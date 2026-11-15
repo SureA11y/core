@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Changed
+
+- **`td-has-header` checks tables from 2 by 2**, where it looked only at tables of 4 by 4 or more: F91 applies to all data tables, and a small price list or timetable without header cells is the table authors make most often. A small table with no header cell is asked about (`TD_TABLE_NO_HEADERS`), and a data cell left without a header in a small table that has some fails (`TD_NO_ASSOCIATED_HEADER`), as in a large one. A single row or column is still left out. Its title no longer says "large".
+
 ## [1.17.0] - 2026-11-13
 
 ### Added

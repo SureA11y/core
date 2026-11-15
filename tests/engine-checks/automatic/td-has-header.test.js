@@ -36,10 +36,44 @@ test(`${RULE_ID}: notApplicable when there are no tables`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the table is below the 4x4 large-table threshold`, () => {
-  const html = `<!doctype html><html><body><table><tr><td>1</td><td>2</td><td>3</td></tr><tr><td>4</td><td>5</td><td>6</td></tr><tr><td>7</td><td>8</td><td>9</td></tr></table></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+test(`${RULE_ID}: notApplicable when the table has a single row or a single column`, () => {
+  for (const body of [
+    '<tr><td>1</td><td>2</td><td>3</td></tr>',
+    '<tr><td>1</td></tr><tr><td>2</td></tr><tr><td>3</td></tr>'
+  ]) {
+    const html = `<!doctype html><html><body><table>${body}</table></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+// F91 applies to all data tables, whatever their size: a small price list
+// with no header cells is asked about as a large table is.
+test(`${RULE_ID}: cantTell, once, when a small table has no headers at all`, () => {
+  for (const body of [
+    '<tr><td>Plan</td><td>Price</td></tr><tr><td>Basic</td><td>10</td></tr>',
+    '<tr><td>1</td><td>2</td><td>3</td></tr><tr><td>4</td><td>5</td><td>6</td></tr><tr><td>7</td><td>8</td><td>9</td></tr>'
+  ]) {
+    const html = `<!doctype html><html><body><table id="t">${body}</table></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'TD_TABLE_NO_HEADERS');
+  }
+});
+
+test(`${RULE_ID}: a small table with a header row passes, and one with a cell left out fails`, () => {
+  const headed = `<!doctype html><html><body><table><tr><th>Day</th><th>Hours</th></tr><tr><td>Monday</td><td>9 to 5</td></tr></table></body></html>`;
+  assertRule(runa11yCoreOnHtml(headed, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  const partly = `<!doctype html><html><body><table><tr><th>Day</th><td>Hours</td></tr><tr><td>Monday</td><td>9 to 5</td></tr></table></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(partly, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'TD_NO_ASSOCIATED_HEADER');
+  assert.strictEqual(rule.occurrences[0].data.details.column, 1);
 });
 
 test(`${RULE_ID}: notApplicable when the table has a colspan/rowspan (skipped, not risked)`, () => {
@@ -148,7 +182,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><table>${TABLE_4X4_NO_HEADERS}</table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'Data cells in large tables must have an associated header');
+  assert.strictEqual(rule.title, 'Data cells in tables must have an associated header');
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/td-has-header-all-scenarios.html)`, () => {
@@ -156,7 +190,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/td-has-header-all-scenarios.h
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
 
   const onTable = (id) => rule.occurrences.filter((o) => o.selector.includes(`#${id}`));
   assert.deepEqual(
@@ -167,12 +201,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/td-has-header-all-scenarios.h
     onTable('tdh_case_09').map((o) => o.occurrenceOutcome),
     ['fail', 'fail', 'fail']
   );
-  const expectedFlaggedIds = ['tdh_case_01', 'tdh_case_09'];
+  assert.deepEqual(
+    onTable('tdh_case_05').map((o) => o.occurrenceOutcome),
+    ['cantTell']
+  );
+  const expectedFlaggedIds = ['tdh_case_01', 'tdh_case_05', 'tdh_case_09'];
   const expectedNoOccIds = [
     'tdh_case_02',
     'tdh_case_03',
     'tdh_case_04',
-    'tdh_case_05',
     'tdh_case_06',
     'tdh_case_07',
     'tdh_case_08'

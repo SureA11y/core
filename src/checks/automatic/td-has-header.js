@@ -5,14 +5,13 @@
 /**
  * @check td-has-header
  * @atomic true
- * @summary Data cells in large tables must have an associated header
+ * @summary Data cells in tables must have an associated header
  * @standard WCAG 2.2
  * @sc 1.3.1
  * @applicability
- *   `<table>` elements with at least 4 rows and at least 4 columns
- *   (a "large" table, where implicit row/column header association is
- *   useful; small tables are usually self-evident), and with
- *   NO `colspan`/`rowspan` anywhere in the table (a `rowspan` of 0, which
+ *   `<table>` elements with at least 2 rows and at least 2 columns (a
+ *   single row or column has no rows and columns for a header to relate),
+ *   and with NO `colspan`/`rowspan` anywhere in the table (a `rowspan` of 0, which
  *   grows the cell to the end of its row group, is a span; a `colspan` of 0
  *   is 1). A table whose role (the
  *   role attribute's first known, non-abstract token, in any case) is
@@ -39,11 +38,11 @@
  *   - `row`, `column`: where the cell sits in the table, counting from 0:
  *     rows from the top, cells from the left within the row.
  * @reason-codes
- *   - `TD_NO_ASSOCIATED_HEADER` (fail): a non-empty data cell in a large
- *     table that has header cells has no headers attribute and no header
+ *   - `TD_NO_ASSOCIATED_HEADER` (fail): a non-empty data cell in a table
+ *     that has header cells has no headers attribute and no header
  *     cell above it in its column or before it in its row.
  *     Basis: WCAG 1.3.1; H51; H43; HTML table model.
- *   - `TD_TABLE_NO_HEADERS` (cantTell): a large table with data in it has
+ *   - `TD_TABLE_NO_HEADERS` (cantTell): a table with data in it has
  *     no header cell at all; a person checks whether it holds data, which
  *     needs headers, or only lays out content, which needs none (F46).
  *     It leans fail when the table shows signs of data (most body cells
@@ -53,6 +52,10 @@
  *     as data; otherwise no lean.
  *     Basis: WCAG 1.3.1 (not settled); H51; F46.
  * @implementation-notes
+ * - Any size from 2 by 2, because F91 applies to all data tables: a small
+ *   price list or timetable needs its headers as much as a large one, and
+ *   a table without any is the kind authors make most in a content editor.
+ *   Until 1.17.0 the rule only looked at tables of 4 by 4 or more.
  * - Closes the gap `table-th-has-data-cells` deferred (see
  *   that rule's own implementation notes): this is the fuller positional
  *   header-association algorithm, but still intentionally scoped,
@@ -67,9 +70,9 @@
 const id = 'td-has-header';
 
 const meta = {
-  title: 'Data cells in large tables must have an associated header',
+  title: 'Data cells in tables must have an associated header',
   description:
-    'Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.',
+    'Checks that every <td> in a simple (no colspan/rowspan) table of at least 2 rows and 2 columns has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.',
   i18n: {
     titleKey: 'tdHasHeader_title',
     descriptionKey: 'tdHasHeader_description'
@@ -97,7 +100,7 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
-  const MIN_SIZE = 4;
+  const MIN_SIZE = 2;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();
