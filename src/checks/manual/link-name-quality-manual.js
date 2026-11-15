@@ -56,6 +56,14 @@
  *     cell has a descriptive name, and fail as GENERIC_LINK_TEXT does.
  *     Basis: WCAG 2.4.4 (not settled); WCAG 2.4.9 (not settled); G91; G53;
  *     ACT 5effbb; ACT aizyf1.
+ *   - `GENERIC_LINK_TEXT_IN_CONTEXT` (cantTell): with the setting
+ *     `whenContextFound: 'ask'` only (the variant link-name-quality-link-only
+ *     sets it): the link's whole name is a generic phrase, and only the
+ *     context found around it says where it leads. That context satisfies
+ *     2.4.4, not 2.4.9, which asks for the purpose from the link text alone;
+ *     a person checks whether the page offers a way to make such links
+ *     descriptive, which F84 allows.
+ *     Basis: WCAG 2.4.9 (not settled); F84.
  * @implementation-notes
  * - Phrase lists exist for en, de, es, fr and ja. English is always
  *   checked; the list for the element's own language (nearest lang
@@ -139,12 +147,19 @@ const meta = {
       '2.4.4': ['link-text-descriptive-evidence'],
       '2.4.9': ['link-text-descriptive-evidence']
     }
-  }
+  },
+  reasonCodes: ['GENERIC_LINK_TEXT', 'AMBIGUOUS_FORMAT_NAME', 'GENERIC_LINK_TEXT_IN_CONTEXT']
 };
 
 function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
+
+  // Settings (see `settings` below): 2.4.4's by default, where context found
+  // around a generic link clears it. The variant link-name-quality-link-only
+  // (2.4.9) passes 'ask' in ctx.config: then only those links are reported.
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const askWhenContextFound = cfg.whenContextFound === 'ask';
 
   const GENERIC_LINK_TEXT_EN = new Set([
     'click here',
@@ -780,7 +795,11 @@ function runInPage(ctx) {
     if (!isGeneric && !isFormatName) continue;
 
     const tier = isGeneric ? 'generic' : 'format';
-    if (hasAdequateContext(el, tier)) continue;
+    const hasContext = hasAdequateContext(el, tier);
+    // 2.4.9 (askWhenContextFound): a generic name only its context explains.
+    // One with no context is the 2.4.4 finding below, which already counts
+    // toward 2.4.9; a bare format name is left to it too.
+    if (askWhenContextFound ? !isGeneric || !hasContext : hasContext) continue;
 
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
@@ -788,33 +807,55 @@ function runInPage(ctx) {
 
     const name = rawName.trim();
     const linkKind = helpers.getLinkKind(el);
-    const reportOpts = isGeneric
+    const reportOpts = askWhenContextFound
       ? {
-          summary: `This link's name ("${name}") is a generic phrase that doesn't say where it leads.`,
-          hint: 'Make the link text say where it leads or what it does, such as "Download the 2026 pricing guide" rather than "Download", or check that the text around it already makes that clear.',
+          summary: `This link's name ("${name}") is a generic phrase: only the text around it says where it leads.`,
+          hint: 'Make the link text itself say where it leads or what it does, such as "Download the 2026 pricing guide" rather than "Click here", so it is clear when read on its own, as in a list of links.',
           i18n: {
-            summaryKey: 'linkNameQuality_summary_cantTell',
-            hintKey: 'linkNameQuality_hint_cantTell',
+            summaryKey: 'linkNameQuality_summary_cantTell_inContext',
+            hintKey: 'linkNameQuality_hint_cantTell_inContext',
             params: { name }
           },
           data: {
-            details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized, linkKind },
+            details: {
+              reasonCode: 'GENERIC_LINK_TEXT_IN_CONTEXT',
+              normalizedName: normalized,
+              linkKind
+            },
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
           }
         }
-      : {
-          summary: `This link's name ("${name}") gives a file format but not which document it is.`,
-          hint: 'Name the document in the link text, or in text or a heading tied to the link, such as "Download the annual report (HTML)" rather than a bare "HTML".',
-          i18n: {
-            summaryKey: 'linkNameQuality_summary_cantTell_formatName',
-            hintKey: 'linkNameQuality_hint_cantTell_formatName',
-            params: { name }
-          },
-          data: {
-            details: { reasonCode: 'AMBIGUOUS_FORMAT_NAME', normalizedName: normalized, linkKind },
-            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+      : isGeneric
+        ? {
+            summary: `This link's name ("${name}") is a generic phrase that doesn't say where it leads.`,
+            hint: 'Make the link text say where it leads or what it does, such as "Download the 2026 pricing guide" rather than "Download", or check that the text around it already makes that clear.',
+            i18n: {
+              summaryKey: 'linkNameQuality_summary_cantTell',
+              hintKey: 'linkNameQuality_hint_cantTell',
+              params: { name }
+            },
+            data: {
+              details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized, linkKind },
+              visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+            }
           }
-        };
+        : {
+            summary: `This link's name ("${name}") gives a file format but not which document it is.`,
+            hint: 'Name the document in the link text, or in text or a heading tied to the link, such as "Download the annual report (HTML)" rather than a bare "HTML".',
+            i18n: {
+              summaryKey: 'linkNameQuality_summary_cantTell_formatName',
+              hintKey: 'linkNameQuality_hint_cantTell_formatName',
+              params: { name }
+            },
+            data: {
+              details: {
+                reasonCode: 'AMBIGUOUS_FORMAT_NAME',
+                normalizedName: normalized,
+                linkKind
+              },
+              visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+            }
+          };
 
     const occurrence = helpers.reportOccurrence(el, reportOpts);
     occurrences.push(occurrence);
@@ -822,8 +863,10 @@ function runInPage(ctx) {
   }
 
   // A lean is advice: a failure reading it costs the leans, not the findings.
+  // The leans weigh context the 2.4.4 findings lack, so a 2.4.9 finding,
+  // which has context by definition, gets none.
   try {
-    addLeans(flagged);
+    if (!askWhenContextFound) addLeans(flagged);
   } catch {
     for (const f of flagged) delete f.occurrence.lean;
   }
@@ -844,4 +887,22 @@ function runInPage(ctx) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }
 
-module.exports = { id, meta, runInPage };
+// Settings a variant can change (docs/RULE_AUTHORING.md, "Rule variants"),
+// with WCAG 2.4.4's as default. link-name-quality-link-only (2.4.9) is this
+// rule with 'ask'.
+const settings = {
+  whenContextFound: 'clear'
+};
+
+// What each setting changes, for the catalog and docs/RULE_SETTINGS.md.
+const settingsInfo = {
+  whenContextFound: {
+    values: ['clear', 'ask'],
+    description:
+      "A generic link name whose list item, paragraph, cell or description says where it leads: not reported ('clear'); or reported, and only such links, as GENERIC_LINK_TEXT_IN_CONTEXT ('ask').",
+    basis:
+      'WCAG 2.4.4 counts the programmatically determined link context (clear); WCAG 2.4.9 asks for the purpose from the link text alone, and F84 fails a generic link only its surrounding text explains (ask)'
+  }
+};
+
+module.exports = { id, meta, runInPage, settings, settingsInfo };

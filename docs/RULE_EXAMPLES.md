@@ -1563,6 +1563,22 @@ No text content, `aria-label`, or `aria-labelledby`.
 ```
 The link text is specific and descriptive.
 
+## link-name-quality-link-only
+
+*It runs in a scan that targets AAA. A generic link with no context around it is `link-name-quality`'s finding, which counts toward 2.4.9 too.*
+
+**Flagged (cantTell)**
+```html
+<p>For the 2026 pricing sheet, <a href="/prices">click here</a>.</p>
+```
+The sentence says where the link leads, which 2.4.4 accepts, but "click here" alone doesn't, which 2.4.9 asks of the link text (F84).
+
+**Not applicable**
+```html
+<p>Prices changed. <a href="/prices">Download the 2026 pricing guide</a>.</p>
+```
+The link text says where it leads on its own.
+
 ## list-children-valid
 
 **Passed**
@@ -1905,6 +1921,13 @@ Normal weight and size; nothing visually suggests a heading.
 <div style="font-size: 24px"><span style="font-weight: bold">Our team</span></div>
 ```
 A `<div>` holding only text is checked like a `<p>`, and the bold can come from a styled `<span>` inside it. A `<div>` that holds other blocks, and text inside a button, label or table header, is not asked about.
+
+**Flagged (cantTell)**
+```html
+<p><strong>Opening hours</strong></p>
+<p>Monday to Friday, from nine to five.</p>
+```
+A bold line at body size that doesn't end as a sentence and comes before plain text reads as a title (`BOLD_SHORT_PARAGRAPH`). A bold sentence ending in a full stop, a run of bold lines such as an address, a bold `<div>`, a bold number and a bold link alone are not asked about at this size.
 
 ## page-has-heading-one
 
@@ -2425,7 +2448,7 @@ Both targets are 10×10, under 24×24, and their centres are 15px apart, closer 
   <tr><th>East</th><td>7</td><td>8</td><td>9</td></tr>
 </table>
 ```
-Every `<td>` has both an implicit row header (`<th>` earlier in its row) and column header (`<th>` earlier in its column). The 4x4 minimum size isn't optional — this rule is inapplicable to smaller tables.
+Every `<td>` has both an implicit row header (`<th>` earlier in its row) and column header (`<th>` earlier in its column).
 
 **Failed**
 ```html
@@ -2437,6 +2460,16 @@ Every `<td>` has both an implicit row header (`<th>` earlier in its row) and col
 </table>
 ```
 The header row stops one column short: the last column's cells have no row, column, or `headers`-attribute association. A table with no header cell at all is asked about instead, since it may be a layout table, which needs none.
+
+**Flagged (cantTell)**
+```html
+<table>
+  <tr><td>Plan</td><td>Price</td></tr>
+  <tr><td>Basic</td><td>10</td></tr>
+  <tr><td>Pro</td><td>20</td></tr>
+</table>
+```
+A small table is checked as a large one is, from 2 rows and 2 columns: this one has no header cell, so it is asked about, as a data table without headers or a layout table that needs none. A single row or column is not applicable.
 
 ## text-spacing-content-loss
 

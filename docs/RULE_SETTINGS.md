@@ -4,7 +4,7 @@ Generated from the compiled engine's own catalog (`getChecksCatalog()`, each rul
 
 Some core rules can be run with other settings by a **variant**: a rule of a pack or profile that names the core rule in `from` and sets some of these in `config` ([`PACKS.md`](./PACKS.md), [`RULE_AUTHORING.md`](./RULE_AUTHORING.md#rule-variants)). That is how another standard's version of a requirement, or a choice WCAG leaves to the evaluator, runs on core's code: a fix to the core rule reaches every variant. A scan's caller can't change them: a result that names WCAG is decided at WCAG's values, the defaults below.
 
-**5 rules offer 11 settings.** Semver covers them: a setting is not removed or renamed, and does not change meaning, before a major version. To ask for a new one, say which rule, what it should change and what in WCAG or the other standard it stands on.
+**6 rules offer 12 settings.** Semver covers them: a setting is not removed or renamed, and does not change meaning, before a major version. To ask for a new one, say which rule, what it should change and what in WCAG or the other standard it stands on.
 
 ```js
 // A pack's variant: core's rule, at the other standard's settings.
@@ -44,6 +44,14 @@ A focused element must not be entirely hidden. [Rule reference](./RULE_CATALOG.m
 | Setting | Default | Takes | What it changes | Basis |
 |---|---|---|---|---|
 | `obscured` | `"entirely"` | `"entirely"`, `"partly"` | Which focused elements are asked about: those that can be hidden entirely ('entirely'), or also those that can be hidden in part ('partly'). | WCAG 2.4.11: not entirely hidden (2.4.12: no part hidden) |
+
+## `link-name-quality`
+
+Link text should be descriptive, not generic. [Rule reference](./RULE_CATALOG.md#link-name-quality).
+
+| Setting | Default | Takes | What it changes | Basis |
+|---|---|---|---|---|
+| `whenContextFound` | `"clear"` | `"clear"`, `"ask"` | A generic link name whose list item, paragraph, cell or description says where it leads: not reported ('clear'); or reported, and only such links, as GENERIC_LINK_TEXT_IN_CONTEXT ('ask'). | WCAG 2.4.4 counts the programmatically determined link context (clear); WCAG 2.4.9 asks for the purpose from the link text alone, and F84 fails a generic link only its surrounding text explains (ask) |
 
 ## `target-size-minimum`
 

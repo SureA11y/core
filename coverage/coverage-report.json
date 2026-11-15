@@ -4,13 +4,13 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 149,
+    "totalRules": 150,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 108,
-          "AA": 23,
-          "AAA": 14
+          "A": 109,
+          "AA": 24,
+          "AAA": 15
         },
         "2.1": {
           "A": 8,
@@ -24,14 +24,14 @@
         }
       },
       "anyVersion": {
-        "A": 119,
-        "AA": 33,
-        "AAA": 17
+        "A": 120,
+        "AA": 34,
+        "AAA": 18
       },
       "rawTagCounts": {
         "wcag2a": 96,
         "wcag21aa": 6,
-        "wcag2aaa": 14,
+        "wcag2aaa": 15,
         "wcag2aa": 11,
         "wcag22aaa": 3,
         "wcag21a": 1,
@@ -6030,6 +6030,60 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/manual/link-name-quality-link-only-manual.js",
+      "ruleId": "link-name-quality-link-only",
+      "wcagScNormative": [
+        "2.4.9"
+      ],
+      "wcagScAll": [
+        "2.4.9"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "A link's text should say where it leads on its own",
+      "tags": [
+        "wcag2aaa",
+        "wcag249",
+        "navigation",
+        "quality",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2aaa",
+            "version": "2.0",
+            "level": "AAA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA",
+            "AAA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA",
+          "AAA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.4.9": [
+            "link-text-alone-clear"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/manual/link-name-quality-manual.js",
       "ruleId": "link-name-quality",
       "wcagScNormative": [
@@ -8364,10 +8418,8 @@
         "sc": "2.4.9",
         "title": "Link Purpose (Link Only)",
         "totalFacets": 3,
-        "coveredFacets": 2,
-        "uncoveredFacets": [
-          "link-text-alone-clear"
-        ],
+        "coveredFacets": 3,
+        "uncoveredFacets": [],
         "automationCounts": {
           "manual": 1,
           "full": 1,
@@ -8398,7 +8450,9 @@
             "id": "link-text-alone-clear",
             "label": "Each link's purpose can be told from its text alone",
             "automation": "partial",
-            "coveredBy": []
+            "coveredBy": [
+              "link-name-quality-link-only"
+            ]
           }
         ]
       },
@@ -10422,10 +10476,8 @@
         "sc": "2.4.9",
         "title": "Link Purpose (Link Only)",
         "totalFacets": 3,
-        "coveredFacets": 2,
-        "uncoveredFacets": [
-          "link-text-alone-clear"
-        ],
+        "coveredFacets": 3,
+        "uncoveredFacets": [],
         "automationCounts": {
           "manual": 1,
           "full": 1,
@@ -10456,7 +10508,9 @@
             "id": "link-text-alone-clear",
             "label": "Each link's purpose can be told from its text alone",
             "automation": "partial",
-            "coveredBy": []
+            "coveredBy": [
+              "link-name-quality-link-only"
+            ]
           }
         ]
       },

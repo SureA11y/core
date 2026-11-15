@@ -4,7 +4,7 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **149**. With fixture: **144**. Without fixture: **5**.
+Total rules: **150**. With fixture: **145**. Without fixture: **5**.
 
 ## Rules WITHOUT a fixture (5)
 
@@ -16,7 +16,7 @@ Total rules: **149**. With fixture: **144**. Without fixture: **5**.
 | moving-content-pausable | manual | Content that moves by itself should be possible to pause, stop or hide | src/checks/manual/moving-content-pausable-manual.js | tests/engine-checks/manual/moving-content-pausable-chromium.test.js |
 | target-size-enhanced | automatic | Pointer targets must be at least 44x44px large | src/checks/automatic/target-size-enhanced.js | tests/engine-checks/automatic/target-size-enhanced.test.js |
 
-## Rules WITH a fixture (144)
+## Rules WITH a fixture (145)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -108,6 +108,7 @@ Total rules: **149**. With fixture: **144**. Without fixture: **5**.
 | link-in-text-block | automatic | `tests/fixtures/link-in-text-block-all-scenarios.html` | 13 | 4 | 4 | 2 | 3 |
 | link-name-present | automatic | `tests/fixtures/link-name-present-all-scenarios.html` | 21 | 12 | 5 | 0 | 4 |
 | link-name-quality | manual | `tests/fixtures/link-name-quality-all-scenarios.html` | 14 | 0 | 0 | 8 | 6 |
+| link-name-quality-link-only | manual | `tests/fixtures/link-name-quality-link-only-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
 | list-children-valid | automatic | `tests/fixtures/list-children-valid-all-scenarios.html` | 20 | 8 | 6 | 3 | 3 |
 | listbox-name-present | automatic | `tests/fixtures/listbox-name-present-all-scenarios.html` | 23 | 5 | 7 | 0 | 11 |
 | listitem-parent-valid | automatic | `tests/fixtures/listitem-parent-valid-all-scenarios.html` | 14 | 6 | 5 | 0 | 3 |

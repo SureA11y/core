@@ -940,6 +940,17 @@
       ]
     }
   },
+  "link-name-quality-link-only": {
+    "prefix": "linkNameQualityLinkOnly",
+    "criteria": [
+      "2.4.9"
+    ],
+    "facets": {
+      "2.4.9": [
+        "link-text-alone-clear"
+      ]
+    }
+  },
   "list-children-valid": {
     "prefix": "listChildrenValid",
     "criteria": [

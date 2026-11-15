@@ -348,7 +348,12 @@ module.exports = [
 
   {
     id: 'wcag-2.4.9-link-purpose-link-only',
-    checksIds: ['identical-links-same-purpose', 'link-name-present', 'link-name-quality'],
+    checksIds: [
+      'identical-links-same-purpose',
+      'link-name-present',
+      'link-name-quality',
+      'link-name-quality-link-only'
+    ],
     meta: {
       titleKey: 'catalog.rules.wcag_249_link_purpose_link_only.title',
       descriptionKey: 'catalog.rules.wcag_249_link_purpose_link_only.description',

@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**149 rules total: 87 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 62 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 119 carry at least one formal WCAG Success Criterion mapping.**
+**150 rules total: 87 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 63 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 120 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -104,7 +104,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (62), never `fail`
+## Manual rules (63), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -146,6 +146,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`landmark-one-main`](#landmark-one-main) | Page should have a main landmark | — | — | medium | minor |
 | [`landmark-unique`](#landmark-unique) | Landmarks with the same role must have unique names | — | — | medium | minor |
 | [`link-name-quality`](#link-name-quality) | Link text should be descriptive, not generic | 2.4.4, 2.4.9 | A, AAA | medium | minor |
+| [`link-name-quality-link-only`](#link-name-quality-link-only) | A link's text should say where it leads on its own | 2.4.9 | AAA | medium | minor |
 | [`live-region-announcements`](#live-region-announcements) | Live regions should be able to announce status messages | 4.1.3 | AA | medium | moderate |
 | [`manual-review`](#manual-review) | Manual review: keyboard navigation and focus order | 2.1.1, 2.4.3, 2.4.7 | A, A, AA | medium | moderate |
 | [`media-alternative-transcript-evidence`](#media-alternative-transcript-evidence) | Time-based media: transcript or text alternative evidence | 1.2.1 | A | low | moderate |
@@ -205,7 +206,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-2.4.4-link-purpose-in-context` | Link Purpose (In Context) | Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase. | 2.4.4 | A | 2 |
 | `wcag-2.4.6-headings-and-labels` | Headings and Labels | Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows. | 2.4.6 | AA | 2 |
 | `wcag-2.4.7-focus-visible` | Focus visible | Rollup of checks ensuring keyboard focus is not hidden and remains perceivable. | 2.4.7 | AA | 4 |
-| `wcag-2.4.9-link-purpose-link-only` | Link Purpose (Link Only) | Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA). | 2.4.9 | AAA | 3 |
+| `wcag-2.4.9-link-purpose-link-only` | Link Purpose (Link Only) | Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA). | 2.4.9 | AAA | 4 |
 | `wcag-2.5.3-label-in-name` | Label in name | Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text. | 2.5.3 | A | 1 |
 | `wcag-2.5.5-target-size-enhanced` | Target Size (Enhanced) | Rollup of checks ensuring pointer targets are at least 44 by 44 CSS pixels, or meet an exception (AAA). | 2.5.5 | AAA | 1 |
 | `wcag-2.5.8-target-size-minimum` | Target size: minimum | Rollup of checks ensuring pointer targets meet minimum size requirements. | 2.5.8 | AA | 1 |
@@ -2612,6 +2613,35 @@ Flags links whose full accessible name is a known non-descriptive phrase (e.g. "
 |---|---|---|---|
 | `GENERIC_LINK_TEXT` | cantTell | The link's whole name is a generic phrase such as "read more" or "click here", with no adjacent context found that says where it leads. It leans fail when another flagged link with the same name goes elsewhere under the same nearest heading, with no other text, table or named container around them. | WCAG 2.4.4 (not settled); WCAG 2.4.9; F84; G91; G53; ACT 5effbb; ACT aizyf1 |
 | `AMBIGUOUS_FORMAT_NAME` | cantTell | The link's whole name is a bare file format such as "PDF", with no adjacent context found that names the document. It leans pass when another link in the same list item, paragraph or cell has a descriptive name, and fail as GENERIC_LINK_TEXT does. | WCAG 2.4.4 (not settled); WCAG 2.4.9 (not settled); G91; G53; ACT 5effbb; ACT aizyf1 |
+| `GENERIC_LINK_TEXT_IN_CONTEXT` | cantTell | With the setting `whenContextFound: 'ask'` only (the variant link-name-quality-link-only sets it): the link's whole name is a generic phrase, and only the context found around it says where it leads. That context satisfies 2.4.4, not 2.4.9, which asks for the purpose from the link text alone; a person checks whether the page offers a way to make such links descriptive, which F84 allows. | WCAG 2.4.9 (not settled); F84 |
+
+**Settings a variant can change.** See [`RULE_SETTINGS.md`](./RULE_SETTINGS.md).
+
+| Setting | Default | Takes | What it changes | Basis |
+|---|---|---|---|---|
+| `whenContextFound` | `"clear"` | `"clear"`, `"ask"` | A generic link name whose list item, paragraph, cell or description says where it leads: not reported ('clear'); or reported, and only such links, as GENERIC_LINK_TEXT_IN_CONTEXT ('ask'). | WCAG 2.4.4 counts the programmatically determined link context (clear); WCAG 2.4.9 asks for the purpose from the link text alone, and F84 fails a generic link only its surrounding text explains (ask) |
+
+### `link-name-quality-link-only`
+
+**A link's text should say where it leads on its own**
+
+manual · WCAG 2.4.9 (AAA) · confidence medium · default severity minor
+
+Flags links whose full accessible name is a known generic phrase (e.g. "click here", "read more") that only the text around them explains, for manual review of whether the link text alone makes the purpose clear.
+
+**Applies to.** The links link-name-quality applies to: `a[href]`, `area[href]` and elements whose role resolves to link, with a non-empty accessible name, whose whole name is a known generic phrase ("click here", "read more", "more", in English and, for a link in that language, German, Spanish, French or Japanese) and whose list item, paragraph, cell or description says where it leads.
+
+**Expectation.** 2.4.9 asks that a link's purpose be identified from the link text alone. A generic phrase that only its surrounding text explains meets 2.4.4, which counts that context, but not 2.4.9 (F84), unless the page offers a mechanism that makes such links descriptive, which a scan cannot see. Each such link is asked about. It is link-name-quality run with `whenContextFound: 'ask'` (a variant: docs/RULE_AUTHORING.md, "Rule variants"), so its phrase lists and its reading of context are that rule's. A generic link with no context is link-name-quality's own finding, which counts toward 2.4.9 already, so no link is reported by both. A bare format name ("PDF") is left to link-name-quality too: F84 is about generic phrases.
+
+**What a finding reports.**
+
+- As link-name-quality's: `normalizedName`, the name as it was matched, and `linkKind`.
+
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `GENERIC_LINK_TEXT_IN_CONTEXT` | cantTell | The link's whole name is a generic phrase, and only the context found around it says where it leads; a person checks whether the page offers a way to make the link descriptive on its own. | WCAG 2.4.9 (not settled); F84 |
 
 ### `list-children-valid`
 
