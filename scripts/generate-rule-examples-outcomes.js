@@ -18,7 +18,8 @@
  * Examples run in Chromium, through the browser bundle, as a reader's page
  * would: several rules measure layout, which jsdom does not have. A label
  * may end in "(in a browser)"; that is part of the reader's text, not of
- * the outcome. A snippet with no <html> is wrapped in a page: its leading
+ * the outcome. One ending in "(at 320 CSS pixels wide)" is laid out at that
+ * width (reflow is checked there); the others at 1280. A snippet with no <html> is wrapped in a page: its leading
  * <title>, <meta>, <link> and <style> elements go in the <head>, and the
  * page gets a title of its own unless the snippet brings one.
  *
