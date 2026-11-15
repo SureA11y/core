@@ -4,7 +4,7 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 150,
+    "totalRules": 151,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -13,8 +13,8 @@
           "AAA": 15
         },
         "2.1": {
-          "A": 8,
-          "AA": 7,
+          "A": 9,
+          "AA": 8,
           "AAA": 1
         },
         "2.2": {
@@ -24,13 +24,13 @@
         }
       },
       "anyVersion": {
-        "A": 120,
-        "AA": 34,
+        "A": 121,
+        "AA": 35,
         "AAA": 18
       },
       "rawTagCounts": {
         "wcag2a": 96,
-        "wcag21aa": 6,
+        "wcag21aa": 7,
         "wcag2aaa": 15,
         "wcag2aa": 11,
         "wcag22aaa": 3,
@@ -3522,6 +3522,57 @@
         "facetsBySc": {
           "1.1.1": [
             "progressbar-name-present"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
+      "file": "src/checks/automatic/reflow-horizontal-scroll.js",
+      "ruleId": "reflow-horizontal-scroll",
+      "wcagScNormative": [
+        "1.4.10"
+      ],
+      "wcagScAll": [
+        "1.4.10"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
+      "tags": [
+        "wcag21aa",
+        "wcag1410",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag21aa",
+            "version": "2.1",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.1"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.1": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.4.10": [
+            "reflow-320"
           ]
         }
       },
@@ -7842,6 +7893,28 @@
         ]
       },
       {
+        "sc": "1.4.10",
+        "title": "Reflow",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "partial": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "reflow-320",
+            "label": "At 320 CSS pixels wide, content needs no scrolling in two directions and nothing is lost",
+            "automation": "partial",
+            "coveredBy": [
+              "reflow-horizontal-scroll"
+            ]
+          }
+        ]
+      },
+      {
         "sc": "1.4.11",
         "title": "Non-text Contrast",
         "totalFacets": 3,
@@ -9895,6 +9968,28 @@
             "automation": "partial",
             "coveredBy": [
               "contrast-enhanced"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "1.4.10",
+        "title": "Reflow",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "partial": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "reflow-320",
+            "label": "At 320 CSS pixels wide, content needs no scrolling in two directions and nothing is lost",
+            "automation": "partial",
+            "coveredBy": [
+              "reflow-horizontal-scroll"
             ]
           }
         ]
