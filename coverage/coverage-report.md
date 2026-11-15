@@ -5,20 +5,20 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **150**
+Total rules (loaded without error): **151**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 120 | 34 | 18 |
+| Any WCAG version | 121 | 35 | 18 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
 | WCAG 2.0 | 109 | 24 | 15 |
-| WCAG 2.1 | 8 | 7 | 1 |
+| WCAG 2.1 | 9 | 8 | 1 |
 | WCAG 2.2 | 6 | 6 | 3 |
 
 ### Raw WCAG tag counts (non-cumulative)
@@ -26,7 +26,7 @@ Total rules (loaded without error): **150**
 | Tag | Rules |
 |---|---:|
 | wcag21a | 1 |
-| wcag21aa | 6 |
+| wcag21aa | 7 |
 | wcag21aaa | 1 |
 | wcag22aa | 3 |
 | wcag22aaa | 3 |
@@ -293,6 +293,19 @@ Automation mix: **full 0, partial 2, manual 0**.
 |---|---|---|---|---|---|
 | contrast-computable | automatic | Color contrast is computable for rendered text | src/checks/automatic/contrast-computable.js | contrast-computability-146 |  |
 | contrast-enhanced | automatic | Text meets enhanced color contrast (AAA) | src/checks/automatic/contrast-enhanced.js | contrast-enhanced-text |  |
+
+### 1.4.10
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| reflow-320 | partial | reflow-horizontal-scroll |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| reflow-horizontal-scroll | automatic | Content reflows at 320 CSS pixels wide without scrolling sideways | src/checks/automatic/reflow-horizontal-scroll.js | reflow-320 |  |
 
 ### 1.4.11
 
@@ -1168,6 +1181,19 @@ Automation mix: **full 0, partial 2, manual 0**.
 |---|---|---|---|---|---|
 | contrast-computable | automatic | Color contrast is computable for rendered text | src/checks/automatic/contrast-computable.js | contrast-computability-146 |  |
 | contrast-enhanced | automatic | Text meets enhanced color contrast (AAA) | src/checks/automatic/contrast-enhanced.js | contrast-enhanced-text |  |
+
+### 1.4.10
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| reflow-320 | partial | reflow-horizontal-scroll |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| reflow-horizontal-scroll | automatic | Content reflows at 320 CSS pixels wide without scrolling sideways | src/checks/automatic/reflow-horizontal-scroll.js | reflow-320 |  |
 
 ### 1.4.11
 
