@@ -99879,8 +99879,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // is large enough is the caller's call.
   function boldStyleOf(holder, blockWeight) {
     const cs = safeComputedStyle(holder);
-    const bold = isBoldWeight(cs);
+    // One read of the weight: weightNumOf takes bold and bolder as 700, so
+    // this is isBoldWeight's test.
     const weight = weightNumOf(cs);
+    const bold = weight >= 700;
     if (!bold && !(weight > blockWeight)) return null;
     const scale =
       helpers.contrast && typeof helpers.contrast.renderedTextScale === 'function'
@@ -99929,6 +99931,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     if (!headingLike.length) return null;
+    // Before working out what is seen, which costs the most: when all the
+    // text is bold and none of it large, only a <p> before lighter text can
+    // be asked about. Both tests hold for any subset of the pieces, so they
+    // never leave out text the full test would ask about. With lighter text
+    // too, the test below usually settles it first, as it did before.
+    if (
+      !others.length &&
+      !headingLike.some((piece) => piece.bold && piece.fontSizePx >= MIN_FONT_SIZE_PX)
+    ) {
+      if (String(dom.localName(el) || '').toLowerCase() !== 'p') return null;
+      const heaviest = Math.max(...headingLike.map((piece) => piece.weight));
+      if (!hasPlainText(dom.nextElementSibling(el), heaviest)) return null;
+    }
     if (others.some(isSeen)) return null;
     return headingLike.filter((piece) => isSeen(piece.holder));
   }
