@@ -101201,7 +101201,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  const usable = (el) => visible(el) && exposed(el);
+  // An element the caller excluded (engineOptions.excludeSelectors, global or
+  // for this rule) is never judged, as for every rule; the rule walks the
+  // whole document itself, so it asks.
+  const excluded = (el) => {
+    try {
+      return typeof helpers.isExcluded === 'function' && helpers.isExcluded(el) === true;
+    } catch {
+      return false;
+    }
+  };
+  const usable = (el) => !excluded(el) && visible(el) && exposed(el);
   const noBanner = !pageHas('banner');
   const noContentinfo = !pageHas('contentinfo');
 

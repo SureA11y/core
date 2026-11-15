@@ -14,7 +14,8 @@
  *   banner, nav, navigation, menu, footer, and their French, German and
  *   Spanish names), at search forms (a form with a search field, or one
  *   named q, s, search or query), and at the page's first <header> and last
- *   <footer>. A page with none of them is notApplicable.
+ *   <footer>. Elements left out with excludeSelectors are not looked at. A
+ *   page with none of them is notApplicable.
  * @expectation
  *   Each zone is exposed as the landmark of its nature, by its element or a
  *   role: the header as banner, a navigation as navigation, the search as
@@ -311,7 +312,17 @@ function runInPage(ctx) {
     );
   }
 
-  const usable = (el) => visible(el) && exposed(el);
+  // An element the caller excluded (engineOptions.excludeSelectors, global or
+  // for this rule) is never judged, as for every rule; the rule walks the
+  // whole document itself, so it asks.
+  const excluded = (el) => {
+    try {
+      return typeof helpers.isExcluded === 'function' && helpers.isExcluded(el) === true;
+    } catch {
+      return false;
+    }
+  };
+  const usable = (el) => !excluded(el) && visible(el) && exposed(el);
   const noBanner = !pageHas('banner');
   const noContentinfo = !pageHas('contentinfo');
 
