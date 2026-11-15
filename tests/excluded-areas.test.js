@@ -80,12 +80,16 @@ test('without an exclusion, the block gives many rules something to report', () 
   assert.ok(rules.length >= 30, `${rules.length} rules report in the block: ${rules.join(', ')}`);
 });
 
-test('no rule reports inside an area left out with excludeSelectors', () => {
+test('no core rule reports inside an area left out with excludeSelectors', () => {
   const result = runa11yCoreOnHtml(PAGE, {
     runOnly: ALL_RULES,
     engineOptions: { excludeSelectors: ['#excluded'] }
   });
   assert.deepStrictEqual(insideExcluded(result), {});
+  // The engine drops what a rule reports there (below), so a core rule that
+  // forgot would pass the check above: it must not have needed the engine.
+  const needed = result.checksResults.filter((c) => c.excludedOccurrences).map((c) => c.ruleId);
+  assert.deepStrictEqual(needed, []);
 });
 
 // A rule from outside core, as a pack or a custom rule would be, that walks
