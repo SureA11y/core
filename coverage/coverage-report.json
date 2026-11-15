@@ -4223,7 +4223,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Data cells in large tables must have an associated header",
+      "title": "Data cells in tables must have an associated header",
       "tags": [
         "wcag2a",
         "wcag131",

@@ -167,7 +167,7 @@ Uncovered facets: form-control-label-quality-review, headings-marked-up, lists-m
 | listitem-parent-valid | automatic | List items must be inside a list container | src/checks/automatic/listitem-parent-valid.js | listitem-parent-valid |  |
 | table-headers-attr-valid | automatic | Table cell "headers" attribute must reference valid header cells | src/checks/automatic/table-headers-attr-valid.js | table-headers-attr-valid |  |
 | table-th-has-data-cells | automatic | &lt;th&gt; elements must describe at least one data cell | src/checks/automatic/table-th-has-data-cells.js | table-th-has-data-cells |  |
-| td-has-header | automatic | Data cells in large tables must have an associated header | src/checks/automatic/td-has-header.js | td-has-header |  |
+| td-has-header | automatic | Data cells in tables must have an associated header | src/checks/automatic/td-has-header.js | td-has-header |  |
 | p-as-heading | manual | Text styled to look like a heading should probably be a real heading | src/checks/manual/p-as-heading-manual.js | p-as-heading-evidence |  |
 | table-fake-caption | manual | A table's first row should not stand in for a real &lt;caption&gt; | src/checks/manual/table-fake-caption-manual.js | table-fake-caption-evidence |  |
 
@@ -1043,7 +1043,7 @@ Uncovered facets: form-control-label-quality-review, headings-marked-up, lists-m
 | listitem-parent-valid | automatic | List items must be inside a list container | src/checks/automatic/listitem-parent-valid.js | listitem-parent-valid |  |
 | table-headers-attr-valid | automatic | Table cell "headers" attribute must reference valid header cells | src/checks/automatic/table-headers-attr-valid.js | table-headers-attr-valid |  |
 | table-th-has-data-cells | automatic | &lt;th&gt; elements must describe at least one data cell | src/checks/automatic/table-th-has-data-cells.js | table-th-has-data-cells |  |
-| td-has-header | automatic | Data cells in large tables must have an associated header | src/checks/automatic/td-has-header.js | td-has-header |  |
+| td-has-header | automatic | Data cells in tables must have an associated header | src/checks/automatic/td-has-header.js | td-has-header |  |
 | p-as-heading | manual | Text styled to look like a heading should probably be a real heading | src/checks/manual/p-as-heading-manual.js | p-as-heading-evidence |  |
 | table-fake-caption | manual | A table's first row should not stand in for a real &lt;caption&gt; | src/checks/manual/table-fake-caption-manual.js | table-fake-caption-evidence |  |
 

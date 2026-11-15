@@ -96,7 +96,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`table-th-has-data-cells`](#table-th-has-data-cells) | &lt;th&gt; elements must describe at least one data cell | 1.3.1 | A | high | moderate |
 | [`target-size-enhanced`](#target-size-enhanced) | Pointer targets must be at least 44x44px large | 2.5.5 | AAA | medium | moderate |
 | [`target-size-minimum`](#target-size-minimum) | Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets | 2.5.8 | AA | medium | serious |
-| [`td-has-header`](#td-has-header) | Data cells in large tables must have an associated header | 1.3.1 | A | high | serious |
+| [`td-has-header`](#td-has-header) | Data cells in tables must have an associated header | 1.3.1 | A | high | serious |
 | [`text-spacing-content-loss`](#text-spacing-content-loss) | Text stays readable when the user increases text spacing | 1.4.12 | AA | medium | serious |
 | [`textbox-name-present`](#textbox-name-present) | Textboxes have an accessible name | 4.1.2 | A | high | serious |
 | [`tooltip-name-present`](#tooltip-name-present) | Tooltips have an accessible name | 4.1.2 | A | high | serious |
@@ -3776,13 +3776,13 @@ Checks that pointer-operable targets have an effective hit region of at least 24
 
 ### `td-has-header`
 
-**Data cells in large tables must have an associated header**
+**Data cells in tables must have an associated header**
 
 automatic · WCAG 1.3.1 (A) · confidence high · default severity serious
 
-Checks that every &lt;td&gt; in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column &lt;th&gt; above it, or an implicit row &lt;th&gt; to its left.
+Checks that every &lt;td&gt; in a simple (no colspan/rowspan) table of at least 2 rows and 2 columns has an associated header, via a headers attribute, an implicit column &lt;th&gt; above it, or an implicit row &lt;th&gt; to its left.
 
-**Applies to.** `<table>` elements with at least 4 rows and at least 4 columns (a "large" table, where implicit row/column header association is useful; small tables are usually self-evident), and with NO `colspan`/`rowspan` anywhere in the table (a `rowspan` of 0, which grows the cell to the end of its row group, is a span; a `colspan` of 0 is 1). A table whose role (the role attribute's first known, non-abstract token, in any case) is anything but table, grid or treegrid, such as a layout table with role="presentation", is left out: it has no data cells.
+**Applies to.** `<table>` elements with at least 2 rows and at least 2 columns (a single row or column has no rows and columns for a header to relate), and with NO `colspan`/`rowspan` anywhere in the table (a `rowspan` of 0, which grows the cell to the end of its row group, is a span; a `colspan` of 0 is 1). A table whose role (the role attribute's first known, non-abstract token, in any case) is anything but table, grid or treegrid, such as a layout table with role="presentation", is left out: it has no data cells.
 
 **Expectation.**
 
@@ -3802,8 +3802,8 @@ A header cell is a `<th>` with no other role, or any cell with role="columnheade
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TD_NO_ASSOCIATED_HEADER` | fail | A non-empty data cell in a large table that has header cells has no headers attribute and no header cell above it in its column or before it in its row. | WCAG 1.3.1; H51; H43; HTML table model |
-| `TD_TABLE_NO_HEADERS` | cantTell | A large table with data in it has no header cell at all; a person checks whether it holds data, which needs headers, or only lays out content, which needs none (F46). It leans fail when the table shows signs of data (most body cells numbers, a caption or thead, a first row or column bold apart from the rest) and none of layout; it leans pass when its cells hold a nested table, form controls, images or blocks of prose and nothing marks it as data; otherwise no lean. | WCAG 1.3.1 (not settled); H51; F46 |
+| `TD_NO_ASSOCIATED_HEADER` | fail | A non-empty data cell in a table that has header cells has no headers attribute and no header cell above it in its column or before it in its row. | WCAG 1.3.1; H51; H43; HTML table model |
+| `TD_TABLE_NO_HEADERS` | cantTell | A table with data in it has no header cell at all; a person checks whether it holds data, which needs headers, or only lays out content, which needs none (F46). It leans fail when the table shows signs of data (most body cells numbers, a caption or thead, a first row or column bold apart from the rest) and none of layout; it leans pass when its cells hold a nested table, form controls, images or blocks of prose and nothing marks it as data; otherwise no lean. | WCAG 1.3.1 (not settled); H51; F46 |
 
 ### `text-spacing-content-loss`
 
