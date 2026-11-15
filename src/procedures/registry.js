@@ -235,6 +235,7 @@ const PROCEDURES = {
           'p-as-heading': [
             'BOLD_LARGE_DIV',
             'BOLD_LARGE_PARAGRAPH',
+            'BOLD_SHORT_PARAGRAPH',
             'HEADING_LIKE_LINK',
             'HEADING_LIKE_NUMBER'
           ]

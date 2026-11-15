@@ -58,7 +58,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/p-as-heading-all-scenarios.ht
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 12, maxOccurrences: 12 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 13, maxOccurrences: 13 });
 
   const expectedFlaggedIds = [
     'pah_case_01',
@@ -72,7 +72,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/p-as-heading-all-scenarios.ht
     'pah_case_17',
     'pah_case_19',
     'pah_case_20',
-    'pah_case_21'
+    'pah_case_21',
+    'pah_case_22'
   ];
   const expectedNoOccIds = [
     'pah_case_02',
@@ -83,7 +84,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/p-as-heading-all-scenarios.ht
     'pah_case_09',
     'pah_case_10',
     'pah_case_13',
-    'pah_case_18'
+    'pah_case_18',
+    'pah_case_23',
+    'pah_case_24',
+    'pah_case_25',
+    'pah_case_26'
   ];
 
   for (const id of expectedFlaggedIds) {
@@ -397,4 +402,76 @@ test(`${RULE_ID}: a bold link over a teaser, repeated across sibling cards, lean
     undefined
   );
   assert.equal(run(`<div class="grid">${card('/a', 'Alpha')}</div>`)[0].lean, undefined);
+});
+
+// Bold body text is far more often emphasis than a title, so below 18px only
+// a paragraph with both signs of a title is asked about: no sentence ending,
+// and plain text after it (F2).
+test(`${RULE_ID}: a bold line at body size over plain text is asked about`, () => {
+  const page = (body) =>
+    `<!doctype html><html><head><style>body{font-size:16px}</style></head><body>${body}</body></html>`;
+  const asked = [
+    '<p id="x"><strong>Opening hours</strong></p><p>Monday to Friday, from nine to five.</p>',
+    '<p id="x" style="font-weight:bold">Next steps</p><ul><li>Read the guide</li></ul>',
+    '<p id="x"><b>Step 2 </b><strong>Prepare the dough</strong></p><p>Mix the flour and the water.</p>'
+  ];
+  for (const body of asked) {
+    const rule = assertRule(
+      runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell',
+      {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      }
+    );
+    const occ = rule.occurrences[0];
+    assert.equal(occ.data.details.reasonCode, 'BOLD_SHORT_PARAGRAPH', body);
+    assert.equal(occ.i18n.summaryKey, 'pAsHeading_summary_cantTell_bodySize');
+    assert.ok(occ.html.includes('id="x"'));
+  }
+  const notAsked = [
+    // ends as a sentence: emphasis
+    '<p><strong>The office is closed today.</strong></p><p>We reopen tomorrow.</p>',
+    '<p><strong>Note:</strong></p><p>Prices include tax.</p>',
+    // nothing after it, or only more bold text
+    '<p><strong>Opening hours</strong></p>',
+    '<p><b>Main office</b></p><p><b>12 High Street</b></p>',
+    // a <div>, a number or a single link at body size
+    '<div style="font-weight:bold">New</div><p>Our latest products.</p>',
+    '<p><strong>2026</strong></p><p>A year of changes.</p>',
+    '<p><a href="#o"><strong>See the offer</strong></a></p><p>Valid this month.</p>',
+    // part of the text is not bold
+    '<p><strong>Opening</strong> hours</p><p>Monday to Friday.</p>'
+  ];
+  for (const body of notAsked) {
+    const result = runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: bold text at 18px or more keeps its own reason code`, () => {
+  const html = `<!doctype html><html><body><p style="font-weight:bold;font-size:20px">Opening hours</p><p>Monday to Friday.</p></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'BOLD_LARGE_PARAGRAPH');
+});
+
+// A theme may draw body text at 300, which makes <strong> 400: heavier than
+// the paragraph and the text after it, so it reads as bold.
+test(`${RULE_ID}: at body size, text heavier than its paragraph counts as bold`, () => {
+  const html = `<!doctype html><html><head><style>body{font-size:16px} p{font-weight:300} strong{font-weight:400}</style></head><body><p id="x"><strong>Next steps</strong></p><p>Read the guide before you start.</p></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'BOLD_SHORT_PARAGRAPH');
+  // Followed by text of the same weight, it is not set apart.
+  const same = `<!doctype html><html><head><style>body{font-size:16px} p{font-weight:300} strong{font-weight:400}</style></head><body><p><strong>Next steps</strong></p><p><strong>Read the guide</strong></p></body></html>`;
+  assertRule(runa11yCoreOnHtml(same, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
