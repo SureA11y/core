@@ -152,17 +152,18 @@ test('text is judged at the size font-size-adjust draws it, in Chromium', { skip
     assert.deepEqual(occ.data.details.typography.sizeScaledBy, ['font-size-adjust']);
   });
 
+  // Drawn at 18px or more, the line is large bold text; drawn smaller, it is
+  // bold body text before plain text, asked about as such.
   await t.test('p-as-heading judges the drawn size', async () => {
     const bold = (style) =>
       `<p style="${FONT};font-weight:700;${style}">A short line of bold text</p><p>Body text.</p>`;
-    assert.equal((await scan(browser, bold('font-size:24px'), 'p-as-heading')).outcome, 'cantTell');
-    assert.equal(
-      (await scan(browser, bold('font-size:24px;font-size-adjust:0.3'), 'p-as-heading')).outcome,
-      'notApplicable'
-    );
-    assert.equal(
-      (await scan(browser, bold('font-size:12px;zoom:2'), 'p-as-heading')).outcome,
-      'cantTell'
-    );
+    const codeOf = async (style) => {
+      const r = await scan(browser, bold(style), 'p-as-heading');
+      assert.equal(r.outcome, 'cantTell', style);
+      return r.occurrences[0].data.details.reasonCode;
+    };
+    assert.equal(await codeOf('font-size:24px'), 'BOLD_LARGE_PARAGRAPH');
+    assert.equal(await codeOf('font-size:24px;font-size-adjust:0.3'), 'BOLD_SHORT_PARAGRAPH');
+    assert.equal(await codeOf('font-size:12px;zoom:2'), 'BOLD_LARGE_PARAGRAPH');
   });
 });

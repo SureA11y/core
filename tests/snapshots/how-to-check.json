@@ -2582,6 +2582,33 @@
       "ja": "2645a67c9ca181c9",
       "fr-CA": "c7e712b778891a6b",
       "pt": "798925fedd34b7b7"
+    },
+    "link-name-quality-link-only GENERIC_LINK_TEXT_IN_CONTEXT": {
+      "en": "8bcf93d1cb984018",
+      "de": "ca02a7f49060d264",
+      "es": "e42d83868282c340",
+      "fr": "650ea80ae5898161",
+      "ja": "5580815ab29a36e9",
+      "fr-CA": "650ea80ae5898161",
+      "pt": "8bcf93d1cb984018"
+    },
+    "link-name-quality GENERIC_LINK_TEXT_IN_CONTEXT": {
+      "en": "8bcf93d1cb984018",
+      "de": "ca02a7f49060d264",
+      "es": "e42d83868282c340",
+      "fr": "650ea80ae5898161",
+      "ja": "5580815ab29a36e9",
+      "fr-CA": "650ea80ae5898161",
+      "pt": "8bcf93d1cb984018"
+    },
+    "p-as-heading BOLD_SHORT_PARAGRAPH": {
+      "en": "2b857fc4c573689b",
+      "de": "67793f2aa8d4ba5b",
+      "es": "5bc36bd68ce02cd2",
+      "fr": "04e8d57d687aca00",
+      "ja": "8795e5880be33d52",
+      "fr-CA": "04e8d57d687aca00",
+      "pt": "2b857fc4c573689b"
     }
   },
   "reviews": {
@@ -2709,7 +2736,7 @@
     "landmark-no-duplicate-main": "1d8409cf92ccd7a3",
     "landmark-one-main": "ff53e32f82b3a1e4",
     "landmark-unique": "29b715ab7b5dc063",
-    "link-name-quality": "a9d84e79ae35260a",
+    "link-name-quality": "babbd1609b6becb8",
     "live-region-announcements": "f3aa57843c29a1e2",
     "media-alternative-transcript-evidence": "df3273c52e973e91",
     "meta-viewport-large": "3ba1c3efc456b2d8",
@@ -2717,7 +2744,7 @@
     "moving-content-pausable": "d2fc5db50c7027ae",
     "no-autoplay-audio": "81943522b1b8739a",
     "object-text-alternative-quality": "ede91b5577079c1d",
-    "p-as-heading": "f3c206f1054cd06b",
+    "p-as-heading": "d8a8897687c8dd18",
     "page-has-heading-one": "5318650367e11f6c",
     "page-title-patterns": "0256ddeb116247aa",
     "password-paste-enabled": "5f3a72b14071d7f5",
@@ -2733,13 +2760,14 @@
     "video-caption": "61b92a403c21d4a5",
     "widget-keyboard-focusable": "c8cefbbd4fadee80",
     "focus-not-obscured-enhanced": "fe683fbed61fbb8f",
-    "focus-not-obscured-minimum": "6d92f3ab7c9aefea"
+    "focus-not-obscured-minimum": "6d92f3ab7c9aefea",
+    "link-name-quality-link-only": "0db2cece5451463f"
   },
   "dictionaries": {
-    "de": "8613facefe590153ec3bea39d6149cd328e1925c20114121ad99fdcf03d86d4a",
-    "en": "614284f828abe469e40b33d626959c839eda0cab63925da226973666b48e5b44",
-    "es": "794930f9bb99c89f6ff23db1026057a3d194bc60bfb9511e12609db55d58f470",
-    "fr": "11deee670647eaac45ff06ae732814205bf24ccabe8d2cf32d9a1d15395cacad",
-    "ja": "233101c4a369fcfced39c092a444827ea25537afae48863dbf47107fd0684cef"
+    "de": "1fca133334da4aff3c8e4371aa41928c0ecba2efa372a1370d5743a6d94bcc94",
+    "en": "141390ef466a045f41ca59b55fcc9d287274feb227afabf1699886b05c4e5cab",
+    "es": "fceb7c0200046bbd7999f06cf67edbf8c30bbf0145e55ea8428b1564935beaa3",
+    "fr": "0695dc26ec4ef445cd428052df953f03ae3eb0b11d28332e2a4441997ab5694d",
+    "ja": "62c76ccec70b6fc08fcf525b365dbd13d228a85731ce9082093772d74791d898"
   }
 }
