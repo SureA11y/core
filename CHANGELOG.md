@@ -4,9 +4,17 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+
+- **`p-as-heading` asks about bold lines at body size** that read as a title (`BOLD_SHORT_PARAGRAPH`, cantTell): a short `<p>` whose text is all bold, or all heavier than the paragraph's own text, that doesn't end as a sentence and comes before lighter text, such as "Opening hours" over the hours. It only asked about bold text of 18px or more, while authors usually make a title by bolding a line of body text (F2). A bold sentence, a run of bold lines such as an address, a bold `<div>`, a bold number and a bold link alone are left out at this size.
+
 ### Changed
 
 - **`td-has-header` checks tables from 2 by 2**, where it looked only at tables of 4 by 4 or more: F91 applies to all data tables, and a small price list or timetable without header cells is the table authors make most often. A small table with no header cell is asked about (`TD_TABLE_NO_HEADERS`), and a data cell left without a header in a small table that has some fails (`TD_NO_ASSOCIATED_HEADER`), as in a large one. A single row or column is still left out. Its title no longer says "large".
+
+### Fixed
+
+- Under jsdom, `p-as-heading` reads a font size written as a keyword (`large`) or a `calc()` as a browser does, where it read it as no size.
 
 ## [1.17.0] - 2026-11-13
 

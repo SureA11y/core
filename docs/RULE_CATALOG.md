@@ -3064,16 +3064,16 @@ Checks that elements with role="option" expose a non-empty accessible name.
 
 manual · WCAG 1.3.1 (A) · confidence low · default severity minor
 
-Flags short &lt;p&gt; and &lt;div&gt; elements whose text is all bold and rendered at &gt;=18px, for manual review of whether a real heading element should be used instead.
+Flags short &lt;p&gt; and &lt;div&gt; elements whose text is all bold and rendered at &gt;=18px, and short all-bold &lt;p&gt; elements at body size that read as a title before plain text, for manual review of whether a real heading element should be used instead.
 
-**Applies to.** `<p>` elements, and `<div>` elements that hold only text and inline markup, whose visible text is short (&lt;=120 char) and non-empty, and in which every visible piece of text is bold (computed `font-weight` &gt;= 700, however it got there: on the element itself, a `<strong>`/`<b>` or a styled `<span>`) and rendered at &gt;=18px. Visible text is the text that is rendered (not display:none, [hidden] or visibility:hidden) and not screen-reader-only. Text that is all inside controls (a widget's or a &lt;label&gt;'s own text) is left out.
+**Applies to.** `<p>` elements, and `<div>` elements that hold only text and inline markup, whose visible text is short (&lt;=120 char) and non-empty, and in which every visible piece of text is bold (computed `font-weight` &gt;= 700, however it got there: on the element itself, a `<strong>`/`<b>` or a styled `<span>`) and rendered at &gt;=18px. Visible text is the text that is rendered (not display:none, [hidden] or visibility:hidden) and not screen-reader-only. Text that is all inside controls (a widget's or a &lt;label&gt;'s own text) is left out. A `<p>` whose visible text is all bold, or all heavier than the paragraph's own text, at body size (smaller than 18px) applies too, when the text doesn't end as a sentence and the next element holds text lighter than it: a title made by bolding a line of body text, the way authors usually make one in a content editor. Heavier counts because a theme may draw body text at weight 300, which makes `<strong>` 400.
 
 **Expectation.** Text styled to visually read as a heading (bold, larger-than-body size, short) should be marked up with a real heading element (`<h1>`-`<h6>` or `role="heading"`) so its structural role is programmatically determinable, the same 1.3.1 concern as any other "structure conveyed through presentation only" issue.
 
 **What a finding reports.**
 
 - `reasonCode`: `HEADING_LIKE_NUMBER` when the text is only a number (digits with spacing and punctuation: "2024", "No 12" is not one), `HEADING_LIKE_LINK` when it is all inside one link, so a report can set either kind aside as a group; otherwise `BOLD_LARGE_PARAGRAPH` for a &lt;p&gt; and `BOLD_LARGE_DIV` for a &lt;div&gt;. All are asked about.
-- `fontSizePx`: the font size of the text as drawn, in CSS pixels (the computed size times CSS zoom, an SVG transform or what font-size-adjust scales the font by), the smallest one when the pieces differ, against the 18px threshold.
+- `fontSizePx`: the font size of the text as drawn, in CSS pixels (the computed size times CSS zoom, an SVG transform or what font-size-adjust scales the font by), the smallest one when the pieces differ, against the 18px threshold. `BOLD_SHORT_PARAGRAPH` has it too.
 
 **Reason codes.**
 
@@ -3083,6 +3083,7 @@ Flags short &lt;p&gt; and &lt;div&gt; elements whose text is all bold and render
 | `BOLD_LARGE_DIV` | cantTell | A short div of text and inline markup, all bold and at least 18px, may be a heading shown only by its style. It leans fail when the text does not end as a sentence, has a real heading's style on the page and is followed by smaller plain text. | WCAG 1.3.1 (not settled); H42; F2 |
 | `HEADING_LIKE_LINK` | cantTell | Bold, large, short text that is all inside one link may be a heading shown only by its style. It leans fail when the link is followed by a description and sibling containers of the same shape repeat it, with no real heading. | WCAG 1.3.1 (not settled); H42; F2 |
 | `HEADING_LIKE_NUMBER` | cantTell | Bold, large text that is only a number, such as a year, may be a heading shown only by its style. | WCAG 1.3.1 (not settled); H42; F2 |
+| `BOLD_SHORT_PARAGRAPH` | cantTell | A short p whose visible text is all bold, or all heavier than the paragraph's own text, at body size, doesn't end as a sentence and is followed by lighter text, may be a heading shown only by its style. Text that is only a number or all one link is left out at this size. | WCAG 1.3.1 (not settled); H42; F2 |
 
 ### `page-has-heading-one`
 

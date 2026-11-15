@@ -17,6 +17,13 @@
  *   Visible text is the text that is rendered (not display:none, [hidden]
  *   or visibility:hidden) and not screen-reader-only. Text that is all
  *   inside controls (a widget's or a <label>'s own text) is left out.
+ *   A `<p>` whose visible text is all bold, or all heavier than the
+ *   paragraph's own text, at body size (smaller than 18px) applies too,
+ *   when the text doesn't end as a sentence and the next element holds
+ *   text lighter than it: a title made by bolding a line of body text, the
+ *   way authors usually make one in a content editor. Heavier counts
+ *   because a theme may draw body text at weight 300, which makes
+ *   `<strong>` 400.
  * @expectation
  *   Text styled to visually read as a heading (bold, larger-than-body
  *   size, short) should be marked up with a real heading element
@@ -32,7 +39,8 @@
  *   - `fontSizePx`: the font size of the text as drawn, in CSS pixels (the
  *     computed size times CSS zoom, an SVG transform or what
  *     font-size-adjust scales the font by), the smallest one when the
- *     pieces differ, against the 18px threshold.
+ *     pieces differ, against the 18px threshold. `BOLD_SHORT_PARAGRAPH`
+ *     has it too.
  * @reason-codes
  *   - `BOLD_LARGE_PARAGRAPH` (cantTell): a short p whose visible text is all
  *     bold and at least 18px may be a heading shown only by its style.
@@ -52,6 +60,12 @@
  *   - `HEADING_LIKE_NUMBER` (cantTell): bold, large text that is only a
  *     number, such as a year, may be a heading shown only by its style.
  *     Basis: WCAG 1.3.1 (not settled); H42; F2.
+ *   - `BOLD_SHORT_PARAGRAPH` (cantTell): a short p whose visible text is
+ *     all bold, or all heavier than the paragraph's own text, at body size,
+ *     doesn't end as a sentence and is followed by lighter text, may be a
+ *     heading shown only by its style.
+ *     Text that is only a number or all one link is left out at this size.
+ *     Basis: WCAG 1.3.1 (not settled); H42; F2.
  * @implementation-notes
  * - This is a stylistic heuristic (bold + large + short), not a
  *   deterministic structural check: a short bold sentence is not
@@ -59,6 +73,12 @@
  *   (cantTell-capped, never fail) to avoid false-flagging legitimate
  *   emphasis, matching this repo's other heuristic-heavy Tier 2/3
  *   rules (e.g. `scrollable-region-focusable`).
+ * - Below 18px only a `<p>` is asked about, and only with both signs a
+ *   title gives (no sentence ending, plain text after it), since bold body
+ *   text is far more often emphasis than a title: a bold warning ends as a
+ *   sentence, and a run of bold lines such as an address is followed by
+ *   more bold text. A `<div>` at body size is more often a label, a badge
+ *   or a price, and is left out.
  * - Uses an absolute 18px size threshold rather than comparing against
  *   surrounding text (unlike `link-in-text-block`); it's simpler on
  *   purpose, since "looks like a heading" is closer to an absolute
@@ -93,7 +113,7 @@ const id = 'p-as-heading';
 const meta = {
   title: 'Text styled to look like a heading should probably be a real heading',
   description:
-    'Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.',
+    'Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, and short all-bold <p> elements at body size that read as a title before plain text, for manual review of whether a real heading element should be used instead.',
   i18n: {
     titleKey: 'pAsHeading_title',
     descriptionKey: 'pAsHeading_description'
@@ -150,6 +170,17 @@ function runInPage(ctx) {
     if (w === 'bold' || w === 'bolder') return true;
     const n = Number.parseInt(w, 10);
     return Number.isFinite(n) && n >= 700;
+  }
+
+  // A computed weight as a number. A browser reports one; jsdom may keep a
+  // keyword, read here as CSS defines it against a normal (400) parent.
+  function weightNumOf(cs) {
+    const w = trim(cs && cs.fontWeight).toLowerCase();
+    if (w === 'bold' || w === 'bolder') return 700;
+    if (w === 'normal' || !w) return 400;
+    if (w === 'lighter') return 100;
+    const n = Number.parseInt(w, 10);
+    return Number.isFinite(n) ? n : 400;
   }
 
   // Elements whose text already has a role of its own: these native tags,
@@ -317,23 +348,37 @@ function runInPage(ctx) {
 
   // A holder's font size as drawn (zoom, an SVG transform or
   // font-size-adjust scale it: helpers.contrast.renderedTextScale) when its
-  // text is bold and at least MIN_FONT_SIZE_PX, else 0.
-  function headingSizeOf(holder) {
+  // text is bold, or heavier than the block's own text (`blockWeight`), else
+  // 0. `bold` says whether it is bold outright (700 or more), which large
+  // text needs; heavier-than-its-block counts only at body size, where a
+  // theme may draw body text at 300 and <strong> at 400. Whether the text
+  // is large enough is the caller's call.
+  function boldStyleOf(holder, blockWeight) {
     const cs = safeComputedStyle(holder);
-    if (!isBoldWeight(cs)) return 0;
+    const bold = isBoldWeight(cs);
+    const weight = weightNumOf(cs);
+    if (!bold && !(weight > blockWeight)) return null;
     const scale =
       helpers.contrast && typeof helpers.contrast.renderedTextScale === 'function'
         ? helpers.contrast.renderedTextScale(holder, cs)
         : 1;
-    const px = Number.parseFloat(cs.fontSize) * scale;
-    return Number.isFinite(px) && px >= MIN_FONT_SIZE_PX ? px : 0;
+    // jsdom keeps a keyword or a calc() as written; parsePx reads them at a
+    // browser's sizes.
+    const size =
+      helpers.contrast && typeof helpers.contrast.parsePx === 'function'
+        ? helpers.contrast.parsePx(cs.fontSize)
+        : Number.parseFloat(cs.fontSize);
+    const px = Number(size) * scale;
+    return Number.isFinite(px) && px > 0 ? { px, bold, weight } : null;
   }
 
-  // The text a sighted reader sees, when all of it is bold and at least
-  // MIN_FONT_SIZE_PX; else null. Visibility is only worked out once some
-  // text has that style, as it costs far more than reading the style.
+  // The text a sighted reader sees, when all of it is bold; else null. Each
+  // piece carries its size, so the caller can tell large bold text from
+  // bold body text. Visibility is only worked out once some text is bold,
+  // as it costs far more than reading the style.
   function headingLikePieces(el) {
     const isSeen = (holder) => isRendered(holder) && !isScreenReaderOnly(holder);
+    const blockWeight = weightNumOf(safeComputedStyle(el));
     const headingLike = [];
     const others = [];
     const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
@@ -341,9 +386,19 @@ function runInPage(ctx) {
       const raw = String(dom.nodeValue(node) || '');
       const holder = dom.parentElement(node);
       if (!holder || !trim(raw)) continue;
-      const fontSizePx = headingSizeOf(holder);
-      if (fontSizePx) headingLike.push({ holder, raw, fontSizePx });
-      else if (others[others.length - 1] !== holder) {
+      const style = boldStyleOf(holder, blockWeight);
+      if (style) {
+        headingLike.push({
+          holder,
+          raw,
+          fontSizePx: style.px,
+          bold: style.bold,
+          weight: style.weight
+        });
+        // A heading is a few pieces of text: a long run of bold text is not
+        // one, and needn't have the visibility of every piece worked out.
+        if (headingLike.length > 64) return null;
+      } else if (others[others.length - 1] !== holder) {
         others.push(holder);
         // A long run of plain text: one piece of it seen settles it early.
         if (others.length === 16 && isSeen(others[0])) return null;
@@ -406,6 +461,24 @@ function runInPage(ctx) {
       if (hasNonInlineDescendant(el)) return false;
     }
     return !hasOwnRoleAncestor(el);
+  }
+
+  // Whether `el` holds visible text lighter than the title's (`titleWeight`):
+  // the plain text a title comes before. A run of bold lines (an address, a list of names) is
+  // followed by more bold text, and is not a title over body text.
+  function hasPlainText(el, titleWeight) {
+    if (!el || !/\p{L}/u.test(String(dom.textContent(el) || ''))) return false;
+    if (!isRendered(el)) return false;
+    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
+    let seen = 0;
+    for (let node = walker.nextNode(); node && seen < 200; node = walker.nextNode()) {
+      if (!/\p{L}/u.test(String(dom.nodeValue(node) || ''))) continue;
+      seen += 1;
+      const holder = dom.parentElement(node);
+      if (holder && weightNumOf(safeComputedStyle(holder)) < titleWeight && isRendered(holder))
+        return true;
+    }
+    return false;
   }
 
   // ---- Leans ----
@@ -522,6 +595,28 @@ function runInPage(ctx) {
     if (pieces.every((piece) => isInsideControl(piece.holder, el))) return;
 
     const isParagraph = (dom.tagName(el) || '').toLowerCase() === 'p';
+
+    // Bold body text: only a paragraph with both signs of a title. Large
+    // text is judged as before: every piece bold outright and 18px or more.
+    const large = fontSizePx >= MIN_FONT_SIZE_PX && pieces.every((piece) => piece.bold);
+    if (!large) {
+      if (!isParagraph || kindCode || SENTENCE_END.test(shown)) return;
+      const titleWeight = Math.min(...pieces.map((piece) => piece.weight));
+      if (!hasPlainText(dom.nextElementSibling(el), titleWeight)) return;
+      const occurrence = helpers.reportOccurrence(el, {
+        summary:
+          'This short paragraph is entirely bold and comes before plain text, as a heading does.',
+        hint: 'If this text introduces the text after it, make it a real heading (<h1>-<h6> or role="heading") instead of a bold paragraph.',
+        i18n: {
+          summaryKey: 'pAsHeading_summary_cantTell_bodySize',
+          hintKey: 'pAsHeading_hint_cantTell_bodySize',
+          params: { fontSizePx: String(fontSizePx) }
+        },
+        data: { details: { reasonCode: 'BOLD_SHORT_PARAGRAPH', fontSizePx } }
+      });
+      occurrences.push(occurrence);
+      return;
+    }
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet(el)
