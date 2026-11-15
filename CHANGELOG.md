@@ -12,6 +12,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 ### Changed
 
 - **`td-has-header` checks tables from 2 by 2**, where it looked only at tables of 4 by 4 or more: F91 applies to all data tables, and a small price list or timetable without header cells is the table authors make most often. A small table with no header cell is asked about (`TD_TABLE_NO_HEADERS`), and a data cell left without a header in a small table that has some fails (`TD_NO_ASSOCIATED_HEADER`), as in a large one. A single row or column is still left out. Its title no longer says "large".
+- **Scan time:** a WCAG 2.2 AA scan takes about as long as in 1.17.0 where these rules find nothing new (the composite page of every fixture, 8,900 elements, within 1.5%, inside the run's noise in Chromium), and up to about 10% longer on pages where they now find a lot (a page of 400 small tables without headers 7%, of 400 bold lines over body text 11%). In a scan that targets AAA, `link-name-quality-link-only` adds about 2% on a page of 1,600 links, and nothing measurable on the composite page.
 
 ### Fixed
 
