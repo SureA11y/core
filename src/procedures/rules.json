@@ -1250,6 +1250,17 @@
       ]
     }
   },
+  "reflow-horizontal-scroll": {
+    "prefix": "reflowHorizontalScroll",
+    "criteria": [
+      "1.4.10"
+    ],
+    "facets": {
+      "1.4.10": [
+        "reflow-320"
+      ]
+    }
+  },
   "region": {
     "prefix": "region",
     "criteria": [],

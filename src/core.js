@@ -36409,6 +36409,81 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "reflow-horizontal-scroll",
+    "title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
+    "description": "At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.",
+    "i18n": {
+      "titleKey": "reflowHorizontalScroll_title",
+      "descriptionKey": "reflowHorizontalScroll_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag21aa",
+      "wcag1410",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.4.10"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.10",
+        "title": "Reflow",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#reflow",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.10",
+        "title": "Reflow",
+        "wcagSc": [
+          "1.4.10"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.10",
+        "title": "Reflow",
+        "wcagSc": [
+          "1.4.10"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "1.4.10": [
+          "reflow-320"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "region",
     "title": "Page content should be inside a landmark region",
     "description": "Checks that content under <body> is contained within a landmark region.",
@@ -39548,6 +39623,42 @@ const RUNTIME_CATALOG = {
     }
   },
   {
+    "id": "wcag-1.4.10-reflow",
+    "checksIds": [
+      "reflow-horizontal-scroll"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_1410_reflow.title",
+      "descriptionKey": "catalog.rules.wcag_1410_reflow.description",
+      "title": "Reflow",
+      "description": "Rollup of checks ensuring content can be shown at 320 CSS pixels wide without scrolling in two directions.",
+      "wcagSc": [
+        "1.4.10"
+      ],
+      "level": "AA",
+      "standardMappings": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.10",
+          "title": "Reflow",
+          "wcagSc": [
+            "1.4.10"
+          ]
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.10",
+          "title": "Reflow",
+          "wcagSc": [
+            "1.4.10"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "wcag-1.4.11-non-text-contrast",
     "checksIds": [
       "css-focus-indicator-suppressed"
@@ -40158,6 +40269,7 @@ const RUNTIME_CATALOG = {
   "presentation-role-conflict": { run: require("./checks/manual/presentation-role-conflict-manual.js").runInPage, applicability: require("./checks/manual/presentation-role-conflict-manual.js").applicability || null },
   "presentational-children-focusable-absent": { run: require("./checks/automatic/presentational-children-focusable-absent.js").runInPage, applicability: require("./checks/automatic/presentational-children-focusable-absent.js").applicability || null },
   "progressbar-name-present": { run: require("./checks/automatic/progressbar-name-present.js").runInPage, applicability: require("./checks/automatic/progressbar-name-present.js").applicability || null },
+  "reflow-horizontal-scroll": { run: require("./checks/automatic/reflow-horizontal-scroll.js").runInPage, applicability: require("./checks/automatic/reflow-horizontal-scroll.js").applicability || null },
   "region": { run: require("./checks/manual/region-manual.js").runInPage, applicability: require("./checks/manual/region-manual.js").applicability || null },
   "role-img-text-alternative-present": { run: require("./checks/automatic/role-img-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/role-img-text-alternative-present.js").applicability || null },
   "scope-attr-valid": { run: require("./checks/manual/scope-attr-valid-manual.js").runInPage, applicability: require("./checks/manual/scope-attr-valid-manual.js").applicability || null },
@@ -40748,6 +40860,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_134_orientation.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inhalte ihre Darstellung nicht auf eine einzige Bildschirmausrichtung beschränken.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Bestimmung des Eingabezwecks",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das autocomplete-Attribut den Eingabezweck korrekt angibt.",
+      "catalog.rules.wcag_1410_reflow.title": "Umfluss (Reflow)",
+      "catalog.rules.wcag_1410_reflow.description": "Zusammenfassung der Prüfungen, die sicherstellen, dass Inhalte bei 320 CSS-Pixeln Breite ohne Scrollen in zwei Richtungen dargestellt werden können.",
       "catalog.rules.wcag_1411_non_text_contrast.title": "Nicht-Text-Kontrast",
       "catalog.rules.wcag_1411_non_text_contrast.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die visuellen Informationen, die zum Erkennen von Bedienelementen und ihren Zuständen nötig sind, und die Teile von Grafiken, die zu ihrem Verständnis nötig sind, einen Kontrast von mindestens 3:1 haben.",
       "catalog.rules.wcag_1412_text_spacing.title": "Textabstand",
@@ -41787,6 +41901,26 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_lean_caution_repeated": "Das Layout der Seite, etwa eine Karte mit Bild oder eine Überschrift, nach der der Link nicht steht, kann jeden Link dennoch verständlich machen.",
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "Der Name dieses Links („{{name}}“) ist eine allgemeine Formulierung: Nur der Text um ihn herum sagt, wohin er führt.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Formulieren Sie den Linktext selbst so, dass er sagt, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Hier klicken“, damit er auch allein verständlich ist, etwa in einer Linkliste.",
+      "reflowHorizontalScroll_title": "Inhalte passen sich bei 320 CSS-Pixeln Breite ohne seitliches Scrollen an",
+      "reflowHorizontalScroll_description": "Prüft bei einem 320 CSS-Pixel breiten Viewport, dass die Seite nicht seitlich scrollt, nennt die Elemente, die über ihren Rand hinausragen, und fragt nach Tabellen, Medien und vorformatiertem Text, die ihr Layout brauchen können.",
+      "reflowHorizontalScroll_summary_fail": "Bei {{viewportWidth}} Pixeln Breite ragt dieses Element {{overflowPx}} Pixel über den Rand hinaus, sodass die Seite seitlich scrollt.",
+      "reflowHorizontalScroll_hint_fail": "Lassen Sie es in die Breite passen: keine feste Breite, die breiter als der Bildschirm ist, max-width: 100% für Bilder und eingebettete Inhalte, und lange Wörter oder Adressen dürfen umbrechen (overflow-wrap: anywhere).",
+      "reflowHorizontalScroll_summary_unattributed": "Bei {{viewportWidth}} Pixeln Breite scrollt die Seite um {{overflowPx}} Pixel seitlich.",
+      "reflowHorizontalScroll_hint_unattributed": "Suchen Sie, was breiter als der Bildschirm ist, etwa einen Rand oder generierten Inhalt, und lassen Sie es in die Breite passen.",
+      "reflowHorizontalScroll_summary_wideTable": "Bei {{viewportWidth}} Pixeln Breite ragt diese Tabelle {{overflowPx}} Pixel über den Rand hinaus.",
+      "reflowHorizontalScroll_hint_wideTable": "Eine Datentabelle darf für sich allein seitlich scrollen: Setzen Sie sie in einen Kasten mit overflow-x: auto. Eine Tabelle für das Layout muss in die Breite passen.",
+      "reflowHorizontalScroll_summary_wideMedia": "Bei {{viewportWidth}} Pixeln Breite ragt dieses {{element}}-Element {{overflowPx}} Pixel über den Rand hinaus.",
+      "reflowHorizontalScroll_hint_wideMedia": "Lassen Sie es schrumpfen, bis es passt (max-width: 100%; height: auto), außer es ist eine Karte, ein Diagramm oder ein Spiel, das seine Größe braucht.",
+      "reflowHorizontalScroll_summary_widePreformatted": "Bei {{viewportWidth}} Pixeln Breite ragt dieser vorformatierte Text {{overflowPx}} Pixel über den Rand hinaus.",
+      "reflowHorizontalScroll_hint_widePreformatted": "Lassen Sie ihn umbrechen (white-space: pre-wrap) oder, wenn seine Zeilen bleiben müssen, wie sie sind, für sich allein in einem Kasten mit overflow-x: auto scrollen.",
+      "reflowHorizontalScroll_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite schneidet der Bildschirmrand dieses Element ab, und die Seite scrollt nicht zum Rest.",
+      "reflowHorizontalScroll_hint_clipped": "Lassen Sie es in die Breite passen, damit nichts davon abgeschnitten wird.",
+      "reflowHorizontalScroll_lean_why_dataTable": "Die Tabelle hat Kopfzellen oder eine Beschriftung: eine Datentabelle, die seitlich scrollen darf.",
+      "reflowHorizontalScroll_lean_why_layoutTable": "Die Tabelle hat weder Kopfzellen noch Beschriftung oder ist als Layout gekennzeichnet: eine Layouttabelle, die passen muss.",
+      "reflowHorizontalScroll_lean_why_media": "Ein Bild oder ein Video lässt sich meist auf die Breite verkleinern.",
+      "reflowHorizontalScroll_lean_caution_media": "Eine Karte, ein Diagramm oder ein Spiel kann seine Größe brauchen, um verstanden zu werden.",
+      "reflowHorizontalScroll_lean_why_clipped": "Der Rand des Viewports schneidet das Element ab, und die Seite scrollt nicht zum Rest.",
+      "reflowHorizontalScroll_lean_caution_clipped": "Ein Karussell oder ein Menü kann den Rest auf andere Weise zeigen.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -42497,6 +42631,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_134_orientation.description": "Rollup of checks ensuring content does not restrict its view to a single display orientation.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Identify Input Purpose",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
+      "catalog.rules.wcag_1410_reflow.title": "Reflow",
+      "catalog.rules.wcag_1410_reflow.description": "Rollup of checks ensuring content can be shown at 320 CSS pixels wide without scrolling in two directions.",
       "catalog.rules.wcag_1411_non_text_contrast.title": "Non-text Contrast",
       "catalog.rules.wcag_1411_non_text_contrast.description": "Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1.",
       "catalog.rules.wcag_1412_text_spacing.title": "Text Spacing",
@@ -43536,6 +43672,26 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_lean_caution_repeated": "The page's layout, such as a card with an image or a heading the link is not placed after, may still make each link clear.",
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "This link's name (\"{{name}}\") is a generic phrase: only the text around it says where it leads.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Make the link text itself say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Click here\", so it is clear when read on its own, as in a list of links.",
+      "reflowHorizontalScroll_title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
+      "reflowHorizontalScroll_description": "At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.",
+      "reflowHorizontalScroll_summary_fail": "At {{viewportWidth}} pixels wide, this element reaches {{overflowPx}} pixels past the edge, so the page scrolls sideways.",
+      "reflowHorizontalScroll_hint_fail": "Let it fit the width: no fixed width wider than the screen, max-width: 100% on images and embeds, and long words or addresses allowed to wrap (overflow-wrap: anywhere).",
+      "reflowHorizontalScroll_summary_unattributed": "At {{viewportWidth}} pixels wide, the page scrolls sideways by {{overflowPx}} pixels.",
+      "reflowHorizontalScroll_hint_unattributed": "Find what is wider than the screen, such as a margin or generated content, and let it fit the width.",
+      "reflowHorizontalScroll_summary_wideTable": "At {{viewportWidth}} pixels wide, this table reaches {{overflowPx}} pixels past the edge.",
+      "reflowHorizontalScroll_hint_wideTable": "A data table may scroll sideways on its own: put it in a box with overflow-x: auto. A table used for layout has to fit the width.",
+      "reflowHorizontalScroll_summary_wideMedia": "At {{viewportWidth}} pixels wide, this {{element}} element reaches {{overflowPx}} pixels past the edge.",
+      "reflowHorizontalScroll_hint_wideMedia": "Let it shrink to fit (max-width: 100%; height: auto), unless it is a map, a diagram or a game that needs its size.",
+      "reflowHorizontalScroll_summary_widePreformatted": "At {{viewportWidth}} pixels wide, this preformatted text reaches {{overflowPx}} pixels past the edge.",
+      "reflowHorizontalScroll_hint_widePreformatted": "Let it wrap (white-space: pre-wrap), or, if its lines must stay as they are, let it scroll on its own in a box with overflow-x: auto.",
+      "reflowHorizontalScroll_summary_clipped": "At {{viewportWidth}} pixels wide, the edge of the screen cuts through this element, and the page does not scroll to the rest of it.",
+      "reflowHorizontalScroll_hint_clipped": "Let it fit the width, so that nothing in it is cut off.",
+      "reflowHorizontalScroll_lean_why_dataTable": "The table has header cells or a caption: a data table, which may scroll sideways.",
+      "reflowHorizontalScroll_lean_why_layoutTable": "The table has no header cells or caption, or is marked as layout: a layout table, which has to fit.",
+      "reflowHorizontalScroll_lean_why_media": "An image or a video can usually be scaled to fit the width.",
+      "reflowHorizontalScroll_lean_caution_media": "A map, a diagram or a game may need its size to be understood.",
+      "reflowHorizontalScroll_lean_why_clipped": "The edge of the viewport cuts through the element, and the page does not scroll to the rest of it.",
+      "reflowHorizontalScroll_lean_caution_clipped": "A carousel or a menu may show the rest another way.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -44246,6 +44402,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_134_orientation.description": "Agrupación de comprobaciones que garantizan que el contenido no restrinja su visualización a una sola orientación de pantalla.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Identificación del propósito de la entrada",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Agrupación de comprobaciones que garantizan que el atributo autocomplete identifique correctamente el propósito de la entrada.",
+      "catalog.rules.wcag_1410_reflow.title": "Reajuste del texto",
+      "catalog.rules.wcag_1410_reflow.description": "Agrupación de comprobaciones que garantizan que el contenido pueda mostrarse con 320 píxeles CSS de ancho sin desplazamiento en dos direcciones.",
       "catalog.rules.wcag_1411_non_text_contrast.title": "Contraste no textual",
       "catalog.rules.wcag_1411_non_text_contrast.description": "Agrupación de comprobaciones que garantizan que la información visual necesaria para identificar los componentes de la interfaz y sus estados, y las partes de los gráficos necesarias para entenderlos, tengan un contraste de al menos 3:1.",
       "catalog.rules.wcag_1412_text_spacing.title": "Espaciado del texto",
@@ -45285,6 +45443,26 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_lean_caution_repeated": "La disposición de la página, como una tarjeta con imagen o un encabezado tras el que no está el enlace, puede aún dejar claro cada enlace.",
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "El nombre de este enlace (\"{{name}}\") es una frase genérica: solo el texto que lo rodea dice adónde lleva.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Haz que el propio texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios de 2026\" en lugar de \"Haz clic aquí\", para que se entienda leído por sí solo, como en una lista de enlaces.",
+      "reflowHorizontalScroll_title": "El contenido se reajusta a 320 píxeles CSS de ancho sin desplazamiento lateral",
+      "reflowHorizontalScroll_description": "Con una ventana de 320 píxeles CSS de ancho, comprueba que la página no se desplace hacia los lados, señala los elementos que sobresalen de su borde y pregunta por las tablas, el contenido multimedia y el texto preformateado que pueden necesitar su disposición.",
+      "reflowHorizontalScroll_summary_fail": "Con {{viewportWidth}} píxeles de ancho, este elemento sobresale {{overflowPx}} píxeles del borde, así que la página se desplaza hacia los lados.",
+      "reflowHorizontalScroll_hint_fail": "Haz que quepa en el ancho: ningún ancho fijo mayor que la pantalla, max-width: 100% en imágenes y contenido incrustado, y que las palabras o direcciones largas puedan partirse (overflow-wrap: anywhere).",
+      "reflowHorizontalScroll_summary_unattributed": "Con {{viewportWidth}} píxeles de ancho, la página se desplaza {{overflowPx}} píxeles hacia los lados.",
+      "reflowHorizontalScroll_hint_unattributed": "Busca lo que es más ancho que la pantalla, como un margen o contenido generado, y haz que quepa en el ancho.",
+      "reflowHorizontalScroll_summary_wideTable": "Con {{viewportWidth}} píxeles de ancho, esta tabla sobresale {{overflowPx}} píxeles del borde.",
+      "reflowHorizontalScroll_hint_wideTable": "Una tabla de datos puede desplazarse hacia los lados por sí sola: ponla en una caja con overflow-x: auto. Una tabla usada para maquetar tiene que caber en el ancho.",
+      "reflowHorizontalScroll_summary_wideMedia": "Con {{viewportWidth}} píxeles de ancho, este elemento {{element}} sobresale {{overflowPx}} píxeles del borde.",
+      "reflowHorizontalScroll_hint_wideMedia": "Haz que se reduzca para caber (max-width: 100%; height: auto), salvo que sea un mapa, un diagrama o un juego que necesite su tamaño.",
+      "reflowHorizontalScroll_summary_widePreformatted": "Con {{viewportWidth}} píxeles de ancho, este texto preformateado sobresale {{overflowPx}} píxeles del borde.",
+      "reflowHorizontalScroll_hint_widePreformatted": "Deja que se parta en líneas (white-space: pre-wrap) o, si sus líneas deben quedar como están, que se desplace por sí solo en una caja con overflow-x: auto.",
+      "reflowHorizontalScroll_summary_clipped": "Con {{viewportWidth}} píxeles de ancho, el borde de la pantalla corta este elemento y la página no se desplaza hasta el resto.",
+      "reflowHorizontalScroll_hint_clipped": "Haz que quepa en el ancho, para que no se corte nada de él.",
+      "reflowHorizontalScroll_lean_why_dataTable": "La tabla tiene celdas de encabezado o un título: es una tabla de datos, que puede desplazarse hacia los lados.",
+      "reflowHorizontalScroll_lean_why_layoutTable": "La tabla no tiene celdas de encabezado ni título, o está marcada como maquetación: es una tabla de maquetación, que tiene que caber.",
+      "reflowHorizontalScroll_lean_why_media": "Una imagen o un vídeo normalmente pueden reducirse para caber en el ancho.",
+      "reflowHorizontalScroll_lean_caution_media": "Un mapa, un diagrama o un juego pueden necesitar su tamaño para entenderse.",
+      "reflowHorizontalScroll_lean_why_clipped": "El borde de la ventana corta el elemento y la página no se desplaza hasta el resto.",
+      "reflowHorizontalScroll_lean_caution_clipped": "Un carrusel o un menú pueden mostrar el resto de otra forma.",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -45995,6 +46173,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_134_orientation.description": "Regroupe les contrôles garantissant que le contenu ne limite pas son affichage à une seule orientation d’écran.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Identifier la finalité de la saisie",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Regroupe les contrôles garantissant que l’attribut autocomplete identifie correctement la finalité du champ.",
+      "catalog.rules.wcag_1410_reflow.title": "Redistribution",
+      "catalog.rules.wcag_1410_reflow.description": "Regroupement des vérifications garantissant que le contenu peut s’afficher à 320 pixels CSS de large sans défilement dans deux directions.",
       "catalog.rules.wcag_1411_non_text_contrast.title": "Contraste du contenu non textuel",
       "catalog.rules.wcag_1411_non_text_contrast.description": "Regroupe les contrôles garantissant que l’information visuelle nécessaire pour identifier les composants d’interface et leurs états, et les parties des graphiques nécessaires pour les comprendre, ont un contraste d’au moins 3:1.",
       "catalog.rules.wcag_1412_text_spacing.title": "Espacement du texte",
@@ -47034,6 +47214,26 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_lean_caution_repeated": "La mise en page, comme une carte avec une image ou un titre que le lien ne suit pas, peut encore rendre chaque lien clair.",
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "Le nom de ce lien (« {{name}} ») est une formule générique : seul le texte qui l’entoure dit où il mène.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Faites dire au texte du lien lui-même où il mène ou ce qu’il fait, par exemple « Télécharger la grille tarifaire 2026 » plutôt que « Cliquez ici », pour qu’il soit clair lu seul, comme dans une liste de liens.",
+      "reflowHorizontalScroll_title": "Le contenu se redistribue à 320 pixels CSS de large sans défilement horizontal",
+      "reflowHorizontalScroll_description": "Avec une fenêtre de 320 pixels CSS de large, vérifie que la page ne défile pas horizontalement, nomme les éléments qui dépassent de son bord et pose une question sur les tableaux, les médias et le texte préformaté qui peuvent avoir besoin de leur mise en page.",
+      "reflowHorizontalScroll_summary_fail": "À {{viewportWidth}} pixels de large, cet élément dépasse le bord de {{overflowPx}} pixels, donc la page défile horizontalement.",
+      "reflowHorizontalScroll_hint_fail": "Faites-le tenir dans la largeur : aucune largeur fixe plus grande que l’écran, max-width: 100% sur les images et les contenus intégrés, et laissez les mots ou adresses longs passer à la ligne (overflow-wrap: anywhere).",
+      "reflowHorizontalScroll_summary_unattributed": "À {{viewportWidth}} pixels de large, la page défile horizontalement de {{overflowPx}} pixels.",
+      "reflowHorizontalScroll_hint_unattributed": "Trouvez ce qui est plus large que l’écran, comme une marge ou un contenu généré, et faites-le tenir dans la largeur.",
+      "reflowHorizontalScroll_summary_wideTable": "À {{viewportWidth}} pixels de large, ce tableau dépasse le bord de {{overflowPx}} pixels.",
+      "reflowHorizontalScroll_hint_wideTable": "Un tableau de données peut défiler horizontalement à lui seul : placez-le dans un bloc avec overflow-x: auto. Un tableau de mise en page doit tenir dans la largeur.",
+      "reflowHorizontalScroll_summary_wideMedia": "À {{viewportWidth}} pixels de large, cet élément {{element}} dépasse le bord de {{overflowPx}} pixels.",
+      "reflowHorizontalScroll_hint_wideMedia": "Laissez-le rétrécir pour tenir (max-width: 100%; height: auto), sauf s’il s’agit d’une carte, d’un diagramme ou d’un jeu qui a besoin de sa taille.",
+      "reflowHorizontalScroll_summary_widePreformatted": "À {{viewportWidth}} pixels de large, ce texte préformaté dépasse le bord de {{overflowPx}} pixels.",
+      "reflowHorizontalScroll_hint_widePreformatted": "Laissez-le passer à la ligne (white-space: pre-wrap) ou, si ses lignes doivent rester telles quelles, laissez-le défiler seul dans un bloc avec overflow-x: auto.",
+      "reflowHorizontalScroll_summary_clipped": "À {{viewportWidth}} pixels de large, le bord de l’écran coupe cet élément, et la page ne défile pas jusqu’au reste.",
+      "reflowHorizontalScroll_hint_clipped": "Faites-le tenir dans la largeur, pour que rien n’en soit coupé.",
+      "reflowHorizontalScroll_lean_why_dataTable": "Le tableau a des cellules d’en-tête ou un titre : un tableau de données, qui peut défiler horizontalement.",
+      "reflowHorizontalScroll_lean_why_layoutTable": "Le tableau n’a ni cellules d’en-tête ni titre, ou il est marqué comme mise en page : un tableau de mise en page, qui doit tenir.",
+      "reflowHorizontalScroll_lean_why_media": "Une image ou une vidéo peut généralement être réduite à la largeur.",
+      "reflowHorizontalScroll_lean_caution_media": "Une carte, un diagramme ou un jeu peut avoir besoin de sa taille pour être compris.",
+      "reflowHorizontalScroll_lean_why_clipped": "Le bord de la fenêtre coupe l’élément, et la page ne défile pas jusqu’au reste.",
+      "reflowHorizontalScroll_lean_caution_clipped": "Un carrousel ou un menu peut montrer le reste autrement.",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -47744,6 +47944,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_134_orientation.description": "コンテンツの表示が、1 つの表示の向きに制限されていないかを確認するチェックの集約です。",
       "catalog.rules.wcag_135_identify_input_purpose.title": "入力目的の特定",
       "catalog.rules.wcag_135_identify_input_purpose.description": "autocomplete 属性が入力の目的を正しく特定しているかを確認するチェックの集約です。",
+      "catalog.rules.wcag_1410_reflow.title": "リフロー",
+      "catalog.rules.wcag_1410_reflow.description": "幅 320 CSS ピクセルで、2 方向のスクロールなしにコンテンツを表示できることを確認するチェックのまとめ。",
       "catalog.rules.wcag_1411_non_text_contrast.title": "非テキストのコントラスト",
       "catalog.rules.wcag_1411_non_text_contrast.description": "ユーザインタフェースコンポーネントとその状態を識別するのに必要な視覚的情報と、グラフィックの理解に必要な部分のコントラスト比が 3:1 以上であるかを確認するチェックの集約です。",
       "catalog.rules.wcag_1412_text_spacing.title": "テキストの間隔",
@@ -48783,6 +48985,26 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_lean_caution_repeated": "画像付きのカードや、リンクの前にはない見出しなど、ページのレイアウトによって各リンクが明確になる場合があります。",
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "このリンクの名前 (\"{{name}}\") は一般的な語句です。リンク先を示しているのは周囲のテキストだけです。",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "リンクの一覧のように単独で読んでもわかるよう、「こちらをクリック」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキスト自体でリンク先や動作を示してください。",
+      "reflowHorizontalScroll_title": "幅 320 CSS ピクセルで、横スクロールなしにコンテンツがリフローする",
+      "reflowHorizontalScroll_description": "幅 320 CSS ピクセルのビューポートで、ページが横にスクロールしないことを確認し、端からはみ出す要素を示します。レイアウトが必要な場合がある表、メディア、整形済みテキストについては確認を求めます。",
+      "reflowHorizontalScroll_summary_fail": "幅 {{viewportWidth}} ピクセルで、この要素は端から {{overflowPx}} ピクセルはみ出しており、ページが横にスクロールします。",
+      "reflowHorizontalScroll_hint_fail": "幅に収まるようにしてください。画面より広い固定幅を使わず、画像や埋め込みには max-width: 100% を指定し、長い単語やアドレスは折り返せるようにします（overflow-wrap: anywhere）。",
+      "reflowHorizontalScroll_summary_unattributed": "幅 {{viewportWidth}} ピクセルで、ページが {{overflowPx}} ピクセル横にスクロールします。",
+      "reflowHorizontalScroll_hint_unattributed": "マージンや生成コンテンツなど、画面より広いものを見つけて、幅に収まるようにしてください。",
+      "reflowHorizontalScroll_summary_wideTable": "幅 {{viewportWidth}} ピクセルで、この表は端から {{overflowPx}} ピクセルはみ出しています。",
+      "reflowHorizontalScroll_hint_wideTable": "データ表はそれ自体で横にスクロールしてかまいません。overflow-x: auto のボックスに入れてください。レイアウト用の表は幅に収める必要があります。",
+      "reflowHorizontalScroll_summary_wideMedia": "幅 {{viewportWidth}} ピクセルで、この {{element}} 要素は端から {{overflowPx}} ピクセルはみ出しています。",
+      "reflowHorizontalScroll_hint_wideMedia": "大きさが必要な地図、図、ゲームでない限り、収まるように縮小させてください（max-width: 100%; height: auto）。",
+      "reflowHorizontalScroll_summary_widePreformatted": "幅 {{viewportWidth}} ピクセルで、この整形済みテキストは端から {{overflowPx}} ピクセルはみ出しています。",
+      "reflowHorizontalScroll_hint_widePreformatted": "折り返せるようにするか（white-space: pre-wrap）、行をそのまま保つ必要がある場合は、overflow-x: auto のボックスの中でそれ自体をスクロールさせてください。",
+      "reflowHorizontalScroll_summary_clipped": "幅 {{viewportWidth}} ピクセルで、画面の端がこの要素を切っており、ページは残りの部分までスクロールしません。",
+      "reflowHorizontalScroll_hint_clipped": "何も切れないように、幅に収まるようにしてください。",
+      "reflowHorizontalScroll_lean_why_dataTable": "この表には見出しセルかキャプションがあります。データ表であり、横にスクロールしてかまいません。",
+      "reflowHorizontalScroll_lean_why_layoutTable": "この表には見出しセルもキャプションもないか、レイアウト用と指定されています。レイアウト用の表は幅に収める必要があります。",
+      "reflowHorizontalScroll_lean_why_media": "画像や動画は、通常、幅に合わせて縮小できます。",
+      "reflowHorizontalScroll_lean_caution_media": "地図、図、ゲームは、理解するためにその大きさが必要な場合があります。",
+      "reflowHorizontalScroll_lean_why_clipped": "ビューポートの端が要素を切っており、ページは残りの部分までスクロールしません。",
+      "reflowHorizontalScroll_lean_caution_clipped": "カルーセルやメニューは、残りを別の方法で表示できる場合があります。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",
@@ -49191,6 +49413,7 @@ const RULE_MODULES = [
   "./checks/manual/presentation-role-conflict-manual.js",
   "./checks/automatic/presentational-children-focusable-absent.js",
   "./checks/automatic/progressbar-name-present.js",
+  "./checks/automatic/reflow-horizontal-scroll.js",
   "./checks/manual/region-manual.js",
   "./checks/automatic/role-img-text-alternative-present.js",
   "./checks/manual/scope-attr-valid-manual.js",
@@ -58093,6 +58316,81 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": null
   },
   {
+    "ruleId": "reflow-horizontal-scroll",
+    "title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
+    "description": "At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.",
+    "i18n": {
+      "titleKey": "reflowHorizontalScroll_title",
+      "descriptionKey": "reflowHorizontalScroll_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag21aa",
+      "wcag1410",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.4.10"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.10",
+        "title": "Reflow",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#reflow",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.10",
+        "title": "Reflow",
+        "wcagSc": [
+          "1.4.10"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.10",
+        "title": "Reflow",
+        "wcagSc": [
+          "1.4.10"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "1.4.10": [
+          "reflow-320"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "region",
     "title": "Page content should be inside a landmark region",
     "description": "Checks that content under <body> is contained within a landmark region.",
@@ -61226,6 +61524,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "title": "Identify input purpose",
           "wcagSc": [
             "1.3.5"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "wcag-1.4.10-reflow",
+    "checksIds": [
+      "reflow-horizontal-scroll"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_1410_reflow.title",
+      "descriptionKey": "catalog.rules.wcag_1410_reflow.description",
+      "title": "Reflow",
+      "description": "Rollup of checks ensuring content can be shown at 320 CSS pixels wide without scrolling in two directions.",
+      "wcagSc": [
+        "1.4.10"
+      ],
+      "level": "AA",
+      "standardMappings": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.10",
+          "title": "Reflow",
+          "wcagSc": [
+            "1.4.10"
+          ]
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.10",
+          "title": "Reflow",
+          "wcagSc": [
+            "1.4.10"
           ]
         }
       ]
@@ -102286,6 +102620,408 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "reflow-horizontal-scroll": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { document, helpers, rule } = ctx;
+  const view = dom.defaultView(document) || null;
+  const REFLOW_WIDTH = 320;
+  const TOLERANCE = 1; // sub-pixel rounding
+  const MAX_PER_CODE = 50;
+
+  const notApplicable = (reason) => ({
+    ruleId: rule.ruleId,
+    outcome: 'notApplicable',
+    severity: 'minor',
+    occurrences: [],
+    ...(reason ? { data: { reason } } : {})
+  });
+
+  const html = dom.documentElement(document);
+  const body = dom.body(document);
+  if (!view || !html || !body) return notApplicable('noLayout');
+
+  // A layout: the root has boxes (jsdom gives none).
+  try {
+    const rects = dom.getClientRects(html);
+    if (!rects || !rects.length) return notApplicable('noLayout');
+  } catch {
+    return notApplicable('noLayout');
+  }
+
+  const width = Number(dom.get(view, 'innerWidth')) || 0;
+  if (!width || width > REFLOW_WIDTH) return notApplicable('viewportWider');
+
+  function style(el) {
+    try {
+      return view.getComputedStyle(el);
+    } catch {
+      return null;
+    }
+  }
+  const rootStyle = style(html);
+  const bodyStyle = style(body);
+  // Vertical text reflows at 256 CSS pixels high, which this rule doesn't
+  // measure.
+  if (rootStyle && /^vertical|^sideways/.test(String(rootStyle.writingMode || ''))) {
+    return notApplicable('verticalWritingMode');
+  }
+  const rtl = rootStyle ? rootStyle.direction === 'rtl' : false;
+
+  // Whether the viewport scrolls sideways: the root's overflow-x, or the
+  // body's when the root's is visible (CSS Overflow 3, propagation).
+  const clips = (s) => !!s && (s.overflowX === 'hidden' || s.overflowX === 'clip');
+  const rootClips =
+    clips(rootStyle) || (rootStyle && rootStyle.overflowX === 'visible' && clips(bodyStyle));
+
+  const scroller = dom.get(document, 'scrollingElement') || html;
+  const clientWidth = Number(dom.get(scroller, 'clientWidth')) || width;
+  const scrollWidth = Number(dom.get(scroller, 'scrollWidth')) || clientWidth;
+  const scrollX = Number(dom.get(view, 'scrollX')) || 0;
+  const pageScrolls = !rootClips && scrollWidth > clientWidth + TOLERANCE;
+
+  // How far an element reaches past the end edge, in page coordinates.
+  function overflowOf(rect) {
+    if (rtl) return -(rect.left + scrollX);
+    return rect.right + scrollX - clientWidth;
+  }
+  // How far it starts inside the edge: positive while part of it shows.
+  function insideOf(rect) {
+    if (rtl) return rect.right + scrollX;
+    return clientWidth - (rect.left + scrollX);
+  }
+
+  const roots = (Array.isArray(ctx.root) ? ctx.root : [ctx.root]).filter(Boolean);
+  const wholeDocument =
+    !roots.length || roots.some((r) => r === document || r === html || r === body);
+  function inScope(el) {
+    if (wholeDocument) return true;
+    return roots.some((r) => {
+      try {
+        return r === el || dom.contains(r, el);
+      } catch {
+        return false;
+      }
+    });
+  }
+  function isExcluded(el) {
+    try {
+      return typeof helpers.isExcluded === 'function' && !!helpers.isExcluded(el);
+    } catch {
+      return false;
+    }
+  }
+
+  // Boxes that keep their content from widening the page: they scroll or
+  // clip sideways. Their own box is measured; what is inside them is not.
+  const contained = new Map();
+  function insideSidewaysBox(el) {
+    let node = dom.parentElement(el);
+    const path = [];
+    let found = false;
+    while (node && node !== body && node !== html) {
+      if (contained.has(node)) {
+        found = contained.get(node);
+        break;
+      }
+      path.push(node);
+      const s = style(node);
+      if (s && s.overflowX !== 'visible') {
+        found = true;
+        break;
+      }
+      node = dom.parentElement(node);
+    }
+    for (const n of path) contained.set(n, found);
+    return found;
+  }
+
+  const MEDIA = new Set(['img', 'video', 'canvas', 'svg', 'object', 'embed', 'iframe', 'picture']);
+  function kindOf(el) {
+    const tag = String(dom.tagName(el) || '').toLowerCase();
+    if (tag === 'table') return 'WIDE_TABLE';
+    if (MEDIA.has(tag)) return 'WIDE_MEDIA';
+    if (tag === 'pre') return 'WIDE_PREFORMATTED';
+    // Code kept on its lines by its style, as a highlighter's block is.
+    const s = style(el);
+    const keepsLines = !!s && (s.whiteSpace === 'pre' || s.whiteSpace === 'nowrap');
+    if (keepsLines && (tag === 'code' || dom.querySelector(el, 'code'))) return 'WIDE_PREFORMATTED';
+    return 'HORIZONTAL_SCROLL';
+  }
+
+  // Each element that crosses the edge while its parent doesn't: the place
+  // the overflow starts.
+  const found = [];
+  const SKIP = new Set([
+    'script',
+    'style',
+    'noscript',
+    'template',
+    'head',
+    'title',
+    'meta',
+    'link'
+  ]);
+  const all = dom.querySelectorAll(body, '*');
+  const crosses = new Map();
+  function crossing(el) {
+    if (crosses.has(el)) return crosses.get(el);
+    let value = null;
+    try {
+      const rects = dom.getClientRects(el);
+      if (rects && rects.length) {
+        const rect = dom.getBoundingClientRect(el);
+        if (rect.width > 0 || rect.height > 0) {
+          const over = overflowOf(rect);
+          if (over > TOLERANCE) value = { rect, over, inside: insideOf(rect) };
+        }
+      }
+    } catch {
+      value = null;
+    }
+    crosses.set(el, value);
+    return value;
+  }
+
+  // Whether something past the edge, with the element it is in and its own
+  // box, is where the overflow starts, and is judged here.
+  const taken = new Set();
+  // Whether something past the edge was outside the scope or excluded: the
+  // page may scroll because of it, which is not for this scan to judge.
+  let leftOut = false;
+  function consider(start, hit, own) {
+    // Kept from widening the page by a box that scrolls or clips sideways:
+    // one around it, or, for text, its own.
+    if (insideSidewaysBox(start)) return;
+    if (!own) {
+      const s = style(start);
+      if (s && s.overflowX !== 'visible') return;
+      // Text in a box that sticks out itself: the box is reported.
+      if (crossing(start)) return;
+    }
+    // Inside preformatted text, the block is what is reported.
+    let el = start;
+    const pre = dom.closest(start, 'pre');
+    if (pre && pre !== start) {
+      const s = style(pre);
+      if (s && s.overflowX !== 'visible') return;
+      el = pre;
+    }
+    if (taken.has(el)) return;
+    // Where it starts: its parent stays inside.
+    const parent = dom.parentElement(el);
+    if (parent && parent !== body && parent !== html && crossing(parent)) return;
+    if (!pageScrolls) {
+      // The page is kept from scrolling: only what the edge cuts through
+      // can't be reached; what is wholly past it waits there on purpose.
+      if (!rootClips || hit.inside <= TOLERANCE) return;
+    }
+    if (!inScope(el) || isExcluded(el)) {
+      leftOut = true;
+      return;
+    }
+    taken.add(el);
+    found.push({ el, tag: String(dom.tagName(el) || '').toLowerCase(), hit });
+  }
+
+  for (const el of all) {
+    const tag = String(dom.tagName(el) || '').toLowerCase();
+    if (SKIP.has(tag)) continue;
+    // Inside an SVG, the SVG is what is measured.
+    if (dom.get(el, 'ownerSVGElement')) continue;
+    const hit = crossing(el);
+    if (hit) consider(el, hit, true);
+  }
+
+  // Text that runs past the edge out of a box that fits, such as a long
+  // address that can't wrap: its element is where the overflow starts.
+  try {
+    const walker = dom.call(document, 'createTreeWalker', body, 4 /* SHOW_TEXT */);
+    const range = dom.call(document, 'createRange');
+    let node = dom.call(walker, 'nextNode');
+    while (node) {
+      const owner = dom.parentElement(node);
+      const value = String(dom.get(node, 'nodeValue') || '');
+      if (owner && /\S/.test(value) && !SKIP.has(String(dom.tagName(owner) || '').toLowerCase())) {
+        dom.call(range, 'selectNodeContents', node);
+        const rect = dom.call(range, 'getBoundingClientRect');
+        if (rect && (rect.width > 0 || rect.height > 0)) {
+          const over = overflowOf(rect);
+          if (over > TOLERANCE) consider(owner, { rect, over, inside: insideOf(rect) }, false);
+        }
+      }
+      node = dom.call(walker, 'nextNode');
+    }
+  } catch {}
+
+  const fails = [];
+  const questions = [];
+  const perCode = {};
+  const viewport = { width: clientWidth, scrollWidth };
+  const edge = rtl ? 'left' : 'right';
+
+  const LEANS = {
+    tableData: {
+      toward: 'pass',
+      why: 'The table has header cells or a caption: a data table, which may scroll sideways.',
+      signals: [{ signal: 'data-table-markup', value: true }],
+      i18n: { whyKey: 'reflowHorizontalScroll_lean_why_dataTable' }
+    },
+    tableLayout: {
+      toward: 'fail',
+      why: 'The table has no header cells or caption, or is marked as layout: a layout table, which has to fit.',
+      signals: [{ signal: 'data-table-markup', value: false }],
+      i18n: { whyKey: 'reflowHorizontalScroll_lean_why_layoutTable' }
+    },
+    media: {
+      toward: 'fail',
+      why: 'An image or a video can usually be scaled to fit the width.',
+      signals: [{ signal: 'scalable-media', value: true }],
+      caution: 'A map, a diagram or a game may need its size to be understood.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_media',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_media'
+      }
+    },
+    clipped: {
+      toward: 'fail',
+      why: 'The edge of the viewport cuts through the element, and the page does not scroll to the rest of it.',
+      signals: [{ signal: 'cut-by-viewport-edge', value: true }],
+      caution: 'A carousel or a menu may show the rest another way.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_clipped',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_clipped'
+      }
+    }
+  };
+
+  function tableLean(el) {
+    const role = String(
+      (helpers.aria && helpers.aria.getExplicitRole && helpers.aria.getExplicitRole(el)) || ''
+    ).toLowerCase();
+    if (role === 'presentation' || role === 'none') return LEANS.tableLayout;
+    const data = !!dom.querySelector(el, 'th, caption, [scope]');
+    return data ? LEANS.tableData : LEANS.tableLayout;
+  }
+
+  const MESSAGES = {
+    HORIZONTAL_SCROLL: {
+      key: 'fail',
+      summary: (p) =>
+        `At ${p.viewportWidth} pixels wide, this element reaches ${p.overflowPx} pixels past the edge, so the page scrolls sideways.`,
+      hint: 'Let it fit the width: no fixed width wider than the screen, max-width: 100% on images and embeds, and long words or addresses allowed to wrap (overflow-wrap: anywhere).'
+    },
+    HORIZONTAL_SCROLL_UNATTRIBUTED: {
+      key: 'unattributed',
+      summary: (p) =>
+        `At ${p.viewportWidth} pixels wide, the page scrolls sideways by ${p.overflowPx} pixels.`,
+      hint: 'Find what is wider than the screen, such as a margin or generated content, and let it fit the width.'
+    },
+    WIDE_TABLE: {
+      key: 'wideTable',
+      needed: 'Whether the table is a data table, whose rows and columns need its layout.',
+      summary: (p) =>
+        `At ${p.viewportWidth} pixels wide, this table reaches ${p.overflowPx} pixels past the edge.`,
+      hint: 'A data table may scroll sideways on its own: put it in a box with overflow-x: auto. A table used for layout has to fit the width.'
+    },
+    WIDE_MEDIA: {
+      key: 'wideMedia',
+      needed:
+        'Whether the image, video or embedded content needs its size to be used or understood.',
+      summary: (p) =>
+        `At ${p.viewportWidth} pixels wide, this ${p.element} element reaches ${p.overflowPx} pixels past the edge.`,
+      hint: 'Let it shrink to fit (max-width: 100%; height: auto), unless it is a map, a diagram or a game that needs its size.'
+    },
+    WIDE_PREFORMATTED: {
+      key: 'widePreformatted',
+      needed: 'Whether the preformatted text needs its lines kept as they are to be understood.',
+      summary: (p) =>
+        `At ${p.viewportWidth} pixels wide, this preformatted text reaches ${p.overflowPx} pixels past the edge.`,
+      hint: 'Let it wrap (white-space: pre-wrap), or, if its lines must stay as they are, let it scroll on its own in a box with overflow-x: auto.'
+    },
+    CLIPPED_AT_VIEWPORT_EDGE: {
+      key: 'clipped',
+      needed: 'Whether everything in the element can still be reached another way.',
+      summary: (p) =>
+        `At ${p.viewportWidth} pixels wide, the edge of the screen cuts through this element, and the page does not scroll to the rest of it.`,
+      hint: 'Let it fit the width, so that nothing in it is cut off.'
+    }
+  };
+
+  function report(code, el, hit, lean) {
+    perCode[code] = (perCode[code] || 0) + 1;
+    if (perCode[code] > MAX_PER_CODE) return;
+    const msg = MESSAGES[code];
+    const tag = String(dom.tagName(el) || '').toLowerCase();
+    const overflowPx = hit ? Math.round(hit.over) : Math.round(scrollWidth - clientWidth);
+    const params = {
+      viewportWidth: String(Math.round(clientWidth)),
+      overflowPx: String(overflowPx),
+      element: tag
+    };
+    const occ = helpers.reportOccurrence(el, {
+      ...(lean ? { lean } : {}),
+      summary: msg.summary(params),
+      hint: msg.hint,
+      i18n: {
+        summaryKey: `reflowHorizontalScroll_summary_${msg.key}`,
+        hintKey: `reflowHorizontalScroll_hint_${msg.key}`,
+        params
+      },
+      ...(msg.needed
+        ? {
+            occurrenceOutcome: 'cantTell',
+            uncertainty: {
+              code: 'judgement-required',
+              needed: msg.needed,
+              evidence: { reasonCode: code }
+            }
+          }
+        : { occurrenceOutcome: 'fail' }),
+      data: {
+        details: {
+          reasonCode: code,
+          element: tag,
+          overflowPx,
+          widthPx: hit ? Math.round(hit.rect.width) : Math.round(scrollWidth),
+          edge,
+          viewport
+        }
+      }
+    });
+    (msg.needed ? questions : fails).push(occ);
+  }
+
+  for (const { el, tag, hit } of found) {
+    if (!pageScrolls) {
+      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, LEANS.clipped);
+      continue;
+    }
+    const code = kindOf(el);
+    const lean =
+      code === 'WIDE_TABLE'
+        ? tableLean(el)
+        : code === 'WIDE_MEDIA' && (tag === 'img' || tag === 'video' || tag === 'picture')
+          ? LEANS.media
+          : null;
+    report(code, el, hit, lean);
+  }
+
+  if (pageScrolls && !found.length && wholeDocument && !leftOut) {
+    report('HORIZONTAL_SCROLL_UNATTRIBUTED', html, null, null);
+  }
+
+  if (fails.length || questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious')
+    };
+  }
+  if (!wholeDocument || leftOut) return notApplicable(null);
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: (function applicability(ctx) {
+  const { helpers } = ctx;
+  return !(helpers.isTopLevelDocument && !helpers.isTopLevelDocument());
+}) },
     "region": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
@@ -114834,6 +115570,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_134_orientation.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inhalte ihre Darstellung nicht auf eine einzige Bildschirmausrichtung beschränken.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Bestimmung des Eingabezwecks",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das autocomplete-Attribut den Eingabezweck korrekt angibt.",
+      "catalog.rules.wcag_1410_reflow.title": "Umfluss (Reflow)",
+      "catalog.rules.wcag_1410_reflow.description": "Zusammenfassung der Prüfungen, die sicherstellen, dass Inhalte bei 320 CSS-Pixeln Breite ohne Scrollen in zwei Richtungen dargestellt werden können.",
       "catalog.rules.wcag_1411_non_text_contrast.title": "Nicht-Text-Kontrast",
       "catalog.rules.wcag_1411_non_text_contrast.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die visuellen Informationen, die zum Erkennen von Bedienelementen und ihren Zuständen nötig sind, und die Teile von Grafiken, die zu ihrem Verständnis nötig sind, einen Kontrast von mindestens 3:1 haben.",
       "catalog.rules.wcag_1412_text_spacing.title": "Textabstand",
@@ -115873,6 +116611,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_lean_caution_repeated": "Das Layout der Seite, etwa eine Karte mit Bild oder eine Überschrift, nach der der Link nicht steht, kann jeden Link dennoch verständlich machen.",
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "Der Name dieses Links („{{name}}“) ist eine allgemeine Formulierung: Nur der Text um ihn herum sagt, wohin er führt.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Formulieren Sie den Linktext selbst so, dass er sagt, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Hier klicken“, damit er auch allein verständlich ist, etwa in einer Linkliste.",
+      "reflowHorizontalScroll_title": "Inhalte passen sich bei 320 CSS-Pixeln Breite ohne seitliches Scrollen an",
+      "reflowHorizontalScroll_description": "Prüft bei einem 320 CSS-Pixel breiten Viewport, dass die Seite nicht seitlich scrollt, nennt die Elemente, die über ihren Rand hinausragen, und fragt nach Tabellen, Medien und vorformatiertem Text, die ihr Layout brauchen können.",
+      "reflowHorizontalScroll_summary_fail": "Bei {{viewportWidth}} Pixeln Breite ragt dieses Element {{overflowPx}} Pixel über den Rand hinaus, sodass die Seite seitlich scrollt.",
+      "reflowHorizontalScroll_hint_fail": "Lassen Sie es in die Breite passen: keine feste Breite, die breiter als der Bildschirm ist, max-width: 100% für Bilder und eingebettete Inhalte, und lange Wörter oder Adressen dürfen umbrechen (overflow-wrap: anywhere).",
+      "reflowHorizontalScroll_summary_unattributed": "Bei {{viewportWidth}} Pixeln Breite scrollt die Seite um {{overflowPx}} Pixel seitlich.",
+      "reflowHorizontalScroll_hint_unattributed": "Suchen Sie, was breiter als der Bildschirm ist, etwa einen Rand oder generierten Inhalt, und lassen Sie es in die Breite passen.",
+      "reflowHorizontalScroll_summary_wideTable": "Bei {{viewportWidth}} Pixeln Breite ragt diese Tabelle {{overflowPx}} Pixel über den Rand hinaus.",
+      "reflowHorizontalScroll_hint_wideTable": "Eine Datentabelle darf für sich allein seitlich scrollen: Setzen Sie sie in einen Kasten mit overflow-x: auto. Eine Tabelle für das Layout muss in die Breite passen.",
+      "reflowHorizontalScroll_summary_wideMedia": "Bei {{viewportWidth}} Pixeln Breite ragt dieses {{element}}-Element {{overflowPx}} Pixel über den Rand hinaus.",
+      "reflowHorizontalScroll_hint_wideMedia": "Lassen Sie es schrumpfen, bis es passt (max-width: 100%; height: auto), außer es ist eine Karte, ein Diagramm oder ein Spiel, das seine Größe braucht.",
+      "reflowHorizontalScroll_summary_widePreformatted": "Bei {{viewportWidth}} Pixeln Breite ragt dieser vorformatierte Text {{overflowPx}} Pixel über den Rand hinaus.",
+      "reflowHorizontalScroll_hint_widePreformatted": "Lassen Sie ihn umbrechen (white-space: pre-wrap) oder, wenn seine Zeilen bleiben müssen, wie sie sind, für sich allein in einem Kasten mit overflow-x: auto scrollen.",
+      "reflowHorizontalScroll_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite schneidet der Bildschirmrand dieses Element ab, und die Seite scrollt nicht zum Rest.",
+      "reflowHorizontalScroll_hint_clipped": "Lassen Sie es in die Breite passen, damit nichts davon abgeschnitten wird.",
+      "reflowHorizontalScroll_lean_why_dataTable": "Die Tabelle hat Kopfzellen oder eine Beschriftung: eine Datentabelle, die seitlich scrollen darf.",
+      "reflowHorizontalScroll_lean_why_layoutTable": "Die Tabelle hat weder Kopfzellen noch Beschriftung oder ist als Layout gekennzeichnet: eine Layouttabelle, die passen muss.",
+      "reflowHorizontalScroll_lean_why_media": "Ein Bild oder ein Video lässt sich meist auf die Breite verkleinern.",
+      "reflowHorizontalScroll_lean_caution_media": "Eine Karte, ein Diagramm oder ein Spiel kann seine Größe brauchen, um verstanden zu werden.",
+      "reflowHorizontalScroll_lean_why_clipped": "Der Rand des Viewports schneidet das Element ab, und die Seite scrollt nicht zum Rest.",
+      "reflowHorizontalScroll_lean_caution_clipped": "Ein Karussell oder ein Menü kann den Rest auf andere Weise zeigen.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -116583,6 +117341,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_134_orientation.description": "Rollup of checks ensuring content does not restrict its view to a single display orientation.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Identify Input Purpose",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
+      "catalog.rules.wcag_1410_reflow.title": "Reflow",
+      "catalog.rules.wcag_1410_reflow.description": "Rollup of checks ensuring content can be shown at 320 CSS pixels wide without scrolling in two directions.",
       "catalog.rules.wcag_1411_non_text_contrast.title": "Non-text Contrast",
       "catalog.rules.wcag_1411_non_text_contrast.description": "Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1.",
       "catalog.rules.wcag_1412_text_spacing.title": "Text Spacing",
@@ -117622,6 +118382,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_lean_caution_repeated": "The page's layout, such as a card with an image or a heading the link is not placed after, may still make each link clear.",
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "This link's name (\"{{name}}\") is a generic phrase: only the text around it says where it leads.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Make the link text itself say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Click here\", so it is clear when read on its own, as in a list of links.",
+      "reflowHorizontalScroll_title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
+      "reflowHorizontalScroll_description": "At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.",
+      "reflowHorizontalScroll_summary_fail": "At {{viewportWidth}} pixels wide, this element reaches {{overflowPx}} pixels past the edge, so the page scrolls sideways.",
+      "reflowHorizontalScroll_hint_fail": "Let it fit the width: no fixed width wider than the screen, max-width: 100% on images and embeds, and long words or addresses allowed to wrap (overflow-wrap: anywhere).",
+      "reflowHorizontalScroll_summary_unattributed": "At {{viewportWidth}} pixels wide, the page scrolls sideways by {{overflowPx}} pixels.",
+      "reflowHorizontalScroll_hint_unattributed": "Find what is wider than the screen, such as a margin or generated content, and let it fit the width.",
+      "reflowHorizontalScroll_summary_wideTable": "At {{viewportWidth}} pixels wide, this table reaches {{overflowPx}} pixels past the edge.",
+      "reflowHorizontalScroll_hint_wideTable": "A data table may scroll sideways on its own: put it in a box with overflow-x: auto. A table used for layout has to fit the width.",
+      "reflowHorizontalScroll_summary_wideMedia": "At {{viewportWidth}} pixels wide, this {{element}} element reaches {{overflowPx}} pixels past the edge.",
+      "reflowHorizontalScroll_hint_wideMedia": "Let it shrink to fit (max-width: 100%; height: auto), unless it is a map, a diagram or a game that needs its size.",
+      "reflowHorizontalScroll_summary_widePreformatted": "At {{viewportWidth}} pixels wide, this preformatted text reaches {{overflowPx}} pixels past the edge.",
+      "reflowHorizontalScroll_hint_widePreformatted": "Let it wrap (white-space: pre-wrap), or, if its lines must stay as they are, let it scroll on its own in a box with overflow-x: auto.",
+      "reflowHorizontalScroll_summary_clipped": "At {{viewportWidth}} pixels wide, the edge of the screen cuts through this element, and the page does not scroll to the rest of it.",
+      "reflowHorizontalScroll_hint_clipped": "Let it fit the width, so that nothing in it is cut off.",
+      "reflowHorizontalScroll_lean_why_dataTable": "The table has header cells or a caption: a data table, which may scroll sideways.",
+      "reflowHorizontalScroll_lean_why_layoutTable": "The table has no header cells or caption, or is marked as layout: a layout table, which has to fit.",
+      "reflowHorizontalScroll_lean_why_media": "An image or a video can usually be scaled to fit the width.",
+      "reflowHorizontalScroll_lean_caution_media": "A map, a diagram or a game may need its size to be understood.",
+      "reflowHorizontalScroll_lean_why_clipped": "The edge of the viewport cuts through the element, and the page does not scroll to the rest of it.",
+      "reflowHorizontalScroll_lean_caution_clipped": "A carousel or a menu may show the rest another way.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -118332,6 +119112,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_134_orientation.description": "Agrupación de comprobaciones que garantizan que el contenido no restrinja su visualización a una sola orientación de pantalla.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Identificación del propósito de la entrada",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Agrupación de comprobaciones que garantizan que el atributo autocomplete identifique correctamente el propósito de la entrada.",
+      "catalog.rules.wcag_1410_reflow.title": "Reajuste del texto",
+      "catalog.rules.wcag_1410_reflow.description": "Agrupación de comprobaciones que garantizan que el contenido pueda mostrarse con 320 píxeles CSS de ancho sin desplazamiento en dos direcciones.",
       "catalog.rules.wcag_1411_non_text_contrast.title": "Contraste no textual",
       "catalog.rules.wcag_1411_non_text_contrast.description": "Agrupación de comprobaciones que garantizan que la información visual necesaria para identificar los componentes de la interfaz y sus estados, y las partes de los gráficos necesarias para entenderlos, tengan un contraste de al menos 3:1.",
       "catalog.rules.wcag_1412_text_spacing.title": "Espaciado del texto",
@@ -119371,6 +120153,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_lean_caution_repeated": "La disposición de la página, como una tarjeta con imagen o un encabezado tras el que no está el enlace, puede aún dejar claro cada enlace.",
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "El nombre de este enlace (\"{{name}}\") es una frase genérica: solo el texto que lo rodea dice adónde lleva.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Haz que el propio texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios de 2026\" en lugar de \"Haz clic aquí\", para que se entienda leído por sí solo, como en una lista de enlaces.",
+      "reflowHorizontalScroll_title": "El contenido se reajusta a 320 píxeles CSS de ancho sin desplazamiento lateral",
+      "reflowHorizontalScroll_description": "Con una ventana de 320 píxeles CSS de ancho, comprueba que la página no se desplace hacia los lados, señala los elementos que sobresalen de su borde y pregunta por las tablas, el contenido multimedia y el texto preformateado que pueden necesitar su disposición.",
+      "reflowHorizontalScroll_summary_fail": "Con {{viewportWidth}} píxeles de ancho, este elemento sobresale {{overflowPx}} píxeles del borde, así que la página se desplaza hacia los lados.",
+      "reflowHorizontalScroll_hint_fail": "Haz que quepa en el ancho: ningún ancho fijo mayor que la pantalla, max-width: 100% en imágenes y contenido incrustado, y que las palabras o direcciones largas puedan partirse (overflow-wrap: anywhere).",
+      "reflowHorizontalScroll_summary_unattributed": "Con {{viewportWidth}} píxeles de ancho, la página se desplaza {{overflowPx}} píxeles hacia los lados.",
+      "reflowHorizontalScroll_hint_unattributed": "Busca lo que es más ancho que la pantalla, como un margen o contenido generado, y haz que quepa en el ancho.",
+      "reflowHorizontalScroll_summary_wideTable": "Con {{viewportWidth}} píxeles de ancho, esta tabla sobresale {{overflowPx}} píxeles del borde.",
+      "reflowHorizontalScroll_hint_wideTable": "Una tabla de datos puede desplazarse hacia los lados por sí sola: ponla en una caja con overflow-x: auto. Una tabla usada para maquetar tiene que caber en el ancho.",
+      "reflowHorizontalScroll_summary_wideMedia": "Con {{viewportWidth}} píxeles de ancho, este elemento {{element}} sobresale {{overflowPx}} píxeles del borde.",
+      "reflowHorizontalScroll_hint_wideMedia": "Haz que se reduzca para caber (max-width: 100%; height: auto), salvo que sea un mapa, un diagrama o un juego que necesite su tamaño.",
+      "reflowHorizontalScroll_summary_widePreformatted": "Con {{viewportWidth}} píxeles de ancho, este texto preformateado sobresale {{overflowPx}} píxeles del borde.",
+      "reflowHorizontalScroll_hint_widePreformatted": "Deja que se parta en líneas (white-space: pre-wrap) o, si sus líneas deben quedar como están, que se desplace por sí solo en una caja con overflow-x: auto.",
+      "reflowHorizontalScroll_summary_clipped": "Con {{viewportWidth}} píxeles de ancho, el borde de la pantalla corta este elemento y la página no se desplaza hasta el resto.",
+      "reflowHorizontalScroll_hint_clipped": "Haz que quepa en el ancho, para que no se corte nada de él.",
+      "reflowHorizontalScroll_lean_why_dataTable": "La tabla tiene celdas de encabezado o un título: es una tabla de datos, que puede desplazarse hacia los lados.",
+      "reflowHorizontalScroll_lean_why_layoutTable": "La tabla no tiene celdas de encabezado ni título, o está marcada como maquetación: es una tabla de maquetación, que tiene que caber.",
+      "reflowHorizontalScroll_lean_why_media": "Una imagen o un vídeo normalmente pueden reducirse para caber en el ancho.",
+      "reflowHorizontalScroll_lean_caution_media": "Un mapa, un diagrama o un juego pueden necesitar su tamaño para entenderse.",
+      "reflowHorizontalScroll_lean_why_clipped": "El borde de la ventana corta el elemento y la página no se desplaza hasta el resto.",
+      "reflowHorizontalScroll_lean_caution_clipped": "Un carrusel o un menú pueden mostrar el resto de otra forma.",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -120081,6 +120883,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_134_orientation.description": "Regroupe les contrôles garantissant que le contenu ne limite pas son affichage à une seule orientation d’écran.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Identifier la finalité de la saisie",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Regroupe les contrôles garantissant que l’attribut autocomplete identifie correctement la finalité du champ.",
+      "catalog.rules.wcag_1410_reflow.title": "Redistribution",
+      "catalog.rules.wcag_1410_reflow.description": "Regroupement des vérifications garantissant que le contenu peut s’afficher à 320 pixels CSS de large sans défilement dans deux directions.",
       "catalog.rules.wcag_1411_non_text_contrast.title": "Contraste du contenu non textuel",
       "catalog.rules.wcag_1411_non_text_contrast.description": "Regroupe les contrôles garantissant que l’information visuelle nécessaire pour identifier les composants d’interface et leurs états, et les parties des graphiques nécessaires pour les comprendre, ont un contraste d’au moins 3:1.",
       "catalog.rules.wcag_1412_text_spacing.title": "Espacement du texte",
@@ -121120,6 +121924,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_lean_caution_repeated": "La mise en page, comme une carte avec une image ou un titre que le lien ne suit pas, peut encore rendre chaque lien clair.",
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "Le nom de ce lien (« {{name}} ») est une formule générique : seul le texte qui l’entoure dit où il mène.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Faites dire au texte du lien lui-même où il mène ou ce qu’il fait, par exemple « Télécharger la grille tarifaire 2026 » plutôt que « Cliquez ici », pour qu’il soit clair lu seul, comme dans une liste de liens.",
+      "reflowHorizontalScroll_title": "Le contenu se redistribue à 320 pixels CSS de large sans défilement horizontal",
+      "reflowHorizontalScroll_description": "Avec une fenêtre de 320 pixels CSS de large, vérifie que la page ne défile pas horizontalement, nomme les éléments qui dépassent de son bord et pose une question sur les tableaux, les médias et le texte préformaté qui peuvent avoir besoin de leur mise en page.",
+      "reflowHorizontalScroll_summary_fail": "À {{viewportWidth}} pixels de large, cet élément dépasse le bord de {{overflowPx}} pixels, donc la page défile horizontalement.",
+      "reflowHorizontalScroll_hint_fail": "Faites-le tenir dans la largeur : aucune largeur fixe plus grande que l’écran, max-width: 100% sur les images et les contenus intégrés, et laissez les mots ou adresses longs passer à la ligne (overflow-wrap: anywhere).",
+      "reflowHorizontalScroll_summary_unattributed": "À {{viewportWidth}} pixels de large, la page défile horizontalement de {{overflowPx}} pixels.",
+      "reflowHorizontalScroll_hint_unattributed": "Trouvez ce qui est plus large que l’écran, comme une marge ou un contenu généré, et faites-le tenir dans la largeur.",
+      "reflowHorizontalScroll_summary_wideTable": "À {{viewportWidth}} pixels de large, ce tableau dépasse le bord de {{overflowPx}} pixels.",
+      "reflowHorizontalScroll_hint_wideTable": "Un tableau de données peut défiler horizontalement à lui seul : placez-le dans un bloc avec overflow-x: auto. Un tableau de mise en page doit tenir dans la largeur.",
+      "reflowHorizontalScroll_summary_wideMedia": "À {{viewportWidth}} pixels de large, cet élément {{element}} dépasse le bord de {{overflowPx}} pixels.",
+      "reflowHorizontalScroll_hint_wideMedia": "Laissez-le rétrécir pour tenir (max-width: 100%; height: auto), sauf s’il s’agit d’une carte, d’un diagramme ou d’un jeu qui a besoin de sa taille.",
+      "reflowHorizontalScroll_summary_widePreformatted": "À {{viewportWidth}} pixels de large, ce texte préformaté dépasse le bord de {{overflowPx}} pixels.",
+      "reflowHorizontalScroll_hint_widePreformatted": "Laissez-le passer à la ligne (white-space: pre-wrap) ou, si ses lignes doivent rester telles quelles, laissez-le défiler seul dans un bloc avec overflow-x: auto.",
+      "reflowHorizontalScroll_summary_clipped": "À {{viewportWidth}} pixels de large, le bord de l’écran coupe cet élément, et la page ne défile pas jusqu’au reste.",
+      "reflowHorizontalScroll_hint_clipped": "Faites-le tenir dans la largeur, pour que rien n’en soit coupé.",
+      "reflowHorizontalScroll_lean_why_dataTable": "Le tableau a des cellules d’en-tête ou un titre : un tableau de données, qui peut défiler horizontalement.",
+      "reflowHorizontalScroll_lean_why_layoutTable": "Le tableau n’a ni cellules d’en-tête ni titre, ou il est marqué comme mise en page : un tableau de mise en page, qui doit tenir.",
+      "reflowHorizontalScroll_lean_why_media": "Une image ou une vidéo peut généralement être réduite à la largeur.",
+      "reflowHorizontalScroll_lean_caution_media": "Une carte, un diagramme ou un jeu peut avoir besoin de sa taille pour être compris.",
+      "reflowHorizontalScroll_lean_why_clipped": "Le bord de la fenêtre coupe l’élément, et la page ne défile pas jusqu’au reste.",
+      "reflowHorizontalScroll_lean_caution_clipped": "Un carrousel ou un menu peut montrer le reste autrement.",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -121830,6 +122654,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_134_orientation.description": "コンテンツの表示が、1 つの表示の向きに制限されていないかを確認するチェックの集約です。",
       "catalog.rules.wcag_135_identify_input_purpose.title": "入力目的の特定",
       "catalog.rules.wcag_135_identify_input_purpose.description": "autocomplete 属性が入力の目的を正しく特定しているかを確認するチェックの集約です。",
+      "catalog.rules.wcag_1410_reflow.title": "リフロー",
+      "catalog.rules.wcag_1410_reflow.description": "幅 320 CSS ピクセルで、2 方向のスクロールなしにコンテンツを表示できることを確認するチェックのまとめ。",
       "catalog.rules.wcag_1411_non_text_contrast.title": "非テキストのコントラスト",
       "catalog.rules.wcag_1411_non_text_contrast.description": "ユーザインタフェースコンポーネントとその状態を識別するのに必要な視覚的情報と、グラフィックの理解に必要な部分のコントラスト比が 3:1 以上であるかを確認するチェックの集約です。",
       "catalog.rules.wcag_1412_text_spacing.title": "テキストの間隔",
@@ -122869,6 +123695,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_lean_caution_repeated": "画像付きのカードや、リンクの前にはない見出しなど、ページのレイアウトによって各リンクが明確になる場合があります。",
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "このリンクの名前 (\"{{name}}\") は一般的な語句です。リンク先を示しているのは周囲のテキストだけです。",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "リンクの一覧のように単独で読んでもわかるよう、「こちらをクリック」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキスト自体でリンク先や動作を示してください。",
+      "reflowHorizontalScroll_title": "幅 320 CSS ピクセルで、横スクロールなしにコンテンツがリフローする",
+      "reflowHorizontalScroll_description": "幅 320 CSS ピクセルのビューポートで、ページが横にスクロールしないことを確認し、端からはみ出す要素を示します。レイアウトが必要な場合がある表、メディア、整形済みテキストについては確認を求めます。",
+      "reflowHorizontalScroll_summary_fail": "幅 {{viewportWidth}} ピクセルで、この要素は端から {{overflowPx}} ピクセルはみ出しており、ページが横にスクロールします。",
+      "reflowHorizontalScroll_hint_fail": "幅に収まるようにしてください。画面より広い固定幅を使わず、画像や埋め込みには max-width: 100% を指定し、長い単語やアドレスは折り返せるようにします（overflow-wrap: anywhere）。",
+      "reflowHorizontalScroll_summary_unattributed": "幅 {{viewportWidth}} ピクセルで、ページが {{overflowPx}} ピクセル横にスクロールします。",
+      "reflowHorizontalScroll_hint_unattributed": "マージンや生成コンテンツなど、画面より広いものを見つけて、幅に収まるようにしてください。",
+      "reflowHorizontalScroll_summary_wideTable": "幅 {{viewportWidth}} ピクセルで、この表は端から {{overflowPx}} ピクセルはみ出しています。",
+      "reflowHorizontalScroll_hint_wideTable": "データ表はそれ自体で横にスクロールしてかまいません。overflow-x: auto のボックスに入れてください。レイアウト用の表は幅に収める必要があります。",
+      "reflowHorizontalScroll_summary_wideMedia": "幅 {{viewportWidth}} ピクセルで、この {{element}} 要素は端から {{overflowPx}} ピクセルはみ出しています。",
+      "reflowHorizontalScroll_hint_wideMedia": "大きさが必要な地図、図、ゲームでない限り、収まるように縮小させてください（max-width: 100%; height: auto）。",
+      "reflowHorizontalScroll_summary_widePreformatted": "幅 {{viewportWidth}} ピクセルで、この整形済みテキストは端から {{overflowPx}} ピクセルはみ出しています。",
+      "reflowHorizontalScroll_hint_widePreformatted": "折り返せるようにするか（white-space: pre-wrap）、行をそのまま保つ必要がある場合は、overflow-x: auto のボックスの中でそれ自体をスクロールさせてください。",
+      "reflowHorizontalScroll_summary_clipped": "幅 {{viewportWidth}} ピクセルで、画面の端がこの要素を切っており、ページは残りの部分までスクロールしません。",
+      "reflowHorizontalScroll_hint_clipped": "何も切れないように、幅に収まるようにしてください。",
+      "reflowHorizontalScroll_lean_why_dataTable": "この表には見出しセルかキャプションがあります。データ表であり、横にスクロールしてかまいません。",
+      "reflowHorizontalScroll_lean_why_layoutTable": "この表には見出しセルもキャプションもないか、レイアウト用と指定されています。レイアウト用の表は幅に収める必要があります。",
+      "reflowHorizontalScroll_lean_why_media": "画像や動画は、通常、幅に合わせて縮小できます。",
+      "reflowHorizontalScroll_lean_caution_media": "地図、図、ゲームは、理解するためにその大きさが必要な場合があります。",
+      "reflowHorizontalScroll_lean_why_clipped": "ビューポートの端が要素を切っており、ページは残りの部分までスクロールしません。",
+      "reflowHorizontalScroll_lean_caution_clipped": "カルーセルやメニューは、残りを別の方法で表示できる場合があります。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",
