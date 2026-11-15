@@ -1909,9 +1909,11 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   // rule's titleKey, whose prefix keys the base's messages and steps.
   const variant = def.variant && typeof def.variant === 'object' ? def.variant : null;
   // A rule's own result can't claim one, nor what the engine says of the
-  // walk up from its elements (ancestorWalkLimit, below).
+  // walk up from its elements (ancestorWalkLimit) or of what it dropped in
+  // excluded areas (excludedOccurrences), below.
   delete out.variantOf;
   delete out.ancestorWalkLimit;
+  delete out.excludedOccurrences;
   if (variant && typeof variant.of === 'string' && variant.of) {
     out.variantOf = variant.of;
     if (out.i18n && variant.messages && typeof variant.messages.from === 'string') {
@@ -1931,6 +1933,45 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned ' + given + ', which is not one of ' + pol.allowedOutcomes.join(', ') + '; reported as cantTell.';
     }
     out.outcome = 'cantTell';
+  }
+
+  // Nothing is reported on an element the caller left out
+  // (engineOptions.excludeSelectors, global or for this rule): core's rules
+  // skip them, and a rule that walks the document itself and forgets is held
+  // to it here. What was dropped is said beside the result and in error, so
+  // the rule's author finds out; a rule left with no occurrence found
+  // nothing outside those areas, so it is notApplicable, as core can't tell
+  // whether the rest of the page passed. Nothing to do without exclusions:
+  // isExcluded answers at once, from a cache, for each occurrence.
+  if (
+    Array.isArray(out.occurrences) &&
+    out.occurrences.length &&
+    helpers &&
+    typeof helpers.isExcluded === 'function'
+  ) {
+    const kept = out.occurrences.filter((o) => {
+      const node = o && typeof o === 'object' ? o.__node : null;
+      if (!node) return true;
+      try {
+        return helpers.isExcluded(node) !== true;
+      } catch {
+        return true;
+      }
+    });
+    const dropped = out.occurrences.length - kept.length;
+    if (dropped > 0) {
+      out.occurrences = kept;
+      out.excludedOccurrences = { dropped };
+      if (!kept.length && (out.outcome === 'fail' || out.outcome === 'cantTell')) {
+        out.excludedOccurrences.coercedFrom = out.outcome;
+        out.outcome = 'notApplicable';
+        delete out.policyOutcome;
+      }
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule reported ' + dropped + ' occurrence' + (dropped === 1 ? '' : 's') +
+        ' on elements left out with excludeSelectors; dropped. A rule that walks the document itself should skip them (helpers.isExcluded).';
+    }
   }
 
   // The outcome agrees with its occurrences' tiers, which are the more

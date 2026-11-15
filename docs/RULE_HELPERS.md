@@ -173,8 +173,11 @@ Whether `el` or one of its ancestors matches the currently effective `excludeSel
 The ancestors are shadow-including: from a shadow root the walk goes on at its host, so
 everything in an excluded host's shadow tree is excluded, however deeply nested.
 `queryAllSmart` already applies this filtering for you; reach for `isExcluded` directly
-only if a rule walks the DOM some other way (e.g. following `composedParent`) and still
-needs to respect exclusions on nodes found off that path.
+only if a rule walks the DOM some other way (e.g. following `composedParent`, or a
+`querySelectorAll` on the whole document) and still needs to respect exclusions on nodes
+found off that path. A rule that forgets has its occurrences on excluded elements dropped
+by the engine, which says so in the result (`excludedOccurrences`, and `error`), so the
+miss shows up; `tests/excluded-areas.test.js` holds core's own rules to it.
 
 ### `buildStructuralPath(node, selector)` → `number[] | null`
 

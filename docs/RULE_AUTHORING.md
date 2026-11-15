@@ -466,6 +466,10 @@ the rule set itself ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-check-result-chec
 - A returned `policyOutcome` or `ruleSeverity` is not taken: the engine sets them, for a
   policy or a profile.
 - Occurrences that are not objects (`null`, a string, a number, an array) are left out.
+- Occurrences on elements the caller left out (`excludeSelectors`, global or for the rule)
+  are dropped and counted in `excludedOccurrences`; a result left with none is
+  `notApplicable`. Skip excluded elements yourself with `helpers.isExcluded` when the rule
+  walks the document on its own.
 - A `fail` with no occurrence gets one on the document element, with reason code
   `FAIL_WITHOUT_OCCURRENCE`, so every reporter shows it as a failure.
 - The outcome is made to agree with the occurrences' `occurrenceOutcome` tiers: any

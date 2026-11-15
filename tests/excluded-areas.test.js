@@ -87,3 +87,72 @@ test('no rule reports inside an area left out with excludeSelectors', () => {
   });
   assert.deepStrictEqual(insideExcluded(result), {});
 });
+
+// A rule from outside core, as a pack or a custom rule would be, that walks
+// the document itself and forgets the exclusion: every <p> is reported.
+const careless = (type) => ({
+  id: 'careless-paragraphs',
+  meta: {
+    title: 'Careless',
+    description: 'Reports every paragraph.',
+    tags: ['best-practice'],
+    wcagSc: [],
+    type
+  },
+  runInPage:
+    "function (ctx) { var ps = Array.prototype.slice.call(ctx.document.querySelectorAll('p')); " +
+    "return { ruleId: ctx.rule.ruleId, outcome: ps.length ? (ctx.rule.type === 'manual' ? 'cantTell' : 'fail') : 'pass', " +
+    "occurrences: ps.map(function (p) { return ctx.helpers.reportOccurrence(p, { summary: 'A paragraph.', occurrenceOutcome: ctx.rule.type === 'manual' ? 'cantTell' : 'fail' }); }) }; }"
+});
+const carelessPage = (body) =>
+  `<!doctype html><html lang="en"><head><title>T</title></head><body>${body}</body></html>`;
+const runCareless = (body, engineOptions, type = 'automatic') =>
+  runa11yCoreOnHtml(carelessPage(body), {
+    runOnly: ['careless-paragraphs'],
+    engineOptions: { customRules: [careless(type)], ...engineOptions }
+  }).checksResults.find((c) => c.ruleId === 'careless-paragraphs');
+
+test('the engine drops what a rule reports in an excluded area, and says so', () => {
+  const body = '<div id="bar"><p>In the bar</p><p>Also</p></div><main><p>Content</p></main>';
+  for (const engineOptions of [
+    { excludeSelectors: ['#bar'] },
+    { rules: { 'careless-paragraphs': { excludeSelectors: ['#bar'] } } }
+  ]) {
+    const r = runCareless(body, engineOptions);
+    assert.strictEqual(r.outcome, 'fail', JSON.stringify(engineOptions));
+    assert.strictEqual(r.occurrences.length, 1);
+    assert.match(r.occurrences[0].selector, /main/);
+    assert.deepStrictEqual(r.excludedOccurrences, { dropped: 2 });
+    assert.match(
+      r.error,
+      /reported 2 occurrences on elements left out with excludeSelectors; dropped/
+    );
+  }
+});
+
+test('a rule that found something only in excluded areas is notApplicable', () => {
+  for (const type of ['automatic', 'manual']) {
+    const r = runCareless(
+      '<div id="bar"><p>In the bar</p></div><main><h1>No paragraphs</h1></main>',
+      { excludeSelectors: ['#bar'] },
+      type
+    );
+    assert.strictEqual(r.outcome, 'notApplicable', type);
+    assert.strictEqual(r.outcomeNormalized, 'inapplicable');
+    assert.deepStrictEqual(r.occurrences, []);
+    assert.deepStrictEqual(r.excludedOccurrences, {
+      dropped: 1,
+      coercedFrom: type === 'manual' ? 'cantTell' : 'fail'
+    });
+  }
+});
+
+test('without exclusions, or with none that matches, nothing changes', () => {
+  const body = '<div id="bar"><p>In the bar</p></div><main><p>Content</p></main>';
+  for (const engineOptions of [{}, { excludeSelectors: ['#nothing'] }]) {
+    const r = runCareless(body, engineOptions);
+    assert.strictEqual(r.occurrences.length, 2);
+    assert.strictEqual(r.excludedOccurrences, undefined);
+    assert.strictEqual(r.error, undefined);
+  }
+});

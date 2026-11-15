@@ -805,6 +805,17 @@ export interface CheckResult {
     coercedFrom?: 'fail';
   };
   /**
+   * Present only when the rule reported on elements left out with
+   * `excludeSelectors`: the engine dropped those occurrences (and says so in
+   * `error`).
+   */
+  excludedOccurrences?: {
+    /** How many occurrences were dropped. */
+    dropped: number;
+    /** Present when none was left, so the outcome became notApplicable: what the rule said. */
+    coercedFrom?: 'fail' | 'cantTell';
+  };
+  /**
    * Present when the rule did not complete (cantTell with no occurrences),
    * or with the engine's notes on what it changed in what the rule returned
    * (docs/OUTPUT_SCHEMA.md, `error`).
