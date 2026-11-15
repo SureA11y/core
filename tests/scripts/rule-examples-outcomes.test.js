@@ -35,6 +35,11 @@ test('readExamples reads each labelled example, and the outcome its label claims
       '<p>c</p>',
       '```',
       '',
+      '**Failed (at 320 CSS pixels wide)**',
+      '```html',
+      '<div style="width:600px">e</div>',
+      '```',
+      '',
       '**Something else**',
       '```html',
       '<p>d</p>',
@@ -48,8 +53,14 @@ test('readExamples reads each labelled example, and the outcome its label claims
       ['rule-a', 'Passed', 'pass'],
       ['rule-a', 'Failed (in a browser)', 'fail'],
       ['rule-b', 'Flagged (cantTell)', 'cantTell'],
+      ['rule-b', 'Failed (at 320 CSS pixels wide)', 'fail'],
       ['rule-b', 'Something else', null]
     ]
+  );
+  // The width it says is the one it is laid out at; the others are at 1280.
+  assert.deepEqual(
+    readExamples(file).map((e) => e.width || null),
+    [null, null, null, 320, null]
   );
 });
 

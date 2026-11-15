@@ -2609,6 +2609,60 @@
       "ja": "8795e5880be33d52",
       "fr-CA": "04e8d57d687aca00",
       "pt": "2b857fc4c573689b"
+    },
+    "reflow-horizontal-scroll CLIPPED_AT_VIEWPORT_EDGE": {
+      "en": "2667997325c9d727",
+      "de": "bdc434305ec8ae68",
+      "es": "0342cb587b584294",
+      "fr": "e2e923edf5c8c6e2",
+      "ja": "d7fc2f5c1209c709",
+      "fr-CA": "e2e923edf5c8c6e2",
+      "pt": "2667997325c9d727"
+    },
+    "reflow-horizontal-scroll HORIZONTAL_SCROLL": {
+      "en": "74234e98afe7498f",
+      "de": "74234e98afe7498f",
+      "es": "74234e98afe7498f",
+      "fr": "74234e98afe7498f",
+      "ja": "74234e98afe7498f",
+      "fr-CA": "74234e98afe7498f",
+      "pt": "74234e98afe7498f"
+    },
+    "reflow-horizontal-scroll HORIZONTAL_SCROLL_UNATTRIBUTED": {
+      "en": "74234e98afe7498f",
+      "de": "74234e98afe7498f",
+      "es": "74234e98afe7498f",
+      "fr": "74234e98afe7498f",
+      "ja": "74234e98afe7498f",
+      "fr-CA": "74234e98afe7498f",
+      "pt": "74234e98afe7498f"
+    },
+    "reflow-horizontal-scroll WIDE_MEDIA": {
+      "en": "174a6cca7fa3a553",
+      "de": "89642feca8bd6d53",
+      "es": "4b9eb24524c61e3f",
+      "fr": "5ee746194b49179f",
+      "ja": "9a9e53e506b40641",
+      "fr-CA": "5ee746194b49179f",
+      "pt": "174a6cca7fa3a553"
+    },
+    "reflow-horizontal-scroll WIDE_PREFORMATTED": {
+      "en": "c586c618f1695d82",
+      "de": "9547917e511e874a",
+      "es": "00ee76d50bf7f58b",
+      "fr": "d951fc6eb5d3bff5",
+      "ja": "23fe918626ef33aa",
+      "fr-CA": "d951fc6eb5d3bff5",
+      "pt": "c586c618f1695d82"
+    },
+    "reflow-horizontal-scroll WIDE_TABLE": {
+      "en": "4f4b3eb3e1dcf964",
+      "de": "8c9ea4ac373b1db8",
+      "es": "7a54e44bb4bb1192",
+      "fr": "89508ca59fada357",
+      "ja": "2167173f0006354f",
+      "fr-CA": "89508ca59fada357",
+      "pt": "4f4b3eb3e1dcf964"
     }
   },
   "reviews": {
@@ -2761,13 +2815,14 @@
     "widget-keyboard-focusable": "c8cefbbd4fadee80",
     "focus-not-obscured-enhanced": "fe683fbed61fbb8f",
     "focus-not-obscured-minimum": "6d92f3ab7c9aefea",
-    "link-name-quality-link-only": "0db2cece5451463f"
+    "link-name-quality-link-only": "0db2cece5451463f",
+    "reflow-horizontal-scroll": "53ca33a7f14833b3"
   },
   "dictionaries": {
-    "de": "1fca133334da4aff3c8e4371aa41928c0ecba2efa372a1370d5743a6d94bcc94",
-    "en": "141390ef466a045f41ca59b55fcc9d287274feb227afabf1699886b05c4e5cab",
-    "es": "fceb7c0200046bbd7999f06cf67edbf8c30bbf0145e55ea8428b1564935beaa3",
-    "fr": "0695dc26ec4ef445cd428052df953f03ae3eb0b11d28332e2a4441997ab5694d",
-    "ja": "62c76ccec70b6fc08fcf525b365dbd13d228a85731ce9082093772d74791d898"
+    "de": "a6e3702d53434d0d3501d41965dfcc1cb5d45d8918eccb73c3dd3902c1861a63",
+    "en": "20e8e4411869f7d5eb62ef753d7ceccac2a022086153d5cfe3da5fd18c39ee23",
+    "es": "b1fbcaa6d47b062a82351ec7924f56738e6c073c78852c14702dbc920d38189f",
+    "fr": "7d3a4f0ec7065372d66601c09995594499029e33e6be96e2dc9003c5027af713",
+    "ja": "5beec6037864e5e36b4d8f779b52cbeea4b24da4cbeee22bf8f5a866c58a9887"
   }
 }

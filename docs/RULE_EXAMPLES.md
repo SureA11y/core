@@ -2086,6 +2086,37 @@ The nested `<span>` carries its own interactive role and tab stop inside the but
 ```
 No accessible name from any supported mechanism.
 
+## reflow-horizontal-scroll
+
+**Passed (at 320 CSS pixels wide)**
+```html
+<p>Opening hours today, and the rest of the week from nine to five.</p>
+<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='40'/%3E" width="800" height="40" alt="A wide banner" style="max-width:100%; height:auto;">
+```
+The text wraps and the image shrinks to the width, so the page scrolls only up and down.
+
+**Failed (at 320 CSS pixels wide)**
+```html
+<div style="width:600px">Opening hours today.</div>
+```
+A box 600 pixels wide sticks out past the edge of a 320 pixel screen, so the page scrolls sideways (WCAG 1.4.10).
+
+**Flagged (cantTell) (at 320 CSS pixels wide)**
+```html
+<table style="width:600px">
+  <caption>Opening hours</caption>
+  <tr><th>Day</th><th>Opens</th><th>Closes</th></tr>
+  <tr><td>Monday</td><td>9:00</td><td>17:00</td></tr>
+</table>
+```
+A data table may scroll sideways, as content that needs two dimensions; a person checks that only the table does. It leans pass: the table has header cells and a caption.
+
+**Not applicable**
+```html
+<div style="width:600px">Opening hours today.</div>
+```
+At a usual width (these examples run at 1280 pixels unless they say otherwise), the rule doesn't apply: reflow is checked by laying the page out at 320 CSS pixels wide.
+
 ## region
 
 **Passed**
