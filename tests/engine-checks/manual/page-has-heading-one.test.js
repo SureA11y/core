@@ -75,6 +75,19 @@ test(`${RULE_ID}: a native heading's valid aria-level is its level, as heading-o
   // An invalid aria-level leaves the tag's level.
   assert.equal(outcome('<h1 aria-level="0">Title</h1>'), 'pass');
   assert.equal(outcome('<h2 aria-level="one">Title</h2>'), 'cantTell');
+  // Browsers read the leading integer.
+  assert.equal(outcome('<h2 aria-level="1.5">Title</h2>'), 'pass');
+});
+
+// Chromium, Firefox and WebKit all expose <h1 role="heading"> at level 1.
+test(`${RULE_ID}: role="heading" on a native heading keeps its tag level`, () => {
+  const outcome = (body) =>
+    runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+      runOnly: [RULE_ID]
+    }).checksResults.find((c) => c.ruleId === RULE_ID).outcome;
+  assert.equal(outcome('<h1 role="heading">Title</h1>'), 'pass');
+  assert.equal(outcome('<h2 role="heading">Title</h2>'), 'cantTell');
+  assert.equal(outcome('<h2 role="heading" aria-level="1">Title</h2>'), 'pass');
 });
 
 test(`${RULE_ID}: cantTell when the page has headings but no level-one heading`, () => {

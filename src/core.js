@@ -85094,6 +85094,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return info && info.status === 'set' ? normalizeWs(info.value) : '';
   }
 
+  // A positive integer read from aria-level as browsers read it, the leading
+  // integer ("2.5" is 2, "3x" is 3), or 0 when it gives none.
+  function parseLevel(raw) {
+    const n =
+      typeof helpers.parseHtmlInteger === 'function'
+        ? helpers.parseHtmlInteger(raw)
+        : parseInt(raw, 10);
+    return Number.isFinite(n) && n >= 1 ? n : 0;
+  }
+
   function getHeadingLevel(el) {
     let explicit = getExplicitRoleToken(el);
     // A focusable <hx>, or one with a global ARIA attribute, stays a heading
@@ -85103,23 +85113,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       helpers.isPresentationalRoleIgnored(el)
     )
       explicit = '';
-    if (explicit) {
-      if (explicit !== 'heading') return 0;
-      const raw = ariaLevelOf(el);
-      const n = parseInt(raw, 10);
-      return Number.isFinite(n) && n >= 1 ? n : 2;
-    }
+    if (explicit && explicit !== 'heading') return 0;
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const m = /^h([1-6])$/.exec(tag);
-    if (!m) return 0;
-    // Browsers expose a valid aria-level on <hx> in place of the tag level.
-    const ariaLevel = normalizeWs(
-      dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level')
-    );
-    if (/^[0-9]+$/.test(ariaLevel) && parseInt(ariaLevel, 10) >= 1) {
-      return parseInt(ariaLevel, 10);
-    }
-    return parseInt(m[1], 10);
+    if (!explicit && !m) return 0;
+    // Browsers expose a valid aria-level in place of any other level. Without
+    // one, an <hx> keeps its tag level, also with role="heading" (Chromium,
+    // Firefox and WebKit all expose <h3 role="heading"> at level 3), and any
+    // other heading takes the ARIA default, 2.
+    const ariaLevel = parseLevel(ariaLevelOf(el));
+    if (ariaLevel) return ariaLevel;
+    return m ? parseInt(m[1], 10) : 2;
   }
 
   const nodes = helpers.queryAllSmart
@@ -100681,6 +100685,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return info && info.status === 'set' ? normalizeWs(info.value) : '';
   }
 
+  // A positive integer read from aria-level as browsers read it, the leading
+  // integer ("1.5" is 1, "1x" is 1), or 0 when it gives none.
+  function parseLevel(raw) {
+    const n =
+      typeof helpers.parseHtmlInteger === 'function'
+        ? helpers.parseHtmlInteger(raw)
+        : parseInt(raw, 10);
+    return Number.isFinite(n) && n >= 1 ? n : 0;
+  }
+
   function isLevelOneHeading(el) {
     let explicit = getExplicitRoleToken(el);
     // A focusable <h1>, or one with a global ARIA attribute, stays a heading
@@ -100690,22 +100704,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       helpers.isPresentationalRoleIgnored(el)
     )
       explicit = '';
-    if (explicit) {
-      if (explicit !== 'heading') return false;
-      return ariaLevelOf(el) === '1';
-    }
+    if (explicit && explicit !== 'heading') return false;
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const m = /^h([1-6])$/.exec(tag);
-    if (!m) return false;
-    // Browsers expose a valid aria-level on <hx> in place of the tag level,
-    // as heading-order reads it.
-    const ariaLevel = normalizeWs(
-      dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level')
-    );
-    if (/^[0-9]+$/.test(ariaLevel) && parseInt(ariaLevel, 10) >= 1) {
-      return parseInt(ariaLevel, 10) === 1;
-    }
-    return m[1] === '1';
+    if (!explicit && !m) return false;
+    // Browsers expose a valid aria-level in place of any other level, as
+    // heading-order reads it. Without one, an <hx> keeps its tag level, also
+    // with role="heading" (<h1 role="heading"> is a level-one heading), and
+    // any other heading takes the ARIA default, 2.
+    const ariaLevel = parseLevel(ariaLevelOf(el));
+    if (ariaLevel) return ariaLevel === 1;
+    return !!m && m[1] === '1';
   }
 
   const isAccTreeEligible =
@@ -100799,14 +100808,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           detail: { cause: 'role', text, role }
         };
       }
-      const level = ariaLevelOf(el);
-      if (/^[0-9]+$/.test(level) && parseInt(level, 10) > 1) {
+      const level = parseLevel(ariaLevelOf(el));
+      if (level > 1) {
         return {
-          summary: `This page has no level-one heading. Its <h1> "${text}" is exposed as level ${level} by aria-level="${level}".`,
+          summary: `This page has no level-one heading. Its <h1> "${text}" is exposed as level ${level} by aria-level="${ariaLevelOf(el)}".`,
           summaryKey: 'pageHasHeadingOne_summary_h1Relevelled',
           hintKey: 'pageHasHeadingOne_hint_h1Relevelled',
           params: { text, level },
-          detail: { cause: 'aria-level', text, level: parseInt(level, 10) }
+          detail: { cause: 'aria-level', text, level }
         };
       }
     }

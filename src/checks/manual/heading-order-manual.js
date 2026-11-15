@@ -9,10 +9,11 @@
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies whenever the page contains two or more heading elements
- *   (native <h1>-<h6>, or explicit role="heading" with aria-level;
- *   default level 2 per the ARIA spec when aria-level is absent/invalid).
- *   A native <hx> with a valid aria-level (a positive integer) takes that
- *   level, as browsers expose it; otherwise it takes its tag level.
+ *   (native <h1>-<h6>, or explicit role="heading" with aria-level).
+ *   A valid aria-level (a positive integer, read as browsers read it: the
+ *   leading integer, so "2.5" is 2) gives a heading its level, as browsers
+ *   expose it. Without one, a native <hx> takes its tag level, also with
+ *   role="heading", and any other heading the ARIA default, level 2.
  *   A native <hx> marked role="none" or "presentation" is still a heading
  *   when it can take focus or carries a global ARIA attribute, as
  *   WAI-ARIA's presentational roles conflict resolution has browsers
@@ -111,6 +112,16 @@ function runInPage(ctx) {
     return info && info.status === 'set' ? normalizeWs(info.value) : '';
   }
 
+  // A positive integer read from aria-level as browsers read it, the leading
+  // integer ("2.5" is 2, "3x" is 3), or 0 when it gives none.
+  function parseLevel(raw) {
+    const n =
+      typeof helpers.parseHtmlInteger === 'function'
+        ? helpers.parseHtmlInteger(raw)
+        : parseInt(raw, 10);
+    return Number.isFinite(n) && n >= 1 ? n : 0;
+  }
+
   function getHeadingLevel(el) {
     let explicit = getExplicitRoleToken(el);
     // A focusable <hx>, or one with a global ARIA attribute, stays a heading
@@ -120,23 +131,17 @@ function runInPage(ctx) {
       helpers.isPresentationalRoleIgnored(el)
     )
       explicit = '';
-    if (explicit) {
-      if (explicit !== 'heading') return 0;
-      const raw = ariaLevelOf(el);
-      const n = parseInt(raw, 10);
-      return Number.isFinite(n) && n >= 1 ? n : 2;
-    }
+    if (explicit && explicit !== 'heading') return 0;
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const m = /^h([1-6])$/.exec(tag);
-    if (!m) return 0;
-    // Browsers expose a valid aria-level on <hx> in place of the tag level.
-    const ariaLevel = normalizeWs(
-      dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level')
-    );
-    if (/^[0-9]+$/.test(ariaLevel) && parseInt(ariaLevel, 10) >= 1) {
-      return parseInt(ariaLevel, 10);
-    }
-    return parseInt(m[1], 10);
+    if (!explicit && !m) return 0;
+    // Browsers expose a valid aria-level in place of any other level. Without
+    // one, an <hx> keeps its tag level, also with role="heading" (Chromium,
+    // Firefox and WebKit all expose <h3 role="heading"> at level 3), and any
+    // other heading takes the ARIA default, 2.
+    const ariaLevel = parseLevel(ariaLevelOf(el));
+    if (ariaLevel) return ariaLevel;
+    return m ? parseInt(m[1], 10) : 2;
   }
 
   const nodes = helpers.queryAllSmart

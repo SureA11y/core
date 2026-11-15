@@ -19,6 +19,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- **`heading-order` and `page-has-heading-one` keep a native heading's tag level when it also has `role="heading"`**, as Chromium, Firefox and WebKit all expose it: `<h3 role="heading">` is level 3, where the rules took the ARIA default, 2. So `heading-order` no longer asks about a skip after it that isn't one (`<h3 role="heading">` then `<h4>`) and asks about the one it hid (`<h1>` then `<h3 role="heading">`), and `page-has-heading-one` counts `<h1 role="heading">` as the page's level-one heading, where it asked about a missing one. Both now read `aria-level` on a native heading as browsers do, from its leading integer (`"2.5"` is 2), where they ignored anything but digits.
 - Under jsdom, `p-as-heading` reads a font size written as a keyword (`large`) or a `calc()` as a browser does, where it read it as no size.
 - **`page-zones-landmark` honours `excludeSelectors`**: it walks the whole document itself and asked about blocks, search forms, headers and footers inside an excluded area, such as a site's admin toolbar. Elements left out, globally or for this rule, are no longer looked at. It was the only rule that reported inside an excluded area: a new test runs every rule on a page whose problems all sit in an excluded block (34 rules find something there without the exclusion) and fails on any finding inside it, so a rule that walks the document itself and forgets the exclusion is caught.
 

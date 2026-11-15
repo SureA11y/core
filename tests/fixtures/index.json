@@ -1089,11 +1089,11 @@
       "testFile": "tests/engine-checks/manual/heading-order.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/heading-order-all-scenarios.html",
-      "totalCases": 3,
+      "totalCases": 4,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 2,
+        "CANTTELL": 3,
         "OTHER": 1
       }
     },
