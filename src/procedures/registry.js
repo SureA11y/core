@@ -747,7 +747,11 @@ const PROCEDURES = {
         coveredBy: 'link-text-alone-clear'
       },
       'link-text-alone-clear': {
-        tools: ['devtools', 'screen-reader']
+        tools: ['devtools', 'screen-reader'],
+        variants: {
+          'link-name-quality': ['GENERIC_LINK_TEXT_IN_CONTEXT'],
+          'link-name-quality-link-only': ['GENERIC_LINK_TEXT_IN_CONTEXT']
+        }
       }
     },
     '2.5.3': {

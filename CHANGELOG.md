@@ -6,6 +6,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Added
 
+- **`link-name-quality-link-only`** (WCAG 2.4.9, AAA): asks about links whose whole name is a generic phrase such as "click here" that only the text around them explains (`GENERIC_LINK_TEXT_IN_CONTEXT`, F84). 2.4.4 counts that context, so `link-name-quality` clears these links, and 2.4.9 doesn't, so until now no rule asked about them. It is `link-name-quality` with its new setting `whenContextFound: 'ask'`, so the two share their phrase lists and their reading of context, and no link is reported by both. It runs in scans that target AAA, and joins the 2.4.9 rollup.
 - **`p-as-heading` asks about bold lines at body size** that read as a title (`BOLD_SHORT_PARAGRAPH`, cantTell): a short `<p>` whose text is all bold, or all heavier than the paragraph's own text, that doesn't end as a sentence and comes before lighter text, such as "Opening hours" over the hours. It only asked about bold text of 18px or more, while authors usually make a title by bolding a line of body text (F2). A bold sentence, a run of bold lines such as an address, a bold `<div>`, a bold number and a bold link alone are left out at this size.
 
 ### Changed

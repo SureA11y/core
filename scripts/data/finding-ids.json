@@ -92,6 +92,7 @@
     "link-in-text-block",
     "link-name-present",
     "link-name-quality",
+    "link-name-quality-link-only",
     "list-children-valid",
     "listbox-name-present",
     "listitem-parent-valid",
@@ -557,7 +558,11 @@
     ],
     "link-name-quality": [
       "AMBIGUOUS_FORMAT_NAME",
-      "GENERIC_LINK_TEXT"
+      "GENERIC_LINK_TEXT",
+      "GENERIC_LINK_TEXT_IN_CONTEXT"
+    ],
+    "link-name-quality-link-only": [
+      "GENERIC_LINK_TEXT_IN_CONTEXT"
     ],
     "list-children-valid": [
       "LIST_INVALID_CHILD",

@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **149**
+Total rules (loaded without error): **150**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 119 | 33 | 17 |
+| Any WCAG version | 120 | 34 | 18 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 108 | 23 | 14 |
+| WCAG 2.0 | 109 | 24 | 15 |
 | WCAG 2.1 | 8 | 7 | 1 |
 | WCAG 2.2 | 6 | 6 | 3 |
 
@@ -32,7 +32,7 @@ Total rules (loaded without error): **149**
 | wcag22aaa | 3 |
 | wcag2a | 96 |
 | wcag2aa | 11 |
-| wcag2aaa | 14 |
+| wcag2aaa | 15 |
 
 ## SC Coverage (A): Enforced requirements only (normativeMappings)
 
@@ -546,7 +546,7 @@ Uncovered facets: focus-indicator-visible
 
 ### 2.4.9
 
-Facet coverage: **2/3** facets covered.
+Facet coverage: **3/3** facets covered.
 Automation mix: **full 1, partial 1, manual 1**.
 Unknown facet ids referenced by rules: link-text-descriptive-evidence
 
@@ -554,14 +554,13 @@ Unknown facet ids referenced by rules: link-text-descriptive-evidence
 |---|---|---|
 | identical-links-same-purpose-evidence | manual | identical-links-same-purpose |
 | link-name-present | full | link-name-present |
-| link-text-alone-clear | partial | — |
-
-Uncovered facets: link-text-alone-clear
+| link-text-alone-clear | partial | link-name-quality-link-only |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | identical-links-same-purpose | manual | Links with the same accessible name should lead to the same destination | src/checks/manual/identical-links-same-purpose-manual.js | identical-links-same-purpose-evidence |  |
+| link-name-quality-link-only | manual | A link's text should say where it leads on its own | src/checks/manual/link-name-quality-link-only-manual.js | link-text-alone-clear |  |
 | link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
 
 ### 2.4.11
@@ -1422,7 +1421,7 @@ Uncovered facets: focus-indicator-visible
 
 ### 2.4.9
 
-Facet coverage: **2/3** facets covered.
+Facet coverage: **3/3** facets covered.
 Automation mix: **full 1, partial 1, manual 1**.
 Unknown facet ids referenced by rules: link-text-descriptive-evidence
 
@@ -1430,14 +1429,13 @@ Unknown facet ids referenced by rules: link-text-descriptive-evidence
 |---|---|---|
 | identical-links-same-purpose-evidence | manual | identical-links-same-purpose |
 | link-name-present | full | link-name-present |
-| link-text-alone-clear | partial | — |
-
-Uncovered facets: link-text-alone-clear
+| link-text-alone-clear | partial | link-name-quality-link-only |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | identical-links-same-purpose | manual | Links with the same accessible name should lead to the same destination | src/checks/manual/identical-links-same-purpose-manual.js | identical-links-same-purpose-evidence |  |
+| link-name-quality-link-only | manual | A link's text should say where it leads on its own | src/checks/manual/link-name-quality-link-only-manual.js | link-text-alone-clear |  |
 | link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
 
 ### 2.4.11

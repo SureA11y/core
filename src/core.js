@@ -34195,7 +34195,93 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "settings": [
+      "whenContextFound"
+    ],
+    "variantSettings": [
+      {
+        "name": "whenContextFound",
+        "default": "clear",
+        "values": [
+          "clear",
+          "ask"
+        ],
+        "description": "A generic link name whose list item, paragraph, cell or description says where it leads: not reported ('clear'); or reported, and only such links, as GENERIC_LINK_TEXT_IN_CONTEXT ('ask').",
+        "basis": "WCAG 2.4.4 counts the programmatically determined link context (clear); WCAG 2.4.9 asks for the purpose from the link text alone, and F84 fails a generic link only its surrounding text explains (ask)"
+      }
+    ]
+  },
+  {
+    "ruleId": "link-name-quality-link-only",
+    "title": "A link's text should say where it leads on its own",
+    "description": "Flags links whose full accessible name is a known generic phrase (e.g. \"click here\", \"read more\") that only the text around them explains, for manual review of whether the link text alone makes the purpose clear.",
+    "i18n": {
+      "titleKey": "linkNameQualityLinkOnly_title",
+      "descriptionKey": "linkNameQualityLinkOnly_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aaa",
+      "wcag249",
+      "navigation",
+      "quality",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.9"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.9",
+        "title": "Link Purpose (Link Only)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#link-purpose-link-only",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html"
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.9": [
+          "link-text-alone-clear"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null,
+    "variant": {
+      "of": "link-name-quality",
+      "config": {
+        "whenContextFound": "ask"
+      },
+      "messages": {
+        "from": "linkNameQuality",
+        "to": "linkNameQualityLinkOnly"
+      }
+    },
+    "settings": [
+      "whenContextFound"
+    ]
   },
   {
     "ruleId": "list-children-valid",
@@ -39180,7 +39266,8 @@ const RUNTIME_CATALOG = {
     "checksIds": [
       "identical-links-same-purpose",
       "link-name-present",
-      "link-name-quality"
+      "link-name-quality",
+      "link-name-quality-link-only"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_249_link_purpose_link_only.title",
@@ -40001,6 +40088,7 @@ const RUNTIME_CATALOG = {
   "link-in-text-block": { run: require("./checks/automatic/link-in-text-block.js").runInPage, applicability: require("./checks/automatic/link-in-text-block.js").applicability || null },
   "link-name-present": { run: require("./checks/automatic/link-name-present.js").runInPage, applicability: require("./checks/automatic/link-name-present.js").applicability || null },
   "link-name-quality": { run: require("./checks/manual/link-name-quality-manual.js").runInPage, applicability: require("./checks/manual/link-name-quality-manual.js").applicability || null },
+  "link-name-quality-link-only": { run: require("./checks/manual/link-name-quality-manual.js").runInPage, applicability: require("./checks/manual/link-name-quality-manual.js").applicability || null },
   "list-children-valid": { run: require("./checks/automatic/list-children-valid.js").runInPage, applicability: require("./checks/automatic/list-children-valid.js").applicability || null },
   "listbox-name-present": { run: require("./checks/automatic/listbox-name-present.js").runInPage, applicability: require("./checks/automatic/listbox-name-present.js").applicability || null },
   "listitem-parent-valid": { run: require("./checks/automatic/listitem-parent-valid.js").runInPage, applicability: require("./checks/automatic/listitem-parent-valid.js").applicability || null },
@@ -41640,10 +41728,24 @@ const RUNTIME_CATALOG = {
       "linkNameQuality_hint_cantTell": "Lassen Sie den Linktext sagen, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Herunterladen“, oder prüfen Sie, ob der umgebende Text das bereits klar macht.",
       "linkNameQuality_summary_cantTell_formatName": "Der Name dieses Links (\"{{name}}\") nennt ein Dateiformat, aber nicht, um welches Dokument es geht.",
       "linkNameQuality_hint_cantTell_formatName": "Nennen Sie das Dokument im Linktext oder in einem mit dem Link verbundenen Text oder einer Überschrift, etwa „Jahresbericht herunterladen (HTML)“ statt nur „HTML“.",
+      "linkNameQuality_summary_cantTell_inContext": "Der Name dieses Links („{{name}}“) ist eine allgemeine Formulierung: Nur der Text um ihn herum sagt, wohin er führt.",
+      "linkNameQuality_hint_cantTell_inContext": "Formulieren Sie den Linktext selbst so, dass er sagt, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Hier klicken“, damit er auch allein verständlich ist, etwa in einer Linkliste.",
       "linkNameQuality_lean_why_formatBesideName": "Ein anderer Link im selben Listenpunkt, Absatz oder in derselben Zelle nennt das Dokument, zu dem dieses Format gehört.",
       "linkNameQuality_lean_caution_formatBesideName": "Prüfen Sie, ob der andere Link dasselbe Dokument nennt.",
       "linkNameQuality_lean_why_repeated": "Andere Links mit demselben Text führen woandershin, und kein Text und keine Überschrift in ihrer Nähe unterscheidet sie.",
       "linkNameQuality_lean_caution_repeated": "Das Layout der Seite, etwa eine Karte mit Bild oder eine Überschrift, nach der der Link nicht steht, kann jeden Link dennoch verständlich machen.",
+      "linkNameQualityLinkOnly_title": "Der Text eines Links sollte allein sagen, wohin er führt",
+      "linkNameQualityLinkOnly_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte allgemeine Formulierung ist (z. B. „hier klicken“, „weiterlesen“), die nur der umgebende Text erklärt, zur manuellen Prüfung, ob der Linktext allein den Zweck klar macht.",
+      "linkNameQualityLinkOnly_summary_cantTell": "Der Name dieses Links (\"{{name}}\") ist eine allgemeine Formulierung, die nicht sagt, wohin er führt.",
+      "linkNameQualityLinkOnly_hint_cantTell": "Lassen Sie den Linktext sagen, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Herunterladen“, oder prüfen Sie, ob der umgebende Text das bereits klar macht.",
+      "linkNameQualityLinkOnly_summary_cantTell_formatName": "Der Name dieses Links (\"{{name}}\") nennt ein Dateiformat, aber nicht, um welches Dokument es geht.",
+      "linkNameQualityLinkOnly_hint_cantTell_formatName": "Nennen Sie das Dokument im Linktext oder in einem mit dem Link verbundenen Text oder einer Überschrift, etwa „Jahresbericht herunterladen (HTML)“ statt nur „HTML“.",
+      "linkNameQualityLinkOnly_lean_why_formatBesideName": "Ein anderer Link im selben Listenpunkt, Absatz oder in derselben Zelle nennt das Dokument, zu dem dieses Format gehört.",
+      "linkNameQualityLinkOnly_lean_caution_formatBesideName": "Prüfen Sie, ob der andere Link dasselbe Dokument nennt.",
+      "linkNameQualityLinkOnly_lean_why_repeated": "Andere Links mit demselben Text führen woandershin, und kein Text und keine Überschrift in ihrer Nähe unterscheidet sie.",
+      "linkNameQualityLinkOnly_lean_caution_repeated": "Das Layout der Seite, etwa eine Karte mit Bild oder eine Überschrift, nach der der Link nicht steht, kann jeden Link dennoch verständlich machen.",
+      "linkNameQualityLinkOnly_summary_cantTell_inContext": "Der Name dieses Links („{{name}}“) ist eine allgemeine Formulierung: Nur der Text um ihn herum sagt, wohin er führt.",
+      "linkNameQualityLinkOnly_hint_cantTell_inContext": "Formulieren Sie den Linktext selbst so, dass er sagt, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Hier klicken“, damit er auch allein verständlich ist, etwa in einer Linkliste.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -43375,10 +43477,24 @@ const RUNTIME_CATALOG = {
       "linkNameQuality_hint_cantTell": "Make the link text say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Download\", or check that the text around it already makes that clear.",
       "linkNameQuality_summary_cantTell_formatName": "This link's name (\"{{name}}\") gives a file format but not which document it is.",
       "linkNameQuality_hint_cantTell_formatName": "Name the document in the link text, or in text or a heading tied to the link, such as \"Download the annual report (HTML)\" rather than a bare \"HTML\".",
+      "linkNameQuality_summary_cantTell_inContext": "This link's name (\"{{name}}\") is a generic phrase: only the text around it says where it leads.",
+      "linkNameQuality_hint_cantTell_inContext": "Make the link text itself say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Click here\", so it is clear when read on its own, as in a list of links.",
       "linkNameQuality_lean_why_formatBesideName": "Another link in the same list item, paragraph or cell names the document this format belongs to.",
       "linkNameQuality_lean_caution_formatBesideName": "Check that the other link names this same document.",
       "linkNameQuality_lean_why_repeated": "Other links with the same text go to different places, and no text or heading near them tells them apart.",
       "linkNameQuality_lean_caution_repeated": "The page's layout, such as a card with an image or a heading the link is not placed after, may still make each link clear.",
+      "linkNameQualityLinkOnly_title": "A link's text should say where it leads on its own",
+      "linkNameQualityLinkOnly_description": "Flags links whose full accessible name is a known generic phrase (e.g. \"click here\", \"read more\") that only the text around them explains, for manual review of whether the link text alone makes the purpose clear.",
+      "linkNameQualityLinkOnly_summary_cantTell": "This link's name (\"{{name}}\") is a generic phrase that doesn't say where it leads.",
+      "linkNameQualityLinkOnly_hint_cantTell": "Make the link text say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Download\", or check that the text around it already makes that clear.",
+      "linkNameQualityLinkOnly_summary_cantTell_formatName": "This link's name (\"{{name}}\") gives a file format but not which document it is.",
+      "linkNameQualityLinkOnly_hint_cantTell_formatName": "Name the document in the link text, or in text or a heading tied to the link, such as \"Download the annual report (HTML)\" rather than a bare \"HTML\".",
+      "linkNameQualityLinkOnly_lean_why_formatBesideName": "Another link in the same list item, paragraph or cell names the document this format belongs to.",
+      "linkNameQualityLinkOnly_lean_caution_formatBesideName": "Check that the other link names this same document.",
+      "linkNameQualityLinkOnly_lean_why_repeated": "Other links with the same text go to different places, and no text or heading near them tells them apart.",
+      "linkNameQualityLinkOnly_lean_caution_repeated": "The page's layout, such as a card with an image or a heading the link is not placed after, may still make each link clear.",
+      "linkNameQualityLinkOnly_summary_cantTell_inContext": "This link's name (\"{{name}}\") is a generic phrase: only the text around it says where it leads.",
+      "linkNameQualityLinkOnly_hint_cantTell_inContext": "Make the link text itself say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Click here\", so it is clear when read on its own, as in a list of links.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -45110,10 +45226,24 @@ const RUNTIME_CATALOG = {
       "linkNameQuality_hint_cantTell": "Hacer que el texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios 2026\" en vez de \"Descargar\", o comprobar que el texto que lo rodea ya lo deja claro.",
       "linkNameQuality_summary_cantTell_formatName": "El nombre de este enlace (\"{{name}}\") indica un formato de archivo, pero no de qué documento se trata.",
       "linkNameQuality_hint_cantTell_formatName": "Nombrar el documento en el texto del enlace, o en un texto o encabezado asociado al enlace, como \"Descargar el informe anual (HTML)\" en vez de solo \"HTML\".",
+      "linkNameQuality_summary_cantTell_inContext": "El nombre de este enlace (\"{{name}}\") es una frase genérica: solo el texto que lo rodea dice adónde lleva.",
+      "linkNameQuality_hint_cantTell_inContext": "Haz que el propio texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios de 2026\" en lugar de \"Haz clic aquí\", para que se entienda leído por sí solo, como en una lista de enlaces.",
       "linkNameQuality_lean_why_formatBesideName": "Otro enlace del mismo elemento de lista, párrafo o celda nombra el documento al que pertenece este formato.",
       "linkNameQuality_lean_caution_formatBesideName": "Comprobar que el otro enlace nombra este mismo documento.",
       "linkNameQuality_lean_why_repeated": "Otros enlaces con el mismo texto llevan a otros sitios, y ningún texto ni encabezado cercano permite distinguirlos.",
       "linkNameQuality_lean_caution_repeated": "La disposición de la página, como una tarjeta con imagen o un encabezado tras el que no está el enlace, puede aún dejar claro cada enlace.",
+      "linkNameQualityLinkOnly_title": "El texto de un enlace debería decir por sí solo adónde lleva",
+      "linkNameQualityLinkOnly_description": "Señala los enlaces cuyo nombre accesible completo es una frase genérica conocida (p. ej., \"haz clic aquí\", \"leer más\") que solo explica el texto que los rodea, para revisar manualmente si el texto del enlace por sí solo deja claro su propósito.",
+      "linkNameQualityLinkOnly_summary_cantTell": "El nombre de este enlace (\"{{name}}\") es una frase genérica que no dice adónde lleva.",
+      "linkNameQualityLinkOnly_hint_cantTell": "Hacer que el texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios 2026\" en vez de \"Descargar\", o comprobar que el texto que lo rodea ya lo deja claro.",
+      "linkNameQualityLinkOnly_summary_cantTell_formatName": "El nombre de este enlace (\"{{name}}\") indica un formato de archivo, pero no de qué documento se trata.",
+      "linkNameQualityLinkOnly_hint_cantTell_formatName": "Nombrar el documento en el texto del enlace, o en un texto o encabezado asociado al enlace, como \"Descargar el informe anual (HTML)\" en vez de solo \"HTML\".",
+      "linkNameQualityLinkOnly_lean_why_formatBesideName": "Otro enlace del mismo elemento de lista, párrafo o celda nombra el documento al que pertenece este formato.",
+      "linkNameQualityLinkOnly_lean_caution_formatBesideName": "Comprobar que el otro enlace nombra este mismo documento.",
+      "linkNameQualityLinkOnly_lean_why_repeated": "Otros enlaces con el mismo texto llevan a otros sitios, y ningún texto ni encabezado cercano permite distinguirlos.",
+      "linkNameQualityLinkOnly_lean_caution_repeated": "La disposición de la página, como una tarjeta con imagen o un encabezado tras el que no está el enlace, puede aún dejar claro cada enlace.",
+      "linkNameQualityLinkOnly_summary_cantTell_inContext": "El nombre de este enlace (\"{{name}}\") es una frase genérica: solo el texto que lo rodea dice adónde lleva.",
+      "linkNameQualityLinkOnly_hint_cantTell_inContext": "Haz que el propio texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios de 2026\" en lugar de \"Haz clic aquí\", para que se entienda leído por sí solo, como en una lista de enlaces.",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -46845,10 +46975,24 @@ const RUNTIME_CATALOG = {
       "linkNameQuality_hint_cantTell": "Faites dire au texte du lien où il mène ou ce qu’il fait, comme « Télécharger le guide tarifaire 2026 » plutôt que « Télécharger », ou vérifiez que le texte autour le précise déjà.",
       "linkNameQuality_summary_cantTell_formatName": "Le nom de ce lien (\"{{name}}\") donne un format de fichier, mais pas le document dont il s’agit.",
       "linkNameQuality_hint_cantTell_formatName": "Nommez le document dans le texte du lien, ou dans un texte ou un titre associé au lien, comme « Télécharger le rapport annuel (HTML) » plutôt que « HTML » seul.",
+      "linkNameQuality_summary_cantTell_inContext": "Le nom de ce lien (« {{name}} ») est une formule générique : seul le texte qui l’entoure dit où il mène.",
+      "linkNameQuality_hint_cantTell_inContext": "Faites dire au texte du lien lui-même où il mène ou ce qu’il fait, par exemple « Télécharger la grille tarifaire 2026 » plutôt que « Cliquez ici », pour qu’il soit clair lu seul, comme dans une liste de liens.",
       "linkNameQuality_lean_why_formatBesideName": "Un autre lien du même élément de liste, paragraphe ou cellule nomme le document auquel ce format appartient.",
       "linkNameQuality_lean_caution_formatBesideName": "Vérifiez que l’autre lien nomme bien ce même document.",
       "linkNameQuality_lean_why_repeated": "D’autres liens portant le même texte mènent ailleurs, et aucun texte ni titre proche ne permet de les distinguer.",
       "linkNameQuality_lean_caution_repeated": "La mise en page, comme une carte avec une image ou un titre que le lien ne suit pas, peut encore rendre chaque lien clair.",
+      "linkNameQualityLinkOnly_title": "Le texte d’un lien devrait dire à lui seul où il mène",
+      "linkNameQualityLinkOnly_description": "Signale les liens dont le nom accessible complet est une formule générique connue (p. ex. « cliquez ici », « lire la suite ») que seul le texte qui les entoure explique, pour vérifier manuellement si le texte du lien suffit à lui seul à en indiquer le but.",
+      "linkNameQualityLinkOnly_summary_cantTell": "Le nom de ce lien (\"{{name}}\") est une formule générique qui ne dit pas où il mène.",
+      "linkNameQualityLinkOnly_hint_cantTell": "Faites dire au texte du lien où il mène ou ce qu’il fait, comme « Télécharger le guide tarifaire 2026 » plutôt que « Télécharger », ou vérifiez que le texte autour le précise déjà.",
+      "linkNameQualityLinkOnly_summary_cantTell_formatName": "Le nom de ce lien (\"{{name}}\") donne un format de fichier, mais pas le document dont il s’agit.",
+      "linkNameQualityLinkOnly_hint_cantTell_formatName": "Nommez le document dans le texte du lien, ou dans un texte ou un titre associé au lien, comme « Télécharger le rapport annuel (HTML) » plutôt que « HTML » seul.",
+      "linkNameQualityLinkOnly_lean_why_formatBesideName": "Un autre lien du même élément de liste, paragraphe ou cellule nomme le document auquel ce format appartient.",
+      "linkNameQualityLinkOnly_lean_caution_formatBesideName": "Vérifiez que l’autre lien nomme bien ce même document.",
+      "linkNameQualityLinkOnly_lean_why_repeated": "D’autres liens portant le même texte mènent ailleurs, et aucun texte ni titre proche ne permet de les distinguer.",
+      "linkNameQualityLinkOnly_lean_caution_repeated": "La mise en page, comme une carte avec une image ou un titre que le lien ne suit pas, peut encore rendre chaque lien clair.",
+      "linkNameQualityLinkOnly_summary_cantTell_inContext": "Le nom de ce lien (« {{name}} ») est une formule générique : seul le texte qui l’entoure dit où il mène.",
+      "linkNameQualityLinkOnly_hint_cantTell_inContext": "Faites dire au texte du lien lui-même où il mène ou ce qu’il fait, par exemple « Télécharger la grille tarifaire 2026 » plutôt que « Cliquez ici », pour qu’il soit clair lu seul, comme dans une liste de liens.",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -48580,10 +48724,24 @@ const RUNTIME_CATALOG = {
       "linkNameQuality_hint_cantTell": "「ダウンロード」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキストでリンク先や働きを伝えるか、周りのテキストですでに明らかになっているか確認してください。",
       "linkNameQuality_summary_cantTell_formatName": "このリンクの名前「{{name}}」はファイル形式を示していますが、どの文書なのかは示していません。",
       "linkNameQuality_hint_cantTell_formatName": "単に「HTML」とするのではなく「年次報告書をダウンロード (HTML)」のように、リンクテキストか、リンクに結び付いたテキストや見出しで文書名を示してください。",
+      "linkNameQuality_summary_cantTell_inContext": "このリンクの名前 (\"{{name}}\") は一般的な語句です。リンク先を示しているのは周囲のテキストだけです。",
+      "linkNameQuality_hint_cantTell_inContext": "リンクの一覧のように単独で読んでもわかるよう、「こちらをクリック」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキスト自体でリンク先や動作を示してください。",
       "linkNameQuality_lean_why_formatBesideName": "同じリスト項目、段落、セル内の別のリンクが、この形式が属する文書を示しています。",
       "linkNameQuality_lean_caution_formatBesideName": "もう一方のリンクが同じ文書を示していることを確認してください。",
       "linkNameQuality_lean_why_repeated": "同じテキストのほかのリンクが別の場所に移動し、近くにそれらを区別するテキストや見出しがありません。",
       "linkNameQuality_lean_caution_repeated": "画像付きのカードや、リンクの前にはない見出しなど、ページのレイアウトによって各リンクが明確になる場合があります。",
+      "linkNameQualityLinkOnly_title": "リンクのテキストは、それだけでリンク先を示すべき",
+      "linkNameQualityLinkOnly_description": "周囲のテキストだけが説明している既知の一般的な語句 (例: 「こちらをクリック」「続きを読む」) を完全なアクセシブルな名前とするリンクを、リンクテキストだけで目的が明確かどうかの手動確認のために示します。",
+      "linkNameQualityLinkOnly_summary_cantTell": "このリンクの名前「{{name}}」は、リンク先を伝えない一般的な語句です。",
+      "linkNameQualityLinkOnly_hint_cantTell": "「ダウンロード」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキストでリンク先や働きを伝えるか、周りのテキストですでに明らかになっているか確認してください。",
+      "linkNameQualityLinkOnly_summary_cantTell_formatName": "このリンクの名前「{{name}}」はファイル形式を示していますが、どの文書なのかは示していません。",
+      "linkNameQualityLinkOnly_hint_cantTell_formatName": "単に「HTML」とするのではなく「年次報告書をダウンロード (HTML)」のように、リンクテキストか、リンクに結び付いたテキストや見出しで文書名を示してください。",
+      "linkNameQualityLinkOnly_lean_why_formatBesideName": "同じリスト項目、段落、セル内の別のリンクが、この形式が属する文書を示しています。",
+      "linkNameQualityLinkOnly_lean_caution_formatBesideName": "もう一方のリンクが同じ文書を示していることを確認してください。",
+      "linkNameQualityLinkOnly_lean_why_repeated": "同じテキストのほかのリンクが別の場所に移動し、近くにそれらを区別するテキストや見出しがありません。",
+      "linkNameQualityLinkOnly_lean_caution_repeated": "画像付きのカードや、リンクの前にはない見出しなど、ページのレイアウトによって各リンクが明確になる場合があります。",
+      "linkNameQualityLinkOnly_summary_cantTell_inContext": "このリンクの名前 (\"{{name}}\") は一般的な語句です。リンク先を示しているのは周囲のテキストだけです。",
+      "linkNameQualityLinkOnly_hint_cantTell_inContext": "リンクの一覧のように単独で読んでもわかるよう、「こちらをクリック」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキスト自体でリンク先や動作を示してください。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",
@@ -48963,6 +49121,7 @@ const RULE_MODULES = [
   "./checks/automatic/link-in-text-block.js",
   "./checks/automatic/link-name-present.js",
   "./checks/manual/link-name-quality-manual.js",
+  "./checks/manual/link-name-quality-link-only-manual.js",
   "./checks/automatic/list-children-valid.js",
   "./checks/automatic/listbox-name-present.js",
   "./checks/automatic/listitem-parent-valid.js",
@@ -55720,7 +55879,93 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "settings": [
+      "whenContextFound"
+    ],
+    "variantSettings": [
+      {
+        "name": "whenContextFound",
+        "default": "clear",
+        "values": [
+          "clear",
+          "ask"
+        ],
+        "description": "A generic link name whose list item, paragraph, cell or description says where it leads: not reported ('clear'); or reported, and only such links, as GENERIC_LINK_TEXT_IN_CONTEXT ('ask').",
+        "basis": "WCAG 2.4.4 counts the programmatically determined link context (clear); WCAG 2.4.9 asks for the purpose from the link text alone, and F84 fails a generic link only its surrounding text explains (ask)"
+      }
+    ]
+  },
+  {
+    "ruleId": "link-name-quality-link-only",
+    "title": "A link's text should say where it leads on its own",
+    "description": "Flags links whose full accessible name is a known generic phrase (e.g. \"click here\", \"read more\") that only the text around them explains, for manual review of whether the link text alone makes the purpose clear.",
+    "i18n": {
+      "titleKey": "linkNameQualityLinkOnly_title",
+      "descriptionKey": "linkNameQualityLinkOnly_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aaa",
+      "wcag249",
+      "navigation",
+      "quality",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.9"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.9",
+        "title": "Link Purpose (Link Only)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#link-purpose-link-only",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html"
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.9": [
+          "link-text-alone-clear"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null,
+    "variant": {
+      "of": "link-name-quality",
+      "config": {
+        "whenContextFound": "ask"
+      },
+      "messages": {
+        "from": "linkNameQuality",
+        "to": "linkNameQualityLinkOnly"
+      }
+    },
+    "settings": [
+      "whenContextFound"
+    ]
   },
   {
     "ruleId": "list-children-valid",
@@ -60705,7 +60950,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "checksIds": [
       "identical-links-same-purpose",
       "link-name-present",
-      "link-name-quality"
+      "link-name-quality",
+      "link-name-quality-link-only"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_249_link_purpose_link_only.title",
@@ -93816,6 +94062,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
+  // Settings (see `settings` below): 2.4.4's by default, where context found
+  // around a generic link clears it. The variant link-name-quality-link-only
+  // (2.4.9) passes 'ask' in ctx.config: then only those links are reported.
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const askWhenContextFound = cfg.whenContextFound === 'ask';
+
   const GENERIC_LINK_TEXT_EN = new Set([
     'click here',
     'here',
@@ -94450,7 +94702,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!isGeneric && !isFormatName) continue;
 
     const tier = isGeneric ? 'generic' : 'format';
-    if (hasAdequateContext(el, tier)) continue;
+    const hasContext = hasAdequateContext(el, tier);
+    // 2.4.9 (askWhenContextFound): a generic name only its context explains.
+    // One with no context is the 2.4.4 finding below, which already counts
+    // toward 2.4.9; a bare format name is left to it too.
+    if (askWhenContextFound ? !isGeneric || !hasContext : hasContext) continue;
 
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
@@ -94458,33 +94714,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const name = rawName.trim();
     const linkKind = helpers.getLinkKind(el);
-    const reportOpts = isGeneric
+    const reportOpts = askWhenContextFound
       ? {
-          summary: `This link's name ("${name}") is a generic phrase that doesn't say where it leads.`,
-          hint: 'Make the link text say where it leads or what it does, such as "Download the 2026 pricing guide" rather than "Download", or check that the text around it already makes that clear.',
+          summary: `This link's name ("${name}") is a generic phrase: only the text around it says where it leads.`,
+          hint: 'Make the link text itself say where it leads or what it does, such as "Download the 2026 pricing guide" rather than "Click here", so it is clear when read on its own, as in a list of links.',
           i18n: {
-            summaryKey: 'linkNameQuality_summary_cantTell',
-            hintKey: 'linkNameQuality_hint_cantTell',
+            summaryKey: 'linkNameQuality_summary_cantTell_inContext',
+            hintKey: 'linkNameQuality_hint_cantTell_inContext',
             params: { name }
           },
           data: {
-            details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized, linkKind },
+            details: {
+              reasonCode: 'GENERIC_LINK_TEXT_IN_CONTEXT',
+              normalizedName: normalized,
+              linkKind
+            },
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
           }
         }
-      : {
-          summary: `This link's name ("${name}") gives a file format but not which document it is.`,
-          hint: 'Name the document in the link text, or in text or a heading tied to the link, such as "Download the annual report (HTML)" rather than a bare "HTML".',
-          i18n: {
-            summaryKey: 'linkNameQuality_summary_cantTell_formatName',
-            hintKey: 'linkNameQuality_hint_cantTell_formatName',
-            params: { name }
-          },
-          data: {
-            details: { reasonCode: 'AMBIGUOUS_FORMAT_NAME', normalizedName: normalized, linkKind },
-            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+      : isGeneric
+        ? {
+            summary: `This link's name ("${name}") is a generic phrase that doesn't say where it leads.`,
+            hint: 'Make the link text say where it leads or what it does, such as "Download the 2026 pricing guide" rather than "Download", or check that the text around it already makes that clear.',
+            i18n: {
+              summaryKey: 'linkNameQuality_summary_cantTell',
+              hintKey: 'linkNameQuality_hint_cantTell',
+              params: { name }
+            },
+            data: {
+              details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized, linkKind },
+              visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+            }
           }
-        };
+        : {
+            summary: `This link's name ("${name}") gives a file format but not which document it is.`,
+            hint: 'Name the document in the link text, or in text or a heading tied to the link, such as "Download the annual report (HTML)" rather than a bare "HTML".',
+            i18n: {
+              summaryKey: 'linkNameQuality_summary_cantTell_formatName',
+              hintKey: 'linkNameQuality_hint_cantTell_formatName',
+              params: { name }
+            },
+            data: {
+              details: {
+                reasonCode: 'AMBIGUOUS_FORMAT_NAME',
+                normalizedName: normalized,
+                linkKind
+              },
+              visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+            }
+          };
 
     const occurrence = helpers.reportOccurrence(el, reportOpts);
     occurrences.push(occurrence);
@@ -94492,8 +94770,745 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // A lean is advice: a failure reading it costs the leans, not the findings.
+  // The leans weigh context the 2.4.4 findings lack, so a 2.4.9 finding,
+  // which has context by definition, gets none.
   try {
-    addLeans(flagged);
+    if (!askWhenContextFound) addLeans(flagged);
+  } catch {
+    for (const f of flagged) delete f.occurrence.lean;
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
+  }
+
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "link-name-quality-link-only": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  // Settings (see `settings` below): 2.4.4's by default, where context found
+  // around a generic link clears it. The variant link-name-quality-link-only
+  // (2.4.9) passes 'ask' in ctx.config: then only those links are reported.
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const askWhenContextFound = cfg.whenContextFound === 'ask';
+
+  const GENERIC_LINK_TEXT_EN = new Set([
+    'click here',
+    'here',
+    'click',
+    'more',
+    'more info',
+    'more information',
+    'read more',
+    'learn more',
+    'continue reading',
+    'continue',
+    'details',
+    'more details',
+    'link',
+    'this link',
+    'go',
+    'download',
+    'view more',
+    'see more',
+    'info'
+  ]);
+
+  const GENERIC_LINK_TEXT = {
+    en: GENERIC_LINK_TEXT_EN,
+    de: new Set([
+      'hier klicken',
+      'klicken sie hier',
+      'hier',
+      'klicken',
+      'mehr',
+      'mehr info',
+      'mehr infos',
+      'mehr informationen',
+      'weiterlesen',
+      'mehr lesen',
+      'mehr erfahren',
+      'weiter',
+      'details',
+      'mehr details',
+      'link',
+      'dieser link',
+      'los',
+      'herunterladen',
+      'mehr anzeigen',
+      'info'
+    ]),
+    es: new Set([
+      'haga clic aquí',
+      'haz clic aquí',
+      'clic aquí',
+      'pulse aquí',
+      'pincha aquí',
+      'aquí',
+      'clic',
+      'más',
+      'más info',
+      'más información',
+      'leer más',
+      'saber más',
+      'seguir leyendo',
+      'continuar leyendo',
+      'continuar',
+      'detalles',
+      'más detalles',
+      'enlace',
+      'este enlace',
+      'ir',
+      'descargar',
+      'ver más',
+      'info'
+    ]),
+    fr: new Set([
+      'cliquez ici',
+      'cliquer ici',
+      'ici',
+      'cliquez',
+      'plus',
+      "plus d'infos",
+      "plus d'informations",
+      'en savoir plus',
+      'lire la suite',
+      'la suite',
+      'suite',
+      'continuer',
+      'détails',
+      'plus de détails',
+      'lien',
+      'ce lien',
+      'télécharger',
+      'voir plus',
+      'info',
+      "plus d'info",
+      'découvrir',
+      'en découvrir plus',
+      'découvrir plus',
+      'pour en savoir plus',
+      'savoir plus',
+      'en lire plus',
+      'lire',
+      "lire l'article",
+      'continuer la lecture',
+      'voir',
+      'voir tout',
+      'tout voir',
+      'voir le détail',
+      'voir les détails',
+      'consulter',
+      'accéder',
+      'accédez'
+    ]),
+    ja: new Set([
+      'こちら',
+      'ここ',
+      'こちらをクリック',
+      'ここをクリック',
+      'クリック',
+      '詳しく',
+      '詳しくは',
+      '詳しくはこちら',
+      '詳細',
+      '詳細はこちら',
+      '詳細を見る',
+      'もっと見る',
+      'もっと読む',
+      'さらに詳しく',
+      '続きを読む',
+      '続き',
+      'リンク',
+      'このリンク',
+      'ダウンロード',
+      '情報'
+    ])
+  };
+
+  const FORMAT_NAME_LINK_TEXT = new Set([
+    'html',
+    'pdf',
+    'epub',
+    'txt',
+    'plain text',
+    'doc',
+    'docx',
+    'xml',
+    'zip',
+    'mp3',
+    'mp4',
+    'csv',
+    'xls',
+    'xlsx',
+    'ppt',
+    'pptx',
+    'json',
+    'rtf'
+  ]);
+
+  const CONTEXT_BLOCK_TAGS = new Set(['td', 'th', 'p', 'dd', 'blockquote', 'figcaption', 'dt']);
+
+  // Trims the characters in `chars` from the end of s by stepping back over
+  // them: a regex like /[.,]+$/ retries the run from every position in it,
+  // which takes seconds on a long value.
+  function trimEndOf(s, chars) {
+    let end = s.length;
+    while (end > 0 && chars.includes(s[end - 1])) end--;
+    return s.slice(0, end);
+  }
+
+  // NFKC folds full-width letters and punctuation (！, ＞) into their ASCII
+  // forms, and the curly apostrophe is folded so "plus d’infos" matches.
+  // Trailing arrows ("Read more »", 「詳しくはこちら→」) are decoration, not
+  // part of the phrase. White space is collapsed first, so the only white
+  // space left to trim is a plain space.
+  function normalize(s) {
+    const folded = (s == null ? '' : String(s))
+      .normalize('NFKC')
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+    return trimEndOf(folded, ' .,;:!?。、>»›→').trim();
+  }
+
+  // Primary language subtag of the nearest lang attribute, crossing shadow
+  // roots; '' when none is declared. Phrase lists are matched in English
+  // plus this language, so a word that is generic in one language ("plus"
+  // in French) is not flagged when it is a real name in another.
+  function primaryLangOf(node) {
+    let n = node;
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; n && steps < 100000; steps++) {
+      if (dom.nodeType(n) === 1 && dom.get(n, 'getAttribute')) {
+        const v = dom.getAttribute(n, 'lang');
+        if (v != null) return v.trim().split('-')[0].toLowerCase();
+      }
+      n = dom.parentNode(n) || dom.host(n) || null;
+    }
+    return '';
+  }
+
+  function inPhraseList(byLang, normalized, lang) {
+    if (byLang.en.has(normalized)) return true;
+    // With no language declared the link may be in any of them, so every
+    // list applies.
+    if (!lang) return Object.keys(byLang).some((k) => byLang[k].has(normalized));
+    return !!(
+      lang !== 'en' &&
+      Object.prototype.hasOwnProperty.call(byLang, lang) &&
+      byLang[lang].has(normalized)
+    );
+  }
+
+  // Phrasing elements whose text belongs to the sentence, list item or cell
+  // they sit in: "<li><strong>Ulysses</strong> <a>Read more</a></li>" has
+  // "Ulysses" as its context. Block descendants (a nested list, a table)
+  // hold their own items and are not read, so a list item heading a nested
+  // list of links is credited only with its own text.
+  const INLINE_CONTEXT_TAGS = new Set([
+    'abbr',
+    'b',
+    'bdi',
+    'bdo',
+    'big',
+    'cite',
+    'code',
+    'data',
+    'del',
+    'dfn',
+    'em',
+    'font',
+    'i',
+    'ins',
+    'kbd',
+    'label',
+    'mark',
+    'nobr',
+    'q',
+    's',
+    'samp',
+    'small',
+    'span',
+    'strike',
+    'strong',
+    'sub',
+    'sup',
+    'time',
+    'tt',
+    'u',
+    'var'
+  ]);
+
+  function isAccEligible(el) {
+    const r = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    return typeof r === 'boolean' ? r : !!(r && r.eligible);
+  }
+
+  // The text of `el` that sits outside any link: its own text nodes and
+  // those of its inline descendants exposed to assistive technology. Another
+  // link's text is left out on purpose: it names that link's destination,
+  // and counting it would let a row of bare "PDF" and "HTML" links, or of
+  // "Read more" links, give each other context. Links met on the way are
+  // collected in `links` when it is given.
+  //
+  // Read once per element: every link in a block asks for that block's
+  // text, and every link under one parent for the parent's, so reading it
+  // again for each made the rule quadratic in the links a block holds.
+  const contextCache = new Map();
+  function contextTextOutsideLinks(el, links) {
+    let entry = contextCache.get(el);
+    if (!entry) {
+      entry = readContextOutsideLinks(el);
+      contextCache.set(el, entry);
+    }
+    if (links) for (const l of entry.links) links.push(l);
+    return entry.text;
+  }
+
+  function readContextOutsideLinks(el) {
+    const links = [];
+    let out = '';
+    // Bounded as a safety net only: a context block holds a few nodes.
+    let budget = 5000;
+    (function walk(node) {
+      const kids = dom.childNodes(node) || [];
+      for (let i = 0; i < kids.length && budget > 0; i++) {
+        budget -= 1;
+        const n = kids[i];
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          out += dom.nodeValue(n) || '';
+          continue;
+        }
+        if (type !== 1 || !dom.get(n, 'getAttribute')) continue;
+        if (isLinkCandidate(n)) {
+          links.push(n);
+          continue;
+        }
+        const tag = String(dom.localName(n) || '').toLowerCase();
+        if (!INLINE_CONTEXT_TAGS.has(tag) || !isAccEligible(n)) continue;
+        out += ' ';
+        walk(n);
+        out += ' ';
+      }
+    })(el);
+    return { text: out.replace(/\s+/g, ' ').trim(), links };
+  }
+
+  function isSubstantiveContext(text) {
+    return !!text && text.length >= 3 && /\p{L}/u.test(text);
+  }
+
+  // The nearest enclosing list item/table cell/paragraph and its text
+  // outside links, climbing through a wrapping <ul>/<ol> into an outer <li>
+  // when the immediate one carries none of its own (a heading li wrapping a
+  // nested list of links, e.g. "Ulysses" above per-format download links).
+  // `block` is the first such element met, `text` the first text found.
+  function nearestBlockContext(el) {
+    let node = dom.parentElement(el);
+    let liHops = 0;
+    let block = null;
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; node && steps < 100000; steps++) {
+      const tag = (dom.tagName(node) || '').toLowerCase();
+      if (tag === 'li') {
+        if (!block) block = node;
+        const text = contextTextOutsideLinks(node);
+        if (text) return { block, text };
+        liHops += 1;
+        if (liHops >= 4) return { block, text: '' };
+        const list = dom.parentElement(node);
+        node = list ? dom.parentElement(list) : null;
+        continue;
+      }
+      if (CONTEXT_BLOCK_TAGS.has(tag))
+        return { block: block || node, text: contextTextOutsideLinks(node) };
+      return { block, text: '' };
+    }
+    return { block, text: '' };
+  }
+
+  function describedByContextText(el) {
+    const describedBy = dom.get(el, 'getAttribute')
+      ? dom.getAttribute(el, 'aria-describedby')
+      : null;
+    if (!describedBy || !describedBy.trim() || !helpers.getTextFromIdRefs) return '';
+    try {
+      const info = helpers.getTextFromIdRefs(describedBy, ctx, undefined, el);
+      return info && info.text ? info.text.replace(/\s+/g, ' ').trim() : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // A table's first-row header text, when the link sits in a later row of
+  // the same table -- naming the row's subject is exactly what turns a
+  // bare format name ("HTML") into a link whose destination is clear.
+  function firstRowHeaderText(el) {
+    const cell = dom.get(el, 'closest') ? dom.closest(el, 'td, th') : null;
+    if (!cell) return '';
+    const table = dom.get(cell, 'closest') ? dom.closest(cell, 'table') : null;
+    if (!table || !table.rows || !table.rows.length) return '';
+    const headerRow = table.rows[0];
+    const cellRow = dom.get(cell, 'closest') ? dom.closest(cell, 'tr') : null;
+    if (!cellRow || headerRow === cellRow) return '';
+    const ths = dom.get(headerRow, 'querySelectorAll') ? dom.querySelectorAll(headerRow, 'th') : [];
+    if (!ths.length) return '';
+    return Array.prototype.map
+      .call(ths, (th) => dom.textContent(th) || '')
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function hasAdequateContext(el, tier) {
+    if (isSubstantiveContext(describedByContextText(el))) return true;
+    if (isSubstantiveContext(nearestBlockContext(el).text)) return true;
+    if (tier === 'format' && isSubstantiveContext(firstRowHeaderText(el))) return true;
+    return false;
+  }
+
+  // The URL a link leads to, '' when it has none to compare (a role="link"
+  // element without href). `.href` on an SVG <a> is not a string.
+  function resolvedHref(el) {
+    try {
+      const h = dom.get(el, 'href');
+      if (typeof h === 'string' && h) return h;
+      const raw = dom.getAttribute(el, 'href') || dom.getAttribute(el, 'xlink:href') || '';
+      return raw ? new URL(raw, dom.baseURI(dom.ownerDocument(el))).href : '';
+    } catch {
+      return '';
+    }
+  }
+
+  let headingList = null;
+  function exposedHeadings() {
+    if (headingList) return headingList;
+    const found = helpers.queryAll('h1, h2, h3, h4, h5, h6, [role~="heading" i]') || [];
+    headingList = Array.prototype.filter.call(found, (h) => {
+      const role = helpers.aria.getAuthorRole(h);
+      const isHeading = role ? role === 'heading' : /^h[1-6]$/.test(String(dom.localName(h)));
+      return isHeading && isAccEligible(h);
+    });
+    return headingList;
+  }
+
+  // Each element's place in its document's tree order, read once. Asking
+  // compareDocumentPosition of every heading for every link made the rule
+  // quadratic in the headings and links, and Chromium walks the siblings
+  // to answer it, which made it cubic on a long flat page.
+  let treeOrder = null;
+  function treeOrderOf(node) {
+    if (!treeOrder) {
+      treeOrder = new Map();
+      try {
+        const all = dom.querySelectorAll(dom.ownerDocument(node), '*');
+        for (let i = 0; i < all.length; i++) treeOrder.set(all[i], i);
+      } catch {}
+    }
+    const p = treeOrder.get(node);
+    return p === undefined ? -1 : p;
+  }
+
+  // The exposed headings with their places: those in the document's own
+  // tree, which follow tree order when the list does (it may not, with
+  // several scan roots), and the others (in a shadow tree), by index.
+  let headingPlaces = null;
+  function placedHeadings() {
+    if (headingPlaces) return headingPlaces;
+    const list = exposedHeadings();
+    const inTree = [];
+    const others = [];
+    let ordered = true;
+    for (let i = 0; i < list.length; i++) {
+      const pos = treeOrderOf(list[i]);
+      if (pos < 0) {
+        others.push(i);
+        continue;
+      }
+      if (inTree.length && pos <= inTree[inTree.length - 1].pos) ordered = false;
+      inTree.push({ i, pos });
+    }
+    headingPlaces = { list, inTree, others, ordered };
+    return headingPlaces;
+  }
+
+  // The last heading before the link in document order (or the heading it
+  // sits in), which H80 lets serve as the link's context; null when none.
+  // That is the heading before the first one in the list the link doesn't
+  // follow (compareDocumentPosition's 4: the link follows the heading or is
+  // inside it), found by a binary search among the headings of the
+  // document's own tree, where following is a smaller place in tree order.
+  function nearestPrecedingHeading(el) {
+    const { list, inTree, others, ordered } = placedHeadings();
+    const elPos = treeOrderOf(el);
+    if (!ordered || elPos < 0) {
+      let last = null;
+      for (const h of list) {
+        if (h === el || !(dom.compareDocumentPosition(h, el) & 4)) break;
+        last = h;
+      }
+      return last;
+    }
+    let lo = 0;
+    let hi = inTree.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (inTree[mid].pos < elPos) lo = mid + 1;
+      else hi = mid;
+    }
+    let stop = lo < inTree.length ? inTree[lo].i : list.length;
+    for (const i of others) {
+      if (i >= stop) break;
+      const h = list[i];
+      if (h === el || !(dom.compareDocumentPosition(h, el) & 4)) {
+        stop = i;
+        break;
+      }
+    }
+    return stop > 0 ? list[stop - 1] : null;
+  }
+
+  // Context the rule doesn't look for but a person may read: a table row's
+  // other cells, a name on an enclosing element, a sentence in the link's
+  // own parent.
+  function hasOtherPossibleContext(el) {
+    // Document order across shadow trees is not defined.
+    if (dom.getRootNode(el) !== dom.ownerDocument(el)) return true;
+    if (dom.closest(el, 'td, th')) return true;
+    if (isSubstantiveContext(contextTextOutsideLinks(dom.parentElement(el) || el))) return true;
+    for (let n = dom.parentElement(el), steps = 0; n && steps < 100000; steps++) {
+      const tag = String(dom.localName(n) || '').toLowerCase();
+      if (tag === 'body' || tag === 'html') break;
+      if (dom.hasAttribute(n, 'aria-label') || dom.hasAttribute(n, 'aria-labelledby')) return true;
+      const role = helpers.aria.getAuthorRole(n);
+      if (role === 'cell' || role === 'gridcell' || role === 'row') return true;
+      n = dom.parentElement(n);
+    }
+    return false;
+  }
+
+  // A format name whose list item, paragraph or cell holds another link
+  // with a descriptive name ("<li><a>Annual report</a> (<a>PDF</a>)</li>"):
+  // that link names the document this one gives a format of.
+  function descriptiveSiblingLink(el) {
+    const { block } = nearestBlockContext(el);
+    if (!block) return null;
+    const links = [];
+    contextTextOutsideLinks(block, links);
+    for (const other of links) {
+      if (other === el || !isAccEligible(other)) continue;
+      const info = helpers.getNameFromContentInfo(other, ctx);
+      const n = normalize(info && typeof info.value === 'string' ? info.value : '');
+      if (!isSubstantiveContext(n)) continue;
+      if (inPhraseList(GENERIC_LINK_TEXT, n, primaryLangOf(other))) continue;
+      if (FORMAT_NAME_LINK_TEXT.has(n)) continue;
+      return n;
+    }
+    return null;
+  }
+
+  // Leans for the flagged links. A format name leans pass when a link
+  // beside it names the document. A link leans fail when another flagged
+  // link with the same name and reason goes elsewhere under the same
+  // nearest heading (or no heading), and nothing else near it could tell
+  // them apart: neither the text around them nor the heading can say which
+  // is which (F84; G53).
+  function addLeans(list) {
+    const groups = new Map();
+    for (const f of list) {
+      f.href = resolvedHref(f.el);
+      if (!f.href || hasOtherPossibleContext(f.el)) continue;
+      f.heading = nearestPrecedingHeading(f.el);
+      const key = f.tier + '\u0000' + f.normalized;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(f);
+    }
+    // The places each group's links go, per nearest heading, gathered once
+    // rather than for each link of the group.
+    const hrefsByHeading = new Map();
+    for (const [key, group] of groups) {
+      const byHeading = new Map();
+      for (const g of group) {
+        if (!byHeading.has(g.heading)) byHeading.set(g.heading, new Set());
+        byHeading.get(g.heading).add(g.href);
+      }
+      hrefsByHeading.set(key, byHeading);
+    }
+    for (const f of list) {
+      if (f.tier === 'format') {
+        const sibling = descriptiveSiblingLink(f.el);
+        if (sibling) {
+          f.occurrence.lean = {
+            toward: 'pass',
+            why: 'Another link in the same list item, paragraph or cell names the document this format belongs to.',
+            signals: [{ signal: 'descriptive-link-in-context', value: sibling }],
+            caution: 'Check that the other link names this same document.',
+            i18n: {
+              whyKey: 'linkNameQuality_lean_why_formatBesideName',
+              cautionKey: 'linkNameQuality_lean_caution_formatBesideName'
+            }
+          };
+          continue;
+        }
+      }
+      if (!f.href || f.heading === undefined) continue;
+      const byHeading = hrefsByHeading.get(f.tier + '\u0000' + f.normalized);
+      const hrefs = (byHeading && byHeading.get(f.heading)) || new Set();
+      if (hrefs.size < 2) continue;
+      f.occurrence.lean = {
+        toward: 'fail',
+        why: 'Other links with the same text go to different places, and no text or heading near them tells them apart.',
+        signals: [
+          { signal: 'same-name-different-href-count', value: hrefs.size },
+          {
+            signal: 'nearest-heading',
+            value: f.heading
+              ? String(dom.textContent(f.heading) || '')
+                  .replace(/\s+/g, ' ')
+                  .trim()
+              : null
+          }
+        ],
+        caution:
+          "The page's layout, such as a card with an image or a heading the link is not placed after, may still make each link clear.",
+        i18n: {
+          whyKey: 'linkNameQuality_lean_why_repeated',
+          cautionKey: 'linkNameQuality_lean_caution_repeated'
+        }
+      };
+    }
+  }
+
+  const NATIVE_LINK_TAGS = ['a', 'area'];
+  // A native link (<a>/<area> with href), or an element whose role attribute
+  // resolves to link: the first token naming a real role wins, in any case,
+  // so role="foo link" and role="LINK" count but role="button link" doesn't.
+  function isLinkCandidate(el) {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (NATIVE_LINK_TAGS.includes(tag) && dom.hasAttribute(el, 'href')) return true;
+    // A custom element's internals may make it a link.
+    return helpers.aria.getAuthorRole(el) === 'link';
+  }
+
+  const selector = 'a[href], area[href], [role~="link" i]';
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
+    : helpers.queryAll(selector);
+
+  const occurrences = [];
+  const flagged = [];
+  let applicableCount = 0;
+
+  for (const el of nodes) {
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (!isLinkCandidate(el)) continue;
+
+    const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    const eligible =
+      typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
+    if (!eligible) continue;
+
+    // The content names a link ahead of its title (accname 1.2), so
+    // `<a title="Read more">Annual report</a>` is "Annual report".
+    const nameInfo = helpers.getNameFromContentInfo(el, ctx);
+    const rawName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
+
+    const normalized = normalize(rawName);
+    if (!normalized) continue; // no name at all: link-name-present's concern, not this rule's.
+
+    applicableCount += 1;
+
+    const isGeneric = inPhraseList(GENERIC_LINK_TEXT, normalized, primaryLangOf(el));
+    const isFormatName = !isGeneric && FORMAT_NAME_LINK_TEXT.has(normalized);
+    if (!isGeneric && !isFormatName) continue;
+
+    const tier = isGeneric ? 'generic' : 'format';
+    const hasContext = hasAdequateContext(el, tier);
+    // 2.4.9 (askWhenContextFound): a generic name only its context explains.
+    // One with no context is the 2.4.4 finding below, which already counts
+    // toward 2.4.9; a bare format name is left to it too.
+    if (askWhenContextFound ? !isGeneric || !hasContext : hasContext) continue;
+
+    const eligInfo = helpers.getEligibilityInfo
+      ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+      : null;
+
+    const name = rawName.trim();
+    const linkKind = helpers.getLinkKind(el);
+    const reportOpts = askWhenContextFound
+      ? {
+          summary: `This link's name ("${name}") is a generic phrase: only the text around it says where it leads.`,
+          hint: 'Make the link text itself say where it leads or what it does, such as "Download the 2026 pricing guide" rather than "Click here", so it is clear when read on its own, as in a list of links.',
+          i18n: {
+            summaryKey: 'linkNameQuality_summary_cantTell_inContext',
+            hintKey: 'linkNameQuality_hint_cantTell_inContext',
+            params: { name }
+          },
+          data: {
+            details: {
+              reasonCode: 'GENERIC_LINK_TEXT_IN_CONTEXT',
+              normalizedName: normalized,
+              linkKind
+            },
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+          }
+        }
+      : isGeneric
+        ? {
+            summary: `This link's name ("${name}") is a generic phrase that doesn't say where it leads.`,
+            hint: 'Make the link text say where it leads or what it does, such as "Download the 2026 pricing guide" rather than "Download", or check that the text around it already makes that clear.',
+            i18n: {
+              summaryKey: 'linkNameQuality_summary_cantTell',
+              hintKey: 'linkNameQuality_hint_cantTell',
+              params: { name }
+            },
+            data: {
+              details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized, linkKind },
+              visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+            }
+          }
+        : {
+            summary: `This link's name ("${name}") gives a file format but not which document it is.`,
+            hint: 'Name the document in the link text, or in text or a heading tied to the link, such as "Download the annual report (HTML)" rather than a bare "HTML".',
+            i18n: {
+              summaryKey: 'linkNameQuality_summary_cantTell_formatName',
+              hintKey: 'linkNameQuality_hint_cantTell_formatName',
+              params: { name }
+            },
+            data: {
+              details: {
+                reasonCode: 'AMBIGUOUS_FORMAT_NAME',
+                normalizedName: normalized,
+                linkKind
+              },
+              visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+            }
+          };
+
+    const occurrence = helpers.reportOccurrence(el, reportOpts);
+    occurrences.push(occurrence);
+    flagged.push({ el, occurrence, tier, normalized });
+  }
+
+  // A lean is advice: a failure reading it costs the leans, not the findings.
+  // The leans weigh context the 2.4.4 findings lack, so a 2.4.9 finding,
+  // which has context by definition, gets none.
+  try {
+    if (!askWhenContextFound) addLeans(flagged);
   } catch {
     for (const f of flagged) delete f.occurrence.lean;
   }
@@ -114774,10 +115789,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQuality_hint_cantTell": "Lassen Sie den Linktext sagen, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Herunterladen“, oder prüfen Sie, ob der umgebende Text das bereits klar macht.",
       "linkNameQuality_summary_cantTell_formatName": "Der Name dieses Links (\"{{name}}\") nennt ein Dateiformat, aber nicht, um welches Dokument es geht.",
       "linkNameQuality_hint_cantTell_formatName": "Nennen Sie das Dokument im Linktext oder in einem mit dem Link verbundenen Text oder einer Überschrift, etwa „Jahresbericht herunterladen (HTML)“ statt nur „HTML“.",
+      "linkNameQuality_summary_cantTell_inContext": "Der Name dieses Links („{{name}}“) ist eine allgemeine Formulierung: Nur der Text um ihn herum sagt, wohin er führt.",
+      "linkNameQuality_hint_cantTell_inContext": "Formulieren Sie den Linktext selbst so, dass er sagt, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Hier klicken“, damit er auch allein verständlich ist, etwa in einer Linkliste.",
       "linkNameQuality_lean_why_formatBesideName": "Ein anderer Link im selben Listenpunkt, Absatz oder in derselben Zelle nennt das Dokument, zu dem dieses Format gehört.",
       "linkNameQuality_lean_caution_formatBesideName": "Prüfen Sie, ob der andere Link dasselbe Dokument nennt.",
       "linkNameQuality_lean_why_repeated": "Andere Links mit demselben Text führen woandershin, und kein Text und keine Überschrift in ihrer Nähe unterscheidet sie.",
       "linkNameQuality_lean_caution_repeated": "Das Layout der Seite, etwa eine Karte mit Bild oder eine Überschrift, nach der der Link nicht steht, kann jeden Link dennoch verständlich machen.",
+      "linkNameQualityLinkOnly_title": "Der Text eines Links sollte allein sagen, wohin er führt",
+      "linkNameQualityLinkOnly_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte allgemeine Formulierung ist (z. B. „hier klicken“, „weiterlesen“), die nur der umgebende Text erklärt, zur manuellen Prüfung, ob der Linktext allein den Zweck klar macht.",
+      "linkNameQualityLinkOnly_summary_cantTell": "Der Name dieses Links (\"{{name}}\") ist eine allgemeine Formulierung, die nicht sagt, wohin er führt.",
+      "linkNameQualityLinkOnly_hint_cantTell": "Lassen Sie den Linktext sagen, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Herunterladen“, oder prüfen Sie, ob der umgebende Text das bereits klar macht.",
+      "linkNameQualityLinkOnly_summary_cantTell_formatName": "Der Name dieses Links (\"{{name}}\") nennt ein Dateiformat, aber nicht, um welches Dokument es geht.",
+      "linkNameQualityLinkOnly_hint_cantTell_formatName": "Nennen Sie das Dokument im Linktext oder in einem mit dem Link verbundenen Text oder einer Überschrift, etwa „Jahresbericht herunterladen (HTML)“ statt nur „HTML“.",
+      "linkNameQualityLinkOnly_lean_why_formatBesideName": "Ein anderer Link im selben Listenpunkt, Absatz oder in derselben Zelle nennt das Dokument, zu dem dieses Format gehört.",
+      "linkNameQualityLinkOnly_lean_caution_formatBesideName": "Prüfen Sie, ob der andere Link dasselbe Dokument nennt.",
+      "linkNameQualityLinkOnly_lean_why_repeated": "Andere Links mit demselben Text führen woandershin, und kein Text und keine Überschrift in ihrer Nähe unterscheidet sie.",
+      "linkNameQualityLinkOnly_lean_caution_repeated": "Das Layout der Seite, etwa eine Karte mit Bild oder eine Überschrift, nach der der Link nicht steht, kann jeden Link dennoch verständlich machen.",
+      "linkNameQualityLinkOnly_summary_cantTell_inContext": "Der Name dieses Links („{{name}}“) ist eine allgemeine Formulierung: Nur der Text um ihn herum sagt, wohin er führt.",
+      "linkNameQualityLinkOnly_hint_cantTell_inContext": "Formulieren Sie den Linktext selbst so, dass er sagt, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Hier klicken“, damit er auch allein verständlich ist, etwa in einer Linkliste.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -116509,10 +117538,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQuality_hint_cantTell": "Make the link text say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Download\", or check that the text around it already makes that clear.",
       "linkNameQuality_summary_cantTell_formatName": "This link's name (\"{{name}}\") gives a file format but not which document it is.",
       "linkNameQuality_hint_cantTell_formatName": "Name the document in the link text, or in text or a heading tied to the link, such as \"Download the annual report (HTML)\" rather than a bare \"HTML\".",
+      "linkNameQuality_summary_cantTell_inContext": "This link's name (\"{{name}}\") is a generic phrase: only the text around it says where it leads.",
+      "linkNameQuality_hint_cantTell_inContext": "Make the link text itself say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Click here\", so it is clear when read on its own, as in a list of links.",
       "linkNameQuality_lean_why_formatBesideName": "Another link in the same list item, paragraph or cell names the document this format belongs to.",
       "linkNameQuality_lean_caution_formatBesideName": "Check that the other link names this same document.",
       "linkNameQuality_lean_why_repeated": "Other links with the same text go to different places, and no text or heading near them tells them apart.",
       "linkNameQuality_lean_caution_repeated": "The page's layout, such as a card with an image or a heading the link is not placed after, may still make each link clear.",
+      "linkNameQualityLinkOnly_title": "A link's text should say where it leads on its own",
+      "linkNameQualityLinkOnly_description": "Flags links whose full accessible name is a known generic phrase (e.g. \"click here\", \"read more\") that only the text around them explains, for manual review of whether the link text alone makes the purpose clear.",
+      "linkNameQualityLinkOnly_summary_cantTell": "This link's name (\"{{name}}\") is a generic phrase that doesn't say where it leads.",
+      "linkNameQualityLinkOnly_hint_cantTell": "Make the link text say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Download\", or check that the text around it already makes that clear.",
+      "linkNameQualityLinkOnly_summary_cantTell_formatName": "This link's name (\"{{name}}\") gives a file format but not which document it is.",
+      "linkNameQualityLinkOnly_hint_cantTell_formatName": "Name the document in the link text, or in text or a heading tied to the link, such as \"Download the annual report (HTML)\" rather than a bare \"HTML\".",
+      "linkNameQualityLinkOnly_lean_why_formatBesideName": "Another link in the same list item, paragraph or cell names the document this format belongs to.",
+      "linkNameQualityLinkOnly_lean_caution_formatBesideName": "Check that the other link names this same document.",
+      "linkNameQualityLinkOnly_lean_why_repeated": "Other links with the same text go to different places, and no text or heading near them tells them apart.",
+      "linkNameQualityLinkOnly_lean_caution_repeated": "The page's layout, such as a card with an image or a heading the link is not placed after, may still make each link clear.",
+      "linkNameQualityLinkOnly_summary_cantTell_inContext": "This link's name (\"{{name}}\") is a generic phrase: only the text around it says where it leads.",
+      "linkNameQualityLinkOnly_hint_cantTell_inContext": "Make the link text itself say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Click here\", so it is clear when read on its own, as in a list of links.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -118244,10 +119287,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQuality_hint_cantTell": "Hacer que el texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios 2026\" en vez de \"Descargar\", o comprobar que el texto que lo rodea ya lo deja claro.",
       "linkNameQuality_summary_cantTell_formatName": "El nombre de este enlace (\"{{name}}\") indica un formato de archivo, pero no de qué documento se trata.",
       "linkNameQuality_hint_cantTell_formatName": "Nombrar el documento en el texto del enlace, o en un texto o encabezado asociado al enlace, como \"Descargar el informe anual (HTML)\" en vez de solo \"HTML\".",
+      "linkNameQuality_summary_cantTell_inContext": "El nombre de este enlace (\"{{name}}\") es una frase genérica: solo el texto que lo rodea dice adónde lleva.",
+      "linkNameQuality_hint_cantTell_inContext": "Haz que el propio texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios de 2026\" en lugar de \"Haz clic aquí\", para que se entienda leído por sí solo, como en una lista de enlaces.",
       "linkNameQuality_lean_why_formatBesideName": "Otro enlace del mismo elemento de lista, párrafo o celda nombra el documento al que pertenece este formato.",
       "linkNameQuality_lean_caution_formatBesideName": "Comprobar que el otro enlace nombra este mismo documento.",
       "linkNameQuality_lean_why_repeated": "Otros enlaces con el mismo texto llevan a otros sitios, y ningún texto ni encabezado cercano permite distinguirlos.",
       "linkNameQuality_lean_caution_repeated": "La disposición de la página, como una tarjeta con imagen o un encabezado tras el que no está el enlace, puede aún dejar claro cada enlace.",
+      "linkNameQualityLinkOnly_title": "El texto de un enlace debería decir por sí solo adónde lleva",
+      "linkNameQualityLinkOnly_description": "Señala los enlaces cuyo nombre accesible completo es una frase genérica conocida (p. ej., \"haz clic aquí\", \"leer más\") que solo explica el texto que los rodea, para revisar manualmente si el texto del enlace por sí solo deja claro su propósito.",
+      "linkNameQualityLinkOnly_summary_cantTell": "El nombre de este enlace (\"{{name}}\") es una frase genérica que no dice adónde lleva.",
+      "linkNameQualityLinkOnly_hint_cantTell": "Hacer que el texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios 2026\" en vez de \"Descargar\", o comprobar que el texto que lo rodea ya lo deja claro.",
+      "linkNameQualityLinkOnly_summary_cantTell_formatName": "El nombre de este enlace (\"{{name}}\") indica un formato de archivo, pero no de qué documento se trata.",
+      "linkNameQualityLinkOnly_hint_cantTell_formatName": "Nombrar el documento en el texto del enlace, o en un texto o encabezado asociado al enlace, como \"Descargar el informe anual (HTML)\" en vez de solo \"HTML\".",
+      "linkNameQualityLinkOnly_lean_why_formatBesideName": "Otro enlace del mismo elemento de lista, párrafo o celda nombra el documento al que pertenece este formato.",
+      "linkNameQualityLinkOnly_lean_caution_formatBesideName": "Comprobar que el otro enlace nombra este mismo documento.",
+      "linkNameQualityLinkOnly_lean_why_repeated": "Otros enlaces con el mismo texto llevan a otros sitios, y ningún texto ni encabezado cercano permite distinguirlos.",
+      "linkNameQualityLinkOnly_lean_caution_repeated": "La disposición de la página, como una tarjeta con imagen o un encabezado tras el que no está el enlace, puede aún dejar claro cada enlace.",
+      "linkNameQualityLinkOnly_summary_cantTell_inContext": "El nombre de este enlace (\"{{name}}\") es una frase genérica: solo el texto que lo rodea dice adónde lleva.",
+      "linkNameQualityLinkOnly_hint_cantTell_inContext": "Haz que el propio texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios de 2026\" en lugar de \"Haz clic aquí\", para que se entienda leído por sí solo, como en una lista de enlaces.",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -119979,10 +121036,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQuality_hint_cantTell": "Faites dire au texte du lien où il mène ou ce qu’il fait, comme « Télécharger le guide tarifaire 2026 » plutôt que « Télécharger », ou vérifiez que le texte autour le précise déjà.",
       "linkNameQuality_summary_cantTell_formatName": "Le nom de ce lien (\"{{name}}\") donne un format de fichier, mais pas le document dont il s’agit.",
       "linkNameQuality_hint_cantTell_formatName": "Nommez le document dans le texte du lien, ou dans un texte ou un titre associé au lien, comme « Télécharger le rapport annuel (HTML) » plutôt que « HTML » seul.",
+      "linkNameQuality_summary_cantTell_inContext": "Le nom de ce lien (« {{name}} ») est une formule générique : seul le texte qui l’entoure dit où il mène.",
+      "linkNameQuality_hint_cantTell_inContext": "Faites dire au texte du lien lui-même où il mène ou ce qu’il fait, par exemple « Télécharger la grille tarifaire 2026 » plutôt que « Cliquez ici », pour qu’il soit clair lu seul, comme dans une liste de liens.",
       "linkNameQuality_lean_why_formatBesideName": "Un autre lien du même élément de liste, paragraphe ou cellule nomme le document auquel ce format appartient.",
       "linkNameQuality_lean_caution_formatBesideName": "Vérifiez que l’autre lien nomme bien ce même document.",
       "linkNameQuality_lean_why_repeated": "D’autres liens portant le même texte mènent ailleurs, et aucun texte ni titre proche ne permet de les distinguer.",
       "linkNameQuality_lean_caution_repeated": "La mise en page, comme une carte avec une image ou un titre que le lien ne suit pas, peut encore rendre chaque lien clair.",
+      "linkNameQualityLinkOnly_title": "Le texte d’un lien devrait dire à lui seul où il mène",
+      "linkNameQualityLinkOnly_description": "Signale les liens dont le nom accessible complet est une formule générique connue (p. ex. « cliquez ici », « lire la suite ») que seul le texte qui les entoure explique, pour vérifier manuellement si le texte du lien suffit à lui seul à en indiquer le but.",
+      "linkNameQualityLinkOnly_summary_cantTell": "Le nom de ce lien (\"{{name}}\") est une formule générique qui ne dit pas où il mène.",
+      "linkNameQualityLinkOnly_hint_cantTell": "Faites dire au texte du lien où il mène ou ce qu’il fait, comme « Télécharger le guide tarifaire 2026 » plutôt que « Télécharger », ou vérifiez que le texte autour le précise déjà.",
+      "linkNameQualityLinkOnly_summary_cantTell_formatName": "Le nom de ce lien (\"{{name}}\") donne un format de fichier, mais pas le document dont il s’agit.",
+      "linkNameQualityLinkOnly_hint_cantTell_formatName": "Nommez le document dans le texte du lien, ou dans un texte ou un titre associé au lien, comme « Télécharger le rapport annuel (HTML) » plutôt que « HTML » seul.",
+      "linkNameQualityLinkOnly_lean_why_formatBesideName": "Un autre lien du même élément de liste, paragraphe ou cellule nomme le document auquel ce format appartient.",
+      "linkNameQualityLinkOnly_lean_caution_formatBesideName": "Vérifiez que l’autre lien nomme bien ce même document.",
+      "linkNameQualityLinkOnly_lean_why_repeated": "D’autres liens portant le même texte mènent ailleurs, et aucun texte ni titre proche ne permet de les distinguer.",
+      "linkNameQualityLinkOnly_lean_caution_repeated": "La mise en page, comme une carte avec une image ou un titre que le lien ne suit pas, peut encore rendre chaque lien clair.",
+      "linkNameQualityLinkOnly_summary_cantTell_inContext": "Le nom de ce lien (« {{name}} ») est une formule générique : seul le texte qui l’entoure dit où il mène.",
+      "linkNameQualityLinkOnly_hint_cantTell_inContext": "Faites dire au texte du lien lui-même où il mène ou ce qu’il fait, par exemple « Télécharger la grille tarifaire 2026 » plutôt que « Cliquez ici », pour qu’il soit clair lu seul, comme dans une liste de liens.",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -121714,10 +122785,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQuality_hint_cantTell": "「ダウンロード」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキストでリンク先や働きを伝えるか、周りのテキストですでに明らかになっているか確認してください。",
       "linkNameQuality_summary_cantTell_formatName": "このリンクの名前「{{name}}」はファイル形式を示していますが、どの文書なのかは示していません。",
       "linkNameQuality_hint_cantTell_formatName": "単に「HTML」とするのではなく「年次報告書をダウンロード (HTML)」のように、リンクテキストか、リンクに結び付いたテキストや見出しで文書名を示してください。",
+      "linkNameQuality_summary_cantTell_inContext": "このリンクの名前 (\"{{name}}\") は一般的な語句です。リンク先を示しているのは周囲のテキストだけです。",
+      "linkNameQuality_hint_cantTell_inContext": "リンクの一覧のように単独で読んでもわかるよう、「こちらをクリック」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキスト自体でリンク先や動作を示してください。",
       "linkNameQuality_lean_why_formatBesideName": "同じリスト項目、段落、セル内の別のリンクが、この形式が属する文書を示しています。",
       "linkNameQuality_lean_caution_formatBesideName": "もう一方のリンクが同じ文書を示していることを確認してください。",
       "linkNameQuality_lean_why_repeated": "同じテキストのほかのリンクが別の場所に移動し、近くにそれらを区別するテキストや見出しがありません。",
       "linkNameQuality_lean_caution_repeated": "画像付きのカードや、リンクの前にはない見出しなど、ページのレイアウトによって各リンクが明確になる場合があります。",
+      "linkNameQualityLinkOnly_title": "リンクのテキストは、それだけでリンク先を示すべき",
+      "linkNameQualityLinkOnly_description": "周囲のテキストだけが説明している既知の一般的な語句 (例: 「こちらをクリック」「続きを読む」) を完全なアクセシブルな名前とするリンクを、リンクテキストだけで目的が明確かどうかの手動確認のために示します。",
+      "linkNameQualityLinkOnly_summary_cantTell": "このリンクの名前「{{name}}」は、リンク先を伝えない一般的な語句です。",
+      "linkNameQualityLinkOnly_hint_cantTell": "「ダウンロード」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキストでリンク先や働きを伝えるか、周りのテキストですでに明らかになっているか確認してください。",
+      "linkNameQualityLinkOnly_summary_cantTell_formatName": "このリンクの名前「{{name}}」はファイル形式を示していますが、どの文書なのかは示していません。",
+      "linkNameQualityLinkOnly_hint_cantTell_formatName": "単に「HTML」とするのではなく「年次報告書をダウンロード (HTML)」のように、リンクテキストか、リンクに結び付いたテキストや見出しで文書名を示してください。",
+      "linkNameQualityLinkOnly_lean_why_formatBesideName": "同じリスト項目、段落、セル内の別のリンクが、この形式が属する文書を示しています。",
+      "linkNameQualityLinkOnly_lean_caution_formatBesideName": "もう一方のリンクが同じ文書を示していることを確認してください。",
+      "linkNameQualityLinkOnly_lean_why_repeated": "同じテキストのほかのリンクが別の場所に移動し、近くにそれらを区別するテキストや見出しがありません。",
+      "linkNameQualityLinkOnly_lean_caution_repeated": "画像付きのカードや、リンクの前にはない見出しなど、ページのレイアウトによって各リンクが明確になる場合があります。",
+      "linkNameQualityLinkOnly_summary_cantTell_inContext": "このリンクの名前 (\"{{name}}\") は一般的な語句です。リンク先を示しているのは周囲のテキストだけです。",
+      "linkNameQualityLinkOnly_hint_cantTell_inContext": "リンクの一覧のように単独で読んでもわかるよう、「こちらをクリック」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキスト自体でリンク先や動作を示してください。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>link-name-quality-link-only — all scenarios</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    .case { border: 1px solid #ccc; padding: 12px; margin: 0 0 12px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>link-name-quality-link-only</h1>
+  <p class="note">WCAG 2.4.9: a generic link name that only its surrounding text explains is asked about (F84). A generic name with no context is link-name-quality's finding, not this rule's.</p>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: "click here" explained only by its sentence</div>
+    <p>For the 2026 pricing sheet, <a id="llo_case_01" href="/prices">click here</a>.</p>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: "Read more" in a list item that names its subject</div>
+    <ul><li><strong>Annual report 2026</strong> <a id="llo_case_02" href="/report">Read more</a></li></ul>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: "Read more" with no context (link-name-quality's finding)</div>
+    <div><a id="llo_case_03" href="/more">Read more</a></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: a descriptive link name</div>
+    <p>Prices changed. <a id="llo_case_04" href="/prices">Download the 2026 pricing guide</a>.</p>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: a bare format name in context (left to link-name-quality)</div>
+    <p>Annual report: <a id="llo_case_05" href="/report.pdf">PDF</a></p>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: a generic phrase explained by aria-describedby</div>
+    <span id="desc_06">Opening hours of the library</span>
+    <div><a id="llo_case_06" href="/hours" aria-describedby="desc_06">More</a></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

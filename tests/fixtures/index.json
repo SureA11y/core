@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 149,
-    "withFixture": 144,
+    "total": 150,
+    "withFixture": 145,
     "withoutFixture": 5
   },
   "rows": [
@@ -1691,6 +1691,25 @@
         "FAIL": 0,
         "CANTTELL": 8,
         "OTHER": 6
+      }
+    },
+    {
+      "ruleId": "link-name-quality-link-only",
+      "title": "A link's text should say where it leads on its own",
+      "type": "manual",
+      "wcagSc": [
+        "2.4.9"
+      ],
+      "ruleFile": "src/checks/manual/link-name-quality-link-only-manual.js",
+      "testFile": "tests/engine-checks/manual/link-name-quality-link-only.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/link-name-quality-link-only-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 3
       }
     },
     {
