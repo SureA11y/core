@@ -609,7 +609,7 @@ const FACETS = {
             {
                 "id": "reflow-320",
                 "label": "At 320 CSS pixels wide, content needs no scrolling in two directions and nothing is lost",
-                "automation": "manual"
+                "automation": "partial"
             }
         ]
     },

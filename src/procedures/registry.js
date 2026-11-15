@@ -436,6 +436,19 @@ const PROCEDURES = {
         tools: ['devtools']
       }
     },
+    '1.4.10': {
+      'reflow-320': {
+        tools: ['devtools', 'zoom'],
+        variants: {
+          'reflow-horizontal-scroll': [
+            'WIDE_TABLE',
+            'WIDE_MEDIA',
+            'WIDE_PREFORMATTED',
+            'CLIPPED_AT_VIEWPORT_EDGE'
+          ]
+        }
+      }
+    },
     '1.4.12': {
       'avoid-inline-spacing': {
         tools: ['devtools'],

@@ -121,6 +121,7 @@
     "presentation-role-conflict",
     "presentational-children-focusable-absent",
     "progressbar-name-present",
+    "reflow-horizontal-scroll",
     "region",
     "role-img-text-alternative-present",
     "scope-attr-valid",
@@ -683,6 +684,14 @@
     "progressbar-name-present": [
       "name_internals",
       "name_missing"
+    ],
+    "reflow-horizontal-scroll": [
+      "CLIPPED_AT_VIEWPORT_EDGE",
+      "HORIZONTAL_SCROLL",
+      "HORIZONTAL_SCROLL_UNATTRIBUTED",
+      "WIDE_MEDIA",
+      "WIDE_PREFORMATTED",
+      "WIDE_TABLE"
     ],
     "region": [
       "CONTENT_OUTSIDE_LANDMARK"

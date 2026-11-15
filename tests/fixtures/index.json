@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 150,
-    "withFixture": 145,
+    "total": 151,
+    "withFixture": 146,
     "withoutFixture": 5
   },
   "rows": [
@@ -2231,6 +2231,25 @@
         "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 1
+      }
+    },
+    {
+      "ruleId": "reflow-horizontal-scroll",
+      "title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
+      "type": "automatic",
+      "wcagSc": [
+        "1.4.10"
+      ],
+      "ruleFile": "src/checks/automatic/reflow-horizontal-scroll.js",
+      "testFile": "tests/engine-checks/automatic/reflow-horizontal-scroll-chromium.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/reflow-horizontal-scroll-all-scenarios.html",
+      "totalCases": 8,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 2,
+        "CANTTELL": 3,
+        "OTHER": 0
       }
     },
     {

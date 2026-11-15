@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>reflow-horizontal-scroll — scenario fixture</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial,
+          sans-serif;
+        font-size: 16px;
+        line-height: 1.4;
+        margin: 8px;
+        color: #000;
+        background: #fff;
+      }
+      .case {
+        border: 1px solid #ddd;
+        padding: 8px;
+        margin: 8px 0;
+      }
+      .case-title {
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      .wide {
+        width: 600px;
+      }
+      .scroll {
+        overflow-x: auto;
+      }
+      img.fluid {
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Scenario fixture: <code>reflow-horizontal-scroll</code> (WCAG 1.4.10)</h1>
+    <p class="note">
+      Each target has a stable id of the form <code>reflow_case_NN</code>. The rule applies only to
+      a page laid out at a viewport 320 CSS pixels wide or less, so load this page at that width
+      (the browser test does). It needs a layout, so in jsdom it reports nothing: each case's
+      <code>data-outcome-reflow-horizontal-scroll</code>
+      attribute gives that jsdom verdict, and the browser test checks the one in the title. The
+      cases that stick out make the page scroll sideways; the cases where the page is kept from
+      scrolling (<code>CLIPPED_AT_VIEWPORT_EDGE</code>) and the one with no element to name
+      (<code>HORIZONTAL_SCROLL_UNATTRIBUTED</code>) need a page of their own, and are covered by
+      the browser test's own pages.
+    </p>
+
+    <h2>A. Fits the width</h2>
+    <div class="case" id="case_01" data-outcome-reflow-horizontal-scroll="PASS (no layout in jsdom)">
+      <div class="case-title">01 — PASS: a paragraph that wraps</div>
+      <p id="reflow_case_01">Opening hours today, and the rest of the week from nine to five.</p>
+    </div>
+    <div class="case" id="case_02" data-outcome-reflow-horizontal-scroll="PASS (no layout in jsdom)">
+      <div class="case-title">02 — PASS: an image that shrinks to fit</div>
+      <img
+        id="reflow_case_02"
+        class="fluid"
+        width="800"
+        height="40"
+        alt="A wide banner"
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='40'/%3E"
+      />
+    </div>
+    <div class="case" id="case_03" data-outcome-reflow-horizontal-scroll="PASS (no layout in jsdom)">
+      <div class="case-title">
+        03 — PASS: a wide data table in a box that scrolls on its own
+      </div>
+      <div class="scroll">
+        <table class="wide" id="reflow_case_03">
+          <tr>
+            <th>Day</th>
+            <th>Opens</th>
+          </tr>
+          <tr>
+            <td>Monday</td>
+            <td>9:00</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <h2>B. Sticks out (the page scrolls sideways)</h2>
+    <div class="case" id="case_04" data-outcome-reflow-horizontal-scroll="PASS (no layout in jsdom)">
+      <div class="case-title">04 — FAIL: a box with a fixed width of 600 pixels</div>
+      <div class="wide" id="reflow_case_04">
+        <p>Opening hours today.</p>
+      </div>
+    </div>
+    <div class="case" id="case_05" data-outcome-reflow-horizontal-scroll="PASS (no layout in jsdom)">
+      <div class="case-title">05 — FAIL: a long address that can't wrap</div>
+      <p id="reflow_case_05">
+        https://example.org/opening-hours/today/and/the/rest/of/the/week/from-nine-to-five
+      </p>
+    </div>
+    <div class="case" id="case_06" data-outcome-reflow-horizontal-scroll="PASS (no layout in jsdom)">
+      <div class="case-title">06 — CANTTELL: a wide data table (leans pass)</div>
+      <table class="wide" id="reflow_case_06">
+        <caption>
+          Opening hours
+        </caption>
+        <tr>
+          <th>Day</th>
+          <th>Opens</th>
+        </tr>
+        <tr>
+          <td>Monday</td>
+          <td>9:00</td>
+        </tr>
+      </table>
+    </div>
+    <div class="case" id="case_07" data-outcome-reflow-horizontal-scroll="PASS (no layout in jsdom)">
+      <div class="case-title">07 — CANTTELL: a wide image with no max-width (leans fail)</div>
+      <img
+        id="reflow_case_07"
+        width="800"
+        height="40"
+        alt="A wide banner"
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='40'/%3E"
+      />
+    </div>
+    <div class="case" id="case_08" data-outcome-reflow-horizontal-scroll="PASS (no layout in jsdom)">
+      <div class="case-title">08 — CANTTELL: preformatted code that keeps its lines</div>
+      <pre id="reflow_case_08"><code>const openingHours = { monday: '9:00', tuesday: '9:00', wednesday: '9:00' };</code></pre>
+    </div>
+  </body>
+</html>

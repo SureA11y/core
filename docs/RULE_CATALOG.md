@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**150 rules total: 87 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 63 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 120 carry at least one formal WCAG Success Criterion mapping.**
+**151 rules total: 88 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 63 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 121 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -12,7 +12,7 @@ Under **What a finding reports**, a rule lists the fields its findings carry in 
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (87), can return `fail`
+## Automatic rules (88), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -83,6 +83,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`page-title-present`](#page-title-present) | Page has a non-empty title | 2.4.2 | A | high | serious |
 | [`presentational-children-focusable-absent`](#presentational-children-focusable-absent) | Roles with presentational children must not contain focusable content | 4.1.2 | A | high | serious |
 | [`progressbar-name-present`](#progressbar-name-present) | Progress bars have an accessible name | 1.1.1 | A | high | serious |
+| [`reflow-horizontal-scroll`](#reflow-horizontal-scroll) | Content reflows at 320 CSS pixels wide without scrolling sideways | 1.4.10 | AA | high | serious |
 | [`role-img-text-alternative-present`](#role-img-text-alternative-present) | [role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative | 1.1.1 | A | high | serious |
 | [`searchbox-name-present`](#searchbox-name-present) | Searchboxes have an accessible name | 4.1.2 | A | high | serious |
 | [`server-side-image-map-absent`](#server-side-image-map-absent) | Server-side image maps must have a keyboard-operable alternative | 2.1.1, 2.1.3 | A, AAA | high | serious |
@@ -172,7 +173,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`video-caption`](#video-caption) | Prerecorded video should provide complete captions | 1.2.2 | A | low | moderate |
 | [`widget-keyboard-focusable`](#widget-keyboard-focusable) | Widgets should be reachable with the keyboard | 2.1.1, 2.1.3 | A, AAA | medium | serious |
 
-## Composite (WCAG-SC rollup) rules (42)
+## Composite (WCAG-SC rollup) rules (43)
 
 Composite rules aren't individually authored. They're generated rollups over the atomic rules above, one per WCAG Success Criterion with automatable coverage. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for rollup semantics.
 
@@ -185,6 +186,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.3.4-orientation` | Orientation | Rollup of checks ensuring content does not restrict its view to a single display orientation. | 1.3.4 | AA | 1 |
 | `wcag-1.3.5-identify-input-purpose` | Identify Input Purpose | Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose. | 1.3.5 | AA | 1 |
 | `wcag-1.4.1-use-of-color` | Use of Color | Rollup of checks ensuring color is not used as the only visual means of conveying information. | 1.4.1 | A | 1 |
+| `wcag-1.4.10-reflow` | Reflow | Rollup of checks ensuring content can be shown at 320 CSS pixels wide without scrolling in two directions. | 1.4.10 | AA | 1 |
 | `wcag-1.4.11-non-text-contrast` | Non-text Contrast | Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1. | 1.4.11 | AA | 1 |
 | `wcag-1.4.12-text-spacing` | Text Spacing | Rollup of checks ensuring text spacing can be increased without losing content. | 1.4.12 | AA | 2 |
 | `wcag-1.4.2-audio-control` | Audio Control | Rollup of checks for a pause/stop or volume-control mechanism on autoplaying audio. | 1.4.2 | A | 1 |
@@ -3300,6 +3302,48 @@ Checks that elements with role="progressbar" expose a non-empty accessible name.
 |---|---|---|---|
 | `name_missing` | fail | The progress bar has no accessible name from aria-label, aria-labelledby, title or an associated label. | WCAG 1.1.1; accname 1.2; WAI-ARIA 1.2 progressbar role |
 | `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 1.1.1 (not settled); accname 1.2 (not settled) |
+
+### `reflow-horizontal-scroll`
+
+**Content reflows at 320 CSS pixels wide without scrolling sideways**
+
+automatic · WCAG 1.4.10 (AA) · confidence high · default severity serious
+
+At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.
+
+**Applies to.** Applies to a page laid out at a viewport 320 CSS pixels wide or less, in a horizontal writing mode, that is the page itself: the top document, or a framed one the host names as the page (`engineOptions.topLevelDocument`). A host scans the page at that width to check reflow, as a phone shows it or a 1280 pixel window at 400% zoom does. At a wider viewport, in vertical text, in a document shown in a frame, and without a layout (jsdom), the rule is notApplicable.
+
+**Expectation.**
+
+WCAG 1.4.10: at that width, content is shown without scrolling in two directions, except parts that need a two-dimensional layout to be used or understood (maps, diagrams, video, games, data tables).
+
+- When the page scrolls sideways (its scrolling box is wider than the viewport, and the root lets it scroll), each element that sticks out past the viewport's end edge (the right, or the left in right-to-left text) while its parent stays inside is the cause, and fails (HORIZONTAL_SCROLL). Its children that stick out with it are not reported again.
+- Where that element is one the exception may cover, it is asked about instead: a table (WIDE_TABLE), which leans pass when it has header cells or a caption (a data table) and fail when it is a layout table; an image, video, canvas, SVG, embedded object or frame (WIDE_MEDIA), which leans fail for an image or a video, since those can be scaled to fit; and preformatted text (WIDE_PREFORMATTED), such as code, with no lean.
+- When the page scrolls sideways and no element can be named (the overflow comes from a margin, a pseudo-element or a closed shadow root), the document fails (HORIZONTAL_SCROLL_UNATTRIBUTED): that it scrolls is measured, not guessed.
+- When the root keeps the page from scrolling sideways (`overflow-x: hidden` or `clip` on the root, or on the body that passes it on), an element that the viewport's end edge cuts through is asked about (CLIPPED_AT_VIEWPORT_EDGE): part of it can't be reached. It leans fail. One wholly past the edge is left out: off-canvas menus and slides wait there on purpose.
+- An element inside a box that scrolls or clips sideways, and that fits, is left alone: the box keeps it from widening the page.
+- A pass is given only for a scan of the whole document; a scoped scan reports what it finds in its scope, and is otherwise notApplicable.
+
+At most 50 elements are listed per reason code.
+
+**What a finding reports.**
+
+- `overflowPx`: how far the element reaches past the viewport's end edge, in CSS pixels.
+- `widthPx`: the element's width, in CSS pixels.
+- `edge`: `right`, or `left` in right-to-left text.
+- `viewport.width`: the width content is laid out in (the viewport less any vertical scrollbar), and `viewport.scrollWidth`: the page's.
+- `element`: the element's tag name.
+
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `HORIZONTAL_SCROLL` | fail | At 320 CSS pixels wide the page scrolls sideways, and this element sticks out past the edge of the viewport. | WCAG 1.4.10 |
+| `HORIZONTAL_SCROLL_UNATTRIBUTED` | fail | The page scrolls sideways at 320 CSS pixels wide, and no element can be named as the cause. | WCAG 1.4.10 |
+| `WIDE_TABLE` | cantTell | A table sticks out past the edge; a data table is covered by the exception for content that needs a two-dimensional layout, a layout table is not. It leans pass for a table with header cells or a caption, and fail for one marked as layout (role presentation or none) or with neither. | WCAG 1.4.10 (exception: two-dimensional layout) |
+| `WIDE_MEDIA` | cantTell | An image, video, canvas, SVG, embedded object or frame sticks out past the edge; a map, diagram or game may need its size. It leans fail for an image or a video, which can usually be scaled to fit. | WCAG 1.4.10 (exception: two-dimensional layout) |
+| `WIDE_PREFORMATTED` | cantTell | Preformatted text, such as code, doesn't wrap and sticks out past the edge; whether its layout is needed to understand it is for a person to judge. | WCAG 1.4.10 (not settled) |
+| `CLIPPED_AT_VIEWPORT_EDGE` | cantTell | The page doesn't scroll sideways, but the edge of the viewport cuts through this element, so part of it can't be reached. It leans fail. | WCAG 1.4.10 (not settled) |
 
 ### `region`
 

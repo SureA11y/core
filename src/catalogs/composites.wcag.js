@@ -460,6 +460,20 @@ module.exports = [
   },
 
   {
+    id: 'wcag-1.4.10-reflow',
+    checksIds: ['reflow-horizontal-scroll'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_1410_reflow.title',
+      descriptionKey: 'catalog.rules.wcag_1410_reflow.description',
+      title: 'Reflow',
+      description:
+        'Rollup of checks ensuring content can be shown at 320 CSS pixels wide without scrolling in two directions.',
+      wcagSc: ['1.4.10'],
+      level: 'AA'
+    }
+  },
+
+  {
     id: 'wcag-1.4.11-non-text-contrast',
     checksIds: ['css-focus-indicator-suppressed'],
     meta: {
