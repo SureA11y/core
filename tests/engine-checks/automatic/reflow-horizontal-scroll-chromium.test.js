@@ -101,6 +101,8 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       'WIDE_TABLE',
       'WIDE_MEDIA',
       'WIDE_PREFORMATTED',
+      'CLIPPED_BY_CONTAINER',
+      'SCROLLS_IN_CONTAINER',
       'CLIPPED_AT_VIEWPORT_EDGE'
     ]) {
       for (const locale of ['en', 'es', 'de', 'fr', 'ja']) {
@@ -136,16 +138,84 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.deepEqual(findings(check), [['layout', 'cantTell', 'WIDE_TABLE', 'fail']]);
   });
 
-  await t.test('boxes that scroll or clip on their own are left alone', async () => {
+  await t.test('a scrolling box may hold a table, code or media at full width', async () => {
     const check = await scan(
       page(
-        '.wide{width:600px}',
-        '<div style="overflow-x:auto"><div class="wide" id="a">In a scrolling box</div></div>' +
+        'table{width:600px} img{display:block}',
+        '<div style="overflow-x:auto"><table id="a"><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table></div>' +
           '<pre style="overflow-x:auto" id="b"><code>const openingHours = { monday: "9:00", tuesday: "9:00" };</code></pre>' +
-          '<p style="overflow-x:hidden" id="c">https://example.org/a/very/long/address/that/cannot/wrap/at/all</p>'
+          '<div style="overflow-x:auto"><img id="c" width="600" height="20" alt=""></div>'
       )
     );
     assert.equal(check.outcome, 'pass');
+  });
+
+  await t.test('a form wider than its scrolling dialog is asked about', async () => {
+    // A dialog whose content scrolls (overflow auto), holding a panel with a
+    // forced minimum width, as a filter dialog does.
+    const check = await scan(
+      page(
+        '.dialog{overflow:auto;border:1px solid;position:fixed;inset:0;max-width:100%} .panel{min-width:584px} .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}',
+        '<div class="dialog"><form><div class="panel" id="panel"><div class="grid"><label>Type <select><option>All</option></select></label><label>Direction <select><option>All</option></select></label></div></div></form></div>'
+      )
+    );
+    assert.deepEqual(findings(check), [['panel', 'cantTell', 'SCROLLS_IN_CONTAINER', 'fail']]);
+    assert.equal(check.occurrences[0].i18n.summaryKey, 'reflowHorizontalScroll_summary_scrollBox');
+    // The same page with the panel fitting its dialog passes.
+    const fits = await scan(
+      page(
+        '.dialog{overflow:auto;position:fixed;inset:0} .panel{min-width:0}',
+        '<div class="dialog"><form><div class="panel"><label>Type <select><option>All</option></select></label></div></form></div>'
+      )
+    );
+    assert.equal(fits.outcome, 'pass');
+  });
+
+  await t.test('a box that hides what overflows it asks about what it cuts off', async () => {
+    // A card (overflow hidden) around a data table, and a filter panel whose
+    // second column is cut. Not reported: a hidden box whose content fits,
+    // visually hidden text, a truncated label, and what waits wholly outside.
+    const check = await scan(
+      page(
+        'table{width:600px} .card{overflow:hidden;border:1px solid} .grid{display:flex;width:560px}' +
+          ' .grid>div{flex:none;width:270px} .sr{position:absolute;width:1px;height:1px;overflow:hidden}' +
+          ' .ell{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}',
+        '<div class="card"><table id="t"><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table></div>' +
+          '<div class="card" id="panel"><div class="grid" id="g"><div>One</div><div>Two</div></div></div>' +
+          '<div class="card"><p id="fits">Fits in its box</p></div>' +
+          '<span class="sr">Visually hidden text that is read aloud and is much longer than one pixel</span>' +
+          '<p class="ell" style="width:100px">Truncated label with an ellipsis that is long</p>' +
+          '<div style="overflow:hidden;width:100px"><nav style="margin-left:150px">Off-canvas</nav></div>'
+      )
+    );
+    assert.deepEqual(findings(check), [
+      ['t', 'cantTell', 'CLIPPED_BY_CONTAINER', 'fail'],
+      ['g', 'cantTell', 'CLIPPED_BY_CONTAINER', 'fail']
+    ]);
+  });
+
+  await t.test('text cut by its own hidden box is asked about', async () => {
+    const check = await scan(
+      page(
+        '',
+        '<p style="overflow-x:hidden" id="c">https://example.org/a/very/long/address/that/cannot/wrap/at/all</p>'
+      )
+    );
+    assert.deepEqual(findings(check), [['c', 'cantTell', 'CLIPPED_BY_CONTAINER', 'fail']]);
+  });
+
+  await t.test('a wide table and a wide tab group on a scrolling page are both named', async () => {
+    const check = await scan(
+      page(
+        'table{width:600px} .tabs{display:flex;white-space:nowrap;width:560px}',
+        '<div class="tabs" id="tabs"><button>All</button><button>Executed</button><button>Rejected</button><button>Failed</button><button>Pending</button></div>' +
+          '<table id="t"><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>'
+      )
+    );
+    assert.deepEqual(findings(check), [
+      ['tabs', 'fail', 'HORIZONTAL_SCROLL', null],
+      ['t', 'cantTell', 'WIDE_TABLE', 'pass']
+    ]);
   });
 
   await t.test('a page kept from scrolling asks about what the edge cuts through', async () => {

@@ -43,8 +43,20 @@
  *     (CLIPPED_AT_VIEWPORT_EDGE): part of it can't be reached. It leans
  *     fail. One wholly past the edge is left out: off-canvas menus and
  *     slides wait there on purpose.
- *   - An element inside a box that scrolls or clips sideways, and that fits,
- *     is left alone: the box keeps it from widening the page.
+ *   - A box that scrolls on its own (`overflow-x: auto` or `scroll`) keeps
+ *     what is in it from widening the page. A table, preformatted text or
+ *     media in it may scroll sideways there, as the exception allows. Anything
+ *     else that sticks out of the box (a form, text, a menu) still needs
+ *     sideways scrolling, and is asked about (SCROLLS_IN_CONTAINER, leaning
+ *     fail).
+ *   - An element inside a box that hides what overflows it (`overflow-x:
+ *     hidden` or `clip`) keeps the page from scrolling, but what sticks out
+ *     of the box is cut off with no way to reach it, whether or not the page
+ *     scrolls. Where it starts, such an element is asked about
+ *     (CLIPPED_BY_CONTAINER) and leans fail. Left out: an element wholly
+ *     outside the box (waiting there on purpose), a box a pixel wide (visually
+ *     hidden text), text truncated with an ellipsis, and an element placed out
+ *     of the box (fixed, or absolute from outside it).
  *   - A pass is given only for a scan of the whole document; a scoped scan
  *     reports what it finds in its scope, and is otherwise notApplicable.
  *   At most 50 elements are listed per reason code.
@@ -77,6 +89,14 @@
  *   - `WIDE_PREFORMATTED` (cantTell): preformatted text, such as code,
  *     doesn't wrap and sticks out past the edge; whether its layout is
  *     needed to understand it is for a person to judge.
+ *     Basis: WCAG 1.4.10 (not settled).
+ *   - `SCROLLS_IN_CONTAINER` (cantTell): this element, not a table, code block
+ *     or media, is wider than the box around it, which scrolls sideways (`overflow-x:
+ *     auto` or `scroll`) to show it. It leans fail.
+ *     Basis: WCAG 1.4.10 (not settled).
+ *   - `CLIPPED_BY_CONTAINER` (cantTell): a box around this element hides what
+ *     overflows it (`overflow-x: hidden` or `clip`), and the element sticks
+ *     out of the box, so part of it can't be reached. It leans fail.
  *     Basis: WCAG 1.4.10 (not settled).
  *   - `CLIPPED_AT_VIEWPORT_EDGE` (cantTell): the page doesn't scroll
  *     sideways, but the edge of the viewport cuts through this element, so
@@ -124,6 +144,8 @@ const meta = {
     'WIDE_TABLE',
     'WIDE_MEDIA',
     'WIDE_PREFORMATTED',
+    'CLIPPED_BY_CONTAINER',
+    'SCROLLS_IN_CONTAINER',
     'CLIPPED_AT_VIEWPORT_EDGE'
   ]
 };
@@ -250,6 +272,132 @@ function runInPage(ctx) {
     return found;
   }
 
+  // Boxes that hide what overflows them (not the root: the viewport's own
+  // clipping is judged above). What sticks out of one is cut off, and the
+  // page doesn't scroll to it.
+  const cuts = (s) => !!s && (s.overflowX === 'hidden' || s.overflowX === 'clip');
+  // The nearest box around `start` (itself included when `self`) that sets
+  // overflow sideways, whether it hides what overflows or scrolls it; null
+  // when there is none.
+  const cutterMemo = new Map();
+  function cutterOf(start, self) {
+    let node = self ? start : dom.parentElement(start);
+    const path = [];
+    let found = null;
+    while (node && node !== body && node !== html) {
+      if (cutterMemo.has(node)) {
+        found = cutterMemo.get(node);
+        break;
+      }
+      path.push(node);
+      const s = style(node);
+      if (s && s.overflowX !== 'visible') {
+        found = node;
+        path.pop();
+        cutterMemo.set(node, found);
+        break;
+      }
+      node = dom.parentElement(node);
+    }
+    for (const n of path) cutterMemo.set(n, found);
+    return found;
+  }
+  // Whether the element is placed out of the box: fixed, or absolute with no
+  // positioned box between it and the cutter.
+  function escapes(el, box) {
+    let node = el;
+    while (node && node !== box) {
+      const s = style(node);
+      const position = s ? s.position : 'static';
+      if (position === 'fixed') return true;
+      if (position === 'absolute') {
+        let up = dom.parentElement(node);
+        let positioned = false;
+        while (up) {
+          const us = style(up);
+          if (us && (us.position !== 'static' || (us.transform && us.transform !== 'none'))) {
+            positioned = true;
+            break;
+          }
+          if (up === box) break;
+          up = dom.parentElement(up);
+        }
+        if (!positioned) return true;
+      }
+      node = dom.parentElement(node);
+    }
+    return false;
+  }
+  // How far a rect reaches past the end edge of a box's visible area, and how
+  // much of it starts inside.
+  function pastBox(rect, box) {
+    let b;
+    try {
+      b = dom.getBoundingClientRect(box);
+    } catch {
+      return null;
+    }
+    const left = b.left + (Number(dom.get(box, 'clientLeft')) || 0);
+    const cw = Number(dom.get(box, 'clientWidth')) || 0;
+    const ch = Number(dom.get(box, 'clientHeight')) || 0;
+    // A box a pixel wide hides text on purpose (visually hidden text).
+    if (cw < 2 || ch < 2) return null;
+    // The end edge of the visible area: the right, or the left in
+    // right-to-left text.
+    const edge = rtl ? left : left + cw;
+    return rtl
+      ? { over: edge - rect.left, inside: rect.right - edge }
+      : { over: rect.right - edge, inside: edge - rect.left };
+  }
+  // What a box that scrolls on its own may hold at full width: a table, a
+  // preformatted block, media. Anything else in it, a form, text, a menu, that
+  // sticks out of the box needs sideways scrolling too.
+  function exemptInScrollBox(el) {
+    try {
+      if (dom.closest(el, 'table, pre')) return true;
+      return kindOf(el) !== 'HORIZONTAL_SCROLL';
+    } catch {
+      return false;
+    }
+  }
+  const clipMemo = new Map();
+  // Where `el` is cut by its nearest hiding box: { box, over }, or null.
+  function clippedBy(el) {
+    if (clipMemo.has(el)) return clipMemo.get(el);
+    let value = null;
+    try {
+      const box = cutterOf(el, false);
+      if (box) {
+        const bs = style(box);
+        const rects = dom.getClientRects(el);
+        const es = style(el);
+        const scrolls = !cuts(bs);
+        if (
+          rects &&
+          rects.length &&
+          !(!scrolls && bs && bs.textOverflow === 'ellipsis') &&
+          !(es && es.visibility === 'hidden') &&
+          !escapes(el, box) &&
+          !(scrolls && exemptInScrollBox(el))
+        ) {
+          const rect = dom.getBoundingClientRect(el);
+          if (rect.width > 0 || rect.height > 0) {
+            const hit = pastBox(rect, box);
+            // Part shows inside the box and part is cut off; one wholly past
+            // its edge waits there on purpose.
+            if (hit && hit.over > TOLERANCE && hit.inside > TOLERANCE) {
+              value = { box, over: hit.over, rect, scrolls };
+            }
+          }
+        }
+      }
+    } catch {
+      value = null;
+    }
+    clipMemo.set(el, value);
+    return value;
+  }
+
   const MEDIA = new Set(['img', 'video', 'canvas', 'svg', 'object', 'embed', 'iframe', 'picture']);
   function kindOf(el) {
     const tag = String(dom.tagName(el) || '').toLowerCase();
@@ -338,6 +486,25 @@ function runInPage(ctx) {
     found.push({ el, tag: String(dom.tagName(el) || '').toLowerCase(), hit });
   }
 
+  // Elements cut off by a box that hides what overflows it. Where it starts:
+  // the parent, if it is not cut by the same box, stays inside.
+  const clipped = [];
+  const clippedTaken = new Set();
+  function considerClipped(el, clip) {
+    if (!clip || clippedTaken.has(el)) return;
+    const parent = dom.parentElement(el);
+    if (parent && parent !== clip.box) {
+      const up = clippedBy(parent);
+      if (up && up.box === clip.box) return;
+    }
+    if (!inScope(el) || isExcluded(el)) {
+      leftOut = true;
+      return;
+    }
+    clippedTaken.add(el);
+    clipped.push({ el, clip });
+  }
+
   for (const el of all) {
     const tag = String(dom.tagName(el) || '').toLowerCase();
     if (SKIP.has(tag)) continue;
@@ -345,6 +512,7 @@ function runInPage(ctx) {
     if (dom.get(el, 'ownerSVGElement')) continue;
     const hit = crossing(el);
     if (hit) consider(el, hit, true);
+    considerClipped(el, clippedBy(el));
   }
 
   // Text that runs past the edge out of a box that fits, such as a long
@@ -362,6 +530,21 @@ function runInPage(ctx) {
         if (rect && (rect.width > 0 || rect.height > 0)) {
           const over = overflowOf(rect);
           if (over > TOLERANCE) consider(owner, { rect, over, inside: insideOf(rect) }, false);
+          // Text cut by its own box, or one around it, that hides overflow.
+          const box = cutterOf(owner, true);
+          const bs = box ? style(box) : null;
+          const scrolls = box ? !cuts(bs) : false;
+          if (
+            box &&
+            !(!scrolls && bs && bs.textOverflow === 'ellipsis') &&
+            !escapes(owner, box) &&
+            !(scrolls && exemptInScrollBox(owner))
+          ) {
+            const hit = pastBox(rect, box);
+            if (hit && hit.over > TOLERANCE && hit.inside > TOLERANCE) {
+              considerClipped(owner, { box, over: hit.over, rect, scrolls });
+            }
+          }
         }
       }
       node = dom.call(walker, 'nextNode');
@@ -395,6 +578,26 @@ function runInPage(ctx) {
       i18n: {
         whyKey: 'reflowHorizontalScroll_lean_why_media',
         cautionKey: 'reflowHorizontalScroll_lean_caution_media'
+      }
+    },
+    scrollBox: {
+      toward: 'fail',
+      why: 'The element is wider than the box around it, which has to scroll sideways to show it: text, fields and menus have to fit the width.',
+      signals: [{ signal: 'scrolls-in-container', value: true }],
+      caution: 'A data table, a code block or a carousel may need its layout.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_scrollBox',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_scrollBox'
+      }
+    },
+    clippedBox: {
+      toward: 'fail',
+      why: 'A box around the element hides what overflows it, and nothing scrolls to the rest of it.',
+      signals: [{ signal: 'cut-by-container', value: true }],
+      caution: 'A carousel or a menu may show the rest another way.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_clippedBox',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_clipped'
       }
     },
     clipped: {
@@ -452,6 +655,20 @@ function runInPage(ctx) {
       summary: (p) =>
         `At ${p.viewportWidth} pixels wide, this preformatted text reaches ${p.overflowPx} pixels past the edge.`,
       hint: 'Let it wrap (white-space: pre-wrap), or, if its lines must stay as they are, let it scroll on its own in a box with overflow-x: auto.'
+    },
+    SCROLLS_IN_CONTAINER: {
+      key: 'scrollBox',
+      needed: 'Whether the element needs its width to be used or understood.',
+      summary: (p) =>
+        `At ${p.viewportWidth} pixels wide, this ${p.element} element is ${p.overflowPx} pixels wider than the box around it, so that box has to scroll sideways to show it.`,
+      hint: 'Let it fit the width of its box, so that nothing needs sideways scrolling. Only a data table, a code block or a map may scroll sideways on its own.'
+    },
+    CLIPPED_BY_CONTAINER: {
+      key: 'clippedBox',
+      needed: 'Whether everything in the element can still be reached another way.',
+      summary: (p) =>
+        `At ${p.viewportWidth} pixels wide, a box around this ${p.element} element hides the ${p.overflowPx} pixels that stick out of it, and nothing scrolls to them.`,
+      hint: 'Let it fit the width of its box, so that nothing in it is cut off. If it is a data table, put it in a box with overflow-x: auto.'
     },
     CLIPPED_AT_VIEWPORT_EDGE: {
       key: 'clipped',
@@ -519,6 +736,15 @@ function runInPage(ctx) {
           ? LEANS.media
           : null;
     report(code, el, hit, lean);
+  }
+
+  for (const { el, clip } of clipped) {
+    report(
+      clip.scrolls ? 'SCROLLS_IN_CONTAINER' : 'CLIPPED_BY_CONTAINER',
+      el,
+      { over: clip.over, rect: clip.rect },
+      clip.scrolls ? LEANS.scrollBox : LEANS.clippedBox
+    );
   }
 
   if (pageScrolls && !found.length && wholeDocument && !leftOut) {

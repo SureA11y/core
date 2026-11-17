@@ -2619,6 +2619,24 @@
       "fr-CA": "e2e923edf5c8c6e2",
       "pt": "2667997325c9d727"
     },
+    "reflow-horizontal-scroll CLIPPED_BY_CONTAINER": {
+      "en": "3599d48b38d52161",
+      "de": "6c22d0cac52d477d",
+      "es": "ade537259b68abd5",
+      "fr": "f3775a9d7b6ca4ec",
+      "ja": "ede3bc60b9645a94",
+      "fr-CA": "f3775a9d7b6ca4ec",
+      "pt": "3599d48b38d52161"
+    },
+    "reflow-horizontal-scroll SCROLLS_IN_CONTAINER": {
+      "en": "1db2ea64e4c24cae",
+      "de": "9db702f1114216f7",
+      "es": "9177f03af20f4017",
+      "fr": "3e9db69d58521c16",
+      "ja": "0f7e54f1300c362d",
+      "fr-CA": "3e9db69d58521c16",
+      "pt": "1db2ea64e4c24cae"
+    },
     "reflow-horizontal-scroll HORIZONTAL_SCROLL": {
       "en": "74234e98afe7498f",
       "de": "74234e98afe7498f",
@@ -2731,9 +2749,9 @@
     "object-text-alternative-present": null,
     "option-name-present": "50681542fa30daa9",
     "page-title-present": null,
-    "page-zones-landmark": "903bfbf62b44c7b4",
     "presentational-children-focusable-absent": null,
     "progressbar-name-present": "6fb808cda52cd74c",
+    "reflow-horizontal-scroll": "5f8e96337b076862",
     "role-img-text-alternative-present": "a656f640278b7802",
     "searchbox-name-present": "99faf4e0c0253e07",
     "server-side-image-map-absent": "2bb18e576f18ecc7",
@@ -2767,6 +2785,8 @@
     "css-hidden-focus": "7ed9ffd0d7d45f1a",
     "embed-text-alternative-quality": "e4e81fce4d537556",
     "empty-table-header": "6f953368aa4888bc",
+    "focus-not-obscured-enhanced": "fe683fbed61fbb8f",
+    "focus-not-obscured-minimum": "6d92f3ab7c9aefea",
     "focus-order-semantics": "8ccfa31ee2e20ffd",
     "form-control-label-quality": "194f1852031a9ebf",
     "form-control-programmatic-label-quality": "bd6b61fce0a27ad9",
@@ -2790,6 +2810,7 @@
     "landmark-no-duplicate-main": "1d8409cf92ccd7a3",
     "landmark-one-main": "ff53e32f82b3a1e4",
     "landmark-unique": "29b715ab7b5dc063",
+    "link-name-quality-link-only": "0db2cece5451463f",
     "link-name-quality": "babbd1609b6becb8",
     "live-region-announcements": "f3aa57843c29a1e2",
     "media-alternative-transcript-evidence": "df3273c52e973e91",
@@ -2801,6 +2822,7 @@
     "p-as-heading": "d8a8897687c8dd18",
     "page-has-heading-one": "5318650367e11f6c",
     "page-title-patterns": "0256ddeb116247aa",
+    "page-zones-landmark": "903bfbf62b44c7b4",
     "password-paste-enabled": "5f3a72b14071d7f5",
     "presentation-role-conflict": "e565499a522bc1ff",
     "region": "797b1622e124fa2a",
@@ -2812,17 +2834,13 @@
     "table-duplicate-name": "ea445b7eb857a12e",
     "table-fake-caption": "5023f49818f67ed2",
     "video-caption": "61b92a403c21d4a5",
-    "widget-keyboard-focusable": "c8cefbbd4fadee80",
-    "focus-not-obscured-enhanced": "fe683fbed61fbb8f",
-    "focus-not-obscured-minimum": "6d92f3ab7c9aefea",
-    "link-name-quality-link-only": "0db2cece5451463f",
-    "reflow-horizontal-scroll": "53ca33a7f14833b3"
+    "widget-keyboard-focusable": "c8cefbbd4fadee80"
   },
   "dictionaries": {
-    "de": "a6e3702d53434d0d3501d41965dfcc1cb5d45d8918eccb73c3dd3902c1861a63",
-    "en": "20e8e4411869f7d5eb62ef753d7ceccac2a022086153d5cfe3da5fd18c39ee23",
-    "es": "b1fbcaa6d47b062a82351ec7924f56738e6c073c78852c14702dbc920d38189f",
-    "fr": "7d3a4f0ec7065372d66601c09995594499029e33e6be96e2dc9003c5027af713",
-    "ja": "5beec6037864e5e36b4d8f779b52cbeea4b24da4cbeee22bf8f5a866c58a9887"
+    "de": "26a54107221b4fd368a37f4ab8d140d3eaffd7285494c1ae3014cbb195c85017",
+    "en": "f84f075fcc4f660662f0acded0c10d30a053a721173be83070206845e83e6d63",
+    "es": "36e895674b97af091239b598f50366ae5f711ccc342258787f61758b03a9a164",
+    "fr": "9a10d28df4b447b35d1f16ebf4d21e5edb27f0596ff1282e976bf397f2a379d1",
+    "ja": "d81811bacf88cd582b8548d7a539c8e0be95edc30c911b6251186dfe0490eb2a"
   }
 }
