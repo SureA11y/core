@@ -687,8 +687,10 @@
     ],
     "reflow-horizontal-scroll": [
       "CLIPPED_AT_VIEWPORT_EDGE",
+      "CLIPPED_BY_CONTAINER",
       "HORIZONTAL_SCROLL",
       "HORIZONTAL_SCROLL_UNATTRIBUTED",
+      "SCROLLS_IN_CONTAINER",
       "WIDE_MEDIA",
       "WIDE_PREFORMATTED",
       "WIDE_TABLE"

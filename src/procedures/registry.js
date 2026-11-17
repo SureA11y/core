@@ -444,6 +444,8 @@ const PROCEDURES = {
             'WIDE_TABLE',
             'WIDE_MEDIA',
             'WIDE_PREFORMATTED',
+            'CLIPPED_BY_CONTAINER',
+            'SCROLLS_IN_CONTAINER',
             'CLIPPED_AT_VIEWPORT_EDGE'
           ]
         }
