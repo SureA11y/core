@@ -102923,6 +102923,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return 'HORIZONTAL_SCROLL';
   }
 
+  // Fields a person fills in: a form needs no two-dimensional layout to be
+  // used or understood, so the exception does not cover it.
+  const NATIVE_CONTROLS = 'input:not([type="hidden"]), select, textarea, [contenteditable="true"]';
+  const CONTROL_ROLES = new Set([
+    'textbox',
+    'combobox',
+    'searchbox',
+    'spinbutton',
+    'listbox',
+    'slider',
+    'checkbox',
+    'radio',
+    'switch'
+  ]);
+  const ROLE_CONTROLS = [...CONTROL_ROLES].map((r) => `[role~="${r}" i]`).join(', ');
+  function isRoleControl(node) {
+    const role = String(
+      (helpers.aria && helpers.aria.getExplicitRole && helpers.aria.getExplicitRole(node)) || ''
+    ).toLowerCase();
+    return CONTROL_ROLES.has(role);
+  }
+  function holdsFormControls(el) {
+    try {
+      if (dom.matches(el, NATIVE_CONTROLS) || dom.querySelector(el, NATIVE_CONTROLS)) return true;
+      if (dom.matches(el, ROLE_CONTROLS) && isRoleControl(el)) return true;
+      return [...(dom.querySelectorAll(el, ROLE_CONTROLS) || [])].some(isRoleControl);
+    } catch {
+      return false;
+    }
+  }
+
   // Each element that crosses the edge while its parent doesn't: the place
   // the overflow starts.
   const found = [];
@@ -103191,7 +103222,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   };
 
-  function report(code, el, hit, lean) {
+  // asFail: the finding is settled as a failure, not asked about.
+  function report(code, el, hit, lean, asFail) {
     perCode[code] = (perCode[code] || 0) + 1;
     if (perCode[code] > MAX_PER_CODE) return;
     const msg = MESSAGES[code];
@@ -103203,7 +103235,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       element: tag
     };
     const occ = helpers.reportOccurrence(el, {
-      ...(lean ? { lean } : {}),
+      ...(lean && !asFail ? { lean } : {}),
       summary: msg.summary(params),
       hint: msg.hint,
       i18n: {
@@ -103211,7 +103243,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hintKey: `reflowHorizontalScroll_hint_${msg.key}`,
         params
       },
-      ...(msg.needed
+      ...(msg.needed && !asFail
         ? {
             occurrenceOutcome: 'cantTell',
             uncertainty: {
@@ -103232,7 +103264,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       }
     });
-    (msg.needed ? questions : fails).push(occ);
+    (msg.needed && !asFail ? questions : fails).push(occ);
   }
 
   for (const { el, tag, hit } of found) {
@@ -103251,11 +103283,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const { el, clip } of clipped) {
+    // Fields cut off or scrolled sideways in a box: no exception covers a
+    // form, so it fails. A table, code or media is left to a person.
+    const asFail = kindOf(el) === 'HORIZONTAL_SCROLL' && holdsFormControls(el);
     report(
       clip.scrolls ? 'SCROLLS_IN_CONTAINER' : 'CLIPPED_BY_CONTAINER',
       el,
       { over: clip.over, rect: clip.rect },
-      clip.scrolls ? LEANS.scrollBox : LEANS.clippedBox
+      clip.scrolls ? LEANS.scrollBox : LEANS.clippedBox,
+      asFail
     );
   }
 

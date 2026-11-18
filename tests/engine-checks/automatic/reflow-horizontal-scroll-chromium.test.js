@@ -150,7 +150,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(check.outcome, 'pass');
   });
 
-  await t.test('a form wider than its scrolling dialog is asked about', async () => {
+  await t.test('a form wider than its scrolling dialog fails', async () => {
     // A dialog whose content scrolls (overflow auto), holding a panel with a
     // forced minimum width, as a filter dialog does.
     const check = await scan(
@@ -159,7 +159,9 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
         '<div class="dialog"><form><div class="panel" id="panel"><div class="grid"><label>Type <select><option>All</option></select></label><label>Direction <select><option>All</option></select></label></div></div></form></div>'
       )
     );
-    assert.deepEqual(findings(check), [['panel', 'cantTell', 'SCROLLS_IN_CONTAINER', 'fail']]);
+    // No exception covers a form, so it is settled as a failure, not asked about.
+    assert.equal(check.outcome, 'fail');
+    assert.deepEqual(findings(check), [['panel', 'fail', 'SCROLLS_IN_CONTAINER', null]]);
     assert.equal(check.occurrences[0].i18n.summaryKey, 'reflowHorizontalScroll_summary_scrollBox');
     // The same page with the panel fitting its dialog passes.
     const fits = await scan(
@@ -170,6 +172,34 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     );
     assert.equal(fits.outcome, 'pass');
   });
+
+  await t.test('fields cut off by a box that hides overflow fail', async () => {
+    const check = await scan(
+      page(
+        '.card{overflow:hidden;border:1px solid} .grid{display:flex;width:560px} .grid>div{flex:none;width:270px}',
+        '<div class="card"><div class="grid" id="g"><div><label>Type <input></label></div><div><label>Direction <input></label></div></div></div>'
+      )
+    );
+    assert.equal(check.outcome, 'fail');
+    assert.deepEqual(findings(check), [['g', 'fail', 'CLIPPED_BY_CONTAINER', null]]);
+  });
+
+  await t.test(
+    'a carousel of links and a data table with a field are still asked about',
+    async () => {
+      const check = await scan(
+        page(
+          'table{width:600px} .card{overflow:hidden;border:1px solid} .row{display:flex;width:560px} .row>a{flex:none;width:270px}',
+          '<div class="card"><div class="row" id="rail"><a href="#a">One</a><a href="#b">Two</a></div></div>' +
+            '<div class="card"><table id="t"><tr><th>A</th><th>B</th></tr><tr><td><input aria-label="x"></td><td>2</td></tr></table></div>'
+        )
+      );
+      assert.deepEqual(findings(check), [
+        ['rail', 'cantTell', 'CLIPPED_BY_CONTAINER', 'fail'],
+        ['t', 'cantTell', 'CLIPPED_BY_CONTAINER', 'fail']
+      ]);
+    }
+  );
 
   await t.test('a box that hides what overflows it asks about what it cuts off', async () => {
     // A card (overflow hidden) around a data table, and a filter panel whose
