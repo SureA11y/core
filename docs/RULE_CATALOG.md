@@ -3344,6 +3344,8 @@ At most 50 elements are listed per reason code.
 | `WIDE_TABLE` | cantTell | A table sticks out past the edge; a data table is covered by the exception for content that needs a two-dimensional layout, a layout table is not. It leans pass for a table with header cells or a caption, and fail for one marked as layout (role presentation or none) or with neither. | WCAG 1.4.10 (exception: two-dimensional layout) |
 | `WIDE_MEDIA` | cantTell | An image, video, canvas, SVG, embedded object or frame sticks out past the edge; a map, diagram or game may need its size. It leans fail for an image or a video, which can usually be scaled to fit. | WCAG 1.4.10 (exception: two-dimensional layout) |
 | `WIDE_PREFORMATTED` | cantTell | Preformatted text, such as code, doesn't wrap and sticks out past the edge; whether its layout is needed to understand it is for a person to judge. | WCAG 1.4.10 (not settled) |
+| `SCROLLS_IN_CONTAINER` | cantTell | This element, not a table, code block or media, is wider than the box around it, which scrolls sideways (`overflow-x: auto` or `scroll`) to show it. It leans fail, and fails where the element is, or holds, a form control, which no exception covers. | WCAG 1.4.10 (not settled) |
+| `CLIPPED_BY_CONTAINER` | cantTell | A box around this element hides what overflows it (`overflow-x: hidden` or `clip`), and the element sticks out of the box, so part of it can't be reached. It leans fail, and fails where the element is, or holds, a form control, which no exception covers. | WCAG 1.4.10 (not settled) |
 | `CLIPPED_AT_VIEWPORT_EDGE` | cantTell | The page doesn't scroll sideways, but the edge of the viewport cuts through this element, so part of it can't be reached. It leans fail. | WCAG 1.4.10 (not settled) |
 
 ### `region`

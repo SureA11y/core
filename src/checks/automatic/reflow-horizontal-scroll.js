@@ -93,14 +93,17 @@
  *     doesn't wrap and sticks out past the edge; whether its layout is
  *     needed to understand it is for a person to judge.
  *     Basis: WCAG 1.4.10 (not settled).
- *   - `SCROLLS_IN_CONTAINER` (cantTell, or fail when it holds a form control):
- *     this element, not a table, code block or media, is wider than the box
- *     around it, which scrolls sideways (`overflow-x: auto` or `scroll`) to
- *     show it. It leans fail.
+ *   - `SCROLLS_IN_CONTAINER` (cantTell): this element, not a table, code block
+ *     or media, is wider than the box around it, which scrolls sideways
+ *     (`overflow-x: auto` or `scroll`) to show it. It leans fail, and fails
+ *     where the element is, or holds, a form control, which no exception
+ *     covers.
  *     Basis: WCAG 1.4.10 (not settled).
- *   - `CLIPPED_BY_CONTAINER` (cantTell, or fail when it holds a form control): a box around this element hides what
+ *   - `CLIPPED_BY_CONTAINER` (cantTell): a box around this element hides what
  *     overflows it (`overflow-x: hidden` or `clip`), and the element sticks
- *     out of the box, so part of it can't be reached. It leans fail.
+ *     out of the box, so part of it can't be reached. It leans fail, and fails
+ *     where the element is, or holds, a form control, which no exception
+ *     covers.
  *     Basis: WCAG 1.4.10 (not settled).
  *   - `CLIPPED_AT_VIEWPORT_EDGE` (cantTell): the page doesn't scroll
  *     sideways, but the edge of the viewport cuts through this element, so
