@@ -1198,8 +1198,12 @@ function packProblems(pack, withCoreVersion, withReported) {
   if (fits !== null && withReported) {
     const uses = experimentalUses(pack);
     const [major, minor] = parseVersion(CORE_VERSION);
-    const next = `${major}.${minor + 1}.0`;
-    if (uses.length && satisfiesRange(next, pack.core)) {
+    // The next minor, or the next major, which may change it as well: a
+    // range that takes either (`~1.17.0 || ^2.0.0`) is reported.
+    const next = [`${major}.${minor + 1}.0`, `${major + 1}.0.0`].find((v) =>
+      satisfiesRange(v, pack.core)
+    );
+    if (uses.length && next) {
       problems.push(
         `core ${pack.core} takes core ${next}, which may change the experimental ${uses
           .map((u) => u.id)

@@ -73,7 +73,14 @@ test('no release ships an experimental API on or past the version that settles i
 
 test('a pack that uses an experimental API is told when its range takes the next minor', () => {
   withEntry(() => {
-    for (const core of [`^${MAJOR}.${MINOR}.0`, `>=${MAJOR}.${MINOR}.0`, `${MAJOR}.x`, '*']) {
+    // The next major may change it too: a range that also takes it is told.
+    for (const core of [
+      `^${MAJOR}.${MINOR}.0`,
+      `>=${MAJOR}.${MINOR}.0`,
+      `${MAJOR}.x`,
+      '*',
+      `${TILDE} || ^${MAJOR + 1}.0.0`
+    ]) {
       const problems = checkPack({ ...sample, core });
       assert.ok(
         problems.some((p) => RANGE_PROBLEM.test(p)),

@@ -7,12 +7,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
 
-let chromium;
-try {
-  ({ chromium } = require('playwright'));
-} catch {
-  chromium = null;
-}
+// Playwright's Chromium, or CHROMIUM_EXECUTABLE_PATH's; skipped without one.
+const { chromium, executablePath, skip } = require('../helpers/chromium');
 const { addBundle } = require('../helpers/browserBundle');
 
 const APP =
@@ -28,40 +24,36 @@ const RULES = [
   'landmark-one-main'
 ];
 
-test(
-  'the app under test in a runner frame is judged as the page',
-  { skip: !chromium },
-  async (t) => {
-    const server = http
-      .createServer((req, res) => {
-        res.writeHead(200, { 'content-type': 'text/html' });
-        res.end(req.url === '/app' ? APP : RUNNER);
-      })
-      .listen(0, '127.0.0.1');
-    await new Promise((r) => server.once('listening', r));
-    t.after(() => server.close());
-    const browser = await chromium.launch();
-    t.after(() => browser.close());
-    const page = await browser.newPage();
-    await page.goto(`http://127.0.0.1:${server.address().port}/runner`);
-    const app = page.frames().find((f) => f.url().endsWith('/app'));
-    await app.waitForLoadState();
-    await addBundle(app);
-    // engineOptions.topLevelDocument: the binding says this frame is the page.
-    const got = await app.evaluate(
-      (rules) =>
-        Object.fromEntries(
-          window.a11ycore
-            .runa11yCoreInPage(null, null, { topLevelDocument: true }, rules)
-            .checksResults.map((c) => [c.ruleId, c.outcome])
-        ),
-      RULES
-    );
-    assert.deepEqual(got, {
-      'page-title-present': 'fail',
-      'html-lang-attr-present': 'fail',
-      'meta-viewport-zoom-enabled': 'fail',
-      'landmark-one-main': 'cantTell'
-    });
-  }
-);
+test('the app under test in a runner frame is judged as the page', { skip }, async (t) => {
+  const server = http
+    .createServer((req, res) => {
+      res.writeHead(200, { 'content-type': 'text/html' });
+      res.end(req.url === '/app' ? APP : RUNNER);
+    })
+    .listen(0, '127.0.0.1');
+  await new Promise((r) => server.once('listening', r));
+  t.after(() => server.close());
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.address().port}/runner`);
+  const app = page.frames().find((f) => f.url().endsWith('/app'));
+  await app.waitForLoadState();
+  await addBundle(app);
+  // engineOptions.topLevelDocument: the binding says this frame is the page.
+  const got = await app.evaluate(
+    (rules) =>
+      Object.fromEntries(
+        window.a11ycore
+          .runa11yCoreInPage(null, null, { topLevelDocument: true }, rules)
+          .checksResults.map((c) => [c.ruleId, c.outcome])
+      ),
+    RULES
+  );
+  assert.deepEqual(got, {
+    'page-title-present': 'fail',
+    'html-lang-attr-present': 'fail',
+    'meta-viewport-zoom-enabled': 'fail',
+    'landmark-one-main': 'cantTell'
+  });
+});

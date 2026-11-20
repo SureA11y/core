@@ -16,7 +16,7 @@
  */
 
 const { isUnsafeKey, TAG } = require('./texts-by-id.js');
-const { appliesUnder } = require('./law-applies.js');
+const { appliesUnder, canonicalTag } = require('./law-applies.js');
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const isText = (v) => typeof v === 'string' && v.trim() !== '';
@@ -168,7 +168,7 @@ function lawOf(st, id, locale) {
   const lower = {};
   for (const [tag, d] of Object.entries(dicts))
     if (TAG.test(tag) && isObject(d)) lower[tag.toLowerCase()] = d;
-  const out = { id, ...JSON.parse(JSON.stringify(law)), lang: source };
+  const out = { id, ...JSON.parse(JSON.stringify(law)), lang: canonicalTag(source) };
   const key = `laws.${id}.name`;
   for (const tag of chain(locale)) {
     if (tag === source) break;
@@ -176,7 +176,7 @@ function lawOf(st, id, locale) {
     const v = d && hasOwn(d, key) ? d[key] : undefined;
     if (isText(v)) {
       out.name = v;
-      out.lang = tag;
+      out.lang = canonicalTag(tag);
       break;
     }
   }
@@ -184,6 +184,7 @@ function lawOf(st, id, locale) {
 }
 
 module.exports = {
+  canonicalTag,
   lawOf,
   lawProblems,
   standardLawProblems,
