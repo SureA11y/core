@@ -2,26 +2,24 @@
 
 Where the work on the audit's findings stands, written so that another person or session can pick it up without the history of this one. The findings themselves, open and fixed, are in [`FINDINGS.md`](./FINDINGS.md); this page says what is in flight, what is decided, and how the work is done.
 
-Last updated 2026-11-20, on `main` at `ec664338` (1.17.0 plus the unreleased 1.18.0 work).
+Last updated 2026-11-20, on `main` at `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work).
 
 ## 1. Open now
 
-One pull request is in flight: [#411](https://github.com/SureA11y/core/pull/411), the seventh round's fixes, open. Seven rounds have run; their findings are fixed or decided, as recorded in [`FINDINGS.md`](./FINDINGS.md) §3:
+Nothing is in flight: no pull request from the audit work is open. Seven rounds have run; their findings are fixed or decided, as recorded in [`FINDINGS.md`](./FINDINGS.md) §3:
 - **Rounds 1 and 2:** fixed in #77 to #186 (the sections of §3 below the third round).
 - **Round 3:** fixed in #191 to #194, merged 2026-10-10.
 - **Round 4:** fixed in #212 to #241, merged 2026-10-15; re-checked by round 5.
 - **Round 5:** fixed in #289 to #295 and #299, merged 2026-10-23 to 2026-10-24, released in 1.14.0; re-checked on `92e54df6` on 2026-10-27.
 - **Round 6** (the unreleased 1.18.0 work, at `23e0a387`): fixed in #406 and #407, merged 2026-11-20, unreleased; every open item of the register re-checked on `c1bb82de` the same day. RF-16's last part fixed by #408.
-- **Round 7** (at `ec664338`): 38 findings, all fixed in #411, opened 2026-11-20, with R4:OP-P1. Once it is merged, move its section of `FINDINGS.md` §3 to "(in `main`)".
+- **Round 7** (at `ec664338`): 38 findings, all fixed in #411, merged 2026-11-20, with R4:OP-P1.
+- **The leftovers of rounds 4 and 5**, and the four questions that waited on a decision: fixed and decided in #412, merged 2026-11-20.
 
-What is left (`FINDINGS.md` §1), all Low:
-- three parts of fifth-round findings: generated text moved off the page by `text-indent` (R5:VI-12), a key listener added from another realm (R5:KH-5), an unknown key given to the console's `run()` (R5:AP-4);
-- the fourth round's option and selection leads (R4:OP-P3 to P6, the strict-mode whitespace and the Kelvin sign);
-- the sixth round's three features (R6:CE-4 to CE-6, `FINDINGS.md` §2).
+What is left: no finding to fix and no question to decide (`FINDINGS.md` §1). The features of `FINDINGS.md` §2 remain, the sixth round's three among them (R6:CE-4 to CE-6).
 
-**Next step:** take the decisions of `FINDINGS.md` §1 ("Waiting on a decision"), then fix the Low items on branches from `main`, one issue each. Before the next round, merge `main` into this branch (README, "Before running an audit").
+**Next step:** go through the features of `FINDINGS.md` §2 and decide which to take. Before the next round, merge `main` into this branch (README, "Before running an audit").
 
-**Before 1.18.0 is used by the packs:** `pack-rgaa`, `pack-raweb` and `pack-en301549` declare `~1.17.0`, so each needs a release to accept it; `pack-rgaa`'s test of the experimental APIs it uses ("the profile serves article 47…") needs updating then, as it uses none any more. With #411, two more package tests need a one-line update: `pack-wai-aria`'s "an unnamed grid: a question for WCAG, a failure of WAI-ARIA" (the check now fails under the WAI-ARIA profile alone, R7:IF-7) and `pack-rgaa`'s "RGAA 9.3 and WCAG 1.3.1 both ask about `<li>` items in a role="list"" (WCAG 1.3.1 is now `passedInPart`, R7:AN-6).
+**Before 1.18.0 is used by the packs:** `pack-rgaa`, `pack-raweb` and `pack-en301549` declare `~1.17.0`, so each needs a release to accept it; `pack-rgaa`'s test of the experimental APIs it uses ("the profile serves article 47…") needs updating then, as it uses none any more. With #411, two more package tests need a one-line update: `pack-wai-aria`'s "an unnamed grid: a question for WCAG, a failure of WAI-ARIA" (the check now fails under the WAI-ARIA profile alone, R7:IF-7) and `pack-rgaa`'s "RGAA 9.3 and WCAG 1.3.1 both ask about `<li>` items in a role="list"" (WCAG 1.3.1 is now `passedInPart`, R7:AN-6). With #412, one more: `pack-rgaa`'s "9.3 asks about a plain `<li>` in a list with a widget role" expects `listitem-parent-valid` to fail, where it now asks (R5 list lead, decided); RGAA 9.3's outcome is unchanged.
 
 **Not recorded here.** Two pieces of audit work ran on `main` between the fifth and sixth rounds, and their reports were never brought to this branch: a stress test of scans of several profiles, fixed in `86d60598` and `2ddfc07a` (2026-11-03), and an audit of the rules' messages, fixed in #385 and #386 (2026-11-11). Their fixes are in `main`, and the sixth round ran on top of them; only their reports and probes are missing from the register.
 
@@ -34,7 +32,8 @@ What is left (`FINDINGS.md` §1), all Low:
 - `valid-lang` and the private-use range `qaa`–`qtz`: kept as a `fail` on 2026-10-05, reversed on 2026-10-25 (#303) to follow ACT.
 - Round 6, all on 2026-11-19: excluded areas are context for rules that judge the whole page (no findings in them, their content still read); every experimental API due at 1.18.0 made stable after its fixes, `skip-link`'s `details.lean` and the `standard.review` keys included, as `pack-rgaa` uses both; requirement-level laws kept experimental until 1.20.0 and honoured by the scan; invalid `aria-level` values follow WAI-ARIA's default where Chromium exposes 1.
 - Round 7, all on 2026-11-20: `reflow-horizontal-scroll` becomes a manual rule that asks and never fails, a region filling the viewport is the page, and `opacity: 0` is hidden; `p-as-heading` drops `BOLD_SHORT_DIV` and `BOLD_LEAD_LINE`, keeping `BOLD_SHORT_PARAGRAPH`; a pack's profile scanned alone keeps the pack's verdict; an invalid `aria-checked` on a native checkbox or radio is asked about.
-- Still open: four questions, in `FINDINGS.md` §1.
+- After round 7, on 2026-11-20: `strictOptions` refuses unknown `mappings` and `optInRules` tags and invalid `excludeSelectors` CSS; an `<li>` in a list whose role replaces list is asked about, leaning fail; an input whose `list` names no datalist is a textbox, as Chromium exposes it; `focus-not-removed-by-script` keeps its criteria, without 3.2.1; ids, tags and profile names match case in ASCII only.
+- Nothing is waiting on a decision.
 
 ## 3. How the work is done
 
@@ -47,7 +46,7 @@ These are the conventions this work has followed; keep them.
 - **Code.** Rules read the DOM through `ctx.helpers.dom`, and a name read with `dom.get` is listed in `src/core/safe-dom.js`. Match the surrounding style. Prettier applies to code and tests (`npm run format:check`), not to docs. Never edit or rewrite `main`.
 - **Tests.** A Chromium test, `tests/engine-checks/*-chromium.test.js`, where the change touches rendering or the browser, and jsdom tests; each new test fails before its fix. Chromium tests find the browser through `CHROMIUM_EXECUTABLE_PATH`.
 - **Pull requests.** Mirror `.github/PULL_REQUEST_TEMPLATE.md` and the style of #146 and #161, with a "Fixes #N" line per issue at the end. Base `main`; they are merged by rebase.
-- **Rounds 6 and 7 did not follow two of these.** Their findings were fixed in a few pull requests (#406, #407; #411 for round 7, all in one at the owner's request) with no issue per item and no separate "Record …" changelog commits: the changelog entries went in with each fix. The other conventions held.
+- **Rounds 6 and 7 did not follow two of these.** Their findings were fixed in a few pull requests (#406, #407; #411 for round 7 and #412 for the leftovers, each in one at the owner's request) with no issue per item and no separate "Record …" changelog commits: the changelog entries went in with each fix. The other conventions held.
 
 ## 4. Verifying a commit
 

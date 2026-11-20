@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Verified against** | `main` at `ec664338` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
+| **Verified against** | `main` at `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the leftovers fixed in #412; `ec664338`, 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
 | **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)), [second](./2026-10-stress-test-2.md) (`cfefc02`), [third](./2026-10-stress-test-3.md) (`eaa5d3f1`, with its [outcomes log](./2026-10-stress-test-3-outcomes.md)), [fourth](./2026-10-stress-test-4.md) (`3af2008`) [fifth](./2026-10-stress-test-5.md) (`c528af08`), [sixth](./2026-11-stress-test-6.md) (`23e0a387`) and [seventh](./2026-11-stress-test-7.md) (`ec664338`) |
 | **How it is kept** | See [`README.md`](./README.md): before each audit, merge `main`; after it, re-run every open item, move fixed ones to §3, and add new ones |
 
@@ -21,30 +21,17 @@ Rounds 3 to 5 were kept on branches of their own until 2026-10-27, when they wer
 
 ## 1. Open — to fix
 
-Sorted by severity. Re-run on `main` at `c1bb82de`, 2026-11-20, with the fourth and fifth rounds' own probes (`2026-10-probes-5/robust/leads-op.js`, `leads-misc.js`, `hooks/p01-listener-keyhandler-sources.mjs`) and [`2026-11-probes-6/recheck-open.mjs`](./2026-11-probes-6/recheck-open.mjs), in Chromium 153 and jsdom: each still behaves as on `92e54df6`. Every finding of rounds 1 to 4 is fixed or closed, every fifth- and sixth-round finding is fixed or decided, and every seventh-round finding is fixed in [#411](https://github.com/SureA11y/core/pull/411), open (§3); what is left are three parts of fifth-round findings and the fourth round's leads, all Low, and the decisions below. On `ec664338`, 2026-11-20, R6:RF-16 was re-run and passes (fixed by #408), and `recheck-open.mjs` gave the same results for R5:VI-12, R5:AP-4 and the two NR leads. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
+Nothing. Every finding of rounds 1 to 7 is fixed, decided or closed (§3, §4): the last open ones, Low parts of rounds 4 and 5, were fixed in [#412](https://github.com/SureA11y/core/pull/412), merged 2026-11-20, and the four questions that waited on a decision were decided the same day (below). Each fix has a regression test that fails on `main` before it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
 
-| # | Finding | Verdict | Severity | Found in |
-|---|---|---|---|---|
-| R5:VI-12 (rest) | Generated text moved off the page by `text-indent` still fails contrast: a `::before` with `display: inline-block; text-indent: -9999px` and `#eee` text fails `BELOW_THRESHOLD` at 1.16:1, though nothing is painted. An element's own text is left out since `a5789731` | Bug | Low | [Round 5](./2026-10-probes-5/visual/FINDINGS.md) |
-| R5:KH-5 (rest) | A key listener added through another realm's `addEventListener` (an iframe's) is not seen by the listener hook, so a working control fails `CLICK_HANDLER_NO_KEY_LISTENER` | Bug | Low | [Round 5](./2026-10-probes-5/hooks/FINDINGS.md) |
-| R5:AP-4 (rest) | `a11ycore.run()` with an unknown top-level key (`{ foo: 1 }`, `{ engineOptions: 'x' }`) runs every rule with no warning; the selection given at the top level is refused since `25a93414` | Inconsistency | Low | [Round 5](./2026-10-probes-5/api/FINDINGS.md) |
-| R4:OP-P3 | An `applicability` returning `undefined`, `0`, `NaN`, `null` or `'false'` runs the rule everywhere, with no warning; only `false` gives `notApplicable` | Inconsistency | Low | Round 4, re-run in round 5 |
-| R4:OP-P4 | `rootCanvasFallback` takes `inherit`, `currentColor`, `rgb(1,2,3,4,5)` and `rgb(1,2,3,)` silently; only `notacolor` is warned | Bug | Low | Round 4, re-run in round 5 |
-| R4:OP-P5 | `packScript` accepts rule code containing `<!--<script` | Bug | Low | Round 4, re-run in round 5 |
-| R4:OP-P6 | `rules: [ , ]` (a hole) is accepted where `[null]` is refused; holes in `excludeSelectors` pass under strict | Inconsistency | Low | Round 4, re-run in round 5 |
-| R4:SE (whitespace) | Under strict, `wcagLevel: ' aA '` is accepted and `wcagVersion: '2.1 '` throws | Inconsistency | Low | [Round 4](./2026-10-probes-4/selection/FINDINGS.md), re-run in round 5 |
-| R4:SE (Kelvin) | `linK-name-present` with the Kelvin sign (U+212A) selects `link-name-present`: case-insensitive matching folds it to `k` | Debatable | Low | Round 4, re-run in round 5 |
+### Decided on 2026-11-20
 
-### Waiting on a decision
-
-Checked on `c1bb82de`, 2026-11-20. Three changed since `92e54df6` without being decided, as the *Now* column says. From the [fifth round's §2](./2026-10-stress-test-5.md#2-decisions-needed) and the fourth round's leads.
-
-| # | Question | Now |
+| # | Question | Decision |
 |---|---|---|
-| R4:OP-P2 | Should `strictOptions` throw for an unknown profile, unknown `mappings` or `optInRules` tags, and invalid `excludeSelectors` CSS? A profile typo runs every rule. Profiles are an open set | An unknown profile throws under `strictOptions` since `4a6cf0fb` (2026-11-02); unknown `mappings` and `optInRules` tags and invalid `excludeSelectors` CSS only warn |
-| R5 (NR lead 2) | `listitem-parent-valid` on `<li>` in `<ul role=group>` or `<ul role=navigation>`, where ARIA in HTML makes the `li` generic | `fail` `LIST_ROLE_OVERRIDDEN` |
-| R5 (NR lead 4) | An input whose `list` names no datalist: textbox (HTML-AAM) or combobox (ARIA in HTML)? | Textbox: `aria-expanded` on it is asked about (`ARIA_ATTR_NOT_ALLOWED`, cantTell) since WCAG no longer fails where only WAI-ARIA is broken (`47e4df1a`, 2026-11-02); the question itself is open |
-| R5 (AP lead) | `focus-not-removed-by-script` maps 2.1.1 and 2.4.7; F55 also names 3.2.1. Add it? | 2.1.1, 2.1.3, 2.4.7 and 2.4.13 since `63f1bad4` (2026-11-10); still no 3.2.1 |
+| R4:OP-P2 | Should `strictOptions` throw for unknown `mappings` or `optInRules` tags and invalid `excludeSelectors` CSS, as for an unknown profile? | Yes, all three, including a rule's own `rules[ruleId].excludeSelectors`; without strict mode they are still warned about (#412) |
+| R5 (NR lead 2) | `listitem-parent-valid` on `<li>` in `<ul role=group>` or `<ul role=navigation>` | Asked about (`LIST_ROLE_OVERRIDDEN`, cantTell), leaning fail where the item is drawn as a list item: the list is gone for certain, whether that loses information depends on the content (#412) |
+| R5 (NR lead 4) | An input whose `list` names no datalist: textbox or combobox? | As Chromium 153 exposes it: a textbox, with no expanded state, as the engine already took it; a test records it (#412) |
+| R5 (AP lead) | Add 3.2.1 to `focus-not-removed-by-script`, as F55 names it? | No: the blur may be intended; it keeps 2.1.1, 2.1.3, 2.4.7 and 2.4.13 |
+| R4:SE (Kelvin) | Should the Kelvin sign select `link-name-present`? | No: ids, tags and profile names match case in ASCII only (#412) |
 
 ### Notes from earlier rounds
 
@@ -77,9 +64,25 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ## 3. Fixed — history
 
-### Seventh round's findings (in [#411](https://github.com/SureA11y/core/pull/411), open)
+### The register's leftovers (in `main`)
 
-Pull request [#411](https://github.com/SureA11y/core/pull/411), ten commits from `d471b2b0` to `55346be4`, opened 2026-11-20; unreleased, for 1.18.0. Every finding of the [seventh round](./2026-11-stress-test-7.md) (at `ec664338`) was reproduced again while it was fixed, each with a regression test that fails without its fix. Move this section's heading to "(in `main`)" once #411 is merged.
+Pull request [#412](https://github.com/SureA11y/core/pull/412) (`161e9bed` to `29507341`), merged 2026-11-20; unreleased, for 1.18.0. Each fix has a regression test that fails on `main` before it, in `tests/register-leftovers.test.js` and beside each rule's own tests. The 12 published packages gave the results of `main` but for one `pack-rgaa` test, which follows decision R5 (NR lead 2) and needs a one-line update at that pack's next release.
+
+| # | Finding | Fixed in |
+|---|---|---|
+| R5:VI-12 (rest) | Generated text indented off the page by its own `text-indent` failed contrast | #412, `161e9bed` |
+| R5:KH-5 (rest) | A key listener added through another frame's `addEventListener` was not seen | #412, `161e9bed`: recorded in the registry of the element's own window, where both frames have the hook |
+| R5:AP-4 (rest) | The console's `run()` with `engineOptions` or an unknown key ran with no warning | #412, `161e9bed`: the first refused, the second warned about |
+| R4:OP-P3 | An `applicability` returning neither `true` nor `false` ran the rule everywhere | #412, `161e9bed`: `cantTell` with an error |
+| R4:OP-P4 | `rootCanvasFallback` took `inherit`, `currentColor` and malformed `rgb()` | #412, `161e9bed` |
+| R4:OP-P5 | `packScript` took `<!--` then `<script` in rule code | #412, `c3ce665f`, `29507341`: the whole script is checked for that pair with no `-->` between; a first version refusing any `<!--` broke `pack-rgaa` and was narrowed before merge |
+| R4:OP-P6 | A hole in an option list passed the check | #412, `161e9bed` |
+| R4:SE (whitespace) | `wcagVersion: '2.1 '` threw under strict where `wcagLevel: ' aA '` was taken | #412, `161e9bed` |
+| R4:SE (Kelvin) | The Kelvin sign selected `link-name-present` | #412, `161e9bed` (decided) |
+
+### Seventh round's findings (in `main`)
+
+Pull request [#411](https://github.com/SureA11y/core/pull/411), ten commits from `d471b2b0` to `55346be4`, merged 2026-11-20; unreleased, for 1.18.0. Every finding of the [seventh round](./2026-11-stress-test-7.md) (at `ec664338`) was reproduced again while it was fixed, each with a regression test that fails without its fix.
 
 | # | Finding | Fixed in |
 |---|---|---|
