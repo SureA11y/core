@@ -42,4 +42,4 @@ A scan without the base pack, or with another version of it than the one this pa
 
 ## Versions
 
-Standard data, derivation and `uses` are experimental in core: a later minor may change them, so `core` in `index.js` and the peer dependency take no later minor (`__CORE__`). The base is a dependency at the version this pack was made with: a scan needs the same version of it in its packs.
+`uses` is experimental in core: a later minor may change it, so `core` in `index.js` and the peer dependency take no later minor (`__CORE__`). The base is a dependency at the version this pack was made with: a scan needs the same version of it in its packs.

@@ -520,59 +520,162 @@ export function buildBrowserBundle(options?: { packs?: Pack[] }): string;
 /** Internal: the engine a scan with these packs runs on. Not covered by semver. */
 export function preparePacks(packs: unknown[], options?: { strict?: boolean }): unknown;
 
+/** A procedure in standard data: how a person assesses a requirement or test. */
+export interface StandardDataProcedure {
+  /** 1 to 8 steps. */
+  steps: string[];
+  passWhen: string;
+  failWhen: string;
+  tools?: string[];
+  automation?: 'full' | 'partial' | 'manual';
+}
+
+/** Where a reason code or a finding of a rule goes instead of the row's units. */
+export interface StandardDataRoute {
+  requirements?: string[];
+  outcome?: 'cantTell' | 'fail';
+}
+
+/** A rule's row in a version's rule map. */
+export interface StandardDataRow {
+  /** The requirements or tests its findings count toward. */
+  requirements: string[];
+  /** With tests only: where its findings are questions. */
+  asks?: string[];
+  reasonCodes?: Record<string, StandardDataRoute>;
+  findings?: Array<StandardDataRoute & { when: Record<string, string | number | boolean | null> }>;
+  note?: string;
+  /** With tests and wcagCorrespondence: tests linked outside it, each with the reason. */
+  outsideCorrespondence?: Record<string, string>;
+}
+
+/** What a requirement or test is based on: a base standard's key and the id in it. */
+export interface StandardDataBasedOn {
+  standard: string;
+  id: string;
+  /** Where it isn't the version its version is based on. */
+  version?: string;
+}
+
+export interface StandardDataRequirement {
+  title: string;
+  wcagSc?: string[];
+  /** Its tests; without it, the tests that name it. */
+  tests?: string[];
+  partial?: boolean;
+  scope?: 'page' | 'site';
+  basedOn?: StandardDataBasedOn[];
+  note?: string;
+  procedure?: StandardDataProcedure;
+  /** With applicability 'wcag': its own procedure for some of the criterion's facets. */
+  replace?: Record<string, Omit<StandardDataProcedure, 'automation'>>;
+}
+
+export interface StandardDataTest {
+  title: string;
+  requirements: string[];
+  wcagSc?: string[];
+  scope?: 'page' | 'site';
+  basedOn?: StandardDataBasedOn[];
+  procedure?: StandardDataProcedure;
+}
+
+export interface StandardDataGroup {
+  id: string;
+  title: string;
+  requirements?: string[];
+  groups?: StandardDataGroup[];
+}
+
+/** A version's tables. */
+export interface StandardDataVersion {
+  groups?: StandardDataGroup[];
+  requirements: Record<string, StandardDataRequirement>;
+  tests?: Record<string, StandardDataTest>;
+  ruleMap: Record<string, StandardDataRow>;
+  notes?: string[];
+  /** The standard's own steps for core rules' codes: { rule: { CODE: procedure } }. */
+  review?: Record<string, Record<string, Omit<StandardDataProcedure, 'automation'>>>;
+  /** Translations by id: { locale: { 'requirements.<id>.title': '…' } }; a list as a list. */
+  texts?: Record<string, Record<string, string | string[]>>;
+}
+
 /**
  * A standard as data, format "surea11y-standard/1"
  * (`@surea11y/core/schemas/standard.schema.json`): its versions and, per
  * version, its groups, requirements, tests and rule map, in JSON.
- * @experimental Until 1.18.0 (docs/API_STABILITY.md).
  */
 export interface StandardData {
   format: 'surea11y-standard/1';
   key: string;
   standard: string;
+  /** The language it is written in, a language tag. */
   lang?: string;
   versions: Array<{
     version: string;
     wcagVersion: '2.0' | '2.1' | '2.2';
+    /** A year, a month or a day: '2026', '2026-02', '2026-02-14'. */
     published?: string;
-    basedOn?: Array<{ standard: string; version?: string; id?: string }>;
+    /** The base versions it is built on. */
+    basedOn?: Array<{ standard: string; version: string }>;
   }>;
   options?: { applicability?: 'wcag'; wcagCorrespondence?: boolean; ruleMapped?: boolean };
+  data: Record<string, StandardDataVersion>;
+  profiles?: Record<
+    string,
+    { version: string; tags?: string[]; law?: string; [field: string]: unknown }
+  >;
+  /** The laws its profiles are used for, by id. */
+  laws?: Record<string, PackLaw>;
+  /** The laws' names in other languages: { locale: { 'laws.<id>.name': '…' } }. */
+  texts?: Record<string, Record<string, string>>;
+}
+
+/** A value frozen all the way down, as standardDataOf gives it. */
+export type DeepReadonly<T> = T extends (infer U)[]
+  ? ReadonlyArray<DeepReadonly<U>>
+  : T extends object
+    ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+    : T;
+
+/**
+ * The data of a standard built on others, before deriveStandard completes
+ * it: a requirement or test based on another needs only its `basedOn`, and
+ * a row `null` drops an inherited one.
+ */
+export interface DerivedStandardData extends Omit<StandardData, 'data'> {
   data: Record<
     string,
-    {
-      groups?: Array<Record<string, unknown>>;
-      requirements: Record<string, Record<string, unknown>>;
-      tests?: Record<string, Record<string, unknown>>;
-      ruleMap: Record<string, Record<string, unknown>>;
+    Omit<StandardDataVersion, 'requirements' | 'tests' | 'ruleMap' | 'review'> & {
+      requirements: Record<string, Partial<StandardDataRequirement>>;
+      tests?: Record<string, Partial<StandardDataTest>>;
+      ruleMap: Record<string, StandardDataRow | null>;
+      review?: Record<string, Record<string, Omit<StandardDataProcedure, 'automation'> | null>>;
     }
   >;
-  profiles?: Record<string, { version: string; [field: string]: unknown }>;
 }
 
 /**
  * The problems with a standard's data: its shape and the cross-references a
  * schema can't check. [] when sound.
- * @experimental Until 1.18.0.
  */
 export function checkStandardData(data: unknown): string[];
 
 /**
  * The registry entry for a standard's data, what a pack's `standard` is.
  * `extras` adds or replaces fields the data doesn't give (report, review,
- * translations, notes). Throws a TypeError naming each problem of the data.
- * @experimental Until 1.18.0.
+ * translations, procedures, groups, notes, a mappingsFor of the pack's own);
+ * it can't replace one the data gives (key, standard, versions, profiles,
+ * ruleTag, ruleMapped, lang, laws, lawTexts, texts, reviewByVersion). Throws
+ * a TypeError naming each problem of the data or the extras.
  */
 export function standardFromData(
-  data: StandardData,
+  data: StandardData | DeepReadonly<StandardData>,
   extras?: Record<string, unknown>
 ): PackStandard;
 
-/**
- * The data a pack's standard was built from (frozen), or null.
- * @experimental Until 1.18.0.
- */
-export function standardDataOf(standard: unknown): StandardData | null;
+/** The data a pack's standard was built from, frozen, or null. */
+export function standardDataOf(standard: unknown): DeepReadonly<StandardData> | null;
 
 /**
  * The complete data of a standard built on others: each version, requirement
@@ -583,4 +686,7 @@ export function standardDataOf(standard: unknown): StandardData | null;
  * bases can't answer, and each rule inherited from two bases without a row of
  * its own. Results' entries carry each requirement's and test's `basedOn`.
  */
-export function deriveStandard(bases: StandardData[], own: Record<string, unknown>): StandardData;
+export function deriveStandard(
+  bases: ReadonlyArray<StandardData | DeepReadonly<StandardData>>,
+  own: DerivedStandardData
+): StandardData;

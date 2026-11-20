@@ -8,8 +8,7 @@
  * functions, so any tool can read it and a pack can be built from it.
  * schemas/standard.schema.json describes the same shape; checkStandardData
  * checks it and its cross-references, and standardFromData turns it into
- * the registry entry a pack's `standard` is. Experimental
- * (src/experimental.js, docs/API_STABILITY.md).
+ * the registry entry a pack's `standard` is.
  *
  *   {
  *     format: 'surea11y-standard/1',
@@ -27,6 +26,7 @@
  */
 
 const { ruleMappedStandard } = require('./profile-kit.js');
+const { WCAG_VERSIONS } = require('./coverage/wcag-criteria.js');
 const { standardLawProblems } = require('./laws.js');
 
 const FORMAT = 'surea11y-standard/1';
@@ -69,6 +69,33 @@ const TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
 const FACET_ID = /^[a-z0-9]+(\.[a-z0-9]+)*(-[a-z0-9]+(\.[a-z0-9]+)*)*$/;
 const GROUP_KEYS = ['id', 'title', 'requirements', 'groups'];
 const BASED_ON_KEYS = ['standard', 'version', 'id'];
+const ROW_KEYS = [
+  'requirements',
+  'asks',
+  'reasonCodes',
+  'findings',
+  'note',
+  'outsideCorrespondence'
+];
+const ROUTE_KEYS = ['requirements', 'outcome'];
+// The fields of a standard's entry its data gives (standardFromData).
+const EXTRAS_FROM_DATA = [
+  'key',
+  'standard',
+  'versions',
+  'profiles',
+  'ruleTag',
+  'ruleMapped',
+  'lang',
+  'laws',
+  'lawTexts',
+  'texts',
+  'reviewByVersion'
+];
+const OUTCOMES = ['cantTell', 'fail'];
+// When a version was published: a year, a month or a day ('2026', '2026-02',
+// '2026-02-14').
+const DATE = /^\d{4}(-\d{2}(-\d{2})?)?$/;
 const SCOPES = ['page', 'site'];
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -113,21 +140,102 @@ function unknownKeys(obj, keys, at, out) {
   for (const k of Object.keys(obj)) if (!keys.includes(k)) out.push(`${at}: no field "${k}"`);
 }
 
-function basedOnProblems(list, at, out) {
+// What a version, requirement or test is based on: a version names a base
+// and its version ({ standard, version }); a requirement or test names a
+// base and the id in it, and the version where it isn't its version's
+// ({ standard, id, version }).
+function basedOnProblems(list, at, out, { entry = true } = {}) {
   if (list === undefined) return;
+  const shape = entry ? '{ standard, id, version }' : '{ standard, version }';
   if (!Array.isArray(list) || !list.length) {
-    out.push(`${at}.basedOn must be a non-empty list of { standard, version, id }`);
+    out.push(`${at}.basedOn must be a non-empty list of ${shape}`);
     return;
   }
   list.forEach((b, i) => {
     const where = `${at}.basedOn[${i}]`;
-    if (!isObject(b)) return out.push(`${where} must be { standard, version, id }`);
-    unknownKeys(b, BASED_ON_KEYS, where, out);
+    if (!isObject(b)) return out.push(`${where} must be ${shape}`);
+    unknownKeys(b, entry ? BASED_ON_KEYS : ['standard', 'version'], where, out);
     if (!isText(b.standard)) out.push(`${where}.standard must be a standard's key`);
     for (const k of ['version', 'id']) {
       if (b[k] !== undefined && !isText(b[k])) out.push(`${where}.${k} must be a non-empty string`);
     }
+    const needed = entry ? 'id' : 'version';
+    if (b[needed] === undefined) out.push(`${where}.${needed} must name the base's ${needed}`);
   });
+}
+
+// A version's rule map: each row names the requirements or tests of the
+// version its rule's findings count toward (requirements), where they are
+// only questions (asks), where a reason code or a finding goes instead
+// (reasonCodes, findings), and tests linked outside the WCAG correspondence
+// with the reason (outsideCorrespondence). Whether the rule exists, and what
+// the rule's criteria allow, is checked when the pack is defined.
+function ruleMapProblems(ruleMap, units, at, out) {
+  const unitList = (list, where, nonEmpty) => {
+    if (!stringList(list, where, out, { empty: !nonEmpty })) return;
+    for (const u of list)
+      if (!units.has(u)) out.push(`${where} names ${u}, no requirement or test`);
+  };
+  const routeProblems = (r, where) => {
+    if (!isObject(r)) return out.push(`${where} must be { requirements, outcome }`);
+    unknownKeys(r, where.includes('.findings[') ? [...ROUTE_KEYS, 'when'] : ROUTE_KEYS, where, out);
+    if (r.requirements !== undefined) unitList(r.requirements, `${where}.requirements`, false);
+    if (r.outcome !== undefined && !OUTCOMES.includes(r.outcome)) {
+      out.push(`${where}.outcome must be ${OUTCOMES.map((o) => `"${o}"`).join(' or ')}`);
+    }
+  };
+  for (const [rule, row] of Object.entries(ruleMap)) {
+    const rAt = `${at}.ruleMap.${rule}`;
+    if (!isObject(row)) {
+      out.push(`${rAt} must be a row { requirements }`);
+      continue;
+    }
+    unknownKeys(row, ROW_KEYS, rAt, out);
+    if (row.requirements === undefined) out.push(`${rAt}.requirements must be a list`);
+    else unitList(row.requirements, `${rAt}.requirements`, false);
+    if (row.asks !== undefined) {
+      unitList(row.asks, `${rAt}.asks`, true);
+      for (const u of Array.isArray(row.asks) ? row.asks : []) {
+        if (Array.isArray(row.requirements) && row.requirements.includes(u))
+          out.push(`${rAt}.asks names ${u}, which requirements already counts`);
+      }
+    }
+    if (row.reasonCodes !== undefined) {
+      if (!isObject(row.reasonCodes)) out.push(`${rAt}.reasonCodes must be { CODE: route }`);
+      else
+        for (const [code, r] of Object.entries(row.reasonCodes))
+          routeProblems(r, `${rAt}.reasonCodes.${code}`);
+    }
+    if (row.findings !== undefined) {
+      if (!Array.isArray(row.findings)) out.push(`${rAt}.findings must be a list of routes`);
+      else
+        row.findings.forEach((f, i) => {
+          const fAt = `${rAt}.findings[${i}]`;
+          routeProblems(f, fAt);
+          if (!isObject(f)) return;
+          if (!isObject(f.when) || !Object.keys(f.when).length) {
+            out.push(`${fAt}.when must name at least one field`);
+            return;
+          }
+          for (const [path, v] of Object.entries(f.when)) {
+            if (v !== null && !['string', 'number', 'boolean'].includes(typeof v))
+              out.push(`${fAt}.when.${path} must be a string, number, boolean or null`);
+          }
+        });
+    }
+    if (row.note !== undefined && typeof row.note !== 'string') {
+      out.push(`${rAt}.note must be a string`);
+    }
+    if (row.outsideCorrespondence !== undefined) {
+      if (!isObject(row.outsideCorrespondence))
+        out.push(`${rAt}.outsideCorrespondence must be { test: reason }`);
+      else
+        for (const [u, reason] of Object.entries(row.outsideCorrespondence)) {
+          if (!isText(reason))
+            out.push(`${rAt}.outsideCorrespondence.${u} must be a non-empty reason`);
+        }
+    }
+  }
 }
 
 function stringList(list, at, out, { empty = true } = {}) {
@@ -310,7 +418,9 @@ function checkStandardData(data) {
     out.push('key must be lowercase letters and digits, joined by "-"');
   }
   if (!isText(data.standard)) out.push("standard must be the standard's name");
-  if (data.lang !== undefined && !isText(data.lang)) out.push('lang must be a language tag');
+  if (data.lang !== undefined && !(isText(data.lang) && TAG.test(data.lang))) {
+    out.push("lang must be a language tag, such as 'fr' or 'pt-BR'");
+  }
   if (data.options !== undefined) {
     if (!isObject(data.options)) out.push('options must be an object');
     else {
@@ -338,11 +448,13 @@ function checkStandardData(data) {
     if (!isText(v.version)) out.push(`${at}.version must be a non-empty string`);
     else if (listed.includes(v.version)) out.push(`${at}: version ${v.version} is given twice`);
     else listed.push(v.version);
-    if (!isText(v.wcagVersion))
-      out.push(`${at}.wcagVersion must be the WCAG version it is built on`);
-    if (v.published !== undefined && !isText(v.published))
-      out.push(`${at}.published must be a date`);
-    basedOnProblems(v.basedOn, at, out);
+    if (!WCAG_VERSIONS.includes(v.wcagVersion))
+      out.push(
+        `${at}.wcagVersion must be the WCAG version it is built on, one of ${WCAG_VERSIONS.join(', ')}`
+      );
+    if (v.published !== undefined && !(typeof v.published === 'string' && DATE.test(v.published)))
+      out.push(`${at}.published must be a date: a year, a month or a day ('2026-02')`);
+    basedOnProblems(v.basedOn, at, out, { entry: false });
   });
   if (!isObject(data.data)) {
     out.push("data must hold each version's tables: { [version]: { requirements, ruleMap } }");
@@ -428,6 +540,22 @@ function checkStandardData(data) {
       }
     }
     if (requirements) groupsProblems(d.groups, requirements, `${at}.groups`, out);
+    // A requirement's own list of tests names tests of the version.
+    for (const [id, req] of Object.entries(requirements || {})) {
+      if (!isObject(req) || !Array.isArray(req.tests) || !tests) continue;
+      for (const t of req.tests) {
+        if (isText(t) && !Object.prototype.hasOwnProperty.call(tests, t))
+          out.push(`${at}.requirements.${id}.tests names ${t}, no test of the version`);
+      }
+    }
+    if (requirements && tests && isObject(d.ruleMap)) {
+      ruleMapProblems(
+        d.ruleMap,
+        new Set([...Object.keys(requirements), ...Object.keys(tests)]),
+        at,
+        out
+      );
+    }
     if (
       d.notes !== undefined &&
       !(Array.isArray(d.notes) && d.notes.length && d.notes.every(isText))
@@ -489,10 +617,13 @@ function checkStandardData(data) {
     else
       for (const [name, p] of Object.entries(data.profiles)) {
         if (!isObject(p)) out.push(`profiles.${name} must be { version, tags }`);
-        else if (!listed.includes(p.version)) {
-          out.push(
-            `profiles.${name}: version ${JSON.stringify(p.version)} is not one of the versions`
-          );
+        else {
+          if (!listed.includes(p.version)) {
+            out.push(
+              `profiles.${name}: version ${JSON.stringify(p.version)} is not one of the versions`
+            );
+          }
+          if (p.tags !== undefined) stringList(p.tags, `profiles.${name}.tags`, out);
         }
       }
   }
@@ -665,8 +796,10 @@ function deepFreeze(value) {
  * with mappingsFor, composites and validate from ruleMappedStandard, the
  * profiles, and procedures and groups where the standard restates WCAG
  * (options.applicability 'wcag'). `extras` adds or replaces fields the data
- * doesn't give yet (report, review, translations, notes, a mappingsFor of
- * the pack's own). Throws a TypeError naming each problem of the data.
+ * doesn't give (report, review, translations, procedures, groups, notes, a
+ * mappingsFor of the pack's own); it can't replace one the data gives (its
+ * key, versions, profiles, language, laws, texts). Throws a TypeError naming
+ * each problem of the data.
  */
 function standardFromData(data, extras = {}) {
   const problems = checkStandardData(data);
@@ -676,6 +809,15 @@ function standardFromData(data, extras = {}) {
     );
   }
   if (!isObject(extras)) throw new TypeError('standardFromData: extras must be an object');
+  // What the data says is the data's: an extra that replaced it would make
+  // the standard and standardDataOf(standard), which a standard built on it
+  // reads, disagree.
+  const fromData = EXTRAS_FROM_DATA.filter((k) => Object.prototype.hasOwnProperty.call(extras, k));
+  if (fromData.length) {
+    throw new TypeError(
+      `standardFromData: extras can't replace what the data gives: ${fromData.join(', ')}`
+    );
+  }
   const frozen = deepFreeze(JSON.parse(JSON.stringify(data)));
   const options = frozen.options || {};
   const pick = (field) =>

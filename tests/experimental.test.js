@@ -206,7 +206,7 @@ test('the experimental APIs of 1.16 are settled by 1.18.0', () => {
   }
 });
 
-test('a pack built from standard data, or on two levels, uses experimental APIs', () => {
+test('a pack built from standard data, or on two levels, uses nothing experimental', () => {
   const { standardFromData } = require('../src/standard-data.js');
   const data = {
     format: 'surea11y-standard/1',
@@ -229,11 +229,11 @@ test('a pack built from standard data, or on two levels, uses experimental APIs'
       core: TILDE,
       standard: standardFromData(d)
     });
-  assert.deepEqual(ids(pack(data)), ['standard data']);
+  assert.deepEqual(ids(pack(data)), []);
   const twoLevel = JSON.parse(JSON.stringify(data));
   twoLevel.data[1].tests = { 'A.1': { title: 'An <img> has alt', requirements: ['A'] } };
   twoLevel.data[1].ruleMap['img-alt-present'].requirements = ['A.1'];
-  assert.deepEqual(ids(pack(twoLevel)), ['standard data']);
+  assert.deepEqual(ids(pack(twoLevel)), []);
   // A pack whose standard is written by hand uses neither.
   assert.deepEqual(ids(skipPack({ requirements: ['S1'] })), []);
 });
@@ -272,6 +272,6 @@ test('a pack built on another standard uses no experimental derivation', () => {
     core: TILDE,
     standard: standardFromData(derived)
   });
-  // Derivation is stable since 1.18.0; the data it builds on is listed apart.
-  assert.deepEqual(ids(pack), ['standard data']);
+  // Standard data and derivation are stable since 1.18.0.
+  assert.deepEqual(ids(pack), []);
 });
