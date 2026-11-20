@@ -106,13 +106,11 @@ export interface PackStandard {
    * steps | passWhen | failWhen, requirements.<id>.replace.<facet>.steps |
    * passWhen | failWhen, groups.<id>.title, notes, review.<rule>.<CODE>.steps
    * | passWhen | failWhen. A list is given as a list.
-   * @experimental Until 1.18.0 (docs/API_STABILITY.md).
    */
   texts?: Record<string, Record<string, Record<string, string | string[]>>>;
   /**
    * A version's own steps for core's codes, replacing `review`'s for the
    * same rule and code under the profiles of that version.
-   * @experimental Until 1.18.0.
    */
   reviewByVersion?: Record<
     string,

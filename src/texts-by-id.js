@@ -6,8 +6,7 @@
  * A standard's translations by id (standard.texts, src/pack-languages.js):
  * read here, with nothing else, so the code that reads a standard's own
  * steps for a finding (src/pack-review.js) can use them in a browser bundle
- * without the rest of the languages' code. Experimental
- * (src/experimental.js).
+ * without the rest of the languages' code.
  */
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);

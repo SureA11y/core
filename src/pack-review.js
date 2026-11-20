@@ -26,7 +26,6 @@
  * standard's for the same rule and code under its profiles, and
  * standard.texts may translate them by id in that version
  * (`review.<rule>.<CODE>.steps`, `.passWhen`, `.failWhen`), read first.
- * Experimental (src/experimental.js).
  */
 
 // Self-contained too: no file system and no engine.

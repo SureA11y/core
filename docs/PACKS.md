@@ -581,7 +581,7 @@ A standard that declares its languages, `lang` or `translations`, is read in one
 
 A facet is translated as a whole, its label, steps, `passWhen` and `failWhen`, or shown as written, so a person never meets one step in another language; a title, a note or a group's title, on its own; the notes of a version, together. Where a text is shown as written in a page or a report in another language, it says so (`lang`, `titleLang`, `noteLang`, `procedureLang`, `notesLang` on what `listProcedures` gives, [`PROCEDURES.md`](./PROCEDURES.md#the-shape)) and is marked `lang` there, as WCAG 3.1.2 asks.
 
-**Translations by id** (experimental until 1.18.0, [`API_STABILITY.md`](./API_STABILITY.md#experimental-may-change-in-a-minor)). `texts` gives translations by what each text is, per version, rather than by its wording. Two texts worded alike can then be translated apart, and a version can word an id its own way:
+**Translations by id.** `texts` gives translations by what each text is, per version, rather than by its wording. Keys join ids with dots, so an id with a `facets` or `replace` segment could give two parts of the standard the same keys: `definePack` refuses a standard with `texts` where it would. Two texts worded alike can then be translated apart, and a version can word an id its own way:
 
 ```js
 standard: {

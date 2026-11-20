@@ -596,12 +596,14 @@ function engineTexts(data) {
     const d = data.data[version];
     if (!isObject(d.texts)) continue;
     const tests = d.tests || {};
+    // The requirements a test is a facet of, as proceduresOf reads them: a
+    // requirement's own list of tests where it gives one, and otherwise
+    // the tests that name it.
     const reqsOf = (t) =>
       Object.keys(d.requirements).filter((r) =>
-        (Array.isArray(d.requirements[r].tests)
-          ? d.requirements[r].tests
-          : (tests[t] && tests[t].requirements) || []
-        ).includes(t)
+        Array.isArray(d.requirements[r].tests)
+          ? d.requirements[r].tests.includes(t)
+          : ((tests[t] && tests[t].requirements) || []).includes(r)
       );
     for (const [locale, dict] of Object.entries(d.texts)) {
       if (isUnsafeKey(locale) || isUnsafeKey(version)) continue;
