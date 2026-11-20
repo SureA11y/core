@@ -3528,57 +3528,6 @@
       "deprecated": false
     },
     {
-      "file": "src/checks/automatic/reflow-horizontal-scroll.js",
-      "ruleId": "reflow-horizontal-scroll",
-      "wcagScNormative": [
-        "1.4.10"
-      ],
-      "wcagScAll": [
-        "1.4.10"
-      ],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
-      "tags": [
-        "wcag21aa",
-        "wcag1410",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [
-          {
-            "tag": "wcag21aa",
-            "version": "2.1",
-            "level": "AA"
-          }
-        ],
-        "versions": [
-          "2.1"
-        ],
-        "cumulativeLevelsByVersion": {
-          "2.1": [
-            "A",
-            "AA"
-          ]
-        },
-        "cumulativeLevelsAny": [
-          "A",
-          "AA"
-        ]
-      },
-      "error": null,
-      "coverage": {
-        "facetsBySc": {
-          "1.4.10": [
-            "reflow-320"
-          ]
-        }
-      },
-      "deprecated": false
-    },
-    {
       "file": "src/checks/automatic/role-img-text-alternative-present.js",
       "ruleId": "role-img-text-alternative-present",
       "wcagScNormative": [
@@ -6765,6 +6714,57 @@
       },
       "error": null,
       "coverage": {},
+      "deprecated": false
+    },
+    {
+      "file": "src/checks/manual/reflow-horizontal-scroll-manual.js",
+      "ruleId": "reflow-horizontal-scroll",
+      "wcagScNormative": [
+        "1.4.10"
+      ],
+      "wcagScAll": [
+        "1.4.10"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
+      "tags": [
+        "wcag21aa",
+        "wcag1410",
+        "structure",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag21aa",
+            "version": "2.1",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.1"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.1": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.4.10": [
+            "reflow-320"
+          ]
+        }
+      },
       "deprecated": false
     },
     {

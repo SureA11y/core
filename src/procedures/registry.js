@@ -441,6 +441,8 @@ const PROCEDURES = {
         tools: ['devtools', 'zoom'],
         variants: {
           'reflow-horizontal-scroll': [
+            'HORIZONTAL_SCROLL',
+            'HORIZONTAL_SCROLL_UNATTRIBUTED',
             'WIDE_TABLE',
             'WIDE_MEDIA',
             'WIDE_PREFORMATTED',

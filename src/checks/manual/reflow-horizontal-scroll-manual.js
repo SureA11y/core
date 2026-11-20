@@ -17,18 +17,24 @@
  *   to check reflow, as a phone shows it or a 1280 pixel window at 400% zoom
  *   does. The width is the layout viewport's (the root's clientWidth): a
  *   phone browser that zooms out to show a wider page widens innerWidth,
- *   not the width the page is laid out in. At a wider viewport, in vertical text, in a document shown in a
- *   frame, and without a layout (jsdom), the rule is notApplicable.
+ *   not the width the page is laid out in. At a wider viewport, in vertical
+ *   text, in a document shown in a frame, and without a layout (jsdom), the
+ *   rule is notApplicable.
  * @expectation
  *   WCAG 1.4.10: at that width, content is shown without scrolling in two
  *   directions, except parts that need a two-dimensional layout to be used
  *   or understood (maps, diagrams, video, games, data tables).
+ *   The rule measures the layout at one width and asks; it never fails.
+ *   Whether what it measures loses content, or needs scrolling in two
+ *   directions to be read, is for a person to confirm: content past an edge
+ *   may be reached another way, need two dimensions, or be cut the same way
+ *   at every width. Its leans say which way the measures point.
  *   - When the page scrolls sideways (its scrolling box is wider than the
  *     viewport, and the root lets it scroll), each element that sticks out
  *     past the viewport's end edge (the right, or the left in right-to-left
- *     text) while its parent stays inside is the cause, and fails
- *     (HORIZONTAL_SCROLL). Its children that stick out with it are not
- *     reported again.
+ *     text) while its parent stays inside is the cause, and is asked about,
+ *     leaning fail (HORIZONTAL_SCROLL). Its children that stick out with it
+ *     are not reported again.
  *   - Where that element is one the exception may cover, it is asked about
  *     instead: a table (WIDE_TABLE), which leans pass when it has header
  *     cells or a caption (a data table) and fail when it is a layout table;
@@ -39,18 +45,18 @@
  *   - When the page scrolls sideways and no element can be named (the
  *     overflow comes from a margin, a pseudo-element, a closed shadow root,
  *     or an open one the scan leaves out with `includeShadowDom: false`),
- *     the document fails (HORIZONTAL_SCROLL_UNATTRIBUTED): that it scrolls
- *     is measured, not guessed. Content nothing of which is drawn
+ *     the document is asked about, leaning fail
+ *     (HORIZONTAL_SCROLL_UNATTRIBUTED): that it scrolls is measured, not
+ *     guessed. Content nothing of which is drawn
  *     (`visibility: hidden` or `collapse`, with no part set back to
  *     visible) is left out at every edge and in every box: there is nothing
  *     to reach. When it is what reaches past the edge, the page may scroll,
  *     but scrolling shows nothing, so it passes. Open shadow roots are read
  *     like the rest of the page, and a box around a shadow host is a box
  *     around what its shadow tree shows.
- *   - Content cut off with nothing to scroll to it (below) is asked about,
- *     never failed: it is a loss only if the narrow width is what cuts it,
- *     and one view of the page can't tell that. A cut field leans fail.
- *     Only scrolling sideways, which the rule measures as it is, fails.
+ *   - Content cut off with nothing to scroll to it (below) is a loss only
+ *     if the narrow width is what cuts it, and one view of the page can't
+ *     tell that. A cut field leans fail with its own reason.
  *   - Text, an image, media or a field that the start edge cuts through
  *     (the left, or the right in right-to-left text, as a negative margin
  *     or a relative offset leaves it) can't be reached, as nothing scrolls
@@ -86,9 +92,9 @@
  *     sideways scrolling, and is asked about (SCROLLS_IN_CONTAINER, leaning
  *     fail). Where a field in it is itself cut off (a text field, select,
  *     text area, editable content or a widget with a matching role, shown
- *     and not disabled, not a button), no exception covers it, and it fails
- *     instead; one whose fields show whole, its help text cut, is asked
- *     about.
+ *     and not disabled, not a button), it leans fail with the reason that a
+ *     field is cut; one whose fields show whole, its help text cut, leans
+ *     as the box does.
  *   - An element inside a box that hides what overflows it (`overflow-x:
  *     hidden` or `clip`, or paint containment: `contain: paint`, `content`
  *     or `strict`, `content-visibility: auto` or `hidden`) keeps the page
@@ -125,12 +131,15 @@
  *     any vertical scrollbar), and `viewport.scrollWidth`: the page's.
  *   - `element`: the element's tag name.
  * @reason-codes
- *   - `HORIZONTAL_SCROLL` (fail): at 320 CSS pixels wide the page scrolls
+ *   - `HORIZONTAL_SCROLL` (cantTell): at 320 CSS pixels wide the page scrolls
  *     sideways, and this element sticks out past the edge of the viewport.
- *     Basis: WCAG 1.4.10.
- *   - `HORIZONTAL_SCROLL_UNATTRIBUTED` (fail): the page scrolls sideways at
- *     320 CSS pixels wide, and no element can be named as the cause.
- *     Basis: WCAG 1.4.10.
+ *     It leans fail: whether scrolling shows content that needs two
+ *     dimensions is for a person to confirm.
+ *     Basis: WCAG 1.4.10 (not settled).
+ *   - `HORIZONTAL_SCROLL_UNATTRIBUTED` (cantTell): the page scrolls
+ *     sideways at 320 CSS pixels wide, and no element can be named as the
+ *     cause. It leans fail.
+ *     Basis: WCAG 1.4.10 (not settled).
  *   - `WIDE_TABLE` (cantTell): a table, or a grid widget (role grid or
  *     treegrid), sticks out past the edge; a data table is covered by the
  *     exception for content that needs a two-dimensional layout, a layout
@@ -151,7 +160,7 @@
  *   - `SCROLLS_IN_CONTAINER` (cantTell): this element, not a table, code block
  *     or media, reaches past the edge of the box around it, which scrolls
  *     sideways (`overflow-x: auto` or `scroll`) to show it. It leans fail,
- *     and fails where a field in it is cut off, which no exception covers.
+ *     with its own reason where a field in it is cut off.
  *     It leans pass for a row of items each of which fits the box, as a
  *     carousel is (G225): only the row scrolls.
  *     Basis: WCAG 1.4.10 (not settled).
@@ -179,13 +188,13 @@ const id = 'reflow-horizontal-scroll';
 const meta = {
   title: 'Content reflows at 320 CSS pixels wide without scrolling sideways',
   description:
-    'At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.',
+    'At a viewport 320 CSS pixels wide, measures whether the page scrolls sideways or cuts content off, and asks about each element that sticks out past an edge, for manual review of whether reading the page needs scrolling in two directions.',
   i18n: {
     titleKey: 'reflowHorizontalScroll_title',
     descriptionKey: 'reflowHorizontalScroll_description'
   },
   helpUrl: null,
-  tags: ['wcag21aa', 'wcag1410', 'structure', 'atomic', 'automatic'],
+  tags: ['wcag21aa', 'wcag1410', 'structure', 'atomic', 'manual'],
   wcagSc: ['1.4.10'],
   normativeMappings: [
     {
@@ -198,8 +207,8 @@ const meta = {
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
-  type: 'automatic',
-  defaultConfidence: 'high',
+  type: 'manual',
+  defaultConfidence: 'medium',
   coverage: { facetsBySc: { '1.4.10': ['reflow-320'] } },
   // Reason codes picked from a table, which scripts/generate-finding-ids.js
   // can't read from the source.
@@ -1147,7 +1156,6 @@ function runInPage(ctx) {
     }
   }
 
-  const fails = [];
   const questions = [];
   const perCode = {};
   const viewport = { width: clientWidth, scrollWidth };
@@ -1207,6 +1215,30 @@ function runInPage(ctx) {
         cautionKey: 'reflowHorizontalScroll_lean_caution_clipped'
       }
     },
+    // The page scrolls sideways at this width, measured as it is: likely a
+    // failure, unless what is reached that way needs two dimensions.
+    scrolls: {
+      toward: 'fail',
+      why: 'The page scrolls sideways at this width because of this element: content has to fit the width, so that it is read by scrolling in one direction only.',
+      signals: [{ signal: 'page-scrolls-sideways', value: true }],
+      caution:
+        'Check that scrolling sideways shows content, and that it is not content that needs two dimensions, such as a data table, a map or a diagram.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_scrolls',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_scrolls'
+      }
+    },
+    unattributed: {
+      toward: 'fail',
+      why: 'The page scrolls sideways at this width: content has to fit the width, so that it is read by scrolling in one direction only.',
+      signals: [{ signal: 'page-scrolls-sideways', value: true }],
+      caution:
+        'No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_scrolls',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_unattributed'
+      }
+    },
     // A field cut off with nothing to scroll to it: likely a loss, but one
     // view can't tell whether the narrow width is what cut it.
     fieldCut: {
@@ -1239,12 +1271,16 @@ function runInPage(ctx) {
   const MESSAGES = {
     HORIZONTAL_SCROLL: {
       key: 'fail',
+      needed:
+        'Whether reading or using the page at this width needs scrolling sideways, and whether what is reached that way needs a two-dimensional layout.',
       summary: (p) =>
         `At ${p.viewportWidth} pixels wide, this element reaches ${p.overflowPx} pixels past the edge, so the page scrolls sideways.`,
       hint: 'Let it fit the width: no fixed width wider than the screen, max-width: 100% on images and embeds, and long words or addresses allowed to wrap (overflow-wrap: anywhere).'
     },
     HORIZONTAL_SCROLL_UNATTRIBUTED: {
       key: 'unattributed',
+      needed:
+        'What makes the page scroll sideways at this width, and whether reading or using it needs that scrolling.',
       summary: (p) =>
         `At ${p.viewportWidth} pixels wide, the page scrolls sideways by ${p.overflowPx} pixels.`,
       hint: 'Find what is wider than the screen, such as a margin or generated content, and let it fit the width.'
@@ -1294,8 +1330,11 @@ function runInPage(ctx) {
     }
   };
 
-  // asFail: the finding is settled as a failure, not asked about.
-  function report(code, el, hit, lean, asFail) {
+  // Every finding is a question: the rule measures the layout at one width,
+  // and whether that layout loses content or needs two directions of
+  // scrolling to be read is for a person to confirm. The lean says which
+  // way the measures point.
+  function report(code, el, hit, lean) {
     perCode[code] = (perCode[code] || 0) + 1;
     if (perCode[code] > MAX_PER_CODE) return;
     const msg = MESSAGES[code];
@@ -1307,7 +1346,7 @@ function runInPage(ctx) {
       element: tag
     };
     const occ = helpers.reportOccurrence(el, {
-      ...(lean && !asFail ? { lean } : {}),
+      ...(lean ? { lean } : {}),
       summary: msg.summary(params),
       hint: msg.hint,
       i18n: {
@@ -1315,16 +1354,12 @@ function runInPage(ctx) {
         hintKey: `reflowHorizontalScroll_hint_${msg.key}`,
         params
       },
-      ...(msg.needed && !asFail
-        ? {
-            occurrenceOutcome: 'cantTell',
-            uncertainty: {
-              code: 'judgement-required',
-              needed: msg.needed,
-              evidence: { reasonCode: code }
-            }
-          }
-        : { occurrenceOutcome: 'fail' }),
+      occurrenceOutcome: 'cantTell',
+      uncertainty: {
+        code: 'judgement-required',
+        needed: msg.needed,
+        evidence: { reasonCode: code }
+      },
       data: {
         details: {
           reasonCode: code,
@@ -1336,7 +1371,7 @@ function runInPage(ctx) {
         }
       }
     });
-    (msg.needed && !asFail ? questions : fails).push(occ);
+    questions.push(occ);
   }
 
   // A row of items each of which fits the box that scrolls it: the row
@@ -1366,13 +1401,16 @@ function runInPage(ctx) {
         ? tableLean(el)
         : code === 'WIDE_MEDIA' && (tag === 'img' || tag === 'video' || tag === 'picture')
           ? LEANS.media
-          : null;
+          : code === 'HORIZONTAL_SCROLL'
+            ? LEANS.scrolls
+            : null;
     report(code, el, hit, lean);
   }
   // Content cut off, with nothing to scroll to it, is a loss only if the
-  // narrow width is what cuts it, which one view of the page can't tell: it
-  // is asked about, and a cut field leans fail. Only scrolling sideways is
-  // measured as it is (a page, or a box with a field it cuts, that scrolls).
+  // narrow width is what cuts it, which one view of the page can't tell: a
+  // cut field leans fail. Scrolling sideways is measured as it is, and
+  // leans fail too; whether what it reaches needs two dimensions is for a
+  // person to say.
   const pastEnd = (rect) => ({ over: overflowOf(rect) });
   const cutLean = (el, pastOf, otherwise) => (cutsFields(el, pastOf) ? LEANS.fieldCut : otherwise);
 
@@ -1404,8 +1442,7 @@ function runInPage(ctx) {
         'SCROLLS_IN_CONTAINER',
         el,
         { over: clip.over, rect: clip.rect },
-        isCarousel(el, clip.box) ? LEANS.carousel : LEANS.scrollBox,
-        cutsFields(el, pastClip)
+        cutLean(el, pastClip, isCarousel(el, clip.box) ? LEANS.carousel : LEANS.scrollBox)
       );
     } else {
       report(
@@ -1426,7 +1463,7 @@ function runInPage(ctx) {
     !leftOut &&
     !undrawnPast
   ) {
-    report('HORIZONTAL_SCROLL_UNATTRIBUTED', html, null, null);
+    report('HORIZONTAL_SCROLL_UNATTRIBUTED', html, null, LEANS.unattributed);
   }
 
   // How many more each reason code had than the 50 listed.
@@ -1434,10 +1471,10 @@ function runInPage(ctx) {
   for (const [code, n] of Object.entries(perCode)) {
     if (n > MAX_PER_CODE) omitted[code] = n - MAX_PER_CODE;
   }
-  if (fails.length || questions.length) {
+  if (questions.length) {
     return {
       ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious'),
+      ...helpers.resolveTieredOutcome([], questions, rule.defaultSeverity || 'serious'),
       ...(Object.keys(omitted).length ? { data: { omitted } } : {})
     };
   }

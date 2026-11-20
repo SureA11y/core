@@ -36524,7 +36524,7 @@ const RUNTIME_CATALOG = {
   {
     "ruleId": "reflow-horizontal-scroll",
     "title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
-    "description": "At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.",
+    "description": "At a viewport 320 CSS pixels wide, measures whether the page scrolls sideways or cuts content off, and asks about each element that sticks out past an edge, for manual review of whether reading the page needs scrolling in two directions.",
     "i18n": {
       "titleKey": "reflowHorizontalScroll_title",
       "descriptionKey": "reflowHorizontalScroll_description"
@@ -36535,7 +36535,7 @@ const RUNTIME_CATALOG = {
       "wcag1410",
       "structure",
       "atomic",
-      "automatic",
+      "manual",
       "a11ycore"
     ],
     "wcagSc": [
@@ -36571,8 +36571,8 @@ const RUNTIME_CATALOG = {
       }
     ],
     "defaultSeverity": "serious",
-    "defaultConfidence": "high",
-    "type": "automatic",
+    "defaultConfidence": "medium",
+    "type": "manual",
     "coverage": {
       "facetsBySc": {
         "1.4.10": [
@@ -40382,7 +40382,7 @@ const RUNTIME_CATALOG = {
   "presentation-role-conflict": { run: require("./checks/manual/presentation-role-conflict-manual.js").runInPage, applicability: require("./checks/manual/presentation-role-conflict-manual.js").applicability || null },
   "presentational-children-focusable-absent": { run: require("./checks/automatic/presentational-children-focusable-absent.js").runInPage, applicability: require("./checks/automatic/presentational-children-focusable-absent.js").applicability || null },
   "progressbar-name-present": { run: require("./checks/automatic/progressbar-name-present.js").runInPage, applicability: require("./checks/automatic/progressbar-name-present.js").applicability || null },
-  "reflow-horizontal-scroll": { run: require("./checks/automatic/reflow-horizontal-scroll.js").runInPage, applicability: require("./checks/automatic/reflow-horizontal-scroll.js").applicability || null },
+  "reflow-horizontal-scroll": { run: require("./checks/manual/reflow-horizontal-scroll-manual.js").runInPage, applicability: require("./checks/manual/reflow-horizontal-scroll-manual.js").applicability || null },
   "region": { run: require("./checks/manual/region-manual.js").runInPage, applicability: require("./checks/manual/region-manual.js").applicability || null },
   "role-img-text-alternative-present": { run: require("./checks/automatic/role-img-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/role-img-text-alternative-present.js").applicability || null },
   "scope-attr-valid": { run: require("./checks/manual/scope-attr-valid-manual.js").runInPage, applicability: require("./checks/manual/scope-attr-valid-manual.js").applicability || null },
@@ -42015,7 +42015,7 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "Der Name dieses Links („{{name}}“) ist eine allgemeine Formulierung: Nur der Text um ihn herum sagt, wohin er führt.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Formulieren Sie den Linktext selbst so, dass er sagt, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Hier klicken“, damit er auch allein verständlich ist, etwa in einer Linkliste.",
       "reflowHorizontalScroll_title": "Inhalte passen sich bei 320 CSS-Pixeln Breite ohne seitliches Scrollen an",
-      "reflowHorizontalScroll_description": "Prüft bei einem 320 CSS-Pixel breiten Viewport, dass die Seite nicht seitlich scrollt, nennt die Elemente, die über ihren Rand hinausragen, und fragt nach Tabellen, Medien und vorformatiertem Text, die ihr Layout brauchen können.",
+      "reflowHorizontalScroll_description": "Misst bei einem 320 CSS-Pixel breiten Viewport, ob die Seite seitlich scrollt oder Inhalte abschneidet, und fragt nach jedem Element, das über einen Rand hinausragt, zur manuellen Prüfung, ob zum Lesen der Seite in zwei Richtungen gescrollt werden muss.",
       "reflowHorizontalScroll_summary_fail": "Bei {{viewportWidth}} Pixeln Breite ragt dieses Element {{overflowPx}} Pixel über den Rand hinaus, sodass die Seite seitlich scrollt.",
       "reflowHorizontalScroll_hint_fail": "Lassen Sie es in die Breite passen: keine feste Breite, die breiter als der Bildschirm ist, max-width: 100% für Bilder und eingebettete Inhalte, und lange Wörter oder Adressen dürfen umbrechen (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "Bei {{viewportWidth}} Pixeln Breite scrollt die Seite um {{overflowPx}} Pixel seitlich.",
@@ -42045,6 +42045,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_clipped": "Ein Karussell oder ein Menü kann den Rest auf andere Weise zeigen.",
       "reflowHorizontalScroll_lean_why_fieldCut": "Ein Formularfeld im Element ist abgeschnitten, und nichts scrollt zum Rest: Ein Feld muss ganz zu sehen und zu bedienen sein.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Prüfen Sie, ob das Feld wegen der geringen Breite abgeschnitten ist: Ein Feld, das bei jeder Breite abgeschnitten ist, ist ein Problem, aber keines des Umfließens.",
+      "reflowHorizontalScroll_lean_why_scrolls": "Die Seite scrollt bei dieser Breite seitlich: Inhalte müssen in die Breite passen, damit sie mit Scrollen in nur einer Richtung gelesen werden.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Prüfen Sie, ob seitliches Scrollen Inhalte zeigt und ob es keine Inhalte sind, die zwei Dimensionen brauchen, etwa eine Datentabelle, eine Karte oder ein Diagramm.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "Es ließ sich kein Element benennen: Der Überlauf kann von einem Rand, generierten Inhalten oder einem geschlossenen Shadow Root stammen. Prüfen Sie, ob seitliches Scrollen Inhalte zeigt.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -43797,7 +43800,7 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "This link's name (\"{{name}}\") is a generic phrase: only the text around it says where it leads.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Make the link text itself say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Click here\", so it is clear when read on its own, as in a list of links.",
       "reflowHorizontalScroll_title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
-      "reflowHorizontalScroll_description": "At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.",
+      "reflowHorizontalScroll_description": "At a viewport 320 CSS pixels wide, measures whether the page scrolls sideways or cuts content off, and asks about each element that sticks out past an edge, for manual review of whether reading the page needs scrolling in two directions.",
       "reflowHorizontalScroll_summary_fail": "At {{viewportWidth}} pixels wide, this element reaches {{overflowPx}} pixels past the edge, so the page scrolls sideways.",
       "reflowHorizontalScroll_hint_fail": "Let it fit the width: no fixed width wider than the screen, max-width: 100% on images and embeds, and long words or addresses allowed to wrap (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "At {{viewportWidth}} pixels wide, the page scrolls sideways by {{overflowPx}} pixels.",
@@ -43827,6 +43830,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_clipped": "A carousel or a menu may show the rest another way.",
       "reflowHorizontalScroll_lean_why_fieldCut": "A form field in the element is cut off, and nothing scrolls to the rest of it: a field has to be seen and used whole.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Check that the field is cut because the width is narrow: a field cut at every width is a problem, but not one of reflow.",
+      "reflowHorizontalScroll_lean_why_scrolls": "The page scrolls sideways at this width: content has to fit the width, so that it is read by scrolling in one direction only.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Check that scrolling sideways shows content, and that it is not content that needs two dimensions, such as a data table, a map or a diagram.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -45579,7 +45585,7 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "El nombre de este enlace (\"{{name}}\") es una frase genérica: solo el texto que lo rodea dice adónde lleva.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Haz que el propio texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios de 2026\" en lugar de \"Haz clic aquí\", para que se entienda leído por sí solo, como en una lista de enlaces.",
       "reflowHorizontalScroll_title": "El contenido se reajusta a 320 píxeles CSS de ancho sin desplazamiento lateral",
-      "reflowHorizontalScroll_description": "Con una ventana de 320 píxeles CSS de ancho, comprueba que la página no se desplace hacia los lados, señala los elementos que sobresalen de su borde y pregunta por las tablas, el contenido multimedia y el texto preformateado que pueden necesitar su disposición.",
+      "reflowHorizontalScroll_description": "Con una ventana de 320 píxeles CSS de ancho, mide si la página se desplaza hacia los lados o corta contenido, y pregunta por cada elemento que sobresale de un borde, para revisar manualmente si leer la página exige desplazarse en dos direcciones.",
       "reflowHorizontalScroll_summary_fail": "Con {{viewportWidth}} píxeles de ancho, este elemento sobresale {{overflowPx}} píxeles del borde, así que la página se desplaza hacia los lados.",
       "reflowHorizontalScroll_hint_fail": "Haz que quepa en el ancho: ningún ancho fijo mayor que la pantalla, max-width: 100% en imágenes y contenido incrustado, y que las palabras o direcciones largas puedan partirse (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "Con {{viewportWidth}} píxeles de ancho, la página se desplaza {{overflowPx}} píxeles hacia los lados.",
@@ -45609,6 +45615,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrusel o un menú pueden mostrar el resto de otra forma.",
       "reflowHorizontalScroll_lean_why_fieldCut": "Un campo de formulario del elemento está cortado y nada se desplaza hasta el resto: un campo tiene que verse y usarse entero.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Comprobar que el campo está cortado porque el ancho es estrecho: un campo cortado en cualquier ancho es un problema, pero no de reajuste.",
+      "reflowHorizontalScroll_lean_why_scrolls": "La página se desplaza hacia los lados con este ancho: el contenido tiene que caber en el ancho para leerse desplazándose en una sola dirección.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Comprobar que el desplazamiento lateral muestra contenido y que no es contenido que necesita dos dimensiones, como una tabla de datos, un mapa o un diagrama.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "No se pudo nombrar ningún elemento: el desbordamiento puede venir de un margen, de contenido generado o de un shadow root cerrado. Comprobar que el desplazamiento lateral muestra contenido.",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -47361,7 +47370,7 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "Le nom de ce lien (« {{name}} ») est une formule générique : seul le texte qui l’entoure dit où il mène.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Faites dire au texte du lien lui-même où il mène ou ce qu’il fait, par exemple « Télécharger la grille tarifaire 2026 » plutôt que « Cliquez ici », pour qu’il soit clair lu seul, comme dans une liste de liens.",
       "reflowHorizontalScroll_title": "Le contenu se redistribue à 320 pixels CSS de large sans défilement horizontal",
-      "reflowHorizontalScroll_description": "Avec une fenêtre de 320 pixels CSS de large, vérifie que la page ne défile pas horizontalement, nomme les éléments qui dépassent de son bord et pose une question sur les tableaux, les médias et le texte préformaté qui peuvent avoir besoin de leur mise en page.",
+      "reflowHorizontalScroll_description": "Avec une fenêtre de 320 pixels CSS de large, mesure si la page défile horizontalement ou coupe du contenu, et interroge sur chaque élément qui dépasse d’un bord, pour vérifier manuellement si lire la page exige de défiler dans deux directions.",
       "reflowHorizontalScroll_summary_fail": "À {{viewportWidth}} pixels de large, cet élément dépasse le bord de {{overflowPx}} pixels, donc la page défile horizontalement.",
       "reflowHorizontalScroll_hint_fail": "Faites-le tenir dans la largeur : aucune largeur fixe plus grande que l’écran, max-width: 100% sur les images et les contenus intégrés, et laissez les mots ou adresses longs passer à la ligne (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "À {{viewportWidth}} pixels de large, la page défile horizontalement de {{overflowPx}} pixels.",
@@ -47391,6 +47400,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrousel ou un menu peut montrer le reste autrement.",
       "reflowHorizontalScroll_lean_why_fieldCut": "Un champ de formulaire de l’élément est coupé, et rien ne fait défiler jusqu’au reste : un champ doit être vu et utilisé en entier.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Vérifiez que le champ est coupé parce que la largeur est étroite : un champ coupé à toute largeur est un problème, mais pas de redistribution.",
+      "reflowHorizontalScroll_lean_why_scrolls": "La page défile horizontalement à cette largeur : le contenu doit tenir dans la largeur, pour se lire en défilant dans une seule direction.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Vérifiez que le défilement horizontal montre du contenu, et que ce n’est pas un contenu qui a besoin de deux dimensions, comme un tableau de données, une carte ou un diagramme.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "Aucun élément n’a pu être nommé : le débordement peut venir d’une marge, d’un contenu généré ou d’un shadow root fermé. Vérifiez que le défilement horizontal montre du contenu.",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -49143,7 +49155,7 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "このリンクの名前 (\"{{name}}\") は一般的な語句です。リンク先を示しているのは周囲のテキストだけです。",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "リンクの一覧のように単独で読んでもわかるよう、「こちらをクリック」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキスト自体でリンク先や動作を示してください。",
       "reflowHorizontalScroll_title": "幅 320 CSS ピクセルで、横スクロールなしにコンテンツがリフローする",
-      "reflowHorizontalScroll_description": "幅 320 CSS ピクセルのビューポートで、ページが横にスクロールしないことを確認し、端からはみ出す要素を示します。レイアウトが必要な場合がある表、メディア、整形済みテキストについては確認を求めます。",
+      "reflowHorizontalScroll_description": "幅 320 CSS ピクセルのビューポートで、ページが横にスクロールするか、コンテンツが切れるかを測定し、端からはみ出す各要素について、ページを読むのに 2 方向のスクロールが必要かどうかの手動確認のために示します。",
       "reflowHorizontalScroll_summary_fail": "幅 {{viewportWidth}} ピクセルで、この要素は端から {{overflowPx}} ピクセルはみ出しており、ページが横にスクロールします。",
       "reflowHorizontalScroll_hint_fail": "幅に収まるようにしてください。画面より広い固定幅を使わず、画像や埋め込みには max-width: 100% を指定し、長い単語やアドレスは折り返せるようにします（overflow-wrap: anywhere）。",
       "reflowHorizontalScroll_summary_unattributed": "幅 {{viewportWidth}} ピクセルで、ページが {{overflowPx}} ピクセル横にスクロールします。",
@@ -49173,6 +49185,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_clipped": "カルーセルやメニューは、残りを別の方法で表示できる場合があります。",
       "reflowHorizontalScroll_lean_why_fieldCut": "要素内のフォーム フィールドが切れており、残りの部分へスクロールする手段がありません。フィールドは全体が見えて操作できる必要があります。",
       "reflowHorizontalScroll_lean_caution_fieldCut": "幅が狭いためにフィールドが切れているかを確認してください。どの幅でも切れているフィールドは問題ですが、リフローの問題ではありません。",
+      "reflowHorizontalScroll_lean_why_scrolls": "この幅でページが横にスクロールします。コンテンツは 1 方向のスクロールだけで読めるよう、幅に収まる必要があります。",
+      "reflowHorizontalScroll_lean_caution_scrolls": "横スクロールでコンテンツが表示されるか、またそれがデータ テーブル、地図、図のように 2 次元を必要とするコンテンツでないかを確認してください。",
+      "reflowHorizontalScroll_lean_caution_unattributed": "要素を特定できませんでした。はみ出しはマージン、生成コンテンツ、または閉じたシャドウ ルートによる可能性があります。横スクロールでコンテンツが表示されるかを確認してください。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",
@@ -49581,7 +49596,7 @@ const RULE_MODULES = [
   "./checks/manual/presentation-role-conflict-manual.js",
   "./checks/automatic/presentational-children-focusable-absent.js",
   "./checks/automatic/progressbar-name-present.js",
-  "./checks/automatic/reflow-horizontal-scroll.js",
+  "./checks/manual/reflow-horizontal-scroll-manual.js",
   "./checks/manual/region-manual.js",
   "./checks/automatic/role-img-text-alternative-present.js",
   "./checks/manual/scope-attr-valid-manual.js",
@@ -58486,7 +58501,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "reflow-horizontal-scroll",
     "title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
-    "description": "At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.",
+    "description": "At a viewport 320 CSS pixels wide, measures whether the page scrolls sideways or cuts content off, and asks about each element that sticks out past an edge, for manual review of whether reading the page needs scrolling in two directions.",
     "i18n": {
       "titleKey": "reflowHorizontalScroll_title",
       "descriptionKey": "reflowHorizontalScroll_description"
@@ -58497,7 +58512,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcag1410",
       "structure",
       "atomic",
-      "automatic",
+      "manual",
       "a11ycore"
     ],
     "wcagSc": [
@@ -58533,8 +58548,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     ],
     "defaultSeverity": "serious",
-    "defaultConfidence": "high",
-    "type": "automatic",
+    "defaultConfidence": "medium",
+    "type": "manual",
     "coverage": {
       "facetsBySc": {
         "1.4.10": [
@@ -103830,7 +103845,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  const fails = [];
   const questions = [];
   const perCode = {};
   const viewport = { width: clientWidth, scrollWidth };
@@ -103890,6 +103904,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         cautionKey: 'reflowHorizontalScroll_lean_caution_clipped'
       }
     },
+    // The page scrolls sideways at this width, measured as it is: likely a
+    // failure, unless what is reached that way needs two dimensions.
+    scrolls: {
+      toward: 'fail',
+      why: 'The page scrolls sideways at this width because of this element: content has to fit the width, so that it is read by scrolling in one direction only.',
+      signals: [{ signal: 'page-scrolls-sideways', value: true }],
+      caution:
+        'Check that scrolling sideways shows content, and that it is not content that needs two dimensions, such as a data table, a map or a diagram.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_scrolls',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_scrolls'
+      }
+    },
+    unattributed: {
+      toward: 'fail',
+      why: 'The page scrolls sideways at this width: content has to fit the width, so that it is read by scrolling in one direction only.',
+      signals: [{ signal: 'page-scrolls-sideways', value: true }],
+      caution:
+        'No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_scrolls',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_unattributed'
+      }
+    },
     // A field cut off with nothing to scroll to it: likely a loss, but one
     // view can't tell whether the narrow width is what cut it.
     fieldCut: {
@@ -103922,12 +103960,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const MESSAGES = {
     HORIZONTAL_SCROLL: {
       key: 'fail',
+      needed:
+        'Whether reading or using the page at this width needs scrolling sideways, and whether what is reached that way needs a two-dimensional layout.',
       summary: (p) =>
         `At ${p.viewportWidth} pixels wide, this element reaches ${p.overflowPx} pixels past the edge, so the page scrolls sideways.`,
       hint: 'Let it fit the width: no fixed width wider than the screen, max-width: 100% on images and embeds, and long words or addresses allowed to wrap (overflow-wrap: anywhere).'
     },
     HORIZONTAL_SCROLL_UNATTRIBUTED: {
       key: 'unattributed',
+      needed:
+        'What makes the page scroll sideways at this width, and whether reading or using it needs that scrolling.',
       summary: (p) =>
         `At ${p.viewportWidth} pixels wide, the page scrolls sideways by ${p.overflowPx} pixels.`,
       hint: 'Find what is wider than the screen, such as a margin or generated content, and let it fit the width.'
@@ -103977,8 +104019,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   };
 
-  // asFail: the finding is settled as a failure, not asked about.
-  function report(code, el, hit, lean, asFail) {
+  // Every finding is a question: the rule measures the layout at one width,
+  // and whether that layout loses content or needs two directions of
+  // scrolling to be read is for a person to confirm. The lean says which
+  // way the measures point.
+  function report(code, el, hit, lean) {
     perCode[code] = (perCode[code] || 0) + 1;
     if (perCode[code] > MAX_PER_CODE) return;
     const msg = MESSAGES[code];
@@ -103990,7 +104035,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       element: tag
     };
     const occ = helpers.reportOccurrence(el, {
-      ...(lean && !asFail ? { lean } : {}),
+      ...(lean ? { lean } : {}),
       summary: msg.summary(params),
       hint: msg.hint,
       i18n: {
@@ -103998,16 +104043,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hintKey: `reflowHorizontalScroll_hint_${msg.key}`,
         params
       },
-      ...(msg.needed && !asFail
-        ? {
-            occurrenceOutcome: 'cantTell',
-            uncertainty: {
-              code: 'judgement-required',
-              needed: msg.needed,
-              evidence: { reasonCode: code }
-            }
-          }
-        : { occurrenceOutcome: 'fail' }),
+      occurrenceOutcome: 'cantTell',
+      uncertainty: {
+        code: 'judgement-required',
+        needed: msg.needed,
+        evidence: { reasonCode: code }
+      },
       data: {
         details: {
           reasonCode: code,
@@ -104019,7 +104060,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       }
     });
-    (msg.needed && !asFail ? questions : fails).push(occ);
+    questions.push(occ);
   }
 
   // A row of items each of which fits the box that scrolls it: the row
@@ -104049,13 +104090,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? tableLean(el)
         : code === 'WIDE_MEDIA' && (tag === 'img' || tag === 'video' || tag === 'picture')
           ? LEANS.media
-          : null;
+          : code === 'HORIZONTAL_SCROLL'
+            ? LEANS.scrolls
+            : null;
     report(code, el, hit, lean);
   }
   // Content cut off, with nothing to scroll to it, is a loss only if the
-  // narrow width is what cuts it, which one view of the page can't tell: it
-  // is asked about, and a cut field leans fail. Only scrolling sideways is
-  // measured as it is (a page, or a box with a field it cuts, that scrolls).
+  // narrow width is what cuts it, which one view of the page can't tell: a
+  // cut field leans fail. Scrolling sideways is measured as it is, and
+  // leans fail too; whether what it reaches needs two dimensions is for a
+  // person to say.
   const pastEnd = (rect) => ({ over: overflowOf(rect) });
   const cutLean = (el, pastOf, otherwise) => (cutsFields(el, pastOf) ? LEANS.fieldCut : otherwise);
 
@@ -104087,8 +104131,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         'SCROLLS_IN_CONTAINER',
         el,
         { over: clip.over, rect: clip.rect },
-        isCarousel(el, clip.box) ? LEANS.carousel : LEANS.scrollBox,
-        cutsFields(el, pastClip)
+        cutLean(el, pastClip, isCarousel(el, clip.box) ? LEANS.carousel : LEANS.scrollBox)
       );
     } else {
       report(
@@ -104109,7 +104152,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     !leftOut &&
     !undrawnPast
   ) {
-    report('HORIZONTAL_SCROLL_UNATTRIBUTED', html, null, null);
+    report('HORIZONTAL_SCROLL_UNATTRIBUTED', html, null, LEANS.unattributed);
   }
 
   // How many more each reason code had than the 50 listed.
@@ -104117,10 +104160,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const [code, n] of Object.entries(perCode)) {
     if (n > MAX_PER_CODE) omitted[code] = n - MAX_PER_CODE;
   }
-  if (fails.length || questions.length) {
+  if (questions.length) {
     return {
       ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious'),
+      ...helpers.resolveTieredOutcome([], questions, rule.defaultSeverity || 'serious'),
       ...(Object.keys(omitted).length ? { data: { omitted } } : {})
     };
   }
@@ -117740,7 +117783,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "Der Name dieses Links („{{name}}“) ist eine allgemeine Formulierung: Nur der Text um ihn herum sagt, wohin er führt.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Formulieren Sie den Linktext selbst so, dass er sagt, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Hier klicken“, damit er auch allein verständlich ist, etwa in einer Linkliste.",
       "reflowHorizontalScroll_title": "Inhalte passen sich bei 320 CSS-Pixeln Breite ohne seitliches Scrollen an",
-      "reflowHorizontalScroll_description": "Prüft bei einem 320 CSS-Pixel breiten Viewport, dass die Seite nicht seitlich scrollt, nennt die Elemente, die über ihren Rand hinausragen, und fragt nach Tabellen, Medien und vorformatiertem Text, die ihr Layout brauchen können.",
+      "reflowHorizontalScroll_description": "Misst bei einem 320 CSS-Pixel breiten Viewport, ob die Seite seitlich scrollt oder Inhalte abschneidet, und fragt nach jedem Element, das über einen Rand hinausragt, zur manuellen Prüfung, ob zum Lesen der Seite in zwei Richtungen gescrollt werden muss.",
       "reflowHorizontalScroll_summary_fail": "Bei {{viewportWidth}} Pixeln Breite ragt dieses Element {{overflowPx}} Pixel über den Rand hinaus, sodass die Seite seitlich scrollt.",
       "reflowHorizontalScroll_hint_fail": "Lassen Sie es in die Breite passen: keine feste Breite, die breiter als der Bildschirm ist, max-width: 100% für Bilder und eingebettete Inhalte, und lange Wörter oder Adressen dürfen umbrechen (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "Bei {{viewportWidth}} Pixeln Breite scrollt die Seite um {{overflowPx}} Pixel seitlich.",
@@ -117770,6 +117813,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_clipped": "Ein Karussell oder ein Menü kann den Rest auf andere Weise zeigen.",
       "reflowHorizontalScroll_lean_why_fieldCut": "Ein Formularfeld im Element ist abgeschnitten, und nichts scrollt zum Rest: Ein Feld muss ganz zu sehen und zu bedienen sein.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Prüfen Sie, ob das Feld wegen der geringen Breite abgeschnitten ist: Ein Feld, das bei jeder Breite abgeschnitten ist, ist ein Problem, aber keines des Umfließens.",
+      "reflowHorizontalScroll_lean_why_scrolls": "Die Seite scrollt bei dieser Breite seitlich: Inhalte müssen in die Breite passen, damit sie mit Scrollen in nur einer Richtung gelesen werden.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Prüfen Sie, ob seitliches Scrollen Inhalte zeigt und ob es keine Inhalte sind, die zwei Dimensionen brauchen, etwa eine Datentabelle, eine Karte oder ein Diagramm.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "Es ließ sich kein Element benennen: Der Überlauf kann von einem Rand, generierten Inhalten oder einem geschlossenen Shadow Root stammen. Prüfen Sie, ob seitliches Scrollen Inhalte zeigt.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -119522,7 +119568,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "This link's name (\"{{name}}\") is a generic phrase: only the text around it says where it leads.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Make the link text itself say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Click here\", so it is clear when read on its own, as in a list of links.",
       "reflowHorizontalScroll_title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
-      "reflowHorizontalScroll_description": "At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.",
+      "reflowHorizontalScroll_description": "At a viewport 320 CSS pixels wide, measures whether the page scrolls sideways or cuts content off, and asks about each element that sticks out past an edge, for manual review of whether reading the page needs scrolling in two directions.",
       "reflowHorizontalScroll_summary_fail": "At {{viewportWidth}} pixels wide, this element reaches {{overflowPx}} pixels past the edge, so the page scrolls sideways.",
       "reflowHorizontalScroll_hint_fail": "Let it fit the width: no fixed width wider than the screen, max-width: 100% on images and embeds, and long words or addresses allowed to wrap (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "At {{viewportWidth}} pixels wide, the page scrolls sideways by {{overflowPx}} pixels.",
@@ -119552,6 +119598,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_clipped": "A carousel or a menu may show the rest another way.",
       "reflowHorizontalScroll_lean_why_fieldCut": "A form field in the element is cut off, and nothing scrolls to the rest of it: a field has to be seen and used whole.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Check that the field is cut because the width is narrow: a field cut at every width is a problem, but not one of reflow.",
+      "reflowHorizontalScroll_lean_why_scrolls": "The page scrolls sideways at this width: content has to fit the width, so that it is read by scrolling in one direction only.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Check that scrolling sideways shows content, and that it is not content that needs two dimensions, such as a data table, a map or a diagram.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -121304,7 +121353,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "El nombre de este enlace (\"{{name}}\") es una frase genérica: solo el texto que lo rodea dice adónde lleva.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Haz que el propio texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios de 2026\" en lugar de \"Haz clic aquí\", para que se entienda leído por sí solo, como en una lista de enlaces.",
       "reflowHorizontalScroll_title": "El contenido se reajusta a 320 píxeles CSS de ancho sin desplazamiento lateral",
-      "reflowHorizontalScroll_description": "Con una ventana de 320 píxeles CSS de ancho, comprueba que la página no se desplace hacia los lados, señala los elementos que sobresalen de su borde y pregunta por las tablas, el contenido multimedia y el texto preformateado que pueden necesitar su disposición.",
+      "reflowHorizontalScroll_description": "Con una ventana de 320 píxeles CSS de ancho, mide si la página se desplaza hacia los lados o corta contenido, y pregunta por cada elemento que sobresale de un borde, para revisar manualmente si leer la página exige desplazarse en dos direcciones.",
       "reflowHorizontalScroll_summary_fail": "Con {{viewportWidth}} píxeles de ancho, este elemento sobresale {{overflowPx}} píxeles del borde, así que la página se desplaza hacia los lados.",
       "reflowHorizontalScroll_hint_fail": "Haz que quepa en el ancho: ningún ancho fijo mayor que la pantalla, max-width: 100% en imágenes y contenido incrustado, y que las palabras o direcciones largas puedan partirse (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "Con {{viewportWidth}} píxeles de ancho, la página se desplaza {{overflowPx}} píxeles hacia los lados.",
@@ -121334,6 +121383,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrusel o un menú pueden mostrar el resto de otra forma.",
       "reflowHorizontalScroll_lean_why_fieldCut": "Un campo de formulario del elemento está cortado y nada se desplaza hasta el resto: un campo tiene que verse y usarse entero.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Comprobar que el campo está cortado porque el ancho es estrecho: un campo cortado en cualquier ancho es un problema, pero no de reajuste.",
+      "reflowHorizontalScroll_lean_why_scrolls": "La página se desplaza hacia los lados con este ancho: el contenido tiene que caber en el ancho para leerse desplazándose en una sola dirección.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Comprobar que el desplazamiento lateral muestra contenido y que no es contenido que necesita dos dimensiones, como una tabla de datos, un mapa o un diagrama.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "No se pudo nombrar ningún elemento: el desbordamiento puede venir de un margen, de contenido generado o de un shadow root cerrado. Comprobar que el desplazamiento lateral muestra contenido.",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -123086,7 +123138,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "Le nom de ce lien (« {{name}} ») est une formule générique : seul le texte qui l’entoure dit où il mène.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Faites dire au texte du lien lui-même où il mène ou ce qu’il fait, par exemple « Télécharger la grille tarifaire 2026 » plutôt que « Cliquez ici », pour qu’il soit clair lu seul, comme dans une liste de liens.",
       "reflowHorizontalScroll_title": "Le contenu se redistribue à 320 pixels CSS de large sans défilement horizontal",
-      "reflowHorizontalScroll_description": "Avec une fenêtre de 320 pixels CSS de large, vérifie que la page ne défile pas horizontalement, nomme les éléments qui dépassent de son bord et pose une question sur les tableaux, les médias et le texte préformaté qui peuvent avoir besoin de leur mise en page.",
+      "reflowHorizontalScroll_description": "Avec une fenêtre de 320 pixels CSS de large, mesure si la page défile horizontalement ou coupe du contenu, et interroge sur chaque élément qui dépasse d’un bord, pour vérifier manuellement si lire la page exige de défiler dans deux directions.",
       "reflowHorizontalScroll_summary_fail": "À {{viewportWidth}} pixels de large, cet élément dépasse le bord de {{overflowPx}} pixels, donc la page défile horizontalement.",
       "reflowHorizontalScroll_hint_fail": "Faites-le tenir dans la largeur : aucune largeur fixe plus grande que l’écran, max-width: 100% sur les images et les contenus intégrés, et laissez les mots ou adresses longs passer à la ligne (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "À {{viewportWidth}} pixels de large, la page défile horizontalement de {{overflowPx}} pixels.",
@@ -123116,6 +123168,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrousel ou un menu peut montrer le reste autrement.",
       "reflowHorizontalScroll_lean_why_fieldCut": "Un champ de formulaire de l’élément est coupé, et rien ne fait défiler jusqu’au reste : un champ doit être vu et utilisé en entier.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Vérifiez que le champ est coupé parce que la largeur est étroite : un champ coupé à toute largeur est un problème, mais pas de redistribution.",
+      "reflowHorizontalScroll_lean_why_scrolls": "La page défile horizontalement à cette largeur : le contenu doit tenir dans la largeur, pour se lire en défilant dans une seule direction.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Vérifiez que le défilement horizontal montre du contenu, et que ce n’est pas un contenu qui a besoin de deux dimensions, comme un tableau de données, une carte ou un diagramme.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "Aucun élément n’a pu être nommé : le débordement peut venir d’une marge, d’un contenu généré ou d’un shadow root fermé. Vérifiez que le défilement horizontal montre du contenu.",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -124868,7 +124923,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "このリンクの名前 (\"{{name}}\") は一般的な語句です。リンク先を示しているのは周囲のテキストだけです。",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "リンクの一覧のように単独で読んでもわかるよう、「こちらをクリック」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキスト自体でリンク先や動作を示してください。",
       "reflowHorizontalScroll_title": "幅 320 CSS ピクセルで、横スクロールなしにコンテンツがリフローする",
-      "reflowHorizontalScroll_description": "幅 320 CSS ピクセルのビューポートで、ページが横にスクロールしないことを確認し、端からはみ出す要素を示します。レイアウトが必要な場合がある表、メディア、整形済みテキストについては確認を求めます。",
+      "reflowHorizontalScroll_description": "幅 320 CSS ピクセルのビューポートで、ページが横にスクロールするか、コンテンツが切れるかを測定し、端からはみ出す各要素について、ページを読むのに 2 方向のスクロールが必要かどうかの手動確認のために示します。",
       "reflowHorizontalScroll_summary_fail": "幅 {{viewportWidth}} ピクセルで、この要素は端から {{overflowPx}} ピクセルはみ出しており、ページが横にスクロールします。",
       "reflowHorizontalScroll_hint_fail": "幅に収まるようにしてください。画面より広い固定幅を使わず、画像や埋め込みには max-width: 100% を指定し、長い単語やアドレスは折り返せるようにします（overflow-wrap: anywhere）。",
       "reflowHorizontalScroll_summary_unattributed": "幅 {{viewportWidth}} ピクセルで、ページが {{overflowPx}} ピクセル横にスクロールします。",
@@ -124898,6 +124953,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_clipped": "カルーセルやメニューは、残りを別の方法で表示できる場合があります。",
       "reflowHorizontalScroll_lean_why_fieldCut": "要素内のフォーム フィールドが切れており、残りの部分へスクロールする手段がありません。フィールドは全体が見えて操作できる必要があります。",
       "reflowHorizontalScroll_lean_caution_fieldCut": "幅が狭いためにフィールドが切れているかを確認してください。どの幅でも切れているフィールドは問題ですが、リフローの問題ではありません。",
+      "reflowHorizontalScroll_lean_why_scrolls": "この幅でページが横にスクロールします。コンテンツは 1 方向のスクロールだけで読めるよう、幅に収まる必要があります。",
+      "reflowHorizontalScroll_lean_caution_scrolls": "横スクロールでコンテンツが表示されるか、またそれがデータ テーブル、地図、図のように 2 次元を必要とするコンテンツでないかを確認してください。",
+      "reflowHorizontalScroll_lean_caution_unattributed": "要素を特定できませんでした。はみ出しはマージン、生成コンテンツ、または閉じたシャドウ ルートによる可能性があります。横スクロールでコンテンツが表示されるかを確認してください。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",

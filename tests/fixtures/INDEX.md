@@ -136,7 +136,7 @@ Total rules: **151**. With fixture: **146**. Without fixture: **5**.
 | presentation-role-conflict | manual | `tests/fixtures/presentation-role-conflict-all-scenarios.html` | 15 | 5 | 0 | 8 | 2 |
 | presentational-children-focusable-absent | automatic | `tests/fixtures/presentational-children-focusable-absent-all-scenarios.html` | 14 | 6 | 6 | 0 | 2 |
 | progressbar-name-present | automatic | `tests/fixtures/progressbar-name-present-all-scenarios.html` | 10 | 4 | 5 | 0 | 1 |
-| reflow-horizontal-scroll | automatic | `tests/fixtures/reflow-horizontal-scroll-all-scenarios.html` | 8 | 3 | 2 | 3 | 0 |
+| reflow-horizontal-scroll | manual | `tests/fixtures/reflow-horizontal-scroll-all-scenarios.html` | 8 | 3 | 2 | 3 | 0 |
 | region | manual | `tests/fixtures/region-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | role-img-text-alternative-present | automatic | `tests/fixtures/role-img-text-alternative-present-all-scenarios.html` | 28 | 6 | 11 | 0 | 11 |
 | scope-attr-valid | manual | `tests/fixtures/scope-attr-valid-all-scenarios.html` | 2 | 1 | 0 | 1 | 0 |
