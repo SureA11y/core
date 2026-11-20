@@ -868,3 +868,37 @@ test('renderSarifReport: a scan of several profiles names them all in the run pr
   delete result.engine.profiles;
   assert.strictEqual(parse(renderSarifReport(result)).runs[0].properties.profiles, undefined);
 });
+
+// An occurrence marked as passing, in a failing check (a custom or pack
+// rule's, which may report them), is no failure: SARIF reported it as an
+// error, JUnit counted it, and baselines took it in.
+test('a pass-tier occurrence of a failing check is no error, failure or baseline entry', () => {
+  const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
+  const { renderJunitReport } = require('../src/junit.js');
+  const { buildBaselineEntries } = require('../src/baseline.js');
+  const rule = {
+    id: 'tiered-probe',
+    meta: {
+      title: 'Tiered',
+      description: 'Reports one failing and one passing paragraph.',
+      tags: ['best-practice'],
+      wcagSc: []
+    },
+    runInPage:
+      "function (ctx) { var d = ctx.document; return { ruleId: ctx.rule.ruleId, outcome: 'fail', occurrences: [ctx.helpers.reportOccurrence(d.getElementById('bad'), { summary: 'bad', occurrenceOutcome: 'fail' }), ctx.helpers.reportOccurrence(d.getElementById('good'), { summary: 'good', occurrenceOutcome: 'pass' })] }; }"
+  };
+  const result = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><p id="bad">Bad</p><p id="good">Good</p></body></html>',
+    { runOnly: ['tiered-probe'], engineOptions: { customRules: [rule] } }
+  );
+  const sarif = renderSarifReport(result);
+  const log = typeof sarif === 'string' ? JSON.parse(sarif) : sarif;
+  const errors = log.runs[0].results.filter((r) => r.ruleId === 'tiered-probe');
+  assert.strictEqual(errors.length, 1);
+  assert.match(JSON.stringify(errors[0].locations), /bad/);
+  assert.match(String(renderJunitReport(result)), /failures="1"/);
+  assert.deepStrictEqual(
+    buildBaselineEntries(result).map((e) => e.selector),
+    ['#bad']
+  );
+});
