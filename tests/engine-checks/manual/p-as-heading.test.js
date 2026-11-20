@@ -580,3 +580,37 @@ test(`${RULE_ID}: large text with no letter or digit is not asked about; a large
   );
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'HEADING_LIKE_NUMBER');
 });
+
+// jsdom keeps bolder and lighter as written; CSS Fonts resolves them against
+// the parent's weight, as a browser computes them (RW-11).
+test(`${RULE_ID}: bolder is read against the parent's weight`, () => {
+  const run = (html) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html><head><style>${html[0]}</style></head><body>${html[1]}</body></html>`,
+      {
+        runOnly: [RULE_ID]
+      }
+    );
+  // A theme at 300: <strong> is bolder, so 400, which is not bold at 24px.
+  assertRule(
+    run([
+      'body{font-weight:300} strong{font-weight:bolder}',
+      '<p style="font-size:24px"><strong>Our services</strong></p><p>We design and build.</p>'
+    ]),
+    RULE_ID,
+    'notApplicable',
+    { minOccurrences: 0, maxOccurrences: 0 }
+  );
+  // In a bold box (700), <strong> is bolder, so 900: heavier than its
+  // paragraph, at body size, over lighter text.
+  const rule = assertRule(
+    run([
+      'strong{font-weight:bolder} .lead{font-weight:700} .lead p+p{font-weight:400}',
+      '<div class="lead"><p><strong>Opening hours</strong></p><p>Monday to Friday, from nine to five.</p></div>'
+    ]),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'BOLD_SHORT_PARAGRAPH');
+});
