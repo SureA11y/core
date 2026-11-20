@@ -1,0 +1,13 @@
+const { launch, BUNDLE } = require('./harness');
+const { internalsHookScript } = require('/home/user/core/src/index.js');
+const defs = `customElements.define('x-u', class extends HTMLElement{constructor(){super(); this.attachInternals().role='button';}});
+customElements.define('x-btn', class extends HTMLElement{constructor(){super(); this.attachInternals().role='button';}});
+customElements.define('x-fa', class extends HTMLElement{static formAssociated=true; constructor(){super(); const i=this.attachInternals(); i.role='checkbox'; i.ariaChecked='false';}});
+customElements.define('x-sh', class extends HTMLElement{constructor(){super(); this.attachInternals().role='button'; this.attachShadow({mode:'open'}).innerHTML='<span>Shadow text</span>';}});`;
+(async()=>{ const b=await launch(); const ctx=await b.newContext(); await ctx.addInitScript({content: internalsHookScript({early:true})}); const p=await ctx.newPage();
+ await p.setContent(`<!doctype html><html lang=en><head><title>t</title><script>${defs}<\/script></head><body><main><x-u id=u tabindex=0></x-u><x-btn id=bb tabindex=0>Buy</x-btn><label>Rating <x-fa id=fa tabindex=0></x-fa></label><label for=fa2>Agree</label><x-fa id=fa2 tabindex=0></x-fa><x-sh id=sh tabindex=0></x-sh></main></body></html>`);
+ await p.addScriptTag({content:BUNDLE});
+ const r=await p.evaluate(async()=>{ console.table=()=>{}; const res=await window.a11ycore.runa11yCoreInPage(null,null,{rules:{include:['button-name-present','binary-control-name-present','form-control-programmatic-label-present','aria-role-name-present']}},null); return [res.engine.environment&&res.engine.environment.internalsHook, res.checksResults.map(c=>c.ruleId+':'+c.outcome+' '+(c.occurrences||[]).map(o=>o.selector+' '+(o.data.details||{}).reasonCode).join(',')), await window.a11ycore.inspect('names',{draw:false})]; });
+ console.log(JSON.stringify(r,null,1));
+ const cdp=await p.context().newCDPSession(p); const {nodes}=await cdp.send('Accessibility.getFullAXTree'); console.log(nodes.filter(n=>['button','checkbox'].includes(n.role&&n.role.value)).map(n=>n.role.value+':'+(n.name&&n.name.value)).join(' | '));
+ await b.close(); })();

@@ -1,0 +1,83 @@
+WCAG 1.1.1
+img-alt-present
+img-alt-quality
+svg-text-alternative-present
+WCAG 1.3.1
+aria-hidden-body
+aria-prohibited-children
+aria-required-children
+aria-roles-valid
+form-control-programmatic-label-present
+list-children-valid
+p-as-heading
+td-has-header
+WCAG 1.3.4
+css-orientation-lock
+WCAG 1.4.3
+contrast-computable
+contrast-minimum
+WCAG 1.4.6
+contrast-computable
+contrast-enhanced
+WCAG 2.1.1
+manual-review
+server-side-image-map-absent
+widget-keyboard-focusable
+WCAG 2.1.3
+server-side-image-map-absent
+widget-keyboard-focusable
+WCAG 2.2.2
+deprecated-elements-not-used
+WCAG 2.4.1
+bypass-blocks-present
+WCAG 2.4.2
+page-title-patterns
+page-title-present
+WCAG 2.4.3
+manual-review
+WCAG 2.4.4
+link-name-present
+link-name-quality
+WCAG 2.4.6
+heading-quality
+WCAG 2.4.7
+manual-review
+WCAG 2.4.9
+link-name-present
+link-name-quality
+WCAG 2.5.3
+label-in-name
+WCAG 3.1.1
+html-lang-attr-present
+WCAG 3.3.2
+form-control-programmatic-label-present
+form-control-programmatic-label-quality
+form-control-single-label
+WCAG 4.1.1
+duplicate-id
+WCAG 4.1.2
+aria-allowed-attr
+aria-checked-state-mismatch
+aria-deprecated-role
+aria-hidden-body
+aria-role-name-present
+aria-roles-valid
+aria-valid-attr
+aria-valid-attr-value
+button-name-present
+form-control-programmatic-label-present
+link-name-present
+nested-interactive-controls-absent
+presentational-children-focusable-absent
+Other checks
+empty-heading
+heading-order
+landmark-banner-is-top-level
+landmark-main-is-top-level
+landmark-no-duplicate-banner
+landmark-no-duplicate-main
+landmark-one-main
+page-has-heading-one
+page-zones-landmark
+region
+skip-link

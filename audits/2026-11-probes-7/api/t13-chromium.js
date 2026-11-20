@@ -1,0 +1,25 @@
+const fs = require('fs');
+const { chromium } = require('/home/user/core/node_modules/playwright');
+const { runa11yCoreOnHtml } = require('/home/user/core/src/testing.js');
+const html = require('./page.js');
+const bundle = fs.readFileSync('/home/user/core/surea11y.browser.js', 'utf8');
+const strip = (r) => r.checksResults.map(c => [c.ruleId, c.outcome, c.occurrences.length, JSON.stringify(c.verdicts||null)].join(' '));
+(async () => {
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+  const page = await browser.newPage();
+  await page.setContent(html);
+  await page.addScriptTag({ content: bundle });
+  const opts = JSON.parse(process.argv[2] || '{"profile":"wcag22-aa"}');
+  const a = await page.evaluate((o) => window.a11ycore.runa11yCoreInPage(null, null, o, null), opts);
+  const b = await page.evaluate((o) => window.a11ycore.run(o), opts);
+  const c = await page.evaluate((o) => window.a11ycore.runa11yCoreInPageAsync(null, null, o, null), opts);
+  const j = await runa11yCoreOnHtml(html, { engineOptions: opts });
+  const sa = strip(a), sb = strip(b), sc = strip(c), sj = strip(j);
+  const diff = (x, y) => x.filter(l => !y.includes(l));
+  console.log('inPage vs run:', diff(sa, sb), diff(sb, sa));
+  console.log('inPage vs async:', diff(sa, sc), diff(sc, sa));
+  console.log('inPage vs jsdom:', diff(sa, sj).length, diff(sa, sj).slice(0, 12), '\n  jsdom side', diff(sj, sa).slice(0, 12));
+  const keys = (r) => Object.keys(r).sort().join(',');
+  console.log('keys', keys(a) === keys(j) ? 'same' : keys(a) + ' VS ' + keys(j), '| engine keys', Object.keys(a.engine).sort().join(','), '|', Object.keys(j.engine).sort().join(','));
+  await browser.close();
+})();
