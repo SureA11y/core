@@ -42047,6 +42047,8 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_carousel": "Prüfen Sie, dass jedes Element mit der Tastatur erreichbar ist und in keinem etwas abgeschnitten wird.",
       "reflowHorizontalScroll_lean_why_clipped": "Der Rand des Viewports schneidet das Element ab, und die Seite scrollt nicht zum Rest.",
       "reflowHorizontalScroll_lean_caution_clipped": "Ein Karussell oder ein Menü kann den Rest auf andere Weise zeigen.",
+      "reflowHorizontalScroll_lean_why_fieldCut": "Ein Formularfeld im Element ist abgeschnitten, und nichts scrollt zum Rest: Ein Feld muss ganz zu sehen und zu bedienen sein.",
+      "reflowHorizontalScroll_lean_caution_fieldCut": "Prüfen Sie, ob das Feld wegen der geringen Breite abgeschnitten ist: Ein Feld, das bei jeder Breite abgeschnitten ist, ist ein Problem, aber keines des Umfließens.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -43831,6 +43833,8 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_carousel": "Check that each item can be reached with the keyboard, and that nothing in an item is cut off.",
       "reflowHorizontalScroll_lean_why_clipped": "The edge of the viewport cuts through the element, and the page does not scroll to the rest of it.",
       "reflowHorizontalScroll_lean_caution_clipped": "A carousel or a menu may show the rest another way.",
+      "reflowHorizontalScroll_lean_why_fieldCut": "A form field in the element is cut off, and nothing scrolls to the rest of it: a field has to be seen and used whole.",
+      "reflowHorizontalScroll_lean_caution_fieldCut": "Check that the field is cut because the width is narrow: a field cut at every width is a problem, but not one of reflow.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -45615,6 +45619,8 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_carousel": "Comprobar que cada elemento se puede alcanzar con el teclado y que nada de un elemento queda cortado.",
       "reflowHorizontalScroll_lean_why_clipped": "El borde de la ventana corta el elemento y la página no se desplaza hasta el resto.",
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrusel o un menú pueden mostrar el resto de otra forma.",
+      "reflowHorizontalScroll_lean_why_fieldCut": "Un campo de formulario del elemento está cortado y nada se desplaza hasta el resto: un campo tiene que verse y usarse entero.",
+      "reflowHorizontalScroll_lean_caution_fieldCut": "Comprobar que el campo está cortado porque el ancho es estrecho: un campo cortado en cualquier ancho es un problema, pero no de reajuste.",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -47399,6 +47405,8 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_carousel": "Vérifier que chaque élément est accessible au clavier et que rien n’y est coupé.",
       "reflowHorizontalScroll_lean_why_clipped": "Le bord de la fenêtre coupe l’élément, et la page ne défile pas jusqu’au reste.",
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrousel ou un menu peut montrer le reste autrement.",
+      "reflowHorizontalScroll_lean_why_fieldCut": "Un champ de formulaire de l’élément est coupé, et rien ne fait défiler jusqu’au reste : un champ doit être vu et utilisé en entier.",
+      "reflowHorizontalScroll_lean_caution_fieldCut": "Vérifiez que le champ est coupé parce que la largeur est étroite : un champ coupé à toute largeur est un problème, mais pas de redistribution.",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -49183,6 +49191,8 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_carousel": "各項目にキーボードで到達でき、どの項目も切れていないことを確認します。",
       "reflowHorizontalScroll_lean_why_clipped": "ビューポートの端が要素を切っており、ページは残りの部分までスクロールしません。",
       "reflowHorizontalScroll_lean_caution_clipped": "カルーセルやメニューは、残りを別の方法で表示できる場合があります。",
+      "reflowHorizontalScroll_lean_why_fieldCut": "要素内のフォーム フィールドが切れており、残りの部分へスクロールする手段がありません。フィールドは全体が見えて操作できる必要があります。",
+      "reflowHorizontalScroll_lean_caution_fieldCut": "幅が狭いためにフィールドが切れているかを確認してください。どの幅でも切れているフィールドは問題ですが、リフローの問題ではありません。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",
@@ -103526,7 +103536,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (box) {
         const bs = style(box);
         const rects = dom.getClientRects(el);
-        const es = style(el);
         const scrolls = !boxCuts(box);
         // Where it lies first, which is cheap; what may leave it out after.
         const rect = rects && rects.length ? dom.getBoundingClientRect(el) : null;
@@ -103537,7 +103546,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hit &&
           hit.over > TOLERANCE &&
           hit.inside > TOLERANCE &&
-          !(es && es.visibility === 'hidden') &&
+          !undrawn(el) &&
           !(!scrolls && ellipsisCovers(el, bs)) &&
           !escapes(el, box) &&
           !(scrolls && exemptInScrollBox(el, box))
@@ -103696,6 +103705,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return value;
   }
 
+  // Nothing of it drawn: it is visibility: hidden or collapse (inherited, so
+  // from any box around it too), and so is everything in it. It still takes
+  // its place in the layout, and may still widen the page, but there is
+  // nothing to reach past the edge. A descendant set back to visible is
+  // drawn, and keeps it in.
+  const HIDDEN_VISIBILITY = new Set(['hidden', 'collapse']);
+  const undrawnMemo = new Map();
+  function undrawn(el) {
+    if (undrawnMemo.has(el)) return undrawnMemo.get(el);
+    let value = false;
+    const s = style(el);
+    if (s && HIDDEN_VISIBILITY.has(String(s.visibility || ''))) {
+      value = true;
+      try {
+        const walker = dom.call(document, 'createTreeWalker', el, 1 /* SHOW_ELEMENT */);
+        for (let n = dom.call(walker, 'nextNode'); n; n = dom.call(walker, 'nextNode')) {
+          const ns = style(n);
+          if (ns && !HIDDEN_VISIBILITY.has(String(ns.visibility || ''))) {
+            value = false;
+            break;
+          }
+        }
+      } catch {
+        value = false;
+      }
+    }
+    undrawnMemo.set(el, value);
+    return value;
+  }
+
   // Each element that crosses the edge while its parent doesn't: the place
   // the overflow starts.
   const found = [];
@@ -103756,6 +103795,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Whether something past the edge was outside the scope or excluded: the
   // page may scroll because of it, which is not for this scan to judge.
   let leftOut = false;
+  // Whether something past the edge was left out because nothing of it is
+  // drawn: it may be what makes the page scroll, and scrolling there shows
+  // nothing, so no content needs it.
+  let undrawnPast = false;
   function consider(start, hit, own) {
     // Fixed to the viewport: it doesn't widen the page, and what of it lies
     // past the edge is never reached, however the page scrolls. One wholly
@@ -103777,6 +103820,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (hit.inside <= TOLERANCE || taken.has(start)) return;
       const up = start === fixed ? null : upOf(start);
       if (up && crossing(up)) return;
+      if (undrawn(start)) return;
       if (!inScope(start) || isExcluded(start)) {
         leftOut = true;
         return;
@@ -103825,7 +103869,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // can't be reached; what is wholly past it waits there on purpose.
       if (!rootClips || hit.inside <= TOLERANCE) return;
     }
-    // Last, as it walks up: what a clip hides shows nowhere.
+    // Last, as they walk: what a clip hides, or nothing of which is drawn,
+    // shows nowhere.
+    if (undrawn(el)) {
+      undrawnPast = true;
+      return;
+    }
     if (clipHidden(el)) return;
     if (!inScope(el) || isExcluded(el)) {
       leftOut = true;
@@ -103846,7 +103895,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const up = clippedBy(parent);
       if (up && up.box === clip.box) return;
     }
-    if (clipHidden(el)) return;
+    if (undrawn(el) || clipHidden(el)) return;
     if (!inScope(el) || isExcluded(el)) {
       leftOut = true;
       return;
@@ -103878,9 +103927,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Where it lies first, which is cheap: most content is inside the edge.
     const hit = beforeStartOf(rect);
     if (!(hit.over > TOLERANCE && hit.inside > TOLERANCE)) return;
-    if (taken.has(el) || clipHidden(el)) return;
-    const s = style(el);
-    if (s && s.visibility === 'hidden') return;
+    if (taken.has(el) || undrawn(el) || clipHidden(el)) return;
     if (!fixedOf(el) && insideSidewaysBox(el)) return;
     if (!inScope(el) || isExcluded(el)) return;
     taken.add(el);
@@ -104037,6 +104084,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         cautionKey: 'reflowHorizontalScroll_lean_caution_clipped'
       }
     },
+    // A field cut off with nothing to scroll to it: likely a loss, but one
+    // view can't tell whether the narrow width is what cut it.
+    fieldCut: {
+      toward: 'fail',
+      why: 'A form field in the element is cut off, and nothing scrolls to the rest of it: a field has to be seen and used whole.',
+      signals: [{ signal: 'cut-form-field', value: true }],
+      caution:
+        'Check that the field is cut because the width is narrow: a field cut at every width is a problem, but not one of reflow.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_fieldCut',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_fieldCut'
+      }
+    },
     clipped: {
       toward: 'fail',
       why: 'The edge of the viewport cuts through the element, and the page does not scroll to the rest of it.',
@@ -104186,17 +104246,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           : null;
     report(code, el, hit, lean);
   }
-  // Fields cut off: no exception covers a form, so it fails. A table, code
-  // or media is left to a person.
+  // Content cut off, with nothing to scroll to it, is a loss only if the
+  // narrow width is what cuts it, which one view of the page can't tell: it
+  // is asked about, and a cut field leans fail. Only scrolling sideways is
+  // measured as it is (a page, or a box with a field it cuts, that scrolls).
   const pastEnd = (rect) => ({ over: overflowOf(rect) });
+  const cutLean = (el, pastOf, otherwise) => (cutsFields(el, pastOf) ? LEANS.fieldCut : otherwise);
 
   for (const { el, tag, hit, fixed, start } of found) {
     if (start) {
-      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, LEANS.clipped, cutsFields(el, beforeStartOf));
+      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, cutLean(el, beforeStartOf, LEANS.clipped));
       continue;
     }
     if (!pageScrolls || fixed) {
-      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, LEANS.clipped, cutsFields(el, pastEnd));
+      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, cutLean(el, pastEnd, LEANS.clipped));
       continue;
     }
     reportOnPage(el, tag, hit);
@@ -104210,21 +104273,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       });
       continue;
     }
-    report(
-      clip.scrolls ? 'SCROLLS_IN_CONTAINER' : 'CLIPPED_BY_CONTAINER',
-      el,
-      { over: clip.over, rect: clip.rect },
-      clip.scrolls
-        ? isCarousel(el, clip.box)
-          ? LEANS.carousel
-          : LEANS.scrollBox
-        : LEANS.clippedBox,
-      cutsFields(el, (rect) => pastBox(rect, clip.box))
-    );
+    const pastClip = (rect) => pastBox(rect, clip.box);
+    if (clip.scrolls) {
+      // A box that scrolls sideways to show a field it cuts: scrolling in two
+      // dimensions to use the form, which no exception covers.
+      report(
+        'SCROLLS_IN_CONTAINER',
+        el,
+        { over: clip.over, rect: clip.rect },
+        isCarousel(el, clip.box) ? LEANS.carousel : LEANS.scrollBox,
+        cutsFields(el, pastClip)
+      );
+    } else {
+      report(
+        'CLIPPED_BY_CONTAINER',
+        el,
+        { over: clip.over, rect: clip.rect },
+        cutLean(el, pastClip, LEANS.clippedBox)
+      );
+    }
   }
 
-  // Only what reaches past the end edge explains why the page scrolls.
-  if (pageScrolls && !found.some((f) => !f.fixed && !f.start) && wholeDocument && !leftOut) {
+  // Only what reaches past the end edge explains why the page scrolls; what
+  // is drawn nowhere explains it too, with nothing to reach.
+  if (
+    pageScrolls &&
+    !found.some((f) => !f.fixed && !f.start) &&
+    wholeDocument &&
+    !leftOut &&
+    !undrawnPast
+  ) {
     report('HORIZONTAL_SCROLL_UNATTRIBUTED', html, null, null);
   }
 
@@ -117888,6 +117966,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_carousel": "Prüfen Sie, dass jedes Element mit der Tastatur erreichbar ist und in keinem etwas abgeschnitten wird.",
       "reflowHorizontalScroll_lean_why_clipped": "Der Rand des Viewports schneidet das Element ab, und die Seite scrollt nicht zum Rest.",
       "reflowHorizontalScroll_lean_caution_clipped": "Ein Karussell oder ein Menü kann den Rest auf andere Weise zeigen.",
+      "reflowHorizontalScroll_lean_why_fieldCut": "Ein Formularfeld im Element ist abgeschnitten, und nichts scrollt zum Rest: Ein Feld muss ganz zu sehen und zu bedienen sein.",
+      "reflowHorizontalScroll_lean_caution_fieldCut": "Prüfen Sie, ob das Feld wegen der geringen Breite abgeschnitten ist: Ein Feld, das bei jeder Breite abgeschnitten ist, ist ein Problem, aber keines des Umfließens.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -119672,6 +119752,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_carousel": "Check that each item can be reached with the keyboard, and that nothing in an item is cut off.",
       "reflowHorizontalScroll_lean_why_clipped": "The edge of the viewport cuts through the element, and the page does not scroll to the rest of it.",
       "reflowHorizontalScroll_lean_caution_clipped": "A carousel or a menu may show the rest another way.",
+      "reflowHorizontalScroll_lean_why_fieldCut": "A form field in the element is cut off, and nothing scrolls to the rest of it: a field has to be seen and used whole.",
+      "reflowHorizontalScroll_lean_caution_fieldCut": "Check that the field is cut because the width is narrow: a field cut at every width is a problem, but not one of reflow.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -121456,6 +121538,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_carousel": "Comprobar que cada elemento se puede alcanzar con el teclado y que nada de un elemento queda cortado.",
       "reflowHorizontalScroll_lean_why_clipped": "El borde de la ventana corta el elemento y la página no se desplaza hasta el resto.",
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrusel o un menú pueden mostrar el resto de otra forma.",
+      "reflowHorizontalScroll_lean_why_fieldCut": "Un campo de formulario del elemento está cortado y nada se desplaza hasta el resto: un campo tiene que verse y usarse entero.",
+      "reflowHorizontalScroll_lean_caution_fieldCut": "Comprobar que el campo está cortado porque el ancho es estrecho: un campo cortado en cualquier ancho es un problema, pero no de reajuste.",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -123240,6 +123324,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_carousel": "Vérifier que chaque élément est accessible au clavier et que rien n’y est coupé.",
       "reflowHorizontalScroll_lean_why_clipped": "Le bord de la fenêtre coupe l’élément, et la page ne défile pas jusqu’au reste.",
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrousel ou un menu peut montrer le reste autrement.",
+      "reflowHorizontalScroll_lean_why_fieldCut": "Un champ de formulaire de l’élément est coupé, et rien ne fait défiler jusqu’au reste : un champ doit être vu et utilisé en entier.",
+      "reflowHorizontalScroll_lean_caution_fieldCut": "Vérifiez que le champ est coupé parce que la largeur est étroite : un champ coupé à toute largeur est un problème, mais pas de redistribution.",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -125024,6 +125110,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_carousel": "各項目にキーボードで到達でき、どの項目も切れていないことを確認します。",
       "reflowHorizontalScroll_lean_why_clipped": "ビューポートの端が要素を切っており、ページは残りの部分までスクロールしません。",
       "reflowHorizontalScroll_lean_caution_clipped": "カルーセルやメニューは、残りを別の方法で表示できる場合があります。",
+      "reflowHorizontalScroll_lean_why_fieldCut": "要素内のフォーム フィールドが切れており、残りの部分へスクロールする手段がありません。フィールドは全体が見えて操作できる必要があります。",
+      "reflowHorizontalScroll_lean_caution_fieldCut": "幅が狭いためにフィールドが切れているかを確認してください。どの幅でも切れているフィールドは問題ですが、リフローの問題ではありません。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",
