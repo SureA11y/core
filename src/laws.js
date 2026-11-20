@@ -9,8 +9,8 @@
  * requirements; it says which law a scan was run for and nothing more. A
  * requirement only some laws ask for says which
  * (standard.procedures[version][id].laws). A law's name is translated by id
- * in standard.lawTexts: { fr: { 'laws.<id>.name': '…' } }. Experimental
- * (src/experimental.js).
+ * in standard.lawTexts: { fr: { 'laws.<id>.name': '…' } }. A requirement's
+ * laws are experimental (src/experimental.js).
  *
  * No file system and no engine, so it runs in a browser bundle too.
  */

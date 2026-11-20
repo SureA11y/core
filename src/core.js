@@ -1047,8 +1047,16 @@ function applyProfile(selection, requestedProfile) {
         ex.ruleIds.filter((id) => !selection.excludeRuleIds.includes(id))
       );
       selection.excludeRollupIds = ex.rollupIds.slice();
-      if (ex.rules.length || ex.criteria.length) {
-        selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
+      // The requirements its law doesn't ask for (standard.procedures'
+      // laws, experimental): their rollups are left out, as listProcedures
+      // leaves them out of the list.
+      const byLaw = Array.isArray(ex.requirements) ? ex.requirements : [];
+      if (ex.rules.length || ex.criteria.length || byLaw.length) {
+        selection.profileExcludes = {
+          rules: ex.rules.slice(),
+          criteria: ex.criteria.slice(),
+          ...(byLaw.length ? { requirements: byLaw.slice() } : {})
+        };
       }
     }
     selection.profile = requestedProfile;
@@ -26568,7 +26576,7 @@ const runCoreSettled = (function runCoreSettled(
       wcagVersion: targetWcagVersion,
       ...(wcagLevel ? { wcagLevel } : {}),
       ...(appliedProfile ? { profile: appliedProfile } : {}),
-      // The law the profile serves (standard.laws, experimental).
+      // The law the profile serves (standard.laws).
       ...(appliedProfile &&
       Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, appliedProfile) &&
       PROFILE_TARGETS[appliedProfile].law
@@ -125729,8 +125737,16 @@ function applyProfile(selection, requestedProfile) {
         ex.ruleIds.filter((id) => !selection.excludeRuleIds.includes(id))
       );
       selection.excludeRollupIds = ex.rollupIds.slice();
-      if (ex.rules.length || ex.criteria.length) {
-        selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
+      // The requirements its law doesn't ask for (standard.procedures'
+      // laws, experimental): their rollups are left out, as listProcedures
+      // leaves them out of the list.
+      const byLaw = Array.isArray(ex.requirements) ? ex.requirements : [];
+      if (ex.rules.length || ex.criteria.length || byLaw.length) {
+        selection.profileExcludes = {
+          rules: ex.rules.slice(),
+          criteria: ex.criteria.slice(),
+          ...(byLaw.length ? { requirements: byLaw.slice() } : {})
+        };
       }
     }
     selection.profile = requestedProfile;
@@ -151250,7 +151266,7 @@ const runCoreSettled = (function runCoreSettled(
       wcagVersion: targetWcagVersion,
       ...(wcagLevel ? { wcagLevel } : {}),
       ...(appliedProfile ? { profile: appliedProfile } : {}),
-      // The law the profile serves (standard.laws, experimental).
+      // The law the profile serves (standard.laws).
       ...(appliedProfile &&
       Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, appliedProfile) &&
       PROFILE_TARGETS[appliedProfile].law

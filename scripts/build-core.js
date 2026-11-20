@@ -1245,8 +1245,16 @@ function applyProfile(selection, requestedProfile) {
         ex.ruleIds.filter((id) => !selection.excludeRuleIds.includes(id))
       );
       selection.excludeRollupIds = ex.rollupIds.slice();
-      if (ex.rules.length || ex.criteria.length) {
-        selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
+      // The requirements its law doesn't ask for (standard.procedures'
+      // laws, experimental): their rollups are left out, as listProcedures
+      // leaves them out of the list.
+      const byLaw = Array.isArray(ex.requirements) ? ex.requirements : [];
+      if (ex.rules.length || ex.criteria.length || byLaw.length) {
+        selection.profileExcludes = {
+          rules: ex.rules.slice(),
+          criteria: ex.criteria.slice(),
+          ...(byLaw.length ? { requirements: byLaw.slice() } : {})
+        };
       }
     }
     selection.profile = requestedProfile;

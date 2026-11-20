@@ -93,9 +93,21 @@ function cityPack(fields = {}, profileFields = {}) {
 const problems = (fields, profileFields) =>
   checkPack(cityPack(fields, profileFields)).filter((p) => /law/i.test(p));
 
-test('a sound set of laws gives no problems, and the pack uses the experimental API', () => {
+test('a sound set of laws gives no problems; only requirement laws are experimental', () => {
   assert.deepEqual(problems(), []);
-  assert.ok(experimentalUses(definePack(cityPack())).some((e) => e.id === 'standard laws'));
+  // The standard's laws and its profiles' are stable since 1.18.0; a
+  // requirement asked for under only some laws is experimental until 1.20.0.
+  const ids = (pack) => experimentalUses(definePack(pack)).map((e) => e.id);
+  assert.deepEqual(ids(cityPack()), ['requirement laws']);
+  const withoutRequirementLaws = cityPack({
+    procedures: {
+      1: {
+        A: { title: 'Images', facets: [facet('a1')] },
+        B: { title: 'Forms', facets: [facet('b1')] }
+      }
+    }
+  });
+  assert.deepEqual(ids(withoutRequirementLaws), []);
 });
 
 test('checkPack reports what is wrong with a law, a reference to one and its translations', () => {
@@ -265,6 +277,49 @@ test("listProcedures by profile lists what the profile's law asks for, and names
     listProcedures({ packs: [pack], profile: 'city-1', standard: 'city' }).profile,
     'city-1'
   );
+});
+
+// The scan judges what listProcedures lists: a requirement only some laws
+// ask for is left out under a profile that serves another law, or none, and
+// the result says so (engine.profileExcludes.requirements).
+test("the scan leaves out the requirements the profile's law doesn't ask for, as the list does", () => {
+  const std = ruleMappedStandard({
+    standard: 'City',
+    tag: 'city',
+    versions: [{ version: '1', wcagVersion: '2.2' }],
+    requirements: {
+      1: { A: { title: 'Images', wcagSc: ['1.1.1'] }, B: { title: 'Forms', wcagSc: [] } }
+    },
+    // B, which only the public law asks for, is where the image fails.
+    ruleMap: { 1: { 'img-alt-present': { requirements: ['A', 'B'] } } }
+  });
+  const pack = definePack(
+    cityPack(
+      { mappingsFor: std.mappingsFor, composites: std.composites, validate: std.validate },
+      { 'city-1-none': { version: '1', tags: ['city'], mappedRules: true } }
+    )
+  );
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="a.png"></body></html>';
+  const scan = (profile) => runa11yCoreOnHtml(html, { engineOptions: { packs: [pack], profile } });
+  const rollups = (result) =>
+    result.rulesResults
+      .filter((r) => r.ruleId.startsWith('city-1-'))
+      .map((r) => `${r.ruleId}=${r.outcome}`)
+      .sort();
+  const ids = (list) => list.requirements.map((r) => r.id);
+
+  const pub = scan('city-1');
+  assert.deepEqual(rollups(pub), ['city-1-A=fail', 'city-1-B=fail']);
+  assert.equal(pub.engine.profileExcludes, undefined);
+  assert.deepEqual(ids(listProcedures({ packs: [pack], profile: 'city-1' })), ['A', 'B']);
+
+  for (const profile of ['city-1-private', 'city-1-none']) {
+    const result = scan(profile);
+    assert.deepEqual(rollups(result), ['city-1-A=fail'], profile);
+    assert.deepEqual(result.engine.profileExcludes.requirements, ['B'], profile);
+    assert.deepEqual(ids(listProcedures({ packs: [pack], profile })), ['A'], profile);
+  }
 });
 
 test('describePacks lists the laws with the profiles that serve each', () => {

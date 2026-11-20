@@ -105,6 +105,7 @@
 const { EN301549_VERSIONS, en301549MappingsForScs } = require('./en301549-map');
 const { wcagTags } = require('../wcag');
 const { wcagLinks } = require('./wcag-criteria');
+const { appliesUnder } = require('../laws.js');
 const PROFILES = require('../../profiles');
 
 // The WCAG A and AA tags of the WCAG version an EN 301 549 version is built on.
@@ -287,7 +288,7 @@ function createRegistry(standards, { uses = {} } = {}) {
             ...(p.severity && typeof p.severity === 'object' ? { severity: { ...p.severity } } : {}),
             ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {}),
             ...(p.keepsParsing ? { keepsParsing: true } : {}),
-            // The law it serves, as a result names it: experimental.
+            // The law it serves, as a result names it.
             ...lawOfProfile(s, p)
           }
         ])
@@ -316,6 +317,38 @@ function createRegistry(standards, { uses = {} } = {}) {
   // `rollupIds` the WCAG rollups of the criteria it waives. A rule that also
   // checks a criterion it keeps still runs. Throws, naming every problem, on an
   // unknown rule or criterion, or on a rule the profile excludes and also maps.
+  // The requirements of a profile's version its law doesn't ask for (a
+  // requirement's `laws` in standard.procedures, as listProcedures reads
+  // them), and the rollups of those requirements: the scan leaves them out,
+  // so it judges what the list asks for. Experimental (src/experimental.js).
+  function lawExclusions(s, p) {
+    const table =
+      s.procedures && typeof s.procedures === 'object' ? s.procedures[p.version] : null;
+    if (!table || typeof table !== 'object') return { requirements: [], rollupIds: [] };
+    const law = typeof p.law === 'string' ? p.law : null;
+    const requirements = Object.keys(table)
+      .filter((id) => !appliesUnder(table[id], law))
+      .sort();
+    if (!requirements.length) return { requirements, rollupIds: [] };
+    let own;
+    try {
+      own = typeof s.composites === 'function' ? s.composites() : [];
+    } catch {
+      own = [];
+    }
+    const rollupIds = (Array.isArray(own) ? own : [])
+      .filter(
+        (r) =>
+          r &&
+          r.meta &&
+          r.meta.version === p.version &&
+          requirements.includes(String(r.meta.criterion))
+      )
+      .map((r) => r.id)
+      .sort();
+    return { requirements, rollupIds };
+  }
+
   function profileExclusions(rules, rollups) {
     const known = new Set(rules.map((r) => r.ruleId));
     const knownSc = new Set(rules.flatMap((r) => r.wcagSc || []).concat(rollups.flatMap((r) => r.wcagSc || [])));
@@ -324,7 +357,13 @@ function createRegistry(standards, { uses = {} } = {}) {
     const out = {};
     for (const s of standards) {
       for (const [name, p] of Object.entries(s.profiles || {})) {
-        if (!p.exclude) continue;
+        const byLaw = lawExclusions(s, p);
+        if (!p.exclude) {
+          if (byLaw.requirements.length) {
+            out[name] = { rules: [], criteria: [], ruleIds: [], rollupIds: byLaw.rollupIds, requirements: byLaw.requirements };
+          }
+          continue;
+        }
         const { rules: ids, criteria } = normalizeExclude(p.exclude);
         for (const id of ids) {
           if (!known.has(id)) problems.push(`${name}: exclude.rules names ${id}, which is no rule`);
@@ -340,7 +379,13 @@ function createRegistry(standards, { uses = {} } = {}) {
         const waived = (list) => list.length > 0 && list.every((sc) => criteria.includes(sc));
         const ruleIds = [...new Set(ids.concat(rules.filter((r) => waived(r.wcagSc || [])).map((r) => r.ruleId)))].sort();
         const rollupIds = rollups.filter((r) => waived(r.wcagSc || [])).map((r) => r.id).sort();
-        out[name] = { rules: ids, criteria, ruleIds, rollupIds };
+        out[name] = {
+          rules: ids,
+          criteria,
+          ruleIds,
+          rollupIds: [...new Set(rollupIds.concat(byLaw.rollupIds))].sort(),
+          ...(byLaw.requirements.length ? { requirements: byLaw.requirements } : {})
+        };
       }
     }
     if (problems.length) throw new Error(`profile exclusions:\n  ${problems.join('\n  ')}`);

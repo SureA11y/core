@@ -553,10 +553,18 @@ export interface EngineInfo {
     profile: string;
     reason: 'unknown-profile' | 'pack-skipped' | 'overridden-by-selection' | string;
   }[];
-  profileExcludes?: { rules: string[]; criteria: string[] };
+  profileExcludes?: {
+    rules: string[];
+    criteria: string[];
+    /**
+     * The requirements of the profile's standard its law doesn't ask for,
+     * whose rollups were left out. @experimental Until 1.20.0.
+     */
+    requirements?: string[];
+  };
   /**
-   * The law the applied profile serves, when it names one.
-   * @experimental Until 1.18.0.
+   * The law the applied profile serves, when it names one. In a scan of
+   * several profiles, only when every one serves the same law.
    */
   law?: EngineLaw;
   optInRules?: string[];
@@ -986,7 +994,7 @@ export interface ScanResult {
       wcagLevel?: string;
       standards?: string[];
       rulesResults: Record<string, Outcome>;
-      /** The law the profile serves, when it names one. @experimental Until 1.18.0. */
+      /** The law the profile serves, when it names one. */
       law?: EngineLaw;
       /** This profile's scan timings, with engineOptions.perfStats. */
       perfStats?: Record<string, unknown>;
@@ -1405,14 +1413,13 @@ export interface ProcedureListOptions {
   rules?: string | readonly string[];
   /**
    * A pack's profile: lists its standard at its version, only the
-   * requirements its law asks for. @experimental Until 1.18.0.
+   * requirements its law asks for.
    */
   profile?: string;
 }
 
 /**
  * The law a profile serves, as results name it.
- * @experimental Until 1.18.0.
  */
 export interface EngineLaw {
   id: string;
@@ -1430,11 +1437,11 @@ export interface ProcedureList {
   key?: string;
   /** The version listed; null for the best practices. */
   version: string | null;
-  /** Listed for a pack's profile: its name. @experimental Until 1.18.0. */
+  /** Listed for a pack's profile: its name. */
   profile?: string;
   /**
    * Listed for a pack's profile that serves a law: the law, in the locale
-   * read where its texts are translated (lawOf). @experimental Until 1.18.0.
+   * read where its texts are translated (lawOf).
    */
   law?: import('./pack').LawText;
   /**

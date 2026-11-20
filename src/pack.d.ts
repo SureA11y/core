@@ -53,7 +53,6 @@ export interface PackStandard {
       keepsParsing?: boolean;
       /**
        * The id of the law the profile serves, one of `laws`.
-       * @experimental Until 1.18.0.
        */
       law?: string;
     }
@@ -120,20 +119,17 @@ export interface PackStandard {
    * The laws its profiles are used for, by id, identified and not
    * documented: name, jurisdiction, official texts (docs/PACKS.md, "The
    * law a profile is used for").
-   * @experimental Until 1.18.0.
    */
   laws?: Record<string, PackLaw>;
   /**
    * The laws' names in other languages, by locale and id: { en:
    * { 'laws.<id>.name': '…' } }.
-   * @experimental Until 1.18.0.
    */
   lawTexts?: Record<string, Record<string, string>>;
 }
 
 /**
  * A law a profile is used for: identified, not documented.
- * @experimental Until 1.18.0.
  */
 export interface PackLaw {
   name: string;
@@ -145,7 +141,6 @@ export interface PackLaw {
 
 /**
  * A law in a language (lawOf).
- * @experimental Until 1.18.0.
  */
 export interface LawText extends PackLaw {
   id: string;
@@ -156,7 +151,6 @@ export interface LawText extends PackLaw {
 /**
  * A standard's law in `locale`, read from standard.lawTexts for it or its
  * base language, else as written; null for a law it doesn't have.
- * @experimental Until 1.18.0.
  */
 export function lawOf(standard: PackStandard, id: string, locale?: string): LawText | null;
 
@@ -189,12 +183,12 @@ export type PackRequirementProcedures =
       title?: string;
       wcag: string;
       replace?: Record<string, PackProcedure>;
-      /** The laws that ask for it; without it, all do. @experimental Until 1.18.0. */
+      /** The laws that ask for it; without it, all do. @experimental Until 1.20.0. */
       laws?: string[];
     }
   | {
       title?: string;
-      /** The laws that ask for it; without it, all do. @experimental Until 1.18.0. */
+      /** The laws that ask for it; without it, all do. @experimental Until 1.20.0. */
       laws?: string[];
       /** The WCAG criteria it relates to, without restating any (relatedRequirements). */
       relatesTo?: string[];
@@ -364,7 +358,7 @@ export interface PackDescription {
     versions: string[];
     profiles: string[];
     rollups: string[];
-    /** Its laws, in English, with the profiles that serve each. @experimental Until 1.18.0. */
+    /** Its laws, in English, with the profiles that serve each. */
     laws?: (LawText & { profiles: string[] })[];
   } | null;
   locales: string[];
