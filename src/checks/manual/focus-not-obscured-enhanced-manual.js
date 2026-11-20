@@ -41,7 +41,9 @@
  *     gets no lean.
  *     Basis: WCAG 2.4.12; F110; C43.
  *   - `FOCUS_OBSCURED_PARTLY` (cantTell): elements in the tab order can take
- *     focus partly hidden behind such a box, none entirely. It leans fail,
+ *     focus partly hidden behind such a box, none entirely; a box that shows
+ *     what is under it (translucent, or faded) obscures them in part, never
+ *     entirely, however much of them it covers. It leans fail,
  *     with the same caution, but for a box a control marks as opened.
  *     Basis: WCAG 2.4.12; C43.
  *   - `FOCUS_OBSCURED_BEHIND_MODAL` (cantTell): a script-made modal dialog

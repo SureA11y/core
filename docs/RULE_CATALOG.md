@@ -1568,7 +1568,7 @@ Checks that no element in the tab order can take focus with any part of it hidde
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `FOCUS_OBSCURED_ENTIRELY` | cantTell | Elements in the tab order can take focus entirely hidden behind a box the page keeps in place over part of the window it counts as in view. It leans fail: the box covers them whatever the user does, unless the user opened it and can close it without moving focus. A box a control marks as opened (`openedByUser`) gets no lean. | WCAG 2.4.12; F110; C43 |
-| `FOCUS_OBSCURED_PARTLY` | cantTell | Elements in the tab order can take focus partly hidden behind such a box, none entirely. It leans fail, with the same caution, but for a box a control marks as opened. | WCAG 2.4.12; C43 |
+| `FOCUS_OBSCURED_PARTLY` | cantTell | Elements in the tab order can take focus partly hidden behind such a box, none entirely; a box that shows what is under it (translucent, or faded) obscures them in part, never entirely, however much of them it covers. It leans fail, with the same caution, but for a box a control marks as opened. | WCAG 2.4.12; C43 |
 | `FOCUS_OBSCURED_BEHIND_MODAL` | cantTell | A script-made modal dialog is open, but elements outside it still take focus, hidden behind the dialog or its backdrop. It leans fail. | WCAG 2.4.12; WAI-ARIA 1.2 aria-modal (not settled); ARIA APG Dialog (Modal) Pattern (best practice) |
 
 ### `focus-not-obscured-minimum`

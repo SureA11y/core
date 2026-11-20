@@ -81524,6 +81524,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const m = /^(-?\d*\.?\d+)px$/.exec(lower(v));
     return m ? Number.parseFloat(m[1]) : 0;
   };
+  // A length a browser may keep as written: px, a percentage of `ref`, or a
+  // calc() adding the two ("calc(10% + 2px)"). Anything else reads as 0.
+  const lengthOf = (v, ref) => {
+    const raw = lower(v);
+    if (!raw || raw === 'auto') return 0;
+    const pct = /^(-?\d*\.?\d+)%$/.exec(raw);
+    if (pct) return (Number.parseFloat(pct[1]) * ref) / 100;
+    const calc = /^calc\((.*)\)$/.exec(raw);
+    if (calc) {
+      let total = 0;
+      let rest = calc[1].replace(/\s+/g, '');
+      const term = /^([+-]?)(\d*\.?\d+)(px|%)/;
+      while (rest) {
+        const m = term.exec(rest);
+        if (!m) return 0;
+        const n = Number.parseFloat(m[2]) * (m[1] === '-' ? -1 : 1);
+        total += m[3] === '%' ? (n * ref) / 100 : n;
+        rest = rest.slice(m[0].length);
+      }
+      return total;
+    }
+    return px(raw);
+  };
   const styleOf = (el) => {
     try {
       return view.getComputedStyle(el);
@@ -81597,11 +81620,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const scrollY = Number(dom.get(view, 'scrollY')) || 0;
   const scrollX = Number(dom.get(view, 'scrollX')) || 0;
   const scroller = dom.get(document, 'scrollingElement') || html;
-  const vh = Number(dom.get(html, 'clientHeight')) || 0;
+  // The viewport's height: the scrolling element's clientHeight, which is
+  // the root's in standards mode and the body's in quirks mode, where the
+  // root's is the document's height (CSSOM View).
+  const vh = Number(dom.get(scroller, 'clientHeight')) || Number(dom.get(view, 'innerHeight')) || 0;
   const maxScroll = Math.max(0, (Number(dom.get(scroller, 'scrollHeight')) || 0) - vh);
   const htmlCs = styleOf(html);
-  const padTop = px(htmlCs && htmlCs.scrollPaddingTop);
-  const padBottom = px(htmlCs && htmlCs.scrollPaddingBottom);
+  // A percentage is of the scrollport's height (CSS Scroll Snap).
+  const padTop = lengthOf(htmlCs && htmlCs.scrollPaddingTop, vh);
+  const padBottom = lengthOf(htmlCs && htmlCs.scrollPaddingBottom, vh);
 
   // What an element is, as a candidate or a box, doesn't depend on the
   // settings: it is kept for the scan, keyed by element, so the variant run
@@ -81802,7 +81829,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   });
   const covers = [];
-  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+  // Every element, inside open shadow roots too: a web component's sticky
+  // header covers as any other does.
+  const deepElements = [];
+  const roots = [document];
+  while (roots.length) {
+    const root = roots.shift();
+    for (const el of [...dom.querySelectorAll(root, root === document ? 'body *' : '*')]) {
+      deepElements.push(el);
+      const shadow = dom.shadowRoot(el);
+      if (shadow) roots.push(shadow);
+    }
+  }
+  for (const el of deepElements) {
     const cover = coverOf(el);
     if (cover) covers.push(cover);
   }
@@ -81851,7 +81890,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const horizontallySome = cover.left < c.right - 0.5 && cover.right > c.left + 0.5;
       let kind = null;
       let at = null;
-      if (horizontallyAll) {
+      // A box that shows what is under it hides nothing entirely, only in
+      // part (2.4.12 still asks about that).
+      if (horizontallyAll && cover.opaque) {
         at = placement(c, cover, true);
         if (at != null) kind = 'entirely';
       }
@@ -81922,6 +81963,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         let top;
         try {
           top = dom.call(document, 'elementFromPoint', x, y);
+          // Through open shadow roots: the document answers with the host.
+          for (let depth = 0; top && depth < 32; depth++) {
+            const shadow = dom.shadowRoot(top);
+            if (!shadow) break;
+            const inner = dom.call(shadow, 'elementFromPoint', x, y);
+            if (!inner || inner === top) break;
+            top = inner;
+          }
         } catch {
           top = null;
         }
@@ -82154,6 +82203,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const m = /^(-?\d*\.?\d+)px$/.exec(lower(v));
     return m ? Number.parseFloat(m[1]) : 0;
   };
+  // A length a browser may keep as written: px, a percentage of `ref`, or a
+  // calc() adding the two ("calc(10% + 2px)"). Anything else reads as 0.
+  const lengthOf = (v, ref) => {
+    const raw = lower(v);
+    if (!raw || raw === 'auto') return 0;
+    const pct = /^(-?\d*\.?\d+)%$/.exec(raw);
+    if (pct) return (Number.parseFloat(pct[1]) * ref) / 100;
+    const calc = /^calc\((.*)\)$/.exec(raw);
+    if (calc) {
+      let total = 0;
+      let rest = calc[1].replace(/\s+/g, '');
+      const term = /^([+-]?)(\d*\.?\d+)(px|%)/;
+      while (rest) {
+        const m = term.exec(rest);
+        if (!m) return 0;
+        const n = Number.parseFloat(m[2]) * (m[1] === '-' ? -1 : 1);
+        total += m[3] === '%' ? (n * ref) / 100 : n;
+        rest = rest.slice(m[0].length);
+      }
+      return total;
+    }
+    return px(raw);
+  };
   const styleOf = (el) => {
     try {
       return view.getComputedStyle(el);
@@ -82227,11 +82299,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const scrollY = Number(dom.get(view, 'scrollY')) || 0;
   const scrollX = Number(dom.get(view, 'scrollX')) || 0;
   const scroller = dom.get(document, 'scrollingElement') || html;
-  const vh = Number(dom.get(html, 'clientHeight')) || 0;
+  // The viewport's height: the scrolling element's clientHeight, which is
+  // the root's in standards mode and the body's in quirks mode, where the
+  // root's is the document's height (CSSOM View).
+  const vh = Number(dom.get(scroller, 'clientHeight')) || Number(dom.get(view, 'innerHeight')) || 0;
   const maxScroll = Math.max(0, (Number(dom.get(scroller, 'scrollHeight')) || 0) - vh);
   const htmlCs = styleOf(html);
-  const padTop = px(htmlCs && htmlCs.scrollPaddingTop);
-  const padBottom = px(htmlCs && htmlCs.scrollPaddingBottom);
+  // A percentage is of the scrollport's height (CSS Scroll Snap).
+  const padTop = lengthOf(htmlCs && htmlCs.scrollPaddingTop, vh);
+  const padBottom = lengthOf(htmlCs && htmlCs.scrollPaddingBottom, vh);
 
   // What an element is, as a candidate or a box, doesn't depend on the
   // settings: it is kept for the scan, keyed by element, so the variant run
@@ -82432,7 +82508,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   });
   const covers = [];
-  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+  // Every element, inside open shadow roots too: a web component's sticky
+  // header covers as any other does.
+  const deepElements = [];
+  const roots = [document];
+  while (roots.length) {
+    const root = roots.shift();
+    for (const el of [...dom.querySelectorAll(root, root === document ? 'body *' : '*')]) {
+      deepElements.push(el);
+      const shadow = dom.shadowRoot(el);
+      if (shadow) roots.push(shadow);
+    }
+  }
+  for (const el of deepElements) {
     const cover = coverOf(el);
     if (cover) covers.push(cover);
   }
@@ -82481,7 +82569,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const horizontallySome = cover.left < c.right - 0.5 && cover.right > c.left + 0.5;
       let kind = null;
       let at = null;
-      if (horizontallyAll) {
+      // A box that shows what is under it hides nothing entirely, only in
+      // part (2.4.12 still asks about that).
+      if (horizontallyAll && cover.opaque) {
         at = placement(c, cover, true);
         if (at != null) kind = 'entirely';
       }
@@ -82552,6 +82642,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         let top;
         try {
           top = dom.call(document, 'elementFromPoint', x, y);
+          // Through open shadow roots: the document answers with the host.
+          for (let depth = 0; top && depth < 32; depth++) {
+            const shadow = dom.shadowRoot(top);
+            if (!shadow) break;
+            const inner = dom.call(shadow, 'elementFromPoint', x, y);
+            if (!inner || inner === top) break;
+            top = inner;
+          }
         } catch {
           top = null;
         }
@@ -109941,10 +110039,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  // The element drawn at a point, through open shadow roots: the document
+  // answers with a shadow host, and the host's root with what it holds.
   function elementFromPoint(x, y) {
     try {
-      if (document && typeof dom.get(document, 'elementFromPoint') === 'function')
-        return dom.elementFromPoint(document, x, y);
+      if (!document || typeof dom.get(document, 'elementFromPoint') !== 'function') return null;
+      let hit = dom.elementFromPoint(document, x, y);
+      for (let depth = 0; hit && depth < 32; depth++) {
+        const root = dom.shadowRoot(hit);
+        if (!root || typeof dom.get(root, 'elementFromPoint') !== 'function') break;
+        const inner = dom.elementFromPoint(root, x, y);
+        if (!inner || inner === hit) break;
+        hit = inner;
+      }
+      return hit;
     } catch {}
     return null;
   }
@@ -110180,6 +110288,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isCoveredNear(other, target) {
     // Out of view, neither is where a pointer would find it.
     if (scrolledOutOf(other.el) || scrolledOutOf(target.el)) return false;
+    // The target itself is covered too (a consent backdrop over both, at the
+    // moment of the scan): the cover hides both, and says nothing of how
+    // close they are once it is gone.
+    if (coveredAtCentre(target)) return false;
     const r = other.rect;
     const x0 = Math.max(r.left, target.center.cx - SPACING);
     const x1 = Math.min(r.right, target.center.cx + SPACING);
@@ -110202,6 +110314,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return answered;
   }
 
+  // Whether something else is drawn at the target's centre.
+  function coveredAtCentre(target) {
+    const hit = elementFromPoint(target.center.cx, target.center.cy);
+    if (!hit) return false;
+    try {
+      return !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
+    } catch {
+      return false;
+    }
+  }
+
   // --- spacing evaluation ---
   // WCAG 2.5.8's spacing exception, exactly: the 24px circle centred on the
   // target's region must not intersect another target's region, nor the
@@ -110220,7 +110343,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const d = dist(target.center, other.center);
       if (isUndersized(other) && d < SPACING - EPS) {
         if (isCoveredNear(other, target)) continue;
-        return { conflict: true, conflictEl: other.el, decidedBy: 'centerDistance', distancePx: d };
+        // Moving the two apart lengthens both distances alike: the move
+        // that clears the spacing is the larger of the two shortfalls.
+        const reachToo = regionDistance(other.region, c);
+        return {
+          conflict: true,
+          conflictEl: other.el,
+          decidedBy: 'centerDistance',
+          distancePx: d,
+          needPx: Math.max(SPACING - d, RADIUS - reachToo)
+        };
       }
       const reach = regionDistance(other.region, c);
       if (reach < RADIUS - EPS) {
@@ -110252,6 +110384,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // checkbox/radio styling across every CSS framework/design system. If the
   // author hasn't reset it, the browser is still rendering its own default
   // control chrome, so the size is UA-determined rather than authored.
+  // A checkbox or radio sized outside the 12 to 16 CSS px browsers draw it at
+  // was resized by the author, so it isn't ("not modified by the author").
   function isUserAgentSizedControl(el) {
     try {
       if (!el || dom.nodeType(el) !== 1) return false;
@@ -110281,6 +110415,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
       if (appearance === 'none') return false;
+
+      // Resized by the author: browsers draw an unstyled checkbox or radio
+      // at 12 to 16 CSS px (13 in Chromium and Firefox, 14 to 16 in Safari).
+      // A size outside that was set by the author, which the exception
+      // doesn't cover ("not modified by the author").
+      const box = dom.getBoundingClientRect(el);
+      const zoom = Number.parseFloat((cs && cs.zoom) || '1') || 1;
+      const w = box.width / zoom;
+      const h = box.height / zoom;
+      if (w < 12 - EPS || h < 12 - EPS || w > 16 + EPS || h > 16 + EPS) return false;
 
       return true;
     } catch {
@@ -110457,7 +110601,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return {
       distancePx: String(round1(info.distancePx, limit)),
       minDistancePx: String(limit),
-      shortfallPx: String(Math.ceil((limit - info.distancePx) * 10 - 1e-6) / 10)
+      shortfallPx: String(
+        Math.ceil(
+          (Number.isFinite(info.needPx) ? info.needPx : limit - info.distancePx) * 10 - 1e-6
+        ) / 10
+      )
     };
   }
   function spacingHint(decidedBy, s) {
@@ -111773,10 +111921,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  // The element drawn at a point, through open shadow roots: the document
+  // answers with a shadow host, and the host's root with what it holds.
   function elementFromPoint(x, y) {
     try {
-      if (document && typeof dom.get(document, 'elementFromPoint') === 'function')
-        return dom.elementFromPoint(document, x, y);
+      if (!document || typeof dom.get(document, 'elementFromPoint') !== 'function') return null;
+      let hit = dom.elementFromPoint(document, x, y);
+      for (let depth = 0; hit && depth < 32; depth++) {
+        const root = dom.shadowRoot(hit);
+        if (!root || typeof dom.get(root, 'elementFromPoint') !== 'function') break;
+        const inner = dom.elementFromPoint(root, x, y);
+        if (!inner || inner === hit) break;
+        hit = inner;
+      }
+      return hit;
     } catch {}
     return null;
   }
@@ -112012,6 +112170,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isCoveredNear(other, target) {
     // Out of view, neither is where a pointer would find it.
     if (scrolledOutOf(other.el) || scrolledOutOf(target.el)) return false;
+    // The target itself is covered too (a consent backdrop over both, at the
+    // moment of the scan): the cover hides both, and says nothing of how
+    // close they are once it is gone.
+    if (coveredAtCentre(target)) return false;
     const r = other.rect;
     const x0 = Math.max(r.left, target.center.cx - SPACING);
     const x1 = Math.min(r.right, target.center.cx + SPACING);
@@ -112034,6 +112196,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return answered;
   }
 
+  // Whether something else is drawn at the target's centre.
+  function coveredAtCentre(target) {
+    const hit = elementFromPoint(target.center.cx, target.center.cy);
+    if (!hit) return false;
+    try {
+      return !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
+    } catch {
+      return false;
+    }
+  }
+
   // --- spacing evaluation ---
   // WCAG 2.5.8's spacing exception, exactly: the 24px circle centred on the
   // target's region must not intersect another target's region, nor the
@@ -112052,7 +112225,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const d = dist(target.center, other.center);
       if (isUndersized(other) && d < SPACING - EPS) {
         if (isCoveredNear(other, target)) continue;
-        return { conflict: true, conflictEl: other.el, decidedBy: 'centerDistance', distancePx: d };
+        // Moving the two apart lengthens both distances alike: the move
+        // that clears the spacing is the larger of the two shortfalls.
+        const reachToo = regionDistance(other.region, c);
+        return {
+          conflict: true,
+          conflictEl: other.el,
+          decidedBy: 'centerDistance',
+          distancePx: d,
+          needPx: Math.max(SPACING - d, RADIUS - reachToo)
+        };
       }
       const reach = regionDistance(other.region, c);
       if (reach < RADIUS - EPS) {
@@ -112084,6 +112266,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // checkbox/radio styling across every CSS framework/design system. If the
   // author hasn't reset it, the browser is still rendering its own default
   // control chrome, so the size is UA-determined rather than authored.
+  // A checkbox or radio sized outside the 12 to 16 CSS px browsers draw it at
+  // was resized by the author, so it isn't ("not modified by the author").
   function isUserAgentSizedControl(el) {
     try {
       if (!el || dom.nodeType(el) !== 1) return false;
@@ -112113,6 +112297,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
       if (appearance === 'none') return false;
+
+      // Resized by the author: browsers draw an unstyled checkbox or radio
+      // at 12 to 16 CSS px (13 in Chromium and Firefox, 14 to 16 in Safari).
+      // A size outside that was set by the author, which the exception
+      // doesn't cover ("not modified by the author").
+      const box = dom.getBoundingClientRect(el);
+      const zoom = Number.parseFloat((cs && cs.zoom) || '1') || 1;
+      const w = box.width / zoom;
+      const h = box.height / zoom;
+      if (w < 12 - EPS || h < 12 - EPS || w > 16 + EPS || h > 16 + EPS) return false;
 
       return true;
     } catch {
@@ -112289,7 +112483,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return {
       distancePx: String(round1(info.distancePx, limit)),
       minDistancePx: String(limit),
-      shortfallPx: String(Math.ceil((limit - info.distancePx) * 10 - 1e-6) / 10)
+      shortfallPx: String(
+        Math.ceil(
+          (Number.isFinite(info.needPx) ? info.needPx : limit - info.distancePx) * 10 - 1e-6
+        ) / 10
+      )
     };
   }
   function spacingHint(decidedBy, s) {

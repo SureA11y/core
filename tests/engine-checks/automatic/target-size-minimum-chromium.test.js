@@ -287,4 +287,64 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(plain.data.details.clippedBy, undefined);
     assert.doesNotMatch(plain.summary, /cuts it/);
   });
+
+  // Seventh stress test (VL-1, VL-2, VL-7, VL-8 on audit/register).
+  await t.test('small targets in shadow roots are measured against each other', async () => {
+    const [outcome, findings] = await scan(
+      '<x-tb id="h"></x-tb><script>customElements.define("x-tb", class extends HTMLElement { constructor() { super(); this.attachShadow({ mode: "open" }).innerHTML = "<style>button{width:16px;height:16px;padding:0;margin:0;border:0}</style><button>a</button><button>b</button><button>c</button>"; } });</script>'
+    );
+    assert.equal(outcome, 'fail');
+    assert.ok(findings.length >= 2, JSON.stringify(findings));
+  });
+
+  await t.test('an overlay over both targets says nothing of how close they are', async () => {
+    const toolbar =
+      '<div style="position:absolute;top:40px;left:40px">' +
+      [1, 2, 3, 4]
+        .map(
+          (i) =>
+            `<button style="width:20px;height:20px;margin:0 2px 0 0;padding:0;border:0">${i}</button>`
+        )
+        .join('') +
+      '</div>';
+    const [outcome] = await scan(
+      toolbar + '<div style="position:fixed;inset:0;background:rgba(0,0,0,.5)"></div>'
+    );
+    assert.equal(outcome, 'fail');
+  });
+
+  await t.test('a checkbox the author resized is not sized by the browser', async () => {
+    const boxes = (css) =>
+      [1, 2, 3].map(() => `<input type="checkbox" style="${css}margin:0 2px 0 0">`).join('');
+    assert.equal((await scan(boxes('')))[0], 'pass');
+    assert.equal((await scan(boxes('width:10px;height:10px;')))[0], 'fail');
+  });
+
+  await t.test('the hint asks for the larger of the two distances the spacing needs', async () => {
+    const p = await browser.newPage({ viewport: { width: 390, height: 900 } });
+    try {
+      await p.setContent(
+        '<!doctype html><html lang="en"><head><title>t</title></head><body>' +
+          '<button id="a" style="position:absolute;left:0;top:0;width:16px;height:16px;padding:0;border:0">a</button>' +
+          '<button style="position:absolute;left:18px;top:0;width:26px;height:16px;padding:0;border:0">Edit</button>' +
+          '</body></html>'
+      );
+      await addBundle(p);
+      const hint = await p.evaluate(() => {
+        const r = window.a11ycore.runa11yCoreInPage(
+          null,
+          null,
+          { rules: { include: 'target-size-minimum' } },
+          null
+        );
+        const c = r.checksResults.find((x) => x.ruleId === 'target-size-minimum');
+        return c.occurrences.find((o) => o.selector === '#a').i18n.params.shortfallPx;
+      });
+      // Centres 23px apart need 1px more, but the other's region is 10px from
+      // this centre, which needs 2px: moving 1px would still fail.
+      assert.equal(hint, '2');
+    } finally {
+      await p.close();
+    }
+  });
 });
