@@ -2095,11 +2095,11 @@ No accessible name from any supported mechanism.
 ```
 The text wraps and the image shrinks to the width, so the page scrolls only up and down.
 
-**Failed (at 320 CSS pixels wide)**
+**Flagged (cantTell) (at 320 CSS pixels wide)**
 ```html
 <div style="width:600px">Opening hours today.</div>
 ```
-A box 600 pixels wide sticks out past the edge of a 320 pixel screen, so the page scrolls sideways (WCAG 1.4.10).
+A box 600 pixels wide sticks out past the edge of a 320 pixel screen, so the page scrolls sideways. The rule asks rather than fails, leaning fail: a person confirms that scrolling sideways shows content that has to fit the width (WCAG 1.4.10).
 
 **Flagged (cantTell) (at 320 CSS pixels wide)**
 ```html

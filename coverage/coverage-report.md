@@ -305,7 +305,7 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| reflow-horizontal-scroll | automatic | Content reflows at 320 CSS pixels wide without scrolling sideways | src/checks/automatic/reflow-horizontal-scroll.js | reflow-320 |  |
+| reflow-horizontal-scroll | manual | Content reflows at 320 CSS pixels wide without scrolling sideways | src/checks/manual/reflow-horizontal-scroll-manual.js | reflow-320 |  |
 
 ### 1.4.11
 
@@ -1193,7 +1193,7 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| reflow-horizontal-scroll | automatic | Content reflows at 320 CSS pixels wide without scrolling sideways | src/checks/automatic/reflow-horizontal-scroll.js | reflow-320 |  |
+| reflow-horizontal-scroll | manual | Content reflows at 320 CSS pixels wide without scrolling sideways | src/checks/manual/reflow-horizontal-scroll-manual.js | reflow-320 |  |
 
 ### 1.4.11
 

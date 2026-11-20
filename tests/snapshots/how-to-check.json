@@ -2638,22 +2638,22 @@
       "pt": "1db2ea64e4c24cae"
     },
     "reflow-horizontal-scroll HORIZONTAL_SCROLL": {
-      "en": "74234e98afe7498f",
-      "de": "74234e98afe7498f",
-      "es": "74234e98afe7498f",
-      "fr": "74234e98afe7498f",
-      "ja": "74234e98afe7498f",
-      "fr-CA": "74234e98afe7498f",
-      "pt": "74234e98afe7498f"
+      "en": "b518c0437bd7db68",
+      "de": "7d7dd89ed36f44a4",
+      "es": "828a851789153409",
+      "fr": "38f094c4bf0bfb00",
+      "ja": "8bdd1b2da8be9938",
+      "fr-CA": "38f094c4bf0bfb00",
+      "pt": "b518c0437bd7db68"
     },
     "reflow-horizontal-scroll HORIZONTAL_SCROLL_UNATTRIBUTED": {
-      "en": "74234e98afe7498f",
-      "de": "74234e98afe7498f",
-      "es": "74234e98afe7498f",
-      "fr": "74234e98afe7498f",
-      "ja": "74234e98afe7498f",
-      "fr-CA": "74234e98afe7498f",
-      "pt": "74234e98afe7498f"
+      "en": "7e6093b8cc8c42e7",
+      "de": "99abc79c93e2bc03",
+      "es": "69cb53a8a330720f",
+      "fr": "a2e8be9f5afecc6d",
+      "ja": "0c2708455cdd6b16",
+      "fr-CA": "a2e8be9f5afecc6d",
+      "pt": "7e6093b8cc8c42e7"
     },
     "reflow-horizontal-scroll WIDE_MEDIA": {
       "en": "174a6cca7fa3a553",
@@ -2751,7 +2751,7 @@
     "page-title-present": null,
     "presentational-children-focusable-absent": null,
     "progressbar-name-present": "6fb808cda52cd74c",
-    "reflow-horizontal-scroll": "369c10c61ca3c800",
+    "reflow-horizontal-scroll": "0018cbad53a8b34a",
     "role-img-text-alternative-present": "a656f640278b7802",
     "searchbox-name-present": "99faf4e0c0253e07",
     "server-side-image-map-absent": "2bb18e576f18ecc7",
@@ -2837,10 +2837,10 @@
     "widget-keyboard-focusable": "c8cefbbd4fadee80"
   },
   "dictionaries": {
-    "de": "d884d8a7f631c9feb7d5d7a81ddd475db3516352865f89ac2569e0dcd9ccdd06",
-    "en": "03008c60c29c965303d2f683c46a488a0ac2ce64b42654de11f26f459bcf38c8",
-    "es": "2b2cdd6f194479aa0cb532d38faad3c01adbb00bdf6d6dc6835c01b24232444f",
-    "fr": "1e391ee3edaea3efbc41bd8e30ee5b8f27cc11227582ce46cb1c153683a7783c",
-    "ja": "96f51592d64d0d913b88cfdc45964cb7e6eb333107f75a6be2b5068144e66391"
+    "de": "d84ef7703a9a33afd98c244e89447c4e6a154bd14aa764f7ae7430967064f20e",
+    "en": "e1d3d92b8f7437e9363c24e676c51e540d729a81c52843b59d4664fbb2c9105e",
+    "es": "f71baad2c4ffb1b3a080c6ceaad4e004358836806027054cc00cf6a33ce54b57",
+    "fr": "dbb9b2f4f5ece600dbe991f2bf6aff118b5b799b25d2a930497e5af0c2ae78e7",
+    "ja": "15882eb9d8384a8ce94f617d4047d56655eac5cd03295ac2d15a0886212126a1"
   }
 }

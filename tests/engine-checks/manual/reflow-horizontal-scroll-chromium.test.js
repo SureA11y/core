@@ -86,13 +86,13 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
 
   await t.test('the fixture, at 320 pixels wide: each case as its title says', async () => {
     const check = await scan(FIXTURE);
-    assert.equal(check.outcome, 'fail');
+    assert.equal(check.outcome, 'cantTell');
     assert.deepEqual(findings(check), [
-      ['reflow_case_04', 'fail', 'HORIZONTAL_SCROLL', null],
-      ['reflow_case_05', 'fail', 'HORIZONTAL_SCROLL', null],
+      ['reflow_case_04', 'cantTell', 'HORIZONTAL_SCROLL', 'fail'],
       ['reflow_case_06', 'cantTell', 'WIDE_TABLE', 'pass'],
       ['reflow_case_07', 'cantTell', 'WIDE_MEDIA', 'fail'],
-      ['reflow_case_08', 'cantTell', 'WIDE_PREFORMATTED', null]
+      ['reflow_case_08', 'cantTell', 'WIDE_PREFORMATTED', null],
+      ['reflow_case_05', 'cantTell', 'HORIZONTAL_SCROLL', 'fail']
     ]);
     const occ = check.occurrences[0];
     assert.equal(occ.data.details.edge, 'right');
@@ -101,6 +101,8 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(occ.i18n.summaryKey, 'reflowHorizontalScroll_summary_fail');
     // Each undecided finding's code has steps, in every locale.
     for (const code of [
+      'HORIZONTAL_SCROLL',
+      'HORIZONTAL_SCROLL_UNATTRIBUTED',
       'WIDE_TABLE',
       'WIDE_MEDIA',
       'WIDE_PREFORMATTED',
@@ -153,7 +155,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(check.outcome, 'pass');
   });
 
-  await t.test('a form wider than its scrolling dialog fails', async () => {
+  await t.test('a form wider than its scrolling dialog is asked about, leaning fail', async () => {
     // A dialog whose content scrolls (overflow auto), holding a panel with a
     // forced minimum width, as a filter dialog does.
     const check = await scan(
@@ -162,9 +164,11 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
         '<div class="dialog"><form><div class="panel" id="panel"><div class="grid"><label>Type <select><option>All</option></select></label><label>Direction <select><option>All</option></select></label></div></div></form></div>'
       )
     );
-    // No exception covers a form, so it is settled as a failure, not asked about.
-    assert.equal(check.outcome, 'fail');
-    assert.deepEqual(findings(check), [['panel', 'fail', 'SCROLLS_IN_CONTAINER', null]]);
+    // A form that scrolls sideways leans fail, with the reason that a field
+    // is cut: no exception covers a form.
+    assert.equal(check.outcome, 'cantTell');
+    assert.deepEqual(findings(check), [['panel', 'cantTell', 'SCROLLS_IN_CONTAINER', 'fail']]);
+    assert.equal(leanWhy(check.occurrences[0]), 'fieldCut');
     assert.equal(check.occurrences[0].i18n.summaryKey, 'reflowHorizontalScroll_summary_scrollBox');
     // The same page with the panel fitting its dialog passes.
     const fits = await scan(
@@ -253,7 +257,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       )
     );
     assert.deepEqual(findings(check), [
-      ['tabs', 'fail', 'HORIZONTAL_SCROLL', null],
+      ['tabs', 'cantTell', 'HORIZONTAL_SCROLL', 'fail'],
       ['t', 'cantTell', 'WIDE_TABLE', 'pass']
     ]);
   });
@@ -268,22 +272,25 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.deepEqual(findings(check), [['cut', 'cantTell', 'CLIPPED_AT_VIEWPORT_EDGE', 'fail']]);
   });
 
-  await t.test('scrolling with no element to name fails on the document', async () => {
-    const check = await scan(
-      page('body::after{content:"";display:block;width:700px;height:1px}', '<p>x</p>')
-    );
-    assert.equal(check.outcome, 'fail');
-    assert.deepEqual(
-      check.occurrences.map((o) => [o.data.details.reasonCode, o.data.details.element]),
-      [['HORIZONTAL_SCROLL_UNATTRIBUTED', 'html']]
-    );
-  });
+  await t.test(
+    'scrolling with no element to name is asked about on the document, leaning fail',
+    async () => {
+      const check = await scan(
+        page('body::after{content:"";display:block;width:700px;height:1px}', '<p>x</p>')
+      );
+      assert.equal(check.outcome, 'cantTell');
+      assert.deepEqual(
+        check.occurrences.map((o) => [o.data.details.reasonCode, o.data.details.element]),
+        [['HORIZONTAL_SCROLL_UNATTRIBUTED', 'html']]
+      );
+    }
+  );
 
   await t.test('in right-to-left text, the left edge is the one measured', async () => {
     const check = await scan(
       page('.wide{width:600px}', '<div class="wide" id="rtl">واسع</div>', 'lang="ar" dir="rtl"')
     );
-    assert.deepEqual(findings(check), [['rtl', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    assert.deepEqual(findings(check), [['rtl', 'cantTell', 'HORIZONTAL_SCROLL', 'fail']]);
     assert.equal(check.occurrences[0].data.details.edge, 'left');
   });
 
@@ -312,7 +319,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
             { rules: { include: RULE_ID }, ...(topLevelDocument ? { topLevelDocument: true } : {}) }
           );
         assert.equal((await run(false)).outcome, 'notApplicable', 'a frame is not the page');
-        assert.equal((await run(true)).outcome, 'fail', 'unless the host says it is');
+        assert.equal((await run(true)).outcome, 'cantTell', 'unless the host says it is');
       } finally {
         await p.close();
       }
@@ -327,7 +334,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     const scoped = await scan(html, { scope: '#m' });
     assert.equal(scoped.outcome, 'notApplicable');
     const other = await scan(html, { scope: 'aside' });
-    assert.deepEqual(findings(other), [['w', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    assert.deepEqual(findings(other), [['w', 'cantTell', 'HORIZONTAL_SCROLL', 'fail']]);
   });
 
   await t.test('a phone that zooms out to show a wide page still runs the rule', async () => {
@@ -341,7 +348,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     const wide = await scan(meta('<div id="w" style="width:600px">Wide</div>'), {
       pageOptions: phone
     });
-    assert.deepEqual(findings(wide), [['w', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    assert.deepEqual(findings(wide), [['w', 'cantTell', 'HORIZONTAL_SCROLL', 'fail']]);
     const fits = await scan(meta('<p>Fits</p>'), { pageOptions: phone });
     assert.equal(fits.outcome, 'pass');
   });
@@ -386,7 +393,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     const div = await scan(
       page(shell, '<div id="app"><div id="w" style="width:600px">Wide text</div></div>')
     );
-    assert.deepEqual(findings(div), [['w', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    assert.deepEqual(findings(div), [['w', 'cantTell', 'HORIZONTAL_SCROLL', 'fail']]);
     const table = await scan(
       page(
         shell + ' table{width:600px}',
@@ -418,7 +425,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       );
       // A box that scrolls sideways to show the fields it cuts: scrolling in
       // two dimensions to use the form, which still fails.
-      assert.deepEqual(findings(outerTable), [['f', 'fail', 'SCROLLS_IN_CONTAINER', null]]);
+      assert.deepEqual(findings(outerTable), [['f', 'cantTell', 'SCROLLS_IN_CONTAINER', 'fail']]);
       const ellipsis = await scan(
         page(
           '.card{overflow:hidden;text-overflow:ellipsis;border:1px solid} .row{display:flex;width:560px} .row>label{flex:none;width:270px}',
@@ -471,11 +478,11 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
               .checksResults.find((r) => r.ruleId === 'reflow-horizontal-scroll').outcome,
           { rules: { include: RULE_ID } }
         );
-      assert.equal(await run(), 'fail');
+      assert.equal(await run(), 'cantTell');
       await p.evaluate(() => {
         document.getElementById('s').scrollLeft = 10000;
       });
-      assert.equal(await run(), 'fail');
+      assert.equal(await run(), 'cantTell');
     } finally {
       await p.close();
     }
@@ -526,7 +533,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     const rtlBody = await scan(
       page('#w{width:600px}', '<div id="w">Wide</div>').replace('<body>', '<body dir="rtl">')
     );
-    assert.deepEqual(findings(rtlBody), [['w', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    assert.deepEqual(findings(rtlBody), [['w', 'cantTell', 'HORIZONTAL_SCROLL', 'fail']]);
     assert.equal(rtlBody.occurrences[0].data.details.edge, 'left');
   });
 
@@ -535,7 +542,9 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       '',
       '<div id="host"></div><script>document.getElementById("host").attachShadow({mode:"open"}).innerHTML="<div id=\\"inner\\" style=\\"width:600px\\">Wide</div>"</script>'
     );
-    assert.deepEqual(findings(await scan(html)), [['inner', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    assert.deepEqual(findings(await scan(html)), [
+      ['inner', 'cantTell', 'HORIZONTAL_SCROLL', 'fail']
+    ]);
     // Left out of the scan, it can't be named.
     const off = await scan(html, { engineOptions: { includeShadowDom: false } });
     assert.equal(findings(off)[0][2], 'HORIZONTAL_SCROLL_UNATTRIBUTED');
@@ -639,14 +648,14 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     const body = await scan(
       page('body{min-width:600px}', '<header>Head</header><main>Main</main><footer>Foot</footer>')
     );
-    assert.deepEqual(findings(body), [['body', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    assert.deepEqual(findings(body), [['body', 'cantTell', 'HORIZONTAL_SCROLL', 'fail']]);
     const nav = await scan(
       page(
         'nav{white-space:nowrap}',
         '<nav id="n"><a href="#">Home</a> <a href="#">Products and services</a> <a href="#">About us</a> <a href="#">Contact</a></nav>'
       )
     );
-    assert.deepEqual(findings(nav), [['n', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    assert.deepEqual(findings(nav), [['n', 'cantTell', 'HORIZONTAL_SCROLL', 'fail']]);
   });
 
   await t.test(
@@ -687,6 +696,25 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     });
     assert.equal(findings(check).length, 0);
   });
+
+  // The rule measures one layout and asks: whether scrolling sideways shows
+  // content that needs two dimensions, or loses content, is for a person.
+  await t.test(
+    'it never fails: the page scrolling sideways is asked about, leaning fail',
+    async () => {
+      const check = await scan(page('#w{width:600px}', '<div id="w">Wide text</div>'));
+      assert.equal(check.outcome, 'cantTell');
+      assert.deepEqual(findings(check), [['w', 'cantTell', 'HORIZONTAL_SCROLL', 'fail']]);
+      assert.equal(leanWhy(check.occurrences[0]), 'scrolls');
+      assert.equal(
+        check.occurrences[0].lean.i18n.cautionKey,
+        'reflowHorizontalScroll_lean_caution_scrolls'
+      );
+      assert.ok(check.occurrences[0].uncertainty.needed);
+      const margin = await scan(page('body{margin-right:-400px} p{width:600px}', '<p></p>'));
+      for (const o of margin.occurrences) assert.equal(o.occurrenceOutcome, 'cantTell');
+    }
+  );
 
   await t.test('a field the start edge cuts through is asked about, leaning fail', async () => {
     const check = await scan(page('#f{margin-left:-60px}', '<input id="f" aria-label="Name">'));

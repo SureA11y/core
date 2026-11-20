@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**151 rules total: 88 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 63 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 121 carry at least one formal WCAG Success Criterion mapping.**
+**151 rules total: 87 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 64 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 121 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -12,7 +12,7 @@ Under **What a finding reports**, a rule lists the fields its findings carry in 
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (88), can return `fail`
+## Automatic rules (87), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -83,7 +83,6 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`page-title-present`](#page-title-present) | Page has a non-empty title | 2.4.2 | A | high | serious |
 | [`presentational-children-focusable-absent`](#presentational-children-focusable-absent) | Roles with presentational children must not contain focusable content | 4.1.2 | A | high | serious |
 | [`progressbar-name-present`](#progressbar-name-present) | Progress bars have an accessible name | 1.1.1 | A | high | serious |
-| [`reflow-horizontal-scroll`](#reflow-horizontal-scroll) | Content reflows at 320 CSS pixels wide without scrolling sideways | 1.4.10 | AA | high | serious |
 | [`role-img-text-alternative-present`](#role-img-text-alternative-present) | [role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative | 1.1.1 | A | high | serious |
 | [`searchbox-name-present`](#searchbox-name-present) | Searchboxes have an accessible name | 4.1.2 | A | high | serious |
 | [`server-side-image-map-absent`](#server-side-image-map-absent) | Server-side image maps must have a keyboard-operable alternative | 2.1.1, 2.1.3 | A, AAA | high | serious |
@@ -105,7 +104,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (63), never `fail`
+## Manual rules (64), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -162,6 +161,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`page-zones-landmark`](#page-zones-landmark) | The page's header, navigation, search and footer are landmarks | — | — | medium | minor |
 | [`password-paste-enabled`](#password-paste-enabled) | Authentication fields must not block pasting | 3.3.8 | AA | medium | serious |
 | [`presentation-role-conflict`](#presentation-role-conflict) | Presentational role must not conflict with a global ARIA attribute or focusability | — | — | medium | minor |
+| [`reflow-horizontal-scroll`](#reflow-horizontal-scroll) | Content reflows at 320 CSS pixels wide without scrolling sideways | 1.4.10 | AA | medium | serious |
 | [`region`](#region) | Page content should be inside a landmark region | — | — | medium | minor |
 | [`scope-attr-valid`](#scope-attr-valid) | scope attribute must have a valid value | — | — | medium | minor |
 | [`scrollable-region-focusable`](#scrollable-region-focusable) | Scrollable regions with no focusable content should be keyboard-focusable | 2.1.1, 2.1.3 | A, AAA | low | moderate |
@@ -3307,25 +3307,25 @@ Checks that elements with role="progressbar" expose a non-empty accessible name.
 
 **Content reflows at 320 CSS pixels wide without scrolling sideways**
 
-automatic · WCAG 1.4.10 (AA) · confidence high · default severity serious
+manual · WCAG 1.4.10 (AA) · confidence medium · default severity serious
 
-At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.
+At a viewport 320 CSS pixels wide, measures whether the page scrolls sideways or cuts content off, and asks about each element that sticks out past an edge, for manual review of whether reading the page needs scrolling in two directions.
 
 **Applies to.** Applies to a page laid out at a viewport 320 CSS pixels wide or less, in a horizontal writing mode (the body's, which the page takes), that is the page itself: the top document, or a framed one the host names as the page (`engineOptions.topLevelDocument`). A host scans the page at that width to check reflow, as a phone shows it or a 1280 pixel window at 400% zoom does. The width is the layout viewport's (the root's clientWidth): a phone browser that zooms out to show a wider page widens innerWidth, not the width the page is laid out in. At a wider viewport, in vertical text, in a document shown in a frame, and without a layout (jsdom), the rule is notApplicable.
 
 **Expectation.**
 
-WCAG 1.4.10: at that width, content is shown without scrolling in two directions, except parts that need a two-dimensional layout to be used or understood (maps, diagrams, video, games, data tables).
+WCAG 1.4.10: at that width, content is shown without scrolling in two directions, except parts that need a two-dimensional layout to be used or understood (maps, diagrams, video, games, data tables). The rule measures the layout at one width and asks; it never fails. Whether what it measures loses content, or needs scrolling in two directions to be read, is for a person to confirm: content past an edge may be reached another way, need two dimensions, or be cut the same way at every width. Its leans say which way the measures point.
 
-- When the page scrolls sideways (its scrolling box is wider than the viewport, and the root lets it scroll), each element that sticks out past the viewport's end edge (the right, or the left in right-to-left text) while its parent stays inside is the cause, and fails (HORIZONTAL_SCROLL). Its children that stick out with it are not reported again.
+- When the page scrolls sideways (its scrolling box is wider than the viewport, and the root lets it scroll), each element that sticks out past the viewport's end edge (the right, or the left in right-to-left text) while its parent stays inside is the cause, and is asked about, leaning fail (HORIZONTAL_SCROLL). Its children that stick out with it are not reported again.
 - Where that element is one the exception may cover, it is asked about instead: a table (WIDE_TABLE), which leans pass when it has header cells or a caption (a data table) and fail when it is a layout table; an image, video, canvas, SVG, embedded object or frame (WIDE_MEDIA), which leans fail for an image or a video, since those can be scaled to fit; and preformatted text (WIDE_PREFORMATTED), such as code, with no lean.
-- When the page scrolls sideways and no element can be named (the overflow comes from a margin, a pseudo-element, a closed shadow root, or an open one the scan leaves out with `includeShadowDom: false`), the document fails (HORIZONTAL_SCROLL_UNATTRIBUTED): that it scrolls is measured, not guessed. Content nothing of which is drawn (`visibility: hidden` or `collapse`, with no part set back to visible) is left out at every edge and in every box: there is nothing to reach. When it is what reaches past the edge, the page may scroll, but scrolling shows nothing, so it passes. Open shadow roots are read like the rest of the page, and a box around a shadow host is a box around what its shadow tree shows.
-- Content cut off with nothing to scroll to it (below) is asked about, never failed: it is a loss only if the narrow width is what cuts it, and one view of the page can't tell that. A cut field leans fail. Only scrolling sideways, which the rule measures as it is, fails.
+- When the page scrolls sideways and no element can be named (the overflow comes from a margin, a pseudo-element, a closed shadow root, or an open one the scan leaves out with `includeShadowDom: false`), the document is asked about, leaning fail (HORIZONTAL_SCROLL_UNATTRIBUTED): that it scrolls is measured, not guessed. Content nothing of which is drawn (`visibility: hidden` or `collapse`, with no part set back to visible) is left out at every edge and in every box: there is nothing to reach. When it is what reaches past the edge, the page may scroll, but scrolling shows nothing, so it passes. Open shadow roots are read like the rest of the page, and a box around a shadow host is a box around what its shadow tree shows.
+- Content cut off with nothing to scroll to it (below) is a loss only if the narrow width is what cuts it, and one view of the page can't tell that. A cut field leans fail with its own reason.
 - Text, an image, media or a field that the start edge cuts through (the left, or the right in right-to-left text, as a negative margin or a relative offset leaves it) can't be reached, as nothing scrolls past the start, whether or not the page scrolls: it is asked about (CLIPPED_AT_VIEWPORT_EDGE, its `edge` the start's), leaning fail where a field is cut. A box alone is not content (a background, a negative margin its padding takes back), and what lies wholly past the edge waits there on purpose (a skip link, replaced text).
 - When the root keeps the page from scrolling sideways (`overflow-x: hidden` or `clip` on the root, or on the body that passes it on), an element that the viewport's end edge cuts through is asked about (CLIPPED_AT_VIEWPORT_EDGE): part of it can't be reached. It leans fail, the more so where a field in it is cut. One wholly past the edge is left out: off-canvas menus and slides wait there on purpose.
 - A box fixed to the viewport (`position: fixed`, with no box around it that holds what is fixed in it, through a transform, a filter or containment) doesn't widen the page and stays put as it scrolls, so what of it lies past the edge is never reached, whether or not the page scrolls: where the edge cuts through it, it is asked about the same way (CLIPPED_AT_VIEWPORT_EDGE).
 - When the root's overflow isn't visible, the body's stays its own, and the body is a box like any other below. A box that scrolls on its own and fills the viewport while the page itself doesn't scroll, as an app's shell does, is the page: what sticks out of it is judged as above (HORIZONTAL_SCROLL, WIDE_TABLE, WIDE_MEDIA, WIDE_PREFORMATTED).
-- A box that scrolls on its own (`overflow-x: auto` or `scroll`) keeps what is in it from widening the page. A table (unless it is a layout table), preformatted text or media in it, inside the box, may scroll sideways there, as the exception allows. Where it lies is read with the box scrolled to its start, wherever it was left. Anything else that sticks out of the box (a form, text, a menu) still needs sideways scrolling, and is asked about (SCROLLS_IN_CONTAINER, leaning fail). Where a field in it is itself cut off (a text field, select, text area, editable content or a widget with a matching role, shown and not disabled, not a button), no exception covers it, and it fails instead; one whose fields show whole, its help text cut, is asked about.
+- A box that scrolls on its own (`overflow-x: auto` or `scroll`) keeps what is in it from widening the page. A table (unless it is a layout table), preformatted text or media in it, inside the box, may scroll sideways there, as the exception allows. Where it lies is read with the box scrolled to its start, wherever it was left. Anything else that sticks out of the box (a form, text, a menu) still needs sideways scrolling, and is asked about (SCROLLS_IN_CONTAINER, leaning fail). Where a field in it is itself cut off (a text field, select, text area, editable content or a widget with a matching role, shown and not disabled, not a button), it leans fail with the reason that a field is cut; one whose fields show whole, its help text cut, leans as the box does.
 - An element inside a box that hides what overflows it (`overflow-x: hidden` or `clip`, or paint containment: `contain: paint`, `content` or `strict`, `content-visibility: auto` or `hidden`) keeps the page from scrolling, but what sticks out of the box is cut off with no way to reach it, whether or not the page scrolls. Where it starts, such an element is asked about (CLIPPED_BY_CONTAINER) and leans fail, the more so where a field in it is cut. Left out: an element wholly outside the box (waiting there on purpose), one above or below a box that also hides what overflows downwards (a collapsed panel), a box a pixel wide (visually hidden text), inline text truncated with an ellipsis (not a block or a field the box cuts off), and an element placed out of the box (fixed, or absolute from outside it).
 - A pass is given only for a scan of the whole document; a scoped scan reports what it finds in its scope, and is otherwise notApplicable.
 
@@ -3346,12 +3346,12 @@ At most 50 elements are listed per reason code; the result's `data.omitted` says
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `HORIZONTAL_SCROLL` | fail | At 320 CSS pixels wide the page scrolls sideways, and this element sticks out past the edge of the viewport. | WCAG 1.4.10 |
-| `HORIZONTAL_SCROLL_UNATTRIBUTED` | fail | The page scrolls sideways at 320 CSS pixels wide, and no element can be named as the cause. | WCAG 1.4.10 |
+| `HORIZONTAL_SCROLL` | cantTell | At 320 CSS pixels wide the page scrolls sideways, and this element sticks out past the edge of the viewport. It leans fail: whether scrolling shows content that needs two dimensions is for a person to confirm. | WCAG 1.4.10 (not settled) |
+| `HORIZONTAL_SCROLL_UNATTRIBUTED` | cantTell | The page scrolls sideways at 320 CSS pixels wide, and no element can be named as the cause. It leans fail. | WCAG 1.4.10 (not settled) |
 | `WIDE_TABLE` | cantTell | A table, or a grid widget (role grid or treegrid), sticks out past the edge; a data table is covered by the exception for content that needs a two-dimensional layout, a layout table is not. It leans pass for a grid or a table with header cells or a caption, and fail for one marked as layout (role presentation or none) or with neither. | WCAG 1.4.10 (exception: two-dimensional layout) |
 | `WIDE_MEDIA` | cantTell | An image, video, canvas, SVG, embedded object, frame, formula (MathML) or application (role application, as a map or a game is) sticks out past the edge; it may need its size. It leans fail for an image or a video, which can usually be scaled to fit. | WCAG 1.4.10 (exception: two-dimensional layout) |
 | `WIDE_PREFORMATTED` | cantTell | Preformatted text, such as code, doesn't wrap and sticks out past the edge; whether its layout is needed to understand it is for a person to judge. | WCAG 1.4.10 (not settled) |
-| `SCROLLS_IN_CONTAINER` | cantTell | This element, not a table, code block or media, reaches past the edge of the box around it, which scrolls sideways (`overflow-x: auto` or `scroll`) to show it. It leans fail, and fails where a field in it is cut off, which no exception covers. It leans pass for a row of items each of which fits the box, as a carousel is (G225): only the row scrolls. | WCAG 1.4.10 (not settled) |
+| `SCROLLS_IN_CONTAINER` | cantTell | This element, not a table, code block or media, reaches past the edge of the box around it, which scrolls sideways (`overflow-x: auto` or `scroll`) to show it. It leans fail, with its own reason where a field in it is cut off. It leans pass for a row of items each of which fits the box, as a carousel is (G225): only the row scrolls. | WCAG 1.4.10 (not settled) |
 | `CLIPPED_BY_CONTAINER` | cantTell | A box around this element hides what overflows it (`overflow-x: hidden` or `clip`), and the element sticks out of the box, so part of it can't be reached. It leans fail, with its own reason where a field in it is cut off: whether the narrow width is what cuts it is for a person to judge. | WCAG 1.4.10 (not settled) |
 | `CLIPPED_AT_VIEWPORT_EDGE` | cantTell | The page doesn't scroll sideways, but the edge of the viewport cuts through this element, so part of it can't be reached, at the end edge or the start edge, or of a box fixed to the viewport. It leans fail, with its own reason where a field in it is cut off. | WCAG 1.4.10 (not settled) |
 
