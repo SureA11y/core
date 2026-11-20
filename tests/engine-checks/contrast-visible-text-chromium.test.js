@@ -109,6 +109,18 @@ const CASES = [
     false
   ],
   [
+    'generated text indented off the page by its own text-indent is not checked (R5:VI-12)',
+    `<style>#t::before{content:"Home"; color:#eee; display:inline-block; text-indent:-9999px}</style><p id="t"></p>`,
+    {},
+    false
+  ],
+  [
+    'generated text with a small indent of its own is checked',
+    `<style>#t::before{content:"Home"; color:#eee; display:inline-block; text-indent:-2px}</style><p id="t"></p>`,
+    {},
+    true
+  ],
+  [
     'on an inline box text-indent moves nothing, so the text is checked',
     `<span id="t" style="${FAINT}; text-indent:-9999px">Home</span>`,
     {},

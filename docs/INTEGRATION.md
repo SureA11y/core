@@ -571,7 +571,7 @@ await page.goto('https://test.local/'); // listenerHook: 'early'
 - `Symbol.for('surea11y.listeners')` is defined on the global, not enumerable, and can't be changed or removed. Any script in the page can ask it which elements have listeners. Install it for test and audit runs, not in pages you serve to users.
 - Each call costs a little more: in Chromium about 1.5 µs the first time a target gets a listener of one of the recorded types, and 0.2 µs for a repeated add or remove, measured with 12,000 listeners on 3,000 elements.
 - A listener added with `once`, or with a `signal` that later aborts, is still recorded after it goes: the hook does not wrap listeners to learn when. A listener the page added is what the rules judge. One added with a `signal` already aborted is never added, so it isn't recorded.
-- A listener added through another frame's `addEventListener`, called on this page's element, isn't seen: each frame is its own realm, with its own copy of the method.
+- A listener added through another frame's `addEventListener`, called on this page's element, is seen when the hook runs in both frames (as the driver calls below install it): the frame's copy records it where the page's scan reads it. Without the hook in that frame it isn't seen: each frame is its own realm, with its own copy of the method.
 - An inline handler attribute (`onclick="…"`) is not a call to either method, so the hook doesn't record it; the rules read those from the markup, as before.
 - A library that replaces `addEventListener` after the hook takes over; the engine then treats the hook as late.
 - A page can define `Symbol.for('surea11y.listeners')` itself. The engine reads it only where it has the hook's shape, and runs none of the page's getters.

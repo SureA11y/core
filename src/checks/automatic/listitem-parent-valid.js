@@ -28,8 +28,9 @@
  * @reports
  *   - `reasonCode`: `LIST_ROLE_OVERRIDDEN` when the parent is a <ul>, <ol>
  *     or <menu> whose explicit role replaces list (`<ul role="tablist">`),
- *     `LISTITEM_INVALID_PARENT` otherwise. Both fail where the <li> is
- *     drawn as a list item, and are asked about where it is not.
+ *     asked about, leaning fail where the <li> is drawn as a list item;
+ *     `LISTITEM_INVALID_PARENT` otherwise, which fails where the <li> is
+ *     drawn as a list item and is asked about where it is not.
  *   - `parentElement`: the tag name of the `<li>`'s parent, the container
  *     it is in instead of a list.
  *   - `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
@@ -41,9 +42,11 @@
  *     item. It fails where the li is drawn as a list item.
  *     Basis: WCAG 1.3.1; H48; HTML li element contexts (MUST); WAI-ARIA 1.2
  *     listitem role (MUST).
- *   - `LIST_ROLE_OVERRIDDEN` (fail, cantTell): the li's parent is a ul, ol
- *     or menu whose explicit role replaces list, so the li is not in a list.
- *     It fails where the li is drawn as a list item.
+ *   - `LIST_ROLE_OVERRIDDEN` (cantTell): the li's parent is a ul, ol or
+ *     menu whose explicit role replaces list, so the li is not in a list.
+ *     Whether losing the list loses information depends on the content (a
+ *     few links in a <ul role="navigation"> read as well without it), so it
+ *     is asked about, leaning fail where the li is drawn as a list item.
  *     Basis: WCAG 1.3.1; WAI-ARIA 1.2 listitem role (MUST).
  * @implementation-notes
  * - The parent is the <li>'s parent in the flat tree, as the page renders
@@ -224,20 +227,48 @@ function runInPage(ctx) {
     if (valid) continue;
 
     // A <ul>, <ol> or <menu> whose role replaces list (tablist, menu, menubar,
-    // group…): the markup is a valid list, but the author made it something
-    // else, so this <li> is a stray listitem in it. Still a failure, with its
-    // own reason, since the fix differs: give the <li> the role the container
-    // expects, rather than put it in a list.
+    // group, navigation…): the markup is a valid list, but the author made it
+    // something else, so this <li> is a stray listitem in it, with its own
+    // reason, since the fix differs: give the <li> the role the container
+    // expects, rather than put it in a list. The list's semantics are gone
+    // for certain; whether that loses information depends on the content (a
+    // few links in a navigation read as well without it), so it is asked
+    // about, leaning fail where the item is drawn as one of a list.
     const { bucket, extra } = tierFor(el);
     if (explicitRole && (parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu')) {
-      bucket.push(
+      const drawn = extra.occurrenceOutcome === 'fail';
+      cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
-          ...extra,
+          occurrenceOutcome: 'cantTell',
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the content loses information without the list: its items, their number or their order.',
+            evidence: { drawnAsListItem: drawn, parentRole: explicitRole }
+          },
+          ...(drawn
+            ? {
+                lean: {
+                  toward: 'fail',
+                  why: 'The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.',
+                  signals: [
+                    { signal: 'drawn-as-list-item', value: true },
+                    { signal: 'parent-role', value: explicitRole }
+                  ],
+                  caution:
+                    'A few links or controls, such as a navigation bar’s, may read as well without the list.',
+                  i18n: {
+                    whyKey: 'listitemParentValid_lean_why_listRoleOverridden',
+                    cautionKey: 'listitemParentValid_lean_caution_listRoleOverridden'
+                  }
+                }
+              }
+            : {}),
           summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
           hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
           i18n: {
-            summaryKey: 'listitemParentValid_summary_fail_listRoleOverridden',
-            hintKey: 'listitemParentValid_hint_fail_listRoleOverridden',
+            summaryKey: 'listitemParentValid_summary_cantTell_listRoleOverridden',
+            hintKey: 'listitemParentValid_hint_cantTell_listRoleOverridden',
             params: { parentElement: parentTag, parentRole: explicitRole }
           },
           data: {

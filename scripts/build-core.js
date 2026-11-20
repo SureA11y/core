@@ -675,11 +675,18 @@ function optionText(value) {
   }
 }
 
+// Rule ids, tags and profile names are matched ignoring case in ASCII only:
+// a full Unicode fold reads the Kelvin sign (U+212A) as "k", so
+// "linK-name-present" written with it would select link-name-present.
+function asciiLowerChar(c) {
+  return c.toLowerCase();
+}
+
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
   if (Array.isArray(value)) {
     const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
-    const norm = lower ? arr.map((s) => s.toLowerCase()) : arr.slice();
+    const norm = lower ? arr.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : arr.slice();
     // de-dupe while preserving first-seen order (deterministic)
     const seen = new Set();
     const out = [];
@@ -690,7 +697,7 @@ function parseCommaList(value, { lower = false } = {}) {
   }
   if (typeof value !== 'string') return [];
   const raw = value.split(',').map((s) => String(s).trim()).filter(Boolean);
-  const norm = lower ? raw.map((s) => s.toLowerCase()) : raw.slice();
+  const norm = lower ? raw.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : raw.slice();
   const seen = new Set();
   const out = [];
   for (const v of norm) {
@@ -700,7 +707,7 @@ function parseCommaList(value, { lower = false } = {}) {
 }
 
 function normalizeIncludeMode(mode) {
-  const m = typeof mode === 'string' ? mode.trim().toLowerCase() : '';
+  const m = typeof mode === 'string' ? mode.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
   return m === 'or' ? 'or' : 'and';
 }
 
@@ -898,7 +905,7 @@ const WCAG_LEVEL_TAGS = (function () {
   const out = Object.create(null);
   const prefix = { '2.0': 'wcag2', '2.1': 'wcag21', '2.2': 'wcag22' };
   for (const version of WCAG_TARGET_VERSIONS) {
-    for (const level of WCAG_TARGET_LEVELS) out[prefix[version] + level.toLowerCase()] = { version, level };
+    for (const level of WCAG_TARGET_LEVELS) out[prefix[version] + level.replace(/[A-Z]/g, asciiLowerChar)] = { version, level };
   }
   return out;
 })();
@@ -908,7 +915,7 @@ const WCAG_LEVEL_TAGS = (function () {
 // WCAG 2.2 removed. A custom tag that only starts with "wcag" (wcagteam) is
 // none of them.
 function isWcagTag(tag) {
-  const t = String(tag).toLowerCase();
+  const t = String(tag).replace(/[A-Z]/g, asciiLowerChar);
   return (
     t === 'wcag22-removed' ||
     Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t) ||
@@ -962,7 +969,7 @@ function criterionInWcagTarget(sc, target) {
 function wcagCriteriaOfDef(def) {
   const out = [];
   for (const t of Array.isArray(def.tags) ? def.tags : []) {
-    const tag = String(t).toLowerCase();
+    const tag = String(t).replace(/[A-Z]/g, asciiLowerChar);
     if (Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, tag)) out.push(WCAG_SC_BY_TAG[tag]);
   }
   const details = def.data && def.data.details;
@@ -973,7 +980,7 @@ function wcagCriteriaOfDef(def) {
 }
 
 function normalizeProfileName(v) {
-  return typeof v === 'string' ? v.trim().toLowerCase() : '';
+  return typeof v === 'string' ? v.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
 }
 
 /**
@@ -1059,7 +1066,7 @@ const PROFILE_OWN_TAGS = CATALOG.profileOwnTags || {};
 // or, for a custom rule, the opt-in tags it carries.
 function optInTagsOf(def) {
   if (def && def.custom) {
-    const tags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    const tags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
     return tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   }
   const id = def && typeof def.ruleId === 'string' ? def.ruleId : '';
@@ -1144,7 +1151,7 @@ function resolveMappingSelection(engineOptions, appliedProfile) {
   const unknown = [];
   for (const token of requested) {
     const sep = token.indexOf(':');
-    const name = (sep < 0 ? token : token.slice(0, sep)).trim().toLowerCase();
+    const name = (sep < 0 ? token : token.slice(0, sep)).trim().replace(/[A-Z]/g, asciiLowerChar);
     const std = Object.prototype.hasOwnProperty.call(NORMATIVE_MAPPING_STANDARDS, name)
       ? NORMATIVE_MAPPING_STANDARDS[name]
       : null;
@@ -1156,8 +1163,8 @@ function resolveMappingSelection(engineOptions, appliedProfile) {
       whole.add(name);
       continue;
     }
-    const wanted = token.slice(sep + 1).trim().toLowerCase();
-    const version = std.versions.find((v) => v.toLowerCase() === wanted);
+    const wanted = token.slice(sep + 1).trim().replace(/[A-Z]/g, asciiLowerChar);
+    const version = std.versions.find((v) => v.replace(/[A-Z]/g, asciiLowerChar) === wanted);
     if (!version) {
       unknown.push(token);
       continue;
@@ -1314,14 +1321,14 @@ function knownSelectionNames(engineOptions) {
   const tags = new Set();
   for (const d of CHECK_DEFS) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
-    for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
+    for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).replace(/[A-Z]/g, asciiLowerChar));
   }
   // A standard's own rollups carry its rule tag, which selects them, even
   // when the standard brings no rule of its own to carry it too.
   for (const entry of Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []) {
     const metaTags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
     for (const t of metaTags) {
-      const tag = String(t).trim().toLowerCase();
+      const tag = String(t).trim().replace(/[A-Z]/g, asciiLowerChar);
       if (tag) tags.add(tag);
     }
   }
@@ -1331,17 +1338,17 @@ function knownSelectionNames(engineOptions) {
   const resolved = resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG);
   for (const d of resolved.defs.values()) {
     ruleIds.add(d.ruleId);
-    for (const t of Array.isArray(d.tags) ? d.tags : []) tags.add(String(t).toLowerCase());
+    for (const t of Array.isArray(d.tags) ? d.tags : []) tags.add(String(t).replace(/[A-Z]/g, asciiLowerChar));
   }
   const skippedReasons = new Map();
   for (const sk of resolved.skipped) if (sk.id && !skippedReasons.has(sk.id)) skippedReasons.set(sk.id, sk.reason);
   // Rule ids that differ only in case name the same rule (the runner skips a
   // custom rule spelt like another in another case), so IMG-ALT-PRESENT is
   // img-alt-present, as tags and engineOptions.rules[ruleId] are read.
-  const prefix = String(ENGINE_TAG).toLowerCase() + '-';
+  const prefix = String(ENGINE_TAG).replace(/[A-Z]/g, asciiLowerChar) + '-';
   const byLower = new Map();
   for (const id of [...ruleIds, ...Object.keys(COMPOSITE_RULE_INDEX)]) {
-    if (!byLower.has(id.toLowerCase())) byLower.set(id.toLowerCase(), id);
+    if (!byLower.has(id.replace(/[A-Z]/g, asciiLowerChar))) byLower.set(id.replace(/[A-Z]/g, asciiLowerChar), id);
   }
   const isRuleId = (v) =>
     !!compositeIdOf(v) || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG));
@@ -1353,19 +1360,19 @@ function knownSelectionNames(engineOptions) {
         ? ' (a custom rule that was skipped: ' + skippedReasons.get(String(v).trim()) + ')'
         : ''),
     isRuleId,
-    isTag: (v) => tags.has(String(v).toLowerCase()),
+    isTag: (v) => tags.has(String(v).replace(/[A-Z]/g, asciiLowerChar)),
     // A rule id as the engine spells it, for one given in another case; any
     // other value as given.
     canonical: (v) => {
       if (typeof v !== 'string' || isRuleId(v)) return v;
-      let lower = v.trim().toLowerCase();
+      let lower = v.trim().replace(/[A-Z]/g, asciiLowerChar);
       if (!byLower.has(lower) && lower.startsWith(prefix)) lower = lower.slice(prefix.length);
       return byLower.get(lower) || v;
     },
     // A WCAG version/level tag no rule carries: a real tag, for criteria the
     // engine has no rule for, not a typo.
     isUntestedWcagTag: (v) => {
-      const t = String(v).toLowerCase();
+      const t = String(v).replace(/[A-Z]/g, asciiLowerChar);
       return !tags.has(t) && Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t);
     }
   };
@@ -1373,7 +1380,7 @@ function knownSelectionNames(engineOptions) {
 
 // 'WCAG 2.2 Level A ("wcag22a")', for messages.
 function describeWcagLevelTag(tag) {
-  const t = WCAG_LEVEL_TAGS[String(tag).toLowerCase()];
+  const t = WCAG_LEVEL_TAGS[String(tag).replace(/[A-Z]/g, asciiLowerChar)];
   return 'WCAG ' + t.version + ' Level ' + t.level + ' ("' + tag + '")';
 }
 
@@ -1398,7 +1405,7 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
     );
   }
   if (asRules.length === values.length) return { includeRuleIds: values };
-  if (asRules.length === 0) return { tags: values.map((v) => v.toLowerCase()) };
+  if (asRules.length === 0) return { tags: values.map((v) => v.replace(/[A-Z]/g, asciiLowerChar)) };
   throw invalidRunOnly(
     'runOnly: an array lists either rule ids or tags, not both; use { includeRuleIds, tags } to combine them.'
   );
@@ -1538,7 +1545,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // any rule ids or tags, and the other keys beside it (excludeTags,
   // excludeRuleIds...) still apply.
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
-    const kind = String(runOnly.type).trim().toLowerCase();
+    const kind = String(runOnly.type).trim().replace(/[A-Z]/g, asciiLowerChar);
     const rest = { ...runOnly };
     delete rest.type;
     delete rest.values;
@@ -1554,7 +1561,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     ['engineOptions.includeMode', eo.includeMode]
   ]) {
     if (value === undefined || value === null) continue;
-    const mode = typeof value === 'string' ? value.trim().toLowerCase() : '';
+    const mode = typeof value === 'string' ? value.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
     if (mode === 'and' || mode === 'or') continue;
     const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
     if (strictOf(eo)) throw invalidRunOnly(message);
@@ -1741,7 +1748,7 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const norm = normalizeRunOnly(runOnly);
   const includeMode = normalizeIncludeMode(norm.includeMode);
 
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
 
   const hasRuleInclude = norm.includeRuleIds.length > 0;
   const hasTestInclude = norm.includeTestIds.length > 0;
@@ -1855,7 +1862,7 @@ function ruleExcludedByRunOnly(def, runOnly, engineTag) {
   }
 
   if (norm.excludeTags.length) {
-    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
     if (defTags.some((t) => norm.excludeTags.includes(t))) return true;
   }
 
@@ -1882,9 +1889,9 @@ function ruleNamedOnItsOwn(def, runOnly, engineTag) {
   ) {
     return true;
   }
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
   // The engine's own tag is on every rule and rollup, so it names them all.
-  const namesCriteria = (t) => isWcagTag(t) || t === tag.toLowerCase();
+  const namesCriteria = (t) => isWcagTag(t) || t === tag.replace(/[A-Z]/g, asciiLowerChar);
   if (defTags.some((t) => norm.tags.includes(t) && !namesCriteria(t))) return true;
   if (optInTagsOf(def).some((t) => norm.ownTags.includes(t) || norm.optInTags.includes(t))) return true;
   return norm.bestPractices && defTags.includes(BEST_PRACTICE_TAG);
@@ -1895,7 +1902,7 @@ function ruleNamedOnItsOwn(def, runOnly, engineTag) {
 // (rollupCompositeResults), not the rule's other criteria.
 function criteriaNamingRule(def, runOnly) {
   const norm = normalizeRunOnly(runOnly);
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
   return defTags
     .filter((t) => norm.tags.includes(t) && Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, t))
     .map((t) => WCAG_SC_BY_TAG[t]);

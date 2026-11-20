@@ -738,3 +738,24 @@ test(`${RULE_ID}: a deprecated attribute names a misspelled role, and a word for
   assert.strictEqual(icon.i18n.hintKey, 'ariaAllowedAttr_hint_cantTell_typoMeantUnsupported');
   assert.strictEqual(icon.i18n.params.meant, 'img');
 });
+
+// An input whose list names no datalist has nothing to suggest: Chromium
+// exposes it as a textbox (153, the accessibility tree over CDP), with no
+// expanded state, and one with a datalist as a combobox. The engine takes
+// them the same way (R5 datalist lead, decided 2026-11-20).
+test('an input whose list names no datalist is a textbox, one with a datalist a combobox', () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>h</h1>${body}</main></body></html>`;
+  const check = (body) =>
+    runa11yCoreOnHtml(page(body), { runOnly: ['aria-allowed-attr'] }).checksResults[0];
+  const dead = check('<label>Dead <input list="nope" aria-expanded="false"></label>');
+  assert.equal(dead.outcome, 'cantTell');
+  assert.deepEqual(
+    dead.occurrences.map((o) => o.data.details.reasonCode),
+    ['ARIA_ATTR_NOT_ALLOWED']
+  );
+  const live = check(
+    '<label>Live <input list="dl" aria-expanded="false"></label><datalist id="dl"><option value="a"></option></datalist>'
+  );
+  assert.equal(live.outcome, 'pass');
+});

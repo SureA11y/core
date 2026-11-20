@@ -1629,7 +1629,9 @@ function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG
     // told apart in a report, and IMG-ALT-PRESENT is most likely meant as
     // img-alt-present. A custom rule spelt like a built-in in another case
     // overrides it, under the built-in's id, and is said so.
-    const sameId = (a, b) => typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
+    const sameId = (a, b) =>
+      typeof b === 'string' &&
+      a.replace(/[A-Z]/g, (c) => c.toLowerCase()) === b.replace(/[A-Z]/g, (c) => c.toLowerCase());
     const earlier = [...defs.keys()].find((k) => sameId(ruleId, k));
     // A second rule with the same id would silently replace the first; a
     // composite's id would put one id in both checksResults and
@@ -2074,6 +2076,48 @@ function runCoreSettled(
   const excludeSelectors = normalizeSelectorList(
     engineOptionsResolved && engineOptionsResolved.excludeSelectors
   );
+  // Under strictOptions, a selector that isn't valid CSS, which would
+  // exclude nothing, is refused before anything runs: globally and for each
+  // rule (engineOptions.rules[id].excludeSelectors). Otherwise it is warned
+  // about where it is used, and the other selectors still apply.
+  if (strictOf(engineOptionsResolved)) {
+    const probe = dom.get(document, 'documentElement');
+    const invalid = (list) =>
+      normalizeSelectorList(list).filter((sel) => {
+        try {
+          if (probe) dom.matches(probe, sel);
+          return false;
+        } catch {
+          return true;
+        }
+      });
+    const bad = invalid(excludeSelectors).map((sel) => 'excludeSelectors: "' + sel + '"');
+    const ruleSettings =
+      engineOptionsResolved.rules &&
+      typeof engineOptionsResolved.rules === 'object' &&
+      !Array.isArray(engineOptionsResolved.rules)
+        ? engineOptionsResolved.rules
+        : null;
+    if (ruleSettings) {
+      for (const id of Object.keys(ruleSettings)) {
+        const own = ruleSettings[id];
+        if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
+        for (const sel of invalid(own.excludeSelectors)) {
+          bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
+        }
+      }
+    }
+    if (bad.length) {
+      const err = new Error(
+        'engineOptions.' +
+          bad.join('; engineOptions.') +
+          (bad.length > 1 ? ' are' : ' is') +
+          ' not valid CSS, and would exclude nothing. (strictOptions)'
+      );
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
+  }
   // Default off: explicit opt-in for "this scan target was never meant to
   // represent a real page" -- see helpers.isWholeDocumentScope().
   const fragment = !!(engineOptionsResolved && switchOf(engineOptionsResolved.fragment) === true);
@@ -2186,6 +2230,24 @@ function runCoreSettled(
     } catch {
       rgba = { a: 1 };
     }
+    // The color parser reads computed styles, which the browser has already
+    // checked, so it is lenient: a keyword that depends on the page
+    // (inherit, currentColor) or rgb() with a wrong number of values would
+    // pass. A color the caller writes is checked as CSS would check it.
+    const text = String(given).trim();
+    const lower = text.toLowerCase();
+    const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
+    const badSyntax =
+      ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'].includes(lower) ||
+      (fn &&
+        (() => {
+          const body = fn[2].trim();
+          const parts = body.includes(',')
+            ? body.split(',').map((x) => x.trim())
+            : body.split('/').flatMap((x, i) => (i === 0 ? x.trim().split(/\s+/) : [x.trim()]));
+          return parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
+        })());
+    if (badSyntax) rgba = null;
     if (!rgba || !(rgba.a >= 1)) {
       const message =
         'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
@@ -2442,16 +2504,21 @@ function runCoreSettled(
   const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
   const optInRulesRan = new Set();
   if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
+    const message =
+      'engineOptions.optInRules: ' +
+      runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
+      ', no such opt-in rule tag (' +
+      (OPT_IN_RULE_TAGS.length
+        ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
+        : 'this version has none') +
+      ')';
+    if (strictOf(engineOptionsResolved)) {
+      const err = new Error(message + '. (strictOptions)');
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
     try {
-      console.warn(
-        '[surea11y] engineOptions.optInRules: ignoring ' +
-          runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such opt-in rule tag (' +
-          (OPT_IN_RULE_TAGS.length
-            ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
-            : 'this version has none') +
-          ').'
-      );
+      console.warn('[surea11y] ' + message.replace(': ', ': ignoring ') + '.');
     } catch {}
   }
 
@@ -2460,11 +2527,17 @@ function runCoreSettled(
   // result carries only those asked for, or implied by the applied profile.
   const mappingSelection = resolveMappingSelection(engineOptionsResolved, appliedProfile);
   if (mappingSelection.unknown.length) {
+    const named = mappingSelection.unknown.map((s) => '"' + s + '"').join(', ');
+    if (strictOf(engineOptionsResolved)) {
+      const err = new Error(
+        'engineOptions.mappings: ' + named + ', no such standard or version. (strictOptions)'
+      );
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
     try {
       console.warn(
-        '[surea11y] engineOptions.mappings: ignoring ' +
-          mappingSelection.unknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such standard or version.'
+        '[surea11y] engineOptions.mappings: ignoring ' + named + ', no such standard or version.'
       );
     } catch {}
   }
@@ -2608,7 +2681,9 @@ function runCoreSettled(
       .map((d) => d.ruleId)
       .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
     const byLower = new Map();
-    for (const id of knownIds) if (typeof id === 'string') byLower.set(id.toLowerCase(), id);
+    // ASCII case only, as the selection matches ids (asciiLowerChar).
+    const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
+    for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
     const legacy = String(ENGINE_TAG || 'a11ycore').toLowerCase() + '-';
     const unknownRuleKeys = [];
     const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
@@ -2616,7 +2691,7 @@ function runCoreSettled(
       for (const key of keys) {
         const value = rulesOption[key];
         if (!value || typeof value !== 'object') continue;
-        const lower = key.trim().toLowerCase();
+        const lower = lowerAscii(key.trim());
         let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
         if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
         if (exact) {
@@ -3043,7 +3118,7 @@ function runCoreSettled(
     }
 
     if (typeof applicabilityFn === 'function') {
-      let applicable = true;
+      let applicable;
       try {
         const res = applicabilityFn(ctx);
         // Rules run synchronously: a Promise is truthy, and would have
@@ -3057,6 +3132,15 @@ function runCoreSettled(
         if (typeof res === 'boolean') applicable = res;
         else if (res && typeof res === 'object' && typeof res.applicable === 'boolean')
           applicable = res.applicable;
+        else {
+          // undefined (a forgotten return), 0, null or 'false' ran the rule
+          // everywhere: what was meant can't be known, so the rule says so.
+          throw new Error(
+            'applicability returned ' +
+              describeOptionValue(res) +
+              '; it must return true or false (or { applicable: true | false })'
+          );
+        }
       } catch (err) {
         const raw = {
           outcome: 'cantTell',

@@ -83,6 +83,37 @@ test('the listener hook in Chromium', { skip }, async (t) => {
     await p.close();
   });
 
+  await t.test(
+    'a key listener added through a frame’s addEventListener is seen (R5:KH-5)',
+    async () => {
+      const p = await browser.newPage();
+      await p.addInitScript({ content: listenerHookScript() });
+      const main = page(
+        '<div id="b" role="button" tabindex="0">Save</div><iframe id="f" src="https://example.test/frame"></iframe>',
+        `document.getElementById('f').addEventListener('load', () => {
+        const b = document.getElementById('b');
+        const other = document.getElementById('f').contentWindow.EventTarget.prototype.addEventListener;
+        b.addEventListener('click', () => {});
+        other.call(b, 'keydown', () => {});
+        window.done = true;
+      });`
+      );
+      await p.route('https://example.test/**', (route) =>
+        route.fulfill({
+          contentType: 'text/html',
+          body: route.request().url().endsWith('/frame')
+            ? '<!doctype html><title>f</title><p>Frame</p>'
+            : main
+        })
+      );
+      await p.goto('https://example.test/');
+      await p.waitForFunction(() => window.done === true);
+      const got = await scan(p, 'click-handler-keyboard-operable');
+      assert.equal(got.outcome, 'pass', JSON.stringify(got.codes));
+      await p.close();
+    }
+  );
+
   await t.test('a key listener on the document is asked about', async () => {
     const p = await open(
       browser,

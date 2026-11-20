@@ -2250,10 +2250,17 @@ function packScript(packs) {
     const code = (fn) => {
       const expr = functionExpression(fn);
       // A script can be inlined in a <script> element (buildBrowserBundle), which
-      // the first "</script" in it ends, whatever follows running as markup.
+      // the first "</script" in it ends, whatever follows running as markup;
+      // and after "<!--" then "<script", HTML no longer ends the element at
+      // "</script", so the rest of the page is taken as script.
       if (/<\/script/i.test(expr)) {
         throw new Error(
           `${id}'s code contains "</script", which ends an inline <script> element: write it as '<' + '/script'`
+        );
+      }
+      if (/<!--/.test(expr)) {
+        throw new Error(
+          `${id}'s code contains "<!--", which with a later "<script" keeps an inline <script> element from ending: write it as '<' + '!--'`
         );
       }
       return expr;
