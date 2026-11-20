@@ -27,18 +27,10 @@
  *   holds text lighter than it, and the element before it is no bold line
  *   too: a title made by bolding a line of body text, the way authors
  *   usually make one in a content editor, and not a line of a bold run,
- *   such as an address. A `<div>` at body size applies the same way when,
- *   besides, what follows it opens with lighter text and is a passage (80
- *   characters or more, or 40 or more with sentence punctuation), and the
- *   `<div>` isn't laid out beside it (an inline box, or an item of a flex
- *   row or of a grid with columns), since a `<div>` is more often a label
- *   over its value. And a `<p>` or `<div>` that opens with a bold line
- *   ended by a `<br>`, where the text after the break is mostly lighter and
- *   a passage, applies too: a title and its text written as one paragraph.
- *   Heavier counts because a theme may draw body text at weight 300, which
- *   makes `<strong>` 400. Under jsdom, a size relative to the parent's
- *   (em, %, larger, smaller) or the root's (rem) is read against it, as a
- *   browser computes it.
+ *   such as an address. Heavier counts because a theme may draw body text
+ *   at weight 300, which makes `<strong>` 400. Under jsdom, a size relative
+ *   to the parent's (em, %, larger, smaller) or the root's (rem) is read
+ *   against it, as a browser computes it.
  * @expectation
  *   Text styled to visually read as a heading (bold, larger-than-body
  *   size, short) should be marked up with a real heading element
@@ -73,25 +65,16 @@
  *     containers of the same shape repeat it, with no real heading.
  *     Basis: WCAG 1.3.1 (not settled); H42; F2.
  *   - `HEADING_LIKE_NUMBER` (cantTell): bold, large text that is only a
- *     number, such as a year, may be a heading shown only by its style.
+ *     number, such as a year, may be a heading shown only by its style. A
+ *     currency or percent sign doesn't stop it being a number ("$29.99",
+ *     "45%"); text with no letter or digit at all (a star rating, a scene
+ *     break, an emoji) is not asked about at any size.
  *     Basis: WCAG 1.3.1 (not settled); H42; F2.
  *   - `BOLD_SHORT_PARAGRAPH` (cantTell): a short p whose visible text is
  *     all bold, or all heavier than the paragraph's own text, at body size,
  *     doesn't end as a sentence and is followed by lighter text, may be a
  *     heading shown only by its style.
  *     Text that is only a number or all one link is left out at this size.
- *     Basis: WCAG 1.3.1 (not settled); H42; F2.
- *   - `BOLD_SHORT_DIV` (cantTell): a short div of text and inline markup,
- *     all bold or all heavier than its own text, at body size, that doesn't
- *     end as a sentence and comes before a passage of lighter text below
- *     it, may be a heading shown only by its style.
- *     Text that is only a number or all one link is left out.
- *     Basis: WCAG 1.3.1 (not settled); H42; F2.
- *   - `BOLD_LEAD_LINE` (cantTell): a p or div that opens with a short bold
- *     line ended by a line break, before a passage of lighter text, may
- *     hold a heading shown only by its style.
- *     A line that ends as a sentence, is only a number or is all one link
- *     is left out.
  *     Basis: WCAG 1.3.1 (not settled); H42; F2.
  * @implementation-notes
  * - This is a stylistic heuristic (bold + large + short), not a
@@ -105,13 +88,7 @@
  *   text is far more often emphasis than a title: a bold warning ends as a
  *   sentence, and a run of bold lines such as an address is followed by
  *   more bold text. A `<div>` at body size is more often a label, a badge
- *   or a price, so it is asked about only before a passage below it, not
- *   beside a value.
- * - A bold first line ended by a `<br>` is asked about only when the text
- *   after the break is mostly lighter (by letters) and a passage: a name
- *   over an address, a label over a phone number or a run of bold lines
- *   is not a title over body text. Only blocks holding a `<br>` are
- *   walked for one, found with one query for the page.
+ *   or a price, and is left out.
  * - Uses an absolute 18px size threshold rather than comparing against
  *   surrounding text (unlike `link-in-text-block`); it's simpler on
  *   purpose, since "looks like a heading" is closer to an absolute
@@ -146,7 +123,7 @@ const id = 'p-as-heading';
 const meta = {
   title: 'Text styled to look like a heading should probably be a real heading',
   description:
-    'Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, short all-bold <p> and <div> elements at body size that read as a title before plain text, and blocks that open with a bold line ended by a line break before plain text, for manual review of whether a real heading element should be used instead.',
+    'Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, and short all-bold <p> elements at body size that read as a title before plain text, for manual review of whether a real heading element should be used instead.',
   i18n: {
     titleKey: 'pAsHeading_title',
     descriptionKey: 'pAsHeading_description'
@@ -510,10 +487,9 @@ function runInPage(ctx) {
     // never leave out text the full test would ask about. With lighter text
     // too, the test below usually settles it first, as it did before.
     if (!others.length && !headingLike.some((piece) => isLargeTitle(piece))) {
+      if (String(dom.localName(el) || '').toLowerCase() !== 'p') return null;
       const heaviest = Math.max(...headingLike.map((piece) => piece.weight));
-      if (String(dom.localName(el) || '').toLowerCase() === 'p') {
-        if (!hasPlainText(nextShown(el), heaviest)) return null;
-      } else if (!titlesPassage(el, heaviest)) return null;
+      if (!hasPlainText(nextShown(el), heaviest)) return null;
     }
     if (others.some(isSeen)) return null;
     return headingLike.filter((piece) => isSeen(piece.holder));
@@ -552,11 +528,11 @@ function runInPage(ctx) {
     return link;
   }
 
-  // Digits with only spacing and punctuation around them: "2024", "12.",
-  // "1/3", "#4".
+  // Digits with only spacing, punctuation, a currency sign or a percent
+  // sign around them: "2024", "12.", "1/3", "#4", "$29.99", "29,99 €", "45%".
   // Two plain tests rather than one pattern with a digit in the middle,
   // which backtracks on long text.
-  const NUMBER_CHARS = /^[\s\d.,:;/#№°'’()\-–—]+$/;
+  const NUMBER_CHARS = /^[\s\d.,:;/#№°'’()\-–—%‰\p{Sc}]+$/u;
   const isNumberOnly = (text) => NUMBER_CHARS.test(text) && /\d/.test(text);
 
   function minFontSize(pieces) {
@@ -594,134 +570,6 @@ function runInPage(ctx) {
         return true;
     }
     return false;
-  }
-
-  // A passage of body text, not a value: long enough to be read rather
-  // than glanced at, or a sentence of some length. A label's value ("$20",
-  // "Paris") and a badge's line ("Our latest products.") are neither.
-  const PASSAGE_CHARS = 80;
-  const SENTENCE_PASSAGE_CHARS = 40;
-  function isPassage(text) {
-    const t = String(text || '')
-      .replace(/\s+/g, ' ')
-      .trim();
-    if (t.length >= PASSAGE_CHARS) return true;
-    return (
-      t.length >= SENTENCE_PASSAGE_CHARS &&
-      (endsAsSentenceOf(t) || /[.!?。！？؟।][\s"'’”»)]/u.test(t))
-    );
-  }
-
-  // Side by side with what follows it, as a label and its value are: an
-  // inline box, or an item of a flex row or of a grid with columns.
-  function laidOutAsLabel(el) {
-    const own = safeComputedStyle(el);
-    if (own && /^inline/.test(trim(own.display).toLowerCase())) return true;
-    const parent = dom.parentElement(el);
-    const cs = parent ? safeComputedStyle(parent) : null;
-    if (!cs) return false;
-    const display = trim(cs.display).toLowerCase();
-    if (/flex$/.test(display)) return !/^column/.test(trim(cs.flexDirection).toLowerCase());
-    if (/grid$/.test(display)) {
-      const columns = trim(cs.gridTemplateColumns).toLowerCase();
-      return !!columns && columns !== 'none' && (/\s/.test(columns) || /repeat\(/.test(columns));
-    }
-    return false;
-  }
-
-  // A bold <div> at body size titling the text after it: lighter text that
-  // is a passage, below it rather than beside it. A <div> at this size is
-  // more often a label, a badge or a price than a <p> is, so it needs more
-  // than a <p>: what follows is read, not a value.
-  function titlesPassage(el, titleWeight) {
-    const next = nextShown(el);
-    return (
-      !laidOutAsLabel(el) && opensLighter(next, titleWeight) && isPassage(dom.textContent(next))
-    );
-  }
-
-  // Whether the first text a reader sees in `el` is lighter than the
-  // title's: the passage starts there. A block that opens with a bold line
-  // of its own starts with another title, not with the text this one titles.
-  function opensLighter(el, titleWeight) {
-    if (!el || !isRendered(el)) return false;
-    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
-    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      if (!/\p{L}/u.test(String(dom.nodeValue(node) || ''))) continue;
-      const holder = dom.parentElement(node);
-      if (!holder || !isRendered(holder) || isScreenReaderOnly(holder)) continue;
-      return weightNumOf(safeComputedStyle(holder)) < titleWeight;
-    }
-    return false;
-  }
-
-  // The blocks a <br> breaks a line in, found once: a lead line is only
-  // looked for in them.
-  let brBlocks = null;
-  function hasLineBreak(el) {
-    if (!brBlocks) {
-      brBlocks = new Set();
-      for (const br of helpers.queryAll('br') || []) {
-        const block = dom.closest(br, 'p, div');
-        if (block) brBlocks.add(block);
-      }
-    }
-    return brBlocks.has(el);
-  }
-
-  // A bold first line ended by a <br>, before lighter text in the same block
-  // (<p><strong>Opening hours</strong><br>Monday to Friday, 9 to 5.</p>):
-  // the title and its text written as one paragraph. The pieces of the bold
-  // line, or null. What follows the break must be mostly lighter and a
-  // passage, so a name over an address, or a label over its value, is not
-  // one.
-  function leadLineOf(el) {
-    if (!hasLineBreak(el)) return null;
-    const isSeen = (holder) => isRendered(holder) && !isScreenReaderOnly(holder);
-    const parentEl = dom.parentElement(el);
-    const blockWeight = Math.min(
-      weightNumOf(safeComputedStyle(el)),
-      parentEl ? weightNumOf(safeComputedStyle(parentEl)) : 400
-    );
-    // Elements and text, in order: SHOW_ELEMENT | SHOW_TEXT.
-    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 5);
-    const lead = [];
-    let node = walker.nextNode();
-    for (; node; node = walker.nextNode()) {
-      if (dom.nodeType(node) === 1) {
-        if (String(dom.localName(node) || '').toLowerCase() === 'br' && isRendered(node)) break;
-        continue;
-      }
-      const holder = dom.parentElement(node);
-      if (!holder || !trim(dom.nodeValue(node)) || !isSeen(holder)) continue;
-      const style = boldStyleOf(holder, blockWeight);
-      if (!style) return null;
-      lead.push({
-        holder,
-        raw: String(dom.nodeValue(node)),
-        fontSizePx: style.px,
-        bold: style.bold,
-        weight: style.weight
-      });
-      if (lead.length > 64) return null;
-    }
-    if (!node || !lead.length) return null;
-    const titleWeight = Math.min(...lead.map((piece) => piece.weight));
-    let after = '';
-    let lighter = 0;
-    let heavier = 0;
-    for (node = walker.nextNode(); node && after.length < 2000; node = walker.nextNode()) {
-      if (dom.nodeType(node) !== 3) continue;
-      const raw = String(dom.nodeValue(node) || '');
-      const holder = dom.parentElement(node);
-      if (!holder || !trim(raw) || !isSeen(holder)) continue;
-      after += raw;
-      const letters = (raw.match(/\p{L}/gu) || []).length;
-      if (weightNumOf(safeComputedStyle(holder)) < titleWeight) lighter += letters;
-      else heavier += letters;
-    }
-    if (!lighter || heavier > lighter || !isPassage(after)) return null;
-    return lead;
   }
 
   // ---- Leans ----
@@ -818,44 +666,17 @@ function runInPage(ctx) {
   // grid repeats them.
   const linkCandidates = [];
 
-  // A block that opens with a bold line ended by a <br>: an occurrence for
-  // it when that line reads as a title over the text after it.
-  function judgeLeadLine(el) {
-    const lead = leadLineOf(el);
-    if (!lead) return;
-    const shown = shownTextOf(lead);
-    if (shown.length > MAX_HEADING_LIKE_CHARS || endsAsSentenceOf(shown)) return;
-    if (!/\p{L}/u.test(shown) || isNumberOnly(shown) || soleLinkOf(lead, el)) return;
-    if (lead.every((piece) => isInsideControl(piece.holder, el))) return;
-    const fontSizePx = minFontSize(lead);
-    occurrences.push(
-      helpers.reportOccurrence(el, {
-        summary:
-          'This block starts with a bold line, ended by a line break, before plain text, as a heading does.',
-        hint: 'If the bold line titles the text after it, make it a real heading (<h1>-<h6> or role="heading") and put that text in an element of its own.',
-        i18n: {
-          summaryKey: 'pAsHeading_summary_cantTell_leadLine',
-          hintKey: 'pAsHeading_hint_cantTell_leadLine',
-          params: { fontSizePx: String(fontSizePx) }
-        },
-        data: { details: { reasonCode: 'BOLD_LEAD_LINE', fontSizePx } }
-      })
-    );
-  }
-
   // One <p> or <div>: a heading-like occurrence for it, or nothing.
   function judgeBlock(el) {
     if (!isCandidate(el)) return;
 
     const pieces = headingLikePieces(el);
-    // Not all bold: perhaps a bold first line over the text after a <br>.
-    if (!pieces) {
-      judgeLeadLine(el);
-      return;
-    }
-    // Nothing a sighted reader sees (screen-reader-only text).
-    if (!pieces.length) return;
+    // Not heading-like, or nothing a sighted reader sees (screen-reader-only text).
+    if (!pieces || !pieces.length) return;
     if (shownTextOf(pieces).length > MAX_HEADING_LIKE_CHARS) return;
+    // Text with no letter or digit (a star rating, a scene break "* * *",
+    // an emoji) titles nothing.
+    if (!/[\p{L}\p{N}]/u.test(shownTextOf(pieces))) return;
 
     const fontSizePx = minFontSize(pieces);
     // Two kinds a reader may set aside as a group: text that is only a
@@ -880,18 +701,15 @@ function runInPage(ctx) {
       // Body size only: large text not bold enough to be a title is not
       // asked about as bold body text either.
       if (fontSizePx >= MIN_FONT_SIZE_PX) return;
-      if (kindCode || endsAsSentenceOf(shown)) return;
+      if (!isParagraph || kindCode || endsAsSentenceOf(shown)) return;
       const titleWeight = Math.min(...pieces.map((piece) => piece.weight));
-      if (isParagraph ? !hasPlainText(nextShown(el), titleWeight) : !titlesPassage(el, titleWeight))
-        return;
+      if (!hasPlainText(nextShown(el), titleWeight)) return;
       // The last of a run of bold lines (an address, a list of names): the
       // line before it is bold too, and it is no title over the text after.
       const prev = prevShown(el);
       if (
         prev &&
-        (isParagraph ? ['p'] : ['p', 'div']).includes(
-          String(dom.localName(prev) || '').toLowerCase()
-        ) &&
+        String(dom.localName(prev) || '').toLowerCase() === 'p' &&
         /\p{L}/u.test(String(dom.textContent(prev) || '')) &&
         trim(dom.textContent(prev)).length <= MAX_HEADING_LIKE_CHARS &&
         !hasPlainText(prev, titleWeight) &&
@@ -899,32 +717,17 @@ function runInPage(ctx) {
       ) {
         return;
       }
-      const occurrence = helpers.reportOccurrence(
-        el,
-        isParagraph
-          ? {
-              summary:
-                'This short paragraph is entirely bold and comes before plain text, as a heading does.',
-              hint: 'If this text introduces the text after it, make it a real heading (<h1>-<h6> or role="heading") instead of a bold paragraph.',
-              i18n: {
-                summaryKey: 'pAsHeading_summary_cantTell_bodySize',
-                hintKey: 'pAsHeading_hint_cantTell_bodySize',
-                params: { fontSizePx: String(fontSizePx) }
-              },
-              data: { details: { reasonCode: 'BOLD_SHORT_PARAGRAPH', fontSizePx } }
-            }
-          : {
-              summary:
-                'This short block of text is entirely bold and comes before a passage of plain text, as a heading does.',
-              hint: 'If this text introduces the text after it, make it a real heading (<h1>-<h6> or role="heading") instead of a bold <div>.',
-              i18n: {
-                summaryKey: 'pAsHeading_summary_cantTell_bodySizeDiv',
-                hintKey: 'pAsHeading_hint_cantTell_bodySizeDiv',
-                params: { fontSizePx: String(fontSizePx) }
-              },
-              data: { details: { reasonCode: 'BOLD_SHORT_DIV', fontSizePx } }
-            }
-      );
+      const occurrence = helpers.reportOccurrence(el, {
+        summary:
+          'This short paragraph is entirely bold and comes before plain text, as a heading does.',
+        hint: 'If this text introduces the text after it, make it a real heading (<h1>-<h6> or role="heading") instead of a bold paragraph.',
+        i18n: {
+          summaryKey: 'pAsHeading_summary_cantTell_bodySize',
+          hintKey: 'pAsHeading_hint_cantTell_bodySize',
+          params: { fontSizePx: String(fontSizePx) }
+        },
+        data: { details: { reasonCode: 'BOLD_SHORT_PARAGRAPH', fontSizePx } }
+      });
       occurrences.push(occurrence);
       return;
     }

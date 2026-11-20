@@ -127,7 +127,7 @@ Total rules: **151**. With fixture: **146**. Without fixture: **5**.
 | object-text-alternative-present | automatic | `tests/fixtures/object-text-alternative-present-all-scenarios.html` | 18 | 5 | 6 | 0 | 7 |
 | object-text-alternative-quality | manual | `tests/fixtures/object-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | option-name-present | automatic | `tests/fixtures/option-name-present-all-scenarios.html` | 17 | 4 | 5 | 0 | 8 |
-| p-as-heading | manual | `tests/fixtures/p-as-heading-all-scenarios.html` | 30 | 0 | 0 | 15 | 15 |
+| p-as-heading | manual | `tests/fixtures/p-as-heading-all-scenarios.html` | 26 | 0 | 0 | 13 | 13 |
 | page-has-heading-one | manual | `tests/fixtures/page-has-heading-one-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | page-title-patterns | manual | `tests/fixtures/page-title-patterns-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | page-title-present | automatic | `tests/fixtures/page-title-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |

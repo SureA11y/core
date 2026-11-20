@@ -2079,12 +2079,12 @@
       "testFile": "tests/engine-checks/manual/p-as-heading.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/p-as-heading-all-scenarios.html",
-      "totalCases": 30,
+      "totalCases": 26,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 15,
-        "OTHER": 15
+        "CANTTELL": 13,
+        "OTHER": 13
       }
     },
     {
