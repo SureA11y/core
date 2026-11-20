@@ -100269,8 +100269,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Number.isFinite(n) && n >= 700;
   }
 
-  // A computed weight as a number. A browser reports one; jsdom may keep a
-  // keyword, read here as CSS defines it against a normal (400) parent.
+  // An element's weight as a number. A browser computes it; jsdom may keep
+  // `bolder` or `lighter` as written, which CSS Fonts resolves against the
+  // parent's weight (bolder: under 350 gives 400, under 550 gives 700, under
+  // 900 gives 900; lighter: under 550 gives 100, under 750 gives 400, else
+  // 700). A child handed the same keyword as its parent inherited it, as
+  // jsdom passes the specified value down: it has the parent's weight.
+  const weightMemo = new Map();
+  function weightOf(el) {
+    if (!el) return 400;
+    if (weightMemo.has(el)) return weightMemo.get(el);
+    const raw = trim(safeComputedStyle(el) && safeComputedStyle(el).fontWeight).toLowerCase();
+    let value;
+    if (raw === 'bolder' || raw === 'lighter') {
+      const parent = dom.parentElement(el);
+      const parentRaw = parent
+        ? trim(safeComputedStyle(parent) && safeComputedStyle(parent).fontWeight).toLowerCase()
+        : '';
+      const base = parent ? weightOf(parent) : 400;
+      if (parentRaw === raw) value = base;
+      else if (raw === 'bolder')
+        value = base < 350 ? 400 : base < 550 ? 700 : base < 900 ? 900 : base;
+      else value = base < 100 ? base : base < 550 ? 100 : base < 750 ? 400 : 700;
+    } else {
+      value = weightNumOf(safeComputedStyle(el));
+    }
+    weightMemo.set(el, value);
+    return value;
+  }
+
+  // A computed weight as a number, from the style alone; a keyword is read
+  // against a normal (400) parent. `weightOf` resolves it against the real one.
   function weightNumOf(cs) {
     const w = trim(cs && cs.fontWeight).toLowerCase();
     if (w === 'bold' || w === 'bolder') return 700;
@@ -100452,9 +100481,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // is large enough is the caller's call.
   function boldStyleOf(holder, blockWeight) {
     const cs = safeComputedStyle(holder);
-    // One read of the weight: weightNumOf takes bold and bolder as 700, so
-    // this is isBoldWeight's test.
-    const weight = weightNumOf(cs);
+    // One read of the weight, `bolder` resolved against the parent's: 700 or
+    // more is bold outright, as isBoldWeight reads it.
+    const weight = weightOf(holder);
     const bold = weight >= 700;
     if (!bold && !(weight > blockWeight)) return null;
     const scale =
@@ -100538,10 +100567,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Heavier than the text around it: the block's own weight, or its
     // parent's where the block itself is set heavier (a semibold title <p>).
     const parentEl = dom.parentElement(el);
-    const blockWeight = Math.min(
-      weightNumOf(safeComputedStyle(el)),
-      parentEl ? weightNumOf(safeComputedStyle(parentEl)) : 400
-    );
+    const blockWeight = Math.min(weightOf(el), parentEl ? weightOf(parentEl) : 400);
     const headingLike = [];
     const others = [];
     const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
@@ -100653,8 +100679,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!/\p{L}/u.test(String(dom.nodeValue(node) || ''))) continue;
       seen += 1;
       const holder = dom.parentElement(node);
-      if (holder && weightNumOf(safeComputedStyle(holder)) < titleWeight && isRendered(holder))
-        return true;
+      if (holder && weightOf(holder) < titleWeight && isRendered(holder)) return true;
     }
     return false;
   }
@@ -100666,7 +100691,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     trim(cs && cs.fontFamily)
       .toLowerCase()
       .replace(/["']/g, '');
-  const weightOf = (cs) => {
+  const styleWeightOf = (cs) => {
     const w = trim(cs && cs.fontWeight).toLowerCase();
     return w === 'bold' ? '700' : w;
   };
@@ -100692,7 +100717,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return realHeadingStyles().some(
       (h) =>
         Math.abs(pxOf(h) - pxOf(cs)) < 0.5 &&
-        weightOf(h) === weightOf(cs) &&
+        styleWeightOf(h) === styleWeightOf(cs) &&
         familyOf(h) === familyOf(cs)
     );
   }
