@@ -233,7 +233,7 @@ test('a pack built from standard data, or on two levels, uses experimental APIs'
   const twoLevel = JSON.parse(JSON.stringify(data));
   twoLevel.data[1].tests = { 'A.1': { title: 'An <img> has alt', requirements: ['A'] } };
   twoLevel.data[1].ruleMap['img-alt-present'].requirements = ['A.1'];
-  assert.deepEqual(ids(pack(twoLevel)), ['standard data', 'ruleMappedStandard tests']);
+  assert.deepEqual(ids(pack(twoLevel)), ['standard data']);
   // A pack whose standard is written by hand uses neither.
   assert.deepEqual(ids(skipPack({ requirements: ['S1'] })), []);
 });

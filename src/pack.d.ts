@@ -449,7 +449,6 @@ export function ruleMappedStandard(options: {
    * to one requirement or several; its `wcagSc` defaults to its requirement's.
    * With tests, every version has them, a rule-map row names tests or
    * requirements, and a result names each test with its `criterion`.
-   * @experimental Until 1.18.0 (docs/API_STABILITY.md).
    */
   tests?: Record<
     string,
@@ -461,8 +460,7 @@ export function ruleMappedStandard(options: {
   /**
    * With tests: link a rule only to tests whose WCAG criteria share one with
    * the rule's (or give the reason in the row's `outsideCorrespondence`), and
-   * name only the shared criteria in each entry.
-   * @experimental Until 1.18.0.
+   * name only the shared criteria in each entry. Only with tests.
    */
   wcagCorrespondence?: boolean;
   /** Per version, the requirements (or, with tests, the tests) each rule checks: { '1.0': { 'img-alt-present': { requirements: ['1'] } } }. */
@@ -484,9 +482,9 @@ export function ruleMappedStandard(options: {
           requirements?: string[];
           outcome?: 'cantTell' | 'fail';
         }>;
-        /** With tests: where the row's findings are questions. @experimental Until 1.18.0. */
+        /** With tests only: where the row's findings are questions. */
         asks?: string[];
-        /** With wcagCorrespondence: tests linked outside it, each with the reason. @experimental Until 1.18.0. */
+        /** With wcagCorrespondence: tests linked outside it, each with the reason. */
         outsideCorrespondence?: Record<string, string>;
         [field: string]: unknown;
       }

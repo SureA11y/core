@@ -47,12 +47,13 @@
  *   optional, names tests (or requirements) where the row's findings are
  *   questions; and a result names each test it counts toward, with the
  *   requirement it belongs to (`criterion`). A test's `wcagSc` defaults to
- *   its requirement's. Experimental (src/experimental.js).
+ *   its requirement's. `asks`, `outsideCorrespondence` and
+ *   `wcagCorrespondence` are refused on a standard without tests.
  *
  * `wcagCorrespondence: true`, optional: a rule is linked to a test only
  * where the test's WCAG criteria share one with the rule's, or the row gives
  * the reason in `outsideCorrespondence: { [testId]: reason }`; and an entry
- * names only the criteria they share. Experimental.
+ * names only the criteria they share.
  *
  * `applicability: 'wcag'`, for a standard whose requirements restate WCAG
  * criteria one for one (EN 301 549's chapter 9): a requirement's rollup is
@@ -248,6 +249,11 @@ function ruleMappedStandard({
       const known = new Set(rules.map((r) => r.ruleId));
       const problems = [];
       const listed = versions.map((v) => v.version);
+      if (wcagCorrespondence === true) {
+        problems.push(
+          'wcagCorrespondence is read only by a standard with tests under its requirements'
+        );
+      }
       for (const { version, wcagVersion } of versions) {
         if (!requirements[version]) {
           problems.push(`version ${version} has no requirements table`);
@@ -290,6 +296,15 @@ function ruleMappedStandard({
           }
           if (new Set(reqs).size !== reqs.length) {
             problems.push(`${version} ${ruleId}: a requirement is listed twice`);
+          }
+          // What only a standard with tests reads: here it would do nothing,
+          // and a row that moved its requirements to asks would lose them.
+          for (const key of ['asks', 'outsideCorrespondence']) {
+            if (row[key] !== undefined) {
+              problems.push(
+                `${version} ${ruleId}: ${key} is read only by a standard with tests under its requirements`
+              );
+            }
           }
           if (row.reasonCodes !== undefined) {
             const codes = row.reasonCodes;
@@ -397,7 +412,6 @@ function ruleMappedStandard({
 const listOf = (v) => (Array.isArray(v) ? v : []);
 const objectOf = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : null);
 const ACT_OF_OUTCOME = { cantTell: 'cantTell', fail: 'fail' };
-const TWO_LEVEL = Symbol.for('surea11y.twoLevelStandard');
 const ROW_KEYS = [
   'requirements',
   'asks',
@@ -789,9 +803,6 @@ function twoLevelStandard({
     return wcagTags(v.wcagVersion);
   }
 
-  // Marks the standard as using the second level, which is experimental
-  // (src/experimental.js); a pack built on it is told so by checkPack.
-  Object.defineProperty(composites, TWO_LEVEL, { value: true });
   return { mappingsFor, composites, validate, wcagTagsOf, procedures: undefined };
 }
 
