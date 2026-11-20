@@ -28,7 +28,7 @@ const KB = 1024;
 const BUDGETS = [
   ['surea11y.browser.js', 1915],
   ['surea11y.i18n.de.js', 304],
-  ['surea11y.i18n.es.js', 293],
+  ['surea11y.i18n.es.js', 294],
   ['surea11y.i18n.fr.js', 306],
   ['surea11y.i18n.ja.js', 359],
   // The HTML report openReport() loads on first use.

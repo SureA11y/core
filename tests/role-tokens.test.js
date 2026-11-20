@@ -47,8 +47,10 @@ function scan(html) {
   }
 }
 
+// Only role attributes, inside a tag: a fixture's text may quote one
+// (role="img"), and rewriting it would change what a reader sees.
 function rewriteRoles(html, rewrite) {
-  return html.replace(/(\srole\s*=\s*)(["'])([^"']*)\2/gi, (m, pre, q, value) =>
+  return html.replace(/(<[^<>]*?\srole\s*=\s*)(["'])([^"']*)\2/gi, (m, pre, q, value) =>
     value.trim() ? `${pre}${q}${rewrite(value)}${q}` : m
   );
 }
