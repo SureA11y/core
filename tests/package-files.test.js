@@ -1,71 +1,52 @@
 'use strict';
 
 /**
- * Every module the package's entry points load is published: listed in
- * package.json's `files`. A module left out loads from the repository, so
- * the tests pass, and fails with MODULE_NOT_FOUND for everyone who installs
- * the package (src/core/evidence-state.js was nearly shipped that way).
+ * package.json's `files` names the files the published package carries, one
+ * by one. A module added to src/ and required by a packaged one, but left out
+ * of the list, works in the repository and breaks every install with "Cannot
+ * find module". This packs the package as npm would (a dry run) and fails on
+ * any relative require of a packaged file that the package doesn't carry.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
-const pkg = require('../package.json');
 
-// A `files` entry as a pattern, as npm reads it: `**/` any directories,
-// none included, `**` any path, `*` any name.
-function patternOf(entry) {
-  const source = entry
-    .split('**/')
-    .map((part) => part.replace(/\*\*/g, '\u0000'))
-    .join('\u0001')
-    .split('\u0000')
-    .map((part) =>
-      part
-        .split('*')
-        .map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
-        .join('[^/]*')
-    )
-    .join('.*')
-    .split('\u0001')
-    .join('(?:.*/)?');
-  return new RegExp(`^${source}$`);
+function packedFiles() {
+  const out = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore']
+  });
+  return new Set(JSON.parse(out)[0].files.map((f) => f.path));
 }
-const published = pkg.files.map(patternOf);
-// npm publishes package.json whatever `files` says.
-const isPublished = (rel) => rel === 'package.json' || published.some((re) => re.test(rel));
 
-// The entry points' own files: each `exports` target that Node loads.
-function entryFiles() {
-  const out = new Set();
-  const visit = (target) => {
-    if (typeof target === 'string') {
-      if (target.endsWith('.js') && !target.includes('*')) out.add(target);
-    } else if (target && typeof target === 'object') {
-      for (const [condition, value] of Object.entries(target)) {
-        if (condition !== 'types' && condition !== 'import') visit(value);
-      }
+// What a relative require resolves to, as Node resolves it, relative to the
+// package root; null where nothing on disk answers it.
+function resolved(fromFile, request) {
+  const base = path.join(path.dirname(path.join(ROOT, fromFile)), request);
+  for (const candidate of [base, `${base}.js`, `${base}.json`, path.join(base, 'index.js')]) {
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+      return path.relative(ROOT, candidate).split(path.sep).join('/');
     }
-  };
-  visit(pkg.exports);
-  out.add(pkg.main);
-  return [...out];
+  }
+  return null;
 }
 
-test("every module the package's entry points load is in package.json's files", () => {
-  const entries = entryFiles();
-  assert.ok(entries.includes('src/index.js'));
-  for (const entry of entries) require(path.join(ROOT, entry));
-  const loaded = Object.keys(require.cache)
-    .filter(
-      (file) =>
-        file.startsWith(ROOT + path.sep) && !file.includes(`${path.sep}node_modules${path.sep}`)
-    )
-    .map((file) => path.relative(ROOT, file).split(path.sep).join('/'))
-    .filter((rel) => !rel.startsWith('tests/'));
-  assert.ok(loaded.includes('src/core/evidence-state.js'));
-  const missing = loaded.filter((rel) => !isPublished(rel)).sort();
-  assert.deepEqual(missing, [], 'loaded by an entry point but not published');
+test('every module a packaged file requires is packaged', () => {
+  const files = packedFiles();
+  const missing = [];
+  for (const file of files) {
+    if (!file.endsWith('.js')) continue;
+    const source = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    for (const m of source.matchAll(/require\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)/g)) {
+      const target = resolved(file, m[1]);
+      if (target && !files.has(target)) missing.push(`${file} requires ${m[1]} (${target})`);
+    }
+  }
+  assert.deepEqual(missing, []);
 });
