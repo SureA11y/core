@@ -192,6 +192,24 @@ test("results name the profile's law, and so does each profile of a scan of seve
   assert.equal(both.profiles['city-1'].law.id, 'city-public');
   assert.equal(both.profiles['city-1-private'].law.id, 'city-private');
   assert.equal(both.profiles['wcag22-aa'].law, undefined);
+  // Profiles that serve different laws, or one that serves none, give the
+  // scan no law of its own: the first's would speak for the others.
+  assert.equal(both.engine.law, undefined);
+  const pair = runa11yCoreOnHtml(html, {
+    engineOptions: { packs: [pack], profile: ['city-1', 'city-1-private'] }
+  });
+  assert.equal(pair.engine.law, undefined);
+  // Profiles that all serve the same law give it.
+  const same = definePack(
+    cityPack(
+      {},
+      { 'city-1-again': { version: '1', tags: ['city'], mappedRules: true, law: 'city-public' } }
+    )
+  );
+  const agreed = runa11yCoreOnHtml(html, {
+    engineOptions: { packs: [same], profile: ['city-1', 'city-1-again'] }
+  });
+  assert.equal(agreed.engine.law.id, 'city-public');
   // The report shows it beside the profile, in the law's language.
   const report = renderHtmlReport(one);
   assert.match(report, /<b><span>City Public Act \(FR\)<\/span><\/b>law/);
@@ -237,6 +255,11 @@ test("listProcedures by profile lists what the profile's law asks for, and names
   assert.equal(priv.law.id, 'city-private');
   // The standard's groups keep only what is listed.
   assert.equal(listProcedures({ packs: [pack], profile: 'nope' }), null);
+  // A profile that is no name lists nothing, as an unknown name doesn't,
+  // rather than all of WCAG.
+  for (const profile of [['city-1'], 123, '', null]) {
+    assert.equal(listProcedures({ packs: [pack], profile }), null, JSON.stringify(profile));
+  }
   assert.equal(listProcedures({ packs: [pack], profile: 'city-1', standard: 'other' }), null);
   assert.equal(
     listProcedures({ packs: [pack], profile: 'city-1', standard: 'city' }).profile,

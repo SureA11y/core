@@ -479,6 +479,11 @@ function mergeProfileResults(runs, asked) {
     engines.map((e) => e.mappings),
     (x) => (typeof x === 'string' ? x : JSON.stringify(x))
   );
+  // The law of the scan where every profile serves the same one; otherwise
+  // none, as the first profile's would speak for the others. Each profile's
+  // own is in profiles[name].law.
+  const laws = engines.map((e) => (e.law && typeof e.law.id === 'string' ? e.law.id : null));
+  const oneLaw = laws.length && laws[0] !== null && laws.every((id) => id === laws[0]);
   const engine = Object.assign({}, first.engine, {
     ...(wcagVersion ? { wcagVersion } : {}),
     ...(wcagLevel ? { wcagLevel } : {}),
@@ -488,6 +493,7 @@ function mergeProfileResults(runs, asked) {
     ...(notRun.length ? { profilesNotRun: notRun } : {}),
     ...(packs.length ? { packs } : {})
   });
+  if (!oneLaw) delete engine.law;
   void asked;
   const out = Object.assign({}, first, {
     engine,
