@@ -7,29 +7,27 @@
 
 | | |
 |---|---|
-| **Verified against** | `main` at `c1bb82de` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
-| **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)), [second](./2026-10-stress-test-2.md) (`cfefc02`), [third](./2026-10-stress-test-3.md) (`eaa5d3f1`, with its [outcomes log](./2026-10-stress-test-3-outcomes.md)), [fourth](./2026-10-stress-test-4.md) (`3af2008`) [fifth](./2026-10-stress-test-5.md) (`c528af08`) and [sixth](./2026-11-stress-test-6.md) (`23e0a387`) |
+| **Verified against** | `main` at `ec664338` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
+| **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)), [second](./2026-10-stress-test-2.md) (`cfefc02`), [third](./2026-10-stress-test-3.md) (`eaa5d3f1`, with its [outcomes log](./2026-10-stress-test-3-outcomes.md)), [fourth](./2026-10-stress-test-4.md) (`3af2008`) [fifth](./2026-10-stress-test-5.md) (`c528af08`), [sixth](./2026-11-stress-test-6.md) (`23e0a387`) and [seventh](./2026-11-stress-test-7.md) (`ec664338`) |
 | **How it is kept** | See [`README.md`](./README.md): before each audit, merge `main`; after it, re-run every open item, move fixed ones to §3, and add new ones |
 
 **How it was built.** Every first-round item was re-run on `cfefc02`, including those the outcomes log marks as fixed, by the re-check probes in [`2026-10-probes-2/recheck-round-1/`](./2026-10-probes-2/recheck-round-1/). Every second-round item was re-run independently while writing that round's report, except those marked *(not re-run)*. Where two audits found the same problem, the entry keeps the **oldest id** and lists the others.
 
 Rounds 3 to 5 were kept on branches of their own until 2026-10-27, when they were gathered here. The third round's follow-up is recorded item by item in its outcomes log; the fourth round's findings were re-run on `c528af08` by the fifth round ([`RECHECK.md`](./2026-10-probes-5/robust/RECHECK.md)); every fifth-round finding, and every round-4 lead still open, was re-run on `92e54df6` with the round's own probes, in Chromium 153 and jsdom.
 
-**Reading an entry.** The id says where it came from: `C-`, `S-`, `O-` and `R-` are first-round ids (custom rules, options, outputs, rules); `NM-`, `VS-`, `ST-`, `OP-`, `RP-` and `RB-` are second-round ids (names, visual, structure, options, reporters, robustness). From the third round on, an id is written with its round (`R3:`, `R4:`, `R5:`, `R6:`), since those rounds reused prefixes of the second (`RB-`, `OP-`, `RP-`); the round's report and probes use the short id. The sixth round's prefixes are `RF-` (reflow), `CG-` (changed rules, the exclusion filter, reporters), `EX-` (experimental APIs, pack tooling), `CE-` (other engines) and `PF-` (speed and memory). Ids never change and are never reused. Verdicts and severities are defined in the [README](./README.md#running-an-audit). The **Details** link leads to the full evidence: repro, spec quotes, browser evidence, cause.
+**Reading an entry.** The id says where it came from: `C-`, `S-`, `O-` and `R-` are first-round ids (custom rules, options, outputs, rules); `NM-`, `VS-`, `ST-`, `OP-`, `RP-` and `RB-` are second-round ids (names, visual, structure, options, reporters, robustness). From the third round on, an id is written with its round (`R3:`, `R4:`, `R5:`, `R6:`, `R7:`), since those rounds reused prefixes of the second (`RB-`, `OP-`, `RP-`); the round's report and probes use the short id. The sixth round's prefixes are `RF-` (reflow), `CG-` (changed rules, the exclusion filter, reporters), `EX-` (experimental APIs, pack tooling), `CE-` (other engines) and `PF-` (speed and memory); the seventh round's are `RW-` (reflow and `p-as-heading`), `VL-` (target size, focus not obscured), `AN-` (names, ARIA, landmarks), `IF-` (the integrator's API) and `SP-` (robustness, speed, memory). Ids never change and are never reused. Verdicts and severities are defined in the [README](./README.md#running-an-audit). The **Details** link leads to the full evidence: repro, spec quotes, browser evidence, cause.
 
 ---
 
 ## 1. Open — to fix
 
-Sorted by severity. Re-run on `main` at `c1bb82de`, 2026-11-20, with the fourth and fifth rounds' own probes (`2026-10-probes-5/robust/leads-op.js`, `leads-misc.js`, `hooks/p01-listener-keyhandler-sources.mjs`) and [`2026-11-probes-6/recheck-open.mjs`](./2026-11-probes-6/recheck-open.mjs), in Chromium 153 and jsdom: each still behaves as on `92e54df6`. Every finding of rounds 1 to 4 is fixed or closed, every fifth-round finding is fixed or decided, and every sixth-round finding is fixed or decided but one part (§3); what is left are three parts of fifth-round findings, one of the sixth, and the fourth round's leads, all Low, and the decisions below. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
+Sorted by severity. Re-run on `main` at `c1bb82de`, 2026-11-20, with the fourth and fifth rounds' own probes (`2026-10-probes-5/robust/leads-op.js`, `leads-misc.js`, `hooks/p01-listener-keyhandler-sources.mjs`) and [`2026-11-probes-6/recheck-open.mjs`](./2026-11-probes-6/recheck-open.mjs), in Chromium 153 and jsdom: each still behaves as on `92e54df6`. Every finding of rounds 1 to 4 is fixed or closed, every fifth- and sixth-round finding is fixed or decided, and every seventh-round finding is fixed in [#411](https://github.com/SureA11y/core/pull/411), open (§3); what is left are three parts of fifth-round findings and the fourth round's leads, all Low, and the decisions below. On `ec664338`, 2026-11-20, R6:RF-16 was re-run and passes (fixed by #408), and `recheck-open.mjs` gave the same results for R5:VI-12, R5:AP-4 and the two NR leads. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| R6:RF-16 (rest) | A `visibility: hidden` panel partly past the edge at 320px is reported by `reflow-horizontal-scroll` (`CLIPPED_AT_VIEWPORT_EDGE`, cantTell), though nothing in it is drawn; it failed before #406 | Bug | Low | [Round 6](./2026-11-stress-test-6.md#reflow-reflow-horizontal-scroll-new-in-1180), [`recheck-hidden-panel.js`](./2026-11-probes-6/reflow/recheck-hidden-panel.js) |
 | R5:VI-12 (rest) | Generated text moved off the page by `text-indent` still fails contrast: a `::before` with `display: inline-block; text-indent: -9999px` and `#eee` text fails `BELOW_THRESHOLD` at 1.16:1, though nothing is painted. An element's own text is left out since `a5789731` | Bug | Low | [Round 5](./2026-10-probes-5/visual/FINDINGS.md) |
 | R5:KH-5 (rest) | A key listener added through another realm's `addEventListener` (an iframe's) is not seen by the listener hook, so a working control fails `CLICK_HANDLER_NO_KEY_LISTENER` | Bug | Low | [Round 5](./2026-10-probes-5/hooks/FINDINGS.md) |
 | R5:AP-4 (rest) | `a11ycore.run()` with an unknown top-level key (`{ foo: 1 }`, `{ engineOptions: 'x' }`) runs every rule with no warning; the selection given at the top level is refused since `25a93414` | Inconsistency | Low | [Round 5](./2026-10-probes-5/api/FINDINGS.md) |
-| R4:OP-P1 | `describePacks([proxy])` with a throwing Proxy throws `PACK_OWNKEYS` | Bug | Low | [Round 4](./2026-10-probes-4/options/FINDINGS.md), re-run in [round 5](./2026-10-probes-5/robust/RECHECK.md) |
 | R4:OP-P3 | An `applicability` returning `undefined`, `0`, `NaN`, `null` or `'false'` runs the rule everywhere, with no warning; only `false` gives `notApplicable` | Inconsistency | Low | Round 4, re-run in round 5 |
 | R4:OP-P4 | `rootCanvasFallback` takes `inherit`, `currentColor`, `rgb(1,2,3,4,5)` and `rgb(1,2,3,)` silently; only `notacolor` is warned | Bug | Low | Round 4, re-run in round 5 |
 | R4:OP-P5 | `packScript` accepts rule code containing `<!--<script` | Bug | Low | Round 4, re-run in round 5 |
@@ -79,6 +77,22 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ## 3. Fixed — history
 
+### Seventh round's findings (in [#411](https://github.com/SureA11y/core/pull/411), open)
+
+Pull request [#411](https://github.com/SureA11y/core/pull/411), ten commits from `d471b2b0` to `55346be4`, opened 2026-11-20; unreleased, for 1.18.0. Every finding of the [seventh round](./2026-11-stress-test-7.md) (at `ec664338`) was reproduced again while it was fixed, each with a regression test that fails without its fix. Move this section's heading to "(in `main`)" once #411 is merged.
+
+| # | Finding | Fixed in |
+|---|---|---|
+| R7:RW-1 to RW-6 | Reflow failing clipped content, a code editor and a carousel holding a field; the carousel lean read on the wrong element; an app shell under an app bar; an escaping element not named | #411, `25e7848a` (and `5e9541f8`: the rule only asks, decided) |
+| R7:RW-7, RW-10 | `p-as-heading`'s `BOLD_LEAD_LINE` and `BOLD_SHORT_DIV` asking about addresses, staff cards, signatures and text beside a bold `<div>` | #411, `d471b2b0` (decided: both codes removed) |
+| R7:RW-8, RW-9 | `p-as-heading` asking about bold prices, percentages and text with no letters | #411, `d471b2b0` |
+| R7:RW-11 | `p-as-heading`: `bolder` read differently by jsdom and Chromium | #411, `c498801a` |
+| R7:VL-1 to VL-8 | Target size: shadow-root targets, an overlay hiding spacing, the hint's pixels, a resized checkbox; focus not obscured: `scroll-padding` in `%` or `calc()`, no doctype, sticky boxes in shadow roots, a see-through cover | #411, `d5f19693` |
+| R7:AN-1 to AN-9 | Form-associated custom elements and `<label>`; web component headers as banners; long values quoted whole; an empty submit value; excluded areas as context; `<li>` in `role=list`; `aria-checked` on a native checkbox (decided: asked about); two messages | #411, `4b259c53`, `55346be4` |
+| R7:IF-1 to IF-7 | Outcomes not following their occurrences; passing occurrences in the console and report; `'pass'` missing from the types; locale-dependent order; a throwing pack; `run({ type, values })`; a pack's certain fail alone (decided: it keeps its verdict) | #411, `00afc5a1`, `55346be4` |
+| R7:SP-1 to SP-3 | `duplicate-id-aria` cubic on repeated cards; the shared cache left on `window`; uncapped lists | #411, `f24a57ca`, `025aa9c4` |
+| R4:OP-P1 | `describePacks([proxy])` with a throwing Proxy threw `PACK_OWNKEYS` | #411, `00afc5a1` |
+
 ### Sixth round's findings (in `main`)
 
 Pull requests [#406](https://github.com/SureA11y/core/pull/406) (the round's findings, 21 commits from `73b5ab71` to `e96ec43f`) and [#407](https://github.com/SureA11y/core/pull/407) (CE-1, CE-2, PF-1; `94bcd3b3` to `c1bb82de`), merged 2026-11-20; unreleased, for 1.18.0. Every finding of the [sixth round](./2026-11-stress-test-6.md) (at `23e0a387`) was reproduced again while it was fixed, each with a regression test that fails without its fix, and the full suite passes on `c1bb82de`: 6,896 tests, none failed or skipped. The 12 published packages that depend on core give the same results as before, test by test, apart from `pack-rgaa`'s test of the experimental APIs it uses (R6:EX-14). The hashes are `main`'s; the report's table gives each finding's commit.
@@ -90,7 +104,7 @@ Pull requests [#406](https://github.com/SureA11y/core/pull/406) (the round's fin
 | R6:RF-5, RF-6, RF-7 | Reflow not walking open shadow DOM; fields failing too broadly and too narrowly; content cut at the start edge | #406, `902f0678` |
 | R6:RF-10, RF-11, RF-12, RF-14 | Reflow: a carousel of fitting cards leaning fail; grids, maps and formulas; one cause given many findings; speed inside clipping boxes | #406, `ea0e7d00`, `62b4c35d` |
 | R6:RF-15 | Reflow's smaller gaps: `overflow-clip-margin`, `clip-path`, the silent cap, a message, `<frameset>` | #406 |
-| R6:RF-16 | A `visibility: hidden` panel partly past the edge failed reflow | Partly: #406 makes it a question; still reported (§1) |
+| R6:RF-16 | A `visibility: hidden` panel partly past the edge failed reflow | #406 made it a question; [#408](https://github.com/SureA11y/core/pull/408) leaves it out (re-run on `ec664338`) |
 | R6:CG-1, CG-2, CG-3, CG-13 | The exclusion filter keeping a `fail` on a passing element, keeping a `pass` with nothing left, letting text-node, selector-only and framed occurrences through, and giving a manual rule `coercedFrom: 'fail'` | #406, `73b5ab71` |
 | R6:CG-4 | Excluding an area changing `heading-order` and `page-has-heading-one` | #406, `d8a5f4c1` (decided: excluded areas are context) |
 | R6:CG-5 to CG-12 | `p-as-heading`'s bold runs, sentence ends, semibold titles, size codes and jsdom sizes; `td-has-header`'s table size and ignored `presentation`; `aria-level` above 9 | #406, `3558ca2a` (invalid `aria-level` values follow WAI-ARIA: decided) |
@@ -105,7 +119,7 @@ Pull requests [#406](https://github.com/SureA11y/core/pull/406) (the round's fin
 | R6:EX-7 | Versionless `standard.review` keys translating other versions | #406, `d20ac41f` |
 | R6:EX-10 to EX-13 | Colliding translation keys reported; `definePack` linear; its message for non-ASCII ids; `checkPack` and ranges into the next major | #406, `0115673c` |
 | R6:EX-14 | The experimental policy test, and `describePacks` no longer listing stable APIs | #406, `d20ac41f` (`pack-rgaa`'s own test needs updating when it moves to 1.18) |
-| R6:CE-1, CE-2 | `p-as-heading` missing a bold line ended by `<br>`, and a bold `<div>` at body size | #407, `81d8875b` (`BOLD_LEAD_LINE`, `BOLD_SHORT_DIV`) |
+| R6:CE-1, CE-2 | `p-as-heading` missing a bold line ended by `<br>`, and a bold `<div>` at body size | #407, `81d8875b` (`BOLD_LEAD_LINE`, `BOLD_SHORT_DIV`); both codes removed again in #411 (R7:RW-7, RW-10, decided) |
 | R6:CE-3 | `p-as-heading` comparing only the next element | #406, `3558ca2a` (same cause as CG-5) |
 | R6:PF-1 | jsdom scans in a synchronous loop running out of memory (jsdom's, not core's) | #407, `94bcd3b3` (documented) |
 

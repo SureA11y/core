@@ -33,6 +33,7 @@ It holds every round so far. The first two rounds were kept on `audit/2026-10-st
 | 4 | 2026-10-14 | `3af2008` | [`2026-10-stress-test-4.md`](./2026-10-stress-test-4.md), [evidence](./2026-10-stress-test-4-evidence.md) | [`2026-10-probes-4/`](./2026-10-probes-4/) |
 | 5 | 2026-10-23 | `c528af08` | [`2026-10-stress-test-5.md`](./2026-10-stress-test-5.md) | [`2026-10-probes-5/`](./2026-10-probes-5/) |
 | 6 | 2026-11-19 | `23e0a387` | [`2026-11-stress-test-6.md`](./2026-11-stress-test-6.md) | [`2026-11-probes-6/`](./2026-11-probes-6/) |
+| 7 | 2026-11-20 | `ec664338` | [`2026-11-stress-test-7.md`](./2026-11-stress-test-7.md) | [`2026-11-probes-7/`](./2026-11-probes-7/) |
 
 **Finding ids.** Each round gives its findings a prefix per area (`NM-`, `VS-`, `RB-`…). Rounds 1 and 2 never shared a prefix, so their ids are used as they are. Later rounds reused some (`RB-` in rounds 2 and 3, `OP-` and `RP-` in rounds 2 and 4), so in the register an id from round 3 on is written with its round: `R3:RB-4`, `R4:OP-5`, `R5:NR-1`. A round's own report and probes keep the short id. A new round picks prefixes not used before, and the register still writes them with the round.
 
