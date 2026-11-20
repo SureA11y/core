@@ -466,6 +466,122 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   });
 
+  await t.test(
+    'content cut at the start edge, which nothing scrolls to, is asked about',
+    async () => {
+      const ltr = await scan(
+        page('#p{margin-left:-120px}', '<p id="p">Text that starts before the left edge</p>')
+      );
+      assert.deepEqual(
+        ltr.occurrences.map((o) => [o.data.details.reasonCode, o.data.details.edge]),
+        [['CLIPPED_AT_VIEWPORT_EDGE', 'left']]
+      );
+      const rtlPage = await scan(
+        page(
+          '#p{position:relative;left:120px}',
+          '<p id="p">نص يبدأ بعد الحافة</p>',
+          'lang="ar" dir="rtl"'
+        )
+      );
+      assert.equal(rtlPage.occurrences[0].data.details.edge, 'right');
+      // A box alone, a link wholly off-screen and image replacement cut no content.
+      for (const [css, body] of [
+        [
+          '.bleed{margin:0 -8px;height:40px;background:#eee}',
+          '<div class="bleed"></div><p>Text</p>'
+        ],
+        [
+          '.skip{position:absolute;left:-9999px}',
+          '<a class="skip" href="#m">Skip</a><main id="m">Text</main>'
+        ],
+        ['h1{text-indent:-9999px;width:200px}', '<h1>Logo</h1>']
+      ]) {
+        assert.equal((await scan(page(css, body))).outcome, 'pass', css);
+      }
+    }
+  );
+
+  await t.test("the body's writing mode and direction are the page's", async () => {
+    const vertical = await scan(
+      page('body{writing-mode:vertical-rl}', '<div style="width:600px">Wide</div>')
+    );
+    assert.equal(vertical.outcome, 'notApplicable');
+    const rtlBody = await scan(
+      page('#w{width:600px}', '<div id="w">Wide</div>').replace('<body>', '<body dir="rtl">')
+    );
+    assert.deepEqual(findings(rtlBody), [['w', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    assert.equal(rtlBody.occurrences[0].data.details.edge, 'left');
+  });
+
+  await t.test('an element in an open shadow root is named', async () => {
+    const html = page(
+      '',
+      '<div id="host"></div><script>document.getElementById("host").attachShadow({mode:"open"}).innerHTML="<div id=\\"inner\\" style=\\"width:600px\\">Wide</div>"</script>'
+    );
+    assert.deepEqual(findings(await scan(html)), [['inner', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    // Left out of the scan, it can't be named.
+    const off = await scan(html, { engineOptions: { includeShadowDom: false } });
+    assert.equal(findings(off)[0][2], 'HORIZONTAL_SCROLL_UNATTRIBUTED');
+  });
+
+  await t.test('a box that hides downwards hides what is below it on purpose', async () => {
+    const check = await scan(
+      page(
+        '.panel{overflow:hidden;height:40px} .row{width:560px}',
+        '<div class="panel"><p>Shown</p><div class="row">Below the panel</div></div>'
+      )
+    );
+    assert.equal(check.outcome, 'pass');
+  });
+
+  await t.test('only a field that is itself cut off fails', async () => {
+    const card = (row, css = '') =>
+      page(
+        '.card{overflow:hidden;width:280px} .row{display:flex;width:560px} .row>*{flex:none;width:270px} ' +
+          css,
+        `<div class="card"><div class="row" id="r">${row}</div></div>`
+      );
+    const tier = async (html) => (await scan(html)).occurrences[0].occurrenceOutcome;
+    assert.equal(await tier(card('<label>A <input></label><label>B <input></label>')), 'fail');
+    // The field shows whole; only its help text is cut.
+    assert.equal(
+      await tier(
+        card(
+          '<input style="width:200px"><span style="width:300px">Help text cut off</span>',
+          '.row>*{width:auto}'
+        )
+      ),
+      'cantTell'
+    );
+    // Hidden, disabled, or a button: not a field a person fills in.
+    assert.equal(
+      await tier(
+        card(
+          '<div><input type="radio" name="s">1</div><div><input type="radio" name="s">2</div>',
+          'input{display:none}'
+        )
+      ),
+      'cantTell'
+    );
+    assert.equal(
+      await tier(card('<label>A <input disabled></label><label>B <input disabled></label>')),
+      'cantTell'
+    );
+    assert.equal(
+      await tier(card('<button>Accept</button><input type="submit" value="Reject">')),
+      'cantTell'
+    );
+    assert.equal(
+      await tier(
+        page(
+          '.card{overflow:hidden;width:280px} .ed{width:560px}',
+          '<div class="card"><div class="ed" contenteditable="plaintext-only">Edit</div></div>'
+        )
+      ),
+      'fail'
+    );
+  });
+
   await t.test('excluded areas are left out', async () => {
     const check = await scan(page('.wide{width:600px}', '<div class="wide" id="x">Wide</div>'), {
       engineOptions: { excludeSelectors: ['#x'] }
