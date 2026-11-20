@@ -111,6 +111,9 @@ test('the procedures entry reaches no module outside core', () => {
       path.join(ROOT, 'src', 'texts-by-id.js'),
       // The law a profile serves, to list what it asks for.
       path.join(ROOT, 'src', 'laws.js'),
+      // Whether a requirement applies under a profile's law, on its own so the
+      // report bundle reads it without the rest of laws.js.
+      path.join(ROOT, 'src', 'law-applies.js'),
       // Reading the dictionaries, and writing a page from the procedures.
       path.join(ROOT, 'src', 'procedures-text.js'),
       path.join(ROOT, 'src', 'procedures-render.js'),
