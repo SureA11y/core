@@ -12,7 +12,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { JSDOM } = require('jsdom');
 
-const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
+const { runa11yCoreOnHtml, runa11yCoreOnDom } = require('./helpers/runDomRulesOnHtml.js');
 const { getChecksCatalog } = require('../src/index.js');
 
 // Something for as many rules as possible to find: zones, forms, images,
@@ -159,4 +159,149 @@ test('without exclusions, or with none that matches, nothing changes', () => {
     assert.strictEqual(r.excludedOccurrences, undefined);
     assert.strictEqual(r.error, undefined);
   }
+});
+
+// A rule that reports what it likes, as a pack's or a custom one can: each
+// entry names a paragraph by id, how to report it (its node, a text node in
+// it, or its selector alone) and its tier.
+const reporting = (outcome, entries, type = 'automatic') => ({
+  id: 'reporting-paragraphs',
+  meta: {
+    title: 'Reporting',
+    description: 'Reports what it is told.',
+    tags: ['best-practice'],
+    wcagSc: [],
+    type
+  },
+  runInPage:
+    'function (ctx) { var d = ctx.document; return { ruleId: ctx.rule.ruleId, outcome: ' +
+    JSON.stringify(outcome) +
+    ', occurrences: ' +
+    JSON.stringify(entries) +
+    ".map(function (e) { var el = d.getElementById(e.id); if (e.by === 'selector') return { selector: '#' + e.id, summary: 'x', occurrenceOutcome: e.tier }; " +
+    "var node = e.by === 'text' ? el.firstChild : el; var o = ctx.helpers.reportOccurrence(node, { summary: 'x' }); if (e.tier) o.occurrenceOutcome = e.tier; return o; }) }; }"
+});
+const runReporting = (body, outcome, entries, type) =>
+  runa11yCoreOnHtml(carelessPage(body), {
+    runOnly: ['reporting-paragraphs'],
+    engineOptions: { customRules: [reporting(outcome, entries, type)], excludeSelectors: ['#bar'] }
+  }).checksResults.find((c) => c.ruleId === 'reporting-paragraphs');
+const BAR =
+  '<div id="bar"><p id="pb">In the bar</p></div><main><p id="pq">Asked</p><p id="pm">Content</p></main>';
+
+test('a result keeps the outcome its remaining occurrences say', () => {
+  // A fail whose failures were all excluded is no longer a fail: it asks
+  // while a question is left, and passes when only passes are.
+  const cases = [
+    [
+      'fail',
+      [
+        ['pb', 'fail'],
+        ['pq', 'cantTell'],
+        ['pm', 'pass']
+      ],
+      'cantTell',
+      'fail'
+    ],
+    [
+      'fail',
+      [
+        ['pb', 'fail'],
+        ['pm', 'pass']
+      ],
+      'pass',
+      'fail'
+    ],
+    [
+      'cantTell',
+      [
+        ['pb', 'cantTell'],
+        ['pm', 'pass']
+      ],
+      'pass',
+      'cantTell'
+    ],
+    // An occurrence with no tier takes the rule's outcome: still a fail.
+    [
+      'fail',
+      [
+        ['pb', 'fail'],
+        ['pm', undefined]
+      ],
+      'fail',
+      undefined
+    ],
+    [
+      'fail',
+      [
+        ['pb', 'fail'],
+        ['pm', 'fail']
+      ],
+      'fail',
+      undefined
+    ]
+  ];
+  for (const [outcome, entries, expected, coercedFrom] of cases) {
+    const r = runReporting(
+      BAR,
+      outcome,
+      entries.map(([id, tier]) => ({ id, tier }))
+    );
+    const label = JSON.stringify([outcome, entries]);
+    assert.strictEqual(r.outcome, expected, label);
+    assert.strictEqual(r.excludedOccurrences.dropped, 1, label);
+    assert.strictEqual(r.excludedOccurrences.coercedFrom, coercedFrom, label);
+    assert.ok(
+      !r.occurrences.some((o) => o.occurrenceOutcome === 'fail') || expected === 'fail',
+      label
+    );
+  }
+});
+
+test('a pass whose occurrences were all excluded is notApplicable', () => {
+  const r = runReporting(BAR, 'pass', [{ id: 'pb', tier: 'pass' }]);
+  assert.strictEqual(r.outcome, 'notApplicable');
+  assert.deepStrictEqual(r.excludedOccurrences, { dropped: 1, coercedFrom: 'pass' });
+});
+
+test('an occurrence named by a text node or by its selector alone is held to the exclusion', () => {
+  for (const by of ['text', 'selector']) {
+    const r = runReporting(BAR, 'fail', [
+      { id: 'pb', by, tier: 'fail' },
+      { id: 'pm', by, tier: 'fail' }
+    ]);
+    assert.strictEqual(r.outcome, 'fail', by);
+    assert.strictEqual(r.occurrences.length, 1, by);
+    assert.deepStrictEqual(r.excludedOccurrences, { dropped: 1 }, by);
+  }
+});
+
+test('an element in the document of a frame inside an excluded area is held to the exclusion', () => {
+  const dom = new JSDOM(
+    carelessPage('<div id="bar"><iframe id="f"></iframe></div><main><p>Content</p></main>'),
+    {
+      runScripts: 'outside-only'
+    }
+  );
+  const frameDoc = dom.window.document.getElementById('f').contentDocument;
+  frameDoc.body.innerHTML = '<p id="inner">In the frame</p>';
+  const rule = {
+    id: 'frame-reporter',
+    meta: {
+      title: 'Frame',
+      description: 'Reports into a frame.',
+      tags: ['best-practice'],
+      wcagSc: []
+    },
+    runInPage:
+      "function (ctx) { var p = ctx.document.getElementById('f').contentDocument.getElementById('inner'); " +
+      "return { ruleId: ctx.rule.ruleId, outcome: 'fail', occurrences: [ctx.helpers.reportOccurrence(p, { summary: 'x', occurrenceOutcome: 'fail' })] }; }"
+  };
+  const result = runa11yCoreOnDom(dom, {
+    runOnly: ['frame-reporter'],
+    engineOptions: { customRules: [rule], excludeSelectors: ['#bar'] }
+  });
+  const r = result.checksResults.find((c) => c.ruleId === 'frame-reporter');
+  assert.strictEqual(r.outcome, 'notApplicable');
+  assert.deepStrictEqual(r.excludedOccurrences, { dropped: 1, coercedFrom: 'fail' });
 });
