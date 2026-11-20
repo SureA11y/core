@@ -17867,7 +17867,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // probe last in <body>: a parent whose first or last element child has
   // changed since is indexed again.
   function __siblingInfo(node) {
-    const parent = node && dom.parentElement(node);
+    // The element's parent, or the shadow root it is a child of: a root's
+    // own children are siblings as an element's are, and :nth-of-type
+    // counts them so (RB5-9).
+    let parent = node && dom.parentElement(node);
+    if (!parent && node) {
+      const up = dom.parentNode(node);
+      if (up && dom.nodeType(up) === 11) parent = up;
+    }
     if (!parent) return null;
     const tagOf = (el) => (dom.tagName(el) || '').toLowerCase();
     // CSS's :nth-of-type counts siblings of the same local name and
@@ -22029,7 +22036,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       function nthOfType(node) {
         const t = typeSelectorOf(node) || '*';
         steps.push([node, t]);
-        const p = dom.parentElement(node);
+        // A child of a shadow root has siblings as one of an element does.
+        const up = dom.parentNode(node);
+        const p = dom.parentElement(node) || (up && dom.nodeType(up) === 11 ? up : null);
         if (!p) return t;
         // A tag shared with another sibling needs :nth-of-type to be
         // unambiguous; a tag of its own does not.
@@ -143852,7 +143861,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // probe last in <body>: a parent whose first or last element child has
   // changed since is indexed again.
   function __siblingInfo(node) {
-    const parent = node && dom.parentElement(node);
+    // The element's parent, or the shadow root it is a child of: a root's
+    // own children are siblings as an element's are, and :nth-of-type
+    // counts them so (RB5-9).
+    let parent = node && dom.parentElement(node);
+    if (!parent && node) {
+      const up = dom.parentNode(node);
+      if (up && dom.nodeType(up) === 11) parent = up;
+    }
     if (!parent) return null;
     const tagOf = (el) => (dom.tagName(el) || '').toLowerCase();
     // CSS's :nth-of-type counts siblings of the same local name and
@@ -148014,7 +148030,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       function nthOfType(node) {
         const t = typeSelectorOf(node) || '*';
         steps.push([node, t]);
-        const p = dom.parentElement(node);
+        // A child of a shadow root has siblings as one of an element does.
+        const up = dom.parentNode(node);
+        const p = dom.parentElement(node) || (up && dom.nodeType(up) === 11 ? up : null);
         if (!p) return t;
         // A tag shared with another sibling needs :nth-of-type to be
         // unambiguous; a tag of its own does not.
