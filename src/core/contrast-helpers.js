@@ -719,8 +719,20 @@ function createContrastHelpers(opts, shared) {
             known = clippedDistanceCache.get(cur);
             break;
           }
-          const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
-          if (info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1) {
+          // The 'clipped' hint of getVisibilityHintsInfo, read alone: the
+          // other hints and their copies were built for every ancestor of
+          // every text, and thrown away.
+          let clipped;
+          if (
+            typeof helpers.isElementClipHidden === 'function' &&
+            typeof helpers.computedStyle === 'function'
+          ) {
+            clipped = helpers.isElementClipHidden(cur, helpers.computedStyle(cur) || {});
+          } else {
+            const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
+            clipped = !!(info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1);
+          }
+          if (clipped) {
             known = 0;
             clippedDistanceCache.set(cur, 0);
             break;
