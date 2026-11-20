@@ -36,13 +36,14 @@ test('list-children-valid: every finding names its list in element', () => {
 });
 
 test("listitem-parent-valid: every finding names the <li>'s parent in parentElement", () => {
+  // A list whose role replaces list is asked about (decided 2026-11-20).
   const cases = [
-    ['<div><li>a</li></div>', 'LISTITEM_INVALID_PARENT', 'div'],
-    ['<ul role="tablist"><li>a</li></ul>', 'LIST_ROLE_OVERRIDDEN', 'ul'],
-    ['<ol role="group"><li>a</li></ol>', 'LIST_ROLE_OVERRIDDEN', 'ol']
+    ['<div><li>a</li></div>', 'LISTITEM_INVALID_PARENT', 'div', 'fail'],
+    ['<ul role="tablist"><li>a</li></ul>', 'LIST_ROLE_OVERRIDDEN', 'ul', 'cantTell'],
+    ['<ol role="group"><li>a</li></ol>', 'LIST_ROLE_OVERRIDDEN', 'ol', 'cantTell']
   ];
-  for (const [body, code, parent] of cases) {
-    const [d] = details('listitem-parent-valid', body);
+  for (const [body, code, parent, outcome] of cases) {
+    const [d] = details('listitem-parent-valid', body, outcome);
     assert.deepEqual([d.reasonCode, d.parentElement], [code, parent], body);
   }
 });
