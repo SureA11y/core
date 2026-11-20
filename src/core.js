@@ -103165,12 +103165,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const pageStill =
           (Number(dom.get(scroller, 'scrollHeight')) || 0) <=
           (Number(dom.get(scroller, 'clientHeight')) || 0) + TOLERANCE;
+        // It fills the viewport's width and most of its height: an app bar,
+        // a tab bar or a bottom navigation may take the rest.
         value =
           pageStill &&
           b.left <= TOLERANCE &&
           b.width >= width - TOLERANCE * 16 &&
           viewportHeight > 0 &&
-          b.height >= viewportHeight - TOLERANCE * 16;
+          b.top >= -TOLERANCE &&
+          b.bottom <= viewportHeight + TOLERANCE &&
+          b.height >= viewportHeight / 2;
       }
     } catch {
       value = false;
@@ -103181,25 +103185,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Boxes that keep their content from widening the page: they scroll or
   // clip sideways. Their own box is measured; what is inside them is not.
-  const contained = new Map();
+  // The nearest such box around an element, or null: one it escapes
+  // (fixed, or absolute from outside it) doesn't keep it in, and it widens
+  // the page like anything else.
+  const containerOf = new Map();
   function insideSidewaysBox(el) {
     let node = upOf(el);
     const path = [];
-    let found = false;
+    let box = null;
     while (!top(node)) {
-      if (contained.has(node)) {
-        found = contained.get(node);
+      if (containerOf.has(node)) {
+        box = containerOf.get(node);
         break;
       }
       path.push(node);
       if (boxSetsOverflow(node)) {
-        found = true;
+        box = node;
         break;
       }
       node = upOf(node);
     }
-    for (const n of path) contained.set(n, found);
-    return found;
+    for (const n of path) containerOf.set(n, box);
+    return !!box && !escapes(el, box);
   }
 
   // Boxes that hide what overflows them (not the root: the viewport's own
@@ -103420,6 +103427,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const s = style(el);
     const keepsLines = !!s && (s.whiteSpace === 'pre' || s.whiteSpace === 'nowrap');
     if (keepsLines && (tag === 'code' || dom.querySelector(el, 'code'))) return 'WIDE_PREFORMATTED';
+    // A code editor: editable text kept on its lines (white-space: pre), as
+    // CodeMirror and Monaco lay theirs out. Its lines are code, as the same
+    // text read-only in a <pre> is.
+    // The element may be the editor, or one of its lines.
+    if (
+      s &&
+      s.whiteSpace === 'pre' &&
+      dom.closest(el, '[contenteditable]:not([contenteditable="false" i]), [role~="textbox" i]')
+    ) {
+      return 'WIDE_PREFORMATTED';
+    }
     return 'HORIZONTAL_SCROLL';
   }
 
@@ -103532,11 +103550,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // nothing to reach past the edge. A descendant set back to visible is
   // drawn, and keeps it in.
   const HIDDEN_VISIBILITY = new Set(['hidden', 'collapse']);
+  // Drawn fully transparent: opacity 0 on it or on a box around it, which a
+  // descendant can't set back.
+  const transparentMemo = new Map();
+  function transparent(el) {
+    let node = el;
+    const path = [];
+    let value = false;
+    while (node && node !== html) {
+      if (transparentMemo.has(node)) {
+        value = transparentMemo.get(node);
+        break;
+      }
+      path.push(node);
+      const ns = style(node);
+      if (ns && Number.parseFloat(ns.opacity) === 0) {
+        value = true;
+        break;
+      }
+      node = upOf(node);
+    }
+    for (const n of path) transparentMemo.set(n, value);
+    return value;
+  }
   const undrawnMemo = new Map();
   function undrawn(el) {
     if (undrawnMemo.has(el)) return undrawnMemo.get(el);
-    let value = false;
-    const s = style(el);
+    let value = transparent(el);
+    const s = value ? null : style(el);
     if (s && HIDDEN_VISIBILITY.has(String(s.visibility || ''))) {
       value = true;
       try {
@@ -103691,12 +103732,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!rootClips || hit.inside <= TOLERANCE) return;
     }
     // Last, as they walk: what a clip hides, or nothing of which is drawn,
-    // shows nowhere.
-    if (undrawn(el)) {
+    // shows nowhere. It may be what makes the page scroll, onto nothing.
+    if (undrawn(el) || clipHidden(el)) {
       undrawnPast = true;
       return;
     }
-    if (clipHidden(el)) return;
     if (!inScope(el) || isExcluded(el)) {
       leftOut = true;
       return;
@@ -104065,21 +104105,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A row of items each of which fits the box that scrolls it: the row
   // scrolls as a carousel does (G225), each item reflowing within the width.
+  // The row is the element itself, or the row it is an item of: the element
+  // the box cuts is usually one of the items.
   function isCarousel(el, box) {
     try {
       const fit = Number(dom.get(box, 'clientWidth')) || 0;
-      const items = [...(dom.get(el, 'children') || [])].filter((c) => {
-        const rects = dom.getClientRects(c);
-        return rects && rects.length;
-      });
-      return (
-        fit > 0 &&
-        items.length >= 2 &&
-        items.every((c) => dom.getBoundingClientRect(c).width <= fit + TOLERANCE)
-      );
+      if (!(fit > 0)) return false;
+      const parent = upOf(el);
+      const rows = [el];
+      if (parent && (parent === box || dom.contains(box, parent))) rows.push(parent);
+      return rows.some((row) => rowOfFittingItems(row, fit));
     } catch {
       return false;
     }
+  }
+  // Two items or more side by side, each fitting the box.
+  function rowOfFittingItems(row, fit) {
+    const items = [...(dom.get(row, 'children') || [])]
+      .filter((c) => {
+        const rects = dom.getClientRects(c);
+        return rects && rects.length;
+      })
+      .map((c) => dom.getBoundingClientRect(c));
+    if (items.length < 2 || !items.every((r) => r.width <= fit + TOLERANCE)) return false;
+    // Side by side: two of them on one line, one after the other.
+    return items.some((a, i) =>
+      items.some(
+        (b, j) => j !== i && Math.abs(a.top - b.top) <= TOLERANCE && b.left >= a.right - TOLERANCE
+      )
+    );
   }
 
   // What sticks out past the edge of the page, or of a box that is the page.
@@ -104131,7 +104185,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         'SCROLLS_IN_CONTAINER',
         el,
         { over: clip.over, rect: clip.rect },
-        cutLean(el, pastClip, isCarousel(el, clip.box) ? LEANS.carousel : LEANS.scrollBox)
+        // A carousel first: each item fits, so a field in an item shows whole
+        // once its item is scrolled into view.
+        isCarousel(el, clip.box) ? LEANS.carousel : cutLean(el, pastClip, LEANS.scrollBox)
       );
     } else {
       report(
