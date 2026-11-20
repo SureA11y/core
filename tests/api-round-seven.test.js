@@ -161,3 +161,44 @@ test('output is sorted the same under any locale (IF-4)', () => {
     });
   assert.equal(render('cs_CZ.UTF-8'), render('en_US.UTF-8'));
 });
+
+test('a scan leaves nothing on the window, so scanned elements can be freed (SP-2)', () => {
+  const { createDom, runa11yCoreOnDom } = require('./helpers/runDomRulesOnHtml.js');
+  const dom = createDom(HTML);
+  const before = Object.getOwnPropertyNames(dom.window);
+  runa11yCoreOnDom(dom, {});
+  assert.deepEqual(
+    Object.getOwnPropertyNames(dom.window).filter((x) => !before.includes(x)),
+    []
+  );
+  assert.equal(dom.window.__a11ycoreSharedCache, undefined);
+});
+
+test('lists in messages stay short however many items there are (SP-3)', () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
+  // A field described by 300 elements.
+  let spans = '';
+  let ids = '';
+  for (let i = 0; i < 300; i++) {
+    spans += `<span id="s${i}">w${i}</span>`;
+    ids += `s${i} `;
+  }
+  const field = runa11yCoreOnHtml(
+    page(`<main><h1>h</h1>${spans}<input aria-describedby="${ids}"></main>`),
+    { runOnly: ['form-control-programmatic-label-present'] }
+  ).checksResults[0].occurrences[0];
+  assert.ok(field.hint.length < 400, field.hint);
+  assert.match(field.hint, /, …, which gives a description/);
+  // 200 unnamed navigation landmarks: each finding names ten of the others.
+  let navs = '';
+  for (let i = 0; i < 200; i++) navs += `<nav><a href="/${i}">Item ${i}</a></nav>`;
+  const lm = runa11yCoreOnHtml(page(`<main><h1>h</h1></main>${navs}`), {
+    runOnly: ['landmark-unique']
+  }).checksResults[0];
+  assert.equal(lm.occurrences.length, 200);
+  for (const o of lm.occurrences) {
+    assert.equal(o.data.details.others.length, 10);
+    assert.equal(o.data.details.groupSize, 200);
+  }
+});

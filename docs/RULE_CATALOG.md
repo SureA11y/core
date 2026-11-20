@@ -2506,7 +2506,7 @@ Checks that when two or more landmarks share the same role, each has a distinct 
 - `role`: the landmark role the colliding landmarks share, such as `navigation`.
 - `name`: the name they share, in lowercase with spacing collapsed. Empty when they are all unnamed.
 - `groupSize`: how many landmarks of that role share that name.
-- `others`: the other landmarks in the group, as the message names them (`<nav id="pages">`, with their text when they are unnamed).
+- `others`: the other landmarks in the group, as the message names them (`<nav id="pages">`, with their text when they are unnamed); the first ten, `groupSize` says how many there are.
 
 **Reason codes.**
 
