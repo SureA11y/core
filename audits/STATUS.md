@@ -16,6 +16,7 @@ Nothing is in flight: no pull request from the audit work is open. Seven rounds 
 - **The leftovers of rounds 4 and 5**, and the four questions that waited on a decision: fixed and decided in #412, merged 2026-11-20.
 - **The safe features of `FINDINGS.md` §2** (R5:AP-7's `checkPack` report, invariants over every rule, pixel checks of native controls): done in #413, merged 2026-11-20, with a shadow-root selector fix the invariants found.
 - **target-size-minimum's speed** on long pages: done in #414, merged 2026-11-20.
+- **The contrast text scan's speed**, the safe part: done in #415, merged 2026-11-20.
 
 What is left: no finding to fix and no question to decide (`FINDINGS.md` §1). The features of `FINDINGS.md` §2 remain, the sixth round's three among them (R6:CE-4 to CE-6).
 
