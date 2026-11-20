@@ -24,6 +24,7 @@
 
 const core = require('./core.js');
 const { version: CORE_VERSION } = require('../package.json');
+const path = require('node:path');
 const { experimentalUses } = require('./experimental.js');
 const { checkStandardData, standardFromData, standardDataOf } = require('./standard-data.js');
 const { deriveStandard } = require('./derive-standard.js');
@@ -1419,11 +1420,14 @@ function readPackProblems(pack, withCoreVersion, withReported) {
     }
     // A standard mapped rule by rule checks its own tables against the
     // rules (validate, from ruleMappedStandard), as preparing the catalog
-    // does for a scan, which skips a pack that fails it.
+    // does for a scan, which skips a pack that fails it. checkPack also
+    // gives it the rules' reason codes, so it reports a reasonCodes entry no
+    // finding can match; that only reads wrong, so it never keeps the pack
+    // from loading (definePack, a scan).
     if (typeof st.validate === 'function') {
       let found;
       try {
-        found = st.validate(standardRules(pack));
+        found = st.validate(standardRules(pack, withReported));
       } catch (e) {
         found = [`validate() throws: ${e && e.message ? e.message : e}`];
       }
@@ -1720,11 +1724,16 @@ const standardOf = (pack) =>
 let coreEntries = null;
 // The rules a standard's tables are checked against: core's and the
 // pack's own, as { ruleId, wcagSc }.
-function standardRules(pack) {
+function standardRules(pack, withCodes = false) {
   const out = [];
+  const coreCodes = withCodes ? coreReasonCodes() : new Map();
   for (const e of coreRuleEntries()) {
     if (e.mod && typeof e.mod.id === 'string') {
-      out.push({ ruleId: e.mod.id, wcagSc: (e.mod.meta && e.mod.meta.wcagSc) || [] });
+      out.push({
+        ruleId: e.mod.id,
+        wcagSc: (e.mod.meta && e.mod.meta.wcagSc) || [],
+        ...(coreCodes.has(e.mod.id) ? { reasonCodes: coreCodes.get(e.mod.id) } : {})
+      });
     }
   }
   // The pack's own rules, and those of the packs it uses (pack.uses), which
@@ -1732,11 +1741,40 @@ function standardRules(pack) {
   for (const p of [pack, ...usedPacks(pack)]) {
     for (const r of Array.isArray(p.rules) ? p.rules : []) {
       if (isObject(r) && typeof r.id === 'string') {
-        out.push({ ruleId: r.id, wcagSc: (isObject(r.meta) && r.meta.wcagSc) || [] });
+        const declared = isObject(r.meta) && r.meta.reasonCodes;
+        out.push({
+          ruleId: r.id,
+          wcagSc: (isObject(r.meta) && r.meta.wcagSc) || [],
+          ...(withCodes && Array.isArray(declared)
+            ? { reasonCodes: declared.filter((c) => typeof c === 'string') }
+            : {})
+        });
       }
     }
   }
   return out;
+}
+
+// The reason codes each core rule gives, from its source header's
+// @reason-codes (src/rule-docs.js reads them for the rule docs; a test keeps
+// them complete). A rule whose header lists none is left out.
+let coreCodesByRule = null;
+function coreReasonCodes() {
+  if (!coreCodesByRule) {
+    coreCodesByRule = new Map();
+    try {
+      const { readRuleProse } = require('./rule-docs.js');
+      for (const dir of ['automatic', 'manual']) {
+        for (const [id, prose] of readRuleProse(path.join(__dirname, 'checks', dir))) {
+          const codes = (prose.reasonCodes || []).map((c) => c.code).filter(Boolean);
+          if (codes.length) coreCodesByRule.set(id, codes);
+        }
+      }
+    } catch {
+      coreCodesByRule = new Map();
+    }
+  }
+  return coreCodesByRule;
 }
 
 function coreRuleEntries() {

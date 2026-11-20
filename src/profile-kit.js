@@ -247,6 +247,7 @@ function ruleMappedStandard({
     // build fails on any.
     function validate(rules) {
       const known = new Set(rules.map((r) => r.ruleId));
+      const ruleById = new Map(rules.map((r) => [r.ruleId, r]));
       const problems = [];
       const listed = versions.map((v) => v.version);
       if (wcagCorrespondence === true) {
@@ -318,6 +319,8 @@ function ruleMappedStandard({
                 problems.push(`${at}: must be { requirements, outcome }`);
                 continue;
               }
+              const unknownCode = unknownCodeProblem(ruleById.get(ruleId), code, at);
+              if (unknownCode) problems.push(unknownCode);
               if (c.requirements !== undefined) {
                 if (!Array.isArray(c.requirements))
                   problems.push(`${at}: requirements must be a list`);
@@ -412,6 +415,17 @@ function ruleMappedStandard({
 const listOf = (v) => (Array.isArray(v) ? v : []);
 const objectOf = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : null);
 const ACT_OF_OUTCOME = { cantTell: 'cantTell', fail: 'fail' };
+// A row's reasonCodes entry for a code its rule never gives can never
+// match, so the findings it means to send elsewhere stay where they were.
+// Checked where the rule's codes are known (`reasonCodes` on the entry
+// validate() is given: a core rule's @reason-codes, or a pack rule's
+// meta.reasonCodes); a rule whose codes aren't known is not.
+function unknownCodeProblem(rule, code, at) {
+  const codes = rule && Array.isArray(rule.reasonCodes) ? rule.reasonCodes : null;
+  if (!codes || !codes.length || codes.includes(code)) return null;
+  return `${at}: ${rule.ruleId} gives no reason code ${code} (it gives ${codes.join(', ')}), so the entry never matches`;
+}
+
 const ROW_KEYS = [
   'requirements',
   'asks',
@@ -749,6 +763,8 @@ function twoLevelStandard({
                 problems.push(`${at}: reasonCodes.${code} must be { requirements, outcome }`);
                 continue;
               }
+              const unknownCode = unknownCodeProblem(rule, code, `${at}: reasonCodes.${code}`);
+              if (unknownCode) problems.push(unknownCode);
               unitList(r.requirements, `reasonCodes.${code}.requirements`);
               outcome(r.outcome, `reasonCodes.${code}`);
             }
