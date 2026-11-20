@@ -2268,6 +2268,24 @@
       "fr-CA": "63cf701038b2a97b",
       "pt": "62c7e4b0bc2a85cc"
     },
+    "p-as-heading BOLD_LEAD_LINE": {
+      "en": "bdfc82113535d417",
+      "de": "82a0a0ce4d43e8d2",
+      "es": "f278a3775330a870",
+      "fr": "ca8f4ab8da4db3be",
+      "ja": "c2af3cda5ab4ed0b",
+      "fr-CA": "ca8f4ab8da4db3be",
+      "pt": "bdfc82113535d417"
+    },
+    "p-as-heading BOLD_SHORT_DIV": {
+      "en": "bb202b90b3a31b26",
+      "de": "f077a948507766f1",
+      "es": "a9f30b0542042a38",
+      "fr": "1e152da565583180",
+      "ja": "4742c049d06bddd2",
+      "fr-CA": "1e152da565583180",
+      "pt": "bb202b90b3a31b26"
+    },
     "p-as-heading HEADING_LIKE_LINK": {
       "en": "04f612cfa781729c",
       "de": "0717652ea1013ece",
@@ -2819,7 +2837,7 @@
     "moving-content-pausable": "d2fc5db50c7027ae",
     "no-autoplay-audio": "81943522b1b8739a",
     "object-text-alternative-quality": "ede91b5577079c1d",
-    "p-as-heading": "d8a8897687c8dd18",
+    "p-as-heading": "fa6e740ae337600a",
     "page-has-heading-one": "5318650367e11f6c",
     "page-title-patterns": "0256ddeb116247aa",
     "page-zones-landmark": "903bfbf62b44c7b4",
@@ -2837,10 +2855,10 @@
     "widget-keyboard-focusable": "c8cefbbd4fadee80"
   },
   "dictionaries": {
-    "de": "26a54107221b4fd368a37f4ab8d140d3eaffd7285494c1ae3014cbb195c85017",
-    "en": "f84f075fcc4f660662f0acded0c10d30a053a721173be83070206845e83e6d63",
-    "es": "36e895674b97af091239b598f50366ae5f711ccc342258787f61758b03a9a164",
-    "fr": "9a10d28df4b447b35d1f16ebf4d21e5edb27f0596ff1282e976bf397f2a379d1",
-    "ja": "d81811bacf88cd582b8548d7a539c8e0be95edc30c911b6251186dfe0490eb2a"
+    "de": "78e88545fa9e25c4668901a59458920b034062bdbef2900fdbb593bd58eb0f9b",
+    "en": "5ef4baf7e2f3efe4cd24900e82995b3e8b98396210b3585c74985b5ac0e819f3",
+    "es": "3513f9fc66afc0b5b9b5a4b405d98723795b21ec9c7872b97f0c3a76f253c640",
+    "fr": "ae5d2168825b4068ebce69a063fd8152a1b2272e534e5e255c39d3a6ae0aa6df",
+    "ja": "9bc64a479bd40e61652b141314f2a31909bbbf564005b8fc2e3c3da8e0786c85"
   }
 }
