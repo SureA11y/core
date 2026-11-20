@@ -1348,13 +1348,26 @@ function packProblems(pack, withCoreVersion, withReported) {
       } catch (e) {
         problems.push(`standard.composites() throws: ${e && e.message ? e.message : e}`);
       }
+      // Each rollup's id once: the engine loads no pack whose rollups share
+      // one, so a standard whose version and requirement ids join into the
+      // same id (version 1 with a-b, version 1-a with b) is refused here.
+      const seenIds = new Set();
       for (const r of Array.isArray(rollups) ? rollups : []) {
         const id = isObject(r) ? r.id : undefined;
-        if (typeof id !== 'string' || !id.startsWith(ns + '-') || !ROLLUP_ID.test(id)) {
+        if (typeof id !== 'string' || !id.startsWith(ns + '-')) {
           problems.push(
             `standard.composites(): rollup id ${JSON.stringify(id)} must start with "${ns}-"`
           );
+        } else if (!ROLLUP_ID.test(id)) {
+          problems.push(
+            `standard.composites(): rollup id ${JSON.stringify(id)} must be letters and digits joined by "-" and "."`
+          );
+        } else if (seenIds.has(id)) {
+          problems.push(
+            `standard.composites(): two rollups have the id ${JSON.stringify(id)}; give a version or requirement an id that doesn't join into another's`
+          );
         }
+        if (typeof id === 'string') seenIds.add(id);
         if (isObject(r) && isObject(r.meta) && r.meta.contributions !== undefined) {
           problems.push(...contributionProblems(r, `standard.composites(): ${id}`));
         }

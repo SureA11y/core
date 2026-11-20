@@ -221,3 +221,74 @@ test('a scan with a two-level standard names the test each finding fails', () =>
   const names = result.rulesResults.find((r) => r.ruleId === 'two-1-4.1');
   assert.equal(names.outcome, 'fail');
 });
+
+// asks, outsideCorrespondence and wcagCorrespondence mean something only with
+// tests: on a standard without them they were taken and did nothing, so a
+// row that moved its requirements to asks lost its findings.
+test('what only a standard with tests reads is refused on one without', () => {
+  const rules = require('../src/index.js').getChecksCatalog();
+  const check = (row, options) =>
+    ruleMappedStandard({
+      standard: 'Plain',
+      tag: 'plain',
+      versions,
+      requirements: { 1: { A: { title: 'Images', wcagSc: ['1.1.1'] } } },
+      ruleMap: { 1: { 'img-alt-present': row } },
+      ...options
+    }).validate(rules);
+  assert.deepEqual(check({ requirements: ['A'] }), []);
+  assert.deepEqual(check({ requirements: [], asks: ['A'] }), [
+    '1 img-alt-present: asks is read only by a standard with tests under its requirements'
+  ]);
+  assert.deepEqual(check({ requirements: ['A'], outsideCorrespondence: { A: 'x' } }), [
+    '1 img-alt-present: outsideCorrespondence is read only by a standard with tests under its requirements'
+  ]);
+  assert.deepEqual(check({ requirements: ['A'] }, { wcagCorrespondence: true }), [
+    'wcagCorrespondence is read only by a standard with tests under its requirements'
+  ]);
+});
+
+// The engine loads no pack whose rollups share an id, and skipped it at scan
+// time: definePack names the clash instead.
+test('two rollups with one id are refused when the pack is defined', () => {
+  const std = ruleMappedStandard({
+    standard: 'Dup',
+    tag: 'dup',
+    versions: [
+      { version: '1', wcagVersion: '2.2' },
+      { version: '1-a', wcagVersion: '2.2' }
+    ],
+    requirements: {
+      1: { 'a-b': { title: 'One', wcagSc: ['1.1.1'] } },
+      '1-a': { b: { title: 'Two', wcagSc: ['2.4.2'] } }
+    },
+    ruleMap: {
+      1: { 'img-alt-present': { requirements: ['a-b'] } },
+      '1-a': { 'page-title-present': { requirements: ['b'] } }
+    }
+  });
+  assert.throws(
+    () =>
+      definePack({
+        name: 'dup-pack',
+        version: '1.0.0',
+        namespace: 'dup',
+        core: '*',
+        standard: {
+          key: 'dup',
+          standard: 'Dup',
+          versions: ['1', '1-a'],
+          profiles: {
+            'dup-1': { version: '1', tags: ['dup'], mappedRules: true },
+            'dup-1-a': { version: '1-a', tags: ['dup'], mappedRules: true }
+          },
+          ruleTag: 'dup',
+          ruleMapped: true,
+          mappingsFor: std.mappingsFor,
+          composites: std.composites,
+          validate: std.validate
+        }
+      }),
+    /two rollups have the id "dup-1-a-b"/
+  );
+});

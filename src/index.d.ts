@@ -580,6 +580,15 @@ export interface NormativeMapping {
   url?: string;
   /** A WCAG 2.1 or 2.2 criterion's Understanding document. */
   understandingUrl?: string;
+  /**
+   * In a standard with tests under its requirements, on an entry that names
+   * a test (its id in `requirement`): the requirement it is counted under.
+   * A requirement's rollup names its own; a rule's own entry names the
+   * test's first, where the test belongs to several.
+   */
+  criterion?: string;
+  /** What the requirement or test is based on, in a derived standard. */
+  basedOn?: Array<{ standard: string; version?: string; id?: string }>;
   [field: string]: unknown;
 }
 
