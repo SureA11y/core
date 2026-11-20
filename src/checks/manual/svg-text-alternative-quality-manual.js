@@ -82,32 +82,6 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    IMAGE_ONLY_CONTROL_CONTENT: {
-      steps: [
-        'Find the link or button the report names; its only content is this svg.',
-        'Activate the control and note what it does or where it goes.',
-        "Read the control's name in the Accessibility pane of the developer tools (it comes from the svg's text alternative), or Tab to it with a screen reader.",
-        'Compare: does the name say what the control does ("Search", "Close menu"), not just what the icon looks like ("magnifying glass")?'
-      ],
-      passWhen: "The control's name says what it does or where it goes.",
-      failWhen:
-        "The name describes the picture, is vague, or is wrong for the action, which fails WCAG 1.1.1 (and leaves the control's purpose unclear)."
-    },
-    TEXT_ALTERNATIVE_REVIEW: {
-      steps: [
-        'Look at the graphic the report names and note what it shows (an icon, a logo, a chart and its data).',
-        'Read its text alternative from the report (title, desc, aria-label or aria-labelledby text), or in the Accessibility pane of the developer tools.',
-        'Compare: does the text say what the graphic shows or means? If the graphic is decorative, it should instead be hidden (aria-hidden="true").'
-      ],
-      passWhen:
-        'The text alternative conveys what the graphic shows, or the decorative graphic is hidden from assistive technology.',
-      failWhen:
-        'The text alternative is wrong, vague (such as "image" or "icon") or leaves out what the graphic conveys, which fails WCAG 1.1.1.'
-    }
   }
 };
 
@@ -124,7 +98,7 @@ function runInPage(ctx) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -198,7 +172,7 @@ function runInPage(ctx) {
 
   const els = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('svg') : queryAll('svg')) || []);
+      return [...((queryAllSmart ? queryAllSmart('svg') : queryAll('svg')) || [])];
     } catch {
       return queryAll('svg');
     }
@@ -246,7 +220,7 @@ function runInPage(ctx) {
       if (other || visits++ > 2000) return;
       const kids = helpers.flatChildNodes
         ? helpers.flatChildNodes(n)
-        : Array.from(dom.childNodes(n) || []);
+        : [...(dom.childNodes(n) || [])];
       for (const k of kids) {
         if (other) return;
         const type = dom.nodeType(k);
@@ -380,14 +354,35 @@ function runInPage(ctx) {
     const controlContent = onlyContentOf(el);
     const lean = leanFor(el, ariaLabel || labelledByText || titleText, controlContent);
 
+    // The name under review, quoted: from aria-labelledby or a <title> deep
+    // in the graphic, it is not in the snippet. A <desc> alone gives none.
+    const nameAll = (ariaLabel || labelledByText || titleText).replace(/\s+/g, ' ');
+    const name = nameAll.length > 80 ? `${nameAll.slice(0, 79)}…` : nameAll;
+    const ids =
+      !ariaLabel && labelledByText
+        ? ariaLabelledBy
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((x) => `#${x}`)
+            .join(' ')
+        : '';
+
     const baseOccurrence = {
       ...(lean ? { lean } : {}),
-      summary: 'Check that the text alternative of this <svg> is accurate.',
+      summary: !name
+        ? 'Check that the text alternative of this <svg> is accurate.'
+        : ids
+          ? `Check that the text alternative of this <svg>, "${name}", taken from ${ids} by aria-labelledby, is accurate.`
+          : `Check that the text alternative of this <svg>, "${name}", is accurate.`,
       hint: 'The <title>, <desc> or ARIA name should say what the graphic means or does here.',
       i18n: {
-        summaryKey: 'svg_textAltQuality_summary_cantTell',
+        summaryKey: !name
+          ? 'svg_textAltQuality_summary_cantTell'
+          : ids
+            ? 'svg_textAltQuality_summary_cantTell_labelledby'
+            : 'svg_textAltQuality_summary_cantTell_name',
         hintKey: 'svg_textAltQuality_hint_cantTell',
-        params: { element: 'svg' }
+        params: { element: 'svg', ...(name ? { name } : {}), ...(ids ? { ids } : {}) }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

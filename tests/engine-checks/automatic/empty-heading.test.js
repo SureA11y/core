@@ -197,3 +197,41 @@ test(`${RULE_ID}: an empty focusable heading with role="none" is still a heading
     maxOccurrences: 1
   });
 });
+
+// A global ARIA attribute keeps the role too, but not one of the four
+// WAI-ARIA 1.2 deprecates as globals: Chromium leaves the heading
+// presentational with aria-invalid, and a heading with aria-describedby.
+test(`${RULE_ID}: role="none" with only a deprecated global is presentational, with a real global a heading`, () => {
+  for (const attr of [
+    'aria-invalid="true"',
+    'aria-disabled="true"',
+    'aria-haspopup="true"',
+    'aria-errormessage="e"'
+  ]) {
+    const html = `<!doctype html><html><body><p id="e">x</p><h2 role="none" ${attr}></h2></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+  const kept = `<!doctype html><html><body><p id="e">x</p><h2 role="none" aria-describedby="e"></h2></body></html>`;
+  assertRule(runa11yCoreOnHtml(kept, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});
+
+test(`${RULE_ID}: a fail says when the heading's text is hidden, or its only content is an image with alt=""`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <h2 id="hidden"><span style="display:none">News</span></h2>
+  <h2 id="img"><img src="x.png" alt=""></h2>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('hidden').i18n.hintKey, 'nameHiddenText_hint_displayNone');
+  assert.equal(occ('hidden').data.details.nameCause.text, 'News');
+  assert.equal(occ('img').i18n.hintKey, 'nameCause_hint_imageEmptyAlt');
+});

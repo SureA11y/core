@@ -79,8 +79,8 @@
  *   ruleTag in meta.tags so only a run that asks for the standard produces
  *   them (one per requirement, say). A rollup's meta.contributions,
  *   optional, judges some of its rules by their findings:
- *   { [ruleId]: { default, codes, findings } }, each act 'count', 'cantTell'
- *   or 'ignore', or { act, requirements } naming which of the rollup's
+ *   { [ruleId]: { default, codes, findings } }, each act 'count', 'cantTell',
+ *   'fail' or 'ignore', or { act, requirements } naming which of the rollup's
  *   requirements (its meta.standardMappings) such findings count toward; the
  *   rollup then names only those for that rule (src/core/dom-runner.js,
  *   outcomeByReasonCode). ruleMappedStandard writes them from a rule map's
@@ -105,6 +105,7 @@
 const { EN301549_VERSIONS, en301549MappingsForScs } = require('./en301549-map');
 const { wcagTags } = require('../wcag');
 const { wcagLinks } = require('./wcag-criteria');
+const { appliesUnder, canonicalTag } = require('../law-applies.js');
 const PROFILES = require('../../profiles');
 
 // The WCAG A and AA tags of the WCAG version an EN 301 549 version is built on.
@@ -134,6 +135,20 @@ const NORMATIVE_STANDARDS = [
   ...PROFILES.map((p) => p.standard)
 ];
 
+// The law a profile serves, as a result names it ({ law: { id, name,
+// jurisdiction, lang } }), or nothing: the standard's laws are checked when
+// its pack is defined (src/laws.js).
+function lawOfProfile(s, p) {
+  const id = p && p.law;
+  const laws = s && s.laws && typeof s.laws === 'object' ? s.laws : null;
+  if (typeof id !== 'string' || !laws || !Object.prototype.hasOwnProperty.call(laws, id)) return {};
+  const law = laws[id];
+  if (!law || typeof law.name !== 'string') return {};
+  // In its canonical case ('fr-CA'), as lawOf gives it.
+  const lang = typeof s.lang === 'string' && s.lang.trim() ? canonicalTag(s.lang.trim()) : 'en';
+  return { law: { id, name: law.name, jurisdiction: String(law.jurisdiction), lang } };
+}
+
 // A profile's `exclude`, as lists: { rules: [...], criteria: [...] }.
 function normalizeExclude(exclude) {
   const list = (v) => (Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : []);
@@ -143,7 +158,11 @@ function normalizeExclude(exclude) {
 // The registry's functions over a list of standards in registry order: the
 // built-in list below, or another one (core's standards and those a scan
 // adds). Each function reads only the list it was made with.
-function createRegistry(standards) {
+// `uses`: for a pack's standard that builds on other packs (pack.uses,
+// experimental), by its key, the rule tags of their standards, whose own
+// rules it may map by id.
+function createRegistry(standards, { uses = {} } = {}) {
+  const usedTags = (s) => (Object.prototype.hasOwnProperty.call(uses, s.key) ? uses[s.key] : []);
   // Whether s maps the rule from its own tables, by its id, rather than only
   // through the WCAG criteria the rule gives (as EN 301 549 maps every rule).
   function mapsById(s, id) {
@@ -269,7 +288,9 @@ function createRegistry(standards) {
             ...(p.exclude ? { exclude: normalizeExclude(p.exclude) } : {}),
             ...(p.severity && typeof p.severity === 'object' ? { severity: { ...p.severity } } : {}),
             ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {}),
-            ...(p.keepsParsing ? { keepsParsing: true } : {})
+            ...(p.keepsParsing ? { keepsParsing: true } : {}),
+            // The law it serves, as a result names it.
+            ...lawOfProfile(s, p)
           }
         ])
       ),
@@ -297,6 +318,38 @@ function createRegistry(standards) {
   // `rollupIds` the WCAG rollups of the criteria it waives. A rule that also
   // checks a criterion it keeps still runs. Throws, naming every problem, on an
   // unknown rule or criterion, or on a rule the profile excludes and also maps.
+  // The requirements of a profile's version its law doesn't ask for (a
+  // requirement's `laws` in standard.procedures, as listProcedures reads
+  // them), and the rollups of those requirements: the scan leaves them out,
+  // so it judges what the list asks for. Experimental (src/experimental.js).
+  function lawExclusions(s, p) {
+    const table =
+      s.procedures && typeof s.procedures === 'object' ? s.procedures[p.version] : null;
+    if (!table || typeof table !== 'object') return { requirements: [], rollupIds: [] };
+    const law = typeof p.law === 'string' ? p.law : null;
+    const requirements = Object.keys(table)
+      .filter((id) => !appliesUnder(table[id], law))
+      .sort();
+    if (!requirements.length) return { requirements, rollupIds: [] };
+    let own;
+    try {
+      own = typeof s.composites === 'function' ? s.composites() : [];
+    } catch {
+      own = [];
+    }
+    const rollupIds = (Array.isArray(own) ? own : [])
+      .filter(
+        (r) =>
+          r &&
+          r.meta &&
+          r.meta.version === p.version &&
+          requirements.includes(String(r.meta.criterion))
+      )
+      .map((r) => r.id)
+      .sort();
+    return { requirements, rollupIds };
+  }
+
   function profileExclusions(rules, rollups) {
     const known = new Set(rules.map((r) => r.ruleId));
     const knownSc = new Set(rules.flatMap((r) => r.wcagSc || []).concat(rollups.flatMap((r) => r.wcagSc || [])));
@@ -305,7 +358,13 @@ function createRegistry(standards) {
     const out = {};
     for (const s of standards) {
       for (const [name, p] of Object.entries(s.profiles || {})) {
-        if (!p.exclude) continue;
+        const byLaw = lawExclusions(s, p);
+        if (!p.exclude) {
+          if (byLaw.requirements.length) {
+            out[name] = { rules: [], criteria: [], ruleIds: [], rollupIds: byLaw.rollupIds, requirements: byLaw.requirements };
+          }
+          continue;
+        }
         const { rules: ids, criteria } = normalizeExclude(p.exclude);
         for (const id of ids) {
           if (!known.has(id)) problems.push(`${name}: exclude.rules names ${id}, which is no rule`);
@@ -321,7 +380,13 @@ function createRegistry(standards) {
         const waived = (list) => list.length > 0 && list.every((sc) => criteria.includes(sc));
         const ruleIds = [...new Set(ids.concat(rules.filter((r) => waived(r.wcagSc || [])).map((r) => r.ruleId)))].sort();
         const rollupIds = rollups.filter((r) => waived(r.wcagSc || [])).map((r) => r.id).sort();
-        out[name] = { rules: ids, criteria, ruleIds, rollupIds };
+        out[name] = {
+          rules: ids,
+          criteria,
+          ruleIds,
+          rollupIds: [...new Set(rollupIds.concat(byLaw.rollupIds))].sort(),
+          ...(byLaw.requirements.length ? { requirements: byLaw.requirements } : {})
+        };
       }
     }
     if (problems.length) throw new Error(`profile exclusions:\n  ${problems.join('\n  ')}`);
@@ -331,7 +396,8 @@ function createRegistry(standards) {
   // A profile depends on core only, never on another profile: the rules a
   // standard maps, and the bases of its rules' variants, are core's or its own,
   // not another standard's opt-in rules. A rule two standards need belongs in
-  // core. Given every rule ([{ ruleId, wcagSc, tags, core, variantOf }]), the
+  // core, unless one pack builds on the other's (pack.uses): then its standard
+  // may map the rules of the packs it uses. Given every rule ([{ ruleId, wcagSc, tags, core, variantOf }]), the
   // problems. A core rule belongs to no standard, whatever its tags.
   function validateProfileIndependence(rules) {
     const byId = new Map(rules.map((r) => [r.ruleId, r]));
@@ -343,7 +409,7 @@ function createRegistry(standards) {
     for (const s of standards) {
       for (const r of rules) {
         const tag = ownerTag(r);
-        if (!tag || tag === s.ruleTag) continue;
+        if (!tag || tag === s.ruleTag || usedTags(s).includes(tag)) continue;
         // Only a standard naming the rule couples the two; one that maps every
         // rule by its WCAG criteria leaves another standard's rules out.
         if (mapsById(s, r.ruleId)) {
@@ -356,7 +422,7 @@ function createRegistry(standards) {
         if (!s.ruleTag || !r.variantOf || ownerTag(r) !== s.ruleTag) continue;
         const base = byId.get(r.variantOf);
         const tag = base && ownerTag(base);
-        if (tag && tag !== s.ruleTag) {
+        if (tag && tag !== s.ruleTag && !usedTags(s).includes(tag)) {
           problems.push(`${s.key}'s ${r.ruleId} is a variant of ${base.ruleId}, a rule of the standard tagged ${tag}`);
         }
       }

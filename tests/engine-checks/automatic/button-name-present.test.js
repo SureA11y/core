@@ -501,3 +501,68 @@ test('button-name-present: content with a hidden attribute that author CSS displ
   assert.ok(hasOccurrenceForId(rule, 'still-hidden'));
   assert.ok(!hasOccurrenceForId(rule, 'shown'));
 });
+
+test('button-name-present: a fail whose content text is hidden says what hides it', () => {
+  const html = `
+<!doctype html><html><head><style>
+  .nav-text { display: none; }
+  .nav-bars::after { content: ""; display: block; width: 20px; height: 2px; background: #fff; }
+</style></head><body>
+  <button id="display-none" class="main-nav-toggle"> <span class="nav-text">Menü</span> <span class="nav-bars"></span> </button>
+  <button id="aria-hidden"><span aria-hidden="true">Close</span></button>
+  <button id="hidden-attr"><span hidden>Open</span></button>
+  <button id="visibility"><span style="visibility: hidden">Save</span></button>
+  <button id="empty"></button>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 5,
+    maxOccurrences: 5
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  for (const [id, reason, text] of [
+    ['display-none', 'displayNone', 'Menü'],
+    ['aria-hidden', 'ariaHidden', 'Close'],
+    ['hidden-attr', 'hiddenAttribute', 'Open'],
+    ['visibility', 'visibilityHidden', 'Save']
+  ]) {
+    const o = occ(id);
+    assert.equal(o.data.details.reasonCode, 'name_missing', id);
+    assert.deepEqual(
+      o.data.details.nameCause,
+      { cause: 'hiddenText', text, reason, element: 'span' },
+      id
+    );
+    assert.equal(o.i18n.hintKey, `nameHiddenText_hint_${reason}`, id);
+    assert.equal(o.i18n.params.text, text, id);
+    assert.equal(o.i18n.params.hiddenElement, 'span', id);
+    // The rule's own params keep the control's tag.
+    assert.equal(o.i18n.params.element, 'button', id);
+    assert.ok(o.hint.startsWith(`Its text "${text}" is in a <span> with `), o.hint);
+  }
+  assert.match(occ('display-none').hint, /display: none, which hides it from screen readers/);
+  // No text at all: the hint stays as it was.
+  assert.equal(occ('empty').i18n.hintKey, 'buttonNamePresent_hint_fail');
+  assert.equal(occ('empty').data.details.nameCause, undefined);
+});
+
+test('button-name-present: a fail says when aria-labelledby points nowhere, or the only content is an unnamed image', () => {
+  const html = `<!doctype html><html><body>
+  <button id="ref" aria-labelledby="nope gone"></button>
+  <button id="alt"><img src="x.png" alt=""></button>
+  <button id="noalt"><img src="x.png"></button>
+  <button id="svg"><svg width="10" height="10"><path d="M0 0h10v10H0z"/></svg></button>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 4,
+    maxOccurrences: 4
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.deepEqual(occ('ref').data.details.nameCause, {
+    cause: 'labelledbyMissing',
+    ids: ['nope', 'gone']
+  });
+  assert.match(occ('ref').hint, /^Its aria-labelledby points to "nope", "gone", which no element/);
+  assert.equal(occ('alt').i18n.hintKey, 'nameCause_hint_imageEmptyAlt');
+  assert.equal(occ('noalt').i18n.hintKey, 'nameCause_hint_imageNoAlt');
+  assert.equal(occ('svg').i18n.hintKey, 'nameCause_hint_svgNoName');
+});

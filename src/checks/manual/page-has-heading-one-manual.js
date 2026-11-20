@@ -8,7 +8,8 @@
  * @summary The page should have at least one level-one heading
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Always applicable to any HTML document with a <body> element:
+ *   Applicable to any HTML document with a <body> element that is a page
+ *   of its own (a document shown in a frame is not):
  *   "does the page have an h1" is a whole-page concern, matching
  *   bypass-blocks-present's pattern of evaluating the document
  *   directly.
@@ -17,16 +18,22 @@
  *   A custom element whose ElementInternals give it the heading role
  *   (this.attachInternals().role) and level 1 (its aria-level attribute or
  *   its internals' ariaLevel) counts as an <h1>.
+ *   A level-one heading in an area excluded with `excludeSelectors` is
+ *   still the page's.
  *   A native <hx> marked role="none" or "presentation" is still a heading
  *   when it can take focus or carries a global ARIA attribute, as
  *   WAI-ARIA's presentational roles conflict resolution has browsers
  *   ignore that role then.
- *   A native <hx> with a valid aria-level (a positive integer) has that
- *   level, as browsers expose it: <h2 aria-level="1"> is a level-one
- *   heading and <h1 aria-level="2"> is not, as heading-order reads them.
+ *   A valid aria-level (an integer from 1 to 9, read as browsers read it:
+ *   the leading integer; any other value is ignored, as ARIA 1.2 says and
+ *   Chromium does above 9) gives a heading its level, as browsers expose it:
+ *   <h2 aria-level="1"> is a level-one heading and <h1 aria-level="2"> is
+ *   not, as heading-order reads them. Without one, a native <hx> keeps its
+ *   tag level, also with role="heading": <h1 role="heading"> is a
+ *   level-one heading.
  * @expectation
- *   At least one heading with level 1 exists (native <h1>, or
- *   role="heading" with aria-level="1"). A page with no top-level
+ *   At least one heading with level 1 exists (native <h1>, <h1
+ *   role="heading">, or role="heading" with aria-level="1"). A page with no top-level
  *   heading has no clear entry point for assistive technology users
  *   navigating by heading.
  * @reason-codes
@@ -69,21 +76,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    HEADING_ONE_MISSING: {
-      steps: [
-        'Open the page and find its main title (the text that says what this page is).',
-        "Open the Accessibility pane of the developer tools, or a screen reader's list of headings, and look for a heading at level 1.",
-        'If there is none, check whether the main title is marked up as a heading at all, and at which level.'
-      ],
-      passWhen: 'The page has a level-one heading that names its main content.',
-      failWhen:
-        'No heading on the page is level one, so heading navigation has no clear start (best practice, G141).'
-    }
-  }
+  coverage: {}
 };
 
 // This check is inherently whole-document (does the PAGE have this
@@ -93,8 +86,10 @@ const meta = {
 //
 // Also notApplicable while a modal dialog is open: the rest of the page is
 // inert then, so the scan saw the dialog, not the page's structure.
+// A document shown in a frame is no page of its own: the page's level-one heading is the top document's.
 function applicability(ctx) {
   const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
   if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }
@@ -134,6 +129,19 @@ function runInPage(ctx) {
     return info && info.status === 'set' ? normalizeWs(info.value) : '';
   }
 
+  // A positive integer read from aria-level as browsers read it, the leading
+  // integer ("1.5" is 1, "1x" is 1), or 0 when it gives none.
+  function parseLevel(raw) {
+    const n =
+      typeof helpers.parseHtmlInteger === 'function'
+        ? helpers.parseHtmlInteger(raw)
+        : parseInt(raw, 10);
+    // Levels 1 to 9: Chromium ignores a larger one and keeps the heading's
+    // own level, and ARIA has a value below 1 or no integer ignored (Chromium
+    // exposes those as 1, against ARIA; the rule follows ARIA).
+    return Number.isFinite(n) && n >= 1 && n <= 9 ? n : 0;
+  }
+
   function isLevelOneHeading(el) {
     let explicit = getExplicitRoleToken(el);
     // A focusable <h1>, or one with a global ARIA attribute, stays a heading
@@ -143,22 +151,17 @@ function runInPage(ctx) {
       helpers.isPresentationalRoleIgnored(el)
     )
       explicit = '';
-    if (explicit) {
-      if (explicit !== 'heading') return false;
-      return ariaLevelOf(el) === '1';
-    }
+    if (explicit && explicit !== 'heading') return false;
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const m = /^h([1-6])$/.exec(tag);
-    if (!m) return false;
-    // Browsers expose a valid aria-level on <hx> in place of the tag level,
-    // as heading-order reads it.
-    const ariaLevel = normalizeWs(
-      dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level')
-    );
-    if (/^[0-9]+$/.test(ariaLevel) && parseInt(ariaLevel, 10) >= 1) {
-      return parseInt(ariaLevel, 10) === 1;
-    }
-    return m[1] === '1';
+    if (!explicit && !m) return false;
+    // Browsers expose a valid aria-level in place of any other level, as
+    // heading-order reads it. Without one, an <hx> keeps its tag level, also
+    // with role="heading" (<h1 role="heading"> is a level-one heading), and
+    // any other heading takes the ARIA default, 2.
+    const ariaLevel = parseLevel(ariaLevelOf(el));
+    if (ariaLevel) return ariaLevel === 1;
+    return !!m && m[1] === '1';
   }
 
   const isAccTreeEligible =
@@ -181,17 +184,96 @@ function runInPage(ctx) {
   try {
     nodes =
       helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', { internalsRoles: true })
+        ? // An excluded area's level-one heading is still the page's: exclusion
+          // keeps findings out of an area, not its headings out of the page.
+          helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', {
+            internalsRoles: true,
+            excluded: true
+          })
         : dom.querySelectorAll(document, 'h1, h2, h3, h4, h5, h6, [role]');
   } catch {
     nodes = [];
   }
 
-  const hasH1 = Array.from(nodes).some((el) => el && isLevelOneHeading(el) && isExposedToAt(el));
+  const hasH1 = [...nodes].some((el) => el && isLevelOneHeading(el) && isExposedToAt(el));
 
   if (hasH1) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
+
+  // An <h1> that is in the markup but does not count, and why: a reader who
+  // finds it in the source otherwise takes the finding for a mistake.
+  // Hidden content included: the hidden <h1> is the one to name.
+  function skippedH1() {
+    let h1s;
+    try {
+      h1s =
+        typeof helpers.queryAllDeep === 'function'
+          ? helpers.queryAllDeep('h1')
+          : dom.querySelectorAll(document, 'h1');
+    } catch {
+      h1s = [];
+    }
+    for (const el of h1s) {
+      if (!el || !dom.tagName(el)) continue;
+      const all = normalizeWs(dom.textContent(el));
+      const text = all.length > 60 ? `${all.slice(0, 59)}…` : all;
+      if (isLevelOneHeading(el)) {
+        const cause = typeof helpers.hiddenCause === 'function' ? helpers.hiddenCause(el) : null;
+        if (!cause) {
+          return {
+            summary: `This page has no level-one heading that screen readers can reach. Its <h1> "${text}" is hidden from screen readers.`,
+            summaryKey: 'pageHasHeadingOne_summary_h1Hidden',
+            hintKey: 'pageHasHeadingOne_hint_h1Hidden',
+            params: { text },
+            detail: { cause: 'hidden', text }
+          };
+        }
+        if (cause.element === el) {
+          return {
+            summary: `This page has no level-one heading that screen readers can reach. Its <h1> "${text}" is hidden by ${cause.hiddenBy}.`,
+            summaryKey: 'pageHasHeadingOne_summary_h1HiddenOwn',
+            hintKey: 'pageHasHeadingOne_hint_h1Hidden',
+            params: { text, hiddenBy: cause.hiddenBy },
+            detail: { cause: 'hidden', text, hiddenBy: cause.hiddenBy }
+          };
+        }
+        const ancestor = helpers.describeElement(cause.element);
+        return {
+          summary: `This page has no level-one heading that screen readers can reach. Its <h1> "${text}" is hidden: an ancestor ${ancestor} has ${cause.hiddenBy}.`,
+          summaryKey: 'pageHasHeadingOne_summary_h1HiddenAncestor',
+          hintKey: 'pageHasHeadingOne_hint_h1Hidden',
+          params: { text, hiddenBy: cause.hiddenBy, ancestor },
+          detail: { cause: 'hidden', text, hiddenBy: cause.hiddenBy, hiddenByElement: ancestor }
+        };
+      }
+      let role = getExplicitRoleToken(el);
+      if ((role === 'none' || role === 'presentation') && helpers.isPresentationalRoleIgnored(el)) {
+        role = '';
+      }
+      if (role && role !== 'heading') {
+        return {
+          summary: `This page has no level-one heading. Its <h1> "${text}" has role="${role}", so it is not exposed as a heading.`,
+          summaryKey: 'pageHasHeadingOne_summary_h1Role',
+          hintKey: 'pageHasHeadingOne_hint_h1Role',
+          params: { text, role },
+          detail: { cause: 'role', text, role }
+        };
+      }
+      const level = parseLevel(ariaLevelOf(el));
+      if (level > 1) {
+        return {
+          summary: `This page has no level-one heading. Its <h1> "${text}" is exposed as level ${level} by aria-level="${ariaLevelOf(el)}".`,
+          summaryKey: 'pageHasHeadingOne_summary_h1Relevelled',
+          hintKey: 'pageHasHeadingOne_hint_h1Relevelled',
+          params: { text, level },
+          detail: { cause: 'aria-level', text, level }
+        };
+      }
+    }
+    return null;
+  }
+  const skipped = skippedH1();
 
   return {
     ruleId: rule.ruleId,
@@ -199,12 +281,21 @@ function runInPage(ctx) {
     severity: rule.defaultSeverity || 'minor',
     occurrences: [
       helpers.reportOccurrence(body, {
-        summary: 'This page has no level-one heading.',
-        hint: 'Add a level-one heading (<h1> or role="heading" aria-level="1") that identifies the page\'s main content.',
+        summary: skipped ? skipped.summary : 'This page has no level-one heading.',
+        hint: skipped
+          ? {
+              pageHasHeadingOne_hint_h1Hidden:
+                "If this <h1> names the page's main content, let screen readers reach it; otherwise add a level-one heading that does.",
+              pageHasHeadingOne_hint_h1Role:
+                "If this <h1> names the page's main content, remove its role; otherwise add a level-one heading that does.",
+              pageHasHeadingOne_hint_h1Relevelled:
+                "If this <h1> names the page's main content, remove its aria-level; otherwise add a level-one heading that does."
+            }[skipped.hintKey]
+          : 'Add a level-one heading (<h1> or role="heading" aria-level="1") that identifies the page\'s main content.',
         i18n: {
-          summaryKey: 'pageHasHeadingOne_summary_cantTell',
-          hintKey: 'pageHasHeadingOne_hint_cantTell',
-          params: {}
+          summaryKey: skipped ? skipped.summaryKey : 'pageHasHeadingOne_summary_cantTell',
+          hintKey: skipped ? skipped.hintKey : 'pageHasHeadingOne_hint_cantTell',
+          params: skipped ? skipped.params : {}
         },
         lean: {
           toward: 'fail',
@@ -213,7 +304,10 @@ function runInPage(ctx) {
           i18n: { whyKey: 'pageHasHeadingOne_lean_why' }
         },
         data: {
-          details: { reasonCode: 'HEADING_ONE_MISSING' }
+          details: {
+            reasonCode: 'HEADING_ONE_MISSING',
+            ...(skipped ? { skippedH1: skipped.detail } : {})
+          }
         }
       })
     ]

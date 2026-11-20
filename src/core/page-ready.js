@@ -104,7 +104,7 @@ async function waitForPageReady(options) {
 
   function pendingImages() {
     if (!doc || typeof dom.get(doc, 'querySelectorAll') !== 'function') return [];
-    return Array.from(dom.querySelectorAll(doc, 'img')).filter(
+    return [...dom.querySelectorAll(doc, 'img')].filter(
       (img) =>
         !img.complete && String(dom.getAttribute(img, 'loading') || '').toLowerCase() !== 'lazy'
     );

@@ -17,7 +17,10 @@
  * running each rule against its own fixture catches the ones built at runtime,
  * and reading the source catches the branches a fixture never reaches. A code
  * that is built at runtime on a branch only a browser reaches is in neither,
- * so a rule lists those in meta.reasonCodes, which is added too.
+ * so a rule lists those in meta.reasonCodes, which is added too. A variant
+ * runs its base's code, so its source is the base's, unless it lists its own
+ * codes in meta.reasonCodes: then those are its codes, as the base's source
+ * holds branches the variant's settings never reach.
  */
 
 const fs = require('fs');
@@ -170,6 +173,10 @@ function main() {
 
   for (const [file, ruleId] of idByFile) {
     const base = fromById.has(ruleId) ? fileById.get(fromById.get(ruleId)) : null;
+    // A variant that lists its codes is taken at its word: its base's source
+    // holds codes its settings never reach (target-size-enhanced, with no
+    // spacing exception, is never too close to another target).
+    if (base && declaredById.has(ruleId)) continue;
     add(ruleId, codesFromSource(base || file));
   }
   for (const [ruleId, codes] of declaredById) add(ruleId, codes);

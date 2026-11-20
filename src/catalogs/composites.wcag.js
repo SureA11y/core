@@ -184,9 +184,13 @@ module.exports = [
   {
     id: 'wcag-2.1.3-keyboard-no-exception',
     checksIds: [
+      'iframe-focusable-content',
+      'server-side-image-map-absent',
       'scrollable-region-focusable',
       'mouse-only-event-handlers',
-      'click-handler-keyboard-operable'
+      'click-handler-keyboard-operable',
+      'focus-not-removed-by-script',
+      'widget-keyboard-focusable'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_213_keyboard_no_exception.title',
@@ -301,8 +305,55 @@ module.exports = [
   },
 
   {
+    id: 'wcag-2.4.11-focus-not-obscured-minimum',
+    checksIds: ['focus-not-obscured-minimum'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_2411_focus_not_obscured_minimum.title',
+      descriptionKey: 'catalog.rules.wcag_2411_focus_not_obscured_minimum.description',
+      title: 'Focus Not Obscured (Minimum)',
+      description:
+        'Rollup of checks ensuring an element that takes keyboard focus is not entirely hidden by content the page puts over it.',
+      wcagSc: ['2.4.11'],
+      level: 'AA'
+    }
+  },
+
+  {
+    id: 'wcag-2.4.12-focus-not-obscured-enhanced',
+    checksIds: ['focus-not-obscured-enhanced'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_2412_focus_not_obscured_enhanced.title',
+      descriptionKey: 'catalog.rules.wcag_2412_focus_not_obscured_enhanced.description',
+      title: 'Focus Not Obscured (Enhanced)',
+      description:
+        'Rollup of checks ensuring no part of an element that takes keyboard focus is hidden by content the page puts over it (AAA).',
+      wcagSc: ['2.4.12'],
+      level: 'AAA'
+    }
+  },
+
+  {
+    id: 'wcag-2.4.13-focus-appearance',
+    checksIds: ['css-focus-indicator-suppressed', 'focus-not-removed-by-script'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_2413_focus_appearance.title',
+      descriptionKey: 'catalog.rules.wcag_2413_focus_appearance.description',
+      title: 'Focus Appearance',
+      description:
+        'Rollup of checks ensuring the keyboard focus indicator is large enough and contrasts enough with its unfocused state (AAA).',
+      wcagSc: ['2.4.13'],
+      level: 'AAA'
+    }
+  },
+
+  {
     id: 'wcag-2.4.9-link-purpose-link-only',
-    checksIds: ['identical-links-same-purpose', 'link-name-present', 'link-name-quality'],
+    checksIds: [
+      'identical-links-same-purpose',
+      'link-name-present',
+      'link-name-quality',
+      'link-name-quality-link-only'
+    ],
     meta: {
       titleKey: 'catalog.rules.wcag_249_link_purpose_link_only.title',
       descriptionKey: 'catalog.rules.wcag_249_link_purpose_link_only.description',
@@ -326,6 +377,20 @@ module.exports = [
       level: 'A'
     }
   },
+  {
+    id: 'wcag-2.5.5-target-size-enhanced',
+    checksIds: ['target-size-enhanced'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_255_target_size_enhanced.title',
+      descriptionKey: 'catalog.rules.wcag_255_target_size_enhanced.description',
+      title: 'Target Size (Enhanced)',
+      description:
+        'Rollup of checks ensuring pointer targets are at least 44 by 44 CSS pixels, or meet an exception (AAA).',
+      wcagSc: ['2.5.5'],
+      level: 'AAA'
+    }
+  },
+
   {
     id: 'wcag-2.5.8-target-size-minimum',
     checksIds: ['target-size-minimum'],
@@ -390,6 +455,34 @@ module.exports = [
       description:
         'Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.',
       wcagSc: ['1.3.5'],
+      level: 'AA'
+    }
+  },
+
+  {
+    id: 'wcag-1.4.10-reflow',
+    checksIds: ['reflow-horizontal-scroll'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_1410_reflow.title',
+      descriptionKey: 'catalog.rules.wcag_1410_reflow.description',
+      title: 'Reflow',
+      description:
+        'Rollup of checks ensuring content can be shown at 320 CSS pixels wide without scrolling in two directions.',
+      wcagSc: ['1.4.10'],
+      level: 'AA'
+    }
+  },
+
+  {
+    id: 'wcag-1.4.11-non-text-contrast',
+    checksIds: ['css-focus-indicator-suppressed'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_1411_non_text_contrast.title',
+      descriptionKey: 'catalog.rules.wcag_1411_non_text_contrast.description',
+      title: 'Non-text Contrast',
+      description:
+        'Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1.',
+      wcagSc: ['1.4.11'],
       level: 'AA'
     }
   },
@@ -505,8 +598,7 @@ module.exports = [
       'aria-braille-equivalent',
       'aria-conditional-attr',
       'aria-checked-state-mismatch',
-      'aria-expanded-state-mismatch',
-      'aria-owns-valid'
+      'aria-expanded-state-mismatch'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_412_aria_validity.title',

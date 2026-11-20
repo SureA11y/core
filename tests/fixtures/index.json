@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total": 145,
-    "withFixture": 142,
-    "withoutFixture": 3
+    "total": 151,
+    "withFixture": 146,
+    "withoutFixture": 5
   },
   "rows": [
     {
@@ -74,8 +74,8 @@
       "totalCases": 36,
       "caseCounts": {
         "PASS": 14,
-        "FAIL": 16,
-        "CANTTELL": 2,
+        "FAIL": 0,
+        "CANTTELL": 18,
         "OTHER": 4
       }
     },
@@ -222,10 +222,10 @@
       "testFile": "tests/engine-checks/automatic/aria-hidden-focus.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-hidden-focus-all-scenarios.html",
-      "totalCases": 36,
+      "totalCases": 38,
       "caseCounts": {
-        "PASS": 15,
-        "FAIL": 21,
+        "PASS": 16,
+        "FAIL": 22,
         "CANTTELL": 0,
         "OTHER": 0
       }
@@ -235,8 +235,7 @@
       "title": "aria-owns must give each element one owner, and never an ancestor of the owner",
       "type": "automatic",
       "wcagSc": [
-        "1.3.1",
-        "4.1.2"
+        "1.3.1"
       ],
       "ruleFile": "src/checks/automatic/aria-owns-valid.js",
       "testFile": "tests/engine-checks/automatic/aria-owns-valid.test.js",
@@ -245,8 +244,8 @@
       "totalCases": 7,
       "caseCounts": {
         "PASS": 2,
-        "FAIL": 3,
-        "CANTTELL": 0,
+        "FAIL": 1,
+        "CANTTELL": 2,
         "OTHER": 2
       }
     },
@@ -264,8 +263,8 @@
       "totalCases": 16,
       "caseCounts": {
         "PASS": 2,
-        "FAIL": 10,
-        "CANTTELL": 0,
+        "FAIL": 9,
+        "CANTTELL": 1,
         "OTHER": 4
       }
     },
@@ -359,8 +358,8 @@
       "totalCases": 30,
       "caseCounts": {
         "PASS": 8,
-        "FAIL": 9,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 9,
         "OTHER": 13
       }
     },
@@ -376,11 +375,11 @@
       "testFile": "tests/engine-checks/automatic/aria-roles-valid.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-roles-valid-all-scenarios.html",
-      "totalCases": 11,
+      "totalCases": 13,
       "caseCounts": {
-        "PASS": 7,
+        "PASS": 6,
         "FAIL": 2,
-        "CANTTELL": 1,
+        "CANTTELL": 4,
         "OTHER": 1
       }
     },
@@ -431,11 +430,11 @@
       "testFile": "tests/engine-checks/automatic/aria-valid-attr-value.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-valid-attr-value-all-scenarios.html",
-      "totalCases": 33,
+      "totalCases": 35,
       "caseCounts": {
         "PASS": 17,
-        "FAIL": 11,
-        "CANTTELL": 4,
+        "FAIL": 7,
+        "CANTTELL": 10,
         "OTHER": 1
       }
     },
@@ -460,7 +459,7 @@
     },
     {
       "ruleId": "avoid-inline-spacing",
-      "title": "Inline style must not force text spacing below the WCAG metric",
+      "title": "Inline style must not keep users from increasing text spacing",
       "type": "automatic",
       "wcagSc": [
         "1.4.12"
@@ -691,7 +690,9 @@
       "title": "Focus indicator must not be removed without a replacement",
       "type": "manual",
       "wcagSc": [
-        "2.4.7"
+        "1.4.11",
+        "2.4.7",
+        "2.4.13"
       ],
       "ruleFile": "src/checks/manual/css-focus-indicator-suppressed-manual.js",
       "testFile": "tests/engine-checks/manual/css-focus-indicator-suppressed.test.js",
@@ -757,8 +758,8 @@
       "totalCases": 14,
       "caseCounts": {
         "PASS": 6,
-        "FAIL": 7,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 7,
         "OTHER": 1
       }
     },
@@ -795,8 +796,8 @@
       "totalCases": 25,
       "caseCounts": {
         "PASS": 5,
-        "FAIL": 8,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 8,
         "OTHER": 12
       }
     },
@@ -814,8 +815,8 @@
       "totalCases": 5,
       "caseCounts": {
         "PASS": 2,
-        "FAIL": 3,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 3,
         "OTHER": 0
       }
     },
@@ -930,12 +931,47 @@
       }
     },
     {
+      "ruleId": "focus-not-obscured-enhanced",
+      "title": "No part of a focused element should be hidden",
+      "type": "manual",
+      "wcagSc": [
+        "2.4.12"
+      ],
+      "ruleFile": "src/checks/manual/focus-not-obscured-enhanced-manual.js",
+      "testFile": "tests/engine-checks/manual/focus-not-obscured-enhanced.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
+    },
+    {
+      "ruleId": "focus-not-obscured-minimum",
+      "title": "A focused element must not be entirely hidden",
+      "type": "manual",
+      "wcagSc": [
+        "2.4.11"
+      ],
+      "ruleFile": "src/checks/manual/focus-not-obscured-minimum-manual.js",
+      "testFile": "tests/engine-checks/manual/focus-not-obscured-chromium.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/focus-not-obscured-all-scenarios.html",
+      "totalCases": 5,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 0
+      }
+    },
+    {
       "ruleId": "focus-not-removed-by-script",
       "title": "A script must not remove focus from an element as it receives it",
       "type": "automatic",
       "wcagSc": [
         "2.1.1",
-        "2.4.7"
+        "2.1.3",
+        "2.4.7",
+        "2.4.13"
       ],
       "ruleFile": "src/checks/automatic/focus-not-removed-by-script.js",
       "testFile": "tests/engine-checks/automatic/focus-not-removed-by-script.test.js",
@@ -1053,11 +1089,11 @@
       "testFile": "tests/engine-checks/manual/heading-order.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/heading-order-all-scenarios.html",
-      "totalCases": 3,
+      "totalCases": 4,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 2,
+        "CANTTELL": 3,
         "OTHER": 1
       }
     },
@@ -1161,7 +1197,8 @@
       "title": "Frames with tabindex=\"-1\" must not contain focusable content",
       "type": "automatic",
       "wcagSc": [
-        "2.1.1"
+        "2.1.1",
+        "2.1.3"
       ],
       "ruleFile": "src/checks/automatic/iframe-focusable-content.js",
       "testFile": "tests/engine-checks/automatic/iframe-focusable-content.test.js",
@@ -1607,12 +1644,12 @@
       "testFile": "tests/engine-checks/automatic/link-in-text-block.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-in-text-block-all-scenarios.html",
-      "totalCases": 11,
+      "totalCases": 13,
       "caseCounts": {
         "PASS": 4,
-        "FAIL": 3,
+        "FAIL": 4,
         "CANTTELL": 2,
-        "OTHER": 2
+        "OTHER": 3
       }
     },
     {
@@ -1657,6 +1694,25 @@
       }
     },
     {
+      "ruleId": "link-name-quality-link-only",
+      "title": "A link's text should say where it leads on its own",
+      "type": "manual",
+      "wcagSc": [
+        "2.4.9"
+      ],
+      "ruleFile": "src/checks/manual/link-name-quality-link-only-manual.js",
+      "testFile": "tests/engine-checks/manual/link-name-quality-link-only.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/link-name-quality-link-only-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 3
+      }
+    },
+    {
       "ruleId": "list-children-valid",
       "title": "Lists must only directly contain list items",
       "type": "automatic",
@@ -1667,11 +1723,11 @@
       "testFile": "tests/engine-checks/automatic/list-children-valid.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/list-children-valid-all-scenarios.html",
-      "totalCases": 19,
+      "totalCases": 20,
       "caseCounts": {
         "PASS": 8,
-        "FAIL": 8,
-        "CANTTELL": 0,
+        "FAIL": 6,
+        "CANTTELL": 3,
         "OTHER": 3
       }
     },
@@ -1931,8 +1987,8 @@
       "totalCases": 5,
       "caseCounts": {
         "PASS": 2,
-        "FAIL": 3,
-        "CANTTELL": 0,
+        "FAIL": 2,
+        "CANTTELL": 1,
         "OTHER": 0
       }
     },
@@ -2023,12 +2079,12 @@
       "testFile": "tests/engine-checks/manual/p-as-heading.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/p-as-heading-all-scenarios.html",
-      "totalCases": 21,
+      "totalCases": 30,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 12,
-        "OTHER": 9
+        "CANTTELL": 15,
+        "OTHER": 15
       }
     },
     {
@@ -2083,6 +2139,23 @@
         "PASS": 0,
         "FAIL": 1,
         "CANTTELL": 0,
+        "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "page-zones-landmark",
+      "title": "The page's header, navigation, search and footer are landmarks",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/page-zones-landmark-manual.js",
+      "testFile": "tests/engine-checks/manual/page-zones-landmark.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/page-zones-landmark-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 1,
         "OTHER": 0
       }
     },
@@ -2158,6 +2231,25 @@
         "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 1
+      }
+    },
+    {
+      "ruleId": "reflow-horizontal-scroll",
+      "title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
+      "type": "automatic",
+      "wcagSc": [
+        "1.4.10"
+      ],
+      "ruleFile": "src/checks/automatic/reflow-horizontal-scroll.js",
+      "testFile": "tests/engine-checks/automatic/reflow-horizontal-scroll-chromium.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/reflow-horizontal-scroll-all-scenarios.html",
+      "totalCases": 8,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 2,
+        "CANTTELL": 3,
+        "OTHER": 0
       }
     },
     {
@@ -2257,7 +2349,8 @@
       "title": "Server-side image maps must have a keyboard-operable alternative",
       "type": "automatic",
       "wcagSc": [
-        "2.1.1"
+        "2.1.1",
+        "2.1.3"
       ],
       "ruleFile": "src/checks/automatic/server-side-image-map-absent.js",
       "testFile": "tests/engine-checks/automatic/server-side-image-map-absent.test.js",
@@ -2513,6 +2606,20 @@
       }
     },
     {
+      "ruleId": "target-size-enhanced",
+      "title": "Pointer targets must be at least 44x44px large",
+      "type": "automatic",
+      "wcagSc": [
+        "2.5.5"
+      ],
+      "ruleFile": "src/checks/automatic/target-size-enhanced.js",
+      "testFile": "tests/engine-checks/automatic/target-size-enhanced.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
+    },
+    {
       "ruleId": "target-size-minimum",
       "title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
       "type": "automatic",
@@ -2533,7 +2640,7 @@
     },
     {
       "ruleId": "td-has-header",
-      "title": "Data cells in large tables must have an associated header",
+      "title": "Data cells in tables must have an associated header",
       "type": "automatic",
       "wcagSc": [
         "1.3.1"
@@ -2546,8 +2653,8 @@
       "caseCounts": {
         "PASS": 0,
         "FAIL": 1,
-        "CANTTELL": 1,
-        "OTHER": 7
+        "CANTTELL": 2,
+        "OTHER": 6
       }
     },
     {
@@ -2602,8 +2709,8 @@
       "totalCases": 7,
       "caseCounts": {
         "PASS": 4,
-        "FAIL": 2,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 2,
         "OTHER": 1
       }
     },
@@ -2637,10 +2744,10 @@
       "testFile": "tests/engine-checks/automatic/valid-lang.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/valid-lang-all-scenarios.html",
-      "totalCases": 4,
+      "totalCases": 5,
       "caseCounts": {
         "PASS": 2,
-        "FAIL": 1,
+        "FAIL": 2,
         "CANTTELL": 0,
         "OTHER": 1
       }
@@ -2688,7 +2795,8 @@
       "title": "Widgets should be reachable with the keyboard",
       "type": "manual",
       "wcagSc": [
-        "2.1.1"
+        "2.1.1",
+        "2.1.3"
       ],
       "ruleFile": "src/checks/manual/widget-keyboard-focusable.js",
       "testFile": "tests/engine-checks/manual/widget-keyboard-focusable.test.js",

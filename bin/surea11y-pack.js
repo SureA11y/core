@@ -6,13 +6,14 @@
 /**
  * Tools for a pack's own repository (see ENGINE_OPTIONS.md, "Packs"):
  *
- *   surea11y-pack new <folder> [--kind checklist|standard] [--name <package name>] [--namespace <ns>] [--title <title>]
+ *   surea11y-pack new <folder> [--kind checklist|standard|derived] [--from <base pack>] [--name <package name>] [--namespace <ns>] [--title <title>]
  *   surea11y-pack docs [--check] [--no-examples] [--pack <file>]
  *
  * new writes a pack that works as it is into a new folder (src/pack-scaffold.js):
  * a checklist (an organisation's policy: profiles and items) or a standard
  * (requirements of its own and the rules that check them), with example
- * rules, messages, tests, examples, lint and scripts. The package name is the
+ * rules, messages, tests, examples, lint and scripts; or a standard derived
+ * from the installed base pack --from names (experimental). The package name is the
  * folder's by default, and the namespace its scope or first word.
  *
  * docs writes the pack's docs/RULE_CATALOG.md and the records of its
@@ -28,13 +29,13 @@
 const path = require('node:path');
 
 const USAGE = `Usage:
-  surea11y-pack new <folder> [--kind checklist|standard] [--name <package name>] [--namespace <ns>] [--title <title>]
+  surea11y-pack new <folder> [--kind checklist|standard|derived] [--from <base pack>] [--name <package name>] [--namespace <ns>] [--title <title>]
   surea11y-pack docs [--check] [--no-examples] [--pack <file>]`;
 
 // What each command takes: flags with a value (--kind standard or
 // --kind=standard), flags alone, and how many positional arguments.
 const COMMANDS = {
-  new: { values: ['kind', 'name', 'namespace', 'title'], flags: [], positional: 1 },
+  new: { values: ['kind', 'from', 'name', 'namespace', 'title'], flags: [], positional: 1 },
   docs: { values: ['pack'], flags: ['check', 'no-examples'], positional: 0 }
 };
 
@@ -104,6 +105,7 @@ function create(args) {
       name: args.values.name,
       namespace: args.values.namespace,
       kind: args.values.kind,
+      from: args.values.from,
       title: args.values.title
     });
   } catch (err) {

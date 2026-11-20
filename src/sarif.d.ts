@@ -8,7 +8,10 @@ export interface SarifOptions {
   toolVersion?: string;
   /** The tool's home page. */
   informationUri?: string;
-  /** Failures recorded here are left out, and under leanFailAs a finding that leans fail recorded here stays a warning (docs/BASELINE.md). */
+  /**
+   * Failures recorded here are left out, and under leanFailAs a finding that leans fail recorded here stays a warning (docs/BASELINE.md).
+   * A value that is not a baseline throws a TypeError with code 'INVALID_BASELINE', as matchBaseline does.
+   */
   baselineEntries?: BaselineEntry[] | BaselineFile;
   /** runs[0].automationDetails.id, for one analysis per viewport width or page. */
   category?: string;
@@ -16,6 +19,11 @@ export interface SarifOptions {
   leanFailAs?: 'warning' | 'error';
   /** With leanFailAs: 'error', raise only the leans of rules mapped to a WCAG criterion, not a best-practice rule's. Default false. */
   leanFailWcagOnly?: boolean;
+  /**
+   * A scan of several profiles that ran fewer than it asked for
+   * (engine.profilesNotRun) is an error by default; true accepts it.
+   */
+  allowProfilesNotRun?: boolean;
   /**
    * The packs the scan ran (engineOptions.packs): in Node, a pack rule's
    * undecided findings carry the steps of its meta.review.

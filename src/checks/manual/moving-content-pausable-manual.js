@@ -82,34 +82,6 @@ const meta = {
     facetsBySc: {
       '2.2.2': ['auto-moving-content-pausable']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    MOVING_CONTENT_LOOPS: {
-      steps: [
-        'Load the page and watch the element the report names; its animation starts by itself and never stops.',
-        'Look near it for a pause, stop or hide control, and try it with the mouse and with the keyboard (Tab to it, press Enter or Space).',
-        'Check whether the motion actually stops or the content is hidden, and stays that way.',
-        'If there is no control, decide whether the motion is essential (removing it would change the meaning), or is a loading indicator shown alone.'
-      ],
-      passWhen:
-        'A reachable control pauses, stops or hides the motion, or the motion is essential.',
-      failWhen:
-        'The content keeps moving and there is no way to pause, stop or hide it, which fails WCAG 2.2.2.'
-    },
-    MOVING_CONTENT_OVER_5S: {
-      steps: [
-        'Load the page and watch the element the report names; its animation starts by itself and runs for more than five seconds.',
-        'Look near it for a pause, stop or hide control, and try it with the mouse and with the keyboard (Tab to it, press Enter or Space).',
-        'Check whether the motion actually stops or the content is hidden, and stays that way.',
-        'If there is no control, decide whether the motion is essential (removing it would change the meaning), or is a loading indicator shown alone.'
-      ],
-      passWhen:
-        'A reachable control pauses, stops or hides the motion, or the motion is essential.',
-      failWhen:
-        'The content keeps moving and there is no way to pause, stop or hide it, which fails WCAG 2.2.2.'
-    }
   }
 };
 
@@ -170,7 +142,7 @@ function runInPage(ctx) {
         summary: entry.loops
           ? `This <${tag}> moves by itself without end${name ? ` (animation "${name}")` : ''}.`
           : `This <${tag}> moves by itself for more than five seconds${name ? ` (animation "${name}")` : ''}.`,
-        hint: 'Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.',
+        hint: 'Check that a control lets users pause, stop or hide this movement, unless it is essential. Movement that stops by itself within five seconds needs none.',
         i18n: {
           summaryKey: entry.loops
             ? 'movingContentPausable_summary_cantTell_loops'

@@ -165,7 +165,15 @@ test('the live-region hook in Chromium', { skip }, async (t) => {
     const inside = "document.getElementById('i').textContent = 'Wrong password'";
     const behind = "document.getElementById('b').textContent = 'Saved'";
     const hidden = (lean) => [
-      [{ reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'modal' }, lean]
+      [
+        {
+          reasonCode: 'LIVE_REGION_HIDDEN',
+          politeness: 'polite',
+          messageKind: 'status',
+          hiddenBy: 'modal'
+        },
+        lean
+      ]
     ];
 
     // The region inside the dialog was shown by the dialog opening, then

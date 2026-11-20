@@ -116,3 +116,30 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-checked-state-mismatch-a
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: the summary gives the state aria-checked says and the real one`, () => {
+  const html = `<!doctype html><html lang="en"><body>
+    <input id="a" type="checkbox" aria-checked="true" aria-label="A">
+    <input id="b" type="radio" checked aria-checked="FALSE" aria-label="B">
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const a = byId('a');
+  assert.strictEqual(
+    a.summary,
+    'This <input type="checkbox"> has aria-checked="true", but it is not checked.'
+  );
+  assert.strictEqual(
+    a.i18n.summaryKey,
+    'ariaCheckedStateMismatch_summary_cantTell_actualUnchecked'
+  );
+
+  const b = byId('b');
+  assert.strictEqual(
+    b.summary,
+    'This <input type="radio"> has aria-checked="false", but it is checked.'
+  );
+  assert.strictEqual(b.i18n.summaryKey, 'ariaCheckedStateMismatch_summary_cantTell_actualChecked');
+  assert.strictEqual(b.i18n.params.written, 'false');
+});

@@ -237,54 +237,32 @@ function validateI18nMatchesMeta(dict, key, value, context) {
   );
 }
 
-// meta.review: how a person checks each undecided finding, by reason code.
-// Each code is one the rule gives (it appears in the rule's source), and its
-// steps, passWhen and failWhen match the English entries of
-// src/i18n/review/en.json,
-// <prefix>_review_<code>_step<n>, _pass and _fail, which the engine reads
-// for the scan's locale.
-function validateReview(dict, meta, runFilePath) {
-  if (!meta || meta.review === undefined) return;
+// How a person checks each undecided finding, by reason code: a core rule's
+// steps are in src/procedures (registry.js files each code under a facet,
+// src/i18n/procedures/<locale>.json holds the text), never in meta.review,
+// which only a pack's rule writes. Each code the registry lists for the rule
+// is one the rule gives (it appears in the rule's source), with 1 to 6 steps,
+// a pass and a fail in English, under <prefix>_review_<code>_step<n>, _pass
+// and _fail.
+function validateReview(dict, meta, ruleId, runFilePath) {
   assert.ok(
-    meta.review && typeof meta.review === 'object' && !Array.isArray(meta.review),
-    'meta.review, when given, must be an object of reason code -> { steps, passWhen, failWhen }'
+    meta.review === undefined,
+    "meta.review: a core rule's steps live in src/procedures and src/i18n/procedures (docs/RULE_AUTHORING.md §8.6)"
   );
   const prefix = String(meta.i18n.titleKey).replace(/_title$/, '');
   const src = fs.readFileSync(runFilePath, 'utf8');
-  for (const [code, entry] of Object.entries(meta.review)) {
+  const { variants } = require('./generate-procedures.js');
+  for (const { code } of variants().filter((v) => v.ruleId === ruleId)) {
     assert.ok(
       src.includes(`'${code}'`) || src.includes('`' + code + '`'),
-      `meta.review: "${code}" is not a reason code of this rule`
+      `src/procedures/registry.js: "${code}" is not a reason code of ${ruleId}`
     );
-    assert.ok(
-      entry && Array.isArray(entry.steps) && entry.steps.length >= 1 && entry.steps.length <= 6,
-      `meta.review.${code}.steps must list 1 to 6 steps`
-    );
-    entry.steps.forEach((step, i) =>
-      validateI18nMatchesMeta(
-        dict,
-        `${prefix}_review_${code}_step${i + 1}`,
-        step,
-        `meta.review.${code}.steps[${i}]`
-      )
-    );
-    assert.equal(
-      dict[`${prefix}_review_${code}_step${entry.steps.length + 1}`],
-      undefined,
-      `meta.review.${code}: the dictionary has a step the rule doesn't (${prefix}_review_${code}_step${entry.steps.length + 1})`
-    );
-    validateI18nMatchesMeta(
-      dict,
-      `${prefix}_review_${code}_pass`,
-      entry.passWhen,
-      `meta.review.${code}.passWhen`
-    );
-    validateI18nMatchesMeta(
-      dict,
-      `${prefix}_review_${code}_fail`,
-      entry.failWhen,
-      `meta.review.${code}.failWhen`
-    );
+    const key = `${prefix}_review_${code}_`;
+    let n = 0;
+    while (typeof dict[`${key}step${n + 1}`] === 'string') n++;
+    assert.ok(n >= 1 && n <= 6, `${key}step<n>: ${code} must have 1 to 6 steps, not ${n}`);
+    assert.ok(typeof dict[`${key}pass`] === 'string', `${key}pass is missing`);
+    assert.ok(typeof dict[`${key}fail`] === 'string', `${key}fail is missing`);
   }
 }
 
@@ -946,8 +924,9 @@ function main() {
   );
 
   validateReview(
-    JSON.parse(fs.readFileSync(path.join(repoRoot, 'src/i18n/review/en.json'), 'utf8')),
+    JSON.parse(fs.readFileSync(path.join(repoRoot, 'src/i18n/procedures/en.json'), 'utf8')),
     mod.meta,
+    mod.id,
     codePath
   );
 

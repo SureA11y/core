@@ -177,3 +177,17 @@ test(`${RULE_ID} (node runtime): a display:none duplicate footer is excluded (no
   assert.strictEqual(rule.outcome, 'pass');
   assert.strictEqual(rule.occurrences.length, 0);
 });
+
+test(`${RULE_ID}: names the other contentinfo landmark`, () => {
+  const html = `<!doctype html><html><body>
+    <main>x</main><footer id="f1">Contact</footer>
+    <div role="contentinfo" class="legal">Legal</div>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const f1 = rule.occurrences.find((o) => o.html.includes('id="f1"'));
+  assert.strictEqual(
+    f1.summary,
+    'This page has 2 contentinfo landmarks: this one and <div role="contentinfo" class="legal"> "Legal".'
+  );
+  assert.strictEqual(f1.i18n.summaryKey, 'landmarkNoDuplicateContentinfo_summary_cantTell_others');
+});

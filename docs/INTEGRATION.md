@@ -549,6 +549,22 @@ window.eval(listenerHookScript({ early: true }));
 
 jsdom's selector engine adds `keydown` and `keyup` listeners to the window the first time a selector runs, for its own `:focus-visible`. Installed before that, the hook records them as the page's, and every element reads as having a key listener above it. Run one selector first, as above. A real browser adds no such listeners.
 
+**Playwright's `setContent()` is no navigation.** It writes the markup into the page's current document, which has already loaded, so an init script doesn't run while that document is loading:
+
+- An init script added to the context (`context.addInitScript`) before the page was opened runs in the page's first, blank document. The hook is there when `setContent()` writes the page, but it is recorded as `'late'`, and `click-handler-keyboard-operable` asks (`CLICK_HANDLER_NO_KEY_HANDLER`) where an early hook would have failed the element (`CLICK_HANDLER_NO_KEY_LISTENER`).
+- An init script added to a page that is already open (`page.addInitScript`) waits for that page's next document, and `setContent()` doesn't make one: the scan runs with no hook (`listenerHook` absent).
+
+For early capture, load the page with a real navigation: `page.goto()` to a server or a `file://` URL, or `page.route()` to answer a URL with the markup, as below. Or, where you know no script of the page has run before the hook (a context init script and markup set with `setContent()`), install it with `listenerHookScript({ early: true })`. The same holds for `internalsHookScript()` and `liveRegionHookScript()`.
+
+```js
+await context.addInitScript({ content: listenerHookScript() });
+const page = await context.newPage();
+await page.route('https://test.local/', (route) =>
+  route.fulfill({ body: html, contentType: 'text/html' })
+);
+await page.goto('https://test.local/'); // listenerHook: 'early'
+```
+
 ### What a page can notice, and the limits
 
 - `addEventListener`, `removeEventListener` and the handler property setters are no longer the browser's own functions: their source isn't `[native code]`. Their names, `length` and property attributes are the same. A stack trace taken inside a call has one more frame.
@@ -625,7 +641,7 @@ window.eval(liveRegionHookScript({ early: true }));
 
 `getAnnouncements([win], [options])` returns what the page made available to announce, `[{ text, politeness, time, order, behindModal, element }]` in the order the page did it (`order` is the change's place among all the page made), or `null` without the hook. Changes made in the same task as the call are included. Run it in the page, with the browser bundle as `window.a11ycore.getAnnouncements()`:
 
-A text given to a region behind an open modal `<dialog>` is left out: the browser made the region inert, so assistive technology did not get it, and a screen reader said nothing. To see that the page wrote it all the same, pass `{ includeBehindModal: true }` (`getAnnouncements(win, { includeBehindModal: true })`, or `getAnnouncements({ includeBehindModal: true })` in the page), and such entries are listed too, with `behindModal: true`; the others have `behindModal: false`. The hook tells from the modal dialogs open in the document, and when each was opened: the region is in none of them and contains none, and one of them was opened before the text was given. It does not see a modal dialog inside a shadow root.
+A text given to a region behind an open modal `<dialog>` is left out: the browser made the region inert, so assistive technology did not get it, and a screen reader said nothing. To see that the page wrote it all the same, pass `{ includeBehindModal: true }` (`getAnnouncements(win, { includeBehindModal: true })`, or `getAnnouncements({ includeBehindModal: true })` in the page), and such entries are listed too, with `behindModal: true`; the others have `behindModal: false`. The hook tells from the modal dialogs open in the document, and when each was opened: the region is in none of them and contains none, and one of them was opened before the text was given. It does not see a modal dialog inside a shadow root. A modal dialog is one opened with `showModal()`, as for the scan; jsdom can't open one, so a jsdom test that stands in for `showModal()` by setting `open` and `aria-modal="true"` installs the hook with `{ early: true, assumeModal: true }` and scans with `engineOptions.assumeModal: true` (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#engineoptions--the-rest)).
 
 ```js
 await page.click('text=Save');
@@ -788,6 +804,7 @@ A few things worth knowing:
 - **Custom rules reach the child frames** as their source: `postMessage` can't carry a function, so a `runInPage` or `applicability` given as one is sent as its `toString()`, which the frame turns back into a function. A frame whose Content Security Policy forbids `'unsafe-eval'` skips such a rule and says so in its `skippedCustomRules`.
 - **Async, unlike the other two runners** — `postMessage` round-trips can't be synchronous, so this is a separate, Promise-returning pair rather than an `engineOptions` flag on `runa11yCoreInPage` (which stays synchronous, unchanged, for every existing caller).
 - **`engineOptions.pingWaitTime`** (default `500`ms) and **`engineOptions.frameWaitTime`** (default `60000`ms) control how long a child frame gets to answer a ping and a full run request respectively.
+- **Frames no one reaches are read as the browser reads them**: a frame the page doesn't show, one behind an open modal dialog (the topmost, where several are open) and one `excludeSelectors` excludes are left out; one under `aria-hidden="true"` is scanned with `engineOptions.embeddedAriaHidden` and one under `[inert]` with `engineOptions.embeddedInert`; and a framed document is no page of its own, so the rules about the page (its title, language, main landmark…) don't apply in it ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#engineoptions--the-rest), `topLevelDocument`).
 - **No jsdom/Node equivalent** — this is browser-only. jsdom's window/frame model doesn't meaningfully represent independent-realm cross-origin `postMessage`, and the feature has no purpose in Node anyway.
 - **Bundler-free, like `runa11yCoreInPage`** — raw-source injection (a bookmarklet, a content script with no build step) still works with no bundler, but the slice you inject has to start at the `// SELF-CONTAINED in-page runner` marker rather than at the cross-frame block. `runa11yCoreAcrossFrames` scans its own frame by calling `runa11yCoreInPage`, so the two travel together. Everything from that marker to `module.exports` is one contiguous chunk with no `require()` in it. If you _do_ use a normal bundler/`require`/`import`, that works too, unchanged.
 - **Cost**: these two functions used to carry their own private copy of the rule catalog and helpers, which put the catalog in `src/core.js` three times over and took the file to ~4.3MB. They share `runa11yCoreInPage`'s copy now, so there is one copy to grow as rules are added.

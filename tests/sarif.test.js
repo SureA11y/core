@@ -601,18 +601,24 @@ test('renderSarifReport: a baseline entry with no reasonCode or html still filte
   ]);
 
   const sarif = parse(
-    renderSarifReport(result, { baselineEntries: [null, { ruleId: 'img-alt-present' }] })
+    renderSarifReport(result, { baselineEntries: [{ ruleId: 'img-alt-present' }] })
   );
 
   assert.deepStrictEqual(sarif.runs[0].results, []);
 });
 
-test('renderSarifReport: a non-array baselineEntries filters nothing', () => {
+test('renderSarifReport: no baselineEntries filters nothing, and a malformed one throws', () => {
   const result = makeScanResult([makeCheckResult({})]);
 
-  for (const baselineEntries of [null, undefined, 'x', {}]) {
+  for (const baselineEntries of [null, undefined]) {
     const sarif = parse(renderSarifReport(result, { baselineEntries }));
     assert.strictEqual(sarif.runs[0].results.length, 1);
+  }
+  for (const baselineEntries of ['x', {}]) {
+    assert.throws(
+      () => renderSarifReport(result, { baselineEntries }),
+      (err) => err.code === 'INVALID_BASELINE'
+    );
   }
 });
 
@@ -635,7 +641,10 @@ test('renderSarifReport: an occurrence carrying `outcome` instead of `occurrence
   );
 });
 
-test('a notApplicable check can carry an explanatory occurrence', () => {
+// Core's contrast rules used to explain a notApplicable with an occurrence;
+// they no longer do, and the text they couldn't measure reaches SARIF as
+// contrast-computable's results. A pack's or custom rule may still attach one.
+test('text no contrast rule could measure reaches SARIF as contrast-computable results', () => {
   const result = runa11yCoreOnHtml(
     '<!doctype html><html lang="en"><head><title>t</title></head><body><p style="background-image:linear-gradient(#fff,#000)">Hello world</p></body></html>',
     { engineOptions: {} }
@@ -643,25 +652,33 @@ test('a notApplicable check can carry an explanatory occurrence', () => {
 
   const contrast = result.checksResults.find((c) => c.ruleId === 'contrast-minimum');
   assert.strictEqual(contrast.outcome, 'notApplicable');
-  assert.strictEqual(contrast.occurrences.length, 1, 'the rule says why it had nothing to judge');
-  assert.strictEqual(contrast.occurrences[0].selector, '', 'it describes the scan, not an element');
-});
+  assert.deepStrictEqual(contrast.occurrences, [], 'a notApplicable names no finding');
 
-test('a rule that could not check reaches SARIF as a notice, never as an alert', () => {
-  const result = runa11yCoreOnHtml(
-    '<!doctype html><html lang="en"><head><title>t</title></head><body><p style="background-image:linear-gradient(#fff,#000)">Hello world</p></body></html>',
-    { engineOptions: {} }
-  );
   const sarif = parse(renderSarifReport(result, { toolVersion: '1.2.3' }));
-
   const ids = sarif.runs[0].results.map((r) => r.ruleId);
   assert.ok(!ids.includes('contrast-minimum'), 'not evaluated is not a violation');
+  assert.ok(
+    ids.includes('contrast-computable'),
+    'a SARIF-only consumer still learns contrast went unchecked'
+  );
+});
 
+test('a rule that explains its notApplicable reaches SARIF as a notice, never as an alert', () => {
+  const result = makeScanResult([
+    makeCheckResult({
+      ruleId: 'explaining-rule',
+      outcome: 'notApplicable',
+      occurrences: [makeOccurrence({ selector: '', summary: 'Nothing here could be measured.' })]
+    })
+  ]);
+  const sarif = parse(renderSarifReport(result, { toolVersion: '1.2.3' }));
+
+  assert.deepStrictEqual(sarif.runs[0].results, []);
   const notices = sarif.runs[0].invocations[0].toolExecutionNotifications;
-  const contrast = notices.find((n) => n.associatedRule.id === 'contrast-minimum');
-  assert.ok(contrast, 'a SARIF-only consumer must still learn contrast went unchecked');
-  assert.strictEqual(contrast.level, 'note');
-  assert.match(contrast.message.text, /computable contrast/);
+  const notice = notices.find((n) => n.associatedRule.id === 'explaining-rule');
+  assert.ok(notice, 'the explanation is carried, not dropped');
+  assert.strictEqual(notice.level, 'note');
+  assert.strictEqual(notice.message.text, 'Nothing here could be measured.');
   assert.strictEqual(sarif.runs[0].invocations[0].executionSuccessful, true);
 });
 
@@ -835,4 +852,53 @@ test("renderSarifReport: no wcag- tag names a criterion outside the scan's level
   ]);
   old.engine = { ...old.engine, wcagVersion: '2.2', wcagLevel: 'AA' };
   assert.deepStrictEqual(wcagTags(parse(renderSarifReport(old)), 'contrast-enhanced'), []);
+});
+
+test('renderSarifReport: a scan of several profiles names them all in the run properties', () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  result.engine = {
+    ...result.engine,
+    profile: 'wcag22-aa',
+    profiles: ['wcag22-aa', 'en301549-v4.1.1']
+  };
+  const props = parse(renderSarifReport(result)).runs[0].properties;
+  assert.strictEqual(props.profile, 'wcag22-aa');
+  assert.deepStrictEqual(props.profiles, ['wcag22-aa', 'en301549-v4.1.1']);
+  // One profile: profile alone, as before.
+  delete result.engine.profiles;
+  assert.strictEqual(parse(renderSarifReport(result)).runs[0].properties.profiles, undefined);
+});
+
+// An occurrence marked as passing, in a failing check (a custom or pack
+// rule's, which may report them), is no failure: SARIF reported it as an
+// error, JUnit counted it, and baselines took it in.
+test('a pass-tier occurrence of a failing check is no error, failure or baseline entry', () => {
+  const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
+  const { renderJunitReport } = require('../src/junit.js');
+  const { buildBaselineEntries } = require('../src/baseline.js');
+  const rule = {
+    id: 'tiered-probe',
+    meta: {
+      title: 'Tiered',
+      description: 'Reports one failing and one passing paragraph.',
+      tags: ['best-practice'],
+      wcagSc: []
+    },
+    runInPage:
+      "function (ctx) { var d = ctx.document; return { ruleId: ctx.rule.ruleId, outcome: 'fail', occurrences: [ctx.helpers.reportOccurrence(d.getElementById('bad'), { summary: 'bad', occurrenceOutcome: 'fail' }), ctx.helpers.reportOccurrence(d.getElementById('good'), { summary: 'good', occurrenceOutcome: 'pass' })] }; }"
+  };
+  const result = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><p id="bad">Bad</p><p id="good">Good</p></body></html>',
+    { runOnly: ['tiered-probe'], engineOptions: { customRules: [rule] } }
+  );
+  const sarif = renderSarifReport(result);
+  const log = typeof sarif === 'string' ? JSON.parse(sarif) : sarif;
+  const errors = log.runs[0].results.filter((r) => r.ruleId === 'tiered-probe');
+  assert.strictEqual(errors.length, 1);
+  assert.match(JSON.stringify(errors[0].locations), /bad/);
+  assert.match(String(renderJunitReport(result)), /failures="1"/);
+  assert.deepStrictEqual(
+    buildBaselineEntries(result).map((e) => e.selector),
+    ['#bad']
+  );
 });

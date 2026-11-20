@@ -177,3 +177,55 @@ test(`${RULE_ID}: tracking-parameter variants lean pass, a generic name to diffe
   assert.deepEqual(leans('<a href="/a">Contact us</a><a href="/b">Contact us</a>'), [null, null]);
   assert.deepEqual(leans('<a href="/p#reviews">More</a><a href="/p#specs">More</a>'), [null, null]);
 });
+
+// details.linkKind says what each link is made of (helpers.getLinkKind), so
+// a standard that judges text, image and SVG links apart can tell them.
+test(`${RULE_ID}: each finding says what its link is made of (linkKind)`, () => {
+  const html =
+    '<!doctype html><html lang="en"><body><main>' +
+    '<a id="text" href="/a">Brochure</a>' +
+    '<a id="image" href="/b"><img src="b.png" alt="Brochure"></a>' +
+    '<a id="composite" href="/c"><img src="c.png" alt="">Brochure</a>' +
+    '<svg><a id="svg" href="/d"><text>Brochure</text></a></svg>' +
+    '</main></body></html>';
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 4,
+    maxOccurrences: 4
+  });
+  assert.deepStrictEqual(
+    rule.occurrences.map((o) => [/id="(\w+)"/.exec(o.html)[1], o.data.details.linkKind]),
+    [
+      ['text', 'text'],
+      ['image', 'image'],
+      ['composite', 'composite'],
+      ['svg', 'svg']
+    ]
+  );
+});
+
+test(`${RULE_ID}: gives the shared name and where the other links go`, () => {
+  const html = `<!doctype html><html><body>
+    <a id="r1" href="/news/a">Read more</a> <a id="r2" href="/news/b">Read more</a>
+    <a id="p1" href="/pricing">Plans</a> <a id="p2" href="/plans.html">Plans</a>
+    <a id="p3" href="https://other.example/plans">Plans</a>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const r1 = byId('r1');
+  assert.strictEqual(
+    r1.summary,
+    'This link, "Read more", goes to /news/a, and a link with the same name elsewhere on the page goes to /news/b.'
+  );
+  assert.strictEqual(r1.i18n.summaryKey, 'identicalLinksSamePurpose_summary_cantTell_oneOther');
+  assert.deepStrictEqual(r1.data.details.otherDestinations, ['/news/b']);
+
+  const p1 = byId('p1');
+  assert.strictEqual(
+    p1.summary,
+    'This link, "Plans", goes to /pricing; links with the same name elsewhere on the page go to 2 other addresses: /plans.html, https://other.example/plans.'
+  );
+  assert.strictEqual(p1.i18n.summaryKey, 'identicalLinksSamePurpose_summary_cantTell_others');
+  assert.strictEqual(p1.i18n.params.otherCount, '2');
+  assert.strictEqual(p1.data.details.reasonCode, 'SAME_NAME_DIFFERENT_DESTINATION');
+});

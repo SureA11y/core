@@ -24,7 +24,9 @@ test('with no document, or in jsdom, it resolves at once and ready', async () =>
   const r = await waitForPageReady({ document: dom.window.document });
   assert.deepEqual(r.pending, { load: false, fonts: false, images: 0 });
   assert.equal(r.ready, true);
-  assert.ok(r.waitedMs < 100, `waited ${r.waitedMs}ms`);
+  // At once, not after the 5 s timeout: a busy test runner can take a
+  // little over 100 ms to get there.
+  assert.ok(r.waitedMs < 1000, `waited ${r.waitedMs}ms`);
   dom.window.close();
 });
 

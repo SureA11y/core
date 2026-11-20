@@ -281,6 +281,22 @@ function createDomHelpers(opts) {
   // own), regardless of whether document.documentElement happens to be in
   // scope. See isWholeDocumentScope() below.
   const fragment = !!(opts && opts.fragment === true);
+  // engineOptions.embeddedAriaHidden: the document is shown in a frame under
+  // aria-hidden="true", so every element is read as under an aria-hidden
+  // ancestor, out of the accessibility tree but for what overrides that.
+  const embeddedAriaHidden = !!(opts && opts.embeddedAriaHidden === true);
+  // engineOptions.embeddedInert: the document is shown in a frame under
+  // [inert], so every element is read as inert content is.
+  const embeddedInert = !!(opts && opts.embeddedInert === true);
+  // engineOptions.topLevelDocument: whether the document is a page of its
+  // own, whatever window it is in (see isTopLevelDocument()); null detects it.
+  const topLevelDocumentOption =
+    opts && typeof opts.topLevelDocument === 'boolean' ? opts.topLevelDocument : null;
+  // engineOptions.assumeModal: where the DOM cannot open a modal dialog (no
+  // showModal(), as in jsdom), take an open <dialog aria-modal="true"> as
+  // one, for a test that stands in for showModal() with those attributes.
+  // Without it, only a dialog matching :modal makes the page behind inert.
+  const assumeModal = !!(opts && opts.assumeModal === true);
 
   // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
   // by dom-runner.js immediately before invoking each rule's applicability/
@@ -381,15 +397,6 @@ function createDomHelpers(opts) {
   // Shared escaping helpers (reduce per-call allocations, deterministic)
   // -------------------------------------------------------------------------
   const __w = realmWindow || window;
-  const __cssEscapeSafe = (s) => {
-    try {
-      return __w && __w.CSS && typeof __w.CSS.escape === 'function'
-        ? __w.CSS.escape(String(s))
-        : String(s);
-    } catch {
-      return String(s);
-    }
-  };
   // Spec-accurate CSS.escape() fallback (CSSOM "serialize an identifier"
   // algorithm) for environments without a native window.CSS.escape, such
   // as jsdom. Must handle CSS identifiers that start with a digit or a
@@ -440,10 +447,64 @@ function createDomHelpers(opts) {
     } catch {}
     return __cssEscapeIdentFallback(s);
   };
-  const __escapeAttrValue = (s) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  // A value for a quoted CSS attribute selector (`[attr="..."]`): a
+  // backslash and a double quote escaped with a backslash, and a control
+  // character as a hex escape ("\a " for a newline), which CSS reads back
+  // as that character, where a raw newline ends the string and the selector
+  // doesn't parse.
+  const __escapeAttrValue = (s) =>
+    // eslint-disable-next-line no-control-regex -- control characters are what it escapes
+    String(s).replace(/[\\"\u0001-\u001f\u007f]/g, (c) =>
+      c === '\\' || c === '"' ? '\\' + c : '\\' + c.charCodeAt(0).toString(16) + ' '
+    );
+  // Whether a selector can name an attribute value, or an id, exactly: CSS
+  // reads a NUL or a lone surrogate, escaped or not, as U+FFFD, so a
+  // selector holding one never matches the element it was built from. A
+  // value longer than SELECTOR_VALUE_MAX is not used either, so a 2 MB
+  // aria-label doesn't make a 2 MB selector: the element's path names it.
+  const SELECTOR_VALUE_MAX = 256;
+  const __valueSelectable = (s) => {
+    const v = String(s);
+    return (
+      v.length <= SELECTOR_VALUE_MAX &&
+      // eslint-disable-next-line no-control-regex -- a NUL is what it looks for
+      !/\u0000|[\ud800-\udbff](?![\udc00-\udfff])|(?:^|[^\ud800-\udbff])[\udc00-\udfff]/.test(v)
+    );
+  };
 
   // --- eligibility utilities ---
   const isElement = (n) => !!n && dom.nodeType(n) === 1;
+  // el.closest(selector), worked out once per element and selector for the
+  // run: an element's answer is itself, where it matches, else its parent
+  // element's, so asking it of every element of a deep page costs the
+  // elements, not elements x depth. Throws where closest() would (a
+  // selector that doesn't parse).
+  function closestCached(el, selector) {
+    let bySelector;
+    try {
+      const all =
+        __domSharedCache.closestBySelector || (__domSharedCache.closestBySelector = new Map());
+      bySelector = all.get(selector);
+      if (!bySelector) all.set(selector, (bySelector = new WeakMap()));
+    } catch {
+      return dom.call(el, 'closest', selector);
+    }
+    if (bySelector.has(el)) return bySelector.get(el);
+    const path = [];
+    let above = null;
+    for (let cur = el; cur; cur = dom.parentElement(cur)) {
+      if (bySelector.has(cur)) {
+        above = bySelector.get(cur);
+        break;
+      }
+      path.push(cur);
+    }
+    for (let i = path.length - 1; i >= 0; i--) {
+      if (dom.matches(path[i], selector)) above = path[i];
+      bySelector.set(path[i], above);
+    }
+    return bySelector.get(el);
+  }
   // The <math> element el is in, or is, where the page has no layout
   // (jsdom), which can't style a formula; null otherwise. Decided once per
   // document.
@@ -451,7 +512,7 @@ function createDomHelpers(opts) {
   const brokenMathRoot = (el) => {
     let math;
     try {
-      math = el && typeof el === 'object' ? dom.call(el, 'closest', 'math') : null;
+      math = el && typeof el === 'object' ? closestCached(el, 'math') : null;
     } catch {
       return null;
     }
@@ -466,6 +527,65 @@ function createDomHelpers(opts) {
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, hasLayoutOf(math));
     return __layoutByDoc.get(doc) ? null : math;
   };
+
+  // jsdom resolves an inherited value an element doesn't declare by
+  // recursing into its parent's, and keeps it once resolved: read first on
+  // an element a thousand or so levels deep, it runs out of stack, and
+  // where it does depends on how much stack the caller has used, so the
+  // same page gave a different verdict from one entry point, or one run,
+  // to the next. Each property read on an element deeper than this has
+  // it resolved on the elements above first, from the top down, once per
+  // element and property for the run, so no read recurses far and every
+  // read gives the value it would without the limit.
+  const __WARM_UP_DEPTH = 100;
+  const __warmedByProp = new Map();
+  const __styleKeyIsProperty = new Map();
+  function warmInheritedUp(el, prop) {
+    let warmed = __warmedByProp.get(prop);
+    if (!warmed) __warmedByProp.set(prop, (warmed = new WeakSet()));
+    if (warmed.has(el)) return;
+    const above = [];
+    for (let p = dom.parentElement(el); p && !warmed.has(p); p = dom.parentElement(p))
+      above.push(p);
+    const view = realmWindow || window;
+    for (let i = above.length - 1; i >= 0; i--) {
+      try {
+        view.getComputedStyle(above[i]).getPropertyValue(prop);
+      } catch {}
+      warmed.add(above[i]);
+    }
+    warmed.add(el);
+  }
+  function withInheritedWarmUp(cs, el) {
+    const isProperty = (target, key) => {
+      if (__styleKeyIsProperty.has(key)) return __styleKeyIsProperty.get(key);
+      let desc = null;
+      for (let o = target; o && !desc; o = Object.getPrototypeOf(o))
+        desc = Object.getOwnPropertyDescriptor(o, key);
+      const yes =
+        !!desc &&
+        typeof desc.get === 'function' &&
+        !['length', 'cssText', 'parentRule', 'cssFloat'].includes(key);
+      __styleKeyIsProperty.set(key, yes);
+      return yes;
+    };
+    const kebab = (key) => key.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
+    return new Proxy(cs, {
+      get(target, key) {
+        if (key === 'getPropertyValue') {
+          return (name) => {
+            warmInheritedUp(el, String(name).toLowerCase());
+            return target.getPropertyValue(name);
+          };
+        }
+        if (typeof key === 'string' && isProperty(target, key)) {
+          warmInheritedUp(el, key.startsWith('webkit') ? '-' + kebab(key) : kebab(key));
+        }
+        const v = Reflect.get(target, key, target);
+        return typeof v === 'function' ? v.bind(target) : v;
+      }
+    });
+  }
 
   const computedStyle = (el) => {
     // Per-run memoization scoped by *helper scope* (root/document), to ensure
@@ -512,6 +632,22 @@ function createDomHelpers(opts) {
       } catch {
         cs = {};
       }
+      // Without a layout (jsdom): an element deep in the page reads its
+      // inherited values with the elements above it resolved first
+      // (withInheritedWarmUp), and the layered and conditional rules jsdom
+      // leaves out apply (layeredOverridesOf).
+      try {
+        if (cs && isElement(el)) {
+          const doc = dom.ownerDocument(el);
+          if (doc && !__layoutByDoc.has(doc)) __layoutByDoc.set(doc, hasLayoutOf(el));
+          if (doc && !__layoutByDoc.get(doc)) {
+            const chunk = ancestorChunk(el);
+            if (chunk && chunk.depth > __WARM_UP_DEPTH) cs = withInheritedWarmUp(cs, el);
+            const overrides = layeredOverridesOf(el);
+            if (overrides) cs = withLayeredOverrides(cs, overrides);
+          }
+        }
+      } catch {}
     }
 
     try {
@@ -639,13 +775,14 @@ function createDomHelpers(opts) {
 
     // A <dialog> opened with showModal() matches :modal in every current
     // engine, whether or not it carries aria-modal; HTML then makes the rest
-    // of the document inert ("blocked by a modal dialog"). Where the DOM has
-    // a top layer, :modal is the whole answer: a dialog opened with the open
-    // attribute or show() leaves the page reachable by keyboard and in
-    // Chromium's accessibility tree, aria-modal="true" or not, so treating
-    // it as modal would hide a live page from every rule. A DOM without a
-    // top layer (jsdom: no showModal(), :modal never matches) falls back to
-    // an open dialog with aria-modal="true", the closest it can tell.
+    // of the document inert ("blocked by a modal dialog"). That is the whole
+    // answer: a dialog opened with the open attribute or show() leaves the
+    // page reachable by keyboard and in the accessibility tree,
+    // aria-modal="true" or not, so treating it as modal would hide a live
+    // page from every rule. A DOM without a top layer (jsdom: no
+    // showModal(), :modal never matches) can't open a modal dialog, so
+    // nothing there is behind one, unless engineOptions.assumeModal takes an
+    // open dialog with aria-modal="true" as modal there.
     // The whole document is searched, not the scan's scope: a modal outside
     // a scoped scan still blocks what is inside it. Open shadow roots are
     // searched too: a dialog opened with showModal() in a shadow tree is in
@@ -660,8 +797,12 @@ function createDomHelpers(opts) {
       hasTopLayer = false;
     }
     let list = [];
-    const sel = hasTopLayer ? 'dialog:modal' : 'dialog[open][aria-modal="true"]';
-    for (const root of documentRoots()) {
+    const sel = hasTopLayer
+      ? 'dialog:modal'
+      : assumeModal
+        ? 'dialog[open][aria-modal="true"]'
+        : null;
+    for (const root of sel ? documentRoots() : []) {
       try {
         for (const el of dom.querySelectorAll(root, sel)) {
           if (list.indexOf(el) === -1) list.push(el);
@@ -679,6 +820,80 @@ function createDomHelpers(opts) {
 
     return list;
   };
+
+  // The open modal dialogs whose content is live: the topmost one, the last
+  // in the top layer, since HTML makes every other one inert under it ("blocked
+  // by a modal dialog"). No DOM API gives the top layer's order, and :modal
+  // matches every dialog in it, so the topmost is found as frame-scan.js finds
+  // it: the browser hit-tests nothing inert, and the topmost dialog's backdrop
+  // covers the rest, so a point at each dialog's centre lands in the topmost.
+  // A modal dialog inside another is its own layer: when it is the topmost,
+  // the outer one's content around it is inert, so a point that lands in it
+  // is not in the outer one.
+  // Where that tells none apart (one dialog, no layout, as in jsdom with
+  // assumeModal, or a topmost dialog the pointer passes through) every open
+  // one counts. Worked out once per run, with the open dialogs.
+  const __topModalsByList = new WeakMap();
+  const getTopModalDialogs = () => {
+    const modals = getOpenModalDialogs();
+    if (modals.length < 2) return modals;
+    try {
+      const cached = __topModalsByList.get(modals);
+      if (cached) return cached;
+    } catch {}
+    const view = window || dom.defaultView(document);
+    const width = (view && view.innerWidth) || 0;
+    const height = (view && view.innerHeight) || 0;
+    const top =
+      !width || !height
+        ? []
+        : modals.filter((d) => {
+            try {
+              const r = dom.getBoundingClientRect(d);
+              if (!r || !r.width || !r.height) return false;
+              const x = Math.min(Math.max(r.left + r.width / 2, 0), width - 1);
+              const y = Math.min(Math.max(r.top + r.height / 2, 0), height - 1);
+              const hit = dom.elementFromPoint(document, x, y);
+              if (!hit) return false;
+              // A hit in a shadow tree is retargeted to its host.
+              const holds = (m) =>
+                hit === m ||
+                dom.contains(m, hit) ||
+                (!!dom.shadowRoot(hit) && containsModal(hit, m));
+              // A hit in an open modal nested in `d` is in that one, not in
+              // `d`: with the inner one on top, the rest of `d` is inert.
+              return (
+                holds(d) &&
+                !modals.some(
+                  (m) => m !== d && containsModal(d, m) && (hit === m || dom.contains(m, hit))
+                )
+              );
+            } catch {
+              return false;
+            }
+          });
+    const out = top.length ? top : modals;
+    try {
+      __topModalsByList.set(modals, out);
+    } catch {}
+    return out;
+  };
+
+  // Whether `el` is behind an open modal dialog, which the browser makes
+  // inert: a modal dialog is open (getOpenModalDialogs) and `el` is in none
+  // of the topmost ones (getTopModalDialogs) by the flat tree, so content of
+  // a shadow root inside the dialog counts as in it, and contains none
+  // (<body>, a wrapper: a container of the dialog is not what is blocked).
+  // A dialog under the topmost one is inert with all it holds. Such an
+  // element is out of the accessibility tree (isAccTreeEligible's
+  // `modalInert`) and takes no focus (getFocusableInfo).
+  function isModalInert(el) {
+    if (!isElement(el)) return false;
+    const openModals = getTopModalDialogs();
+    if (!openModals.length) return false;
+    const chain = ancestorsIncludingSelf(el);
+    return !openModals.some((d) => chain.indexOf(d) !== -1 || containsModal(el, d));
+  }
 
   // Flat-tree (composed) parent: a distributed/slotted node's real rendered
   // parent is the <slot> it's assigned to, NOT its own light-DOM parentNode
@@ -757,10 +972,29 @@ function createDomHelpers(opts) {
     return null;
   };
 
-  const ancestorsIncludingSelf = (n) => {
-    if (!n) return [];
-    // Cache ancestor chains per node, per run, to avoid repeated composed-parent walks.
-    // Deterministic: purely memoized within the current run, no cross-run persistence.
+  // How far up the flat tree a walk from an element goes: far past any
+  // nesting a browser renders (Chromium's parser stops nesting at 512),
+  // a bound on the time a hostile page can cost, not a limit a real page
+  // meets. An element deeper than this is one whose ancestors beyond it the
+  // engine has not seen (hasTruncatedAncestorWalk).
+  const ANCESTOR_WALK_LIMIT = 10000;
+  // Each node keeps the first ANCESTOR_CHUNK nodes of its chain, itself
+  // first, and where the chain goes on, the node it goes on from (`next`)
+  // and how long it is in all (`depth`). A chunk is built from its parent's,
+  // so each node's parent is read once per run, and the memory kept is at
+  // most ANCESTOR_CHUNK entries a node however deep the page is.
+  const ANCESTOR_CHUNK = 200;
+
+  const makeAncestorChunk = (node, base) => {
+    const out = [node];
+    if (base) for (let k = 0; k < base.length && k < ANCESTOR_CHUNK - 1; k++) out.push(base[k]);
+    out.next = base ? (base.length >= ANCESTOR_CHUNK ? base[ANCESTOR_CHUNK - 1] : base.next) : null;
+    out.depth = base ? base.depth + 1 : 1;
+    return out;
+  };
+
+  const ancestorChunk = (n) => {
+    if (!n) return null;
     try {
       if (
         __ancestorsIncludingSelfCache &&
@@ -772,31 +1006,64 @@ function createDomHelpers(opts) {
           return cached;
         }
         __perfInc('ancestorsIncludingSelf.miss');
-        const out = [];
-        let cur = n,
-          guard = 0;
-        while (cur && guard++ < 200) {
-          out.push(cur);
-          cur = composedParent(cur);
+        // The ancestors on the way up that have no chunk yet get theirs too.
+        const path = [];
+        let base = null;
+        for (let cur = n; cur; cur = composedParent(cur)) {
+          const known = cur === n ? null : __ancestorsIncludingSelfCache.get(cur);
+          if (known) {
+            base = known;
+            break;
+          }
+          path.push(cur);
+          // Far deeper than the limit: the rest is not read, and the chain
+          // counts as going on past it.
+          if (path.length > ANCESTOR_WALK_LIMIT * 10) {
+            base = Object.assign([], { next: null, depth: Infinity });
+            break;
+          }
         }
-        // Still more to walk: callers must not read "no blocking ancestor
-        // found" from a chain that never reached the root.
-        if (cur) {
-          out.truncated = true;
-          __perfInc('ancestorsIncludingSelf.truncated');
+        for (let i = path.length - 1; i >= 0; i--) {
+          base = makeAncestorChunk(path[i], base);
+          __ancestorsIncludingSelfCache.set(path[i], base);
         }
-        __ancestorsIncludingSelfCache.set(n, out);
-        return out;
+        return base;
       }
     } catch {
       /* fall through */
     }
+    return null;
+  };
+
+  // The node and its ancestors in the flat tree, nearest first, up to
+  // ANCESTOR_WALK_LIMIT of them; `truncated` when there are more. Within
+  // one chunk (nearly every page) it is the kept array itself.
+  const ancestorsIncludingSelf = (n) => {
+    if (!n) return [];
+    const head = ancestorChunk(n);
+    if (head) {
+      if (!head.next) return head;
+      const out = head.slice();
+      for (let nx = head.next; nx;) {
+        const chunk = ancestorChunk(nx);
+        if (!chunk) break;
+        for (let k = 0; k < chunk.length; k++) {
+          if (out.length >= ANCESTOR_WALK_LIMIT) {
+            out.truncated = true;
+            __perfInc('ancestorsIncludingSelf.truncated');
+            return out;
+          }
+          out.push(chunk[k]);
+        }
+        nx = chunk.next;
+      }
+      return out;
+    }
 
     __perfInc('ancestorsIncludingSelf.nocache');
     const out = [];
-    let cur = n,
-      guard = 0;
-    while (cur && guard++ < 200) {
+    let cur = n;
+    while (cur && out.length < ANCESTOR_WALK_LIMIT) {
       out.push(cur);
       cur = composedParent(cur);
     }
@@ -807,17 +1074,20 @@ function createDomHelpers(opts) {
     return out;
   };
 
-  // Whether the 200-step ancestor walk for this node stopped short of the
-  // root. A rule cannot see this, so normalization uses it to decide how much
-  // confidence an occurrence on that node deserves.
+  // Whether the walk up from this node stopped at ANCESTOR_WALK_LIMIT
+  // short of the root. A rule cannot see this, so normalization uses it to
+  // decide how much confidence an occurrence on that node deserves.
   function hasTruncatedAncestorWalk(node) {
     try {
       if (!node || typeof node !== 'object') return false;
+      const head = ancestorChunk(node);
+      if (head) return head.depth > ANCESTOR_WALK_LIMIT;
       return ancestorsIncludingSelf(node).truncated === true;
     } catch {
       return false;
     }
   }
+  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
 
   function getClosestMap(el) {
     try {
@@ -841,13 +1111,13 @@ function createDomHelpers(opts) {
     __imageMapIndexByTree.set(tree, idx);
     try {
       const byName = new Map();
-      for (const m of Array.from(dom.querySelectorAll(tree, 'map'))) {
+      for (const m of [...dom.querySelectorAll(tree, 'map')]) {
         for (const attr of ['id', 'name']) {
           const v = dom.getAttribute(m, attr);
           if (v && !byName.has(v)) byName.set(v, m);
         }
       }
-      for (const img of Array.from(dom.querySelectorAll(tree, 'img[usemap]'))) {
+      for (const img of [...dom.querySelectorAll(tree, 'img[usemap]')]) {
         const ref = String(dom.getAttribute(img, 'usemap') || '');
         if (ref.charAt(0) !== '#' || ref.length < 2) continue;
         const map = byName.get(ref.slice(1));
@@ -892,27 +1162,56 @@ function createDomHelpers(opts) {
     );
   }
 
+  // Whether something holds for a node or any of its ancestors in the flat
+  // tree, where `own(n, parent)` says whether it holds at n: kept per node
+  // for the run, so each ancestor is asked once however deep the page is.
+  function holdsUpFlatTree(cache, node, own) {
+    const path = [];
+    let cur = node;
+    let held = false;
+    while (cur) {
+      if (cache.has(cur)) {
+        held = cache.get(cur);
+        break;
+      }
+      path.push(cur);
+      cur = composedParent(cur);
+    }
+    for (let i = path.length - 1; i >= 0; i--) {
+      if (!held) held = own(path[i], i + 1 < path.length ? path[i + 1] : cur) === true;
+      cache.set(path[i], held);
+    }
+    return held;
+  }
+
+  const __inertAttrUp = new WeakMap();
+  const inertAttrUp = (node) =>
+    holdsUpFlatTree(
+      __inertAttrUp,
+      node,
+      (n) => isElement(n) && !!dom.get(n, 'hasAttribute') && dom.hasAttribute(n, 'inert')
+    );
+
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
+    if (embeddedInert) return true;
     if (isSelectButton(node)) return true;
 
     const tag = (dom.tagName(node) || '').toLowerCase();
-    const isArea = tag === 'area';
-    const mapEl = isArea ? getClosestMap(node) : null;
+    if (tag !== 'area') return inertAttrUp(node);
 
-    const chain = ancestorsIncludingSelf(node);
-
-    for (const a of chain) {
-      if (!isElement(a)) continue;
-
-      // <area>/<map> generate no box, so a real browser's image-map
-      // hit-testing sits outside the pipeline inert operates on. Verified
-      // against Chromium and Firefox: inert on the area or its map does
-      // not remove it from the tab order. Only inert on a genuine ancestor
-      // of the <img>+<map> pairing does.
-      if (isArea && (a === node || a === mapEl)) continue;
-
-      if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'inert')) return true;
+    // <area>/<map> generate no box, so a real browser's image-map
+    // hit-testing sits outside the pipeline inert operates on. Verified
+    // against Chromium and Firefox: inert on the area or its map does
+    // not remove it from the tab order. Only inert on a genuine ancestor
+    // of the <img>+<map> pairing does.
+    const mapEl = getClosestMap(node);
+    for (let a = composedParent(node); a; a = composedParent(a)) {
+      if (a === mapEl) {
+        const above = composedParent(a);
+        return !!above && inertAttrUp(above);
+      }
+      if (isElement(a) && dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'inert')) return true;
     }
     return false;
   }
@@ -971,6 +1270,9 @@ function createDomHelpers(opts) {
       result = { focusable: false, tabbable: false, mechanism: 'none', flags: ['notElement'] };
     } else if (hasBlockingInert(el)) {
       result = { focusable: false, tabbable: false, mechanism: 'none', flags: ['inert'] };
+    } else if (isModalInert(el)) {
+      // Behind an open modal dialog: inert, as the browser makes it.
+      result = { focusable: false, tabbable: false, mechanism: 'none', flags: ['modalInert'] };
     } else {
       const flags = [];
       const disabled = !!(dom.get(el, 'matches') && dom.matches(el, ':disabled'));
@@ -1093,6 +1395,259 @@ function createDomHelpers(opts) {
     });
   }
 
+  // What a selector part requires of the element it matches, read from its
+  // text without a selector engine: `key`, an id ('#x'), a class ('.x') or a
+  // tag ('x') the element itself must have, and `above`, the ids, classes
+  // and tags some ancestor of it must have (the compounds a descendant or
+  // child combinator joins to it). Only what is certain is taken: nothing
+  // inside parentheses or brackets, nothing past a sibling combinator, and
+  // nothing at all from a part with an escape, a namespace or `&`. Names
+  // are lower-cased, which can only widen the match (quirks mode compares
+  // ids and classes so, HTML tags always). { key: null, above: [] } where
+  // nothing is certain.
+  const __IDENT_CHAR = /[A-Za-z0-9_\-\u00a0-\uffff]/;
+  function __selectorNeeds(part) {
+    const none = { key: null, above: [] };
+    if (/[\\|&]/.test(part)) return none;
+    // The compounds, rightmost last, with the combinator before each.
+    const compounds = [];
+    let cur = '';
+    let comb = '';
+    let depth = 0;
+    let quote = '';
+    const flush = (next) => {
+      if (cur.trim()) compounds.push({ text: cur.trim(), comb });
+      cur = '';
+      comb = next;
+    };
+    for (let i = 0; i < part.length; i++) {
+      const ch = part[i];
+      if (quote) {
+        if (ch === quote) quote = '';
+        cur += ch;
+      } else if (ch === '"' || ch === "'") {
+        quote = ch;
+        cur += ch;
+      } else if (ch === '(' || ch === '[') {
+        depth++;
+        cur += ch;
+      } else if (ch === ')' || ch === ']') {
+        depth = Math.max(0, depth - 1);
+        cur += ch;
+      } else if (depth === 0 && (ch === '>' || ch === '+' || ch === '~')) {
+        flush(ch);
+      } else if (depth === 0 && /\s/.test(ch)) {
+        if (cur.trim()) flush(' ');
+      } else cur += ch;
+    }
+    flush('');
+    if (!compounds.length) return none;
+    // The ids, classes and tag of a compound, outside parentheses and brackets.
+    const namesOf = (text) => {
+      const out = [];
+      let d = 0;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '(' || ch === '[') d++;
+        else if (ch === ')' || ch === ']') d = Math.max(0, d - 1);
+        else if (d === 0 && (ch === '#' || ch === '.' || (i === 0 && __IDENT_CHAR.test(ch)))) {
+          // A ':' before it makes it a pseudo-class's name.
+          let j = ch === '#' || ch === '.' ? i + 1 : i;
+          const start = j;
+          while (j < text.length && __IDENT_CHAR.test(text[j])) j++;
+          if (j > start) {
+            const name = text.slice(start, j).toLowerCase();
+            out.push(ch === '#' ? '#' + name : ch === '.' ? '.' + name : name);
+          }
+          i = j - 1;
+        } else if (d === 0 && ch === ':') {
+          // Skip the pseudo-class's name, so `:hover` is no tag.
+          let j = i + 1;
+          while (j < text.length && (text[j] === ':' || __IDENT_CHAR.test(text[j]))) j++;
+          i = j - 1;
+        }
+      }
+      return out;
+    };
+    const own = namesOf(compounds[compounds.length - 1].text);
+    const key = own.find((n) => n[0] === '#') || own.find((n) => n[0] === '.') || own[0] || null;
+    const above = [];
+    for (let k = compounds.length - 1; k > 0; k--) {
+      const combinator = compounds[k].comb;
+      if (combinator !== ' ' && combinator !== '>') break;
+      for (const n of namesOf(compounds[k - 1].text)) above.push(n);
+    }
+    return { key, above };
+  }
+
+  // An index of selector parts (a list of complex selectors, each without a
+  // comma) by what each needs of the element it matches (__selectorNeeds).
+  // candidates(el) gives the indices, in order, of the parts that may match
+  // el: those whose element name el has and whose ancestor names its
+  // ancestors have, and every part with no such name or that doesn't parse,
+  // since matching that one throws for any element. A rule matching each
+  // element against many selectors matches only these, with the same
+  // results, so a page's many style rules cost elements x the rules that
+  // could apply. The parse test runs on the first element asked about.
+  function selectorIndex(parts) {
+    const list = Array.isArray(parts) ? parts.map((p) => String(p)) : [];
+    let byKey = null;
+    let needsOf = null;
+    const build = (probe) => {
+      byKey = new Map();
+      needsOf = list.map((part, i) => {
+        let valid = true;
+        try {
+          dom.matches(probe, part);
+        } catch {
+          valid = false;
+        }
+        const needs = valid ? __selectorNeeds(part) : { key: null, above: [] };
+        const key = needs.key || '';
+        if (!byKey.has(key)) byKey.set(key, []);
+        byKey.get(key).push(i);
+        return needs;
+      });
+    };
+    const addNames = (node, names) => {
+      const tag = String(dom.localName(node) || '').toLowerCase();
+      if (tag) names.add(tag);
+      const id = dom.getAttribute(node, 'id');
+      if (id) names.add('#' + String(id).toLowerCase());
+      for (const c of String(dom.getAttribute(node, 'class') || '').split(/\s+/)) {
+        if (c) names.add('.' + c.toLowerCase());
+      }
+      return names;
+    };
+    function candidates(el) {
+      if (!list.length) return [];
+      if (!byKey) build(el);
+      if (byKey.size === 1 && byKey.has('')) return byKey.get('').slice();
+      const own = addNames(el, new Set());
+      const lists = [];
+      for (const name of [''].concat([...own])) {
+        if (byKey.has(name)) lists.push(byKey.get(name));
+      }
+      // The names on el's ancestors, read the first time a part needs them.
+      let above = null;
+      const out = [];
+      for (const ids of lists) {
+        for (const i of ids) {
+          const need = needsOf[i].above;
+          if (need.length) {
+            if (!above) {
+              above = new Set();
+              for (let p = dom.parentElement(el); p; p = dom.parentElement(p)) addNames(p, above);
+            }
+            if (!need.every((n) => above.has(n))) continue;
+          }
+          out.push(i);
+        }
+      }
+      if (lists.length > 1) out.sort((a, b) => a - b);
+      return out;
+    }
+    return { candidates };
+  }
+
+  // An @supports condition where there is no CSS.supports (jsdom): a
+  // property and value test holds, as in the current browsers a page tests
+  // for; selector() holds where the selector parses; not, and and or
+  // combine them. A condition this can't read holds.
+  function __supportsHolds(text) {
+    const s = String(text || '').trim();
+    if (!s) return true;
+    // The top-level pieces joined by and/or.
+    const pieces = [];
+    const ops = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      else if (depth === 0 && /\s/.test(ch)) {
+        const m = /^\s+(and|or)\s+/i.exec(s.slice(i));
+        if (m) {
+          pieces.push(s.slice(start, i));
+          ops.push(m[1].toLowerCase());
+          i += m[0].length - 1;
+          start = i + 1;
+        }
+      }
+    }
+    pieces.push(s.slice(start));
+    if (pieces.length > 1) {
+      const values = pieces.map(__supportsHolds);
+      return ops.every((o) => o === 'and')
+        ? values.every(Boolean)
+        : ops.every((o) => o === 'or')
+          ? values.some(Boolean)
+          : true;
+    }
+    const not = /^not\s*(\(.*\))$/is.exec(s);
+    if (not) return !__supportsHolds(not[1]);
+    const selector = /^selector\((.*)\)$/is.exec(s);
+    if (selector) {
+      try {
+        dom.matches(dom.documentElement(document), selector[1]);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    if (s[0] === '(' && s[s.length - 1] === ')') {
+      const inner = s.slice(1, -1).trim();
+      // A nested condition, or a declaration, which holds.
+      if (/^(\(|not\b|selector\()/i.test(inner)) return __supportsHolds(inner);
+      return true;
+    }
+    return true;
+  }
+  // Whether a style sheet or an @import, @media or @supports rule applies to
+  // the page as it is drawn now: its media list matches (window.matchMedia)
+  // and its @supports condition holds (CSS.supports, or __supportsHolds
+  // without it). A disabled sheet
+  // applies to nothing, and an @starting-style block applies only to the
+  // first frame of a transition, so neither does. Without matchMedia
+  // (jsdom), only a media list that names nothing but media other than the
+  // screen ("print", "speech") is known not to apply. Any other rule,
+  // @container among them (it depends on the element), is taken to apply.
+  const __OTHER_MEDIA = /^(print|speech|aural|braille|embossed|handheld|projection|tty|tv)$/;
+  function cssConditionApplies(ruleOrSheet) {
+    if (!ruleOrSheet) return true;
+    const view = window || (document && dom.defaultView(document));
+    try {
+      if (ruleOrSheet.disabled === true) return false;
+      if (ruleOrSheet.constructor && ruleOrSheet.constructor.name === 'CSSStartingStyleRule')
+        return false;
+      const media = ruleOrSheet.media;
+      const text = media ? String(media.mediaText || '').trim() : '';
+      if (text) {
+        if (view && typeof view.matchMedia === 'function') {
+          if (!dom.get(view.matchMedia(text), 'matches')) return false;
+        } else {
+          const queries = text.split(',').map((q) => q.trim().toLowerCase());
+          if (queries.every((q) => __OTHER_MEDIA.test(q.replace(/^only\s+/, '').split(/\s/)[0])))
+            return false;
+        }
+      }
+      const isSupports =
+        ruleOrSheet.type === 12 ||
+        (ruleOrSheet.constructor && ruleOrSheet.constructor.name === 'CSSSupportsRule');
+      const css = view && view.CSS;
+      if (isSupports) {
+        const condition = String(ruleOrSheet.conditionText || '').trim();
+        if (css && typeof css.supports === 'function') {
+          if (condition && !css.supports(condition)) return false;
+        } else if (condition && !__supportsHolds(condition)) return false;
+      }
+    } catch {
+      // unreadable: taken to apply
+    }
+    return true;
+  }
+
   function cssRulesOf(sheet) {
     if (!sheet) return null;
     try {
@@ -1129,6 +1684,15 @@ function createDomHelpers(opts) {
     return rules;
   }
 
+  // The elements in a list the DOM or a component gave (an array, a
+  // FrozenArray, or any object with a length), read by index: such a list
+  // need not be iterable.
+  function __elementsIn(list) {
+    const out = [];
+    for (let i = 0; i < list.length; i++) if (isElement(list[i])) out.push(list[i]);
+    return out;
+  }
+
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
     if (getAttr(el, attr) == null) return [];
@@ -1137,7 +1701,7 @@ function createDomHelpers(opts) {
       // aria-activedescendant reflects as one element, the others as lists.
       if (isElement(list)) return [list];
       if (!list || typeof list.length !== 'number') return [];
-      return Array.from(list).filter(isElement);
+      return __elementsIn(list);
     } catch {
       return [];
     }
@@ -1188,6 +1752,12 @@ function createDomHelpers(opts) {
     } catch {
       return null;
     }
+  }
+  // A WeakMap of the rules' own, by name, shared by every rule of this run
+  // and made again for the next: for work a rule and its variants would
+  // each repeat on the same element. Named apart from the helpers' caches.
+  function runMemo(name) {
+    return __sharedWeakMap('rules:' + String(name));
   }
 
   // The internals hook's registry in a window, read and checked once per run.
@@ -1317,7 +1887,9 @@ function createDomHelpers(opts) {
       if (!ctor) return none;
       const disabled = ctor.disabledFeatures;
       if (disabled && typeof disabled.length === 'number') {
-        for (const f of Array.from(disabled)) if (String(f) === 'internals') return none;
+        for (let i = 0; i < disabled.length; i++) {
+          if (String(disabled[i]) === 'internals') return none;
+        }
       }
       // The hook's registry in the element's own realm, checked first.
       const hook = win ? __internalsHookOf(win) : null;
@@ -1360,11 +1932,7 @@ function createDomHelpers(opts) {
     try {
       const refs = ei.internals.ariaLabelledByElements;
       if (refs && typeof refs.length === 'number' && refs.length) {
-        const t = getTextFromRefs(
-          { refs: Array.from(refs).filter(isElement), missing: [], flags: [] },
-          _ctx,
-          opts
-        );
+        const t = getTextFromRefs({ refs: __elementsIn(refs), missing: [], flags: [] }, _ctx, opts);
         if (t.text) return { status: 'named', value: t.text };
       }
       const label = trim(ei.internals.ariaLabel);
@@ -1407,6 +1975,1095 @@ function createDomHelpers(opts) {
       return { status: 'unknown', value: null };
     }
     return { status: 'unset', value: null };
+  }
+
+  // Why a control that takes its name from its content has none, where its
+  // content has text: the first text with a letter or a digit inside el that
+  // is hidden from assistive technology, and what hides it. A name rule's
+  // fail says so, since "give the button visible text" reads as wrong to
+  // someone who sees the text on screen, or finds it in the markup.
+  // { text, reason, element }: text trimmed to 40 characters; reason one of
+  // 'displayNone', 'visibilityHidden', 'ariaHidden', 'hiddenAttribute'; element
+  // the tag of the element that hides it. null when no such text is found
+  // (the control has no text at all, or it is in a shadow root).
+  const HIDDEN_TEXT_NODES = 500;
+  const HIDDEN_TEXT_RE = /[\p{L}\p{N}]/u;
+  function hiddenNameText(el) {
+    try {
+      if (!isElement(el)) return null;
+      // What hides n from assistive technology, for an element inside el.
+      const hides = (n) => {
+        if (lower(dom.getAttribute(n, 'aria-hidden')) === 'true') return 'ariaHidden';
+        const cs = computedStyle(n) || {};
+        if (String(cs.display || '') !== 'none') return null;
+        // The hidden attribute hides only while author CSS leaves it so.
+        return dom.hasAttribute(n, 'hidden') ? 'hiddenAttribute' : 'displayNone';
+      };
+      const stack = [];
+      for (let c = dom.lastChild(el); c; c = dom.previousSibling(c)) stack.push([c, null]);
+      let seen = 0;
+      while (stack.length && seen < HIDDEN_TEXT_NODES) {
+        const [n, hidden] = stack.pop();
+        seen += 1;
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          const text = String(dom.nodeValue(n) || '');
+          if (!HIDDEN_TEXT_RE.test(text)) continue;
+          let found = hidden;
+          if (!found) {
+            // Visibility is inherited, and a child can set it back: it is
+            // read on the element the text is in.
+            const holder = dom.parentElement(n);
+            const v = String((computedStyle(holder) || {}).visibility || '');
+            if (holder && holder !== el && (v === 'hidden' || v === 'collapse')) {
+              found = { reason: 'visibilityHidden', element: holder };
+            }
+          }
+          if (!found) continue;
+          const all = trim(String(dom.textContent(found.element) || '').replace(/\s+/g, ' '));
+          return {
+            text: all.length > 40 ? `${all.slice(0, 39)}…` : all,
+            reason: found.reason,
+            element: lower(dom.tagName(found.element) || '')
+          };
+        }
+        if (type !== 1) continue;
+        const why = hidden ? null : hides(n);
+        const under = hidden || (why ? { reason: why, element: n } : null);
+        for (let c = dom.lastChild(n); c; c = dom.previousSibling(c)) stack.push([c, under]);
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  // The hint of a name rule's fail when hiddenNameText found the content's
+  // text hidden: the fields for helpers.reportOccurrence's hint and i18n.
+  function hiddenNameTextHint(found) {
+    const { text, reason, element } = found;
+    const how = {
+      displayNone: 'with display: none, which hides it from screen readers as well as from view',
+      visibilityHidden:
+        'with visibility: hidden, which hides it from screen readers as well as from view',
+      ariaHidden: 'with aria-hidden="true", which hides it from screen readers',
+      hiddenAttribute:
+        'with the hidden attribute, which hides it from screen readers as well as from view'
+    }[reason];
+    const fix =
+      reason === 'ariaHidden'
+        ? 'Remove aria-hidden from it, or name the element with aria-label.'
+        : 'Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.';
+    return {
+      hint: `Its text "${text}" is in a <${element}> ${how}, so it gives no name. ${fix}`,
+      hintKey: `nameHiddenText_hint_${reason}`,
+      // Not `element`, which a rule's own params give as the control's tag.
+      params: { text, hiddenElement: element }
+    };
+  }
+  // A short tag for an element in a message: <div id="app">, else
+  // <div class="drawer"> with its first class, else <div>; with
+  // { role: true }, its role attribute first: <div role="banner" id="ad">;
+  // with { text: true }, followed by its text, shortened: <button> "Save"
+  // (helpers.describeElement).
+  function describeElement(el, opts) {
+    try {
+      if (!isElement(el)) return '';
+      const tag = lower(dom.tagName(el) || '');
+      const id = trim(dom.getAttribute(el, 'id') || '');
+      const cls = trim(dom.getAttribute(el, 'class') || '').split(/\s+/)[0];
+      const role = opts && opts.role ? trim(dom.getAttribute(el, 'role') || '') : '';
+      const head = role ? `${tag} role="${role}"` : tag;
+      let out = `<${head}>`;
+      if (id) out = `<${head} id="${id}">`;
+      else if (cls) out = `<${head} class="${cls}">`;
+      if (opts && opts.text) {
+        const text = shortText(el);
+        if (text) out += ` "${text}"`;
+      }
+      return out;
+    } catch {
+      return '';
+    }
+  }
+  // Why an element that should have a name has none, where the page shows a
+  // cause a reader would not see from the element alone: the hint and its
+  // i18n fields for a name rule's fail, with details.nameCause, or null.
+  // Tried in turn: an aria-labelledby whose ids are all missing, whose
+  // elements all have no text, whose elements' text is hidden from assistive
+  // technology, or that mixes missing ids with such elements; a <label> on an element it can't label (a
+  // custom widget); for a form field, a <label> hidden from assistive
+  // technology, and a nearby <label> that misses the field (a for typo, a
+  // duplicate id, a for at a non-field, a label around an earlier field, a
+  // label beside it with no for); then, for an element named from its
+  // content (opts.content), text in it that is hidden, and content that is
+  // only images or icons that give no name; then an aria-label with no
+  // text; last, an attribute that reads like a name but gives none
+  // (aria-placeholder, aria-describedby, an aria-label on the generic
+  // parent). opts.skip lists causes a rule words itself.
+  const LEVENSHTEIN_MAX = 2;
+  // How many edits apart two ids are, ignoring case, or Infinity past
+  // LEVENSHTEIN_MAX.
+  function idDistance(a, b) {
+    a = lower(a);
+    b = lower(b);
+    if (a === b) return 0;
+    if (Math.abs(a.length - b.length) > LEVENSHTEIN_MAX) return Infinity;
+    let prev = [];
+    for (let j = 0; j <= b.length; j++) prev.push(j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(
+          prev[j] + 1,
+          cur[j - 1] + 1,
+          prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+        );
+      }
+      prev = cur;
+    }
+    return prev[b.length] <= LEVENSHTEIN_MAX ? prev[b.length] : Infinity;
+  }
+  function shortText(n) {
+    const all = trim(String(dom.textContent(n) || '').replace(/\s+/g, ' '));
+    return all.length > 40 ? `${all.slice(0, 39)}…` : all;
+  }
+  // What hides el (or an ancestor) from assistive technology, or null:
+  // { hiddenBy, element }, hiddenBy one of 'aria-hidden="true"', 'hidden',
+  // 'display: none', 'visibility: hidden' or 'visibility: collapse' (the last
+  // two read on el itself, as a child can set visibility back), element the
+  // one that carries it. Rules name it in a message (helpers.hiddenCause).
+  function hiddenBy(el) {
+    for (let n = el, i = 0; n && isElement(n) && i < 200; n = dom.parentElement(n), i++) {
+      if (lower(dom.getAttribute(n, 'aria-hidden')) === 'true') {
+        return { hiddenBy: 'aria-hidden="true"', element: n };
+      }
+      const cs = computedStyle(n) || {};
+      if (String(cs.display || '') === 'none') {
+        return {
+          hiddenBy: dom.hasAttribute(n, 'hidden') ? 'hidden=""' : 'display: none',
+          element: n
+        };
+      }
+      if (n === el && /^(hidden|collapse)$/.test(String(cs.visibility || ''))) {
+        return { hiddenBy: `visibility: ${cs.visibility}`, element: n };
+      }
+    }
+    return null;
+  }
+  // The <label for> elements of a root (a document or shadow root), read
+  // once per run: nameCause asks for them for every element a name rule
+  // fails, and reading the whole tree each time made a page with many
+  // unnamed fields cost the square of their number. `all` is in tree order,
+  // `pos` gives each label's place in it, `byFor` and `byForTrim` list them
+  // by their for attribute as written and trimmed, and `byParent` by their
+  // parent element. What depends on ids (labels whose for reaches nothing,
+  // or reaches an element that isn't a form field) is filled in on first
+  // use, with the caller's id lookup, which is the same for every element
+  // of the root.
+  function labelForIndex(r) {
+    const cache = __sharedWeakMap('labelForIndexByRoot');
+    const cached = cache && cache.get(r);
+    if (cached) return cached;
+    let all;
+    try {
+      all = [...dom.querySelectorAll(r, 'label[for]')];
+    } catch {
+      all = [];
+    }
+    const pos = new Map();
+    const byFor = new Map();
+    const byForTrim = new Map();
+    const byParent = new Map();
+    const push = (map, key, l) => {
+      const list = map.get(key);
+      if (list) list.push(l);
+      else map.set(key, [l]);
+    };
+    all.forEach((l, i) => {
+      pos.set(l, i);
+      const f = dom.getAttribute(l, 'for') || '';
+      push(byFor, f, l);
+      push(byForTrim, trim(f), l);
+      const up = dom.parentElement(l);
+      if (up) push(byParent, up, l);
+    });
+    const index = { all, pos, byFor, byForTrim, byParent, ids: null };
+    if (cache) cache.set(r, index);
+    return index;
+  }
+  // The id-dependent part of a labelForIndex: `orphans`, the labels whose
+  // trimmed for names no element, also by parent element (`orphansByParent`),
+  // with deletion indexes over their lower cased for values (closeTo), and
+  // `byTarget`, the labels whose for reaches an element, by that element.
+  const CLOSE_IDS_INDEX_MAX = 48;
+  // How many labels in a field's parent nameCause compares with its id one
+  // by one before it looks them up in the deletion index instead.
+  const BESIDE_DIRECT_MAX = 32;
+  // A string and what it gives with up to max (1 or 2) characters deleted.
+  function deletionsWithin(s, max) {
+    const out = new Set([s]);
+    for (let i = 0; i < s.length; i++) {
+      const d1 = s.slice(0, i) + s.slice(i + 1);
+      out.add(d1);
+      if (max < 2) continue;
+      for (let j = i; j < d1.length; j++) out.add(d1.slice(0, j) + d1.slice(j + 1));
+    }
+    return out;
+  }
+  function labelForIds(index, byId) {
+    if (index.ids) return index.ids;
+    const orphans = [];
+    const orphansByParent = new Map();
+    const byTarget = new Map();
+    const push = (map, key, l) => {
+      const list = map.get(key);
+      if (list) list.push(l);
+      else map.set(key, [l]);
+    };
+    for (const l of index.all) {
+      const forId = trim(dom.getAttribute(l, 'for') || '');
+      if (!forId) continue;
+      const target = byId(forId);
+      if (!target) {
+        orphans.push(l);
+        const up = dom.parentElement(l);
+        if (up) push(orphansByParent, up, l);
+      } else push(byTarget, target, l);
+    }
+    // Two strings at most max edits apart (1 or 2) share a string each gives
+    // by deleting at most max of its characters, so looking up an id's
+    // deletions finds every for value within max edits of it (and some a
+    // little further, which idDistance then measures). A long value (rare)
+    // is kept apart and compared directly.
+    const indexes = {};
+    let long = null;
+    const closeTo = (id, max) => {
+      let deletionIndex = indexes[max];
+      if (!deletionIndex) {
+        deletionIndex = indexes[max] = new Map();
+        long = [];
+        for (const l of orphans) {
+          const f = lower(trim(dom.getAttribute(l, 'for') || ''));
+          if (f.length > CLOSE_IDS_INDEX_MAX) {
+            long.push(l);
+            continue;
+          }
+          for (const d of deletionsWithin(f, max)) push(deletionIndex, d, l);
+        }
+      }
+      const found = new Set(long);
+      const key = lower(id);
+      if (key.length <= CLOSE_IDS_INDEX_MAX + LEVENSHTEIN_MAX) {
+        for (const d of deletionsWithin(key, max)) {
+          for (const l of deletionIndex.get(d) || []) found.add(l);
+        }
+      } else {
+        for (const l of orphans) found.add(l);
+      }
+      return found;
+    };
+    index.ids = { orphans, orphansByParent, byTarget, closeTo };
+    return index.ids;
+  }
+  function labelsOf(el) {
+    const out = [];
+    try {
+      const doc = dom.ownerDocument(el);
+      const id = dom.getAttribute(el, 'id');
+      if (id && doc) {
+        for (const l of labelForIndex(doc).byFor.get(id) || []) out.push(l);
+      }
+      const wrap = dom.closest(el, 'label');
+      if (wrap && !dom.getAttribute(wrap, 'for') && !out.includes(wrap)) out.push(wrap);
+    } catch {
+      /* none */
+    }
+    return out;
+  }
+  const LABELABLE = /^(input|select|textarea|meter|output|progress|button)$/;
+  function nameCause(el, opts) {
+    const o = opts || {};
+    // Causes a rule words itself (opts.skip: cause names) are left to it.
+    const skip = (cause) => Array.isArray(o.skip) && o.skip.includes(cause);
+    try {
+      if (!isElement(el)) return null;
+      const doc = dom.ownerDocument(el);
+      const root = dom.getRootNode(el) || doc;
+      const byId = (id) => {
+        try {
+          return (
+            (root && dom.get(root, 'getElementById') && dom.getElementById(root, id)) ||
+            (doc && dom.getElementById(doc, id)) ||
+            null
+          );
+        } catch {
+          return null;
+        }
+      };
+      const tagOf = (n) => lower(dom.tagName(n) || '');
+      const attr = (n, name) => trim(dom.getAttribute(n, name) || '');
+      // A label's text, leaving out el's and a field's own text (a widget or
+      // a <select> it wraps), trimmed to 40 characters.
+      const labelText = (l) => {
+        let all = '';
+        const stack = [l];
+        for (let seen = 0; stack.length && seen < 500; seen++) {
+          const n = stack.pop();
+          if (dom.nodeType(n) === 3) all += String(dom.nodeValue(n) || '');
+          if (
+            dom.nodeType(n) !== 1 ||
+            (n !== l && (n === el || /^(select|textarea)$/.test(tagOf(n))))
+          ) {
+            continue;
+          }
+          for (let c = dom.lastChild(n); c; c = dom.previousSibling(c)) stack.push(c);
+        }
+        all = trim(all.replace(/\s+/g, ' '));
+        return all.length > 40 ? `${all.slice(0, 39)}…` : all;
+      };
+      // The root's <label for> elements, read once per run (labelForIndex).
+      const labelIndex = () => labelForIndex(root || doc);
+      // Labels in tree order, from a set of them.
+      const inOrder = (set) => {
+        const pos = labelIndex().pos;
+        return [...set].filter((l) => pos.has(l)).sort((a, b) => pos.get(a) - pos.get(b));
+      };
+      const labelledby = attr(el, 'aria-labelledby');
+      if (labelledby) {
+        const ids = labelledby.split(/\s+/);
+        const targets = ids.map(byId);
+        if (targets.every((t) => !t)) {
+          const list = ids.map((id) => `"${id}"`).join(', ');
+          return {
+            hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
+            hintKey: 'nameCause_hint_labelledbyMissing',
+            params: { ids: list },
+            detail: { cause: 'labelledbyMissing', ids }
+          };
+        }
+        // Every target is there, and none has text or a name of its own.
+        const gives = (t) =>
+          HIDDEN_TEXT_RE.test(String(dom.textContent(t) || '')) ||
+          attr(t, 'aria-label') ||
+          attr(t, 'alt') ||
+          attr(t, 'title') ||
+          attr(t, 'value') ||
+          dom.querySelector(t, 'img, svg, input, select, textarea, [aria-label], [title]');
+        const tagWithId = (t) => `<${tagOf(t)} id="${attr(t, 'id')}">`;
+        if (targets.every((t) => t && t !== el && !gives(t))) {
+          const list = targets.map(tagWithId).join(', ');
+          return {
+            hint: `Its aria-labelledby points only to elements with no text (${list}), so it gives no name. Put the text in the element it points to, or name it with aria-label.`,
+            hintKey: 'nameCause_hint_labelledbyEmpty',
+            params: { targets: list },
+            detail: { cause: 'labelledbyEmpty', ids }
+          };
+        }
+        // The element names nothing, so a target with text has it hidden
+        // from assistive technology inside it (the target itself may be
+        // hidden: its text still counts).
+        const hiddenIn = targets.map((t) => (t && t !== el && gives(t) ? hiddenNameText(t) : null));
+        const silent = targets.every((t, i) => !t || t === el || !gives(t) || hiddenIn[i]);
+        if (silent) {
+          const missing = ids.filter((_, i) => !targets[i]);
+          const found = targets.filter((t) => t && t !== el);
+          const k = hiddenIn.findIndex(Boolean);
+          if (!missing.length && k >= 0 && !skip('labelledbyHiddenText')) {
+            const { text, reason, element: hiddenElement } = hiddenIn[k];
+            const hiddenBy = {
+              displayNone: 'display: none',
+              visibilityHidden: 'visibility: hidden',
+              ariaHidden: 'aria-hidden="true"',
+              hiddenAttribute: 'the hidden attribute'
+            }[reason];
+            const target = tagWithId(targets[k]);
+            return {
+              hint: `Its aria-labelledby points to ${target}, whose text "${text}" is in a <${hiddenElement}> hidden from screen readers by ${hiddenBy}, so it gives no name. Let screen readers read that text, or name it with aria-label.`,
+              hintKey: 'nameCause_hint_labelledbyHiddenText',
+              params: { target, text, hiddenElement, hiddenBy },
+              detail: { cause: 'labelledbyHiddenText', ids, text, hiddenBy: reason }
+            };
+          }
+          if (missing.length && found.length) {
+            const missingIds = missing.map((id) => `"${id}"`).join(', ');
+            const list = found.map(tagWithId).join(', ');
+            return {
+              hint: `Its aria-labelledby gives no name: no element on the page has ${missingIds}, and what it does point to (${list}) has no text screen readers read. Point it at elements with text, or name it with aria-label.`,
+              hintKey: 'nameCause_hint_labelledbyMixed',
+              params: { ids: missingIds, targets: list },
+              detail: { cause: 'labelledbyMixed', ids, missing }
+            };
+          }
+        }
+      }
+      const tag = tagOf(el);
+      const id = attr(el, 'id');
+      // The first form field a <label> with no for would label: its control.
+      const firstField = (l) => {
+        for (const n of dom.querySelectorAll(
+          l,
+          'input, select, textarea, meter, output, progress, button'
+        )) {
+          if (!(tagOf(n) === 'input' && lower(dom.getAttribute(n, 'type')) === 'hidden')) return n;
+        }
+        return null;
+      };
+      if (!LABELABLE.test(tag)) {
+        // A <label> names only a native form field: one pointed at (or
+        // wrapped around) a custom widget names nothing.
+        let label = null;
+        if (id && byId(id) === el) {
+          label = (labelIndex().byFor.get(id) || [])[0] || null;
+        }
+        if (!label) {
+          const wrap = dom.closest(el, 'label');
+          if (wrap && !dom.getAttribute(wrap, 'for')) label = wrap;
+        }
+        const text = label ? labelText(label) : '';
+        if (label && HIDDEN_TEXT_RE.test(text)) {
+          const forId = dom.getAttribute(label, 'for');
+          const labelTag = forId ? `<label for="${forId}">` : '<label>';
+          const role = attr(el, 'role').split(/\s+/)[0];
+          const control = role ? `${tag} role="${role}"` : tag;
+          const labelId = attr(label, 'id');
+          const base = `The ${labelTag} "${text}" names nothing here: a <label> only names native form fields (input, select, textarea…), not a <${control}>.`;
+          const detail = { cause: 'labelNotLabelable', text, labelId: labelId || null };
+          return labelId
+            ? {
+                hint: `${base} Add aria-labelledby="${labelId}" to this element.`,
+                hintKey: 'nameCause_hint_labelNotLabelable',
+                params: { labelTag, text, control, labelId },
+                detail
+              }
+            : {
+                hint: `${base} Give the label an id and point this element's aria-labelledby at it.`,
+                hintKey: 'nameCause_hint_labelNotLabelableNoId',
+                params: { labelTag, text, control },
+                detail
+              };
+        }
+      }
+      if (LABELABLE.test(tag)) {
+        // The labels that do label el: for reaches it, or it is the first
+        // field of a label it sits in.
+        const labels = labelsOf(el).filter((l) =>
+          dom.getAttribute(l, 'for')
+            ? byId(dom.getAttribute(l, 'for')) === el
+            : firstField(l) === el
+        );
+        for (const label of labels) {
+          const text = shortText(label);
+          if (!HIDDEN_TEXT_RE.test(text)) continue;
+          const hid = hiddenBy(label);
+          if (!hid) continue;
+          const hiddenElement = lower(dom.tagName(hid.element) || '');
+          return {
+            hint: `Its label "${text}" is hidden from screen readers by ${hid.hiddenBy} on a <${hiddenElement}>, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the field with aria-label.`,
+            hintKey: 'nameCause_hint_labelHidden',
+            params: { text, hiddenBy: hid.hiddenBy, hiddenElement },
+            detail: { cause: 'labelHidden', text, hiddenBy: hid.hiddenBy, element: hiddenElement }
+          };
+        }
+        if (!labels.length && doc) {
+          // A <label for> that labels nothing, beside the field or with an
+          // id one or two letters from the field's.
+          const near = new Set([dom.previousElementSibling(el), dom.nextElementSibling(el)]);
+          const parent = dom.parentElement(el);
+          if (parent) near.add(dom.previousElementSibling(parent));
+          // The label most likely meant for the field, in this order: one
+          // next to it, which a reader takes for its label; another in its
+          // parent whose for is close to its id, then any other there; then
+          // one elsewhere whose for is close to its id. Among several, the
+          // fewest edits from its id, then the first in the page. Each tier
+          // is looked up rather than every label tried, so a form of many
+          // fields costs in proportion to its size.
+          const ids = labelForIds(labelIndex(), byId);
+          const pos = labelIndex().pos;
+          const usable = (l) => {
+            const forId = attr(l, 'for');
+            if (!forId || byId(forId)) return null;
+            const text = shortText(l);
+            return HIDDEN_TEXT_RE.test(text) ? { forId, text } : null;
+          };
+          // The usable label of a set fewest edits from the id, the first in
+          // the page on a tie, or null.
+          const closest = (set, keep) => {
+            let best = null;
+            for (const l of set) {
+              if (!pos.has(l) || !keep(l)) continue;
+              const distance = idDistance(attr(l, 'for'), id);
+              if (distance > LEVENSHTEIN_MAX) continue;
+              if (
+                best &&
+                (best.distance < distance ||
+                  (best.distance === distance && pos.get(best.l) < pos.get(l)))
+              ) {
+                continue;
+              }
+              const found = usable(l);
+              if (found) best = { l, distance, ...found };
+            }
+            return best;
+          };
+          // Every label one edit from the id shares a key of the one-edit
+          // index with it, so a find there at one edit or less is the
+          // closest; past that, the two-edit index has the rest.
+          const closestOf = (keep) => {
+            if (!id) return null;
+            const one = closest(ids.closeTo(id, 1), keep);
+            if (one && one.distance <= 1) return one;
+            return closest(ids.closeTo(id, 2), keep) || one;
+          };
+          // A label next to the field (a sibling, or just before its
+          // parent), the reader's first guess at its label: the usable one
+          // fewest edits from its id, any distance, then the first.
+          const nextTo = () => {
+            let best = null;
+            for (const l of near) {
+              if (!l || !pos.has(l)) continue;
+              const distance = id ? idDistance(attr(l, 'for'), id) : Infinity;
+              if (
+                best &&
+                (best.distance < distance ||
+                  (best.distance === distance && pos.get(best.l) < pos.get(l)))
+              ) {
+                continue;
+              }
+              const found = usable(l);
+              if (found) best = { l, distance, ...found };
+            }
+            return best;
+          };
+          // Another in its parent: the closest to its id. The labels of a
+          // parent are compared one by one, but for a large flat form, where
+          // they are looked up in the index instead.
+          const inParent = (parent && ids.orphansByParent.get(parent)) || [];
+          const parentClose = () => {
+            if (!id) return null;
+            if (inParent.length > BESIDE_DIRECT_MAX) {
+              return closestOf((l) => dom.parentElement(l) === parent);
+            }
+            return closest(inParent, () => true);
+          };
+          // Else the first usable in its parent.
+          const parentFirst = () => {
+            for (const l of inParent) {
+              const found = usable(l);
+              if (found) return { l, ...found };
+            }
+            return null;
+          };
+          const best = nextTo() || parentClose() || parentFirst() || closestOf(() => true);
+          if (best) {
+            const { forId, text } = best;
+            return id
+              ? {
+                  hint: `The <label for="${forId}"> "${text}" points to an id no element has, so it labels nothing; this field's id is "${id}". Make the two match.`,
+                  hintKey: 'nameCause_hint_labelForMissing',
+                  params: { forId, text, id },
+                  detail: { cause: 'labelForMissing', for: forId, text, id }
+                }
+              : {
+                  hint: `The <label for="${forId}"> "${text}" points to an id no element has, so it labels nothing, and this field has no id. Give the field the id "${forId}".`,
+                  hintKey: 'nameCause_hint_labelForMissingNoId',
+                  params: { forId, text },
+                  detail: { cause: 'labelForMissing', for: forId, text, id: null }
+                };
+          }
+          // A <label for> with this field's id that reaches an earlier
+          // element with the same id.
+          const first = id ? byId(id) : null;
+          if (first && first !== el) {
+            for (const l of labelIndex().byForTrim.get(id) || []) {
+              if (attr(l, 'for') !== id) continue;
+              const text = shortText(l);
+              if (!HIDDEN_TEXT_RE.test(text)) continue;
+              const firstTag = tagOf(first);
+              return {
+                hint: `The <label for="${id}"> "${text}" reaches the first element with id "${id}", a <${firstTag}>, not this field, which has the same id. Give each element its own id.`,
+                hintKey: 'nameCause_hint_labelForDuplicateId',
+                params: { forId: id, text, firstTag },
+                detail: { cause: 'labelForDuplicateId', for: id, text, first: firstTag }
+              };
+            }
+          }
+          // A <label for> beside the field, or around it, that points at an
+          // element that is not a form field.
+          // Only these can pass the test below: a label beside the field,
+          // and one whose for reaches the field's ancestor.
+          const aimed = new Set();
+          for (const n of near) if (n) aimed.add(n);
+          for (
+            let n = dom.parentElement(el), i = 0;
+            n && i < 10000;
+            n = dom.parentElement(n), i++
+          ) {
+            for (const l of ids.byTarget.get(n) || []) aimed.add(l);
+          }
+          for (const l of inOrder(aimed)) {
+            const forId = attr(l, 'for');
+            const target = forId ? byId(forId) : null;
+            if (!target || target === el || LABELABLE.test(tagOf(target))) continue;
+            if (!near.has(l) && !dom.contains(target, el)) continue;
+            const text = shortText(l);
+            if (!HIDDEN_TEXT_RE.test(text)) continue;
+            const targetTag = tagOf(target);
+            const detail = { cause: 'labelForNotField', for: forId, text, target: targetTag };
+            return id
+              ? {
+                  hint: `The <label for="${forId}"> "${text}" points at a <${targetTag}>, not at a form field, so it labels nothing. Point for at this field's id, "${id}".`,
+                  hintKey: 'nameCause_hint_labelForNotField',
+                  params: { forId, text, targetTag, id },
+                  detail
+                }
+              : {
+                  hint: `The <label for="${forId}"> "${text}" points at a <${targetTag}>, not at a form field, so it labels nothing. Give this field an id and point for at it.`,
+                  hintKey: 'nameCause_hint_labelForNotFieldNoId',
+                  params: { forId, text, targetTag },
+                  detail
+                };
+          }
+          // A label around the field that names an earlier field in it.
+          const wrap = dom.closest(el, 'label');
+          const wrapFirst = wrap && !dom.getAttribute(wrap, 'for') ? firstField(wrap) : null;
+          if (wrapFirst && wrapFirst !== el) {
+            const text = labelText(wrap);
+            if (HIDDEN_TEXT_RE.test(text)) {
+              const firstTag = tagOf(wrapFirst);
+              return {
+                hint: `It sits inside the <label> "${text}", but a label names only the first field in it, which is another <${firstTag}>. Give this field its own <label> or aria-label.`,
+                hintKey: 'nameCause_hint_labelWrapsOther',
+                params: { text, firstTag },
+                detail: { cause: 'labelWrapsOther', text, first: firstTag }
+              };
+            }
+          }
+          // A <label> beside the field with no for, that wraps no field.
+          for (const l of [dom.previousElementSibling(el), dom.nextElementSibling(el)]) {
+            if (!l || tagOf(l) !== 'label' || dom.hasAttribute(l, 'for') || firstField(l)) continue;
+            const text = shortText(l);
+            if (!HIDDEN_TEXT_RE.test(text)) continue;
+            const base = `The <label> "${text}" beside it is not tied to it: the label has no for attribute and does not wrap the field.`;
+            const detail = { cause: 'labelNotTied', text, id: id || null };
+            return id
+              ? {
+                  hint: `${base} Add for="${id}" to the label, or put the field inside the label.`,
+                  hintKey: 'nameCause_hint_labelNotTied',
+                  params: { text, id },
+                  detail
+                }
+              : {
+                  hint: `${base} Give the field an id and add a for attribute with that id to the label, or put the field inside the label.`,
+                  hintKey: 'nameCause_hint_labelNotTiedNoId',
+                  params: { text },
+                  detail
+                };
+          }
+        }
+      }
+      // An aria-label with no text in it: it is ignored.
+      const blankLabel = () => {
+        const ariaLabel = dom.getAttribute(el, 'aria-label');
+        if (ariaLabel === null || trim(ariaLabel) || labelledby) return null;
+        return ariaLabel
+          ? {
+              hint: 'Its aria-label is only white space, so it gives no name. Put the name in it.',
+              hintKey: 'nameCause_hint_ariaLabelBlank',
+              params: {},
+              detail: { cause: 'ariaLabelBlank' }
+            }
+          : {
+              hint: 'Its aria-label is empty, so it gives no name. Put the name in it.',
+              hintKey: 'nameCause_hint_ariaLabelEmpty',
+              params: {},
+              detail: { cause: 'ariaLabelEmpty' }
+            };
+      };
+      // An attribute that reads like a name but gives none: aria-placeholder,
+      // aria-describedby, or an aria-label on the generic parent.
+      const notAName = () => {
+        const placeholder = attr(el, 'aria-placeholder');
+        if (placeholder && !skip('ariaPlaceholder')) {
+          const text = placeholder.length > 40 ? `${placeholder.slice(0, 39)}…` : placeholder;
+          return {
+            hint: `Its aria-placeholder "${text}" is a hint shown while it is empty, not a name. Name it with aria-label or aria-labelledby.`,
+            hintKey: 'nameCause_hint_ariaPlaceholder',
+            params: { text },
+            detail: { cause: 'ariaPlaceholder', text }
+          };
+        }
+        const described = attr(el, 'aria-describedby')
+          .split(/\s+/)
+          .filter(Boolean)
+          .map(byId)
+          .filter((t) => t && t !== el && HIDDEN_TEXT_RE.test(String(dom.textContent(t) || '')));
+        if (described.length && !skip('describedbyNotName')) {
+          const targets = described.map((t) => describeElement(t, { text: true })).join(', ');
+          return {
+            hint: `Its aria-describedby points to ${targets}, which gives a description, not a name. Point aria-labelledby at it instead, or name it with aria-label.`,
+            hintKey: 'nameCause_hint_describedbyNotName',
+            params: { targets },
+            detail: { cause: 'describedbyNotName' }
+          };
+        }
+        const parent = dom.parentElement(el);
+        const parentLabel = parent ? attr(parent, 'aria-label') : '';
+        if (
+          parentLabel &&
+          dom.childElementCount(parent) === 1 &&
+          !attr(parent, 'role') &&
+          /^(div|span|p)$/.test(tagOf(parent))
+        ) {
+          const text = parentLabel.length > 40 ? `${parentLabel.slice(0, 39)}…` : parentLabel;
+          const parentTag = describeElement(parent);
+          return {
+            hint: `The aria-label "${text}" is on its parent ${parentTag}, where it names nothing. Move it to this element.`,
+            hintKey: 'nameCause_hint_parentAriaLabel',
+            params: { text, parentTag },
+            detail: { cause: 'parentAriaLabel', text }
+          };
+        }
+        return null;
+      };
+      if (!o.content) return blankLabel() || notAName();
+      return contentNameCause(el) || blankLabel() || notAName();
+    } catch {
+      return null;
+    }
+  }
+  // nameCause for an element named from its content: text in it that is
+  // hidden, or content that is only images or icons that give no name.
+  function contentNameCause(el) {
+    const tagOf = (n) => lower(dom.tagName(n) || '');
+    const hidden = hiddenNameText(el);
+    if (hidden) {
+      const h = hiddenNameTextHint(hidden);
+      return { ...h, detail: { cause: 'hiddenText', ...hidden } };
+    }
+    // Content that is only images or icons with no name: no text of its own.
+    if (HIDDEN_TEXT_RE.test(String(dom.textContent(el) || ''))) return null;
+    const named = (n) =>
+      trim(dom.getAttribute(n, 'aria-label') || '') || dom.getAttribute(n, 'aria-labelledby');
+    // Images and svgs, leaving out an svg inside another.
+    const imgs = [...dom.querySelectorAll(el, 'img, svg')].filter((n) => {
+      const up = dom.parentElement(n);
+      return !(up && dom.closest(up, 'svg') && dom.contains(el, dom.closest(up, 'svg')));
+    });
+    if (imgs.length > 1) {
+      const allEmpty = imgs.every(
+        (n) =>
+          tagOf(n) === 'img' &&
+          !hiddenBy(n) &&
+          !named(n) &&
+          dom.getAttribute(n, 'alt') !== null &&
+          !trim(dom.getAttribute(n, 'alt'))
+      );
+      if (!allEmpty) return null;
+      const count = imgs.length;
+      return {
+        hint: `Its content is ${count} images, all with alt="", so it gives no name. Give one of them alt text that says what it does or where it leads, or name the element with aria-label.`,
+        hintKey: 'nameCause_hint_imagesEmptyAlt',
+        params: { count },
+        detail: { cause: 'imagesEmptyAlt', count }
+      };
+    }
+    if (!imgs.length) {
+      // An empty element with a class, as an icon font or a CSS background
+      // draws: nothing in it gives a name.
+      const icons = [...dom.querySelectorAll(el, 'i, span')].filter(
+        (n) =>
+          trim(dom.getAttribute(n, 'class') || '') &&
+          !dom.querySelector(n, '*') &&
+          !trim(dom.textContent(n) || '')
+      );
+      if (!icons.length) {
+        // An icon-font character a ::before or ::after draws, on el or on
+        // an empty element in it, with no class to name it by: only a
+        // document with a layout computes it.
+        const empty = [el].concat(
+          [...dom.querySelectorAll(el, '*')].filter(
+            (n) => !dom.querySelector(n, '*') && !trim(dom.textContent(n) || '')
+          )
+        );
+        for (const n of empty.slice(0, 50)) {
+          for (const pseudo of ['::before', '::after']) {
+            const gen = contrast.getGeneratedNameText(n, pseudo);
+            if (!gen || !gen.glyphs || trim(gen.text)) continue;
+            const host = describeElement(n);
+            return {
+              hint: `Its only content is an icon-font character drawn by CSS (${pseudo} on ${host}), which screen readers can't read as a name. Add visually-hidden text, or name the element with aria-label.`,
+              hintKey: 'nameCause_hint_iconGenerated',
+              params: { pseudo, host },
+              detail: { cause: 'iconGenerated', pseudo, element: tagOf(n) }
+            };
+          }
+        }
+        return null;
+      }
+      if (icons.length !== 1 || named(icons[0])) return null;
+      const iconTag = tagOf(icons[0]);
+      const cls = trim(dom.getAttribute(icons[0], 'class')).replace(/\s+/g, ' ');
+      const iconClass = cls.length > 40 ? `${cls.slice(0, 39)}…` : cls;
+      return {
+        hint: `Its only content is an empty <${iconTag} class="${iconClass}">, an icon drawn by CSS, which has no text to give a name. Add visually-hidden text, or name the element with aria-label.`,
+        hintKey: 'nameCause_hint_iconEmpty',
+        params: { iconTag, iconClass },
+        detail: { cause: 'iconEmpty', element: iconTag, class: cls }
+      };
+    }
+    const img = imgs[0];
+    const imageTag = tagOf(img);
+    const hid = hiddenBy(img);
+    if (hid) {
+      // Hidden by aria-hidden inside el: an icon screen readers skip.
+      if (
+        hid.hiddenBy !== 'aria-hidden="true"' ||
+        hid.element === el ||
+        !dom.contains(el, hid.element)
+      ) {
+        return null;
+      }
+      return {
+        hint: `Its only content is an <${imageTag}> hidden by aria-hidden="true", so screen readers skip it and it gives no name. Add text a screen reader reads (a visually-hidden <span>), or name the element with aria-label.`,
+        hintKey: 'nameCause_hint_iconHidden',
+        params: { imageTag },
+        detail: { cause: 'iconHidden', element: imageTag }
+      };
+    }
+    if (imageTag === 'img') {
+      if (named(img)) return null;
+      const alt = dom.getAttribute(img, 'alt');
+      if (alt === null) {
+        return {
+          hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hintKey: 'nameCause_hint_imageNoAlt',
+          params: {},
+          detail: { cause: 'imageNoAlt' }
+        };
+      }
+      if (!trim(alt)) {
+        return {
+          hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hintKey: 'nameCause_hint_imageEmptyAlt',
+          params: {},
+          detail: { cause: 'imageEmptyAlt' }
+        };
+      }
+      return null;
+    }
+    const svgNamed =
+      named(img) ||
+      [...dom.querySelectorAll(img, 'title')].some((t) =>
+        HIDDEN_TEXT_RE.test(dom.textContent(t) || '')
+      );
+    if (svgNamed) return null;
+    return {
+      hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.',
+      hintKey: 'nameCause_hint_svgNoName',
+      params: {},
+      detail: { cause: 'svgNoName' }
+    };
+  }
+
+  // The language tag an almost-right lang value was meant to be, for a
+  // message: { kind, suggestion }, kind 'underscore' (en_US, a POSIX locale),
+  // 'country' (jp, a country code used as a language code) or 'alpha3' (eng,
+  // the ISO 639-2 code of a language with a two-letter one); null when no
+  // such fix gives a valid tag.
+  const LANG_FROM_COUNTRY = {
+    jp: 'ja',
+    cz: 'cs',
+    dk: 'da',
+    gr: 'el',
+    cn: 'zh',
+    ua: 'uk',
+    kr: 'ko',
+    il: 'he',
+    vn: 'vi'
+  };
+  const LANG_FROM_ALPHA3 = {
+    ara: 'ar',
+    ces: 'cs',
+    chi: 'zh',
+    cze: 'cs',
+    dan: 'da',
+    deu: 'de',
+    dut: 'nl',
+    ell: 'el',
+    eng: 'en',
+    fin: 'fi',
+    fra: 'fr',
+    fre: 'fr',
+    ger: 'de',
+    gre: 'el',
+    heb: 'he',
+    hin: 'hi',
+    ita: 'it',
+    jpn: 'ja',
+    kor: 'ko',
+    nld: 'nl',
+    nor: 'no',
+    pol: 'pl',
+    por: 'pt',
+    rus: 'ru',
+    spa: 'es',
+    swe: 'sv',
+    tur: 'tr',
+    ukr: 'uk',
+    zho: 'zh'
+  };
+  function langTagFix(value) {
+    const raw = trim(value);
+    if (!raw) return null;
+    if (raw.includes('_')) {
+      const fixed = raw.replace(/_/g, '-');
+      return isValidLanguageTag(fixed) ? { kind: 'underscore', suggestion: fixed } : null;
+    }
+    const parts = raw.split('-');
+    const primary = lower(parts[0]);
+    const own = (map) => Object.prototype.hasOwnProperty.call(map, primary);
+    const kind = own(LANG_FROM_COUNTRY) ? 'country' : own(LANG_FROM_ALPHA3) ? 'alpha3' : '';
+    if (!kind) return null;
+    const code = kind === 'country' ? LANG_FROM_COUNTRY[primary] : LANG_FROM_ALPHA3[primary];
+    const suggestion = [code].concat(parts.slice(1)).join('-');
+    return isValidLanguageTag(suggestion) ? { kind, suggestion } : null;
+  }
+
+  // Edits (insert, delete, replace, or swap two neighbours) from a to b.
+  function editDistance(a, b) {
+    const d = [];
+    for (let i = 0; i <= a.length; i++) {
+      d.push([i]);
+      for (let j = 1; j <= b.length; j++) {
+        if (i === 0) {
+          d[0].push(j);
+          continue;
+        }
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        let v = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
+          v = Math.min(v, d[i - 2][j - 2] + 1);
+        d[i].push(v);
+      }
+    }
+    return d[a.length][b.length];
+  }
+
+  // The one concrete role a token is a near misspelling of: one edit away
+  // for a token of up to five letters, two for a longer one, and no other
+  // role as near; '' when none is. Shorter tokens resemble too many words
+  // to tell.
+  function nearestRole(token) {
+    const t = lower(token);
+    if (t.length < 4) return '';
+    const limit = t.length <= 5 ? 1 : 2;
+    let best = '';
+    let bestDistance = Infinity;
+    let tie = false;
+    for (const r of aria.concreteRoles()) {
+      const d = editDistance(t, r);
+      if (d < bestDistance) {
+        best = r;
+        bestDistance = d;
+        tie = false;
+      } else if (d === bestDistance) tie = true;
+    }
+    return bestDistance <= limit && !tie ? best : '';
+  }
+
+  // The ARIA attribute an unknown aria-* name is a near misspelling of
+  // (aria-lable, aria-value-now): one edit away after aria- for a name of
+  // up to five letters, two for a longer one; '' when none is that near.
+  function nearestAriaAttr(name) {
+    const n = lower(name);
+    if (n.slice(0, 5) !== 'aria-' || aria.isValidAriaAttrName(n)) return '';
+    const suffix = n.slice(5);
+    let best = '';
+    let bestDistance = Infinity;
+    for (const a of aria.ariaAttrNames()) {
+      const d = editDistance(suffix, a.slice(5));
+      if (d < bestDistance) {
+        best = a;
+        bestDistance = d;
+      }
+    }
+    return bestDistance <= (suffix.length <= 5 ? 1 : 2) ? best : '';
+  }
+
+  // Words authors write as a role that ARIA calls by another name, each
+  // with the role it means; only words with one clear meaning.
+  const ROLE_WORDS = {
+    icon: 'img',
+    image: 'img',
+    picture: 'img',
+    photo: 'img',
+    svg: 'img',
+    nav: 'navigation',
+    btn: 'button',
+    input: 'textbox',
+    textfield: 'textbox',
+    modal: 'dialog',
+    hyperlink: 'link',
+    anchor: 'link'
+  };
+
+  // A role attribute that gives an element no role because none of its
+  // tokens is an ARIA role (role="buton", role="menu-item"): the attribute
+  // as written, and the role its first near token misspells ('' when none
+  // is near; then word and meant, when a token is a word for a role,
+  // ROLE_WORDS).
+  // null when the element has no role attribute, an empty one,
+  // or one naming a role (an abstract one too, which aria-roles-valid
+  // reports apart). The rules that fall back to the element's native role
+  // say so, as the reader sees a role attribute in the markup.
+  function roleTypo(el) {
+    let raw;
+    try {
+      raw = trim(dom.getAttribute(el, 'role'));
+    } catch {
+      return null;
+    }
+    if (!raw) return null;
+    const tokens = raw.split(/\s+/).map(lower);
+    if (tokens.some((t) => aria.isKnownRole(t))) return null;
+    let suggestion = '';
+    for (const t of tokens) {
+      suggestion = nearestRole(t);
+      if (suggestion) break;
+    }
+    if (suggestion) return { written: raw, suggestion };
+    // No near misspelling: a word authors often write for a role ARIA
+    // names otherwise (role="icon" for img) gives that role as meant.
+    for (const t of tokens) {
+      if (Object.prototype.hasOwnProperty.call(ROLE_WORDS, t))
+        return { written: raw, suggestion, word: t, meant: ROLE_WORDS[t] };
+    }
+    return { written: raw, suggestion };
+  }
+
+  // An element as a reader finds it in the markup, for a message to point
+  // at: its start tag with the attributes that give it a role or focus
+  // (role, tabindex, href, type, contenteditable), then its text or
+  // aria-label, each cut to 40 characters: <span role="button"
+  // tabindex="0"> "Fav" (helpers.describeMarkup).
+  function describeMarkup(el) {
+    const cut = (v) => (v.length > 40 ? v.slice(0, 39) + '…' : v);
+    let out = '<' + lower(dom.tagName(el) || '');
+    for (const a of ['role', 'tabindex', 'href', 'type', 'contenteditable']) {
+      let v = null;
+      try {
+        v = dom.getAttribute(el, a);
+      } catch {}
+      if (v != null) out += ' ' + a + '="' + cut(String(v)) + '"';
+    }
+    out += '>';
+    let text = '';
+    try {
+      text =
+        trim(dom.textContent(el)).replace(/\s+/g, ' ') || trim(dom.getAttribute(el, 'aria-label'));
+    } catch {}
+    return text ? out + ' "' + cut(text) + '"' : out;
   }
 
   // What a name rule asks when a custom element may name itself through
@@ -1645,6 +3302,34 @@ function createDomHelpers(opts) {
     return el || null;
   };
 
+  // The elements of an element root (a scoped or detached subtree, which
+  // has no getElementById) by id, the root itself included, the first in
+  // tree order for each id, as getElementById gives it. Built once per root
+  // per run, and read by the id attribute's value, so any id resolves: a
+  // selector can't name an id with a NUL or a lone surrogate, which CSS
+  // reads as U+FFFD.
+  const __rootIdMap = (r) => {
+    let maps;
+    try {
+      maps = __domSharedCache.idMapsByRoot || (__domSharedCache.idMapsByRoot = new WeakMap());
+    } catch {
+      maps = null;
+    }
+    const cached = maps && maps.get(r);
+    if (cached) return cached;
+    const map = new Map();
+    const add = (el) => {
+      const v = dom.getAttribute(el, 'id');
+      if (v && !map.has(v)) map.set(v, el);
+    };
+    if (isElement(r)) add(r);
+    for (const el of dom.querySelectorAll(r, '[id]')) add(el);
+    try {
+      if (maps) maps.set(r, map);
+    } catch {}
+    return map;
+  };
+
   const safeRootQueryById = (id) => {
     // Best-effort for cases where root is not the document (e.g. shadow root-like, fragment roots).
     // Note: IDs are document-global in HTML, but test harnesses may use scoped roots.
@@ -1666,9 +3351,12 @@ function createDomHelpers(opts) {
     __perfInc('idLookup.root.miss');
     let el = null;
     for (const r of roots) {
-      if (!r || !dom.get(r, 'querySelector')) continue;
+      if (!r) continue;
       try {
-        el = dom.querySelector(r, '#' + key);
+        el =
+          typeof dom.get(r, 'getElementById') === 'function'
+            ? dom.getElementById(r, key)
+            : __rootIdMap(r).get(key) || null;
       } catch {
         el = null;
       }
@@ -1719,21 +3407,19 @@ function createDomHelpers(opts) {
   // it. The walk is over the composed ancestors, so a shadow root's content
   // inside a closed <details>, and light-DOM content slotted into one, count
   // too. The <details> element itself is not hidden by its own state.
+  const __inClosedDetails = new WeakMap();
   function inClosedDetailsContent(node) {
     try {
       if (!isElement(node)) return false;
-      const chain = ancestorsIncludingSelf(node);
-      for (let i = 1; i < chain.length; i++) {
-        const a = chain[i];
-        if (!isElement(a) || (dom.localName(a) || '').toLowerCase() !== 'details') continue;
-        if (dom.hasAttribute(a, 'open')) continue;
-        const child = chain[i - 1];
+      return holdsUpFlatTree(__inClosedDetails, node, (child, a) => {
+        if (!isElement(a) || (dom.localName(a) || '').toLowerCase() !== 'details') return false;
+        if (dom.hasAttribute(a, 'open')) return false;
         const isToggle =
           (dom.localName(child) || '').toLowerCase() === 'summary' &&
           dom.parentNode(child) === a &&
           firstSummaryChild(a) === child;
-        if (!isToggle) return true;
-      }
+        return !isToggle;
+      });
     } catch {}
     return false;
   }
@@ -1827,7 +3513,7 @@ function createDomHelpers(opts) {
     const idx = new Map();
     let refs;
     try {
-      refs = Array.from(dom.querySelectorAll(scopeObj, '[aria-labelledby],[aria-describedby]'));
+      refs = [...dom.querySelectorAll(scopeObj, '[aria-labelledby],[aria-describedby]')];
     } catch {
       refs = [];
     }
@@ -1927,13 +3613,12 @@ function createDomHelpers(opts) {
     }
 
     // Fallback to querySelectorAll when cache is unavailable.
-    const esc = __cssEscapeSafe;
-    const idSel = esc(idTok);
+    const idSel = __escapeAttrValue(idTok);
     let refs;
     try {
       refs = [
-        ...Array.from(dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]')),
-        ...Array.from(dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]'))
+        ...dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]'),
+        ...dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]')
       ];
     } catch {
       refs = [];
@@ -2021,6 +3706,59 @@ function createDomHelpers(opts) {
     return result;
   }
 
+  // Whether an occurrence a rule reported lies in an excluded area, however
+  // the rule named its element: a node (an element, or a text node, read
+  // through the element or shadow host that holds it), or only a selector,
+  // read against the document as buildStructuralPath re-finds it. An element
+  // in a frame's document is excluded when the frame is, so the walk goes on
+  // from the frame element up to the scanned document.
+  function isOccurrenceExcluded(occ) {
+    if (!__getEffectiveExcludeSelectors().length || !occ || typeof occ !== 'object') return false;
+    let node = occ.__node || null;
+    if (!node) {
+      const selector = occ.selector;
+      if (!selector || typeof selector !== 'string' || !document) return false;
+      // A selector inside a shadow tree holds only there; read against the
+      // document it would name another element.
+      if (Array.isArray(occ.shadowHostSelectors) && occ.shadowHostSelectors.length) return false;
+      try {
+        node = dom.querySelector(document, selector);
+      } catch {
+        node = null;
+      }
+      if (!node) return false;
+    }
+    for (let guard = 0; node && guard < 64; guard++) {
+      if (dom.nodeType(node) !== 1) {
+        let up = dom.parentElement(node);
+        if (!up) {
+          const parent = dom.parentNode(node);
+          up = parent && dom.nodeType(parent) === 11 ? dom.host(parent) || null : null;
+        }
+        node = up;
+        continue;
+      }
+      if (isExcluded(node)) return true;
+      let doc;
+      try {
+        doc = dom.ownerDocument(node);
+      } catch {
+        doc = null;
+      }
+      if (!doc || !document || doc === document) return false;
+      let frame;
+      try {
+        const view = dom.defaultView(doc);
+        frame = view ? dom.get(view, 'frameElement') : null;
+      } catch {
+        // A cross-origin parent hides its frame element.
+        frame = null;
+      }
+      node = frame || null;
+    }
+    return false;
+  }
+
   function queryAll(sel) {
     if (!roots.length) return [];
     const out = [];
@@ -2061,7 +3799,10 @@ function createDomHelpers(opts) {
     return out;
   }
 
-  function queryAllDeep(sel) {
+  // keepExcluded (internal): excluded elements stay in, for a rule that reads
+  // the whole page as context (queryAllSmart's { excluded: true }).
+  function queryAllDeep(sel, keepExcluded = false) {
+    const out = (el) => !keepExcluded && isExcluded(el);
     if (!roots.length) return [];
     // Performance note:
     // Avoid the old "querySelectorAll('*')" approach which is O(N) per shadow host
@@ -2079,9 +3820,9 @@ function createDomHelpers(opts) {
       } catch {
         els = [];
       }
-      // NodeList is iterable; avoid Array.from to reduce allocations.
+      // NodeList is iterable; no copy, to reduce allocations.
       for (const el of els) {
-        if (el && !seen.has(el) && !isExcluded(el)) {
+        if (el && !seen.has(el) && !out(el)) {
           seen.add(el);
           results.push(el);
         }
@@ -2094,7 +3835,7 @@ function createDomHelpers(opts) {
         dom.nodeType(scope) === 1 &&
         typeof dom.get(scope, 'matches') === 'function' &&
         !seen.has(scope) &&
-        !isExcluded(scope)
+        !out(scope)
       ) {
         try {
           if (dom.matches(scope, sel)) {
@@ -2159,7 +3900,7 @@ function createDomHelpers(opts) {
       const roots = [];
       for (const el of hosts) {
         if (!el || dom.nodeType(el) !== 1) continue;
-        if (isExcluded(el)) continue;
+        if (out(el)) continue;
         const sr = dom.shadowRoot(el);
         if (sr) roots.push(sr);
       }
@@ -2180,7 +3921,7 @@ function createDomHelpers(opts) {
 
       // querySelectorAll('*') never returns curRoot itself, so a scope
       // that is a shadow host would leave out its own shadow root.
-      if (dom.nodeType(curRoot) === 1 && dom.shadowRoot(curRoot) && !isExcluded(curRoot)) {
+      if (dom.nodeType(curRoot) === 1 && dom.shadowRoot(curRoot) && !out(curRoot)) {
         q.push(dom.shadowRoot(curRoot));
       }
       const childShadowRoots = collectShadowRoots(curRoot);
@@ -2251,12 +3992,7 @@ function createDomHelpers(opts) {
       // node is still hidden, or behind the modal, and is excluded by the
       // default hidden-content policy.
       if (reasons.includes('inert')) {
-        const openModals = getOpenModalDialogs();
-        if (openModals.length) {
-          const chain = ancestorsIncludingSelf(el);
-          const reachable = openModals.some((d) => chain.indexOf(d) !== -1 || containsModal(el, d));
-          if (!reachable) return true;
-        }
+        if (isModalInert(el)) return true;
         const domVis = isDomVisibleEligible(el, null, {
           visibilityMode: 'styleOnly',
           disableGeometry: true,
@@ -2352,7 +4088,11 @@ function createDomHelpers(opts) {
   // `opts.inert: true` keeps inert content, for a rule about how content
   // looks (isHiddenContent).
   function queryAllSmart(sel, opts) {
-    let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+    // { excluded: true } keeps the elements excludeSelectors leaves out, for
+    // a rule that reads the whole page as context (a page's outline, its
+    // level-one heading) and reports nothing on them (isExcluded tells).
+    const keepExcluded = !!(opts && opts.excluded === true);
+    let list = includeShadowDom ? queryAllDeep(sel, keepExcluded) : queryAll(sel);
 
     // { internalsRoles: true } adds the custom elements whose internals give
     // them a role the selector's role attribute selectors name: a rule that
@@ -2393,7 +4133,9 @@ function createDomHelpers(opts) {
     // rendered visibility by default (unless includeHiddenElements:true).
     if (!includeHiddenElements) list = list.filter((el) => !isHiddenContent(el, opts));
 
-    return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
+    return __getEffectiveExcludeSelectors().length && !keepExcluded
+      ? list.filter((el) => !isExcluded(el))
+      : list;
   }
 
   // Same deep query as queryAllSmart (shadow roots when includeShadowDom,
@@ -2621,6 +4363,10 @@ function createDomHelpers(opts) {
   // asked next -- so which rule ran first decided the answer.
   let __accessibleNameCacheByKey = null;
   let __accessibleDescCacheByKey = null; // Map<string, WeakMap<Element, Info>>
+  // Map<string, WeakMap<Element, {text, touched}>>: the text an
+  // aria-labelledby or aria-describedby target gives, per computation
+  // options (see readIdRefTargetText).
+  let __idRefTargetTextCacheByKey = null;
 
   try {
     __ancestorsIncludingSelfCache =
@@ -2755,6 +4501,15 @@ function createDomHelpers(opts) {
         : (__domSharedCache.accessibleDescCacheByKey = new Map());
   } catch {
     __accessibleDescCacheByKey = null;
+  }
+
+  try {
+    __idRefTargetTextCacheByKey =
+      __domSharedCache.idRefTargetTextCacheByKey instanceof Map
+        ? __domSharedCache.idRefTargetTextCacheByKey
+        : (__domSharedCache.idRefTargetTextCacheByKey = new Map());
+  } catch {
+    __idRefTargetTextCacheByKey = null;
   }
 
   function __getScopeObj() {
@@ -3305,24 +5060,9 @@ function createDomHelpers(opts) {
     if (hasBlockingInert(node)) {
       return __cacheAndReturn({ eligible: false, reasons: ['inert'] });
     }
-    // An open modal dialog blocks the rest of the document. An element is
-    // blocked unless it is in a modal dialog (by the flat tree, so content of
-    // a shadow root inside the dialog counts) or contains one (<body>, a
-    // wrapper): a container of the dialog is not what assistive technology
-    // is denied. With several modals open, inside any of them counts, since
-    // the DOM does not say which one is topmost.
+    // An open modal dialog blocks the rest of the document (isModalInert).
     try {
-      const openModals = getOpenModalDialogs();
-      if (openModals.length) {
-        let reachable = false;
-        for (const d of openModals) {
-          if (chain.indexOf(d) !== -1 || containsModal(node, d)) {
-            reachable = true;
-            break;
-          }
-        }
-        if (!reachable) return __cacheAndReturn({ eligible: false, reasons: ['modalInert'] });
-      }
+      if (isModalInert(node)) return __cacheAndReturn({ eligible: false, reasons: ['modalInert'] });
     } catch {}
 
     // 3) CSS rendering suppression
@@ -3421,7 +5161,7 @@ function createDomHelpers(opts) {
     }
 
     // 4) ARIA subtree hiding with exceptions with exceptions
-    let ariaHidden = false;
+    let ariaHidden = embeddedAriaHidden;
     for (const a of chain) {
       if (!isElement(a)) continue;
       const v = dom.get(a, 'getAttribute') && dom.getAttribute(a, 'aria-hidden');
@@ -3576,6 +5316,9 @@ function createDomHelpers(opts) {
           __perfInc('ancestorBlockerDom.structFinal.hit');
           const r = __ancBlockStructFinalCache.get(a);
           const rr = r != null && r !== '' ? String(r) : null;
+          // An element whose own walk to the root met no structural
+          // blocker: there is none further up either.
+          if (!rr) break;
           if (rr) {
             // Propagate to nodes we've seen on this walk (including `node`)
             try {
@@ -3702,8 +5445,18 @@ function createDomHelpers(opts) {
     // hard block was found anywhere in the chain.
     const __cssInfoByAncestor = new Map();
 
+    // An <area> draws nothing of its own: it is a region of the image that
+    // uses its map, and that image renders it. So its own display, which
+    // HTML's default style sheet sets to none (jsdom follows it; Chromium
+    // computes inline), and its <map>'s don't hide it, as in
+    // isAccTreeEligible: in Chromium and Firefox a used map's region stays
+    // on the page under display:none on the area or the map.
+    const __isAreaNode = String(dom.localName(node) || '').toLowerCase() === 'area';
+    const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
+
     for (const a of chain) {
       if (!isElement(a)) continue;
+      if (__isAreaNode && (a === node || a === __ownMapEl)) continue;
 
       let cssBlock = null;
       let cssKnown = false;
@@ -4196,7 +5949,7 @@ function createDomHelpers(opts) {
     if (role === 'combobox' || role === 'listbox') {
       if (isSelect) {
         const picked = [];
-        for (const opt of Array.from(dom.querySelectorAll(node, 'option'))) {
+        for (const opt of [...dom.querySelectorAll(node, 'option')]) {
           let selected;
           try {
             selected = !!dom.get(opt, 'selected');
@@ -4209,7 +5962,7 @@ function createDomHelpers(opts) {
       }
       if (tag === 'input') return trim(valueOf());
       if (role === 'listbox') {
-        return Array.from(dom.querySelectorAll(node, '[role~="option" i]'))
+        return [...dom.querySelectorAll(node, '[role~="option" i]')]
           .filter((o) => lower(getAttr(o, 'aria-selected')) === 'true')
           .map(optionText)
           .filter(Boolean)
@@ -4243,6 +5996,7 @@ function createDomHelpers(opts) {
   // and would otherwise defeat that per-call guard on a genuine cycle.
   function computeIdRefTargetTextAlternative(el, visited, _ctx, opts) {
     if (!isElement(el)) return '';
+    if (__idRefTouched) __idRefTouched.add(el);
     if (visited.has(el)) return '';
     visited.add(el);
     if (__nameComputationDepth >= __NAME_COMPUTATION_MAX_DEPTH) return '';
@@ -4253,6 +6007,73 @@ function createDomHelpers(opts) {
     } finally {
       __namingInProgress.delete(el);
     }
+  }
+
+  // The text of a referenced target, kept for the run: fields that share
+  // one aria-labelledby (a long label, a group's heading) or controls that
+  // share one aria-describedby (a tooltip) worked out the target's text
+  // again for each, which cost the target's size times their number.
+  //
+  // What a target gives depends on more than the element: on the options
+  // (the cache is keyed by every one that is a plain value; options holding
+  // an object, such as a node to skip, are not cached), and, through the
+  // cycle guards, on what the traversal has already met. So a text is kept
+  // and reused only at the top of a computation (no name being worked out
+  // around it), with the elements its traversal met (`touched`): it is
+  // reused only when the traversal's `visited` holds none of them, when the
+  // computation would meet the same answers again, and those elements are
+  // added to `visited` as the computation would have added them. The
+  // caches are cleared at the start of every run (dom-runner.js), so a page
+  // changed between scans is read again.
+  let __idRefTouched = null; // Set<Element> the computation being kept meets
+  function __idRefTargetOptsKey(opts) {
+    if (!opts) return '';
+    const parts = [];
+    for (const k of Object.keys(opts).sort()) {
+      if (k === '__idrefVisited') continue;
+      const v = opts[k];
+      if (v === undefined) continue;
+      if ((v !== null && typeof v === 'object') || typeof v === 'function') return null;
+      parts.push(k + '=' + typeof v + ':' + String(v));
+    }
+    return parts.join('|');
+  }
+
+  function readIdRefTargetText(el, visited, _ctx, opts) {
+    const atTop =
+      !!__idRefTargetTextCacheByKey &&
+      __idRefTouched === null &&
+      __nameComputationDepth === 0 &&
+      __namingInProgress.size === 0 &&
+      isElement(el);
+    const key = atTop ? __idRefTargetOptsKey(opts) : null;
+    if (key === null) return computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+    let byEl = __idRefTargetTextCacheByKey.get(key);
+    if (!(byEl instanceof WeakMap)) {
+      byEl = new WeakMap();
+      __idRefTargetTextCacheByKey.set(key, byEl);
+    }
+    const kept = byEl.get(el);
+    if (kept) {
+      if (kept.touched.some((n) => visited.has(n))) {
+        return computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+      }
+      __perfInc('idRefTargetText.hit');
+      for (const n of kept.touched) visited.add(n);
+      return kept.text;
+    }
+    __perfInc('idRefTargetText.miss');
+    const before = new Set(visited);
+    const touched = new Set();
+    __idRefTouched = touched;
+    let text;
+    try {
+      text = computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+    } finally {
+      __idRefTouched = null;
+    }
+    if (![...touched].some((n) => before.has(n))) byEl.set(el, { text, touched: [...touched] });
+    return text;
   }
 
   function computeIdRefTargetTextOf(el, visited, _ctx, opts) {
@@ -4392,7 +6213,7 @@ function createDomHelpers(opts) {
       try {
         const t = readHere.has(el)
           ? readHere.get(el)
-          : computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+          : readIdRefTargetText(el, visited, _ctx, opts);
         readHere.set(el, t);
         if (t) texts.push(t);
       } catch {}
@@ -4436,7 +6257,7 @@ function createDomHelpers(opts) {
         // A repeated id is read again, as in getTextFromRefs.
         const t = readHere.has(el)
           ? readHere.get(el)
-          : computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+          : readIdRefTargetText(el, visited, _ctx, opts);
         readHere.set(el, t);
         if (t) texts.push(t);
       } catch {}
@@ -5136,7 +6957,7 @@ function createDomHelpers(opts) {
       TA_REDUNDANT_SUFFIXES_JA.some((x) => word.length > x.length && word.endsWith(x));
     if (prefixed || suffixed) return { altSignal: 'redundant-prefix' };
 
-    const length = Array.from(String(rawAlt).trim()).length;
+    const length = [...String(rawAlt).trim()].length;
     if (length > TA_MAX_LENGTH) {
       return { altSignal: 'too-long', length, limit: TA_MAX_LENGTH };
     }
@@ -5146,52 +6967,65 @@ function createDomHelpers(opts) {
   // The message for a getTextAlternativeSignal result, shared by the rules
   // that report one: summary and hint in English, and the i18n keys and
   // params that translate them. `element` is how the summary names the
-  // element: 'img', 'area', 'input type="image"'.
+  // element: 'img', 'area', 'input type="image"'. Each entry: the key
+  // suffix, the summary, the summary quoting the text ('' for none), the
+  // hint.
   const TA_SIGNAL_MESSAGES = {
     'file-name': [
       'FileName',
       'The text alternative of this <{{element}}> looks like a file name.',
-      'A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.'
+      'The text alternative of this <{{element}}>, "{{text}}", looks like a file name.',
+      'A file name tells someone who can’t see the image nothing about it. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.'
     ],
     url: [
       'Url',
       'The text alternative of this <{{element}}> is a web address.',
+      'The text alternative of this <{{element}}>, "{{text}}", is a web address.',
       'An address does not say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the address is itself what the image shows, such as an image of a printed web address.'
     ],
     placeholder: [
       'Placeholder',
       'The text alternative of this <{{element}}> is a placeholder or a generic word.',
-      'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt="" instead. The word is fine only if it is all the image conveys, such as an image of that word.'
+      'The text alternative of this <{{element}}>, "{{text}}", is a placeholder or a generic word.',
+      'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt="" instead. The word is fine only if it is all the image conveys, such as an image of that word.'
     ],
     symbols: [
       'Symbols',
       'The text alternative of this <{{element}}> is made only of symbols.',
+      'The text alternative of this <{{element}}>, "{{text}}", is made only of symbols.',
       'Screen readers read symbols one by one, by their names, or skip them, so “★★★★☆” may be read as five separate stars, or as nothing. Replace them with words that say what they mean, such as “4 out of 5 stars”.'
     ],
     'redundant-prefix': [
       'RedundantPrefix',
       'The text alternative of this <{{element}}> starts by saying it is an image.',
+      'The text alternative of this <{{element}}>, "{{text}}", starts by saying it is an image.',
       'Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.'
     ],
     'too-long': [
       'TooLong',
       'The text alternative of this <{{element}}> is {{length}} characters long.',
+      '',
       'A text alternative is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the text alternative short and give the details in text on the page or in a linked description. A long one is fine when the image holds that much text itself, such as a short quotation.'
     ]
   };
 
-  function describeTextAlternativeSignal(signal, element) {
+  // With text, the text alternative judged, the summary quotes it, cut to
+  // 80 characters: a name from aria-labelledby is not in the element's
+  // markup. A too-long one is not quoted.
+  function describeTextAlternativeSignal(signal, element, text) {
     const entry = signal && TA_SIGNAL_MESSAGES[signal.altSignal];
     if (!entry) return null;
     const params = { element: String(element || '') };
     if (signal.length) params.length = signal.length;
+    const all = entry[2] && text != null ? trim(String(text)).replace(/\s+/g, ' ') : '';
+    if (all) params.text = all.length > 80 ? `${all.slice(0, 79)}…` : all;
     const fill = (t) =>
       t.replace(/\{\{(\w+)\}\}/g, (m, k) => (params[k] != null ? String(params[k]) : m));
     return {
-      summary: fill(entry[1]),
-      hint: entry[2],
+      summary: fill(all ? entry[2] : entry[1]),
+      hint: entry[3],
       i18n: {
-        summaryKey: 'textAlternative_summary_cantTell' + entry[0],
+        summaryKey: 'textAlternative_summary_cantTell' + entry[0] + (all ? 'Quoted' : ''),
         hintKey: 'textAlternative_hint_cantTell' + entry[0],
         params
       }
@@ -5861,7 +7695,7 @@ function createDomHelpers(opts) {
         const kids = assigned.length
           ? assigned
           : dom.childNodes(node)
-            ? Array.from(dom.childNodes(node))
+            ? [...dom.childNodes(node)]
             : [];
         for (const kid of kids) {
           collectChild(kid, parts);
@@ -5973,12 +7807,15 @@ function createDomHelpers(opts) {
   // Whether an element's role="none" or "presentation" is ignored, as
   // WAI-ARIA's presentational roles conflict resolution has browsers do when
   // the element is focusable or carries a global ARIA attribute: it keeps
-  // its implicit role then (an <h1> stays a heading). Chromium does both.
+  // its implicit role then (an <h1> stays a heading). Chromium does both,
+  // but doesn't count the four attributes WAI-ARIA 1.2 deprecates as
+  // globals (aria-disabled, aria-errormessage, aria-haspopup,
+  // aria-invalid): with only those, the element stays presentational.
   function isPresentationalRoleIgnored(el) {
     if (!isElement(el)) return false;
     const explicit = aria.getExplicitRole(el);
     if (explicit !== 'none' && explicit !== 'presentation') return false;
-    if (aria.hasGlobalAriaAttr(el)) return true;
+    if (aria.hasGlobalAriaAttr(el, { exceptDeprecated: true })) return true;
     return getFocusableInfo(el).focusable;
   }
 
@@ -6059,6 +7896,579 @@ function createDomHelpers(opts) {
     return isEmptyClipPath(style.clipPath != null ? style.clipPath : style['clip-path']);
   }
 
+  // The `clip` declared for an element, where the page has no layout (jsdom)
+  // and its computed clip reads `auto`: jsdom's CSS parser drops a
+  // space-separated rect() (rect(0 0 0 0) computes as auto, and a style
+  // rule keeps only its first edge, rect(0px)), the visually hidden pattern
+  // most sites use. Read as written, from every style sheet of the
+  // element's tree that core can read (getStyleSheets): a <style> element's
+  // text, a sheet's text engineOptions.styleSheetTexts gives, the sheets
+  // either imports, and, for a sheet with no text to read (one jsdom loaded
+  // itself, a constructed one), its rules as parsed. The declaration that
+  // applies is the cascade's: the page's own declarations (the browser's
+  // style sheet sets no clip), !important first, then the style attribute
+  // over any rule, then cascade layers, specificity and order. Only rules
+  // whose @media and @supports apply count (cssConditionApplies). null
+  // where a browser computed the value, or nothing declares one.
+  // A style sheet's text parsed apart from the page, as cssRulesOf parses a
+  // supplied one; null where it can't be.
+  function __parsedRulesOf(text) {
+    try {
+      const view = window || (document && dom.defaultView(document));
+      if (view && typeof view.CSSStyleSheet === 'function') {
+        const parsed = new view.CSSStyleSheet();
+        parsed.replaceSync(text);
+        return parsed.cssRules;
+      }
+      if (document && dom.get(document, 'implementation')) {
+        const doc = dom.get(document, 'implementation').createHTMLDocument('');
+        const style = dom.createElement(doc, 'style');
+        style.textContent = text;
+        dom.appendChild(dom.head(doc), style);
+        return style.sheet ? style.sheet.cssRules : null;
+      }
+    } catch {}
+    return null;
+  }
+  // The properties read as declared under jsdom (declaredRules), each by
+  // its name in a style sheet; `overflow` and `inset` are shorthands of
+  // the ones core reads (expandDeclared).
+  const __DECLARED_PROPS = [
+    'clip-path',
+    'clip',
+    'display',
+    'visibility',
+    'position',
+    'opacity',
+    'width',
+    'height',
+    'overflow-x',
+    'overflow-y',
+    'overflow',
+    'content-visibility',
+    'pointer-events',
+    'inset',
+    'left',
+    'top',
+    'text-indent',
+    'transform',
+    'scale',
+    'contain'
+  ];
+  const __DECLARED_PREFIX = '--surea11y-declared-';
+  const __DECLARED_NAME_RE = new RegExp(
+    '(^|[{;\\s])(' + __DECLARED_PROPS.join('|') + ')(\\s*:)',
+    'gi'
+  );
+  // A declaration as the longhands core reads: [[prop, value]].
+  function expandDeclared(prop, value) {
+    const words = /^(inherit|initial|unset|revert|revert-layer)$/i.test(value)
+      ? null
+      : value.split(/\s+/).filter(Boolean);
+    if (prop === 'overflow') {
+      return [
+        ['overflow-x', words ? words[0] : value],
+        ['overflow-y', words ? words[1] || words[0] : value]
+      ];
+    }
+    if (prop === 'inset') {
+      if (!words)
+        return [
+          ['top', value],
+          ['left', value]
+        ];
+      return [
+        ['top', words[0]],
+        ['left', words[3] || words[1] || words[0]]
+      ];
+    }
+    return [[prop, value]];
+  }
+  // Whether jsdom applies a media list: only "all" or "screen" as a whole
+  // query, or an empty list (its evaluateMediaList).
+  function jsdomMediaApplies(ruleOrSheet) {
+    try {
+      const media = ruleOrSheet && ruleOrSheet.media;
+      const items = [];
+      for (let i = 0; media && i < media.length; i++) items.push(String(media[i]).trim());
+      return !items.length || items.some((q) => q === 'all' || q === 'screen');
+    } catch {
+      return true;
+    }
+  }
+  const __declaredRulesByRoot = new WeakMap();
+  // The declarations of __DECLARED_PROPS in a root's sheets, in cascade
+  // order: [{ selector, prop, value, important, layer, order, jsdom, media }],
+  // `layer` a list of indices (each layer's place among its siblings, in
+  // the order they are first named), [] outside any layer. `jsdom`: jsdom's
+  // own getComputedStyle applies the rule (a top-level rule of a document
+  // sheet it read, one in a top-level @media it applies, or a top-level one
+  // of a sheet that sheet imports); `media`: every @media around it is one
+  // jsdom applies. A rule under @container is left out: without a layout
+  // there is no container to query. Once per root.
+  function declaredRules(root) {
+    if (__declaredRulesByRoot.has(root)) return __declaredRulesByRoot.get(root);
+    const rules = [];
+    let order = 0;
+    // Layer names, dotted from the outermost, to their indices.
+    const layerPaths = new Map();
+    let anonymous = 0;
+    const layerOf = (parent, name) => {
+      const parentName = parent.name;
+      const full = name ? (parentName ? parentName + '.' + name : name) : null;
+      const key = full || '\u0000anonymous' + anonymous++;
+      if (!layerPaths.has(key)) {
+        const siblings = [...layerPaths.values()].filter(
+          (l) => l.path.length === parent.path.length + 1 && l.parent === parentName
+        ).length;
+        layerPaths.set(key, { path: parent.path.concat(siblings), parent: parentName, name: full });
+      }
+      const l = layerPaths.get(key);
+      return { path: l.path, name: full || key };
+    };
+    const NO_LAYER = { path: [], name: '' };
+    const NOT_JSDOM = { top: false, jsdom: false, media: true };
+    // ctx: { top: at the top level of a sheet jsdom reads, jsdom: jsdom
+    // applies a style rule here, media: as above }.
+    const walk = (list, layer, fromText, imports, base, depth, ctx) => {
+      const n = (list && list.length) || 0;
+      let importIndex = 0;
+      for (let i = 0; i < n && depth < 10; i++) {
+        const rule = list[i];
+        if (!rule) continue;
+        const kind = (rule.constructor && rule.constructor.name) || '';
+        if (typeof rule.selectorText === 'string' && rule.style) {
+          // A nested style rule's selector is relative to its parent's:
+          // not followed.
+          for (const name of __DECLARED_PROPS) {
+            const prop = fromText ? __DECLARED_PREFIX + name : name;
+            const value = String(rule.style.getPropertyValue(prop) || '').trim();
+            if (!value) continue;
+            const important = rule.style.getPropertyPriority(prop) === 'important';
+            for (const [longhand, v] of expandDeclared(name, value)) {
+              rules.push({
+                selector: rule.selectorText,
+                prop: longhand,
+                value: v,
+                important,
+                layer: layer.path,
+                order: order++,
+                jsdom: ctx.jsdom,
+                media: ctx.media
+              });
+            }
+          }
+        } else if (kind === 'CSSImportRule' || rule.type === 3) {
+          const own = imports ? imports[importIndex] : rule;
+          importIndex++;
+          if (!cssConditionApplies(rule)) continue;
+          const name = typeof rule.layerName === 'string' ? rule.layerName : null;
+          const inner = name === null ? layer : layerOf(layer, name);
+          // jsdom applies an imported sheet's top-level rules, whatever
+          // its layer.
+          const media = jsdomMediaApplies(rule);
+          const innerCtx = {
+            top: false,
+            jsdom: ctx.top && ctx.jsdom && media,
+            media: ctx.media && media
+          };
+          let sheet = null;
+          try {
+            sheet = own ? own.styleSheet : null;
+          } catch {}
+          if (sheet) walkSheet(sheet, inner, depth + 1, innerCtx);
+          else {
+            let href = '';
+            try {
+              href = new URL(String(rule.href || ''), base).href;
+            } catch {}
+            const text = href ? suppliedTextFor(href) : null;
+            if (text != null)
+              walkText(text, href, null, inner, depth + 1, { ...innerCtx, jsdom: false });
+          }
+        } else if (kind === 'CSSLayerStatementRule') {
+          for (const name of rule.nameList || []) layerOf(layer, String(name));
+        } else if (kind === 'CSSLayerBlockRule') {
+          walk(
+            rule.cssRules,
+            layerOf(layer, rule.name ? String(rule.name) : ''),
+            fromText,
+            null,
+            base,
+            depth + 1,
+            { ...NOT_JSDOM, media: ctx.media }
+          );
+        } else if (kind === 'CSSMediaRule' || rule.type === 4) {
+          if (!cssConditionApplies(rule)) continue;
+          const media = jsdomMediaApplies(rule);
+          walk(rule.cssRules, layer, fromText, null, base, depth + 1, {
+            top: false,
+            jsdom: ctx.top && ctx.jsdom && media,
+            media: ctx.media && media
+          });
+        } else if (kind === 'CSSSupportsRule' || rule.type === 12) {
+          if (cssConditionApplies(rule))
+            walk(rule.cssRules, layer, fromText, null, base, depth + 1, {
+              ...NOT_JSDOM,
+              media: ctx.media
+            });
+        }
+      }
+    };
+    // A sheet's text, with each declaration read renamed to a custom
+    // property, which the parser keeps as written. `imports`: the page's own
+    // @import rules of the sheet, which have the imported sheets.
+    const walkText = (text, base, imports, layer, depth, ctx) => {
+      const renamed = String(text).replace(__DECLARED_NAME_RE, '$1' + __DECLARED_PREFIX + '$2$3');
+      walk(__parsedRulesOf(renamed), layer, true, imports, base, depth, ctx);
+    };
+    const walkSheet = (sheet, layer, depth, ctx) => {
+      if (!sheet || depth > 10 || !cssConditionApplies(sheet)) return;
+      const owner = sheet.ownerNode;
+      const href = typeof sheet.href === 'string' ? sheet.href : '';
+      const base = href || (document && dom.get(document, 'baseURI')) || '';
+      let text = null;
+      if (owner && String(dom.localName(owner) || '').toLowerCase() === 'style')
+        text = String(dom.get(owner, 'textContent') || '');
+      else if (href) text = suppliedTextFor(href);
+      let own;
+      try {
+        own = sheet.cssRules;
+      } catch {
+        own = null;
+      }
+      // A sheet jsdom has no rules of (a link it didn't load, whose text
+      // the run supplies) is one it applies nothing from.
+      const read = !!own && own.length > 0;
+      const sheetCtx = read
+        ? { ...ctx, media: ctx.media && jsdomMediaApplies(sheet) }
+        : { ...ctx, jsdom: false };
+      if (read && !jsdomMediaApplies(sheet)) sheetCtx.jsdom = false;
+      if (text != null) {
+        const imports = own
+          ? [...own].filter(
+              (r) =>
+                r && (r.type === 3 || (r.constructor && r.constructor.name) === 'CSSImportRule')
+            )
+          : null;
+        walkText(text, base, imports, layer, depth, sheetCtx);
+      } else {
+        walk(cssRulesOf(sheet), layer, false, null, base, depth, sheetCtx);
+      }
+    };
+    // jsdom's getComputedStyle reads the document's own sheets: not a
+    // shadow root's, nor adopted ones.
+    let docSheets = [];
+    try {
+      docSheets = root && dom.nodeType(root) === 9 ? [...(dom.get(root, 'styleSheets') || [])] : [];
+    } catch {}
+    for (const { sheet, root: r } of getStyleSheets()) {
+      if (r !== root) continue;
+      const read = docSheets.includes(sheet);
+      walkSheet(sheet, NO_LAYER, 0, { top: read, jsdom: read, media: true });
+    }
+    __declaredRulesByRoot.set(root, rules);
+    return rules;
+  }
+  // The rules of a root's sheets that declare a clip (declaredRules).
+  const __declaredClipRulesByRoot = new WeakMap();
+  function declaredClipRules(root) {
+    if (!__declaredClipRulesByRoot.has(root))
+      __declaredClipRulesByRoot.set(
+        root,
+        declaredRules(root).filter((r) => r.prop === 'clip')
+      );
+    return __declaredClipRulesByRoot.get(root);
+  }
+  // Which of two declarations the cascade applies: each { important,
+  // inline, layer, specificity, order }; true when `a` wins over `b`.
+  function __clipDeclWins(a, b) {
+    if (a.important !== b.important) return a.important;
+    if (a.inline !== b.inline) return a.inline;
+    // Cascade layers: for normal declarations a later layer wins, and
+    // declarations outside any layer (or directly in a layer, over its
+    // sublayers) win over those in one; !important reverses both.
+    const la = a.layer;
+    const lb = b.layer;
+    let layerCmp = 0;
+    for (let i = 0; i < Math.max(la.length, lb.length) && !layerCmp; i++) {
+      if (i >= la.length) layerCmp = 1;
+      else if (i >= lb.length) layerCmp = -1;
+      else if (la[i] !== lb[i]) layerCmp = la[i] > lb[i] ? 1 : -1;
+    }
+    if (layerCmp) return a.important ? layerCmp < 0 : layerCmp > 0;
+    if (a.specificity !== b.specificity) return a.specificity > b.specificity;
+    return a.order > b.order;
+  }
+  function declaredClipOf(el, cs) {
+    try {
+      const computed = String((cs && cs.clip) || '')
+        .trim()
+        .toLowerCase();
+      if (computed && computed !== 'auto') return null;
+      const doc = dom.ownerDocument(el);
+      if (!doc) return null;
+      if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, hasLayoutOf(el));
+      if (__layoutByDoc.get(doc)) return null;
+      let best = null;
+      const consider = (decl) => {
+        if (!best || __clipDeclWins(decl, best)) best = decl;
+      };
+      // The style attribute: its last declaration of each importance.
+      let n = 0;
+      for (const m of String(getAttr(el, 'style') || '').matchAll(
+        /(?:^|;)\s*clip\s*:\s*([^;]+)/gi
+      )) {
+        const important = /!\s*important\s*$/i.test(m[1]);
+        consider({
+          value: m[1].replace(/!\s*important\s*$/i, '').trim(),
+          important,
+          inline: true,
+          layer: [],
+          specificity: 0,
+          order: n++
+        });
+      }
+      const root = dom.getRootNode(el);
+      for (const rule of root ? declaredClipRules(root) : []) {
+        // Only a rule that could still win is matched.
+        if (best && best.important && (best.inline || !rule.important)) continue;
+        const specificity = contrast.matchedSpecificity(el, rule.selector);
+        if (specificity < 0) continue;
+        consider({ ...rule, inline: false, specificity });
+      }
+      return best ? best.value : null;
+    } catch {
+      return null;
+    }
+  }
+  // isClipHidden for an element, with its declared clip where jsdom lost it.
+  function isElementClipHidden(el, cs) {
+    if (isClipHidden(cs)) return true;
+    const clip = declaredClipOf(el, cs);
+    return !!clip && isClipHidden({ position: cs && cs.position, clip, clipPath: '' });
+  }
+
+  // Under jsdom, the properties core reads to tell whether an element is
+  // shown, with the cascade jsdom's getComputedStyle leaves out applied:
+  // it reads no rule inside @layer, @supports or @container, nor one
+  // nested in another at-rule, so a Tailwind v4 page's `hidden` and
+  // `sr-only`, in @layer utilities, hid nothing there. Where the
+  // declaration that wins the cascade for el (declaredRules: !important,
+  // the style attribute, layers, specificity, order) is one jsdom left
+  // out, its value stands in for jsdom's; where one jsdom read wins, or
+  // none is declared, jsdom's value is right. @media is taken as jsdom
+  // takes it (only "all" and "screen" apply), so a page's rules count the
+  // same whether they are in a layer or not. visibility, pointer-events
+  // and text-indent are inherited: an element that declares none takes
+  // its parent's. Only the document's own tree, as jsdom styles it.
+  const __INHERITED_DECLARED = new Set(['visibility', 'pointer-events', 'text-indent']);
+  const __INITIAL_DECLARED = {
+    display: 'inline',
+    visibility: 'visible',
+    position: 'static',
+    'clip-path': 'none',
+    opacity: '1',
+    width: 'auto',
+    height: 'auto',
+    'overflow-x': 'visible',
+    'overflow-y': 'visible',
+    'content-visibility': 'visible',
+    'pointer-events': 'auto',
+    left: 'auto',
+    top: 'auto',
+    'text-indent': '0px',
+    transform: 'none',
+    scale: 'none',
+    contain: 'none'
+  };
+  const __layeredIndexByDoc = new WeakMap();
+  // The rules that could win over what jsdom computed, indexed by what
+  // their selectors need (selectorIndex); null where no rule jsdom left
+  // out declares one of the properties.
+  function layeredIndexOf(doc) {
+    if (__layeredIndexByDoc.has(doc)) return __layeredIndexByDoc.get(doc);
+    let out = null;
+    try {
+      const records = declaredRules(doc).filter((r) => r.media && r.prop !== 'clip');
+      if (records.some((r) => !r.jsdom)) {
+        const bySelector = new Map();
+        for (const r of records) {
+          if (!bySelector.has(r.selector)) bySelector.set(r.selector, []);
+          bySelector.get(r.selector).push(r);
+        }
+        const selectors = [...bySelector.keys()];
+        const parts = [];
+        const partOwner = [];
+        selectors.forEach((sel, i) => {
+          for (const part of contrast.splitSelectorList(sel)) {
+            parts.push(part);
+            partOwner.push(i);
+          }
+        });
+        out = {
+          selectors,
+          bySelector,
+          partOwner,
+          index: selectorIndex(parts),
+          inherited: records.some((r) => !r.jsdom && __INHERITED_DECLARED.has(r.prop))
+        };
+      }
+    } catch {
+      out = null;
+    }
+    __layeredIndexByDoc.set(doc, out);
+    return out;
+  }
+  // el's own winning declaration of each property: Map prop -> decl.
+  function __declaredWinners(el, idx) {
+    const best = new Map();
+    const consider = (decl) => {
+      const cur = best.get(decl.prop);
+      if (!cur || __clipDeclWins(decl, cur)) best.set(decl.prop, decl);
+    };
+    let n = 0;
+    for (const m of String(getAttr(el, 'style') || '').matchAll(
+      /(?:^|;)\s*([a-z-]+)\s*:\s*([^;]+)/gi
+    )) {
+      const name = m[1].toLowerCase();
+      if (!__DECLARED_PROPS.includes(name) || name === 'clip') continue;
+      const important = /!\s*important\s*$/i.test(m[2]);
+      const value = m[2].replace(/!\s*important\s*$/i, '').trim();
+      for (const [prop, v] of expandDeclared(name, value)) {
+        consider({
+          prop,
+          value: v,
+          important,
+          inline: true,
+          jsdom: true,
+          layer: [],
+          specificity: 0,
+          order: n++
+        });
+      }
+    }
+    const seen = new Set();
+    for (const i of idx.index.candidates(el)) {
+      const s = idx.partOwner[i];
+      if (seen.has(s)) continue;
+      seen.add(s);
+      const selector = idx.selectors[s];
+      const specificity = contrast.matchedSpecificity(el, selector);
+      if (specificity < 0) continue;
+      for (const r of idx.bySelector.get(selector)) consider({ ...r, inline: false, specificity });
+    }
+    return best;
+  }
+  const __layeredOverridesCache = new WeakMap();
+  // Map prop -> value that replaces jsdom's for el, or null.
+  function layeredOverridesOf(el) {
+    if (__layeredOverridesCache.has(el)) return __layeredOverridesCache.get(el);
+    let doc;
+    try {
+      doc = dom.ownerDocument(el);
+      if (!doc || dom.getRootNode(el) !== doc) doc = null;
+    } catch {
+      doc = null;
+    }
+    const idx = doc ? layeredIndexOf(doc) : null;
+    if (!idx) {
+      __layeredOverridesCache.set(el, null);
+      return null;
+    }
+    // Elements up to the nearest one with an answer, when an inherited
+    // property may come down from above; their answers are worked out
+    // from the top.
+    const path = [el];
+    if (idx.inherited) {
+      for (
+        let p = dom.parentElement(el);
+        p && !__layeredOverridesCache.has(p);
+        p = dom.parentElement(p)
+      )
+        path.push(p);
+    }
+    const view = window || dom.defaultView(doc);
+    for (let k = path.length - 1; k >= 0; k--) {
+      const node = path[k];
+      const parent = dom.parentElement(node);
+      const fromParent = parent ? __layeredOverridesCache.get(parent) || null : null;
+      // A property's value on the parent, as corrected here.
+      const parentValue = (prop) => {
+        if (fromParent && fromParent.has(prop)) return fromParent.get(prop);
+        if (!parent) return __INITIAL_DECLARED[prop];
+        try {
+          return String(view.getComputedStyle(parent).getPropertyValue(prop) || '');
+        } catch {
+          return null;
+        }
+      };
+      let out = null;
+      const set = (prop, value) => {
+        if (value == null || value === '') return;
+        if (!out) out = new Map();
+        out.set(prop, value);
+      };
+      let winners;
+      try {
+        winners = __declaredWinners(node, idx);
+      } catch {
+        winners = new Map();
+      }
+      for (const [prop, decl] of winners) {
+        if (decl.jsdom) continue;
+        const v = String(decl.value);
+        const kw = v.toLowerCase();
+        if (kw === 'inherit' || (kw === 'unset' && __INHERITED_DECLARED.has(prop)))
+          set(prop, parentValue(prop));
+        else if (kw === 'initial' || kw === 'unset') set(prop, __INITIAL_DECLARED[prop]);
+        // revert, revert-layer, var() and env() can't be resolved here:
+        // jsdom's value stays.
+        else if (kw === 'revert' || kw === 'revert-layer' || /\b(var|env|attr)\(/i.test(v))
+          continue;
+        else set(prop, v);
+      }
+      if (fromParent) {
+        for (const [prop, value] of fromParent) {
+          if (__INHERITED_DECLARED.has(prop) && !winners.has(prop)) set(prop, value);
+        }
+      }
+      __layeredOverridesCache.set(node, out);
+    }
+    return __layeredOverridesCache.get(el);
+  }
+  // jsdom's computed style with the overrides read in its place, through
+  // every way core reads it (cs.visibility, cs['clip-path'],
+  // getPropertyValue).
+  function withLayeredOverrides(cs, overrides) {
+    const byName = new Map();
+    for (const [prop, value] of overrides) {
+      byName.set(prop, value);
+      byName.set(
+        prop.replace(/-([a-z])/g, (m, c) => c.toUpperCase()),
+        value
+      );
+    }
+    if (overrides.has('overflow-x') || overrides.has('overflow-y')) {
+      const x = byName.get('overflow-x') || String(cs.overflowX || '');
+      const y = byName.get('overflow-y') || String(cs.overflowY || '');
+      byName.set('overflow', x === y ? x : x + ' ' + y);
+    }
+    return new Proxy(cs, {
+      get(target, key) {
+        if (typeof key === 'string' && byName.has(key)) return byName.get(key);
+        if (key === 'getPropertyValue') {
+          return (name) => {
+            const k = String(name).toLowerCase();
+            return byName.has(k) ? byName.get(k) : target.getPropertyValue(name);
+          };
+        }
+        const v = Reflect.get(target, key, target);
+        return typeof v === 'function' ? v.bind(target) : v;
+      }
+    });
+  }
+
   // An element's containing block: the box its position is resolved
   // against, and whose overflow can clip it (CSS Position 3, CSS Overflow 3:
   // a box clips content "whose containing block is the box or a descendant
@@ -6110,7 +8520,8 @@ function createDomHelpers(opts) {
   // transparent, clipped away (clip or clip-path), or at most 1x1 px with its
   // overflow hidden -- the "screen-reader-only" patterns. Applies to the
   // whole subtree. jsdom neither computes clip nor keeps its value intact, so
-  // the declaration in the style attribute is read too. `opts.ignoreOpacity`
+  // there the clip is read as declared (declaredClipOf), and a clip-path in
+  // the style attribute too. `opts.ignoreOpacity`
   // leaves transparency out, for a rule about content a script may fade in.
   function isVisuallyHidden(el, opts) {
     if (!isElement(el)) return false;
@@ -6118,18 +8529,13 @@ function createDomHelpers(opts) {
     const opacity = Number.parseFloat(cs.opacity);
     const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
     if (!ignoreOpacity && Number.isFinite(opacity) && opacity <= 0.0001) return true;
-    if (isClipHidden(cs)) return true;
+    if (isElementClipHidden(el, cs)) return true;
     const declared = String(getAttr(el, 'style') || '');
     if (declared) {
-      const clip = /(?:^|;)\s*clip\s*:\s*([^;]+)/i.exec(declared);
       const clipPath = /(?:^|;)\s*clip-path\s*:\s*([^;]+)/i.exec(declared);
       if (
-        (clip || clipPath) &&
-        isClipHidden({
-          position: cs.position,
-          clip: clip ? clip[1].trim() : '',
-          clipPath: clipPath ? clipPath[1].trim() : ''
-        })
+        clipPath &&
+        isClipHidden({ position: cs.position, clip: '', clipPath: clipPath[1].trim() })
       )
         return true;
     }
@@ -6190,10 +8596,12 @@ function createDomHelpers(opts) {
 
     // clip / clip-path
     try {
-      const clip = cs.clip != null ? String(cs.clip).trim() : '';
+      const computedClip = cs.clip != null ? String(cs.clip).trim() : '';
+      const declaredClip = declaredClipOf(el, cs);
+      const clip = declaredClip || computedClip;
       const clipPath = cs.clipPath != null ? String(cs.clipPath).trim() : '';
 
-      if (isClipHidden(cs)) hints.push('clipped');
+      if (isElementClipHidden(el, cs)) hints.push('clipped');
 
       if (clip) metrics.clip = clip;
       if (clipPath) metrics.clipPath = clipPath;
@@ -6374,16 +8782,19 @@ function createDomHelpers(opts) {
       // anchor builders (see that function's header comment): a CSS
       // attribute/ID selector must match the DOM attribute's real,
       // untrimmed value exactly, so only the truthiness check may trim.
+      const usable = __valueSelectable;
       const elementId = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id');
-      if (elementId && elementId.trim()) return '#' + cssEscapeIdent(elementId);
+      if (elementId && elementId.trim() && usable(elementId))
+        return '#' + cssEscapeIdent(elementId);
 
       for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
         const v = dom.get(el, 'getAttribute') && dom.getAttribute(el, a);
-        if (v && v.trim()) return '[' + a + '="' + escapeAttrValue(v) + '"]';
+        if (v && v.trim() && usable(v)) return '[' + a + '="' + escapeAttrValue(v) + '"]';
       }
 
       const name = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'name');
-      if (name && name.trim()) return tag + '[name="' + escapeAttrValue(name) + '"]';
+      if (name && name.trim() && usable(name))
+        return tag + '[name="' + escapeAttrValue(name) + '"]';
 
       return tag;
     } catch {
@@ -6443,6 +8854,7 @@ function createDomHelpers(opts) {
 
   function buildSelectorUncached(el) {
     const escapeAttrValue = __escapeAttrValue;
+    const usable = __valueSelectable;
     try {
       if (!el || dom.nodeType(el) !== 1) return 'html';
 
@@ -6472,7 +8884,7 @@ function createDomHelpers(opts) {
       // error.
       const uniqueIdSel = () => {
         const elementId = dom.getAttribute(el, 'id');
-        if (!elementId || !elementId.trim()) return null;
+        if (!elementId || !elementId.trim() || !usable(elementId)) return null;
         if (idx && (idx.idCount.get(elementId.trim()) || 0) === 1)
           return '#' + cssEscape(elementId);
         return null;
@@ -6481,7 +8893,7 @@ function createDomHelpers(opts) {
       const uniqueTestSel = () => {
         for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
           const v = dom.getAttribute(el, a);
-          if (!v || !v.trim()) continue;
+          if (!v || !v.trim() || !usable(v)) continue;
           const key = a + '=' + v.trim();
           if (idx && (idx.testIdCount.get(key) || 0) === 1) {
             return '[' + a + '="' + escapeAttrValue(v) + '"]';
@@ -6492,7 +8904,7 @@ function createDomHelpers(opts) {
 
       const uniqueNameSel = () => {
         const v = dom.getAttribute(el, 'name');
-        if (!v || !v.trim() || !tag) return null;
+        if (!v || !v.trim() || !tag || !usable(v)) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.nameCount.get(key) || 0) === 1)
           return tag + '[name="' + escapeAttrValue(v) + '"]';
@@ -6501,7 +8913,7 @@ function createDomHelpers(opts) {
 
       const uniqueAriaSel = () => {
         const v = dom.getAttribute(el, 'aria-label');
-        if (!v || !v.trim() || !tag) return null;
+        if (!v || !v.trim() || !tag || !usable(v)) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.ariaLabelCount.get(key) || 0) === 1)
           return tag + '[aria-label="' + escapeAttrValue(v) + '"]';
@@ -6511,7 +8923,8 @@ function createDomHelpers(opts) {
       const uniqueRoleAriaSel = () => {
         const role = dom.getAttribute(el, 'role');
         const aria = dom.getAttribute(el, 'aria-label');
-        if (!role || !role.trim() || !aria || !aria.trim()) return null;
+        if (!role || !role.trim() || !aria || !aria.trim() || !usable(role) || !usable(aria))
+          return null;
         const key = role.trim() + '|' + aria.trim();
         if (idx && (idx.roleAriaLabelCount.get(key) || 0) === 1) {
           return (
@@ -6528,7 +8941,13 @@ function createDomHelpers(opts) {
         uniqueNameSel() ||
         uniqueAriaSel();
 
-      if (direct) return direct;
+      // A direct anchor stands for the element only if the selector engine
+      // reads it back as naming it.
+      let directMatches = false;
+      try {
+        directMatches = !!direct && dom.matches(el, direct);
+      } catch {}
+      if (directMatches) return direct;
 
       const parts = [];
       // Each element on the path with the part of its step that names it
@@ -6538,6 +8957,12 @@ function createDomHelpers(opts) {
       const steps = [];
       let countsUnsure = false;
 
+      // jsdom's selector engine matches no camelCase type selector of an
+      // SVG element (foreignObject, linearGradient) followed by a
+      // combinator, though browsers do: `svg > foreignObject > div` finds
+      // nothing in jsdom. With a pseudo-class beside it, both match it, so
+      // such a step above the element always has its :nth-of-type.
+      const isCamelCase = (t) => t !== t.toLowerCase();
       function nthOfType(node) {
         const t = typeSelectorOf(node) || '*';
         steps.push([node, t]);
@@ -6548,8 +8973,17 @@ function createDomHelpers(opts) {
         const info = __siblingInfo(node);
         if (!info) return t;
         if (info.mixed) countsUnsure = true;
-        return info.sameType > 1 ? t + ':nth-of-type(' + info.ofType + ')' : t;
+        return info.sameType > 1 || (node !== el && isCamelCase(t))
+          ? t + ':nth-of-type(' + info.ofType + ')'
+          : t;
       }
+      // An anchor's type selector, with the :nth-of-type jsdom needs.
+      const anchorType = (node, t) => {
+        if (!isCamelCase(t)) return t;
+        const info = __siblingInfo(node);
+        if (info && info.mixed) countsUnsure = true;
+        return info ? t + ':nth-of-type(' + info.ofType + ')' : t;
+      };
 
       let node = el;
       let safety = 0;
@@ -6598,12 +9032,18 @@ function createDomHelpers(opts) {
             // Same trimmed-key-lookup / raw-value-embed split as the direct
             // anchor builders above -- see this function's header comment.
             const id = dom.getAttribute(node, 'id');
-            if (id && id.trim() && idx && (idx.idCount.get(id.trim()) || 0) === 1)
+            if (id && id.trim() && usable(id) && idx && (idx.idCount.get(id.trim()) || 0) === 1)
               anchor = '#' + cssEscape(id);
             if (!anchor) {
               for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
                 const v = dom.getAttribute(node, a);
-                if (v && v.trim() && idx && (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1) {
+                if (
+                  v &&
+                  v.trim() &&
+                  usable(v) &&
+                  idx &&
+                  (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1
+                ) {
                   anchor = '[' + a + '="' + escapeAttrValue(v) + '"]';
                   break;
                 }
@@ -6614,11 +9054,12 @@ function createDomHelpers(opts) {
               if (
                 name &&
                 name.trim() &&
+                usable(name) &&
                 t &&
                 idx &&
                 (idx.nameCount.get(t + '|' + name.trim()) || 0) === 1
               ) {
-                anchor = t + '[name="' + escapeAttrValue(name) + '"]';
+                anchor = anchorType(node, t) + '[name="' + escapeAttrValue(name) + '"]';
               }
             }
             if (!anchor) {
@@ -6626,11 +9067,12 @@ function createDomHelpers(opts) {
               if (
                 aria &&
                 aria.trim() &&
+                usable(aria) &&
                 t &&
                 idx &&
                 (idx.ariaLabelCount.get(t + '|' + aria.trim()) || 0) === 1
               ) {
-                anchor = t + '[aria-label="' + escapeAttrValue(aria) + '"]';
+                anchor = anchorType(node, t) + '[aria-label="' + escapeAttrValue(aria) + '"]';
               }
             }
           }
@@ -6720,7 +9162,7 @@ function createDomHelpers(opts) {
       const resolve = (sel) => {
         try {
           const root = dom.getRootNode(el);
-          return root ? Array.from(dom.querySelectorAll(root, sel)) : [];
+          return root ? [...dom.querySelectorAll(root, sel)] : [];
         } catch {
           return [];
         }
@@ -6803,14 +9245,21 @@ function createDomHelpers(opts) {
   // lead to it, outermost first, each resolved in the tree that holds it;
   // the element's own selector is resolved in its shadow root. null for an
   // element in the document, or when a host gets no selector.
+  // How many shadow roots deep an element's path from the document may go.
+  const MAX_SHADOW_HOSTS = 1000;
+
   function buildShadowHostSelectors(el) {
     try {
       if (!el || dom.nodeType(el) !== 1 || typeof dom.get(el, 'getRootNode') !== 'function')
         return null;
       const hosts = [];
       let root = dom.getRootNode(el);
-      let guard = 0;
-      while (root && dom.nodeType(root) === 11 && dom.host(root) && guard++ < 100) {
+      // The walk goes out from the element, so stopping short kept the
+      // innermost hosts and lost the outermost: a path that no longer starts
+      // at the document, the same for every element past the limit. Past
+      // MAX_SHADOW_HOSTS there is no path rather than a wrong one.
+      while (root && dom.nodeType(root) === 11 && dom.host(root)) {
+        if (hosts.length >= MAX_SHADOW_HOSTS) return null;
         hosts.unshift(dom.host(root));
         root = dom.getRootNode(dom.host(root));
       }
@@ -7055,7 +9504,7 @@ function createDomHelpers(opts) {
     } catch {}
 
     const firstChildOfType = (childTag) => {
-      const kids = dom.children(el) ? Array.from(dom.children(el)) : [];
+      const kids = dom.children(el) ? [...dom.children(el)] : [];
       for (const kid of kids) {
         if (lower(dom.localName(kid)) === childTag) return kid;
       }
@@ -7228,8 +9677,12 @@ function createDomHelpers(opts) {
     computedStyle,
     composedParent,
     buildSimpleSelector,
+    escapeAttrValue: __escapeAttrValue,
+    ancestorsIncludingSelf,
+    closestCached,
     getLabelControl,
     cssRulesOf,
+    selectorIndex,
     __contrastSharedCache
   };
 
@@ -7314,6 +9767,23 @@ function createDomHelpers(opts) {
     return roots.includes(dom.documentElement(document));
   }
 
+  // Whether the document is a page of its own, not one shown in a frame
+  // (an <iframe> or <frame> of another page): a page's title and language
+  // are the top document's, and a frame is named by its <iframe>. Comparing
+  // windows works across origins; a window that can't be read is a frame.
+  // engineOptions.topLevelDocument says it instead, for a page a test runner
+  // shows in a frame of its own.
+  function isTopLevelDocument() {
+    if (topLevelDocumentOption !== null) return topLevelDocumentOption;
+    const win = realmWindow;
+    if (!win) return true;
+    try {
+      return win.self === win.top;
+    } catch {
+      return false;
+    }
+  }
+
   // Whether a link's text reads as a skip link ("Skip to content", "Aller au
   // contenu", "Zum Inhalt"...), in the languages the engine ships and the
   // phrasings French sites use ("liens d'évitement"). One list for
@@ -7334,6 +9804,49 @@ function createDomHelpers(opts) {
   function hasSkipLinkWording(text) {
     const s = typeof text === 'string' ? text : '';
     return SKIP_LINK_WORDING.some((re) => re.test(s));
+  }
+
+  // What a link is made of, for a standard that judges text links, image
+  // links and SVG links apart:
+  // - 'svg': an <a> in SVG (an SVG link), whatever it holds;
+  // - 'image': an <area> (a region of an image), or a link whose content is
+  //   one or more images and no text;
+  // - 'composite': a link whose content has both text and an image;
+  // - 'text': any other link: its content is text, or it has neither (its
+  //   name comes from its attributes).
+  // An image is an <img>, an <svg>, an <object>, a <canvas>, or an element
+  // whose role attribute is img (what is inside one is the image's). Text
+  // is a text node with more than white space. Content is read in the flat
+  // tree, leaving out what the default hidden-content policy hides
+  // (display:none, [hidden], ...); content hidden only from assistive
+  // technology (aria-hidden) is still drawn, and counts. Generated content
+  // (::before, ::after) is not read.
+  const LINK_KIND_IMAGES = new Set(['img', 'svg', 'object', 'canvas']);
+  function getLinkKind(el) {
+    if (!isElement(el)) return 'text';
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (tag === 'a' && dom.namespaceURI(el) === 'http://www.w3.org/2000/svg') return 'svg';
+    if (tag === 'area') return 'image';
+    let text = false;
+    let image = false;
+    const visit = (node, depth) => {
+      if (depth > 64 || (text && image)) return;
+      for (const c of flatChildNodes(node)) {
+        if (dom.nodeType(c) === 3) {
+          if (/\S/.test(dom.nodeValue(c) || '')) text = true;
+          continue;
+        }
+        if (isHiddenContent(c)) continue;
+        const name = String(dom.localName(c) || '').toLowerCase();
+        if (LINK_KIND_IMAGES.has(name) || aria.getExplicitRole(c) === 'img') image = true;
+        else visit(c, depth + 1);
+      }
+    };
+    try {
+      visit(el, 0);
+    } catch {}
+    if (image) return text ? 'composite' : 'image';
+    return 'text';
   }
 
   return {
@@ -7364,19 +9877,24 @@ function createDomHelpers(opts) {
     buildShadowHostSelectors,
     buildSimpleSelector,
     buildSelector,
+    cssEscape: __cssEscapeIdent,
     buildStructuralPath,
 
     // Existing (back-compat)
     hasAccessibleName,
     isExcluded,
+    isOccurrenceExcluded,
     isAccTreeEligible,
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
+    isTopLevelDocument,
     isModalDialogOpen,
     getOpenModalDialogs,
+    isModalInert,
     getDocumentRoots: documentRoots,
     hasSkipLinkWording,
+    getLinkKind,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
     // (engineOptions.rules[ruleId].excludeSelectors) are currently in
@@ -7396,10 +9914,22 @@ function createDomHelpers(opts) {
     getRefElements,
     getStyleSheets,
     cssRulesOf,
+    cssConditionApplies,
+    selectorIndex,
     getCustomElementInternals,
     getInternalsNameInfo,
     getInternalsStateInfo,
     internalsQuestion,
+    hiddenNameText,
+    hiddenNameTextHint,
+    nameCause,
+    langTagFix,
+    hiddenCause: hiddenBy,
+    nearestRole,
+    nearestAriaAttr,
+    roleTypo,
+    describeElement,
+    describeMarkup,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)
@@ -7457,7 +9987,9 @@ function createDomHelpers(opts) {
     getLiveRegionRecord,
     getVisibilityHintsInfo,
     isClipHidden,
+    isElementClipHidden,
     containingBlockOf,
+    runMemo,
 
     getAttributeInfo,
 

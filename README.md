@@ -29,7 +29,7 @@ results are auditable rather than reassuring.
 
 *Sure* means certainty about what is known, and honesty about what isn't.
 
-145 accessibility rules · 60 W3C ACT rules compared against W3C's test
+149 accessibility rules · 60 W3C ACT rules compared against W3C's test
 corpus (957 reference cases) · zero runtime dependencies
 
 Unlike browser extensions or cloud-based services, the engine is a library.
@@ -48,6 +48,7 @@ that can be consumed by people, scripts or reporting tools.
 - [Quick Start](#quick-start)
 - [Understanding the Results](#understanding-the-results)
 - [Documentation](#documentation)
+- [Languages](#languages)
 - [Contributing](#contributing)
 - [Security](#security)
 - [Versioning & stability](#versioning--stability)
@@ -137,12 +138,17 @@ such as whether a heading describes the content under it.
 reasoning, and `node scripts/act-testcase-check.js` reproduces the figures. They
 cover the rules that have an ACT counterpart.
 
-The [EARL implementation report](https://surea11y.github.io/act-report/act-report.jsonld)
-records the outcome for every one of those cases, passes and inapplicable
-results included, so a rule that stayed silent because nothing applied is
-distinguishable from one that is not implemented. `node scripts/act-report.js`
-regenerates it against the corpus as it stands rather than a snapshot, and a
-scheduled job republishes it weekly and on release.
+Two EARL implementation reports record the outcome for every one of those
+cases, passes and inapplicable results included, so a rule that stayed silent
+because nothing applied is distinguishable from one that is not implemented:
+[one from a scan in jsdom](https://surea11y.github.io/act-report/act-report.jsonld),
+as the CLI and test-matchers run the engine, and
+[one from a scan in Chromium](https://surea11y.github.io/act-report/act-report-browser.jsonld),
+as the browser bindings do. `node scripts/act-report.js` (with
+`--runner=chromium` for the second) regenerates them against the corpus as it
+stands rather than a snapshot, from the latest release: a workflow in
+[SureA11y/act-report](https://github.com/SureA11y/act-report) republishes them
+every Monday, and is run by hand after each release.
 
 ## What this engine does not detect
 
@@ -383,19 +389,39 @@ findings, `a11ycore.highlight(result)` boxes them and
 
 ### Choosing what to check
 
-Name a WCAG version and level in `runOnly`, or pass a profile for a
-standard built on WCAG:
+Name a WCAG version and level in `runOnly`, or pass the profile of a
+WCAG version and level:
 
 ```js
 runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
-runDomRulesInPage(url, null, { profile: 'section508' }, null);
+runDomRulesInPage(url, null, { profile: 'wcag21-aa' }, null);
 ```
 
 Either one only chooses which rules run; it does not certify conformance.
-The profiles (`wcag22-aa`, `section508`, and `en301549-v4.1.1` and
-`en301549-v3.2.1`, deprecated since 1.13.0 in favour of
-`@surea11y/pack-en301549`), best-practice rules, EN 301 549 clauses in
-results, and finer selections are in
+
+A scan can judge the page by several profiles at once, a pack's among
+them; the result reads as one profile with the rules of all, and each
+finding says what each profile makes of it:
+
+```js
+const waiAria = require('@surea11y/pack-wai-aria');
+
+const result = runDomRulesInPage(url, null, {
+  packs: [waiAria],
+  profile: ['wcag22-aa', 'wai-aria-1.2']
+});
+// <div role="group" aria-checked="true">: an attribute the role doesn't
+// support, a question for WCAG 4.1.2 and a failure of WAI-ARIA.
+result.checksResults.find((c) => c.ruleId === 'aria-allowed-attr').verdicts;
+// { 'wcag22-aa': 'cantTell', 'wai-aria-1.2': 'fail' }
+```
+
+The profiles (`wcag20-a`, `wcag20-aa`, `wcag20-aaa`, `wcag21-a`,
+`wcag21-aa`, `wcag21-aaa`, `wcag22-a`, `wcag22-aa` and `wcag22-aaa`;
+`en301549-v4.1.1` and `en301549-v3.2.1`, deprecated since 1.13.0 in favour of
+`@surea11y/pack-en301549`; and `section508`, deprecated since 1.16.0 in
+favour of `wcag20-aa`), best-practice rules, EN 301 549 clauses in
+results, finer selections and scans of several profiles are in
 [`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#selecting-which-rules-run).
 
 ### Going further
@@ -563,6 +589,25 @@ contributing to it, is listed by what you want to do in
 
 ---
 
+## Languages
+
+Messages come in English, French, German, Spanish and Japanese, and every
+other language is welcome. A translation is a data file of strings, with no
+code to write: `npm run i18n:new <locale>` creates it, seeded with the
+English, and whatever you leave untranslated shows in English until someone
+translates it. Before a new language is merged, someone who speaks it
+natively and works in accessibility reviews it.
+[`docs/I18N.md`](./docs/I18N.md#adding-your-language) has the steps.
+
+You can help without translating everything: report a wrong or unclear
+message with a
+[translation issue](https://github.com/SureA11y/core/issues/new?template=translation.md),
+or, if you work in accessibility, join the
+[translation reviewers](./docs/I18N.md#translation-reviewers) for your
+language.
+
+---
+
 ## Contributing
 
 Contributions are welcome: bug fixes, documentation, translations, rules.
@@ -592,6 +637,9 @@ bump, the release cadence, and the rule-ID deprecation policy.
 In short: patch and minor releases are always backward-compatible, so a consumer
 pinned to a `^1.y.0` range is never broken by an upgrade within the `1.x` line,
 though rule fixes in those releases can change what a scan finds.
+The exception is an API marked experimental, which may change in a minor
+(never in a patch) and settles within two minors; a pack that uses one
+pins core with a `~` range.
 Correctness fixes ship as patches when ready; feature work is batched into
 periodic minors; breaking changes are reserved for major versions and are rare by
 design.

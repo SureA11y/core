@@ -147,7 +147,7 @@ function createAriaHelpers(opts, shared) {
     const includeMain = !!(opts && opts.includeMain);
     let cur = dom.parentElement(el);
     let guard = 0;
-    while (cur && guard++ < 200) {
+    while (cur && guard++ < 10000) {
       if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
       // Don't climb past the scanned scope -- a contextSelector-scoped
       // (or fragment) scan should never let ancestry OUTSIDE the
@@ -377,7 +377,6 @@ function createAriaHelpers(opts, shared) {
     'tablist',
     'tabpanel',
     'term',
-    'text',
     'textbox',
     'time',
     'timer',
@@ -915,7 +914,7 @@ function createAriaHelpers(opts, shared) {
     const tags = context.tags;
     let cur = el && dom.parentElement(el) ? dom.parentElement(el) : null;
     let guard = 0;
-    while (cur && guard++ < 200) {
+    while (cur && guard++ < 10000) {
       const tag = lower(dom.tagName(cur) || '');
       if (tags.indexOf(tag) !== -1) return true;
       if (context.directParent) return false;
@@ -1430,9 +1429,13 @@ function createAriaHelpers(opts, shared) {
     'aria-relevant',
     'aria-roledescription'
   ];
-  function hasGlobalAriaAttr(el) {
+  // Whether an element has a global ARIA attribute. With exceptDeprecated,
+  // the four WAI-ARIA 1.2 deprecates as globals (DEPRECATED_ATTRS) don't
+  // count, as Chromium doesn't count them for a role="none" element.
+  function hasGlobalAriaAttr(el, { exceptDeprecated = false } = {}) {
     if (!isElement(el)) return false;
     for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (exceptDeprecated && DEPRECATED_ATTRS.has(attr)) continue;
       if (dom.hasAttribute(el, attr)) return true;
     }
     return false;
@@ -1453,7 +1456,7 @@ function createAriaHelpers(opts, shared) {
     if (!isElement(el) || lower(dom.tagName(el) || '') !== 'td') return '';
     let table = dom.parentElement(el);
     let guard = 0;
-    while (table && guard++ < 200 && lower(dom.tagName(table) || '') !== 'table') {
+    while (table && guard++ < 10000 && lower(dom.tagName(table) || '') !== 'table') {
       table = dom.parentElement(table);
     }
     if (!table || lower(dom.tagName(table) || '') !== 'table') return '';
@@ -1533,7 +1536,14 @@ function createAriaHelpers(opts, shared) {
   return {
     // Every concrete role token: the list the live-region hook keeps a copy
     // of, to resolve a role attribute as getExplicitRole does.
-    concreteRoles: () => Array.from(CONCRETE_ROLES),
+    concreteRoles: () => [...CONCRETE_ROLES],
+    // Every WAI-ARIA attribute name, and the tokens one with an enumerated
+    // value takes (null for any other), for a rule that says what was meant.
+    ariaAttrNames: () => Object.keys(ATTR_VALUE_TYPES),
+    getAttrTokens: (name) => {
+      const set = ATTR_TOKEN_SETS[lower(name)];
+      return set ? [...set] : null;
+    },
     isValidAriaAttrName,
     getAttrValueType,
     validateAttrValue,
@@ -1554,6 +1564,11 @@ function createAriaHelpers(opts, shared) {
     getRequiredOwnedRoles,
     getRequiredContextRoles,
     isRoleAllowedOnElement,
+    // The permitted-roles entry an element falls under (section and
+    // section[named], img and img[alt], ...) and the roles it permits, for
+    // aria-allowed-role to say why a role is not allowed.
+    getElementRoleKey,
+    getAllowedRolesForElement,
     getContainmentRole,
 
     // An element's own native/implicit ARIA-in-HTML role (see

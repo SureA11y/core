@@ -558,3 +558,50 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: a plain <li> in a menu is named as an <li> whose implicit role is listitem`, () => {
+  const occ = messageOccurrence(
+    '<ul role="menu"><li><a role="menuitem" href="/a">A</a></li></ul>',
+    '<li><a'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaProhibitedChildren_summary_fail_implicit');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaProhibitedChildren_hint_fail_implicit');
+  assert.strictEqual(
+    occ.summary,
+    'This <li> is a listitem by default, which isn\'t allowed directly inside a role="menu" container.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Give the <li> one of the roles the container allows (menuitem, menuitemcheckbox, menuitemradio, group, separator), or role="none" so what it holds belongs to the menu.'
+  );
+});
+
+test(`${RULE_ID}: a misspelled child role is named, with the role it likely meant`, () => {
+  const occ = messageOccurrence('<ul role="menu"><li role="menu-item">C</li></ul>', 'menu-item');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaProhibitedChildren_summary_fail_typo');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaProhibitedChildren_hint_fail_typoNear');
+  assert.strictEqual(
+    occ.summary,
+    'This <li>’s role "menu-item" is not an ARIA role, so it stays a listitem, which isn\'t allowed directly inside a role="menu" container.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Did you mean role="menuitem"? Otherwise give it one of the roles the container allows (menuitem, menuitemcheckbox, menuitemradio, group, separator), or role="none".'
+  );
+});

@@ -61,32 +61,7 @@ const meta = {
   category: 'understandable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    LABEL_FOR_NOT_LABELABLE: {
-      steps: [
-        'Find the label the report names and the element its for attribute points to (the report gives its tag).',
-        'Work out which form control the label was meant for.',
-        "Read that control's computed name in the Accessibility pane, and click the label to see whether it focuses the control."
-      ],
-      passWhen:
-        'The label is fixed to point at the control it describes, or that control already has the same name another way and the label is only visible text.',
-      failWhen:
-        "The label points at an element that cannot be labelled, so the control it was meant for gets no name or focus from it, a best-practice miss under HTML's labelled-control rules."
-    },
-    LABEL_FOR_TARGET_MISSING: {
-      steps: [
-        'Find the label the report names and the id in its for attribute.',
-        "Search the page's elements for that id; check whether the control appears later, for example after a script runs.",
-        'Work out which control the label was meant for, read its computed name in the Accessibility pane, and click the label to see whether it focuses that control.'
-      ],
-      passWhen: 'The id exists once the page is ready and the label names and focuses its control.',
-      failWhen:
-        "No element has that id, so the label labels nothing and its control is left without that name, a best-practice miss under HTML's labelled-control rules."
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

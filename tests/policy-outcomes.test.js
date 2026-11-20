@@ -63,7 +63,7 @@ test("unknown values in the policy's lists are named, and strict mode throws", (
 test('a policy without fail keeps a rule with fail-tier occurrences cantTell, tiers included', () => {
   const html =
     '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
-    '<img src="a.png"><div role="caption" aria-label="Shipping">Free</div></main></body></html>';
+    '<img src="a.png"><div role="caption" aria-label="Shipping"></div></main></body></html>';
   const tiered = {
     id: 'acme-tiered',
     meta: { title: 'Tiered', wcagSc: ['1.1.1'] },

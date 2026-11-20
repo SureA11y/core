@@ -35,6 +35,9 @@
  *   - `reasonCode`: `label_from_placeholder_primary`, `label_from_title_primary`,
  *     `label_from_aria_label_only` or `label_from_hidden_labelledby`.
  *   - `sourceText`: the label text, up to 120 characters.
+ *   - `labelledbyTargets` (`label_from_hidden_labelledby`): the elements
+ *     aria-labelledby points at (`#id`), with `hiddenBy` and, when an
+ *     ancestor carries it, `hiddenByElement`, for a single target.
  * @reason-codes
  *   - `label_from_aria_label_only` (cantTell): the field's name comes from
  *     aria-label, which is not shown on screen, so whether a visible label
@@ -97,51 +100,6 @@ const meta = {
     facetsBySc: {
       '3.3.2': ['form-control-visible-label-quality']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    label_from_aria_label_only: {
-      steps: [
-        'Find the field the report names on screen and read its aria-label, which the report gives.',
-        'Look for text shown next to the field (a visible label, a heading or a legend) that tells what to enter.'
-      ],
-      passWhen:
-        'Text shown next to the field, or an icon whose meaning is plain such as a magnifier on a search field, tells what to enter.',
-      failWhen: 'Nothing shown on screen tells what to enter in the field, which fails WCAG 3.3.2.'
-    },
-    label_from_hidden_labelledby: {
-      steps: [
-        'Find the field the report names and, in the developer tools, follow its aria-labelledby ids to the elements they point at.',
-        'Check whether those elements are shown on screen when the field is.',
-        'Look for other text shown next to the field that tells what to enter.'
-      ],
-      passWhen:
-        'The labelling text is shown with the field, or other text next to it tells what to enter.',
-      failWhen:
-        'The label is only in hidden elements and nothing on screen tells what to enter, which fails WCAG 3.3.2.'
-    },
-    label_from_placeholder_primary: {
-      steps: [
-        'Find the field the report names and read its placeholder.',
-        'Type something in the field.',
-        'Check whether anything still shown on screen tells what the field is for.'
-      ],
-      passWhen:
-        'A label or text shown next to the field stays on screen once it is filled in and tells what to enter.',
-      failWhen:
-        'Once the field is filled in, nothing on screen tells what it is for, which fails WCAG 3.3.2.'
-    },
-    label_from_title_primary: {
-      steps: [
-        'Look at the field the report names without hovering over it.',
-        'Look for text shown next to it that tells what to enter.',
-        'Tab to the field with the keyboard and note that its title tooltip does not appear.'
-      ],
-      passWhen: 'Text shown next to the field, without hovering, tells what to enter.',
-      failWhen:
-        'What to enter is told only by the title, shown on mouse hover, so keyboard and touch users never see it, which fails WCAG 3.3.2.'
-    }
   }
 };
 
@@ -180,9 +138,9 @@ function runInPage(ctx) {
 
   function safeQueryAll(sel) {
     try {
-      if (queryAllSmart) return Array.from(queryAllSmart(sel) || []);
+      if (queryAllSmart) return [...(queryAllSmart(sel) || [])];
       return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-        ? Array.from(dom.querySelectorAll(safeRoot, sel))
+        ? [...dom.querySelectorAll(safeRoot, sel)]
         : [];
     } catch {
       return [];
@@ -220,7 +178,13 @@ function runInPage(ctx) {
           n = dom.parentElement(n), i++
         ) {
           const cs = view && view.getComputedStyle ? view.getComputedStyle(n) : null;
-          if (cs && helpers.isClipHidden(cs)) return false;
+          if (
+            cs &&
+            (typeof helpers.isElementClipHidden === 'function'
+              ? helpers.isElementClipHidden(n, cs)
+              : helpers.isClipHidden(cs))
+          )
+            return false;
           // jsdom neither computes clip nor keeps its value intact
           // (rect(0 0 0 0) reads back as rect(0px)), so read the declaration
           // as written in the style attribute too.
@@ -283,6 +247,53 @@ function runInPage(ctx) {
       }
     }
     return false;
+  }
+
+  // The elements aria-labelledby points at, none of them rendered, and what
+  // hides them, for the message: the target, its text, and the CSS or
+  // attribute on it or on the ancestor that carries it.
+  function hiddenLabelledby(el, text) {
+    let refs;
+    try {
+      refs = [...helpers.getRefElements(el, 'aria-labelledby', ctx)];
+    } catch {
+      refs = [];
+    }
+    if (!refs.length) return null;
+    const refName = (r) => {
+      const rid = trim(dom.getAttribute(r, 'id') || '');
+      return rid ? `#${rid}` : helpers.describeElement(r);
+    };
+    const target = refs.map(refName).join(' ');
+    const name = text.length > 80 ? `${text.slice(0, 79)}…` : text;
+    const cause =
+      refs.length === 1 && typeof helpers.hiddenCause === 'function'
+        ? helpers.hiddenCause(refs[0])
+        : null;
+    // aria-hidden leaves the text on screen: it is not what hides it here.
+    if (!cause || cause.hiddenBy === 'aria-hidden="true"') {
+      return {
+        summary: `This form field's name, "${name}", comes from aria-labelledby pointing at ${target}, which is not shown on screen.`,
+        summaryKey: 'formControl_programmaticLabelQuality_summary_labelledbyHidden',
+        params: { name, target },
+        detail: { labelledbyTargets: target }
+      };
+    }
+    if (cause.element === refs[0]) {
+      return {
+        summary: `This form field's name, "${name}", comes from aria-labelledby pointing at ${target}, which has ${cause.hiddenBy}, so no label is shown on screen.`,
+        summaryKey: 'formControl_programmaticLabelQuality_summary_labelledbyHiddenOwn',
+        params: { name, target, hiddenBy: cause.hiddenBy },
+        detail: { labelledbyTargets: target, hiddenBy: cause.hiddenBy }
+      };
+    }
+    const ancestor = helpers.describeElement(cause.element);
+    return {
+      summary: `This form field's name, "${name}", comes from aria-labelledby pointing at ${target}, whose ancestor ${ancestor} has ${cause.hiddenBy}, so no label is shown on screen.`,
+      summaryKey: 'formControl_programmaticLabelQuality_summary_labelledbyHiddenAncestor',
+      params: { name, target, hiddenBy: cause.hiddenBy, ancestor },
+      detail: { labelledbyTargets: target, hiddenBy: cause.hiddenBy, hiddenByElement: ancestor }
+    };
   }
 
   // Native controls only
@@ -373,6 +384,15 @@ function runInPage(ctx) {
         summaryKey: 'formControl_programmaticLabelQuality_summary_unseenName',
         hintKey: 'formControl_programmaticLabelQuality_hint_unseenName'
       };
+      if (method === 'aria-labelledby') {
+        const hidden = hiddenLabelledby(el, sourceText);
+        if (hidden) {
+          message.summary = hidden.summary;
+          message.summaryKey = hidden.summaryKey;
+          message.params = hidden.params;
+          message.detail = hidden.detail;
+        }
+      }
     }
 
     const baseOccurrence = {
@@ -381,7 +401,7 @@ function runInPage(ctx) {
       i18n: {
         summaryKey: message.summaryKey,
         hintKey: message.hintKey,
-        params: { element, method }
+        params: { element, method, ...(message.params || {}) }
       },
       data: {
         visibilityFilter: vf || { targetSet: 'acc', accEligible: null, reasons: [] },
@@ -390,7 +410,8 @@ function runInPage(ctx) {
           labelMethod: method,
           labelStrength: isWeakPrimary ? 'weak' : 'medium',
           recommendedMethods: ['label', 'aria-labelledby'],
-          sourceText
+          sourceText,
+          ...(message.detail || {})
         }
       }
     };

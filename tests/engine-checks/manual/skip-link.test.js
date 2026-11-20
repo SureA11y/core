@@ -196,6 +196,9 @@ test(`${RULE_ID}: a skip link to a missing target leans fail when nothing listen
     const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
     const occ = result.checksResults.find((c) => c.ruleId === RULE_ID).occurrences[0];
     assert.equal(occ.data.details.reasonCode, 'SKIP_LINK_TARGET_MISSING');
+    // The lean's direction is in details too, for a standard's routes.
+    assert.equal(occ.data.details.lean, occ.lean ? occ.lean.toward : undefined);
+    assert.ok(occ.lean || !('lean' in occ.data.details));
     return occ.lean;
   };
   const SKIP = '<a href="#main">Skip to content</a><main>Content</main>';
@@ -225,8 +228,47 @@ test(`${RULE_ID}: a target hidden by aria-hidden leans fail, one hidden by displ
   assert.equal(hidden.data.details.reasonCode, 'SKIP_LINK_TARGET_UNUSABLE');
   assert.equal(hidden.lean.toward, 'fail');
   assert.equal(hidden.lean.i18n.whyKey, 'skipLink_lean_why_hiddenTarget');
+  assert.equal(hidden.data.details.lean, 'fail');
 
   const display = scan('<a href="#c">Skip to content</a><div hidden><main id="c">x</main></div>');
   assert.equal(display.data.details.reasonCode, 'SKIP_LINK_TARGET_UNUSABLE');
   assert.equal(display.lean, undefined);
+  assert.ok(!('lean' in display.data.details));
+});
+
+test(`${RULE_ID}: says what makes an existing target unreachable, and where it comes from`, () => {
+  const html = `<!doctype html><html><head><style>.desktop{display:none}</style></head><body>
+    <a id="s1" href="#content">Skip to content</a>
+    <a id="s2" href="#c2">Skip to main</a>
+    <a id="s3" href="#c3">Skip to navigation</a>
+    <a id="s4" href="#c4">Skip to footer</a>
+    <div class="desktop"><main id="content">a</main></div>
+    <div aria-hidden="true"><div id="c2">b</div></div>
+    <div id="shell" inert><div id="c3">c</div></div>
+    <div id="c4" aria-hidden="true">d</div>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const s1 = byId('s1');
+  assert.strictEqual(
+    s1.summary,
+    'This skip link\'s target #content can\'t be reached: its ancestor <div class="desktop"> has display: none.'
+  );
+  assert.strictEqual(s1.i18n.summaryKey, 'skipLink_summary_unusableTarget_hiddenAncestor');
+  assert.strictEqual(s1.data.details.reasonCode, 'SKIP_LINK_TARGET_UNUSABLE');
+  assert.deepStrictEqual(s1.data.details.unusableCause, {
+    hiddenBy: 'display: none',
+    hiddenByElement: '<div class="desktop">'
+  });
+
+  assert.match(byId('s2').summary, /its ancestor <div> has aria-hidden="true"\.$/);
+  assert.match(byId('s3').summary, /its ancestor <div id="shell"> has inert\.$/);
+
+  const s4 = byId('s4');
+  assert.strictEqual(
+    s4.summary,
+    'This skip link\'s target #c4 can\'t be reached: it has aria-hidden="true".'
+  );
+  assert.strictEqual(s4.i18n.summaryKey, 'skipLink_summary_unusableTarget_hiddenOwn');
 });

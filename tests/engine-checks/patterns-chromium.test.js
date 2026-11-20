@@ -6,7 +6,8 @@
  * menu scrolled with overflow: auto and with overflow: hidden, a carousel
  * between slides, a sticky header over scrolled content, a virtual list, an
  * off-canvas drawer, a table with a sticky header. No rule may fail any of
- * them: a rule that does is wrong on a common page, as the contrast rules
+ * them but target-size-enhanced, whose 44px (WCAG 2.5.5, AAA) they were not
+ * built to: a rule that does is wrong on a common page, as the contrast rules
  * and target-size-minimum were on scrolled lists (#176, #177, #181). The
  * rules a pattern lists in `settled` may not ask about it either. A failure
  * a finding explains is listed in the patterns' knownFailures until it is
@@ -79,10 +80,21 @@ test('no rule fails a real-world component pattern, in Chromium', { skip }, asyn
           if (script) await page.evaluate(script);
           await page.evaluate(BUNDLE);
           const settled = pattern.settled || [];
+          // The patterns are built to WCAG AA. target-size-enhanced (2.5.5,
+          // AAA) fails their 24 to 43px controls as it should, so it is left
+          // out; the geometry it shares with target-size-minimum, which the
+          // scrolled states test, is tested here through that rule.
           const failed = await page.evaluate(
             (settled) =>
               window.a11ycore
-                .runa11yCoreInPage(location.href, null, {}, null)
+                .runa11yCoreInPage(
+                  location.href,
+                  null,
+                  {},
+                  {
+                    excludeRuleIds: ['target-size-enhanced']
+                  }
+                )
                 .checksResults.filter(
                   (c) =>
                     c.outcome === 'fail' || (c.outcome === 'cantTell' && settled.includes(c.ruleId))

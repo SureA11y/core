@@ -32,6 +32,14 @@
  *   - `href`: the full URL this link leads to.
  *   - `distinctDestinationCount`: how many different URLs the links with
  *     this name lead to, a count of 2 or more.
+ *   - `otherDestinations`: the other addresses the links with this name
+ *     lead to, the first ten, as the message shows them (a path on the
+ *     page's own site).
+ *   - `linkKind`: what this link is made of (`helpers.getLinkKind`): `svg`
+ *     for an `<a>` in SVG; `image` for an `<area>`, or a link whose content
+ *     is only images (`<img>`, `<svg>`, `<object>`, `<canvas>`,
+ *     `role="img"`); `composite` for text and an image; `text` otherwise,
+ *     a link with no content (named by its attributes) included.
  * @reason-codes
  *   - `SAME_NAME_DIFFERENT_DESTINATION` (cantTell): links that share an
  *     accessible name lead to two or more different URLs; a person judges
@@ -84,22 +92,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'low',
-  coverage: { facetsBySc: { '2.4.9': ['identical-links-same-purpose-evidence'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    SAME_NAME_DIFFERENT_DESTINATION: {
-      steps: [
-        "Find all links with the name the report gives (a screen reader's links list helps) and note where each leads.",
-        'Open each link and compare the pages it reaches.',
-        'Decide whether the pages serve the same purpose (the same page with tracking parameters, or equivalent pages) or different ones.'
-      ],
-      passWhen:
-        'Every link with this name leads to the same page or to pages that serve the same purpose.',
-      failWhen:
-        'Links with the same name, such as "Read more", lead to pages with different purposes, so their name alone does not tell them apart, which fails WCAG 2.4.9 (ACT b20e66).'
-    }
-  }
+  coverage: { facetsBySc: { '2.4.9': ['identical-links-same-purpose-evidence'] } }
 };
 
 function runInPage(ctx) {
@@ -164,8 +157,12 @@ function runInPage(ctx) {
     // The name in accname order, so a link titled "Read more" around a
     // headline is named by the headline. A link with no name is left out.
     const nameInfo = helpers.getNameFromContentInfo(el, ctx);
-    const name = normName(nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '');
+    const rawName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
+    const name = normName(rawName);
     if (!name) continue;
+    // The name as the page writes it, for the message.
+    const fullName = rawName.replace(/\s+/g, ' ').trim();
+    const shownName = fullName.length > 80 ? `${fullName.slice(0, 79)}…` : fullName;
 
     // `.href` on an SVG <a> is an SVGAnimatedString, not a plain string
     // IDL property like HTMLAnchorElement.href -- `String(el.href)` would
@@ -193,7 +190,20 @@ function runInPage(ctx) {
     if (!href) continue;
 
     if (!groups.has(name)) groups.set(name, []);
-    groups.get(name).push({ el, href });
+    groups.get(name).push({ el, href, shownName });
+  }
+
+  // An address as a reader finds it in the page: the path on the page's own
+  // site, the whole address elsewhere.
+  function shownHref(href) {
+    try {
+      const page = new URL(dom.baseURI(document));
+      const u = new URL(href, page);
+      if (u.origin === page.origin) return u.pathname + u.search + u.hash;
+    } catch {
+      /* as written */
+    }
+    return href;
   }
 
   // ---- Lean ----
@@ -311,7 +321,20 @@ function runInPage(ctx) {
     if (distinctHrefs.size <= 1) continue;
     const lean = groupLean(name, entries);
 
-    for (const { el, href } of entries) {
+    // Each address shown once; a link lists the first ten others in
+    // details and three in the message, so many alike links stay cheap.
+    const shownOf = new Map([...distinctHrefs].map((h) => [h, shownHref(h)]));
+    for (const { el, href, shownName } of entries) {
+      const others = [];
+      for (const h of distinctHrefs) {
+        if (h === href) continue;
+        if (others.length === 10) break;
+        others.push(shownOf.get(h));
+      }
+      const otherCount = distinctHrefs.size - 1;
+      const shown = shownOf.get(href);
+      const otherList = others.slice(0, 3).join(', ') + (otherCount > 3 ? ', …' : '');
+      const one = otherCount === 1;
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
       const html = helpers.getOuterHtmlSnippet
         ? helpers.getOuterHtmlSnippet(el)
@@ -321,20 +344,32 @@ function runInPage(ctx) {
         ...(lean ? { lean } : {}),
         selector: stableSelector,
         html,
-        summary:
-          'This link shares an accessible name with other links on the page that lead to a different destination.',
+        summary: one
+          ? `This link, "${shownName}", goes to ${shown}, and a link with the same name elsewhere on the page goes to ${otherList}.`
+          : `This link, "${shownName}", goes to ${shown}; links with the same name elsewhere on the page go to ${otherCount} other addresses: ${otherList}.`,
         hint: 'Links with the same text may lead to different addresses when they serve the same purpose, such as one page with different tracking parameters. Otherwise make each link’s text describe its own destination.',
         i18n: {
-          summaryKey: 'identicalLinksSamePurpose_summary_cantTell',
+          summaryKey: one
+            ? 'identicalLinksSamePurpose_summary_cantTell_oneOther'
+            : 'identicalLinksSamePurpose_summary_cantTell_others',
           hintKey: 'identicalLinksSamePurpose_hint_cantTell',
-          params: { name, destinationCount: String(distinctHrefs.size) }
+          params: {
+            name,
+            destinationCount: String(distinctHrefs.size),
+            shownName,
+            href: shown,
+            otherCount: String(otherCount),
+            others: otherList
+          }
         },
         data: {
           details: {
             reasonCode: 'SAME_NAME_DIFFERENT_DESTINATION',
             name,
             href,
-            distinctDestinationCount: distinctHrefs.size
+            distinctDestinationCount: distinctHrefs.size,
+            otherDestinations: others,
+            linkKind: helpers.getLinkKind(el)
           }
         }
       };

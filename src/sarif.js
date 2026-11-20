@@ -257,7 +257,8 @@ function addLineHashes(results) {
 }
 
 // The conformance target a run used, so a dashboard can tell a WCAG 2.1 run
-// from a 2.2 one, and an AA one from one at every level, the opt-in rules it
+// from a 2.2 one, and an AA one from one at every level, the profile it
+// scanned (or the profiles, of a scan of several), the opt-in rules it
 // added beyond that target, and the conditions the page was rendered under,
 // which layout-dependent results depend on. Absent on results from releases
 // that predate the fields.
@@ -267,6 +268,9 @@ function runProperties(result) {
   if (engine.wcagVersion) props.wcagVersion = engine.wcagVersion;
   if (engine.wcagLevel) props.wcagLevel = engine.wcagLevel;
   if (engine.profile) props.profile = engine.profile;
+  // A scan of several profiles names them all; profile is the first.
+  if (Array.isArray(engine.profiles) && engine.profiles.length)
+    props.profiles = engine.profiles.slice();
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     props.optInRules = engine.optInRules.slice();
   if (engine.environment && typeof engine.environment === 'object')
@@ -284,6 +288,27 @@ function automationDetails(category) {
   if (typeof category !== 'string' || !category.trim()) return null;
   const id = category.trim();
   return { id: id.endsWith('/') ? id : `${id}/` };
+}
+
+// The profiles a scan of several asked for and didn't run, from every frame
+// that answered, each once, with every reason a frame gave for it.
+function profilesNotRunOf(frames) {
+  const out = [];
+  for (const f of frames) {
+    const list = f.result && f.result.engine && f.result.engine.profilesNotRun;
+    for (const p of Array.isArray(list) ? list : []) {
+      if (!p) continue;
+      // Names match in any case, as core reads them.
+      const held = out.find(
+        (x) => String(x.profile).toLowerCase() === String(p.profile).toLowerCase()
+      );
+      if (!held) out.push({ ...p });
+      else if (p.reason && !String(held.reason).split(', ').includes(p.reason)) {
+        held.reason = `${held.reason}, ${p.reason}`;
+      }
+    }
+  }
+  return out;
 }
 
 function renderSarifReport(result, options = {}) {
@@ -317,8 +342,21 @@ function renderSarifReport(result, options = {}) {
       `renderSarifReport: leanFailWcagOnly must be true or false, not ${JSON.stringify(leanFailWcagOnly)}`
     );
   }
+  // allowProfilesNotRun: true accepts a scan of several profiles that ran
+  // fewer than it asked for. By default each profile not run is an error,
+  // and the run not successful: it counted less than it was asked to.
+  const { allowProfilesNotRun } = options;
+  if (allowProfilesNotRun != null && typeof allowProfilesNotRun !== 'boolean') {
+    throw new TypeError(
+      `renderSarifReport: allowProfilesNotRun must be true or false, not ${JSON.stringify(allowProfilesNotRun)}`
+    );
+  }
   const automation = automationDetails(category);
-  const { known, knownLeaning } = knownOccurrences(frames, baselineEntries);
+  const { known, knownLeaning } = knownOccurrences(
+    frames,
+    baselineEntries,
+    'renderSarifReport: options.baselineEntries'
+  );
 
   const rules = [];
   const seenRuleIds = new Set();
@@ -442,6 +480,15 @@ function renderSarifReport(result, options = {}) {
     }
   }
 
+  const notRun = profilesNotRunOf(frames);
+  for (const p of notRun) {
+    notices.push({
+      level: allowProfilesNotRun === true ? 'warning' : 'error',
+      message: { text: `The profile ${p.profile} was asked for and not run: ${p.reason}` }
+    });
+  }
+  const executionSuccessful = !(notRun.length && allowProfilesNotRun !== true);
+
   const sarifLog = {
     $schema: SARIF_SCHEMA_URI,
     version: SARIF_VERSION,
@@ -466,7 +513,7 @@ function renderSarifReport(result, options = {}) {
         ...(automation ? { automationDetails: automation } : {}),
         ...(runProperties(top) ? { properties: runProperties(top) } : {}),
         ...(notices.length
-          ? { invocations: [{ executionSuccessful: true, toolExecutionNotifications: notices }] }
+          ? { invocations: [{ executionSuccessful, toolExecutionNotifications: notices }] }
           : {})
       }
     ]

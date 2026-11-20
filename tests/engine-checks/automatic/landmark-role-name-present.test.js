@@ -108,3 +108,36 @@ test(`${RULE_ID}: an upper-case role resolves too: role="REGION" needs a name (#
   );
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
+
+test(`${RULE_ID}: the hint says when aria-labelledby points to a missing id`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <div id="r1" role="region" aria-labelledby="qq"><p>Text</p></div>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('r1').i18n.hintKey, 'nameCause_hint_labelledbyMissing');
+  assert.equal(
+    occ('r1').hint,
+    'Its aria-labelledby points to "qq", which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.'
+  );
+  assert.equal(occ('r1').data.details.nameCause.cause, 'labelledbyMissing');
+});
+
+test(`${RULE_ID}: with no aria-labelledby, the hint names the heading inside to point it at`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><div id="r1" role="region"><h2 id="n">News</h2></div><div id="r2" role="form"><h3>Sign in</h3></div></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('r1').i18n.hintKey, 'landmarkRoleNamePresent_hint_cantTell_heading');
+  assert.equal(
+    occ('r1').hint,
+    'Its heading <h2> "News" is not tied to it. Add aria-labelledby="n" to it; or remove role="region" if it is not meant to be a landmark.'
+  );
+  assert.equal(occ('r2').i18n.hintKey, 'landmarkRoleNamePresent_hint_cantTell_headingNoId');
+  assert.equal(occ('r2').i18n.params.text, 'Sign in');
+});

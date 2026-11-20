@@ -258,7 +258,16 @@ test(`${RULE_ID}: a navigation block with links before the content leans fail`, 
     '<nav><a href="/a">A</a> <a href="/b">B</a></nav><div>Content of the page</div>'
   );
   assert.equal(nav.toward, 'fail');
-  assert.equal(nav.i18n.whyKey, 'bypassBlocksPresent_lean_why_navBeforeContent');
+  assert.equal(nav.i18n.whyKey, 'bypassBlocksPresent_lean_why_navBeforeContentNamed');
+  // The block is named, as it is in the markup.
+  assert.equal(
+    nav.why,
+    "The navigation block <nav> comes before the page's own content, and no skip link, main landmark, heading or same-page link leads past it."
+  );
+  const named = lean(
+    '<div class="top"><div role="navigation" id="menu"><a href="/a">A</a> <a href="/b">B</a></div></div><div>Content of the page</div>'
+  );
+  assert.deepEqual(named.i18n.params, { block: '<div role="navigation" id="menu">' });
 
   const nothing = lean('<div>Content of the page</div><p><a href="/x">A link after it</a></p>');
   assert.equal(nothing.toward, 'pass');

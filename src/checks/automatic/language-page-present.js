@@ -13,6 +13,8 @@
  *   Applies to HTML documents with a root <html> element.
  *   The rule evaluates the document element only and does not iterate over child nodes.
  *   Non-HTML documents or documents without a document element are not applicable.
+ *   A document shown in a frame (an <iframe> or <frame> of another page) is
+ *   not applicable: the page's language is the top document's.
  *
  * @expectation
  *   The <html> element has a lang attribute.
@@ -90,8 +92,13 @@ const meta = {
 // property?), not evaluable per-subtree -- notApplicable when contextSelector
 // scoped this run narrower than the whole document, or when
 // engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+// A document shown in a frame is no page of its own: the page's language is
+// the top document's, and the frame is named by its <iframe>
+// (iframe-name-present), so it is notApplicable there too.
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }
 
 function runInPage(ctx) {
@@ -138,15 +145,30 @@ function runInPage(ctx) {
   const lang = (rawLang || '').trim();
 
   if (rawLang === null) {
+    // A language the markup has, but where it does not declare the page's:
+    // xml:lang, which HTML ignores, or lang on <body>.
+    const xmlLang = (dom.getAttribute(html, 'xml:lang') || '').trim();
+    const body = dom.body(document);
+    const bodyLang = body ? (dom.getAttribute(body, 'lang') || '').trim() : '';
+    const hintKey = xmlLang
+      ? 'html_lang_attr_hint_missing_xmlLang'
+      : bodyLang
+        ? 'html_lang_attr_hint_missing_bodyLang'
+        : 'html_lang_attr_hint_missing_absent';
     return {
       ruleId: rule.ruleId,
       outcome: 'fail',
       severity: rule.defaultSeverity,
       occurrences: pushFail(
         'html_lang_attr_missing_absent',
-        'html_lang_attr_hint_missing_absent',
-        {},
-        { reasonCode: 'lang-missing', location: 'html' }
+        hintKey,
+        xmlLang ? { xmlLang } : bodyLang ? { bodyLang } : {},
+        {
+          reasonCode: 'lang-missing',
+          location: 'html',
+          ...(xmlLang ? { xmlLang } : {}),
+          ...(!xmlLang && bodyLang ? { bodyLang } : {})
+        }
       )
     };
   }
@@ -172,15 +194,23 @@ function runInPage(ctx) {
       ? helpers.isValidLanguageTag
       : (v) => /^[a-zA-Z]{2,3}$/.test(String(v || ''));
   if (!isValidTag(lang.split('-')[0])) {
+    // An almost-right value (en_US, jp, eng): the hint gives the tag it was
+    // meant to be (helpers.langTagFix).
+    const fix =
+      helpers && typeof helpers.langTagFix === 'function' ? helpers.langTagFix(lang) : null;
     return {
       ruleId: rule.ruleId,
       outcome: 'fail',
       severity: rule.defaultSeverity,
       occurrences: pushFail(
         'html_lang_attr_invalid',
-        'html_lang_attr_hint_invalid',
-        { lang },
-        { reasonCode: 'lang-invalid-bcp47', lang }
+        fix ? `html_lang_attr_hint_invalid_${fix.kind}` : 'html_lang_attr_hint_invalid',
+        { lang, ...(fix ? { subtag: lang.split('-')[0], suggestion: fix.suggestion } : {}) },
+        {
+          reasonCode: 'lang-invalid-bcp47',
+          lang,
+          ...(fix ? { suggestion: fix.suggestion, fixKind: fix.kind } : {})
+        }
       )
     };
   }

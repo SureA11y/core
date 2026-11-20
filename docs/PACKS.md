@@ -10,6 +10,7 @@ This guide goes from an empty folder to a published pack. [`ENGINE_OPTIONS.md`, 
 - [3. Write its rules](#3-write-its-rules)
 - [4. Choose what runs: profiles](#4-choose-what-runs-profiles)
 - [5. Group results: checklist items or requirements](#5-group-results-checklist-items-or-requirements)
+  - [How a person assesses it: procedures](#how-a-person-assesses-it-procedures)
 - [6. Messages and languages](#6-messages-and-languages)
 - [7. Test, lint and document it](#7-test-lint-and-document-it)
 - [8. Use it](#8-use-it)
@@ -31,6 +32,8 @@ A pack's rules and profiles can use any of core's rules: a checklist or a standa
 npx -p @surea11y/core surea11y-pack new acme-a11y --name @acme/a11y-pack
 # or, for a standard:
 npx -p @surea11y/core surea11y-pack new city-standard --name @city/a11y-standard --kind standard --title "City Standard"
+# or, for a standard built on another pack's (installed first, here pack-rgaa):
+npx -p @surea11y/core surea11y-pack new city-raweb --name @city/raweb --kind derived --from @surea11y/pack-rgaa
 
 cd acme-a11y
 npm install
@@ -51,7 +54,9 @@ The pack works as generated: its tests pass, its rules lint clean, its examples 
 | `docs/RULE_EXAMPLES.md` | Examples of each rule's outcomes. |
 | `eslint.config.js` | Core's lint rules for rules. |
 | `requirements.js`, `rule-map.js` | Standard only: the requirements and the rules that check each. |
-| `package.json` | `private`, with `@surea11y/core` as a peer dependency at the version that wrote it (`^1.14.0`), and eslint, jsdom and Playwright as development dependencies. |
+| `procedures.js`, `tests/procedures.test.js` | Standard only: how a person assesses each requirement by hand, and a test that every requirement has a procedure for each of its facets. |
+| `package.json` | `private`, with `@surea11y/core` as a peer dependency at the version that wrote it (`^<version>`, such as `^1.15.0`), and eslint, jsdom and Playwright as development dependencies. |
+| `standard-data.js`, `tests/standard.test.js` | Derived only, and the only files besides `index.js`, `README.md`, `package.json`, `eslint.config.js` and `.gitignore`: the standard derived from the base's data, the base as it is until you change it, and its tests ([A pack built on another pack](#a-pack-built-on-another-pack)). |
 | `README.md`, `.gitignore` | The pack's own guide to these files, and what git leaves out. |
 
 Its README walks through each file. The rest of this guide explains the choices behind them.
@@ -61,7 +66,7 @@ Its README walks through each file. The rest of this guide explains the choices 
 - **The package name** is an npm package name (lowercase, with a scope or without, no spaces), and **the version** a whole version (`1.0.0`, `1.0.0-rc.1`). A scan reports them in `engine.packs` (`@acme/a11y-pack@0.1.0`).
 - **The namespace** (`namespace: 'acme'`) keeps the pack's ids apart from core's and other packs': every rule, rollup and profile id starts with it and `-`. It is also the tag of the pack's rules (see [opt-in](#the-namespace-tag-makes-the-packs-rules-opt-in)). It may be a word core's rules use as a tag (`forms`, `best-practice`): the tag still makes only the pack's own rules opt-in. It may not start core's rule ids (`img`, `aria`, `link`), since the pack's ids would then sit among core's, where core could add the same one; such a pack is invalid. Core doesn't start a new rule id with a namespace a published pack uses. Two packs in one scan can't share a namespace, or have one that starts the other's (`city` and `city-parks`): the first by name runs, and the other is skipped. `new` takes the package scope or first word; `--namespace` chooses another.
 - **Ids** have core's shape: lowercase letters and digits in parts joined by `-` (`acme-link-text-specific`), dots allowed within a part (`acme-1.0`); a rollup id may keep the capitals of a requirement's number (`city-1.0-S1`). Rule, rollup and profile ids, and a standard's `key`, start with the namespace and `-` (the key may be the namespace itself), a standard's `ruleTag` is the namespace, and a rule's `meta.wcagSc` names WCAG criteria. A pack that breaks one of these is invalid.
-- **`core`** is the range of core versions the pack works with (`'^1.11.0'`), read as npm reads the ranges in a `package.json` (`1.x`, `~1.11`, `>=1.11 <2`, `1.11.0 - 2.x`, `||`), so a prerelease core matches only a range that names a prerelease of that version. An empty range, or an empty alternative (`'^1.11.0 ||'`), which npm takes for any version, is no range here. `definePack` takes a pack whatever core is installed, so a host can still load it; a scan with a core outside the range skips the pack, with the reason in `skippedPacks`. A range that can't be read is a mistake in the pack, and `definePack` throws. `new` writes the version that generated the pack (`^1.14.0`); keep a range that starts at 1.14 if the pack uses what 1.14 added: `meta.review`, `reasonCodes` and `findings` rows, `meta.contributions`, `applicability`, `partial` or `keepsParsing`.
+- **`core`** is the range of core versions the pack works with (`'^1.11.0'`), read as npm reads the ranges in a `package.json` (`1.x`, `~1.11`, `>=1.11 <2`, `1.11.0 - 2.x`, `||`), so a prerelease core matches only a range that names a prerelease of that version. An empty range, or an empty alternative (`'^1.11.0 ||'`), which npm takes for any version, is no range here. `definePack` takes a pack whatever core is installed, so a host can still load it; a scan with a core outside the range skips the pack, with the reason in `skippedPacks`. A range that can't be read is a mistake in the pack, and `definePack` throws. `new` writes the version that generated the pack (`^1.14.0`); keep a range that starts at 1.14 if the pack uses what 1.14 added: `meta.review`, `reasonCodes` and `findings` rows, `meta.contributions`, `applicability`, `partial` or `keepsParsing`; and one that starts at 1.15 if it uses `outcome: 'fail'` or the act `'fail'`. A pack that uses an API core marks experimental ([`API_STABILITY.md`](./API_STABILITY.md#experimental-may-change-in-a-minor)) declares a range that takes no later minor (`'~1.16.0'`), since the next minor may change it; `checkPack` reports a wider one, and `describePacks` lists what it uses.
 - **`description`** is a sentence on what the pack checks, for tools that let their users choose packs (`describePacks` returns it).
 - **`title`** is what results and reports call a checklist (a standard has its own `standard` name). Reports tell standards apart by name, so it can't be one another standard of the scan has (`WCAG`, `EN 301 549`, another pack's): such a pack is invalid.
 
@@ -131,7 +136,69 @@ meta.review = {
 };
 ```
 
-`definePack` checks its shape as core's rules are checked: an object of reason codes, each with 1 to 6 steps and a non-empty `passWhen` and `failWhen`, on a rule with a `meta.i18n.titleKey`. A rule that declares its reason codes in `meta.reasonCodes` (`['GENERIC_LINK_NAME']`) gives steps only for a code it declares there or names in its `runInPage`, so a mistyped code is refused; a rule that declares none is checked for shape alone, so a code a helper builds need not be written into `runInPage`. Declaring them is worth it for that check. The steps are English, whatever the scan's locale, and stay out of the page: `runDomRulesInPage` with `engineOptions.packs` adds them to the result, and for a result from a page `addHowToCheck(result, { packs })` does (or `applyHowToCheck(result, dictionaries, { packs })` from `@surea11y/core/how-to-check` in a browser bundle). A variant has its base rule's steps, translated where the base is core's, so it needs none; steps it gives for one of its base's codes replace the base's. An override, like a custom rule, has none.
+`definePack` checks its shape as core's rules are checked: an object of reason codes, each with 1 to 6 steps and a non-empty `passWhen` and `failWhen`, on a rule with a `meta.i18n.titleKey`. A rule that declares its reason codes in `meta.reasonCodes` (`['GENERIC_LINK_NAME']`) gives steps only for a code it declares there or names in its `runInPage`, so a mistyped code is refused; a rule that declares none is checked for shape alone, so a code a helper builds need not be written into `runInPage`. Declaring them is worth it for that check. The steps are English, and a pack's dictionary may translate them ([§6](#6-messages-and-languages)); they stay out of the page: `runDomRulesInPage` with `engineOptions.packs` adds them to the result, and for a result from a page `addHowToCheck(result, { packs })` does (or `applyHowToCheck(result, dictionaries, { packs })` from `@surea11y/core/how-to-check` in a browser bundle). A variant has its base rule's steps, translated where the base is core's, so it needs none; steps it gives for one of its base's codes replace the base's. An override, like a custom rule, has none.
+
+**Steps that name the case.** A step, `passWhen` or `failWhen` may name what the finding found, `{{name|text}}`: the finding's value for `name`, from the `params` of its `i18n` or the fields of its `data.details`, and `text` where it has none (a procedures page, `howToCheckFor`). Write `text` so the step reads as it would without placeholders. Give each value the step needs in the finding, so the person reads this case, not every case the code covers:
+
+```js
+reportOccurrence(el, {
+  summary: `This element has ${attrs}, which role ${role} cannot have.`,
+  i18n: { summaryKey: '…', params: { role, attributes: attrs } },
+  data: { details: { reasonCode: 'PRESENTATIONAL_ATTRIBUTE_UNSUPPORTED', role, attributes: attrs } }
+});
+
+meta.review = {
+  PRESENTATIONAL_ATTRIBUTE_UNSUPPORTED: {
+    steps: ['Find the element the report names, and read its {{attributes|aria-* attributes}}.'],
+    passWhen: 'The element is only for layout, and {{attributes|the attribute}} can be removed.',
+    failWhen: 'The element stands for a control, which role {{role|none}} hides.'
+  }
+};
+```
+
+`definePack` refuses a placeholder without its `text` (`{{role}}`) and a brace outside one. A pack's dictionary that translates the steps names the same placeholders.
+
+**Core's steps in the standard's words.** A standard that judges core's rules by their reason codes (`ruleMappedStandard`) may give its own steps for a core rule's code, in `standard.review`, by rule id and code, in English and with placeholders as above:
+
+```js
+standard: {
+  // …
+  review: {
+    'aria-valid-attr-value': {
+      ARIA_HASPOPUP_ROLE_MISMATCH: {
+        steps: ['Open the popup, which aria-haspopup says is a {{expectedRole|menu}}.'],
+        passWhen: 'It is a {{expectedRole|menu}}.',
+        failWhen: 'It is a {{popupRole|dialog}}, which fails Acme 4.2.'
+      }
+    }
+  }
+}
+```
+
+A finding that only the standard's profiles ask about (its verdict is `cantTell` under them and under no other) reads them in place of core's, which name WCAG; where a WCAG profile asks too, it reads core's. Without a finding, `howToCheckFor(ruleId, code, locale, { packs, profile: 'acme-1.0' })` reads them the same way, translated as below; without `profile` it gives core's. `definePack` refuses a rule that isn't core's (a pack rule writes its own `meta.review`), a code core gives no steps for (`src/procedures`), and steps of the wrong shape. The pack's dictionaries translate them, under keys of their own ([§6](#6-messages-and-languages)).
+
+**Which facet each code tests.** A criterion's procedures ([`PROCEDURES.md`](./PROCEDURES.md#a-packs-rules)) list a rule under the facets it claims in `meta.coverage.facetsBySc`, the test objectives of each criterion in [`src/coverage/wcag-facets.js`](../src/coverage/wcag-facets.js), and its steps as variants under them, as core's are:
+
+```js
+meta.coverage = { facetsBySc: { '2.4.4': ['link-text-descriptive-evidence'] } };
+```
+
+A rule that claims one facet files every code of its `meta.review` there. One that claims several says where each code goes, with `facet`, and with `criterion` where it claims that facet under more than one criterion:
+
+```js
+meta.coverage = {
+  facetsBySc: {
+    '2.1.1': ['click-handler-keyboard-operable', 'server-side-image-map-absent'],
+    '2.1.3': ['click-handler-keyboard-operable']
+  }
+};
+meta.review = {
+  CLICK_ONLY: { steps: [/* … */], passWhen: '…', failWhen: '…', facet: 'click-handler-keyboard-operable', criterion: '2.1.1' },
+  IMAGE_MAP: { steps: [/* … */], passWhen: '…', failWhen: '…', facet: 'server-side-image-map-absent' }
+};
+```
+
+A code it doesn't file is under no facet: it still has its steps on its findings. `definePack` refuses a `facet` the rule doesn't claim, a `criterion` it doesn't claim that facet under or one without a `facet`, a `facet` claimed under several criteria with no `criterion`, and a code with no `facet` where the rule names the facet of its other codes and claims several. A standard's own requirements have facets too ([§5](#how-a-person-assesses-it-procedures)): a rule claims them in `meta.coverage.facetsByRequirement`, and `facet` and `criterion` name them in the same way.
 
 `reportOccurrence` returns the occurrence; the rule lists it in `occurrences` itself. A `fail` that lists none is reported on the whole page, "failed for the page without naming an element". The engine fills in the element's selector, HTML and path. `reasonCode` is part of a finding's identity in baselines and SARIF: keep it stable once the pack is released.
 
@@ -176,6 +243,7 @@ A rule runs under the profile when it carries one of its `tags` **or** its id is
 | `severity` | `{ ruleId: level }`: another severity under the profile. Results show it and keep the rule's own as `ruleSeverity`; baselines and finding ids don't change. |
 | `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'`: the WCAG version the profile's scans are judged by (`engine.wcagVersion`). Without it, the WCAG tags in `tags` imply the version, and a profile with none is judged by 2.2. A scan's own `engineOptions.wcagVersion` still wins. |
 | `keepsParsing` | `true` when the standard requires 4.1.1 Parsing as written, as EN 301 549 V3.2.1 does. A failure of it then stays a failure under a 2.0 or 2.1 target; under a profile without it, the 2023 errata to WCAG 2.0 and 2.1 count 4.1.1 as satisfied for HTML and XML, and `duplicate-id` asks instead (under 2.2, which removed 4.1.1, it asks whatever the profile says). Only the profile's own field counts: a pack's profile that takes the place of one of core's (a standard moving out of core, such as `en301549-v3.2.1`) doesn't inherit it, and core warns once when the profile it replaces kept 4.1.1 and the pack's doesn't say so. It is a profile's field only: `engineOptions.mappings` names a standard's requirements and never changes an outcome, so a scan judged by a standard that keeps 4.1.1 runs its profile. |
+| `law` | A standard's profile only: the id of the law the profile serves, one of the standard's `laws` ([below](#the-law-a-profile-is-used-for)). |
 | `version`, `mappedRules` | A standard's profile only: the standard's version it targets, and `mappedRules: true` to run every rule the standard maps for that version. |
 
 **A profile that runs only what its standard asks for.** A standard's profile with `tags: [<ns>]` and `mappedRules: true` runs the pack's own rules and the core rules its map links to a requirement, and nothing else: no rule checks what the standard doesn't, and results hold no WCAG criteria. With no WCAG tag, though, nothing says which WCAG version the standard is built on, and the run is judged by 2.2. For a standard built on 2.1 that is wrong: the run reports 2.2's criteria, such as 2.5.8, which the standard doesn't have. Give the version, and `keepsParsing: true` if the standard still requires 4.1.1 Parsing. The scaffold's `index.js` reads it from `requirements.js`, where each version of the standard names the WCAG version it is built on (`{ version: '1.0', wcagVersion: '2.2' }`, see [section 5](#5-group-results-checklist-items-or-requirements)):
@@ -220,7 +288,87 @@ const RULE_REQUIREMENTS = { '1.0': {
 
 `ruleMappedStandard({ standard, tag, versions, requirements, ruleMap })` from `@surea11y/core/pack` turns them into the standard's functions: a rollup per requirement (`<ns>-<version>-<requirement>`), the requirements each rule's result names (in `meta.normativeMappings`, under the standard's profiles or with `engineOptions.mappings: ['<key>']`), and checks of both tables when the pack is prepared. The standard's entry (`standard: { key, standard, versions, profiles, ruleTag, ruleMapped, mappingsFor, composites, validate, report }`) is generated in `index.js`; `report.noteKey` names the message above its results in the HTML report. A standard whose requirements relate to WCAG in a way the two tables can't say writes those functions itself (ENTRY SHAPE in `src/coverage/standards.js`).
 
-A row can also send a rule's findings of one reason code elsewhere, with `reasonCodes: { [code]: { requirements, outcome } }`: `requirements` (default: the row's) are the ones those findings count toward, `[]` for none, and `outcome: 'cantTell'` makes a failing one a question there. A requirement's rollup then judges the rule by the findings that count toward it, so a standard can ask about one cause where WCAG fails it, or file two causes under two tests:
+**Tests under requirements.** A standard that judges tests under its requirements, as RGAA judges tests under each criterion and BITV-Test steps under each requirement, gives `ruleMappedStandard` a third table, `tests`, per version: each test's `title` and the `requirements` it belongs to, one or several. A rule-map row then names tests (or requirements), and may say where its findings are only questions, with `asks`:
+
+```js
+const std = ruleMappedStandard({
+  standard: 'City Standard', tag: 'city', versions,
+  requirements: { '1.0': { '4.2': { title: 'Images have a text alternative', wcagSc: ['1.1.1'], tests: ['4.2.1', '4.2.2'] } } },
+  tests: { '1.0': {
+    '4.2.1': { title: 'Each image has an alt attribute', requirements: ['4.2'] },
+    '4.2.2': { title: 'Each alternative describes the image', requirements: ['4.2'] }
+  } },
+  ruleMap: { '1.0': {
+    'img-alt-present': { requirements: ['4.2.1'] },
+    'img-alt-quality': { requirements: [], asks: ['4.2.2'] }
+  } }
+});
+```
+
+There is still one rollup per requirement, grouping the rules of its tests; each finding counts toward the test it fails, and the results name each test with the requirement it belongs to: an entry for a test has the test's id in `requirement` and its requirement in `criterion` (`{ requirement: '4.2.1', criterion: '4.2' }`). A requirement's rollup names a test under that requirement; a rule's own entries name a test that belongs to several under its first. Every version of such a standard has tests, and a requirement that lists its `tests` lists exactly those that name it. With `wcagCorrespondence: true`, a rule is linked only to tests whose WCAG criteria share one with the rule's, or with the reason in the row's `outsideCorrespondence: { [test]: reason }`, and each entry names only the criteria they share. `asks`, `outsideCorrespondence` and `wcagCorrespondence` are read only with tests: `definePack` refuses them on a standard without, where they would do nothing.
+
+**A standard as data.** The same tables, with the standard's versions, groups and profiles, can be one JSON object in the format `surea11y-standard/1`, which `@surea11y/core/schemas/standard.schema.json` describes, so any tool can read the standard without running the pack:
+
+```js
+const { standardFromData } = require('@surea11y/core/pack');
+
+const data = require('./standard.json');
+// { format: 'surea11y-standard/1', key: 'city', standard: 'City Standard', lang: 'en',
+//   versions: [{ version: '1.0', wcagVersion: '2.2' }],
+//   options: { applicability: 'wcag' },                 // and wcagCorrespondence, ruleMapped
+//   data: { '1.0': { groups, requirements, tests, ruleMap } },
+//   profiles: { 'city-1.0': { version: '1.0', tags: ['city'], mappedRules: true } } }
+
+module.exports = definePack({ name, version, namespace: 'city', core: '~1.16.0',
+  standard: standardFromData(data, { report: { noteKey: 'city_report_note' } }) });
+```
+
+The data also holds the standard's texts, in its own language (`lang`), and their translations:
+
+- A requirement's `note`, and its `procedure` (`{ steps, passWhen, failWhen, tools, automation }`) where it is assessed as a whole; a test's `procedure`; `replace: { [facet]: { steps, passWhen, failWhen } }` on a requirement that restates a WCAG criterion.
+- Per version, `notes` (a list) and `review` (the standard's own steps for core's codes, `{ [rule]: { [CODE]: { steps, passWhen, failWhen } } }`).
+- Per version, `texts: { [locale]: { [key]: text | [texts] } }`, keyed as the data names its texts: `requirements.<id>.title`, `.note`, `.procedure.steps`, `.procedure.passWhen`, `.procedure.failWhen`, `.replace.<facet>.steps`…; `tests.<id>.title`, `tests.<id>.procedure.steps`…; `groups.<id>.title`; `notes`; `review.<rule>.<CODE>.steps`…. `checkStandardData` names a key that is no text of the version, a list of another length, an empty text or other `{{placeholders}}`.
+
+`standardFromData(data, extras)` returns the `standard` entry: mappings, rollups and checks from `ruleMappedStandard`, the profiles, and the procedures (a requirement with a procedure is one facet labelled with its title; one with tests has a facet per test, labelled with the test's title, that lists the core rules the mapping sends to the test; one that restates a WCAG criterion, with `applicability: 'wcag'`, takes its procedures and replacements; one with only a note is listed with it), the groups, the notes, the per-version review and the translations by id (`texts`, above), as core reads them. `extras` adds or replaces what the data doesn't give (`report`, `translations` keyed by text, `procedures`, `groups`, `notes`, `review`, a `mappingsFor` of the pack's own), and refuses to replace what it does (its key, versions, profiles, language, laws and texts), so the standard and `standardDataOf(standard)` never disagree. `checkStandardData` checks the shape the schema describes, rule-map rows included, and what a schema can't: each id a row, group, test or requirement names exists in its version, each version is given once. It throws on data with a problem, naming each: `checkStandardData(data)` lists them, its shape and the cross-references a schema can't check (a group or test naming a requirement the version lacks, a version's tables for a version not listed); what needs the rules is checked when the pack is defined. `standardDataOf(pack.standard)` gives the data back, frozen. A requirement, a test or a version may say what it is based on in another standard, `basedOn: [{ standard, version, id }]`.
+
+**A standard built on others.** `deriveStandard(bases, own)` gives the complete data of a standard built on one or more others, as RAWeb is on RGAA and EN 301 549, and BITV-Test on EN 301 549 split into steps. The bases are their packs' data (`standardDataOf(base.standard)`, or their JSON); `own` declares only what the derived standard keeps and changes:
+
+```js
+const { deriveStandard, standardFromData, standardDataOf } = require('@surea11y/core/pack');
+const en301549 = require('@surea11y/pack-en301549');
+
+const data = deriveStandard([standardDataOf(en301549.standard)], {
+  format: 'surea11y-standard/1', key: 'city', standard: 'City Standard',
+  versions: [{ version: '1.0', wcagVersion: '2.1', basedOn: [{ standard: 'en301549', version: 'V3.2.1' }] }],
+  data: { '1.0': {
+    requirements: {
+      // As the base has it.
+      '9.1.4.3': { basedOn: [{ standard: 'en301549', id: '9.1.4.3' }] },
+      // Split into steps of its own.
+      '9.1.1.1': { basedOn: [{ standard: 'en301549', id: '9.1.1.1' }], tests: ['9.1.1.1a', '9.1.1.1b'] }
+    },
+    tests: {
+      '9.1.1.1a': { title: 'Controls have a text alternative', requirements: ['9.1.1.1'] },
+      '9.1.1.1b': { title: 'Images have a text alternative', requirements: ['9.1.1.1'] }
+    },
+    ruleMap: {
+      'input-image-alt-present': { requirements: ['9.1.1.1a'] },   // narrowed
+      'some-rule': null                                           // dropped
+    }
+  } }
+});
+```
+
+- **Fields:** a requirement or test takes the fields of the entry it is based on, and its own replace them; one with only `basedOn` is the base's as it is.
+- **Only what is declared exists.** A base requirement no derived entry is based on is left out. A derived requirement based on a base requirement with tests has those tests too, unless it lists its own.
+- **Rule rows flow through `basedOn`.** A base row for clause X applies to every derived entry based on X, and to its own steps when the derived standard splits X into them; routes, `asks` and `outsideCorrespondence` follow. A row that reaches nothing is dropped. The derived standard's own row for a rule replaces the inherited one whole, and `null` drops it. A rule that reaches the derived standard from two bases needs a row of its own.
+- **Drift is an error.** A `basedOn` naming a standard, version, requirement or test the bases don't have throws, naming it: when a base changes, the derived pack's tests fail rather than its results.
+- **Results name the base.** Each entry in a result carries the `basedOn` of its requirement or test, so a step's result names the clause it comes from, whether or not the base's pack is in the scan.
+- **Review and texts follow.** A version's review comes from its bases', the derived standard's own entry for a rule and code replacing theirs (`null` drops it); two bases giving the same code differently need an entry of its own. A derived entry takes its base's translations under its own id where its source text is the base's; a text it rewords keeps only its own translations, never the base's of another wording. Groups and notes are its own.
+
+The derived pack depends on its bases as npm dependencies and builds its data when it is required; a scan still takes each pack alone.
+
+A row can also send a rule's findings of one reason code elsewhere, with `reasonCodes: { [code]: { requirements, outcome } }`: `requirements` (default: the row's) are the ones those findings count toward, `[]` for none; `outcome: 'cantTell'` makes a failing one a question there, and `outcome: 'fail'` makes a question a failure there. A requirement's rollup then judges the rule by the findings that count toward it, so a standard can ask about one cause where WCAG fails it, be certain of one where WCAG asks, or file two causes under two tests:
 
 ```js
 'list-children-valid': {
@@ -228,6 +376,17 @@ A row can also send a rule's findings of one reason code elsewhere, with `reason
   reasonCodes: { LIST_ITEM_ROLE_OVERRIDDEN: { requirements: ['9.3.1', '9.3.2'], outcome: 'cantTell' } }
 }
 ```
+
+`outcome: 'fail'` is for a standard that is certain where WCAG asks. An unnamed `role="grid"` is `cantTell` for WCAG, whose 4.1.2 depends on what the page shows, but breaks WAI-ARIA's "Accessible Name Required" for certain:
+
+```js
+'aria-role-name-present': {
+  requirements: ['name-required'],
+  reasonCodes: { name_missing: { outcome: 'fail' } }
+}
+```
+
+It fails the standard's requirement only: the check result's own outcome, and every WCAG rollup, stay as they were. List only the codes the standard states for certain; a code left out is judged by the rule's own outcome. A pack that uses `outcome: 'fail'` needs core 1.15 or later, so its `core` range starts there (`'^1.15.0'`).
 
 A row can send findings by what they record as well, with `findings: [{ when, requirements, outcome }]`: `when` gives values that fields of a finding's `data.details` must equal, named by dotted path, and `requirements` and `outcome` work as in `reasonCodes`. A finding goes by the first entry it matches, else by its reason code, else by the row. So a standard can file one rule's failures under the test for their text size, though they share a reason code:
 
@@ -241,11 +400,11 @@ A row can send findings by what they record as well, with `findings: [{ when, re
 }
 ```
 
-Match only fields a rule keeps stable: `reasonCode` on every rule, and those [`API_STABILITY.md`](./API_STABILITY.md) names (`contrast-minimum`'s ratio, threshold and typography, the list rules' `element` and `parentElement`, `aria-role-name-present`'s `role`). A field that changes or disappears matches nothing, and the finding goes by its code or the row.
+Match only fields a rule keeps stable: `reasonCode` on every rule, and those [`API_STABILITY.md`](./API_STABILITY.md) names (`contrast-minimum`'s ratio, threshold and typography, `contrast-computable`'s typography, the list rules' `element` and `parentElement`, `aria-role-name-present`'s `role`, the link rules' `linkKind`, `live-region-announcements`' `messageKind`, and `skip-link`'s `lean`, the direction of its lean, which follows the lean and so may change in a minor). `linkKind` and `messageKind` may gain values in a minor: name the ones you route, and the others go by their code or the row. A field that changes or disappears matches nothing, and the finding goes by its code or the row. A pack that routes by an experimental field declares a `core` range that takes no later minor ([`API_STABILITY.md`](./API_STABILITY.md#experimental-may-change-in-a-minor)).
 
 Each rollup's contributors then say `byReasonCode: true`, with the rule's own outcome in `checkOutcome`.
 
-**A standard that writes its own rollups** routes findings the same way, in each rollup's `meta.contributions`: `{ [ruleId]: { default, codes, findings } }`, one entry for each of its `checksIds` it judges by findings (the others it judges whole). An act, in `default`, in `codes[code]` or in a `findings` entry's `act`, is `'count'`, `'cantTell'` (a failing finding is a question there) or `'ignore'` (the finding doesn't count there), and a finding goes by the first `findings` entry whose `when` it matches, else by its reason code, else by `default`, as above. That is what `ruleMappedStandard` writes. A rollup that groups several requirements, a criterion and its tests say, can also say which of them a finding counts toward, with an act `{ act, requirements }`: the rollup then names, in its `meta.normativeMappings`, only the requirements of the findings that decided it, rather than every requirement of every rule that did, and the contributor lists them in `requirements`. So a contrast failure in small text names the test for small text, not the one for large text beside it:
+**A standard that writes its own rollups** routes findings the same way, in each rollup's `meta.contributions`: `{ [ruleId]: { default, codes, findings } }`, one entry for each of its `checksIds` it judges by findings (the others it judges whole). An act, in `default`, in `codes[code]` or in a `findings` entry's `act`, is `'count'`, `'cantTell'` (a failing finding is a question there), `'fail'` (a finding the rule leaves as a question is a failure there) or `'ignore'` (the finding doesn't count there), and a finding goes by the first `findings` entry whose `when` it matches, else by its reason code, else by `default`, as above. That is what `ruleMappedStandard` writes. A rollup that groups several requirements, a criterion and its tests say, can also say which of them a finding counts toward, with an act `{ act, requirements }`: the rollup then names, in its `meta.normativeMappings`, only the requirements of the findings that decided it, rather than every requirement of every rule that did, and the contributor lists them in `requirements`. So a contrast failure in small text names the test for small text, not the one for large text beside it:
 
 ```js
 // One rollup for criterion 3.2, whose tests 3.2.1 and 3.2.3 are for regular and large text
@@ -290,6 +449,216 @@ A standard whose requirements restate WCAG criteria one for one (EN 301 549's ch
 }
 ```
 
+### How a person assesses it: procedures
+
+Core says how a person assesses every WCAG criterion by hand, facet by facet ([`PROCEDURES.md`](./PROCEDURES.md)): a manual review, a conformance report or a finding left undecided reads it. A pack adds its own to the same procedures, in three places:
+
+| What | Where | Read as |
+|---|---|---|
+| How a person answers a finding of one of its rules | The rule's `meta.review`, by reason code ([§3](#3-write-its-rules)) | The finding's `howToCheck`, and a variant under each facet the rule claims (`meta.coverage`) |
+| How a person assesses each requirement of its standard | The standard's `procedures`, by version and requirement (below) | `proceduresFor('<requirement>', { packs, standard })` |
+| How the standard groups its requirements, and the WCAG criteria they relate to | The standard's `groups`, and `relatesTo` on a requirement (below) | `listProcedures` and `procedureChecklist` in those groups, `relatedRequirements` |
+| Their text in other languages | The pack's dictionaries ([§6](#6-messages-and-languages)) | A rule's steps, in the reader's locale |
+
+A checklist has no requirements of its own: its rules' steps join the WCAG criteria they claim, and `proceduresFor('2.4.4', { packs })` lists them there. A standard gives `procedures` for each of its requirements, so a person can assess it requirement by requirement, as the standard numbers them; `surea11y-pack new --kind standard` writes them in `procedures.js`, with an example of each kind, and a test that every requirement of every version has a procedure for each of its facets.
+
+Each requirement takes one of four forms:
+
+- **It restates a WCAG criterion**: `{ wcag: '1.1.1' }`. It takes that criterion's facets, rules and procedures as they are, in every locale core has them.
+- **It restates a criterion, but tests some of it its own way**: `{ wcag: '1.4.3', replace: { <facet>: { ... } } }`. It takes the criterion's facets, and the facets it names show its procedure instead of core's.
+- **It is its own**: `{ facets: [ ... ] }`. It gives the test objectives a person checks, each with its procedure.
+- **It has nothing to assess**: `{ note: '...' }`, such as a clause a version leaves void. It is listed with its note, in English, and no facets, so a person looking for it learns why; a checklist has nothing to do for it. Any other form may carry a `note` too, shown under the requirement's heading.
+
+Each also gives the requirement's `title`, its wording in the standard: a list, a checklist, a page of procedures and `relatedRequirements` name the requirement by it ("4.2 Images have a text alternative"). Take it from where the standard's requirements are written, so the two can't drift: the generated `procedures.js` adds each title from `requirements.js`, and its tests fail on a requirement without one; `ruleMappedStandard`'s `procedures` (`applicability: 'wcag'`) carry them too. An entry without a `title` is accepted, as packs written before titles were read are: it takes the title the standard's rollups name the requirement by (`composites()`, in their `meta.standardMappings`, as `ruleMappedStandard` writes them), and where no rollup names it (no rule checks it) or two name it differently, it has `title: null` and is shown by its number alone (`7.1`).
+
+```js
+standard: {
+  // ...
+  procedures: {
+    '1.0': {
+      '4.2': { title: 'Images have a text alternative', wcag: '1.1.1' },
+      '4.3': {
+        title: 'Text has enough contrast',
+        wcag: '1.4.3',
+        replace: {
+          'contrast-minimum-text': {
+            tools: ['devtools'],               // core's for the facet, when left out
+            steps: ['Measure the contrast of each text with the method of annex B.'],
+            passWhen: 'Every text meets the ratio annex B gives.',
+            failWhen: 'A text falls below that ratio, which fails requirement 4.3.'
+          }
+        }
+      },
+      '7.1': {
+        title: 'Every form has a text version',
+        facets: [{
+          id: 'text-version',
+          label: 'Each form can be had as a text document',
+          automation: 'manual',              // full, partial or manual (the default)
+          tools: ['keyboard'],               // keyboard, pointer, screen-reader, zoom, contrast-theme, devtools
+          steps: ['Find each form on the page.', 'Look next to it for a link to a text version.'],
+          passWhen: 'Every form has a text version.',
+          failWhen: 'A form has no text version, which fails requirement 7.1.'
+        }]
+      }
+    }
+  }
+}
+```
+
+**Writing a procedure.** Write it for the whole page, as core's general procedures are, and for someone without accessibility training: one to eight short steps a person follows in a browser, with its developer tools, a keyboard and, where it matters, a screen reader; then what they see if it passes and if it fails, naming the requirement it fails. `{{requirement}}` in its text is filled in with the standard's name and the requirement it is read as (`City Standard 4.3`), as core's procedures are, so a text shared by several requirements can name each. `automation` says how much of the facet the pack's rules decide: `manual` (the default) where only a person can, `partial` where rules decide part of it, `full` where they decide all of it. `tools` lists what it needs besides a browser. [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §8.6 has the style core's steps follow.
+
+**Replacing a WCAG facet's procedure.** The facets of each criterion, with their ids, are in [`src/coverage/wcag-facets.js`](../src/coverage/wcag-facets.js), or `proceduresFor('1.4.3').facets`. Only a facet with a procedure of its own can be replaced: a technology facet (one with `coveredBy`) is assessed by the procedure of the facet it names, so replace that one. Only reading the requirement shows the replacement: `proceduresFor('4.3', { packs: [pack], standard: 'city' })` gives the pack's procedure for that facet, with `procedureFrom` the pack's name, and its tools, or core's where it names none; the other facets are core's. `proceduresFor('1.4.3')` stays core's, with the pack or without, so two packs never change each other's. The facet's rules and variants stay: a finding still shows its own steps.
+
+**A requirement of its own** can have rules of the pack that test its facets: a rule claims them, by requirement, in `meta.coverage.facetsByRequirement`, and the requirement's procedures list it under the facet, with its steps as variants ([§3](#3-write-its-rules)):
+
+```js
+meta.coverage = { facetsBySc: {}, facetsByRequirement: { '7.1': ['text-version'] } };
+```
+
+**The core rules the standard maps.** A facet also lists the core rules the standard's mapping (`mappingsFor`, the rule map) sends to what it assesses, in its `rules` and its `mappedRules`. A requirement with one facet is assessed by it as a whole, so the core rules mapped to the requirement are listed there with nothing more. A standard whose map links rules to something finer than its procedures' requirements, a criterion's tests say, names in each facet the ids its mapping uses, in `mappedRequirements`:
+
+```js
+// rule-map.js links page-title-present to test 8.5.1; the procedures list criterion 8.5
+'8.5': {
+  title: 'Each page has a title',
+  facets: [{ id: 'test-8-5-1', mappedRequirements: ['8.5.1'], label: 'Test 8.5.1: …', steps: [/* … */], passWhen: '…', failWhen: '…' }]
+}
+```
+
+Core can't tell which facet assesses a test from the data alone: a facet id is the pack's choice, and a test only core's rules check has no rule of the pack to link the two. A facet that names nothing, in a requirement of several, lists only the pack's rules that claim it. `automation` stays what the facet says: say `partial` or `full` where core's rules decide part or all of it. `definePack` refuses `mappedRequirements` that isn't a list of ids, each once.
+
+**Related WCAG criteria.** A requirement of its own may name, in `relatesTo`, the WCAG criteria it relates to without restating any (`{ title, relatesTo: ['1.3.1', '4.1.2'], facets }`). `relatedRequirements` reads them both ways, with the criterion each restating requirement gives in `wcag`: from `'1.3.1'` to the standard's requirements, and from a requirement to its criteria ([`PROCEDURES.md`](./PROCEDURES.md#related-requirements)).
+
+**Notes.** What a reader of the standard's procedures should know before using them, such as the status of a version or how its results read in a report, goes in `standard.notes`, by version, in English: `listProcedures` and `procedureChecklist` give them as `notes`, and a page of procedures shows them in its header.
+
+```js
+standard: {
+  // ...
+  notes: { '1.0': ['Say which edition of the standard you tested against in every report.'] }
+}
+```
+
+**Groups.** A standard that groups its requirements, in themes or chapters, says so in `standard.groups`, by version; a list of its procedures shows them in these groups, and in number order within each:
+
+```js
+standard: {
+  // ...
+  procedures: { '1.0': { /* … */ } },
+  groups: {
+    '1.0': [
+      { id: '4', title: 'Images and colour', requirements: ['4.2', '4.3'] },
+      { id: '7', title: 'Forms', requirements: ['7.1'], groups: [ /* groups under it, the same way */ ] }
+    ]
+  }
+}
+```
+
+Each group has an `id`, unique in the version, a `title`, and `requirements`, `groups` or both. A requirement is in one group at most; one in none is still listed.
+
+**From `ruleMappedStandard`.** A standard that restates WCAG one for one gets the first kind for every requirement from `ruleMappedStandard` with `applicability: 'wcag'`, which returns them as `procedures`: pass `procedures: std.procedures` in the standard, and add `replace` to a requirement there where the standard tests it its own way. Any other standard writes them, as `procedures.js` does.
+
+**Reading them.** `listProcedures({ packs: [pack], standard: 'city' })` reads every requirement of the standard, in its groups, `procedureChecklist` what a person does to assess it, once each, and `relatedRequirements` the WCAG criteria a requirement restates or relates to ([`PROCEDURES.md`](./PROCEDURES.md#listing-them)). `proceduresFor('4.2', { packs: [pack], standard: 'city', version: '1.0' })` reads one requirement as it reads a WCAG criterion: `standard` and `id` are the pack's (`'City Standard'`, `'4.2'`), `version` the standard's version, and `wcag` names the criterion a restating requirement takes its facets from. The general procedures say what fails as the requirement ("which fails City Standard 4.2"), core's included. `standard` is the standard's key or name; `version` defaults to the latest that has the requirement. In a browser, `proceduresFrom` from `@surea11y/core/procedures` does the same.
+
+**What `definePack` checks.** It refuses a version the standard doesn't have, a criterion WCAG doesn't, a requirement with both `wcag` and `facets` or neither, `replace` without `wcag`, a facet the criterion doesn't have or a technology facet in `replace`, `relatesTo` with `wcag` or naming no WCAG criterion, groups without `procedures`, for a version the standard doesn't have, with an id used twice, without a title, or naming a requirement the version's procedures don't have or another group has, facets that aren't well formed, and, in `facetsByRequirement`, a pack whose standard gives no `procedures`, a requirement with no facets of its own there and a facet that requirement doesn't have in any version. A core older than the one that reads `procedures` ignores these fields.
+
+**Languages.** A standard's own text (its own facets' labels and procedures, its replacements, its requirements' titles and notes, its groups' titles, its notes and its rollups' titles) is written in one language, `lang`, English where it gives none. `translations` gives it in others, keyed by the text it translates:
+
+```js
+standard: {
+  // ...
+  lang: 'en',
+  translations: {
+    fr: require('./i18n/standard.fr.json'), // { "Check that every form…": "Vérifiez que chaque formulaire…" }
+    es: require('./i18n/standard.es.json')
+  }
+}
+```
+
+Keyed by its text, a translation follows it. A text two versions share is translated once. A text whose source changes is no longer translated: it shows as written until it is translated again, never as the translation of what it used to say, and `definePack` refuses the translation of a text the standard no longer has, so the old one can't linger. A standard written in French says `lang: 'fr'`, and its translations are keyed by the French.
+
+A standard that declares its languages, `lang` or `translations`, is read in one of them: the first the reader asks for that it has (`fr-CA` tries `fr-ca`, then `fr`), or else its own. Everything about it is then in that language: its own text, and core's that it uses, the procedures of the WCAG criteria its requirements restate and the tools' names, read in that locale as if asked for it. A standard written in French and translated into English, read in Spanish, is all French, core's procedures included, rather than French beside Spanish. `listProcedures` and `procedureChecklist` say which language in `locale`.
+
+A facet is translated as a whole, its label, steps, `passWhen` and `failWhen`, or shown as written, so a person never meets one step in another language; a title, a note or a group's title, on its own; the notes of a version, together. Where a text is shown as written in a page or a report in another language, it says so (`lang`, `titleLang`, `noteLang`, `procedureLang`, `notesLang` on what `listProcedures` gives, [`PROCEDURES.md`](./PROCEDURES.md#the-shape)) and is marked `lang` there, as WCAG 3.1.2 asks.
+
+**Translations by id.** `texts` gives translations by what each text is, per version, rather than by its wording. Keys join ids with dots, so an id with a `facets` or `replace` segment could give two parts of the standard the same keys: `definePack` refuses a standard with `texts` where it would. Two texts worded alike can then be translated apart, and a version can word an id its own way:
+
+```js
+standard: {
+  // ...
+  lang: 'en',
+  texts: {
+    fr: {
+      '1.0': {
+        'requirements.4.2.title': 'Les images ont une alternative textuelle',
+        'requirements.4.2.facets.alt-present.label': 'Chaque image a un attribut alt',
+        'requirements.4.2.facets.alt-present.steps': ['Ouvrez les outils de développement.', 'Inspectez chaque image.'],
+        'requirements.4.2.facets.alt-present.passWhen': 'Chaque image en a un.',
+        'requirements.4.2.facets.alt-present.failWhen': 'Une image n’en a pas, ce qui enfreint {{requirement}}.',
+        'groups.4.title': 'Images et couleur',
+        notes: ['…']
+      }
+    }
+  }
+}
+```
+
+The keys: `requirements.<id>.title` and `.note`; `requirements.<id>.facets.<facet>.label`, `.steps`, `.passWhen`, `.failWhen`; `requirements.<id>.replace.<facet>.steps`, `.passWhen`, `.failWhen`; `groups.<id>.title`; `notes`; and `review.<rule>.<CODE>.steps`, `.passWhen`, `.failWhen` for the standard's own steps for core's codes. A list (steps, notes) is given as a list, in the source's order, and is read as a whole, as a translation keyed by text is. A text with its key in the locale and version is read from `texts`; one without is read from `translations`, by its wording; so a standard can move from one to the other text by text. `definePack` refuses a key that names no text of the version, a list of another length, an empty text, other `{{placeholders}}`, a version the standard doesn't have, and a translation into the standard's own language. `packTranslationCoverage` and `procedureLanguages` count each text where it is.
+
+**The standard's own steps per version.** `reviewByVersion: { [version]: { [rule]: { [CODE]: { steps, passWhen, failWhen } } } }` gives a version steps of its own for a core rule's code, replacing `review`'s for the same rule and code under that version's profiles: steps that name a requirement ("which fails RGAA 7.1") can follow the version's numbering. `texts` translates them by id in that version (`review.<rule>.<CODE>.steps`), read before the `_standardReview_` dictionary keys.
+
+A scan shows the standard's rollups by the titles its translations give, in the scan's locale where the standard has it; core makes their keys. In another locale they show as written, or as the standard's English translation where it has one, and `result.standards[].titleLang` says in which language.
+
+A standard that declares neither is read as it always was: its own text as written, taken to be English (or `report.titleLang` for its titles), and core's in the locale asked for.
+
+For a locale core doesn't ship (`ca`), the pack's dictionary for it may give core's procedures as well, under core's keys (`wcag_2.4.7_focus-visible_step1`), as it may give core's messages ([§6](#6-messages-and-languages)): with the standard translated into it too, a page of the standard in that locale is in that language throughout. A text it doesn't give is English, as any text a locale lacks.
+
+`packTranslationCoverage(pack)` from `@surea11y/core/pack` says how far each translation goes: `[{ locale, total, translated, missing }]`, `missing` the texts it doesn't translate yet, and `languagesOf(pack.standard)` the standard's languages, its own first. `procedureLanguages({ packs: [pack], standard })` says which languages a reader can choose for it, each `complete` or not, with core's text counted too, so an app's language picker never leads to a page in two languages ([`PROCEDURES.md`](./PROCEDURES.md#their-languages)). `definePack` and `checkPack` refuse a `lang` that isn't a language tag, a translation into the standard's own language, a key that is no text of the standard, an empty translation, and one that loses or adds a `{{placeholder}}`. Core's procedures name the requirement they are read as: read under a pack's requirement 4.3 restating WCAG 1.4.3, "which fails WCAG 1.4.3" becomes "which fails City Standard 4.3". The steps of a finding (variants) keep naming WCAG.
+
+### The law a profile is used for
+
+A profile can name the law it is used for, so results and the report say which law a scan was run for. Core tests a standard's requirements; it identifies the law and doesn't document it: a law has its name, where it applies, and links to its official text, nothing more.
+
+```js
+laws: {
+  'fr-article-47': {
+    name: 'Article 47 de la loi n° 2005-102 du 11 février 2005',
+    jurisdiction: 'FR',                                   // 'FR', 'DE-BY', 'EU'…
+    sources: [{ title: 'Légifrance', url: 'https://www.legifrance.gouv.fr/…' }]   // https only
+  }
+},
+profiles: { 'rgaa-4.1.2': { version: '4.1.2', tags: ['rgaa'], mappedRules: true, law: 'fr-article-47' } }
+```
+
+Only `name` and `jurisdiction` are required. Where a standard serves several laws and a requirement is asked for by only some of them, the requirement lists them (`laws: ['fr-article-47']` in its procedures entry; experimental until 1.20.0, [`API_STABILITY.md`](./API_STABILITY.md#experimental-may-change-in-a-minor)); one without `laws` is asked for by all, and under a profile whose law isn't among them, or that serves none, the requirement is neither listed nor judged. A law's name is translated in `standard.lawTexts`, by id: `{ en: { 'laws.fr-article-47.name': '…' } }`. `checkPack` checks all of it.
+
+What it changes: results name the profile's law (`engine.law: { id, name, jurisdiction, lang }`, and `profiles[name].law` in a scan of several), the HTML report shows it beside the profile, `listProcedures({ profile })` lists only the requirements the profile's law asks for, and its head names the law; the scan leaves the others' rollups out, and names those requirements in `engine.profileExcludes.requirements`. `lawOf(standard, id, locale)` from `@surea11y/core/pack` gives a law with its name in a language, and `describePacks` lists each standard's laws with the profiles that use them. In standard data, they are the top-level `laws` and `texts`, a profile's `law` and a requirement's `laws`. A standard derived from another doesn't inherit its laws or its requirements' `laws`: it names its own.
+
+### A pack built on another pack
+
+*Experimental ([`API_STABILITY.md`](./API_STABILITY.md#experimental-may-change-in-a-minor)).* A standard built on another, as RAWeb is on RGAA, takes its base's data with `deriveStandard`. When the base's pack has rules of its own, the new pack uses them too, rather than copying them: it names the packs it builds on in `uses`, and its standard maps their rules by id as it maps core's.
+
+```js
+const rgaa = require('@surea11y/pack-rgaa');
+
+module.exports = definePack({
+  name: '@acme/pack-raweb', version: '1.0.0', namespace: 'raweb', core: '~1.17.0',
+  uses: [rgaa],              // the pack itself, as installed (a dependency in package.json)
+  standard                   // its rule map may name rgaa-… rules, and its profiles run them
+});
+```
+
+- **The rules stay where they are.** A pack uses another's rules as it uses core's: it says which of its requirements each checks, and its profiles run them. It can't change them; where it judges differently, it maps their findings its own way or writes a rule of its own.
+- **A scan runs it only with them.** The packs it uses go in the same scan, `packs: [rgaa, raweb]` (in a page, one `packScript` call), at the version it was made with. Otherwise the scan skips it and says why in `skippedPacks` ("it uses @surea11y/pack-rgaa@1.1.0, which this scan doesn't have"), and skips the packs that use it too; `packScript` throws.
+- **A chain works.** A pack may use one that uses others; `checkPack` refuses a circle, two versions of one pack along the chain, and an entry that isn't a valid pack.
+- **Without `uses`**, a standard still maps only core's rules and its own: a rule two unrelated standards need belongs in core.
+
+`describePacks` lists what each pack uses (`uses`, as `name@version`).
+
+**Start one** with `surea11y-pack new <folder> --kind derived --from <base>` (experimental, as what it uses is), the base installed where you run it and its standard in the data format. It writes a pack that is the base as it is: `standard-data.js` derives every requirement of the base's latest version, with its tests and rule map, and has an empty table of changes (`OWN_ROWS`) with an example of each kind; `index.js` uses the base; core's range is `~`, and the base is a dependency at the version installed. Its tests check that the data is valid, that every row it doesn't change is the base's, and that the profile runs with the base and is skipped without it.
+
+**Test each difference on a page.** A derived standard changes its base's map where it asks something different: it drops a link, makes a failure a question, sends a reason code or a finding elsewhere. Give each change a page the base's row would get wrong, and the result the derived standard gives. A route by a field of the base pack's findings (`findings`, `when`) needs that page most: the field is the base pack's own, not one core keeps stable, and if it changes, the route matches nothing and the finding goes back to the row, silently. The page test fails instead.
+
 ## 6. Messages and languages
 
 Each text a rule shows has a key: `meta.i18n.titleKey` and `descriptionKey`, and the `summaryKey` and `hintKey` of its occurrences (with `{{name}}` placeholders filled from `params`; a single brace is shown as written). `i18n/<locale>.json` holds them per locale, and `dictionaries` in `index.js` lists the files:
@@ -298,7 +667,32 @@ Each text a rule shows has a key: `meta.i18n.titleKey` and `descriptionKey`, and
 dictionaries: { en: require('./i18n/en.json'), fr: require('./i18n/fr.json') }
 ```
 
-A scan with `engineOptions.locale: 'fr'` shows the French ones; a locale with no dictionary shows English. The pack's keys are its own: start them with the namespace in camel case (`acmeLinkTextSpecific_title`). A pack can't change a core message in a locale core ships; for a locale core doesn't ship (`pt`), its dictionary may also give core's keys, which translates core's rules there. A variant's messages are its own keys under its prefix (`acmeContrastEnhanced_fail_belowThreshold` for core's `contrastMinimum_fail_belowThreshold`); one its pack doesn't define reads the core rule's text in the scan's language, so a variant needs only its title and description.
+A scan with `engineOptions.locale: 'fr'` shows the French ones; a locale with no dictionary shows English. A standard's own text, its procedures and titles, is translated in `standard.translations` instead, keyed by its text ([Languages](#how-a-person-assesses-it-procedures)).
+
+A rule's steps ([§3](#3-write-its-rules)) are translated the same way, under the keys core's steps use: the rule's prefix (its `titleKey` without `_title`), `_review_`, the reason code, then `step<n>`, `pass` or `fail`:
+
+```json
+{
+  "acmeLinkTextSpecific_review_GENERIC_LINK_NAME_step1": "Trouvez le lien que le rapport désigne.",
+  "acmeLinkTextSpecific_review_GENERIC_LINK_NAME_step2": "Lisez le texte qui l'entoure.",
+  "acmeLinkTextSpecific_review_GENERIC_LINK_NAME_pass": "Le texte autour du lien dit où il mène.",
+  "acmeLinkTextSpecific_review_GENERIC_LINK_NAME_fail": "Rien près du lien ne dit où il mène, ce qui enfreint le critère 2.4.4 des WCAG."
+}
+```
+
+A finding's `howToCheck` and the procedures show them in that locale, and in English each text the locale lacks; English, `meta.review`, says how many steps there are. A dictionary that translates only part of an entry, some of its `step<n>`, `pass` and `fail` and not the others, has a person read its steps in two languages: `checkPack` reports it, naming the keys it lacks (`dictionaries.fr: acmeLinkTextSpecific_review_GENERIC_LINK_NAME_*: translates only part of acme-link-text-specific's meta.review.GENERIC_LINK_NAME, whose other keys are read in English; it lacks step2, fail`), while `definePack` and a scan still load the pack, and read each key the locale lacks in English. A standard's own steps are stricter (below).
+
+A standard's own steps for core's codes (`standard.review`, [§3](#3-write-its-rules)) are translated under keys made of the standard's `key`, `_standardReview_`, the core rule's id and the reason code, then `step<n>`, `pass` or `fail`. The keys name no version of the standard: they translate `standard.review`, and a version whose own steps replace an entry (`reviewByVersion`, below) is read in English there, never in another version's words, unless it is translated by id (`standard.texts`, `review.<rule>.<CODE>.*`); `checkPack` reports a key whose entry a version replaces. A core rule's id has no `_` and a rule's keys say `_review_`, so they can't be taken for a rule's:
+
+```json
+{
+  "acme_standardReview_aria-valid-attr-value_ARIA_HASPOPUP_ROLE_MISMATCH_step1": "Ouvrez la fenêtre, qu'aria-haspopup dit être un {{expectedRole|menu}}.",
+  "acme_standardReview_aria-valid-attr-value_ARIA_HASPOPUP_ROLE_MISMATCH_pass": "C'est un {{expectedRole|menu}}.",
+  "acme_standardReview_aria-valid-attr-value_ARIA_HASPOPUP_ROLE_MISMATCH_fail": "C'est un {{popupRole|dialog}}, ce qui enfreint l'exigence 4.2 d'Acme."
+}
+```
+
+A finding that reads the standard's steps, in a scan with that locale or from `addHowToCheck` and `applyHowToCheck` with `locale`, has them in it where the dictionary for it (`fr-CA`, then `fr`) translates the whole entry, and the English of `standard.review` otherwise, so a person never reads one step in each language. `checkPack` and `definePack` refuse a dictionary that translates part of an entry, saying which keys it lacks; a key for a rule or code `standard.review` doesn't have, for a step its English doesn't have or with another ending; a translation that names other placeholders than the English; and such a key in the English dictionary. A standard whose `standard.review` has no translations is read as before. `definePack` refuses such a key in the English dictionary, for a code the rule's `meta.review` doesn't have, for a step its English doesn't have, and with an ending other than `step<n>`, `pass` or `fail`. The pack's keys are its own: start them with the namespace in camel case (`acmeLinkTextSpecific_title`). A pack can't change a core message in a locale core ships; for a locale core doesn't ship (`pt`), its dictionary may also give core's keys, which translates core's rules there. A variant's messages are its own keys under its prefix (`acmeContrastEnhanced_fail_belowThreshold` for core's `contrastMinimum_fail_belowThreshold`); one its pack doesn't define reads the core rule's text in the scan's language, so a variant needs only its title and description.
 
 ## 7. Test, lint and document it
 
@@ -317,6 +711,19 @@ const policy = require('@acme/a11y-pack');
 const result = runDomRulesInPage(url, null, { packs: [policy], profile: 'acme-policy' });
 result.engine.packs;   // ['@acme/a11y-pack@0.1.0']
 ```
+
+**With other profiles.** A pack's profile can run beside WCAG's, or beside another pack's, in one scan: `profile` takes a list, and each profile judges the page as it would alone ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles), [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#several-profiles)):
+
+```js
+const result = runDomRulesInPage(url, null, {
+  packs: [policy, en301549],
+  profile: ['acme-policy', 'en301549-v4.1.1']
+});
+result.engine.profiles; // ['acme-policy', 'en301549-v4.1.1']
+result.profiles['acme-policy'].rulesResults; // the policy's items, by id
+```
+
+A finding the standard is certain of where WCAG asks (`outcome: 'fail'` in its rule map, above) fails the scan, and says both: its `verdicts` are each profile's. A profile whose pack is skipped is listed in `engine.profilesNotRun`, and the others still run.
 
 The pack is prepared once and kept for the next scan with the same pack object, so a pack must not change once made: `definePack` freezes it, with its lists and objects, and a change throws. A pack made without `definePack` isn't frozen, and a change to it after a scan goes unseen.
 
@@ -352,7 +759,7 @@ In a `<script>` tag, with the file `buildBrowserBundle` wrote (`fs.writeFileSync
 
 The rules' code is written into the script as functions, so it runs where a Content Security Policy forbids `eval`. See [Packs in a page](./INTEGRATION.md#packs-in-a-page).
 
-**When a pack is wrong**, `definePack` throws, naming each problem, so its own tests fail; `checkPack(pack)` returns the same list without throwing, and with the installed core's version checked too. Both run a standard's own checks of its tables (`validate`, which `ruleMappedStandard` makes) against core's rules and the pack's, as a scan does: a version without its `wcagVersion`, or a finding sent to a requirement the table lacks, is refused there rather than make every scan skip the pack. What only a scan can find (a profile naming a rule that doesn't exist, a core version outside the pack's range, an invalid pack never passed through `definePack`) makes the scan run without the pack, warn, and list it in `skippedPacks` with the reason; under `strictOptions` it throws, with `code: 'INVALID_ENGINE_OPTIONS'` as every error in `engineOptions.packs` has. So a scan can finish without the checks you added the pack for: a tool that depends on a pack should check `skippedPacks` before treating the scan as complete. `describePacks([policy])` lists what a pack brings: its rules, profiles, rollups, locales and the probes its rules read.
+**When a pack is wrong**, `definePack` throws, naming each problem, so its own tests fail; `checkPack(pack)` returns the same list without throwing, with the installed core's version checked too, and with what reads wrong without keeping the pack from loading: a rule's steps a dictionary translates in part ([§6](#6-messages-and-languages)). Both run a standard's own checks of its tables (`validate`, which `ruleMappedStandard` makes) against core's rules and the pack's, as a scan does: a version without its `wcagVersion`, or a finding sent to a requirement the table lacks, is refused there rather than make every scan skip the pack. What only a scan can find (a profile naming a rule that doesn't exist, a core version outside the pack's range, an invalid pack never passed through `definePack`) makes the scan run without the pack, warn, and list it in `skippedPacks` with the reason; under `strictOptions` it throws, with `code: 'INVALID_ENGINE_OPTIONS'` as every error in `engineOptions.packs` has. So a scan can finish without the checks you added the pack for: a tool that depends on a pack should check `skippedPacks` before treating the scan as complete. `describePacks([policy])` lists what a pack brings: its rules, profiles, rollups, locales and the probes its rules read.
 
 ## 9. Publish it
 

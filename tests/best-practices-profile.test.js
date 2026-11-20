@@ -6,6 +6,7 @@
 
 const core = require('../src/core');
 const { NORMATIVE_STANDARDS } = require('../src/coverage/standards.js');
+const { WCAG_PROFILE_TAGS } = require('../src/core/prepare-catalog');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 const { checkBestPracticesWithProfile } = require('./helpers/bestPracticesProfile.js');
 
@@ -13,8 +14,7 @@ checkBestPracticesWithProfile({
   core,
   runOnHtml: runa11yCoreOnHtml,
   profiles: [
-    'wcag22-aa',
-    'section508',
+    ...Object.keys(WCAG_PROFILE_TAGS),
     ...NORMATIVE_STANDARDS.flatMap((s) => Object.keys(s.profiles || {}))
   ]
 });

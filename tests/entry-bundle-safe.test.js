@@ -77,7 +77,47 @@ test('the how-to-check entry reaches no module outside core', () => {
     [
       path.join(ROOT, 'src', 'how-to-check-core.js'),
       path.join(ROOT, 'src', 'hook-reason-codes.js'),
-      path.join(ROOT, 'src', 'occurrence-outcome.js')
+      path.join(ROOT, 'src', 'occurrence-outcome.js'),
+      path.join(ROOT, 'src', 'pack-review.js'),
+      path.join(ROOT, 'src', 'review-placeholders.js'),
+      path.join(ROOT, 'src', 'texts-by-id.js')
+    ].sort()
+  );
+});
+
+// @surea11y/core/procedures is how an app whose code runs in a browser
+// reads the procedures: it reaches nothing outside core, not even Node's fs,
+// and none of the rules (their facets come from src/procedures/rules.json,
+// data the walk doesn't follow).
+test('the procedures entry reaches no module outside core', () => {
+  const { seen, outside } = reached(path.join(ROOT, 'src', 'procedures-core.js'));
+  assert.deepEqual(outside, []);
+  assert.deepEqual(
+    [...seen].sort(),
+    [
+      path.join(ROOT, 'src', 'procedures-core.js'),
+      path.join(ROOT, 'src', 'procedures', 'registry.js'),
+      path.join(ROOT, 'src', 'coverage', 'wcag-facets.js'),
+      // WCAG's versions, levels, titles and guidelines, for listing criteria.
+      path.join(ROOT, 'src', 'wcag.js'),
+      path.join(ROOT, 'src', 'coverage', 'wcag-criteria.js'),
+      path.join(ROOT, 'src', 'coverage', 'wcag-titles.js'),
+      path.join(ROOT, 'src', 'coverage', 'wcag-guidelines.js'),
+      path.join(ROOT, 'src', 'pack-review.js'),
+      // A variant's steps read without a finding: each placeholder's text.
+      path.join(ROOT, 'src', 'review-placeholders.js'),
+      // A pack's standard in its languages.
+      path.join(ROOT, 'src', 'pack-languages.js'),
+      path.join(ROOT, 'src', 'texts-by-id.js'),
+      // The law a profile serves, to list what it asks for.
+      path.join(ROOT, 'src', 'laws.js'),
+      // Whether a requirement applies under a profile's law, on its own so the
+      // report bundle reads it without the rest of laws.js.
+      path.join(ROOT, 'src', 'law-applies.js'),
+      // Reading the dictionaries, and writing a page from the procedures.
+      path.join(ROOT, 'src', 'procedures-text.js'),
+      path.join(ROOT, 'src', 'procedures-render.js'),
+      path.join(ROOT, 'src', 'html-text.js')
     ].sort()
   );
 });

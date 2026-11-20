@@ -218,3 +218,78 @@ test(`${RULE_ID}: a parent with role="directory" is a list`, () => {
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }
 });
+
+// An <li> outside a list fails where it is still drawn as a list item (a
+// marker the reader sees, in no list the markup states); one drawn as a
+// plain layout box, with no marker, shows no list and is asked about.
+test(`${RULE_ID}: fails where the stray item is drawn as a list item, and asks about one drawn with no marker`, () => {
+  const run = (body) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.strictEqual(run('<div><li>Apple</li></div>').outcome, 'fail');
+  const plain = run('<div><li style="display:block">Apple</li></div>');
+  assert.strictEqual(plain.outcome, 'cantTell');
+  assert.strictEqual(plain.occurrences[0].uncertainty.code, 'spec-only');
+  assert.strictEqual(
+    run('<div><li style="list-style-type:none">Apple</li></div>').outcome,
+    'cantTell'
+  );
+});
+
+// An <li> a wrapper separates from its list: the hint must not suggest
+// role="list" on the wrapper, which would nest a second list.
+test(`${RULE_ID}: an <li> a wrapper separates from its <ul> names both`, () => {
+  const html = `<!doctype html><html><body>
+    <ul><div class="item-wrap"><li id="w">a</li></div></ul>
+    <ul><a href="/x"><li id="l">Home</li></a></ul>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const wrapped = rule.occurrences.find((o) => o.html.includes('id="w"'));
+  assert.strictEqual(wrapped.data.details.reasonCode, 'LISTITEM_INVALID_PARENT');
+  assert.strictEqual(wrapped.i18n.summaryKey, 'listitemParentValid_summary_fail_wrapped');
+  assert.strictEqual(
+    wrapped.summary,
+    'This <li> is inside a <ul>, but the <div class="item-wrap"> between them breaks the list: a list\'s items must be its children.'
+  );
+  assert.doesNotMatch(wrapped.hint, /role="list"/);
+  const link = rule.occurrences.find((o) => o.html.includes('id="l"'));
+  assert.strictEqual(
+    link.hint,
+    'Move the <a> inside the <li>, or remove it, so the <li> is a child of the <ul>.'
+  );
+  assert.strictEqual(link.data.details.listElement, 'ul');
+});
+
+// Wrappers two or three levels deep: the list is still named, with every
+// wrapper between, from the list down.
+test(`${RULE_ID}: an <li> two or three wrappers below its list names the list and them`, () => {
+  const html = `<!doctype html><html><body>
+    <ul><div class="row"><span><li id="two">a</li></span></div></ul>
+    <ol><div><span><b><li id="three">b</li></b></span></div></ol>
+    <ul><div><span><b><i><li id="four">c</li></i></b></span></div></ul>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const two = byId('two');
+  assert.strictEqual(two.i18n.summaryKey, 'listitemParentValid_summary_fail_wrappedMany');
+  assert.strictEqual(two.i18n.hintKey, 'listitemParentValid_hint_fail_wrappedMany');
+  assert.strictEqual(
+    two.summary,
+    'This <li> is inside a <ul>, but the <div class="row">, <span> between them break the list: a list\'s items must be its children.'
+  );
+  assert.strictEqual(
+    two.hint,
+    'Remove the elements between them, or move them inside the <li>, so the <li> is a child of the <ul>.'
+  );
+  assert.deepStrictEqual(two.data.details.wrappedBy, ['<span>', '<div class="row">']);
+  assert.strictEqual(two.data.details.listElement, 'ul');
+
+  assert.match(byId('three').summary, /inside a <ol>, but the <div>, <span>, <b> between them/);
+  // Four levels down is past the walk: the plain message.
+  assert.strictEqual(byId('four').i18n.summaryKey, 'listitemParentValid_summary_fail');
+});

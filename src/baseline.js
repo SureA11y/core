@@ -145,6 +145,85 @@ function entriesOf(baseline) {
   return [];
 }
 
+// What a value is, for an error message: 'the string "x"', 'null', 'an
+// object with no entries list'.
+function describeBaselineValue(v) {
+  if (v === null) return 'null';
+  if (Array.isArray(v)) return 'an array';
+  if (typeof v === 'string') return 'the string ' + JSON.stringify(v.slice(0, 40));
+  if (typeof v === 'object') return 'an object';
+  return 'the ' + typeof v + ' ' + String(v);
+}
+
+// The entries of a baseline given to `caller`, checked: null or undefined
+// is a baseline with none; anything else must be a list of entries or the
+// file as saved ({ entries: [...] }), and each entry an object with a
+// ruleId, whose reasonCode, selector and html are strings where present
+// (null reads as absent, as before). A value read as no baseline would make every failure new without
+// a word, so a malformed one throws a TypeError (code INVALID_BASELINE)
+// saying what is wrong with it.
+function checkedEntriesOf(baseline, caller) {
+  if (baseline === undefined || baseline === null) return [];
+  const invalid = (message) => {
+    const err = new TypeError(caller + ': ' + message);
+    err.code = 'INVALID_BASELINE';
+    return err;
+  };
+  let entries;
+  let where;
+  if (Array.isArray(baseline)) {
+    entries = baseline;
+    where = (i) => 'entry ' + i;
+  } else if (typeof baseline === 'object' && Array.isArray(baseline.entries)) {
+    entries = baseline.entries;
+    where = (i) => 'entries[' + i + ']';
+  } else {
+    throw invalid(
+      'the baseline must be a list of entries or a baseline file ({ entries: [...] }), not ' +
+        (typeof baseline === 'object'
+          ? baseline.entries === undefined
+            ? 'an object with no entries list'
+            : 'an object whose entries is ' + describeBaselineValue(baseline.entries)
+          : describeBaselineValue(baseline)) +
+        '.'
+    );
+  }
+  entries.forEach((entry, i) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw invalid(
+        'baseline ' +
+          where(i) +
+          ' is ' +
+          describeBaselineValue(entry) +
+          ', not an entry ({ ruleId, reasonCode, selector, html }).'
+      );
+    }
+    if (typeof entry.ruleId !== 'string' || !entry.ruleId) {
+      throw invalid('baseline ' + where(i) + ' has no ruleId.');
+    }
+    for (const field of ['reasonCode', 'selector', 'html']) {
+      if (entry[field] != null && typeof entry[field] !== 'string') {
+        throw invalid(
+          'baseline ' +
+            where(i) +
+            "'s " +
+            field +
+            ' is ' +
+            describeBaselineValue(entry[field]) +
+            ', not a string.'
+        );
+      }
+    }
+    if (
+      entry.frame !== undefined &&
+      !(Array.isArray(entry.frame) && entry.frame.every((step) => typeof step === 'string'))
+    ) {
+      throw invalid('baseline ' + where(i) + "'s frame is not a list of strings.");
+    }
+  });
+  return entries;
+}
+
 // The reason codes a finding had before this release moved it to the one
 // it has now (src/baseline-moves.json): ruleId and new code -> old codes.
 const EARLIER_CODES = new Map();
@@ -255,7 +334,8 @@ function leanFindingsOf(frames) {
 // reporters look each occurrence up in: `known`, the failures its entries
 // for failures match, and `knownLeaning`, the findings that lean fail its
 // `lean: 'fail'` entries match.
-function knownOccurrences(frames, baselineEntries) {
+function knownOccurrences(frames, baselineEntries, caller = 'baselineEntries') {
+  checkedEntriesOf(baselineEntries, caller);
   const knownIn = (findings, lean) => {
     const known = takeKnown(entryCounts(baselineEntries, lean), findings);
     return new Set(findings.filter((f, i) => known[i]).map((f) => f.occurrence));
@@ -300,6 +380,7 @@ function compare(findings, remaining) {
 // compared with them too, in `leanFail`.
 function matchBaseline(result, baselineEntries, options) {
   const frames = framesOf(result, 'matchBaseline');
+  checkedEntriesOf(baselineEntries, 'matchBaseline');
   const fail = compare(failFindingsOf(frames), entryCounts(baselineEntries));
   const match = {
     totalFail: fail.total,
@@ -322,6 +403,7 @@ function matchBaseline(result, baselineEntries, options) {
 // since a split code can't be told apart without the finding. Every other
 // entry is kept as it is, so nothing new is accepted.
 function migrateBaselineEntries(baselineEntries, result) {
+  checkedEntriesOf(baselineEntries, 'migrateBaselineEntries');
   const entries = entriesOf(baselineEntries).map((entry) =>
     entry && typeof entry === 'object' ? { ...entry } : entry
   );

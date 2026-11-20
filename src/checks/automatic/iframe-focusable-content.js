@@ -7,7 +7,7 @@
  * @atomic true
  * @summary <iframe>/<frame> elements with tabindex="-1" must not contain focusable content
  * @standard WCAG 2.2
- * @sc 2.1.1
+ * @sc 2.1.1, 2.1.3
  * @applicability
  *   Applies to <iframe>/<frame> elements with an explicit negative
  *   tabindex, whose embedded document is same-origin and reachable via
@@ -36,14 +36,14 @@
  *   - `IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE` (fail): a frame with a
  *     negative tabindex holds content in the tab order, which Tab skips, so
  *     a keyboard user cannot reach it.
- *     Basis: WCAG 2.1.1; ACT akn7bn; HTML sequential focus navigation.
+ *     Basis: WCAG 2.1.1; WCAG 2.1.3; ACT akn7bn; HTML sequential focus navigation.
  *   - `IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT` (cantTell): a frame
  *     with a negative tabindex holds one focusable element, but focus moved
  *     straight on from it, so keyboard access is checked in a real browser.
  *     It leans pass when that element is an empty focus guard (a plain
  *     element made focusable by tabindex alone, with no text, content, name
  *     or role) and focus left the frame.
- *     Basis: WCAG 2.1.1 (not settled); ACT akn7bn (not settled).
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); ACT akn7bn (not settled).
  * @implementation-notes
  * - Scoped to same-origin, currently-accessible content only
  *   (contentDocument access is wrapped in try/catch and treated as "no
@@ -76,8 +76,18 @@ const meta = {
     descriptionKey: 'iframeFocusableContent_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag211', 'structure', 'atomic', 'automatic', 'keyboard', 'iframe'],
-  wcagSc: ['2.1.1'],
+  tags: [
+    'wcag2a',
+    'wcag211',
+    'wcag2aaa',
+    'wcag213',
+    'structure',
+    'atomic',
+    'automatic',
+    'keyboard',
+    'iframe'
+  ],
+  wcagSc: ['2.1.1', '2.1.3'],
   normativeMappings: [
     {
       standard: 'WCAG',
@@ -85,27 +95,23 @@ const meta = {
       requirement: '2.1.1',
       title: 'Keyboard',
       conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.1.3',
+      title: 'Keyboard (No Exception)',
+      conformanceLevel: 'AAA'
     }
   ],
   defaultSeverity: 'moderate',
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '2.1.1': ['iframe-tabindex-negative-content-not-focusable'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT: {
-      steps: [
-        'Click on the page just before the frame the report names, then press Tab to move toward it.',
-        'Keep pressing Tab and watch whether focus ever lands inside the frame, and where it goes when it would arrive there.',
-        'Inspect the focusable element inside the frame in the Elements panel: note whether it is an empty focus guard or a real link or control with content.',
-        "If it is a real link or control, try every other keyboard route to it (Shift+Tab, the frame's own controls) to see if it can be reached and used."
-      ],
-      passWhen:
-        'The only focusable element inside the frame is an empty focus guard that sends focus on, and nothing a user needs inside the frame is left out of keyboard reach.',
-      failWhen:
-        'A real link or control inside the frame cannot be reached or used with the keyboard because focus skips or bounces away from it, which fails WCAG 2.1.1.'
+  coverage: {
+    facetsBySc: {
+      '2.1.1': ['iframe-tabindex-negative-content-not-focusable'],
+      '2.1.3': ['iframe-tabindex-negative-content-not-focusable']
     }
   }
 };
@@ -587,18 +593,38 @@ function runInPage(ctx) {
       continue;
     }
 
+    // The tabindex as written, and the first element it puts out of reach.
+    const tabindex = String(dom.getAttribute(el, 'tabindex')).trim();
+    const first =
+      typeof helpers.describeElement === 'function'
+        ? helpers.describeElement(candidates[0], { text: true })
+        : '';
+    const more = candidates.length - 1;
     failOccurrences.push(
       helpers.reportOccurrence(el, {
-        summary:
-          'This frame has tabindex="-1" but its content contains focusable elements, which keyboard users cannot reach.',
-        hint: 'Remove focusable content from the frame, or remove tabindex="-1" if the frame is meant to be reachable.',
+        summary: !first
+          ? `This <${tag}> has tabindex="${tabindex}", so keyboard users can't reach the focusable elements inside it.`
+          : more
+            ? `This <${tag}> has tabindex="${tabindex}", so keyboard users can't reach the focusable elements inside it: ${first} and ${more} more.`
+            : `This <${tag}> has tabindex="${tabindex}", so keyboard users can't reach the ${first} inside it.`,
+        hint: `Remove focusable content from the frame, or remove tabindex="${tabindex}" if the frame is meant to be reachable.`,
         i18n: {
-          summaryKey: 'iframeFocusableContent_summary_fail',
-          hintKey: 'iframeFocusableContent_hint_fail',
-          params: { element: tag }
+          summaryKey: !first
+            ? 'iframeFocusableContent_summary_fail_value'
+            : more
+              ? 'iframeFocusableContent_summary_fail_namedMore'
+              : 'iframeFocusableContent_summary_fail_named',
+          hintKey: 'iframeFocusableContent_hint_fail_value',
+          params: { element: tag, tabindex, ...(first ? { first, more: String(more) } : {}) }
         },
         data: {
-          details: { reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE', element: tag }
+          details: {
+            reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE',
+            element: tag,
+            tabindex,
+            focusableCount: candidates.length,
+            ...(first ? { firstFocusable: first } : {})
+          }
         }
       })
     );

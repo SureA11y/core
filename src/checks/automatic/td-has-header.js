@@ -5,19 +5,23 @@
 /**
  * @check td-has-header
  * @atomic true
- * @summary Data cells in large tables must have an associated header
+ * @summary Data cells in tables must have an associated header
  * @standard WCAG 2.2
  * @sc 1.3.1
  * @applicability
- *   `<table>` elements with at least 4 rows and at least 4 columns
- *   (a "large" table, where implicit row/column header association is
- *   useful; small tables are usually self-evident), and with
- *   NO `colspan`/`rowspan` anywhere in the table (a `rowspan` of 0, which
+ *   `<table>` elements with at least 2 rows and at least 2 columns as a
+ *   reader meets them: rows shown that hold something, columns with
+ *   something in some row (a single row or column has no rows and columns
+ *   for a header to relate, and an empty or hidden row or an empty column
+ *   doesn't make one a table of two),
+ *   and with NO `colspan`/`rowspan` anywhere in the table (a `rowspan` of 0, which
  *   grows the cell to the end of its row group, is a span; a `colspan` of 0
  *   is 1). A table whose role (the
  *   role attribute's first known, non-abstract token, in any case) is
  *   anything but table, grid or treegrid, such as a layout table with
- *   role="presentation", is left out: it has no data cells.
+ *   role="presentation", is left out: it has no data cells. A presentation
+ *   or none role that browsers ignore, on a table with a global ARIA
+ *   attribute or that can take focus, leaves it a table.
  * @expectation
  *   A table with no header cell at all is asked about once, on the table:
  *   markup can't tell a layout table, which needs no headers, from a data
@@ -39,11 +43,11 @@
  *   - `row`, `column`: where the cell sits in the table, counting from 0:
  *     rows from the top, cells from the left within the row.
  * @reason-codes
- *   - `TD_NO_ASSOCIATED_HEADER` (fail): a non-empty data cell in a large
- *     table that has header cells has no headers attribute and no header
+ *   - `TD_NO_ASSOCIATED_HEADER` (fail): a non-empty data cell in a table
+ *     that has header cells has no headers attribute and no header
  *     cell above it in its column or before it in its row.
  *     Basis: WCAG 1.3.1; H51; H43; HTML table model.
- *   - `TD_TABLE_NO_HEADERS` (cantTell): a large table with data in it has
+ *   - `TD_TABLE_NO_HEADERS` (cantTell): a table with data in it has
  *     no header cell at all; a person checks whether it holds data, which
  *     needs headers, or only lays out content, which needs none (F46).
  *     It leans fail when the table shows signs of data (most body cells
@@ -53,6 +57,10 @@
  *     as data; otherwise no lean.
  *     Basis: WCAG 1.3.1 (not settled); H51; F46.
  * @implementation-notes
+ * - Any size from 2 by 2, because F91 applies to all data tables: a small
+ *   price list or timetable needs its headers as much as a large one, and
+ *   a table without any is the kind authors make most in a content editor.
+ *   Until 1.17.0 the rule only looked at tables of 4 by 4 or more.
  * - Closes the gap `table-th-has-data-cells` deferred (see
  *   that rule's own implementation notes): this is the fuller positional
  *   header-association algorithm, but still intentionally scoped,
@@ -67,9 +75,9 @@
 const id = 'td-has-header';
 
 const meta = {
-  title: 'Data cells in large tables must have an associated header',
+  title: 'Data cells in tables must have an associated header',
   description:
-    'Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.',
+    'Checks that every <td> in a simple (no colspan/rowspan) table of at least 2 rows and 2 columns has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.',
   i18n: {
     titleKey: 'tdHasHeader_title',
     descriptionKey: 'tdHasHeader_description'
@@ -90,29 +98,14 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.3.1': ['td-has-header'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TD_TABLE_NO_HEADERS: {
-      steps: [
-        'Look at the table the report names on screen.',
-        'Decide whether it presents data in rows and columns, with a top row or first column that labels the rest, or only lays out content side by side.',
-        'If it holds data, inspect the label row or column and check whether it uses <th> elements (or headers attributes).'
-      ],
-      passWhen:
-        'The table only lays out content (and should say so with role="presentation"), or its labelling cells are marked as headers.',
-      failWhen:
-        'The table holds data but no cell is marked as a header, so screen reader users are not told what each value means, which fails WCAG 1.3.1 (F46).'
-    }
-  }
+  coverage: { facetsBySc: { '1.3.1': ['td-has-header'] } }
 };
 
 function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
-  const MIN_SIZE = 4;
+  const MIN_SIZE = 2;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();
@@ -180,7 +173,7 @@ function runInPage(ctx) {
   // (<td><b>Name</b></td>).
   function isBold(cell) {
     if (weightBold(cell)) return true;
-    const kids = Array.from(dom.children(cell) || []);
+    const kids = [...(dom.children(cell) || [])];
     return (
       kids.length === 1 &&
       trim(dom.textContent(kids[0])) === trim(dom.textContent(cell)) &&
@@ -230,6 +223,75 @@ function runInPage(ctx) {
     return null;
   }
 
+  function cellText(cell) {
+    const all = trim(String(dom.textContent(cell) || '').replace(/\s+/g, ' '));
+    return all.length > 40 ? `${all.slice(0, 39)}…` : all;
+  }
+
+  // The message of a cell with no header, when a cell that looks like a
+  // header is not counted as one: the cell itself (self), the first such
+  // cell above it (col) or at the start of its row (row). null otherwise.
+  function headerMessage(self, col, row) {
+    if (self && self.kind === 'role') {
+      const { role, text } = self;
+      return {
+        summary: `This <th> has role="${role}", which makes it an ordinary cell, so it heads nothing and has no header of its own.`,
+        hint: `Remove role="${role}" from the <th> so it heads its column or row (or give it role="columnheader" or role="rowheader").`,
+        summaryKey: 'tdHasHeader_summary_fail_thRole',
+        hintKey: 'tdHasHeader_hint_fail_thRole',
+        params: { role },
+        detail: { cell: 'self', kind: 'role', role, text }
+      };
+    }
+    if (self && self.kind === 'theadTd') {
+      return {
+        summary:
+          "This cell is in the table's <thead> but is a <td>, so it heads nothing, and the cells below it have no column header.",
+        hint: 'Make the cells of the header row <th>.',
+        summaryKey: 'tdHasHeader_summary_fail_theadTd',
+        hintKey: 'tdHasHeader_hint_fail_theadTd',
+        params: {},
+        detail: { cell: 'self', kind: 'theadTd', text: self.text }
+      };
+    }
+    const near = col || row;
+    if (!near) return null;
+    const where = col ? 'col' : 'row';
+    const { text } = near;
+    const detail = { cell: where, ...near };
+    if (near.kind === 'theadTd') {
+      return {
+        summary: `This data cell has no header: the cell above it in the <thead> ("${text}") is a <td>, not a <th>, so it heads nothing.`,
+        hint: 'Make the cells of the header row <th>.',
+        summaryKey: 'tdHasHeader_summary_fail_colTheadTd',
+        hintKey: 'tdHasHeader_hint_fail_theadTd',
+        params: { text },
+        detail
+      };
+    }
+    const place = col ? 'above it' : 'at the start of its row';
+    if (near.kind === 'hidden') {
+      const { hiddenBy } = near;
+      return {
+        summary: `This data cell has no header: the <th> ${place} ("${text}") is hidden from screen readers by ${hiddenBy}, so it heads nothing.`,
+        hint: 'Let screen readers read the header cells, or give this cell a headers attribute that points at a header they read.',
+        summaryKey: `tdHasHeader_summary_fail_${where}Hidden`,
+        hintKey: 'tdHasHeader_hint_fail_hidden',
+        params: { text, hiddenBy },
+        detail
+      };
+    }
+    const { role } = near;
+    return {
+      summary: `This data cell has no header: the <th> ${place} ("${text}") has role="${role}", which makes it an ordinary cell.`,
+      hint: `Remove role="${role}" from the header cells, or give them role="${col ? 'columnheader' : 'rowheader'}".`,
+      summaryKey: `tdHasHeader_summary_fail_${where}Role`,
+      hintKey: `tdHasHeader_hint_fail_${where}Role`,
+      params: { text, role },
+      detail
+    };
+  }
+
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
@@ -239,15 +301,35 @@ function runInPage(ctx) {
   for (const table of tables) {
     if (!table || !table.rows) continue;
 
-    const tableRole = firstRole(table);
+    let tableRole = firstRole(table);
+    // role="presentation" or "none" on a table with a global ARIA attribute
+    // (aria-label) or that can take focus is ignored by browsers (WAI-ARIA's
+    // presentational roles conflict resolution): it stays a table.
+    if (
+      (tableRole === 'presentation' || tableRole === 'none') &&
+      typeof helpers.isPresentationalRoleIgnored === 'function' &&
+      helpers.isPresentationalRoleIgnored(table)
+    ) {
+      tableRole = '';
+    }
     if (tableRole && !TABLE_ROLES.includes(tableRole)) continue;
 
-    const rows = Array.from(table.rows);
+    const rows = [...table.rows];
     if (rows.length < MIN_SIZE) continue;
 
-    const rowCells = rows.map((r) => Array.from(r.cells || []));
+    const rowCells = rows.map((r) => [...(r.cells || [])]);
     const maxCols = rowCells.reduce((m, cells) => Math.max(m, cells.length), 0);
     if (maxCols < MIN_SIZE) continue;
+    // Its size as a reader meets it: the rows shown with a cell that holds
+    // something, and the columns with such a cell in some row. A spacer row,
+    // a hidden template row or an empty column doesn't make a single row or
+    // column a table of two.
+    const shownRows = rowCells.filter(
+      (cells, i) => isEligible(rows[i]) && cells.some((c) => !isEmptyCell(c))
+    );
+    const usedColumns = new Set();
+    for (const cells of shownRows) cells.forEach((c, i) => !isEmptyCell(c) && usedColumns.add(i));
+    if (shownRows.length < MIN_SIZE || usedColumns.size < MIN_SIZE) continue;
 
     // A rowspan of 0 spans too: the cell grows down to the end of its row
     // group (HTML, forming a table). A colspan of 0 is 1. parseInt reads
@@ -290,15 +372,58 @@ function runInPage(ctx) {
       const hasData = rowCells.some((cells) => cells.some((c) => isEligible(c) && !isEmptyCell(c)));
       if (hasData) {
         const kind = tableKind(table, rowCells);
+        // A cell that looks like a header but is not counted as one
+        // (notHeader): the message names it.
+        let looks = null;
+        for (const cells of rowCells) {
+          for (const c of cells) {
+            looks = looks || notHeader(c);
+          }
+        }
+        const lk = looks ? looks.kind : '';
         questions.push(
           helpers.reportOccurrence(table, {
-            summary: 'This table has no header cells. If it holds data, its cells have no headers.',
-            hint: 'If the table holds data, mark its header cells with <th>, or give its cells a headers attribute. If it only lays out content, give it role="presentation".',
+            summary:
+              lk === 'role'
+                ? `This table has no header cells that count: its <th> ("${looks.text}") has role="${looks.role}", which makes it an ordinary cell. If it holds data, its cells have no headers.`
+                : lk === 'hidden'
+                  ? `This table has no header cells that count: its <th> ("${looks.text}") is hidden from screen readers by ${looks.hiddenBy}. If it holds data, its cells have no headers.`
+                  : lk === 'theadTd'
+                    ? `This table has no header cells: its <thead> holds <td> cells ("${looks.text}"), not <th>. If it holds data, its cells have no headers.`
+                    : 'This table has no header cells. If it holds data, its cells have no headers.',
+            hint:
+              lk === 'role'
+                ? `If the table holds data, remove role="${looks.role}" from its <th> cells (or give them role="columnheader" or role="rowheader"). If it only lays out content, give the table role="presentation".`
+                : lk === 'hidden'
+                  ? 'If the table holds data, let screen readers read its header cells. If it only lays out content, give the table role="presentation".'
+                  : lk === 'theadTd'
+                    ? 'If the table holds data, make the cells of its header row <th>. If it only lays out content, give the table role="presentation".'
+                    : 'If the table holds data, mark its header cells with <th>, or give its cells a headers attribute. If it only lays out content, give it role="presentation".',
             occurrenceOutcome: 'cantTell',
             i18n: {
-              summaryKey: 'tdHasHeader_summary_cantTell_noHeaders',
-              hintKey: 'tdHasHeader_hint_cantTell_noHeaders',
-              params: {}
+              summaryKey:
+                lk === 'role'
+                  ? 'tdHasHeader_summary_cantTell_noHeadersRole'
+                  : lk === 'hidden'
+                    ? 'tdHasHeader_summary_cantTell_noHeadersHidden'
+                    : lk === 'theadTd'
+                      ? 'tdHasHeader_summary_cantTell_noHeadersTheadTd'
+                      : 'tdHasHeader_summary_cantTell_noHeaders',
+              hintKey:
+                lk === 'role'
+                  ? 'tdHasHeader_hint_cantTell_noHeadersRole'
+                  : lk === 'hidden'
+                    ? 'tdHasHeader_hint_cantTell_noHeadersHidden'
+                    : lk === 'theadTd'
+                      ? 'tdHasHeader_hint_cantTell_noHeadersTheadTd'
+                      : 'tdHasHeader_hint_cantTell_noHeaders',
+              params: looks
+                ? {
+                    text: looks.text,
+                    ...(looks.role ? { role: looks.role } : {}),
+                    ...(looks.hiddenBy ? { hiddenBy: looks.hiddenBy } : {})
+                  }
+                : {}
             },
             uncertainty: {
               code: 'judgement-required',
@@ -324,18 +449,45 @@ function runInPage(ctx) {
                   }
                 }
               : {}),
-            data: { details: { reasonCode: 'TD_TABLE_NO_HEADERS' } }
+            data: {
+              details: { reasonCode: 'TD_TABLE_NO_HEADERS', ...(looks ? { notHeader: looks } : {}) }
+            }
           })
         );
       }
       continue;
     }
 
+    // Why a cell that looks like a header is not counted as one, for the
+    // message: a <th> with another role, a <th> hidden from assistive
+    // technology, or a <td> in the table's <thead>. null for other cells.
+    function notHeader(cell) {
+      const tag = String(dom.tagName(cell) || '').toLowerCase();
+      if (tag === 'th') {
+        if (!isEligible(cell)) {
+          const hid = typeof helpers.hiddenCause === 'function' ? helpers.hiddenCause(cell) : null;
+          return hid ? { kind: 'hidden', text: cellText(cell), hiddenBy: hid.hiddenBy } : null;
+        }
+        const role = firstRole(cell);
+        return role ? { kind: 'role', text: cellText(cell), role } : null;
+      }
+      const row = dom.parentElement(cell);
+      const section = row ? dom.parentElement(row) : null;
+      if (tag === 'td' && section && String(dom.tagName(section) || '').toLowerCase() === 'thead') {
+        return { kind: 'theadTd', text: cellText(cell) };
+      }
+      return null;
+    }
+
     const colHasHeaderAbove = new Array(maxCols).fill(false);
+    // The first cell above, in each column, that looks like a header but is
+    // not counted as one (notHeader).
+    const colNotHeader = new Array(maxCols).fill(null);
 
     for (let r = 0; r < rowCells.length; r++) {
       const cells = rowCells[r];
       let rowHasHeaderBefore = false;
+      let rowNotHeader = null;
 
       for (let c = 0; c < cells.length; c++) {
         const cell = cells[c];
@@ -346,6 +498,12 @@ function runInPage(ctx) {
           rowHasHeaderBefore = true;
           continue;
         }
+        const why = notHeader(cell);
+        // Read before this cell is recorded, so a cell is not its own header.
+        const colWhy = colNotHeader[c];
+        const rowWhy = rowNotHeader;
+        if (why && !colNotHeader[c]) colNotHeader[c] = why;
+        if (why && why.kind !== 'theadTd' && !rowNotHeader) rowNotHeader = why;
 
         // An aria-hidden data cell isn't exposed to AT either, so it has
         // no need for an accessible header association.
@@ -360,19 +518,28 @@ function runInPage(ctx) {
         if (colHasHeaderAbove[c]) continue;
         if (rowHasHeaderBefore) continue;
 
+        const msg = headerMessage(why, colWhy, rowWhy);
         occurrences.push(
           helpers.reportOccurrence(cell, {
-            summary:
-              'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
-            hint: "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
+            summary: msg
+              ? msg.summary
+              : 'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
+            hint: msg
+              ? msg.hint
+              : "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
             occurrenceOutcome: 'fail',
             i18n: {
-              summaryKey: 'tdHasHeader_summary_fail',
-              hintKey: 'tdHasHeader_hint_fail',
-              params: { row: String(r), column: String(c) }
+              summaryKey: msg ? msg.summaryKey : 'tdHasHeader_summary_fail',
+              hintKey: msg ? msg.hintKey : 'tdHasHeader_hint_fail',
+              params: { row: String(r), column: String(c), ...(msg ? msg.params : {}) }
             },
             data: {
-              details: { reasonCode: 'TD_NO_ASSOCIATED_HEADER', row: r, column: c }
+              details: {
+                reasonCode: 'TD_NO_ASSOCIATED_HEADER',
+                row: r,
+                column: c,
+                ...(msg ? { notHeader: msg.detail } : {})
+              }
             }
           })
         );

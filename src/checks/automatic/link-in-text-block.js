@@ -14,8 +14,9 @@
  *   text (text other than white space in the link's flat tree and, where the
  *   page has a layout, a box with some area) and whose immediate parent
  *   element also has text with a letter or a digit beside
- *   it: a direct-child text node, or text in an inline element on the same
- *   line that is not a link, is not drawn invisibly, and is not an item of
+ *   it, on the link's own line (a `<br>`, or a child laid out as a block,
+ *   starts another): a direct-child text node, or text in an inline element
+ *   that is not a link, is not drawn invisibly, and is not an item of
  *   a flex or grid parent (i.e. the link sits inline within a run of
  *   plain text, not as a standalone item, e.g. not the sole content of a
  *   <li> nav item, nor one of a row of links separated by "|" or "·").
@@ -77,7 +78,9 @@
  * @reason-codes
  *   - `COLOR_ONLY_DIFFERENTIATION` (fail): a link in a block of text is told
  *     apart from the surrounding text by color alone, with less than 3:1
- *     contrast between the two.
+ *     contrast between the two. At 1.00:1, drawn in the text's own color,
+ *     the summary says nothing sets the link apart
+ *     (`linkInTextBlock_summary_fail_sameColor`).
  *     Basis: WCAG 1.4.1; F73; G183.
  *   - `LINK_COLOR_CONTRAST_ONLY` (cantTell): a link in a block of text is
  *     told apart by color alone at 3:1 or more; whether hover and focus add
@@ -208,7 +211,9 @@
  *     available in this run, so the link could not be checked.
  *     Basis: WCAG 1.4.1 (not settled).
  *   - `ENGINE_EXCEPTION` (cantTell): the rule stopped on an internal error
- *     for this link; it is to be checked by hand.
+ *     for this link, or could not read its style (jsdom throws reading the
+ *     computed style of an element a few thousand levels deep); it is to be
+ *     checked by hand.
  *     Basis: WCAG 1.4.1 (not settled).
  * @implementation-notes
  * - "Surrounding text style" is approximated as the link's immediate
@@ -293,199 +298,7 @@ const meta = {
     'TEXT_SHADOW',
     'TEXT_STROKE'
   ],
-  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ANCESTOR_OPACITY: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        'Check whether the link is set apart by an underline, bold, italics, a border or another mark; read colors from the screen, since the fading changes them.',
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    },
-    BACKGROUND_FILTER_OR_BACKDROP_FILTER: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        'Check whether the link is set apart by an underline, bold, italics, a border or another mark; read colors from the screen, since the filter changes them.',
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    },
-    BACKGROUND_IMAGE_OR_GRADIENT: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        'Check whether the link is set apart by an underline, bold, italics, a border or another mark, not just its color over the background image.',
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    },
-    BACKGROUND_NOT_OPAQUE_AT_ROOT: {
-      steps: [
-        'Find the link the report names inside its paragraph; the page sets no opaque background, so what shows around it is the canvas the browser paints, or, in a frame, the page around it.',
-        'View the page where it is shown: inside the page that embeds it, with forced colors off, and in each color scheme the page supports (light and dark).',
-        "In each setting, check whether the link's background color stands out from the background around it, or an underline or another non-color mark sets the link apart."
-      ],
-      passWhen:
-        "In every setting where the page is shown, the link's background stands out from the one around it, or another non-color mark sets the link apart.",
-      failWhen:
-        "In some setting the link's background matches the one around it and only a color difference of less than 3:1 sets the link apart, which fails WCAG 1.4.1 (F73)."
-    },
-    BACKGROUND_OVERLAP: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        'Check whether the link is set apart by an underline, bold, italics, a border or another mark, not just its color.',
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    },
-    COLOR_NOT_COMPUTABLE: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        'Check whether the link is set apart on screen by an underline, bold, italics, a border or another mark.',
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    },
-    CONTRAST_HELPERS_UNAVAILABLE: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        'Check whether the link is set apart by an underline, bold, italics, a border or another mark.',
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    },
-    ELEMENT_OPACITY: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        'Check whether the link is set apart by an underline, bold, italics, a border or another mark; read its color from the screen, since its own opacity changes it.',
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    },
-    ENGINE_EXCEPTION: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        'Check whether the link is set apart by an underline, bold, italics, a border or another mark.',
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    },
-    LINK_COLOR_CONTRAST_ONLY: {
-      steps: [
-        'Find the link the report names inside its paragraph; the report gives its contrast with the surrounding text.',
-        'Hover the pointer over the link and check whether an underline or another non-color mark appears.',
-        'Click just before the link and press Tab until it has focus, and check again for a non-color mark.'
-      ],
-      passWhen: 'Both hover and focus add a non-color cue, such as an underline, to the link.',
-      failWhen:
-        'Hover or focus changes only the color, so color alone sets the link apart, which fails WCAG 1.4.1 (G183, F73).'
-    },
-    MIX_BLEND_MODE: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        'Check whether the link is set apart by an underline, bold, italics, a border or another mark; read colors from the screen, since blending changes them.',
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    },
-    PSEUDO_ELEMENT_COLOR: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        "Check whether the link is set apart by an underline, bold, italics, a border or another mark; if it sits on the paragraph's first line or first letter, compare it with the text on that line.",
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    },
-    SELECT_OPTION_COLOR: {
-      steps: [
-        'Find the drop-down the report names and open its list of options.',
-        "Look at the option the report names next to the other options' text.",
-        "Check whether it is set apart by something other than color (an underline, bold, a mark); if only color differs, read both colors with the color picker's eyedropper and check the contrast is at least 3:1."
-      ],
-      passWhen:
-        'The option is set apart by a non-color cue, or its color contrasts with the other text by at least 3:1 with a non-color cue on focus.',
-      failWhen:
-        'Color alone sets the option apart, below 3:1 or with no other cue, which fails WCAG 1.4.1 (F73).'
-    },
-    TEXT_DECORATION_NOT_RESOLVABLE: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        'Check whether the link is underlined on screen, or set apart by bold, italics, a border or another mark.',
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    },
-    TEXT_SHADOW: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        'Check whether the link is set apart by an underline, bold, italics, a border or another mark; a shadow shared with the text does not count.',
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    },
-    TEXT_STROKE: {
-      steps: [
-        'Find the link the report names inside its paragraph and look at it next to the surrounding text.',
-        'Check whether the link is set apart by an underline, bold, italics, a border or another mark; read colors from the screen, where the stroke is drawn.',
-        "If nothing but color differs, use the color picker's eyedropper in the developer tools to read the link color and the text color as drawn, and check their contrast is at least 3:1.",
-        'Then hover the pointer over the link and Tab to it, and check that an underline or another non-color mark appears.'
-      ],
-      passWhen:
-        'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
-      failWhen:
-        'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
-    }
-  }
+  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } }
 };
 
 function runInPage(ctx) {
@@ -622,15 +435,31 @@ function runInPage(ctx) {
     );
   }
 
-  function resolveUnderlineFromCssom(el) {
-    const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
-    if (!doc || typeof dom.get(el, 'matches') !== 'function')
-      return { underlined: false, resolved: false };
+  // A sheet or a group rule whose media or @supports condition doesn't hold
+  // now (@media print on a screen scan) styles nothing the scan sees.
+  function cssConditionApplies(x) {
+    return typeof helpers.cssConditionApplies === 'function'
+      ? helpers.cssConditionApplies(x)
+      : true;
+  }
 
-    let best = null; // { rank, order, underlined }
-    let order = 0;
-    let unreadableSheet = false;
-    let unparsableSelector = false;
+  // The parts of a set of style rules (found.parts, each selector at
+  // `field`) that may match el, in order: every part a selector in them
+  // could match, as helpers.selectorIndex finds them, so a page with many
+  // rules costs links x the rules that could apply. The index is made once.
+  function candidatePartsOf(found, el, field) {
+    if (typeof helpers.selectorIndex !== 'function') return found.parts;
+    if (!found.index) found.index = helpers.selectorIndex(found.parts.map((p) => p[field]));
+    return found.index.candidates(el).map((i) => found.parts[i]);
+  }
+
+  // The style rule parts that set an underline on an element at rest, in
+  // the sheets' order, found once per run: { parts, unreadableSheet,
+  // broken }. Each part is { part, rank, underlined }.
+  const underlineRulesByDoc = new Map();
+  function underlineRulesOf(doc) {
+    if (underlineRulesByDoc.has(doc)) return underlineRulesByDoc.get(doc);
+    const found = { parts: [], unreadableSheet: false, broken: false };
 
     function consider(cssRule) {
       const decl = underlineFromDeclaration(cssRule.style);
@@ -644,24 +473,15 @@ function runInPage(ctx) {
         if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
           continue;
         }
-        let matched;
-        try {
-          matched = dom.matches(el, part);
-        } catch {
-          unparsableSelector = true;
-          continue;
-        }
-        if (!matched) continue;
-        order += 1;
         const rank = (decl.important ? 1e9 : 0) + specificityOf(part);
-        if (!best || rank >= best.rank) best = { rank, order, underlined: decl.underlined };
+        found.parts.push({ part, rank, underlined: decl.underlined });
       }
     }
 
     function walk(rules, depth) {
       if (!rules || depth > MAX_NESTED_DEPTH) return;
       for (const cssRule of rules) {
-        if (!cssRule) continue;
+        if (!cssRule || !cssConditionApplies(cssRule)) continue;
         if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
           consider(cssRule);
           continue;
@@ -678,17 +498,44 @@ function runInPage(ctx) {
 
     try {
       for (const sheet of dom.styleSheets(doc) || []) {
+        if (!cssConditionApplies(sheet)) continue;
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
         } catch {
-          unreadableSheet = true; // cross-origin, not inspectable
+          found.unreadableSheet = true; // cross-origin, not inspectable
           continue;
         }
         if (rules) walk(rules, 0);
       }
     } catch {
+      found.broken = true;
+    }
+    underlineRulesByDoc.set(doc, found);
+    return found;
+  }
+
+  // Whether the style sheets underline el at rest (see underlineFromDeclaration
+  // for which declaration wins): { underlined, resolved }.
+  function resolveUnderlineFromCssom(el) {
+    const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
+    if (!doc || typeof dom.get(el, 'matches') !== 'function')
       return { underlined: false, resolved: false };
+
+    const found = underlineRulesOf(doc);
+    if (found.broken) return { underlined: false, resolved: false };
+    let best = null; // { rank, underlined }
+    let unparsableSelector = false;
+    for (const { part, rank, underlined } of candidatePartsOf(found, el, 'part')) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        unparsableSelector = true;
+        continue;
+      }
+      if (!matched) continue;
+      if (!best || rank >= best.rank) best = { rank, underlined };
     }
 
     // The inline style attribute outranks every stylesheet declaration.
@@ -700,7 +547,7 @@ function runInPage(ctx) {
     // No author declaration reached this element. If a sheet or selector was
     // unreadable, one of them might have, so the answer is unknown; otherwise
     // the UA default stands, and for a link that means underlined.
-    if (unreadableSheet || unparsableSelector) return { underlined: false, resolved: false };
+    if (found.unreadableSheet || unparsableSelector) return { underlined: false, resolved: false };
     return { underlined: uaUnderlines(el), resolved: true };
   }
 
@@ -784,9 +631,9 @@ function runInPage(ctx) {
   function hasVisibleImageChild(el) {
     let imgs;
     try {
-      imgs = Array.from(
-        dom.querySelectorAll(el, 'img, svg, picture, canvas, [role~="img" i], [role~="image" i]')
-      ).filter((img) => {
+      imgs = [
+        ...dom.querySelectorAll(el, 'img, svg, picture, canvas, [role~="img" i], [role~="image" i]')
+      ].filter((img) => {
         const name = String(dom.localName(img) || '').toLowerCase();
         if (['img', 'svg', 'picture', 'canvas'].includes(name)) return true;
         return explicitRole(img) === 'img';
@@ -865,7 +712,7 @@ function runInPage(ctx) {
     function walk(rules, depth) {
       if (!rules || depth > MAX_NESTED_DEPTH) return;
       for (const cssRule of rules) {
-        if (!cssRule) continue;
+        if (!cssRule || !cssConditionApplies(cssRule)) continue;
         if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
           consider(cssRule);
           continue;
@@ -881,6 +728,7 @@ function runInPage(ctx) {
     }
     try {
       for (const sheet of (doc && dom.styleSheets(doc)) || []) {
+        if (!cssConditionApplies(sheet)) continue;
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -1042,30 +890,54 @@ function runInPage(ctx) {
     }
     return null;
   }
-  // The element whose style is the surrounding text's, for the parent: the
-  // parent itself when text sits in it directly, else the inline element
-  // beside the link that holds it, else null (no text around the link).
+  // The element whose style is the surrounding text's, for the link (or the
+  // inline wrapper holding it, `child`) in parent: the parent itself when
+  // text sits in it directly, else the inline element beside the link that
+  // holds it, else null (no text around the link). Only text on the link's
+  // own line counts: a <br>, or a child laid out as a block, starts another
+  // line, so a link alone on its line ("Phone 555 (Fax)<br><a>mail</a>") is
+  // in no block of text, whatever the lines around it hold. The parent's
+  // children are read once, a line at a time, for all its links.
   const surroundingTextElement = new Map();
-  function textElementOf(parent) {
-    if (!parent) return null;
+  const INLINE_LEVEL = /^(inline|contents|none|ruby)|^$/;
+  function breaksLine(n) {
+    if ((dom.tagName(n) || '').toLowerCase() === 'br') return true;
+    const display = String((safeComputedStyle(n) || {}).display || '');
+    return !INLINE_LEVEL.test(display.split(/\s+/)[0]);
+  }
+  function linesOf(parent) {
     if (surroundingTextElement.has(parent)) return surroundingTextElement.get(parent);
-    let found = null;
+    // A flex or grid parent lays its children out as items, not lines of
+    // text: its own text still counts, its elements' does not.
+    const itemized = /flex|grid/.test(String((safeComputedStyle(parent) || {}).display || ''));
+    const lineOf = new Map();
+    let line = { text: null, inline: null };
     for (let n = dom.firstChild(parent); n; n = dom.nextSibling(n)) {
-      if (dom.nodeType(n) === 3 && TEXT.test(dom.nodeValue(n) || '')) {
-        found = parent;
-        break;
+      const type = dom.nodeType(n);
+      if (type === 3) {
+        if (!line.text && TEXT.test(dom.nodeValue(n) || '')) line.text = parent;
+        continue;
       }
-    }
-    if (!found && !/flex|grid/.test(String((safeComputedStyle(parent) || {}).display || ''))) {
-      for (let n = dom.firstElementChild(parent); n && !found; n = dom.nextElementSibling(n)) {
-        found = inlineTextElement(n);
+      if (type !== 1) continue;
+      if (!itemized && breaksLine(n)) {
+        // The element is a line of its own, and the text after it another.
+        lineOf.set(n, { text: null, inline: null });
+        line = { text: null, inline: null };
+        continue;
       }
+      lineOf.set(n, line);
+      if (!itemized && !line.inline) line.inline = inlineTextElement(n);
     }
-    surroundingTextElement.set(parent, found);
-    return found;
+    surroundingTextElement.set(parent, lineOf);
+    return lineOf;
+  }
+  function textElementOf(parent, child) {
+    if (!parent || !child) return null;
+    const line = linesOf(parent).get(child);
+    return line ? line.text || line.inline : null;
   }
   function hasSurroundingText(el, parent) {
-    return !!textElementOf(parent);
+    return !!textElementOf(parent, el);
   }
 
   const contrastOpts =
@@ -1169,9 +1041,9 @@ function runInPage(ctx) {
       }
     };
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         let rules;
         try {
@@ -1273,9 +1145,24 @@ function runInPage(ctx) {
           .trim()
           .split(/\s+/)[0];
         const name = String(dom.localName(source) || '').toLowerCase();
+        // The id, else the first class, escaped, where the selector so made
+        // names the element: an id holding a NUL or a lone surrogate, which
+        // CSS reads as U+FFFD, names none, and the class or the tag stands.
+        const named = (part) => {
+          try {
+            const sel = name + part(helpers.cssEscape);
+            return dom.matches(source, sel) ? sel : '';
+          } catch {
+            return '';
+          }
+        };
+        const base =
+          (blockId && named((esc) => '#' + esc(blockId))) ||
+          (cls && named((esc) => '.' + esc(cls))) ||
+          name;
         out = {
           color,
-          selector: name + (blockId ? '#' + blockId : cls ? '.' + cls : '') + '::first-line',
+          selector: base + '::first-line',
           otherCue:
             c.normalizeFontWeight(ps.fontWeight) !== c.normalizeFontWeight(blockCs.fontWeight) ||
             String(ps.fontStyle || '') !== String(blockCs.fontStyle || '') ||
@@ -1618,6 +1505,91 @@ function runInPage(ctx) {
     return false;
   }
 
+  // The :hover and :focus parts of every style rule in a document, with the
+  // state taken out, found once per run: { parts, readable }. Each part is
+  // { base, onHover, onFocus, cue, cueError, valid }: cue whether its
+  // declarations give a non-color cue, cueError where they can't be read.
+  // readable is false when a sheet can't be read.
+  const stateRulesByDoc = new Map();
+  function stateRulesOf(doc) {
+    if (stateRulesByDoc.has(doc)) return stateRulesByDoc.get(doc);
+    const found = { parts: [], readable: true };
+    const consider = (cssRule, selectorText) => {
+      for (const part of splitSelectorList(selectorText)) {
+        if (!/:(hover|focus|focus-visible|focus-within)\b/i.test(part)) continue;
+        const hover = /:hover\b/i.test(part);
+        const focus = /:focus(-visible|-within)?\b/i.test(part);
+        let base = part.replace(STATE_RE, '');
+        const onPseudo = /::?(before|after)\b/i.test(base);
+        base = base.replace(/::?(before|after)\b/gi, '');
+        if (/::[a-z-]+/i.test(base)) continue;
+        base = base.trim() || '*';
+        if (/[>+~]$/.test(base)) base += ' *';
+        let cue = false;
+        let cueError = false;
+        try {
+          cue = declaresCue(cssRule.style, onPseudo);
+        } catch {
+          cueError = true;
+        }
+        // valid: whether the selector parses, learnt from the first link
+        // matched against it (a selector that doesn't throws for none).
+        found.parts.push({ base, onHover: hover, onFocus: focus, cue, cueError, valid: null });
+      }
+    };
+    // A nested rule's selector, resolved against its parent's: `&` stands
+    // for the parent, and a selector without one is a descendant of it, so
+    // `nav a { &:hover {} }` reaches only the links in a nav.
+    const nestedSelector = (selector, parent) =>
+      !parent
+        ? selector
+        : splitSelectorList(selector)
+            .map((part) =>
+              part.indexOf('&') !== -1
+                ? part.split('&').join(':is(' + parent + ')')
+                : ':is(' + parent + ') ' + part.trim()
+            )
+            .join(', ');
+    const walk = (rules, depth, parent) => {
+      if (!rules || depth > MAX_NESTED_DEPTH) return;
+      for (const cssRule of rules) {
+        if (!cssRule || !cssConditionApplies(cssRule)) continue;
+        let selector = parent;
+        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
+          selector = nestedSelector(String(cssRule.selectorText), parent);
+          consider(cssRule, selector);
+        } else if (parent && cssRule.style && !cssRule.selectorText) {
+          // Declarations straight inside an at-rule within a style rule.
+          consider(cssRule, parent);
+        }
+        let nested;
+        try {
+          nested = cssRule.cssRules || null;
+        } catch {
+          nested = null;
+        }
+        if (nested && nested.length) walk(nested, depth + 1, selector);
+      }
+    };
+    try {
+      for (const sheet of dom.styleSheets(doc) || []) {
+        if (!cssConditionApplies(sheet)) continue;
+        let rules = null;
+        try {
+          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        } catch {
+          found.readable = false;
+          continue;
+        }
+        if (rules) walk(rules, 0, '');
+      }
+    } catch {
+      found.readable = false;
+    }
+    stateRulesByDoc.set(doc, found);
+    return found;
+  }
+
   function hoverFocusCues(el) {
     const out = { onHover: false, onFocus: false, readable: true };
     const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
@@ -1630,56 +1602,30 @@ function runInPage(ctx) {
     } catch {
       out.readable = false;
     }
-    const consider = (cssRule) => {
-      for (const part of splitSelectorList(cssRule.selectorText)) {
-        if (!/:(hover|focus|focus-visible|focus-within)\b/i.test(part)) continue;
-        const hover = /:hover\b/i.test(part);
-        const focus = /:focus(-visible|-within)?\b/i.test(part);
-        let base = part.replace(STATE_RE, '');
-        const onPseudo = /::?(before|after)\b/i.test(base);
-        base = base.replace(/::?(before|after)\b/gi, '');
-        if (/::[a-z-]+/i.test(base)) continue;
-        base = base.trim() || '*';
-        if (/[>+~]$/.test(base)) base += ' *';
-        let matched;
-        try {
-          matched = dom.matches(el, base);
-        } catch {
-          out.readable = false;
-          continue;
-        }
-        if (!matched || !declaresCue(cssRule.style, onPseudo)) continue;
-        if (hover) out.onHover = true;
-        if (focus) out.onFocus = true;
+    const found = stateRulesOf(doc);
+    if (!found.readable) out.readable = false;
+    for (const part of candidatePartsOf(found, el, 'base')) {
+      // A part that gives no cue matters only as a selector that can't be
+      // read, which it is for every link or none.
+      if (part.valid === false) {
+        out.readable = false;
+        continue;
       }
-    };
-    const walk = (rules, depth) => {
-      if (!rules || depth > MAX_NESTED_DEPTH) return;
-      for (const cssRule of rules) {
-        if (!cssRule) continue;
-        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) consider(cssRule);
-        let nested;
-        try {
-          nested = cssRule.cssRules || null;
-        } catch {
-          nested = null;
-        }
-        if (nested && nested.length) walk(nested, depth + 1);
+      if (part.valid === true && !part.cue && !part.cueError) continue;
+      let matched;
+      try {
+        matched = dom.matches(el, part.base);
+        part.valid = true;
+      } catch {
+        part.valid = false;
+        out.readable = false;
+        continue;
       }
-    };
-    try {
-      for (const sheet of dom.styleSheets(doc) || []) {
-        let rules = null;
-        try {
-          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
-        } catch {
-          out.readable = false;
-          continue;
-        }
-        if (rules) walk(rules, 0);
-      }
-    } catch {
-      out.readable = false;
+      if (!matched) continue;
+      if (part.cueError) throw new Error('style rule unreadable');
+      if (!part.cue) continue;
+      if (part.onHover) out.onHover = true;
+      if (part.onFocus) out.onFocus = true;
     }
     return out;
   }
@@ -1902,25 +1848,42 @@ function runInPage(ctx) {
     }
   }
 
-  for (const el of nodes) {
-    if (!el || !dom.get(el, 'getAttribute')) continue;
+  // The link's visibility filter, as the finding reports it.
+  function eligibilityInfoOf(el) {
+    const none = { targetSet: 'acc', accEligible: null, reasons: [] };
+    try {
+      return (
+        (helpers.getEligibilityInfo && helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })) ||
+        none
+      );
+    } catch {
+      return none;
+    }
+  }
 
+  // One link in the loop below.
+  function judgeLink(el) {
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
-    if (!eligible) continue;
+    if (!eligible) return;
 
-    if (!drawsText(el)) continue;
+    if (!drawsText(el)) return;
 
     const parent = textParentOf(el);
-    if (!hasSurroundingText(el, parent)) continue;
+    // The link, or the inline wrapper holding it, as a child of parent.
+    let lineChild = el;
+    while (lineChild && dom.parentElement(lineChild) !== parent) {
+      lineChild = dom.parentElement(lineChild);
+    }
+    if (!hasSurroundingText(lineChild, parent)) return;
 
     applicableCount += 1;
 
     const linkCs = safeComputedStyle(el);
     // The surrounding text's style: the parent's, or the inline element's
     // beside the link that holds the text.
-    const textEl = textElementOf(parent);
+    const textEl = textElementOf(parent, lineChild);
     const parentCs = safeComputedStyle(textEl);
 
     // Cues that do not depend on `text-decoration` come first, so a link
@@ -1929,14 +1892,14 @@ function runInPage(ctx) {
     const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
     if (linkWeight !== parentWeight) {
       decidedCount += 1;
-      continue;
+      return;
     }
 
     const linkStyle = (linkCs && linkCs.fontStyle) || 'normal';
     const parentStyle = (parentCs && parentCs.fontStyle) || 'normal';
     if (linkStyle !== parentStyle) {
       decidedCount += 1;
-      continue;
+      return;
     }
 
     // An underline the computed style vouches for settles the link before
@@ -1948,19 +1911,19 @@ function runInPage(ctx) {
       !isTransparentColor(linkCs && linkCs.textDecorationColor)
     ) {
       decidedCount += 1;
-      continue;
+      return;
     }
 
     // A border, box-shadow, outline, background image, icon or generated
     // content marks the link without relying on color.
     if (hasNonColorMark(el, linkCs) || cueOnContent(el, parent, parentCs)) {
       decidedCount += 1;
-      continue;
+      return;
     }
 
     if (!c) {
       markUndecided(el, 'CONTRAST_HELPERS_UNAVAILABLE');
-      continue;
+      return;
     }
 
     // An underline is a non-color cue: once it is found, the colors do not
@@ -1980,7 +1943,7 @@ function runInPage(ctx) {
     }
     if (underlined === true) {
       decidedCount += 1;
-      continue;
+      return;
     }
 
     // The colors of the link or of the text around it in the color scheme
@@ -1992,7 +1955,7 @@ function runInPage(ctx) {
       (c.colorSchemeUnread(el) || c.colorSchemeUnread(textEl))
     ) {
       markUndecided(el, 'COLOR_NOT_COMPUTABLE');
-      continue;
+      return;
     }
 
     let flagged = false;
@@ -2178,7 +2141,7 @@ function runInPage(ctx) {
       const known = knownFromTextColors(undecidedReason, info);
       if (!known) {
         markUndecided(el, undecidedReason, undecidedLean(undecidedReason, info), undecidedDetail);
-        continue;
+        return;
       }
       ratio = known.ratio;
       beforeOpacity = undecidedReason === 'ANCESTOR_OPACITY';
@@ -2199,21 +2162,21 @@ function runInPage(ctx) {
 
     if (backgroundDiffers) {
       decidedCount += 1;
-      continue;
+      return;
     }
 
     // No underline was found. If this environment could not tell, the
     // colors cannot settle it either.
     if (underlined === null) {
       markUndecided(el, 'TEXT_DECORATION_NOT_RESOLVABLE');
-      continue;
+      return;
     }
 
     // Below 3:1, a highlight of the link's own would set it apart, but
     // whether it differs from the canvas the page is drawn on is unknown.
     if (flagged && rootUnknown) {
       markUndecided(el, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
-      continue;
+      return;
     }
 
     // Color is the only cue at rest. At 3:1 or more, G183 also needs a
@@ -2221,29 +2184,54 @@ function runInPage(ctx) {
     colorCompared += 1;
     if (!flagged) {
       contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity, schemeDetail });
-      continue;
+      return;
     }
 
     decidedCount += 1;
 
-    const eligInfo = helpers.getEligibilityInfo
-      ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
-      : null;
+    const eligInfo = eligibilityInfoOf(el);
     const tag = (dom.tagName(el) || '').toLowerCase();
-    const ratioStr = c.round2 ? c.round2(ratio) : String(ratio);
+    // The ratio the summary states, to two decimals, rounded down where
+    // rounding would reach 3: a link under 3:1 never reads as 3.00:1.
+    const hasRatio = Number.isFinite(ratio);
+    let ratioStr = c.round2 ? c.round2(ratio) : String(ratio);
+    if (hasRatio && Number(ratioStr) >= 3) ratioStr = (Math.floor(ratio * 100) / 100).toFixed(2);
+    // The ratio is stated with the summary. Under an ancestor's opacity it
+    // is the one before the fading, which only brings the colors closer.
+    // At 1.00:1 the link is drawn in the surrounding text's color: color
+    // sets it apart no more than anything else does, and the summary says
+    // nothing does. The outcome and its reason code are the same (F73).
+    const sameColor = hasRatio && Number(ratioStr) === 1;
+    const summaryKey = sameColor
+      ? 'linkInTextBlock_summary_fail_sameColor'
+      : !hasRatio
+        ? 'linkInTextBlock_summary_fail'
+        : beforeOpacity
+          ? 'linkInTextBlock_summary_fail_ratioBeforeOpacity'
+          : 'linkInTextBlock_summary_fail_ratio';
+    const colorOnly =
+      'This link in a block of text relies on color alone to be distinguished from the surrounding text';
+    const summary = sameColor
+      ? 'Nothing sets this link in a block of text apart from the surrounding text: it is drawn in the same color, with no underline or other mark.'
+      : !hasRatio
+        ? `${colorOnly}.`
+        : beforeOpacity
+          ? `${colorOnly}, with a contrast of ${ratioStr}:1 against that text, below 3:1, and less as drawn, since an ancestor's opacity fades both.`
+          : `${colorOnly}, with a contrast of ${ratioStr}:1 against that text, below 3:1.`;
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary:
-          'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
-        hint: 'Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.',
+        summary,
+        hint: sameColor
+          ? 'Add an underline or another visible cue (a font-weight or style difference, a border, an icon), so the link can be told apart from the text around it.'
+          : 'Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.',
         i18n: {
-          summaryKey: 'linkInTextBlock_summary_fail',
-          hintKey: 'linkInTextBlock_hint_fail',
+          summaryKey,
+          hintKey: sameColor ? 'linkInTextBlock_hint_fail_sameColor' : 'linkInTextBlock_hint_fail',
           params: { element: tag, ratio: String(ratioStr), threshold: '3' }
         },
         data: {
-          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+          visibilityFilter: eligInfo,
           details: {
             reasonCode: 'COLOR_ONLY_DIFFERENTIATION',
             // Faded with the text by an ancestor's opacity, the ratio is the
@@ -2258,6 +2246,22 @@ function runInPage(ctx) {
         }
       })
     );
+  }
+
+  for (const el of nodes) {
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const counts = { applicableCount, decidedCount, colorCompared };
+    try {
+      judgeLink(el);
+    } catch {
+      // A link whose style can't be read (jsdom runs out of stack reading
+      // the computed style of an element a few thousand levels deep) is left
+      // for a person to check, and the other links are still judged.
+      decidedCount = counts.decidedCount;
+      colorCompared = counts.colorCompared;
+      applicableCount = counts.applicableCount + 1;
+      markUndecided(el, 'ENGINE_EXCEPTION');
+    }
   }
 
   if (applicableCount === 0) {
@@ -2282,9 +2286,7 @@ function runInPage(ctx) {
         evidence: { reasonCode }
       },
       data: {
-        visibilityFilter: helpers.getEligibilityInfo
-          ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
-          : { targetSet: 'acc', accEligible: null, reasons: [] },
+        visibilityFilter: eligibilityInfoOf(el),
         details: { reasonCode, ...(detail || {}) }
       }
     })
@@ -2320,9 +2322,7 @@ function runInPage(ctx) {
             : { reasonCode: 'LINK_COLOR_CONTRAST_ONLY', ratio }
         },
         data: {
-          visibilityFilter: helpers.getEligibilityInfo
-            ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
-            : { targetSet: 'acc', accEligible: null, reasons: [] },
+          visibilityFilter: eligibilityInfoOf(el),
           details: {
             reasonCode: 'LINK_COLOR_CONTRAST_ONLY',
             metrics: beforeOpacity

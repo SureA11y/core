@@ -290,7 +290,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-hidden-focus-all-scenario
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 10, maxOccurrences: 10 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedHintsById = {
     case_opacity_zero: ['opacityZero'],
@@ -302,7 +302,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-hidden-focus-all-scenario
     case_input_offscreen: ['offscreen'],
     case_select_opacity_zero: ['opacityZero'],
     case_textarea_clipped: ['clipped'],
-    case_focus_half_restored: ['offscreen']
+    case_focus_half_restored: ['offscreen'],
+    case_fixed_bar_above_viewport: ['outOfReach']
   };
 
   for (const [id, hints] of Object.entries(expectedHintsById)) {
@@ -325,8 +326,30 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-hidden-focus-all-scenario
     'case_hidden_attr',
     'case_tabindex_neg1',
     'case_skip_link_focus_restored',
-    'case_not_focus_clip'
+    'case_not_focus_clip',
+    'case_fixed_bar_revealed'
   ];
+
+  // What is positioned out of view leans fail; what opacity, a clip, no
+  // size or a text-indent hides doesn't.
+  const leaning = {};
+  for (const o of rule.occurrences) {
+    const id = (/id="([^"]+)"/.exec(o.html) || [])[1];
+    leaning[id] = o.lean ? o.lean.toward + ':' + o.lean.signals[0].value : null;
+  }
+  assert.deepStrictEqual(leaning, {
+    case_opacity_zero: null,
+    case_offscreen: 'fail:offscreen',
+    case_text_indent_offscreen: null,
+    case_clipped: null,
+    case_zero_size_overflow_hidden: null,
+    case_multi_hint: 'fail:offscreen',
+    case_input_offscreen: 'fail:offscreen',
+    case_select_opacity_zero: null,
+    case_textarea_clipped: null,
+    case_focus_half_restored: 'fail:offscreen',
+    case_fixed_bar_above_viewport: 'fail:outOfReach'
+  });
 
   for (const id of expectedNoOccIds) {
     assert.ok(
@@ -535,7 +558,7 @@ test(`${RULE_ID}: a link in a container positioned off screen or clipped to noth
   assert.deepStrictEqual(hintsFor('clip'), ['containerClipped']);
   assert.match(
     rule.occurrences.find((o) => o.html.includes('id="off"')).summary,
-    /where scrolling can't bring it into view/
+    /its container <div id="menu"> is positioned off screen \(left: -9999px\)/
   );
 });
 
@@ -547,5 +570,304 @@ test(`${RULE_ID}: a container a :focus-within rule brings into view is not asked
   assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
     minOccurrences: 0,
     maxOccurrences: 0
+  });
+});
+
+test(`${RULE_ID}: names the container that hides the element, and its CSS`, () => {
+  const html = `<!doctype html><html><head><style>
+    .drawer { position: absolute; left: -9999px; }
+    .sr { clip-path: inset(50%); }
+  </style></head><body>
+    <div class="drawer"><ul><li><a id="acct" href="/a">Account</a></li></ul></div>
+    <div id="panel" class="sr"><span><button id="go">Go</button></span></div>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const acct = byId('acct');
+  assert.strictEqual(
+    acct.summary,
+    'This focusable <a> can\'t be seen: its container <div class="drawer"> is positioned off screen (left: -9999px), and nothing brings it into view when the element takes focus.'
+  );
+  assert.strictEqual(acct.i18n.summaryKey, 'cssHidden_focus_summary_cantTell_containerOffscreen');
+  assert.strictEqual(acct.i18n.params.container, '<div class="drawer">');
+  assert.strictEqual(acct.data.details.hiddenByContainer, '<div class="drawer">');
+  assert.strictEqual(acct.data.details.containerCss, 'left: -9999px');
+  assert.strictEqual(acct.data.details.reasonCode, 'cssHiddenTabbable_needsFocusStateVerification');
+
+  const go = byId('go');
+  assert.strictEqual(go.i18n.summaryKey, 'cssHidden_focus_summary_cantTell_containerClipped');
+  assert.match(
+    go.summary,
+    /its container <div id="panel"> is clipped to nothing \(clip-path: inset\(50%\)\)/
+  );
+});
+
+// A fixed box that clips its content and whose px lengths put it wholly
+// outside the viewport: off screen for good, read without layout.
+const IN_BAR = '<div style="visibility:visible"><button id="in_bar">One</button></div>';
+const fixedBarCase = (style, inner = IN_BAR, head = '') =>
+  `<!doctype html><html><head>${head}</head><body><div class="bar" style="${style}">${inner}</div></body></html>`;
+
+test(`${RULE_ID}: cantTell outOfReach for a visible button in a fixed 1px visibility:hidden bar above the viewport`, () => {
+  const html = fixedBarCase(
+    'overflow-y:hidden;position:fixed;height:1px;top:-1px;left:0;visibility:hidden'
+  );
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.ok(hasOccurrenceForId(rule, 'in_bar'));
+  assert.deepStrictEqual(occ.data.details.metrics.visibilityHints, ['outOfReach']);
+  assert.strictEqual(occ.data.details.containerCss, 'position: fixed; top: -1px; height: 1px');
+  assert.strictEqual(
+    occ.summary,
+    'This focusable <button> can\'t be seen: its container <div class="bar"> is positioned off screen (position: fixed; top: -1px; height: 1px), and nothing brings it into view when the element takes focus.'
+  );
+});
+
+for (const [name, style] of [
+  ['below the viewport', 'overflow:hidden;position:fixed;height:10px;bottom:-10px'],
+  ['left of the viewport', 'overflow-x:hidden;position:fixed;width:200px;left:-200px'],
+  ['right of the viewport', 'overflow:clip;position:fixed;width:50px;right:-60px'],
+  [
+    'above the viewport with its padding and border counted',
+    'overflow:hidden;position:fixed;height:4px;padding:2px;border:1px solid;top:-10px'
+  ],
+  [
+    'above the viewport by its margin',
+    'overflow:hidden;position:fixed;height:5px;top:0;margin-top:-5px'
+  ],
+  [
+    'above the viewport with border-box sizing',
+    'overflow:hidden;position:fixed;box-sizing:border-box;height:8px;padding:3px;top:-8px'
+  ]
+]) {
+  test(`${RULE_ID}: cantTell outOfReach for a button in a fixed clipping box ${name}`, () => {
+    const result = runa11yCoreOnHtml(fixedBarCase(style), { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.deepStrictEqual(rule.occurrences[0].data.details.metrics.visibilityHints, [
+      'outOfReach'
+    ]);
+  });
+}
+
+for (const [name, style, head] of [
+  ['that reaches 1px into the viewport', 'overflow-y:hidden;position:fixed;height:2px;top:-1px'],
+  [
+    'whose padding reaches into the viewport',
+    'overflow-y:hidden;position:fixed;height:1px;top:-1px;padding-bottom:10px'
+  ],
+  ['that does not clip its content', 'position:fixed;height:1px;top:-1px'],
+  ['that clips only the other axis', 'overflow-x:hidden;position:fixed;height:1px;top:-1px'],
+  ['positioned absolute, not fixed', 'overflow:hidden;position:absolute;height:1px;top:-1px'],
+  ['sized in em, which needs layout', 'overflow:hidden;position:fixed;height:1em;top:-1em'],
+  [
+    'brought into view by a :focus-within rule',
+    '',
+    '<style>.bar{overflow-y:hidden;position:fixed;height:1px;top:-1px}.bar:focus-within{top:0;height:auto}</style>'
+  ]
+]) {
+  test(`${RULE_ID}: notApplicable for a button in a fixed box ${name}`, () => {
+    const result = runa11yCoreOnHtml(fixedBarCase(style, IN_BAR, head), { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  });
+}
+
+test(`${RULE_ID}: a fixed skip link above the viewport is offscreen, and not once :focus brings it down`, () => {
+  const hidden = `<!doctype html><html><body>
+      <a id="skip_fixed" href="#m" style="position:fixed;top:-30px;height:20px;overflow:hidden">Skip</a>
+      <main id="m"></main></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(hidden, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.deepStrictEqual(rule.occurrences[0].data.details.metrics.visibilityHints, ['offscreen']);
+
+  const revealed = `<!doctype html><html><head><style>
+      #skip_fixed{position:fixed;top:-30px;height:20px;overflow:hidden}#skip_fixed:focus{top:0}
+    </style></head><body><a id="skip_fixed" href="#m">Skip</a><main id="m"></main></body></html>`;
+  assertRule(runa11yCoreOnHtml(revealed, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
+
+// ===== lean =====
+// A finding positioned out of view, or in a container clipped to nothing,
+// leans fail; one hidden by its own opacity, clip or lack of size (a custom
+// checkbox's input) gets no lean, nor does a checkbox or radio input, nor
+// one a script may show.
+test(`${RULE_ID}: a button kept out of view by its container leans fail`, () => {
+  const html = fixedBarCase(
+    'overflow-y:hidden;position:fixed;height:1px;top:-1px;left:0;visibility:hidden'
+  );
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const { lean } = rule.occurrences[0];
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'cssHidden_focus_lean_why_container');
+  assert.strictEqual(lean.i18n.cautionKey, 'cssHidden_focus_lean_caution_script');
+  assert.deepStrictEqual(lean.signals, [
+    { signal: 'hidden-by', value: 'outOfReach' },
+    { signal: 'focus-style-reveals', value: false },
+    { signal: 'focus-script', value: null }
+  ]);
+});
+
+test(`${RULE_ID}: a link in a container clipped to nothing leans fail`, () => {
+  const html = `<!doctype html><html><body>
+      <div style="position:absolute;clip:rect(0 0 0 0);clip-path:inset(50%)"><a id="clipped_in" href="/a">Account</a></div>
+    </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(rule.occurrences[0].lean.toward, 'fail');
+  assert.deepStrictEqual(rule.occurrences[0].lean.signals[0], {
+    signal: 'hidden-by',
+    value: 'containerClipped'
+  });
+});
+
+test(`${RULE_ID}: an element hidden by its own opacity, clip, lack of size or text-indent gets no lean`, () => {
+  const html = `<!doctype html><html><body>
+      <label><input type="checkbox" style="opacity:0"><span>Accept</span></label>
+      <button style="position:absolute;clip:rect(0,0,0,0)">Clipped</button>
+      <button style="width:0;height:0;overflow:hidden">No size</button>
+      <a href="/" style="display:block;overflow:hidden;text-indent:-9999px">Logo</a>
+    </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 4,
+    maxOccurrences: 4
+  });
+  for (const occ of rule.occurrences) assert.strictEqual(occ.lean, undefined, occ.html);
+});
+
+test(`${RULE_ID}: an element positioned off screen by its own styles leans fail`, () => {
+  const html = `<!doctype html><html><body>
+      <a id="own_off" href="#x" style="position:absolute;left:-9999px">Hidden link</a>
+    </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const { lean } = rule.occurrences[0];
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'cssHidden_focus_lean_why_container');
+  assert.deepStrictEqual(lean.signals[0], { signal: 'hidden-by', value: 'offscreen' });
+});
+
+test(`${RULE_ID}: a checkbox or radio input off screen gets no lean, as its label may show the focus`, () => {
+  const html = `<!doctype html><html><body>
+      <input id="off_cb" type="checkbox" style="position:absolute;left:-9999px"><label for="off_cb">Accept</label>
+      <div style="position:absolute;left:-9999px"><input id="off_radio" type="RADIO" name="r"></div><label for="off_radio">Yes</label>
+    </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  for (const occ of rule.occurrences) assert.strictEqual(occ.lean, undefined, occ.html);
+});
+
+test(`${RULE_ID}: no lean when an onfocus or onfocusin attribute may show the element`, () => {
+  for (const [onEl, onBar] of [
+    [' onfocus="this.parentNode.parentNode.style.top=0"', ''],
+    ['', ' onfocusin="this.style.top=0"']
+  ]) {
+    const html = fixedBarCase(
+      'overflow-y:hidden;position:fixed;height:1px;top:-1px',
+      `<div><button id="in_bar"${onEl}>One</button></div>`
+    ).replace('<div class="bar"', `<div class="bar"${onBar}`);
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.strictEqual(rule.occurrences[0].lean, undefined);
+  }
+});
+
+test(`${RULE_ID}: with an early listener hook, the lean drops its caution, and a focus listener takes it away`, () => {
+  const { JSDOM } = require('jsdom');
+  const { listenerHookScript } = require('../../../src/index.js');
+  const scan = (script) => {
+    const dom = new JSDOM(
+      fixedBarCase(
+        'overflow-y:hidden;position:fixed;height:1px;top:-1px',
+        '<div><button id="in_bar">One</button></div>'
+      ),
+      { runScripts: 'outside-only' }
+    );
+    // jsdom's selector engine adds its own key listeners on first use.
+    dom.window.document.querySelector('*');
+    dom.window.eval(listenerHookScript({ early: true }));
+    if (script) dom.window.eval(script);
+    const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
+    return result.checksResults.find((c) => c.ruleId === RULE_ID).occurrences[0].lean;
+  };
+
+  const lean = scan(null);
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.caution, undefined);
+  assert.strictEqual(lean.i18n.cautionKey, undefined);
+  assert.deepStrictEqual(lean.signals[2], { signal: 'focus-script', value: false });
+
+  for (const script of [
+    "document.getElementById('in_bar').addEventListener('focus', () => {})",
+    "document.querySelector('.bar').addEventListener('focusin', () => {})",
+    "document.addEventListener('focusin', () => {})"
+  ]) {
+    assert.strictEqual(scan(script), undefined, script);
+  }
+});
+
+// jsdom's CSS parser drops a space-separated rect() (rect(0 0 0 0) computes
+// as auto), the form most visually hidden classes are written in, so the
+// clip is read as declared.
+test(`${RULE_ID}: clip: rect(0 0 0 0) with spaces is clipped, inline or in a style sheet, on the element or a container`, () => {
+  const C = 'position:absolute;clip:rect(0 0 0 0)';
+  for (const [head, body, hint] of [
+    ['', `<button id="t" style="${C}">B</button>`, 'clipped'],
+    [`<style>.h{${C}}</style>`, '<button id="t" class="h">B</button>', 'clipped'],
+    ['', `<div style="${C}"><button id="t">B</button></div>`, 'containerClipped'],
+    [
+      `<style>.h{${C}}</style>`,
+      '<div class="h"><button id="t">B</button></div>',
+      'containerClipped'
+    ]
+  ]) {
+    const html = `<!doctype html><html><head>${head}</head><body>${body}</body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.deepStrictEqual(rule.occurrences[0].data.details.metrics.visibilityHints, [hint], body);
+  }
+});
+
+test(`${RULE_ID}: a rect(0 0 0 0) clip with spaces is judged in the focused state as written`, () => {
+  const C = 'position:absolute;clip:rect(0 0 0 0)';
+  const scan = (css) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html><head><style>${css}</style></head><body><a class="vh" href="#m">Skip</a><main id="m"></main></body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+  // A focus rule that unclips it, or a clip only while unfocused: not asked about.
+  assertRule(scan(`.vh{${C}}.vh:focus{clip:auto;position:static}`), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  assertRule(scan(`.vh:not(:focus){${C}}`), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  // A focus rule that sets something else leaves the clip in place.
+  assertRule(scan(`.vh{${C}}.vh:focus{padding:2px}`), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
   });
 });

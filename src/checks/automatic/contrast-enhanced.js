@@ -101,12 +101,13 @@
  *     `::marker`, the pseudo-element whose text is measured; the selector
  *     names its element, and the colors and font are the pseudo-element's.
  *   - `eligibleTextCount`, `computableTextCount` (the pass, and the
- *     notApplicable result when no text was computable): how many text
- *     nodes were in scope, and how many of those had colors that could be
- *     worked out. The pass repeats both under `metrics`.
- *   - `forcedColors` (every occurrence, when the colors measured were
- *     forced): `true`, and the hint says to check the page again with
- *     forced colors off. A scan under forced colors measures the page's own
+ *     result's own `data.details` when it is notApplicable because no text
+ *     was computable, which lists no occurrence): how many text nodes were
+ *     in scope, and how many of those had colors that could be worked out.
+ *     The pass repeats both under `metrics`.
+ *   - `forcedColors` (every occurrence, and that notApplicable result's
+ *     details, when the colors measured were forced): `true`, and the hint
+ *     says to check the page again with forced colors off. A scan under forced colors measures the page's own
  *     colors, so this is there only where it could not keep the page in
  *     them.
  * @reason-codes
@@ -145,6 +146,11 @@
  *   `CONTRAST_UNREACHABLE_ANY_BACKGROUND`; otherwise contrast-computable asks
  *   about it (`BACKGROUND_NOT_COMPUTABLE` and its other blockers), so this
  *   rule has no code of its own for it.
+ * - A page lists at most 50 elements below the ratio (or asked about), in
+ *   document order; the rest are counted, not listed. The rule's own
+ *   `data.details` on a fail or cantTell says how many there were
+ *   (`elementCount`), how many are listed (`reportedCount`, at most
+ *   `maxOccurrences`) and whether any were left out (`truncated`).
  */
 
 const id = 'contrast-enhanced';
@@ -174,55 +180,7 @@ const meta = {
   type: 'automatic',
   defaultConfidence: 'high',
   coverage: { facetsBySc: { '1.4.6': ['contrast-enhanced-text'] } },
-  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    CONTRAST_UNREACHABLE_ANY_BACKGROUND: {
-      steps: [
-        'Find the text the report names and note its color, which the report gives.',
-        'With a contrast calculator, measure that color against white and against black.',
-        'Compare the higher of the two ratios with 7:1.'
-      ],
-      passWhen:
-        'Against white or black the text color reaches 7:1, so some background can bring it to the ratio; measure it then against its own background.',
-      failWhen:
-        'Against both white and black the text color stays below 7:1, so no background brings it to the ratio, which fails WCAG 1.4.6.'
-    },
-    ENGINE_EXCEPTION: {
-      steps: [
-        'Find the text the report names (the check stopped early, so nothing was measured).',
-        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text color against the background directly behind the letters.",
-        'Note the text size and weight and compare the ratio with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).'
-      ],
-      passWhen: 'The ratio reaches the threshold for its size.',
-      failWhen: 'The ratio is below the threshold for its size, which fails WCAG 1.4.6.'
-    },
-    PLACEHOLDER_BELOW_THRESHOLD: {
-      steps: [
-        'Find the field the report names and empty it so the placeholder shows.',
-        "In the Styles pane, check whether the page's CSS sets the ::placeholder color or opacity, or the field's background.",
-        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the placeholder text against the field background and compare with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).",
-        'Check whether the placeholder holds information needed to fill the field (a format or instruction), rather than just an example.'
-      ],
-      passWhen:
-        "The placeholder reaches 7:1 (or 4.5:1 if large), or it is drawn entirely in the browser's own default colors.",
-      failWhen:
-        'The page sets the placeholder or field colors and the ratio is below the threshold, which fails WCAG 1.4.6.'
-    },
-    SYMBOLIC_CHARACTER_BELOW_THRESHOLD: {
-      steps: [
-        'Find the character the report names (such as ×, ☰, › or an icon-font glyph).',
-        'Decide whether it is text people read (part of words, a number) or an icon standing in for an action, like a close or menu symbol.',
-        "If it is text, use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure it against its background and compare with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).",
-        'If it is an icon for a control, measure it against its background and compare with 3:1 instead (WCAG 1.4.11).'
-      ],
-      passWhen:
-        'It is text and reaches its ratio, or it is an icon that reaches 3:1 for non-text contrast.',
-      failWhen:
-        'It is text below 7:1, which fails WCAG 1.4.6; or an icon below 3:1, which fails WCAG 1.4.11.'
-    }
-  }
+  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } }
 };
 
 function runInPage(ctx) {
@@ -373,6 +331,20 @@ function runInPage(ctx) {
   let measuredElements = 0;
 
   const seenFailEls = new Set();
+  // Elements below the ratio past the occurrence cap: counted, not listed,
+  // so the result can say how many there were (data.details.truncated).
+  let unlistedCount = 0;
+  function countUnlisted(el, pseudo) {
+    if (!el) return;
+    let seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
+    if (!seen) {
+      seen = new Set();
+      seenGenerated.set(pseudo, seen);
+    }
+    if (seen.has(el)) return;
+    seen.add(el);
+    unlistedCount += 1;
+  }
   // The color schemes text on the page's canvas was measured in, where the
   // page supports one it wasn't (acrossSchemes), for the pass's evidence.
   let schemesChecked = null;
@@ -382,11 +354,11 @@ function runInPage(ctx) {
       occurrences.push({
         selector: '',
         summary: 'All computable text meets the enhanced (AAA) contrast threshold.',
-        hint: '',
+        hint: 'Nothing to change. Only text whose colors could be worked out is counted; the contrast computability rule lists any other text, to measure by hand.',
         html: '',
         i18n: {
           summaryKey: 'contrastEnhanced_pass_allAboveThreshold',
-          hintKey: '',
+          hintKey: 'contrast_hint_pass',
           params: {
             eligibleTextCount: String(Number(eligibleCount) || 0),
             computableTextCount: String(Number(computableCount) || 0)
@@ -427,7 +399,7 @@ function runInPage(ctx) {
   function symbolicCharacter(el) {
     try {
       const own = String(dom.textContent(el) || '').trim();
-      if (Array.from(own).length !== 1) return '';
+      if ([...own].length !== 1) return '';
       for (let node = el, depth = 0; node && depth < 8; depth += 1) {
         if (
           dom.getAttribute(node, 'aria-label') != null ||
@@ -473,12 +445,57 @@ function runInPage(ctx) {
     };
   }
 
+  // Text drawn in a color other than the one its CSS gives, faded by the
+  // opacity of itself or an ancestor, or by its color's own alpha: the
+  // summary names the color the CSS gives and what fades it
+  // (helpers.contrast.describeFade). { params, detail }, or null where the
+  // drawn color is the CSS one.
+  function fadeNote(el, fgHex) {
+    const C = helpers.contrast;
+    const f = C && typeof C.describeFade === 'function' ? C.describeFade(el) : null;
+    if (!f || !f.declaredColor || f.declaredColor === fgHex) return null;
+    const round = (n) => String(Math.round(n * 100) / 100);
+    const faders = f.faders || [];
+    const detail = {
+      declaredColor: f.declaredColor,
+      colorAlpha: f.colorAlpha,
+      fadedBy: faders.map((x) => ({ element: x.description, opacity: x.opacity }))
+    };
+    if (faders.length === 1) {
+      return {
+        params: {
+          declaredColor: f.declaredColor,
+          fadedBy: faders[0].description,
+          fadedOpacity: round(faders[0].opacity)
+        },
+        detail
+      };
+    }
+    if (faders.length > 1) {
+      return {
+        params: {
+          declaredColor: f.declaredColor,
+          fadedByMany: faders.map((x) => `${x.description} (${round(x.opacity)})`).join(', '),
+          fadedOpacity: round(faders.reduce((p, x) => p * x.opacity, 1))
+        },
+        detail
+      };
+    }
+    if (f.colorAlpha < 1) {
+      return { params: { declaredColor: f.declaredColor, alphaColor: true }, detail };
+    }
+    return null;
+  }
+
   function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
       if (!el || seen.has(el)) return;
-      if (occurrences.length >= MAX_OCCURRENCES) return;
+      if (occurrences.length >= MAX_OCCURRENCES) {
+        countUnlisted(el, pseudo);
+        return;
+      }
 
       seen.add(el);
 
@@ -584,7 +601,7 @@ function runInPage(ctx) {
         const t = params && params.threshold;
         if (special.kind === 'logo') {
           occBase.data.details.looksLikeLogo = true;
-          occBase.hint = `If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches ${t}:1.`;
+          occBase.hint = `If this text is part of a logo or brand name, it has no contrast requirement; otherwise change its colors so the ratio reaches ${t}:1.`;
           occBase.i18n.hintKey = 'contrast_hint_logo';
         } else if (special.kind === 'switch') {
           occBase.data.details.contrastSwitch = special.switchName;
@@ -602,7 +619,10 @@ function runInPage(ctx) {
           el && typeof dom.get(el, 'getAttribute') === 'function'
             ? dom.getAttribute(el, 'id') || ''
             : '';
-        if (elementId) nodeSelector = `#${elementId}`;
+        // Escaped, and only where it names the element: CSS reads a NUL or
+        // a lone surrogate as U+FFFD, so such an id names nothing.
+        const byId = elementId ? '#' + helpers.cssEscape(elementId) : '';
+        if (byId && dom.matches(el, byId)) nodeSelector = byId;
       } catch {
         // no-throw
       }
@@ -1106,6 +1126,7 @@ function runInPage(ctx) {
           failCount += textCount;
           if (occurrences.length < MAX_OCCURRENCES)
             pushUnreachableOccurrence(el, analysis.unreachable);
+          else countUnlisted(el, '');
           continue;
         }
         if (!analysis || analysis.computable !== true) continue;
@@ -1159,8 +1180,12 @@ function runInPage(ctx) {
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
           // and measuredCount: stopping here made both depend on where the
-          // 50th failure fell.
-          if (occurrences.length >= MAX_OCCURRENCES) continue;
+          // 50th failure fell. The element is still counted, once, for the
+          // result's truncated count.
+          if (occurrences.length >= MAX_OCCURRENCES) {
+            countUnlisted(el, pseudo);
+            continue;
+          }
 
           const fgHex = helpers.contrast.rgbToHex ? helpers.contrast.rgbToHex(fgOpaque) : '';
 
@@ -1218,6 +1243,27 @@ function runInPage(ctx) {
               ? analysis.bgAssumedRootCanvasColor
               : null;
 
+          // The color the CSS gives, where opacity or its alpha fades it.
+          const fade =
+            pseudo ||
+            placeholderMode ||
+            analysis.colorScheme ||
+            analysis.drawnBy ||
+            analysis.pseudoElementColor
+              ? null
+              : fadeNote(el, fgHex);
+          if (fade) Object.assign(params, fade.params);
+          // The ancestor that paints the background, where the reader would
+          // not find that color on the element itself.
+          const C2 = helpers.contrast;
+          const backgroundFrom =
+            pseudo || placeholderMode || analysis.colorScheme || analysis.drawnBy
+              ? ''
+              : C2 && typeof C2.describeBackgroundSource === 'function'
+                ? C2.describeBackgroundSource(el, bgHex)
+                : '';
+          if (backgroundFrom) params.backgroundFrom = backgroundFrom;
+
           const details = {
             reasonCode: 'BELOW_THRESHOLD',
             metrics: { ratio, threshold },
@@ -1245,6 +1291,8 @@ function runInPage(ctx) {
               ? { pseudoElementColor: analysis.pseudoElementColor }
               : {}),
             ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
+            ...(fade ? { fade: fade.detail } : {}),
+            ...(backgroundFrom ? { backgroundFrom } : {}),
             ...(pseudo ? { generatedBy: pseudo } : {}),
             // On the canvas of a page with two color schemes: the one it
             // fails in, where it passes in the other, and those measured,
@@ -1311,20 +1359,16 @@ function runInPage(ctx) {
       outcome: 'notApplicable',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences: helpers.contrast.noteForcedColors([
-        {
-          selector: '',
-          summary: '',
-          hint: '',
-          html: '',
-          i18n: {
-            summaryKey: 'contrastEnhanced_notApplicable_noComputableText',
-            hintKey: '',
-            params: { eligibleTextCount: String(eligibleTextCount) }
-          },
-          data: { details: { eligibleTextCount, computableTextCount } }
+      // No occurrence: a notApplicable result names no finding. The counts
+      // go on the result, for a reader who wants to know what was looked at.
+      occurrences: [],
+      data: {
+        details: {
+          eligibleTextCount,
+          computableTextCount,
+          ...(helpers.contrast.colorsForced() ? { forcedColors: true } : {})
         }
-      ])
+      }
     };
   }
 
@@ -1340,7 +1384,15 @@ function runInPage(ctx) {
       confidence: rule.defaultConfidence || 'high',
       occurrences,
       marginCandidates,
-      measuredCount: measuredElements
+      measuredCount: measuredElements,
+      data: {
+        details: {
+          reportedCount: occurrences.length,
+          elementCount: occurrences.length + unlistedCount,
+          maxOccurrences: MAX_OCCURRENCES,
+          truncated: unlistedCount > 0
+        }
+      }
     };
   }
 

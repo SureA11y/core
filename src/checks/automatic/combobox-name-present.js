@@ -65,22 +65,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['combobox-name-present'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    name_internals: {
-      steps: [
-        'Inspect the combobox the report names, a custom element, and note its role.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the combobox, set through its internals or otherwise, and the screen reader announces it.',
-      failWhen:
-        'The combobox has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['combobox-name-present'] } }
 };
 
 function runInPage(ctx) {
@@ -248,17 +233,27 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This combobox has no accessible name.',
-        hint: 'Name it with aria-label, aria-labelledby or a title attribute. Text inside a combobox does not become its name.',
+        hint: cause
+          ? cause.hint
+          : 'Name it with aria-label, aria-labelledby or a title attribute. Text inside a combobox does not become its name.',
         i18n: {
           summaryKey: 'comboboxNamePresent_summary_fail',
-          hintKey: 'comboboxNamePresent_hint_fail',
-          params: {}
+          hintKey: cause ? cause.hintKey : 'comboboxNamePresent_hint_fail',
+          params: { ...(cause ? cause.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: 'combobox', methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(cause ? { nameCause: cause.detail } : {}),
+            controlType: 'combobox',
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

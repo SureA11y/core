@@ -73,7 +73,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de ce <canvas> transmet ce qu\u2019il affiche.'
+    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de ce <canvas>, \u00ab Fallback text \u00bb, transmet ce qu\u2019il affiche.'
   );
   assert.strictEqual(
     occ.hint,
@@ -184,4 +184,28 @@ test(`${RULE_ID}: an ARIA name is read before the fallback content`, () => {
   // The "browser does not support canvas" note is not the name, so it no
   // longer leans fail.
   assert.equal(rule.occurrences[0].lean, undefined);
+});
+
+test(`${RULE_ID}: quotes the text under review, and the ids aria-labelledby takes it from`, () => {
+  const html = `<!doctype html><html><body>
+    <p id="c">Figure 2</p><canvas id="a" aria-labelledby="c" width="100" height="100"></canvas>
+    <canvas id="b" width="100" height="100">Bar chart of sales</canvas>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const a = byId('a');
+  assert.strictEqual(
+    a.summary,
+    'Check that the text alternative of this <canvas>, "Figure 2", taken from #c by aria-labelledby, conveys what it shows.'
+  );
+  assert.strictEqual(a.i18n.summaryKey, 'canvas_textAltQuality_summary_cantTell_labelledby');
+  assert.strictEqual(a.i18n.params.ids, '#c');
+
+  const b = byId('b');
+  assert.strictEqual(
+    b.summary,
+    'Check that the text alternative of this <canvas>, "Bar chart of sales", conveys what it shows.'
+  );
+  assert.strictEqual(b.i18n.summaryKey, 'canvas_textAltQuality_summary_cantTell_name');
 });

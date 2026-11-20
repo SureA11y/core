@@ -86,34 +86,7 @@ const meta = {
   category: 'understandable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '3.3.2': ['form-control-single-label'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    FORM_FIELD_EXTRA_EMPTY_LABEL: {
-      steps: [
-        'Find the field the report names and note its label with text and the empty label also pointing at it.',
-        "Open the Accessibility pane in the browser's developer tools and check that the field's name is the text of the real label.",
-        'With a screen reader, Tab to the field and listen to the name.'
-      ],
-      passWhen:
-        "The field's name is the text of the real label, and nothing is lost to the empty one.",
-      failWhen:
-        'The field gets no name or an incomplete one because of the empty label, which fails WCAG 3.3.2 (and 4.1.2).'
-    },
-    FORM_FIELD_MULTIPLE_LABELS: {
-      steps: [
-        'Find the field the report names and note the text of each label pointing at it.',
-        "Open the Accessibility pane in the browser's developer tools and read the field's accessible name, which joins all the labels.",
-        'With a screen reader, Tab to the field and listen to the name.',
-        'Decide whether the joined name still says clearly what to enter.'
-      ],
-      passWhen:
-        'The joined name is clear: the labels repeat each other or the extra one is only a marker such as "required".',
-      failWhen:
-        'The joined name is confusing or misleading, such as two unrelated labels run together, which fails WCAG 3.3.2 (and can fail 2.5.3 and 4.1.2).'
-    }
-  }
+  coverage: { facetsBySc: { '3.3.2': ['form-control-single-label'] } }
 };
 
 function runInPage(ctx) {
@@ -228,16 +201,51 @@ function runInPage(ctx) {
     if (contributing.length >= 2) {
       // Labels that repeat each other, or a marker such as "required",
       // leave the joined name clear, if wordy.
-      const repeat = labelsRepeat(contributing.map((lab) => labelText(lab, el)));
+      // In tree order, the order browsers join them in.
+      const ordered = contributing
+        .slice()
+        .sort((a, b) => (dom.compareDocumentPosition(a, b) & 4 ? -1 : 1));
+      const texts = ordered.map((lab) => labelText(lab, el));
+      const repeat = labelsRepeat(texts);
+      const clip = (t) => {
+        const v = String(t || '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        return v.length > 80 ? v.slice(0, 77) + '...' : v;
+      };
+      const labelsList = texts.map((t) => `"${clip(t)}"`).join(', ');
+      const joinedName = clip(texts.map((t) => String(t).trim()).join(' '));
+      // A label that looks like a validation message (class "error",
+      // "invalid"): the usual reason a field gets a second <label>.
+      let errorLabel = '';
+      for (const lab of ordered.slice(1)) {
+        const cls = String(dom.getAttribute(lab, 'class') || '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (/error|invalid/i.test(cls)) {
+          errorLabel = `<label class="${cls.length > 60 ? cls.slice(0, 57) + '...' : cls}">`;
+          break;
+        }
+      }
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
-          summary: 'This form control is associated with more than one <label>.',
-          hint: 'Browsers join the labels into one name. Check that it still makes sense, or keep one <label> per field.',
+          summary: `This <${tag}> has ${contributing.length} <label> elements, ${labelsList}, which browsers join into the name "${joinedName}"; check that it makes sense.`,
+          hint:
+            'Browsers join the labels into one name. Check that it still makes sense, or keep one <label> per field.' +
+            (errorLabel
+              ? ` If ${errorLabel} is an error message, tie it to the field with aria-describedby or aria-errormessage instead of <label for>.`
+              : ''),
           occurrenceOutcome: 'cantTell',
           i18n: {
             summaryKey: 'formControlSingleLabel_summary_cantTell_competing',
             hintKey: 'formControlSingleLabel_hint_cantTell_competing',
-            params: { element: tag, labelCount: String(contributing.length) }
+            params: {
+              element: tag,
+              labelCount: String(contributing.length),
+              labels: labelsList,
+              joinedName,
+              errorLabel
+            }
           },
           uncertainty: {
             code: 'judgement-required',
@@ -266,7 +274,10 @@ function runInPage(ctx) {
             details: {
               reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
               element: tag,
-              labelCount: contributing.length
+              labelCount: contributing.length,
+              labelTexts: texts.map(clip),
+              joinedName,
+              ...(errorLabel ? { errorLabel } : {})
             }
           }
         })

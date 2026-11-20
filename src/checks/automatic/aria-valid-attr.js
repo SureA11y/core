@@ -68,23 +68,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-attr-name-valid'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ARIA_ATTR_INVALID: {
-      steps: [
-        'Inspect the element the report names and note the unknown aria-* attribute.',
-        'Check whether it is a misspelling of a real one (aria-lable, aria-labeledby, aria-describeby, aria-hiden) or a made-up hook (aria-qa, aria-test).',
-        "If it is a misspelling, open the Accessibility pane in the browser's developer tools and check whether what the real attribute would give (name, description, hidden state) is present anyway.",
-        'With a screen reader, move to the element and listen to what is announced.'
-      ],
-      passWhen:
-        'The attribute is a data hook not meant for assistive technology, or what it meant is supplied another way.',
-      failWhen:
-        'It is a typo of a real attribute and its effect is missing, such as a control with no name or decorative content not hidden, which fails WCAG 4.1.2 (ACT 5f99a7).'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['aria-attr-name-valid'] } }
 };
 
 function runInPage(ctx) {
@@ -309,14 +293,33 @@ function runInPage(ctx) {
 
     for (const name of invalidNames) {
       const lean = leanFor(el, name);
+      // What the author likely meant, said in the hint: the role attribute
+      // for aria-role, else the attribute the name misspells.
+      const roleValue = name === 'aria-role' ? String(dom.getAttribute(el, name) || '').trim() : '';
+      const suggestion =
+        !roleValue && typeof helpers.nearestAriaAttr === 'function'
+          ? helpers.nearestAriaAttr(name)
+          : '';
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This element has an attribute that is not a recognized ARIA attribute.',
-          hint: 'Fix the attribute name if it is a typo, or remove it.',
+          hint: roleValue
+            ? `ARIA has no aria-role attribute. Use the role attribute instead: role="${roleValue}".`
+            : suggestion
+              ? `Did you mean ${suggestion}? As written, the attribute is ignored.`
+              : 'Fix the attribute name if it is a typo, or remove it.',
           i18n: {
             summaryKey: 'ariaValidAttr_summary_fail',
-            hintKey: 'ariaValidAttr_hint_fail',
-            params: { attr: name }
+            hintKey: roleValue
+              ? 'ariaValidAttr_hint_fail_ariaRole'
+              : suggestion
+                ? 'ariaValidAttr_hint_fail_near'
+                : 'ariaValidAttr_hint_fail',
+            params: {
+              attr: name,
+              ...(roleValue ? { value: roleValue } : {}),
+              ...(suggestion ? { suggestion } : {})
+            }
           },
           uncertainty: {
             code: 'spec-only',
@@ -326,7 +329,11 @@ function runInPage(ctx) {
           },
           ...(lean ? { lean } : {}),
           data: {
-            details: { reasonCode: 'ARIA_ATTR_INVALID', attr: name }
+            details: {
+              reasonCode: 'ARIA_ATTR_INVALID',
+              attr: name,
+              ...(suggestion ? { suggestion } : {})
+            }
           }
         })
       );

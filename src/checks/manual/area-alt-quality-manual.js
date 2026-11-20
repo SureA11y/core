@@ -88,21 +88,6 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TEXT_ALTERNATIVE_REVIEW: {
-      steps: [
-        'Find the image map area the report names and look at the part of the image it covers.',
-        'Click it, or follow its link, and note where it leads.',
-        "Read the area's text alternative (and every other source the report lists) and check that it says where the link leads or what the region is."
-      ],
-      passWhen:
-        'The text alternative tells the user where the link goes, in words that match the region.',
-      failWhen:
-        "The text alternative is wrong, generic, a file name or doesn't say where the link leads, which fails WCAG 1.1.1 (H24)."
-    }
   }
 };
 
@@ -119,7 +104,7 @@ function runInPage(ctx) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -256,7 +241,7 @@ function runInPage(ctx) {
 
   const els = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || []);
+      return [...((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || [])];
     } catch {
       return queryAll('area');
     }
@@ -339,12 +324,25 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
     const sourcesText = alt.sources.join(', ');
+    // The name screen readers announce, quoted: from aria-labelledby it is
+    // not in the snippet.
+    const nameAll = alt.name.replace(/\s+/g, ' ');
+    const shownName = nameAll.length > 80 ? `${nameAll.slice(0, 79)}…` : nameAll;
+    const ids =
+      alt.sources[0] === 'aria-labelledby'
+        ? String(dom.getAttribute(el, 'aria-labelledby') || '')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((x) => `#${x}`)
+            .join(' ')
+        : '';
 
     const details = { name: alt.name, sources: alt.sources.slice() };
     if (alt.alt) details.alt = alt.alt;
     const message =
       signal && typeof helpers.describeTextAlternativeSignal === 'function'
-        ? helpers.describeTextAlternativeSignal(signal, 'area')
+        ? helpers.describeTextAlternativeSignal(signal, 'area', alt.name)
         : null;
     if (message) Object.assign(details, signal);
     // One code whatever the signal, which changes the message only.
@@ -367,16 +365,25 @@ function runInPage(ctx) {
       ...(lean ? { lean } : {}),
       summary: message
         ? message.summary
-        : `Check that the text alternative of this <area> (${sourcesText}) is accurate.`,
+        : ids
+          ? `Check that the text alternative of this <area> (${sourcesText}) is accurate; screen readers announce "${shownName}", taken from ${ids} by aria-labelledby.`
+          : `Check that the text alternative of this <area> (${sourcesText}) is accurate; screen readers announce "${shownName}".`,
       hint: message
         ? message.hint
         : 'Each text alternative listed should say where this area of the image map leads or what it does.',
       i18n: message
         ? message.i18n
         : {
-            summaryKey: 'area_altQuality_summary_cantTell',
+            summaryKey: ids
+              ? 'area_altQuality_summary_cantTell_labelledby'
+              : 'area_altQuality_summary_cantTell_name',
             hintKey: 'area_altQuality_hint_cantTell',
-            params: { element: (dom.tagName(el) || '').toLowerCase(), sources: sourcesText }
+            params: {
+              element: (dom.tagName(el) || '').toLowerCase(),
+              sources: sourcesText,
+              name: shownName,
+              ...(ids ? { ids } : {})
+            }
           },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

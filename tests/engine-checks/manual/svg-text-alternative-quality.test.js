@@ -85,7 +85,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de ce <svg> est exact.'
+    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de ce <svg>, \u00ab Close \u00bb, est exact.'
   );
   assert.strictEqual(
     occ.hint,
@@ -176,4 +176,41 @@ test(`${RULE_ID}: leans fail on a tool leftover, a file name or a placeholder na
   const started = Date.now();
   assert.strictEqual(run(svg(`<title>rect${'0'.repeat(40)}x</title>`)).lean, undefined);
   assert.ok(Date.now() - started < 1000, `took ${Date.now() - started} ms`);
+});
+
+test(`${RULE_ID}: quotes the name under review, and the ids aria-labelledby takes it from`, () => {
+  const html = `<!doctype html><html><body>
+    <p id="c">Figure 2</p><svg id="a" role="img" aria-labelledby="c"><circle r="3"></circle></svg>
+    <svg id="b" role="img"><title>Sales chart</title></svg>
+    <svg id="d" role="img"><desc>Only a description</desc></svg>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const a = byId('a');
+  assert.strictEqual(
+    a.summary,
+    'Check that the text alternative of this <svg>, "Figure 2", taken from #c by aria-labelledby, is accurate.'
+  );
+  assert.strictEqual(a.i18n.summaryKey, 'svg_textAltQuality_summary_cantTell_labelledby');
+  assert.deepStrictEqual(a.i18n.params, { element: 'svg', name: 'Figure 2', ids: '#c' });
+
+  const b = byId('b');
+  assert.strictEqual(
+    b.summary,
+    'Check that the text alternative of this <svg>, "Sales chart", is accurate.'
+  );
+  assert.strictEqual(b.i18n.summaryKey, 'svg_textAltQuality_summary_cantTell_name');
+
+  // A <desc> alone names nothing: the plain question stays.
+  assert.strictEqual(byId('d').i18n.summaryKey, 'svg_textAltQuality_summary_cantTell');
+
+  const de = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { locale: 'de' } });
+  const deA = assertRule(de, RULE_ID, 'cantTell').occurrences.find((o) =>
+    o.html.includes('id="a"')
+  );
+  assert.strictEqual(
+    deA.summary,
+    'Prüfen Sie, ob die Textalternative dieses <svg>, „Figure 2“, die aria-labelledby aus #c übernimmt, zutrifft.'
+  );
 });

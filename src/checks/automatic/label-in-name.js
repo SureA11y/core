@@ -40,8 +40,11 @@
  *   counts as a native element with that role does.
  * @expectation
  *   The accessible name contains the visible label's words, adjacent and in
- *   order. The comparison is over words rather than characters:
- *   parenthesised text is dropped, case is folded, text is NFKC-normalised,
+ *   order. In a browser, the label is also read as it shows: two boxes
+ *   drawn side by side on one line with no space between them join their
+ *   words (flex items "sure" and "a11y" read "surea11y"), and a name that
+ *   holds either reading contains the label. The comparison is over words
+ *   rather than characters: parenthesised text is dropped, case is folded, text is NFKC-normalised,
  *   and every character that is not a letter, digit or combining mark
  *   becomes a separator, so punctuation and spacing differences never
  *   decide the outcome. Invisible formatting characters (a soft hyphen, a
@@ -66,6 +69,8 @@
  *   - `tokenized.visibleLabel`, `tokenized.accessibleName`: the words each
  *     text was split into, one word per item. The name must hold the
  *     label's words next to each other and in order.
+ *   - Each text is cut at 2,000 characters, with "…" after it, as an
+ *     occurrence's `html` is, and each word list at its first 200 words.
  *   - `labelSource`: where the visible label came from: `label` (an
  *     associated `<label>`), `self` (the control's own text), `value` (a
  *     button-type `<input>`'s value) or `aria-labelledby` (the elements it
@@ -107,7 +112,7 @@ const id = 'label-in-name';
 const meta = {
   title: 'Label in Name: accessible name contains visible text',
   description:
-    'Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).',
+    'Checks that when a control has a visible text label, the accessible name contains that visible label text.',
   i18n: {
     titleKey: 'labelInName_title',
     descriptionKey: 'labelInName_description'
@@ -136,55 +141,7 @@ const meta = {
     'POSSIBLE_ABBREVIATION',
     'POSSIBLE_ICON_FONT_GLYPH',
     'POSSIBLE_SYMBOLIC_CHARACTER'
-  ],
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    HYPHENATION_DIFFERS: {
-      steps: [
-        'Read the visible label of the control the report names.',
-        "Open the Accessibility pane and read the control's accessible name.",
-        'Compare the two: they differ only in where hyphens fall ("e-mail" against "email"); decide whether a person saying the visible label would say the same words.',
-        'If speech input software is available, say the visible label and see whether it activates the control.'
-      ],
-      passWhen:
-        'The name says the same words as the label, with only the hyphenation differing, so speaking the label reaches the control.',
-      failWhen:
-        'The hyphenation changes the words, so the name does not contain what the label shows, which fails WCAG 2.5.3.'
-    },
-    POSSIBLE_ABBREVIATION: {
-      steps: [
-        'Read the visible label of the control the report names, and note the word ending in a period.',
-        "Open the Accessibility pane and read the control's accessible name.",
-        'Decide whether the label\'s word is a common abbreviation of the word in the name ("Ave." for "Avenue") that a person would read aloud as the full word.'
-      ],
-      passWhen:
-        'The abbreviation is a conventional one read as the full word that the name contains.',
-      failWhen:
-        "The label's word is not read as the word in the name, so a person saying the label would not match the name, which fails WCAG 2.5.3."
-    },
-    POSSIBLE_ICON_FONT_GLYPH: {
-      steps: [
-        'Look at the control the report names on screen and note what it shows: readable words or an icon.',
-        "Open the Accessibility pane and read the control's accessible name.",
-        'If the control shows only an icon, decide whether the name describes it; if it shows readable words, check that the name contains them.'
-      ],
-      passWhen:
-        'The control shows an icon rather than readable text, or the readable text it shows is contained in the name.',
-      failWhen:
-        'The control shows readable words that the accessible name does not contain, which fails WCAG 2.5.3.'
-    },
-    POSSIBLE_SYMBOLIC_CHARACTER: {
-      steps: [
-        'Look at the single character the control the report names shows.',
-        "Open the Accessibility pane and read the control's accessible name.",
-        'Decide whether the character is a symbol standing for an action (an "X" for close, an arrow) or literal text a user would say, such as a digit or letter.'
-      ],
-      passWhen: 'The character is a symbol, and the name describes what it does.',
-      failWhen:
-        'The character is text a user would say (a digit or a letter) and the name does not contain it, which fails WCAG 2.5.3.'
-    }
-  }
+  ]
 };
 
 function runInPage(ctx) {
@@ -353,6 +310,118 @@ function runInPage(ctx) {
     return r ? `${tag}[role="${r}"]` : tag;
   }
 
+  // A text a finding carries, cut as an occurrence's html is: at 2,000
+  // characters, at a code point, with "…" after it. A control's name can be
+  // any length (a 2 MB aria-label), and the finding would carry it whole
+  // several times over. A word list keeps its first 200 words.
+  function capText(s) {
+    const v = s == null ? '' : String(s);
+    if (v.length <= 2000) return v;
+    const code = v.charCodeAt(1999);
+    return v.slice(0, code >= 0xd800 && code <= 0xdbff ? 1999 : 2000) + '…';
+  }
+  function capWords(list) {
+    return Array.isArray(list) && list.length > 200 ? list.slice(0, 200) : list;
+  }
+
+  // The label's words the name does not have, each once, in label order.
+  function missingWordsOf(labelTokens, nameTokens) {
+    const have = new Set(nameTokens);
+    const out = [];
+    for (const w of labelTokens) if (!have.has(w) && out.indexOf(w) === -1) out.push(w);
+    return out;
+  }
+
+  // An element as a message names it: <span class="badge">.
+  function describeEl(node) {
+    const tag = String(dom.localName(node) || dom.tagName(node) || '').toLowerCase();
+    const cut = (v) => (v.length > 60 ? v.slice(0, 57) + '...' : v);
+    const elId = String(dom.getAttribute(node, 'id') || '').trim();
+    if (elId) return `<${tag} id="${cut(elId)}">`;
+    const cls = String(dom.getAttribute(node, 'class') || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return cls ? `<${tag} class="${cut(cls)}">` : `<${tag}>`;
+  }
+
+  // The element inside the control whose own text shows `word`, where it is
+  // not the control itself; null otherwise.
+  function shownIn(control, word) {
+    const stack = [control];
+    let guard = 0;
+    while (stack.length && guard++ < 2000) {
+      const node = stack.pop();
+      const kids = dom.childNodes(node) || [];
+      for (let i = kids.length - 1; i >= 0; i--) {
+        const k = kids[i];
+        const type = dom.nodeType(k);
+        if (type === 1) stack.push(k);
+        else if (type === 3 && tokenize(dom.textContent(k), false).indexOf(word) !== -1) {
+          const parent = dom.parentElement(k);
+          return parent && parent !== control ? parent : null;
+        }
+      }
+    }
+    return null;
+  }
+
+  // The fail's hint, naming the label's words the name lacks and where the
+  // first is shown, or, none lacking, saying they are not together and in
+  // order.
+  function failHintOf(control, labelInfo, missing, visibleLabel) {
+    if (!missing.length) {
+      const label = clipForSummary(visibleLabel);
+      return {
+        hint: `The accessible name has every word of the visible label, but not together and in that order; people using speech input say them as they see them. Make the name contain "${label}" as one phrase, ideally at its start.`,
+        hintKey: 'labelInName_hint_fail_wordOrder',
+        params: {}
+      };
+    }
+    const shown = missing.slice(0, 5);
+    const missingWords =
+      shown.map((w) => `"${w}"`).join(', ') + (missing.length > 5 ? ', ...' : '');
+    // Where the first missing word is shown: inside the control (missingIn),
+    // or, where the label comes from elsewhere, such as a <label>, in that
+    // element or the one in it that holds the word (missingAt, and the
+    // element it is in, missingAtWithin).
+    let missingIn = '';
+    let missingAt = '';
+    let missingAtWithin = '';
+    try {
+      if (labelInfo && labelInfo.source === 'self') {
+        const holder = shownIn(control, missing[0]);
+        if (holder) missingIn = describeEl(holder);
+      } else if (labelInfo && Array.isArray(labelInfo.sourceElements)) {
+        for (const src of labelInfo.sourceElements) {
+          if (!src || src === control || dom.nodeType(src) !== 1) continue;
+          const holder = shownIn(src, missing[0]);
+          if (holder) {
+            missingAt = describeEl(holder);
+            missingAtWithin = describeEl(src);
+            break;
+          }
+          if (tokenize(dom.textContent(src), false).indexOf(missing[0]) !== -1) {
+            missingAt = describeEl(src);
+            break;
+          }
+        }
+      }
+    } catch {
+      missingIn = '';
+      missingAt = '';
+      missingAtWithin = '';
+    }
+    return {
+      hint: missingIn
+        ? `The accessible name lacks ${missingWords} from the visible label, shown in ${missingIn} inside the control. Add ${missingWords} to the name, or move that text out of the control, so people using speech input can activate it by saying what they see.`
+        : missingAt
+          ? `The accessible name lacks ${missingWords} from the visible label, shown in ${missingAt}${missingAtWithin ? ` in ${missingAtWithin}` : ''}. Add ${missingWords} to the name, so people using speech input can activate it by saying what they see.`
+          : `The accessible name lacks ${missingWords} from the visible label. Add ${missingWords} to the name, so people using speech input can activate it by saying what they see.`,
+      hintKey: 'labelInName_hint_fail_missingWords',
+      params: { missingWords, missingIn, missingAt, missingAtWithin }
+    };
+  }
+
   function clipForSummary(s) {
     const v = (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim();
     if (v.length <= 80) return v;
@@ -407,9 +476,27 @@ function runInPage(ctx) {
   // a box nobody can see -- clipped away, 1x1 px or fully transparent, as a
   // screen-reader-only span is -- is not part of it (helpers.isVisuallyHidden), and
   // neither is what a <select> or <textarea> holds.
+  // Returns { text, asShown }. asShown is the same text read as it shows on
+  // screen: a break between two boxes that sit on one line with nothing
+  // drawn between them (two touching flex items, "sure" and "a11y") joins
+  // their words, as a person reads them. It is '' when no break was joined.
+  //
+  // Kept per element for this run: fields that point at one aria-labelledby
+  // target, or share a <label>, read its text once. Nothing in the run
+  // changes the page, and the result is never modified, only read.
+  const visibleTextCache = new Map();
   function collectVisibleTextUnder(container) {
-    if (!container) return '';
-    if (!isDomVisible(container)) return '';
+    if (!container) return { text: '', asShown: '' };
+    let known = visibleTextCache.get(container);
+    if (!known) {
+      known = readVisibleTextUnder(container);
+      visibleTextCache.set(container, known);
+    }
+    return known;
+  }
+
+  function readVisibleTextUnder(container) {
+    if (!isDomVisible(container)) return { text: '', asShown: '' };
 
     const boundaryOf = (n) =>
       typeof helpers.getTextBoundaryKind === 'function' ? helpers.getTextBoundaryKind(n) : 'inline';
@@ -435,7 +522,7 @@ function runInPage(ctx) {
             }
             const value = String(dom.nodeValue(n) || '');
             if (ok === 'shown' || (ok === 'ariaHidden' && !isHiddenIconText(p, value, container))) {
-              parts.push(value);
+              parts.push({ node: n, value });
             }
             continue;
           }
@@ -445,16 +532,109 @@ function runInPage(ctx) {
           const childTag = String(dom.tagName(n) || '').toLowerCase();
           if (childTag === 'select' || childTag === 'textarea') continue;
           const apart = boundaryOf(n) === 'block';
-          if (apart) parts.push(' ');
+          if (apart) parts.push(BOX_BREAK);
           walk(n);
-          if (apart) parts.push(' ');
+          if (apart) parts.push(BOX_BREAK);
         } catch {
           // no-throws
         }
       }
     };
     if (!hidden(container)) walk(container);
-    return parts.join('').replace(/\s+/g, ' ').trim();
+    const tidy = (v) => v.replace(/\s+/g, ' ').trim();
+    const text = tidy(parts.map((p) => (p === BOX_BREAK ? ' ' : p.value)).join(''));
+    if (!parts.includes(BOX_BREAK) || !hasLayout(container)) return { text, asShown: '' };
+    // Between two words a break separates, the whitespace is replaced by
+    // what the screen shows there: nothing, or a space.
+    let out = '';
+    let held = '';
+    let last = null;
+    let broken = false;
+    let anyJoined = false;
+    for (const p of parts) {
+      if (p === BOX_BREAK) {
+        broken = true;
+        continue;
+      }
+      if (!p.value.trim()) {
+        held += p.value;
+        continue;
+      }
+      let value = p.value;
+      if (broken && last && drawnTouching(last, p.node)) {
+        out = out.replace(/\s+$/, '');
+        value = value.replace(/^\s+/, '');
+        anyJoined = true;
+      } else {
+        out += broken ? ' ' : held;
+      }
+      out += value;
+      held = '';
+      broken = false;
+      last = p.node;
+    }
+    return { text, asShown: anyJoined ? tidy(out) : '' };
+  }
+
+  const BOX_BREAK = {};
+
+  // Whether the page is laid out (a browser), not jsdom's zero-size boxes.
+  let layoutKnown = null;
+  function hasLayout(node) {
+    if (layoutKnown === null) {
+      try {
+        const root = dom.documentElement(dom.ownerDocument(node));
+        const r = root && dom.getBoundingClientRect(root);
+        layoutKnown = !!r && (r.width > 0 || r.height > 0);
+      } catch {
+        layoutKnown = false;
+      }
+    }
+    return layoutKnown;
+  }
+
+  // The box drawn for one character of a text node: the first one that
+  // isn't whitespace, or the last one with fromEnd.
+  function charRect(textNode, fromEnd) {
+    const value = String(dom.nodeValue(textNode) || '');
+    let i = fromEnd ? value.length - 1 : 0;
+    while (i >= 0 && i < value.length && /\s/.test(value[i])) i += fromEnd ? -1 : 1;
+    if (i < 0 || i >= value.length) return null;
+    // A surrogate pair is measured whole.
+    let end = i + 1;
+    if (fromEnd && i > 0 && /[\uDC00-\uDFFF]/.test(value[i])) i -= 1;
+    else if (!fromEnd && /[\uD800-\uDBFF]/.test(value[i])) end += 1;
+    let range = null;
+    try {
+      range = dom.createRange(dom.ownerDocument(textNode));
+      range.setStart(textNode, i);
+      range.setEnd(textNode, Math.min(end, value.length));
+      const r = dom.getBoundingClientRect(range);
+      return r && r.width > 0 && r.height > 0 ? r : null;
+    } catch {
+      return null;
+    } finally {
+      try {
+        if (range) range.detach();
+      } catch {}
+    }
+  }
+
+  // Whether the last character of one piece of text and the first of the
+  // next are drawn side by side on one line with no space between them: no
+  // gap, margin or padding wider than a tenth of the font size (a space is
+  // about a quarter). Either order counts, for right-to-left text.
+  function drawnTouching(before, after) {
+    const a = charRect(before, true);
+    const b = charRect(after, false);
+    if (!a || !b) return false;
+    const overlap = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+    if (overlap < Math.min(a.height, b.height) / 2) return false;
+    const parent = dom.parentElement(after);
+    const cs = parent ? computedStyleOf(parent) : null;
+    const fontSize = parseFloat(cs && cs.fontSize) || 16;
+    const gap = Math.max(b.left - a.right, a.left - b.right);
+    return Math.abs(gap) <= Math.max(1, fontSize * 0.1);
   }
 
   // Real <label> elements associated with a native form control -- the
@@ -476,16 +656,14 @@ function runInPage(ctx) {
   }
 
   function getVisibleTextLabelInfo(el) {
-    // Returns { text, source, sourceElements } where source helps reporting
+    // Returns { text, asShown, source, sourceElements }, where asShown is
+    // as collectVisibleTextUnder gives it, source helps reporting
     // and sourceElements (the actual DOM nodes the visible text came from)
     // lets the icon-font check below look at the right element's own style.
     // Source policy (deterministic):
     // 1) <label> association for form controls
     // 2) visible text inside the element
     // 3) visible text from aria-labelledby referenced elements
-    let text;
-    let source = 'none';
-
     const tn = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : '';
 
     // 1) Label association (native form controls)
@@ -497,20 +675,23 @@ function runInPage(ctx) {
       for (const l of labels) {
         if (!l || !isDomVisible(l)) continue;
         const t = collectVisibleTextUnder(l);
-        if (t) {
+        if (t.text) {
           labelParts.push(t);
           contributing.push(l);
         }
       }
-      const joined = labelParts.join(' ').replace(/\s+/g, ' ').trim();
-      if (joined) return { text: joined, source: 'label', sourceElements: contributing };
+      if (labelParts.length)
+        return { ...joinTexts(labelParts), source: 'label', sourceElements: contributing };
     }
 
     // 2) Text inside the control itself. Not for <select> or <textarea>:
     //    what shows inside them is a value (the chosen option, what the
     //    user typed), not a label, and neither takes its name from content.
-    text = tn === 'select' || tn === 'textarea' ? '' : collectVisibleTextUnder(el);
-    if (text) return { text, source: 'self', sourceElements: [el] };
+    const own =
+      tn === 'select' || tn === 'textarea'
+        ? { text: '', asShown: '' }
+        : collectVisibleTextUnder(el);
+    if (own.text) return { ...own, source: 'self', sourceElements: [el] };
 
     // 2b) A button-type <input> shows its value as its label. Without a
     //     value it shows the browser's own default ("Submit", in the
@@ -537,20 +718,33 @@ function runInPage(ctx) {
           if (!ref || !dom.tagName(ref)) continue;
           if (!isDomVisible(ref)) continue;
           const t = collectVisibleTextUnder(ref);
-          if (t) {
+          if (t.text) {
             parts.push(t);
             contributing.push(ref);
           }
         }
-        const joined = parts.join(' ').replace(/\s+/g, ' ').trim();
-        if (joined)
-          return { text: joined, source: 'aria-labelledby', sourceElements: contributing };
+        if (parts.length)
+          return {
+            ...joinTexts(parts),
+            source: 'aria-labelledby',
+            sourceElements: contributing
+          };
       }
     } catch {
       // ignore
     }
 
-    return { text: '', source, sourceElements: [] };
+    return { text: '', asShown: '', source: 'none', sourceElements: [] };
+  }
+
+  // Several labels' texts joined in order, in both readings.
+  function joinTexts(texts) {
+    const tidy = (v) => v.join(' ').replace(/\s+/g, ' ').trim();
+    const asShown = texts.some((t) => t.asShown);
+    return {
+      text: tidy(texts.map((t) => t.text)),
+      asShown: asShown ? tidy(texts.map((t) => t.asShown || t.text)) : ''
+    };
   }
 
   // Curated real-world icon-font family names. These fonts remap ordinary
@@ -688,7 +882,7 @@ function runInPage(ctx) {
   // would say. Other letters give no direction. (A symbol alone has no
   // words to compare, so it is not reported; it is read here all the same.)
   function symbolicCharacterKind(text) {
-    const c = Array.from(norm(text))[0] || '';
+    const c = [...norm(text)][0] || '';
     if (c === 'x') return 'letter-x';
     if (/^[\p{S}\p{P}]$/u.test(c)) return 'symbol';
     if (/^\p{N}$/u.test(c)) return 'digit';
@@ -706,7 +900,7 @@ function runInPage(ctx) {
   // symbol standing in for something else, and still fails outright.
   function isSingleSymbolicCharacter(text, accessibleNameNorm) {
     const t = norm(text);
-    if (!t || Array.from(t).length !== 1) return false;
+    if (!t || [...t].length !== 1) return false;
     return accessibleNameNorm.indexOf(t) === -1;
   }
 
@@ -758,7 +952,14 @@ function runInPage(ctx) {
     // was counted as contained. One the name doesn't hold is asked about as a
     // symbol standing for an icon, as a single "X" is.
     const symbolsOnly = labelTokens.length === 0 && accNorm.indexOf(visibleNorm) === -1;
-    const contains = !symbolsOnly && containsWordRun(labelTokens, nameTokens, null);
+    // The label as the screen shows it counts too: touching flex items
+    // "sure" and "a11y" read "surea11y" to a person, though the box break
+    // splits the visible text into two words.
+    const asShown = labelInfo.asShown ? String(labelInfo.asShown) : '';
+    const contains =
+      !symbolsOnly &&
+      (containsWordRun(labelTokens, nameTokens, null) ||
+        (!!asShown && containsWordRun(tokenize(asShown, false), nameTokens, null)));
 
     // An abbreviation, a word hyphenated differently, or visible text that
     // may not be literal text at all (an icon-font glyph, a single symbolic
@@ -801,7 +1002,7 @@ function runInPage(ctx) {
       // A stem of one or two letters ("N.", "No.") starts too many words to
       // stand for the one in the name; three or more ("Ave.", "Dept.") does.
       const longStems = new Set(
-        [...abbreviatedWords(visibleLabel)].filter((w) => Array.from(w).length >= 3)
+        [...abbreviatedWords(visibleLabel)].filter((w) => [...w].length >= 3)
       );
       if (longStems.size && containsWordRun(labelTokens, nameTokens, longStems)) {
         lean = {
@@ -811,7 +1012,7 @@ function runInPage(ctx) {
             { signal: 'abbreviation-prefix-match', value: true },
             {
               signal: 'shortest-abbreviation-stem',
-              value: Math.min(...[...longStems].map((w) => Array.from(w).length))
+              value: Math.min(...[...longStems].map((w) => [...w].length))
             }
           ],
           caution: 'A speech user may say the abbreviation as shown rather than the full word.',
@@ -874,6 +1075,13 @@ function runInPage(ctx) {
       uncertainReason === 'POSSIBLE_ICON_FONT_GLYPH' ||
       uncertainReason === 'POSSIBLE_SYMBOLIC_CHARACTER';
 
+    // Which of the label's words the name lacks, and the element inside the
+    // control that shows the first of them (a badge, a counter); none
+    // lacking, the words are all there but not together and in order.
+    const failWords =
+      !contains && !uncertainReason ? missingWordsOf(labelTokens, nameTokens) : null;
+    const failHint = failWords ? failHintOf(el, labelInfo, failWords, visibleLabel) : null;
+
     if (!contains) {
       occurrences.push(
         helpers.reportOccurrence(el, {
@@ -882,7 +1090,9 @@ function runInPage(ctx) {
             ? 'Accessible name may not contain the visible label text.'
             : 'Accessible name does not contain the visible label text.',
           hint: !uncertainReason
-            ? 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).'
+            ? failHint
+              ? failHint.hint
+              : 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).'
             : isSymbolicUncertainty
               ? 'Check by hand: the visible text may render as an icon or symbol rather than literal words, which markup cannot settle.'
               : 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.',
@@ -893,15 +1103,20 @@ function runInPage(ctx) {
                 ? 'labelInName_summary_cantTell_symbolic'
                 : 'labelInName_summary_cantTell',
             hintKey: !uncertainReason
-              ? 'labelInName_hint_fail'
+              ? failHint
+                ? failHint.hintKey
+                : 'labelInName_hint_fail'
               : isSymbolicUncertainty
                 ? 'labelInName_hint_cantTell_symbolic'
                 : 'labelInName_hint_cantTell',
             params: {
               element: getElementDescriptor(el),
               visibleLabel: clipForSummary(visibleLabel),
+              // The name the label is missing from, said in the summary.
+              accessibleName: clipForSummary(accName),
               labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
-              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none',
+              ...(failHint ? failHint.params : null)
             }
           },
           ...(uncertainReason
@@ -912,8 +1127,8 @@ function runInPage(ctx) {
                   needed:
                     'Whether the accessible name and the visible label say the same thing to a user.',
                   evidence: {
-                    visibleLabel,
-                    accessibleName: accName,
+                    visibleLabel: capText(visibleLabel),
+                    accessibleName: capText(accName),
                     difference: uncertainReason
                   }
                 }
@@ -922,12 +1137,22 @@ function runInPage(ctx) {
           data: {
             details: {
               reasonCode: uncertainReason || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
-              visibleLabel,
-              accessibleName: accName,
-              normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
-              tokenized: { visibleLabel: labelTokens, accessibleName: nameTokens },
+              visibleLabel: capText(visibleLabel),
+              accessibleName: capText(accName),
+              normalized: { visibleLabel: capText(visibleNorm), accessibleName: capText(accNorm) },
+              tokenized: {
+                visibleLabel: capWords(labelTokens),
+                accessibleName: capWords(nameTokens)
+              },
               labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
-              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none',
+              ...(failWords ? { missingWords: failWords } : null),
+              ...(failHint && failHint.params.missingIn
+                ? { missingWordsShownIn: failHint.params.missingIn }
+                : null),
+              ...(failHint && failHint.params.missingAt
+                ? { missingWordsShownAt: failHint.params.missingAt }
+                : null)
             }
           }
         })

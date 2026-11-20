@@ -26,6 +26,13 @@
  *   of scope for every value type, not a violation: a common, deliberate
  *   pattern in templated markup (e.g. React conditionally rendering
  *   `aria-describedby={hasError ? errorId : ''}`).
+ *   A value of the wrong type is a WAI-ARIA violation, which ACT 6a7281
+ *   says is "not required for conformance to WCAG 2.1 at any level". It is a
+ *   FAIL only where it leaves a control's user-settable state or value, or
+ *   the focused item, unstated, which SC 4.1.2 requires to be programmatically
+ *   determinable: one of aria-checked, aria-pressed, aria-selected,
+ *   aria-expanded or aria-valuenow on an element with a widget role, or any
+ *   invalid aria-activedescendant. Anywhere else it is CANTTELL.
  *   Some attributes also constrain each other, checked once each is
  *   valid on its own:
  *   - On an element whose role is slider, scrollbar, progressbar, meter,
@@ -53,7 +60,8 @@
  * @reports
  *   - `attr`: the attribute whose value is not valid.
  *   - `value`: its value as written.
- *   - `valueReason`: what is wrong with it. On a FAIL: `expected-true-false`,
+ *   - `valueReason`: what is wrong with it. On an ARIA_ATTR_VALUE_INVALID
+ *     finding (either tier): `expected-true-false`,
  *     `expected-true-false-undefined`, `expected-true-false-mixed`,
  *     `expected-integer`, `expected-number` or `invalid-token` when it is not
  *     of the attribute's type, `integer-out-of-range` when it is below the
@@ -67,11 +75,18 @@
  *     included); `posinset`, `setsize`; `haspopup`, `expectedRole`,
  *     `popupRole`; `activedescendant`.
  * @reason-codes
- *   - `ARIA_ATTR_VALUE_INVALID` (fail): an aria-* attribute whose value is not
- *     of the type WAI-ARIA defines for it, is below its lowest allowed value,
- *     or, for aria-activedescendant, names no element.
- *     Basis: WCAG 4.1.2; ACT 6a7281; WAI-ARIA 1.2 state and property value
- *     types.
+ *   - `ARIA_ATTR_VALUE_INVALID` (fail, cantTell): an aria-* attribute whose
+ *     value is not of the type WAI-ARIA defines for it, is below its lowest
+ *     allowed value, or, for aria-activedescendant, names no element. It fails
+ *     where the value leaves a control's state, value or focus unstated: one
+ *     of aria-checked, aria-pressed, aria-selected, aria-expanded or
+ *     aria-valuenow on an element with a widget role (explicit or native), or
+ *     any invalid aria-activedescendant. Anywhere else (aria-level="abc",
+ *     aria-live="loud", aria-checked on an element with no widget role) it is
+ *     asked about: a WAI-ARIA violation whose WCAG effect depends on what the
+ *     attribute was meant to convey.
+ *     Basis: WAI-ARIA 1.2 state and property value types; ACT 6a7281; WCAG
+ *     4.1.2.
  *   - `ARIA_ATTR_VALUE_TARGET_ABSENT` (cantTell): an id reference list, such as
  *     aria-describedby or aria-controls, none of whose ids matches an element;
  *     a script may add it later.
@@ -161,45 +176,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-attr-value-valid'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ARIA_ACTIVEDESCENDANT_OUTSIDE: {
-      steps: [
-        'Inspect the element the report names and note the id in its aria-activedescendant and where that element sits.',
-        'Focus the element and use the arrow keys to move the active item.',
-        'With a screen reader running, listen whether each active item is announced as you move.',
-        'Check whether the referenced element could be moved inside the element or tied to it with aria-owns or aria-controls.'
-      ],
-      passWhen: 'Each active item is announced as the arrow keys move through it.',
-      failWhen:
-        'The screen reader announces nothing or the wrong item as the active one changes, so keyboard users cannot follow it, which fails WCAG 4.1.2.'
-    },
-    ARIA_ATTR_VALUE_TARGET_ABSENT: {
-      steps: [
-        'Inspect the element the report names and note the attribute and the ids it refers to.',
-        'Use the page as a user would (open, expand, submit) to reach the state where the referenced element should exist.',
-        "In the developer tools console, run document.getElementById('the-id') for each id and check for a near-miss id in the markup (different case, typo, or inside another shadow root).",
-        "Open the Accessibility pane in the browser's developer tools and check whether the name, description or relation it should supply appears."
-      ],
-      passWhen:
-        'The referenced element exists when it matters and the name, description or relation shows in the accessibility tree.',
-      failWhen:
-        'The id never resolves (missing, misspelled, or across a shadow boundary), so the label, description or relation is lost, which fails WCAG 4.1.2 (ACT 6a7281).'
-    },
-    ARIA_HASPOPUP_ROLE_MISMATCH: {
-      steps: [
-        'Inspect the element the report names and note its aria-haspopup value (menu, listbox, tree, grid, dialog; true means menu).',
-        'Open the popup with the mouse and with the keyboard (Enter, Space or Down Arrow).',
-        "Inspect the popup that appears and check its role in the Accessibility pane in the browser's developer tools.",
-        "Compare the popup's role with the type aria-haspopup announces."
-      ],
-      passWhen: 'The popup that opens has the role aria-haspopup announces.',
-      failWhen:
-        'The popup that opens has another role than announced (such as a dialog announced as a menu), misleading screen reader users, which fails WCAG 4.1.2.'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['aria-attr-value-valid'] } }
 };
 
 function runInPage(ctx) {
@@ -607,6 +584,136 @@ function runInPage(ctx) {
     return out;
   }
 
+  // The states and value a user sets on a control (SC 4.1.2: "states,
+  // properties, and values that can be set by the user can be
+  // programmatically set"). An invalid value for one of them on a control
+  // leaves that state or value unstated.
+  const USER_SETTABLE_STATE_ATTRS = new Set([
+    'aria-checked',
+    'aria-pressed',
+    'aria-selected',
+    'aria-expanded',
+    'aria-valuenow'
+  ]);
+  // The widget roles: the user interface components those states belong to.
+  const CONTROL_ROLES = new Set([
+    'button',
+    'checkbox',
+    'combobox',
+    'gridcell',
+    'link',
+    'listbox',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'textbox',
+    'treeitem'
+  ]);
+  function controlRoleOf(el) {
+    const author = roleOf(el);
+    if (author) return author;
+    try {
+      return trim(ariaHelpers.getNativeRoleForElement(el)).toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+  function invalidValueFailsWcag(el, item) {
+    // An active descendant that names no element: the focused item is not
+    // exposed.
+    if (item.name === 'aria-activedescendant') return true;
+    return USER_SETTABLE_STATE_ATTRS.has(item.name) && CONTROL_ROLES.has(controlRoleOf(el));
+  }
+
+  // What a missing id reference was likely meant to be: the bare id of a
+  // value written with a leading "#" (aria-controls="#menu") whose bare id
+  // an element has, or the id that differs from it only by case or one
+  // character (the near-miss lean's signal).
+  function idRefFix(el, value, lean) {
+    const v = trim(value);
+    if (/^#\S+$/.test(v)) {
+      const bare = v.slice(1);
+      let found = null;
+      try {
+        found = helpers.getElementByIdInTree(el, bare);
+      } catch {}
+      if (found) return { bareId: bare };
+    }
+    const near =
+      lean && lean.signals ? lean.signals.find((x) => x.signal === 'near-miss-id') : null;
+    return near ? { nearId: String(near.value) } : null;
+  }
+
+  // The hint for an invalid value: the values or the kind of value the
+  // attribute takes, by why the value was refused.
+  function valueHint(item, fix) {
+    const attr = item.name;
+    if (item.reason === 'idref-not-found') {
+      if (fix && fix.bareId)
+        return {
+          key: 'ariaValidAttrValue_hint_fail_idrefHash',
+          text: `Remove the "#": an id reference takes the bare id, ${fix.bareId}.`,
+          params: { bareId: fix.bareId }
+        };
+      if (fix && fix.nearId)
+        return {
+          key: 'ariaValidAttrValue_hint_fail_idrefNear',
+          text: `An element with id "${fix.nearId}" exists; did you mean that?`,
+          params: { nearId: fix.nearId }
+        };
+      return {
+        key: 'ariaValidAttrValue_hint_fail_idrefMissing',
+        text: 'Point it at the id of an element on the page, or remove it.',
+        params: {}
+      };
+    }
+    if (item.reason === 'invalid-token') {
+      const tokens = ariaHelpers.getAttrTokens ? ariaHelpers.getAttrTokens(attr) : null;
+      if (tokens && tokens.length) {
+        const list = ariaHelpers.getAttrValueType(attr) === 'token-list';
+        return {
+          key: list
+            ? 'ariaValidAttrValue_hint_fail_tokenList'
+            : 'ariaValidAttrValue_hint_fail_tokens',
+          text: list
+            ? `${attr} takes one or more of these values, separated by spaces: ${tokens.join(', ')}.`
+            : `${attr} takes one of these values: ${tokens.join(', ')}.`,
+          params: { values: tokens.join(', ') }
+        };
+      }
+      return null;
+    }
+    const BY_REASON = {
+      'expected-true-false': ['trueFalse', `${attr} takes "true" or "false".`],
+      'expected-true-false-undefined': [
+        'trueFalseUndefined',
+        `${attr} takes "true", "false" or "undefined".`
+      ],
+      'expected-true-false-mixed': ['trueFalseMixed', `${attr} takes "true", "false" or "mixed".`],
+      'expected-integer': ['integer', `${attr} takes a whole number, such as 2.`],
+      'expected-number':
+        attr === 'aria-valuenow'
+          ? [
+              'numberValuenow',
+              `${attr} takes a number without units or other text, such as 50; put text such as "50%" in aria-valuetext.`
+            ]
+          : ['number', `${attr} takes a number without units or other text, such as 50.`],
+      'expected-single-idref': ['singleIdref', `${attr} takes a single id, with no spaces.`]
+    };
+    const entry = BY_REASON[item.reason];
+    return entry
+      ? { key: 'ariaValidAttrValue_hint_fail_' + entry[0], text: entry[1], params: {} }
+      : null;
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*') : helpers.queryAll('*');
 
   const failOccurrences = [];
@@ -652,21 +759,48 @@ function runInPage(ctx) {
     }
 
     for (const item of invalid || []) {
-      failOccurrences.push(
+      // A FAIL only where the invalid value leaves a control's state, value
+      // or focus undeterminable (SC 4.1.2); elsewhere it is a WAI-ARIA
+      // violation whose WCAG effect a person settles.
+      const wcagFail = invalidValueFailsWcag(el, item);
+      // A well-formed id no element has is a missing target, not a value of
+      // the wrong kind: said so, with the id it was likely meant to be.
+      const idMissing = item.reason === 'idref-not-found';
+      const fix = idMissing ? idRefFix(el, item.value, targetAbsentLean(el, item.value)) : null;
+      const vh = valueHint(item, fix);
+      (wcagFail ? failOccurrences : cantTellOccurrences).push(
         helpers.reportOccurrence(el, {
-          summary: 'This element has an ARIA attribute with an invalid value.',
-          hint: 'Use a value of the type this attribute expects, as the WAI-ARIA specification defines it.',
+          summary: idMissing
+            ? `${item.name} points to id "${item.value}", which no element on the page has.`
+            : 'This element has an ARIA attribute with an invalid value.',
+          hint: vh
+            ? vh.text
+            : 'Use a value of the type this attribute expects, as the WAI-ARIA specification defines it.',
+          occurrenceOutcome: wcagFail ? 'fail' : 'cantTell',
           i18n: {
-            summaryKey: 'ariaValidAttrValue_summary_fail',
-            hintKey: 'ariaValidAttrValue_hint_fail',
-            params: { attr: item.name, value: item.value }
+            summaryKey: idMissing
+              ? 'ariaValidAttrValue_summary_fail_idrefMissing'
+              : 'ariaValidAttrValue_summary_fail',
+            hintKey: vh ? vh.key : 'ariaValidAttrValue_hint_fail',
+            params: { attr: item.name, value: item.value, ...(vh ? vh.params : {}) }
           },
+          ...(wcagFail
+            ? {}
+            : {
+                uncertainty: {
+                  code: 'spec-only',
+                  needed:
+                    'Whether the attribute carries information the page shows and conveys no other way.',
+                  evidence: { attribute: item.name, value: item.value, valueReason: item.reason }
+                }
+              }),
           data: {
             details: {
               reasonCode: 'ARIA_ATTR_VALUE_INVALID',
               attr: item.name,
               value: item.value,
-              valueReason: item.reason
+              valueReason: item.reason,
+              ...(fix || {})
             }
           }
         })
@@ -676,19 +810,31 @@ function runInPage(ctx) {
     for (const item of review || []) {
       const controls = item.name === 'aria-controls';
       const lean = targetAbsentLean(el, item.value);
+      // A leading "#" or a near id, said in the hint (idRefFix).
+      const fix = idRefFix(el, item.value, lean);
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary:
             'No element with this id exists right now, so the engine cannot tell whether this reference is wrong.',
-          hint: controls
-            ? 'Check that the element it refers to is added when the widget opens; if it never is, fix or remove the reference.'
-            : 'Check whether an element with this id is added later. If not, correct or remove the reference; until then the element uses its other name or description sources.',
+          hint:
+            fix && fix.bareId
+              ? `Remove the "#": an id reference takes the bare id, ${fix.bareId}, and an element with that id exists.`
+              : fix && fix.nearId
+                ? `No element has this id, but one has id "${fix.nearId}"; did you mean that? If not, check whether an element with this id is added later.`
+                : controls
+                  ? 'Check that the element it refers to is added when the widget opens; if it never is, fix or remove the reference.'
+                  : 'Check whether an element with this id is added later. If not, correct or remove the reference; until then the element uses its other name or description sources.',
           i18n: {
             summaryKey: 'ariaValidAttrValue_summary_cantTell_idref',
-            hintKey: controls
-              ? 'ariaValidAttrValue_hint_cantTell_idref'
-              : 'ariaValidAttrValue_hint_cantTell_idrefList',
-            params: { attr: item.name, value: item.value }
+            hintKey:
+              fix && fix.bareId
+                ? 'ariaValidAttrValue_hint_cantTell_idrefHash'
+                : fix && fix.nearId
+                  ? 'ariaValidAttrValue_hint_cantTell_idrefNear'
+                  : controls
+                    ? 'ariaValidAttrValue_hint_cantTell_idref'
+                    : 'ariaValidAttrValue_hint_cantTell_idrefList',
+            params: { attr: item.name, value: item.value, ...(fix || {}) }
           },
           uncertainty: {
             code: 'runtime-dependent',
@@ -707,7 +853,8 @@ function runInPage(ctx) {
               reasonCode: 'ARIA_ATTR_VALUE_TARGET_ABSENT',
               attr: item.name,
               value: item.value,
-              valueReason: item.reason
+              valueReason: item.reason,
+              ...(fix || {})
             }
           }
         })

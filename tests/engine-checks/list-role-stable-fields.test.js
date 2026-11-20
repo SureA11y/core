@@ -10,25 +10,27 @@ const assert = require('node:assert/strict');
 
 const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
 
-const details = (ruleId, body) => {
+const details = (ruleId, body, outcome = 'fail') => {
   const result = runa11yCoreOnHtml(
     `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`,
     { runOnly: [ruleId] }
   );
   const rule = result.checksResults.find((r) => r.ruleId === ruleId);
-  assert.equal(rule.outcome, 'fail', body);
+  assert.equal(rule.outcome, outcome, body);
   return rule.occurrences.map((o) => o.data.details);
 };
 
 test('list-children-valid: every finding names its list in element', () => {
+  // A stray paragraph is not drawn as an item, so it is asked about; an
+  // overridden <li> still draws its marker, so it fails.
   const cases = [
-    ['<ul><li>a</li><p>b</p></ul>', 'LIST_INVALID_CHILD', 'ul'],
-    ['<ol><li>a</li><p>b</p></ol>', 'LIST_INVALID_CHILD', 'ol'],
-    ['<ul><li role="presentation">a</li></ul>', 'LIST_ITEM_ROLE_OVERRIDDEN', 'ul'],
-    ['<ol><li role="none">a</li></ol>', 'LIST_ITEM_ROLE_OVERRIDDEN', 'ol']
+    ['<ul><li>a</li><p>b</p></ul>', 'LIST_INVALID_CHILD', 'ul', 'cantTell'],
+    ['<ol><li>a</li><p>b</p></ol>', 'LIST_INVALID_CHILD', 'ol', 'cantTell'],
+    ['<ul><li role="presentation">a</li></ul>', 'LIST_ITEM_ROLE_OVERRIDDEN', 'ul', 'fail'],
+    ['<ol><li role="none">a</li></ol>', 'LIST_ITEM_ROLE_OVERRIDDEN', 'ol', 'fail']
   ];
-  for (const [body, code, element] of cases) {
-    const [d] = details('list-children-valid', body);
+  for (const [body, code, element, outcome] of cases) {
+    const [d] = details('list-children-valid', body, outcome);
     assert.deepEqual([d.reasonCode, d.element], [code, element], body);
   }
 });
@@ -54,7 +56,8 @@ test('aria-role-name-present: every finding names the role that needs a name', (
     ['tree', '<ul role="tree"><li role="treeitem">a</li></ul>']
   ];
   for (const [role, body] of cases) {
-    const [d] = details('aria-role-name-present', body);
+    // A missing name is a WAI-ARIA violation reported for review (cantTell).
+    const [d] = details('aria-role-name-present', body, 'cantTell');
     assert.equal(d.role, role, body);
   }
 });

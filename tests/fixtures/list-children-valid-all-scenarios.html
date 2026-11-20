@@ -41,18 +41,23 @@
   <h2>B. Invalid lists</h2>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — FAIL: ul, li plus a wrapping div</div>
+    <div class="case-title">04 — CANTTELL: ul, li plus a wrapping div, not drawn as list items</div>
     <ul id="lcv_case_04"><li>Elderberry</li><div>wrapper</div></ul>
   </div>
 
   <div class="case" id="case_05">
-    <div class="case-title">05 — FAIL: ol, li plus a span</div>
+    <div class="case-title">05 — CANTTELL: ol, li plus a span, not drawn as list items</div>
     <ol id="lcv_case_05"><li>Fig</li><span>oops</span></ol>
   </div>
 
   <div class="case" id="case_06">
-    <div class="case-title">06 — FAIL: ul, multiple invalid direct children</div>
+    <div class="case-title">06 — CANTTELL: ul, multiple invalid direct children, not drawn as list items</div>
     <ul id="lcv_case_06"><div>a</div><p>b</p></ul>
+  </div>
+
+  <div class="case" id="case_40">
+    <div class="case-title">40 — FAIL: a wrapping div around the list items, which leaves the bulleted items in no list</div>
+    <ul id="lcv_case_40"><div><li>Apple</li><li>Pear</li></div></ul>
   </div>
 
   <div class="case" id="case_08">

@@ -67,44 +67,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['treeitem-name-present'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    name_closedContent: {
-      steps: [
-        'Find the tree item the report names and note the text or icon it shows on screen.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from content no script can read.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the tree item, taken from its content, and the screen reader announces it.',
-      failWhen:
-        'The tree item has no name in the accessibility tree, since its content gives none, which fails WCAG 4.1.2.'
-    },
-    name_contentTooDeep: {
-      steps: [
-        'Find the tree item the report names and note the text it shows on screen.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from all of its nested content.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the tree item, taken from its nested content, and the screen reader announces it.',
-      failWhen:
-        'The tree item has no name in the accessibility tree, since its content gives none, which fails WCAG 4.1.2.'
-    },
-    name_internals: {
-      steps: [
-        'Inspect the tree item the report names, a custom element, and note its role.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the tree item, set through its internals or otherwise, and the screen reader announces it.',
-      failWhen:
-        'The tree item has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['treeitem-name-present'] } }
 };
 
 function runInPage(ctx) {
@@ -302,17 +265,27 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+        hint: cause
+          ? cause.hint
+          : 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
         i18n: {
           summaryKey: 'treeitemNamePresent_summary_fail',
-          hintKey: 'treeitemNamePresent_hint_fail',
-          params: { controlType: 'treeitem' }
+          hintKey: cause ? cause.hintKey : 'treeitemNamePresent_hint_fail',
+          params: { controlType: 'treeitem', ...(cause ? cause.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: 'treeitem', methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(cause ? { nameCause: cause.detail } : {}),
+            controlType: 'treeitem',
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

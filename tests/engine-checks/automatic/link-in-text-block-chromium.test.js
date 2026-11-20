@@ -91,6 +91,38 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   );
 
+  // A hover and focus cue counts only where its rule reaches the link: a
+  // nested `&:hover` under a parent the link isn't in, or one only print
+  // media gets, is no cue, and the link leans fail.
+  await t.test('hover and focus cues come only from rules that reach the link', async () => {
+    const p = await browser.newPage();
+    try {
+      await p.setContent(
+        '<!doctype html><html lang="en"><head><title>t</title><style>body{color:#000;background:#fff} a{text-decoration:none;color:#cc0000}' +
+          ' nav a { &:hover, &:focus { text-decoration: underline } }' +
+          ' @media print { a.print:hover, a.print:focus { text-decoration: underline } }' +
+          '</style></head><body>' +
+          '<nav><p>Read <a id="nav" href="#a">the guide</a> first.</p></nav>' +
+          '<p>Then <a id="out" href="#b">the notes</a> below.</p>' +
+          '<p>And <a id="print" class="print" href="#c">the archive</a> too.</p></body></html>'
+      );
+      await addBundle(p);
+      const leans = await p.evaluate((id) => {
+        const res = window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null);
+        const rule = res.checksResults.find((x) => x.ruleId === id);
+        return Object.fromEntries(
+          rule.occurrences.map((o) => [
+            (String(o.html).match(/id="([^"]+)"/) || [])[1],
+            o.lean && o.lean.toward
+          ])
+        );
+      }, RULE_ID);
+      assert.deepEqual(leans, { nav: 'pass', out: 'fail', print: 'fail' });
+    } finally {
+      await p.close();
+    }
+  });
+
   // Links told apart by color alone that reach 3:1 are asked about (the hover
   // and focus cue); the closest to 3:1 is the margin, on a fail result too.
   await t.test('the color-only link closest to 3:1 is the margin', async () => {

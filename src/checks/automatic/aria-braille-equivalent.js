@@ -77,23 +77,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-braille-equivalent'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    BRAILLE_ATTR_WITHOUT_EQUIVALENT: {
-      steps: [
-        'Inspect the element the report names and note whether it has aria-braillelabel or aria-brailleroledescription.',
-        "If it has aria-braillelabel, open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
-        'If the role is one that needs a name (button, link, image, checkbox and similar), confirm that a name exists besides the braille label; with a screen reader in speech, listen for it.',
-        'If it has aria-brailleroledescription, check whether it also has aria-roledescription; if not, confirm the native role is still announced and nothing else was meant.'
-      ],
-      passWhen:
-        'The element has a spoken name (and a roledescription where a braille one is given), or its role needs no name and nothing is lost.',
-      failWhen:
-        'A control or image has only a braille label, so speech users get no name, which fails WCAG 4.1.2.'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['aria-braille-equivalent'] } }
 };
 
 function runInPage(ctx) {
@@ -226,8 +210,11 @@ function runInPage(ctx) {
 
     if (brailleRoleDesc) {
       const roleDesc = trim(dom.getAttribute(el, 'aria-roledescription'));
+      // Present but blank, which the reader sees in the markup: said so.
+      const blank = !roleDesc && dom.hasAttribute(el, 'aria-roledescription');
       if (!roleDesc)
         missing.push({
+          blank,
           // Browsers expose aria-brailleroledescription only with an
           // aria-roledescription, so the element keeps its usual role and
           // no user loses anything they had.
@@ -244,9 +231,12 @@ function runInPage(ctx) {
           attr: 'aria-brailleroledescription',
           requires: 'aria-roledescription',
           messageKey: 'roleDescription',
-          summary:
-            'This element has aria-brailleroledescription but not aria-roledescription, its non-braille equivalent.',
-          hint: 'aria-brailleroledescription is a Braille-specific supplement, not a replacement, so also provide aria-roledescription.'
+          summary: blank
+            ? 'This element has aria-brailleroledescription, but its aria-roledescription, the non-braille equivalent, is empty.'
+            : 'This element has aria-brailleroledescription but not aria-roledescription, its non-braille equivalent.',
+          hint: blank
+            ? 'aria-brailleroledescription is a Braille-specific supplement, not a replacement, so also put the role description in aria-roledescription.'
+            : 'aria-brailleroledescription is a Braille-specific supplement, not a replacement, so also provide aria-roledescription.'
         });
     }
 
@@ -263,8 +253,12 @@ function runInPage(ctx) {
           summary: m.summary,
           hint: m.hint,
           i18n: {
-            summaryKey: `ariaBrailleEquivalent_summary_fail_${m.messageKey}`,
-            hintKey: `ariaBrailleEquivalent_hint_fail_${m.messageKey}`,
+            summaryKey: m.blank
+              ? 'ariaBrailleEquivalent_summary_cantTell_roleDescriptionBlank'
+              : `ariaBrailleEquivalent_summary_fail_${m.messageKey}`,
+            hintKey: m.blank
+              ? 'ariaBrailleEquivalent_hint_cantTell_roleDescriptionBlank'
+              : `ariaBrailleEquivalent_hint_fail_${m.messageKey}`,
             params: { element: tag, attr: m.attr }
           },
           uncertainty: {
@@ -278,7 +272,8 @@ function runInPage(ctx) {
             details: {
               reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT',
               attr: m.attr,
-              requires: m.requires
+              requires: m.requires,
+              ...(m.blank ? { requiredBlank: true } : {})
             }
           }
         })

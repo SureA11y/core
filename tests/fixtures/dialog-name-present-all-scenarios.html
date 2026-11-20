@@ -27,12 +27,12 @@
   <h2>A. Baseline: mechanism priority order (eligible)</h2>
 
   <div class="case" id="case_01">
-    <div class="case-title">01 — FAIL: role=dialog, no name at all</div>
+    <div class="case-title">01 — CANTTELL: role=dialog, no name at all</div>
     <div role="dialog" id="dialog_case_01"><p>Body text only.</p></div>
   </div>
 
   <div class="case" id="case_02">
-    <div class="case-title">02 — FAIL: role=dialog, visible heading text only (does NOT count)</div>
+    <div class="case-title">02 — CANTTELL: role=dialog, visible heading text only (does NOT count)</div>
     <div role="dialog" id="dialog_case_02"><h2>Confirm deletion</h2></div>
   </div>
 
@@ -52,7 +52,7 @@
   </div>
 
   <div class="case" id="case_06">
-    <div class="case-title">06 — FAIL: role=alertdialog, no name at all</div>
+    <div class="case-title">06 — CANTTELL: role=alertdialog, no name at all</div>
     <div role="alertdialog" id="dialog_case_06"><p>Unsaved changes will be lost.</p></div>
   </div>
 
@@ -62,17 +62,17 @@
   </div>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — FAIL: aria-label empty string</div>
+    <div class="case-title">08 — CANTTELL: aria-label empty string</div>
     <div role="dialog" id="dialog_case_08" aria-label=""><h2>Visible heading ignored</h2></div>
   </div>
 
   <div class="case" id="case_09">
-    <div class="case-title">09 — FAIL: aria-labelledby references non-existent id</div>
+    <div class="case-title">09 — CANTTELL: aria-labelledby references non-existent id</div>
     <div role="dialog" id="dialog_case_09" aria-labelledby="dialog_case_09_missing"></div>
   </div>
 
   <div class="case" id="case_10">
-    <div class="case-title">10 — FAIL: whitespace-only aria-label</div>
+    <div class="case-title">10 — CANTTELL: whitespace-only aria-label</div>
     <div role="dialog" id="dialog_case_10" aria-label="   "></div>
   </div>
 
@@ -112,7 +112,7 @@
   </div>
 
   <div class="case" id="case_17">
-    <div class="case-title">17 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => FAIL</div>
+    <div class="case-title">17 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => CANTTELL</div>
     <div style="visibility:hidden">
       <div role="dialog" tabindex="0" style="visibility:visible" id="dialog_case_17"></div>
     </div>
@@ -152,7 +152,7 @@
   <h2>F. Native dialog and role fallback lists</h2>
 
   <div class="case" id="case_22">
-    <div class="case-title">22 — FAIL: open native &lt;dialog&gt; with no role and no name</div>
+    <div class="case-title">22 — CANTTELL: open native &lt;dialog&gt; with no role and no name</div>
     <dialog open id="dialog_case_22"><p>Are you sure?</p><button>OK</button></dialog>
   </div>
 
@@ -162,7 +162,7 @@
   </div>
 
   <div class="case" id="case_24">
-    <div class="case-title">24 — FAIL: role="alertdialog dialog" (first token wins), no name</div>
+    <div class="case-title">24 — CANTTELL: role="alertdialog dialog" (first token wins), no name</div>
     <div role="alertdialog dialog" id="dialog_case_24"><p>Unsaved changes.</p></div>
   </div>
 

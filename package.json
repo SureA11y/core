@@ -1,6 +1,6 @@
 {
   "name": "@surea11y/core",
-  "version": "1.14.0",
+  "version": "1.17.0",
   "description": "Deterministic WCAG 2.2 accessibility engine that tells you what it can't tell you. Zero dependencies.",
   "keywords": [
     "accessibility",
@@ -23,7 +23,9 @@
     "cypress",
     "webdriverio",
     "jest",
-    "vitest"
+    "vitest",
+    "server-side-rendering",
+    "static-html"
   ],
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -71,6 +73,12 @@
       "review/*": [
         "src/review-dictionary.d.ts"
       ],
+      "procedures": [
+        "src/procedures-core.d.ts"
+      ],
+      "procedures/*": [
+        "src/procedures-dictionary.d.ts"
+      ],
       "browser": [
         "surea11y.browser.d.ts"
       ]
@@ -113,6 +121,7 @@
       "types": "./src/pack.d.ts",
       "default": "./src/pack.js"
     },
+    "./schemas/standard.schema.json": "./src/schemas/standard.schema.json",
     "./testing": {
       "types": "./src/testing.d.ts",
       "default": "./src/testing.js"
@@ -133,6 +142,14 @@
     "./review/*": {
       "types": "./src/review-dictionary.d.ts",
       "default": "./src/i18n/review/*.json"
+    },
+    "./procedures": {
+      "types": "./src/procedures-core.d.ts",
+      "default": "./src/procedures-core.js"
+    },
+    "./procedures/*": {
+      "types": "./src/procedures-dictionary.d.ts",
+      "default": "./src/i18n/procedures/*.json"
     },
     "./browser": {
       "types": "./surea11y.browser.d.ts",
@@ -162,10 +179,27 @@
     "src/index.js",
     "src/how-to-check.js",
     "src/how-to-check-lazy.js",
+    "src/manual-checks-lazy.js",
     "src/how-to-check-core.js",
     "src/how-to-check-core.d.ts",
+    "src/pack-languages.js",
+    "src/texts-by-id.js",
+    "src/laws.js",
+    "src/law-applies.js",
+    "src/pack-review.js",
     "src/review-dictionary.d.ts",
     "src/i18n/review/*.json",
+    "src/procedures.js",
+    "src/procedures-core.js",
+    "src/procedures-render.js",
+    "src/procedures-text.js",
+    "src/review-placeholders.js",
+    "src/html-text.js",
+    "src/procedures-core.d.ts",
+    "src/procedures-dictionary.d.ts",
+    "src/procedures/registry.js",
+    "src/procedures/rules.json",
+    "src/i18n/procedures/*.json",
     "src/index.d.ts",
     "src/baseline.d.ts",
     "src/report.d.ts",
@@ -194,6 +228,10 @@
     "src/wcag.js",
     "src/profile-kit.js",
     "src/pack.js",
+    "src/experimental.js",
+    "src/standard-data.js",
+    "src/derive-standard.js",
+    "src/schemas/standard.schema.json",
     "src/pack.d.ts",
     "src/testing.js",
     "src/testing.d.ts",
@@ -204,6 +242,7 @@
     "src/core/internals-hook.js",
     "src/core/listener-hook.js",
     "src/core/live-region-hook.js",
+    "src/core/evidence-state.js",
     "src/hook-reason-codes.js",
     "src/core/engine-options.js",
     "src/pack-docs.js",
@@ -216,6 +255,8 @@
     "src/core/rule-variants.js",
     "src/core/rule-meta.js",
     "src/coverage/wcag-facets.js",
+    "src/coverage/wcag-guidelines.js",
+    "src/coverage/wcag-titles.js",
     "src/coverage/wcag-version-map.js",
     "src/coverage/wcag-criteria.js",
     "profiles/index.js",
@@ -253,6 +294,9 @@
     "coverage": "node scripts/generate-wcag-coverage.js",
     "coverage:strict": "node scripts/generate-wcag-coverage.js --strictFacets",
     "coverage:check": "node scripts/generate-wcag-coverage.js --check",
+    "procedures": "node scripts/generate-procedures.js",
+    "procedures:check": "node scripts/generate-procedures.js --check",
+    "procedures:review": "node scripts/procedures-review.js",
     "aria-tables:check": "node scripts/generate-aria-tables.js --check",
     "language-subtags:check": "node scripts/generate-language-subtags.js --check",
     "finding-ids": "npm run build && node scripts/generate-finding-ids.js",
@@ -294,5 +338,8 @@
     "prettier": "^3.9.6",
     "semver": "^7.8.5",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "minimatch": "^11.0.3"
   }
 }

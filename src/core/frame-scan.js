@@ -36,8 +36,9 @@ const { createSafeDom } = require('./safe-dom');
 
 // The frames in the scanned scope: a scope that is itself an <iframe> or
 // <frame>, and the frames inside each scope, open shadow roots included (a
-// player or a payment widget often puts its iframe in one).
-function findChildFrameElements(roots) {
+// player or a payment widget often puts its iframe in one) unless the scan
+// leaves shadow roots out (includeShadowDom: false).
+function findChildFrameElements(roots, includeShadowDom) {
   const dom = createSafeDom();
   const seen = new Set();
   const out = [];
@@ -68,7 +69,7 @@ function findChildFrameElements(roots) {
     }
     for (const el of all) {
       if (isFrame(el)) add(el);
-      const shadow = dom.shadowRoot(el);
+      const shadow = includeShadowDom === false ? null : dom.shadowRoot(el);
       if (shadow) queue.push(shadow);
     }
   }
@@ -107,32 +108,140 @@ function isFrameShown(el) {
   return true;
 }
 
-// A frame matching excludeSelectors, or inside an element that does, is
-// left out with its whole content, as excluded content is by every rule:
-// excluding a third-party embed (an ad slot, a video player) keeps its
-// document out of the result too. A selector the page can't parse
-// excludes nothing; the scan of this frame has already said so.
-function isFrameExcluded(el, excludeSelectors) {
+// The frame element and the elements around it in the flat tree, nearest
+// first, as the accessibility tree has them: through the slot an element
+// is assigned to and out of a shadow root to its host.
+function frameAncestors(el) {
   const dom = createSafeDom();
-  for (const selector of normalizeSelectorList(excludeSelectors)) {
+  const out = [];
+  let node = el;
+  while (node) {
+    if (dom.nodeType(node) === 1) out.push(node);
+    let next;
     try {
-      if (dom.closest(el, selector)) return true;
+      next = (dom.nodeType(node) === 1 && dom.assignedSlot(node)) || dom.parentNode(node);
+    } catch {
+      next = null;
+    }
+    if (next && dom.nodeType(next) === 11) next = dom.host(next) || null;
+    node = next;
+  }
+  return out;
+}
+
+// Whether a frame element, or an element around it, has aria-hidden="true".
+function isFrameAriaHidden(el) {
+  const dom = createSafeDom();
+  for (const node of frameAncestors(el)) {
+    try {
+      const v = dom.getAttribute(node, 'aria-hidden');
+      if (v != null && String(v).trim().toLowerCase() === 'true') return true;
     } catch {}
   }
   return false;
 }
 
-// A selector for a frame element in its document, so an entry names its
-// <iframe>: its id when no other element has it, else the element's path
-// by type from the nearest ancestor with such an id, or from <html>.
+// Whether a frame element, or an element around it, is [inert]: its
+// document is then read as inert content is.
+function isFrameInert(el) {
+  const dom = createSafeDom();
+  for (const node of frameAncestors(el)) {
+    try {
+      if (dom.hasAttribute(node, 'inert')) return true;
+    } catch {}
+  }
+  return false;
+}
+
+// Whether an open modal dialog covers the frame: the browser makes all but
+// the dialog inert, and a scan taken while one is open judges the dialog,
+// not what it covers, so such a frame is left out as hidden content is.
+function isFrameBehindModal(el) {
+  const dom = createSafeDom();
+  const modals = [];
+  const visit = (root) => {
+    let dialogs = [];
+    try {
+      dialogs = dom.querySelectorAll(root, 'dialog');
+    } catch {}
+    for (const d of dialogs) {
+      try {
+        if (dom.matches(d, ':modal')) modals.push(d);
+      } catch {}
+    }
+    let all = [];
+    try {
+      all = dom.querySelectorAll(root, '*');
+    } catch {}
+    for (const n of all) {
+      const shadow = dom.shadowRoot(n);
+      if (shadow) visit(shadow);
+    }
+  };
+  const doc = dom.ownerDocument(el);
+  if (!doc) return false;
+  visit(doc);
+  if (!modals.length) return false;
+  // With several open, only the topmost is reachable: the others are inert
+  // under it. The browser hit-tests none of an inert dialog, so the topmost
+  // is the one a point at its centre lands in. When that tells none apart
+  // (no layout), every open one counts.
+  const view = dom.defaultView(doc);
+  const top = modals.filter((d) => {
+    try {
+      const r = dom.getBoundingClientRect(d);
+      if (!r || !r.width || !r.height) return false;
+      const x = Math.min(Math.max(r.left + r.width / 2, 0), ((view && view.innerWidth) || 1) - 1);
+      const y = Math.min(Math.max(r.top + r.height / 2, 0), ((view && view.innerHeight) || 1) - 1);
+      const hit = dom.elementFromPoint(doc, x, y);
+      if (!hit) return false;
+      const shadow = dom.shadowRoot(hit);
+      if (!(hit === d || dom.contains(d, hit) || (!!shadow && dom.contains(shadow, d))))
+        return false;
+      // A point in an open modal nested in `d` is in that one: with the inner
+      // one on top, the rest of `d` is inert.
+      return !modals.some(
+        (m) => m !== d && frameAncestors(m).indexOf(d) > 0 && (hit === m || dom.contains(m, hit))
+      );
+    } catch {
+      return false;
+    }
+  });
+  const reachable = top.length ? top : modals;
+  const chain = frameAncestors(el);
+  return !reachable.some((d) => chain.indexOf(d) !== -1);
+}
+
+// A frame matching excludeSelectors, or inside an element that does, is
+// left out with its whole content, as excluded content is by every rule:
+// excluding a third-party embed (an ad slot, a video player), or the shadow
+// host it is in, keeps its document out of the result too. A selector the
+// page can't parse excludes nothing; the scan of this frame has already
+// said so.
+function isFrameExcluded(el, excludeSelectors) {
+  const dom = createSafeDom();
+  const chain = frameAncestors(el);
+  for (const selector of normalizeSelectorList(excludeSelectors)) {
+    try {
+      if (chain.some((node) => dom.matches(node, selector))) return true;
+    } catch {}
+  }
+  return false;
+}
+
+// A selector for a frame element (or a shadow host on the way to it) in its
+// own tree, the document or a shadow root, so an entry names its <iframe>:
+// its id when no other element of that tree has it, else the element's
+// path by type from the nearest ancestor with such an id, or from the
+// tree's top.
 function getFrameElementSelector(el) {
   const dom = createSafeDom();
-  const doc = dom.ownerDocument(el);
+  const root = (dom.get(el, 'getRootNode') && dom.getRootNode(el)) || dom.ownerDocument(el);
   const uniqueId = (node) => {
     const id = dom.get(node, 'getAttribute') ? dom.getAttribute(node, 'id') : null;
     if (!id || !/^[A-Za-z_][\w-]*$/.test(id)) return null;
     try {
-      return dom.querySelectorAll(doc, '#' + id).length === 1 ? '#' + id : null;
+      return dom.querySelectorAll(root, '#' + id).length === 1 ? '#' + id : null;
     } catch {
       return null;
     }
@@ -166,17 +275,28 @@ function getFrameElementSelector(el) {
   return parts.join(' > ');
 }
 
-// Which <iframe>/<frame> an entry is: its selector, and its title, the
-// name it gives its content.
+// Which <iframe>/<frame> an entry is: its selector, in the shadow root it
+// is in when it is in one, the selectors of the shadow hosts leading to it
+// from the document, outermost first (as an occurrence's
+// shadowHostSelectors), and its title, the name it gives its content.
 function describeFrameElement(el) {
   const dom = createSafeDom();
   let title = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'title') : null;
   title = typeof title === 'string' && title.trim() ? title.trim() : null;
   let selector = null;
+  const hosts = [];
   try {
     selector = getFrameElementSelector(el) || null;
+    let root = dom.getRootNode(el);
+    while (root && dom.nodeType(root) === 11 && dom.host(root)) {
+      const host = dom.host(root);
+      hosts.unshift(getFrameElementSelector(host));
+      root = dom.getRootNode(host);
+    }
   } catch {}
-  return { selector: selector, title: title };
+  return hosts.length
+    ? { selector: selector, shadowHostSelectors: hosts, title: title }
+    : { selector: selector, title: title };
 }
 
 function getFrameElementUrl(el) {
@@ -235,16 +355,18 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
   const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
 
   const { roots } = resolveContextRoots(document, contextSelector);
-  const frameElements = findChildFrameElements(roots).filter(
+  const frameElements = findChildFrameElements(roots, eo.includeShadowDom).filter(
     (el) =>
-      (eo.includeHiddenElements === true || isFrameShown(el)) &&
+      (eo.includeHiddenElements === true || (isFrameShown(el) && !isFrameBehindModal(el))) &&
       !isFrameExcluded(el, eo.excludeSelectors)
   );
 
   const framePromises = frameElements.map(function (el) {
     const described = describeFrameElement(el);
     return scanFrame(el).then(function (entry) {
-      const out = { url: entry.url, selector: described.selector, title: described.title };
+      const out = { url: entry.url, selector: described.selector };
+      if (described.shadowHostSelectors) out.shadowHostSelectors = described.shadowHostSelectors;
+      out.title = described.title;
       for (const key of Object.keys(entry)) if (key !== 'url') out[key] = entry[key];
       return out;
     });
@@ -276,7 +398,12 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
         {
           pageUrl: url,
           contextSelector: null,
-          engineOptions: engineOptionsForFrames(eo),
+          // A frame under aria-hidden="true", or in a document that is, is
+          // read as aria-hidden: what is seen still counts, names and roles
+          // don't. One under [inert] is read as inert content: only how it
+          // looks counts. A frame is no page of its own whatever this
+          // document is (topLevelDocument).
+          engineOptions: frameRunOptions(el),
           runOnly: runOnly
         },
         frameWaitTime
@@ -288,6 +415,14 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
           return { url: url, error: String(err && err.message ? err.message : err) };
         });
     });
+  }
+
+  function frameRunOptions(el) {
+    const out = { ...engineOptionsForFrames(eo) };
+    delete out.topLevelDocument;
+    if (isFrameAriaHidden(el)) out.embeddedAriaHidden = true;
+    if (isFrameInert(el)) out.embeddedInert = true;
+    return out;
   }
 
   return Promise.all(framePromises).then(function (frames) {
@@ -333,6 +468,10 @@ module.exports = {
   engineOptionsForFrames,
   isFrameShown,
   isFrameExcluded,
+  isFrameAriaHidden,
+  isFrameInert,
+  isFrameBehindModal,
+  frameAncestors,
   getFrameElementSelector,
   describeFrameElement,
   getFrameElementUrl,

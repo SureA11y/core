@@ -58,3 +58,34 @@ test('p-as-heading still finds bold text set apart, and leaves out what it left 
   );
   assert.equal(run(nested(3, `<h2>${bold}</h2>`)).occurrences.length, 0);
 });
+
+// jsdom runs out of stack reading the computed style of an element a few
+// thousand levels deep: the read itself throws, which stopped the rule.
+// Stood in for here by a style that throws on every read.
+test('p-as-heading passes over a block whose style throws, and still judges the others', () => {
+  const bold = (id) => `<p id="${id}" style="font-weight:700;font-size:24px">Shipping</p>`;
+  const dom = new JSDOM(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+      `<div class="deep">${bold('deep')}</div>${bold('ok')}` +
+      '</main></body></html>'
+  );
+  const { window } = dom;
+  const getComputedStyle = window.getComputedStyle.bind(window);
+  const throwing = new Proxy(
+    {},
+    {
+      get() {
+        throw new RangeError('Maximum call stack size exceeded');
+      }
+    }
+  );
+  window.getComputedStyle = (el, pseudo) =>
+    el && el.closest && el.closest('.deep') ? throwing : getComputedStyle(el, pseudo);
+  const rule = runa11yCoreOnDom(dom, { runOnly: ['p-as-heading'], entryPointParity: false })
+    .checksResults[0];
+  assert.equal(rule.error, undefined);
+  assert.deepEqual(
+    rule.occurrences.map((o) => o.selector),
+    ['#ok']
+  );
+});

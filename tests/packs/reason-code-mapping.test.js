@@ -75,7 +75,7 @@ test('a finding whose code the map makes a question is one, in every requirement
 });
 
 test('a finding of another code fails the row requirement, and leaves the others', () => {
-  const result = scan('<ul><li>1</li><div>stray</div></ul>');
+  const result = scan('<ul><li>1</li><div style="display:list-item">stray</div></ul>');
   assert.equal(rollup(result, 'L1').outcome, 'fail');
   assert.equal(rollup(result, 'L2').outcome, 'pass');
 });
@@ -97,7 +97,9 @@ test('the rule maps to every requirement its codes send findings to', () => {
 // fail): the requirement its finding counted toward drops to cantTell, and
 // one the finding never went to stays a pass.
 test('a stored result read back keeps the judgement by reason code', () => {
-  const stored = JSON.parse(JSON.stringify(scan('<ul><li>1</li><div>stray</div></ul>')));
+  const stored = JSON.parse(
+    JSON.stringify(scan('<ul><li>1</li><div style="display:list-item">stray</div></ul>'))
+  );
   stored.checksResults.find((c) => c.ruleId === 'list-children-valid').policyOutcome = 'fail';
   const read = coercedResult(stored);
   assert.equal(
@@ -118,14 +120,14 @@ test('the map is checked', () => {
       '1.0': {
         'list-children-valid': {
           requirements: ['L1'],
-          reasonCodes: { X: { requirements: ['L9'] }, Y: { outcome: 'fail' }, Z: 'cantTell' }
+          reasonCodes: { X: { requirements: ['L9'] }, Y: { outcome: 'pass' }, Z: 'cantTell' }
         }
       }
     }
   });
   assert.deepEqual(bad.validate([{ ruleId: 'list-children-valid', wcagSc: ['1.3.1'] }]), [
     '1.0 list-children-valid X: no requirement L9',
-    "1.0 list-children-valid Y: outcome can only be 'cantTell'",
+    "1.0 list-children-valid Y: outcome can only be 'cantTell' or 'fail'",
     '1.0 list-children-valid Z: must be { requirements, outcome }'
   ]);
 });

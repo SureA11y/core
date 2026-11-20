@@ -89,11 +89,11 @@ No `<img usemap>` references this map, so the area is never hit-tested or render
 ```
 `aria-checked` is one of the states role="checkbox" supports.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <div role="checkbox" aria-valuenow="1"></div>
 ```
-`aria-valuenow` belongs to range widgets, not role="checkbox".
+`aria-valuenow` belongs to range widgets, not role="checkbox": a WAI-ARIA violation. The checkbox keeps its name, role and state without it, so whether WCAG 4.1.2 fails depends on what the attribute was meant to convey.
 
 ## aria-allowed-role
 
@@ -320,11 +320,11 @@ role="tab" has no tablist ancestor or owner anywhere on the page.
 ```
 role="grid" requires an accessible name, and `aria-label` provides one.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <div role="grid"></div>
 ```
-role="grid" requires an accessible name; none is present.
+role="grid" requires an accessible name in WAI-ARIA; none is present. A grid is a container of controls, not a single control, so whether a WCAG criterion fails depends on whether the page shows a title for it that is not tied to it.
 
 ## aria-roles-valid
 
@@ -336,11 +336,19 @@ role="grid" requires an accessible name; none is present.
 
 **Failed**
 ```html
-<div role="buton"></div>
+<div role="buton" tabindex="0">Save</div>
 ```
-"buton" isn't a defined ARIA role token (typo).
+"buton" isn't a defined ARIA role token (typo), so a control that takes focus is left with no role.
+
+**Flagged (cantTell)**
+```html
+<div role="heding">Orders</div>
+```
+"heding" isn't a defined ARIA role token either, but the element takes no focus: whether losing the heading role fails WCAG depends on whether the page shows it as a heading.
 
 ## aria-text
+
+*`text` is no WAI-ARIA role (neither 1.2 nor the 1.3 draft defines it), so `aria-roles-valid` also reports every `role="text"` below as naming no valid role. This rule reads the token itself and asks only about focusable content inside it.*
 
 **Passed**
 ```html
@@ -352,7 +360,7 @@ No focusable descendant exists inside the `role="text"` element.
 ```html
 <span role="text">Some text with <a href="#">a link</a> inside it.</span>
 ```
-`role="text"` tells assistive technology to treat this as a single flat string, but the nested link is still focusable and interactive underneath it.
+`role="text"` is meant to have the content read as a single flat string, but the nested link is still focusable and interactive underneath it.
 
 ## aria-valid-attr
 
@@ -380,9 +388,15 @@ No focusable descendant exists inside the `role="text"` element.
 
 **Failed**
 ```html
+<div role="checkbox" tabindex="0" aria-checked="yes">Subscribe</div>
+```
+`aria-checked` is tristate; "yes" isn't a valid token, so the checkbox's checked state is not stated.
+
+**Flagged (cantTell)**
+```html
 <div aria-hidden="yes"></div>
 ```
-`aria-hidden` is boolean-typed; "yes" isn't a valid boolean token.
+`aria-hidden` is boolean-typed; "yes" isn't a valid boolean token. It carries no control's state, so whether a WCAG criterion fails depends on the page.
 
 ## autocomplete-valid
 
@@ -677,7 +691,7 @@ A landscape media query forces a 90-degree rotation, locking the page to portrai
 ```
 `<dl>`'s only direct children are `dt`/`dd`.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <dl>
   <dt>Term</dt>
@@ -685,7 +699,7 @@ A landscape media query forces a 90-degree rotation, locking the page to portrai
   <p>oops</p>
 </dl>
 ```
-The `<p>` is a direct child of `<dl>` that isn't `dt`/`dd` (or an allowed wrapper).
+The `<p>` is a direct child of `<dl>` that isn't `dt`/`dd` (or an allowed wrapper). The term and definition keep their roles, so whether a WCAG criterion fails depends on whether the page shows a pairing the markup breaks.
 
 ## deprecated-elements-not-used
 
@@ -712,13 +726,13 @@ No `<marquee>` anywhere, which satisfies the rule outright; there is no separate
 ```
 `aria-label` names the dialog.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <div role="dialog">
   <p>Body text only.</p>
 </div>
 ```
-No accessible name; visible body text doesn't count toward a dialog's name.
+No accessible name, which WAI-ARIA requires; visible body text doesn't count toward a dialog's name. A dialog is not a single control, so whether a WCAG criterion fails depends on whether it shows a title that is not tied to it.
 
 ## dlitem-parent-valid
 
@@ -731,13 +745,13 @@ No accessible name; visible body text doesn't count toward a dialog's name.
 ```
 Both `dt` and `dd` are inside a `<dl>` ancestor.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <div>
   <dt>orphan</dt>
 </div>
 ```
-`<dt>` has no `<dl>` ancestor at all.
+`<dt>` has no `<dl>` ancestor at all. It keeps its term role, so whether a WCAG criterion fails depends on whether the page shows it paired with a definition.
 
 ## duplicate-id
 
@@ -833,6 +847,50 @@ The header cell has visible text content.
 <table><tr><th></th></tr></table>
 ```
 The header cell has no text content and no accessible name.
+
+## focus-not-obscured-enhanced
+
+**Passed** (in a browser)
+```html
+<style>html { scroll-padding-bottom: 60px; } footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #fff; }</style>
+<p style="height: 1000px">Article</p>
+<p><a href="/next">Next article</a></p>
+<p style="height: 1000px"></p>
+<footer>Site footer</footer>
+```
+The page's `scroll-padding-bottom` is as tall as the fixed footer, so focus scrolls the link clear of it before it can be hidden, even in part.
+
+**Flagged (cantTell)** (in a browser)
+```html
+<style>.chat { position: fixed; bottom: 0; left: 0; width: 40px; height: 60px; background: #036; }</style>
+<p style="height: 1000px">Article</p>
+<p><a href="/next" style="display: inline-block; width: 200px">Next article</a></p>
+<p style="height: 1000px"></p>
+<div class="chat">Chat</div>
+```
+The chat button stays in place over the bottom of the window, which the page still counts as in view, so the link can take focus with part of it hidden behind the button.
+
+## focus-not-obscured-minimum
+
+**Passed** (in a browser)
+```html
+<style>html { scroll-padding-bottom: 60px; } footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #fff; }</style>
+<p style="height: 1000px">Article</p>
+<p><a href="/next">Next article</a></p>
+<p style="height: 1000px"></p>
+<footer>Site footer</footer>
+```
+The page's `scroll-padding-bottom` is as tall as the fixed footer, so focus scrolls the link clear of it.
+
+**Flagged (cantTell)** (in a browser)
+```html
+<style>footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #fff; }</style>
+<p style="height: 1000px">Article</p>
+<p><a href="/next">Next article</a></p>
+<p style="height: 1000px"></p>
+<footer>Site footer</footer>
+```
+The fixed footer covers the bottom 60px of the window, which the page still counts as in view, so the link can take focus there entirely hidden behind it, as the next link often does while tabbing down a page.
 
 ## focus-order-semantics
 
@@ -1505,6 +1563,22 @@ No text content, `aria-label`, or `aria-labelledby`.
 ```
 The link text is specific and descriptive.
 
+## link-name-quality-link-only
+
+*It runs in a scan that targets AAA. A generic link with no context around it is `link-name-quality`'s finding, which counts toward 2.4.9 too.*
+
+**Flagged (cantTell)**
+```html
+<p>For the 2026 pricing sheet, <a href="/prices">click here</a>.</p>
+```
+The sentence says where the link leads, which 2.4.4 accepts, but "click here" alone doesn't, which 2.4.9 asks of the link text (F84).
+
+**Not applicable**
+```html
+<p>Prices changed. <a href="/prices">Download the 2026 pricing guide</a>.</p>
+```
+The link text says where it leads on its own.
+
 ## list-children-valid
 
 **Passed**
@@ -1519,11 +1593,21 @@ The link text is specific and descriptive.
 **Failed**
 ```html
 <ul>
+  <div>
+    <li>Elderberry</li>
+  </div>
+</ul>
+```
+A `<div>` between the `<ul>` and its `<li>` leaves the bulleted item in no list.
+
+**Flagged (cantTell)**
+```html
+<ul>
   <li>Elderberry</li>
   <div>wrapper</div>
 </ul>
 ```
-A `<div>` is a direct child of `<ul>` alongside the `<li>`.
+A `<div>` is a direct child of `<ul>` alongside the `<li>`, but it is not drawn as a list item: whether a WCAG criterion fails depends on whether the page shows it as one.
 
 ## listbox-name-present
 
@@ -1555,7 +1639,7 @@ No accessible name from any supported mechanism.
   <li>Date</li>
 </div>
 ```
-`<li>` has no `<ul>`/`<ol>`/`role="list"` ancestor.
+`<li>` has no `<ul>`/`<ol>`/`role="list"` ancestor, yet the browser draws it with a bullet: the page shows a list item the markup leaves in no list.
 
 ## live-region-announcements
 
@@ -1745,7 +1829,7 @@ No nested interactive control.
   <input type="checkbox"> Accept
 </button>
 ```
-A `<button>` contains a nested `<input type="checkbox">`, another focusable control.
+A `<button>` contains a nested `<input type="checkbox">`, another focusable control. A button's children are presentational, so the checkbox loses its role.
 
 ## no-autoplay-audio
 
@@ -1838,6 +1922,26 @@ Normal weight and size; nothing visually suggests a heading.
 ```
 A `<div>` holding only text is checked like a `<p>`, and the bold can come from a styled `<span>` inside it. A `<div>` that holds other blocks, and text inside a button, label or table header, is not asked about.
 
+**Flagged (cantTell)**
+```html
+<p><strong>Opening hours</strong></p>
+<p>Monday to Friday, from nine to five.</p>
+```
+A bold line at body size that doesn't end as a sentence and comes before plain text reads as a title (`BOLD_SHORT_PARAGRAPH`). A bold sentence ending in a full stop, a run of bold lines such as an address, a bold number and a bold link alone are not asked about at this size.
+
+**Flagged (cantTell)**
+```html
+<div><b>Our story</b></div>
+<div>We started in a garage in 1998 and grew to three hundred people in four cities.</div>
+```
+A bold `<div>` at body size is asked about above a passage of lighter text (`BOLD_SHORT_DIV`). A `<div>` is more often a label, a badge or a price, so it isn't asked about above a short line such as a price or "Our latest products.", nor beside what follows it in a flex row or a grid with columns.
+
+**Flagged (cantTell)**
+```html
+<p><strong>Opening hours</strong><br>Monday to Friday, from nine in the morning to five in the evening.</p>
+```
+A bold first line ended by a line break, before a passage of lighter text in the same paragraph, reads as a title written into the paragraph (`BOLD_LEAD_LINE`). A bold name over an address, a label over a phone number and a line ending in a colon are not asked about.
+
 ## page-has-heading-one
 
 **Passed**
@@ -1890,6 +1994,47 @@ The document has a non-empty `<title>`.
 </html>
 ```
 No `<title>` element anywhere in the document.
+
+## page-zones-landmark
+
+**Passed**
+```html
+<body>
+  <header><a href="/">Site</a></header>
+  <nav class="menu"><a href="/news">News</a> <a href="/contact">Contact</a></nav>
+  <main><p>Content</p></main>
+  <footer>© Site</footer>
+</body>
+```
+The header, the navigation and the footer are landmarks.
+
+**Flagged (cantTell)**
+```html
+<body>
+  <div class="site-header"><a href="/">Site</a></div>
+  <main><p>Content</p></main>
+</body>
+```
+The block named as the page header is not a banner landmark, and the page has none: a person checks whether it is the page header.
+
+**Flagged (cantTell)**
+```html
+<body>
+  <main>
+    <header><a href="/">Site</a></header>
+    <p>Content</p>
+  </main>
+</body>
+```
+The page's `<header>` is inside `<main>`, where it is not a banner landmark, and the page has none.
+
+**Not applicable**
+```html
+<body>
+  <main><p>Content</p></main>
+</body>
+```
+Nothing on the page is named as a zone, and it has no header, footer or search form.
 
 ## password-paste-enabled
 
@@ -1953,6 +2098,37 @@ The nested `<span>` carries its own interactive role and tab stop inside the but
 <div role="progressbar" aria-valuenow="50"></div>
 ```
 No accessible name from any supported mechanism.
+
+## reflow-horizontal-scroll
+
+**Passed (at 320 CSS pixels wide)**
+```html
+<p>Opening hours today, and the rest of the week from nine to five.</p>
+<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='40'/%3E" width="800" height="40" alt="A wide banner" style="max-width:100%; height:auto;">
+```
+The text wraps and the image shrinks to the width, so the page scrolls only up and down.
+
+**Failed (at 320 CSS pixels wide)**
+```html
+<div style="width:600px">Opening hours today.</div>
+```
+A box 600 pixels wide sticks out past the edge of a 320 pixel screen, so the page scrolls sideways (WCAG 1.4.10).
+
+**Flagged (cantTell) (at 320 CSS pixels wide)**
+```html
+<table style="width:600px">
+  <caption>Opening hours</caption>
+  <tr><th>Day</th><th>Opens</th><th>Closes</th></tr>
+  <tr><td>Monday</td><td>9:00</td><td>17:00</td></tr>
+</table>
+```
+A data table may scroll sideways, as content that needs two dimensions; a person checks that only the table does. It leans pass: the table has header cells and a caption.
+
+**Not applicable**
+```html
+<div style="width:600px">Opening hours today.</div>
+```
+At a usual width (these examples run at 1280 pixels unless they say otherwise), the rule doesn't apply: reflow is checked by laying the page out at 320 CSS pixels wide.
 
 ## region
 
@@ -2277,6 +2453,20 @@ The table has at least one `<td>` for the `<th>` to head.
 ```
 The table has a `<th>` but zero `<td>` anywhere.
 
+## target-size-enhanced
+
+**Passed**
+```html
+<button style="width:44px; height:44px; padding:0;">+</button>
+```
+Meets the 44×44 CSS pixel size of WCAG 2.5.5 on its own.
+
+**Failed**
+```html
+<button style="width:30px; height:30px; padding:0;">+</button>
+```
+30×30 meets 2.5.8's 24×24 but not 2.5.5's 44×44, and 2.5.5 has no spacing exception: the button fails however far it is from other targets.
+
 ## target-size-minimum
 
 **Passed**
@@ -2302,7 +2492,7 @@ Both targets are 10×10, under 24×24, and their centres are 15px apart, closer 
   <tr><th>East</th><td>7</td><td>8</td><td>9</td></tr>
 </table>
 ```
-Every `<td>` has both an implicit row header (`<th>` earlier in its row) and column header (`<th>` earlier in its column). The 4x4 minimum size isn't optional — this rule is inapplicable to smaller tables.
+Every `<td>` has both an implicit row header (`<th>` earlier in its row) and column header (`<th>` earlier in its column).
 
 **Failed**
 ```html
@@ -2314,6 +2504,16 @@ Every `<td>` has both an implicit row header (`<th>` earlier in its row) and col
 </table>
 ```
 The header row stops one column short: the last column's cells have no row, column, or `headers`-attribute association. A table with no header cell at all is asked about instead, since it may be a layout table, which needs none.
+
+**Flagged (cantTell)**
+```html
+<table>
+  <tr><td>Plan</td><td>Price</td></tr>
+  <tr><td>Basic</td><td>10</td></tr>
+  <tr><td>Pro</td><td>20</td></tr>
+</table>
+```
+A small table is checked as a large one is, from 2 rows and 2 columns: this one has no header cell, so it is asked about, as a data table without headers or a layout table that needs none. A single row or column is not applicable.
 
 ## text-spacing-content-loss
 
@@ -2354,11 +2554,11 @@ No accessible name from any supported mechanism.
 ```
 Visible text content names the tooltip.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <div role="tooltip"></div>
 ```
-No text content and no accessible name.
+No text content and no accessible name, which WAI-ARIA requires. A tooltip is not a control, and an empty one shows nothing that is missing.
 
 ## treeitem-name-present
 

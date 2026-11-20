@@ -12,6 +12,25 @@ function createContrastHelpers(opts, shared) {
   const computedStyle = shared.computedStyle;
   const composedParent = shared.composedParent;
   const buildSimpleSelector = shared.buildSimpleSelector;
+  const selectorIndex = shared.selectorIndex;
+  // An element and its ancestors in the flat tree, nearest first, up to
+  // the walk's limit, kept per element for the run (dom-helpers'
+  // ancestorsIncludingSelf); walked here where it isn't given.
+  const ancestorsOf =
+    typeof shared.ancestorsIncludingSelf === 'function'
+      ? shared.ancestorsIncludingSelf
+      : (el) => {
+          const out = [];
+          for (let cur = el, guard = 0; cur && guard++ < 10000; cur = composedParent(cur))
+            out.push(cur);
+          return out;
+        };
+  // el.closest(selector), kept per element for the run where dom-helpers
+  // gives it (closestCached).
+  const closestOf =
+    typeof shared.closestCached === 'function'
+      ? shared.closestCached
+      : (el, selector) => dom.closest(el, selector);
 
   const clamp01 = (n) => {
     const x = Number(n);
@@ -25,9 +44,27 @@ function createContrastHelpers(opts, shared) {
   // such as the empty string jsdom 26 gives for an opacity no style sets,
   // is the initial value, 1: clamp01 would make it 0, as if the element
   // were invisible.
+  // Kept per style object, which is per element for the run
+  // (__contrastComputedStyle): the walks up an element's ancestors ask it of
+  // each, and under jsdom reading a style's property costs more than the
+  // rest of a step.
+  const __opacityByStyle = new WeakMap();
   const opacityOf = (cs) => {
+    const keep = !!cs && typeof cs === 'object';
+    if (keep && __opacityByStyle.has(cs)) return __opacityByStyle.get(cs);
     const x = Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1');
-    return Number.isFinite(x) ? clamp01(x) : 1;
+    const out = Number.isFinite(x) ? clamp01(x) : 1;
+    if (keep) __opacityByStyle.set(cs, out);
+    return out;
+  };
+  // A style's background-color as the browser gives it, kept as opacityOf is.
+  const __bgColorByStyle = new WeakMap();
+  const backgroundColorOf = (cs) => {
+    if (!cs || typeof cs !== 'object') return undefined;
+    if (__bgColorByStyle.has(cs)) return __bgColorByStyle.get(cs);
+    const out = cs.backgroundColor;
+    __bgColorByStyle.set(cs, out);
+    return out;
   };
 
   const clamp255 = (n) => {
@@ -257,8 +294,22 @@ function createContrastHelpers(opts, shared) {
   // (disabled) user interface component has no contrast requirement. Walk the
   // ancestor chain (not just the text's immediate parent) so text nested inside
   // a disabled control, e.g. <button disabled><span>Label</span></button>, is
-  // still recognized as inactive.
+  // still recognized as inactive. Answered once per element per run: every
+  // text element asks it of each of its ancestors, and under jsdom matching
+  // :disabled walks the ancestors again, so a deep page cost elements x
+  // depth x depth.
   function isDisabledWidget(node) {
+    const cache = __getSharedWeakMapCache('__disabledWidgetCache');
+    if (cache && node && typeof node === 'object') {
+      const known = cache.get(node);
+      if (known !== undefined) return known;
+      const out = isDisabledWidgetUncached(node);
+      cache.set(node, out);
+      return out;
+    }
+    return isDisabledWidgetUncached(node);
+  }
+  function isDisabledWidgetUncached(node) {
     try {
       if (typeof dom.get(node, 'matches') === 'function' && dom.matches(node, ':disabled'))
         return true;
@@ -315,7 +366,10 @@ function createContrastHelpers(opts, shared) {
             : dom.ownerDocument(labelAncestor);
         const labelId = dom.get(labelAncestor, 'id');
         if (tree && labelId) {
-          const referrers = dom.querySelectorAll(tree, '[aria-labelledby~="' + labelId + '"]');
+          const referrers = dom.querySelectorAll(
+            tree,
+            '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
+          );
           for (const ref of referrers) {
             if (isDisabledWidget(ref)) return true;
           }
@@ -443,7 +497,7 @@ function createContrastHelpers(opts, shared) {
     if (__dropDownOptionCache.has(el)) return __dropDownOptionCache.get(el);
     let out = null;
     try {
-      const option = dom.closest(el, 'option');
+      const option = closestOf(el, 'option');
       const select = option ? dom.closest(option, 'select') : null;
       const selectCs = select ? __contrastComputedStyle(select) : null;
       // A customizable select draws its closed control from the page's own
@@ -1058,7 +1112,7 @@ function createContrastHelpers(opts, shared) {
             try {
               const found =
                 selector === beforeOrAfter && __beforeOrAfterHostSetByRoot.get(walkRoot);
-              hosts = Array.from(found || dom.querySelectorAll(walkRoot, selector));
+              hosts = [...(found || dom.querySelectorAll(walkRoot, selector))];
               if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
                 hosts.unshift(walkRoot);
             } catch {
@@ -2618,6 +2672,79 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // An element as a message names it: its tag with its id, or else with its
+  // class, as in <div class="card is-disabled">.
+  function describeElement(el) {
+    try {
+      if (!el || dom.nodeType(el) !== 1) return '';
+      const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
+      const cut = (s) => (s.length > 60 ? s.slice(0, 57) + '...' : s);
+      const id = trim(String(dom.getAttribute(el, 'id') || ''));
+      if (id) return `<${tag} id="${cut(id)}">`;
+      const cls = trim(String(dom.getAttribute(el, 'class') || '').replace(/\s+/g, ' '));
+      if (cls) return `<${tag} class="${cut(cls)}">`;
+      return `<${tag}>`;
+    } catch {
+      return '';
+    }
+  }
+
+  // Why text is drawn in a color other than the one its CSS gives: the
+  // elements, itself or its ancestors, whose opacity below 1 fades it
+  // (nearest first), and the alpha of its own color. declaredColor is that
+  // color as CSS gives it: a hex, or rgba() where it is semi-transparent.
+  // null where it can't be read.
+  function describeFade(el) {
+    try {
+      if (!el || dom.nodeType(el) !== 1) return null;
+      const declared = parseCssColorToRgba(textFillColor(el));
+      if (!declared) return null;
+      const faders = [];
+      for (const cur of ancestorsOf(el)) {
+        if (dom.nodeType(cur) !== 1) continue;
+        const o = opacityOf(__contrastComputedStyle(cur));
+        if (o < 1) faders.push({ element: cur, description: describeElement(cur), opacity: o });
+      }
+      const alpha = declared.a == null ? 1 : clamp01(declared.a);
+      const declaredColor =
+        alpha < 1
+          ? `rgba(${Math.round(declared.r)}, ${Math.round(declared.g)}, ${Math.round(declared.b)}, ${Math.round(alpha * 100) / 100})`
+          : rgbToHex(declared);
+      return { declaredColor, colorAlpha: alpha, faders };
+    } catch {
+      return null;
+    }
+  }
+
+  // The ancestor that paints the background el's text is measured on, as a
+  // message names it (describeElement), where the reader would not find that
+  // color on el: the nearest ancestor with a background, when it is an
+  // opaque color and is the one measured (bgHex). '' where el paints its own background, where the color is
+  // blended from several layers or comes from elsewhere, and where it is the
+  // page's own (<html> or <body>).
+  function describeBackgroundSource(el, bgHex) {
+    try {
+      if (!el || dom.nodeType(el) !== 1 || !bgHex) return '';
+      if (__svgBackdropOf(el) || __fieldText(el)) return '';
+      for (const cur of ancestorsOf(el)) {
+        if (dom.nodeType(cur) !== 1) continue;
+        const cs = __contrastComputedStyle(cur);
+        const bg = parseCssColorToRgba(backgroundColorOf(cs));
+        const paints = (bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(cur, cs);
+        if (!paints) continue;
+        if (cur === el || !bg || bg.a < 1 || __hasBackgroundImageOrGradientEl(cur, cs)) return '';
+        const tag = String(dom.localName(cur) || '').toLowerCase();
+        if (tag === 'html' || tag === 'body') return '';
+        return String(rgbToHex(bg)).toLowerCase() === String(bgHex).toLowerCase()
+          ? describeElement(cur)
+          : '';
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  }
+
   // -------- Opacity product memoization --------
 
   const __localOpacityProductCache = new WeakMap();
@@ -2630,17 +2757,11 @@ function createContrastHelpers(opts, shared) {
       if (__opacityProductCache.has(el)) return __opacityProductCache.get(el);
 
       let prod = 1;
-      let cur = el;
-      let guard = 0;
-      while (cur && guard++ < 200) {
-        if (dom.nodeType(cur) !== 1) {
-          cur = composedParent(cur);
-          continue;
-        }
+      for (const cur of ancestorsOf(el)) {
+        if (dom.nodeType(cur) !== 1) continue;
         const cs = __contrastComputedStyle(cur);
         const o = opacityOf(cs);
         prod *= o;
-        cur = composedParent(cur);
         if (prod <= 0) break;
       }
 
@@ -2737,6 +2858,12 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
+  const __isLinkByEl = new WeakMap();
+  function __isLinkKept(el) {
+    if (!el || typeof el !== 'object') return __isLink(el);
+    if (!__isLinkByEl.has(el)) __isLinkByEl.set(el, __isLink(el));
+    return __isLinkByEl.get(el);
+  }
   function __isLink(el) {
     try {
       const name = String(dom.localName(el) || '').toLowerCase();
@@ -2825,6 +2952,23 @@ function createContrastHelpers(opts, shared) {
       } else i++;
     }
     return a * 1e6 + b * 1e3 + c;
+  }
+
+  // The specificity (__specificityOf) of the most specific selector of a
+  // list that el matches, which is what the cascade weighs for a rule with
+  // that list; -1 where none matches or none can be read.
+  function matchedSpecificity(el, selectorText) {
+    let best = -1;
+    for (const part of __splitTopLevel(String(selectorText || '')).filter(Boolean)) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        matched = false;
+      }
+      if (matched) best = Math.max(best, __specificityOf(part));
+    }
+    return best;
   }
 
   // The style rules that set a color property (`color`, or
@@ -2920,10 +3064,13 @@ function createContrastHelpers(opts, shared) {
       }
     };
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
+        // <style media="print"> or <link media="print">: not the screen's.
+        if (sheet && sheet.disabled === true) continue;
+        if (!mediaApplies(sheet)) continue;
         let rules;
         try {
           rules = sheet.cssRules;
@@ -2940,6 +3087,27 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
+  // The parts of a root's rules for prop (__colorRulesOf) that may match el,
+  // in the rules' order (selectorIndex): a page with many color rules costs
+  // elements x the rules that could apply, not elements x rules. Each entry
+  // is { rule, part }; a pseudo-element's part is left out.
+  function __colorPartsFor(found, el) {
+    if (!found.index) {
+      const entries = [];
+      for (const rule of found.rules) {
+        for (const part of rule.parts) {
+          // A pseudo-element paints another box; :visited isn't known here,
+          // and the link is taken as not visited, as jsdom takes it.
+          if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
+          entries.push({ rule, part });
+        }
+      }
+      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+    }
+    const { entries, index } = found.index;
+    return index.candidates(el).map((i) => entries[i]);
+  }
+
   // The author's declaration of `color` (or of prop) that wins for el in a
   // browser: { value }, null where none applies, or { unknown: true } where
   // it can't be told.
@@ -2951,31 +3119,26 @@ function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
-    const { rules, unreadable } = __colorRulesOf(root, prop);
-    if (unreadable) return { unknown: true };
+    const found = __colorRulesOf(root, prop);
+    if (found.unreadable) return { unknown: true };
     let best = null;
     let unknown = false;
-    for (const rule of rules) {
-      for (const part of rule.parts) {
-        // A pseudo-element paints another box; :visited isn't known here,
-        // and the link is taken as not visited, as jsdom takes it.
-        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
-        let matched;
-        try {
-          matched = dom.matches(el, part);
-        } catch {
-          unknown = true;
-          continue;
-        }
-        if (!matched) continue;
-        if (rule.uncertain) {
-          unknown = true;
-          continue;
-        }
-        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
-        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
-          best = { rank, order: rule.order, value: rule.value };
+    for (const { rule, part } of __colorPartsFor(found, el)) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        unknown = true;
+        continue;
       }
+      if (!matched) continue;
+      if (rule.uncertain) {
+        unknown = true;
+        continue;
+      }
+      const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+      if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+        best = { rank, order: rule.order, value: rule.value };
     }
     // The style attribute outranks every rule of its importance.
     try {
@@ -3003,29 +3166,26 @@ function createContrastHelpers(opts, shared) {
     }
     root = root || dom.ownerDocument(el);
     const out = { values: [], winner: null, uncertain: false, unknown: false };
-    const { rules, unreadable } = __colorRulesOf(root, prop);
-    if (unreadable) {
+    const found = __colorRulesOf(root, prop);
+    if (found.unreadable) {
       out.unknown = true;
       return out;
     }
     let best = null;
-    for (const rule of rules) {
-      for (const part of rule.parts) {
-        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
-        let matched;
-        try {
-          matched = dom.matches(el, part);
-        } catch {
-          out.unknown = true;
-          continue;
-        }
-        if (!matched) continue;
-        out.values.push(rule.value);
-        if (rule.uncertain) out.uncertain = true;
-        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
-        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
-          best = { rank, order: rule.order, value: rule.value };
+    for (const { rule, part } of __colorPartsFor(found, el)) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        out.unknown = true;
+        continue;
       }
+      if (!matched) continue;
+      out.values.push(rule.value);
+      if (rule.uncertain) out.uncertain = true;
+      const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+      if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+        best = { rank, order: rule.order, value: rule.value };
     }
     try {
       const style = dom.get(el, 'style');
@@ -3058,15 +3218,9 @@ function createContrastHelpers(opts, shared) {
     if (!__underJsdom(dom.ownerDocument(el))) return undefined;
     // Only text in a link: the browser's sheet sets the color of nothing
     // else that jsdom ranks differently.
-    let inLink = false;
-    for (let cur = el, depth = 0; cur && depth < 200; depth++) {
-      if (__isLink(cur)) {
-        inLink = true;
-        break;
-      }
-      cur = composedParent(cur);
-    }
-    if (!inLink) return undefined;
+    // Each element's answer is kept for the run, as its chain of ancestors
+    // is, so a deep page asks it of each element once.
+    if (!ancestorsOf(el).some(__isLinkKept)) return undefined;
     const parent = composedParent(el);
     const inherited = () => {
       if (!parent || dom.nodeType(parent) !== 1) return null;
@@ -3464,7 +3618,7 @@ function createContrastHelpers(opts, shared) {
       if (!occ.data.details || typeof occ.data.details !== 'object') occ.data.details = {};
       occ.data.details.forcedColors = true;
       occ.hint =
-        'Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.';
+        'Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: contrast is judged in the page’s own colors.';
       if (occ.i18n && typeof occ.i18n === 'object') occ.i18n.hintKey = 'contrast_hint_forcedColors';
     }
     return occurrences;
@@ -3537,7 +3691,7 @@ function createContrastHelpers(opts, shared) {
       // schemes").
       if (!supported.length && (!rootValue || rootValue.toLowerCase() === 'normal')) {
         const metas = dom.call(doc, 'querySelectorAll', 'meta[name="color-scheme" i]') || [];
-        for (const meta of Array.from(metas)) {
+        for (const meta of [...metas]) {
           const named = __schemesNamed(dom.getAttribute(meta, 'content'));
           if (named.length) {
             supported = named;
@@ -3764,9 +3918,9 @@ function createContrastHelpers(opts, shared) {
       }
     };
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         const rules = rulesOf(sheet);
         if (!rules) {
@@ -4217,8 +4371,6 @@ function createContrastHelpers(opts, shared) {
         acc = compositeRgba(acc, { r: own.r, g: own.g, b: own.b, a: clamp01(own.a) });
       }
     }
-    let cur = el;
-    let guard = 0;
     // A background color this parser can't read, met while what is in front
     // of it still lets it show through. Skipping it as if transparent would
     // judge the text against whatever lies further out.
@@ -4227,30 +4379,29 @@ function createContrastHelpers(opts, shared) {
     // text): that background is the text's color, not behind it.
     const clipOwner = __clipTextOwner(el);
 
-    while (cur && guard++ < 200) {
-      if (dom.nodeType(cur) !== 1) {
-        cur = composedParent(cur);
-        continue;
-      }
+    for (const cur of ancestorsOf(el)) {
+      if (dom.nodeType(cur) !== 1) continue;
       if (cur === clipOwner) {
         const ocs = __contrastComputedStyle(cur);
         const oop = opacityOf(ocs);
         if (oop < 1) acc = { r: acc.r, g: acc.g, b: acc.b, a: clamp01(acc.a * oop) };
-        cur = composedParent(cur);
         continue;
       }
 
       const cs = __contrastComputedStyle(cur);
-      const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+      const bgColor = backgroundColorOf(cs);
+      const bg = parseCssColorToRgba(bgColor);
       const op = opacityOf(cs);
 
-      if (!bg && acc.a < 1 && trim(cs && cs.backgroundColor)) {
+      if (!bg && acc.a < 1 && trim(bgColor)) {
         unparsable = {
           selector: __getSimpleSelectorCached(
             cur,
             (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
-          value: truncateCssValue(trim(cs.backgroundColor), 80)
+          element: describeElement(cur),
+          isAncestor: cur !== el,
+          value: truncateCssValue(trim(bgColor), 80)
         };
         break;
       }
@@ -4306,8 +4457,6 @@ function createContrastHelpers(opts, shared) {
       if (op < 1) {
         acc = { r: acc.r, g: acc.g, b: acc.b, a: clamp01(acc.a * op) };
       }
-
-      cur = composedParent(cur);
     }
 
     let out;
@@ -4322,6 +4471,8 @@ function createContrastHelpers(opts, shared) {
         stack: stack || [],
         reasonCode: 'BACKGROUND_UNPARSABLE',
         blockerSelector: unparsable.selector,
+        blockerElement: unparsable.element,
+        blockerIsAncestor: unparsable.isAncestor,
         blockerProperty: 'background-color',
         blockerValue: unparsable.value
       };
@@ -4616,9 +4767,9 @@ function createContrastHelpers(opts, shared) {
     } catch {}
     let found = false;
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         let rules;
         try {
@@ -4696,9 +4847,9 @@ function createContrastHelpers(opts, shared) {
     const bases = new Set();
     let all = false;
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       const stack = [];
       for (const sheet of sheets) {
         try {
@@ -4747,7 +4898,7 @@ function createContrastHelpers(opts, shared) {
     } catch {
       all = true;
     }
-    let out = all ? '*' : Array.from(bases).join(', ');
+    let out = all ? '*' : [...bases].join(', ');
     if (out && out !== '*') {
       try {
         __beforeOrAfterHostSetByRoot.set(root, new Set(dom.querySelectorAll(root, out)));
@@ -5486,7 +5637,7 @@ function createContrastHelpers(opts, shared) {
         doc,
         'button, a[href], input[type="checkbox"], input[type="button"], [role="button"], [role="switch"], [role="checkbox"], [role="menuitemcheckbox"]'
       );
-      for (const c of Array.from(candidates || [])) {
+      for (const c of [...(candidates || [])]) {
         // Cheap test first, on what can name it, before the name itself.
         const raw = [
           dom.textContent(c),
@@ -5693,8 +5844,6 @@ function createContrastHelpers(opts, shared) {
       return out;
     }
 
-    let cur = el;
-    let guard = 0;
     // Once a closer ancestor's own background-color is confirmed fully
     // opaque (and that ancestor is itself free of blend-mode/filter), it
     // visually PAINTS OVER anything farther out -- a background-image/
@@ -5765,11 +5914,8 @@ function createContrastHelpers(opts, shared) {
       }
     }
 
-    while (cur && guard++ < 200) {
-      if (dom.nodeType(cur) !== 1) {
-        cur = composedParent(cur);
-        continue;
-      }
+    for (const cur of ancestorsOf(el)) {
+      if (dom.nodeType(cur) !== 1) continue;
       const cs = __contrastComputedStyle(cur);
 
       if (__hasBlendModeEl(cur, cs)) {
@@ -5780,6 +5926,8 @@ function createContrastHelpers(opts, shared) {
             cur,
             (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
+          blockerElement: describeElement(cur),
+          blockerIsAncestor: cur !== el,
           blockerProperty: 'mix-blend-mode',
           blockerValue: truncateCssValue(cs && cs.mixBlendMode, 80)
         };
@@ -5816,6 +5964,8 @@ function createContrastHelpers(opts, shared) {
               cur,
               (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
             blockerProperty: filterBlocks ? 'filter' : 'backdrop-filter',
             blockerValue: truncateCssValue((filterBlocks ? cs.filter : cs.backdropFilter) || '', 80)
           };
@@ -5950,6 +6100,8 @@ function createContrastHelpers(opts, shared) {
               cur,
               (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
             blockerProperty: '-webkit-text-stroke',
             blockerValue: truncateCssValue(strokeWidth + ' ' + strokeColor, 80)
           };
@@ -5975,6 +6127,8 @@ function createContrastHelpers(opts, shared) {
             cur,
             (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
+          blockerElement: describeElement(cur),
+          blockerIsAncestor: cur !== el,
           blockerProperty: 'background-image',
           blockerValue: truncateCssValue(bgImg, 80),
           backgroundFillType: classifyBackgroundImageValue(bgImg)
@@ -6011,6 +6165,8 @@ function createContrastHelpers(opts, shared) {
               cur,
               (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
             blockerProperty: 'opacity',
             blockerValue: truncateCssValue(String(cs && cs.opacity != null ? cs.opacity : '1'), 80)
           };
@@ -6056,6 +6212,8 @@ function createContrastHelpers(opts, shared) {
               cur,
               (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
             blockerProperty: 'opacity',
             blockerValue: truncateCssValue(String(cs && cs.opacity != null ? cs.opacity : '1'), 80)
           };
@@ -6074,7 +6232,7 @@ function createContrastHelpers(opts, shared) {
       // this point (see the paintOccluded comment above the loop).
       if (!paintOccluded) {
         chain.push(cur);
-        const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
+        const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
         if (
           (ownBg && clamp01(ownBg.a) >= 1) ||
           (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
@@ -6083,8 +6241,6 @@ function createContrastHelpers(opts, shared) {
           occluder = cur;
         }
       }
-
-      cur = composedParent(cur);
     }
 
     const overlap = __findPaintUnderText(el, chain);
@@ -6093,6 +6249,7 @@ function createContrastHelpers(opts, shared) {
           ok: false,
           reasonCode: 'BACKGROUND_OVERLAP',
           blockerSelector: overlap.selector,
+          blockerElement: overlap.element || '',
           blockerProperty: overlap.property,
           blockerValue: overlap.value
         }
@@ -6431,7 +6588,7 @@ function createContrastHelpers(opts, shared) {
             cs &&
             String(cs.display).startsWith('inline') &&
             !__REPLACED_PAINT.has(String(dom.localName(node) || '').toLowerCase())
-              ? Array.from(dom.getClientRects(node))
+              ? [...dom.getClientRects(node)]
               : [dom.getBoundingClientRect(node)];
         } catch {
           continue;
@@ -7074,6 +7231,7 @@ function createContrastHelpers(opts, shared) {
                 continue;
               return {
                 selector: __getSimpleSelectorCached(p.el, String(dom.localName(p.el) || '')),
+                element: describeElement(p.el),
                 property: p.paint.property,
                 value: p.paint.value
               };
@@ -7101,6 +7259,7 @@ function createContrastHelpers(opts, shared) {
         return {
           selector:
             __getSimpleSelectorCached(host, String(dom.localName(host) || '')) + pseudo.name,
+          element: describeElement(host) + pseudo.name,
           property: pseudo.property,
           value: pseudo.value
         };
@@ -7271,6 +7430,7 @@ function createContrastHelpers(opts, shared) {
   const __rootFactsCache = new WeakMap();
   const __clipsCache = new WeakMap();
   const __sunkCache = new WeakMap();
+  const __sinksCache = new WeakMap();
   const __lname = (node) => String(dom.localName(node) || '').toLowerCase();
 
   function __isStackingContext(node, cs) {
@@ -7461,6 +7621,7 @@ function createContrastHelpers(opts, shared) {
     const blocked = (p) => ({
       blocked: {
         selector: __getSimpleSelectorCached(p.el, __lname(p.el)) + (p.pseudo || ''),
+        element: describeElement(p.el) + (p.pseudo || ''),
         property: p.paint.property,
         value: p.paint.value
       }
@@ -7617,11 +7778,18 @@ function createContrastHelpers(opts, shared) {
     // Text in a stacking context with a negative z-index can be painted
     // under its own ancestors' backgrounds. Only a negative z-index can
     // give that, so it is read before the paint group is worked out.
+    // Kept per element: a chain the guard cuts short asks it of each of a
+    // thousand ancestors, for every text that deep.
     const sinks = (a) => {
+      if (__sinksCache.has(a)) return __sinksCache.get(a);
       const zcs = __contrastComputedStyle(a);
-      if (!(Number.parseInt(zcs && zcs.zIndex, 10) < 0)) return false;
-      const g = __paintGroup(a);
-      return !!g && g.kind === 'context' && g.z < 0;
+      let v = false;
+      if (Number.parseInt(zcs && zcs.zIndex, 10) < 0) {
+        const g = __paintGroup(a);
+        v = !!g && g.kind === 'context' && g.z < 0;
+      }
+      __sinksCache.set(a, v);
+      return v;
     };
     // The chain's tail is shared with every other text in the same
     // ancestors, so each answer is kept per element, for it and above it.
@@ -7929,6 +8097,9 @@ function createContrastHelpers(opts, shared) {
     hasBlendMode,
     hasFilter,
     computeOpacityProduct,
+    describeElement,
+    describeFade,
+    describeBackgroundSource,
     computeEffectiveForeground,
     textFillColor,
     computeEffectiveBackground,
@@ -7954,7 +8125,10 @@ function createContrastHelpers(opts, shared) {
     colorSchemeMeasurable,
     colorSchemeUnread,
     useNamedCanvas,
-    isPinned: __isPinned
+    isPinned: __isPinned,
+    matchedSpecificity,
+    // A selector list's complex selectors, split at its top-level commas.
+    splitSelectorList: (text) => __splitTopLevel(String(text || '')).filter(Boolean)
   };
 }
 

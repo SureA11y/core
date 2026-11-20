@@ -3,6 +3,7 @@
   "de": {
     "report_frame_heading": "Frame {{path}}",
     "report_heading_frames": "Frames",
+    "report_manualChecks_scan": "Scan: {{outcome}}",
     "report_margins_col_element": "Element"
   },
   "es": {

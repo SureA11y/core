@@ -41,7 +41,7 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
       const req = String(m.requirement || '').trim();
       if (req) out.add(req);
     }
-    return Array.from(out).sort();
+    return [...out].sort();
   }
 
   const m = meta && typeof meta === 'object' ? meta : {};

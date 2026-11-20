@@ -23,6 +23,7 @@ const {
   occurrenceOutcome,
   reviewGroupOf
 } = require('./scan-result.js');
+const { esc, jsonForScript } = require('./html-text.js');
 
 // One status palette, mapped 1:1 onto this engine's own 4 outcomes. Each
 // color is also the text of a chip or a tile on its own bg, so each meets
@@ -63,6 +64,10 @@ function getTranslator() {
 // runa11yCoreInPage) gains them here, in Node: surea11y.report.js, the
 // report in a browser, shows the steps a result already carries.
 const { withHowToCheck } = require('./how-to-check-lazy.js');
+
+// What the scan leaves to a person: the standard's procedures for what no
+// rule decides in full, read in Node only, as the steps are.
+const { leftToAPerson } = require('./manual-checks-lazy.js');
 
 // The page speaks the locale the scan resolved to when the engine carries
 // it. A dictionary the caller supplied at scan time is not in the result, so
@@ -131,47 +136,9 @@ function createUi(engine) {
   return { tr, trStrong, num, pct, outcomeInfo, severity, uiLocale, contentLocale, english };
 }
 
-// Text for the page: HTML's special characters as entities, and control
-// characters (U+0000 and the like) and the bidi controls that reorder what
-// follows (U+202A-U+202E, U+2066-U+2069) left out, so a rule's or a pack's
-// text shows as written.
-function esc(s) {
-  return withoutControls(String(s == null ? '' : s)).replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
-  );
-}
-
 // A rollup's rules as a list, whatever a stored result holds there.
 function idList(value) {
   return Array.isArray(value) ? value.map(String) : typeof value === 'string' ? [value] : [];
-}
-
-// Neutralizes '<' so embedded JSON can never break out of its <script> tag,
-// even if an occurrence's own html snippet literally contains "</script>".
-// Strings lose the characters esc leaves out, as the page shows them too.
-function jsonForScript(value) {
-  return JSON.stringify(value, (key, v) =>
-    typeof v === 'string' ? withoutControls(v) : v
-  ).replace(/</g, '\\u003c');
-}
-
-// Text without control characters (newlines and tabs kept) and bidi controls.
-function withoutControls(s) {
-  let out = '';
-  for (const ch of s) {
-    const code = ch.codePointAt(0);
-    if (
-      (code < 0x20 && ch !== '\n' && ch !== '\t' && ch !== '\r') ||
-      code === 0x7f ||
-      (code >= 0x202a && code <= 0x202e) ||
-      (code >= 0x2066 && code <= 0x2069)
-    ) {
-      continue;
-    }
-    out += ch;
-  }
-  return out;
 }
 
 function fmtPct(n, total, ui) {
@@ -207,15 +174,59 @@ function isWcagCriterion(m) {
 // What the scan was tested against, and any opt-in rules it added. A result
 // from an engine older than the WCAG-version target carries none of these
 // fields and gets no chips.
-function renderTargetChips(engine, ui) {
+function renderTargetChips(engine, ui, profileResults) {
   if (!engine) return '';
   const chips = [];
   if (engine.wcagVersion)
     chips.push(
       `<div><b>WCAG ${esc(engine.wcagVersion)}</b>${esc(ui.tr('report_meta_target'))}</div>`
     );
-  if (engine.profile)
-    chips.push(`<div><b>${esc(engine.profile)}</b>${esc(ui.tr('report_meta_profile'))}</div>`);
+  // A scan of several profiles names each (engine.profiles), not only the
+  // first, which engine.profile keeps for code that reads one.
+  const profiles =
+    Array.isArray(engine.profiles) && engine.profiles.length
+      ? engine.profiles
+      : engine.profile
+        ? [engine.profile]
+        : [];
+  if (profiles.length)
+    chips.push(
+      `<div><b>${esc(profiles.join(' + '))}</b>${esc(ui.tr('report_meta_profile'))}</div>`
+    );
+  // The laws the profiles serve (standard.laws), each once, in the
+  // standard's language, marked as such where it isn't the report's (WCAG
+  // 3.1.2). A scan of several profiles names each profile's.
+  const isLaw = (l) => !!l && typeof l === 'object' && typeof l.name === 'string' && l.name;
+  const laws = [];
+  const seen = new Set();
+  const lawsOf = [engine.law, ...Object.values(profileResults || {}).map((p) => p && p.law)];
+  for (const l of lawsOf) {
+    if (!isLaw(l) || seen.has(l.id || l.name)) continue;
+    seen.add(l.id || l.name);
+    laws.push(l);
+  }
+  if (laws.length) {
+    const base = (l) =>
+      String(l || '')
+        .toLowerCase()
+        .split('-')[0];
+    const named = laws.map((law) => {
+      const lang =
+        law.lang && base(law.lang) !== base(ui.uiLocale) ? ` lang="${esc(law.lang)}"` : '';
+      const where =
+        typeof law.jurisdiction === 'string' && law.jurisdiction ? ` (${law.jurisdiction})` : '';
+      return `<span${lang}>${esc(law.name + where)}</span>`;
+    });
+    chips.push(`<div><b>${named.join(' + ')}</b>${esc(ui.tr('report_meta_law'))}</div>`);
+  }
+  // The profiles a scan of several asked for that did not run.
+  const notRun = Array.isArray(engine.profilesNotRun)
+    ? engine.profilesNotRun.map((p) => p && p.profile).filter(Boolean)
+    : [];
+  if (notRun.length)
+    chips.push(
+      `<div><b>${esc(notRun.join(', '))}</b>${esc(ui.tr('report_meta_profileNotRun'))}</div>`
+    );
   // Rules beyond the targeted standard ran (engineOptions.optInRules).
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     chips.push(
@@ -437,13 +448,13 @@ function renderWcagRollup(rulesResults, standards, ui) {
           const ruleMappings = (rule.meta && rule.meta.normativeMappings) || [];
           const enLabel = standards
             .map((standard) => {
-              const requirements = Array.from(
-                new Set(
+              const requirements = [
+                ...new Set(
                   ruleMappings
                     .filter((m) => standardOfEntryIn(standards, m) === standard)
                     .map((m) => m.requirement)
                 )
-              );
+              ];
               return requirements.length
                 ? `<br><span class="note">${esc(standard.standard)} ${requirements.map(esc).join(', ')}</span>`
                 : '';
@@ -497,7 +508,129 @@ function scrollingTable(headingId, table) {
 // A standard's own rollups (one per requirement, say), present only when the
 // scan produced them. The standard (standardsOf) gives the note above the
 // table and the language of the titles when it is not the scan's.
-function renderStandardRollup(standard, results, ui, headingId) {
+// The WCAG levels the scan reported: A and AA, and AAA where a criterion of
+// that level is among its results.
+function reportedLevels(rulesResults) {
+  const aaa = rulesResults.some((r) =>
+    ((r.meta && r.meta.normativeMappings) || []).some(
+      (m) => isWcagCriterion(m) && m.level === 'AAA'
+    )
+  );
+  return aaa ? ['A', 'AA', 'AAA'] : ['A', 'AA'];
+}
+
+// Each requirement's outcome in the scan, by standard: WCAG's from its
+// rollups, a pack's from the rollups its standard defines.
+function scanOutcomes(rollups, left) {
+  const out = new Map();
+  for (const r of rollups) {
+    const mappings = (r.meta && r.meta.normativeMappings) || [];
+    const own = left.standard === 'wcag' ? mappings.find(isWcagCriterion) : null;
+    const theirs =
+      left.standard !== 'wcag' && r.meta && r.meta.standard === left.name
+        ? mappings.find(
+            (m) => m && m.standard === left.name && (!m.version || m.version === left.version)
+          )
+        : null;
+    const m = own || theirs;
+    if (m && m.requirement && !out.has(String(m.requirement))) {
+      out.set(String(m.requirement), getCardOutcome(r));
+    }
+  }
+  return out;
+}
+
+// "What's left for a person": for each requirement of each standard and
+// version scanned, the checks no rule decides in full, with their steps,
+// closed until asked for, and the requirement's outcome in the scan beside
+// it. A requirement whose rules all pass is not met until these are done.
+function renderManualChecks(lefts, rollups, standards, ui) {
+  const sections = lefts
+    .filter((left) => left && left.requirements.length)
+    .map((left) =>
+      renderManualSection(left, rollups, standards.find((s) => s.key === left.standard) || null, ui)
+    );
+  if (!sections.length) return '';
+  return `<h2 id="manual-checks-heading">${esc(ui.tr('report_heading_manualChecks'))}</h2>
+  ${sections.join('\n  ')}
+  <p class="note">${esc(ui.tr('report_manualChecks_worksheet'))}</p>`;
+}
+
+// One standard's and version's part of it: how many checks it leaves, and
+// the list of them by requirement.
+function renderManualSection(left, rollups, standard, ui) {
+  const OUTCOME_INFO = ui.outcomeInfo;
+  // Each text says its language: marked where it isn't the report's (a text
+  // the locale lacks, or a pack's standard read in its own language).
+  const base = (tag) =>
+    String(tag || '')
+      .toLowerCase()
+      .split('-')[0];
+  const langAttr = (lang) =>
+    lang && base(lang) !== base(ui.uiLocale) ? ` lang="${esc(lang)}"` : '';
+  // A pack's titles are in the language its standard reads in, or else the
+  // one its report.titleLang gives.
+  const titleLang = (standard && standard.titleLang) || null;
+  const titleAttr = (r) => langAttr(r.titleLang || (left.standard === 'wcag' ? null : titleLang));
+  const outcomes = scanOutcomes(rollups, left);
+  const checks = left.requirements.reduce((n, r) => n + r.facets.length, 0);
+  const name =
+    left.standard === 'wcag'
+      ? `WCAG ${left.version}${left.levels ? ` (${left.levels.join(', ')})` : ''}`
+      : `${left.name} ${left.version}`;
+  // The sentence's numbers in bold and the standard's name, put in after
+  // it is escaped: dictionaries hold plain text.
+  const intro = esc(
+    ui.tr('report_manualChecks_intro', {
+      checks: '\uE000c',
+      requirements: '\uE000r',
+      standard: '\uE000s'
+    })
+  )
+    .replace('\uE000c', `<strong>${ui.num(checks)}</strong>`)
+    .replace('\uE000r', `<strong>${ui.num(left.requirements.length)}</strong>`)
+    .replace('\uE000s', esc(name));
+  const items = left.requirements.map((r) => {
+    const outcome = outcomes.get(r.id);
+    const info = outcome ? OUTCOME_INFO[outcome] || OUTCOME_INFO.notApplicable : null;
+    const scan = info
+      ? `<span class="chip" style="background:${info.bg};color:${info.color}">${esc(
+          ui.tr('report_manualChecks_scan', { outcome: info.label })
+        )}</span>`
+      : `<span class="chip" style="background:${STATUS.neutral.bg};color:${STATUS.neutral.color}">${esc(
+          ui.tr('report_manualChecks_notScanned')
+        )}</span>`;
+    const facets = r.facets.map((f) => {
+      const tools = f.tools.length
+        ? f.tools.map((t) => `<span${langAttr(t.lang)}>${esc(t.label)}</span>`).join(', ')
+        : esc(ui.tr('report_manualChecks_toolsBrowser'));
+      const steps = f.procedure.steps.map((x) => `<li>${esc(x)}</li>`).join('');
+      return `<div class="manual-facet">
+          <p class="manual-label"><strong${langAttr(f.labelLang)}>${esc(f.label)}</strong></p>
+          <p class="manual-meta">${esc(ui.tr(`report_manualChecks_automation_${f.automation}`))} · ${esc(
+            ui.tr('report_manualChecks_tools', { tools: '' })
+          ).replace('', tools)}</p>
+          <ol${langAttr(f.procedureLang)}>${steps}</ol>
+          <p><strong>${esc(ui.tr('report_manualChecks_passWhen'))}</strong> <span${langAttr(f.procedureLang)}>${esc(f.procedure.passWhen)}</span></p>
+          <p><strong>${esc(ui.tr('report_manualChecks_failWhen'))}</strong> <span${langAttr(f.procedureLang)}>${esc(f.procedure.failWhen)}</span></p>
+        </div>`;
+    });
+    return `<details class="manual-req">
+      <summary><span class="sc-cell">${esc(r.id)}</span> <span${titleAttr(r)}>${esc(
+        r.title || ''
+      )}</span> ${scan} <span class="card-count">${esc(
+        ui.tr('report_manualChecks_count', { count: ui.num(r.facets.length) })
+      )}</span></summary>
+      <div class="manual-body">${facets.join('')}</div>
+    </details>`;
+  });
+  return `<p class="manual-intro">${intro}</p>
+  <div class="manual-list">${items.join('')}</div>`;
+}
+
+// `version` names the standard's version in each row, for a table that is
+// one of several versions of it.
+function renderStandardRollup(standard, results, ui, headingId, version) {
   const OUTCOME_INFO = ui.outcomeInfo;
   const titleLang = standard.titleLang ? ` lang="${esc(standard.titleLang)}"` : '';
   const byCriterion = (r) =>
@@ -510,13 +643,13 @@ function renderStandardRollup(standard, results, ui, headingId) {
       const details = (rule.data && rule.data.details) || {};
       const metrics = details.metrics || {};
       const checksIds = idList(details.checksIds);
-      const tests = Array.from(
-        new Set(
+      const tests = [
+        ...new Set(
           ((rule.meta && rule.meta.normativeMappings) || [])
             .filter((m) => standardOfEntryIn([standard], m) === standard)
             .map((m) => m.requirement)
         )
-      );
+      ];
       const chip = `<span class="chip" style="background:${info.bg};color:${info.color}">${esc(info.label)}</span>`;
       const metricsLabel = ui.tr('report_rollup_breakdown', {
         pass: ui.num(metrics.passCount),
@@ -525,7 +658,7 @@ function renderStandardRollup(standard, results, ui, headingId) {
         na: ui.num(metrics.notApplicableCount)
       });
       return `<tr>
-            <td class="sc-cell">${esc(standard.standard)} ${esc(byCriterion(rule))}${tests.length ? `<br><span class="note">${tests.map(esc).join(', ')}</span>` : ''}</td>
+            <td class="sc-cell">${esc(standard.standard)}${version ? ` ${esc(version)}` : ''} ${esc(byCriterion(rule))}${tests.length ? `<br><span class="note">${tests.map(esc).join(', ')}</span>` : ''}</td>
             <td${titleLang}>${esc(rule.title || rule.ruleId)}</td>
             <td>${chip}</td>
             <td class="note">${esc(metricsLabel)}${partlyCheckedNote(details, ui)}</td>
@@ -733,6 +866,19 @@ function renderCards(checksResults, ui) {
           `<span class="chip" style="background:${STATUS.neutral.bg};color:${STATUS.neutral.color}">WCAG ${esc(m.requirement)}</span>`
       )
       .join('');
+    // In a scan of several profiles, what each profile makes of the finding
+    // ("wai-aria-1.2: Fail" beside "wcag22-aa: Needs review"), so a failure of
+    // one standard isn't read as a failure of the WCAG criterion beside it.
+    const verdicts = (representative && representative.verdicts) || r.verdicts || null;
+    const verdictChips = verdicts
+      ? Object.entries(verdicts)
+          .filter(([, v]) => OUTCOME_INFO[v])
+          .map(([profile, v]) => {
+            const o = OUTCOME_INFO[v];
+            return `<span class="chip" style="background:${o.bg};color:${o.color}">${esc(profile)}: ${esc(o.label)}</span>`;
+          })
+          .join('')
+      : '';
     const hasMixedOutcomes = occurrenceCounts.fail > 0 && occurrenceCounts.cantTell > 0;
     const countLabel =
       occs.length > 1
@@ -755,7 +901,7 @@ function renderCards(checksResults, ui) {
         <span class="card-title"><strong>${esc(r.ruleId)}</strong> ${esc(ui.tr('report_card_status', { outcome: info.label, severity: ui.severity(r.severity) }))}${countLabel}</span>
       </div>
       <div class="card-body">
-        <div class="card-meta">${wcagChips}</div>
+        <div class="card-meta">${wcagChips}${verdictChips}</div>
         <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector ? truncateForCard(locationText(representative)) : ui.tr('report_card_noSelector'))}</code></div>
         <div class="card-snippet">${snippetPart(ui, truncateForCard(representative.summary), representative.summary, occI18n.summaryKey, occI18n.params)}${representative.hint ? ` — ${snippetPart(ui, representative.hint, representative.hint, occI18n.hintKey, occI18n.params)}` : ''}</div>
         ${leanLine}
@@ -872,13 +1018,42 @@ function renderHtmlReport(input, options = {}) {
   const ownStandard = (r) =>
     (r && r.meta && standards.find((s) => s.standard === r.meta.standard)) || null;
   const rulesResults = allRollups.filter((r) => !ownStandard(r));
-  const standardRollups = standards
-    .map((standard) => ({
+  // One table per standard, and per version of it where the scan judged
+  // the page by several (a scan of two of its profiles): each version's
+  // clauses are the same numbers, and one table would list each twice with
+  // nothing to tell them apart.
+  const versionOfRollup = (r) => {
+    const details = r && r.data && r.data.details;
+    if (details && typeof details.version === 'string' && details.version) return details.version;
+    const mapping = ((r && r.meta && r.meta.normativeMappings) || []).find(
+      (m) => m && typeof m.version === 'string' && m.version
+    );
+    return mapping ? mapping.version : '';
+  };
+  const standardRollups = standards.flatMap((standard) => {
+    const results = allRollups.filter((r) => ownStandard(r) === standard);
+    const versions = [...new Set(results.map(versionOfRollup))];
+    if (versions.length < 2) return results.length ? [{ standard, results }] : [];
+    const known = Array.isArray(standard.versions) ? standard.versions : [];
+    const at = (v) => (known.includes(v) ? known.indexOf(v) : known.length);
+    versions.sort((a, b) => at(a) - at(b) || a.localeCompare(b, undefined, { numeric: true }));
+    return versions.map((version) => ({
       standard,
-      results: allRollups.filter((r) => ownStandard(r) === standard)
-    }))
-    .filter((s) => s.results.length);
+      version,
+      results: results.filter((r) => versionOfRollup(r) === version)
+    }));
+  });
   const OUTCOME_INFO = ui.outcomeInfo;
+  // What the scan leaves to a person, in Node, unless asked not to.
+  // One part per standard and version a profile of the scan judged by.
+  const lefts =
+    options && options.manualChecks === false
+      ? []
+      : leftToAPerson(result, {
+          packs: options && options.packs,
+          locale: ui.uiLocale,
+          levels: reportedLevels(allRollups)
+        });
   // The scan's own timestamp when it has one (engineOptions.timestamp), so
   // the same result always renders the same page; the time of rendering
   // only for a result without one. In UTC either way, so the page does not
@@ -976,6 +1151,20 @@ function renderHtmlReport(input, options = {}) {
   .card-how p { margin: 2px 0; }
   .card-help { font-size: 12.5px; margin: 6px 0 0; }
 
+  .manual-intro { margin: 0 0 12px; line-height: 1.5; }
+  .manual-list { display: grid; gap: 8px; margin-bottom: 8px; }
+  details.manual-req { border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; }
+  details.manual-req > summary { padding: 10px 14px; cursor: pointer; font-size: 13.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; list-style: none; }
+  details.manual-req > summary::-webkit-details-marker { display: none; }
+  details.manual-req > summary::before { content: '▶'; font-size: 11px; transition: transform 0.15s; }
+  details.manual-req[open] > summary::before { transform: rotate(90deg); }
+  details.manual-req .manual-body { padding: 0 14px 12px; }
+  .manual-facet { border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px; font-size: 13px; line-height: 1.5; }
+  .manual-facet p { margin: 4px 0; }
+  .manual-facet ol { margin: 4px 0 6px 20px; padding: 0; }
+  .manual-meta { opacity: 0.8; font-size: 12.5px; }
+  @media (prefers-color-scheme: dark) { details.manual-req { background: #1f2227 !important; border-color: #3a3d44 !important; } .manual-facet { border-color: #3a3d44; } }
+
   details.tech-details { border: 1px solid #e0e0e0; border-radius: 8px; margin-top: 8px; }
   details.tech-details summary { padding: 14px 18px; cursor: pointer; font-weight: 600; font-size: 14px; color: #333; list-style: none; }
   details.tech-details summary::-webkit-details-marker { display: none; }
@@ -1019,7 +1208,7 @@ function renderHtmlReport(input, options = {}) {
   <div><b>${ui.num(rows.length)}</b>${esc(ui.tr('report_meta_totalOccurrences'))}</div>
   <div><b>${esc((engine && engine.tag) || '?')}</b>${esc(ui.tr('report_meta_engine'))}</div>
   <div><b>${esc((engine && engine.schemaVersion) || '?')}</b>${esc(ui.tr('report_meta_schemaVersion'))}</div>
-  ${renderTargetChips(engine, ui)}
+  ${renderTargetChips(engine, ui, result && result.profiles)}
   ${renderEnvironmentChips(engine, ui)}
   ${renderLocaleChip(engine, ui)}
 </div>
@@ -1037,12 +1226,13 @@ function renderHtmlReport(input, options = {}) {
   ${renderWcagRollup(rulesResults, standards, ui)}
 ${standardRollups
   .map(
-    ({ standard, results }, i) => `
-  <h2 id="standard-rollup-${i}">${esc(ui.tr('report_heading_standardRollup', { standard: standard.standard }))}</h2>
-  ${renderStandardRollup(standard, results, ui, `standard-rollup-${i}`)}
+    ({ standard, version, results }, i) => `
+  <h2 id="standard-rollup-${i}">${esc(ui.tr('report_heading_standardRollup', { standard: version ? `${standard.standard} ${version}` : standard.standard }))}</h2>
+  ${renderStandardRollup(standard, results, ui, `standard-rollup-${i}`, version)}
 `
   )
   .join('')}
+  ${renderManualChecks(lefts, allRollups, standards, ui)}
   <details class="tech-details">
     <summary>${esc(ui.tr('report_techDetails'))}</summary>
     <div class="tech-body">

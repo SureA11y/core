@@ -8,7 +8,8 @@
  * @summary Page content should be contained within a landmark region
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to a page whose <body> has content: outside any landmark, an
+ *   Applies to a page of its own (not a document shown in a frame, which
+ *   sits in the top document's landmarks) whose <body> has content: outside any landmark, an
  *   element with text of its own or an aria-label, an <img>, <video>,
  *   <audio>, <canvas>, <object> or <embed>, or an <input> other than
  *   type="hidden"; or a landmark with anything in it. Live regions,
@@ -102,22 +103,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    CONTENT_OUTSIDE_LANDMARK: {
-      steps: [
-        'Find the content the report names (or the iframe) on the page.',
-        "Open the Accessibility pane of the developer tools, or a screen reader's list of landmarks, and see which landmark, if any, contains it.",
-        'Decide whether it belongs in an existing landmark (header, nav, main, footer, aside) or is outside every one.'
-      ],
-      passWhen:
-        'The content sits inside a landmark, or is something that needs none (such as a skip link or a dialog).',
-      failWhen:
-        'Real page content sits outside every landmark, so people moving by landmark can miss it (best practice, ARIA11).'
-    }
-  }
+  coverage: {}
 };
 
 // This check is inherently whole-document (does the PAGE have this
@@ -127,8 +113,10 @@ const meta = {
 //
 // Also notApplicable while a modal dialog is open: the rest of the page is
 // inert then, so the scan saw the dialog, not the page's structure.
+// A document shown in a frame is no page of its own: the page's landmarks are the top document's, and the frame sits in them.
 function applicability(ctx) {
   const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
   if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }

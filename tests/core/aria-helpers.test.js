@@ -88,7 +88,8 @@ test('isAbstractRole / isDeprecatedRole / isKnownRole / isValidConcreteRole', ()
   // ARIA 1.3 roles aria-query does not carry yet are supplemented back.
   assert.equal(helpers.isValidConcreteRole('comment'), true);
   assert.equal(helpers.isValidConcreteRole('suggestion'), true);
-  assert.equal(helpers.isValidConcreteRole('text'), true);
+  // text is no role: neither WAI-ARIA 1.2 nor the 1.3 draft defines it.
+  assert.equal(helpers.isValidConcreteRole('text'), false);
 });
 
 test('getDeprecatedRoleGuidance: role-specific message, generic fallback otherwise', () => {

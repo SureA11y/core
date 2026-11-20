@@ -181,6 +181,63 @@ function runInPage(ctx) {
     return FIELD_NAMES.has(remaining[0]);
   }
 
+  // What is wrong with an invalid value, so the hint can name it: a token
+  // that is no autofill token (with the field name one or two letters from
+  // it, as a typo), a contact modality before a field that is no contact
+  // field, or known tokens in an order or number autofill doesn't take.
+  function editDistance(a, b) {
+    let prev = [];
+    for (let j = 0; j <= b.length; j++) prev.push(j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(
+          prev[j] + 1,
+          cur[j - 1] + 1,
+          prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+        );
+      }
+      prev = cur;
+    }
+    return prev[b.length];
+  }
+  function diagnose(raw) {
+    const tokens = tokensOf(raw);
+    const known = (t) =>
+      FIELD_NAMES.has(t) ||
+      t.startsWith('section-') ||
+      t === 'shipping' ||
+      t === 'billing' ||
+      t === 'webauthn' ||
+      CONTACT_MODALITY.has(t);
+    const unknown = tokens.find((t) => !known(t));
+    if (unknown) {
+      let suggestion = '';
+      let best = 3;
+      for (const name of FIELD_NAMES) {
+        if (Math.abs(name.length - unknown.length) >= best) continue;
+        const d = editDistance(unknown, name);
+        if (d < best) {
+          best = d;
+          suggestion = name;
+        }
+      }
+      return {
+        kind: suggestion ? 'unknownToken_suggestion' : 'unknownToken',
+        token: unknown,
+        suggestion
+      };
+    }
+    const at = tokens.findIndex((t) => CONTACT_MODALITY.has(t));
+    if (at >= 0) {
+      const next = tokens[at + 1] || '';
+      const isContactField =
+        next === 'email' || next === 'impp' || next === 'tel' || next.startsWith('tel-');
+      if (!isContactField) return { kind: 'modality', token: tokens[at], field: next };
+    }
+    return { kind: 'order' };
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('input, select, textarea')
     : helpers.queryAll('input, select, textarea');
@@ -235,17 +292,37 @@ function runInPage(ctx) {
 
     const tag = dom.tagName(el).toLowerCase();
 
+    const why = diagnose(raw);
+    const hint = {
+      unknownToken_suggestion: `"${why.token}" is not an autofill token. Did you mean "${why.suggestion}"?`,
+      unknownToken: `"${why.token}" is not an autofill token. Use a field name such as "email", "tel" or "postal-code", after "shipping" or "billing" where it applies.`,
+      modality: `"${why.token}" can come only before a contact field (email, tel, impp), not "${why.field}".`,
+      order:
+        'Its tokens are autofill tokens, but not in an order or number autofill accepts: an optional section-*, then shipping or billing, then home, work, mobile, fax or pager before a contact field, then one field name, then webauthn.'
+    }[why.kind];
+
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This autocomplete value is not one that browsers recognize for autofill.',
-        hint: 'Use "on", "off", or valid autofill tokens, such as "shipping postal-code" or "cc-number".',
+        hint,
         i18n: {
           summaryKey: 'autocompleteValid_summary_fail',
-          hintKey: 'autocompleteValid_hint_fail',
-          params: { element: tag, value }
+          hintKey: `autocompleteValid_hint_fail_${why.kind}`,
+          params: {
+            element: tag,
+            value,
+            token: why.token || '',
+            suggestion: why.suggestion || '',
+            field: why.field || ''
+          }
         },
         data: {
-          details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value }
+          details: {
+            reasonCode: 'AUTOCOMPLETE_VALUE_INVALID',
+            element: tag,
+            value,
+            problem: why
+          }
         }
       })
     );

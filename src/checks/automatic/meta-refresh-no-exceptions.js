@@ -121,6 +121,26 @@ function runInPage(ctx) {
     return null;
   }
 
+  // The URL a refresh directive goes to, '' when it reloads the page itself:
+  // after the time and its separator, an optional "url=" and an optional
+  // quote, as HTML's declarative refresh steps read it. Cut at 100
+  // characters for a message.
+  function parseRefreshTarget(input) {
+    const s = String(input == null ? '' : input);
+    const m =
+      /^[\t\n\f\r ]*[0-9.]*[\t\n\f\r ]*[;,]?[\t\n\f\r ]*(?:url[\t\n\f\r ]*=[\t\n\f\r ]*)?(.*)$/is.exec(
+        s
+      );
+    let url = m ? m[1].trim() : '';
+    const q = url[0];
+    if (q === '"' || q === "'") {
+      const end = url.indexOf(q, 1);
+      url = end === -1 ? url.slice(1) : url.slice(1, end);
+    }
+    url = url.trim();
+    return url.length > 100 ? url.slice(0, 97) + '...' : url;
+  }
+
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -138,17 +158,37 @@ function runInPage(ctx) {
 
     if (delay === 0) break; // an immediate redirect is not a timed interruption
 
+    // The delay, in hours too where it is long, and where it goes: a
+    // delayed redirect passes here at a delay of 0, a reload never does. A
+    // delay over 20 hours passes the Level A rule, so the summary says why
+    // it fails here.
+    const target = parseRefreshTarget(raw);
+    const delayHours = delay >= 3600 ? String(Math.round((delay / 3600) * 10) / 10) : '';
+    const overTwentyHours = delay > 72000;
+    const hoursNote = delayHours ? ` (${delayHours} hours)` : '';
+    const aaaNote = overTwentyHours
+      ? ' At AAA any delay fails, even one over 20 hours that the Level A rule allows.'
+      : '';
+
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This page uses a meta refresh, which changes the page without the user asking.',
-        hint: 'Remove the meta refresh, and redirect or refresh only when the user asks to.',
+        summary: target
+          ? `This page redirects to ${target} after ${delay} seconds${hoursNote}, without the user asking.${aaaNote}`
+          : `This page reloads itself every ${delay} seconds${hoursNote}, without the user asking.${aaaNote}`,
+        hint: target
+          ? `Redirect at once (content="0; url=${target}", or a redirect from the server), or let the user follow a link.`
+          : 'Remove the meta refresh, and redirect or refresh only when the user asks to.',
         i18n: {
-          summaryKey: 'metaRefreshNoExceptions_summary_fail',
-          hintKey: 'metaRefreshNoExceptions_hint_fail',
-          params: {}
+          summaryKey: target
+            ? 'metaRefreshNoExceptions_summary_fail_redirect'
+            : 'metaRefreshNoExceptions_summary_fail',
+          hintKey: target
+            ? 'metaRefreshNoExceptions_hint_fail_redirect'
+            : 'metaRefreshNoExceptions_hint_fail',
+          params: { delay: String(delay), delayHours, overTwentyHours, target }
         },
         data: {
-          details: { reasonCode: 'META_REFRESH_PRESENT' }
+          details: { reasonCode: 'META_REFRESH_PRESENT', delay, ...(target ? { target } : {}) }
         }
       })
     );

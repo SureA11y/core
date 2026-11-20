@@ -10,7 +10,8 @@
  * @sc 2.4.2
  * @applicability
  *   Applies to a run over a whole document whose <title> resolves to
- *   non-empty text. The title element is the first HTML <title> anywhere in
+ *   non-empty text, and that is a page of its own: a document shown in a
+ *   frame is not applicable, as its frame is named by its <iframe>. The title element is the first HTML <title> anywhere in
  *   the document, as for document.title, so one the parser left in <body>
  *   counts; a missing or empty title is page-title-present's
  *   failure, not a pattern to review. A run narrowed by contextSelector or
@@ -93,81 +94,18 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.2': ['page-title-patterns'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    genericTitle: {
-      steps: [
-        'Read the page title the report gives; the browser shows it in the tab.',
-        "Look at the page's main heading and content and note what the page is about.",
-        "Decide whether the title says that, and tells this page apart from the site's other pages."
-      ],
-      passWhen: 'The title says what the page is about, even though it is a common word.',
-      failWhen:
-        'The title is a generic word that does not say what the page is about, which fails WCAG 2.4.2 (F25).'
-    },
-    veryShortTitle: {
-      steps: [
-        'Read the page title the report gives; the browser shows it in the tab.',
-        "Look at the page's main heading and content and note what the page is about.",
-        'Decide whether so short a title says what the page is about.'
-      ],
-      passWhen:
-        'The short title says what the page is about, for example the name of the product or place the page covers.',
-      failWhen: 'The title is too short to say what the page is about, which fails WCAG 2.4.2.'
-    },
-    templateLikeTitle: {
-      steps: [
-        'Read the page title the report gives; the browser shows it in the tab.',
-        "Look at the page's main heading and content and note what the page is about.",
-        "Decide whether the title, besides the site's name, says what the page is about."
-      ],
-      passWhen:
-        "The page is the site's home page, which the title names, or the title says what the page is about.",
-      failWhen:
-        "The title only pairs the site's name with a generic word and does not say what the page is about, which fails WCAG 2.4.2 (F25)."
-    },
-    duplicateTitlesAcrossPages: {
-      steps: [
-        'Note a repeated title and the URLs the report lists for it.',
-        'Open two or more of those URLs and note what each page is about.',
-        'Decide whether the shared title says what each of them is about.'
-      ],
-      passWhen:
-        'The pages sharing the title are the same content at different URLs, or the title fits each of them.',
-      failWhen:
-        'Different pages share one title, so it does not say what each is about or tell them apart, which fails WCAG 2.4.2 (F25).'
-    },
-    templatedTitlesAcrossPages: {
-      steps: [
-        'Note the start or end the report says every title shares.',
-        "Open several of the scanned pages and read each one's title in the browser tab.",
-        'Decide whether the part of each title that is not shared says what that page is about.'
-      ],
-      passWhen: 'Each title has a part of its own that says what its page is about.',
-      failWhen:
-        'Beyond the shared part, the titles say little or nothing of what each page is about, which fails WCAG 2.4.2.'
-    },
-    titleReview: {
-      steps: [
-        'Read the page title the report gives; the browser shows it in the tab.',
-        "Look at the page's main heading and content and note what the page is about.",
-        'Decide whether the title says that topic or purpose.'
-      ],
-      passWhen: 'The title says what the page is about or what it is for.',
-      failWhen:
-        'The title does not say what the page is about or what it is for, which fails WCAG 2.4.2.'
-    }
-  }
+  coverage: { facetsBySc: { '2.4.2': ['page-title-patterns'] } }
 };
 
 // This check is inherently whole-document (does the PAGE have this
 // property?), not evaluable per-subtree -- notApplicable when contextSelector
 // scoped this run narrower than the whole document, or when
 // engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+// A document shown in a frame is no page of its own: the page's title is the top document's, and the frame is named by its <iframe>.
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }
 
 function runInPage(ctx) {
@@ -192,18 +130,25 @@ function runInPage(ctx) {
   // <svg><title> is not the page title.
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   let titleEl = null;
-  for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
+  for (const t of [...dom.getElementsByTagName(document, 'title')]) {
     if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
       titleEl = t;
       break;
     }
   }
-  // Kept as the stable selector for the usual place; a <title> elsewhere gets
-  // the selector the engine builds for the node.
-  const titleSelector =
-    titleEl && dom.parentElement(titleEl) && dom.localName(dom.parentElement(titleEl)) === 'head'
-      ? 'head > title'
-      : undefined;
+  // The selector of the title element itself, which the engine builds for
+  // the node (a second <title> makes `head > title` name both); without one,
+  // where the title belongs: <head>, or <html> without one.
+  let titleSelector;
+  if (!titleEl) {
+    titleSelector = 'html';
+    try {
+      const head = dom.head(document);
+      if (head && typeof helpers.buildSelector === 'function')
+        titleSelector = helpers.buildSelector(head);
+      else if (head) titleSelector = 'head';
+    } catch {}
+  }
   const rawTitle = dom.get(document, 'title') || '';
   const titleText = rawTitle.replace(/\s+/g, ' ').trim();
   const titleLc = titleText.toLowerCase();
@@ -232,7 +177,7 @@ function runInPage(ctx) {
       }
 
       // Duplicate titles across distinct URLs is a strong "review" signal (not a guaranteed failure)
-      const dupGroups = Array.from(groups.values()).filter((g) => g.urls.length >= 2);
+      const dupGroups = [...groups.values()].filter((g) => g.urls.length >= 2);
 
       // Boilerplate-ish: detect a long common suffix/prefix across most titles.
       // Keep conservative: only flag if the common part is long and shared by many.
@@ -461,19 +406,50 @@ function runInPage(ctx) {
             ? 'pageTitlePatterns_summary_cantTell_templateLike'
             : 'pageTitlePatterns_summary_cantTell_review';
     const review = reasonCode === 'titleReview';
+    const shownTitle = titleText.length > 80 ? `${titleText.slice(0, 79)}…` : titleText;
+    // The generic word of a templated title, as written: "Home" in "Acme | Home".
+    const templateWord = (() => {
+      if (reasonCode !== 'templateLikeTitle') return '';
+      let m = /\b(home|homepage|welcome)\b\s*(?:\||-|—|:)\s*./i.exec(titleText);
+      if (m) return m[1];
+      m = /.(?:\||-|—|:) ?\b(home|homepage|welcome)\b/i.exec(titleText);
+      if (m) return m[1];
+      const tokens = Object.prototype.hasOwnProperty.call(TEMPLATE_TOKENS, pageLang)
+        ? TEMPLATE_TOKENS[pageLang]
+        : [];
+      const parts = titleText.split(/\s*(?:\||-|—|:)\s*/).filter(Boolean);
+      const normPart = (x) =>
+        x
+          .toLowerCase()
+          .normalize('NFKC')
+          .replace(/[\u2018\u2019]/g, "'");
+      if (parts.length < 2) return '';
+      if (tokens.includes(normPart(parts[0]))) return parts[0];
+      const last = parts[parts.length - 1];
+      return tokens.includes(normPart(last)) ? last : '';
+    })();
     const occBase = {
       selector: titleSelector,
       html: '',
-      summary: review
-        ? `Check that the page title, “${titleText}”, says what the page is about.`
-        : 'The page title may not say clearly what the page is about.',
-      hint: review
-        ? "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages."
-        : 'Use a more specific title that identifies the page topic or purpose (for example, include the section name or task).',
+      summary:
+        reasonCode === 'genericTitle'
+          ? `The page title “${shownTitle}” is generic and may not say what the page is about.`
+          : reasonCode === 'veryShortTitle'
+            ? `The page title “${shownTitle}” is very short and may not say what the page is about.`
+            : reasonCode === 'templateLikeTitle' && templateWord
+              ? `The page title “${shownTitle}” pairs a site name with the generic word “${templateWord}”, and may not say what the page is about.`
+              : `Check that the page title, “${shownTitle}”, says what the page is about.`,
+      hint: "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages.",
       i18n: {
-        summaryKey,
+        summaryKey:
+          reasonCode === 'templateLikeTitle' && !templateWord
+            ? 'pageTitlePatterns_summary_cantTell_review'
+            : summaryKey,
         hintKey: 'pageTitlePatterns_hint_cantTell',
-        params: review ? { titleText } : {}
+        params: {
+          titleText: shownTitle,
+          ...(templateWord ? { word: templateWord } : {})
+        }
       },
       data: {
         details: {

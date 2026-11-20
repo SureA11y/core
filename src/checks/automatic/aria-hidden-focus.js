@@ -60,6 +60,10 @@
  * @implementation-notes
  * - Focusability is computed via ctx.helpers.getFocusableInfo (native + tabindex + contenteditable).
  * - Elements that are not rendered (e.g., display:none, visibility:hidden, [hidden]) are excluded.
+ * - visibility:hidden is inherited, not absolute: an element set to
+ *   visibility:visible inside a visibility:hidden aria-hidden root is drawn
+ *   and takes focus, so it is reported. An aria-hidden root hidden that way
+ *   alone makes the rule applicable only when it holds such an element.
  * - Disabled controls are not focusable, including those disabled by an ancestor
  *   <fieldset disabled> (matched with :disabled).
  * - <area href> has no box of its own, so it is judged by the <img usemap> that uses its
@@ -106,32 +110,6 @@ const meta = {
     facetsBySc: {
       '4.1.2': ['aria-hidden-focusable']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ariaHiddenFocusable_modalOpen_needsReview: {
-      steps: [
-        'Find the element the report names, behind the modal dialog open on the page, and note what in it can take focus.',
-        'With the dialog open, press Tab repeatedly, then Shift+Tab, and watch where focus goes.',
-        'Whenever focus seems to leave the dialog, check document.activeElement in the developer tools console.'
-      ],
-      passWhen:
-        'Focus stays inside the open dialog and never reaches the hidden content behind it.',
-      failWhen:
-        'Focus reaches content behind the dialog inside aria-hidden="true", where a screen reader announces nothing, which fails WCAG 4.1.2.'
-    },
-    ariaHiddenFocusable_runtimeRedirect_needsReview: {
-      steps: [
-        'Click just before the element the report names, then press Tab until focus should reach it.',
-        'Watch where focus lands and check document.activeElement in the developer tools console.',
-        'Press Shift+Tab from the control after it and see whether focus stops on the hidden element or passes straight on.'
-      ],
-      passWhen:
-        "Focus never stays on the hidden element: it passes straight on to a visible control, as a focus trap's sentinel does.",
-      failWhen:
-        'Focus can stay on the element inside aria-hidden="true", where a screen reader announces nothing, which fails WCAG 4.1.2.'
-    }
   }
 };
 
@@ -174,14 +152,14 @@ function runInPage(ctx) {
       if (queryAllSmart) {
         const r = queryAllSmart(sel);
         if (Array.isArray(r)) return r;
-        return Array.from(r || []);
+        return [...(r || [])];
       }
     } catch {
       // fall through
     }
     try {
       if (safeRoot && typeof dom.get(safeRoot, 'querySelectorAll') === 'function')
-        return Array.from(dom.querySelectorAll(safeRoot, sel));
+        return [...dom.querySelectorAll(safeRoot, sel)];
     } catch {
       // fall through
     }
@@ -541,7 +519,11 @@ function runInPage(ctx) {
 
     // clip / clip-path (still focusable)
     try {
-      if (helpers.isClipHidden(cs)) out.push('clipped');
+      const clipHidden =
+        typeof helpers.isElementClipHidden === 'function'
+          ? helpers.isElementClipHidden(el, cs)
+          : helpers.isClipHidden(cs);
+      if (clipHidden) out.push('clipped');
     } catch {}
 
     // zero-size + overflow hidden/clip (still focusable)
@@ -788,10 +770,22 @@ function runInPage(ctx) {
   // 1) Find aria-hidden="true" roots, read as the ancestor walk below reads
   // them (any case, trimmed): browsers hide aria-hidden="TRUE" too, and a
   // page whose only roots were written that way was notApplicable.
-  const ariaHiddenRoots = qAll('[aria-hidden]').filter(
-    (el) => dom.get(el, 'getAttribute') && lower(dom.getAttribute(el, 'aria-hidden')) === 'true'
-  );
-  if (!ariaHiddenRoots.length) {
+  const isAriaHiddenTrue = (el) =>
+    dom.get(el, 'getAttribute') && lower(dom.getAttribute(el, 'aria-hidden')) === 'true';
+  const ariaHiddenRoots = qAll('[aria-hidden]').filter(isAriaHiddenTrue);
+  // The query above leaves out hidden elements, a root with
+  // visibility:hidden among them. But visibility is inherited, not
+  // absolute: a descendant set to visibility:visible is drawn and takes
+  // focus again, still inside the aria-hidden subtree. So when no rendered
+  // root is found, roots hidden that way are looked for too; whether
+  // anything under them can take focus is decided per element below.
+  // Without a rendered root the rule stays notApplicable unless one of
+  // them holds such an element.
+  const sourceRoots =
+    !ariaHiddenRoots.length && helpers && typeof helpers.queryAllSource === 'function'
+      ? helpers.queryAllSource('[aria-hidden]').filter(isAriaHiddenTrue)
+      : [];
+  if (!ariaHiddenRoots.length && !sourceRoots.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
@@ -870,18 +864,34 @@ function runInPage(ctx) {
       const hints = getVisibilityHints(el);
       for (const h of hints) entry.hints.add(h);
 
+      // The element as the reader finds it in the markup, for the message
+      // (helpers.describeMarkup): <a href="/promo"> "Read more".
+      let description;
+      try {
+        description =
+          typeof helpers.describeMarkup === 'function' ? helpers.describeMarkup(el) : '';
+      } catch {
+        description = '';
+      }
+
       entry.offenders.push({
         tag: tag || null,
         tabindex: ti == null ? null : String(ti),
         href: href || null,
         type: type || null,
-        visibilityHints: hints
+        visibilityHints: hints,
+        ...(description ? { description, isRoot: el === rootEl } : {})
       });
     }
   }
 
   if (!bucket.size) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return {
+      ruleId: rule.ruleId,
+      outcome: ariaHiddenRoots.length ? 'pass' : 'notApplicable',
+      severity: 'minor',
+      occurrences: []
+    };
   }
 
   // Ensure deterministic root focusability computation (done once per failing root).
@@ -956,6 +966,45 @@ function runInPage(ctx) {
         : 'ariaHiddenSelfFocusable'
       : 'ariaHiddenContainsFocusable';
 
+    // The first focusable element inside, named in the summary so the
+    // reader need not search a large hidden section for it.
+    const firstInside = entry.offenders.find((o) => o.description && !o.isRoot);
+    const named = !selfFocusable && !!firstInside;
+    const moreCount = Math.max(0, totalFocusable - 1);
+    let namedSummaryKey = '';
+    let namedSummary = '';
+    if (named) {
+      namedSummaryKey =
+        moreCount > 0
+          ? 'ariaHidden_focus_summary_fail_desc_named'
+          : 'ariaHidden_focus_summary_fail_desc_one';
+      namedSummary =
+        moreCount > 0
+          ? `This aria-hidden <${tagName}> contains ${firstInside.description} and ${moreCount} more focusable element(s): keyboard users can reach them, but screen readers don't announce them.`
+          : `This aria-hidden <${tagName}> contains a focusable element, ${firstInside.description}: keyboard users can reach it, but screen readers don't announce it.`;
+    }
+
+    // A focusable aria-hidden element itself, named as the reader finds it
+    // in the markup.
+    const rootOffender = entry.offenders.find((o) => o.description && o.isRoot);
+    const selfNamed = selfFocusable && !!rootOffender;
+    if (selfNamed) {
+      namedSummaryKey =
+        descendantFocusable > 0
+          ? 'ariaHidden_focus_summary_fail_self_and_desc_named'
+          : 'ariaHidden_focus_summary_fail_self_named';
+      namedSummary =
+        descendantFocusable > 0
+          ? `This aria-hidden ${rootOffender.description} can take keyboard focus and contains ${descendantFocusable} more focusable element(s), none of which screen readers announce.`
+          : `This aria-hidden ${rootOffender.description} can take keyboard focus, but screen readers don't announce it.`;
+    }
+
+    // A focusable element made invisible with opacity: 0 still takes focus:
+    // the hint says so, as the reader may not find it on screen.
+    const invisible = entry.offenders.find(
+      (o) => o.description && (o.visibilityHints || []).indexOf('opacityZero') !== -1
+    );
+
     const summaryText = selfFocusable
       ? descendantFocusable > 0
         ? `This aria-hidden <${tagName}> can take keyboard focus and contains ${descendantFocusable} more focusable element(s), none of which screen readers announce.`
@@ -983,10 +1032,18 @@ function runInPage(ctx) {
     let occReasonCode;
 
     if (downgradedByModal) {
-      occSummary = cantTellModalSummary;
+      occSummary = firstInside
+        ? moreCount > 0
+          ? `This aria-hidden <${tagName}> contains ${firstInside.description} and ${moreCount} more focusable element(s) while a modal dialog is open. They are fine if the dialog keeps focus inside it; check that focus can't reach them.`
+          : `This aria-hidden <${tagName}> contains a focusable element, ${firstInside.description}, while a modal dialog is open. It is fine if the dialog keeps focus inside it; check that focus can't reach it.`
+        : cantTellModalSummary;
       occHint =
         'Making the background inert, or opening a native <dialog> with showModal(), takes it out of the tab order. Then check that keyboard focus stays inside the dialog.';
-      occSummaryKey = 'ariaHidden_focus_summary_cantTell_modal';
+      occSummaryKey = firstInside
+        ? moreCount > 0
+          ? 'ariaHidden_focus_summary_cantTell_modal_named'
+          : 'ariaHidden_focus_summary_cantTell_modal_one'
+        : 'ariaHidden_focus_summary_cantTell_modal';
       occHintKey = 'ariaHidden_focus_hint_cantTell_modal';
       occReasonCode = 'ariaHiddenFocusable_modalOpen_needsReview';
     } else if (downgradedByRedirect) {
@@ -997,11 +1054,12 @@ function runInPage(ctx) {
       occHintKey = 'ariaHidden_focus_hint_cantTell_redirect';
       occReasonCode = 'ariaHiddenFocusable_runtimeRedirect_needsReview';
     } else {
-      occSummary = summaryText;
-      occHint =
-        'Remove aria-hidden, or take these elements out of the tab order (the inert attribute does this for a whole section), so nothing keyboard users can reach is hidden from screen readers.';
-      occSummaryKey = summaryKey;
-      occHintKey = 'ariaHidden_focus_hint_fail';
+      occSummary = named || selfNamed ? namedSummary : summaryText;
+      occHint = invisible
+        ? `${invisible.description} is invisible (opacity: 0) but still takes focus, so keyboard focus lands on something no one can see. Remove aria-hidden, or take these elements out of the tab order (the inert attribute does this for a whole section).`
+        : 'Remove aria-hidden, or take these elements out of the tab order (the inert attribute does this for a whole section), so nothing keyboard users can reach is hidden from screen readers.';
+      occSummaryKey = named || selfNamed ? namedSummaryKey : summaryKey;
+      occHintKey = invisible ? 'ariaHidden_focus_hint_fail_opacity' : 'ariaHidden_focus_hint_fail';
       occReasonCode = reasonCode;
     }
 
@@ -1016,6 +1074,9 @@ function runInPage(ctx) {
           element: tagName,
           focusableCount: String(totalFocusable),
           descendantFocusableCount: String(descendantFocusable),
+          ...(firstInside ? { first: firstInside.description, moreCount: String(moreCount) } : {}),
+          ...(selfNamed ? { self: rootOffender.description } : {}),
+          ...(invisible && !downgradedToCantTell ? { invisible: invisible.description } : {}),
           redirectedToTag:
             runtimeProbe && runtimeProbe.redirectedToTag ? runtimeProbe.redirectedToTag : '',
           redirectedToId:

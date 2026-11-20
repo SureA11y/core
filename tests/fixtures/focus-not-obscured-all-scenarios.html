@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>focus-not-obscured fixtures</title>
+    <style>
+      body { margin: 0; font: 16px/1.4 sans-serif; }
+      h1, .note { margin: 8px; font-size: 14px; }
+      .cols { display: flex; gap: 10px; }
+      .case { width: 180px; flex: none; }
+      .case-title { font-size: 12px; min-height: 64px; }
+      .case a { display: block; width: 170px; height: 24px; margin: 6px 0; }
+      .spacer { height: 1600px; }
+      /* The boxes the page keeps in place, each over its own column. */
+      .box { position: fixed; bottom: 0; height: 60px; width: 180px; }
+      #fno_case_01 { left: 0; background: #003366; color: #fff; }
+      #fno_case_02 { left: 190px; }
+      #fno_case_03 { left: 380px; width: 60px; background: #663300; }
+      #fno_case_04 { left: 570px; background: #333; color: #fff; }
+      #fno_case_05 { left: 760px; top: 0; bottom: auto; height: 120px; background: #eee; }
+    </style>
+  </head>
+  <body>
+    <h1>Scenario fixture: <code>focus-not-obscured-minimum</code> (WCAG 2.4.11) and <code>focus-not-obscured-enhanced</code> (WCAG 2.4.12)</h1>
+    <p class="note">
+      Each case is a column of links, with the box the page keeps in place over it, whose id is
+      <code>fno_case_NN</code>; the page has no scroll-padding. The rules need a layout, so in jsdom
+      they report nothing: the <code>data-outcome-*</code> attributes give that jsdom verdict, and
+      the browser test checks the one in each title. The links come after a tall space, so the page
+      can scroll them under a footer. A script-made modal dialog covers the whole
+      window, so it can't share a page with the other cases: the rules' own tests cover it, and a
+      sticky header and scroll-padding too.
+    </p>
+    <!-- The links sit below the first window's height, so they can be scrolled under a footer. -->
+    <div class="spacer"></div>
+    <div class="cols">
+      <div
+        class="case"
+        id="case_01"
+        data-outcome-focus-not-obscured-minimum="NEUTRAL (no layout in jsdom)"
+        data-outcome-focus-not-obscured-enhanced="NEUTRAL (no layout in jsdom)"
+      >
+        <div class="case-title">01 — CANTTELL: a fixed footer as wide as the links hides them entirely (both rules, leans fail)</div>
+        <a href="#a1">Alpha one</a><a href="#a2">Alpha two</a><a href="#a3">Alpha three</a>
+        <a href="#a4">Alpha four</a><a href="#a5">Alpha five</a><a href="#a6">Alpha six</a>
+        <div class="box" id="fno_case_01">Footer</div>
+      </div>
+      <div
+        class="case"
+        id="case_02"
+        data-outcome-focus-not-obscured-minimum="NEUTRAL (no layout in jsdom)"
+        data-outcome-focus-not-obscured-enhanced="NEUTRAL (no layout in jsdom)"
+      >
+        <div class="case-title">02 — PASS: a fixed box that draws nothing hides nothing</div>
+        <a href="#b1">Beta one</a><a href="#b2">Beta two</a><a href="#b3">Beta three</a>
+        <a href="#b4">Beta four</a><a href="#b5">Beta five</a><a href="#b6">Beta six</a>
+        <div class="box" id="fno_case_02"></div>
+      </div>
+      <div
+        class="case"
+        id="case_03"
+        data-outcome-focus-not-obscured-minimum="NEUTRAL (no layout in jsdom)"
+        data-outcome-focus-not-obscured-enhanced="NEUTRAL (no layout in jsdom)"
+      >
+        <div class="case-title">03 — CANTTELL: a fixed box narrower than the links hides part of each (enhanced only; minimum passes)</div>
+        <a href="#c1">Gamma one</a><a href="#c2">Gamma two</a><a href="#c3">Gamma three</a>
+        <a href="#c4">Gamma four</a><a href="#c5">Gamma five</a><a href="#c6">Gamma six</a>
+        <div class="box" id="fno_case_03">Chat</div>
+      </div>
+      <div
+        class="case"
+        id="case_04"
+        data-outcome-focus-not-obscured-minimum="NEUTRAL (no layout in jsdom)"
+        data-outcome-focus-not-obscured-enhanced="NEUTRAL (no layout in jsdom)"
+      >
+        <div class="case-title">04 — CANTTELL: a panel the user opened with a button hides the links entirely (both rules, no lean)</div>
+        <button type="button" aria-expanded="true" aria-controls="fno_case_04">Help</button>
+        <a href="#d1">Delta one</a><a href="#d2">Delta two</a><a href="#d3">Delta three</a>
+        <a href="#d4">Delta four</a><a href="#d5">Delta five</a>
+        <div class="box" id="fno_case_04">Help panel</div>
+      </div>
+      <div
+        class="case"
+        id="case_05"
+        data-outcome-focus-not-obscured-minimum="NEUTRAL (no layout in jsdom)"
+        data-outcome-focus-not-obscured-enhanced="NEUTRAL (no layout in jsdom)"
+      >
+        <div class="case-title">05 — PASS: links inside a fixed header move with it, so it hides none of them</div>
+        <div class="box" id="fno_case_05"><a href="#e1">Epsilon one</a><a href="#e2">Epsilon two</a></div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </body>
+</html>

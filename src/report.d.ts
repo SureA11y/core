@@ -7,9 +7,16 @@ export interface HtmlReportOptions {
   title?: string;
   /**
    * The packs the scan ran (engineOptions.packs): in Node, a pack rule's
-   * undecided findings show the steps of its meta.review, in English.
+   * undecided findings show the steps of its meta.review, in English or as
+   * its pack's dictionaries translate them.
    */
   packs?: readonly unknown[] | null;
+  /**
+   * false leaves out "What's left for a person": the checks no rule decides
+   * in full, for the standard scanned, with their steps (docs/REPORT.md). It
+   * is shown by default, in Node; the browser report has none.
+   */
+  manualChecks?: boolean;
 }
 
 /** A self-contained HTML page, as text. A cross-frame result covers every frame. Throws a TypeError for anything else. */

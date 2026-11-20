@@ -27,22 +27,34 @@
  *   attribute ARIA 1.2 made no longer global (`aria-disabled`,
  *   `aria-errormessage`, `aria-haspopup`, `aria-invalid`) is CANTTELL there
  *   too.
+ *   An attribute the role does not support is reported at CANTTELL as well,
+ *   not FAIL. It is a WAI-ARIA violation, but the element keeps the name,
+ *   role and state it has without the attribute: `<button
+ *   aria-valuenow="1">Save</button>` is still a button named Save. ACT
+ *   5c01ea maps this to WAI-ARIA, and to SC 1.3.1 and 4.1.2 only as
+ *   secondary requirements "less strict" than the rule. Whether SC 4.1.2
+ *   fails depends on whether the element is a control whose state or value
+ *   the page meant the attribute to convey and conveys no other way (a
+ *   toggle button given aria-checked instead of aria-pressed); a person
+ *   settles that.
  * @reports
  *   - `attr`: the aria-* attribute that is not allowed, or deprecated, on
  *     the element.
  *   - `role` (an element with a role): the role it was judged against,
  *     explicit or implicit. Absent when the element has no role at all.
  * @reason-codes
- *   - `ARIA_ATTR_NOT_ALLOWED` (fail): an aria-* attribute that the element's
- *     role, explicit or implicit, neither requires nor supports, and that is
- *     not global.
- *     Basis: WCAG 4.1.2; ACT 5c01ea; WAI-ARIA 1.2 supported states and
- *     properties.
- *   - `ARIA_ATTR_NOT_ALLOWED_ROLELESS` (fail): a role-specific aria-* attribute
- *     on an element that has no role at all, so nothing supports it and
- *     assistive technology ignores it.
- *     Basis: WCAG 4.1.2; ACT 5c01ea; WAI-ARIA 1.2 supported states and
- *     properties; HTML-AAM.
+ *   - `ARIA_ATTR_NOT_ALLOWED` (cantTell): an aria-* attribute that the
+ *     element's role, explicit or implicit, neither requires nor supports, and
+ *     that is not global. A WAI-ARIA violation; whether it also fails SC 4.1.2
+ *     depends on what the attribute was meant to convey.
+ *     Basis: WAI-ARIA 1.2 supported states and properties; ACT 5c01ea; WCAG
+ *     4.1.2 (not settled).
+ *   - `ARIA_ATTR_NOT_ALLOWED_ROLELESS` (cantTell): a role-specific aria-*
+ *     attribute on an element that has no role at all, so nothing supports it
+ *     and assistive technology ignores it. A WAI-ARIA violation; whether it
+ *     also fails SC 4.1.2 depends on what the attribute was meant to convey.
+ *     Basis: WAI-ARIA 1.2 supported states and properties; HTML-AAM; ACT
+ *     5c01ea; WCAG 4.1.2 (not settled).
  *   - `ARIA_ATTR_DEPRECATED` (cantTell): an aria-* attribute that ARIA
  *     deprecates on the element's role, or that ARIA 1.2 stopped making global,
  *     used on an element with no role; it is still allowed.
@@ -121,23 +133,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '4.1.2': ['aria-attr-allowed-for-role'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ARIA_ATTR_DEPRECATED: {
-      steps: [
-        "Inspect the element the report names and note the deprecated aria-* attribute and the element's role.",
-        "Open the Accessibility pane in the browser's developer tools and check whether the attribute's state still shows on the element (for example disabled, invalid, has popup).",
-        'With a screen reader, move to the element and listen for that state being announced.',
-        'Look for a non-deprecated way to convey the same thing (a native attribute such as disabled, or a role that supports the attribute) and whether the page already uses it.'
-      ],
-      passWhen:
-        'The state is announced, or it is also conveyed by a native attribute or a supported role, so nothing depends on the deprecated attribute alone.',
-      failWhen:
-        "The state is conveyed only by the deprecated attribute and the screen reader does not announce it, so the element's state is not exposed (WCAG 4.1.2)."
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['aria-attr-allowed-for-role'] } }
 };
 
 function runInPage(ctx) {
@@ -888,6 +884,20 @@ function runInPage(ctx) {
   // applicable count.
   function rolelessOccurrences(el, tag, allowed) {
     let seen = 0;
+    // Why the element has no role, where its markup alone doesn't show it:
+    // a <td> in a <table> whose role takes the cells' away, an <img> with
+    // alt="" (only such an img reaches here).
+    let tableRole = '';
+    if (tag === 'td') {
+      let table;
+      try {
+        table = dom.closest(el, 'table');
+      } catch {
+        table = null;
+      }
+      tableRole = table ? ariaHelpers.getExplicitRole(table) || '' : '';
+    }
+    const decorativeImg = tag === 'img';
     const attrs = dom.attributes(el);
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
@@ -925,17 +935,38 @@ function runInPage(ctx) {
         continue;
       }
 
-      failOccurrences.push(
+      cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `<${tag}> has no ARIA role, so nothing supports the ${name} attribute on it.`,
+          summary: tableRole
+            ? `This <td> has no role because its <table> has role="${tableRole}", so nothing supports the ${name} attribute on it.`
+            : decorativeImg
+              ? `This <img> has alt="", which marks it as decorative, with no role, so nothing supports the ${name} attribute on it.`
+              : `<${tag}> has no ARIA role, so nothing supports the ${name} attribute on it.`,
           hint: `Remove ${name}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.`,
+          occurrenceOutcome: 'cantTell',
           i18n: {
-            summaryKey: 'ariaAllowedAttr_summary_fail_roleless',
+            summaryKey: tableRole
+              ? 'ariaAllowedAttr_summary_cantTell_rolelessCell'
+              : decorativeImg
+                ? 'ariaAllowedAttr_summary_cantTell_rolelessImg'
+                : 'ariaAllowedAttr_summary_fail_roleless',
             hintKey: 'ariaAllowedAttr_hint_fail_roleless',
-            params: { attr: name, element: tag }
+            params: { attr: name, element: tag, ...(tableRole ? { tableRole } : {}) }
+          },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the element is a control whose state or value the page means this attribute to convey, and that state or value is conveyed no other way.',
+            evidence: { attribute: name, element: tag, status: 'not-supported-roleless' }
           },
           data: {
-            details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED_ROLELESS', attr: name, element: tag }
+            details: {
+              reasonCode: 'ARIA_ATTR_NOT_ALLOWED_ROLELESS',
+              attr: name,
+              element: tag,
+              ...(tableRole ? { tableRole } : {}),
+              ...(decorativeImg ? { emptyAlt: true } : {})
+            }
           }
         })
       );
@@ -1036,6 +1067,23 @@ function runInPage(ctx) {
     return null;
   }
 
+  // The attribute a role takes for the state an unsupported one was
+  // likely meant to give (aria-checked on a button means aria-pressed).
+  const STATE_ATTRS = {
+    button: { 'aria-checked': 'aria-pressed', 'aria-selected': 'aria-pressed' },
+    checkbox: { 'aria-pressed': 'aria-checked', 'aria-selected': 'aria-checked' },
+    radio: { 'aria-pressed': 'aria-checked', 'aria-selected': 'aria-checked' },
+    switch: { 'aria-pressed': 'aria-checked', 'aria-selected': 'aria-checked' },
+    menuitemcheckbox: { 'aria-pressed': 'aria-checked', 'aria-selected': 'aria-checked' },
+    menuitemradio: { 'aria-pressed': 'aria-checked', 'aria-selected': 'aria-checked' },
+    tab: { 'aria-pressed': 'aria-selected', 'aria-checked': 'aria-selected' },
+    option: { 'aria-pressed': 'aria-selected' }
+  };
+  function stateAttrFor(role, name) {
+    const map = Object.prototype.hasOwnProperty.call(STATE_ATTRS, role) ? STATE_ATTRS[role] : null;
+    return map && Object.prototype.hasOwnProperty.call(map, name) ? map[name] : '';
+  }
+
   for (const el of nodes) {
     if (!el || !dom.attributes(el)) continue;
 
@@ -1111,6 +1159,14 @@ function runInPage(ctx) {
 
     if (!disallowed || !disallowed.length) continue;
 
+    // The role is the element's implicit one when it has no role of its
+    // own: the message names the element rather than a role attribute it
+    // doesn't have, and a role attribute that names no ARIA role
+    // (helpers.roleTypo) is said, as the reader sees it in the markup.
+    const element = String(dom.tagName(el) || '').toLowerCase();
+    const implicit = !explicitRole;
+    const typo = implicit && typeof helpers.roleTypo === 'function' ? helpers.roleTypo(el) : null;
+
     for (const name of disallowed) {
       // A property ARIA deprecated (rather than prohibited) on this role is
       // still allowed, surfaced as cantTell for the author to decide, not a
@@ -1121,13 +1177,32 @@ function runInPage(ctx) {
       if (deprecated) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
-            summary: 'This ARIA attribute is deprecated for this element’s role.',
-            hint: 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
+            summary: typo
+              ? `This <${element}>’s role "${typo.written}" is not an ARIA role, so it is read as ${role}, on which ${name} is deprecated (still allowed, but discouraged).`
+              : implicit
+                ? `${name} is deprecated on this <${element}>, whose implicit role is ${role} (still allowed, but discouraged).`
+                : 'This ARIA attribute is deprecated for this element’s role.',
+            hint:
+              typo && typo.suggestion
+                ? `Did you mean role="${typo.suggestion}"? Fix the role, or remove ${name}.`
+                : 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
             occurrenceOutcome: 'cantTell',
             i18n: {
-              summaryKey: 'ariaAllowedAttr_summary_cantTell',
-              hintKey: 'ariaAllowedAttr_hint_cantTell',
-              params: { attr: name, role }
+              summaryKey: typo
+                ? 'ariaAllowedAttr_summary_cantTell_typo'
+                : implicit
+                  ? 'ariaAllowedAttr_summary_cantTell_implicit'
+                  : 'ariaAllowedAttr_summary_cantTell',
+              hintKey:
+                typo && typo.suggestion
+                  ? 'ariaAllowedAttr_hint_fail_typoNear'
+                  : 'ariaAllowedAttr_hint_cantTell',
+              params: {
+                attr: name,
+                role,
+                element,
+                ...(typo ? { written: typo.written, suggestion: typo.suggestion } : {})
+              }
             },
             uncertainty: {
               code: 'spec-only',
@@ -1136,24 +1211,98 @@ function runInPage(ctx) {
               evidence: { attribute: name, role, status: 'deprecated-for-role' }
             },
             data: {
-              details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, role }
+              details: {
+                reasonCode: 'ARIA_ATTR_DEPRECATED',
+                attr: name,
+                role,
+                ...(typo ? { roleTypo: typo } : {})
+              }
             }
           })
         );
         continue;
       }
-      failOccurrences.push(
+      // A role a word was written for (role="icon" for img) is offered only
+      // where it supports the attribute; the attribute the role takes for
+      // the state meant; or, on a cell, the grid whose cells can be selected.
+      const meant =
+        typo &&
+        !typo.suggestion &&
+        typo.meant &&
+        Object.prototype.hasOwnProperty.call(SUPPORTED_ATTRS_BY_ROLE, typo.meant) &&
+        SUPPORTED_ATTRS_BY_ROLE[typo.meant].indexOf(name) !== -1
+          ? typo.meant
+          : '';
+      const meantUnsupported = typo && !typo.suggestion && typo.meant && !meant ? typo.meant : '';
+      const substitute = typo ? '' : stateAttrFor(role, name);
+      const cellSelected = !typo && role === 'cell' && name === 'aria-selected';
+      cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
-          summary: 'This ARIA attribute is not permitted for this element’s role.',
-          hint: 'Remove this attribute, or use a role that supports it.',
-          occurrenceOutcome: 'fail',
+          summary: typo
+            ? `This <${element}>’s role "${typo.written}" is not an ARIA role, so it is read as ${role}, which does not support ${name}.`
+            : implicit
+              ? `${name} is not permitted on this <${element}>, whose implicit role ${role} does not support it.`
+              : 'This ARIA attribute is not permitted for this element’s role.',
+          hint:
+            typo && typo.suggestion
+              ? `Did you mean role="${typo.suggestion}"? Fix the role, or remove ${name}.`
+              : meant
+                ? `ARIA has no role "${typo.word}"; use role="${meant}", the ARIA role for it, or remove ${name}.`
+                : meantUnsupported
+                  ? `ARIA has no role "${typo.word}"; the ARIA role for it, role="${meantUnsupported}", does not support ${name} either. Remove ${name}, or give the element a role that supports it.`
+                  : substitute
+                    ? `Did you mean ${substitute}? Role ${role} gives this state with ${substitute}, and ignores ${name}.`
+                    : cellSelected
+                      ? 'A cell can’t be selected: aria-selected is supported on a gridcell. If its cells can be selected, give the table role="grid"; otherwise remove aria-selected.'
+                      : implicit
+                        ? `Remove ${name}, or give the element a role that supports it.`
+                        : 'Remove this attribute, or use a role that supports it.',
+          occurrenceOutcome: 'cantTell',
           i18n: {
-            summaryKey: 'ariaAllowedAttr_summary_fail',
-            hintKey: 'ariaAllowedAttr_hint_fail',
-            params: { attr: name, role }
+            summaryKey: typo
+              ? 'ariaAllowedAttr_summary_fail_typo'
+              : implicit
+                ? 'ariaAllowedAttr_summary_fail_implicit'
+                : 'ariaAllowedAttr_summary_fail',
+            hintKey:
+              typo && typo.suggestion
+                ? 'ariaAllowedAttr_hint_fail_typoNear'
+                : meant
+                  ? 'ariaAllowedAttr_hint_cantTell_typoMeant'
+                  : meantUnsupported
+                    ? 'ariaAllowedAttr_hint_cantTell_typoMeantUnsupported'
+                    : substitute
+                      ? 'ariaAllowedAttr_hint_cantTell_substitute'
+                      : cellSelected
+                        ? 'ariaAllowedAttr_hint_cantTell_cellSelected'
+                        : implicit
+                          ? 'ariaAllowedAttr_hint_fail_implicit'
+                          : 'ariaAllowedAttr_hint_fail',
+            params: {
+              attr: name,
+              role,
+              element,
+              ...(typo ? { written: typo.written, suggestion: typo.suggestion } : {}),
+              ...(meant ? { word: typo.word, meant } : {}),
+              ...(meantUnsupported ? { word: typo.word, meant: meantUnsupported } : {}),
+              ...(substitute ? { substitute } : {})
+            }
+          },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the element is a control whose state or value the page means this attribute to convey, and that state or value is conveyed no other way.',
+            evidence: { attribute: name, role, status: 'not-supported-for-role' }
           },
           data: {
-            details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED', attr: name, role }
+            details: {
+              reasonCode: 'ARIA_ATTR_NOT_ALLOWED',
+              attr: name,
+              role,
+              ...(implicit ? { implicitRole: true } : {}),
+              ...(typo ? { roleTypo: typo } : {}),
+              ...(substitute ? { substitute } : {})
+            }
           }
         })
       );

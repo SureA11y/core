@@ -35,6 +35,8 @@
  *   the visible fragment of a label whose descriptive part is hidden.
  * @reports
  *   - `label`: the visible label text of the field.
+ *   - `sharedWithFields`: on `DUPLICATE_LABEL_TEXT`, the first three of
+ *     those other fields, as the message names them (`#last (name="last")`).
  *   - `sharedWith`: how many other fields have the same label with nothing
  *     visible telling them apart, a count. 0 when no other field shares it.
  *   - `hiddenLabelParts`: how many parts of the field's label are hidden
@@ -140,44 +142,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.6': ['form-control-label-descriptive-evidence'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    DUPLICATE_LABEL_TEXT: {
-      steps: [
-        'Find the field the report names and the other fields with the same visible label.',
-        'Look at the screen around each one: a legend, heading, row text or nearby text that says which is which.',
-        'Decide whether the fields ask for the same thing (a repeated search box) or different things (shipping and billing name).'
-      ],
-      passWhen:
-        'The fields serve the same purpose, or something visible near each one makes clear which is which.',
-      failWhen:
-        'Different fields share a label and nothing visible tells them apart, so a user cannot tell which to fill in, which fails WCAG 2.4.6 (G131).'
-    },
-    PARTIALLY_HIDDEN_LABEL: {
-      steps: [
-        'Find the field the report names and read its visible label on screen.',
-        'Inspect the field in the Accessibility pane and read its full computed name, including the hidden parts.',
-        'Ask whether the visible part alone tells a sighted user what to enter or choose.'
-      ],
-      passWhen:
-        'The visible part of the label describes the field on its own; the hidden part only adds detail.',
-      failWhen:
-        'The visible part does not identify the field without the hidden part (for example, only "Go" is shown), which fails WCAG 2.4.6 (ACT cc0f0a).'
-    },
-    PLACEHOLDER_LABEL_TEXT: {
-      steps: [
-        'Find the field the report names and read its visible label.',
-        'Work out from the page what the field is for.',
-        'Decide whether the label says that, or is template text such as "Label", "Field" or "Enter text".'
-      ],
-      passWhen:
-        'The label is a real name for what the field asks for in this context (for example "Value" in a key/value editor).',
-      failWhen:
-        'The label is placeholder text that does not say what the field is for, which fails WCAG 2.4.6 (G131).'
-    }
-  }
+  coverage: { facetsBySc: { '2.4.6': ['form-control-label-descriptive-evidence'] } }
 };
 
 function runInPage(ctx) {
@@ -632,7 +597,28 @@ function runInPage(ctx) {
     }
   })();
 
+  // Each element's place in the document's tree order, read once.
+  // Chromium answers compareDocumentPosition by walking siblings, so a
+  // comparison per field and heading made this rule quadratic on a form
+  // whose fields are siblings; their places are compared instead. An
+  // element without one (in a shadow tree) is compared as before.
+  let treeOrder = null;
+  function treeOrderOf(node) {
+    if (!treeOrder) {
+      treeOrder = new Map();
+      try {
+        const all = dom.querySelectorAll(document, '*');
+        for (let i = 0; i < all.length; i++) treeOrder.set(all[i], i);
+      } catch {}
+    }
+    const p = treeOrder.get(node);
+    return p === undefined ? -1 : p;
+  }
+
   function precedes(a, b) {
+    const pa = treeOrderOf(a);
+    const pb = treeOrderOf(b);
+    if (pa >= 0 && pb >= 0) return pa < pb;
     try {
       // DOCUMENT_POSITION_PRECEDING (2) on b relative to a.
       return !!(dom.compareDocumentPosition(b, a) & 2);
@@ -914,7 +900,9 @@ function runInPage(ctx) {
       orderedFields.push(field);
     }
 
+    const placed = orderedFields.every((field) => treeOrderOf(field.el) >= 0);
     orderedFields.sort((a, b) => {
+      if (placed) return treeOrderOf(a.el) - treeOrderOf(b.el);
       try {
         const bits = dom.compareDocumentPosition(a.el, b.el);
         if (bits & 4) return -1; // b follows a
@@ -978,7 +966,15 @@ function runInPage(ctx) {
   // (different names) with nothing visible apart are G131's shape. Radio
   // buttons and checkboxes are left out: their question may be in text the
   // context doesn't reach, such as a group with no element of its own.
+  //
+  // Worked out once per set: every field of a set shares it, so working it
+  // out per field made a page of same-labelled fields quadratic.
+  const duplicateLeanCache = new Map();
   function duplicateLean(shared) {
+    if (!duplicateLeanCache.has(shared)) duplicateLeanCache.set(shared, readDuplicateLean(shared));
+    return duplicateLeanCache.get(shared);
+  }
+  function readDuplicateLean(shared) {
     const shapes = shared.map((f) => shapeOf(f.el));
     if (shapes.some((x) => !x.form)) return null;
     const forms = new Set(shapes.map((x) => x.form));
@@ -1004,6 +1000,16 @@ function runInPage(ctx) {
   }
 
   const occurrences = [];
+  const fieldNames = new Map();
+  function describeField(f) {
+    if (!fieldNames.has(f)) {
+      const fid = String(dom.getAttribute(f.el, 'id') || '').trim();
+      const fname = String(dom.getAttribute(f.el, 'name') || '').trim();
+      const tagged = fid ? `#${fid}` : helpers.describeElement(f.el);
+      fieldNames.set(f, fname ? `${tagged} (name="${fname}")` : tagged);
+    }
+    return fieldNames.get(f);
+  }
 
   for (const field of fields) {
     const isPlaceholder = inPhraseList(
@@ -1072,9 +1078,21 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // The other fields with this label, the first three, named with their
+    // name attribute: the evidence the reviewer weighs. Each field is
+    // described once, so a page of many alike fields stays linear.
+    const otherFields = [];
+    if (isDuplicate) {
+      for (const f of shared) {
+        if (f === field) continue;
+        if (otherFields.length === 3) break;
+        otherFields.push(describeField(f));
+      }
+    }
+    const others = otherFields.join(', ') + (shared.length - 1 > 3 ? ', …' : '');
     const summaryByReason = {
       PLACEHOLDER_LABEL_TEXT: `This field's visible label ("${field.labelText}") is a placeholder rather than a description of what the field is for.`,
-      DUPLICATE_LABEL_TEXT: `This field's visible label ("${field.labelText}") is shared with ${shared.length - 1} other field(s), with no visible heading, legend or row text telling them apart.`,
+      DUPLICATE_LABEL_TEXT: `This field's visible label ("${field.labelText}") is also the label of ${others}, with no visible heading, legend or row text telling them apart.`,
       PARTIALLY_HIDDEN_LABEL: `This field's label is split: "${field.labelText}" is what renders, while ${field.hiddenParts} other part(s) of the label are hidden from sight.`
     };
     const hintByReason = {
@@ -1087,7 +1105,7 @@ function runInPage(ctx) {
     };
     const SUMMARY_KEY_BY_REASON = {
       PLACEHOLDER_LABEL_TEXT: 'formControlLabelQuality_summary_cantTell_placeholder',
-      DUPLICATE_LABEL_TEXT: 'formControlLabelQuality_summary_cantTell_duplicate',
+      DUPLICATE_LABEL_TEXT: 'formControlLabelQuality_summary_cantTell_duplicateOthers',
       PARTIALLY_HIDDEN_LABEL: 'formControlLabelQuality_summary_cantTell_partiallyHidden'
     };
     const HINT_KEY_BY_REASON = {
@@ -1106,7 +1124,8 @@ function runInPage(ctx) {
           params: {
             label: field.labelText,
             count: String(shared.length - 1),
-            hiddenCount: String(field.hiddenParts)
+            hiddenCount: String(field.hiddenParts),
+            others
           }
         },
         ...(lean ? { lean } : {}),
@@ -1115,6 +1134,7 @@ function runInPage(ctx) {
             reasonCode,
             label: field.labelText,
             sharedWith: isDuplicate ? shared.length - 1 : 0,
+            ...(isDuplicate ? { sharedWithFields: otherFields } : {}),
             hiddenLabelParts: field.hiddenParts
           },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }

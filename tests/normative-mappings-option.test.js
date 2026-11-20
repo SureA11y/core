@@ -11,6 +11,7 @@ const assert = require('node:assert/strict');
 
 const core = require('../src/core.js');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
+const { WCAG_PROFILE_TAGS } = require('../src/core/prepare-catalog');
 
 const HTML =
   '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
@@ -90,7 +91,7 @@ test('a profile adds to engineOptions.mappings rather than replacing it', () => 
 });
 
 test('a profile not named after a standard switches nothing on', () => {
-  for (const profile of ['wcag22-aa', 'section508']) {
+  for (const profile of Object.keys(WCAG_PROFILE_TAGS)) {
     const result = scan({ profile });
     assert.deepEqual(standards(atomic(result)), ['WCAG'], profile);
     assert.equal('mappings' in result.engine, false, profile);

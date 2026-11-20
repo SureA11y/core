@@ -300,3 +300,123 @@ test(`${RULE_ID}: the same generic name to different places under one heading le
     assert.ok(own.length && own.every((o) => !o.lean), body);
   }
 });
+
+// Every link asked for its parent's text and its group's places, and every
+// heading for whether the link followed it, so a page of identical links
+// took 1.6 s at 4,000 links in Chromium, and 40 s with a heading over each
+// pair. Counted rather than timed, so the test doesn't flake under load:
+// the node reads and position comparisons grow with the page.
+test(`${RULE_ID}: the work grows linearly with identical links and headings, with the same leans`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../../src/testing.js');
+  const scan = (body) => {
+    const dom = createDom(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`
+    );
+    const nodeProto = dom.window.Node.prototype;
+    const nodeType = Object.getOwnPropertyDescriptor(nodeProto, 'nodeType');
+    const compare = nodeProto.compareDocumentPosition;
+    let work = 0;
+    Object.defineProperty(nodeProto, 'nodeType', {
+      configurable: true,
+      get() {
+        work++;
+        return nodeType.get.call(this);
+      }
+    });
+    nodeProto.compareDocumentPosition = function (...args) {
+      work++;
+      return compare.apply(this, args);
+    };
+    const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
+    return { rule: result.checksResults.find((c) => c.ruleId === RULE_ID), work };
+  };
+  const pages = {
+    flat: (n) => Array.from({ length: n }, (_, i) => `<a href="/${i}">Read more</a> `).join(''),
+    headed: (n) =>
+      Array.from(
+        { length: n / 2 },
+        (_, i) =>
+          `<h2>Section ${i}</h2><div><a href="/${i}">Read more</a></div><div><a href="/x${i}">Read more</a></div>`
+      ).join('')
+  };
+  for (const [name, page] of Object.entries(pages)) {
+    const small = scan(page(100));
+    const large = scan(page(200));
+    assert.ok(
+      large.work <= small.work * 2.5,
+      `${name}: ${small.work} for 100, ${large.work} for 200`
+    );
+    assert.equal(large.rule.occurrences.length, 200, name);
+    assert.ok(
+      large.rule.occurrences.every((o) => o.lean && o.lean.toward === 'fail'),
+      `${name}: each link shares its name with another going elsewhere`
+    );
+  }
+});
+
+// The heading a link sits under is found among the headings in tree order;
+// a link inside a heading has that heading, and scan roots given out of
+// document order are read as before, heading by heading.
+test(`${RULE_ID}: the nearest heading, with a link inside a heading and roots out of order`, () => {
+  const html =
+    '<!doctype html><html lang="en"><body>' +
+    '<section id="one"><h2>A</h2><div><a href="/a">Read more</a></div><div><a href="/b">Read more</a></div>' +
+    '<h2><a href="/c">Read more</a></h2><div><a href="/d">Read more</a></div></section>' +
+    '<section id="two"><h2>B</h2><div><a href="/e">Read more</a></div><div><a href="/e">Read more</a></div></section>' +
+    '</body></html>';
+  const leans = (result) =>
+    Object.fromEntries(
+      result.checksResults
+        .find((c) => c.ruleId === RULE_ID)
+        .occurrences.map((o) => [/href="([^"]+)"/.exec(o.html)[1], o.lean ? o.lean.toward : null])
+    );
+  // Under A, /a and /b go to different places; under the heading holding
+  // /c, /c and /d do; under B both links go to /e.
+  const expected = { '/a': 'fail', '/b': 'fail', '/c': 'fail', '/d': 'fail', '/e': null };
+  assert.deepEqual(leans(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] })), expected);
+  assert.deepEqual(
+    leans(runa11yCoreOnHtml(html, { runOnly: [RULE_ID], contextSelector: ['#two', '#one'] })),
+    expected
+  );
+});
+
+// details.linkKind says what the link is made of (helpers.getLinkKind): an
+// <a> in SVG is svg; an <area>, or content of images only, is image; text and
+// an image is composite; anything else is text. Hidden content doesn't count;
+// aria-hidden content is drawn, and does.
+test('link-name-quality: each finding says what its link is made of (linkKind)', () => {
+  const cases = [
+    ['text', '<a id="x" href="/a">Read more</a>'],
+    ['text', '<a id="x" href="/a" aria-label="Read more"></a>'],
+    ['text', '<a id="x" href="/a"><span hidden><img src="i.png" alt=""></span>Read more</a>'],
+    ['image', '<a id="x" href="/a"><img src="i.png" alt="Read more"></a>'],
+    ['image', '<a id="x" href="/a"><img src="i.png" alt="Read"> <img src="j.png" alt="more"></a>'],
+    [
+      'image',
+      '<a id="x" href="/a" aria-label="Read more"><svg viewBox="0 0 1 1"><text>Go</text></svg></a>'
+    ],
+    ['image', '<a id="x" href="/a"><span role="img" aria-label="Read more">*</span></a>'],
+    ['image', '<a id="x" href="/a" aria-label="Read more"><canvas></canvas></a>'],
+    ['image', '<a id="x" href="/a" aria-label="Read more"><object data="o.svg"></object></a>'],
+    [
+      'image',
+      '<img src="m.png" usemap="#m" alt="Map"><map name="m"><area id="x" href="/a" alt="Read more" shape="rect" coords="0,0,1,1"></map>'
+    ],
+    ['composite', '<a id="x" href="/a"><img src="i.png" alt="">Read more</a>'],
+    [
+      'composite',
+      '<a id="x" href="/a"><span aria-hidden="true">Read</span><img src="i.png" alt="more"></a>'
+    ],
+    ['svg', '<svg><a id="x" href="/a"><text>Read more</text></a></svg>']
+  ];
+  for (const [kind, link] of cases) {
+    const html = `<!doctype html><html lang="en"><body><main><p>${link}</p></main></body></html>`;
+    const rule = assertRule(
+      runa11yCoreOnHtml(html, { runOnly: ['link-name-quality'] }),
+      'link-name-quality',
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    );
+    assert.strictEqual(rule.occurrences[0].data.details.linkKind, kind, link);
+  }
+});

@@ -239,3 +239,25 @@ test('contrast in Chromium: SVG text is judged by its fill, not its color', { sk
     'contrast-minimum:pass'
   ]);
 });
+
+test('the summary names what is painted under the text', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const p = await browser.newPage();
+  await p.setContent(
+    '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
+      `<body><main>${OVERLAPS['an <img> hero'].replace('<img ', '<img class="hero-img" ')}</main></body></html>`
+  );
+  await addBundle(p);
+  const occ = await p.evaluate(() => {
+    const r = window.a11ycore.runa11yCoreInPage(null, null, {}, ['contrast-computable']);
+    const o = r.checksResults[0].occurrences[0];
+    return { summary: o.summary, key: o.i18n.summaryKey, element: o.data.details.blockerElement };
+  });
+  assert.equal(occ.key, 'contrastComputable_cantTell_backgroundOverlap');
+  assert.equal(occ.element, '<img class="hero-img">');
+  assert.match(
+    occ.summary,
+    /because <img class="hero-img">, which is not an ancestor of the text, is painted under it \(element=img\)/
+  );
+});

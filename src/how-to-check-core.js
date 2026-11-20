@@ -20,31 +20,25 @@
  * `dictionaries` is either an object keyed by locale ({ en, fr }) or a
  * function from a locale to its dictionary (or null). English is the
  * fallback for every key a locale lacks, and says how many steps a code has.
+ *
+ * A step may name what its finding found, {{name|text}}
+ * (src/review-placeholders.js): a finding's steps are filled from its own
+ * values, and steps read for a code alone read as each placeholder's text.
+ *
+ * A pack's standard may give its own steps for a core rule's code
+ * (standard.review, docs/PACKS.md), in its own words: a finding only that
+ * standard's profiles ask about reads them in place of core's, which name
+ * WCAG; the pack's dictionaries may translate them, under
+ * `<standard key>_standardReview_<rule id>_<CODE>_step<n>`, `_pass` and
+ * `_fail` (src/pack-review.js).
  */
 
 const { occurrenceOutcome, reviewGroupOf } = require('./occurrence-outcome.js');
 const { HOOK_REASON_CODES } = require('./hook-reason-codes.js');
+const { chainOf, standardReviewsOf, standardSteps, withPackReview } = require('./pack-review.js');
+const { fillHowToCheck, placeholderValues } = require('./review-placeholders.js');
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
-
-// 'fr-CA' reads fr-ca, then fr; English last.
-function localeChain(locale) {
-  const tag = typeof locale === 'string' ? locale.trim().toLowerCase() : '';
-  if (!tag || tag === 'en' || tag.startsWith('en-')) return [];
-  const base = tag.split('-')[0];
-  return base === tag ? [tag] : [tag, base];
-}
-
-function chainOf(locales) {
-  const chain = [];
-  const add = (l) => {
-    for (const tag of localeChain(l)) if (!chain.includes(tag)) chain.push(tag);
-  };
-  if (Array.isArray(locales)) locales.forEach(add);
-  else add(locales);
-  chain.push('en');
-  return chain;
-}
 
 function dictionaryFor(dictionaries, locale) {
   let dict = null;
@@ -67,13 +61,15 @@ function dictionaryFor(dictionaries, locale) {
  * The steps for one finding: { steps, passWhen, failWhen }, or null when the
  * dictionaries have none for that rule prefix and reason code. `locales` is a
  * locale ('fr-CA') or a list of them, most wanted first. With
- * `options.packs`, a pack rule's prefix reads its meta.review, in English.
+ * `options.packs`, a pack rule's prefix reads its meta.review, in English,
+ * or in a locale its pack's dictionary translates it to.
  */
 function howToCheckFrom(dictionaries, prefix, code, locales, options) {
   if (typeof prefix !== 'string' || !prefix || typeof code !== 'string' || !code) return null;
-  const packs = options && typeof options === 'object' ? options.packs : null;
-  const source = packs ? withPackReview(dictionaries, packs) : dictionaries;
-  return stepsFrom(source, prefix, code, locales);
+  const opts = options && typeof options === 'object' ? options : {};
+  const source = opts.packs ? withPackReview(dictionaries, opts.packs) : dictionaries;
+  const how = stepsFrom(source, prefix, code, locales);
+  return how ? fillHowToCheck(how, opts.values) : null;
 }
 
 function stepsFrom(dictionaries, prefix, code, locales) {
@@ -100,6 +96,11 @@ function stepsFrom(dictionaries, prefix, code, locales) {
   return { steps, passWhen, failWhen };
 }
 
+function isPastWalkLimit(occ) {
+  const evidence = occ.uncertainty && occ.uncertainty.evidence;
+  return !!evidence && typeof evidence === 'object' && 'ancestorWalkLimit' in evidence;
+}
+
 function isUndecided(check, occ) {
   return occurrenceOutcome(check, occ) === 'cantTell';
 }
@@ -117,66 +118,6 @@ function prefixesOf(check) {
   const own = prefixOfKey(i18n.titleKey);
   const base = typeof check.variantOf === 'string' ? prefixOfKey(i18n.variantOfTitleKey) : null;
   return [own, base].filter((p, i, all) => p && all.indexOf(p) === i);
-}
-
-const isText = (v) => typeof v === 'string' && v.trim() !== '';
-function wellFormedReview(entry) {
-  return (
-    !!entry &&
-    typeof entry === 'object' &&
-    Array.isArray(entry.steps) &&
-    entry.steps.length > 0 &&
-    entry.steps.every(isText) &&
-    isText(entry.passWhen) &&
-    isText(entry.failWhen)
-  );
-}
-
-/**
- * The English review dictionary of packs' rules: each pack rule's and
- * variant's meta.review, under the keys core's dictionaries use. A pack's
- * steps are in English: a scan in another locale shows them in English. A
- * rule that overrides a core rule gives none, as a custom one doesn't.
- */
-function packReviewDictionary(packs) {
-  const dict = {};
-  for (const pack of Array.isArray(packs) ? packs : []) {
-    if (!pack || typeof pack !== 'object') continue;
-    const overrides = Array.isArray(pack.overrides) ? pack.overrides : [];
-    const rules = [].concat(
-      Array.isArray(pack.rules) ? pack.rules : [],
-      Array.isArray(pack.variants) ? pack.variants : []
-    );
-    for (const rule of rules) {
-      if (!rule || typeof rule !== 'object' || overrides.includes(rule.id)) continue;
-      const meta = rule.meta && typeof rule.meta === 'object' ? rule.meta : {};
-      const prefix = prefixOfKey(meta.i18n && meta.i18n.titleKey);
-      const review = meta.review;
-      if (!prefix || !review || typeof review !== 'object' || Array.isArray(review)) continue;
-      for (const code of Object.keys(review)) {
-        const entry = review[code];
-        if (!/^[A-Za-z0-9_]+$/.test(code) || !wellFormedReview(entry)) continue;
-        const key = `${prefix}_review_${code}_`;
-        entry.steps.forEach((step, i) => (dict[`${key}step${i + 1}`] = step));
-        dict[`${key}pass`] = entry.passWhen;
-        dict[`${key}fail`] = entry.failWhen;
-      }
-    }
-  }
-  return dict;
-}
-
-// The dictionaries with the packs' steps added to English, where core's
-// English has no such key.
-function withPackReview(dictionaries, packs) {
-  const extra = packReviewDictionary(packs);
-  if (!Object.keys(extra).length) return dictionaries;
-  let en;
-  return (locale) => {
-    if (locale !== 'en') return dictionaryFor(dictionaries, locale);
-    if (!en) en = { ...extra, ...(dictionaryFor(dictionaries, 'en') || {}) };
-    return en;
-  };
 }
 
 // engine.locale says which dictionary the scan used: { requested, resolved,
@@ -200,10 +141,22 @@ function isCustom(result, check) {
   );
 }
 
+// The profiles that ask about a finding: those whose verdict on it is
+// cantTell in a scan of several, the scan's own profile otherwise.
+function askingProfiles(result, occ) {
+  if (occ.verdicts && typeof occ.verdicts === 'object') {
+    return Object.keys(occ.verdicts)
+      .filter((p) => occ.verdicts[p] === 'cantTell')
+      .map((p) => p.toLowerCase());
+  }
+  const profile = result.engine && result.engine.profile;
+  return typeof profile === 'string' && profile ? [profile.toLowerCase()] : [];
+}
+
 // options.locale, when given, is the locale (or list of locales, most wanted
 // first) to give the steps in, in place of the scan's; the steps a finding
 // already has are then given again in it, where the dictionaries have them.
-function addToResult(result, dictionaries, wanted) {
+function addToResult(result, dictionaries, wanted, reviews) {
   if (!result || typeof result !== 'object' || !Array.isArray(result.checksResults)) return result;
   const engineLocale = engineLocaleOf(result);
   const checksResults = result.checksResults.map((check) => {
@@ -215,16 +168,19 @@ function addToResult(result, dictionaries, wanted) {
     let changed = false;
     const occurrences = check.occurrences.map((occ) => {
       if (!occ || typeof occ !== 'object' || !isUndecided(check, occ)) return occ;
-      if (occ.howToCheck && !wanted) return occ;
+      // Steps the engine gave itself, for an element deeper than it walks
+      // (OUTPUT_SCHEMA.md, ancestorWalkLimit), are in the scan's locale.
+      if (occ.howToCheck && (!wanted || isPastWalkLimit(occ))) return occ;
       const code = occ.data && occ.data.details && occ.data.details.reasonCode;
-      let how = null;
-      for (const prefix of prefixes) {
+      const ruleIds = [check.ruleId, check.variantOf].filter((id) => typeof id === 'string');
+      let how = standardSteps(reviews, askingProfiles(result, occ), ruleIds, code, locale);
+      for (const prefix of how ? [] : prefixes) {
         how = stepsFrom(dictionaries, prefix, code, locale);
         if (how) break;
       }
       if (!how) return occ;
       changed = true;
-      return { ...occ, howToCheck: how };
+      return { ...occ, howToCheck: fillHowToCheck(how, placeholderValues(occ)) };
     });
     return changed ? { ...check, occurrences } : check;
   });
@@ -235,15 +191,15 @@ function addToResult(result, dictionaries, wanted) {
 // A binding's frames(true) lists each frame as a scan result of its own, or
 // as { url, error } where it could not scan one: a result gains its steps,
 // an error is left as it is.
-function addToTree(node, dictionaries, wanted) {
+function addToTree(node, dictionaries, wanted, reviews) {
   if (!node || typeof node !== 'object') return node;
   if (!node.topFrame && Array.isArray(node.checksResults)) {
-    return addToResult(node, dictionaries, wanted);
+    return addToResult(node, dictionaries, wanted, reviews);
   }
   const out = { ...node };
-  if (node.topFrame) out.topFrame = addToResult(node.topFrame, dictionaries, wanted);
+  if (node.topFrame) out.topFrame = addToResult(node.topFrame, dictionaries, wanted, reviews);
   if (Array.isArray(node.frames)) {
-    out.frames = node.frames.map((n) => addToTree(n, dictionaries, wanted));
+    out.frames = node.frames.map((n) => addToTree(n, dictionaries, wanted, reviews));
   }
   return out;
 }
@@ -265,21 +221,28 @@ function wantedLocale(options) {
  * in which each undecided finding of a core rule carries howToCheck, in the
  * scan's locale, from the dictionaries given; a variant's finding without
  * steps of its own gets its base rule's. With `options.packs`, the packs the
- * scan ran, their rules' and variants' meta.review give theirs, in English.
+ * scan ran, their rules' and variants' meta.review give theirs, in English,
+ * or in the scan's locale where the pack's dictionary for it translates them.
  * Findings that already have one, and decided ones, are left as they are.
  * With `options.locale` (a tag, or a list of tags, most wanted first), the
  * steps are in that locale instead of the scan's, and a finding that already
  * has steps is given them again in it, as a report in another language
  * needs; English stays the fallback for every step a locale lacks.
+ * Each finding's steps are filled from its own values ({{name|text}}), and
+ * a finding only a pack standard's profiles ask about reads that standard's
+ * steps for its code where it gives them (standard.review), in the locale
+ * where the pack's dictionary for it translates the whole entry, and in
+ * English otherwise.
  */
 function applyHowToCheck(result, dictionaries, options) {
   const packs = options && typeof options === 'object' ? options.packs : null;
   const dicts = withPackReview(dictionaries, packs);
   const wanted = wantedLocale(options);
+  const reviews = standardReviewsOf(packs);
   if (result && typeof result === 'object' && 'topFrame' in result) {
-    return addToTree(result, dicts, wanted);
+    return addToTree(result, dicts, wanted, reviews);
   }
-  return addToResult(result, dicts, wanted);
+  return addToResult(result, dicts, wanted, reviews);
 }
 
 // occurrenceOutcome and reviewGroupOf go with the steps, so a tool whose code

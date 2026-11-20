@@ -7,7 +7,7 @@
  * @atomic true
  * @summary An element with a widget role should be reachable with the keyboard
  * @standard WCAG 2.2
- * @sc 2.1.1
+ * @sc 2.1.1, 2.1.3
  * @applicability
  *   Elements the page shows with `aria-activedescendant`, and those whose
  *   role, from the `role` attribute or a custom element's
@@ -67,26 +67,26 @@
  *     it does another way is for a person to check.
  *     It leans fail unless another element in the tab order has the same
  *     role and name.
- *     Basis: WCAG 2.1.1 (not settled); F42.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); F42.
  *   - `WIDGET_NOT_IN_TAB_ORDER` (cantTell): a widget that takes focus only
  *     from script (tabindex="-1"), so Tab never reaches it.
  *     It leans pass when another element in the tab order has the same role
  *     and name, and fail when, with a listener hook installed before the
  *     page's scripts, no key listener is on an ancestor, the document or
  *     the window to move focus to it.
- *     Basis: WCAG 2.1.1 (not settled).
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
  *   - `COMPOSITE_NO_TAB_STOP` (cantTell): a composite widget that no other
  *     element controls or owns, with no tab stop on it or on any of its
  *     items.
  *     It leans fail unless the element just before it, or before its parent,
  *     says it opens a popup (aria-haspopup, or aria-expanded="true").
- *     Basis: WCAG 2.1.1 (not settled).
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
  *   - `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` (cantTell): an element with
  *     aria-activedescendant that cannot take focus, so its active item is
  *     never announced.
  *     It leans fail: ARIA gives aria-activedescendant effect only on the
  *     element that has focus.
- *     Basis: WCAG 2.1.1 (not settled); WAI-ARIA 1.2 aria-activedescendant.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); WAI-ARIA 1.2 aria-activedescendant.
  * @implementation-notes
  * - WCAG 2.1.1 asks that all functionality work from a keyboard; F42 fails
  *   a scripted control that can't take focus, F54 a function behind
@@ -117,8 +117,18 @@ const meta = {
     descriptionKey: 'widgetKeyboardFocusable_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag211', 'aria', 'keyboard', 'structure', 'atomic', 'manual'],
-  wcagSc: ['2.1.1'],
+  tags: [
+    'wcag2a',
+    'wcag211',
+    'wcag2aaa',
+    'wcag213',
+    'aria',
+    'keyboard',
+    'structure',
+    'atomic',
+    'manual'
+  ],
+  wcagSc: ['2.1.1', '2.1.3'],
   normativeMappings: [
     {
       standard: 'WCAG',
@@ -126,61 +136,23 @@ const meta = {
       requirement: '2.1.1',
       title: 'Keyboard',
       conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.1.3',
+      title: 'Keyboard (No Exception)',
+      conformanceLevel: 'AAA'
     }
   ],
   defaultSeverity: 'serious',
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.1.1': ['widget-keyboard-focusable-evidence'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE: {
-      steps: [
-        'Find the element the report names; it uses aria-activedescendant to point at its active item.',
-        'Using only the keyboard, open or reach the widget (for example type in its search box) and watch whether that element, not something else, gets focus.',
-        'Press the arrow keys with a screen reader running and listen whether each active item is announced.'
-      ],
-      passWhen:
-        'The element gets focus and the screen reader announces each active item as the arrow keys move.',
-      failWhen:
-        'The element cannot get focus, so moving through items announces nothing or the items cannot be reached, which fails WCAG 2.1.1.'
-    },
-    COMPOSITE_NO_TAB_STOP: {
-      steps: [
-        'Find the widget the report names (a menu, list box, tab list, toolbar, grid or tree).',
-        'Click just before it and press Tab, and watch whether focus enters it or one of its items.',
-        'If it is a popup, open it from its button with the keyboard and see whether focus moves into it.',
-        'Once inside, check that the arrow keys move between the items.'
-      ],
-      passWhen:
-        'Tab (or the button that opens it) puts focus in the widget and the arrow keys move between its items.',
-      failWhen:
-        'Focus never gets into the widget or its items with the keyboard, which fails WCAG 2.1.1.'
-    },
-    WIDGET_NOT_FOCUSABLE: {
-      steps: [
-        'Find the widget the report names and note what it does when clicked or touched.',
-        'Click just before it, then press Tab and watch whether focus ever lands on it.',
-        'If it never gets focus, look for another control a keyboard can reach that does the same thing.',
-        'If the element does nothing, its role may be wrong; note that instead.'
-      ],
-      passWhen:
-        'The widget gets keyboard focus and works with the keyboard, or the same function is offered by another keyboard-reachable control.',
-      failWhen:
-        'The widget cannot be reached or used with the keyboard and its function is not offered elsewhere, which fails WCAG 2.1.1 (F42).'
-    },
-    WIDGET_NOT_IN_TAB_ORDER: {
-      steps: [
-        'Find the widget the report names and note when it appears (for example when a menu or dialog opens).',
-        'Use only the keyboard to open or reach that part of the page, and watch whether a script moves focus to the widget, or the arrow keys reach it.',
-        'If focus never reaches it, look for another keyboard-reachable control that does the same thing.'
-      ],
-      passWhen:
-        'Focus is moved to the widget by script or by arrow keys when needed, or its function is offered elsewhere.',
-      failWhen:
-        'Tab and arrow keys never reach the widget and nothing else offers its function, which fails WCAG 2.1.1.'
+  coverage: {
+    facetsBySc: {
+      '2.1.1': ['widget-keyboard-focusable-evidence'],
+      '2.1.3': ['widget-keyboard-focusable-evidence']
     }
   }
 };
@@ -346,9 +318,10 @@ function runInPage(ctx) {
       return '';
     }
   }
-  function hasTabbableTwin(el, role) {
+  // The first other tab stop with el's role and name, or null.
+  function tabbableTwin(el, role) {
     const name = nameOf(el);
-    if (!name) return false;
+    if (!name) return null;
     if (!tabStopsByRoleName) {
       tabStopsByRoleName = new Map();
       for (const d of helpers.queryAllDeep(FOCUS_SELECTOR + ', [role]')) {
@@ -357,7 +330,7 @@ function runInPage(ctx) {
         tabStopsByRoleName.set(key, (tabStopsByRoleName.get(key) || []).concat(d));
       }
     }
-    return (tabStopsByRoleName.get(role + '|' + name) || []).some((d) => d !== el);
+    return (tabStopsByRoleName.get(role + '|' + name) || []).find((d) => d !== el) || null;
   }
   // A key listener the listener hook saw on an ancestor, the document or the
   // window; null without an early hook, which alone shows there is none.
@@ -484,7 +457,7 @@ function runInPage(ctx) {
 
     let lean;
     if (reasonCode === 'WIDGET_NOT_FOCUSABLE') {
-      if (!hasTabbableTwin(el, role))
+      if (!tabbableTwin(el, role))
         lean = {
           toward: 'fail',
           why: 'The element says it is a widget, but neither it nor anything in it can take focus, and no control in the tab order has its role and name.',
@@ -501,15 +474,24 @@ function runInPage(ctx) {
           }
         };
     } else if (reasonCode === 'WIDGET_NOT_IN_TAB_ORDER') {
-      if (hasTabbableTwin(el, role)) {
+      const twin = tabbableTwin(el, role);
+      if (twin) {
+        // The other control, as in the markup, for the reviewer to compare.
+        const other =
+          typeof helpers.describeMarkup === 'function' ? helpers.describeMarkup(twin) : '';
         lean = {
           toward: 'pass',
-          why: 'Another control in the tab order has the same role and name, so this one is a duplicate taken out of the tab order.',
+          why: other
+            ? `Another control in the tab order, ${other}, has the same role and name, so this one is a duplicate taken out of the tab order.`
+            : 'Another control in the tab order has the same role and name, so this one is a duplicate taken out of the tab order.',
           signals: [{ signal: 'same-name-tabbable-duplicate', value: true }],
           caution: 'Check that the two really do the same thing.',
           i18n: {
-            whyKey: 'widgetKeyboardFocusable_lean_why_duplicate',
-            cautionKey: 'widgetKeyboardFocusable_lean_caution_duplicate'
+            whyKey: other
+              ? 'widgetKeyboardFocusable_lean_why_duplicateNamed'
+              : 'widgetKeyboardFocusable_lean_why_duplicate',
+            cautionKey: 'widgetKeyboardFocusable_lean_caution_duplicate',
+            ...(other ? { params: { other } } : {})
           }
         };
       } else if (keyListenerAbove(el) === false) {

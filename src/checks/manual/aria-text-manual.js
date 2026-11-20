@@ -8,22 +8,30 @@
  * @summary role="text" elements should have no focusable descendants
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Elements whose role attribute resolves to text: its first token naming
- *   a known role, matched in any case, is `text`, so `role="foo text"` and
- *   `role="TEXT"` count while `role="link text"` (a link) does not.
+ *   Elements whose role attribute has the token `text`, matched in any
+ *   case, before any token naming a WAI-ARIA role, so `role="foo text"`
+ *   and `role="TEXT"` count while `role="link text"` (a link) does not.
  * @expectation
- *   `role="text"` tells assistive technology to treat an element's whole
- *   subtree as a single unit of plain text (e.g. text visually split
- *   across multiple `<span>`s by styling). Per the WAI-ARIA Authoring
- *   Practices, this only makes sense when that subtree contains no
- *   focusable content: a focusable descendant inside a "this is just
- *   text" region is unreachable or confusing for keyboard/AT users.
+ *   `role="text"` names no WAI-ARIA role (neither WAI-ARIA 1.2 nor the
+ *   1.3 draft defines it; aria-roles-valid reports it), but some
+ *   assistive technology has read it as asking to treat an element's
+ *   whole subtree as a single unit of plain text (e.g. text visually split
+ *   across multiple `<span>`s by styling). That only makes sense when the
+ *   subtree contains no focusable content: a focusable descendant inside
+ *   a "this is just text" region is unreachable or confusing for
+ *   keyboard/AT users.
+ * @reports
+ *   - `focusableElement`, `focusableSelector`: the first focusable element
+ *     inside, as the message names it (`<a> "details"`) and a selector.
  * @reason-codes
  *   - `ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT` (cantTell): an element with
  *     role="text" contains content that can take keyboard focus.
  *     It leans fail: the page states it.
  *     Basis: WAI-ARIA Authoring Practices (best practice).
  * @implementation-notes
+ * - `text` is no WAI-ARIA role (neither 1.2 nor the 1.3 draft defines it),
+ *   so `aria-roles-valid` reports `role="text"` as naming no valid role
+ *   (ACT 674b10); this rule reads the token itself.
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule, matching the Tier 1b precedent (see
  *   `landmark-unique`'s header comment for the shared rationale).
@@ -53,22 +61,7 @@ const meta = {
   category: 'robust',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT: {
-      steps: [
-        'Inspect the element the report names and find the focusable element inside it.',
-        'Press Tab until that element has focus, with a screen reader running, and listen to what is announced.',
-        'Try to activate it with Enter or Space.'
-      ],
-      passWhen:
-        "The focusable element is announced with its role and name and can be used, or it doesn't need to be focusable.",
-      failWhen:
-        "The focusable element is announced as plain text, or not at all, so users can't tell it is interactive (best practice, WAI-ARIA Authoring Practices)."
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {
@@ -86,12 +79,23 @@ function runInPage(ctx) {
   }
 
   // role is a fallback list matched in any case: select by token, then keep
-  // only elements whose resolved role is text (role="link text" is a link).
+  // only elements where text comes before any WAI-ARIA role (role="link
+  // text" is a link). text is no WAI-ARIA role, so it is read here, not by
+  // the role helpers, which don't know it.
+  const textFirst = (el) => {
+    const tokens =
+      typeof helpers.aria.getAllRoleTokens === 'function' ? helpers.aria.getAllRoleTokens(el) : [];
+    for (const t of tokens) {
+      if (t === 'text') return true;
+      if (helpers.aria.isValidConcreteRole && helpers.aria.isValidConcreteRole(t)) return false;
+    }
+    return false;
+  };
   const nodes = (
     helpers.queryAllSmart
       ? helpers.queryAllSmart('[role~="text" i]')
       : helpers.queryAll('[role~="text" i]')
-  ).filter((el) => helpers.aria.getExplicitRole(el) === 'text');
+  ).filter(textFirst);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -109,6 +113,8 @@ function runInPage(ctx) {
     }
     if (!focusableDescendant) continue;
 
+    // The focusable element, named with its text, for the message.
+    const focusable = helpers.describeElement(focusableDescendant, { text: true });
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet(el)
@@ -117,12 +123,12 @@ function runInPage(ctx) {
     const baseOccurrence = {
       selector: stableSelector,
       html,
-      summary: 'This role="text" element contains something that can take focus.',
+      summary: `This role="text" element contains a focusable ${focusable}, which role="text" flattens into plain text.`,
       hint: 'Remove role="text", or move the focusable content out of it.',
       i18n: {
-        summaryKey: 'ariaText_summary_cantTell',
+        summaryKey: 'ariaText_summary_cantTell_focusable',
         hintKey: 'ariaText_hint_cantTell',
-        params: {}
+        params: { focusable }
       },
       lean: {
         toward: 'fail',
@@ -131,7 +137,13 @@ function runInPage(ctx) {
         i18n: { whyKey: 'ariaText_lean_why' }
       },
       data: {
-        details: { reasonCode: 'ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT' }
+        details: {
+          reasonCode: 'ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT',
+          focusableElement: focusable,
+          focusableSelector: helpers.buildSelector
+            ? helpers.buildSelector(focusableDescendant)
+            : null
+        }
       }
     };
 

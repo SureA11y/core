@@ -104,3 +104,21 @@ test(`${RULE_ID}: role="foo meter" and role="METER" are in scope, role="link met
   assert.ok(hasOccurrenceForId(rule, 'b'));
   assert.ok(!hasOccurrenceForId(rule, 'c'));
 });
+
+test(`${RULE_ID}: a fail says when aria-labelledby points only to empty elements`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <span id="ml"></span>
+  <div id="m1" role="meter" aria-valuenow="5" aria-valuemin="0" aria-valuemax="10" aria-labelledby="ml"></div>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('m1').i18n.hintKey, 'nameCause_hint_labelledbyEmpty');
+  assert.equal(
+    occ('m1').hint,
+    'Its aria-labelledby points only to elements with no text (<span id="ml">), so it gives no name. Put the text in the element it points to, or name it with aria-label.'
+  );
+  assert.equal(occ('m1').data.details.nameCause.cause, 'labelledbyEmpty');
+});

@@ -40,25 +40,25 @@ test(`${RULE_ID}: pass when dt/dd is wrapped in a single div`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when dl has a non-dt/dd direct child`, () => {
+test(`${RULE_ID}: cantTell when dl has a non-dt/dd direct child`, () => {
   const html = `<!doctype html><html><body><dl id="a"><dt>Term</dt><dd>Definition</dd><p>oops</p></dl></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['p']);
 });
 
-test(`${RULE_ID}: fail when dt is present with no matching dd (unbalanced pairing)`, () => {
+test(`${RULE_ID}: cantTell when dt is present with no matching dd (unbalanced pairing)`, () => {
   const html = `<!doctype html><html><body><dl id="b"><dt>Term</dt></dl></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'DL_NO_DT_DD');
 });
 
-test(`${RULE_ID}: fail when dd is present with no matching dt (unbalanced pairing)`, () => {
+test(`${RULE_ID}: cantTell when dd is present with no matching dt (unbalanced pairing)`, () => {
   const html = `<!doctype html><html><body><dl id="b"><dd>Definition</dd></dl></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'DL_NO_DT_DD');
 });
 
@@ -77,7 +77,7 @@ test(`${RULE_ID}: pass when dl's only children are passthrough (script/template)
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><dl id="a"><p>oops</p></dl></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'Description lists must be structured correctly');
 });
 
@@ -91,7 +91,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/definition-list-children-vali
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 7, maxOccurrences: 7 });
 
   const expectedFailIds = [
     'dlv_case_03',
@@ -120,7 +120,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/definition-list-children-vali
   }
 });
 
-test(`${RULE_ID}: fail when the dt/dd groups are out of order`, () => {
+test(`${RULE_ID}: cantTell when the dt/dd groups are out of order`, () => {
   for (const markup of [
     '<dl id="a"><dd>b</dd><dt>a</dt></dl>',
     '<dl id="a"><dt>a</dt><dd>b</dd><dt>c</dt></dl>',
@@ -129,7 +129,10 @@ test(`${RULE_ID}: fail when the dt/dd groups are out of order`, () => {
     for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
       const html = `<!doctype html><html><body>${markup}</body></html>`;
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
-      const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+      const rule = assertRule(result, RULE_ID, 'cantTell', {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      });
       assert.ok(hasOccurrenceForId(rule, 'a'), markup);
       assert.equal(rule.occurrences[0].data.details.reasonCode, 'DL_DT_DD_ORDER', markup);
     }
@@ -143,7 +146,7 @@ test(`${RULE_ID}: pass for several dt then several dd, repeated`, () => {
   });
 });
 
-test(`${RULE_ID}: fail for non-whitespace text directly inside the dl or a wrapping div`, () => {
+test(`${RULE_ID}: cantTell for non-whitespace text directly inside the dl or a wrapping div`, () => {
   for (const markup of [
     '<dl id="a">hello</dl>',
     '<dl id="a"><dt>a</dt>stray<dd>b</dd></dl>',
@@ -152,7 +155,10 @@ test(`${RULE_ID}: fail for non-whitespace text directly inside the dl or a wrapp
     for (const engineOptions of [{}]) {
       const html = `<!doctype html><html><body>${markup}</body></html>`;
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
-      const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+      const rule = assertRule(result, RULE_ID, 'cantTell', {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      });
       assert.equal(rule.occurrences[0].data.details.reasonCode, 'DL_INVALID_CHILD', markup);
       assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['#text']);
     }
@@ -164,4 +170,59 @@ test(`${RULE_ID}: whitespace between groups is not a text child`, () => {
   assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
     maxOccurrences: 0
   });
+});
+
+// The summary says what is wrong: a wrapper nested one level too deep,
+// which of <dt> and <dd> is missing, and which end of the order is wrong.
+test(`${RULE_ID}: the summary names the nested wrapper, the missing kind and the end out of order`, () => {
+  const html = `<!doctype html><html><body>
+    <dl id="nested"><div><div><dt>a</dt><dd>b</dd></div></div></dl>
+    <dl id="no-dd"><dt>a</dt><dt>b</dt></dl>
+    <dl id="no-dt"><dd>a</dd></dl>
+    <dl id="start"><dd>a</dd><dt>b</dt><dd>c</dd></dl>
+    <dl id="end"><dt>a</dt><dd>b</dd><dt>Last term</dt></dl>
+    <dl id="span"><div><span>x</span><dt>a</dt><dd>b</dd></div></dl>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 6, maxOccurrences: 6 });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const nested = byId('nested');
+  assert.strictEqual(nested.data.details.reasonCode, 'DL_INVALID_CHILD');
+  assert.strictEqual(
+    nested.i18n.summaryKey,
+    'definitionListChildrenValid_summary_fail_invalidChild_nestedDiv'
+  );
+  assert.match(nested.summary, /^A <div> inside the wrapping <div> holds items/);
+  assert.match(nested.hint, /^Remove the inner <div>/);
+
+  const noDd = byId('no-dd');
+  assert.strictEqual(noDd.data.details.reasonCode, 'DL_NO_DT_DD');
+  assert.strictEqual(
+    noDd.summary,
+    'This description list has terms (<dt>, 2) but no definition (<dd>).'
+  );
+  assert.strictEqual(
+    byId('no-dt').summary,
+    'This description list has definitions (<dd>, 1) but no term (<dt>).'
+  );
+
+  const start = byId('start');
+  assert.strictEqual(start.data.details.reasonCode, 'DL_DT_DD_ORDER');
+  assert.strictEqual(start.i18n.summaryKey, 'definitionListChildrenValid_summary_fail_order_start');
+  assert.strictEqual(
+    start.summary,
+    "This description list's first item is a <dd>, with no <dt> term before it."
+  );
+  const end = byId('end');
+  assert.strictEqual(end.i18n.summaryKey, 'definitionListChildrenValid_summary_fail_order_end');
+  assert.strictEqual(
+    end.summary,
+    'In this description list, the last <dt> ("Last term") has no <dd> after it.'
+  );
+
+  // A bad child that is not a nested <div> keeps the general message.
+  const span = byId('span');
+  assert.strictEqual(span.i18n.summaryKey, 'definitionListChildrenValid_summary_fail_invalidChild');
+  assert.match(span.summary, /dt\/dd group: span\.$/);
 });

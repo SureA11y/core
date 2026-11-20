@@ -135,12 +135,14 @@
  *     `::after` or `::marker`, the pseudo-element whose text is measured;
  *     the selector names its element, and the colors and font are the
  *     pseudo-element's.
- *   - `eligibleTextCount`, `computableTextCount` (the summary when nothing
- *     fails): how many text nodes the rule looked at, and how many of them
- *     had colors it could compute. Repeated under `metrics` on a pass.
- *   - `forcedColors` (every occurrence, when the colors measured were
- *     forced): `true`, and the hint says to check the page again with
- *     forced colors off. A scan under forced colors measures the page's own
+ *   - `eligibleTextCount`, `computableTextCount` (the pass, and the
+ *     result's own `data.details` when it is notApplicable because no text
+ *     was computable, which lists no occurrence): how many text nodes the
+ *     rule looked at, and how many of them had colors it could compute.
+ *     Repeated under `metrics` on a pass.
+ *   - `forcedColors` (every occurrence, and that notApplicable result's
+ *     details, when the colors measured were forced): `true`, and the hint
+ *     says to check the page again with forced colors off. A scan under forced colors measures the page's own
  *     colors, so this is there only where it could not keep the page in
  *     them.
  * @reason-codes
@@ -206,6 +208,11 @@
  * - Text whose background can't be worked out is never measured here, so
  *   this rule has no code for it: contrast-computable asks about that text
  *   (`BACKGROUND_NOT_COMPUTABLE` and its other blockers).
+ * - A page lists at most 50 elements below the ratio (or asked about), in
+ *   document order; the rest are counted, not listed. The rule's own
+ *   `data.details` on a fail or cantTell says how many there were
+ *   (`elementCount`), how many are listed (`reportedCount`, at most
+ *   `maxOccurrences`) and whether any were left out (`truncated`).
  */
 
 const id = 'contrast-minimum';
@@ -246,109 +253,7 @@ const meta = {
     'SEMIBOLD_BELOW_THRESHOLD',
     'TEXT_SHADOW',
     'TEXT_STROKE'
-  ],
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    CONTRAST_SWITCH_OFFERED: {
-      steps: [
-        'Find the contrast switch the report names and check that it is easy to find, near the top of the page or on every page, and reachable by keyboard.',
-        'Turn the switch on.',
-        "Find the text the report names and use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure it against its background, comparing with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).",
-        'Move to another page and check that the setting holds.'
-      ],
-      passWhen:
-        'The switch is easy to find and use, and with it on the text reaches its ratio (G174).',
-      failWhen:
-        'The switch is hard to find or does not raise this text to its ratio, so the text fails WCAG 1.4.3.'
-    },
-    ENGINE_EXCEPTION: {
-      steps: [
-        'Find the text the report names (the check stopped early, so nothing was measured).',
-        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text color against the background directly behind the letters.",
-        'Note the text size and weight and compare the ratio with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).'
-      ],
-      passWhen: 'The ratio reaches the threshold for its size.',
-      failWhen: 'The ratio is below the threshold for its size, which fails WCAG 1.4.3.'
-    },
-    LOGO_TEXT_BELOW_THRESHOLD: {
-      steps: [
-        'Find the text the report names (often in the site header or its home link).',
-        "Decide whether it is part of a logo or brand name, such as the site's name in its logo treatment, rather than a slogan, menu item or other text.",
-        "If it is not logo text, use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure it against its background and compare with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold)."
-      ],
-      passWhen:
-        'The text is part of a logo or brand name, which has no contrast requirement, or it reaches its ratio.',
-      failWhen:
-        'The text is not part of a logo or brand name and is below its ratio, which fails WCAG 1.4.3.'
-    },
-    PLACEHOLDER_BELOW_THRESHOLD: {
-      steps: [
-        'Find the field the report names and empty it so the placeholder shows.',
-        "In the Styles pane, check whether the page's CSS sets the ::placeholder color or opacity, or the field's background.",
-        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the placeholder text against the field background and compare with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).",
-        'Check whether the placeholder holds information needed to fill the field (a format or instruction), rather than just an example.'
-      ],
-      passWhen:
-        "The placeholder reaches 4.5:1 (or 3:1 if large), or it is drawn entirely in the browser's own default colors.",
-      failWhen:
-        'The page sets the placeholder or field colors and the ratio is below the threshold, which fails WCAG 1.4.3.'
-    },
-    PSEUDO_ELEMENT_COLOR: {
-      steps: [
-        'Find the text the report names and note the ::first-line or ::first-letter color in the Styles pane.',
-        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure both the element's text color and the first-line or first-letter color against the background.",
-        'Resize the window to see which words the first-line color paints at different widths.',
-        'Compare each ratio with the one the report gives as needed for that color.'
-      ],
-      passWhen: 'Both colors reach the ratio they need.',
-      failWhen: 'Either color gives a ratio below the one it needs, so the text fails the check.'
-    },
-    SEMIBOLD_BELOW_THRESHOLD: {
-      steps: [
-        'Find the semi-bold text the report names.',
-        'Compare it side by side with bold text (weight 700) of the same size and font on the page or in the developer tools, toggling font-weight.',
-        'Decide whether it reads as bold; if it does, it counts as large and needs 3:1, otherwise 4.5:1.'
-      ],
-      passWhen: 'The text reads as bold, so it is large text and its ratio meets 3:1.',
-      failWhen:
-        'The text does not read as bold, so it is normal text below 4.5:1, which fails WCAG 1.4.3.'
-    },
-    SYMBOLIC_CHARACTER_BELOW_THRESHOLD: {
-      steps: [
-        'Find the character the report names (such as ×, ☰, › or an icon-font glyph).',
-        'Decide whether it is text people read (part of words, a number) or an icon standing in for an action, like a close or menu symbol.',
-        "If it is text, use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure it against its background and compare with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).",
-        'If it is an icon for a control, measure it against its background and compare with 3:1 instead (WCAG 1.4.11).'
-      ],
-      passWhen:
-        'It is text and reaches its ratio, or it is an icon that reaches 3:1 for non-text contrast.',
-      failWhen:
-        'It is text below 4.5:1, which fails WCAG 1.4.3; or an icon below 3:1, which fails WCAG 1.4.11.'
-    },
-    TEXT_SHADOW: {
-      steps: [
-        'Find the text the report names and note its text-shadow.',
-        'Zoom in and check whether the shadow forms a solid outline or halo around every letter.',
-        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the color that forms the letters against the background.",
-        'Compare the ratio with the one the report gives as needed.'
-      ],
-      passWhen: 'The color that forms the letters reaches the ratio needed.',
-      failWhen:
-        'The color that forms the letters gives a ratio below the one needed, so the text fails the check.'
-    },
-    TEXT_STROKE: {
-      steps: [
-        'Find the text the report names and note its -webkit-text-stroke width and color.',
-        'Zoom in to see which color forms most of each letter (a thin stroke counts less than the fill).',
-        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure that color against the background.",
-        'Compare the ratio with the one the report gives as needed.'
-      ],
-      passWhen: 'The color that forms the letters reaches the ratio needed.',
-      failWhen:
-        'The color that forms the letters gives a ratio below the one needed, so the text fails the check.'
-    }
-  }
+  ]
 };
 
 function runInPage(ctx) {
@@ -524,6 +429,9 @@ function runInPage(ctx) {
   let measuredElements = 0;
 
   const seenFailEls = new Set();
+  // Elements below the ratio past the occurrence cap: counted, not listed,
+  // so the result can say how many there were (data.details.truncated).
+  let unlistedCount = 0;
   // The color schemes text on the page's canvas was measured in, where the
   // page supports one it wasn't (acrossSchemes), for the pass's evidence.
   let schemesChecked = null;
@@ -533,11 +441,11 @@ function runInPage(ctx) {
       occurrences.push({
         selector: '',
         summary: 'All computable text meets the minimum (AA) contrast threshold.',
-        hint: '',
+        hint: 'Nothing to change. Only text whose colors could be worked out is counted; the contrast computability rule lists any other text, to measure by hand.',
         html: '',
         i18n: {
           summaryKey: 'contrastMinimum_pass_allAboveThreshold',
-          hintKey: '',
+          hintKey: 'contrast_hint_pass',
           params: {
             eligibleTextCount: String(Number(eligibleCount) || 0),
             computableTextCount: String(Number(computableCount) || 0)
@@ -578,7 +486,7 @@ function runInPage(ctx) {
   function symbolicCharacter(el) {
     try {
       const own = String(dom.textContent(el) || '').trim();
-      if (Array.from(own).length !== 1) return '';
+      if ([...own].length !== 1) return '';
       for (let node = el, depth = 0; node && depth < 8; depth += 1) {
         if (
           dom.getAttribute(node, 'aria-label') != null ||
@@ -608,7 +516,7 @@ function runInPage(ctx) {
       code: 'LOGO_TEXT_BELOW_THRESHOLD',
       key: 'logo',
       hint: (t) =>
-        `If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches ${t}:1.`,
+        `If this text is part of a logo or brand name, it has no contrast requirement; otherwise change its colors so the ratio reaches ${t}:1.`,
       needed:
         'Whether this text is part of a logo or brand name, which has no contrast requirement.'
     },
@@ -674,12 +582,58 @@ function runInPage(ctx) {
     };
   }
 
+  // Text drawn in a color other than the one its CSS gives, faded by the
+  // opacity of itself or an ancestor, or by its color's own alpha: the
+  // summary names the color the CSS gives and what fades it
+  // (helpers.contrast.describeFade). { params, detail }, or null where the
+  // drawn color is the CSS one.
+  function fadeNote(el, fgHex) {
+    const C = helpers.contrast;
+    const f = C && typeof C.describeFade === 'function' ? C.describeFade(el) : null;
+    if (!f || !f.declaredColor || f.declaredColor === fgHex) return null;
+    const round = (n) => String(Math.round(n * 100) / 100);
+    const faders = f.faders || [];
+    const detail = {
+      declaredColor: f.declaredColor,
+      colorAlpha: f.colorAlpha,
+      fadedBy: faders.map((x) => ({ element: x.description, opacity: x.opacity }))
+    };
+    if (faders.length === 1) {
+      return {
+        params: {
+          declaredColor: f.declaredColor,
+          fadedBy: faders[0].description,
+          fadedOpacity: round(faders[0].opacity)
+        },
+        detail
+      };
+    }
+    if (faders.length > 1) {
+      return {
+        params: {
+          declaredColor: f.declaredColor,
+          fadedByMany: faders.map((x) => `${x.description} (${round(x.opacity)})`).join(', '),
+          fadedOpacity: round(faders.reduce((p, x) => p * x.opacity, 1))
+        },
+        detail
+      };
+    }
+    if (f.colorAlpha < 1) {
+      return { params: { declaredColor: f.declaredColor, alphaColor: true }, detail };
+    }
+    return null;
+  }
+
   function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
       if (!el || seen.has(el)) return;
-      if (occurrences.length >= MAX_OCCURRENCES) return;
+      if (occurrences.length >= MAX_OCCURRENCES) {
+        seen.add(el);
+        unlistedCount += 1;
+        return;
+      }
 
       seen.add(el);
 
@@ -782,7 +736,10 @@ function runInPage(ctx) {
           el && typeof dom.get(el, 'getAttribute') === 'function'
             ? dom.getAttribute(el, 'id') || ''
             : '';
-        if (elementId) nodeSelector = `#${elementId}`;
+        // Escaped, and only where it names the element: CSS reads a NUL or
+        // a lone surrogate as U+FFFD, so such an id names nothing.
+        const byId = elementId ? '#' + helpers.cssEscape(elementId) : '';
+        if (byId && dom.matches(el, byId)) nodeSelector = byId;
       } catch {
         // no-throw
       }
@@ -821,8 +778,12 @@ function runInPage(ctx) {
   // from outlineOnlyAnalysis or pseudoColorAnalysis).
   function pushAskOccurrence(el, ask) {
     try {
-      if (!el || seenFailEls.has(el) || occurrences.length >= MAX_OCCURRENCES) return;
+      if (!el || seenFailEls.has(el)) return;
       seenFailEls.add(el);
+      if (occurrences.length >= MAX_OCCURRENCES) {
+        unlistedCount += 1;
+        return;
+      }
       const C = helpers.contrast;
       const hex = (c) => (C.rgbToHex ? C.rgbToHex(c) : '');
       const rc = ask.reasonCode;
@@ -1401,8 +1362,17 @@ function runInPage(ctx) {
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
           // and measuredCount: stopping here made both depend on where the
-          // 50th failure fell.
-          if (occurrences.length >= MAX_OCCURRENCES) continue;
+          // 50th failure fell. The element is still counted, once, for the
+          // result's truncated count.
+          if (occurrences.length >= MAX_OCCURRENCES) {
+            const seenHere = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
+            if (!seenHere || !seenHere.has(el)) {
+              if (seenHere) seenHere.add(el);
+              else seenGenerated.set(pseudo, new Set([el]));
+              unlistedCount += 1;
+            }
+            continue;
+          }
 
           const fgHex = helpers.contrast.rgbToHex ? helpers.contrast.rgbToHex(fgOpaque) : '';
 
@@ -1456,6 +1426,27 @@ function runInPage(ctx) {
               ? analysis.bgAssumedRootCanvasColor
               : null;
 
+          // The color the CSS gives, where opacity or its alpha fades it.
+          const fade =
+            pseudo ||
+            placeholderMode ||
+            analysis.colorScheme ||
+            analysis.drawnBy ||
+            analysis.pseudoElementColor
+              ? null
+              : fadeNote(el, fgHex);
+          if (fade) Object.assign(params, fade.params);
+          // The ancestor that paints the background, where the reader would
+          // not find that color on the element itself.
+          const C2 = helpers.contrast;
+          const backgroundFrom =
+            pseudo || placeholderMode || analysis.colorScheme || analysis.drawnBy
+              ? ''
+              : C2 && typeof C2.describeBackgroundSource === 'function'
+                ? C2.describeBackgroundSource(el, bgHex)
+                : '';
+          if (backgroundFrom) params.backgroundFrom = backgroundFrom;
+
           const details = {
             reasonCode: 'BELOW_THRESHOLD',
             metrics: { ratio, threshold },
@@ -1483,6 +1474,8 @@ function runInPage(ctx) {
               ? { pseudoElementColor: analysis.pseudoElementColor }
               : {}),
             ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
+            ...(fade ? { fade: fade.detail } : {}),
+            ...(backgroundFrom ? { backgroundFrom } : {}),
             ...(pseudo ? { generatedBy: pseudo } : {}),
             // On the canvas of a page with two color schemes: the one it
             // fails in, where it passes in the other, and those measured,
@@ -1521,6 +1514,17 @@ function runInPage(ctx) {
     }
   }
 
+  // How many elements fell short (or were asked about) and how many of them
+  // the result lists: past MAX_OCCURRENCES they are counted, not listed.
+  function listingDetails() {
+    return {
+      reportedCount: occurrences.length,
+      elementCount: occurrences.length + unlistedCount,
+      maxOccurrences: MAX_OCCURRENCES,
+      truncated: unlistedCount > 0
+    };
+  }
+
   if (eligibleTextCount === 0) {
     return {
       ruleId: rule.ruleId,
@@ -1540,20 +1544,16 @@ function runInPage(ctx) {
       outcome: 'notApplicable',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences: helpers.contrast.noteForcedColors([
-        {
-          selector: '',
-          summary: '',
-          hint: '',
-          html: '',
-          i18n: {
-            summaryKey: 'contrastMinimum_notApplicable_noComputableText',
-            hintKey: '',
-            params: { eligibleTextCount: String(eligibleTextCount) }
-          },
-          data: { details: { eligibleTextCount, computableTextCount } }
+      // No occurrence: a notApplicable result names no finding. The counts
+      // go on the result, for a reader who wants to know what was looked at.
+      occurrences: [],
+      data: {
+        details: {
+          eligibleTextCount,
+          computableTextCount,
+          ...(helpers.contrast.colorsForced() ? { forcedColors: true } : {})
         }
-      ])
+      }
     };
   }
 
@@ -1569,7 +1569,8 @@ function runInPage(ctx) {
       confidence: rule.defaultConfidence || 'high',
       occurrences,
       marginCandidates,
-      measuredCount: measuredElements
+      measuredCount: measuredElements,
+      data: { details: listingDetails() }
     };
   }
 

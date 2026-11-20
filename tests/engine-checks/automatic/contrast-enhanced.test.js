@@ -166,16 +166,13 @@ test(`${RULE_ID}: eligible text exists but none computable => notApplicable (noC
 
   const result = run(html);
 
+  // notApplicable names no finding: the counts are on the result itself.
   const rule = assertRule(result, RULE_ID, 'notApplicable', {
-    minOccurrences: 1,
-    maxOccurrences: 1
+    minOccurrences: 0,
+    maxOccurrences: 0
   });
-  assert.strictEqual(
-    rule.occurrences[0].i18n.summaryKey,
-    'contrastEnhanced_notApplicable_noComputableText'
-  );
-  assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
-  assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
+  assert.ok(Number(rule.data.details.eligibleTextCount) >= 1);
+  assert.strictEqual(Number(rule.data.details.computableTextCount), 0);
 });
 
 test(`${RULE_ID}: strictConformance + root not opaque => measured on the page's white canvas`, () => {
@@ -207,14 +204,10 @@ test(`${RULE_ID}: root not opaque, the text's color in the page's dark scheme un
     <p>Hello</p>
   </body></html>`;
   const rule = assertRule(run(html), RULE_ID, 'notApplicable', {
-    minOccurrences: 1,
-    maxOccurrences: 1
+    minOccurrences: 0,
+    maxOccurrences: 0
   });
-  assert.strictEqual(
-    rule.occurrences[0].i18n.summaryKey,
-    'contrastEnhanced_notApplicable_noComputableText'
-  );
-  assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
+  assert.strictEqual(Number(rule.data.details.computableTextCount), 0);
 });
 
 test(`${RULE_ID}: auditorAssist + root not opaque => pass using rootCanvasFallback`, () => {
@@ -715,7 +708,7 @@ test(`${RULE_ID}: on the page's canvas such a color is measured, not judged on a
     </head><body>
     <p>Gray text on no background</p>
   </body></html>`;
-  assertRule(run(unknown), RULE_ID, 'notApplicable', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(run(unknown), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: large text, a reachable color or a filter around the text is not failed on an unknown background`, () => {
@@ -754,4 +747,37 @@ test(`${RULE_ID}: text on the canvas of a page with two color schemes is measure
     minOccurrences: 1,
     maxOccurrences: 1
   });
+});
+
+test(`${RULE_ID}: text faded by an ancestor's opacity names the ancestor and the color the CSS gives`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <div id="card" style="opacity: 0.4"><p id="faded" style="color: #333">Faded text</p></div>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastEnhanced_fail_belowThreshold');
+  assert.strictEqual(occ.i18n.params.fadedBy, '<div id="card">');
+  assert.match(
+    occ.summary,
+    /Its color #333333 is drawn as #adadad because <div id="card"> has opacity: 0\.4\.$/
+  );
+});
+
+test(`${RULE_ID}: a background painted by an ancestor names the ancestor`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <section id="band" style="background: #777"><div><p id="deep" style="color: #222">Gray text</p></div></section>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.params.backgroundFrom, '<section id="band">');
+  assert.match(
+    occ.summary,
+    /The background #777777 is painted by its ancestor <section id="band">\.$/
+  );
 });

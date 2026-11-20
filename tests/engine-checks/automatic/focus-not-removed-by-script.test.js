@@ -213,3 +213,20 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/focus-not-removed-by-script-a
     ['fail', 'fail', 'cantTell', 'cantTell']
   );
 });
+
+test(`${RULE_ID}: a handler that moves focus gets a hint about moving it, naming the target`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><input id="a" onfocus="document.getElementById('picker').focus()"><div id="picker" tabindex="-1">Pick a date</div><input id="b" onfocus="next.focus()"></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.strictEqual(occ('a').i18n.hintKey, 'focusNotRemovedByScript_hint_cantTell_movesTarget');
+  assert.strictEqual(
+    occ('a').hint,
+    'Tab to the element and check that focus stays on it. Its handler sends focus to <div id="picker"> "Pick a date": stop moving focus away as the element receives it, or make the element unfocusable if it should not take focus at all.'
+  );
+  assert.strictEqual(occ('a').data.details.focusTarget, '<div id="picker"> "Pick a date"');
+  assert.strictEqual(occ('b').i18n.hintKey, 'focusNotRemovedByScript_hint_cantTell_moves');
+  assert.doesNotMatch(occ('b').hint, /blur\(\)/);
+});

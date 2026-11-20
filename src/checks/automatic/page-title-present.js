@@ -13,7 +13,9 @@
  *   is <html>; an SVG document opened on its own is notApplicable. A run
  *   narrowed by contextSelector, or by engineOptions.fragment, is
  *   notApplicable: whether the page has a title is not a property any
- *   subtree can answer.
+ *   subtree can answer. A document shown in a frame (an <iframe> or <frame>
+ *   of another page) is notApplicable too: it is no page of its own, and
+ *   its frame is named by the <iframe> (iframe-name-present).
  * @expectation
  *   The document has a <title> element, and document.title with whitespace
  *   collapsed is non-empty. The element is looked for anywhere in the
@@ -63,8 +65,13 @@ const meta = {
 // property?), not evaluable per-subtree -- notApplicable when contextSelector
 // scoped this run narrower than the whole document, or when
 // engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+// A document shown in a frame is no page of its own: the page's title is
+// the top document's, and the frame is named by its <iframe>
+// (iframe-name-present), so it is notApplicable there too.
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }
 
 function runInPage(ctx) {
@@ -96,11 +103,24 @@ function runInPage(ctx) {
   // <title> counts: an inline <svg><title> names the graphic, not the page,
   // and document.title ignores it.
   let titleEl = null;
-  for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
+  // For the message: the first <title> with text inside an <svg>, and the
+  // first HTML <title> with text after the one that counts.
+  const textOf = (t) => {
+    const all = String(dom.textContent(t) || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return all.length > 40 ? `${all.slice(0, 39)}…` : all;
+  };
+  let svgTitle = '';
+  let laterTitle = '';
+  for (const t of [...dom.getElementsByTagName(document, 'title')]) {
     if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
-      titleEl = t;
-      break;
+      if (!titleEl) titleEl = t;
+      else if (!laterTitle) laterTitle = textOf(t);
+    } else if (!svgTitle) {
+      svgTitle = textOf(t);
     }
+    if (titleEl && laterTitle) break;
   }
   const titleText = (dom.get(document, 'title') || '').replace(/\s+/g, ' ').trim();
 
@@ -110,24 +130,36 @@ function runInPage(ctx) {
   if (missingTitleEl || emptyTitle) {
     const reasonCode = missingTitleEl ? 'missingTitleElement' : 'emptyTitleText';
 
+    // A <title> the reader finds in the markup that does not count: one
+    // inside an <svg>, which names the graphic, or a later one, which
+    // browsers ignore.
+    const svgOnly = missingTitleEl && !!svgTitle;
+    const later = emptyTitle && !!laterTitle;
     const occBase = {
-      selector: 'head > title',
       html: '',
-      summary: missingTitleEl
-        ? 'This page has no <title> element.'
-        : "This page's <title> is empty.",
-      hint: 'Provide a descriptive, non-empty <title> that identifies the page topic or purpose.',
+      summary: svgOnly
+        ? `This page has no <title> element of its own: the only <title> ("${svgTitle}") is inside an <svg>, where it names the graphic.`
+        : missingTitleEl
+          ? 'This page has no <title> element.'
+          : "This page's <title> is empty.",
+      hint: later
+        ? `Browsers use the first <title>, which is empty; the later <title> ("${laterTitle}") is ignored. Remove the empty one, or put the title text in it.`
+        : 'Provide a descriptive, non-empty <title> that identifies the page topic or purpose.',
       i18n: {
-        summaryKey: missingTitleEl
-          ? 'pageTitlePresent_summary_fail_missing'
-          : 'pageTitlePresent_summary_fail_empty',
-        hintKey: 'pageTitlePresent_hint_fail',
-        params: {}
+        summaryKey: svgOnly
+          ? 'pageTitlePresent_summary_fail_svgOnly'
+          : missingTitleEl
+            ? 'pageTitlePresent_summary_fail_missing'
+            : 'pageTitlePresent_summary_fail_empty',
+        hintKey: later ? 'pageTitlePresent_hint_fail_laterTitle' : 'pageTitlePresent_hint_fail',
+        params: svgOnly ? { svgTitle } : later ? { laterTitle } : {}
       },
       data: {
         details: {
           reasonCode,
-          titleText
+          titleText,
+          ...(svgOnly ? { svgTitle } : {}),
+          ...(later ? { laterTitle } : {})
         },
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
       }
@@ -137,8 +169,16 @@ function runInPage(ctx) {
       // empty title: we have a node, so engine can attach html
       occurrences.push(helpers.reportOccurrence(titleEl, occBase));
     } else {
-      // missing title element: no node exists, keep deterministic html string
-      occurrences.push({ ...occBase, html: '<title>(missing)</title>' });
+      // missing title element: no node exists, keep deterministic html string,
+      // and point at where the title belongs: <head>, or <html> without one.
+      let where = 'html';
+      try {
+        const head = dom.head(document);
+        if (head && typeof helpers.buildSelector === 'function')
+          where = helpers.buildSelector(head);
+        else if (head) where = 'head';
+      } catch {}
+      occurrences.push({ ...occBase, selector: where, html: '<title>(missing)</title>' });
     }
   }
 

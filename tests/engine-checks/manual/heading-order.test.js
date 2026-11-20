@@ -135,6 +135,33 @@ test(`${RULE_ID}: an invalid aria-level on a native heading leaves the tag level
   assert.equal(rule.occurrences[0].data.details.toLevel, 3);
 });
 
+// Chromium, Firefox and WebKit all expose <h3 role="heading"> at level 3:
+// role="heading" on a native heading leaves its tag level.
+test(`${RULE_ID}: role="heading" on a native heading keeps its tag level`, () => {
+  const quiet = `<!doctype html><html><body><h1>A</h1><h2>B</h2><h3 role="heading">C</h3><h4>D</h4></body></html>`;
+  assertRule(runa11yCoreOnHtml(quiet, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+
+  const skip = `<!doctype html><html><body><h1>A</h1><h3 role="heading" id="a">B</h3></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(skip, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.equal(rule.occurrences[0].data.details.toLevel, 3);
+});
+
+// Browsers read aria-level's leading integer, on a native heading too.
+test(`${RULE_ID}: aria-level on a native heading is read from its leading integer`, () => {
+  const html = `<!doctype html><html><body><h1>S</h1><h4 aria-level="2.5">N</h4><h5 aria-level="3x">M</h5></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><h1>A</h1><h3 id="a">B</h3></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -147,10 +174,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/heading-order-all-scenarios.h
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
   assert.ok(hasOccurrenceForId(rule, 'ho_case_01'));
   assert.ok(hasOccurrenceForId(rule, 'ho_case_02'));
   assert.ok(!hasOccurrenceForId(rule, 'ho_case_03'));
+  assert.ok(hasOccurrenceForId(rule, 'ho_case_04'));
 });
 
 test(`${RULE_ID}: an aria-hidden heading is excluded from the outline (regression -- neither flagged itself nor allowed to mask a real skip after it)`, () => {
@@ -240,4 +268,59 @@ test(`${RULE_ID}: a heading with role="none" and nothing to override it is out o
     minOccurrences: 1,
     maxOccurrences: 1
   });
+});
+
+test(`${RULE_ID}: names the heading it jumps from`, () => {
+  const html = `<!doctype html><html><body><h1>Shop</h1><h2 id="p">Pricing</h2><p>Long content</p><h4 id="f">FAQ</h4></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occ = rule.occurrences[0];
+  assert.strictEqual(
+    occ.summary,
+    'This level-4 heading "FAQ" follows the level-2 heading "Pricing", skipping a level.'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'headingOrder_summary_cantTell_previous');
+  assert.strictEqual(occ.data.details.previousText, 'Pricing');
+  assert.strictEqual(occ.data.details.previousSelector, '#p');
+  assert.strictEqual(occ.data.details.fromLevel, 2);
+});
+
+// aria-level from 1 to 9: Chromium ignores a larger one, and ARIA has any
+// value below 1 or no integer ignored. The heading keeps its own level.
+test('heading-order: an aria-level outside 1 to 9 is ignored', () => {
+  for (const level of ['10', '99', '99999999999999999999', '0', '-1', 'abc']) {
+    const html = `<!doctype html><html lang="en"><body><h1>A</h1><h2 aria-level="${level}">B</h2></body></html>`;
+    const rule = runa11yCoreOnHtml(html, { runOnly: ['heading-order'] }).checksResults.find(
+      (r) => r.ruleId === 'heading-order'
+    );
+    assert.strictEqual(rule.outcome, 'pass', level);
+  }
+});
+
+// An excluded area is part of the page's outline as its readers meet it:
+// its headings are read as context, and nothing is reported on them.
+test('heading-order: excluded headings are context, never findings', () => {
+  const outcome = (body, excludeSelectors) => {
+    const rule = runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${body}</body></html>`, {
+      runOnly: ['heading-order'],
+      engineOptions: { excludeSelectors }
+    }).checksResults.find((r) => r.ruleId === 'heading-order');
+    return [rule.outcome, (rule.occurrences || []).map((o) => o.data.details.toLevel)];
+  };
+  // The excluded <h2> bridges the <h1> and the <h3>: no skip a reader meets.
+  assert.deepStrictEqual(outcome('<h1>A</h1><div id="x"><h2>B</h2></div><h3>C</h3>', ['#x']), [
+    'pass',
+    []
+  ]);
+  // A skip into the page from an excluded heading is reported on the page's own.
+  assert.deepStrictEqual(outcome('<div id="x"><h2>A</h2></div><h4>B</h4>', ['#x']), [
+    'cantTell',
+    [4]
+  ]);
+  // A skip onto an excluded heading is not reported.
+  assert.deepStrictEqual(outcome('<h1>A</h1><div id="x"><h3>B</h3></div>', ['#x']), ['pass', []]);
+  // Every heading excluded: nothing to judge.
+  assert.deepStrictEqual(outcome('<div id="x"><h1>A</h1><h3>B</h3></div>', ['#x']), [
+    'notApplicable',
+    []
+  ]);
 });

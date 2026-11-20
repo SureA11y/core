@@ -33,6 +33,13 @@
  *     lowercase, with spacing collapsed and trailing punctuation removed.
  *     It is a generic phrase (`GENERIC_LINK_TEXT`) or a bare format name
  *     (`AMBIGUOUS_FORMAT_NAME`).
+ *   - `linkKind`: what the link is made of (`helpers.getLinkKind`): `svg`
+ *     for an `<a>` in SVG; `image` for an `<area>`, or a link whose content
+ *     is only images (`<img>`, `<svg>`, `<object>`, `<canvas>`,
+ *     `role="img"`); `composite` for text and an image; `text` otherwise,
+ *     a link with no content (named by its attributes) included. Hidden
+ *     content (`display: none`, `[hidden]`) doesn't count; content hidden
+ *     only by `aria-hidden` is drawn, and does.
  * @reason-codes
  *   - `GENERIC_LINK_TEXT` (cantTell): the link's whole name is a generic
  *     phrase such as "read more" or "click here", with no adjacent context
@@ -49,6 +56,14 @@
  *     cell has a descriptive name, and fail as GENERIC_LINK_TEXT does.
  *     Basis: WCAG 2.4.4 (not settled); WCAG 2.4.9 (not settled); G91; G53;
  *     ACT 5effbb; ACT aizyf1.
+ *   - `GENERIC_LINK_TEXT_IN_CONTEXT` (cantTell): with the setting
+ *     `whenContextFound: 'ask'` only (the variant link-name-quality-link-only
+ *     sets it): the link's whole name is a generic phrase, and only the
+ *     context found around it says where it leads. That context satisfies
+ *     2.4.4, not 2.4.9, which asks for the purpose from the link text alone;
+ *     a person checks whether the page offers a way to make such links
+ *     descriptive, which F84 allows.
+ *     Basis: WCAG 2.4.9 (not settled); F84.
  * @implementation-notes
  * - Phrase lists exist for en, de, es, fr and ja. English is always
  *   checked; the list for the element's own language (nearest lang
@@ -133,38 +148,18 @@ const meta = {
       '2.4.9': ['link-text-descriptive-evidence']
     }
   },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    AMBIGUOUS_FORMAT_NAME: {
-      steps: [
-        'Find the link the report names; its text is only a format, such as "PDF".',
-        'Read the text around it (the sentence, list item, table row or heading above it) and see whether it names the document.',
-        'Follow the link and confirm the document is the one that context names.'
-      ],
-      passWhen:
-        'The surrounding sentence, list item, row or heading names the document, so the link reads as, for example, the annual report in PDF.',
-      failWhen:
-        'Nothing near the link says which document it is, so the destination is unclear, which fails WCAG 2.4.4; link text that is unclear on its own fails 2.4.9.'
-    },
-    GENERIC_LINK_TEXT: {
-      steps: [
-        'Find the link the report names and read its text, such as "read more" or "click here".',
-        'Read the sentence, list item, table cell or heading right around it, as someone using the link would.',
-        'Ask whether the link text together with that context makes clear where the link goes; then check whether a list of links (link text alone) would.',
-        'Follow the link and confirm it goes where the context says.'
-      ],
-      passWhen:
-        'The link text with its surrounding sentence, list item, cell or heading makes the destination clear; for AAA, the link text alone does.',
-      failWhen:
-        'Neither the link text nor its surrounding context says where it leads, which fails WCAG 2.4.4 (F84); link text that is unclear on its own fails 2.4.9.'
-    }
-  }
+  reasonCodes: ['GENERIC_LINK_TEXT', 'AMBIGUOUS_FORMAT_NAME', 'GENERIC_LINK_TEXT_IN_CONTEXT']
 };
 
 function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
+
+  // Settings (see `settings` below): 2.4.4's by default, where context found
+  // around a generic link clears it. The variant link-name-quality-link-only
+  // (2.4.9) passes 'ask' in ctx.config: then only those links are reported.
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const askWhenContextFound = cfg.whenContextFound === 'ask';
 
   const GENERIC_LINK_TEXT_EN = new Set([
     'click here',
@@ -426,7 +421,23 @@ function runInPage(ctx) {
   // and counting it would let a row of bare "PDF" and "HTML" links, or of
   // "Read more" links, give each other context. Links met on the way are
   // collected in `links` when it is given.
+  //
+  // Read once per element: every link in a block asks for that block's
+  // text, and every link under one parent for the parent's, so reading it
+  // again for each made the rule quadratic in the links a block holds.
+  const contextCache = new Map();
   function contextTextOutsideLinks(el, links) {
+    let entry = contextCache.get(el);
+    if (!entry) {
+      entry = readContextOutsideLinks(el);
+      contextCache.set(el, entry);
+    }
+    if (links) for (const l of entry.links) links.push(l);
+    return entry.text;
+  }
+
+  function readContextOutsideLinks(el) {
+    const links = [];
     let out = '';
     // Bounded as a safety net only: a context block holds a few nodes.
     let budget = 5000;
@@ -442,7 +453,7 @@ function runInPage(ctx) {
         }
         if (type !== 1 || !dom.get(n, 'getAttribute')) continue;
         if (isLinkCandidate(n)) {
-          if (links) links.push(n);
+          links.push(n);
           continue;
         }
         const tag = String(dom.localName(n) || '').toLowerCase();
@@ -452,7 +463,7 @@ function runInPage(ctx) {
         out += ' ';
       }
     })(el);
-    return out.replace(/\s+/g, ' ').trim();
+    return { text: out.replace(/\s+/g, ' ').trim(), links };
   }
 
   function isSubstantiveContext(text) {
@@ -553,16 +564,80 @@ function runInPage(ctx) {
     return headingList;
   }
 
+  // Each element's place in its document's tree order, read once. Asking
+  // compareDocumentPosition of every heading for every link made the rule
+  // quadratic in the headings and links, and Chromium walks the siblings
+  // to answer it, which made it cubic on a long flat page.
+  let treeOrder = null;
+  function treeOrderOf(node) {
+    if (!treeOrder) {
+      treeOrder = new Map();
+      try {
+        const all = dom.querySelectorAll(dom.ownerDocument(node), '*');
+        for (let i = 0; i < all.length; i++) treeOrder.set(all[i], i);
+      } catch {}
+    }
+    const p = treeOrder.get(node);
+    return p === undefined ? -1 : p;
+  }
+
+  // The exposed headings with their places: those in the document's own
+  // tree, which follow tree order when the list does (it may not, with
+  // several scan roots), and the others (in a shadow tree), by index.
+  let headingPlaces = null;
+  function placedHeadings() {
+    if (headingPlaces) return headingPlaces;
+    const list = exposedHeadings();
+    const inTree = [];
+    const others = [];
+    let ordered = true;
+    for (let i = 0; i < list.length; i++) {
+      const pos = treeOrderOf(list[i]);
+      if (pos < 0) {
+        others.push(i);
+        continue;
+      }
+      if (inTree.length && pos <= inTree[inTree.length - 1].pos) ordered = false;
+      inTree.push({ i, pos });
+    }
+    headingPlaces = { list, inTree, others, ordered };
+    return headingPlaces;
+  }
+
   // The last heading before the link in document order (or the heading it
   // sits in), which H80 lets serve as the link's context; null when none.
+  // That is the heading before the first one in the list the link doesn't
+  // follow (compareDocumentPosition's 4: the link follows the heading or is
+  // inside it), found by a binary search among the headings of the
+  // document's own tree, where following is a smaller place in tree order.
   function nearestPrecedingHeading(el) {
-    let last = null;
-    for (const h of exposedHeadings()) {
-      // 4: the link follows the heading or is inside it.
-      if (h === el || !(dom.compareDocumentPosition(h, el) & 4)) break;
-      last = h;
+    const { list, inTree, others, ordered } = placedHeadings();
+    const elPos = treeOrderOf(el);
+    if (!ordered || elPos < 0) {
+      let last = null;
+      for (const h of list) {
+        if (h === el || !(dom.compareDocumentPosition(h, el) & 4)) break;
+        last = h;
+      }
+      return last;
     }
-    return last;
+    let lo = 0;
+    let hi = inTree.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (inTree[mid].pos < elPos) lo = mid + 1;
+      else hi = mid;
+    }
+    let stop = lo < inTree.length ? inTree[lo].i : list.length;
+    for (const i of others) {
+      if (i >= stop) break;
+      const h = list[i];
+      if (h === el || !(dom.compareDocumentPosition(h, el) & 4)) {
+        stop = i;
+        break;
+      }
+    }
+    return stop > 0 ? list[stop - 1] : null;
   }
 
   // Context the rule doesn't look for but a person may read: a table row's
@@ -620,6 +695,17 @@ function runInPage(ctx) {
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(f);
     }
+    // The places each group's links go, per nearest heading, gathered once
+    // rather than for each link of the group.
+    const hrefsByHeading = new Map();
+    for (const [key, group] of groups) {
+      const byHeading = new Map();
+      for (const g of group) {
+        if (!byHeading.has(g.heading)) byHeading.set(g.heading, new Set());
+        byHeading.get(g.heading).add(g.href);
+      }
+      hrefsByHeading.set(key, byHeading);
+    }
     for (const f of list) {
       if (f.tier === 'format') {
         const sibling = descriptiveSiblingLink(f.el);
@@ -638,10 +724,8 @@ function runInPage(ctx) {
         }
       }
       if (!f.href || f.heading === undefined) continue;
-      const peers = (groups.get(f.tier + '\u0000' + f.normalized) || []).filter(
-        (g) => g.heading === f.heading
-      );
-      const hrefs = new Set(peers.map((g) => g.href));
+      const byHeading = hrefsByHeading.get(f.tier + '\u0000' + f.normalized);
+      const hrefs = (byHeading && byHeading.get(f.heading)) || new Set();
       if (hrefs.size < 2) continue;
       f.occurrence.lean = {
         toward: 'fail',
@@ -711,40 +795,67 @@ function runInPage(ctx) {
     if (!isGeneric && !isFormatName) continue;
 
     const tier = isGeneric ? 'generic' : 'format';
-    if (hasAdequateContext(el, tier)) continue;
+    const hasContext = hasAdequateContext(el, tier);
+    // 2.4.9 (askWhenContextFound): a generic name only its context explains.
+    // One with no context is the 2.4.4 finding below, which already counts
+    // toward 2.4.9; a bare format name is left to it too.
+    if (askWhenContextFound ? !isGeneric || !hasContext : hasContext) continue;
 
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
 
     const name = rawName.trim();
-    const reportOpts = isGeneric
+    const linkKind = helpers.getLinkKind(el);
+    const reportOpts = askWhenContextFound
       ? {
-          summary: `This link's name ("${name}") is a generic phrase that doesn't say where it leads.`,
-          hint: 'Make the link text say where it leads or what it does, such as "Download the 2026 pricing guide" rather than "Download", or check that the text around it already makes that clear.',
+          summary: `This link's name ("${name}") is a generic phrase: only the text around it says where it leads.`,
+          hint: 'Make the link text itself say where it leads or what it does, such as "Download the 2026 pricing guide" rather than "Click here", so it is clear when read on its own, as in a list of links.',
           i18n: {
-            summaryKey: 'linkNameQuality_summary_cantTell',
-            hintKey: 'linkNameQuality_hint_cantTell',
+            summaryKey: 'linkNameQuality_summary_cantTell_inContext',
+            hintKey: 'linkNameQuality_hint_cantTell_inContext',
             params: { name }
           },
           data: {
-            details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized },
+            details: {
+              reasonCode: 'GENERIC_LINK_TEXT_IN_CONTEXT',
+              normalizedName: normalized,
+              linkKind
+            },
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
           }
         }
-      : {
-          summary: `This link's name ("${name}") gives a file format but not which document it is.`,
-          hint: 'Name the document in the link text, or in text or a heading tied to the link, such as "Download the annual report (HTML)" rather than a bare "HTML".',
-          i18n: {
-            summaryKey: 'linkNameQuality_summary_cantTell_formatName',
-            hintKey: 'linkNameQuality_hint_cantTell_formatName',
-            params: { name }
-          },
-          data: {
-            details: { reasonCode: 'AMBIGUOUS_FORMAT_NAME', normalizedName: normalized },
-            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+      : isGeneric
+        ? {
+            summary: `This link's name ("${name}") is a generic phrase that doesn't say where it leads.`,
+            hint: 'Make the link text say where it leads or what it does, such as "Download the 2026 pricing guide" rather than "Download", or check that the text around it already makes that clear.',
+            i18n: {
+              summaryKey: 'linkNameQuality_summary_cantTell',
+              hintKey: 'linkNameQuality_hint_cantTell',
+              params: { name }
+            },
+            data: {
+              details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized, linkKind },
+              visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+            }
           }
-        };
+        : {
+            summary: `This link's name ("${name}") gives a file format but not which document it is.`,
+            hint: 'Name the document in the link text, or in text or a heading tied to the link, such as "Download the annual report (HTML)" rather than a bare "HTML".',
+            i18n: {
+              summaryKey: 'linkNameQuality_summary_cantTell_formatName',
+              hintKey: 'linkNameQuality_hint_cantTell_formatName',
+              params: { name }
+            },
+            data: {
+              details: {
+                reasonCode: 'AMBIGUOUS_FORMAT_NAME',
+                normalizedName: normalized,
+                linkKind
+              },
+              visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+            }
+          };
 
     const occurrence = helpers.reportOccurrence(el, reportOpts);
     occurrences.push(occurrence);
@@ -752,8 +863,10 @@ function runInPage(ctx) {
   }
 
   // A lean is advice: a failure reading it costs the leans, not the findings.
+  // The leans weigh context the 2.4.4 findings lack, so a 2.4.9 finding,
+  // which has context by definition, gets none.
   try {
-    addLeans(flagged);
+    if (!askWhenContextFound) addLeans(flagged);
   } catch {
     for (const f of flagged) delete f.occurrence.lean;
   }
@@ -774,4 +887,22 @@ function runInPage(ctx) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }
 
-module.exports = { id, meta, runInPage };
+// Settings a variant can change (docs/RULE_AUTHORING.md, "Rule variants"),
+// with WCAG 2.4.4's as default. link-name-quality-link-only (2.4.9) is this
+// rule with 'ask'.
+const settings = {
+  whenContextFound: 'clear'
+};
+
+// What each setting changes, for the catalog and docs/RULE_SETTINGS.md.
+const settingsInfo = {
+  whenContextFound: {
+    values: ['clear', 'ask'],
+    description:
+      "A generic link name whose list item, paragraph, cell or description says where it leads: not reported ('clear'); or reported, and only such links, as GENERIC_LINK_TEXT_IN_CONTEXT ('ask').",
+    basis:
+      'WCAG 2.4.4 counts the programmatically determined link context (clear); WCAG 2.4.9 asks for the purpose from the link text alone, and F84 fails a generic link only its surrounding text explains (ask)'
+  }
+};
+
+module.exports = { id, meta, runInPage, settings, settingsInfo };

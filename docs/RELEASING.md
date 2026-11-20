@@ -1,6 +1,6 @@
 # Releasing
 
-What a release of `@surea11y/core` goes through, in order. Every release is a pull request to `main` titled `Release x.y.z`; pushing the tag afterwards is what publishes it. What the version number promises is in [`API_STABILITY.md`](./API_STABILITY.md#release-cadence).
+What a release of `@surea11y/core` goes through, in order. Every release is a pull request titled `Release x.y.z`, to `main`, or to its release branch for [a patch from an earlier commit](#a-patch-from-an-earlier-commit); pushing the tag afterwards is what publishes it. What the version number promises is in [`API_STABILITY.md`](./API_STABILITY.md#release-cadence).
 
 ## 1. Prepare the branch
 
@@ -9,7 +9,8 @@ On a branch `release-x.y.z` from `main`:
 - [ ] **Pick the version** by what the release changes, as [`API_STABILITY.md`](./API_STABILITY.md#release-cadence) defines it: patch for rule fixes and documentation, minor for additive work, major for a breaking change to a stable field.
 - [ ] **Changelog:** the Unreleased section of [`CHANGELOG.md`](../CHANGELOG.md) becomes `[x.y.z] - <date>`, condensed to the changes a consumer meets, with related fixes merged into one entry each. Keep what an entry says about scan time: condensing must not drop that a release makes scans slower or faster.
 - [ ] **Version:** `package.json` and `package-lock.json` at x.y.z (`npm version x.y.z --no-git-tag-version`), then `npm run build`, so `engine.version` reports it and the rules' help links point at the `vx.y.z` tag. `tests/engine-version.test.js` fails until the build carries it.
-- [ ] **Lean measures:** after the version step, so the counts name this release's version, `npm run leans:measure` (it reads the ACT test cases over the network), then `npm run build`, and commit `scripts/data/lean-measures.json` and the build, so each lean's `measured` counts the leans this release gives. Say in the pull request about any lean it lists as right in fewer than 80% of its cases.
+- [ ] **Lean measures:** after the version step, so the counts name this release's version, `npm run leans:measure` (it reads the ACT test cases over the network, and writes nothing if one couldn't be read: W3C answers 429 to many requests at once, so run it again, and only the cases not yet cached are fetched), then `npm run build`, and commit `scripts/data/lean-measures.json` and the build, so each lean's `measured` counts the leans this release gives. Say in the pull request about any lean it lists as right in fewer than 80% of its cases.
+- [ ] **Experimental APIs:** for each one in [`API_STABILITY.md`](./API_STABILITY.md#experimental-may-change-in-a-minor) (`src/experimental.js`) that this release settles, make it stable (remove it from the list and the `@experimental` marks, and say so in the changelog) or remove it (under `### Removed`). `tests/experimental.test.js` fails while one is still listed on or past its date.
 - [ ] **Finding identities:** `npm run finding-ids`, so the inventory is current, then `npm run finding-ids:release -- x.y.z`, and commit `scripts/data/released-finding-ids.json` ([Finding identity](./API_STABILITY.md#finding-identity)), with `src/baseline-moves.json`, from which it drops the identity moves of the minor release before ([`BASELINE.md`](./BASELINE.md#upgrading)). Say in the pull request whether any identity was retired.
 
 ## 2. Check and open the pull request
@@ -19,5 +20,20 @@ On a branch `release-x.y.z` from `main`:
 
 ## 3. Publish
 
-- [ ] Merge the pull request, then tag the merge on `main` and push the tag: `git tag vx.y.z && git push origin vx.y.z`.
+- [ ] Merge the pull request, then tag the merge on `main` and push the tag: `git tag -m "Release x.y.z" vx.y.z && git push origin vx.y.z`. Where git signs tags (`tag.gpgsign`) a tag needs a message, and a key with a passphrase needs a terminal to ask for it.
 - [ ] [`release.yml`](../.github/workflows/release.yml) runs on the tag. It checks that the tag matches `package.json`, runs lint and the full suite, checks that the committed build is what a clean build gives, and that W3C's ACT corpus gives no false positive, then publishes to npm with provenance. Any failure stops it before publishing: fix it on `main` and tag again.
+- [ ] **ACT reports:** once the version is on npm, run the "ACT implementation report" workflow in [SureA11y/act-report](https://github.com/SureA11y/act-report/actions/workflows/act-report.yml) (Run workflow, on `main`). It regenerates both implementation reports from the version npm serves as `latest`, and W3C reads them daily ([`EARL.md`](./EARL.md)); without it they wait for its Monday run. A false positive fails it and leaves the published reports as they were.
+
+## A patch from an earlier commit
+
+When `main` already holds work for the next minor release, fixes merged before it can still ship as a patch, from the last commit before that work. 1.14.2 was released this way.
+
+- [ ] **Find the commit:** the last commit on `main` that has every fix to release and none of the minor release's work. If a fix landed after that work, a patch needs it cherry-picked onto the branch, with its tests.
+- [ ] **Cut the line:** push `release/x.y.x` at that commit (`git push origin <commit>:refs/heads/release/x.y.x`), and make `release-x.y.z` from it.
+- [ ] **Prepare** `release-x.y.z` as in step 1. The changelog's Unreleased section at that commit holds only what this release ships. Leave `src/baseline-moves.json` as it is: a patch keeps the minor release's moves.
+- [ ] **Check and open** `Release x.y.z` as in step 2, into `release/x.y.x`, not `main`. [`test.yml`](../.github/workflows/test.yml) runs on pull requests into `release/**`.
+- [ ] **Publish** as in step 3, but tag the merge on `release/x.y.x`: `git fetch origin release/x.y.x && git tag -m "Release x.y.z" vx.y.z origin/release/x.y.x && git push origin vx.y.z`. A tag on `main` would publish the minor release's work too.
+- [ ] **Bring it back into `main`** before the next minor release, on a branch from `main` that merges `origin/release/x.y.x`:
+  - `CHANGELOG.md`: the released entries leave Unreleased for the `[x.y.z]` section, as released, between Unreleased and the release before. Git can merge it without a conflict and still put Unreleased's entries under `[x.y.z]`: check it by hand.
+  - `package.json`, `package-lock.json`, `scripts/data/lean-measures.json` and `scripts/data/released-finding-ids.json` as released. The build is generated: take `main`'s and run `npm run build`.
+  - `npm test`, then a pull request into `main`, merged with **Squash and merge**: `main` requires a linear history. Git then doesn't record the line as merged, so a later patch from it meets the same conflicts when it comes back.

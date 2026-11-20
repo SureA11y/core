@@ -40,7 +40,10 @@ module.exports = [
       top: '',
       'scrolled 400px': 'window.scrollTo(0, 400);',
       'scrolled to the end': 'window.scrollTo(0, document.body.scrollHeight);'
-    }
+    },
+    // Its scroll-padding-top keeps a focused element clear of the header and
+    // toolbar, so the focus-obscured rules have an answer.
+    settled: ['focus-not-obscured-minimum', 'focus-not-obscured-enhanced']
   },
   {
     file: 'virtual-list.html',

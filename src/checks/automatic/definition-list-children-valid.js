@@ -26,20 +26,29 @@
  *   required only of a list that has items. Any other direct or wrapped
  *   child breaks the description-list semantics assistive technologies rely
  *   on.
+ *   Every finding is reported at CANTTELL, not FAIL. HTML-AAM gives <dt> and
+ *   <dd> their term and definition roles wherever they sit, so what a broken
+ *   content model loses is the pairing of terms with definitions, which only
+ *   the <dl>'s structure and order state. That is a WCAG failure (SC 1.3.1)
+ *   only where the page shows the pairing, and H40 is only a sufficient
+ *   technique: a person settles it.
  * @reports
  *   - `invalidChildren`: the children that do not belong in the list, one
  *     tag name per child (`#text` for text placed directly inside). Empty
  *     when the problem is a missing or misordered `<dt>`/`<dd>`.
  * @reason-codes
- *   - `DL_INVALID_CHILD` (fail): the list holds an element, or text, that is
- *     not a dt/dd group, a single wrapping div, script, template or style.
- *     Basis: WCAG 1.3.1; H40; HTML dl element content model (MUST).
- *   - `DL_NO_DT_DD` (fail): the list has terms with no definition, or
+ *   - `DL_INVALID_CHILD` (cantTell): the list holds an element, or text,
+ *     that is not a dt/dd group, a single wrapping div, script, template or style.
+ *     Basis: H40; HTML dl element content model (MUST); WCAG 1.3.1 (not
+ *     settled).
+ *   - `DL_NO_DT_DD` (cantTell): the list has terms with no definition, or
  *     definitions with no term.
- *     Basis: WCAG 1.3.1; H40; HTML dl element content model (MUST).
- *   - `DL_DT_DD_ORDER` (fail): a definition comes before the first term, or
- *     the last term has no definition after it.
- *     Basis: WCAG 1.3.1; H40; HTML dl element content model (MUST).
+ *     Basis: H40; HTML dl element content model (MUST); WCAG 1.3.1 (not
+ *     settled).
+ *   - `DL_DT_DD_ORDER` (cantTell): a definition comes before the first
+ *     term, or the last term has no definition after it.
+ *     Basis: H40; HTML dl element content model (MUST); WCAG 1.3.1 (not
+ *     settled).
  * @implementation-notes
  * - Only one level of <div> wrapping is flattened, a <div> nested inside
  *   another wrapping <div> is not flattened further and its contents are
@@ -134,12 +143,16 @@ function runInPage(ctx) {
     // Flatten one level of wrapping <div> (common dt/dd grouping pattern).
     const flattened = [];
     let hasText = dlHasText;
+    // <div>s inside a wrapping <div>: one level of wrapper too many.
+    const nestedDivs = new Set();
     for (const child of childElementsOf(el)) {
       if (!child || !dom.tagName(child)) continue;
       if (dom.tagName(child).toLowerCase() === 'div') {
         if (hasDirectText(child)) hasText = true;
         for (const grandchild of childElementsOf(child)) {
-          if (grandchild && dom.tagName(grandchild)) flattened.push(grandchild);
+          if (!grandchild || !dom.tagName(grandchild)) continue;
+          flattened.push(grandchild);
+          if (dom.tagName(grandchild).toLowerCase() === 'div') nestedDivs.add(grandchild);
         }
       } else {
         flattened.push(child);
@@ -148,6 +161,10 @@ function runInPage(ctx) {
 
     let hasDt = false;
     let hasDd = false;
+    let dtCount = 0;
+    let ddCount = 0;
+    let lastDt = null;
+    let invalidNotNested = 0;
     const invalidTags = [];
     // The dt/dd sequence in document order, for the group-order check.
     const sequence = [];
@@ -155,17 +172,26 @@ function runInPage(ctx) {
       const tag = dom.tagName(node).toLowerCase();
       if (tag === 'dt') {
         hasDt = true;
+        dtCount += 1;
+        lastDt = node;
         sequence.push(tag);
         continue;
       }
       if (tag === 'dd') {
         hasDd = true;
+        ddCount += 1;
         sequence.push(tag);
         continue;
       }
-      if (!PASSTHROUGH_TAGS.has(tag)) invalidTags.push(tag);
+      if (!PASSTHROUGH_TAGS.has(tag)) {
+        invalidTags.push(tag);
+        if (!nestedDivs.has(node)) invalidNotNested += 1;
+      }
     }
-    if (hasText) invalidTags.push('#text');
+    if (hasText) {
+      invalidTags.push('#text');
+      invalidNotNested += 1;
+    }
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
     // Groups of one or more dt then one or more dd: the sequence starts
@@ -187,6 +213,49 @@ function runInPage(ctx) {
           ? 'DL_DT_DD_ORDER'
           : null;
     if (!reasonCode) continue;
+
+    // Which form of the finding the summary takes: a <div> nested in the
+    // wrapping <div> and nothing else wrong; which of dt and dd is missing;
+    // which end of the order is wrong.
+    let variant = '';
+    let lastTerm = '';
+    if (reasonCode === 'DL_INVALID_CHILD' && invalidNotNested === 0) variant = 'nestedDiv';
+    else if (reasonCode === 'DL_NO_DT_DD') variant = hasDt ? 'noDd' : 'noDt';
+    else if (reasonCode === 'DL_DT_DD_ORDER') {
+      if (sequence[0] !== 'dt') variant = 'orderStart';
+      else {
+        variant = 'orderEnd';
+        const t = String((lastDt && dom.textContent(lastDt)) || '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        lastTerm = t.length > 40 ? t.slice(0, 39) + '…' : t;
+      }
+    }
+    const VARIANT = {
+      nestedDiv: {
+        summary:
+          'A <div> inside the wrapping <div> holds items of this description list; only one level of <div> may sit between <dl> and its <dt>/<dd>.',
+        hint: 'Remove the inner <div>, so each group is wrapped in at most one <div> directly inside the <dl>.',
+        key: 'invalidChild_nestedDiv',
+        hintSuffix: 'invalidChild_nestedDiv'
+      },
+      noDd: {
+        summary: `This description list has terms (<dt>, ${dtCount}) but no definition (<dd>).`,
+        key: 'noDd'
+      },
+      noDt: {
+        summary: `This description list has definitions (<dd>, ${ddCount}) but no term (<dt>).`,
+        key: 'noDt'
+      },
+      orderStart: {
+        summary: "This description list's first item is a <dd>, with no <dt> term before it.",
+        key: 'order_start'
+      },
+      orderEnd: {
+        summary: `In this description list, the last <dt>${lastTerm ? ` ("${lastTerm}")` : ''} has no <dd> after it.`,
+        key: 'order_end'
+      }
+    }[variant];
 
     const TEXT = {
       DL_INVALID_CHILD: {
@@ -210,15 +279,30 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: TEXT.summary,
-        hint: TEXT.hint,
+        summary: VARIANT ? VARIANT.summary : TEXT.summary,
+        hint: VARIANT && VARIANT.hint ? VARIANT.hint : TEXT.hint,
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether the page shows terms paired with their definitions in a way this markup does not state.',
+          evidence: { reasonCode, invalidChildren: invalidTags }
+        },
         i18n: {
-          summaryKey: `definitionListChildrenValid_summary_fail_${TEXT.key}`,
-          hintKey: `definitionListChildrenValid_hint_fail_${TEXT.key}`,
-          params: { invalidChildren: dedupedInvalidTags.join(', ') }
+          summaryKey: `definitionListChildrenValid_summary_fail_${VARIANT ? VARIANT.key : TEXT.key}`,
+          hintKey: `definitionListChildrenValid_hint_fail_${VARIANT && VARIANT.hintSuffix ? VARIANT.hintSuffix : TEXT.key}`,
+          params: {
+            invalidChildren: dedupedInvalidTags.join(', '),
+            dtCount: String(dtCount),
+            ddCount: String(ddCount),
+            lastTerm
+          }
         },
         data: {
-          details: { reasonCode, invalidChildren: invalidTags }
+          details: {
+            reasonCode,
+            invalidChildren: invalidTags,
+            ...(variant ? { finding: variant, dtCount, ddCount } : {})
+          }
         }
       })
     );
@@ -227,15 +311,13 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // Every finding is a question: the term and definition roles survive,
+  // and whether the pairing the markup breaks is one the page shows is for
+  // a person to say (see @expectation).
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome([], occurrences, rule.defaultSeverity || 'serious')
+  };
 }
 
 module.exports = { id, meta, runInPage };

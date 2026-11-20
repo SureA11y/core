@@ -225,6 +225,23 @@ const BLOCK_FIRST_LINE = [
     'PSEUDO_ELEMENT_COLOR',
     'div.o::first-line'
   ],
+  // The id or class it is named by is escaped as CSS reads it, so the
+  // selector names the element: an id that opens with a digit or holds a
+  // dot, a class that holds a colon.
+  [
+    '[id="1st.intro"]::first-line{color:#900} a{color:#c00}',
+    `<div id="1st.intro">${PARA}</div>`,
+    'cantTell',
+    'PSEUDO_ELEMENT_COLOR',
+    'div#\\31 st\\.intro::first-line'
+  ],
+  [
+    '.md\\:intro::first-line{color:#900} a{color:#c00}',
+    `<div class="md:intro">${PARA}</div>`,
+    'cantTell',
+    'PSEUDO_ELEMENT_COLOR',
+    'div.md\\:intro::first-line'
+  ],
   // A float before the paragraph is out of the flow: the paragraph still
   // opens the div's first line.
   [

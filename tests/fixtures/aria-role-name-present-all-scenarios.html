@@ -28,7 +28,7 @@
   <h2>A. One pass/fail pair per name-required role</h2>
 
   <div class="case" id="case_01">
-    <div class="case-title">01 — FAIL: role=grid, no name</div>
+    <div class="case-title">01 — CANTTELL: role=grid, no name</div>
     <div role="grid" id="role_case_01"></div>
   </div>
 
@@ -38,7 +38,7 @@
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — FAIL: role=radiogroup, no name (even though content has text)</div>
+    <div class="case-title">03 — CANTTELL: role=radiogroup, no name (even though content has text)</div>
     <div role="radiogroup" id="role_case_03">Contact method</div>
   </div>
 
@@ -48,7 +48,7 @@
   </div>
 
   <div class="case" id="case_05">
-    <div class="case-title">05 — FAIL: role=tree, no name (even though items have text)</div>
+    <div class="case-title">05 — CANTTELL: role=tree, no name (even though items have text)</div>
     <div role="tree" id="role_case_05"><div role="treeitem">Documents</div></div>
   </div>
 
@@ -59,7 +59,7 @@
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — FAIL: role=meter, no name</div>
+    <div class="case-title">07 — CANTTELL: role=meter, no name</div>
     <div role="meter" id="role_case_07"></div>
   </div>
 
@@ -69,7 +69,7 @@
   </div>
 
   <div class="case" id="case_09">
-    <div class="case-title">09 — FAIL: role=progressbar, no name</div>
+    <div class="case-title">09 — CANTTELL: role=progressbar, no name</div>
     <div role="progressbar" id="role_case_09"></div>
   </div>
 
@@ -89,17 +89,17 @@
   <h2>C. Empty/whitespace attribute edge cases</h2>
 
   <div class="case" id="case_12">
-    <div class="case-title">12 — FAIL: role=radiogroup, whitespace-only aria-label</div>
+    <div class="case-title">12 — CANTTELL: role=radiogroup, whitespace-only aria-label</div>
     <div role="radiogroup" id="role_case_12" aria-label=" "></div>
   </div>
 
   <div class="case" id="case_13">
-    <div class="case-title">13 — FAIL: role=grid, aria-labelledby references non-existent id</div>
+    <div class="case-title">13 — CANTTELL: role=grid, aria-labelledby references non-existent id</div>
     <div role="grid" id="role_case_13" aria-labelledby="role_case_13_missing"></div>
   </div>
 
   <div class="case" id="case_14">
-    <div class="case-title">14 — FAIL: role=meter, empty title</div>
+    <div class="case-title">14 — CANTTELL: role=meter, empty title</div>
     <div role="meter" id="role_case_14" title=""></div>
   </div>
 
@@ -111,7 +111,7 @@
   </div>
 
   <div class="case" id="case_16">
-    <div class="case-title">16 — EXCEPTION: role=grid, aria-hidden="true" but focusable (tabindex=0) => eligible, missing name => FAIL</div>
+    <div class="case-title">16 — EXCEPTION: role=grid, aria-hidden="true" but focusable (tabindex=0) => eligible, missing name => CANTTELL</div>
     <div role="grid" aria-hidden="true" tabindex="0" id="role_case_16"></div>
   </div>
 
@@ -133,7 +133,7 @@
   </div>
 
   <div class="case" id="case_20">
-    <div class="case-title">20 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => FAIL</div>
+    <div class="case-title">20 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => CANTTELL</div>
     <div style="visibility:hidden">
       <div role="grid" tabindex="0" style="visibility:visible" id="role_case_20"></div>
     </div>
@@ -202,7 +202,7 @@
   </div>
 
   <div class="case" id="case_30">
-    <div class="case-title">30 — FAIL: a &lt;legend&gt; that is not a child of the fieldset does not name it</div>
+    <div class="case-title">30 — CANTTELL: a &lt;legend&gt; that is not a child of the fieldset does not name it</div>
     <fieldset role="radiogroup" id="role_case_30"><div><legend>Civilité</legend></div>
       <label><input type="radio" name="civ30"> Madame</label>
     </fieldset>

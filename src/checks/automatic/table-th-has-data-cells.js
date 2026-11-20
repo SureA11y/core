@@ -103,23 +103,7 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.3.1': ['table-th-has-data-cells'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TABLE_TH_NO_ASSIGNED_CELL: {
-      steps: [
-        'Find the header cell the report names (its row and column are given, counting from 0).',
-        'Look at the cells below it in its column, or after it in its row, as its scope says.',
-        'Decide whether the header is meant to label data: if the cells it should head are missing, or are marked up as headers, it labels nothing.',
-        "If a screen reader is available, move through the table's data cells and note whether this header is ever announced."
-      ],
-      passWhen:
-        'The header is not meant to label data (it can be a plain cell), or the data it heads is marked up so the header is assigned to it.',
-      failWhen:
-        'A header that should label data has no data cells assigned to it, so its relationship is not conveyed, which fails WCAG 1.3.1.'
-    }
-  }
+  coverage: { facetsBySc: { '1.3.1': ['table-th-has-data-cells'] } }
 };
 
 function runInPage(ctx) {
@@ -153,12 +137,12 @@ function runInPage(ctx) {
     let found;
     try {
       found = scope
-        ? Array.from(dom.querySelectorAll(scope, selector))
-        : Array.from(
-            (helpers.queryAllSmart
+        ? [...dom.querySelectorAll(scope, selector)]
+        : [
+            ...((helpers.queryAllSmart
               ? helpers.queryAllSmart(selector, { internalsRoles: true })
-              : helpers.queryAll(selector)) || []
-          );
+              : helpers.queryAll(selector)) || [])
+          ];
       if (scope && typeof helpers.getInternalsRoleElements === 'function') {
         for (const { el, role } of helpers.getInternalsRoleElements()) {
           if (el !== scope && roles.includes(role) && dom.contains(scope, el)) found.push(el);
@@ -228,16 +212,59 @@ function runInPage(ctx) {
     return Number.isFinite(n) ? n : 1;
   }
 
-  function askUnassigned(th, row, column, ragged) {
+  // The hint of an unassigned header, by why (askUnassignedIn): its scope
+  // looks away from the cells there are, or the cells where it looks list
+  // their headers in a headers attribute that leaves it out. null otherwise.
+  function unassignedHint(th, why) {
+    if (!why) return null;
+    if (why.kind === 'scope') {
+      const scopeValue = String(dom.getAttribute(th, 'scope') || '')
+        .trim()
+        .toLowerCase();
+      const scopeAttr =
+        scopeValue === why.scope
+          ? `scope="${why.scope}"`
+          : `role="${why.scope === 'row' ? 'rowheader' : 'columnheader'}"`;
+      return why.scope === 'row'
+        ? {
+            hint: `Its ${scopeAttr} makes it head the cells to its right, but there are none; the cells are below it. If it heads that column, use scope="col".`,
+            hintKey: 'tableThHasDataCells_hint_cantTell_scopeRow',
+            params: { scopeAttr }
+          }
+        : {
+            hint: `Its ${scopeAttr} makes it head the cells below it, but there are none; the cells are to its right. If it heads that row, use scope="row".`,
+            hintKey: 'tableThHasDataCells_hint_cantTell_scopeCol',
+            params: { scopeAttr }
+          };
+    }
+    const base =
+      'The cells it would head list their headers in a headers attribute, which replaces the lookup by position,';
+    return why.id
+      ? {
+          hint: `${base} and none lists this header's id, "${why.id}". Add "${why.id}" to the headers attribute of the cells it heads.`,
+          hintKey: 'tableThHasDataCells_hint_cantTell_headersOmit',
+          params: { id: why.id }
+        }
+      : {
+          hint: `${base} and this header has no id for them to list. Give it an id and add that id to the headers attribute of the cells it heads.`,
+          hintKey: 'tableThHasDataCells_hint_cantTell_headersOmitNoId',
+          params: {}
+        };
+  }
+
+  function askUnassigned(th, row, column, ragged, why) {
+    const cause = unassignedHint(th, why);
     askOccurrences.push(
       helpers.reportOccurrence(th, {
         summary: 'No data cell in this table is assigned to this header cell.',
-        hint: 'Check whether the table is missing the cells this header describes. Where cells name their headers with a headers attribute, include this header in those it applies to.',
+        hint: cause
+          ? cause.hint
+          : 'Check whether the table is missing the cells this header describes. Where cells name their headers with a headers attribute, include this header in those it applies to.',
         occurrenceOutcome: 'cantTell',
         i18n: {
           summaryKey: 'tableThHasDataCells_summary_cantTell_unassigned',
-          hintKey: 'tableThHasDataCells_hint_cantTell_unassigned',
-          params: {}
+          hintKey: cause ? cause.hintKey : 'tableThHasDataCells_hint_cantTell_unassigned',
+          params: cause ? cause.params : {}
         },
         uncertainty: {
           code: 'judgement-required',
@@ -265,7 +292,14 @@ function runInPage(ctx) {
               }
             }
           : {}),
-        data: { details: { reasonCode: 'TABLE_TH_NO_ASSIGNED_CELL', row, column } }
+        data: {
+          details: {
+            reasonCode: 'TABLE_TH_NO_ASSIGNED_CELL',
+            row,
+            column,
+            ...(why ? { unassignedCause: why } : {})
+          }
+        }
       })
     );
   }
@@ -276,42 +310,124 @@ function runInPage(ctx) {
   function askUnassignedIn(rowCells, inScope, isHeader, isData, scopeOf, named) {
     // A cell with a headers attribute is assigned only to those it names.
     const free = (cell) => !!cell && isData(cell) && !dom.getAttribute(cell, 'headers');
+    // What lies after each cell in its row and below it in its column, read
+    // once per table rather than once per header: how many cells, whether
+    // one is free, and whether all are headers.
+    const kinds = rowCells.map((cells) =>
+      cells.map((cell) => ({ header: isHeader(cell), free: free(cell) }))
+    );
+    const after = kinds.map((cells) => {
+      const out = new Array(cells.length);
+      let count = 0;
+      let anyFree = false;
+      let allHeaders = true;
+      for (let c = cells.length - 1; c >= 0; c--) {
+        out[c] = { count, anyFree, allHeaders };
+        count += 1;
+        anyFree = anyFree || cells[c].free;
+        allHeaders = allHeaders && cells[c].header;
+      }
+      return out;
+    });
+    const below = new Array(rowCells.length);
+    const columns = [];
+    for (let r = rowCells.length - 1; r >= 0; r--) {
+      below[r] = kinds[r].map(
+        (_, c) => columns[c] || { count: 0, anyFree: false, allHeaders: true }
+      );
+      kinds[r].forEach((kind, c) => {
+        const col = columns[c] || { count: 0, anyFree: false, allHeaders: true };
+        columns[c] = {
+          count: col.count + 1,
+          anyFree: col.anyFree || kind.free,
+          allHeaders: col.allHeaders && kind.header
+        };
+      });
+    }
     for (let r = 0; r < rowCells.length; r++) {
       for (let c = 0; c < rowCells[r].length; c++) {
         const th = rowCells[r][c];
-        if (!isHeader(th) || !inScope.has(th)) continue;
+        if (!kinds[r][c].header || !inScope.has(th)) continue;
         const scope = scopeOf(th);
         if (scope === null) continue;
         const headerId = dom.getAttribute(th, 'id');
         if (headerId && named.has(headerId)) continue;
-        const after = rowCells[r].slice(c + 1);
-        const below = rowCells
-          .slice(r + 1)
-          .map((cells) => cells[c])
-          .filter(Boolean);
+        const inRowAfter = after[r][c];
+        const inColumnBelow = below[r][c];
         // The corner where a row of headers meets a column of them labels
         // the headers, as tables often do; it is left out.
-        if (after.length && below.length && after.concat(below).every(isHeader)) continue;
-        const inRow = scope !== 'col' && after.some(free);
-        const inColumn = scope !== 'row' && below.some(free);
+        if (
+          inRowAfter.count &&
+          inColumnBelow.count &&
+          inRowAfter.allHeaders &&
+          inColumnBelow.allHeaders
+        )
+          continue;
+        const inRow = scope !== 'col' && inRowAfter.anyFree;
+        const inColumn = scope !== 'row' && inColumnBelow.anyFree;
         if (!inRow && !inColumn) {
           // No cell at all where the header looks: the row ends, or the
           // rows below are shorter, rather than cells marked up as headers.
           const ragged =
             named.size === 0 &&
             (scope === 'col'
-              ? !below.length
+              ? !inColumnBelow.count
               : scope === 'row'
-                ? !after.length
-                : !after.length && !below.length);
-          askUnassigned(th, r, c, ragged);
+                ? !inRowAfter.count
+                : !inRowAfter.count && !inColumnBelow.count);
+          // Why, where the markup shows it: the scope looks away from the
+          // cells there are, or every cell where it looks lists its headers
+          // in a headers attribute that leaves this one out.
+          let why = null;
+          if (scope === 'row' && inColumnBelow.anyFree) why = { kind: 'scope', scope: 'row' };
+          else if (scope === 'col' && inRowAfter.anyFree) why = { kind: 'scope', scope: 'col' };
+          else if (
+            named.size &&
+            ((scope !== 'col' && inRowAfter.count && !inRowAfter.allHeaders) ||
+              (scope !== 'row' && inColumnBelow.count && !inColumnBelow.allHeaders))
+          ) {
+            why = { kind: 'headersAttr', id: headerId || null };
+          }
+          askUnassigned(th, r, c, ragged, why);
         }
       }
     }
   }
 
+  // table.rows, by walking the table's children: in its order (the rows of
+  // a thead, then those of the table itself and its tbodys, then those of a
+  // tfoot, each in tree order). jsdom answers each read of table.rows, or of
+  // any element's children, in time that grows with the index, so reading
+  // them cost rows x rows.
+  function rowsOf(table) {
+    const HTML_NS = 'http://www.w3.org/1999/xhtml';
+    const isHtml = (el, name) =>
+      String(dom.localName(el) || '') === name && dom.namespaceURI(el) === HTML_NS;
+    const head = [];
+    const body = [];
+    const foot = [];
+    for (let child = dom.firstElementChild(table); child; child = dom.nextElementSibling(child)) {
+      if (isHtml(child, 'tr')) {
+        body.push(child);
+        continue;
+      }
+      const list = isHtml(child, 'thead')
+        ? head
+        : isHtml(child, 'tbody')
+          ? body
+          : isHtml(child, 'tfoot')
+            ? foot
+            : null;
+      if (!list) continue;
+      for (let row = dom.firstElementChild(child); row; row = dom.nextElementSibling(row)) {
+        if (isHtml(row, 'tr')) list.push(row);
+      }
+    }
+    return head.concat(body, foot);
+  }
+
   function askUnassignedInTable(table, headers) {
-    const rowCells = Array.from(table.rows || []).map((row) => Array.from(row.cells || []));
+    const rowCells = rowsOf(table).map((row) => [...(row.cells || [])]);
     // A rowspan of 0 spans too, as in td-has-header.
     const spans = rowCells.some((cells) =>
       cells.some((c) => spanOf(c, 'colspan') > 1 || spanOf(c, 'rowspan') !== 1)
@@ -366,7 +482,7 @@ function runInPage(ctx) {
     );
     const rowCells = [];
     for (const row of rows) {
-      const cells = Array.from(dom.children(row) || []);
+      const cells = [...(dom.children(row) || [])];
       const simple = cells.every((cell) => {
         const role = explicitRole(cell);
         return (
@@ -403,7 +519,7 @@ function runInPage(ctx) {
       ths = [];
     }
 
-    const headers = Array.from(ths).filter(isHeaderCellInScope);
+    const headers = [...ths].filter(isHeaderCellInScope);
     if (!headers.length) continue;
 
     applicableCount += 1;

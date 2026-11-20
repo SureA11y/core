@@ -237,3 +237,18 @@ test(`${RULE_ID}: a direct child <title> names the image wherever it is; a <desc
     { minOccurrences: 1, maxOccurrences: 1 }
   );
 });
+
+test(`${RULE_ID}: a fail says a <title> beside the <image> names its parent`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><svg><g><title>Logo</title><image href="a.png" width="10" height="10"/></g></svg></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.hintKey, 'svgImage_textAltPresent_hint_fail_parentTitle');
+  assert.strictEqual(
+    occ.hint,
+    'The <title> "Logo" beside it is a child of the <g>, so it names the <g>, not this <image>. Put a <title> inside the <image>, or name it with aria-label.'
+  );
+  assert.strictEqual(occ.data.details.nameCause.parent, 'g');
+});

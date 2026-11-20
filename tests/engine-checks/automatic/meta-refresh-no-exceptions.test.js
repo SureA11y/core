@@ -112,3 +112,39 @@ test(`${RULE_ID}: the refresh time is read as HTML reads it`, () => {
   assert.strictEqual(outcome(doc(' 5; url=/a')), 'fail');
   assert.strictEqual(outcome(doc('5x; url=/a')), 'notApplicable');
 });
+
+// The summary gives the delay and where the refresh goes; a delayed
+// redirect is told to redirect at once, which this rule passes.
+test(`${RULE_ID}: names the delay and target, and the redirect fix`, () => {
+  const page = (content) =>
+    `<!doctype html><html><head><meta http-equiv="refresh" content="${content}"><title>t</title></head><body></body></html>`;
+  const occOf = (content) =>
+    assertRule(runa11yCoreOnHtml(page(content), { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    }).occurrences[0];
+
+  const redirect = occOf('5; url=/new-page');
+  assert.strictEqual(redirect.i18n.summaryKey, 'metaRefreshNoExceptions_summary_fail_redirect');
+  assert.strictEqual(
+    redirect.summary,
+    'This page redirects to /new-page after 5 seconds, without the user asking.'
+  );
+  assert.strictEqual(
+    redirect.hint,
+    'Redirect at once (content="0; url=/new-page", or a redirect from the server), or let the user follow a link.'
+  );
+  assert.strictEqual(redirect.data.details.target, '/new-page');
+  assert.strictEqual(redirect.data.details.delay, 5);
+
+  const daily = occOf('86400');
+  assert.strictEqual(daily.i18n.summaryKey, 'metaRefreshNoExceptions_summary_fail');
+  assert.strictEqual(
+    daily.summary,
+    'This page reloads itself every 86400 seconds (24 hours), without the user asking. At AAA any delay fails, even one over 20 hours that the Level A rule allows.'
+  );
+
+  const quoted = occOf("30; URL='https://example.com/x'");
+  assert.strictEqual(quoted.i18n.params.target, 'https://example.com/x');
+  assert.doesNotMatch(occOf('30').summary, /hours|AAA/);
+});

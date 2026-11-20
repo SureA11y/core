@@ -206,6 +206,8 @@ test(
           elements: document.getElementsByTagName('*').length,
           checks: r.checksResults.map((c) => ({
             ruleId: c.ruleId,
+            outcome: c.outcome,
+            details: c.data && c.data.details,
             occurrences: c.occurrences.map((o) => ({
               forcedColors: o.data.details.forcedColors,
               hint: o.hint,
@@ -220,6 +222,12 @@ test(
     assert.equal(r.environment.forcedColors, 'active');
     assert.equal(r.styleSheets, 0);
     for (const check of r.checks) {
+      // A notApplicable names no occurrence: it says so on the result.
+      if (check.outcome === 'notApplicable') {
+        assert.equal(check.occurrences.length, 0, check.ruleId);
+        assert.equal(check.details.forcedColors, true, check.ruleId);
+        continue;
+      }
       assert.ok(check.occurrences.length, check.ruleId);
       for (const o of check.occurrences) {
         assert.equal(o.forcedColors, true, check.ruleId);

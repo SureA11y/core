@@ -93,3 +93,17 @@ test(`${RULE_ID}: role is a fallback list matched in any case (#91)`, () => {
   assert.ok(hasOccurrenceForId(rule, 'up'));
   assert.ok(!hasOccurrenceForId(rule, 'lk'));
 });
+
+test(`${RULE_ID}: names the focusable element inside`, () => {
+  const html = `<!doctype html><html><body><span role="text">Price <a href="/x">details</a> now</span></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occ = rule.occurrences[0];
+  assert.strictEqual(
+    occ.summary,
+    'This role="text" element contains a focusable <a> "details", which role="text" flattens into plain text.'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaText_summary_cantTell_focusable');
+  assert.strictEqual(occ.data.details.focusableElement, '<a> "details"');
+  assert.strictEqual(occ.data.details.focusableSelector, 'html > body > span > a');
+  assert.strictEqual(occ.data.details.reasonCode, 'ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT');
+});

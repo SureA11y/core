@@ -16,7 +16,7 @@ See [`CI_INTEGRATIONS.md`](./CI_INTEGRATIONS.md) for a ready-to-paste GitHub Act
 
 Only `fail`/`cantTell` occurrences produce SARIF results (same "violations only" framing as [`REPORT.md`](./REPORT.md)'s HTML report). So a log with no results says nothing failed or needs review among the checks that ran; it doesn't say what was checked, and it is not a conformance claim. Keep the JSON result for that.
 
-A `notApplicable` check is not always empty: a rule may attach one occurrence explaining why it had nothing to judge, which the contrast rules do when no text had a computable background. Those never become results — a consumer treats every result as an alert, and "this was not evaluated" is not one — but they are not dropped either. They are carried as `note`-level entries in `runs[0].invocations[0].toolExecutionNotifications`, each naming the rule it came from via `associatedRule.id`:
+A `notApplicable` check is not always empty: a pack's or custom rule may attach one occurrence explaining why it had nothing to judge (core's rules attach none). Those never become results — a consumer treats every result as an alert, and "this was not evaluated" is not one — but they are not dropped either. They are carried as `note`-level entries in `runs[0].invocations[0].toolExecutionNotifications`, each naming the rule it came from via `associatedRule.id`:
 
 ```json
 "invocations": [
@@ -25,8 +25,8 @@ A `notApplicable` check is not always empty: a rule may attach one occurrence ex
     "toolExecutionNotifications": [
       {
         "level": "note",
-        "message": { "text": "No eligible text had computable contrast (eligible text nodes: 13). See the contrast computability rule for details." },
-        "associatedRule": { "id": "contrast-minimum" }
+        "message": { "text": "No form on this page could be checked: each is inside a closed shadow root." },
+        "associatedRule": { "id": "acme-form-review" }
       }
     ]
   }
@@ -35,7 +35,7 @@ A `notApplicable` check is not always empty: a rule may attach one occurrence ex
 
 A rule that did not complete (it threw: `cantTell` with no occurrences and an `error`, see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)) judged nothing, so it is no result either. It is an `error`-level notification in the same list, `"The rule <id> did not complete: <error>"`, naming the rule in `associatedRule.id`, so the gap in coverage doesn't read as a pass.
 
-That keeps a SARIF-only pipeline from reading silence as a clean bill of health: no contrast alerts can mean the page is fine, or that contrast was never computable, and only the notice separates the two. The block is emitted only when there is something to say, so a run with nothing to report has no `invocations` key at all.
+That keeps a SARIF-only pipeline from reading silence as a clean bill of health. Core's contrast rules need no notice for it: text whose contrast could not be computed is a `contrast-computable` result. The block is emitted only when there is something to say, so a run with nothing to report has no `invocations` key at all.
 
 | Engine outcome | SARIF `level` | Meaning |
 |---|---|---|
@@ -66,7 +66,7 @@ Every rule that ran (regardless of whether it produced a result) is listed once 
 | `tool.driver.rules[].helpUri` | `meta.helpUrl`, the rule's help link, when it is an absolute `http(s)` URL; otherwise the Understanding document of the first WCAG criterion it maps to (`understandingUrl`); absent for a rule with neither, which no built-in rule is: one mapped to no criterion has its section of docs/RULE_CATALOG.md as `meta.helpUrl`. |
 | `tool.driver.version` | The `toolVersion` option, if given (a tool wrapping the engine passes its own); otherwise `engine.version`, the engine release that produced the result. `"0.0.0"` only for a result without one, from a release before 1.10.0, or whose `engine.version` is not a string. |
 | `runs[0].automationDetails.id` | The `category` option, with a trailing `/` added if it has none (GitHub reads everything up to the last slash as the category). Absent when no category is given. See [Scanning at several viewport widths](#scanning-at-several-viewport-widths). |
-| `runs[0].properties` | `wcagVersion`, `wcagLevel` (when the scan had a level: `engineOptions.wcagLevel`, or the one its selection gives), `profile`, `optInRules` and `environment` (a copy of `engine.environment`) from the result's `engine`: the conformance target the run used, so a dashboard can tell a WCAG 2.1 run from a 2.2 one, and an AA run from one at every level, the opt-in rule tags it added beyond that target when it added any, and the conditions the page was rendered under (`layout`, `viewport`, `devicePixelRatio`, `colorScheme`, `forcedColors`, `fonts` and every other field it has, the hooks' included; see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#top-level-result)). Omitted for results from releases that predate those fields. |
+| `runs[0].properties` | `wcagVersion`, `wcagLevel` (when the scan had a level: `engineOptions.wcagLevel`, or the one its selection gives), `profile` (the first profile, for a scan of several), `profiles` (a scan of several profiles only: every profile it ran, `engine.profiles`), `optInRules` and `environment` (a copy of `engine.environment`) from the result's `engine`: the conformance target the run used, so a dashboard can tell a WCAG 2.1 run from a 2.2 one, and an AA run from one at every level, the opt-in rule tags it added beyond that target when it added any, and the conditions the page was rendered under (`layout`, `viewport`, `devicePixelRatio`, `colorScheme`, `forcedColors`, `fonts` and every other field it has, the hooks' included; see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#top-level-result)). Omitted for results from releases that predate those fields. |
 
 A compact result (`engineOptions.output.detail: 'findings'`, see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#top-level-result)) is read as the full result it stands for, so it is reported the same.
 
@@ -123,10 +123,11 @@ The finding's identity does not include the viewport, and does not need to: the 
 |---|---|---|
 | `toolVersion` | `engine.version` | `tool.driver.version`, for a tool wrapping the engine. |
 | `informationUri` | `'https://github.com/SureA11y/core'` | `tool.driver.informationUri`, the tool's home page. |
-| `baselineEntries` | none | The baseline file as saved (`JSON.parse` of it) or its `entries` list, see [`BASELINE.md`](./BASELINE.md#file-format). Fail occurrences recorded there are left out, as `--baseline` does (see below). An entry written by 1.13 under a reason code that changed in 1.14 still matches the finding under its new one (`src/baseline-moves.json`, [`BASELINE.md`](./BASELINE.md#upgrading)). |
+| `baselineEntries` | none | The baseline file as saved (`JSON.parse` of it) or its `entries` list, see [`BASELINE.md`](./BASELINE.md#file-format). Fail occurrences recorded there are left out, as `--baseline` does (see below). An entry written by the minor release before, under a reason code that has changed since, still matches the finding under its new one (`src/baseline-moves.json`, [`BASELINE.md`](./BASELINE.md#upgrading)). |
 | `category` | none | `runs[0].automationDetails.id`, see [Scanning at several viewport widths](#scanning-at-several-viewport-widths). |
 | `leanFailAs` | `'warning'` | `'error'` reports a `cantTell` finding whose lean points to fail at `error`, so a build gated on errors fails on likely failures too. Read in any case; another value throws a `TypeError`. A best-practice rule's too: such a rule, mapped to no WCAG criterion, never fails, and the facts it states lean fail without condition ([`LEANS.md`](./LEANS.md#how-far-to-trust-a-lean)), so a skipped heading level (`heading-order`) is an `error`. A finding of a rule whose every criterion is outside the scan's target stays a `note`. A finding that leans fail and has an entry marked `lean: 'fail'` in `baselineEntries` stays a `warning`. |
 | `leanFailWcagOnly` | `false` | With `leanFailAs: 'error'`, `true` raises only the findings of rules mapped to a WCAG criterion in the scan's target, leaving the best-practice rules' leans at `warning`. A value other than `true` or `false` throws a `TypeError`. `leaningFailures(result, { wcagOnly })`, from `@surea11y/core`, lists the findings these two options raise, before the baseline. |
+| `allowProfilesNotRun` | `false` | A scan of several profiles that ran fewer than it asked for (`engine.profilesNotRun`) counted less than it was asked to: each profile not run is an `error` notification, and the invocation is not `executionSuccessful`. `true` makes them warnings. A value other than `true` or `false` throws a `TypeError`. |
 | `packs` | none | The packs the scan ran (`engineOptions.packs`): in Node, a pack rule's undecided findings carry the steps of its own `meta.review` (`properties.howToCheck`). |
 
 ## Combining with `--baseline`

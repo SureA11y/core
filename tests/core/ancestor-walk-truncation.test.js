@@ -5,10 +5,11 @@ const assert = require('node:assert/strict');
 
 const { runa11yCoreOnHtml } = require('../helpers/runa11yCoreOnHtml');
 
-// Ancestor walks stop after 200 steps so a malformed or cyclic tree cannot
-// hang a scan. Past that depth the walk cannot prove an element is exposed,
-// and asserting a violation on content that may be hidden is the one outcome
-// this engine must not produce.
+// The walk up from an element reads every ancestor up to 10,000, far past
+// any nesting a browser renders. It stopped at 200: an element deeper than
+// that was judged without what lies above, and a fail on it became a
+// cantTell. Hidden content stays hidden however deep it is, and a fail
+// stays a fail.
 const SHELL = '<!doctype html><html lang="en"><head><title>t</title></head><body>';
 const CONTENT = '<img src="x.png"><button></button><input type="text">';
 
@@ -26,58 +27,29 @@ function scan(depth, wrapperAttrs) {
 
   return {
     outcomeOf,
+    result,
     truncations: result.perfStats.counters['ancestorsIncludingSelf.truncated'] || 0
   };
 }
 
-test('a fail resting only on out-of-reach elements becomes cantTell', () => {
-  const shallow = scan(10, 'aria-hidden="true"');
-  const deep = scan(250, 'aria-hidden="true"');
-
-  assert.equal(shallow.truncations, 0, 'a shallow tree walks to the root');
-  assert.ok(deep.truncations > 0, 'a deep tree exhausts the walk budget');
-
-  assert.equal(shallow.outcomeOf('img-alt-present'), 'notApplicable', 'hidden content is skipped');
-  assert.equal(
-    deep.outcomeOf('img-alt-present'),
-    'cantTell',
-    'past the limit the engine cannot prove the content is exposed, so it must not assert a fail'
-  );
-});
-
-test('depth alone does not suppress a finding', () => {
-  const deep = scan(250, '');
-
-  assert.equal(
-    deep.outcomeOf('img-alt-present'),
-    'cantTell',
-    'still reported, just without the certainty a fail claims'
-  );
-});
-
-test('a certain occurrence alongside an uncertain one keeps the fail', () => {
-  const body =
-    '<img src="x.png">' + '<div>'.repeat(250) + '<img src="x.png">' + '</div>'.repeat(250);
-  const result = runa11yCoreOnHtml(SHELL + body + '</body></html>', {});
-
-  assert.equal(
-    result.checksResults.find((r) => r.ruleId === 'img-alt-present').outcome,
-    'fail',
-    'one element the walk reached is enough to justify the fail'
-  );
-});
-
-test('an exhausted walk is counted so it is not silent', () => {
-  assert.equal(scan(10, '').truncations, 0);
-  assert.ok(scan(400, '').truncations > 0);
-});
-
-// Only rules that report their element can be downgraded: the engine has no
-// way to tell whether a hand-built occurrence sits on a reachable element.
-test('the downgrade reaches every rule that reports its element', () => {
-  const deep = scan(250, 'aria-hidden="true"');
-
-  for (const ruleId of ['img-alt-present', 'button-name-present']) {
-    assert.equal(deep.outcomeOf(ruleId), 'cantTell', `${ruleId} still asserts an unverified fail`);
+test('content hidden from far above is hidden, however deep', () => {
+  for (const depth of [10, 250]) {
+    const { outcomeOf } = scan(depth, 'aria-hidden="true"');
+    for (const ruleId of ['img-alt-present', 'button-name-present']) {
+      assert.equal(outcomeOf(ruleId), 'notApplicable', `${ruleId} at ${depth}`);
+    }
   }
+});
+
+test('depth alone does not weaken a finding', () => {
+  const { outcomeOf, result } = scan(250, '');
+  for (const ruleId of ['img-alt-present', 'button-name-present']) {
+    assert.equal(outcomeOf(ruleId), 'fail', ruleId);
+  }
+  assert.ok(result.checksResults.every((r) => !r.ancestorWalkLimit));
+});
+
+test('a walk of a few hundred levels reaches the root', () => {
+  assert.equal(scan(10, '').truncations, 0);
+  assert.equal(scan(400, '').truncations, 0);
 });

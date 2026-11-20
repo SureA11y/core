@@ -96,21 +96,31 @@ test(
     assert.deepEqual(summarize(results), EXPECTED);
 
     // A select in the browser's own background: Chromium paints its field
-    // white (Field), though the computed background is #efefef, which other
-    // browsers may paint. Text that fails on either fails, at the lower
-    // ratio, and the finding gives both colors.
+    // white (Field), though on Linux and Windows the computed background is
+    // #efefef (ButtonFace), which other browsers may paint. Text that fails
+    // on either fails, at the lower ratio, and the finding gives both colors.
+    // On macOS the computed background is Field too: there is one color, the
+    // white the select is drawn in, and #767676 passes on it (4.54).
     const q = await browser.newPage();
     await q.setContent(
       '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head><body><main><label>G <select id="g" style="color:#767676"><option>One</option></select></label></main></body></html>'
     );
     await addBundle(q);
-    const g = await q.evaluate(
-      () =>
-        window.a11ycore.runa11yCoreInPage(null, null, {}, ['contrast-minimum']).checksResults[0]
-          .occurrences[0].data.details
+    const computed = await q.evaluate(
+      () => getComputedStyle(document.getElementById('g')).backgroundColor
     );
-    assert.equal(Math.round(g.metrics.ratio * 100) / 100, 3.95);
-    assert.deepEqual(g.selectField, { backgroundHex: '#efefef', fieldHex: '#ffffff' });
+    const g = await q.evaluate(
+      () => window.a11ycore.runa11yCoreInPage(null, null, {}, ['contrast-minimum']).checksResults[0]
+    );
+    if (computed === 'rgb(255, 255, 255)') {
+      assert.equal(g.outcome, 'pass');
+      assert.equal(g.occurrences[0].data.details.selectField, undefined);
+    } else {
+      assert.equal(computed, 'rgb(239, 239, 239)');
+      const details = g.occurrences[0].data.details;
+      assert.equal(Math.round(details.metrics.ratio * 100) / 100, 3.95);
+      assert.deepEqual(details.selectField, { backgroundHex: '#efefef', fieldHex: '#ffffff' });
+    }
   }
 );
 

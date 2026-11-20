@@ -64,7 +64,8 @@ function engineOptionSpec() {
       test: (v) => typeof v === 'string' && ['A', 'AA', 'AAA'].includes(v.trim().toUpperCase()),
       expected: '"A", "AA" or "AAA", in any case'
     },
-    profile: T.string,
+    // One profile, or a list of them: a scan of several at once.
+    profile: T.list,
     mappings: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
@@ -72,6 +73,10 @@ function engineOptionSpec() {
     includeHiddenElements: T.boolean,
     includeShadowDom: T.boolean,
     fragment: T.boolean,
+    embeddedAriaHidden: T.boolean,
+    embeddedInert: T.boolean,
+    topLevelDocument: T.boolean,
+    assumeModal: T.boolean,
     excludeSelectors: T.list,
     // The text of style sheets the page can't read (preloadStyleSheets).
     styleSheetTexts: {

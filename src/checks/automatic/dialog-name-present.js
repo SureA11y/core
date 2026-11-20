@@ -23,11 +23,20 @@
  *   aria-labelledby that resolves to non-empty text, or from title. Both
  *   roles are name-from-author-only, so the heading or body text inside the
  *   dialog is not accepted as its name unless aria-labelledby points at it.
+ *   A missing name is reported at CANTTELL, not FAIL. WAI-ARIA requires it
+ *   ("Authors MUST provide an accessible name for a dialog"), but a dialog is
+ *   not itself a user interface component in WCAG's sense, "a single control
+ *   for a distinct function": its controls are, and each is named by its own
+ *   rule. So the missing name proves the WAI-ARIA violation, not a failure of
+ *   SC 4.1.2. It can still be a WCAG failure where the dialog shows a visible
+ *   title that is not tied to it (that relationship is then not
+ *   programmatically determinable, SC 1.3.1); a person settles that.
  * @reason-codes
- *   - `name_missing` (fail): the dialog or alertdialog has no accessible name
- *     from aria-label, aria-labelledby or title.
- *     Basis: WCAG 4.1.2; accname 1.2; WAI-ARIA 1.2 dialog role (MUST);
- *     WAI-ARIA 1.2 alertdialog role.
+ *   - `name_missing` (cantTell): the dialog or alertdialog has no accessible
+ *     name from aria-label, aria-labelledby or title. A WAI-ARIA violation;
+ *     whether it also fails a WCAG criterion depends on what the page shows.
+ *     Basis: WAI-ARIA 1.2 dialog role (MUST); WAI-ARIA 1.2 alertdialog role;
+ *     accname 1.2; WCAG 4.1.2 (not settled); WCAG 1.3.1 (not settled).
  *   - `name_internals` (cantTell): the element is a custom element that may
  *     give itself a name through ElementInternals, which no script can read, so
  *     whether it has one could not be told.
@@ -60,22 +69,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['dialog-name-present'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    name_internals: {
-      steps: [
-        'Inspect the dialog the report names, a custom element, and note its role.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the dialog, set through its internals or otherwise, and the screen reader announces it.',
-      failWhen:
-        'The dialog has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['dialog-name-present'] } }
 };
 
 function runInPage(ctx) {
@@ -180,6 +174,38 @@ function runInPage(ctx) {
     return { ok: false, method: 'none' };
   }
 
+  // The first heading in el with text, not inside a nested dialog:
+  // { tag, text, id }, tag as <h2> or <div role="heading">; null when none.
+  function headingIn(el) {
+    const BOXES = ['dialog', 'alertdialog'];
+    const roleOf = (n) => helpers.aria.getExplicitRole(n) || '';
+    for (const h of dom.querySelectorAll(el, 'h1, h2, h3, h4, h5, h6, [role~="heading" i]')) {
+      const tag = String(dom.tagName(h) || '').toLowerCase();
+      const role = roleOf(h);
+      if (role ? role !== 'heading' : !/^h[1-6]$/.test(tag)) continue;
+      // Leave out a heading of a nested dialog or landmark.
+      let nested = false;
+      for (let n = dom.parentElement(h); n && n !== el; n = dom.parentElement(n)) {
+        const r =
+          roleOf(n) || (String(dom.tagName(n) || '').toLowerCase() === 'dialog' ? 'dialog' : '');
+        if (BOXES.includes(r)) nested = true;
+      }
+      if (nested) continue;
+      const all = String(dom.textContent(h) || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!/[\p{L}\p{N}]/u.test(all)) continue;
+      const text = all.length > 40 ? `${all.slice(0, 39)}…` : all;
+      const headingId = (dom.getAttribute(h, 'id') || '').trim();
+      return {
+        tag: /^h[1-6]$/.test(tag) ? `<${tag}>` : `<${tag} role="heading">`,
+        text,
+        id: headingId
+      };
+    }
+    return null;
+  }
+
   // The role the browser uses: the first token of the role attribute that
   // names a concrete ARIA role (in any case), else the element's implicit
   // role (dialog for a native <dialog>; the others are not in scope here).
@@ -222,17 +248,58 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause
+      ? helpers.nameCause(el, { content: false, skip: ['labelledbyHiddenText'] })
+      : null;
+    // Without a cause, the hint does not ask for an aria-labelledby the dialog has.
+    const labelledby = !!(dom.getAttribute(el, 'aria-labelledby') || '').trim();
+    // A heading in the dialog that is not tied to it: the hint names it.
+    const heading = cause || labelledby ? null : headingIn(el);
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This dialog has no accessible name.',
-        hint: 'Name it with aria-labelledby pointing at its heading, or with aria-label, so screen readers announce what the dialog is about.',
+        hint: cause
+          ? cause.hint
+          : labelledby
+            ? "Its aria-labelledby gives no name. Check that it lists the id of the dialog's heading and that the heading has text screen readers read, or name the dialog with aria-label."
+            : heading && heading.id
+              ? `Its heading ${heading.tag} "${heading.text}" is not tied to it. Add aria-labelledby="${heading.id}" to the dialog, so screen readers announce that heading as its name.`
+              : heading
+                ? `Its heading ${heading.tag} "${heading.text}" is not tied to it. Give the heading an id and point the dialog's aria-labelledby at it, so screen readers announce that heading as its name.`
+                : 'Name it with aria-labelledby pointing at its heading, or with aria-label, so screen readers announce what the dialog is about.',
         i18n: {
           summaryKey: 'dialogNamePresent_summary_fail',
-          hintKey: 'dialogNamePresent_hint_fail',
-          params: { role }
+          hintKey: cause
+            ? cause.hintKey
+            : labelledby
+              ? 'dialogNamePresent_hint_fail_labelledby'
+              : heading && heading.id
+                ? 'dialogNamePresent_hint_heading'
+                : heading
+                  ? 'dialogNamePresent_hint_headingNoId'
+                  : 'dialogNamePresent_hint_fail',
+          params: {
+            role,
+            ...(cause ? cause.params : {}),
+            ...(heading ? { tag: heading.tag, text: heading.text, id: heading.id } : {})
+          }
+        },
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether the dialog shows a visible title or heading that is not tied to it with aria-labelledby.',
+          evidence: { role, source: 'WAI-ARIA 1.2, dialog role (MUST)' }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(cause ? { nameCause: cause.detail } : {}),
+            ...(heading ? { heading: { text: heading.text, id: heading.id || null } } : {}),
+            controlType: role,
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })
@@ -242,22 +309,16 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  // Tiered only when there is a question, so a plain failure reads as before.
-  if (questions.length) {
-    return {
-      ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
-    };
-  }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'minor',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // Every finding is a question: a missing name proves the WAI-ARIA
+  // violation, not a WCAG failure (see @expectation).
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(
+      [],
+      [...occurrences, ...questions],
+      rule.defaultSeverity || 'minor'
+    )
+  };
 }
 
 module.exports = { id, meta, runInPage };

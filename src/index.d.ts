@@ -11,6 +11,26 @@
 
 type Open<T extends string> = T | (string & {});
 
+/**
+ * The conformance profiles core has itself; a pack's standard brings others.
+ * `en301549-v4.1.1`, `en301549-v3.2.1` and `section508` are deprecated and go
+ * in 2.0.0: use `@surea11y/pack-en301549`, or `wcag22-aa`, `wcag21-aa` and
+ * `wcag20-aa` for the WCAG targets they come to.
+ */
+type CoreProfileName =
+  | 'wcag20-a'
+  | 'wcag20-aa'
+  | 'wcag20-aaa'
+  | 'wcag21-a'
+  | 'wcag21-aa'
+  | 'wcag21-aaa'
+  | 'wcag22-a'
+  | 'wcag22-aa'
+  | 'wcag22-aaa'
+  | 'en301549-v4.1.1'
+  | 'en301549-v3.2.1'
+  | 'section508';
+
 // ---- Inputs ----
 
 /** A list given as an array or as a comma-separated string. */
@@ -73,7 +93,8 @@ export type ContextSelector = string | string[];
 export interface EngineOptionFields {
   /**
    * true throws INVALID_ENGINE_OPTIONS on an option the engine doesn't read,
-   * or a value of the wrong type; without it, only a key that looks like a
+   * a value of the wrong type, or a profile it doesn't have (the error's
+   * `knownProfiles` lists those it has); without it, only a key that looks like a
    * typo of a known one is warned about. 'true', '1' and 1 count as true,
    * as a command line or an environment variable spells it.
    */
@@ -87,7 +108,11 @@ export interface EngineOptionFields {
    * as named.
    */
   wcagLevel?: WcagLevelInput;
-  profile?: Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>;
+  /**
+   * A conformance profile, or a list of them: a scan of several at once,
+   * which reads as one profile with the rules of all (ScanResult.profiles).
+   */
+  profile?: Open<CoreProfileName> | Open<CoreProfileName>[];
   mappings?: StringList;
   optInRules?: 'all' | StringList;
   /** Default true. false leaves out the console.info note for a WCAG version/level tag no rule carries. */
@@ -96,6 +121,34 @@ export interface EngineOptionFields {
   includeHiddenElements?: boolean;
   includeShadowDom?: boolean;
   fragment?: boolean;
+  /**
+   * The document is shown in a frame under aria-hidden="true": its content is
+   * read as under an aria-hidden ancestor, out of the accessibility tree, so
+   * rules about names and roles don't apply to it, and those about what is
+   * seen and operated (contrast, focus, keyboard) still do.
+   */
+  embeddedAriaHidden?: boolean;
+  /**
+   * The document is shown in a frame under [inert]: its content is read as
+   * inert content is, out of the accessibility tree and taking no focus, so
+   * only rules about how it looks judge it.
+   */
+  embeddedInert?: boolean;
+  /**
+   * Whether the document is a page of its own. Unset, a document shown in a
+   * frame is not, and rules about the page (its title, language, main
+   * landmark, …) don't apply to it. A test runner that shows the page under
+   * test in a frame of its own sets it to true.
+   */
+  topLevelDocument?: boolean;
+  /**
+   * Default false. Where the DOM cannot open a modal dialog (no showModal(),
+   * as in jsdom), take an open <dialog> with aria-modal="true" as modal, so
+   * the page behind it is inert and left out, for a test that stands in for
+   * showModal() with those attributes. A browser opens real modal dialogs and
+   * ignores it: there, only a dialog opened with showModal() is modal.
+   */
+  assumeModal?: boolean;
   excludeSelectors?: StringList;
   /**
    * The text of style sheets the page can't read (another origin's), by their
@@ -169,7 +222,8 @@ export interface PolicyContract {
 
 /**
  * The `code` on an error the engine throws: a contextSelector that is not a
- * selector, or one that can't be parsed, a runOnly that names nothing,
+ * selector, one that can't be parsed, or, under strictOptions, an empty one
+ * ('' or []), a runOnly that names nothing,
  * under strictOptions an option the engine doesn't read or a value of the
  * wrong type, or, in a page whose scripts broke a JavaScript built-in the
  * engine relies on, PAGE_BUILTINS_BROKEN (its `broken` lists them).
@@ -214,7 +268,34 @@ export interface CustomRuleMeta {
   deprecated?: boolean;
   /** Required with `deprecated: true`. */
   deprecation?: { reason: string; sinceVersion: string; [field: string]: unknown };
+  /** The reason codes the rule reports, which meta.review is checked against. */
+  reasonCodes?: string[];
+  /**
+   * The facets the rule tests (docs/PROCEDURES.md): a WCAG criterion's, and,
+   * for a pack's rule, a requirement of its pack's standard's.
+   */
+  coverage?: {
+    facetsBySc?: Record<string, string[]>;
+    facetsByRequirement?: Record<string, string[]>;
+    [field: string]: unknown;
+  };
+  /** A pack rule's steps for each undecided finding, by reason code (docs/PACKS.md). */
+  review?: Record<string, RuleReviewEntry>;
   [field: string]: unknown;
+}
+
+/**
+ * How a person answers a rule's undecided finding of one reason code, in
+ * English, and the facet it is filed under in the procedures: needed where
+ * the rule claims several facets, with the criterion or requirement where it
+ * claims that facet under several.
+ */
+export interface RuleReviewEntry {
+  steps: string[];
+  passWhen: string;
+  failWhen: string;
+  facet?: string;
+  criterion?: string;
 }
 
 /**
@@ -286,6 +367,7 @@ export interface RuleHelpers {
   flatParentElement: RuleHelper;
   buildSimpleSelector: RuleHelper;
   buildSelector: RuleHelper;
+  cssEscape: RuleHelper;
   getOuterHtmlSnippet: RuleHelper;
   isExcluded: RuleHelper;
   buildStructuralPath: RuleHelper;
@@ -296,13 +378,17 @@ export interface RuleHelpers {
   getEligibilityInfo: RuleHelper;
   getVisibilityHintsInfo: RuleHelper;
   isClipHidden: RuleHelper;
+  isElementClipHidden: RuleHelper;
   containingBlockOf: RuleHelper;
+  runMemo: RuleHelper;
   isVisuallyHidden: RuleHelper;
   readViewportContent: RuleHelper;
   getTextBoundaryKind: RuleHelper;
   isWholeDocumentScope: RuleHelper;
+  isTopLevelDocument: RuleHelper;
   isModalDialogOpen: RuleHelper;
   getOpenModalDialogs: RuleHelper;
+  isModalInert: RuleHelper;
   getDocumentRoots: RuleHelper;
   getAriaLabelInfo: RuleHelper;
   getAriaLabelledByInfo: RuleHelper;
@@ -331,7 +417,10 @@ export interface RuleHelpers {
   getReflectedRefs: RuleHelper;
   getRefElements: RuleHelper;
   animationsAtScanStart: RuleHelper;
+  paintContainedByContentVisibility: RuleHelper;
   cssRulesOf: RuleHelper;
+  cssConditionApplies: RuleHelper;
+  selectorIndex: RuleHelper;
   getStyleSheets: RuleHelper;
   getCustomElementInternals: RuleHelper;
   getInternalsNameInfo: RuleHelper;
@@ -352,6 +441,7 @@ export interface RuleHelpers {
   getImagesUsingMap: RuleHelper;
   parseHtmlInteger: RuleHelper;
   hasSkipLinkWording: RuleHelper;
+  getLinkKind: RuleHelper;
   reportOccurrence: RuleHelper;
   resolveTieredOutcome: RuleHelper;
   getPerfStats: RuleHelper;
@@ -412,6 +502,12 @@ export interface RenderingEnvironment {
    */
   animationsSettled?: number;
   /**
+   * How many elements with content-visibility: auto had their content
+   * skipped, which the scan laid out as it is near the viewport and let the
+   * browser skip again afterwards. Absent when there were none.
+   */
+  contentVisibilitySkipped?: number;
+  /**
    * Whether the page runs the internals hook (internalsHookScript) in this
    * document's realm: 'early' when it was installed before the page's
    * scripts and is still the realm's attachInternals, 'late' otherwise.
@@ -448,8 +544,29 @@ export interface EngineInfo {
    */
   wcagLevel?: 'A' | 'AA' | 'AAA';
   environment: RenderingEnvironment;
+  /** The profile applied; in a scan of several, the first that ran. */
   profile?: string;
-  profileExcludes?: { rules: string[]; criteria: string[] };
+  /** A scan of several profiles only: those that ran, in the order asked. */
+  profiles?: string[];
+  /** A scan of several profiles only: those asked for that didn't run, and why. */
+  profilesNotRun?: {
+    profile: string;
+    reason: 'unknown-profile' | 'pack-skipped' | 'overridden-by-selection' | string;
+  }[];
+  profileExcludes?: {
+    rules: string[];
+    criteria: string[];
+    /**
+     * The requirements of the profile's standard its law doesn't ask for,
+     * whose rollups were left out. @experimental Until 1.20.0.
+     */
+    requirements?: string[];
+  };
+  /**
+   * The law the applied profile serves, when it names one. In a scan of
+   * several profiles, only when every one serves the same law.
+   */
+  law?: EngineLaw;
   optInRules?: string[];
   mappings?: string[];
   /** 'findings' when output.detail made pass and notApplicable results compact. */
@@ -471,6 +588,15 @@ export interface NormativeMapping {
   url?: string;
   /** A WCAG 2.1 or 2.2 criterion's Understanding document. */
   understandingUrl?: string;
+  /**
+   * In a standard with tests under its requirements, on an entry that names
+   * a test (its id in `requirement`): the requirement it is counted under.
+   * A requirement's rollup names its own; a rule's own entry names the
+   * test's first, where the test belongs to several.
+   */
+  criterion?: string;
+  /** What the requirement or test is based on, in a derived standard. */
+  basedOn?: Array<{ standard: string; version?: string; id?: string }>;
   [field: string]: unknown;
 }
 
@@ -562,6 +688,8 @@ export interface Occurrence {
   i18n: { summaryKey: string; hintKey: string; params: Record<string, unknown> } | null;
   /** Present when the rule graded its findings into tiers. */
   occurrenceOutcome?: 'fail' | 'cantTell';
+  /** A scan of several profiles only: what each profile that ran the rule makes of the finding. */
+  verdicts?: Record<string, Outcome>;
   /** Present only on a cantTell-tier occurrence. */
   uncertainty?: Uncertainty;
   /** On a cantTell occurrence only: the answer the evidence makes likely. */
@@ -644,6 +772,16 @@ export interface CheckResult {
   ruleSeverity?: Severity;
   /** The outcome the rule found, when the policy's allowedOutcomes made it cantTell. */
   policyOutcome?: 'fail' | 'pass' | 'cantTell' | 'notApplicable';
+  /**
+   * A scan of several profiles only: each profile's outcome for the rule;
+   * `outcome` is the worst of them.
+   */
+  verdicts?: Record<string, Outcome>;
+  /**
+   * A scan of several profiles only: the rule's own outcome, before any
+   * standard judged its findings by reason code. Its WCAG criteria read it.
+   */
+  checkOutcome?: Outcome;
   confidence: Confidence;
   type: RuleType;
   occurrences: Occurrence[];
@@ -672,6 +810,33 @@ export interface CheckResult {
     by?: 'errata';
   };
   /**
+   * Present only when an element the rule failed is nested deeper than the
+   * engine walks up from it: its occurrences became cantTell-tier, with steps.
+   */
+  ancestorWalkLimit?: {
+    /** How many ancestors, the element included, the walk reads: 10000. */
+    limit: number;
+    /** How many fail-tier occurrences it made cantTell-tier. */
+    occurrences: number;
+    /** Present when no fail-tier occurrence was left, so the outcome went from fail to cantTell. */
+    coercedFrom?: 'fail';
+  };
+  /**
+   * Present only when the rule reported on elements left out with
+   * `excludeSelectors`: the engine dropped those occurrences (and says so in
+   * `error`).
+   */
+  excludedOccurrences?: {
+    /** How many occurrences were dropped. */
+    dropped: number;
+    /**
+     * Present when dropping them changed the outcome: what the rule said. A
+     * result left with no occurrence is notApplicable; one left with
+     * occurrences takes the outcome they say.
+     */
+    coercedFrom?: 'fail' | 'cantTell' | 'pass';
+  };
+  /**
    * Present when the rule did not complete (cantTell with no occurrences),
    * or with the engine's notes on what it changed in what the rule returned
    * (docs/OUTPUT_SCHEMA.md, `error`).
@@ -698,6 +863,8 @@ export interface CompositeResult {
   type: RuleType;
   /** Always empty: a composite rolls rules up, it does not flag elements. */
   occurrences: [];
+  /** A scan of several profiles only: the profiles that give this rollup. */
+  profiles?: string[];
   title: string;
   description: string;
   i18n: { titleKey: string; descriptionKey: string } | null;
@@ -742,6 +909,12 @@ export interface CompositeResult {
          */
         byReasonCode?: true;
         checkOutcome?: string;
+        /**
+         * Of such a rule, what the rollup made of each of its findings, in
+         * the order of the check's occurrences: 'fail', 'cantTell', or null
+         * for one it doesn't count.
+         */
+        findingOutcomes?: Array<'fail' | 'cantTell' | null>;
         /**
          * Of such a rule, the rollup's requirements its counted findings
          * name, when every one of them names some: those the rollup names
@@ -808,6 +981,25 @@ export interface ScanResult {
   skippedCustomRules: { id: string | null; reason: string; excluded?: true }[];
   /** engineOptions.packs that were not run, and why; absent when all ran. */
   skippedPacks?: { name: string | null; reason: string }[];
+  /**
+   * A scan of several profiles only: per profile that ran, the WCAG version
+   * it was judged by, the WCAG level it targets (absent for a profile that
+   * targets none, such as WAI-ARIA's), the standards it names, and the
+   * outcome of each of its rollups (rulesResults lists each rollup once).
+   */
+  profiles?: Record<
+    string,
+    {
+      wcagVersion?: string;
+      wcagLevel?: string;
+      standards?: string[];
+      rulesResults: Record<string, Outcome>;
+      /** The law the profile serves, when it names one. */
+      law?: EngineLaw;
+      /** This profile's scan timings, with engineOptions.perfStats. */
+      perfStats?: Record<string, unknown>;
+    }
+  >;
 }
 
 /**
@@ -839,6 +1031,12 @@ export interface ScannedFrame {
    * result carries it; optional so objects built for earlier versions still fit.
    */
   selector?: string | null;
+  /**
+   * For a frame element in a shadow root: `selector` holds in that root, and
+   * these are the selectors of the shadow hosts leading to it from the
+   * document, outermost first. Absent otherwise.
+   */
+  shadowHostSelectors?: string[];
   /** The frame element's title attribute, or null. Every result carries it; optional as selector. */
   title?: string | null;
   topFrame: ScanResult;
@@ -853,6 +1051,12 @@ export interface UnreachableFrame {
    * result carries it; optional so objects built for earlier versions still fit.
    */
   selector?: string | null;
+  /**
+   * For a frame element in a shadow root: `selector` holds in that root, and
+   * these are the selectors of the shadow hosts leading to it from the
+   * document, outermost first. Absent otherwise.
+   */
+  shadowHostSelectors?: string[];
   /** The frame element's title attribute, or null. Every result carries it; optional as selector. */
   title?: string | null;
   error: string;
@@ -901,12 +1105,13 @@ export function flattenCrossFrameResult(
 /**
  * An occurrence's outcome, as the reporters read it: its own tier
  * (`occurrenceOutcome`) when it is 'fail' or 'cantTell', or else its check's
- * outcome when that is; null otherwise.
+ * outcome when that is 'fail', 'cantTell' or 'pass' (the summary occurrence of
+ * a passing check, as a scan of several profiles gives it); null otherwise.
  */
 export function occurrenceOutcome(
   check: Pick<CheckResult, 'outcome'> | null | undefined,
   occurrence: Occurrence | null | undefined
-): 'fail' | 'cantTell' | null;
+): 'fail' | 'cantTell' | 'pass' | null;
 
 /**
  * Where an occurrence goes in a review: 'leanFail' or 'leanPass' for an
@@ -980,8 +1185,9 @@ export function addHowToCheck<T extends ScanResult | CrossFrameResult | BindingF
 ): T;
 
 /**
- * The packs a result was scanned with: their rules' meta.review give steps,
- * in English, and their variants are known for howToCheckFor.
+ * The packs a result was scanned with: their rules' meta.review, and their
+ * standards' standard.review, give steps, in English or as their
+ * dictionaries translate them, and their variants are known for howToCheckFor.
  */
 export interface HowToCheckOptions {
   packs?: readonly unknown[] | null;
@@ -992,12 +1198,30 @@ export interface HowToCheckOptions {
    * the fallback for every step a locale lacks.
    */
   locale?: string | readonly string[] | null;
+  /**
+   * howToCheckFor and howToCheckFrom only: the values to fill the steps'
+   * placeholders ({{name|text}}) with, as a finding's i18n.params and
+   * data.details give them; without them, each placeholder reads as its text.
+   */
+  values?: Readonly<Record<string, string>> | null;
+  /**
+   * howToCheckFor only, with packs: the profile that asks about the code
+   * ('acme-1.0'), or a list of the profiles that do. Where the standard of
+   * each of them gives its own steps for the rule's code (standard.review),
+   * those are read, as addHowToCheck reads them for a finding only those
+   * profiles ask about, translated where the pack's dictionary for the
+   * locale has the whole entry; core's steps otherwise, as for a WCAG
+   * profile.
+   */
+  profile?: string | readonly string[] | null;
 }
 
 /**
  * A rule's steps for one reason code, in a locale (English when
  * untranslated), or null: core's, a variant's base rule's where it has none
- * of its own, and, with options.packs, a pack rule's own.
+ * of its own, and, with options.packs, a pack rule's own, or, with
+ * options.profile too, the steps a pack's standard gives for a core rule's
+ * code (standard.review).
  */
 export function howToCheckFor(
   ruleId: string,
@@ -1005,6 +1229,409 @@ export function howToCheckFor(
   locale?: string,
   options?: HowToCheckOptions
 ): HowToCheck | null;
+
+/** Something a procedure needs besides a browser, with its name in the locale. */
+export interface ProcedureTool {
+  id:
+    | 'keyboard'
+    | 'pointer'
+    | 'screen-reader'
+    | 'zoom'
+    | 'contrast-theme'
+    | 'devtools'
+    | (string & {});
+  label: string;
+  /** Its label's language, where it isn't the locale the procedure was read in. */
+  lang?: string;
+}
+
+/**
+ * A variant: the steps one rule's finding shows for a reason code
+ * (howToCheck), under the facet the code tests.
+ */
+export interface ProcedureVariant extends HowToCheck {
+  ruleId: string;
+  reasonCode: string;
+  /** Its steps' language, where it isn't the locale the procedure was read in. */
+  lang?: string;
+}
+
+/** One facet of a requirement: a test objective, and how a person assesses it. */
+export interface ProcedureFacet {
+  id: string;
+  label: string;
+  /** full: rules decide it; partial: rules decide part of it; manual: only a person can. */
+  automation: 'full' | 'partial' | 'manual';
+  /** A facet broader than any one rule, kept for coverage reporting. */
+  macro?: true;
+  /**
+   * The rules that claim the facet (meta.coverage): core's, then, with
+   * options.packs, the packs' own rules and variants; on a pack's own facet,
+   * then the core rules its standard's mapping sends to what it assesses
+   * (mappedRules).
+   */
+  rules: string[];
+  /**
+   * A pack's own facet only, where there are any: the core rules its
+   * standard's mapping (mappingsFor) sends to the requirement ids the facet
+   * assesses (its mappedRequirements, or its requirement where it is the
+   * only facet), also in rules.
+   */
+  mappedRules?: string[];
+  /** What its procedure needs besides a browser; empty without a procedure. */
+  tools: ProcedureTool[];
+  /**
+   * How a person assesses the facet on a whole page; null where its
+   * coveredBy facet's procedure does, or where core has none yet.
+   */
+  procedure: HowToCheck | null;
+  /**
+   * A pack's requirement that replaces this WCAG facet's general procedure
+   * (standard.procedures, replace): the pack's name. The procedure and tools
+   * are then the pack's, in English; rules and variants stay core's.
+   */
+  procedureFrom?: string;
+  /**
+   * Its procedure's language, where it isn't lang's (or, without lang, the
+   * locale read): a replaced procedure's, or core's where a locale lacks it.
+   * procedureLang, else lang, else the requirement's locale, is always the
+   * procedure's.
+   */
+  procedureLang?: string;
+  /**
+   * The language its label is in, and its procedure's where procedureLang
+   * doesn't say: always on a pack's own facet where its standard declares
+   * its languages (docs/PACKS.md); otherwise only where it isn't the locale
+   * read ('en' for a pack's own facet in a standard that declares none, or a
+   * label a locale lacks).
+   */
+  lang?: string;
+  /** The broader facet of the same criterion whose procedure assesses this one. */
+  coveredBy?: string;
+  variants: ProcedureVariant[];
+}
+
+/** How a person assesses a requirement by hand (docs/PROCEDURES.md). */
+export interface Procedures {
+  /** 'wcag', 'best-practice', or the name of a pack's standard ('EN 301 549'). */
+  standard: 'wcag' | 'best-practice' | (string & {});
+  /** The criterion ('1.4.13'), 'best-practice', or a pack's requirement ('9.1.4.3'). */
+  id: string;
+  /** A pack's requirement: the version of its standard it is read from. */
+  version?: string;
+  /**
+   * A pack's requirement: its title in standard.procedures, else the one the
+   * standard's rollups name it by; null where neither gives one.
+   */
+  title: string | null;
+  /**
+   * Its title's language: a pack's requirement's always where its standard
+   * declares its languages; otherwise only where it isn't the locale read
+   * (an earlier WCAG's own title, such as 2.1's "Parsing" for 4.1.1, or a
+   * pack's title in a standard that declares none: its report.titleLang, or
+   * 'en').
+   */
+  titleLang?: string;
+  /**
+   * The locale its text was read in: the first of options.locale a
+   * dictionary was given for, or 'en'; for a pack's standard that declares
+   * its languages, the one of them it is read in. Each text in another says
+   * so (titleLang, lang, procedureLang, a tool's or variant's lang).
+   */
+  locale: string;
+  /** A pack's requirement: what its standard's procedures say of it. */
+  note?: string;
+  /** The note's language, where the standard declares its languages. */
+  noteLang?: string;
+  level: 'A' | 'AA' | 'AAA' | null;
+  /** A pack's requirement that restates a WCAG criterion: that criterion, whose facets it has. */
+  wcag?: string;
+  /** A pack's requirement of its own: the WCAG criteria it relates to, without restating any. */
+  relatesTo?: string[];
+  /** Whether every facet has a procedure, its own or its coveredBy facet's. */
+  complete: boolean;
+  /**
+   * The rules that test the criterion (wcagSc), core's then the packs'; the
+   * best practices'; or the pack rules that claim a pack requirement's facets.
+   */
+  rules: string[];
+  facets: ProcedureFacet[];
+}
+
+export interface ProceduresOptions {
+  /** A locale ('fr-CA') or a list of them, most wanted first; English is the fallback. */
+  locale?: string | readonly string[] | null;
+  /**
+   * Packs whose standards' requirements can be read (their standard.procedures),
+   * and whose rules are listed under the facets they claim.
+   */
+  packs?: readonly object[];
+  /** 'wcag' (the default), 'best-practice', or a pack's standard by key or name. */
+  standard?: string;
+  /** A version of the pack's standard; the latest that has the requirement by default. */
+  version?: string;
+}
+
+/**
+ * How a person assesses a WCAG 2.2 criterion ('1.4.13'), the best practices
+ * ('best-practice'), or, with options.packs, a requirement of a pack's
+ * standard, by hand, read from disk in Node; null for a requirement none of
+ * them knows. In a browser bundle it warns once and returns null: use
+ * proceduresFrom from @surea11y/core/procedures.
+ */
+export function proceduresFor(requirement: string, options?: ProceduresOptions): Procedures | null;
+
+/** A group of a standard's requirements: a WCAG principle or guideline, or a pack's own group. */
+export interface ProcedureGroup {
+  id: string;
+  title: string;
+  /**
+   * Its title's language: a pack's group's always where its standard
+   * declares its languages; otherwise only where it isn't the locale read.
+   */
+  titleLang?: string;
+  /** The requirements in this group itself, in the standard's order. */
+  requirements: string[];
+  /** The groups under it: a principle's guidelines. */
+  groups: ProcedureGroup[];
+}
+
+export interface ProcedureListOptions {
+  /** 'wcag' (the default), 'best-practice', or a pack's standard by key or name. */
+  standard?: string;
+  /** WCAG's version ('2.2', the default), or the pack's standard's (the latest that gives procedures). */
+  version?: string;
+  /** WCAG only: the levels to list; all by default. */
+  levels?: 'A' | 'AA' | 'AAA' | readonly ('A' | 'AA' | 'AAA')[];
+  locale?: string | readonly string[] | null;
+  packs?: readonly object[];
+  /** Keep only the facets whose procedure needs one of these tools. */
+  tools?: ProcedureTool['id'] | readonly ProcedureTool['id'][];
+  /** Keep only the facets with one of these automation levels. */
+  automation?: ProcedureFacet['automation'] | readonly ProcedureFacet['automation'][];
+  /** Keep only the facets one of these rules claims. */
+  rules?: string | readonly string[];
+  /**
+   * A pack's profile: lists its standard at its version, only the
+   * requirements its law asks for.
+   */
+  profile?: string;
+}
+
+/**
+ * The law a profile serves, as results name it.
+ */
+export interface EngineLaw {
+  id: string;
+  name: string;
+  jurisdiction: string;
+  /** The language name is in. */
+  lang: string;
+}
+
+/** Every requirement of a standard, in its order, and the groups it puts them in. */
+export interface ProcedureList {
+  /** 'wcag', 'best-practice', or the name of a pack's standard. */
+  standard: string;
+  /** A pack's standard: its key. */
+  key?: string;
+  /** The version listed; null for the best practices. */
+  version: string | null;
+  /** Listed for a pack's profile: its name. */
+  profile?: string;
+  /**
+   * Listed for a pack's profile that serves a law: the law, in the locale
+   * read where its texts are translated (lawOf).
+   */
+  law?: import('./pack').LawText;
+  /**
+   * The locale the text was read in: the first of options.locale a
+   * dictionary was given for, or 'en'; for a pack's standard that declares
+   * its languages, the one of them it is read in (docs/PACKS.md).
+   */
+  locale: string;
+  /** A pack's standard: what it says of itself for the version (standard.notes). */
+  notes?: string[];
+  /** The notes' language: always where the standard declares its languages, else where it isn't the locale read. */
+  notesLang?: string;
+  /** What shaped it: the WCAG levels asked for and the filters, each null where not given. */
+  scope: {
+    levels: string[] | null;
+    tools: string[] | null;
+    automation: string[] | null;
+    rules: string[] | null;
+  };
+  /**
+   * Each requirement as proceduresFor gives it; with filters, only the
+   * matching facets (a technology facet keeps the one it is covered by), and
+   * only the requirements left with any. complete is the requirement's own.
+   */
+  requirements: Procedures[];
+  groups: ProcedureGroup[];
+}
+
+/** One thing a person does to assess a standard: a general procedure, once. */
+export interface ProcedureChecklistItem {
+  /** '<criterion>/<facet>' for core's procedure; '<requirement>/<facet>' for a pack's own or replaced one. */
+  key: string;
+  facet: string;
+  label: string;
+  automation: ProcedureFacet['automation'];
+  /** The WCAG criterion the facet is of, or null for a pack's own requirement. */
+  wcag: string | null;
+  /** The requirements it serves, in the standard's order. */
+  requirements: string[];
+  /** The technology facets it assesses (their coveredBy). */
+  covers: string[];
+  /** The rules that claim it or a facet it covers. */
+  rules: string[];
+  /** Those of rules its facets list as mappedRules, where there are any. */
+  mappedRules?: string[];
+  tools: ProcedureTool[];
+  /** Naming every requirement it serves where it says what fails. */
+  procedure: HowToCheck;
+  /** A pack's procedure in place of core's: the pack's name. */
+  procedureFrom?: string;
+  /** Its label's language, and its procedure's where procedureLang doesn't say (ProcedureFacet.lang). */
+  lang?: string;
+  /** Its procedure's language, where it isn't lang's (ProcedureFacet.procedureLang). */
+  procedureLang?: string;
+}
+
+export interface ProcedureChecklist {
+  standard: string;
+  key?: string;
+  version: string | null;
+  /**
+   * The locale the text was read in: the first of options.locale a
+   * dictionary was given for, or 'en'; for a pack's standard that declares
+   * its languages, the one of them it is read in (docs/PACKS.md).
+   */
+  locale: string;
+  /** A pack's standard: what it says of itself for the version (standard.notes). */
+  notes?: string[];
+  /** The notes' language: always where the standard declares its languages, else where it isn't the locale read. */
+  notesLang?: string;
+  /** What shaped it: the WCAG levels asked for and the filters, each null where not given. */
+  scope: {
+    levels: string[] | null;
+    tools: string[] | null;
+    automation: string[] | null;
+    rules: string[] | null;
+  };
+  items: ProcedureChecklistItem[];
+  groups: ProcedureGroup[];
+}
+
+/** A requirement related to another: a pack's to a WCAG criterion, or a WCAG criterion to a pack's. */
+export interface RelatedRequirement {
+  /** 'wcag', or the name of a pack's standard. */
+  standard: string;
+  /** A pack's standard: its key. */
+  key?: string;
+  id: string;
+  /** A pack's standard: the version read. */
+  version?: string;
+  title: string | null;
+  /** A WCAG criterion: its level. */
+  level?: 'A' | 'AA' | 'AAA' | null;
+  /** The pack's requirement restates the criterion, or relates to it without restating it. */
+  relation: 'restates' | 'relatesTo';
+}
+
+export interface RelatedRequirementsOptions {
+  packs?: readonly object[];
+  /** For a pack's requirement: its standard, by key or name. */
+  standard?: string;
+  /** For a pack's requirement: a version of its standard; the latest that has it by default. */
+  version?: string;
+}
+
+export interface RenderProceduresOptions {
+  /** 'html' (the default): one self-contained page; or 'markdown'. */
+  format?: 'html' | 'markdown';
+  /** The page's words in this locale; by default the one the procedures were read in. */
+  locale?: string | readonly string[] | null;
+  /** The page's title; by default one naming the standard. */
+  title?: string;
+  /** A list: under each facet, the steps a scan's undecided finding gives (its variants). */
+  variants?: boolean;
+  /** A checklist in HTML: false for a page without results to record. */
+  record?: boolean;
+  /** HTML: the page's content alone, with no document, style or script, to put in a page of one's own. */
+  fragment?: boolean;
+  /** The packs the procedures were read with: their rules' steps and their titles' language. */
+  packs?: readonly object[];
+}
+
+/**
+ * Procedures as a document (docs/PROCEDURES.md#rendering-them): what
+ * listProcedures, procedureChecklist or proceduresFor gives, as one
+ * self-contained HTML page or as Markdown. A checklist page records a result
+ * and notes per item, kept in the browser and downloaded as JSON or CSV.
+ * Throws a TypeError for anything else. In a browser bundle it warns once
+ * and returns null: use renderProceduresFrom from @surea11y/core/procedures.
+ */
+export function renderProcedures(
+  input: ProcedureList | ProcedureChecklist | Procedures,
+  options?: RenderProceduresOptions
+): string;
+
+/**
+ * Every requirement of a standard, in its order and groups (docs/PROCEDURES.md),
+ * read from disk, in Node; null for a standard or version it doesn't know. In a
+ * browser bundle it warns once and returns null: use listProceduresFrom from
+ * @surea11y/core/procedures.
+ */
+export function listProcedures(options?: ProcedureListOptions): ProcedureList | null;
+
+/**
+ * What a person does to assess a standard by hand, once each: one item per
+ * general procedure. Takes listProcedures' options. In a browser bundle it
+ * warns once and returns null: use procedureChecklistFrom.
+ */
+export function procedureChecklist(options?: ProcedureListOptions): ProcedureChecklist | null;
+
+export interface ProcedureLanguagesOptions {
+  /** 'wcag' (the default), 'best-practice', or a pack's standard by key or name. */
+  standard?: string;
+  /** WCAG's version ('2.2', the default), or the pack's standard's (the latest that gives procedures). */
+  version?: string;
+  packs?: readonly object[];
+}
+
+/** A language a standard's procedures can be read in (docs/PROCEDURES.md#their-languages). */
+export interface ProcedureLanguage {
+  /** Lower case: listProcedures with this locale reads the standard in it. */
+  locale: string;
+  /**
+   * Everything of the standard and version is in this locale: core's
+   * procedures, the tools' names, a page's words and a pack's standard's
+   * own text.
+   */
+  complete: boolean;
+  /** The texts that would be shown in another language; 0 where complete. */
+  missing: number;
+}
+
+/**
+ * The languages a standard's procedures can be read in, its own first, so a
+ * language picker offers only those (docs/PROCEDURES.md#their-languages):
+ * WCAG's and the best practices' in each locale core ships, a pack's
+ * standard's in those it declares (docs/PACKS.md, "Languages"); null for a
+ * standard or version it doesn't know. In a browser bundle it warns once
+ * and returns null: use procedureLanguagesFrom from @surea11y/core/procedures.
+ */
+export function procedureLanguages(options?: ProcedureLanguagesOptions): ProcedureLanguage[] | null;
+
+/**
+ * For a WCAG criterion, the packs' requirements that restate or relate to it;
+ * for a pack's requirement, the WCAG criteria it restates or relates to.
+ */
+export function relatedRequirements(
+  requirement: string,
+  options?: RelatedRequirementsOptions
+): RelatedRequirement[];
 
 /**
  * The same scan from a single self-contained function, which can be
@@ -1179,6 +1806,12 @@ export interface LiveRegionHookOptions {
    * loading.
    */
   early?: boolean;
+  /**
+   * Where the DOM cannot open a modal dialog (jsdom), take an open <dialog>
+   * with aria-modal="true" as modal, as engineOptions.assumeModal does for
+   * the scan. Default false: only a dialog opened with showModal() is.
+   */
+  assumeModal?: boolean;
 }
 
 /** A text a live region was given while shown and reachable. */
@@ -1227,6 +1860,39 @@ export function getAnnouncements(
   options?: GetAnnouncementsOptions
 ): Announcement[] | null;
 export function getAnnouncements(options: GetAnnouncementsOptions): Announcement[] | null;
+
+/** A state a rule puts the page in to find what it reports. */
+export type EvidenceStateName = 'text-spacing';
+
+/** The states evidenceState() knows. */
+export const EVIDENCE_STATES: readonly EvidenceStateName[];
+
+export type EvidenceStateRequest =
+  | { op: 'apply'; state: EvidenceStateName | string; token: string }
+  | { op: 'release'; token: string };
+
+export type EvidenceStateApplied =
+  | { applied: true; via: 'style' | 'adopted' }
+  | { applied: false; reason: 'unknown-state' | 'blocked' | 'no-document' };
+
+/**
+ * Puts the page in the state a finding was made in, as its
+ * `data.details.evidenceState` names it, and takes it out again: a rule
+ * measures in one task, so the browser never paints the state, and a
+ * screenshot taken after the scan doesn't show the finding. For a binding's
+ * screenshots. `apply` returns whether the state applied (`blocked` where
+ * the page's Content Security Policy kept it out); `release` with the same
+ * token takes it off the page and puts the scroll position back, and never
+ * throws. Self-contained, like runa11yCoreInPage: `evidenceState.toString()`
+ * evaluated in a page works there. Throws a TypeError for a request it
+ * can't read.
+ */
+export function evidenceState(
+  request: Extract<EvidenceStateRequest, { op: 'apply' }>
+): EvidenceStateApplied;
+export function evidenceState(request: Extract<EvidenceStateRequest, { op: 'release' }>): {
+  released: boolean;
+};
 
 /**
  * An announcement as getAnnouncements({ selectors: true }) gives it: the

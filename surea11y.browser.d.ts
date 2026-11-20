@@ -7,7 +7,8 @@ import type {
   waitForPageReady as WaitForPageReady,
   preloadStyleSheets as PreloadStyleSheets,
   getMargins as GetMargins,
-  getAnnouncements as GetAnnouncements
+  getAnnouncements as GetAnnouncements,
+  evidenceState as EvidenceState
 } from './src/index';
 
 declare namespace a11ycore {
@@ -23,6 +24,11 @@ declare namespace a11ycore {
    * defaults to this window.
    */
   const getAnnouncements: typeof GetAnnouncements;
+  /**
+   * Puts the page in the state a finding was made in
+   * (`data.details.evidenceState`), and out again, to picture the finding.
+   */
+  const evidenceState: typeof EvidenceState;
   const runa11yCoreInPage: typeof RunInPage;
   const preloadStyleSheets: typeof PreloadStyleSheets;
   /**

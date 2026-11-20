@@ -55,7 +55,7 @@ test(`${RULE_ID}: fail when aria-hidden element itself is focusable (tabindex=0)
   assert.ok(hasOccurrenceForId(rule, 'ah_focus'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    "This aria-hidden <div> can take keyboard focus, but screen readers don't announce it."
+    `This aria-hidden <div tabindex="0"> "Focusable hidden" can take keyboard focus, but screen readers don't announce it.`
   );
 });
 
@@ -280,7 +280,7 @@ test(`${RULE_ID}: cantTell when a custom aria-modal="true" dialog is open behind
   assert.strictEqual(occ.data.details.metrics.modalOpen, true);
   assert.strictEqual(
     occ.summary,
-    "This aria-hidden <div> contains 2 focusable element(s) while a modal dialog is open. They are fine if the dialog keeps focus inside it; check that focus can't reach them."
+    `This aria-hidden <div> contains <a href="#x"> "Background link" and 1 more focusable element(s) while a modal dialog is open. They are fine if the dialog keeps focus inside it; check that focus can't reach them.`
   );
 });
 
@@ -385,7 +385,7 @@ test(`${RULE_ID}: fail when aria-hidden native control itself is focusable (butt
   assert.ok(hasOccurrenceForId(rule, 'ah_btn'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    "This aria-hidden <button> can take keyboard focus, but screen readers don't announce it."
+    `This aria-hidden <button> "Hidden button" can take keyboard focus, but screen readers don't announce it.`
   );
 });
 
@@ -400,7 +400,7 @@ test(`${RULE_ID}: fail when aria-hidden subtree contains focusable descendant (l
   assert.ok(hasOccurrenceForId(rule, 'ah_root2'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    "This aria-hidden <div> contains 1 focusable element(s): keyboard users can reach them, but screen readers don't announce them."
+    `This aria-hidden <div> contains a focusable element, <a href="#x"> "Focusable link": keyboard users can reach it, but screen readers don't announce it.`
   );
 });
 
@@ -461,7 +461,7 @@ test(`${RULE_ID}: fail when aria-hidden element is focusable AND contains focusa
   assert.ok(hasOccurrenceForId(rule, 'ah_root_mix'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    'This aria-hidden <div> can take keyboard focus and contains 1 more focusable element(s), none of which screen readers announce.'
+    'This aria-hidden <div tabindex="0"> "Focusable link" can take keyboard focus and contains 1 more focusable element(s), none of which screen readers announce.'
   );
 });
 
@@ -483,6 +483,61 @@ test(`${RULE_ID}: excludes visibility:hidden focusable candidates (pass when onl
     </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// visibility is inherited, so a descendant set back to visibility:visible is
+// drawn and takes focus inside a visibility:hidden aria-hidden root.
+test(`${RULE_ID}: fail when a visibility:hidden aria-hidden root holds a focusable element set back to visibility:visible`, () => {
+  const html = `<!doctype html><html><body>
+      <div id="ah_vh_root" aria-hidden="true" style="visibility:hidden">
+        <button id="vh_still_hidden">One</button>
+        <span style="visibility:visible"><button id="vh_shown">Two</button></span>
+      </div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'ah_vh_root'));
+  const offenders = rule.occurrences[0].data.details.offenders;
+  assert.strictEqual(offenders.length, 1, 'only the button set back to visible is focusable');
+  assert.strictEqual(rule.occurrences[0].data.details.metrics.focusableTotal, 1);
+});
+
+test(`${RULE_ID}: fail for the off-screen pattern, a fixed 1px visibility:hidden root with a visible container of buttons`, () => {
+  const html = `<!doctype html><html><body>
+      <div id="ah_vh_fixed" aria-hidden="true" style="overflow-y:hidden;position:fixed;height:1px;top:-1px;left:0;visibility:hidden">
+        <div style="visibility:visible"><button>One</button><button>Two</button></div>
+      </div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'ah_vh_fixed'));
+  assert.strictEqual(rule.occurrences[0].data.details.metrics.focusableTotal, 2);
+});
+
+test(`${RULE_ID}: notApplicable when the only aria-hidden root is visibility:hidden and nothing under it is set back to visible`, () => {
+  const html = `<!doctype html><html><body>
+      <div aria-hidden="true" style="visibility:hidden"><button>One</button></div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// jsdom's CSS parser drops a space-separated rect(), so the clip is read as
+// declared: the offender is still described as clipped.
+test(`${RULE_ID}: a focusable element clipped with rect(0 0 0 0), spaces and all, is hinted clipped`, () => {
+  for (const [head, attr] of [
+    ['', 'style="position:absolute;clip:rect(0 0 0 0)"'],
+    ['<style>.h{position:absolute;clip:rect(0 0 0 0)}</style>', 'class="h"']
+  ]) {
+    const html = `<!doctype html><html><head>${head}</head><body>
+        <div id="ah_clip_spaces" aria-hidden="true"><button ${attr}>B</button></div>
+      </body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.deepStrictEqual(rule.occurrences[0].data.details.metrics.visibilityHints, ['clipped']);
+  }
 });
 
 test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden together (pass, visibility:hidden wins)`, () => {
@@ -537,7 +592,7 @@ test(`${RULE_ID}: does NOT exclude opacity:0 focusable candidates (fail when opa
   assert.ok(hasOccurrenceForId(rule, 'ah_root5'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    "This aria-hidden <div> contains 1 focusable element(s): keyboard users can reach them, but screen readers don't announce them."
+    `This aria-hidden <div> contains a focusable element, <a href="#x"> "Invisible but focusable link": keyboard users can reach it, but screen readers don't announce it.`
   );
 });
 
@@ -764,7 +819,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-focus-all-scenari
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 21, maxOccurrences: 21 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 22, maxOccurrences: 22 });
 
   const expectedFailIds = [
     'case_link_href',
@@ -787,7 +842,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-focus-all-scenari
     'case_clip_rect',
     'case_clip_path_inset',
     'case_zero_size_overflow_hidden',
-    'case_offscreen_text_indent'
+    'case_offscreen_text_indent',
+    'case_visibility_overridden'
   ];
 
   const expectedNoOccIds = [
@@ -805,7 +861,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-focus-all-scenari
     'case_opacity_and_visibility_hidden',
     'case_opacity_close_display_none_far',
     'case_tabindex_negative_descendant',
-    'case_tabindex_negative_self'
+    'case_tabindex_negative_self',
+    'case_visibility_hidden_root'
   ];
 
   for (const id of expectedFailIds) {
@@ -833,7 +890,7 @@ test(`${RULE_ID}: i18n default is English (title/description/occurrence strings)
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    "This aria-hidden <div> contains 1 focusable element(s): keyboard users can reach them, but screen readers don't announce them."
+    `This aria-hidden <div> contains a focusable element, <a href="#x"> "Link": keyboard users can reach it, but screen readers don't announce it.`
   );
   assert.strictEqual(
     occ.hint,
@@ -862,7 +919,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description/occurrence strings are locali
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'Cet élément <div> avec aria-hidden contient 1 élément(s) focalisable(s) : on les atteint au clavier, mais les lecteurs d’écran ne les annoncent pas.'
+    'Cet élément <div> avec aria-hidden contient un élément focalisable, <a href="#x"> "Link" : on l’atteint au clavier, mais les lecteurs d’écran ne l’annoncent pas.'
   );
   assert.strictEqual(
     occ.hint,
@@ -963,4 +1020,76 @@ test('aria-hidden-focus: a page that reacts to focus is reported as it was found
     ]
   );
   assert.strictEqual(doc.activeElement, doc.body);
+});
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: several focusable elements: the summary names one and counts the rest`, () => {
+  const occ = messageOccurrence(
+    '<div aria-hidden="true"><button>b</button><button>c</button></div>',
+    'aria-hidden'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaHidden_focus_summary_fail_desc_named');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaHidden_focus_hint_fail');
+  assert.strictEqual(
+    occ.summary,
+    'This aria-hidden <div> contains <button> "b" and 1 more focusable element(s): keyboard users can reach them, but screen readers don\'t announce them.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Remove aria-hidden, or take these elements out of the tab order (the inert attribute does this for a whole section), so nothing keyboard users can reach is hidden from screen readers.'
+  );
+});
+
+test(`${RULE_ID}: the hint says when a focusable element is invisible with opacity: 0`, () => {
+  const html = `<!doctype html><html><body>
+      <div id="ah_op" aria-hidden="true"><div tabindex="0" style="opacity:0">Ghost</div></div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.hintKey, 'ariaHidden_focus_hint_fail_opacity');
+  assert.strictEqual(occ.i18n.params.invisible, '<div tabindex="0"> "Ghost"');
+  assert.match(
+    occ.hint,
+    /^<div tabindex="0"> "Ghost" is invisible \(opacity: 0\) but still takes focus/
+  );
+});
+
+test(`${RULE_ID}: a self-focusable aria-hidden element and a modal-open background are named`, () => {
+  const self = runa11yCoreOnHtml(
+    `<!doctype html><html><body><a id="s" aria-hidden="true" href="/x">Promo</a></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const selfOcc = assertRule(self, RULE_ID, 'fail', { minOccurrences: 1 }).occurrences[0];
+  assert.strictEqual(selfOcc.i18n.summaryKey, 'ariaHidden_focus_summary_fail_self_named');
+  assert.strictEqual(selfOcc.i18n.params.self, '<a href="/x"> "Promo"');
+
+  const modal = runa11yCoreOnHtml(
+    `<!doctype html><html><body>
+      <div role="dialog" aria-modal="true" aria-label="D"><button>Close</button></div>
+      <div aria-hidden="true"><a href="/a">Back</a></div>
+    </body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const modalOcc = assertRule(modal, RULE_ID, 'cantTell', { minOccurrences: 1 }).occurrences[0];
+  assert.strictEqual(modalOcc.i18n.summaryKey, 'ariaHidden_focus_summary_cantTell_modal_one');
+  assert.strictEqual(
+    modalOcc.summary,
+    'This aria-hidden <div> contains a focusable element, <a href="/a"> "Back", while a modal dialog is open. It is fine if the dialog keeps focus inside it; check that focus can\'t reach it.'
+  );
 });

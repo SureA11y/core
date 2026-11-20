@@ -36,10 +36,44 @@ test(`${RULE_ID}: notApplicable when there are no tables`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the table is below the 4x4 large-table threshold`, () => {
-  const html = `<!doctype html><html><body><table><tr><td>1</td><td>2</td><td>3</td></tr><tr><td>4</td><td>5</td><td>6</td></tr><tr><td>7</td><td>8</td><td>9</td></tr></table></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+test(`${RULE_ID}: notApplicable when the table has a single row or a single column`, () => {
+  for (const body of [
+    '<tr><td>1</td><td>2</td><td>3</td></tr>',
+    '<tr><td>1</td></tr><tr><td>2</td></tr><tr><td>3</td></tr>'
+  ]) {
+    const html = `<!doctype html><html><body><table>${body}</table></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+// F91 applies to all data tables, whatever their size: a small price list
+// with no header cells is asked about as a large table is.
+test(`${RULE_ID}: cantTell, once, when a small table has no headers at all`, () => {
+  for (const body of [
+    '<tr><td>Plan</td><td>Price</td></tr><tr><td>Basic</td><td>10</td></tr>',
+    '<tr><td>1</td><td>2</td><td>3</td></tr><tr><td>4</td><td>5</td><td>6</td></tr><tr><td>7</td><td>8</td><td>9</td></tr>'
+  ]) {
+    const html = `<!doctype html><html><body><table id="t">${body}</table></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'TD_TABLE_NO_HEADERS');
+  }
+});
+
+test(`${RULE_ID}: a small table with a header row passes, and one with a cell left out fails`, () => {
+  const headed = `<!doctype html><html><body><table><tr><th>Day</th><th>Hours</th></tr><tr><td>Monday</td><td>9 to 5</td></tr></table></body></html>`;
+  assertRule(runa11yCoreOnHtml(headed, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  const partly = `<!doctype html><html><body><table><tr><th>Day</th><td>Hours</td></tr><tr><td>Monday</td><td>9 to 5</td></tr></table></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(partly, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'TD_NO_ASSOCIATED_HEADER');
+  assert.strictEqual(rule.occurrences[0].data.details.column, 1);
 });
 
 test(`${RULE_ID}: notApplicable when the table has a colspan/rowspan (skipped, not risked)`, () => {
@@ -148,7 +182,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><table>${TABLE_4X4_NO_HEADERS}</table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'Data cells in large tables must have an associated header');
+  assert.strictEqual(rule.title, 'Data cells in tables must have an associated header');
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/td-has-header-all-scenarios.html)`, () => {
@@ -156,7 +190,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/td-has-header-all-scenarios.h
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
 
   const onTable = (id) => rule.occurrences.filter((o) => o.selector.includes(`#${id}`));
   assert.deepEqual(
@@ -167,12 +201,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/td-has-header-all-scenarios.h
     onTable('tdh_case_09').map((o) => o.occurrenceOutcome),
     ['fail', 'fail', 'fail']
   );
-  const expectedFlaggedIds = ['tdh_case_01', 'tdh_case_09'];
+  assert.deepEqual(
+    onTable('tdh_case_05').map((o) => o.occurrenceOutcome),
+    ['cantTell']
+  );
+  const expectedFlaggedIds = ['tdh_case_01', 'tdh_case_05', 'tdh_case_09'];
   const expectedNoOccIds = [
     'tdh_case_02',
     'tdh_case_03',
     'tdh_case_04',
-    'tdh_case_05',
     'tdh_case_06',
     'tdh_case_07',
     'tdh_case_08'
@@ -305,4 +342,155 @@ test(`${RULE_ID}: a table with no headers leans fail on data signs, pass on layo
   assert.equal(layout.i18n.whyKey, 'tdHasHeader_lean_why_layout');
   assert.equal(noHeadersLean(words.repeat(4)), undefined);
   assert.equal(noHeadersLean(layoutRow + numbers), undefined);
+});
+
+test(`${RULE_ID}: a fail names the <th> that is not counted as a header, and why`, () => {
+  const body = '<tr><th>R</th><td>1</td><td>2</td><td>3</td></tr>'.repeat(4);
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><table>
+  <tr><th role="presentation">H0</th><th role="presentation">H1</th><th role="presentation">H2</th><th role="presentation">H3</th></tr>
+  ${body}
+</table></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 4,
+    maxOccurrences: 4
+  });
+  // Only the <th role="presentation"> cells themselves: the row <th>s head the others.
+  for (const o of rule.occurrences) {
+    assert.equal(o.i18n.summaryKey, 'tdHasHeader_summary_fail_thRole');
+    assert.equal(o.i18n.hintKey, 'tdHasHeader_hint_fail_thRole');
+    assert.equal(
+      o.summary,
+      'This <th> has role="presentation", which makes it an ordinary cell, so it heads nothing and has no header of its own.'
+    );
+  }
+});
+
+test(`${RULE_ID}: a fail says the <th> above a cell has a role, or is hidden`, () => {
+  const body = '<tr><td>a</td><td>1</td><td>2</td><td>3</td></tr>'.repeat(4);
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><table>
+  <tr><th role="cell">H0</th><th aria-hidden="true">H1</th><th>H2</th><th>H3</th></tr>
+  ${body}
+</table></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 9,
+    maxOccurrences: 9
+  });
+  const role = rule.occurrences.filter(
+    (o) => o.i18n.summaryKey === 'tdHasHeader_summary_fail_colRole'
+  );
+  const hidden = rule.occurrences.filter(
+    (o) => o.i18n.summaryKey === 'tdHasHeader_summary_fail_colHidden'
+  );
+  assert.equal(role.length, 4);
+  assert.equal(hidden.length, 4);
+  assert.equal(
+    role[0].summary,
+    'This data cell has no header: the <th> above it ("H0") has role="cell", which makes it an ordinary cell.'
+  );
+  assert.equal(role[0].i18n.hintKey, 'tdHasHeader_hint_fail_colRole');
+  assert.equal(
+    role[0].hint,
+    'Remove role="cell" from the header cells, or give them role="columnheader".'
+  );
+  assert.equal(
+    hidden[0].summary,
+    'This data cell has no header: the <th> above it ("H1") is hidden from screen readers by aria-hidden="true", so it heads nothing.'
+  );
+  assert.equal(hidden[0].i18n.hintKey, 'tdHasHeader_hint_fail_hidden');
+  assert.deepEqual(hidden[0].data.details.notHeader, {
+    cell: 'col',
+    kind: 'hidden',
+    text: 'H1',
+    hiddenBy: 'aria-hidden="true"'
+  });
+  // The <th role="cell"> itself.
+  assert.ok(rule.occurrences.some((o) => o.i18n.summaryKey === 'tdHasHeader_summary_fail_thRole'));
+});
+
+test(`${RULE_ID}: a fail says a header row of <td>s in <thead> heads nothing`, () => {
+  const body = '<tr><td>a</td><td>1</td><td>2</td><td>3</td></tr>'.repeat(3);
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><table>
+  <thead><tr><td>H0</td><td>H1</td><td>H2</td><td>H3</td></tr></thead>
+  <tbody><tr><th>R</th><td>1</td><td>2</td><td>3</td></tr>${body}</tbody>
+</table></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail');
+  const head = rule.occurrences.filter(
+    (o) => o.i18n.summaryKey === 'tdHasHeader_summary_fail_theadTd'
+  );
+  assert.equal(head.length, 4);
+  assert.equal(
+    head[0].summary,
+    "This cell is in the table's <thead> but is a <td>, so it heads nothing, and the cells below it have no column header."
+  );
+  assert.equal(head[0].hint, 'Make the cells of the header row <th>.');
+  const below = rule.occurrences.find(
+    (o) => o.i18n.summaryKey === 'tdHasHeader_summary_fail_colTheadTd'
+  );
+  assert.equal(
+    below.summary,
+    'This data cell has no header: the cell above it in the <thead> ("H1") is a <td>, not a <th>, so it heads nothing.'
+  );
+  assert.equal(below.i18n.hintKey, 'tdHasHeader_hint_fail_theadTd');
+});
+
+test(`${RULE_ID}: a table with no header cells names the <th> that does not count`, () => {
+  const body = '<tr><td>1</td><td>2</td><td>3</td><td>4</td></tr>'.repeat(4);
+  const run = (head) =>
+    assertRule(
+      runa11yCoreOnHtml(
+        `<!doctype html><html lang="en"><head><title>t</title></head><body><table>${head}${body}</table></body></html>`,
+        { runOnly: [RULE_ID] }
+      ),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+  const role = run('<tr>' + '<th role="presentation">Year</th>'.repeat(4) + '</tr>');
+  assert.strictEqual(role.i18n.summaryKey, 'tdHasHeader_summary_cantTell_noHeadersRole');
+  assert.strictEqual(role.i18n.hintKey, 'tdHasHeader_hint_cantTell_noHeadersRole');
+  assert.strictEqual(
+    role.summary,
+    'This table has no header cells that count: its <th> ("Year") has role="presentation", which makes it an ordinary cell. If it holds data, its cells have no headers.'
+  );
+  assert.strictEqual(role.data.details.reasonCode, 'TD_TABLE_NO_HEADERS');
+  const hidden = run('<tr>' + '<th aria-hidden="true">Year</th>'.repeat(4) + '</tr>');
+  assert.strictEqual(hidden.i18n.summaryKey, 'tdHasHeader_summary_cantTell_noHeadersHidden');
+  assert.strictEqual(hidden.i18n.params.hiddenBy, 'aria-hidden="true"');
+  const thead = run('<thead><tr>' + '<td>Year</td>'.repeat(4) + '</tr></thead>');
+  assert.strictEqual(thead.i18n.summaryKey, 'tdHasHeader_summary_cantTell_noHeadersTheadTd');
+  assert.strictEqual(
+    thead.hint,
+    'If the table holds data, make the cells of its header row <th>. If it only lays out content, give the table role="presentation".'
+  );
+});
+
+// A table is sized as a reader meets it: an empty or hidden row, or an empty
+// column, doesn't make one row or column a table of two.
+test('td-has-header: a table that is really one row or one column is left out', () => {
+  const outcome = (table) =>
+    runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${table}</body></html>`, {
+      runOnly: ['td-has-header']
+    }).checksResults.find((r) => r.ruleId === 'td-has-header').outcome;
+  for (const table of [
+    '<table><tr><td>A</td><td>B</td></tr><tr></tr></table>',
+    '<table><tr><td>A</td><td>B</td></tr><tr style="display:none"><td>C</td><td>D</td></tr></table>',
+    '<table><tr><td>A</td><td></td></tr><tr><td>C</td><td></td></tr></table>'
+  ]) {
+    assert.strictEqual(outcome(table), 'notApplicable', table);
+  }
+  assert.strictEqual(
+    outcome('<table><tr><td>A</td><td>B</td></tr><tr><td>C</td><td>D</td></tr></table>'),
+    'cantTell'
+  );
+});
+
+// role="presentation" with a global ARIA attribute is ignored (WAI-ARIA's
+// presentational roles conflict resolution): the table is a table.
+test('td-has-header: a presentation role browsers ignore leaves the table a table', () => {
+  const rule = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><body><table role="presentation" aria-label="Prices"><tr><td>Tea</td><td>2</td></tr><tr><td>Coffee</td><td>3</td></tr></table></body></html>',
+    { runOnly: ['td-has-header'] }
+  ).checksResults.find((r) => r.ruleId === 'td-has-header');
+  assert.strictEqual(rule.outcome, 'cantTell');
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'TD_TABLE_NO_HEADERS');
 });

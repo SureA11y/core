@@ -5,7 +5,7 @@
 /**
  * @check avoid-inline-spacing
  * @atomic true
- * @summary Inline style must not force text spacing below the WCAG metric
+ * @summary Inline style must not keep users from increasing text spacing
  * @standard WCAG 2.2
  * @sc 1.4.12
  * @applicability
@@ -27,7 +27,7 @@
  * @reason-codes
  *   - `INLINE_SPACING_IMPORTANT` (fail): the element's style attribute
  *     forces line-height, letter-spacing or word-spacing with !important
- *     below the spacing WCAG 1.4.12 lets users apply, on text that wraps.
+ *     below the spacing users must be able to apply, on text that wraps.
  *     Basis: WCAG 1.4.12; ACT 78fd32; ACT 24afc2; ACT 9e45ec;
  *     CSS Cascade important declarations.
  *   - `INLINE_SPACING_NO_SOFT_WRAP` (cantTell): spacing forced below the
@@ -73,9 +73,9 @@
 const id = 'avoid-inline-spacing';
 
 const meta = {
-  title: 'Inline style must not force text spacing below the WCAG metric',
+  title: 'Inline style must not keep users from increasing text spacing',
   description:
-    'Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.',
+    'Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already reaches the spacing users must be able to apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), so the user has nothing left to override.',
   i18n: {
     titleKey: 'avoidInlineSpacing_title',
     descriptionKey: 'avoidInlineSpacing_description'
@@ -96,47 +96,7 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.4.12': ['avoid-inline-spacing'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    INLINE_SPACING_NOT_RESOLVABLE: {
-      steps: [
-        'Inspect the element the report names and read the !important spacing value in its style attribute.',
-        'In the Computed tab of the developer tools, read the resulting line-height, letter-spacing or word-spacing in pixels and compare with 1.5 times, 0.12 times or 0.16 times the font size.',
-        "Apply the WCAG 1.4.12 text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, paragraph spacing 2em) with !important, for example through a user stylesheet or a bookmarklet; since the element's own !important inline style wins, also note the values it keeps.",
-        'Narrow to 320 CSS pixels and check whether the text is cut off or overlaps.'
-      ],
-      passWhen:
-        'The forced value meets the WCAG 1.4.12 metric, or the text does not wrap, or nothing is lost with the spacing applied.',
-      failWhen:
-        'The forced value is below the metric on wrapping text and the text cannot take user spacing without loss, which fails WCAG 1.4.12.'
-    },
-    INLINE_SPACING_NO_SOFT_WRAP: {
-      steps: [
-        'Inspect the element the report names and note which spacing property its style attribute forces with !important.',
-        'Narrow the window to 320 CSS pixels wide (or zoom to 400%) and check whether the text ever wraps onto a second line.',
-        "Apply the WCAG 1.4.12 text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, paragraph spacing 2em) with !important, for example through a user stylesheet or a bookmarklet; since the element's own !important inline style wins, also note the values it keeps.",
-        'Check whether any text is cut off, overlaps or is hidden.'
-      ],
-      passWhen:
-        'The text cannot wrap (it stays on one line or scrolls) and nothing is cut off or overlaps, so the criterion does not apply.',
-      failWhen:
-        'The text does wrap and, with the forced spacing, lines overlap or text is clipped, which fails WCAG 1.4.12.'
-    },
-    INLINE_SPACING_SHORT_TEXT: {
-      steps: [
-        'Inspect the element the report names and note which spacing property its style attribute forces with !important.',
-        'Narrow the window to 320 CSS pixels wide (or zoom to 400%) and check whether the short text wraps onto two lines.',
-        "Apply the WCAG 1.4.12 text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, paragraph spacing 2em) with !important, for example through a user stylesheet or a bookmarklet; since the element's own !important inline style wins, also note the values it keeps.",
-        'Check whether the text is cut off, overlaps or is hidden.'
-      ],
-      passWhen:
-        'The text stays on one line at every width, or wraps without lines overlapping or text being lost.',
-      failWhen:
-        'The text wraps and the forced spacing makes lines overlap or text clip, which fails WCAG 1.4.12.'
-    }
-  }
+  coverage: { facetsBySc: { '1.4.12': ['avoid-inline-spacing'] } }
 };
 
 function runInPage(ctx) {
@@ -146,6 +106,12 @@ function runInPage(ctx) {
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
   // WCAG 1.4.12's own metrics, as multiples of the font size.
   const MIN_RATIO = { 'line-height': 1.5, 'letter-spacing': 0.12, 'word-spacing': 0.16 };
+  // Each metric as a message quotes it.
+  const LIMIT_TEXT = {
+    'line-height': 'line-height 1.5',
+    'letter-spacing': 'letter-spacing 0.12em',
+    'word-spacing': 'word-spacing 0.16em'
+  };
   // Only these two take the value from the parent, leaving this declaration
   // specifying no spacing of its own. `initial` and `revert` resolve to a
   // concrete value (`normal` for all three properties), so they stay in scope.
@@ -193,7 +159,7 @@ function runInPage(ctx) {
   function hasVisibleTextChild(el) {
     let kids;
     try {
-      kids = dom.childNodes(el) ? Array.from(dom.childNodes(el)) : [];
+      kids = dom.childNodes(el) ? [...dom.childNodes(el)] : [];
     } catch {
       return false;
     }
@@ -311,7 +277,7 @@ function runInPage(ctx) {
     );
     let most = 0;
     let measured = false;
-    for (const n of Array.from(dom.childNodes(el) || [])) {
+    for (const n of [...(dom.childNodes(el) || [])]) {
       if (dom.nodeType(n) !== 3) continue;
       const value = String(dom.nodeValue(n) || '');
       if (!value.trim() || (keepsNewlines && value.includes('\n'))) continue;
@@ -442,6 +408,9 @@ function runInPage(ctx) {
 
     const flagged = [];
     const unresolved = [];
+    // The forced declarations, as the summary quotes them: the value, and
+    // for one not already relative to the font size, the ratio it comes to.
+    const forced = {};
     let inScope = false;
     for (const prop of SPACING_PROPS) {
       const decl = effectiveDeclaration(raw, prop);
@@ -451,16 +420,30 @@ function runInPage(ctx) {
       const ratio = spacingRatio(el, prop, decl.value);
       // Not flagged, since `fail` needs a measured value -- but recorded, so
       // the element does not fall through to `pass` unmeasured.
+      const value = decl.value.trim();
       if (ratio === null) {
         unresolved.push(prop);
+        forced[prop] = `${prop}: ${value}`;
         continue;
       }
-      if (!meetsMinimum(prop, ratio)) flagged.push(prop);
+      if (!meetsMinimum(prop, ratio)) {
+        flagged.push(prop);
+        const shown = Math.round(ratio * 100) / 100;
+        const relative = /^(\d*\.?\d+)(em)?$/i.test(value);
+        forced[prop] = relative
+          ? `${prop}: ${value}`
+          : `${prop}: ${value} (${shown}${prop === 'line-height' ? '' : 'em'})`;
+      }
     }
 
     if (inScope) applicableCount += 1;
     if (!flagged.length) {
-      if (unresolved.length) undecided.push({ el, props: unresolved.slice() });
+      if (unresolved.length)
+        undecided.push({
+          el,
+          props: unresolved.slice(),
+          declarations: unresolved.map((prop) => forced[prop]).join(', ')
+        });
       continue;
     }
 
@@ -480,18 +463,41 @@ function runInPage(ctx) {
     }
 
     const tag = dom.tagName(el).toLowerCase();
+    // The values forced, the font size they are measured against, and only
+    // the limits they fall short of.
+    const declarations = flagged.map((prop) => forced[prop]).join(', ');
+    const limits = flagged.map((prop) => LIMIT_TEXT[prop]).join(', ');
+    let fontSize;
+    try {
+      fontSize = fontSizeOf(computedStyleOf(el));
+    } catch {
+      fontSize = null;
+    }
+    const fontSizePx = fontSize ? String(Math.round(fontSize * 100) / 100) : '';
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `This element's inline style forces ${flagged.join(', ')} with !important below the spacing WCAG 1.4.12 lets users apply, so they can't increase it.`,
-        hint: 'Remove !important from the spacing in the inline style, or set a value that already meets the metric: line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em.',
+        summary: `This element's inline style forces ${declarations} with !important${fontSizePx ? ` at its ${fontSizePx}px font size` : ''}, below the spacing users must be able to apply (${limits}), so they can't increase it.`,
+        hint: `Remove !important from the spacing in the inline style, or set a value that already meets the metric: ${limits}.`,
         i18n: {
           summaryKey: 'avoidInlineSpacing_summary_fail',
           hintKey: 'avoidInlineSpacing_hint_fail',
-          params: { element: tag, properties: flagged.join(', ') }
+          params: {
+            element: tag,
+            properties: flagged.join(', '),
+            declarations,
+            limits,
+            fontSizePx
+          }
         },
         data: {
-          details: { reasonCode: 'INLINE_SPACING_IMPORTANT', element: tag, properties: flagged }
+          details: {
+            reasonCode: 'INLINE_SPACING_IMPORTANT',
+            element: tag,
+            properties: flagged,
+            declarations: flagged.map((prop) => forced[prop]),
+            ...(fontSize ? { fontSizePx: fontSize } : {})
+          }
         }
       })
     );
@@ -623,17 +629,18 @@ function runInPage(ctx) {
       )
     )
     .concat(
-      undecided.map(({ el, props }) =>
+      undecided.map(({ el, props, declarations }) =>
         helpers.reportOccurrence(el, {
           occurrenceOutcome: 'cantTell',
-          summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be worked out, so whether it allows the spacing WCAG asks for is unknown.`,
+          summary: `This element's inline style sets ${declarations} with !important, but the value could not be worked out, so whether it allows the spacing users must be able to apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em) is unknown.`,
           hint: "Check the value by hand against line-height 1.5, letter-spacing 0.12em and word-spacing 0.16em, or use a unit the engine can work out from the element's font size.",
           i18n: {
             summaryKey: 'avoidInlineSpacing_summary_cantTell',
             hintKey: 'avoidInlineSpacing_hint_cantTell',
             params: {
               element: (dom.tagName(el) || '').toLowerCase(),
-              properties: props.join(', ')
+              properties: props.join(', '),
+              declarations
             }
           },
           uncertainty: {

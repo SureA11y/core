@@ -51,6 +51,10 @@ export interface PackStandard {
        * A profile that takes the place of one of core's doesn't inherit it.
        */
       keepsParsing?: boolean;
+      /**
+       * The id of the law the profile serves, one of `laws`.
+       */
+      law?: string;
     }
   >;
   mappingsFor: (rule: { id: string; wcagSc?: string[]; checksIds?: string[] }) => object[];
@@ -61,19 +65,167 @@ export interface PackStandard {
   composites?: () => object[];
   validate?: (rules: { ruleId: string; wcagSc: string[] }[]) => string[];
   report?: { noteKey?: string; titleLang?: string };
+  /**
+   * How a person assesses each requirement by hand (docs/PROCEDURES.md), by
+   * version and requirement: a WCAG criterion's procedures, or its own
+   * facets, in English.
+   */
+  procedures?: Record<string, Record<string, PackRequirementProcedures>>;
+  /**
+   * How the standard groups its requirements, by version, as a list of its
+   * procedures shows them (listProcedures): each requirement of the
+   * version's procedures in one group at most.
+   */
+  groups?: Record<string, PackRequirementGroup[]>;
+  /**
+   * The standard's own steps for core rules' undecided findings, by rule id
+   * and reason code, in English (docs/PACKS.md): a finding only the
+   * standard's profiles ask about reads them in place of core's. Each text
+   * may name what the finding found, {{name|text}}. The pack's dictionaries
+   * translate an entry, as a whole, under
+   * `<key>_standardReview_<ruleId>_<CODE>_step<n>`, `_pass` and `_fail`.
+   */
+  review?: Record<string, Record<string, { steps: string[]; passWhen: string; failWhen: string }>>;
+  /**
+   * The language the standard's own text is written in (its procedures,
+   * titles, notes and rollups' titles): a language tag, 'en' by default.
+   */
+  lang?: string;
+  /**
+   * The standard's own text in other languages, by locale, keyed by the text
+   * it translates. A standard that declares lang or translations is read in
+   * one of its languages, core's procedures included (docs/PACKS.md).
+   */
+  translations?: Record<string, Record<string, string>>;
+  /**
+   * Translations by what each text is, per version, read before
+   * `translations`: { fr: { '1.0': { 'requirements.4.2.title': '…',
+   * 'requirements.4.2.facets.alt.steps': ['…'] } } }. Keys:
+   * requirements.<id>.title | note, requirements.<id>.facets.<facet>.label |
+   * steps | passWhen | failWhen, requirements.<id>.replace.<facet>.steps |
+   * passWhen | failWhen, groups.<id>.title, notes, review.<rule>.<CODE>.steps
+   * | passWhen | failWhen. A list is given as a list.
+   */
+  texts?: Record<string, Record<string, Record<string, string | string[]>>>;
+  /**
+   * A version's own steps for core's codes, replacing `review`'s for the
+   * same rule and code under the profiles of that version.
+   */
+  reviewByVersion?: Record<
+    string,
+    Record<string, Record<string, { steps: string[]; passWhen: string; failWhen: string }>>
+  >;
+  /**
+   * The laws its profiles are used for, by id, identified and not
+   * documented: name, jurisdiction, official texts (docs/PACKS.md, "The
+   * law a profile is used for").
+   */
+  laws?: Record<string, PackLaw>;
+  /**
+   * The laws' names in other languages, by locale and id: { en:
+   * { 'laws.<id>.name': '…' } }.
+   */
+  lawTexts?: Record<string, Record<string, string>>;
 }
 
 /**
+ * A law a profile is used for: identified, not documented.
+ */
+export interface PackLaw {
+  name: string;
+  /** A country ('FR'), a subdivision ('DE-BY') or a region ('EU'). */
+  jurisdiction: string;
+  /** Its official texts, at https addresses. */
+  sources?: { title: string; url: string }[];
+}
+
+/**
+ * A law in a language (lawOf).
+ */
+export interface LawText extends PackLaw {
+  id: string;
+  /** The language its name is in. */
+  lang: string;
+}
+
+/**
+ * A standard's law in `locale`, read from standard.lawTexts for it or its
+ * base language, else as written; null for a law it doesn't have.
+ */
+export function lawOf(standard: PackStandard, id: string, locale?: string): LawText | null;
+
+/** A group of a standard's requirements, such as a theme or a chapter. */
+export interface PackRequirementGroup {
+  id: string;
+  title: string;
+  requirements?: string[];
+  groups?: PackRequirementGroup[];
+}
+
+/** A general procedure a pack writes, in its standard's language. */
+export interface PackProcedure {
+  /** What it needs besides a browser; by default, for a replaced facet, what core's needs. */
+  tools?: ('keyboard' | 'pointer' | 'screen-reader' | 'zoom' | 'contrast-theme' | 'devtools')[];
+  steps: string[];
+  passWhen: string;
+  failWhen: string;
+}
+
+/**
+ * One requirement's procedures: a WCAG criterion's, some of whose facets'
+ * general procedures it may replace (by facet id; not a facet with
+ * coveredBy), or facets of its own. `title` names the requirement in a list,
+ * a checklist and a page of procedures; without it, the title the standard's
+ * rollups give the requirement, or only its number where none does.
+ */
+export type PackRequirementProcedures =
+  | {
+      title?: string;
+      wcag: string;
+      replace?: Record<string, PackProcedure>;
+      /** The laws that ask for it; without it, all do. @experimental Until 1.20.0. */
+      laws?: string[];
+    }
+  | {
+      title?: string;
+      /** The laws that ask for it; without it, all do. @experimental Until 1.20.0. */
+      laws?: string[];
+      /** The WCAG criteria it relates to, without restating any (relatedRequirements). */
+      relatesTo?: string[];
+      facets: {
+        id: string;
+        label: string;
+        automation?: 'full' | 'partial' | 'manual';
+        tools?: (
+          'keyboard' | 'pointer' | 'screen-reader' | 'zoom' | 'contrast-theme' | 'devtools'
+        )[];
+        steps: string[];
+        passWhen: string;
+        failWhen: string;
+        /**
+         * The requirement ids of the standard's mapping (the requirement of
+         * its mappingsFor entries) the facet assesses, such as a test of the
+         * requirement ('8.5.1'): the core rules mapped to them are listed
+         * under it, in rules and mappedRules. Without it, the only facet of
+         * a requirement assesses the requirement itself.
+         */
+        mappedRequirements?: string[];
+      }[];
+    };
+
+/**
  * What a rollup does with a finding: count it, make a failing one a
- * question ('cantTell'), or leave it out ('ignore'). As an object, it also
+ * question ('cantTell'), make a question a failure ('fail'), or leave it out
+ * ('ignore'). As an object, it also
  * names the rollup's requirements the finding counts toward, so the rollup
  * names only those when such findings decide it.
  */
 export type ContributionAct =
   | 'count'
   | 'cantTell'
+  | 'fail'
   | 'ignore'
-  | { act: 'count' | 'cantTell' | 'ignore'; requirements?: string[] };
+  | { act: 'count' | 'cantTell' | 'fail' | 'ignore'; requirements?: string[] };
 
 /**
  * How a rollup judges one of its rules by the rule's findings: by the first
@@ -172,6 +324,12 @@ export interface Pack {
   probes?: Record<string, { description: string; readBy?: string[] }>;
   /** Messages of its own keys, per locale; English is the fallback. */
   dictionaries?: Record<string, Record<string, string>>;
+  /**
+   * The packs it builds on: its standard may map their own rules, and its
+   * profiles run them. A scan runs it only with them, at these versions.
+   * @experimental Until 1.19.0 (docs/API_STABILITY.md).
+   */
+  uses?: Pack[];
 }
 
 /**
@@ -192,15 +350,25 @@ export interface PackDescription {
   rules: string[];
   variants: string[];
   overrides: string[];
+  /** The packs it uses, as name@version. @experimental Until 1.19.0. */
+  uses?: string[];
   standard: {
     key: string;
     standard: string;
     versions: string[];
     profiles: string[];
     rollups: string[];
+    /** Its laws, in English, with the profiles that serve each. */
+    laws?: (LawText & { profiles: string[] })[];
   } | null;
   locales: string[];
   probes: { path: string; description: string; readBy: string[] }[];
+  /**
+   * The experimental APIs of core the pack uses (`docs/API_STABILITY.md`,
+   * "Experimental"), each with the version that brought it and the one by
+   * which it is stable or removed. Present only when it uses one.
+   */
+  experimental?: { id: string; since: string; until: string }[];
 }
 
 /** Each pack described, or, for one that is not valid, its name and problems. */
@@ -208,8 +376,35 @@ export function describePacks(
   packs: unknown[]
 ): (PackDescription | { name: string | null; problems: string[] })[];
 
-/** What is wrong with a pack's shape; empty when it can be prepared. */
+/**
+ * What is wrong with a pack's shape; empty when it can be prepared. Also
+ * reports a rule's steps (`meta.review`) that a dictionary translates only
+ * in part, which `definePack` and a scan accept, reading each missing key in
+ * English; and a `core` range wider than `~` in a pack that uses an
+ * experimental API, which the next minor may change.
+ */
 export function checkPack(pack: unknown): string[];
+
+/** How far one translation of a pack's standard covers its texts. */
+export interface PackTranslationCoverage {
+  locale: string;
+  /** The standard's texts a translation can give. */
+  total: number;
+  translated: number;
+  /** The texts it doesn't translate yet. */
+  missing: string[];
+}
+
+/**
+ * The languages of a pack's standard (docs/PACKS.md, "Languages"): the one
+ * its own text is written in, standard.lang ('en' where it gives none),
+ * first, then those standard.translations gives, lower case. Takes the
+ * standard, pack.standard.
+ */
+export function languagesOf(standard: unknown): string[];
+
+/** How far each translation of a pack's standard covers its texts; empty without any. */
+export function packTranslationCoverage(pack: unknown): PackTranslationCoverage[];
 
 /**
  * Whether a version is in a range, as npm reads it ('^1.2.0', '~1.2', '1.x', '>=1.2.0 <2', '1.0.0 - 2.x', a || b),
@@ -242,15 +437,35 @@ export function ruleMappedStandard(options: {
       { title: string; wcagSc?: string[]; partial?: boolean; [field: string]: unknown }
     >
   >;
-  /** Per version, the requirements each rule checks: { '1.0': { 'img-alt-present': { requirements: ['1'] } } }. */
+  /**
+   * Per version, the tests a standard judges under its requirements:
+   * { '1.0': { '1.1.1': { title, requirements: ['1.1'] } } }. A test belongs
+   * to one requirement or several; its `wcagSc` defaults to its requirement's.
+   * With tests, every version has them, a rule-map row names tests or
+   * requirements, and a result names each test with its `criterion`.
+   */
+  tests?: Record<
+    string,
+    Record<
+      string,
+      { title: string; requirements: string[]; wcagSc?: string[]; [field: string]: unknown }
+    >
+  >;
+  /**
+   * With tests: link a rule only to tests whose WCAG criteria share one with
+   * the rule's (or give the reason in the row's `outsideCorrespondence`), and
+   * name only the shared criteria in each entry. Only with tests.
+   */
+  wcagCorrespondence?: boolean;
+  /** Per version, the requirements (or, with tests, the tests) each rule checks: { '1.0': { 'img-alt-present': { requirements: ['1'] } } }. */
   ruleMap: Record<
     string,
     Record<
       string,
       {
         requirements: string[];
-        /** Findings of a reason code: the requirements they count toward ([] for none), and 'cantTell' to make a failing one a question there. */
-        reasonCodes?: Record<string, { requirements?: string[]; outcome?: 'cantTell' }>;
+        /** Findings of a reason code: the requirements they count toward ([] for none), 'cantTell' to make a failing one a question there, and 'fail' to make a question a failure there. */
+        reasonCodes?: Record<string, { requirements?: string[]; outcome?: 'cantTell' | 'fail' }>;
         /**
          * Findings by what they record: the first entry whose `when` values
          * equal the finding's data.details fields (by dotted path) decides,
@@ -259,8 +474,12 @@ export function ruleMappedStandard(options: {
         findings?: Array<{
           when: Record<string, string | number | boolean | null>;
           requirements?: string[];
-          outcome?: 'cantTell';
+          outcome?: 'cantTell' | 'fail';
         }>;
+        /** With tests only: where the row's findings are questions. */
+        asks?: string[];
+        /** With wcagCorrespondence: tests linked outside it, each with the reason. */
+        outsideCorrespondence?: Record<string, string>;
         [field: string]: unknown;
       }
     >
@@ -275,6 +494,11 @@ export function ruleMappedStandard(options: {
   composites: NonNullable<PackStandard['composites']>;
   validate: NonNullable<PackStandard['validate']>;
   wcagTagsOf: (version: string) => string[];
+  /**
+   * With applicability 'wcag', each requirement that restates one criterion
+   * taking its procedures, for standard.procedures; undefined otherwise.
+   */
+  procedures: PackStandard['procedures'];
 };
 
 /**
@@ -289,3 +513,174 @@ export function buildBrowserBundle(options?: { packs?: Pack[] }): string;
 
 /** Internal: the engine a scan with these packs runs on. Not covered by semver. */
 export function preparePacks(packs: unknown[], options?: { strict?: boolean }): unknown;
+
+/** A procedure in standard data: how a person assesses a requirement or test. */
+export interface StandardDataProcedure {
+  /** 1 to 8 steps. */
+  steps: string[];
+  passWhen: string;
+  failWhen: string;
+  tools?: string[];
+  automation?: 'full' | 'partial' | 'manual';
+}
+
+/** Where a reason code or a finding of a rule goes instead of the row's units. */
+export interface StandardDataRoute {
+  requirements?: string[];
+  outcome?: 'cantTell' | 'fail';
+}
+
+/** A rule's row in a version's rule map. */
+export interface StandardDataRow {
+  /** The requirements or tests its findings count toward. */
+  requirements: string[];
+  /** With tests only: where its findings are questions. */
+  asks?: string[];
+  reasonCodes?: Record<string, StandardDataRoute>;
+  findings?: Array<StandardDataRoute & { when: Record<string, string | number | boolean | null> }>;
+  note?: string;
+  /** With tests and wcagCorrespondence: tests linked outside it, each with the reason. */
+  outsideCorrespondence?: Record<string, string>;
+}
+
+/** What a requirement or test is based on: a base standard's key and the id in it. */
+export interface StandardDataBasedOn {
+  standard: string;
+  id: string;
+  /** Where it isn't the version its version is based on. */
+  version?: string;
+}
+
+export interface StandardDataRequirement {
+  title: string;
+  wcagSc?: string[];
+  /** Its tests; without it, the tests that name it. */
+  tests?: string[];
+  partial?: boolean;
+  scope?: 'page' | 'site';
+  basedOn?: StandardDataBasedOn[];
+  note?: string;
+  procedure?: StandardDataProcedure;
+  /** With applicability 'wcag': its own procedure for some of the criterion's facets. */
+  replace?: Record<string, Omit<StandardDataProcedure, 'automation'>>;
+}
+
+export interface StandardDataTest {
+  title: string;
+  requirements: string[];
+  wcagSc?: string[];
+  scope?: 'page' | 'site';
+  basedOn?: StandardDataBasedOn[];
+  procedure?: StandardDataProcedure;
+}
+
+export interface StandardDataGroup {
+  id: string;
+  title: string;
+  requirements?: string[];
+  groups?: StandardDataGroup[];
+}
+
+/** A version's tables. */
+export interface StandardDataVersion {
+  groups?: StandardDataGroup[];
+  requirements: Record<string, StandardDataRequirement>;
+  tests?: Record<string, StandardDataTest>;
+  ruleMap: Record<string, StandardDataRow>;
+  notes?: string[];
+  /** The standard's own steps for core rules' codes: { rule: { CODE: procedure } }. */
+  review?: Record<string, Record<string, Omit<StandardDataProcedure, 'automation'>>>;
+  /** Translations by id: { locale: { 'requirements.<id>.title': '…' } }; a list as a list. */
+  texts?: Record<string, Record<string, string | string[]>>;
+}
+
+/**
+ * A standard as data, format "surea11y-standard/1"
+ * (`@surea11y/core/schemas/standard.schema.json`): its versions and, per
+ * version, its groups, requirements, tests and rule map, in JSON.
+ */
+export interface StandardData {
+  format: 'surea11y-standard/1';
+  key: string;
+  standard: string;
+  /** The language it is written in, a language tag. */
+  lang?: string;
+  versions: Array<{
+    version: string;
+    wcagVersion: '2.0' | '2.1' | '2.2';
+    /** A year, a month or a day: '2026', '2026-02', '2026-02-14'. */
+    published?: string;
+    /** The base versions it is built on. */
+    basedOn?: Array<{ standard: string; version: string }>;
+  }>;
+  options?: { applicability?: 'wcag'; wcagCorrespondence?: boolean; ruleMapped?: boolean };
+  data: Record<string, StandardDataVersion>;
+  profiles?: Record<
+    string,
+    { version: string; tags?: string[]; law?: string; [field: string]: unknown }
+  >;
+  /** The laws its profiles are used for, by id. */
+  laws?: Record<string, PackLaw>;
+  /** The laws' names in other languages: { locale: { 'laws.<id>.name': '…' } }. */
+  texts?: Record<string, Record<string, string>>;
+}
+
+/** A value frozen all the way down, as standardDataOf gives it. */
+export type DeepReadonly<T> = T extends (infer U)[]
+  ? ReadonlyArray<DeepReadonly<U>>
+  : T extends object
+    ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+    : T;
+
+/**
+ * The data of a standard built on others, before deriveStandard completes
+ * it: a requirement or test based on another needs only its `basedOn`, and
+ * a row `null` drops an inherited one.
+ */
+export interface DerivedStandardData extends Omit<StandardData, 'data'> {
+  data: Record<
+    string,
+    Omit<StandardDataVersion, 'requirements' | 'tests' | 'ruleMap' | 'review'> & {
+      requirements: Record<string, Partial<StandardDataRequirement>>;
+      tests?: Record<string, Partial<StandardDataTest>>;
+      ruleMap: Record<string, StandardDataRow | null>;
+      review?: Record<string, Record<string, Omit<StandardDataProcedure, 'automation'> | null>>;
+    }
+  >;
+}
+
+/**
+ * The problems with a standard's data: its shape and the cross-references a
+ * schema can't check. [] when sound.
+ */
+export function checkStandardData(data: unknown): string[];
+
+/**
+ * The registry entry for a standard's data, what a pack's `standard` is.
+ * `extras` adds or replaces fields the data doesn't give (report, review,
+ * translations, procedures, groups, notes, a mappingsFor of the pack's own);
+ * it can't replace one the data gives (key, standard, versions, profiles,
+ * ruleTag, ruleMapped, lang, laws, lawTexts, texts, reviewByVersion). Throws
+ * a TypeError naming each problem of the data or the extras.
+ */
+export function standardFromData(
+  data: StandardData | DeepReadonly<StandardData>,
+  extras?: Record<string, unknown>
+): PackStandard;
+
+/** The data a pack's standard was built from, frozen, or null. */
+export function standardDataOf(standard: unknown): DeepReadonly<StandardData> | null;
+
+/**
+ * The complete data of a standard built on others: each version, requirement
+ * and test of `own` may say what it is based on (`basedOn`); fields, tests
+ * and rule-map rows are inherited from the `bases` through it, the derived
+ * standard's own fields and rows replacing them (a row `null` drops one).
+ * Only what `own` declares exists. Throws a TypeError naming each basedOn the
+ * bases can't answer, and each rule inherited from two bases without a row of
+ * its own. Results' entries carry each requirement's and test's `basedOn`.
+ */
+export function deriveStandard(
+  bases: ReadonlyArray<StandardData | DeepReadonly<StandardData>>,
+  own: DerivedStandardData
+): StandardData;

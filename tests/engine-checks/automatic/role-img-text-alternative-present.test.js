@@ -529,3 +529,62 @@ test(`${RULE_ID}: an empty aria-label or aria-labelledby beside one that names t
     maxOccurrences: 1
   });
 });
+
+test(`${RULE_ID}: the hint names the cause of each reason code and the content the role hides`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <div id="r1" role="img" aria-labelledby="chart-title"></div>
+  <h2 id="ct"><span aria-hidden="true">x</span></h2><div id="r2" role="img" aria-labelledby="ct"></div>
+  <div id="r3" role="img" aria-label=""></div>
+  <div id="r4" role="img" aria-labelledby=""></div>
+  <span id="r5" role="img">4 out of 5 stars</span>
+  <div id="r6" role="img"><img src="map.png" alt="Map"></div>
+  <div id="r7" role="img" alt="Map of the area"></div>
+  <div id="r8" role="img"></div>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 8,
+    maxOccurrences: 8
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('r1').i18n.hintKey, 'nameCause_hint_labelledbyMissing');
+  assert.equal(
+    occ('r1').hint,
+    'Its aria-labelledby points to "chart-title", which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.'
+  );
+  assert.equal(occ('r2').i18n.hintKey, 'roleImg_textAlternativePresent_hint_fail_notResolved');
+  assert.equal(
+    occ('r2').hint,
+    'Its aria-labelledby="ct" gives no name: the elements it points to have no text that screen readers read (text hidden with aria-hidden or display: none does not count). Put readable text in them, or name it with aria-label.'
+  );
+  assert.equal(occ('r2').data.details.nameCause.cause, 'labelledbyNoText');
+  assert.equal(occ('r3').i18n.hintKey, 'nameCause_hint_ariaLabelEmpty');
+  assert.equal(occ('r3').hint, 'Its aria-label is empty, so it gives no name. Put the name in it.');
+  assert.equal(occ('r4').i18n.hintKey, 'roleImg_textAlternativePresent_hint_fail_emptyLabelledby');
+  assert.equal(
+    occ('r4').hint,
+    'Its aria-labelledby is empty, so it gives no name. Put in it the id of the element whose text names it, or name it with aria-label.'
+  );
+  assert.equal(occ('r5').i18n.hintKey, 'roleImg_textAlternativePresent_hint_fail_textInside');
+  assert.equal(
+    occ('r5').hint,
+    'Its text "4 out of 5 stars" does not name it: role="img" hides its content from screen readers. Put that text in aria-label.'
+  );
+  assert.equal(occ('r5').data.details.nameCause.cause, 'textInside');
+  assert.equal(occ('r6').i18n.hintKey, 'roleImg_textAlternativePresent_hint_fail_imgInside');
+  assert.equal(
+    occ('r6').hint,
+    'The <img alt="Map"> inside it does not name it: role="img" hides its content from screen readers. Move the alt text to aria-label on this element, or remove the role.'
+  );
+  assert.equal(occ('r6').data.details.nameCause.cause, 'imgInside');
+  assert.equal(occ('r7').i18n.hintKey, 'roleImg_textAlternativePresent_hint_fail_alt');
+  assert.equal(
+    occ('r7').hint,
+    'Its alt="Map of the area" does nothing: alt names only an <img> (or an <area> or an <input type="image">), not a <div>. Use aria-label="Map of the area" instead.'
+  );
+  assert.equal(occ('r7').data.details.nameCause.cause, 'altOnNonImage');
+  assert.equal(occ('r8').i18n.hintKey, 'roleImg_textAlternativePresent_hint_fail');
+  assert.equal(
+    occ('r8').hint,
+    'Name it with aria-label, or with aria-labelledby pointing at text that is not empty.'
+  );
+});

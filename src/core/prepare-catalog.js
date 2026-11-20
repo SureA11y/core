@@ -18,12 +18,30 @@
 const { normalizeRuleMeta } = require('./rule-meta');
 const { resolveVariants, describeSettings } = require('./rule-variants');
 const { wcagTags } = require('../wcag');
+const { languagesOf, sourceOf } = require('../pack-languages');
 
-// The WCAG profiles core defines itself, by tag set; a standard's profiles
-// come from the registry.
-const WCAG_PROFILE_TAGS = {
-  'wcag22-aa': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
-  section508: ['wcag2a', 'wcag2aa']
+// The WCAG profiles core defines itself, by tag set: one per WCAG version
+// and level, named wcag<version>-<level> (wcag20-aa is WCAG 2.0 Level A and
+// AA), each the tags wcagTags gives. A standard's profiles come from the
+// registry.
+const WCAG_PROFILE_TAGS = Object.fromEntries([
+  ...['2.0', '2.1', '2.2'].flatMap((version) =>
+    [['A'], ['A', 'AA'], ['A', 'AA', 'AAA']].map((levels) => [
+      'wcag' + version.replace('.', '') + '-' + levels[levels.length - 1].toLowerCase(),
+      wcagTags(version, levels)
+    ])
+  ),
+  // Deprecated (DEPRECATED_PROFILES): WCAG 2.0 A and AA under another name.
+  ['section508', wcagTags('2.0', ['A', 'AA'])]
+]);
+
+// Profiles core defines that are on their way out: each keeps working, and a
+// scan that names one says so once per process, naming the profile that
+// replaces it and the version that removes it (docs/API_STABILITY.md,
+// "Deprecating a standard, a profile or an entry point"). A deprecated
+// standard's profiles are marked in the registry instead.
+const DEPRECATED_PROFILES = {
+  section508: { replacedBy: 'wcag20-aa', removal: '2.0.0' }
 };
 
 const tagged = (where, message) => (where ? `${where} ${message}` : message);
@@ -80,7 +98,12 @@ function prepareStandards(registry, { where = '' } = {}) {
         {
           tags: p.tags,
           mappings: [s.key + ':' + p.version],
-          target: { key: s.key, standard: s.standard, version: p.version }
+          target: {
+            key: s.key,
+            standard: s.standard,
+            version: p.version,
+            ...(p.law ? { law: { ...p.law } } : {})
+          }
         }
       ])
     )
@@ -112,10 +135,15 @@ function prepareStandards(registry, { where = '' } = {}) {
     // without the registry.
     standardReports: registry.standards.map((s) => {
       const report = (s && s.report) || {};
+      // A standard that declares its languages (docs/PACKS.md) has its
+      // rollups' titles in each of them: the scan works out which it shows.
+      const declared =
+        s && (s.lang !== undefined || s.translations !== undefined || s.texts !== undefined);
       return {
         key: s.key,
         standard: s.standard,
         ...(report.titleLang ? { titleLang: String(report.titleLang) } : {}),
+        ...(declared ? { lang: sourceOf(s), locales: languagesOf(s) } : {}),
         ...(report.noteKey ? { noteKey: String(report.noteKey) } : {})
       };
     }),
@@ -576,6 +604,7 @@ function mergeDictionaries(files) {
 
 module.exports = {
   WCAG_PROFILE_TAGS,
+  DEPRECATED_PROFILES,
   profileWcagTarget,
   prepareStandards,
   prepareRules,

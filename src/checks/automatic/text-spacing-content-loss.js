@@ -19,7 +19,8 @@
  *     the page's own (inline `!important` aside, which avoid-inline-spacing
  *     reports), and each line of text is measured before and after against
  *     the boxes that clip it: those on its containing block chain with
- *     `overflow: hidden` or `clip`, or `contain: paint`, and the viewport
+ *     `overflow: hidden` or `clip`, or `contain: paint` (which
+ *     `content-visibility: auto` gives), and the viewport
  *     on an axis the page keeps from scrolling, or for text in a fixed box,
  *     which doesn't scroll with the page. A
  *     line that was inside and ends at least half outside (half its
@@ -91,12 +92,26 @@
  *     past the top or bottom.
  *   - `container.widthPx`, `container.heightPx` (cut-off text): the size of
  *     the clipping box with the spacing applied.
+ *   - `edge` (cut-off text): the edge of the box the line went furthest
+ *     past: `top`, `right`, `bottom` or `left`.
+ *   - `clipCss` (cut-off text, where it can be read): the CSS that cuts it
+ *     off there, as declarations: what fixes the box's size on that axis
+ *     (`white-space: nowrap`, `width`, `max-height`...) and its overflow,
+ *     as `height: 48px; overflow: hidden`. Not for the viewport.
+ *   - `clippedBy` (cut-off text): `content-visibility` when the box clips
+ *     only for its `content-visibility: auto`, which clips what overflows
+ *     it, on screen as well as off it, as `contain: paint` does, though its
+ *     computed `contain` doesn't say so. The finding names it.
  *   - `viewport.width`, `viewport.height` (cut-off or overlapping text): the
  *     viewport the page was laid out in, in CSS pixels. Text that fits at
  *     one width can be cut off at another.
  *   - `other` (overlapping text): the text it comes to overlap.
  *   - `selector`, `property`, `value` (a style sheet rule): the rule's
  *     selector and the declaration that forces the spacing.
+ *   - `evidenceState` (cut-off, overlapping or scroll-locked text):
+ *     `text-spacing`, as the finding shows only with the spacing applied,
+ *     which the rule takes off the page again before the browser paints. A
+ *     tool applies it again with evidenceState() to picture the finding.
  * @reason-codes
  *   - `TEXT_CLIPPED` (fail): with the WCAG text spacing applied, a line of
  *     text ends at least half outside the box that clips it, so it is cut
@@ -109,6 +124,15 @@
  *   - `TEXT_CLIPPED_MOVING` (cantTell): text moved by an animation that
  *     repeats for ever reaches past the edge of its clipping box with the
  *     spacing applied; whether any of it is lost is for a person to judge.
+ *     Basis: WCAG 1.4.12 (not settled).
+ *   - `TEXT_CLIPPED_SCRIPT_SIZED` (cantTell): text cut off as TEXT_CLIPPED
+ *     is, by a box the page's script sized to fit that text before the
+ *     spacing (an inline width or height on the box, or on the box its
+ *     percentage size is taken from, equal to the text's own size). The
+ *     script may size it again once the text grows, after the moment the
+ *     scan measures in.
+ *     It leans pass for the floating label of an Angular Material outlined
+ *     form field, whose script fits the outline to the label again.
  *     Basis: WCAG 1.4.12 (not settled).
  *   - `TEXT_CLIPPED_FURTHER` (cantTell): text its box already cut off shows
  *     fewer lines in full once the spacing is applied; whether the excerpt
@@ -156,6 +180,10 @@
  *   stops the propagation in Chromium), <body> clips its own box. Text in a
  *   box fixed to the viewport is judged against the viewport on the axes the
  *   box doesn't scroll; a sticky box scrolls with its container and is not.
+ *   Content already beyond the viewport counts as a scroll lock whether the
+ *   document's scroll size shows it or a box out of flow holds it: a
+ *   `body { position: fixed }` lock, or a fixed box that already reached past
+ *   the viewport.
  *   Only text wholly inside the viewport before the spacing is judged
  *   against it.
  * - Lines are read with Range.getClientRects() on each text node, up to
@@ -169,7 +197,7 @@ const id = 'text-spacing-content-loss';
 const meta = {
   title: 'Text stays readable when the user increases text spacing',
   description:
-    'Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.',
+    'Applies increased text spacing (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.',
   i18n: {
     titleKey: 'textSpacingContentLoss_title',
     descriptionKey: 'textSpacingContentLoss_description'
@@ -200,85 +228,10 @@ const meta = {
     'TEXT_CLIPPED_FURTHER',
     'TEXT_OVERLAPS',
     'VIEWPORT_SCROLL_LOCKED',
+    'TEXT_CLIPPED_SCRIPT_SIZED',
     'SPACING_NOT_APPLIED'
   ],
-  margin: { measure: 'overflow-px', unit: 'px', limit: 'max', band: { absolute: 8 } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    SPACING_NOT_APPLIED: {
-      steps: [
-        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important. Rules added in the Styles pane are not blocked by the page's security policy.",
-        'Scroll through the whole page and look for text that is cut off, overlaps other text or disappears.',
-        'Check that controls and menus still work and show all their text.'
-      ],
-      passWhen:
-        'All text stays visible and readable and nothing stops working with the spacing applied.',
-      failWhen:
-        'Some text is cut off, overlaps or is lost with the spacing applied, which fails WCAG 1.4.12.'
-    },
-    STYLESHEET_IMPORTANT: {
-      steps: [
-        'Note the rule, property and value the report gives, and find an element it styles in the Elements panel.',
-        "Add the text-spacing rules with !important in the Styles pane and check in the Computed tab whether the element's line-height, letter-spacing or word-spacing changes.",
-        "If it does not change, look at that element's text on screen with the spacing a user would apply, and check whether it stays readable."
-      ],
-      passWhen:
-        "A user's spacing still takes effect on the element, or the content reads fine without it.",
-      failWhen:
-        "The page's !important rule keeps the user's spacing from applying, which fails WCAG 1.4.12."
-    },
-    TEXT_CLIPPED_FURTHER: {
-      steps: [
-        'Find the text excerpt the report names and note how many lines it shows in full.',
-        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
-        "Count the lines it shows now, and check whether a 'read more' link or other way still reaches the full text."
-      ],
-      passWhen: 'The excerpt still does its job, and the full text can be reached another way.',
-      failWhen:
-        'The spacing cuts off content that cannot be reached any other way, which fails WCAG 1.4.12.'
-    },
-    TEXT_CLIPPED_MOVING: {
-      steps: [
-        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
-        'Find the moving text the report names and watch it through at least one full cycle of its animation.',
-        'Pause it if there is a control, and check that all of its text can be read at some point.'
-      ],
-      passWhen: 'Every part of the moving text can still be read during its cycle.',
-      failWhen:
-        'Some of the text never appears in full with the spacing applied, which fails WCAG 1.4.12.'
-    },
-    TEXT_CLIPPED_PARTLY: {
-      steps: [
-        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
-        'Find the text the report names and look at the edge of the box that cuts it off.',
-        'Read the text and check whether every letter can still be made out, including the tops and tails of letters.'
-      ],
-      passWhen: 'Only a sliver at the edge is cut and all the text can still be read.',
-      failWhen:
-        'Part of the text is cut off so it can no longer be read, which fails WCAG 1.4.12 (F104).'
-    },
-    TEXT_OVERLAPS: {
-      steps: [
-        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
-        'Find the text the report names and the text it now overlaps.',
-        'Read both and check whether either one becomes hard to read where they overlap.'
-      ],
-      passWhen: 'The overlap is only a sliver at the edges and both texts stay readable.',
-      failWhen:
-        'Text is drawn over other text so that either becomes unreadable, which fails WCAG 1.4.12 (F104).'
-    },
-    VIEWPORT_SCROLL_LOCKED: {
-      steps: [
-        'Close any banner, dialog or overlay that is open on the page, so the page can scroll.',
-        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
-        'Scroll to the text the report names and check that it can be reached and read.'
-      ],
-      passWhen:
-        'Once the overlay is closed, the page scrolls and all of the text can be reached and read.',
-      failWhen: 'The text stays out of reach with the spacing applied, which fails WCAG 1.4.12.'
-    }
-  }
+  margin: { measure: 'overflow-px', unit: 'px', limit: 'max', band: { absolute: 8 } }
 };
 
 function runInPage(ctx) {
@@ -290,6 +243,7 @@ function runInPage(ctx) {
   const SPACING_PROPS = Object.keys(MIN_RATIO);
   const MAX_TEXT_NODES = 3000;
   const CSS_STYLE_RULE = 1;
+  const CSS_IMPORT_RULE = 3;
   const LAYER = 'surea11y-text-spacing';
 
   function styleOf(el, pseudo) {
@@ -371,8 +325,11 @@ function runInPage(ctx) {
   const importantFindings = [];
   (function readSheets() {
     const seen = new Set();
-    function check(cssRule) {
-      const style = cssRule.style;
+    // `style` is a rule's declarations, `selector` its selector resolved
+    // against the rules it is nested in, `scopes` the @scope blocks around
+    // it, whose subtrees alone it reaches, and `shown` the selector as the
+    // author wrote it, for the message.
+    function check(style, selector, scopes, shown) {
       for (const prop of SPACING_PROPS) {
         let value;
         let priority;
@@ -388,13 +345,13 @@ function runInPage(ctx) {
         let targets;
         try {
           targets = helpers.queryAllSmart
-            ? helpers.queryAllSmart(cssRule.selectorText, { inert: true })
-            : helpers.queryAll(cssRule.selectorText);
+            ? helpers.queryAllSmart(selector, { inert: true })
+            : helpers.queryAll(selector);
         } catch {
           targets = [];
         }
         for (const el of targets) {
-          if (!el || seen.has(el) || !textOf(el)) continue;
+          if (!el || seen.has(el) || !textOf(el) || !inRoot(el) || !inScopes(el, scopes)) continue;
           const cs = styleOf(el);
           const fontSize = px(cs && cs.fontSize) || 16;
           const declared = declaredRatio(prop, value);
@@ -408,33 +365,127 @@ function runInPage(ctx) {
             prop,
             value,
             ratio,
-            selector: String(cssRule.selectorText)
+            selector: String(shown)
           });
           break;
         }
       }
     }
-    function walk(rules, depth) {
+    // A sheet or a group rule whose media or @supports condition doesn't
+    // hold now (@media print on a screen scan) blocks no user's spacing.
+    const applies = (x) =>
+      typeof helpers.cssConditionApplies === 'function' ? helpers.cssConditionApplies(x) : true;
+    // The selector list's own commas, not those inside :is() and the like.
+    function splitSelectorList(text) {
+      const parts = [];
+      let depth = 0;
+      let current = '';
+      for (const ch of String(text || '')) {
+        if (ch === '(') depth += 1;
+        if (ch === ')') depth = Math.max(0, depth - 1);
+        if (depth === 0 && ch === ',') {
+          parts.push(current);
+          current = '';
+          continue;
+        }
+        current += ch;
+      }
+      parts.push(current);
+      return parts.map((x) => x.trim()).filter(Boolean);
+    }
+    // A nested rule's selector, resolved against its parent's: `&` stands
+    // for the parent, and a selector without one is a descendant of it
+    // (CSS Nesting), so `.card { p {} }` reaches only the p in a .card.
+    function nestedSelector(selector, parent) {
+      if (!parent) return selector;
+      return splitSelectorList(selector)
+        .map((part) =>
+          part.indexOf('&') !== -1
+            ? part.split('&').join(':is(' + parent + ')')
+            : ':is(' + parent + ') ' + part
+        )
+        .join(', ');
+    }
+    // The root (document or shadow root) of the sheet being read.
+    let sheetRoot = document;
+    function inRoot(el) {
+      try {
+        return dom.getRootNode(el) === sheetRoot;
+      } catch {
+        return false;
+      }
+    }
+    // Whether el is inside every @scope around the rule: at or below an
+    // element its start matches, and not at or below one its end matches
+    // there. A scope with no start is rooted at its <style>'s parent.
+    function inScopes(el, scopes) {
+      for (const scope of scopes) {
+        try {
+          let root = null;
+          if (scope.start) root = dom.closest(el, scope.start);
+          else if (scope.owner && dom.contains(scope.owner, el)) root = scope.owner;
+          if (!root) return false;
+          const limit = scope.end ? dom.closest(el, scope.end) : null;
+          if (limit && limit !== root && dom.contains(root, limit)) return false;
+        } catch {
+          // A scope that can't be read is taken to hold el.
+        }
+      }
+      return true;
+    }
+    function scopeOf(r) {
+      let owner = null;
+      try {
+        const node = r.parentStyleSheet && r.parentStyleSheet.ownerNode;
+        owner = node ? dom.parentElement(node) : null;
+      } catch {}
+      return { start: r.start || '', end: r.end || '', owner };
+    }
+    function walk(rules, depth, parent, scopes, parentShown) {
       if (!rules || depth > 8) return;
       for (const r of rules) {
-        if (!r) continue;
-        if (r.type === CSS_STYLE_RULE && r.selectorText && r.style) check(r);
+        if (!r || !applies(r)) continue;
+        let selector = parent;
+        let shown = parentShown;
+        if (r.type === CSS_STYLE_RULE && r.selectorText && r.style) {
+          selector = nestedSelector(String(r.selectorText), parent);
+          shown = r.selectorText;
+          check(r.style, selector, scopes, r.selectorText);
+        } else if (parent && r.style && !r.selectorText) {
+          // Declarations straight inside an at-rule within a style rule
+          // (`h1 { @media screen { letter-spacing: 0 !important } }`) belong
+          // to that rule's selector.
+          check(r.style, parent, scopes, parentShown);
+        }
+        const isScope = !!(r.constructor && r.constructor.name === 'CSSScopeRule');
         let nested = null;
         try {
-          nested = r.cssRules || null;
+          // An @import's sheet holds rules of its own.
+          nested = r.type === CSS_IMPORT_RULE ? r.styleSheet && r.styleSheet.cssRules : r.cssRules;
         } catch {}
-        if (nested) walk(nested, depth + 1);
+        if (nested)
+          walk(nested, depth + 1, selector, isScope ? scopes.concat(scopeOf(r)) : scopes, shown);
       }
     }
     try {
-      for (const sheet of dom.styleSheets(document) || []) {
+      // The document's sheets, adopted ones too, and each open shadow
+      // root's, whose rules reach only the elements of that root: the scan
+      // finds elements in shadow roots, which a document rule doesn't style.
+      const sheets = helpers.getStyleSheets
+        ? helpers.getStyleSheets()
+        : [...(dom.styleSheets(document) || [])].map((sheet) => ({ sheet, root: document }));
+      for (const { sheet, root } of sheets) {
+        if (!applies(sheet)) continue;
+        sheetRoot = root;
+        // Another origin's sheet: its text from engineOptions.styleSheetTexts,
+        // if given (helpers.cssRulesOf); otherwise not inspectable.
         let rules = null;
         try {
-          rules = sheet.cssRules;
+          rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet.cssRules;
         } catch {
           continue;
         }
-        walk(rules, 0);
+        walk(rules, 0, '', [], '');
       }
     } catch {}
   })();
@@ -457,6 +508,7 @@ function runInPage(ctx) {
   const partly = [];
   const moving = [];
   const locked = [];
+  const scriptSized = [];
   const clippedFurther = [];
   const overlaps = [];
   let textCount = 0;
@@ -604,6 +656,19 @@ function runInPage(ctx) {
       return !contained(rs) && !contained(bs);
     })();
 
+    // Whether el's box, or the content overflowing it, reaches past the
+    // viewport on each axis, as drawn now.
+    function pastViewport(el) {
+      const se = dom.get(document, 'compatMode') === 'BackCompat' ? bodyEl : rootEl;
+      const w = Number(dom.get(se, 'clientWidth')) || view.innerWidth || 0;
+      const h = Number(dom.get(se, 'clientHeight')) || view.innerHeight || 0;
+      const r = dom.getBoundingClientRect(el);
+      if (!r || !w || !h) return { x: false, y: false };
+      const right = Math.max(r.right, r.left + (Number(dom.get(el, 'scrollWidth')) || 0));
+      const bottom = Math.max(r.bottom, r.top + (Number(dom.get(el, 'scrollHeight')) || 0));
+      return { x: r.left < -1 || right > w + 1, y: r.top < -1 || bottom > h + 1 };
+    }
+
     // The viewport clips on each axis its used overflow hides. `locked`: both
     // hidden with content already beyond, a scroll lock the engine can't see past.
     const rootEl = dom.documentElement(document);
@@ -619,11 +684,17 @@ function runInPage(ctx) {
       const y = hides(cs.overflowY);
       const quirks = dom.get(document, 'compatMode') === 'BackCompat';
       const se = quirks ? bodyEl : rootEl;
-      const beyond = (scrollSize, clientSize, offset) =>
+      // A <body> taken out of flow, as `body { position: fixed }` locks the
+      // page behind a banner, leaves the scroll size at the viewport's though
+      // its content lies beyond, so its own box counts too.
+      const bodyPast = bodyEl ? pastViewport(bodyEl) : { x: false, y: false };
+      const beyond = (scrollSize, clientSize, offset, past) =>
         (Number(dom.get(se, scrollSize)) || 0) > (Number(dom.get(se, clientSize)) || 0) + 1 ||
-        offset > 0;
-      const lockedX = x && y && beyond('scrollWidth', 'clientWidth', view.scrollX || 0);
-      const lockedY = x && y && beyond('scrollHeight', 'clientHeight', view.scrollY || 0);
+        offset > 0 ||
+        past;
+      const lockedX = x && y && beyond('scrollWidth', 'clientWidth', view.scrollX || 0, bodyPast.x);
+      const lockedY =
+        x && y && beyond('scrollHeight', 'clientHeight', view.scrollY || 0, bodyPast.y);
       const out = [];
       if (x && y && lockedX === lockedY) out.push({ el, x, y, viewport: true, locked: lockedX });
       else {
@@ -649,6 +720,19 @@ function runInPage(ctx) {
     // A viewport clipper set by a fixed box has a key of its own, as the box
     // may clip its own content too.
     const keyOf = (c) => c.key || c.el;
+    // Whether a box clips on its axes only for its content-visibility: auto,
+    // which clips what overflows it, on screen or off, as contain: paint
+    // does. The scan lays such a box out as visible (computed so here), with
+    // the containment auto gives it, so the runner says which boxes those are.
+    const cvClips =
+      typeof helpers.paintContainedByContentVisibility === 'function'
+        ? helpers.paintContainedByContentVisibility
+        : () => false;
+    function byContentVisibility(a, cs, x, y) {
+      if (!cvClips(a)) return false;
+      const hides = (v) => v === 'hidden' || v === 'clip';
+      return !(x && hides(cs.overflowX)) && !(y && hides(cs.overflowY));
+    }
     function clippersOf(el) {
       if (clipCache.has(el)) return clipCache.get(el);
       const path = [];
@@ -677,7 +761,7 @@ function runInPage(ctx) {
             !(scrolls & 1) && (paint || cs.overflowX === 'hidden' || cs.overflowX === 'clip');
           const y =
             !(scrolls & 2) && (paint || cs.overflowY === 'hidden' || cs.overflowY === 'clip');
-          if (x || y) own = { el: a, x, y };
+          if (x || y) own = { el: a, x, y, contentVisibility: byContentVisibility(a, cs, x, y) };
           if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') after |= 1;
           if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') after |= 2;
         }
@@ -686,10 +770,14 @@ function runInPage(ctx) {
         if (scrolls === 3) break;
         // A fixed box placed against the viewport doesn't scroll with the
         // page: what it holds outside the viewport can't be scrolled to.
+        // One that already reached past the viewport, as a whole page held
+        // in a fixed box does, is locked like the viewport.
         if (cs && cs.position === 'fixed' && !helpers.containingBlockOf(a)) {
-          tail = [
-            { el: a, key: { fixed: a }, x: !(scrolls & 1), y: !(scrolls & 2), viewport: true }
-          ];
+          const x = !(scrolls & 1);
+          const y = !(scrolls & 2);
+          const past = pastViewport(a);
+          const locked = (x && past.x) || (y && past.y);
+          tail = [{ el: a, key: { fixed: a }, x, y, viewport: true, locked }];
           break;
         }
       }
@@ -845,6 +933,48 @@ function runInPage(ctx) {
 
     const scroll = [sx(), sy()];
     const before = measure();
+
+    // A box the page's script fitted to its text as it was: an inline width
+    // or height, on the box or on the one its percentage size is taken from,
+    // that gives the text's own size before the spacing, as Angular
+    // Material's outlined field sets its notch to the floating label's
+    // width. The script may fit it again once the text grows, which a scan
+    // taken in one moment can't see. Inline styles are read before the
+    // page's scripts can run; sizes are compared in layout pixels.
+    function scriptSizing(el, n) {
+      const lines = before.lines.get(n) || [];
+      if (!lines.length) return null;
+      const r = dom.getBoundingClientRect(el);
+      const ow = Number(dom.get(el, 'offsetWidth')) || 0;
+      const oh = Number(dom.get(el, 'offsetHeight')) || 0;
+      const kx = ow > 0 && r && r.width > 0 ? r.width / ow : 1;
+      const ky = oh > 0 && r && r.height > 0 ? r.height / oh : 1;
+      const text = {
+        width:
+          (Math.max(...lines.map((l) => l.right)) - Math.min(...lines.map((l) => l.left))) / kx,
+        height:
+          (Math.max(...lines.map((l) => l.bottom)) - Math.min(...lines.map((l) => l.top))) / ky
+      };
+      const cb = helpers.containingBlockOf(el) || dom.parentElement(el);
+      for (const [by, box] of [
+        ['self', el],
+        ['containing-block', cb]
+      ]) {
+        if (!box || dom.nodeType(box) !== 1) continue;
+        const style = String(dom.getAttribute(box, 'style') || '');
+        const re = /(?:^|;)\s*((?:min-|max-)?(width|height))\s*:\s*([^;]*)/gi;
+        let m;
+        while ((m = re.exec(style))) {
+          const size = text[m[2].toLowerCase()];
+          for (const v of m[3].match(/\d*\.?\d+px/g) || []) {
+            if (Math.abs(parseFloat(v) - size) <= 1.5) {
+              return { box, by, property: m[1].toLowerCase(), value: m[3].trim() };
+            }
+          }
+        }
+      }
+      return null;
+    }
     const fontSizes = new Map();
     for (const n of nodes) {
       const cs = styleOf(dom.parentElement(n));
@@ -873,6 +1003,8 @@ function runInPage(ctx) {
       if (inside) visibleBefore.add(n);
     }
 
+    // evidenceState() (src/core/evidence-state.js) applies the same style
+    // sheet to picture the findings; a test keeps the two alike.
     const spacingCss =
       `@layer ${LAYER} {` +
       '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }' +
@@ -994,6 +1126,58 @@ function runInPage(ctx) {
       const dx = c.x ? Math.max(0, box.left - line.left, line.right - box.right) : 0;
       return { dx, dy };
     }
+    // The side of box a line goes furthest past on an axis: top, right,
+    // bottom or left.
+    function edgeOf(line, box, axis) {
+      return axis === 'x'
+        ? line.right - box.right >= box.left - line.left
+          ? 'right'
+          : 'left'
+        : line.bottom - box.bottom >= box.top - line.top
+          ? 'bottom'
+          : 'top';
+    }
+    // The CSS that cuts text off on an axis at box c: what fixes the box's
+    // size there (white-space: nowrap or pre, on the text's element or an
+    // element up to c, keeping the text on one line; else the box's
+    // max-width or width, max-height or height), then its overflow, as
+    // declarations: "height: 48px; overflow: hidden". '' where it can't
+    // be read.
+    function clipCssOf(c, textEl, axis) {
+      try {
+        const cs = styleOf(c.el);
+        if (!cs) return '';
+        const parts = [];
+        if (axis === 'x') {
+          let ws = '';
+          for (let cur = textEl, i = 0; cur && i < 100; cur = dom.parentElement(cur), i++) {
+            const st = styleOf(cur);
+            const v = st ? String(st.whiteSpace || st.textWrapMode || '') : '';
+            if (/^(nowrap|pre)$/.test(v) || (st && st.textWrapMode === 'nowrap')) {
+              ws = `white-space: ${v === 'pre' ? 'pre' : 'nowrap'}`;
+              break;
+            }
+            if (cur === c.el) break;
+          }
+          if (ws) parts.push(ws);
+          else if (cs.maxWidth && cs.maxWidth !== 'none') parts.push(`max-width: ${cs.maxWidth}`);
+          else if (cs.width && cs.width !== 'auto') parts.push(`width: ${cs.width}`);
+        } else if (cs.maxHeight && cs.maxHeight !== 'none')
+          parts.push(`max-height: ${cs.maxHeight}`);
+        else if (cs.height && cs.height !== 'auto') parts.push(`height: ${cs.height}`);
+        const ox = String(cs.overflowX || '');
+        const oy = String(cs.overflowY || '');
+        const own = axis === 'x' ? ox : oy;
+        if (own && own !== 'visible')
+          parts.push(ox === oy ? `overflow: ${own}` : `overflow-${axis}: ${own}`);
+        else if (cs.contain && cs.contain !== 'none') parts.push(`contain: ${cs.contain}`);
+        else return '';
+        if (axis === 'x' && cs.textOverflow === 'ellipsis') parts.push('text-overflow: ellipsis');
+        return parts.join('; ');
+      } catch {
+        return '';
+      }
+    }
     function insideBefore(n, c) {
       const b0 = before.boxes.get(keyOf(c));
       const lines = before.lines.get(n) || [];
@@ -1087,20 +1271,41 @@ function runInPage(ctx) {
           const lost = o.dy >= y.thresholdPx || o.dx >= x.thresholdPx;
           const some = o.dy > PARTLY_PX || o.dx > PARTLY_PX;
           if (lost) {
-            worst = { lost, ...(o.dx >= x.thresholdPx ? x : y) };
+            const m = o.dx >= x.thresholdPx ? x : y;
+            worst = { lost, ...m, edge: edgeOf(l, b1, m.axis) };
             break;
           }
           if (some) {
             const m = o.dx >= o.dy ? x : y;
-            if (!worst || m.overflowPx > worst.overflowPx) worst = { lost, ...m };
+            if (!worst || m.overflowPx > worst.overflowPx)
+              worst = { lost, ...m, edge: edgeOf(l, b1, m.axis) };
           }
         }
         const moved = isMovedForEver(dom.parentElement(n), c.el);
         if (worst) {
           reportedClip.add(c.el);
-          const list = moved ? moving : c.locked ? locked : worst.lost ? clipped : partly;
+          const sizing =
+            worst.lost && !moved && !c.locked && !c.viewport ? scriptSizing(c.el, n) : null;
+          const list = moved
+            ? moving
+            : c.locked
+              ? locked
+              : sizing
+                ? scriptSized
+                : worst.lost
+                  ? clipped
+                  : partly;
           list.push({
             el: c.el,
+            ...(sizing ? { sizing } : {}),
+            ...(c.contentVisibility ? { clippedBy: 'content-visibility' } : {}),
+            // The edge the text crosses, and the CSS that keeps the box from
+            // growing past it and clips it there.
+            edge: worst.edge,
+            clipCss:
+              c.viewport || c.contentVisibility
+                ? ''
+                : clipCssOf(c, dom.parentElement(n), worst.axis),
             text: textOf(dom.parentElement(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
@@ -1275,60 +1480,88 @@ function runInPage(ctx) {
 
   // ---- Findings ----
 
+  // The edge a finding names, as its params give it (edgeTop and so on),
+  // with a space after it, or ''.
+  function edgeWord(p) {
+    if (p.edgeTop) return 'top ';
+    if (p.edgeRight) return 'right ';
+    if (p.edgeBottom) return 'bottom ';
+    if (p.edgeLeft) return 'left ';
+    return '';
+  }
   const MESSAGES = {
     TEXT_CLIPPED: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge).`,
-      hint: 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its ${edgeWord(p)}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
+      hint: (p) =>
+        p.clipCss
+          ? `Let the container grow with its text: change ${p.clipCss}, or let it scroll.`
+          : 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll.',
       key: 'fail_clipped'
+    },
+    // TEXT_CLIPPED by a box that clips only for its content-visibility: auto,
+    // which nothing in its overflow or contain shows.
+    TEXT_CLIPPED_CONTENT_VISIBILITY: {
+      summary: (p) =>
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge): its content-visibility: auto clips what goes past its edge, as overflow: clip does.`,
+      hint: 'content-visibility: auto clips the content of an element to its box, on screen as well as off it. Let the text wrap or the box grow with it, or leave content-visibility: auto off this element.',
+      key: 'fail_clippedContentVisibility'
     },
     TEXT_CLIPPED_PARTLY: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, which hides what goes past it.`,
-      hint: 'Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the ${edgeWord(p)}edge of this element, which hides what goes past it.${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
+      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that this text can still be read in full.',
       key: 'cantTell_clippedPartly',
       needed: 'Whether the text that reaches past the edge of the element can still be read.'
     },
     TEXT_CLIPPED_MOVING: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.`,
-      hint: 'Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.`,
+      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that this moving text can still be read in full as it passes. Moving content also needs a way to pause it.',
       key: 'cantTell_clippedMoving',
       needed: 'Whether the moving text can still be read in full with the spacing applied.'
     },
+    TEXT_CLIPPED_SCRIPT_SIZED: {
+      summary: (p) =>
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge), but the page's script sized it to fit that text as it was, and may size it again once the text grows.`,
+      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied, once the page has had a moment to react, that this text shows in full; if it stays cut off, let the container grow with its text.',
+      key: 'cantTell_clippedScriptSized',
+      needed:
+        "Whether the page's script resizes the element to fit the text once the spacing is applied."
+    },
     TEXT_CLIPPED_FURTHER: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element shows ${p.linesAfter} of the ${p.linesBefore} lines of the text "${p.text}" it showed in full before.`,
-      hint: 'Check with the text spacing applied that what this excerpt shows still serves its purpose, or let it grow with its text, as line-clamp does (WCAG 1.4.12).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, this element shows ${p.linesAfter} of the ${p.linesBefore} lines of the text "${p.text}" it showed in full before.`,
+      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that what this excerpt shows still serves its purpose, or let it grow with its text, as line-clamp does.',
       key: 'cantTell_clippedFurther',
       needed: 'Whether the excerpt still serves its purpose with fewer lines shown.'
     },
     VIEWPORT_SCROLL_LOCKED: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" moves ${p.overflowPx}px out of the viewport, which this element keeps from scrolling though content already lay beyond it, as a scroll lock behind a cookie banner or a menu does.`,
-      hint: 'Check with the text spacing applied that this text can be reached once the page scrolls again; if the page never scrolls in this state, let it scroll (WCAG 1.4.12).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" moves ${p.overflowPx}px out of the viewport, which this element keeps from scrolling though content already lay beyond it, as a scroll lock behind a cookie banner or a menu does.`,
+      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that this text can be reached once the page scrolls again; if the page never scrolls in this state, let it scroll.',
       key: 'cantTell_viewportScrollLocked',
       needed:
         'Whether the text pushed out of the viewport can be reached once the page scrolls again.'
     },
     TEXT_OVERLAPS: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" comes to overlap the text "${p.other}".`,
-      hint: 'Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" comes to overlap the text "${p.other}".`,
+      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that both texts can still be read.',
       key: 'cantTell_overlaps',
       needed: 'Whether the overlapping texts can still be read.'
     },
     SPACING_NOT_APPLIED: {
       summary: () =>
         "The page's Content Security Policy kept the engine from applying the text spacing, so whether text is lost with it could not be measured.",
-      hint: 'Check the page by hand with the text spacing of WCAG 1.4.12 applied, or scan it with a browser setting or extension that applies it.',
+      hint: 'Check the page by hand with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied, or scan it with a browser setting or extension that applies it.',
       key: 'cantTell_spacingNotApplied',
       needed: 'Whether text is cut off or overlaps once the text spacing is applied.'
     },
     STYLESHEET_IMPORTANT: {
       summary: (p) =>
-        `A style sheet rule (${p.selector}) sets ${p.property}: ${p.value} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.`,
-      hint: 'Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12).',
+        `A style sheet rule (${p.selector}) sets ${p.property}: ${p.value} with !important on this text, below the spacing users must be able to apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).`,
+      hint: 'Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it.',
       key: 'cantTell_stylesheetImportant',
       needed: 'Whether users can still apply their own text spacing to this text.'
     }
@@ -1348,7 +1581,7 @@ function runInPage(ctx) {
     if (!/\s/.test(textOf(f.el))) return null;
     return {
       toward: 'fail',
-      why: 'The rule forces a spacing below the WCAG value with !important on text that can wrap, so a tool that adds its own style sheet cannot increase it.',
+      why: 'The rule forces a spacing below the value users must be able to apply, with !important on text that can wrap, so a tool that adds its own style sheet cannot increase it.',
       signals: [
         { signal: 'important-below-threshold', value: f.prop + ': ' + f.value },
         { signal: 'value-gap', value: Math.round((f.ratio / MIN_RATIO[f.prop]) * 100) / 100 }
@@ -1425,16 +1658,52 @@ function runInPage(ctx) {
     };
   }
 
+  // Angular Material's outlined form field sizes its notch to the floating
+  // label, calc(<width>px * var(--mat-mdc-form-field-floating-label-scale,
+  // 0.75) + 9px), and sizes it again when the label's size changes.
+  function scriptSizedLean(sizing) {
+    const cls = String(dom.getAttribute(sizing.box, 'class') || '');
+    if (
+      !/(^|\s)mdc-notched-outline__notch(\s|$)/.test(cls) ||
+      !/var\(\s*--mat-mdc-form-field-floating-label-scale/.test(sizing.value)
+    ) {
+      return null;
+    }
+    return {
+      toward: 'pass',
+      why: 'The text is the floating label of an Angular Material outlined form field, whose script fits the outline to the label again when the label grows.',
+      signals: [{ signal: 'self-resizing-component', value: 'angular-material-notched-outline' }],
+      caution:
+        'Older versions of the library set the outline width only once; check that the label shows in full with the spacing applied.',
+      i18n: {
+        whyKey: 'textSpacingContentLoss_lean_why_scriptSized',
+        cautionKey: 'textSpacingContentLoss_lean_caution_scriptSized'
+      }
+    };
+  }
+
   const fails = [];
   const questions = [];
+  // The findings that exist only with the spacing applied, which the page
+  // as it is doesn't show: they name the state, so a tool can apply it again
+  // to picture them (evidenceState, src/core/evidence-state.js).
+  const SEEN_WITH_SPACING = new Set([
+    'TEXT_CLIPPED',
+    'TEXT_CLIPPED_PARTLY',
+    'TEXT_CLIPPED_MOVING',
+    'TEXT_CLIPPED_SCRIPT_SIZED',
+    'TEXT_CLIPPED_FURTHER',
+    'TEXT_OVERLAPS',
+    'VIEWPORT_SCROLL_LOCKED'
+  ]);
   // `params` fill in the summary; `details` are what the rule found, with
   // the measurements behind it.
-  function report(reasonCode, el, params, details, uncertaintyCode, lean) {
-    const msg = MESSAGES[reasonCode];
+  function report(reasonCode, el, params, details, uncertaintyCode, lean, message) {
+    const msg = MESSAGES[message || reasonCode];
     const occ = helpers.reportOccurrence(el, {
       ...(lean ? { lean } : {}),
       summary: msg.summary(params),
-      hint: msg.hint,
+      hint: typeof msg.hint === 'function' ? msg.hint(params) : msg.hint,
       i18n: {
         summaryKey: `textSpacingContentLoss_summary_${msg.key}`,
         hintKey: `textSpacingContentLoss_hint_${msg.key}`,
@@ -1443,7 +1712,13 @@ function runInPage(ctx) {
       ...(msg.needed
         ? { uncertainty: { code: uncertaintyCode, needed: msg.needed, evidence: { reasonCode } } }
         : {}),
-      data: { details: { reasonCode, ...details } }
+      data: {
+        details: {
+          reasonCode,
+          ...details,
+          ...(SEEN_WITH_SPACING.has(reasonCode) ? { evidenceState: 'text-spacing' } : {})
+        }
+      }
     });
     (msg.needed ? questions : fails).push(occ);
   }
@@ -1457,19 +1732,50 @@ function runInPage(ctx) {
     ['TEXT_CLIPPED', clipped],
     ['TEXT_CLIPPED_PARTLY', partly, 'judgement-required'],
     ['TEXT_CLIPPED_MOVING', moving, 'judgement-required'],
-    ['VIEWPORT_SCROLL_LOCKED', locked, 'runtime-dependent']
+    ['VIEWPORT_SCROLL_LOCKED', locked, 'runtime-dependent'],
+    ['TEXT_CLIPPED_SCRIPT_SIZED', scriptSized, 'runtime-dependent']
   ]) {
     for (const f of list) {
-      const { text, metrics, container } = f;
-      const params = { text, overflowPx: String(Math.round(metrics.overflowPx)), ...at };
-      const lean = reasonCode === 'VIEWPORT_SCROLL_LOCKED' ? scrollLockedLean() : null;
+      const { text, metrics, container, sizing, clippedBy, edge, clipCss } = f;
+      // The edge the text crosses and the CSS that clips it there, said in
+      // the summary of a box that cuts text off (TEXT_CLIPPED,
+      // TEXT_CLIPPED_PARTLY).
+      const named = reasonCode === 'TEXT_CLIPPED' || reasonCode === 'TEXT_CLIPPED_PARTLY';
+      const edgeKey = named && edge ? `edge${edge[0].toUpperCase()}${edge.slice(1)}` : '';
+      const params = {
+        text,
+        overflowPx: String(Math.round(metrics.overflowPx)),
+        ...at,
+        ...(edgeKey ? { [edgeKey]: true } : {}),
+        ...(named && clipCss && !clippedBy ? { clipCss } : {})
+      };
+      const lean =
+        reasonCode === 'VIEWPORT_SCROLL_LOCKED'
+          ? scrollLockedLean()
+          : sizing
+            ? scriptSizedLean(sizing)
+            : null;
+      // Which inline size the script set, and on which box.
+      const sizedBy = sizing
+        ? { box: sizing.by, property: sizing.property, value: sizing.value }
+        : null;
       report(
         reasonCode,
         f.el,
         params,
-        { text, metrics, container, viewport },
+        {
+          text,
+          metrics,
+          container,
+          viewport,
+          ...(sizedBy ? { sizedBy } : {}),
+          ...(clippedBy ? { clippedBy } : {}),
+          ...(edge ? { edge } : {}),
+          ...(clipCss ? { clipCss } : {})
+        },
         uncertaintyCode,
-        lean
+        lean,
+        reasonCode === 'TEXT_CLIPPED' && clippedBy ? 'TEXT_CLIPPED_CONTENT_VISIBILITY' : null
       );
     }
   }

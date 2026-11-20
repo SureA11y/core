@@ -9,7 +9,8 @@
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to <meta name="viewport"> elements that carry a non-empty
- *   content attribute.
+ *   content attribute, in a page of its own: browsers ignore one in a
+ *   document shown in a frame.
  * @expectation
  *   The content attribute does not block zoom with user-scalable, and does
  *   not set maximum-scale below 5 (500%), read as browsers read it, the same
@@ -53,30 +54,19 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    VIEWPORT_ZOOM_BELOW_500: {
-      steps: [
-        "Read the viewport meta tag's content in the page source; the report lists the settings that limit zoom, such as user-scalable=no or maximum-scale=2.",
-        "Open the page on a phone or in the browser's device emulation and pinch-zoom (or use the zoom gesture) as far as it will go.",
-        'Note whether it reaches 500% and whether text is still readable.'
-      ],
-      passWhen:
-        'The page can be zoomed to 500% with no user-scalable=no and no maximum-scale below 5.',
-      failWhen:
-        'Zoom is blocked or stops below 500%, which misses the best-practice target beyond WCAG 1.4.4.'
-    }
-  }
+  coverage: {}
 };
 
 // This check is inherently whole-document (does the PAGE have this
 // property?), not evaluable per-subtree -- notApplicable when contextSelector
 // scoped this run narrower than the whole document, or when
 // engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+// A document shown in a frame is no page of its own: a browser ignores its
+// viewport meta.
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }
 
 function runInPage(ctx) {

@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
+const { JSDOM } = require('jsdom');
 
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
@@ -20,7 +21,10 @@ function getFirstOccurrence(rule) {
 function assertOccShape(occ) {
   assert.ok(occ && typeof occ === 'object', 'occurrence must be an object');
 
-  assert.strictEqual(occ.selector, 'head > title', 'selector should be "head > title"');
+  assert.ok(
+    typeof occ.selector === 'string' && occ.selector,
+    'selector must be a non-empty string'
+  );
   assert.ok(typeof occ.html === 'string', 'html snippet must be a string');
 
   assert.ok(occ.i18n && typeof occ.i18n === 'object', 'occurrence.i18n must exist');
@@ -147,7 +151,7 @@ test(`${RULE_ID}: an inline <svg><title> is not the page title, so the reason is
     const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
     const occ = getFirstOccurrence(rule);
     assert.strictEqual(occ.data.details.reasonCode, 'missingTitleElement');
-    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePresent_summary_fail_missing');
+    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePresent_summary_fail_svgOnly');
   }
 });
 
@@ -190,4 +194,68 @@ test('page-title-present: an SVG document is notApplicable', () => {
   } finally {
     [global.window, global.document] = saved;
   }
+});
+
+// The selector names the element the finding is about: the title itself,
+// the first of several, or, with none, <head> where it belongs, or <html>
+// without a <head>.
+function resolve(html, selector) {
+  return [...new JSDOM(html).window.document.querySelectorAll(selector)];
+}
+
+test(`${RULE_ID}: each finding's selector names its own element`, () => {
+  const noTitle =
+    '<!doctype html><html lang="en"><head><meta charset="utf-8"></head><body>Hi</body></html>';
+  let occ = getFirstOccurrence(runa11yCoreOnHtml(noTitle, { runOnly: [RULE_ID] }).checksResults[0]);
+  assert.deepEqual(
+    resolve(noTitle, occ.selector).map((e) => e.localName),
+    ['head']
+  );
+
+  const twoEmpty =
+    '<!doctype html><html lang="en"><head><title id="a"></title><title id="b">x</title></head><body>Hi</body></html>';
+  occ = getFirstOccurrence(runa11yCoreOnHtml(twoEmpty, { runOnly: [RULE_ID] }).checksResults[0]);
+  assert.deepEqual(
+    resolve(twoEmpty, occ.selector).map((e) => e.id),
+    ['a']
+  );
+});
+
+test(`${RULE_ID}: with no <head>, the finding points at <html>`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  const dom = createDom('<!doctype html><html lang="en"><head></head><body>Hi</body></html>');
+  const doc = dom.window.document;
+  doc.documentElement.removeChild(doc.head);
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const occ = getFirstOccurrence(result.checksResults[0]);
+  assert.equal(occ.selector, 'html');
+  assert.deepEqual([...doc.querySelectorAll(occ.selector)], [doc.documentElement]);
+});
+
+test(`${RULE_ID}: a fail says when the only <title> is an svg's, or a later <title> has the text`, () => {
+  const svgOnly = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head></head><body><svg><title>Logo</title></svg></body></html>',
+    { runOnly: [RULE_ID] }
+  );
+  const a = assertRule(svgOnly, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 })
+    .occurrences[0];
+  assert.equal(a.i18n.summaryKey, 'pageTitlePresent_summary_fail_svgOnly');
+  assert.equal(
+    a.summary,
+    'This page has no <title> element of its own: the only <title> ("Logo") is inside an <svg>, where it names the graphic.'
+  );
+  assert.equal(a.data.details.reasonCode, 'missingTitleElement');
+
+  const later = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title></title><title>Shop</title></head><body></body></html>',
+    { runOnly: [RULE_ID] }
+  );
+  const b = assertRule(later, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 })
+    .occurrences[0];
+  assert.equal(b.i18n.hintKey, 'pageTitlePresent_hint_fail_laterTitle');
+  assert.equal(
+    b.hint,
+    'Browsers use the first <title>, which is empty; the later <title> ("Shop") is ignored. Remove the empty one, or put the title text in it.'
+  );
+  assert.equal(b.data.details.reasonCode, 'emptyTitleText');
 });

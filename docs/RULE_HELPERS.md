@@ -33,9 +33,12 @@ reports what it finds should query with `queryAllSmart`, which applies both.
 
 ### `queryAllDeep(selector)` → `Element[]`
 
-Same as `queryAll`, but also descends into open shadow roots (BFS over discovered
-`shadowRoot`s). Ignores `includeShadowDom`/hidden-content policy — it's the raw
-traversal `queryAllSmart` builds on.
+`queryAll` across the context root(s), also descending into open shadow roots (BFS over
+discovered `shadowRoot`s), and leaving out excluded elements (`excludeSelectors`, global
+or rule-scoped), unlike `queryAll`. It ignores `includeShadowDom` and the hidden-content
+policy: it's the traversal `queryAllSmart` builds on. A rule that must know whether an
+excluded element is what it finds (to say a page scrolls because of one, say) walks the
+shadow roots itself.
 
 ### `queryAllSmart(selector, opts?)` → `Element[]`
 
@@ -48,6 +51,11 @@ spacing, orientation, a moving `<marquee>`) or about the markup itself (duplicat
 passes `queryAllSmart(selector, { inert: true })` to keep inert content, which is still
 drawn and still in the markup; the page behind a modal stays out. See `RULE_AUTHORING.md` §6.1 — write rules assuming
 open shadow roots are in scope and let this helper honor the caller's choice.
+
+`queryAllSmart(selector, { excluded: true })` keeps the elements `excludeSelectors` leaves
+out, for a rule that reads the whole page as context, as `heading-order` reads a page's
+outline: it must report nothing on them (`isExcluded` tells which), and the engine drops
+what it does report there.
 
 `queryAllSmart(selector, { internalsRoles: true })` also returns the custom elements whose
 `ElementInternals` give them a role the selector's role attribute selectors name
@@ -142,6 +150,16 @@ The engine's real, best-effort-unique CSS selector builder (cached per element p
 run). Used internally by `reportOccurrence`'s finalization; rules generally don't need
 to call this directly.
 
+### `cssEscape(value)` → `string`
+
+`value` as a CSS identifier, escaped as `CSS.escape()` escapes it (CSSOM's "serialize an
+identifier"), in jsdom too, which has no `CSS.escape`: a leading digit, a dot, a colon or a
+control character, which would otherwise end or change the selector. For a selector a rule
+builds by hand from an id or a class (`'#' + helpers.cssEscape(id)`), so it names the element
+it was built from. CSS reads a NUL or a lone surrogate as U+FFFD, so an id holding one names
+no element however it is escaped: check the selector with `dom.matches(el, selector)` before
+reporting it. An occurrence's own `selector` needs none of this: `reportOccurrence` builds it.
+
 ### `buildShadowHostSelectors` (internal)
 
 For an element in a shadow tree, the selectors of the shadow hosts that lead to it,
@@ -163,8 +181,11 @@ Whether `el` or one of its ancestors matches the currently effective `excludeSel
 The ancestors are shadow-including: from a shadow root the walk goes on at its host, so
 everything in an excluded host's shadow tree is excluded, however deeply nested.
 `queryAllSmart` already applies this filtering for you; reach for `isExcluded` directly
-only if a rule walks the DOM some other way (e.g. following `composedParent`) and still
-needs to respect exclusions on nodes found off that path.
+only if a rule walks the DOM some other way (e.g. following `composedParent`, or a
+`querySelectorAll` on the whole document) and still needs to respect exclusions on nodes
+found off that path. A rule that forgets has its occurrences on excluded elements dropped
+by the engine, which says so in the result (`excludedOccurrences`, and `error`), so the
+miss shows up; `tests/excluded-areas.test.js` holds core's own rules to it.
 
 ### `buildStructuralPath(node, selector)` → `number[] | null`
 
@@ -186,7 +207,10 @@ the wrong one, so the distinctions matter:
 Whether a node is eligible for the accessibility tree, per an ordered set of checks
 (display/visibility, `hidden`, `inert`, closed `<details>`, template content, etc.).
 Deliberately keeps a focusable-but-`aria-hidden` element _eligible_ — see the header
-comment on `isIncludedInAccessibilityTree` below for why.
+comment on `isIncludedInAccessibilityTree` below for why. Under `engineOptions.embeddedAriaHidden` (a
+document shown in a frame under `aria-hidden="true"`), every element is read as under an
+`aria-hidden` ancestor, and under `engineOptions.embeddedInert` (one under `[inert]`), as
+inert.
 
 ### `isHiddenContent(el, opts?)` → `boolean`
 
@@ -196,7 +220,7 @@ closed `<details>` other than its first `<summary>`, content under
 `content-visibility:hidden` or `hidden="until-found"` (not on an inline element, which
 `until-found` doesn't hide), an `[inert]` subtree and the
 button a customizable `<select>` draws itself with, the page behind an open modal
-dialog). `isHiddenContent(el, { inert: true })` keeps inert content, as
+dialog; every element under `engineOptions.embeddedInert`). `isHiddenContent(el, { inert: true })` keeps inert content, as
 `queryAllSmart` does with the same option. Inert content takes no focus and no click
 and is out of the accessibility tree, so a rule about either leaves it out with this
 one exclusion rather than deciding it alone; it is still drawn, so the contrast scan
@@ -220,7 +244,10 @@ same element under the wrong rule.
 Style/geometry-only visibility (not accessibility-tree membership): `display`,
 `visibility`, size/position, opacity, etc. `opts.visibilityMode` (`'styleOnly'` |
 `'styleAndGeometry'`), `opts.disableGeometry`, `opts.ignoreOpacity` tune what's checked.
-Use when a rule cares about visual rendering specifically, not AT exposure.
+Use when a rule cares about visual rendering specifically, not AT exposure. An `<area>` is
+drawn by the image that uses its map, so neither its own `display` (`none` in HTML's default
+style sheet, which jsdom follows and Chromium doesn't) nor its `<map>`'s hides it, as in
+`isAccTreeEligible`.
 
 ### `getEligibilityInfo(node, ctx, opts)` → `{ eligible, reasons[], targetSet, accEligible }`
 
@@ -233,7 +260,14 @@ its result straight through.
 
 Style-only visibility _hints_ for triage/diagnostics (`opacityZero`, `clipped`, etc.) —
 explicitly does **not** decide eligibility; a rule's own logic still owns the outcome.
-`clipped` is `isClipHidden` below.
+`clipped` is `isClipHidden` below. Without a layout (jsdom), whose CSS parser turns a
+space-separated `clip: rect(0 0 0 0)` into `auto`, the clip is read as declared, from every
+style sheet of the element's tree core can read: a `<style>` element's text, the text
+`engineOptions.styleSheetTexts` gives for a sheet, the sheets they `@import`, and the parsed
+rules of a sheet with no text to read. The declaration that applies is the cascade's:
+`!important` first, then the `style` attribute over any rule, then cascade layers,
+specificity and order, counting only rules whose `@media` and `@supports` apply.
+`metrics.clip` is that value.
 
 ### `computedStyle(el)` → `CSSStyleDeclaration | object`
 
@@ -242,6 +276,20 @@ it through this rather than the page's `getComputedStyle`. An empty object where
 can't be read. Without a layout (jsdom), an element of a formula (`<math>`) has the style
 of the element around the formula: jsdom can't compute a formula's style, and reading it
 throws. A browser computes it, and it is read as any other.
+
+Also without a layout, the properties core reads to tell whether an element is shown
+(`display`, `visibility`, `position`, `clip-path`, `opacity`, `width`, `height`,
+`overflow`, `overflow-x`, `overflow-y`, `content-visibility`, `pointer-events`, `left`,
+`top`, `text-indent`, `transform`, `scale` and `contain`) take the rules jsdom's
+`getComputedStyle` leaves out: those inside `@layer`, `@supports` and `@container`, and
+those nested in another at-rule. Where the declaration that wins the cascade for the
+element is one of those, its value is read in place of jsdom's, by property
+(`cs.display`, `cs['clip-path']`, `getPropertyValue('display')`); `visibility`,
+`pointer-events` and `text-indent` come down to an element that declares none. `@media` is
+taken as jsdom takes it (only `all` and `screen` apply), `@supports` holds for a property
+test and for a `selector()` that parses, and `@container` doesn't apply without a layout.
+A value of `revert`, `revert-layer` or with `var()` leaves jsdom's. Only the document's own
+style sheets count, as for jsdom; `clip` is read by `isClipHidden`'s own reader below.
 
 ### `isClipHidden(style)` → `boolean`
 
@@ -254,6 +302,17 @@ does nothing on other boxes), a `clip-path: inset()` whose insets meet (`inset(5
 of the box, such as `rect(0, 100px, 50px, 0)` or `inset(0 50% 0 0)`, or that cannot be
 decided without the box's size, such as `inset(10px)`, is not hidden. Use it rather than
 matching the values yourself, so every rule agrees on what visually hidden means.
+
+### `isElementClipHidden(el, style)` → `boolean`
+
+`isClipHidden` for an element, given its computed style: where that style reads no hiding
+clip, the `clip` as declared is tried too. jsdom's CSS parser drops a space-separated
+`rect()` (`rect(0 0 0 0)` computes as `auto`), the form most visually hidden classes are
+written in, so a rule that reads only the computed style misses them without a browser. The
+declared value is read from the style attribute and the style sheets core can read, by the
+cascade, as `getVisibilityHintsInfo` and `isVisuallyHidden` read it. A browser computes the
+clip, so there it decides as `isClipHidden` does. Use it whenever an element is at hand;
+keep `isClipHidden` for a style with no element behind it, such as a focused-state overlay.
 
 ### `containingBlockOf(el)` → `Element | null`
 
@@ -272,8 +331,8 @@ positioned popup escapes an `overflow: hidden` box that isn't on its chain (#110
 
 Whether an element's box is drawn so that nothing in it can be seen, though it is
 rendered and stays in the accessibility tree: fully transparent, clipped away
-(`isClipHidden`, reading a `clip` in the `style` attribute too, which jsdom doesn't
-compute), or at most 1×1 px with its overflow hidden. Those are the screen-reader-only
+(`isClipHidden`, reading the `clip` as declared where jsdom doesn't compute it, as
+`getVisibilityHintsInfo` does), or at most 1×1 px with its overflow hidden. Those are the screen-reader-only
 patterns; the result holds for the whole subtree. For "is this text on screen?", as
 `label-in-name` asks of a control's visible label (#93). `{ ignoreOpacity: true }` leaves
 transparency out, for a rule about content a script may fade in, as `p-as-heading` is.
@@ -310,12 +369,27 @@ an `applicability(ctx)` export using this, per [`RULE_AUTHORING.md`](./RULE_AUTH
 rule will wrongly fault a scoped subtree for lacking something it was never meant to
 have.
 
+### `isTopLevelDocument()` → `boolean`
+
+Whether the document is a page of its own, not one shown in a frame (an `<iframe>` or
+`<frame>` of another page): `true` when its window is the top window
+(`window.self === window.top`), `false` in a frame, including one whose top window can't be
+read. `engineOptions.topLevelDocument`, when set, decides instead, for a page a test runner
+shows in a frame of its own. A rule about the page itself (its `<title>`, its language, its
+viewport, its level-one heading, main landmark, bypass mechanism or landmark structure) adds
+it to its `applicability(ctx)` next to `isWholeDocumentScope()`: a framed document's title
+and language are the top page's, a browser ignores its viewport `<meta>`, and it sits in the
+top page's landmarks.
+
 ### `isModalDialogOpen()` → `boolean`
 
 `true` while a modal dialog is open: a `<dialog>` that matches `:modal` (opened with
-`showModal()`), in the document or in an open shadow root. Under jsdom, which has no top layer, an open `<dialog aria-modal="true">`
-stands in for it; in a browser, such a dialog opened without `showModal()` is not modal. The rest of the document is
-inert then, and `isAccTreeEligible` already leaves it out (reason `modalInert`). Also
+`showModal()`), in the document or in an open shadow root. A `<dialog>` opened with the
+`open` attribute or `show()` is not modal, `aria-modal="true"` or not, in a browser and under
+jsdom alike; jsdom can't open a modal dialog, so there none is open, unless
+`engineOptions.assumeModal` takes an open `<dialog aria-modal="true">` as one. The rest of
+the document is inert then, and `isAccTreeEligible` already leaves it out (reason
+`modalInert`). Also
 `true` while a script-made modal is shown: an element whose `role` attribute is `dialog` or
 `alertdialog`, with `aria-modal="true"`, drawn (no `display: none`, `[hidden]` or
 `visibility: hidden` on it or above it) and not inside or on `aria-hidden="true"` or
@@ -330,10 +404,30 @@ not.
 ### `getOpenModalDialogs()` → `Element[]`
 
 The modal `<dialog>` elements open in the document and its open shadow roots (the document's first, then each shadow root's): those that match
-`:modal` (opened with `showModal()`), or under jsdom, which has no top layer, those open with
-`aria-modal="true"`. The page outside them is what `isAccTreeEligible` leaves out with reason
-`modalInert`. A script-made modal (`role="dialog"` with `aria-modal="true"`) is not one: it
-makes nothing inert. Worked out once per run.
+`:modal` (opened with `showModal()`). Under jsdom, which can't open one, none, or with
+`engineOptions.assumeModal`, those open with `aria-modal="true"`. The page outside them is
+what `isModalInert` names and `isAccTreeEligible` leaves out with reason `modalInert`. A
+script-made modal (`role="dialog"` with `aria-modal="true"`) is not one: it makes nothing
+inert. Worked out once per run.
+
+### `isModalInert(el)` → `boolean`
+
+Whether `el` is behind an open modal dialog, which the browser makes inert: a dialog from
+`getOpenModalDialogs()` is open and `el` is in none of them (by the flat tree, so a shadow
+root's content inside the dialog, and what the page slots into it, counts as in it) and
+contains none (`<body>` or a wrapper around the dialog is not blocked). With several open,
+only the topmost one, the one opened last, is live: a dialog under it is inert with all it
+holds, as in the browser. That holds for a modal dialog inside another too: with the inner one
+on top, the outer one's content around it is inert. No DOM API gives the top layer's order, so
+the topmost is the one the browser hit-tests at each dialog's centre; where that can't tell (no
+layout), every open one counts. `false` for anything
+that isn't an element and while no modal dialog is open. Core's own view of modal blocking:
+`isAccTreeEligible` gives such an element reason `modalInert`, the default hidden-content
+policy leaves it out, and `getFocusableInfo` says it takes no focus (flag `modalInert`). A
+rule or pack that works out focus or tab order itself (which links a keyboard user reaches,
+in what order) asks this instead of deciding modality on its own, so it counts what core
+counts. Content under `[inert]` is another matter, which `getFocusableInfo` covers (flag
+`inert`).
 
 ### `getDocumentRoots()` → `(Document | ShadowRoot)[]`
 
@@ -354,10 +448,23 @@ property; times are in milliseconds, `iterations` and `endTime` `null` for one t
 runner adds it to `helpers` for the scan (`src/core/dom-runner.js`), so it is not in
 `createDomHelpers()`'s object; `moving-content-pausable` reads it.
 
+### `paintContainedByContentVisibility(el)` → `boolean`
+
+Whether `el` clips what overflows it only for its `content-visibility: auto`. Such an element
+has paint containment, on screen or off, so it clips its content as `contain: paint` does, yet
+its computed `contain` says `none`. For the scan, the engine lays each one out as it renders
+near the viewport, `content-visibility: visible` with that containment set in its style
+attribute, so its computed style during the scan no longer names `auto`; this says which
+elements those are. `false` for one whose own `contain` already had paint containment, and
+everywhere without a layout (jsdom). The runner adds it to `helpers` for the scan
+(`src/core/dom-runner.js`); `text-spacing-content-loss` reads it to say what cuts the text off.
+
 ### `hasTruncatedAncestorWalk` (internal)
 
-Backs confidence scoring during result normalization when a 200-step ancestor walk
-didn't reach the root. Not something a rule calls directly.
+Whether the walk up from a node stopped at its limit, 10,000 nodes with the node itself
+(`hasTruncatedAncestorWalk.limit`), short of the root. Result normalization makes a fail on
+such an element a question (`ancestorWalkLimit` in [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)).
+Not something a rule calls directly.
 
 ---
 
@@ -605,6 +712,29 @@ origin's, whose `cssRules` throws), the rules of the text `engineOptions.styleSh
 its URL, parsed apart from the page. `null` when neither can be had, which a rule reads as
 "could not be checked". The sheet's own `media` list can still be read and still applies.
 
+### `cssConditionApplies(ruleOrSheet)` → `boolean`
+
+Whether a style sheet or an `@import`, `@media` or `@supports` rule applies to the page as it is
+drawn now: its media list matches (`window.matchMedia`) and its `@supports` condition holds
+(`CSS.supports`). A disabled sheet applies to nothing, and an `@starting-style` block applies only
+to the first frame of a transition, so neither does. Without `matchMedia` (jsdom), only a media
+list that names nothing but media other than the screen (`print`, `speech`) is known not to
+apply. Anything else, `@container` among them, is taken to apply. A rule that reads declarations
+from style sheets rather than from computed styles skips the sheets and rules for which this is
+`false`: an `@media print` rule changes nothing on the screen the scan checks.
+
+### `selectorIndex(parts)` → `{ candidates(el) }`
+
+An index of selectors (each one complex selector, without a comma) for a rule that matches many
+elements against many of a page's style rules. `candidates(el)` gives the indices, in the order
+given, of the selectors that may match `el`: those whose element part names an id, class or tag
+`el` has and whose ancestors' parts name ids, classes or tags its ancestors have, and every
+selector it can't read that way (a pseudo-class only, an escape, a namespace) or that doesn't
+parse, since matching that one throws for any element. Match `el` against those only, with
+`dom.matches`: the results are the same as matching every selector, and a page with thousands of
+rules costs elements times the rules that could apply instead of elements times rules. Names are
+compared without case, which can only add candidates. Build it once per run and set of rules.
+
 ### `getStyleSheets()` → `Array<{ sheet, root }>`
 
 Every style sheet that styles the page, with the root it applies in: the document's, linked
@@ -707,7 +837,9 @@ password, date, time, color and file inputs have no ARIA role.
 Whether `el`'s `role="none"` or `role="presentation"` is ignored, as WAI-ARIA's presentational
 roles conflict resolution has browsers do when the element can take focus or carries a global
 ARIA attribute (`aria.hasGlobalAriaAttr`): it keeps its implicit role then, so an
-`<h1 role="none" aria-label="…">` is still a heading. `false` for any other role.
+`<h1 role="none" aria-label="…">` is still a heading. As in Chromium, the four globals WAI-ARIA
+1.2 deprecates (`aria-disabled`, `aria-errormessage`, `aria-haspopup`, `aria-invalid`) don't
+count here: with only those, the element stays presentational. `false` for any other role.
 
 ### `getEventListenerInfo(target, types)` → `{ hook, listens }`
 
@@ -738,7 +870,8 @@ default tab order. Native focusability covers links and image-map areas with `hr
 form controls, `<summary>`, editing hosts, `<iframe>`/`<frame>`, and `<audio>`/`<video>`
 with `controls`, as Chromium and Firefox both treat them. A `<video>` without controls
 (focusable in Firefox only) and `<embed>`/`<object>` (focusable or not depending on what
-they embed) are not counted.
+they embed) are not counted. Nothing under `[inert]` (flag `inert`) or behind an open modal
+dialog (flag `modalInert`, see `isModalInert`) takes focus.
 
 ### `hasLandmarkScopingAncestor(el, opts)` → `boolean`
 
@@ -813,6 +946,21 @@ One list for every rule that looks for a skip link, core's `skip-link` and any a
 profile brings, so they recognise the same links; add a phrasing here, not in a
 rule.
 
+### `getLinkKind(el)` → `'text' | 'image' | 'composite' | 'svg'`
+
+What a link is made of, for a standard that judges text links, image links and SVG links
+apart. `svg`: an `<a>` in SVG, whatever it holds. `image`: an `<area>` (a region of an
+image), or a link whose content is one or more images and no text. `composite`: content
+with both text and an image. `text`: any other link, one whose content is text or that has
+no content at all (named by `aria-label`, `aria-labelledby` or `title`). An image is an
+`<img>`, an `<svg>`, an `<object>`, a `<canvas>` or an element whose `role` attribute is
+`img`; what is inside one is the image's, not the link's. Text is a text node with more than
+white space. The content is read in the flat tree, leaving out what the default
+hidden-content policy hides (`display: none`, `[hidden]`, …); content hidden only from
+assistive technology (`aria-hidden="true"`) is still drawn, and counts. Generated content
+(`::before`, `::after`) is not read. `link-name-quality` and `identical-links-same-purpose`
+report it as `data.details.linkKind`. The set of kinds is open: a minor release may add one, and a kind never changes meaning.
+
 ### `reportOccurrence(node, partial)` → occurrence object
 
 **Use this to build every occurrence.** Attaches the element so the engine fills in
@@ -840,6 +988,15 @@ finding exists, `cantTell` when only cantTell-tier findings exist, `pass` otherw
 Reach for this instead of the naive `if (fails.length) return fail(fails); else if
 (cantTells.length) return cantTell(cantTells);`, which silently drops every cantTell
 finding whenever at least one fail finding also exists on the page.
+
+### `runMemo(name)` → `WeakMap | null`
+
+A `WeakMap` for this scan only, the same for every rule that asks for `name`, and a new
+one in the next scan: for work a rule and its variants would each do again on the same
+element, such as `target-size-minimum` and `target-size-enhanced` measuring a target's
+region. Key it by element and store only what doesn't depend on the rule's settings, scope
+or excludes, since every rule of the scan reads it; prefix the name with the rule's id.
+`null` if it can't be made: then compute as before.
 
 ### `getPerfStats()` / `resetPerfStats()`
 
@@ -962,8 +1119,9 @@ author leaves it out), `hasLandmarkScopingAncestor` (also re-exported flat, see 
 `getRoleInfo`), `hasSuggestionsSource` (whether an input's `list` names a `<datalist>` in its
 own tree), `getTableCellRole` (a `<td>`'s role from its nearest table: `cell`, `gridcell` in a
 grid or treegrid, `''` in a presentational table; worked out once per table) and
-`hasGlobalAriaAttr` (whether an element carries any of WAI-ARIA's global states and
-properties, by presence, not value).
+`hasGlobalAriaAttr(el, { exceptDeprecated })` (whether an element carries any of WAI-ARIA's
+global states and properties, by presence, not value; with `exceptDeprecated: true` the four
+deprecated globals in `DEPRECATED_ATTRS` don't count).
 
 `getExplicitRole(el)` is how a rule reads an element's role: the attribute is a
 fallback list, and browsers use "the first token in the sequence of tokens in the role

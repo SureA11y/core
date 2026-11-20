@@ -63,23 +63,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT: {
-      steps: [
-        'Inspect the element the report names and note its tag and its role attribute.',
-        "Open the Accessibility pane in the browser's developer tools and check which role is exposed.",
-        'Press Tab to see whether the element takes keyboard focus, and try operating it with Enter or Space if it is a control.',
-        'With a screen reader, move to the element and compare what is announced with what the element does on screen.'
-      ],
-      passWhen:
-        'The announced role matches how the element looks and behaves (or role none/presentation was ignored on a focusable control and its native role is kept).',
-      failWhen:
-        "The announced role contradicts the element's behaviour, such as a focusable button announced as a heading, which fails ARIA in HTML and can fail WCAG 4.1.2."
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {
@@ -200,14 +184,92 @@ function runInPage(ctx) {
     const tag = (dom.tagName(el) || '').toLowerCase();
     const lean = leanFor(el, role);
 
+    // Why the role is not allowed, where the element's own state decides
+    // which roles it permits (aria.getElementRoleKey): a <section> with no
+    // name is not a region, a nested <header> is not a banner, a <label>
+    // tied to a field takes no role, an <img> with no alt text takes only
+    // none or presentation, an <a> with href only a few. Else, the roles it
+    // allows.
+    let key = '';
+    let allowedList = null;
+    try {
+      key = ariaHelpers.getElementRoleKey ? ariaHelpers.getElementRoleKey(el) : '';
+      allowedList = ariaHelpers.getAllowedRolesForElement
+        ? ariaHelpers.getAllowedRolesForElement(el)
+        : null;
+    } catch {}
+    const allowedRoles = (allowedList || []).join(', ');
+    // The sectioning element or landmark a nested <header> sits in.
+    let scope = '';
+    if (key === 'header' && role === 'banner') {
+      const TAGS = ['article', 'aside', 'main', 'nav', 'section'];
+      const ROLES = ['article', 'complementary', 'main', 'navigation', 'region'];
+      for (
+        let p = dom.parentElement(el), g = 0;
+        p && g < 200 && !scope;
+        p = dom.parentElement(p), g++
+      ) {
+        const t = String(dom.tagName(p) || '').toLowerCase();
+        const r = ariaHelpers.getExplicitRole(p);
+        if (r ? ROLES.includes(r) : TAGS.includes(t)) scope = t;
+      }
+    }
+    const REASONS = {
+      section: role === 'region' && {
+        reason: 'sectionUnnamed',
+        summary:
+          'This <section> has no accessible name, so it is not a region, and role="region" is not allowed on it.',
+        hint: 'Name the section with aria-label or aria-labelledby: it is then a region, and the role is not needed. Or remove the role.'
+      },
+      header: role === 'banner' &&
+        scope && {
+          reason: 'headerNested',
+          summary: `This <header> is nested in <${scope}>, so it is not the page banner, and role="banner" is not allowed on it.`,
+          hint: 'Remove the role, or move the page header out of that element.'
+        },
+      'label[associated]': {
+        reason: 'labelAssociated',
+        summary: `This <label> is tied to a form field, and a label tied to a field may take no role, so role="${role}" is not allowed on it.`,
+        hint: 'Remove the role. If the label must act as a control, use a separate element, such as a <button>.'
+      },
+      img: {
+        reason: 'imgNoAlt',
+        summary: `This <img> has no alt text, so it may only take role="none" or role="presentation", and role="${role}" is not allowed on it.`,
+        hint: 'Give the image alt text that says what it is or does, which allows more roles, or put it inside a native element, such as a <button>.'
+      },
+      'a[href]': {
+        reason: 'linkHref',
+        summary: `An <a> with href may only take these roles: ${allowedRoles}. role="${role}" is not one of them.`,
+        hint: 'Use one of those roles, or wrap the link in an element that has the role you meant, such as a heading element around it.'
+      }
+    };
+    const why = REASONS[key] || null;
+    const summaryText = why ? why.summary : 'This role is not permitted on this element.';
+    const hintText = why
+      ? why.hint
+      : allowedList && allowedList.length
+        ? `Use a role this element allows (${allowedRoles}), or use a different element.`
+        : 'Use a role this element allows, or use a different element.';
+
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This role is not permitted on this element.',
-        hint: 'Use a role this element allows, or use a different element.',
+        summary: summaryText,
+        hint: hintText,
         i18n: {
-          summaryKey: 'ariaAllowedRole_summary_fail',
-          hintKey: 'ariaAllowedRole_hint_fail',
-          params: { role, element: tag }
+          summaryKey: why
+            ? `ariaAllowedRole_summary_cantTell_${why.reason}`
+            : 'ariaAllowedRole_summary_fail',
+          hintKey: why
+            ? `ariaAllowedRole_hint_cantTell_${why.reason}`
+            : allowedList && allowedList.length
+              ? 'ariaAllowedRole_hint_cantTell_allowed'
+              : 'ariaAllowedRole_hint_fail',
+          params: {
+            role,
+            element: tag,
+            ...(allowedRoles ? { allowedRoles } : {}),
+            ...(scope ? { scope } : {})
+          }
         },
         uncertainty: {
           code: 'spec-only',
@@ -221,7 +283,13 @@ function runInPage(ctx) {
         },
         ...(lean ? { lean } : {}),
         data: {
-          details: { reasonCode: 'ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT', role, element: tag }
+          details: {
+            reasonCode: 'ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT',
+            role,
+            element: tag,
+            ...(why ? { notAllowedBecause: why.reason } : {}),
+            ...(allowedList ? { allowedRoles: allowedList.slice() } : {})
+          }
         }
       })
     );

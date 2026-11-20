@@ -382,3 +382,42 @@ test(`${RULE_ID}: leans fail on an unnamed control, pass on a spacer, none other
   assert.strictEqual(photo.data.details.reasonCode, 'EXCLUDED_ELEMENT_REVIEW');
   assert.strictEqual(photo.lean, undefined);
 });
+
+test(`${RULE_ID}: names what hides the image and quotes the alt that is never read`, () => {
+  const html = `<!doctype html><html><body>
+    <div class="app shell" aria-hidden="true"><img id="a" src="chart.png" alt="Sales rose 20% in Q3" width="300" height="200"></div>
+    <img id="b" src="team.png" role="presentation" alt="Team photo" width="300" height="200">
+    <div id="root" aria-hidden="true"><img id="c" src="d.png" alt="" width="300" height="200"></div>
+    <svg id="d" width="40" height="40"><rect width="40" height="40"></rect></svg>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const a = byId('a');
+  assert.strictEqual(
+    a.summary,
+    'This <img> is hidden from screen readers by aria-hidden="true" on its ancestor <div class="app">, so its alt text "Sales rose 20% in Q3" is never read. Check whether it is purely decorative.'
+  );
+  assert.strictEqual(a.i18n.summaryKey, 'img_altDecorative_summary_ancestorHiddenAlt');
+  assert.strictEqual(a.i18n.hintKey, 'img_altDecorative_hint_ancestorHidden');
+  assert.strictEqual(a.i18n.params.ancestor, '<div class="app">');
+  assert.strictEqual(a.data.details.excludedBy, 'hidden-ancestor');
+  assert.strictEqual(a.data.details.hiddenByElement, '<div class="app">');
+  assert.strictEqual(a.data.details.reasonCode, 'EXCLUDED_ELEMENT_REVIEW');
+
+  const b = byId('b');
+  assert.strictEqual(
+    b.summary,
+    'role="presentation" hides this <img> from screen readers, so its alt text "Team photo" is never read. Check whether it is purely decorative.'
+  );
+  assert.strictEqual(b.i18n.summaryKey, 'img_altDecorative_summary_ownHiddenAlt');
+  assert.strictEqual(b.data.details.excludedBy, 'role');
+
+  const c = byId('c');
+  assert.strictEqual(c.i18n.summaryKey, 'img_altDecorative_summary_ancestorHidden');
+  assert.match(c.summary, /aria-hidden="true" on its ancestor <div id="root">\./);
+
+  const d = byId('d');
+  assert.strictEqual(d.i18n.summaryKey, 'img_altDecorative_summary_unnamed');
+  assert.strictEqual(d.data.details.excludedBy, 'unnamed-svg');
+});

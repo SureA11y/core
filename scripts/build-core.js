@@ -50,11 +50,13 @@ const {
 const {
   isThenable,
   assertPageBuiltins,
+  assertArrayFromFor,
   resolveCustomRules,
   runCore,
   runCoreSettled,
   settleAnimations,
   holdPageColors,
+  layOutSkippedContent,
   rollupCompositeResults,
   noteEmptySelection,
   rollupMembers,
@@ -65,6 +67,14 @@ const {
   warnIgnoredWcagTarget,
   readRenderingEnvironment
 } = require('../src/core/dom-runner');
+const {
+  profileNamesOf,
+  profileOptionsOf,
+  mayBeSkippedPackProfile,
+  runProfiles,
+  mergeProfileResults,
+  noteProfileNotApplied
+} = require('../src/core/multi-profile');
 const {
   createSafeDom,
   SAFE_DOM_GETTERS,
@@ -79,6 +89,8 @@ const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
 const { NORMATIVE_STANDARDS, createRegistry } = require('../src/coverage/standards');
 const {
+  WCAG_PROFILE_TAGS,
+  DEPRECATED_PROFILES,
   prepareStandards,
   prepareRules,
   prepareComposites,
@@ -126,6 +138,10 @@ const {
   engineOptionsForFrames,
   isFrameShown,
   isFrameExcluded,
+  isFrameAriaHidden,
+  isFrameInert,
+  isFrameBehindModal,
+  frameAncestors,
   getFrameElementSelector,
   describeFrameElement,
   getFrameElementUrl,
@@ -790,19 +806,49 @@ function normalizeRunOnly(runOnly) {
  * see docs/WCAG_CONFORMANCE.md). The WCAG target version then follows from the
  * tags the usual way, so a profile needs no version of its own.
  *
- * - wcag22-aa: WCAG 2.2 Level A and AA.
- * - section508: the Revised 508 Standards incorporate WCAG 2.0 A and AA.
+ * - wcag20-a, wcag20-aa, wcag20-aaa: WCAG 2.0 up to Level A, AA or AAA.
+ * - wcag21-a, wcag21-aa, wcag21-aaa: WCAG 2.1 up to Level A, AA or AAA.
+ * - wcag22-a, wcag22-aa, wcag22-aaa: WCAG 2.2 up to Level A, AA or AAA.
+ * - section508: deprecated, WCAG 2.0 A and AA under another name
+ *   (DEPRECATED_PROFILES).
  * - plus the profiles a registered standard brings (src/coverage/standards.js),
  *   such as en301549-v4.1.1 and en301549-v3.2.1.
  *
+ * Core's own are built in src/core/prepare-catalog.js (WCAG_PROFILE_TAGS).
  * A profile only selects which rules run. It is not a claim that passing them
  * satisfies the standard it is named after.
  */
 const CONFORMANCE_PROFILES = {
-  'wcag22-aa': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
-  'section508': ['wcag2a', 'wcag2aa'],
+  ...${JSON.stringify(WCAG_PROFILE_TAGS)},
   ...CATALOG.profileTags
 };
+
+// Core's profiles on their way out, { [name]: { replacedBy, removal } }.
+const DEPRECATED_PROFILES = ${JSON.stringify(DEPRECATED_PROFILES)};
+
+// A deprecated profile of core's says so the first time a scan names it, once
+// per process, as a deprecated standard does (warnDeprecatedStandards): the
+// record lives on the global object, made only when a scan names one.
+function warnDeprecatedProfile(name) {
+  const key = normalizeProfileName(name);
+  if (!key || !Object.prototype.hasOwnProperty.call(DEPRECATED_PROFILES, key)) return;
+  let warned;
+  try {
+    const slot = Symbol.for('surea11y.deprecatedProfilesWarned');
+    warned = globalThis[slot] || (globalThis[slot] = new Set());
+  } catch {
+    warned = new Set();
+  }
+  if (warned.has(key)) return;
+  warned.add(key);
+  const d = DEPRECATED_PROFILES[key];
+  try {
+    console.warn(
+      '[surea11y] engineOptions.profile "' + key + '" is deprecated and goes in ' + d.removal +
+        ': use "' + d.replacedBy + '", which runs the same rules and gives the same results. Shown once.'
+    );
+  } catch {}
+}
 
 // The WCAG target each profile's tag set comes to, { version, level }, for a
 // caller that selects by runOnly.wcag instead: { 'wcag22-aa': { version:
@@ -1199,8 +1245,16 @@ function applyProfile(selection, requestedProfile) {
         ex.ruleIds.filter((id) => !selection.excludeRuleIds.includes(id))
       );
       selection.excludeRollupIds = ex.rollupIds.slice();
-      if (ex.rules.length || ex.criteria.length) {
-        selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
+      // The requirements its law doesn't ask for (standard.procedures'
+      // laws, experimental): their rollups are left out, as listProcedures
+      // leaves them out of the list.
+      const byLaw = Array.isArray(ex.requirements) ? ex.requirements : [];
+      if (ex.rules.length || ex.criteria.length || byLaw.length) {
+        selection.profileExcludes = {
+          rules: ex.rules.slice(),
+          criteria: ex.criteria.slice(),
+          ...(byLaw.length ? { requirements: byLaw.slice() } : {})
+        };
       }
     }
     selection.profile = requestedProfile;
@@ -1424,6 +1478,21 @@ function checkSelectionNames(lists, engineOptions, { otherIncludes = false } = {
 // would be dropped (resolveEffectiveRunOnly).
 const RUN_ONLY_KEYS = ['type', 'values', 'wcag', 'bestPractices', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode'];
 
+// Under strictOptions, a profile the engine doesn't have is an error, as
+// other invalid options are: the scan would otherwise run every rule, which
+// reads as a conformance scan of a target nobody asked for. Without it, the
+// runner says so (runCore) and runs without a profile.
+function enforceKnownProfile(selection, eo) {
+  if (!selection || selection.profileNotApplied !== 'unknown' || !strictOf(eo)) return selection;
+  const err = new Error(
+    'engineOptions.profile: no profile named ' + JSON.stringify(String(eo.profile)) +
+      '; the profiles are ' + Object.keys(CONFORMANCE_PROFILES).sort().join(', ') + '. (strictOptions)'
+  );
+  err.code = 'INVALID_ENGINE_OPTIONS';
+  err.knownProfiles = Object.keys(CONFORMANCE_PROFILES).sort();
+  throw err;
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   // A number or a boolean, and an object none of whose keys the engine
@@ -1434,7 +1503,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   }
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
-  if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = Array.from(runOnly);
+  if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = [...runOnly];
   // Another kind of object (a Map, a Date) has no keys a selection reads,
   // and ran every rule.
   // By its type tag, which holds across realms (a page's object, read by
@@ -1524,7 +1593,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     selection.ownTags = [];
     selection.excludeRollupIds = [];
     selection.standardRuleIds = [];
-    return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
+    return applyOptInRules(enforceKnownProfile(applyProfile(selection, requestedProfile), eo), eo.optInRules);
   }
 
   const mode = normalizeIncludeMode(eo.includeMode);
@@ -1533,7 +1602,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // runOnly takes one. As an object with neither key it ran every rule.
   const includeExclude = (v) =>
     Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-      ? { include: Array.from(typeof v === 'string' ? [v] : v) }
+      ? { include: typeof v === 'string' ? [v] : [...v] }
       : (v && typeof v === 'object' ? v : null);
   const rules = includeExclude(eo.rules);
   const tags = includeExclude(eo.tags);
@@ -1570,7 +1639,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     eo
   );
 
-  return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
+  return applyOptInRules(enforceKnownProfile(applyProfile(out, requestedProfile), eo), eo.optInRules);
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
@@ -1847,8 +1916,12 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   // A variant (src/core/rule-variants.js) names the rule it runs, and that
   // rule's titleKey, whose prefix keys the base's messages and steps.
   const variant = def.variant && typeof def.variant === 'object' ? def.variant : null;
-  // A rule's own result can't claim one.
+  // A rule's own result can't claim one, nor what the engine says of the
+  // walk up from its elements (ancestorWalkLimit) or of what it dropped in
+  // excluded areas (excludedOccurrences), below.
   delete out.variantOf;
+  delete out.ancestorWalkLimit;
+  delete out.excludedOccurrences;
   if (variant && typeof variant.of === 'string' && variant.of) {
     out.variantOf = variant.of;
     if (out.i18n && variant.messages && typeof variant.messages.from === 'string') {
@@ -1868,6 +1941,72 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned ' + given + ', which is not one of ' + pol.allowedOutcomes.join(', ') + '; reported as cantTell.';
     }
     out.outcome = 'cantTell';
+  }
+
+  // Nothing is reported on an element the caller left out
+  // (engineOptions.excludeSelectors, global or for this rule): core's rules
+  // skip them, and a rule that walks the document itself and forgets is held
+  // to it here. What was dropped is said beside the result and in error, so
+  // the rule's author finds out; a rule left with no occurrence found
+  // nothing outside those areas, so it is notApplicable, as core can't tell
+  // whether the rest of the page passed. A result left with occurrences
+  // takes the outcome they say: a fail whose fail-tier occurrences were all
+  // dropped is no longer a fail (cantTell while a question is left, pass when
+  // only passes are), and a cantTell left with only passes passes. An
+  // occurrence with no tier takes the outcome the rule gave. Nothing to do
+  // without exclusions: isExcluded answers at once, from a cache, for each
+  // occurrence.
+  if (
+    Array.isArray(out.occurrences) &&
+    out.occurrences.length &&
+    helpers &&
+    (typeof helpers.isOccurrenceExcluded === 'function' || typeof helpers.isExcluded === 'function')
+  ) {
+    const kept = out.occurrences.filter((o) => {
+      if (!o || typeof o !== 'object') return true;
+      try {
+        if (typeof helpers.isOccurrenceExcluded === 'function') return helpers.isOccurrenceExcluded(o) !== true;
+        return !o.__node || helpers.isExcluded(o.__node) !== true;
+      } catch {
+        return true;
+      }
+    });
+    const dropped = out.occurrences.length - kept.length;
+    if (dropped > 0) {
+      const given = out.outcome;
+      const tierOf = (o) =>
+        o && typeof o === 'object' && typeof o.occurrenceOutcome === 'string' ? o.occurrenceOutcome : given;
+      out.occurrences = kept;
+      out.excludedOccurrences = { dropped };
+      let outcome = given;
+      if (given === 'fail' || given === 'cantTell' || given === 'pass') {
+        if (!kept.length) {
+          outcome = 'notApplicable';
+        } else {
+          const tiers = kept.map(tierOf);
+          if (tiers.includes('fail')) outcome = given === 'fail' ? 'fail' : given;
+          else if (tiers.includes('cantTell')) outcome = given === 'pass' ? 'pass' : 'cantTell';
+          else if (tiers.every((x) => x === 'pass')) outcome = 'pass';
+        }
+      }
+      // What the rule could have reported: a manual rule's fail is a
+      // cantTell (below), so it never claims to have been a fail.
+      const reported =
+        given === 'fail' && pol.coerceManualFailToCantTell && def.type === 'manual' ? 'cantTell' : given;
+      if (outcome !== given) {
+        if (outcome !== reported) out.excludedOccurrences.coercedFrom = reported;
+        out.outcome = outcome;
+        delete out.policyOutcome;
+      } else if (out.policyOutcome === 'fail' && !kept.some((o) => tierOf(o) === 'fail')) {
+        // A fail the policy turned into a question, whose failures were all
+        // dropped: there is no fail left to keep.
+        delete out.policyOutcome;
+      }
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule reported ' + dropped + ' occurrence' + (dropped === 1 ? '' : 's') +
+        ' on elements left out with excludeSelectors; dropped. A rule that walks the document itself should skip them (helpers.isExcluded).';
+    }
   }
 
   // The outcome agrees with its occurrences' tiers, which are the more
@@ -1974,10 +2113,15 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   else delete out.margin;
 
   const occ = Array.isArray(out.occurrences) ? out.occurrences : [];
-  let __truncatedOccurrences = 0;
+  // Fail-tier occurrences made questions because the walk up from their
+  // element stopped at its limit (helpers.hasTruncatedAncestorWalk).
+  let __beyondWalkLimit = 0;
+  const __walkLimit =
+    helpers && typeof helpers.hasTruncatedAncestorWalk === 'function'
+      ? helpers.hasTruncatedAncestorWalk.limit
+      : null;
   // Uncertainty codes outside the closed set, dropped and noted in error.
   const __invalidUncertaintyCodes = [];
-  let __placedOccurrences = 0;
   out.occurrences = occ.map((item) => {
     const o = item && typeof item === 'object' ? { ...item } : {};
 
@@ -1985,13 +2129,40 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     const node = o.__node || null;
     if (node) delete o.__node;
 
-    // A 200-step ancestor walk that stopped short cannot show the element is
-    // exposed, so a fail resting only on such elements is not certain enough.
-    if (node && helpers && typeof helpers.hasTruncatedAncestorWalk === 'function') {
+    // An element nested deeper than the walk up from it goes: the engine has
+    // not seen every element around it, any of which may hide it, so a fail
+    // on it becomes a question. The rule's verdict on every other element
+    // stands.
+    if (
+      node &&
+      out.outcome === 'fail' &&
+      o.occurrenceOutcome !== 'cantTell' &&
+      typeof __walkLimit === 'number'
+    ) {
+      let beyond = false;
       try {
-        if (helpers.hasTruncatedAncestorWalk(node)) __truncatedOccurrences += 1;
+        beyond = helpers.hasTruncatedAncestorWalk(node) === true;
       } catch {}
-      __placedOccurrences += 1;
+      if (beyond) {
+        __beyondWalkLimit += 1;
+        o.occurrenceOutcome = 'cantTell';
+        o.uncertainty = {
+          code: 'not-computable',
+          needed:
+            'Whether this element is exposed: it is nested deeper than the ' +
+            __walkLimit +
+            ' ancestors the engine reads, so it could not check the elements around it.',
+          evidence: { ancestorWalkLimit: __walkLimit }
+        };
+        delete o.lean;
+        const eo = out.engineOptions || null;
+        const key = 'engine_review_ancestorWalkLimit_';
+        o.howToCheck = {
+          steps: [1, 2, 3].map((n) => t(key + 'step' + n, '', null, eo)),
+          passWhen: t(key + 'pass', '', null, eo),
+          failWhen: t(key + 'fail', '', null, eo)
+        };
+      }
     }
 
     if (needsDetails && node && helpers && typeof helpers === 'object') {
@@ -2106,19 +2277,15 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     return o;
   });
 
-  // Downgrade only when every reported element was out of reach of its own
-  // walk. One element the engine could see through justifies the fail; the
-  // rest ride along as occurrences of it, same as any mixed-confidence result.
-  if (
-    out.outcome === 'fail' &&
-    __placedOccurrences > 0 &&
-    __truncatedOccurrences === __placedOccurrences
-  ) {
-    out.outcome = 'cantTell';
-    out.outcomeNormalized = 'cantTell';
-    out.error =
-      (out.error ? String(out.error) + ' | ' : '') +
-      'Ancestor walk hit its depth limit, so the engine could not confirm this content is exposed; coerced to cantTell.';
+  // Said beside the result, not in error: the rule completed. The result is
+  // a question only when no fail-tier occurrence is left.
+  if (__beyondWalkLimit > 0) {
+    out.ancestorWalkLimit = { limit: __walkLimit, occurrences: __beyondWalkLimit };
+    if (!out.occurrences.some((o) => (o.occurrenceOutcome || out.outcome) === 'fail')) {
+      out.outcome = 'cantTell';
+      out.outcomeNormalized = 'cantTell';
+      out.ancestorWalkLimit.coercedFrom = 'fail';
+    }
   }
 
   if (__invalidUncertaintyCodes.length) {
@@ -2138,9 +2305,32 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
 // The standards a catalog entry names for these options, chosen exactly as for
 // a scan result: engineOptions.mappings, plus what a profile adds when it
 // would apply to this selection. With no options that is WCAG alone.
+// A list of profiles names the standards of each profile its scan applies
+// (catalogProfileRuns), as the merged result's mappings do.
 function catalogMappingTokens(engineOptions, runOnly) {
-  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
-  return resolveMappingSelection(engineOptions, selection.profile || null).tokens;
+  const tokens = [];
+  for (const run of catalogProfileRuns(engineOptions, runOnly)) {
+    for (const token of resolveMappingSelection(run.eo, run.selection.profile || null).tokens) {
+      if (!tokens.includes(token)) tokens.push(token);
+    }
+  }
+  return tokens;
+}
+
+// The scans a scan with these options runs, each with its options and its
+// selection: one per profile engineOptions.profile lists (runProfiles), or
+// the one. A profile its scan doesn't apply in a scan of several (no such
+// profile, a runOnly that selects the rules instead) adds nothing to the
+// merged result, so it is left out; with none applied the merged result is
+// the first scan's, and so is the catalog's.
+function catalogProfileRuns(engineOptions, runOnly) {
+  const runs = profileOptionsOf(engineOptions).map((eo) => ({
+    eo,
+    selection: resolveEffectiveRunOnly(eo, runOnly)
+  }));
+  if (runs.length < 2) return runs;
+  const applied = runs.filter((r) => !r.selection.profileNotApplied);
+  return applied.length ? applied : runs.slice(0, 1);
 }
 
 function toCatalogEntry(r, engineOptions, mappingTokens) {
@@ -2268,10 +2458,12 @@ ${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
 
 ${inlineConstFunction('settleAnimations', settleAnimations)}
 ${inlineConstFunction('holdPageColors', holdPageColors)}
+${inlineConstFunction('layOutSkippedContent', layOutSkippedContent)}
 ${inlineConstFunction('resolveCustomRules', resolveCustomRules)}
 ${inlineConstFunction('runCoreSettled', runCoreSettled)}
 ${inlineConstFunction('isThenable', isThenable)}
 ${inlineConstFunction('assertPageBuiltins', assertPageBuiltins)}
+${inlineConstFunction('assertArrayFromFor', assertArrayFromFor)}
 ${inlineConstFunction('runCore', runCore)}
 
 // Inlined from src/core/frame-messaging.js -- postMessage RPC used by
@@ -2284,6 +2476,15 @@ ${inlineConstFunction('nextFrameRpcRequestId', nextFrameRpcRequestId)}
 ${inlineConstFunction('pingFrame', pingFrame)}
 ${inlineConstFunction('sendFrameRunCommand', sendFrameRunCommand)}
 ${inlineConstFunction('enableFrameRpcResponder', enableFrameRpcResponder)}
+
+// Inlined from src/core/multi-profile.js -- a scan of several profiles at
+// once, engineOptions.profile as a list.
+${inlineConstFunction('profileNamesOf', profileNamesOf)}
+${inlineConstFunction('profileOptionsOf', profileOptionsOf)}
+${inlineConstFunction('mayBeSkippedPackProfile', mayBeSkippedPackProfile)}
+${inlineConstFunction('runProfiles', runProfiles)}
+${inlineConstFunction('mergeProfileResults', mergeProfileResults)}
+${inlineConstFunction('noteProfileNotApplied', noteProfileNotApplied)}
 `.trim();
 
   const inPageRunnerSource = `
@@ -2324,6 +2525,31 @@ ${implEntriesInPage.join(',\n')}
     }
     return Object.assign({}, entry, { impls, i18n });
   }
+  // In a page a pack is named (name@version): beside names, an item of the
+  // list that is no name is left out, with a warning, and the named packs
+  // run as named, or are skipped and said to be, rather than all dropped
+  // unnoticed. A list of no names (packs themselves) is a Node scan's, and
+  // the runner says so.
+  if (
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    Array.isArray(engineOptions.packs) &&
+    engineOptions.packs.some((p) => typeof p === 'string') &&
+    engineOptions.packs.some((p) => typeof p !== 'string')
+  ) {
+    const left = engineOptions.packs.filter((p) => typeof p !== 'string').length;
+    try {
+      console.warn(
+        '[surea11y] engineOptions.packs: ' +
+          left +
+          (left === 1 ? ' item is' : ' items are') +
+          ' not a pack name (name@version) and left out; in a page, packs are named as packScript registered them.'
+      );
+    } catch {}
+    engineOptions = Object.assign({}, engineOptions, {
+      packs: engineOptions.packs.filter((p) => typeof p === 'string')
+    });
+  }
   const packNames =
     engineOptions &&
     Array.isArray(engineOptions.packs) &&
@@ -2349,7 +2575,11 @@ ${implEntriesInPage.join(',\n')}
       registry && Object.prototype.hasOwnProperty.call(registry, key) && registry[key]
         ? registry[key]
         : null;
-    if (!entry) {
+    // A name given twice is one pack named twice, as it is in Node.
+    const twice = packNames.find((name, i) => i > 0 && packNames[i - 1] === name);
+    if (twice) {
+      packProblem = twice + ' is named twice; name each pack once';
+    } else if (!entry) {
       const sets = registry ? Object.keys(registry) : [];
       packProblem =
         'no packScript in this page registered exactly these packs (' +
@@ -2425,52 +2655,71 @@ ${implEntriesInPage.join(',\n')}
     } catch {}
     const withoutPacks = Object.assign({}, engineOptions);
     delete withoutPacks.packs;
-    const unrun = runCore(
-      pageUrl,
-      contextSelector,
-      withoutPacks,
-      resolveEffectiveRunOnly(withoutPacks, runOnly),
-      CHECK_DEFS,
-      RULE_IMPLS,
-      ENGINE_TAG,
-      SCHEMA_VERSION,
-      COMPOSITE_RULES
-    );
     const note = (r) =>
       r && typeof r === 'object'
         ? Object.assign({}, r, {
             skippedPacks: named.map((name) => ({ name: name, reason: packProblem }))
           })
         : r;
-    return isThenable(unrun) ? unrun.then(note) : note(unrun);
+    // The profiles the skipped packs declare, where a packScript in the
+    // page registered them in some other set: those not built in, of the
+    // skipped packs themselves and not of the others in that set. A set
+    // that doesn't say which pack has which (a script of an older core)
+    // gives its profiles for a set of one pack only; for the others the
+    // packs' namespaces are all there is to go by.
+    const declared = [];
+    const sets = packRegistry && typeof packRegistry === 'object' ? packRegistry : {};
+    for (const key of Object.keys(sets)) {
+      const entry = sets[key];
+      if (!entry || !Array.isArray(entry.packs) || !entry.packs.some((n) => named.includes(n))) continue;
+      const own = Array.isArray(entry.packProfiles)
+        ? entry.packProfiles
+            .filter((p) => Array.isArray(p) && named.includes(p[0]) && Array.isArray(p[1]))
+            .flatMap((p) => p[1])
+        : entry.packs.length === 1
+          ? Object.keys(entry.profileTags || {})
+          : [];
+      for (const name of own) {
+        if (typeof name !== 'string' || !Object.prototype.hasOwnProperty.call(entry.profileTags || {}, name)) continue;
+        if (Object.prototype.hasOwnProperty.call(BUILT_IN_CATALOG.profileTags || {}, name)) continue;
+        if (!declared.includes(name.toLowerCase())) declared.push(name.toLowerCase());
+      }
+    }
+    // Each profile scanned as without the packs (a list of them too), each
+    // result naming the packs skipped, so a scan of several says which of
+    // its profiles did not run because of them: one a skipped pack may
+    // have, and not any name no profile has.
+    return runProfiles(withoutPacks, (eo) => {
+      const selection = resolveEffectiveRunOnly(eo, runOnly);
+      const one = runCore(pageUrl, contextSelector, eo, selection, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES);
+      const why = selection && selection.profileNotApplied;
+      return noteProfileNotApplied(
+        isThenable(one) ? one.then(note) : note(one),
+        why === 'unknown' && mayBeSkippedPackProfile(eo && eo.profile, named, declared) ? 'pack-skipped' : why
+      );
+    });
   }
   if (!PACK_ENTRY) {
-    return runCore(
-      pageUrl,
-      contextSelector,
-      engineOptions,
-      resolveEffectiveRunOnly(engineOptions, runOnly),
-      CHECK_DEFS,
-      RULE_IMPLS,
-      ENGINE_TAG,
-      SCHEMA_VERSION,
-      COMPOSITE_RULES
+    return runProfiles(engineOptions, (eo) => {
+      const selection = resolveEffectiveRunOnly(eo, runOnly);
+      return noteProfileNotApplied(
+        runCore(pageUrl, contextSelector, eo, selection, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES),
+        selection && selection.profileNotApplied
+      );
+    }
     );
   }
   // A scan with registered packs: the options without them, and a result
   // that names them and lists the core rules they replace.
   const scanOptions = Object.assign({}, engineOptions);
   delete scanOptions.packs;
-  const result = runCore(
-    pageUrl,
-    contextSelector,
-    scanOptions,
-    resolveEffectiveRunOnly(scanOptions, runOnly),
-    CHECK_DEFS,
-    RULE_IMPLS,
-    ENGINE_TAG,
-    SCHEMA_VERSION,
-    COMPOSITE_RULES
+  const result = runProfiles(scanOptions, (eo) => {
+    const selection = resolveEffectiveRunOnly(eo, runOnly);
+    return noteProfileNotApplied(
+      runCore(pageUrl, contextSelector, eo, selection, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES),
+      selection && selection.profileNotApplied
+    );
+  }
   );
   const stamp = (r) => {
     if (!r || typeof r !== 'object') return r;
@@ -2540,6 +2789,14 @@ ${engineOptionsForFrames.toString()}
 ${isFrameShown.toString()}
 
 ${isFrameExcluded.toString()}
+
+${frameAncestors.toString()}
+
+${isFrameAriaHidden.toString()}
+
+${isFrameInert.toString()}
+
+${isFrameBehindModal.toString()}
 
 ${getFrameElementSelector.toString()}
 
@@ -2622,7 +2879,7 @@ function catalogCheckDefs(engineOptions) {
   const custom = resolveCustomRules(eo.customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG);
   if (!custom.defs.size) return { defs: CHECK_DEFS, overridden: [] };
   return {
-    defs: CHECK_DEFS.filter((d) => !custom.defs.has(d.ruleId)).concat(Array.from(custom.defs.values())),
+    defs: CHECK_DEFS.filter((d) => !custom.defs.has(d.ruleId)).concat([...custom.defs.values()]),
     overridden: custom.overriddenBuiltinIds
   };
 }
@@ -2719,10 +2976,10 @@ function getRulesCatalog(engineOptions) {
   // Data-only catalog. No i18n resolution yet (we can add later if needed).
   checkCatalogOptions(engineOptions, null);
   const tokens = catalogMappingTokens(engineOptions, null);
-  const selection = resolveEffectiveRunOnly(engineOptions, null);
+  const selections = catalogProfileRuns(engineOptions, null).map((r) => r.selection);
   const customDefs = catalogCustomDefs(engineOptions);
   return Array.isArray(COMPOSITE_RULES)
-    ? COMPOSITE_RULES.filter((x) => isCompositeListed(x, selection)).map((x) =>
+    ? COMPOSITE_RULES.filter((x) => selections.some((selection) => isCompositeListed(x, selection))).map((x) =>
         toCompositeCatalogEntry(x, tokens, customDefs)
       )
     : [];
@@ -2742,17 +2999,18 @@ function getCompositeRuleById(ruleId, engineOptions) {
 
 function getChecksForRunOnly(runOnly, engineOptions) {
   checkCatalogOptions(engineOptions, runOnly);
-  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
+  // A list of profiles lists the rules of each, as its scan runs them.
+  const runs = catalogProfileRuns(engineOptions, runOnly);
   const tokens = catalogMappingTokens(engineOptions, runOnly);
   const { defs, overridden } = catalogCheckDefs(engineOptions);
   // As in a scan, an override is selected wherever its built-in would be.
-  const selected = (r) =>
+  const selectedBy = (r, selection) =>
     ruleMatchesRunOnly(r, selection, ENGINE_TAG) ||
     (overridden.includes(r.ruleId) &&
       CHECK_DEFS.some((d) => d.ruleId === r.ruleId && ruleMatchesRunOnly(d, selection, ENGINE_TAG)));
-  const chosen = defs.filter(selected);
+  const chosen = defs.filter((r) => runs.some((run) => selectedBy(r, run.selection)));
   // A selection that cancels itself is said so, as a scan says it.
-  if (!chosen.length && defs.length) noteEmptySelection(selection, engineOptions);
+  if (!chosen.length && defs.length) noteEmptySelection(runs[0].selection, engineOptions);
   return chosen.map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
@@ -2761,12 +3019,29 @@ function getChecksForRunOnly(runOnly, engineOptions) {
 // checks. The scan's own rollup step works them out, over the rules
 // getChecksForRunOnly lists, so the list and the scan agree.
 function getRulesForRunOnly(runOnly, engineOptions) {
-  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
   checkCatalogOptions(engineOptions, runOnly);
-  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
   const tokens = catalogMappingTokens(engineOptions, runOnly);
   const { defs, overridden } = catalogCheckDefs(engineOptions);
   const customDefs = catalogCustomDefs(engineOptions);
+  // A list of profiles reports the rollups of each, as its scan does.
+  const ids = new Set();
+  const runs = catalogProfileRuns(engineOptions, runOnly);
+  let empty = 0;
+  for (const run of runs) {
+    const rolled = rollupsForSelection(run.selection, run.eo, defs, overridden, customDefs);
+    if (!rolled.selected) empty++;
+    for (const id of rolled.ids) ids.add(id);
+  }
+  if (empty === runs.length && defs.length) noteEmptySelection(runs[0].selection, engineOptions);
+  return COMPOSITE_RULES.filter((x) => x && ids.has(x.id)).map((x) =>
+    toCompositeCatalogEntry(x, tokens, customDefs)
+  );
+}
+
+// The ids of the rollups one scan with this selection and these options
+// reports, and how many rules it selects.
+function rollupsForSelection(selection, engineOptions, defs, overridden, customDefs) {
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
   const selectedIds = new Set();
   const namedIds = new Set();
   const namedCriteria = new Map();
@@ -2780,10 +3055,9 @@ function getRulesForRunOnly(runOnly, engineOptions) {
     const criteria = criteriaNamingRule(r, selection).concat(builtin ? criteriaNamingRule(builtin, selection) : []);
     if (criteria.length) namedCriteria.set(r.ruleId, criteria);
   }
-  if (!selectedIds.size && defs.length) noteEmptySelection(selection, engineOptions);
   // Every rule selected gives a result, whatever its outcome; the outcome
   // doesn't decide which rollups are reported.
-  const ran = Array.from(selectedIds, (ruleId) => ({ ruleId, outcome: 'notApplicable' }));
+  const ran = [...selectedIds].map((ruleId) => ({ ruleId, outcome: 'notApplicable' }));
   const rolled = rollupCompositeResults(
     ran,
     COMPOSITE_RULES,
@@ -2796,10 +3070,7 @@ function getRulesForRunOnly(runOnly, engineOptions) {
     customDefs,
     { wcagVersion: targetWcagVersionOf(eo, selection), selectedIds, namedIds, namedCriteria }
   );
-  const ids = new Set(rolled.map((x) => x.ruleId));
-  return COMPOSITE_RULES.filter((x) => x && ids.has(x.id)).map((x) =>
-    toCompositeCatalogEntry(x, tokens, customDefs)
-  );
+  return { ids: rolled.map((x) => x.ruleId), selected: selectedIds.size };
 }
 
 function getTestsForRunOnly(runOnly, engineOptions) {
@@ -2815,16 +3086,13 @@ function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Under strictOptions the options are checked before the selection is
   // worked out from them, as they are said to be.
   if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
-  return runCore(
-    pageUrl,
-    contextSelector,
-    engineOptions,
-    resolveEffectiveRunOnly(engineOptions, runOnly),
-    CHECK_DEFS,
-    RULE_IMPLS,
-    ENGINE_TAG,
-    SCHEMA_VERSION,
-    COMPOSITE_RULES
+  return runProfiles(engineOptions, (eo) => {
+    const selection = resolveEffectiveRunOnly(eo, runOnly);
+    return noteProfileNotApplied(
+      runCore(pageUrl, contextSelector, eo, selection, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES),
+      selection && selection.profileNotApplied
+    );
+  }
   );
 }
 

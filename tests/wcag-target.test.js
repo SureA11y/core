@@ -190,7 +190,12 @@ test('an invalid target throws INVALID_RUN_ONLY', () => {
 });
 
 test('a profile names its WCAG target', () => {
+  assert.deepEqual(core.getProfileWcagTarget('wcag22-a'), { version: '2.2', level: 'A' });
   assert.deepEqual(core.getProfileWcagTarget('wcag22-aa'), { version: '2.2', level: 'AA' });
+  assert.deepEqual(core.getProfileWcagTarget('wcag22-aaa'), { version: '2.2', level: 'AAA' });
+  assert.deepEqual(core.getProfileWcagTarget('wcag21-aa'), { version: '2.1', level: 'AA' });
+  assert.deepEqual(core.getProfileWcagTarget('wcag20-aa'), { version: '2.0', level: 'AA' });
+  // Deprecated, and still the target it came to.
   assert.deepEqual(core.getProfileWcagTarget('section508'), { version: '2.0', level: 'AA' });
   assert.deepEqual(core.getProfileWcagTarget('en301549-v4.1.1'), { version: '2.2', level: 'AA' });
   assert.deepEqual(core.getProfileWcagTarget('en301549-v3.2.1'), { version: '2.1', level: 'AA' });
@@ -248,11 +253,12 @@ test('a WCAG tag no rule carries, beside others, is noted, not warned about', ()
   assert.ok(info.length > 0);
   for (const line of info) assert.equal(line, NOTE_22A);
 
-  const two = quietly(() => ids({ tags: ['wcag2a', 'wcag22a', 'wcag22aaa'] }));
-  assert.equal(
-    two.info[0],
-    '[surea11y] runOnly.tags: no rules for WCAG 2.2 Level A ("wcag22a") or WCAG 2.2 Level AAA ("wcag22aaa"); their criteria need manual review.'
-  );
+  // Beside a level tag that has rules (wcag21aaa: target-size-enhanced), the
+  // note names only the one that has none.
+  const beside = quietly(() => ids({ tags: ['wcag2a', 'wcag21aaa', 'wcag22a'] }));
+  assert.ok(beside.value.includes('target-size-enhanced'));
+  assert.ok(beside.info.length > 0);
+  for (const line of beside.info) assert.equal(line, NOTE_22A);
 
   const shorthand = quietly(() => ids(['wcag2a', 'wcag22a']));
   assert.deepEqual(shorthand.value, quietly(() => ids({ tags: ['wcag2a'] })).value);
@@ -280,14 +286,11 @@ test('a WCAG tag no rule carries, on its own, throws and says why', () => {
         'runOnly.tags: no rules for WCAG 2.2 Level A ("wcag22a"), so no rule would run; its criteria need manual review.'
     }
   );
-  assert.deepEqual(
-    throws(() => ids(['wcag22a', 'wcag21aaa'])),
-    {
-      code: 'INVALID_RUN_ONLY',
-      message:
-        'runOnly.tags: no rules for WCAG 2.2 Level A ("wcag22a") or WCAG 2.1 Level AAA ("wcag21aaa"), so no rule would run; their criteria need manual review.'
-    }
-  );
+  // Beside a level tag that has rules (wcag21aaa: target-size-enhanced),
+  // rules run, so it doesn't throw: the other is noted.
+  const beside = quietly(() => ids(['wcag22a', 'wcag21aaa']));
+  assert.ok(beside.value.includes('target-size-enhanced'));
+  for (const line of beside.info) assert.equal(line, NOTE_22A);
   assert.deepEqual(
     throws(() => ids(null, { tags: { include: 'wcag22a' } })),
     {

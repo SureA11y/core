@@ -47,7 +47,36 @@ module.exports = [
     ],
     ignores: ['src/core/safe-dom.js'],
     plugins: { 'safe-dom': safeDomPlugin },
-    rules: { 'safe-dom/use-safe-dom': 'error' }
+    rules: {
+      'safe-dom/use-safe-dom': 'error',
+      // Old libraries (Prototype, MooTools) replace Array.from with one that
+      // drops Sets, Map iterators and the mapping function. Spread goes
+      // through the iterators, which they leave alone; read a list that
+      // need not be iterable by index.
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'Array',
+          property: 'from',
+          message:
+            'A page can replace Array.from: use spread ([...x], [...x].map(f)), or read a list that need not be iterable by index.'
+        }
+      ]
+    }
+  },
+  {
+    // The HTML report, which the browser bundle renders in the page.
+    files: ['src/report.js'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'Array',
+          property: 'from',
+          message: 'A page can replace Array.from: use spread ([...x], [...x].map(f)).'
+        }
+      ]
+    }
   },
   {
     // Rules only: the shared helpers define the role and ID resolution.

@@ -9,7 +9,9 @@
  * @standard WCAG 2.2
  * @sc 2.4.1
  * @applicability
- *   Always applicable to any HTML document with a <body> element:
+ *   Applicable to any HTML document with a <body> element that is a page
+ *   of its own (a document shown in a frame is not: the page's blocks and
+ *   the way past them are the top document's):
  *   "bypass blocks" is a whole-page concern, matching
  *   aria-hidden-body / page-title-present's pattern of
  *   evaluating the document directly rather than a scoped root.
@@ -103,7 +105,7 @@ const id = 'bypass-blocks-present';
 const meta = {
   title: 'Page must provide a way to bypass repeated blocks',
   description:
-    'Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working skip link, or a heading.',
+    'Checks that the page has at least one recognized mechanism to bypass blocks of repeated content: a main landmark, a working skip link, or a heading.',
   i18n: {
     titleKey: 'bypassBlocksPresent_title',
     descriptionKey: 'bypassBlocksPresent_description'
@@ -124,22 +126,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.1': ['bypass-blocks-present'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    BYPASS_MECHANISM_ABSENT: {
-      steps: [
-        'Close any dialog or overlay, then look at whether the page repeats blocks such as a header or menu that appear on other pages of the site.',
-        'Click the address bar and press Tab: check whether a skip link appears that moves focus past the repeated blocks to the main content.',
-        "Check for headings at the start of the main content, or a main landmark, in the Accessibility pane or by a screen reader's headings and landmarks lists."
-      ],
-      passWhen:
-        'The page has no repeated blocks, or offers a working skip link, a main landmark or headings that let users jump past them.',
-      failWhen:
-        'Repeated blocks have no way to skip them, so keyboard and screen reader users must go through them on every page, which fails WCAG 2.4.1.'
-    }
-  }
+  coverage: { facetsBySc: { '2.4.1': ['bypass-blocks-present'] } }
 };
 
 // This check is inherently whole-document (does the PAGE have this
@@ -149,8 +136,11 @@ const meta = {
 //
 // Also notApplicable while a modal dialog is open: the rest of the page is
 // inert then, so the scan saw the dialog, not the page's structure.
+// A document shown in a frame is no page of its own: the blocks repeated on
+// the page, and the way past them, are the top document's.
 function applicability(ctx) {
   const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
   if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }
@@ -232,7 +222,7 @@ function runInPage(ctx) {
     try {
       target =
         typeof dom.get(root, 'querySelectorAll') === 'function'
-          ? Array.from(dom.querySelectorAll(root, 'a[name]')).find(
+          ? [...dom.querySelectorAll(root, 'a[name]')].find(
               (a) => dom.getAttribute(a, 'name') === fragment
             ) || null
           : null;
@@ -432,6 +422,7 @@ function runInPage(ctx) {
     if (!content) return null;
     let leading = 0;
     let navWithLinks = false;
+    let navBlock = null;
     for (const el of queryAll(FOCUSABLE)) {
       if (!el || !isExposedToAt(el) || !precedes(el, content)) continue;
       const tabindex = dom.getAttribute(el, 'tabindex');
@@ -442,6 +433,7 @@ function runInPage(ctx) {
         for (let cur = el; cur && guard++ < 500; cur = dom.parentElement(cur)) {
           if (blockRoleOf(cur) === 'navigation') {
             navWithLinks = true;
+            navBlock = cur;
             break;
           }
         }
@@ -477,15 +469,25 @@ function runInPage(ctx) {
     // A navigation block with links in front of the page's own text, and
     // nothing to move past it: the block 2.4.1 is about (ACT cf77f2).
     if (navWithLinks && otherSamePageLinks === 0) {
+      // The block, named as in the markup: <nav class="top">.
+      const block =
+        navBlock && typeof helpers.describeElement === 'function'
+          ? helpers.describeElement(navBlock, { role: true })
+          : '';
       return {
         toward: 'fail',
-        why: "A navigation block with links comes before the page's own content, and no skip link, main landmark, heading or same-page link leads past it.",
+        why: block
+          ? `The navigation block ${block} comes before the page's own content, and no skip link, main landmark, heading or same-page link leads past it.`
+          : "A navigation block with links comes before the page's own content, and no skip link, main landmark, heading or same-page link leads past it.",
         signals,
         caution:
           'Whether the block repeats on other pages cannot be seen from one page, and a dialog built without <dialog> may hide the real page.',
         i18n: {
-          whyKey: 'bypassBlocksPresent_lean_why_navBeforeContent',
-          cautionKey: 'bypassBlocksPresent_lean_caution_navBeforeContent'
+          whyKey: block
+            ? 'bypassBlocksPresent_lean_why_navBeforeContentNamed'
+            : 'bypassBlocksPresent_lean_why_navBeforeContent',
+          cautionKey: 'bypassBlocksPresent_lean_caution_navBeforeContent',
+          ...(block ? { params: { block } } : {})
         }
       };
     }

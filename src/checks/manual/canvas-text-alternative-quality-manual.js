@@ -69,21 +69,6 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TEXT_ALTERNATIVE_REVIEW: {
-      steps: [
-        'Look at what the canvas the report names shows on screen, including any changes as you use it.',
-        'Read its text alternative (the value the report gives, or its fallback content and name in the Accessibility pane).',
-        'Check that the text conveys the same information or purpose as the drawing, and keeps up if the drawing changes.'
-      ],
-      passWhen:
-        'The text alternative gives the same information or purpose as what the canvas shows.',
-      failWhen:
-        'The text alternative is missing the information the canvas shows, or is vague or wrong, which fails WCAG 1.1.1.'
-    }
   }
 };
 
@@ -100,7 +85,7 @@ function runInPage(ctx) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -171,7 +156,7 @@ function runInPage(ctx) {
 
   const els = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || []);
+      return [...((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || [])];
     } catch {
       return queryAll('canvas');
     }
@@ -208,7 +193,8 @@ function runInPage(ctx) {
       try {
         const aria = helpers.getAriaNameInfo(el, ctx);
         const v = aria && aria.present ? String(aria.value || '').trim() : '';
-        if (v) return { text: v, fallback: false };
+        if (v)
+          return { text: v, fallback: false, labelledby: aria.mechanism === 'aria-labelledby' };
       } catch {
         // use the helper's value
       }
@@ -216,12 +202,12 @@ function runInPage(ctx) {
     if (!textAltInfo || textAltInfo.value === 'fallback-content') return null;
     return {
       text: String(textAltInfo.value || '').trim(),
-      fallback: textAltInfo.mechanism === 'canvas-fallback'
+      fallback: textAltInfo.mechanism === 'canvas-fallback',
+      labelledby: textAltInfo.mechanism === 'aria-labelledby'
     };
   }
 
-  function leanFor(el, textAltInfo) {
-    const judged = textToJudge(el, textAltInfo);
+  function leanFor(el, judged) {
     if (!judged || !judged.text) return null;
     if (judged.fallback && isUnsupportedBrowserNote(judged.text)) {
       return {
@@ -290,15 +276,41 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const lean = leanFor(el, textAltInfo);
+    const judged = textToJudge(el, textAltInfo);
+    const lean = leanFor(el, judged);
+    // The text under review, quoted: from aria-labelledby it is not in the
+    // snippet.
+    const nameAll = judged && judged.text ? judged.text.replace(/\s+/g, ' ') : '';
+    const name = nameAll.length > 80 ? `${nameAll.slice(0, 79)}…` : nameAll;
+    const ids =
+      name && judged.labelledby
+        ? String(dom.getAttribute(el, 'aria-labelledby') || '')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((x) => `#${x}`)
+            .join(' ')
+        : '';
     const baseOccurrence = {
       ...(lean ? { lean } : {}),
-      summary: 'Check that the text alternative of this <canvas> conveys what it shows.',
+      summary: !name
+        ? 'Check that the text alternative of this <canvas> conveys what it shows.'
+        : ids
+          ? `Check that the text alternative of this <canvas>, "${name}", taken from ${ids} by aria-labelledby, conveys what it shows.`
+          : `Check that the text alternative of this <canvas>, "${name}", conveys what it shows.`,
       hint: 'The fallback text or accessible name should give the same information, or do the same job, as what is drawn.',
       i18n: {
-        summaryKey: 'canvas_textAltQuality_summary_cantTell',
+        summaryKey: !name
+          ? 'canvas_textAltQuality_summary_cantTell'
+          : ids
+            ? 'canvas_textAltQuality_summary_cantTell_labelledby'
+            : 'canvas_textAltQuality_summary_cantTell_name',
         hintKey: 'canvas_textAltQuality_hint_cantTell',
-        params: { element: (dom.tagName(el) || '').toLowerCase() }
+        params: {
+          element: (dom.tagName(el) || '').toLowerCase(),
+          ...(name ? { name } : {}),
+          ...(ids ? { ids } : {})
+        }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

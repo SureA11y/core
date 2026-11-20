@@ -178,12 +178,36 @@ function runBothEntryPoints(
   entryPointParity,
   parityPage
 ) {
+  // The second run checks the first; what the engine says about the options
+  // (an unknown profile, a value read as not given) was said by the first
+  // run already, so the second says only what the first didn't.
+  const said = [];
+  const realWarn = console.warn;
+  const remembering = (...args) => {
+    said.push(args.map(String).join(' '));
+    return realWarn.apply(console, args);
+  };
+  const scanFirst = (scan) => {
+    console.warn = remembering;
+    try {
+      return scan();
+    } finally {
+      console.warn = realWarn;
+    }
+  };
   const parity = (inPageResult) => {
     const done = parityPage ? parityPage() : null;
+    const left = said.slice();
+    console.warn = (...args) => {
+      const at = left.indexOf(args.map(String).join(' '));
+      if (at !== -1) left.splice(at, 1);
+      else realWarn.apply(console, args);
+    };
     try {
       const nodeResult = runDomRulesInPage(url, contextSelector, engineOptions, runOnly);
       assertEntryPointParity(inPageResult, nodeResult);
     } finally {
+      console.warn = realWarn;
       if (done) done();
     }
     return inPageResult;
@@ -194,16 +218,15 @@ function runBothEntryPoints(
   if (engineOptions && Array.isArray(engineOptions.packs) && engineOptions.packs.length) {
     const names = registerAsInPage(engineOptions.packs);
     if (!names) return runDomRulesInPage(url, contextSelector, engineOptions, runOnly);
-    const inPageResult = runa11yCoreInPage(
-      url,
-      contextSelector,
-      { ...engineOptions, packs: names },
-      runOnly
+    const inPageResult = scanFirst(() =>
+      runa11yCoreInPage(url, contextSelector, { ...engineOptions, packs: names }, runOnly)
     );
     if (entryPointParity === false) return inPageResult;
     return parity(inPageResult);
   }
-  const inPageResult = runa11yCoreInPage(url, contextSelector, engineOptions, runOnly);
+  const inPageResult = scanFirst(() =>
+    runa11yCoreInPage(url, contextSelector, engineOptions, runOnly)
+  );
   if (entryPointParity === false) return inPageResult;
   return parity(inPageResult);
 }

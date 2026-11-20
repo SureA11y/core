@@ -27,7 +27,8 @@
  *     take focus: `opacityZero`, `offscreen`, `clipped` or
  *     `zeroSizeOverflowHidden` (no size, with overflow hidden) by its own
  *     styles; when they show it, `outOfReach` (a container is positioned
- *     off screen, or, in a browser, the box focus would show lies where no
+ *     off screen, or is fixed and clips its content where its px lengths
+ *     put it wholly outside the viewport, or, in a browser, the box focus would show lies where no
  *     scrolling reaches) or `containerClipped` (a container is clipped to
  *     nothing, has no size with overflow hidden, or is scaled to nothing,
  *     or, in a browser, the element lies wholly outside a container with
@@ -42,6 +43,21 @@
  *   - `cssHiddenTabbable_needsFocusStateVerification` (cantTell): an element
  *     in the tab order is hidden by CSS and no focus rule brings it into
  *     view, so a keyboard user may not see where focus is.
+ *     It leans fail when the element is out of view where it lies:
+ *     `outOfReach` (a container is positioned off screen, or, in a browser,
+ *     the element's box lies where no scrolling reaches, whether its own
+ *     position or a container's puts it there), `offscreen` (its own styles
+ *     position it off screen; a text-indent that moves only its text leaves
+ *     its box and focus ring in view, and doesn't lean) or `containerClipped` (a container clips it to
+ *     nothing); no focus rule brings it into view; and no script is known
+ *     to react to its focus (no `onfocus` or `onfocusin` attribute on it or
+ *     a container, and no focus listener the listener hook saw). Without
+ *     the hook, the lean says a script may still show it. Hidden by its own
+ *     opacity, clip or lack of size alone (`opacityZero`, `clipped`,
+ *     `zeroSizeOverflowHidden`), it gets no lean: a custom checkbox hides
+ *     its input that way and draws focus on the box beside it. A checkbox
+ *     or radio input gets none either way, as such a control may also move
+ *     its input off screen and show focus on its label.
  *     Basis: WCAG 2.4.7 (not settled).
  *   - `cssHiddenTabbable_runtimeRedirect_needsReview` (cantTell): an element
  *     in the tab order is hidden by CSS, but focusing it moved focus
@@ -51,6 +67,14 @@
  * @implementation-notes
  * - This rule intentionally targets CSS techniques that *can* keep an element focusable.
  * - Elements removed from rendering (display:none, visibility:hidden, [hidden]) are excluded.
+ *   visibility:hidden is inherited, so an element set back to
+ *   visibility:visible inside such a container is drawn and is in scope.
+ * - A position:fixed box that clips its content (overflow hidden or clip
+ *   on that axis) and whose px lengths end at or beyond a viewport edge
+ *   (`top: -1px; height: 1px`, with its padding, border and margin) is off
+ *   screen for good: a fixed box doesn't scroll. This is read without
+ *   layout, so jsdom reports it too; a length that needs layout (%, em in
+ *   jsdom) is left to the browser's measurement.
  * - The element's own styles and its containers' are read from computed
  *   style, which jsdom has too. Only in a browser is the rendered box also
  *   measured, to find a container slid out of view by a transform: focus
@@ -105,31 +129,6 @@ const meta = {
     facetsBySc: {
       '2.4.7': ['css-hidden-focusable']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    cssHiddenTabbable_needsFocusStateVerification: {
-      steps: [
-        'Click just before the element the report names, then press Tab until focus should reach it.',
-        'Check document.activeElement in the developer tools console to be sure focus is on it.',
-        'Look for the element and its focus indicator on screen.'
-      ],
-      passWhen: 'The element comes into view with a visible focus indicator while it has focus.',
-      failWhen:
-        'Focus lands on the element while it stays hidden, so a keyboard user cannot see where focus is, which fails WCAG 2.4.7.'
-    },
-    cssHiddenTabbable_runtimeRedirect_needsReview: {
-      steps: [
-        'Click just before the element the report names, then press Tab until focus should reach it.',
-        'Watch where focus lands and check document.activeElement in the developer tools console.',
-        'Press Shift+Tab from the control after it and see whether focus stops on the hidden element or passes straight on.'
-      ],
-      passWhen:
-        "Focus never stays on the hidden element: it passes straight on to a visible control, as a focus trap's sentinel does.",
-      failWhen:
-        'Focus can stay on the hidden element, so a keyboard user cannot see where focus is, which fails WCAG 2.4.7.'
-    }
   }
 };
 
@@ -157,14 +156,14 @@ function runInPage(ctx) {
       if (queryAllSmart) {
         const r = queryAllSmart(sel);
         if (Array.isArray(r)) return r;
-        return Array.from(r || []);
+        return [...(r || [])];
       }
     } catch {
       // fall through
     }
     try {
       if (safeRoot && typeof dom.get(safeRoot, 'querySelectorAll') === 'function')
-        return Array.from(dom.querySelectorAll(safeRoot, sel));
+        return [...dom.querySelectorAll(safeRoot, sel)];
     } catch {
       // fall through
     }
@@ -188,12 +187,14 @@ function runInPage(ctx) {
   // Returns deterministic "visually hidden but can remain focusable" hints.
   function getVisibilityHints(el) {
     if (!el) return [];
-    return hintsFromStyle(getComputedStyleSafe(el));
+    return hintsFromStyle(getComputedStyleSafe(el), el);
   }
 
   // The same hints, read off any object carrying the computed-style fields
-  // used below (a CSSStyleDeclaration, or the focused-state overlay).
-  function hintsFromStyle(cs) {
+  // used below (a CSSStyleDeclaration, or the focused-state overlay). With
+  // `el`, a clip jsdom's parser dropped (rect(0 0 0 0) reads as auto) is
+  // read as declared (helpers.isElementClipHidden).
+  function hintsFromStyle(cs, el) {
     const out = [];
 
     // opacity:0
@@ -205,7 +206,11 @@ function runInPage(ctx) {
 
     // clip / clip-path
     try {
-      if (helpers.isClipHidden(cs)) out.push('clipped');
+      const clipHidden =
+        el && typeof helpers.isElementClipHidden === 'function'
+          ? helpers.isElementClipHidden(el, cs)
+          : helpers.isClipHidden(cs);
+      if (clipHidden) out.push('clipped');
     } catch {}
 
     // zero-size + overflow hidden/clip
@@ -221,26 +226,8 @@ function runInPage(ctx) {
 
     // off-screen heuristic (absolute/fixed + left/top <= -5000 OR text-indent <= -5000)
     try {
-      const pos = cs && cs.position != null ? String(cs.position).trim().toLowerCase() : '';
-      const left = cs && cs.left != null ? String(cs.left).trim().toLowerCase() : '';
-      const top = cs && cs.top != null ? String(cs.top).trim().toLowerCase() : '';
-      const ti = cs && cs.textIndent != null ? String(cs.textIndent).trim().toLowerCase() : '';
-
-      const parsePx = (s) => {
-        if (!s || s === 'auto') return null;
-        const m = String(s).match(/-?\d+(\.\d+)?/);
-        if (!m) return null;
-        const n = Number.parseFloat(m[0]);
-        return Number.isFinite(n) ? n : null;
-      };
-
-      const l = parsePx(left);
-      const t = parsePx(top);
-      const ind = parsePx(ti);
-
-      if (pos === 'absolute' || pos === 'fixed') {
-        if ((l != null && l <= -5000) || (t != null && t <= -5000)) out.push('offscreen');
-      }
+      if (positionedOffscreen(cs)) out.push('offscreen');
+      const ind = pxLoose(cs && cs.textIndent);
       if (ind != null && ind <= -5000) out.push('offscreen');
     } catch {}
 
@@ -255,6 +242,93 @@ function runInPage(ctx) {
       }
     }
     return uniq;
+  }
+
+  // The first number in a computed length, or null for none or auto.
+  function pxLoose(v) {
+    const s = trim(v).toLowerCase();
+    if (!s || s === 'auto') return null;
+    const m = s.match(/-?\d+(\.\d+)?/);
+    if (!m) return null;
+    const n = Number.parseFloat(m[0]);
+    return Number.isFinite(n) ? n : null;
+  }
+  // Whether the box itself is positioned off screen: absolute or fixed at
+  // left/top <= -5000px, or a fixed box wholly outside the viewport. A
+  // text-indent moves only the text: the box, and a focus ring on it, stay
+  // in view (a logo link replaced by its background image).
+  function positionedOffscreen(cs) {
+    if (!cs) return false;
+    const pos = lower(cs.position);
+    if (pos !== 'absolute' && pos !== 'fixed') return false;
+    const l = pxLoose(cs.left);
+    const t = pxLoose(cs.top);
+    if ((l != null && l <= -5000) || (t != null && t <= -5000)) return true;
+    return pos === 'fixed' && !!fixedBoxOutsideViewport(cs);
+  }
+
+  // A length in px as computed style gives it ('12px', '0'), or null for
+  // anything that needs layout to resolve (auto, %, em in jsdom).
+  function pxOf(v) {
+    const s = trim(v).toLowerCase();
+    if (s === '0') return 0;
+    const m = /^(-?\d*\.?\d+)px$/.exec(s);
+    return m ? Number.parseFloat(m[1]) : null;
+  }
+  const BORDER_KEYWORDS = { thin: 1, medium: 3, thick: 5 };
+  function borderOf(cs, side) {
+    const style = trim(cs['border' + side + 'Style']).toLowerCase();
+    if (!style || style === 'none' || style === 'hidden') return 0;
+    const w = trim(cs['border' + side + 'Width']).toLowerCase();
+    return Object.prototype.hasOwnProperty.call(BORDER_KEYWORDS, w) ? BORDER_KEYWORDS[w] : pxOf(w);
+  }
+  // Whether the box clips what overflows it on one axis. jsdom leaves
+  // overflow-x/-y at visible when only the shorthand is set, so the
+  // shorthand ('hidden', or 'visible hidden' for x then y) is read too.
+  function clipsAxis(cs, axis) {
+    const own = trim(axis === 'x' ? cs.overflowX : cs.overflowY).toLowerCase();
+    if (own === 'hidden' || own === 'clip') return true;
+    const parts = trim(cs.overflow).toLowerCase().split(/\s+/).filter(Boolean);
+    const v = axis === 'x' ? parts[0] : parts[1] || parts[0];
+    return v === 'hidden' || v === 'clip';
+  }
+  // A position:fixed box that clips its content and lies wholly outside the
+  // viewport on one side, from its computed lengths alone: `top: -1px;
+  // height: 1px; overflow-y: hidden` ends where the viewport starts. A fixed
+  // box doesn't scroll, so focus can't bring it, or anything in it, into
+  // view. Only lengths in px are read, so nothing that needs layout to
+  // resolve is guessed; the browser measures those itself (outOfReach).
+  // Returns the declarations that place it there, for the message, or ''.
+  function fixedBoxOutsideViewport(cs) {
+    const borderBox = trim(cs.boxSizing).toLowerCase() === 'border-box';
+    const axes = [
+      { axis: 'y', size: 'height', start: ['Top', 'top'], end: ['Bottom', 'bottom'] },
+      { axis: 'x', size: 'width', start: ['Left', 'left'], end: ['Right', 'right'] }
+    ];
+    for (const a of axes) {
+      if (!clipsAxis(cs, a.axis)) continue;
+      const size = pxOf(cs[a.size]);
+      if (size == null) continue;
+      let extent = size;
+      if (!borderBox) {
+        const box = [
+          pxOf(cs['padding' + a.start[0]]),
+          pxOf(cs['padding' + a.end[0]]),
+          borderOf(cs, a.start[0]),
+          borderOf(cs, a.end[0])
+        ];
+        if (box.some((n) => n == null)) continue;
+        extent += box.reduce((s, n) => s + n, 0);
+      }
+      // The start offset wins when both are set, as it does in a
+      // left-to-right, top-to-bottom page.
+      const [side, prop] = trim(cs[a.start[1]]).toLowerCase() !== 'auto' ? a.start : a.end;
+      const offset = pxOf(cs[prop]);
+      const margin = pxOf(cs['margin' + side]);
+      if (offset != null && margin != null && offset + margin + extent <= 0)
+        return `position: fixed; ${prop}: ${trim(cs[prop])}; ${a.size}: ${trim(cs[a.size])}`;
+    }
+    return '';
   }
 
   // ---- Focused state, worked out from the stylesheets ----
@@ -276,7 +350,29 @@ function runInPage(ctx) {
     top: 'top',
     'text-indent': 'textIndent',
     transform: 'transform',
-    translate: 'translate'
+    translate: 'translate',
+    // What says whether a fixed box lies outside the viewport.
+    bottom: 'bottom',
+    right: 'right',
+    'overflow-x': 'overflowX',
+    'overflow-y': 'overflowY',
+    'box-sizing': 'boxSizing',
+    'margin-top': 'marginTop',
+    'margin-right': 'marginRight',
+    'margin-bottom': 'marginBottom',
+    'margin-left': 'marginLeft',
+    'padding-top': 'paddingTop',
+    'padding-right': 'paddingRight',
+    'padding-bottom': 'paddingBottom',
+    'padding-left': 'paddingLeft',
+    'border-top-width': 'borderTopWidth',
+    'border-right-width': 'borderRightWidth',
+    'border-bottom-width': 'borderBottomWidth',
+    'border-left-width': 'borderLeftWidth',
+    'border-top-style': 'borderTopStyle',
+    'border-right-style': 'borderRightStyle',
+    'border-bottom-style': 'borderBottomStyle',
+    'border-left-style': 'borderLeftStyle'
   };
   const INITIAL_VALUES = {
     opacity: '1',
@@ -290,7 +386,28 @@ function runInPage(ctx) {
     top: 'auto',
     'text-indent': '0px',
     transform: 'none',
-    translate: 'none'
+    translate: 'none',
+    bottom: 'auto',
+    right: 'auto',
+    'overflow-x': 'visible',
+    'overflow-y': 'visible',
+    'box-sizing': 'content-box',
+    'margin-top': '0px',
+    'margin-right': '0px',
+    'margin-bottom': '0px',
+    'margin-left': '0px',
+    'padding-top': '0px',
+    'padding-right': '0px',
+    'padding-bottom': '0px',
+    'padding-left': '0px',
+    'border-top-width': 'medium',
+    'border-right-width': 'medium',
+    'border-bottom-width': 'medium',
+    'border-left-width': 'medium',
+    'border-top-style': 'none',
+    'border-right-style': 'none',
+    'border-bottom-style': 'none',
+    'border-left-style': 'none'
   };
 
   function splitTopLevel(text, separators) {
@@ -422,10 +539,13 @@ function runInPage(ctx) {
         )
         .join(', ');
     }
+    const conditionApplies = (x) =>
+      typeof helpers.cssConditionApplies === 'function' ? helpers.cssConditionApplies(x) : true;
     function walk(rules, depth, parent) {
       if (!rules || depth > MAX_RULE_DEPTH) return;
       for (const cssRule of rules) {
-        if (!cssRule) continue;
+        // @media print and the like style nothing on the screen scanned.
+        if (!cssRule || !conditionApplies(cssRule)) continue;
         let nested;
         try {
           nested = cssRule.cssRules || null;
@@ -446,8 +566,9 @@ function runInPage(ctx) {
       // root's, whose rules reach only the elements of that root.
       const sheets = helpers.getStyleSheets
         ? helpers.getStyleSheets()
-        : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
+        : [...(dom.styleSheets(document) || [])].map((sheet) => ({ sheet, root: document }));
       for (const { sheet, root } of sheets) {
+        if (!conditionApplies(sheet)) continue;
         sheetRoot = root;
         // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
         // given (helpers.cssRulesOf); otherwise not inspectable.
@@ -534,7 +655,12 @@ function runInPage(ctx) {
           ? cs[field]
           : '';
     }
-    return hintsFromStyle(focused);
+    // A focus rule that sets clip decides it; otherwise the clip as declared
+    // stands, which jsdom may have dropped from the computed style.
+    return hintsFromStyle(
+      focused,
+      Object.prototype.hasOwnProperty.call(overlay, 'clip') ? null : el
+    );
   }
 
   function getFocusableInfoSafe(el) {
@@ -741,7 +867,7 @@ function runInPage(ctx) {
   }
   function containerStyleHints(c) {
     if (!containerStyleCache.has(c)) {
-      const hs = hintsFromStyle(getComputedStyleSafe(c));
+      const hs = hintsFromStyle(getComputedStyleSafe(c), c);
       const out = [];
       // A container at opacity 0 is left out: content faded in on scroll
       // is seen by the time a reader gets to it.
@@ -777,7 +903,17 @@ function runInPage(ctx) {
   // one walk up the tree per focusable element: whether one is positioned off
   // screen (outOfReach) or clipped to nothing (clipped), the outermost scroll
   // container below <body> (box), and whether one is fixed to the viewport.
-  const NO_CONTAINER = { outOfReach: false, clipped: false, box: null, fixed: false, clips: [] };
+  // outOfReachBy and clippedBy keep the outermost container that does it,
+  // for the message.
+  const NO_CONTAINER = {
+    outOfReach: false,
+    clipped: false,
+    outOfReachBy: null,
+    clippedBy: null,
+    box: null,
+    fixed: false,
+    clips: []
+  };
   const scrolls = (v) => v === 'hidden' || v === 'auto' || v === 'scroll';
   const chainCache = new Map();
   function chainOf(c) {
@@ -806,6 +942,8 @@ function runInPage(ctx) {
       acc = {
         outOfReach: acc.outOfReach || own.includes('outOfReach'),
         clipped: acc.clipped || own.includes('containerClipped'),
+        outOfReachBy: acc.outOfReachBy || (own.includes('outOfReach') ? e : null),
+        clippedBy: acc.clippedBy || (own.includes('containerClipped') ? e : null),
         box: acc.box || (cs && (scrolls(cs.overflowX) || scrolls(cs.overflowY)) ? e : null),
         fixed: acc.fixed || (!!cs && cs.position === 'fixed'),
         clips: clipX || clipY ? acc.clips.concat([{ el: e, x: clipX, y: clipY }]) : acc.clips
@@ -925,7 +1063,60 @@ function runInPage(ctx) {
     const hints = [];
     if (outOfReach) hints.push('outOfReach');
     if (chain.clipped || outsideClipBox(el, chain)) hints.push('containerClipped');
-    return { hints, containers: hints.length ? containersOf(el) : [] };
+    return {
+      hints,
+      containers: hints.length ? containersOf(el) : [],
+      cause: containerCause(chain)
+    };
+  }
+
+  // The container that hides the element and the CSS that does it, as a
+  // reader would find it in a stylesheet: { kind, container, css } or null.
+  function containerCause(chain) {
+    const px = (v) => {
+      const m = String(v == null ? '' : v).match(/-?\d+(\.\d+)?/);
+      return m ? Number.parseFloat(m[0]) : null;
+    };
+    if (chain.outOfReachBy) {
+      const cs = getComputedStyleSafe(chain.outOfReachBy) || {};
+      let css = '';
+      for (const [prop, field] of [
+        ['left', 'left'],
+        ['top', 'top'],
+        ['text-indent', 'textIndent']
+      ]) {
+        const n = px(cs[field]);
+        if (n != null && n <= -5000) {
+          css = `${prop}: ${trim(cs[field])}`;
+          break;
+        }
+      }
+      if (!css && lower(cs.position) === 'fixed') css = fixedBoxOutsideViewport(cs);
+      return {
+        kind: 'offscreen',
+        container: helpers.describeElement(chain.outOfReachBy),
+        css
+      };
+    }
+    if (chain.clippedBy) {
+      const cs = getComputedStyleSafe(chain.clippedBy) || {};
+      let css = '';
+      const clipPath = trim(cs.clipPath);
+      const clip = trim(cs.clip);
+      const ov = lower(cs.overflow);
+      if (clipPath && clipPath !== 'none' && clipPath !== 'auto') css = `clip-path: ${clipPath}`;
+      else if (clip && clip !== 'auto') css = `clip: ${clip}`;
+      else if ((ov === 'hidden' || ov === 'clip') && px(cs.width) === 0) {
+        css = `width: 0; overflow: ${ov}`;
+      } else if ((ov === 'hidden' || ov === 'clip') && px(cs.height) === 0) {
+        css = `height: 0; overflow: ${ov}`;
+      } else if (trim(cs.scale) && trim(cs.scale) !== 'none') css = `scale: ${trim(cs.scale)}`;
+      else if (trim(cs.transform) && trim(cs.transform) !== 'none') {
+        css = `transform: ${trim(cs.transform)}`;
+      }
+      return { kind: 'clipped', container: helpers.describeElement(chain.clippedBy), css };
+    }
+    return null;
   }
 
   // A :focus-within rule that reaches a container (`.menu:focus-within`,
@@ -963,6 +1154,74 @@ function runInPage(ctx) {
     }
     return true;
   }
+  // Whether a script reacts to the element taking focus: true when an
+  // onfocus/onfocusin attribute or a listener the hook saw says so, false
+  // when an early listener hook saw none, null when that can't be known.
+  const FOCUS_EVENTS = ['focus', 'focusin'];
+  function focusScripted(el) {
+    const chain = [el, ...containersOf(el)];
+    for (const a of chain) {
+      try {
+        if (dom.getAttribute(a, 'onfocus') != null || dom.getAttribute(a, 'onfocusin') != null)
+          return true;
+      } catch {}
+    }
+    if (typeof helpers.getEventListenerInfo !== 'function') return null;
+    const view = dom.defaultView(document);
+    let known = true;
+    for (const t of [...chain, htmlEl, document, view]) {
+      if (!t) continue;
+      const info = helpers.getEventListenerInfo(t, FOCUS_EVENTS);
+      if (info && info.listens) return true;
+      if (!info || info.hook !== 'early') known = false;
+    }
+    return known ? false : null;
+  }
+
+  // Which way a finding out of view where it lies leans: fail, out of
+  // reach (a container off screen, or a box the browser measured where no
+  // scrolling reaches), positioned off screen by its own styles, or in a
+  // container clipped to nothing, unless a script may react to the focus.
+  // Hidden by opacity, a clip or no size doesn't lean: that is how a custom
+  // checkbox or radio hides its input while a sibling shows the focus. A
+  // checkbox or radio input never leans, as such a control may also move
+  // its input off screen (left: -9999px) and show focus on its label.
+  const LEAN_HINTS = ['outOfReach', 'containerClipped', 'offscreen'];
+  function outOfViewLean(el, hintsArr) {
+    const by =
+      LEAN_HINTS.find(
+        (h) =>
+          hintsArr.includes(h) &&
+          (h !== 'offscreen' || positionedOffscreen(getComputedStyleSafe(el)))
+      ) || null;
+    if (!by) return null;
+    if (lower(dom.tagName(el)) === 'input') {
+      const type = lower(dom.getAttribute(el, 'type'));
+      if (type === 'checkbox' || type === 'radio') return null;
+    }
+    const scripted = focusScripted(el);
+    if (scripted === true) return null;
+    return {
+      toward: 'fail',
+      why: "When the element takes focus it stays out of view: it lies where scrolling can't reach, or in a container clipped to nothing, and no focus style brings it into view.",
+      signals: [
+        { signal: 'hidden-by', value: by },
+        { signal: 'focus-style-reveals', value: false },
+        { signal: 'focus-script', value: scripted }
+      ],
+      ...(scripted === null
+        ? {
+            caution:
+              'A script may still show it when it takes focus; whether one listens could not be checked.'
+          }
+        : {}),
+      i18n: {
+        whyKey: 'cssHidden_focus_lean_why_container',
+        ...(scripted === null ? { cautionKey: 'cssHidden_focus_lean_caution_script' } : {})
+      }
+    };
+  }
+
   const candidates = qAll(
     'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]'
   );
@@ -988,6 +1247,7 @@ function runInPage(ctx) {
     if (!isRendered(el)) continue;
 
     let hints = getVisibilityHints(el);
+    let cause = null;
     if (hints.length) {
       // Brought back into view when it takes focus: visible while focused.
       const whenFocused = focusedVisibilityHints(el);
@@ -1010,11 +1270,12 @@ function runInPage(ctx) {
       )
         continue;
       hints = byContainer.hints;
+      cause = byContainer.cause;
     }
-    flagged.push({ el, hints });
+    flagged.push({ el, hints, cause });
   }
 
-  for (const { el, hints } of flagged) {
+  for (const { el, hints, cause } of flagged) {
     const tagName = (() => {
       try {
         return lower(dom.tagName(el) || '');
@@ -1038,11 +1299,21 @@ function runInPage(ctx) {
       runtimeProbeCount < maxRuntimeProbeCount ? probeImmediateFocusRedirect(el) : null;
     if (runtimeProbeCount < maxRuntimeProbeCount) runtimeProbeCount += 1;
     const downgradedToRedirectReview = !!(runtimeProbe && runtimeProbe.redirected);
+    // A container the rule found, named with its CSS.
+    const byContainer = !downgradedToRedirectReview && cause && cause.css ? cause : null;
+    const containerSummary = byContainer
+      ? byContainer.kind === 'offscreen'
+        ? `This focusable <${tagName}> can't be seen: its container ${byContainer.container} is positioned off screen (${byContainer.css}), and nothing brings it into view when the element takes focus.`
+        : `This focusable <${tagName}> can't be seen: its container ${byContainer.container} is clipped to nothing (${byContainer.css}), and nothing shows it when the element takes focus.`
+      : null;
+
+    const lean = downgradedToRedirectReview ? null : outOfViewLean(el, hintsArr);
 
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: downgradedToRedirectReview
         ? `This focusable <${tagName}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.`
-        : `Focusable ${tagName} is visually hidden (${hintsArr.join(',')}).`,
+        : containerSummary || `Focusable ${tagName} is visually hidden (${hintsArr.join(',')}).`,
       hint: downgradedToRedirectReview
         ? 'Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.'
         : 'Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.',
@@ -1053,7 +1324,11 @@ function runInPage(ctx) {
             params: { element: tagName }
           }
         : {
-            summaryKey: 'cssHidden_focus_summary_cantTell',
+            summaryKey: byContainer
+              ? byContainer.kind === 'offscreen'
+                ? 'cssHidden_focus_summary_cantTell_containerOffscreen'
+                : 'cssHidden_focus_summary_cantTell_containerClipped'
+              : 'cssHidden_focus_summary_cantTell',
             hintKey: 'cssHidden_focus_hint_cantTell',
             // One flag per technique, so each locale words them as sentences
             // instead of showing the internal codes. visibilityHints stays
@@ -1066,7 +1341,8 @@ function runInPage(ctx) {
               clipped: hintsArr.includes('clipped'),
               zeroSizeOverflowHidden: hintsArr.includes('zeroSizeOverflowHidden'),
               outOfReach: hintsArr.includes('outOfReach'),
-              containerClipped: hintsArr.includes('containerClipped')
+              containerClipped: hintsArr.includes('containerClipped'),
+              ...(byContainer ? { container: byContainer.container, css: byContainer.css } : {})
             }
           },
       data: {
@@ -1075,6 +1351,9 @@ function runInPage(ctx) {
             ? 'cssHiddenTabbable_runtimeRedirect_needsReview'
             : 'cssHiddenTabbable_needsFocusStateVerification',
           metrics: { visibilityHints: hintsArr.slice(0) },
+          ...(byContainer
+            ? { hiddenByContainer: byContainer.container, containerCss: byContainer.css }
+            : {}),
           runtimeProbe: runtimeProbe || null
         }
       }

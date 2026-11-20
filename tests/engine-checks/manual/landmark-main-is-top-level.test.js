@@ -170,3 +170,16 @@ test(`${RULE_ID} (node runtime): a main scoped to the top of a contextSelector-n
   assert.strictEqual(rule.outcome, 'notApplicable');
   assert.strictEqual(rule.occurrences.length, 0);
 });
+
+test(`${RULE_ID}: names the landmark it is nested in`, () => {
+  const html = `<!doctype html><html><body><section class="page" aria-label="Page"><div class="col"><main id="t">x</main></div></section></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occ = rule.occurrences.find((o) => o.html.includes('id="t"'));
+  assert.strictEqual(
+    occ.summary,
+    'This main landmark is nested inside the region landmark <section class="page">.'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'landmarkMainIsTopLevel_summary_cantTell_inside');
+  assert.strictEqual(occ.data.details.ancestorRole, 'region');
+  assert.strictEqual(occ.data.details.ancestorElement, '<section class="page">');
+});

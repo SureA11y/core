@@ -200,3 +200,56 @@ for (const [label, body] of [
     assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
   });
 }
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: a native <button> is named by its tag, and the hint keeps its role`, () => {
+  const occ = messageOccurrence(
+    '<button>Save <span class="badge" tabindex="0">3</span></button>',
+    'Save'
+  );
+  assert.strictEqual(
+    occ.i18n.summaryKey,
+    'presentationalChildrenFocusableAbsent_summary_fail_native'
+  );
+  assert.strictEqual(occ.i18n.hintKey, 'presentationalChildrenFocusableAbsent_hint_fail_native');
+  assert.strictEqual(
+    occ.summary,
+    'This <button> is a button, which makes its children presentational, but it contains content that is still in the tab order: <span tabindex="0"> "3".'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Move the focusable content out of the <button>, or take it out of the tab order; otherwise focus lands on something screen readers announce with no role or name.'
+  );
+});
+
+test(`${RULE_ID}: an explicit role names each focusable element`, () => {
+  const occ = messageOccurrence(
+    '<div role="button" tabindex="0">x <a href="/y">y</a></div>',
+    'role="button"'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'presentationalChildrenFocusableAbsent_summary_fail');
+  assert.strictEqual(occ.i18n.hintKey, 'presentationalChildrenFocusableAbsent_hint_fail');
+  assert.strictEqual(
+    occ.summary,
+    'This role="button" element makes its children presentational, but it contains content that is still part of sequential focus navigation (<a href="/y"> "y").'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Move the focusable content out of this element, or remove the role that makes its children presentational; otherwise focus lands on something screen readers announce with no role or name.'
+  );
+});

@@ -85,44 +85,7 @@ const meta = {
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    name_closedContent: {
-      steps: [
-        'Find the heading the report names and note the text or icon it shows on screen.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from content no script can read.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the heading, taken from its content, and the screen reader announces it.',
-      failWhen:
-        'The heading has no name in the accessibility tree, since its content gives none, which goes against the best practice that headings have content (ACT ffd0e9).'
-    },
-    name_contentTooDeep: {
-      steps: [
-        'Find the heading the report names and note the text it shows on screen.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from all of its nested content.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the heading, taken from its nested content, and the screen reader announces it.',
-      failWhen:
-        'The heading has no name in the accessibility tree, since its content gives none, which goes against the best practice that headings have content (ACT ffd0e9).'
-    },
-    name_internals: {
-      steps: [
-        'Inspect the heading the report names, a custom element, and note its role.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the heading, set through its internals or otherwise, and the screen reader announces it.',
-      failWhen:
-        'The heading has no name in the accessibility tree and the screen reader announces only its role, which goes against the best practice that headings have content (ACT ffd0e9).'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {
@@ -294,17 +257,22 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This heading has no accessible name.',
-        hint: "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
+        hint: cause
+          ? cause.hint
+          : "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
         i18n: {
           summaryKey: 'emptyHeading_summary_fail',
-          hintKey: 'emptyHeading_hint_fail',
-          params: {}
+          hintKey: cause ? cause.hintKey : 'emptyHeading_hint_fail',
+          params: { ...(cause ? cause.params : {}) }
         },
         data: {
-          details: { reasonCode: 'HEADING_EMPTY' },
+          details: { reasonCode: 'HEADING_EMPTY', ...(cause ? { nameCause: cause.detail } : {}) },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

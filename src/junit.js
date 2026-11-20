@@ -400,6 +400,8 @@ function frameSuites(result, frame, baseline, opts, totals) {
     ['schemaVersion', engine.schemaVersion],
     ['wcagVersion', engine.wcagVersion],
     ['profile', engine.profile],
+    // A scan of several profiles names them all; profile is the first.
+    ['profiles', Array.isArray(engine.profiles) ? engine.profiles.join(',') : null],
     ['optInRules', Array.isArray(engine.optInRules) ? engine.optInRules.join(',') : null],
     ...environmentProperties(engine.environment),
     ['locale', engine.locale && engine.locale.resolved],
@@ -490,6 +492,14 @@ function renderJunitReport(result, options = {}) {
       `renderJunitReport: leanFailWcagOnly must be true or false, not ${JSON.stringify(leanFailWcagOnly)}`
     );
   }
+  // allowProfilesNotRun: true accepts a scan of several profiles that ran
+  // fewer than it asked for; by default each profile not run is an error.
+  const allowProfilesNotRun = options.allowProfilesNotRun;
+  if (allowProfilesNotRun != null && typeof allowProfilesNotRun !== 'boolean') {
+    throw new TypeError(
+      `renderJunitReport: allowProfilesNotRun must be true or false, not ${JSON.stringify(allowProfilesNotRun)}`
+    );
+  }
   const opts = {
     cantTellAs,
     leanFailAs,
@@ -504,7 +514,11 @@ function renderJunitReport(result, options = {}) {
       f.result ? { ...f, result: withHowToCheck(f.result, options.packs) } : f
     );
   }
-  const baseline = knownOccurrences(frames, options.baselineEntries);
+  const baseline = knownOccurrences(
+    frames,
+    options.baselineEntries,
+    'renderJunitReport: options.baselineEntries'
+  );
 
   const totals = { tests: 0, failures: 0, errors: 0, skipped: 0 };
   const suiteXml = [];
@@ -528,6 +542,45 @@ function renderJunitReport(result, options = {}) {
         `    <testcase classname="frame" name="${xmlText(pathText)}" time="0">`,
         `      <skipped message="${xmlText(`Not scanned: ${error}`)}"/>`,
         '    </testcase>',
+        '  </testsuite>'
+      ].join('\n')
+    );
+  }
+
+  // A scan of several profiles that ran fewer than it asked for counted less
+  // than it was asked to: one error per profile not run, in a suite of its
+  // own, unless allowProfilesNotRun accepts it (then a skip).
+  // Each profile once, with every reason a frame gave for it.
+  const notRun = [];
+  for (const f of frames) {
+    const list = f.result && f.result.engine && f.result.engine.profilesNotRun;
+    for (const p of Array.isArray(list) ? list : []) {
+      if (!p) continue;
+      // Names match in any case, as core reads them.
+      const held = notRun.find(
+        (x) => String(x.profile).toLowerCase() === String(p.profile).toLowerCase()
+      );
+      if (!held) notRun.push({ ...p });
+      else if (p.reason && !String(held.reason).split(', ').includes(p.reason)) {
+        held.reason = `${held.reason}, ${p.reason}`;
+      }
+    }
+  }
+  if (notRun.length) {
+    const allowed = allowProfilesNotRun === true;
+    totals.tests += notRun.length;
+    if (allowed) totals.skipped += notRun.length;
+    else totals.errors += notRun.length;
+    suiteXml.push(
+      [
+        `  <testsuite name="Profiles" tests="${notRun.length}" failures="0" errors="${allowed ? 0 : notRun.length}" skipped="${allowed ? notRun.length : 0}" time="0">`,
+        ...notRun.flatMap((p) => [
+          `    <testcase classname="profile" name="${xmlText(p.profile)}" time="0">`,
+          allowed
+            ? `      <skipped message="${xmlText(`Not run: ${p.reason}`)}"/>`
+            : `      <error message="${xmlText(`Asked for and not run: ${p.reason}`)}"/>`,
+          '    </testcase>'
+        ]),
         '  </testsuite>'
       ].join('\n')
     );

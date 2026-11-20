@@ -79,20 +79,6 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TEXT_ALTERNATIVE_REVIEW: {
-      steps: [
-        'Look at the object the report names and note what it shows or does (image, chart, animation, player).',
-        'Read its text alternative from the report (fallback text, aria-label, aria-labelledby text or title), or in the Accessibility pane of the developer tools.',
-        'Compare: does the text say what the object shows, or, for a control or player, what it is for?'
-      ],
-      passWhen: "The text alternative describes the object's content or purpose accurately.",
-      failWhen:
-        'The text alternative is wrong, vague (such as "object" or a file name) or misses what the object conveys, which fails WCAG 1.1.1.'
-    }
   }
 };
 
@@ -143,7 +129,7 @@ function runInPage(ctx) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -194,7 +180,7 @@ function runInPage(ctx) {
 
   const els = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('object') : queryAll('object')) || []);
+      return [...((queryAllSmart ? queryAllSmart('object') : queryAll('object')) || [])];
     } catch {
       return queryAll('object');
     }
@@ -361,19 +347,32 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const lean = leanFor(
-      el,
-      ariaLabel || labelledByText || fallbackText || title,
-      dom.getAttribute(el, 'data')
-    );
+    const judgedText = ariaLabel || labelledByText || fallbackText || title;
+    const lean = leanFor(el, judgedText, dom.getAttribute(el, 'data'));
+    // The text under review, quoted: from aria-labelledby it is not in the
+    // snippet.
+    const nameAll = judgedText.replace(/\s+/g, ' ');
+    const name = nameAll.length > 80 ? `${nameAll.slice(0, 79)}…` : nameAll;
+    const ids =
+      !ariaLabel && labelledByText
+        ? ariaLabelledBy
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((x) => `#${x}`)
+            .join(' ')
+        : '';
     const baseOccurrence = {
       ...(lean ? { lean } : {}),
-      summary: 'Check that the text alternative of this <object> conveys what it embeds.',
+      summary: ids
+        ? `Check that the text alternative of this <object>, "${name}", taken from ${ids} by aria-labelledby, conveys what it embeds.`
+        : `Check that the text alternative of this <object>, "${name}", conveys what it embeds.`,
       hint: 'The fallback content or ARIA name should give the same information as the embedded content.',
       i18n: {
-        summaryKey: 'object_textAltQuality_summary_cantTell',
+        summaryKey: ids
+          ? 'object_textAltQuality_summary_cantTell_labelledby'
+          : 'object_textAltQuality_summary_cantTell_name',
         hintKey: 'object_textAltQuality_hint_cantTell',
-        params: { element: 'object' }
+        params: { element: 'object', name, ...(ids ? { ids } : {}) }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

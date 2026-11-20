@@ -198,3 +198,26 @@ test(`${RULE_ID}: tokens are split as HTML splits them`, () => {
   assert.strictEqual(outcome(' email'), 'fail');
   assert.strictEqual(outcome('section- email'), 'fail');
 });
+
+test(`${RULE_ID}: a fail names what is wrong with the value`, () => {
+  for (const [value, kind, hint] of [
+    ['emial', 'unknownToken_suggestion', '"emial" is not an autofill token. Did you mean "email"?'],
+    ['foo', 'unknownToken', null],
+    [
+      'work photo',
+      'modality',
+      '"work" can come only before a contact field (email, tel, impp), not "photo".'
+    ],
+    ['email shipping', 'order', null]
+  ]) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><input autocomplete="${value}"></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    const occ = rule.occurrences[0];
+    assert.equal(occ.i18n.hintKey, `autocompleteValid_hint_fail_${kind}`, value);
+    assert.equal(occ.data.details.problem.kind, kind, value);
+    if (hint) assert.equal(occ.hint, hint, value);
+  }
+});

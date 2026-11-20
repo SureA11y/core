@@ -110,7 +110,7 @@ test('a scan that selects its criteria gets only those, and none partly checked'
     [{ bestPractices: true }, {}],
     [null, { profile: 'wcag22-aa' }],
     [null, { profile: 'en301549-v3.2.1' }],
-    [null, { profile: 'section508' }],
+    [null, { profile: 'wcag20-aa' }],
     [{ bestPractices: true }, { profile: 'en301549-v4.1.1' }],
     [{ wcag: { version: '2.2', level: 'AA' }, excludeRuleIds: ['link-name-present'] }, {}]
   ];

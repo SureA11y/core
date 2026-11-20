@@ -50,6 +50,8 @@
     "embed-text-alternative-quality",
     "empty-heading",
     "empty-table-header",
+    "focus-not-obscured-enhanced",
+    "focus-not-obscured-minimum",
     "focus-not-removed-by-script",
     "focus-order-semantics",
     "form-control-label-quality",
@@ -90,6 +92,7 @@
     "link-in-text-block",
     "link-name-present",
     "link-name-quality",
+    "link-name-quality-link-only",
     "list-children-valid",
     "listbox-name-present",
     "listitem-parent-valid",
@@ -113,10 +116,12 @@
     "page-has-heading-one",
     "page-title-patterns",
     "page-title-present",
+    "page-zones-landmark",
     "password-paste-enabled",
     "presentation-role-conflict",
     "presentational-children-focusable-absent",
     "progressbar-name-present",
+    "reflow-horizontal-scroll",
     "region",
     "role-img-text-alternative-present",
     "scope-attr-valid",
@@ -136,6 +141,7 @@
     "table-fake-caption",
     "table-headers-attr-valid",
     "table-th-has-data-cells",
+    "target-size-enhanced",
     "target-size-minimum",
     "td-has-header",
     "text-spacing-content-loss",
@@ -285,6 +291,7 @@
       "name_missing"
     ],
     "contrast-computable": [
+      "ALL_TEXT_COMPUTABLE",
       "ANCESTOR_OPACITY",
       "BACKGROUND_FILTER_OR_BACKDROP_FILTER",
       "BACKGROUND_IMAGE_OR_GRADIENT",
@@ -380,6 +387,16 @@
     "empty-table-header": [
       "TABLE_HEADER_EMPTY",
       "TABLE_HEADER_NAME_NOT_VISIBLE_TEXT"
+    ],
+    "focus-not-obscured-enhanced": [
+      "FOCUS_OBSCURED_BEHIND_MODAL",
+      "FOCUS_OBSCURED_ENTIRELY",
+      "FOCUS_OBSCURED_PARTLY"
+    ],
+    "focus-not-obscured-minimum": [
+      "FOCUS_OBSCURED_BEHIND_MODAL",
+      "FOCUS_OBSCURED_ENTIRELY",
+      "FOCUS_OBSCURED_PARTLY"
     ],
     "focus-not-removed-by-script": [
       "FOCUS_HANDLER_BLURS_SELF",
@@ -542,7 +559,11 @@
     ],
     "link-name-quality": [
       "AMBIGUOUS_FORMAT_NAME",
-      "GENERIC_LINK_TEXT"
+      "GENERIC_LINK_TEXT",
+      "GENERIC_LINK_TEXT_IN_CONTEXT"
+    ],
+    "link-name-quality-link-only": [
+      "GENERIC_LINK_TEXT_IN_CONTEXT"
     ],
     "list-children-valid": [
       "LIST_INVALID_CHILD",
@@ -623,6 +644,9 @@
     "p-as-heading": [
       "BOLD_LARGE_DIV",
       "BOLD_LARGE_PARAGRAPH",
+      "BOLD_LEAD_LINE",
+      "BOLD_SHORT_DIV",
+      "BOLD_SHORT_PARAGRAPH",
       "HEADING_LIKE_LINK",
       "HEADING_LIKE_NUMBER"
     ],
@@ -641,6 +665,14 @@
       "emptyTitleText",
       "missingTitleElement"
     ],
+    "page-zones-landmark": [
+      "BANNER_NOT_EXPOSED",
+      "CONTENTINFO_NOT_EXPOSED",
+      "FOOTER_NESTED",
+      "HEADER_NESTED",
+      "NAVIGATION_NOT_EXPOSED",
+      "SEARCH_NOT_EXPOSED"
+    ],
     "password-paste-enabled": [
       "PASTE_CANCELLED",
       "PASTE_HANDLER_OPAQUE"
@@ -654,6 +686,16 @@
     "progressbar-name-present": [
       "name_internals",
       "name_missing"
+    ],
+    "reflow-horizontal-scroll": [
+      "CLIPPED_AT_VIEWPORT_EDGE",
+      "CLIPPED_BY_CONTAINER",
+      "HORIZONTAL_SCROLL",
+      "HORIZONTAL_SCROLL_UNATTRIBUTED",
+      "SCROLLS_IN_CONTAINER",
+      "WIDE_MEDIA",
+      "WIDE_PREFORMATTED",
+      "WIDE_TABLE"
     ],
     "region": [
       "CONTENT_OUTSIDE_LANDMARK"
@@ -727,7 +769,13 @@
       "TABLE_TH_NO_ASSIGNED_CELL",
       "TABLE_TH_NO_DATA_CELLS"
     ],
+    "target-size-enhanced": [
+      "undersized",
+      "undersized-inline-link-run",
+      "undersized-plausibly-essential"
+    ],
     "target-size-minimum": [
+      "undersized",
       "undersized-and-too-close",
       "undersized-inline-link-run",
       "undersized-plausibly-essential"
@@ -743,6 +791,7 @@
       "TEXT_CLIPPED_FURTHER",
       "TEXT_CLIPPED_MOVING",
       "TEXT_CLIPPED_PARTLY",
+      "TEXT_CLIPPED_SCRIPT_SIZED",
       "TEXT_OVERLAPS",
       "VIEWPORT_SCROLL_LOCKED"
     ],

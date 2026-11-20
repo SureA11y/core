@@ -143,17 +143,42 @@ function runInPage(ctx) {
       : null;
     const tag = dom.tagName(el).toLowerCase();
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    // A name attribute, a target for links and forms, reads like a name
+    // but gives none.
+    const frameCause = (() => {
+      const raw = String(dom.getAttribute(el, 'name') || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!/[\p{L}\p{N}]/u.test(raw)) return null;
+      const frameName = raw.length > 40 ? `${raw.slice(0, 39)}…` : raw;
+      return {
+        hint: `Its name="${frameName}" is a target for links and forms, not a name screen readers read. Put the text in a title attribute.`,
+        hintKey: 'iframeNamePresent_hint_fail_nameAttr',
+        params: { frameName },
+        detail: { cause: 'nameAttribute', name: frameName }
+      };
+    })();
+    const cause =
+      (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || frameCause;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This frame has no accessible name.',
-        hint: 'Add a title attribute, aria-label or aria-labelledby that says what the frame contains.',
+        hint: cause
+          ? cause.hint
+          : 'Add a title attribute, aria-label or aria-labelledby that says what the frame contains.',
         i18n: {
           summaryKey: 'iframeNamePresent_summary_fail',
-          hintKey: 'iframeNamePresent_hint_fail',
-          params: { element: tag }
+          hintKey: cause ? cause.hintKey : 'iframeNamePresent_hint_fail',
+          params: { element: tag, ...(cause ? cause.params : {}) }
         },
         data: {
-          details: { reasonCode: 'IFRAME_NAME_MISSING', element: tag },
+          details: {
+            reasonCode: 'IFRAME_NAME_MISSING',
+            ...(cause ? { nameCause: cause.detail } : {}),
+            element: tag
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

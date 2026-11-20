@@ -240,3 +240,44 @@ test(`${RULE_ID}: leans fail for a container holding named content without the r
 test(`${RULE_ID}: no lean for a container holding only unnamed elements`, () => {
   assert.strictEqual(leanOn('<div id="a" role="list"><span></span></div>', 'a'), undefined);
 });
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: the text-only message names the role and the roles it needs`, () => {
+  const occ = messageOccurrence('<div role="listbox"><div class="opt">One</div></div>', 'listbox');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaRequiredChildren_summary_fail_textOnly');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaRequiredChildren_hint_fail_textOnly');
+  assert.strictEqual(
+    occ.summary,
+    'This role="listbox" holds content, but none of it has one of the roles it requires: option, group.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Give each item the role it needs inside the listbox, such as role="option".'
+  );
+});
+
+test(`${RULE_ID}: a child with a misspelled role is named, with the role it likely meant`, () => {
+  const occ = messageOccurrence('<div role="tablist"><div role="tabs">One</div></div>', 'tablist');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaRequiredChildren_summary_fail_typo');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaRequiredChildren_hint_fail_typoNear');
+  assert.strictEqual(
+    occ.summary,
+    'This role="tablist" needs a child with one of these roles: tab. A child <div> has role "tabs", which is not an ARIA role, so it has none.'
+  );
+  assert.strictEqual(occ.hint, 'Did you mean role="tab"? Fix the child’s role.');
+});

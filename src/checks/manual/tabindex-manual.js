@@ -17,6 +17,9 @@
  *   fixed instead.
  * @reports
  *   - `value`: the `tabindex` value, a whole number above 0.
+ *   - `skippedCount`, `firstSkipped`: when Tab reaches it before tab stops
+ *     earlier in the document, how many, and the first, as the message
+ *     names it (`<a> "Home"`).
  * @reason-codes
  *   - `TABINDEX_POSITIVE` (cantTell): the element has a tabindex above 0,
  *     which moves it ahead of the page's natural tab order.
@@ -48,21 +51,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TABINDEX_POSITIVE: {
-      steps: [
-        'Click just before the start of the page, then press Tab repeatedly, watching the focus outline.',
-        'Note when the element the report names gets focus, compared with where it sits on screen.',
-        'Check whether the focus order still follows the visual and reading order of the page.'
-      ],
-      passWhen: 'Focus moves through the page in an order that matches its layout and meaning.',
-      failWhen:
-        'The positive tabindex makes focus jump out of reading order, which can fail WCAG 2.4.3 (F44) and is against best practice.'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {
@@ -117,12 +106,19 @@ function runInPage(ctx) {
   function jumpsAhead(el) {
     const o = tabOrder();
     if (!o.position.has(el)) return null;
+    return skippedBy(el).length > 0;
+  }
+  // The tab stops earlier in the document that Tab reaches after el.
+  function skippedBy(el) {
+    const o = tabOrder();
+    const out = [];
+    if (!o.position.has(el)) return out;
     const mine = o.position.get(el);
     for (const s of o.stops) {
-      if (s.el === el) return false;
-      if (o.position.get(s.el) > mine) return true;
+      if (s.el === el) break;
+      if (o.position.get(s.el) > mine) out.push(s.el);
     }
-    return false;
+    return out;
   }
 
   for (const el of nodes) {
@@ -168,18 +164,29 @@ function runInPage(ctx) {
         }
       };
     }
+    // The tab stops it jumps ahead of, the first named, for the message.
+    const skipped = jumps === true ? skippedBy(el) : [];
+    const first = skipped.length ? helpers.describeElement(skipped[0], { text: true }) : '';
     occurrences.push(
       helpers.reportOccurrence(el, {
         ...(lean ? { lean } : {}),
-        summary: 'This element has a positive tabindex, overriding the natural tab order.',
+        summary: skipped.length
+          ? `This element has tabindex="${n}", so Tab reaches it before earlier tab stops in the page (${skipped.length}, starting with ${first}).`
+          : `This element has tabindex="${n}", overriding the natural tab order.`,
         hint: 'Use tabindex="0" to add the element to the tab order, or a negative value to take it out. If the tab order needs to change, change the order of the content instead.',
         i18n: {
-          summaryKey: 'tabindex_summary_cantTell',
+          summaryKey: skipped.length
+            ? 'tabindex_summary_cantTell_jumpsAhead'
+            : 'tabindex_summary_cantTell_value',
           hintKey: 'tabindex_hint_cantTell',
-          params: { value: String(n) }
+          params: { value: String(n), skippedCount: String(skipped.length), first }
         },
         data: {
-          details: { reasonCode: 'TABINDEX_POSITIVE', value: n }
+          details: {
+            reasonCode: 'TABINDEX_POSITIVE',
+            value: n,
+            ...(skipped.length ? { skippedCount: skipped.length, firstSkipped: first } : {})
+          }
         }
       })
     );

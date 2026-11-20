@@ -222,16 +222,20 @@ test(`${RULE_ID}: i18n default is English`, () => {
   );
 });
 
-test(`${RULE_ID}: fail when aria-label is on a native <caption> (implicit role caption)`, () => {
+test(`${RULE_ID}: aria-label on a native <caption> (implicit role caption) whose text names it is asked about`, () => {
   const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
     <table><caption id="a" aria-label="x">c</caption><tr><td>1</td></tr></table>
     <table><caption id="b">Plain</caption><tr><td>1</td></tr></table>
   </body></html>`;
   for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    const rule = assertRule(result, RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
     assert.ok(hasOccurrenceForId(rule, 'a'));
     assert.equal(rule.occurrences[0].data.details.role, 'caption');
+    assert.equal(rule.occurrences[0].uncertainty.code, 'spec-only');
     assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_PROHIBITED');
   }
 });
@@ -277,21 +281,25 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-attr-all-scen
   }
 });
 
-test(`${RULE_ID}: a role description on an element with no role, or the generic role, fails whatever its content (WAI-ARIA 1.3; ACT kb1m8s)`, () => {
+test(`${RULE_ID}: a role description on an element with no role, or the generic role, is asked about whatever its content (WAI-ARIA 1.3; ACT kb1m8s)`, () => {
   const html = `<!doctype html><html><body>
     <div aria-roledescription="Banana text">I like bananas</div>
     <span role="generic" aria-brailleroledescription="bnn">I like bananas</span>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  // It refines no control, so the WAI-ARIA violation is reported for review.
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 });
 
 test(`${RULE_ID}: aria-braillelabel is prohibited where a name is (WAI-ARIA 1.3; ACT kb1m8s)`, () => {
   const html = `<!doctype html><html><body>
     <span role="code" aria-braillelabel="x">x</span>
+    <span role="code" aria-braillelabel="y"></span>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  // Asked about where the element's text names it, failed where nothing does.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.deepEqual(rule.occurrences.map((o) => o.occurrenceOutcome).sort(), ['cantTell', 'fail']);
 });
 
 test(`${RULE_ID}: a role description on a role that supports one is not this rule's concern`, () => {
@@ -332,4 +340,69 @@ test(`${RULE_ID}: leans fail when the label has words the text lacks`, () => {
 
 test(`${RULE_ID}: no lean when the label's words are all in the text, in another order`, () => {
   assert.strictEqual(leanOn('<span id="a" aria-label="items 3">3 items</span>', 'a'), undefined);
+});
+
+// A prohibited label on an element whose own text already names it loses
+// nothing WCAG requires for certain: the explicit-role path is graded as the
+// path for elements with no role is. With no other name it still fails.
+test(`${RULE_ID}: a prohibited label is asked about where the element's text names it, and fails where nothing does`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+    <p role="paragraph" id="a" aria-label="Intro">Welcome to the shop</p>
+    <span role="presentation" id="b" aria-label="Rating 4 of 5"></span>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const tier = (id) =>
+    rule.occurrences.find((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`))
+      .occurrenceOutcome;
+  assert.equal(tier('a'), 'cantTell');
+  assert.equal(tier('b'), 'fail');
+});
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: a misspelled role is named as why the element has none`, () => {
+  const occ = messageOccurrence('<div role="buton" aria-label="Close"></div>', 'buton');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaProhibitedAttr_summary_fail_roleless_typo');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaProhibitedAttr_hint_typoNear');
+  assert.strictEqual(
+    occ.summary,
+    'This <div>’s role "buton" is not an ARIA role, so it has none, and with no other source of a name, assistive technology may not announce its aria-label.'
+  );
+  assert.strictEqual(occ.hint, 'Did you mean role="button"? Fix the role, or remove aria-label.');
+});
+
+test(`${RULE_ID}: a word written for a role is answered with the ARIA role for it`, () => {
+  const html = `<!doctype html><html lang="en"><body><span id="star" role="icon" aria-label="Star"></span></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'ARIA_ATTR_PROHIBITED_ROLELESS');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaProhibitedAttr_hint_typoMeant');
+  assert.deepStrictEqual(occ.data.details.roleTypo, {
+    written: 'icon',
+    suggestion: '',
+    word: 'icon',
+    meant: 'img'
+  });
+  assert.strictEqual(
+    occ.hint,
+    'ARIA has no role "icon"; use role="img", the ARIA role for it, or remove aria-label.'
+  );
 });

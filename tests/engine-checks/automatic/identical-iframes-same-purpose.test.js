@@ -205,3 +205,27 @@ test(`${RULE_ID}: an unresolved frame is read from its lazy-load attribute`, () 
     ]
   );
 });
+
+test(`${RULE_ID}: the summary names the other frame's address, and the hint the embed code's default title`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><iframe id="a" src="https://www.youtube.com/embed/aaa" title="YouTube video player"></iframe><iframe id="b" src="https://www.youtube.com/embed/bbb" title="YouTube video player"></iframe></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.strictEqual(
+    occ('a').i18n.summaryKey,
+    'identicalIframesSamePurpose_summary_cantTell_other'
+  );
+  assert.strictEqual(occ('a').i18n.params.other, 'https://www.youtube.com/embed/bbb');
+  assert.match(occ('a').summary, /\(https:\/\/www\.youtube\.com\/embed\/bbb\)\.$/);
+  assert.strictEqual(
+    occ('a').i18n.hintKey,
+    'identicalIframesSamePurpose_hint_cantTell_embedDefault'
+  );
+  assert.strictEqual(
+    occ('a').hint,
+    `“YouTube video player” is the title YouTube's embed code gives every frame, not one that says what this frame shows. Give each frame a name of its own, such as the title of the video it plays.`
+  );
+  assert.strictEqual(occ('b').i18n.params.other, 'https://www.youtube.com/embed/aaa');
+});

@@ -29,14 +29,27 @@
  *   announced or operable via assistive technology, activating the outer
  *   control and the inner one become ambiguous, and some AT only exposes
  *   one of the two.
+ *   It FAILS where the outer control's role has presentational children
+ *   (WAI-ARIA 1.2: button, checkbox, img, menuitemcheckbox, menuitemradio,
+ *   meter, option, progressbar, radio, scrollbar, separator, slider, switch,
+ *   tab): the nested control's role is removed there, so a control that still
+ *   takes focus has no role to determine (SC 4.1.2, as ACT 307n5z has it).
+ *   Elsewhere (a link, textbox, combobox, listbox, menuitem, searchbox,
+ *   spinbutton or treeitem holding a control) both keep their roles; HTML's
+ *   content model forbids the nesting, but whether a name, role or value is
+ *   lost depends on the page, so it is reported at CANTTELL.
  * @reports
  *   - `nestedElements`: the controls nested inside this one, one tag name
  *     per control.
  * @reason-codes
- *   - `NESTED_INTERACTIVE_CONTROL` (fail): an interactive control contains
- *     another control that can take focus, such as a button inside a link.
- *     Basis: WCAG 4.1.2; HTML interactive content (MUST); WAI-ARIA 1.2
- *     presentational children.
+ *   - `NESTED_INTERACTIVE_CONTROL` (fail, cantTell): an interactive control
+ *     contains another control that can take focus, such as a button inside a
+ *     link. It fails where the outer control's role has presentational
+ *     children (a button, tab, checkbox, option...), which removes the nested
+ *     control's role, and is asked about otherwise (a control inside a link,
+ *     textbox or tree item), where both keep their roles.
+ *     Basis: WCAG 4.1.2; ACT 307n5z; HTML interactive content (MUST);
+ *     WAI-ARIA 1.2 presentational children.
  * @implementation-notes
  * - A descendant counts as a nested interactive control only when it is both
  *   (a) a native interactive element or an explicit ARIA widget role and
@@ -64,6 +77,12 @@
  *   with controls. That button is inert, so presentational-children-
  *   focusable-absent leaves it alone, and HTML allows no interactive content
  *   and no tabindex inside a button.
+ *   The finding is the select's, a combobox or list box, which has no
+ *   presentational children, so it is asked about (CANTTELL). A control
+ *   inside one of its options is the select's finding too, an owned option
+ *   not counting as a control of its own; the option's presentational
+ *   children make it a failure, which presentational-children-focusable-
+ *   absent reports.
  * - A disabled native control (<button disabled>, <input disabled>) and an
  *   inert descendant are not focusable, so they do not nest an interactive
  *   control; a display:none or aria-hidden descendant is not exposed to AT
@@ -326,8 +345,39 @@ function runInPage(ctx) {
     ? helpers.queryAllSmart(INTERACTIVE_SELECTOR, { internalsRoles: true })
     : helpers.queryAll(INTERACTIVE_SELECTOR);
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // The roles WAI-ARIA gives presentational children: inside one, the
+  // nested control's own role is removed, so a control that still takes
+  // focus there has no role that can be programmatically determined
+  // (SC 4.1.2; ACT 307n5z makes the same call for any focusable content).
+  const PRESENTATIONAL_CHILDREN_ROLES = new Set([
+    'button',
+    'checkbox',
+    'img',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'scrollbar',
+    'separator',
+    'slider',
+    'switch',
+    'tab'
+  ]);
+  function effectiveRole(node) {
+    const explicit = getExplicitRole(node);
+    if (explicit) return explicit;
+    try {
+      return String(helpers.aria.getNativeRoleForElement(node) || '').toLowerCase();
+    } catch {
+      return '';
+    }
+  }
 
   for (const el of nodes) {
     if (!el || dom.nodeType(el) !== 1) continue;
@@ -347,20 +397,68 @@ function runInPage(ctx) {
 
     const tag = dom.tagName(el).toLowerCase();
 
-    occurrences.push(
+    // Inside a role with presentational children the nested control loses its
+    // role: a FAIL. Anywhere else (a control inside a link, say) both keep
+    // their roles; HTML's content model forbids the nesting, but whether a
+    // name, role or value is lost depends on the page: asked about.
+    const outerRole = effectiveRole(el);
+    const fails = PRESENTATIONAL_CHILDREN_ROLES.has(outerRole);
+
+    // Each nested control as the reader finds it in the markup, with what
+    // makes it focusable (helpers.describeMarkup): <span role="button"
+    // tabindex="0"> "Fav". The first three, and how many more.
+    const describe = (n) => {
+      try {
+        return typeof helpers.describeMarkup === 'function' ? helpers.describeMarkup(n) : '';
+      } catch {
+        return '';
+      }
+    };
+    const described = nested.slice(0, 3).map(describe).filter(Boolean);
+    const nestedList = described.length
+      ? described.join(', ') + (nested.length > 3 ? ` (+${nested.length - 3})` : '')
+      : '';
+    const roleNamed = !!(outerRole && nestedList);
+
+    (fails ? failOccurrences : cantTellOccurrences).push(
       helpers.reportOccurrence(el, {
-        summary: 'This interactive control contains one or more other interactive controls.',
+        occurrenceOutcome: fails ? 'fail' : 'cantTell',
+        ...(fails
+          ? {}
+          : {
+              uncertainty: {
+                code: 'spec-only',
+                needed:
+                  'Whether the nested control can be reached and operated on its own, and whether its name is swallowed by the outer control’s.',
+                evidence: { element: tag, outerRole, nestedElements: nestedTags }
+              }
+            }),
+        summary: !roleNamed
+          ? 'This interactive control contains one or more other interactive controls.'
+          : fails
+            ? `This <${tag}> is a ${outerRole}, whose content is presentational, and it contains ${nestedList}: the nested control loses its role but still takes focus.`
+            : `This <${tag}> (${outerRole}) contains ${nestedList}. Both keep their roles, but a control inside another is hard to reach and operate, and its name may be swallowed by the outer one.`,
         hint: "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another.",
         i18n: {
-          summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
+          summaryKey: !roleNamed
+            ? 'nestedInteractiveControlsAbsent_summary_fail'
+            : fails
+              ? 'nestedInteractiveControlsAbsent_summary_fail_presentational'
+              : 'nestedInteractiveControlsAbsent_summary_cantTell_nested',
           hintKey: 'nestedInteractiveControlsAbsent_hint_fail',
-          params: { element: tag, nestedElements: dedupedNestedTags.join(', ') }
+          params: {
+            element: tag,
+            nestedElements: dedupedNestedTags.join(', '),
+            ...(roleNamed ? { outerRole, nestedList } : {})
+          }
         },
         data: {
           details: {
             reasonCode: 'NESTED_INTERACTIVE_CONTROL',
             element: tag,
-            nestedElements: nestedTags
+            nestedElements: nestedTags,
+            ...(outerRole ? { outerRole } : {}),
+            ...(described.length ? { nestedDescriptions: described } : {})
           }
         }
       })
@@ -370,15 +468,14 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(
+      failOccurrences,
+      cantTellOccurrences,
+      rule.defaultSeverity || 'serious'
+    )
+  };
 }
 
 module.exports = { id, meta, runInPage };

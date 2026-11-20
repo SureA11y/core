@@ -44,11 +44,19 @@
  *   its children's.
  * @reports
  *   - `href`: the link's `href`.
+ *   - `lean` (a finding with a lean): the lean's direction, `fail` or
+ *     `pass`, the same as the occurrence's `lean.toward`, so a standard's
+ *     mapping, which reads `data.details`, can route the finding by it.
+ *     Absent when the finding has no lean.
  *   - `unusableReasonCode` (a target that is not usable): why it is not:
  *     `ACC_TREE_INELIGIBLE` when it is hidden from the accessibility tree,
  *     `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it,
  *     or for an empty target the content it marks, has no area or is cut
  *     to nothing.
+ *   - `unusableCause` (a target that is not usable, when known): what hides
+ *     it, `hiddenBy` (`aria-hidden="true"`, `hidden`, `display: none`,
+ *     `visibility: hidden`, `inert`) with `hiddenByElement` when an
+ *     ancestor carries it, or `geometry` (`notRendered`, `noSize`).
  *   - `targetSelector` (a target that is not usable): a selector for the
  *     target.
  *   - `geometryCheckEnabled` (a target that is not usable): whether the
@@ -99,33 +107,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    SKIP_LINK_TARGET_MISSING: {
-      steps: [
-        'Load the page, press Tab once or twice until the skip link the report names appears, and note its href.',
-        'Press Enter to follow it.',
-        'Press Tab once more and see where focus lands.'
-      ],
-      passWhen:
-        'Following the link moves to the main content and the next Tab goes to the first control in it.',
-      failWhen:
-        "Nothing happens or focus stays at the top, because no element matches the link's target, so the link does not bypass repeated content (best practice, G1)."
-    },
-    SKIP_LINK_TARGET_UNUSABLE: {
-      steps: [
-        'Load the page at the window width the report gives (if any), press Tab until the skip link appears, and press Enter.',
-        'Watch whether the page scrolls to the target and the target area is visible.',
-        'Press Tab once more and see where focus lands.'
-      ],
-      passWhen:
-        'The page moves to the visible main content and the next Tab goes to the first control in it.',
-      failWhen:
-        'The target is hidden, not shown or has no size, so focus does not move past the repeated content (best practice, G1).'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {
@@ -222,7 +204,7 @@ function runInPage(ctx) {
     const rects = [];
     const cs = styleOf(el);
     if (cs && cs.display === 'contents') {
-      for (const child of Array.from(dom.childNodes(el) || [])) {
+      for (const child of [...(dom.childNodes(el) || [])]) {
         if (dom.nodeType(child) === 1) {
           const r = drawnBox(child);
           if (r) rects.push(r);
@@ -230,13 +212,13 @@ function runInPage(ctx) {
           try {
             const range = dom.createRange(document);
             range.selectNodeContents(child);
-            rects.push(...Array.from(dom.getClientRects(range)));
+            rects.push(...dom.getClientRects(range));
           } catch {}
         }
       }
     } else {
       try {
-        rects.push(...Array.from(dom.getClientRects(el)));
+        rects.push(...dom.getClientRects(el));
       } catch {}
     }
     if (!rects.length) return null;
@@ -308,7 +290,7 @@ function runInPage(ctx) {
     // (the first token naming a real role, in any case).
     // Failing that, a custom element whose internals make it the main.
     const main =
-      Array.from(dom.querySelectorAll(document, 'main, [role~="main" i]') || []).find(
+      [...(dom.querySelectorAll(document, 'main, [role~="main" i]') || [])].find(
         (el) =>
           String(dom.localName(el) || '').toLowerCase() === 'main' ||
           helpers.aria.getExplicitRole(el) === 'main'
@@ -401,6 +383,61 @@ function runInPage(ctx) {
     };
   }
 
+  // Why the target can't be reached, for the summary: what hides it and
+  // the element that carries it, inert, or no box or no size.
+  function unusableCause(target, href, byAcc, reasons, geometryCode) {
+    if (byAcc) {
+      const cause = typeof helpers.hiddenCause === 'function' ? helpers.hiddenCause(target) : null;
+      let hiddenBy = cause ? cause.hiddenBy : null;
+      let carrier = cause ? cause.element : null;
+      if (!cause && reasons.indexOf('inert') !== -1) {
+        hiddenBy = 'inert';
+        try {
+          carrier = dom.closest(target, '[inert]');
+        } catch {
+          carrier = null;
+        }
+      }
+      if (!hiddenBy) return null;
+      if (!carrier || carrier === target) {
+        return {
+          summary: `This skip link's target ${href} can't be reached: it has ${hiddenBy}.`,
+          summaryKey: 'skipLink_summary_unusableTarget_hiddenOwn',
+          params: { hiddenBy },
+          detail: { hiddenBy }
+        };
+      }
+      const ancestor = helpers.describeElement(carrier);
+      return {
+        summary: `This skip link's target ${href} can't be reached: its ancestor ${ancestor} has ${hiddenBy}.`,
+        summaryKey: 'skipLink_summary_unusableTarget_hiddenAncestor',
+        params: { hiddenBy, ancestor },
+        detail: { hiddenBy, hiddenByElement: ancestor }
+      };
+    }
+    if (geometryCode === 'NO_CLIENT_RECTS') {
+      return {
+        summary: `This skip link's target ${href} is not rendered, so the page can't scroll to it.`,
+        summaryKey: 'skipLink_summary_unusableTarget_notRendered',
+        params: {},
+        detail: { geometry: 'notRendered' }
+      };
+    }
+    if (geometryCode === 'ZERO_AREA_TARGET') {
+      return {
+        summary: `This skip link's target ${href} has no size or is clipped to nothing, so it lands on nothing visible.`,
+        summaryKey: 'skipLink_summary_unusableTarget_noSize',
+        params: {},
+        detail: { geometry: 'noSize' }
+      };
+    }
+    return null;
+  }
+
+  // The lean's direction, in details too (`lean`), so a standard's mapping
+  // can route a finding by it: the routes read data.details.
+  const leanDetail = (lean) => (lean && lean.toward ? { lean: lean.toward } : {});
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -434,7 +471,7 @@ function runInPage(ctx) {
         // selector, which a backslash or quote in the name would break.
         try {
           target =
-            Array.from(dom.querySelectorAll(document, 'a[name]')).find(
+            [...dom.querySelectorAll(document, 'a[name]')].find(
               (a) => dom.getAttribute(a, 'name') === fragment
             ) || null;
         } catch {
@@ -477,23 +514,33 @@ function runInPage(ctx) {
       const unusableByGeometry = !!geometryReasonCode;
       if (!unusableByAcc && !unusableByGeometry) continue;
       const unusableLean = unusableByAcc ? unusableTargetLean(accEligibility.reasons) : null;
+      const why = unusableCause(
+        target,
+        href,
+        unusableByAcc,
+        accEligibility.reasons,
+        geometryReasonCode
+      );
 
       occurrences.push(
         helpers.reportOccurrence(el, {
           ...(unusableLean ? { lean: unusableLean } : {}),
-          summary:
-            "This skip link points to an element that exists but can't be reached right now.",
+          summary: why
+            ? why.summary
+            : "This skip link points to an element that exists but can't be reached right now.",
           hint: 'Point it at an element that is visible and not hidden from assistive technology.',
           i18n: {
-            summaryKey: 'skipLink_summary_unusableTarget_cantTell',
+            summaryKey: why ? why.summaryKey : 'skipLink_summary_unusableTarget_cantTell',
             hintKey: 'skipLink_hint_unusableTarget_cantTell',
-            params: { href }
+            params: { href, ...(why ? why.params : {}) }
           },
           data: {
             details: {
               reasonCode: 'SKIP_LINK_TARGET_UNUSABLE',
               href,
+              ...leanDetail(unusableLean),
               unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
+              ...(why ? { unusableCause: why.detail } : {}),
               targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
               geometryCheckEnabled: geometrySupported,
               // A target hidden at one breakpoint may be shown at another.
@@ -527,7 +574,7 @@ function runInPage(ctx) {
           params: { href }
         },
         data: {
-          details: { reasonCode: 'SKIP_LINK_TARGET_MISSING', href }
+          details: { reasonCode: 'SKIP_LINK_TARGET_MISSING', href, ...leanDetail(missingLean) }
         }
       })
     );

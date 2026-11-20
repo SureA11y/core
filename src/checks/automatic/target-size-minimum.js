@@ -53,6 +53,11 @@
  *   each other between separators alone, as in "Edit | Delete", or a target
  *   inside an SVG, canvas or image map that may be essential), the result is
  *   cantTell rather than a guess.
+ *   Settings, for a variant: `minSizePx`, the size needed (24), and
+ *   `spacingException`, `'none'` to drop the spacing exception, so that
+ *   every target under the size that no other exception covers fails
+ *   (`undersized`), however far it is from others. target-size-enhanced is
+ *   this rule at 2.5.5's 44px with none.
  *   Margin (`target-size-px`): of the targets that are at least 24 by 24,
  *   the smallest, as the side of the largest square that fits in it against
  *   24 (for a rectangle, the smaller of its width and height);
@@ -77,6 +82,14 @@
  *     (`regionDistance`): how far the neighbour's region is from the
  *     target's centre, against the circle's 12px radius.
  *   - `conflictWith`: a selector for the neighbour it is too close to.
+ *   - `clippedBy`, `clipProperty`: where the region is smaller than the
+ *     target's box, the ancestor that clips it, as `<div class="toolbar">`,
+ *     and the CSS that does, as `overflow: hidden`.
+ *   - The fail hint (`targetSizeMinimum_hint_fail_centerDistance` or
+ *     `targetSizeMinimum_hint_fail_regionDistance`, by `decidedBy`) states
+ *     the same distance: `i18n.params.distancePx` against
+ *     `i18n.params.minDistancePx`, and `i18n.params.shortfallPx`, how much
+ *     further apart the two need to be, rounded up to a tenth.
  *   - `measured.width`, `measured.height`, `measured.square`: the region's
  *     extent and the largest square, unrounded.
  *   - `viewport.width`, `viewport.height`: the viewport the page was laid
@@ -87,14 +100,19 @@
  *     pixels is too close to another target for the spacing exception, and
  *     no other exception applies.
  *     Basis: WCAG 2.5.8.
+ *   - `undersized` (fail): under `spacingException: 'none'` (a variant's
+ *     setting, as target-size-enhanced's), a target smaller than the size
+ *     needed, with no exception that applies; spacing excuses none.
+ *     Basis: WCAG 2.5.5.
  *   - `undersized-inline-link-run` (cantTell): an undersized inline link is
  *     too close only to another inline link in a run with separators but no
  *     words, as in "Edit | Delete"; whether the inline exception covers it
  *     is for a person to judge.
  *     Basis: WCAG 2.5.8 (exception: inline).
  *   - `undersized-plausibly-essential` (cantTell): an undersized target too
- *     close to another sits inside an SVG, a canvas or an image map, where
- *     its size may be essential.
+ *     close to another (or, under `spacingException: 'none'`, any
+ *     undersized target) sits inside an SVG, a canvas or an image map,
+ *     where its size may be essential.
  *     Basis: WCAG 2.5.8 (exception: essential).
  * @implementation-notes
  * - Under a scoped scan (contextSelector), only targets in scope are
@@ -211,7 +229,15 @@ const meta = {
       '2.5.8': ['target-size-minimum-pointer']
     }
   },
-  margin: { measure: 'target-size-px', unit: 'px', limit: 'min', band: { absolute: 6 } }
+  margin: { measure: 'target-size-px', unit: 'px', limit: 'min', band: { absolute: 6 } },
+  // undersized is given only under a variant's setting (spacingException:
+  // 'none'), which the fixture never runs.
+  reasonCodes: [
+    'undersized-and-too-close',
+    'undersized',
+    'undersized-inline-link-run',
+    'undersized-plausibly-essential'
+  ]
 };
 
 function runInPage(ctx) {
@@ -221,8 +247,39 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   const RULE_ID = (rule && rule.ruleId) || 'target-size-minimum';
-  const MIN = 24;
-  const RADIUS = MIN / 2;
+  // Settings (see `settings` below): WCAG 2.5.8's by default. A variant,
+  // such as target-size-enhanced for 2.5.5, passes its own in ctx.config
+  // (docs/RULE_AUTHORING.md, "Rule variants").
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  // The size a target needs: a square this many CSS px on a side fits in it.
+  const MIN =
+    typeof cfg.minSizePx === 'number' && Number.isFinite(cfg.minSizePx) && cfg.minSizePx > 0
+      ? cfg.minSizePx
+      : 24;
+  // Whether an undersized target passes when it is far enough from others
+  // (2.5.8's spacing exception, 'apply'), or fails on its size alone ('none',
+  // as 2.5.5 has no such exception).
+  const SPACING_APPLIES = cfg.spacingException !== 'none';
+  // The spacing exception's circle is 24px across, whatever size is needed.
+  const SPACING = 24;
+  const RADIUS = SPACING / 2;
+
+  // What doesn't depend on the settings (whether a target can be hit, where
+  // it can be hit at most, its region, the text around it) is kept for the
+  // scan, keyed by element, so a variant run in the same scan
+  // (target-size-enhanced) reads it instead of measuring again.
+  const memoOf = (name) =>
+    (typeof helpers.runMemo === 'function' && helpers.runMemo('target-size-minimum:' + name)) ||
+    new WeakMap();
+  const memoized = (map, fn) => (el) => {
+    if (map.has(el)) return map.get(el);
+    const value = fn(el);
+    map.set(el, value);
+    return value;
+  };
+  const isPointerReachable = memoized(memoOf('reachable'), pointerReachable);
+  const measure = memoized(memoOf('measure'), measureTarget);
+  const extentOf = memoized(memoOf('extent'), extentOfTarget);
 
   // --- tiny safe helpers (never throw) ---
   // Goes through helpers.queryAllSmart/queryAll (multi-root and shadow-DOM
@@ -232,9 +289,9 @@ function runInPage(ctx) {
   function qsa(sel, opts) {
     try {
       if (helpers && typeof helpers.queryAllSmart === 'function')
-        return Array.from(helpers.queryAllSmart(sel, opts) || []);
+        return [...(helpers.queryAllSmart(sel, opts) || [])];
       if (helpers && typeof helpers.queryAll === 'function')
-        return Array.from(helpers.queryAll(sel) || []);
+        return [...(helpers.queryAll(sel) || [])];
       return [];
     } catch {
       return [];
@@ -245,8 +302,19 @@ function runInPage(ctx) {
     try {
       if (helpers && typeof helpers.buildSelector === 'function') return helpers.buildSelector(el);
     } catch {}
+    // Without the engine's builder, the id, escaped as CSS reads it, where
+    // the selector so made names the element.
     try {
-      if (el && dom.get(el, 'id')) return `#${dom.get(el, 'id')}`;
+      const elId = el ? dom.getAttribute(el, 'id') : '';
+      const view = dom.defaultView(dom.ownerDocument(el));
+      const esc =
+        helpers && typeof helpers.cssEscape === 'function'
+          ? helpers.cssEscape
+          : view && view.CSS && typeof view.CSS.escape === 'function'
+            ? (s) => view.CSS.escape(s)
+            : null;
+      const sel = elId && esc ? '#' + esc(elId) : '';
+      if (sel && dom.matches(el, sel)) return sel;
     } catch {}
     return 'html';
   }
@@ -345,20 +413,20 @@ function runInPage(ctx) {
     try {
       if (dom.nodeType(node) === 1) {
         const sr = dom.shadowRoot(node);
-        if (sr) return Array.from(dom.childNodes(sr));
+        if (sr) return [...dom.childNodes(sr)];
         if (String(dom.localName(node) || '').toLowerCase() === 'slot') {
           const assigned = dom.assignedNodes(node, { flatten: true });
-          if (assigned && assigned.length) return Array.from(assigned);
+          if (assigned && assigned.length) return [...assigned];
         }
       }
-      return Array.from(dom.childNodes(node));
+      return [...dom.childNodes(node)];
     } catch {
       return [];
     }
   }
   // Walks a block container once and settles, for every inline target in it,
   // the text of its stretch.
-  const __textAround = new WeakMap();
+  const __textAround = memoOf('textAround');
   const HAS_WORD = /[\p{L}\p{N}]/u;
   function stretchesOf(container) {
     if (!container) return;
@@ -406,7 +474,7 @@ function runInPage(ctx) {
     try {
       if (!el || typeof dom.get(el, 'getClientRects') !== 'function') return [];
       const r = dom.getClientRects(el);
-      return r ? Array.from(r) : [];
+      return r ? [...r] : [];
     } catch {
       return [];
     }
@@ -1071,7 +1139,7 @@ function runInPage(ctx) {
     try {
       const range = dom.createRange(document);
       range.selectNodeContents(el);
-      return Array.from(dom.getClientRects(range));
+      return [...dom.getClientRects(range)];
     } catch {
       return [];
     }
@@ -1083,9 +1151,7 @@ function runInPage(ctx) {
     let list = __contentCache.get(el);
     if (!list) {
       try {
-        list = Array.from(dom.querySelectorAll(el, '*'))
-          .slice(0, 500)
-          .filter((d) => !isCandidate(d));
+        list = [...dom.querySelectorAll(el, '*')].slice(0, 500).filter((d) => !isCandidate(d));
       } catch {
         list = [];
       }
@@ -1206,15 +1272,18 @@ function runInPage(ctx) {
   // Whether a 24 by 24 square fits in some piece: exactly in a rectangle,
   // and within a thousandth of a pixel where the region is worked out by
   // search rather than read off a box.
+  // Kept on the region by size, as a variant in the same scan reads the
+  // same region (memoOf) with a size of its own.
   function fitsMin(region) {
-    if (region.fits === undefined) {
-      region.fits = region.pieces.some((piece) => {
+    const fits = region.fits || (region.fits = Object.create(null));
+    if (fits[MIN] === undefined) {
+      fits[MIN] = region.pieces.some((piece) => {
         const plain = plainSquare(piece);
         if (plain !== null) return plain >= (piece.rect ? MIN : MIN - 1e-3);
         return squareFits(piece, MIN - 1e-3);
       });
     }
-    return region.fits;
+    return fits[MIN];
   }
   function regionDistance(region, c) {
     let best = Infinity;
@@ -1222,7 +1291,7 @@ function runInPage(ctx) {
     return best;
   }
 
-  function isPointerReachable(el) {
+  function pointerReachable(el) {
     // Match test expectations:
     // - exclude display:none
     // - exclude [hidden]
@@ -1359,7 +1428,7 @@ function runInPage(ctx) {
   // A target's region, its bounding box (`rect`), on whose centre the
   // spacing circle sits, and the largest square that fits in it (`square`),
   // or null for a target with nothing left to hit, clipped away.
-  function measure(el) {
+  function measureTarget(el) {
     let region;
     try {
       region = regionOf(el);
@@ -1387,7 +1456,7 @@ function runInPage(ctx) {
   // contents, its content's) and those of the content inside it. Its region
   // lies within, since clips and the boxes over it only take away. Cheap
   // next to the region, it tells which targets need one.
-  function extentOf(el) {
+  function extentOfTarget(el) {
     const cs = getStyle(el);
     const rects =
       cs && cs.display === 'contents'
@@ -1435,7 +1504,7 @@ function runInPage(ctx) {
     const inScope = new Set(applicable);
     let all;
     try {
-      all = Array.from(dom.querySelectorAll(document, CANDIDATE_SELECTOR));
+      all = [...dom.querySelectorAll(document, CANDIDATE_SELECTOR)];
     } catch {
       all = [];
     }
@@ -1487,8 +1556,13 @@ function runInPage(ctx) {
   const spaced = entries.filter((e) => !e.exempt);
   const extentCells = gridOf(spaced, (e) => e.extent);
   for (const e of spaced) {
-    for (const f of around(extentCells, e.extent, MIN)) {
-      if (f === e || isRelated(e.el, f.el) || gap(e.extent, f.extent) >= MIN) continue;
+    // With no spacing exception, every target's size decides it.
+    if (!SPACING_APPLIES) {
+      e.near = true;
+      continue;
+    }
+    for (const f of around(extentCells, e.extent, SPACING)) {
+      if (f === e || isRelated(e.el, f.el) || gap(e.extent, f.extent) >= SPACING) continue;
       e.near = true;
       break;
     }
@@ -1520,7 +1594,7 @@ function runInPage(ctx) {
     b: it.rect.bottom
   }));
   function nearbyItems(center) {
-    return around(regionCells, { l: center.cx, t: center.cy, r: center.cx, b: center.cy }, MIN);
+    return around(regionCells, { l: center.cx, t: center.cy, r: center.cx, b: center.cy }, SPACING);
   }
 
   // Whether the browser reports something else on top of `other` everywhere
@@ -1533,10 +1607,10 @@ function runInPage(ctx) {
     // Out of view, neither is where a pointer would find it.
     if (scrolledOutOf(other.el) || scrolledOutOf(target.el)) return false;
     const r = other.rect;
-    const x0 = Math.max(r.left, target.center.cx - MIN);
-    const x1 = Math.min(r.right, target.center.cx + MIN);
-    const y0 = Math.max(r.top, target.center.cy - MIN);
-    const y1 = Math.min(r.bottom, target.center.cy + MIN);
+    const x0 = Math.max(r.left, target.center.cx - SPACING);
+    const x1 = Math.min(r.right, target.center.cx + SPACING);
+    const y0 = Math.max(r.top, target.center.cy - SPACING);
+    const y1 = Math.min(r.bottom, target.center.cy + SPACING);
     if (x1 <= x0 || y1 <= y0) return false;
     let answered = false;
     for (const fx of [0.1, 0.3, 0.5, 0.7, 0.9]) {
@@ -1570,7 +1644,7 @@ function runInPage(ctx) {
       if (isInlineTextExceptionTarget(other.el)) continue;
 
       const d = dist(target.center, other.center);
-      if (isUndersized(other) && d < MIN - EPS) {
+      if (isUndersized(other) && d < SPACING - EPS) {
         if (isCoveredNear(other, target)) continue;
         return { conflict: true, conflictEl: other.el, decidedBy: 'centerDistance', distancePx: d };
       }
@@ -1690,8 +1764,8 @@ function runInPage(ctx) {
       decidedBy: info.decidedBy || null
     };
     if (info.decidedBy === 'centerDistance') {
-      metrics.centerDistancePx = round1(info.distancePx);
-      metrics.minDistancePx = MIN;
+      metrics.centerDistancePx = round1(info.distancePx, SPACING);
+      metrics.minDistancePx = SPACING;
     } else if (info.decidedBy === 'regionDistance') {
       metrics.regionDistancePx = round1(info.distancePx, RADIUS);
       metrics.minDistancePx = RADIUS;
@@ -1717,6 +1791,106 @@ function runInPage(ctx) {
       : `The part of this target a pointer can hit spans ${size.widthPx}×${size.heightPx} CSS px but fits only a ${size.squarePx}×${size.squarePx} square`;
   }
   const keyFor = (it, key) => (it.region.rectangle ? key : `${key}_shape`);
+  // The neighbour a target is too close to, as a reader finds it in the
+  // markup: <a href="/next"> "Next" (helpers.describeMarkup).
+  function neighbourOf(other) {
+    try {
+      return other && typeof helpers.describeMarkup === 'function'
+        ? helpers.describeMarkup(other)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+  // The ancestor whose clip cuts a target's box down to the region
+  // measured, and the CSS that does it, where the region is smaller than
+  // the box: { clippedBy, clipProperty }, or {}. Overflow (and contain:
+  // paint) on the containing-block chain first, then clip-path: inset()
+  // and clip: rect() on its ancestors.
+  function clipParams(it) {
+    try {
+      const r = boxOf(it.el);
+      if (!r) return {};
+      const cutW = it.rect.width < r.width - 0.5;
+      const cutH = it.rect.height < r.height - 0.5;
+      if (!cutW && !cutH) return {};
+      const name = (a) =>
+        typeof helpers.describeElement === 'function' ? helpers.describeElement(a) : '';
+      for (let a = containingBlockOf(it.el), i = 0; a && i < 1000; a = containingBlockOf(a), i++) {
+        const cs = getStyle(a);
+        const oc = overflowClip(a, cs);
+        const ar = oc ? boxOf(a) : null;
+        if (!ar) continue;
+        const cutX =
+          oc.sw < Infinity &&
+          (oc.sw < r.width - 0.5 ||
+            r.left < ar.left - 0.5 ||
+            r.left + r.width > ar.left + ar.width + 0.5);
+        const cutY =
+          oc.sh < Infinity &&
+          (oc.sh < r.height - 0.5 ||
+            r.top < ar.top - 0.5 ||
+            r.top + r.height > ar.top + ar.height + 0.5);
+        if (!(cutX && cutW) && !(cutY && cutH)) continue;
+        const contain = String(cs.contain || '');
+        let property;
+        if (/\b(paint|strict|content)\b/.test(contain)) property = `contain: ${contain}`;
+        else if (cs.overflowX === cs.overflowY) property = `overflow: ${cs.overflowX}`;
+        else
+          property = cutY && cutH ? `overflow-y: ${cs.overflowY}` : `overflow-x: ${cs.overflowX}`;
+        const clippedBy = name(a);
+        return clippedBy ? { clippedBy, clipProperty: property } : {};
+      }
+      for (let a = helpers.composedParent(it.el), i = 0; a && i < 1000; i++) {
+        if (dom.nodeType(a) !== 1) break;
+        const cs = getStyle(a);
+        const c = subtreeClipOf(a, cs);
+        if (
+          c &&
+          (c.l > r.left + 0.5 ||
+            c.t > r.top + 0.5 ||
+            c.r < r.left + r.width - 0.5 ||
+            c.b < r.top + r.height - 0.5)
+        ) {
+          const cp = String(cs.clipPath || 'none').trim();
+          const clippedBy = name(a);
+          return clippedBy
+            ? {
+                clippedBy,
+                clipProperty: cp !== 'none' ? `clip-path: ${cp}` : `clip: ${cs.clip}`
+              }
+            : {};
+        }
+        a = helpers.composedParent(a);
+      }
+      return {};
+    } catch {
+      return {};
+    }
+  }
+  function clipText(c) {
+    return c.clippedBy
+      ? ` Its ancestor ${c.clippedBy} cuts it to that size with ${c.clipProperty}.`
+      : '';
+  }
+  // How far the conflict leaves the target from passing the spacing
+  // exception, for the hint: the distance measured, the distance the test
+  // holds it to, and the gap between them. The distance is rounded as
+  // metrics rounds it, and the gap up, so the two together never fall short
+  // of what is needed.
+  function spacingParams(info) {
+    const limit = info.decidedBy === 'centerDistance' ? SPACING : RADIUS;
+    return {
+      distancePx: String(round1(info.distancePx, limit)),
+      minDistancePx: String(limit),
+      shortfallPx: String(Math.ceil((limit - info.distancePx) * 10 - 1e-6) / 10)
+    };
+  }
+  function spacingHint(decidedBy, s) {
+    return decidedBy === 'centerDistance'
+      ? `Its centre is ${s.distancePx} px from the centre of another target under 24×24, and the two need ${s.minDistancePx} px. Make the target at least 24×24 CSS px, or move the two at least ${s.shortfallPx} px further apart.`
+      : `Another target comes within ${s.distancePx} px of its centre, and a 24 px circle centred on it needs ${s.minDistancePx} px clear. Make the target at least 24×24 CSS px, or move it at least ${s.shortfallPx} px further from that target.`;
+  }
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
@@ -1735,8 +1909,18 @@ function runInPage(ctx) {
     const info = hasSpacingConflict(it);
     const size = sizeParams(it);
     const sized = sizeText(it, size);
+    // Without the spacing exception the size alone decides, and the distance
+    // to a neighbour is reported only where it is why the target is asked
+    // about (the inline link run below).
+    const shown = SPACING_APPLIES ? info : { conflict: false, conflictEl: null };
+    // The neighbour it is too close to, and what clips it, named.
+    const neighbour = neighbourOf(shown.conflictEl);
+    const clip = clipParams(it);
+    const tooClose = SPACING_APPLIES
+      ? `, and too close to another target${neighbour ? ` (${neighbour})` : ''}`
+      : '';
 
-    if (info.conflict) {
+    if (info.conflict || !SPACING_APPLIES) {
       if (isPlausiblyEssentialOrEquivalent(it.el)) {
         // Confident spacing conflict, but the target may be exempt as part
         // of an essential graphic/image-map region, so report it as
@@ -1744,12 +1928,12 @@ function runInPage(ctx) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
-            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.`,
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${tooClose}, but may be exempt as part of an essential graphic or image-map region.${clipText(clip)}`,
             hint: 'Check whether this size is essential, as it can be for a region of a map or a diagram. If not, make the target larger or give it more space.',
             i18n: {
               summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_plausiblyEssential'),
               hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
-              params: size
+              params: { ...size, ...(neighbour ? { neighbour } : {}), ...clip }
             },
             uncertainty: {
               code: 'judgement-required',
@@ -1762,8 +1946,9 @@ function runInPage(ctx) {
               details: {
                 measured: measuredOf(it),
                 reasonCode: 'undersized-plausibly-essential',
-                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
-                ...measurements(it, info)
+                conflictWith: shown.conflictEl ? buildSelector(shown.conflictEl) : null,
+                ...clip,
+                ...measurements(it, shown)
               }
             }
           })
@@ -1778,15 +1963,16 @@ function runInPage(ctx) {
       // text around them at all are in no text to be exempt in.
       const around = isLinkLike(it.el) ? textAround(it.el) : null;
       if (around && around.symbols && info.conflictEl && textAround(info.conflictEl) === around) {
+        const linkNeighbour = neighbourOf(info.conflictEl);
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
-            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than 24×24, and close to another inline link in the same run of text, where the inline exception may apply.`,
-            hint: 'Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least 24×24 CSS px or give it more space.',
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than ${MIN}×${MIN}, and close to another inline link${linkNeighbour ? ` (${linkNeighbour})` : ''} in the same run of text, where the inline exception may apply.${clipText(clip)}`,
+            hint: `Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least ${MIN}×${MIN} CSS px or give it more space.`,
             i18n: {
               summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_inlineLinkRun'),
               hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
-              params: size
+              params: { ...size, ...(linkNeighbour ? { neighbour: linkNeighbour } : {}), ...clip }
             },
             uncertainty: {
               code: 'judgement-required',
@@ -1800,6 +1986,7 @@ function runInPage(ctx) {
                 measured: measuredOf(it),
                 reasonCode: 'undersized-inline-link-run',
                 conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
+                ...clip,
                 ...measurements(it, info)
               }
             }
@@ -1808,22 +1995,35 @@ function runInPage(ctx) {
         continue;
       }
 
+      // Too small with nothing to except it: with the spacing exception, the
+      // hint says how far the target is from passing it; without one, how
+      // large it needs to be.
+      const spacing = SPACING_APPLIES ? spacingParams(info) : { minSizePx: String(MIN) };
       failOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'fail',
-          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target.`,
-          hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
+          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${
+            SPACING_APPLIES
+              ? `${tooClose}: ${spacing.distancePx} px where ${spacing.minDistancePx} px is needed`
+              : ''
+          }.${clipText(clip)}`,
+          hint: SPACING_APPLIES
+            ? spacingHint(info.decidedBy, spacing)
+            : `Make the target at least ${MIN}×${MIN} CSS px.`,
           i18n: {
             summaryKey: keyFor(it, 'targetSizeMinimum_summary_fail'),
-            hintKey: 'targetSizeMinimum_hint_fail',
-            params: size
+            hintKey: SPACING_APPLIES
+              ? `targetSizeMinimum_hint_fail_${info.decidedBy}`
+              : 'targetSizeMinimum_hint_fail_size',
+            params: { ...size, ...spacing, ...(neighbour ? { neighbour } : {}), ...clip }
           },
           data: {
             details: {
               measured: measuredOf(it),
-              reasonCode: 'undersized-and-too-close',
-              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
-              ...measurements(it, info)
+              reasonCode: SPACING_APPLIES ? 'undersized-and-too-close' : 'undersized',
+              conflictWith: shown.conflictEl ? buildSelector(shown.conflictEl) : null,
+              ...clip,
+              ...measurements(it, shown)
             }
           }
         })
@@ -1873,4 +2073,27 @@ function runInPage(ctx) {
   return { ruleId: RULE_ID, ...resolved, marginCandidates, measuredCount: items.length };
 }
 
-module.exports = { id, meta, runInPage };
+// Settings a variant can change (docs/RULE_AUTHORING.md, "Rule variants"),
+// with WCAG 2.5.8's as defaults. target-size-enhanced (2.5.5) is this rule at
+// 44px with no spacing exception.
+const settings = {
+  minSizePx: 24,
+  spacingException: 'apply'
+};
+
+// What each setting changes, for the catalog and docs/RULE_SETTINGS.md.
+const settingsInfo = {
+  minSizePx: {
+    description:
+      'The size a target needs, in CSS pixels: a square this size on a side fits in the region a pointer can hit.',
+    basis: 'WCAG 2.5.8: 24 (2.5.5: 44)'
+  },
+  spacingException: {
+    values: ['apply', 'none'],
+    description:
+      "Whether an undersized target passes when a 24px circle centred on it reaches no other target ('apply'), or fails on its size alone, reported as undersized ('none').",
+    basis: 'WCAG 2.5.8 exception: Spacing (2.5.5 has none)'
+  }
+};
+
+module.exports = { id, meta, runInPage, settings, settingsInfo };

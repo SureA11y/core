@@ -28,17 +28,17 @@ test(`${RULE_ID}: pass when tooltip has visible text content`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when tooltip has no accessible name`, () => {
+test(`${RULE_ID}: cantTell when tooltip has no accessible name`, () => {
   const html = `<!doctype html><html><body><div id="a" role="tooltip"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.controlType, 'tooltip');
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" role="tooltip"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'Tooltips have an accessible name');
 });
 
@@ -58,7 +58,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/tooltip-name-present-all-scen
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 
   const expectedFailIds = ['tip_case_05', 'tip_case_06'];
   const expectedNoOccIds = [
@@ -96,7 +96,7 @@ test(`${RULE_ID}: role is a fallback list matched in any case (#91)`, () => {
     <a id="lk" href="#x" role="link tooltip"></a>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   assert.ok(hasOccurrenceForId(rule, 'fb'));
   assert.ok(hasOccurrenceForId(rule, 'up'));
   assert.ok(!hasOccurrenceForId(rule, 'lk'));

@@ -68,23 +68,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['duplicate-id-aria'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    DUPLICATE_ID_ARIA_REFERENCED: {
-      steps: [
-        'Inspect the element the report names and note the ARIA attribute and the duplicated id it refers to.',
-        'In the developer tools, search the markup for id="the-id" and note each element that has it and its text; the browser uses the first one.',
-        "Open the Accessibility pane in the browser's developer tools on the referring element and read the name or description it gets.",
-        "Compare that with the text next to the element on screen (for example, its own card's title)."
-      ],
-      passWhen:
-        'The name or description comes from the intended element, or all the duplicates have the same text.',
-      failWhen:
-        "The referring element gets text from the wrong element, such as card 2 named with card 1's title, which fails WCAG 4.1.2 (and 1.3.1)."
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['duplicate-id-aria'] } }
 };
 
 function runInPage(ctx) {
@@ -143,7 +127,7 @@ function runInPage(ctx) {
   if (helpers && typeof helpers.queryAllSmart === 'function') {
     try {
       const scoped = helpers.queryAllSmart('[id]', { inert: true });
-      inScope = new Set(Array.isArray(scoped) ? scoped : Array.from(scoped || []));
+      inScope = new Set(Array.isArray(scoped) ? scoped : [...(scoped || [])]);
     } catch {
       inScope = null;
     }
@@ -219,23 +203,91 @@ function runInPage(ctx) {
     return null;
   }
 
+  // Up to 40 characters of an element's text, for a message.
+  const shortText = (el) => {
+    const t = normalized(el);
+    return t.length > 40 ? t.slice(0, 39) + '…' : t;
+  };
+  // An element as a message names it: <input>, <input id="email">.
+  function describeEl(n) {
+    const tag = String(dom.localName(n) || dom.tagName(n) || '').toLowerCase();
+    const cut = (v) => (v.length > 60 ? v.slice(0, 57) + '...' : v);
+    const elId = String(dom.getAttribute(n, 'id') || '').trim();
+    if (elId) return `<${tag} id="${cut(elId)}">`;
+    const cls = String(dom.getAttribute(n, 'class') || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return cls ? `<${tag} class="${cut(cls)}">` : `<${tag}>`;
+  }
+  // The referring element whose nearest copy, alone, is `copy`: a repeated
+  // component whose reference was meant for its own copy. { el, attr } or
+  // null.
+  function nearReferrerOf(refId, els, copy) {
+    for (const r of referrers.get(refId) || []) {
+      let best = -1;
+      let nearest = null;
+      let tie = false;
+      for (const e of els) {
+        const d = sharedDepth(r.el, e);
+        if (d > best) {
+          best = d;
+          nearest = e;
+          tie = false;
+        } else if (d === best) tie = true;
+      }
+      if (nearest === copy && !tie) return r;
+    }
+    return null;
+  }
+
   for (const refId of referencedIds) {
     const els = idMap.get(refId) || [];
     if (els.length <= 1) continue;
     const lean = leanFor(refId, els);
+    // The attributes that refer to the id, each once.
+    const attrs = [];
+    for (const r of referrers.get(refId) || [])
+      if (attrs.indexOf(r.attr) === -1) attrs.push(r.attr);
+    const attributes = attrs.join(', ');
+    const firstText = shortText(els[0]);
 
     for (const el of els) {
       if (inScope && !inScope.has(el)) continue;
 
+      // Whether this copy is the one the reference reaches, and, for a later
+      // one, the referring element next to it, whose reference was likely
+      // meant for it.
+      const isFirst = el === els[0];
+      const near = isFirst ? null : nearReferrerOf(refId, els, el);
+      const ownText = isFirst ? firstText : shortText(el);
+      const nearReferrer = near ? describeEl(near.el) : '';
+      const quoted = (t) => (t ? ` ("${t}")` : '');
+      const summary = isFirst
+        ? `The id "${refId}" is used by ${els.length} elements; this one is the first, the one ${attributes} reaches.`
+        : near
+          ? `The ${near.attr} on the ${nearReferrer} next to this element refers to "${refId}", but it reaches the first element with that id${quoted(firstText)}, not this one${quoted(ownText)}.`
+          : `The id "${refId}" is used by ${els.length} elements; ${attributes} reaches the first one${quoted(firstText)}, not this one${quoted(ownText)}.`;
+
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
-          summary:
-            'This id is referenced by an ARIA attribute but is used by more than one element; the reference resolves to the first.',
+          summary,
           hint: 'Confirm the first element carrying this id is the intended target, or make the id unique.',
           i18n: {
-            summaryKey: 'duplicateIdAria_summary_cantTell',
+            summaryKey: isFirst
+              ? 'duplicateIdAria_summary_cantTell_first'
+              : near
+                ? 'duplicateIdAria_summary_cantTell_nearerCopy'
+                : 'duplicateIdAria_summary_cantTell',
             hintKey: 'duplicateIdAria_hint_cantTell',
-            params: { id: refId, duplicateCount: String(els.length) }
+            params: {
+              id: refId,
+              duplicateCount: String(els.length),
+              attributes,
+              firstText,
+              ownText,
+              nearAttribute: near ? near.attr : '',
+              nearReferrer
+            }
           },
           uncertainty: {
             code: 'judgement-required',
@@ -247,7 +299,10 @@ function runInPage(ctx) {
             details: {
               reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',
               id: refId,
-              duplicateCount: els.length
+              duplicateCount: els.length,
+              referringAttributes: attrs,
+              reached: isFirst,
+              ...(near ? { nearReferrer: { element: nearReferrer, attribute: near.attr } } : {})
             }
           }
         })

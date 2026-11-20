@@ -67,7 +67,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-conditional-attr-all-sce
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 
   const expectedFailIds = ['aca_case_04', 'aca_case_05'];
-  const expectedNoOccIds = ['aca_case_01', 'aca_case_02', 'aca_case_03', 'aca_case_06'];
+  const expectedNoOccIds = [
+    'aca_case_01',
+    'aca_case_02',
+    'aca_case_03',
+    'aca_case_03b',
+    'aca_case_06'
+  ];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
@@ -111,5 +117,72 @@ test(`${RULE_ID}: no lean when the error message is hidden`, () => {
   assert.strictEqual(
     leanOn('<input id="a" aria-errormessage="e"><div id="e" hidden>Enter a date.</div>', 'a'),
     undefined
+  );
+});
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: an aria-invalid value outside its tokens is read as true, so it passes`, () => {
+  // WAI-ARIA 1.2: a value not in aria-invalid's list is treated as "true",
+  // so the error message is exposed. The value is aria-valid-attr-value's.
+  for (const value of ['yes', 'invalid', '1']) {
+    const result = runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><input aria-label="Email" aria-errormessage="e1" aria-invalid="${value}"><span id="e1">Bad</span></body></html>`,
+      { runOnly: [RULE_ID, 'aria-valid-attr-value'] }
+    );
+    const own = result.checksResults.find((r) => r.ruleId === RULE_ID);
+    assert.strictEqual(own.outcome, 'pass', value);
+    const valueRule = result.checksResults.find((r) => r.ruleId === 'aria-valid-attr-value');
+    assert.ok(
+      (valueRule.occurrences || []).some((o) =>
+        String(o.summary).includes(`aria-invalid="${value}"`)
+      ),
+      `aria-valid-attr-value reports aria-invalid="${value}"`
+    );
+  }
+});
+
+test(`${RULE_ID}: a missing aria-invalid is called missing`, () => {
+  const occ = messageOccurrence('<input aria-errormessage="e1"><span id="e1">Bad</span>', 'input');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaConditionalAttr_summary_fail_missing');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaConditionalAttr_hint_fail');
+  assert.strictEqual(
+    occ.summary,
+    'This element has aria-errormessage but no aria-invalid, so the error message is not exposed.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.'
+  );
+});
+
+test(`${RULE_ID}: aria-invalid="false" is called false`, () => {
+  const occ = messageOccurrence(
+    '<input aria-errormessage="e1" aria-invalid="false"><span id="e1">Bad</span>',
+    'false'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaConditionalAttr_summary_fail_false');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaConditionalAttr_hint_fail');
+  assert.strictEqual(
+    occ.summary,
+    'This element has aria-errormessage but aria-invalid="false", so the error message is not exposed.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.'
   );
 });

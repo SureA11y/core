@@ -500,3 +500,24 @@ for (const [description, content] of [
     assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   });
 }
+
+test(`${RULE_ID}: the fail gives the tabindex as written and names what can't be reached`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><iframe id="f1" tabindex="-5" title="chat" srcdoc="<button>Open chat</button><a href=x>Help</a>"></iframe><iframe id="f2" tabindex="-1" title="form" srcdoc="<button>Send</button>"></iframe></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.strictEqual(occ('f1').i18n.summaryKey, 'iframeFocusableContent_summary_fail_namedMore');
+  assert.strictEqual(
+    occ('f1').summary,
+    `This <iframe> has tabindex="-5", so keyboard users can't reach the focusable elements inside it: <button> "Open chat" and 1 more.`
+  );
+  assert.strictEqual(occ('f1').i18n.hintKey, 'iframeFocusableContent_hint_fail_value');
+  assert.match(occ('f1').hint, /remove tabindex="-5"/);
+  assert.strictEqual(occ('f2').i18n.summaryKey, 'iframeFocusableContent_summary_fail_named');
+  assert.strictEqual(
+    occ('f2').summary,
+    `This <iframe> has tabindex="-1", so keyboard users can't reach the <button> "Send" inside it.`
+  );
+});

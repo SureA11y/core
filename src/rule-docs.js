@@ -608,8 +608,19 @@ function readExamples(file) {
     let m;
     while ((m = re.exec(section)) !== null) {
       const label = m[1].trim();
-      const outcome = label.replace(/\s*\(in a browser\)$/, '');
-      out.push({ ruleId, label, expected: LABELS[outcome] || null, html: m[2] });
+      // "(at 320 CSS pixels wide)" says, to the reader and to the run, the
+      // width the page is laid out at (reflow is checked at 320).
+      const at = label.match(/\s*\(at (\d+) CSS pixels wide\)$/);
+      const outcome = label
+        .replace(/\s*\(at \d+ CSS pixels wide\)$/, '')
+        .replace(/\s*\(in a browser\)$/, '');
+      out.push({
+        ruleId,
+        label,
+        expected: LABELS[outcome] || null,
+        html: m[2],
+        ...(at ? { width: Number(at[1]) } : {})
+      });
     }
   }
   return out;
@@ -669,6 +680,7 @@ async function collectDisagreements(
       } else {
         const page = await context.newPage();
         try {
+          if (ex.width) await page.setViewportSize({ width: ex.width, height: 900 });
           await page.setContent(toPage(ex.html), { timeout });
           await page.addScriptTag({ content: bundle });
           engine = await page.evaluate(

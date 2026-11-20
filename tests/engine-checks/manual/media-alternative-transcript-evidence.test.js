@@ -259,3 +259,19 @@ test(`${RULE_ID}: <audio autoplay loop> is cantTell under wcag22-aa`, () => {
   const result = runa11yCoreOnHtml(html, { engineOptions: { profile: 'wcag22-aa' } });
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
+
+test(`${RULE_ID}: names the transcript link it found and could not verify`, () => {
+  const html = `<!doctype html><html><body><div>
+    <audio controls src="a.mp3"></audio><p><a href="/more">Read the transcript</a></p>
+  </div></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occ = rule.occurrences[0];
+  assert.equal(
+    occ.summary,
+    'A link that may lead to this <audio>\'s transcript, "Read the transcript" (/more), was found, but the page doesn\'t show that it is one. Open it and check.'
+  );
+  assert.equal(occ.i18n.summaryKey, 'mediaTranscriptPresent_summary_cantTell_unverifiedLink');
+  assert.equal(occ.data.details.reasonCode, 'transcriptEvidenceUnverified');
+  assert.equal(occ.data.details.evidence.transcriptLinkText, 'Read the transcript');
+  assert.equal(occ.data.details.evidence.transcriptLinkSelector, 'html > body > div > p > a');
+});

@@ -246,3 +246,41 @@ test(`${RULE_ID}: an upper-case role resolves too: role="SLIDER" is a slider (#9
   );
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: a fail says a <label for> can't name a custom slider`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <label for="vol">Volume</label>
+  <div id="vol" role="slider" tabindex="0" aria-valuenow="5" aria-valuemin="0" aria-valuemax="10"></div>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('vol').i18n.hintKey, 'nameCause_hint_labelNotLabelableNoId');
+  assert.equal(
+    occ('vol').hint,
+    'The <label for="vol"> "Volume" names nothing here: a <label> only names native form fields (input, select, textarea…), not a <div role="slider">. Give the label an id and point this element\'s aria-labelledby at it.'
+  );
+  assert.equal(occ('vol').data.details.nameCause.cause, 'labelNotLabelable');
+});
+
+test(`${RULE_ID}: a fail names an aria-describedby, or an aria-label on the parent, that gives no name`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><p id="d">Volume</p><div id="s1" role="slider" tabindex="0" aria-valuenow="5" aria-describedby="d"></div><div class="vol" aria-label="Bass"><div id="s2" role="slider" tabindex="0" aria-valuenow="5"></div></div></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('s1').i18n.hintKey, 'nameCause_hint_describedbyNotName');
+  assert.equal(
+    occ('s1').hint,
+    'Its aria-describedby points to <p id="d"> "Volume", which gives a description, not a name. Point aria-labelledby at it instead, or name it with aria-label.'
+  );
+  assert.equal(occ('s2').i18n.hintKey, 'nameCause_hint_parentAriaLabel');
+  assert.equal(
+    occ('s2').hint,
+    'The aria-label "Bass" is on its parent <div class="vol">, where it names nothing. Move it to this element.'
+  );
+  assert.equal(occ('s2').data.details.nameCause.cause, 'parentAriaLabel');
+});

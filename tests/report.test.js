@@ -100,7 +100,8 @@ test('renderHtmlReport: meta bar reports the locale the scan resolved to', () =>
   const report = renderHtmlReport(runa11yCoreOnHtml(html, { engineOptions: { locale: 'de' } }));
 
   assert.match(report, /<b>de<\/b>Sprache/);
-  assert.doesNotMatch(report, /angefordert/);
+  // The procedures below may say "angefordert" in their own sentences.
+  assert.doesNotMatch(report.split('<h2 id="manual-checks-heading">')[0], /angefordert/);
 });
 
 // A locale asked for in another case resolved to the same one: it is not a
@@ -111,7 +112,8 @@ test('renderHtmlReport: a locale asked for in capitals is not shown as a fallbac
   const report = renderHtmlReport(runa11yCoreOnHtml(html, { engineOptions: { locale: 'DE' } }));
 
   assert.match(report, /<b>de<\/b>Sprache/);
-  assert.doesNotMatch(report, /angefordert/);
+  // The procedures below may say "angefordert" in their own sentences.
+  assert.doesNotMatch(report.split('<h2 id="manual-checks-heading">')[0], /angefordert/);
 });
 
 // Shares follow the report's language, as the counts and ratios do.
@@ -150,9 +152,14 @@ test('renderHtmlReport: a report for a shipped locale is written entirely in tha
   assert.match(report, /<b>ja<\/b>ロケール/);
   assert.match(report, /\(不合格、重大度: 重大\)/);
   assert.match(report, /<div class="card-snippet">この &lt;img&gt; には alt 属性がありません。/);
-  assert.doesNotMatch(report, /<span lang=|<td lang=/);
+  // Nothing is marked as another language: what's left for a person is in
+  // Japanese too.
+  const [own, manual] = report.split('<h2 id="manual-checks-heading">');
+  assert.doesNotMatch(own, /<span lang=|<td lang=/);
+  assert.doesNotMatch(manual, / lang="en"/);
 
-  // Every label of the English page, none of which may survive.
+  // Every label of the English page, none of which may survive in the
+  // report's own text (a procedure only in English may say "prevent").
   for (const english of [
     'Worth reviewing',
     'WCAG rollup',
@@ -168,7 +175,7 @@ test('renderHtmlReport: a report for a shipped locale is written entirely in tha
     'Contributing rules',
     'surea11y scan report'
   ]) {
-    assert.ok(!report.includes(english), `English label left in a Japanese report: ${english}`);
+    assert.ok(!own.includes(english), `English label left in a Japanese report: ${english}`);
   }
 });
 
@@ -899,4 +906,36 @@ test('renderHtmlReport: with no failure, the report says that is not a conforman
     renderHtmlReport(french),
     /Aucune règle n’a échoué, ce qui ne signifie pas que la page est conforme/
   );
+});
+
+test("renderHtmlReport: two versions of a standard's rollups get a table each, naming the version", () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  result.standards = [{ key: 'acme', standard: 'Acme Standard' }];
+  const rollup = (version, criterion) => ({
+    ruleId: `acme-${version}-${criterion}`,
+    title: 'Images have a text alternative',
+    outcome: 'fail',
+    meta: {
+      standard: 'Acme Standard',
+      normativeMappings: [{ standard: 'Acme Standard', version, requirement: criterion }]
+    },
+    data: { details: { standard: 'Acme Standard', version, criterion, checksIds: [] } }
+  });
+  result.rulesResults = [rollup('V4', '1.1'), rollup('V3', '1.1'), rollup('V3', '1.2')];
+  const report = renderHtmlReport(result);
+  const headings = report.match(/<h2 id="standard-rollup-\d+">[^<]*/g).map((h) => h.split('>')[1]);
+  assert.deepStrictEqual(headings, ['Acme Standard V3 rollup', 'Acme Standard V4 rollup']);
+  const cells = (i) =>
+    report
+      .split(`id="standard-rollup-${i}"`)[1]
+      .split('<h2')[0]
+      .match(/<td class="sc-cell">[^<]*/g)
+      .map((td) => td.split('>')[1]);
+  assert.deepStrictEqual(cells(0), ['Acme Standard V3 1.1', 'Acme Standard V3 1.2']);
+  assert.deepStrictEqual(cells(1), ['Acme Standard V4 1.1']);
+  // One version: one table, as before.
+  result.rulesResults = [rollup('V3', '1.1')];
+  const one = renderHtmlReport(result);
+  assert.match(one, /<h2 id="standard-rollup-0">Acme Standard rollup<\/h2>/);
+  assert.match(one, /<td class="sc-cell">Acme Standard 1\.1/);
 });

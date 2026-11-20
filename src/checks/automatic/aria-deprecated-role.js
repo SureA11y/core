@@ -73,35 +73,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-role-not-deprecated'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ARIA_ROLE_AUTHOR_DISCOURAGED: {
-      steps: [
-        'Inspect the element the report names and note its tag and role="generic".',
-        'If the tag is a plain container (div, span, b, i), the role changes nothing; remove it as cleanup.',
-        "Otherwise open the Accessibility pane in the browser's developer tools and check whether the element's native meaning (button, link, heading, list item, navigation) has been lost.",
-        'With a screen reader, move to the element and, if it is focusable, press Tab to it and listen to what is announced.'
-      ],
-      passWhen:
-        'The element was already a generic container, or its native role still shows and is announced.',
-      failWhen:
-        'role="generic" strips a native meaning, such as a link or heading no longer announced as one, which fails WCAG 4.1.2 (and 1.3.1 for structure).'
-    },
-    ARIA_ROLE_DEPRECATED: {
-      steps: [
-        'Inspect the element the report names and note its deprecated role (such as directory).',
-        "Open the Accessibility pane in the browser's developer tools and check which role is exposed (directory is usually mapped to list).",
-        'With a screen reader, move to the element and its items and listen for the structure being announced.',
-        'Consider the suggested replacement role (list for directory) and whether it fits.'
-      ],
-      passWhen:
-        'The structure is announced correctly (for example as a list with its item count), or the role is replaced with the suggested one.',
-      failWhen:
-        'The structure is not conveyed by assistive technology because it relies on the deprecated role, which can fail WCAG 4.1.2.'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['aria-role-not-deprecated'] } }
 };
 
 function runInPage(ctx) {

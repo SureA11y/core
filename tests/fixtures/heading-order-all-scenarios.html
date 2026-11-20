@@ -21,6 +21,9 @@
   <div class="case-title">03 — NEUTRAL: a hidden h6 is not part of the outline, so the h5 after the h4 is one level down</div>
   <h6 style="display:none" id="ho_case_03_hidden">Hidden heading</h6>
   <h5 id="ho_case_03">One level below the h4</h5>
+  <div class="case-title">04 — CANTTELL: role="heading" on an h3 keeps level 3, so after an h1 it skips level 2</div>
+  <h1>Back to the top level</h1>
+  <h3 role="heading" id="ho_case_04">Native heading with an explicit heading role</h3>
   <p class="note">
     This rule needs at least two headings to evaluate, and the violation is inherently a
     relationship between two headings rather than a single element, so each case is

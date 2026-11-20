@@ -136,3 +136,24 @@ test(`${RULE_ID}: leans pass for a braille role description without aria-roledes
   assert.strictEqual(lean.toward, 'pass');
   assert.strictEqual(lean.i18n.whyKey, 'ariaBrailleEquivalent_lean_why_roleDescription');
 });
+
+test(`${RULE_ID}: a blank aria-roledescription is said to be empty, not missing`, () => {
+  const html = `<!doctype html><html lang="en"><body>
+      <div id="blank" role="button" tabindex="0" aria-roledescription=" " aria-brailleroledescription="sld">Slide</div>
+    </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'BRAILLE_ATTR_WITHOUT_EQUIVALENT');
+  assert.strictEqual(occ.data.details.requiredBlank, true);
+  assert.strictEqual(
+    occ.i18n.summaryKey,
+    'ariaBrailleEquivalent_summary_cantTell_roleDescriptionBlank'
+  );
+  assert.strictEqual(
+    occ.summary,
+    'This element has aria-brailleroledescription, but its aria-roledescription, the non-braille equivalent, is empty.'
+  );
+});

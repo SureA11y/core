@@ -20,6 +20,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { applyHowToCheck, howToCheckFrom } = require('./how-to-check-core.js');
+const { standardReviewsOf, standardSteps } = require('./pack-review.js');
+const { fillHowToCheck } = require('./review-placeholders.js');
 
 const REVIEW_DIR = path.join(__dirname, 'i18n', 'review');
 
@@ -75,16 +77,37 @@ function ruleOf(ruleId, packs) {
  * (English where it has no translation), or null when the rule gives none
  * for that reason code. A variant without steps of its own for the code has
  * its base rule's. With options.packs, a pack's rules and variants are
- * known too, their own steps in English.
+ * known too, their own steps in English, or in the locale where the pack's
+ * dictionary translates them. With options.profile too, a profile or a
+ * list of the profiles that ask, a code the standard of each of them gives
+ * its own steps for (standard.review) reads those, as a finding only they
+ * ask about does in addHowToCheck: in the locale where the pack's
+ * dictionary translates the whole entry, in English otherwise.
  */
 function howToCheckFor(ruleId, reasonCode, locale, options) {
-  const packs = options && typeof options === 'object' ? options.packs : null;
+  const opts = options && typeof options === 'object' ? options : {};
+  const packs = opts.packs || null;
   const rule = ruleOf(ruleId, packs);
   if (!rule) return null;
+  const profiles = [].concat(opts.profile || []).filter((p) => typeof p === 'string' && p);
+  if (packs && profiles.length) {
+    const ruleIds = [ruleId, rule.variantOf].filter((id) => typeof id === 'string');
+    const own = standardSteps(
+      standardReviewsOf(packs),
+      profiles.map((p) => p.toLowerCase()),
+      ruleIds,
+      reasonCode,
+      locale
+    );
+    if (own) return fillHowToCheck(own, opts.values);
+  }
   const base = rule.variantOf ? ruleOf(rule.variantOf, packs) : null;
   for (const prefix of [rule.prefix, base && base.prefix]) {
     if (!prefix) continue;
-    const how = howToCheckFrom(dictionary, prefix, reasonCode, locale, { packs });
+    const how = howToCheckFrom(dictionary, prefix, reasonCode, locale, {
+      packs,
+      values: opts.values
+    });
     if (how) return how;
   }
   return null;
@@ -95,7 +118,8 @@ function howToCheckFor(ruleId, reasonCode, locale, options) {
  * in which each undecided finding of a core rule carries howToCheck, in the
  * scan's locale; a variant's, its base rule's where it has none of its own.
  * With options.packs, the packs the scan ran, a pack rule's finding gets the
- * steps of its meta.review, in English. Findings that already have one, and
+ * steps of its meta.review, in English, or in the locale where the pack's
+ * dictionary translates them. Findings that already have one, and
  * decided ones, are left as they are. With options.locale, the steps are in
  * that locale instead, those a finding already has included.
  */

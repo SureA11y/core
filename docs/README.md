@@ -12,6 +12,7 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 | [`LEANS.md`](./LEANS.md) | Which way an undecided finding points: reading, using and trusting a lean. |
 | [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) | How rule results roll up to WCAG criteria, and why a criterion whose rules all pass is still `cantTell`. |
 | [`LIMITATIONS.md`](./LIMITATIONS.md) | What a scan can't establish, and what to do about it. |
+| [`PROCEDURES.md`](./PROCEDURES.md) | How a person assesses each criterion by hand: its facets, procedures, tools and the rules that cover it; a whole standard listed, a checklist, and either rendered as a page or a worksheet to work through. |
 | [`LAYOUT_MEASUREMENT.md`](./LAYOUT_MEASUREMENT.md) | How the contrast and target-size rules measure a rendered page. |
 | [`I18N.md`](./I18N.md) | Results in another language, and adding a language. |
 | [`TROUBLESHOOTING.md`](./TROUBLESHOOTING.md) | Common questions and errors. |
@@ -33,7 +34,7 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 | Document | What it covers |
 |---|---|
 | [`BUILDING_ON_CORE.md`](./BUILDING_ON_CORE.md) | Start here: what to rely on, running scans, presenting results, comparing runs, extending. |
-| [`API_STABILITY.md`](./API_STABILITY.md) | What semver covers: result fields, entry points, extension points, rule-id deprecation. |
+| [`API_STABILITY.md`](./API_STABILITY.md) | What semver covers: result fields, entry points, extension points, experimental APIs, rule-id deprecation. |
 | [`BINDING_AUTHORS_GUIDE.md`](./BINDING_AUTHORS_GUIDE.md) | Writing an integration for a test framework or browser driver. |
 | [`POLICY.md`](./POLICY.md) | Policy contracts: which outcomes may reach a result. |
 
@@ -43,7 +44,7 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 |---|---|
 | [`PACKS.md`](./PACKS.md) | Your own rules, profiles, checklist or standard, from `surea11y-pack new` to publishing. |
 | [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) | The rule contract, in full. |
-| [`RULE_TEMPLATE.md`](./RULE_TEMPLATE.md) | A rule to start from, with its test in [`RULE_TEMPLATE.test.js`](./RULE_TEMPLATE.test.js). |
+| [`RULE_TEMPLATE.md`](./RULE_TEMPLATE.md) | A rule to start from, [`RULE_TEMPLATE.js`](./RULE_TEMPLATE.js), with its test in [`RULE_TEMPLATE.test.js`](./RULE_TEMPLATE.test.js) ([`RULE_TEST_TEMPLATE.md`](./RULE_TEST_TEMPLATE.md)). |
 | [`RULE_TEST_AUTHORING.md`](./RULE_TEST_AUTHORING.md) | Testing a rule. |
 | [`RULE_HELPERS.md`](./RULE_HELPERS.md) | Every `ctx.helpers` function a rule can use. |
 | [`RULE_TAXONOMY.md`](./RULE_TAXONOMY.md) | How rules are categorized and split. |
@@ -58,6 +59,7 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 | [`ACT_RULE_MAPPING.md`](./ACT_RULE_MAPPING.md) | Which W3C ACT rules the engine implements, how it scores on their test cases, and where it differs by design. |
 | [`ARIA_DEPRECATION.md`](./ARIA_DEPRECATION.md) | How deprecated ARIA roles and attributes are graded. |
 | [`DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md) | Open and settled design questions, each with the reasoning behind the call. |
-| [`RELEASING.md`](./RELEASING.md) | The release checklist: version, changelog, finding identities, and publishing. |
+| [`MULTI_PROFILE_SCANS.md`](./MULTI_PROFILE_SCANS.md) | Why a scan can run several profiles at once, and WAI-ARIA as a standard in a pack: the design and what changed while building it. |
+| [`RELEASING.md`](./RELEASING.md) | The release checklist: version, changelog, finding identities, and publishing, and a patch from an earlier commit. |
 
 Project policies are at the repository root: [`CONTRIBUTING.md`](../CONTRIBUTING.md), [`GOVERNANCE.md`](../GOVERNANCE.md), [`SUPPORT.md`](../SUPPORT.md), [`SECURITY.md`](../SECURITY.md) and [`CHANGELOG.md`](../CHANGELOG.md).

@@ -117,3 +117,38 @@ test(`${RULE_ID}: no lean for a misspelling whose effect a person must judge`, (
   assert.strictEqual(leanOn('<div id="a" aria-hiden="true">x</div>', 'a'), undefined);
   assert.strictEqual(leanOn('<div id="a" aria-role="button">x</div>', 'a'), undefined);
 });
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: a misspelled attribute names the attribute it likely meant`, () => {
+  const occ = messageOccurrence('<button aria-lable="Close"></button>', 'aria-lable');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaValidAttr_summary_fail');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaValidAttr_hint_fail_near');
+  assert.strictEqual(occ.summary, 'aria-lable is not a recognized ARIA attribute.');
+  assert.strictEqual(occ.hint, 'Did you mean aria-label? As written, the attribute is ignored.');
+});
+
+test(`${RULE_ID}: aria-role points to the role attribute`, () => {
+  const occ = messageOccurrence('<div aria-role="button">x</div>', 'aria-role');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaValidAttr_summary_fail');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaValidAttr_hint_fail_ariaRole');
+  assert.strictEqual(occ.summary, 'aria-role is not a recognized ARIA attribute.');
+  assert.strictEqual(
+    occ.hint,
+    'ARIA has no aria-role attribute. Use the role attribute instead: role="button".'
+  );
+});

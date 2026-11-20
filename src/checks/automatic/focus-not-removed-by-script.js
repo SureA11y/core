@@ -7,7 +7,7 @@
  * @atomic true
  * @summary A script must not remove focus from an element as it receives it
  * @standard WCAG 2.2
- * @sc 2.1.1, 2.4.7
+ * @sc 2.1.1, 2.1.3, 2.4.7, 2.4.13
  * @type automatic
  * @applicability
  *   Elements that can take focus, that the page renders, and whose inline
@@ -48,14 +48,14 @@
  *   - `FOCUS_HANDLER_BLURS_SELF` (fail, cantTell): the element's onfocus
  *     handler does nothing but call blur() on it, so focus is removed as it
  *     arrives; it fails in the tab order and is asked about outside it.
- *     Basis: WCAG 2.1.1; WCAG 2.4.7; F55.
+ *     Basis: WCAG 2.1.1; WCAG 2.1.3; WCAG 2.4.7; WCAG 2.4.13; F55.
  *   - `FOCUS_HANDLER_CALLS_BLUR` (cantTell): the element's onfocus handler
  *     calls blur() among other code or on another element; whether focus is
  *     lost depends on the script.
  *     It leans fail when the element is in the tab order and blur() is
  *     called on it as a statement of its own, outside any condition or
  *     callback, with no return before it.
- *     Basis: WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); WCAG 2.4.7 (not settled); WCAG 2.4.13 (not settled); F55.
  *   - `FOCUS_HANDLER_MOVES_FOCUS` (cantTell): the element's onfocus handler
  *     calls focus() on another element, so focus may move away as it arrives.
  *     It leans pass when the element is a focus-trap sentinel (a plain,
@@ -63,7 +63,7 @@
  *     the edge of a container holding focusable content), and fail when it
  *     is a visible control with a name, in the tab order, that calls focus()
  *     as a statement of its own, outside any condition or callback.
- *     Basis: WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); WCAG 2.4.7 (not settled); WCAG 2.4.13 (not settled); F55.
  * @implementation-notes
  * - Only inline `onfocus` attributes are read. A focus listener added with
  *   addEventListener, and a blur() delayed by setTimeout, are not seen: the
@@ -81,14 +81,27 @@ const id = 'focus-not-removed-by-script';
 const meta = {
   title: 'A script must not remove focus from an element as it receives it',
   description:
-    'Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).',
+    'Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it.',
   i18n: {
     titleKey: 'focusNotRemovedByScript_title',
     descriptionKey: 'focusNotRemovedByScript_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag2aa', 'wcag211', 'wcag247', 'navigation', 'focus', 'atomic', 'automatic'],
-  wcagSc: ['2.1.1', '2.4.7'],
+  tags: [
+    'wcag2a',
+    'wcag2aa',
+    'wcag2aaa',
+    'wcag22aaa',
+    'wcag211',
+    'wcag213',
+    'wcag247',
+    'wcag2413',
+    'navigation',
+    'focus',
+    'atomic',
+    'automatic'
+  ],
+  wcagSc: ['2.1.1', '2.1.3', '2.4.7', '2.4.13'],
   normativeMappings: [
     {
       standard: 'WCAG',
@@ -100,9 +113,23 @@ const meta = {
     {
       standard: 'WCAG',
       version: '2.2',
+      requirement: '2.1.3',
+      title: 'Keyboard (No Exception)',
+      conformanceLevel: 'AAA'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
       requirement: '2.4.7',
       title: 'Focus Visible',
       conformanceLevel: 'AA'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.13',
+      title: 'Focus Appearance',
+      conformanceLevel: 'AAA'
     }
   ],
   defaultSeverity: 'serious',
@@ -112,55 +139,14 @@ const meta = {
   coverage: {
     facetsBySc: {
       '2.1.1': ['focus-not-removed-by-script-evidence'],
-      '2.4.7': ['focus-not-removed-by-script-evidence']
+      '2.1.3': ['focus-not-removed-by-script-evidence'],
+      '2.4.7': ['focus-not-removed-by-script-evidence'],
+      '2.4.13': ['focus-not-removed-by-script-evidence']
     }
   },
   // Picked from a table by the handler's kind, which
   // scripts/generate-finding-ids.js can't read from the source.
-  reasonCodes: [
-    'FOCUS_HANDLER_BLURS_SELF',
-    'FOCUS_HANDLER_CALLS_BLUR',
-    'FOCUS_HANDLER_MOVES_FOCUS'
-  ],
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    FOCUS_HANDLER_BLURS_SELF: {
-      steps: [
-        'Click just before the element the report names, then press Tab until focus should reach it (if it is not in the tab order, click it instead).',
-        'Watch the focus indicator and, in the developer tools console, check document.activeElement.',
-        'Press Tab once more and see where focus goes.'
-      ],
-      passWhen:
-        'Focus stays on the element, its focus indicator shows, and the next Tab moves on to the next control.',
-      failWhen:
-        'Focus disappears from the element as it arrives, so it cannot be reached or operated by keyboard, which fails WCAG 2.1.1 and 2.4.7 (F55).'
-    },
-    FOCUS_HANDLER_CALLS_BLUR: {
-      steps: [
-        'Read the onfocus handler the report quotes and note when it calls blur() and on which element.',
-        'Click just before the element, then press Tab until focus should reach it; repeat in any state the handler tests for (for example, a field filled in or empty).',
-        'Watch the focus indicator and check document.activeElement in the developer tools console.',
-        'Try to operate the element with the keyboard (type, press Enter or Space).'
-      ],
-      passWhen:
-        'In every state, focus stays on the element, its focus indicator shows, and it can be operated by keyboard.',
-      failWhen:
-        'In some state focus is removed as the element receives it, so it cannot be operated by keyboard or focus is lost from view, which fails WCAG 2.1.1 and 2.4.7 (F55).'
-    },
-    FOCUS_HANDLER_MOVES_FOCUS: {
-      steps: [
-        'Read the onfocus handler the report quotes and note which element it sends focus to.',
-        'Click just before the element, then press Tab until focus should reach it, and see where focus lands (check document.activeElement in the console).',
-        'If the element is an invisible, unnamed sentinel at the edge of a dialog that wraps focus back inside, note that this is a focus trap for a modal and expected.',
-        'Otherwise, try to operate the element with the keyboard and press Shift+Tab to see whether you can go back.'
-      ],
-      passWhen:
-        "Focus goes to a sensible place (a dialog's focus wrap) or stays on the element, and every control can still be reached and operated by keyboard.",
-      failWhen:
-        'A visible control sends focus elsewhere as it arrives, so it cannot be reached or operated by keyboard, which fails WCAG 2.1.1 and 2.4.7 (F55).'
-    }
-  }
+  reasonCodes: ['FOCUS_HANDLER_BLURS_SELF', 'FOCUS_HANDLER_CALLS_BLUR', 'FOCUS_HANDLER_MOVES_FOCUS']
 };
 
 function runInPage(ctx) {
@@ -189,6 +175,28 @@ function runInPage(ctx) {
     const all = (handler.match(CALLS_FOCUS) || []).length;
     const own = (handler.match(FOCUSES_SELF) || []).length;
     return all > own;
+  }
+
+  // The element a handler sends focus to, named as <tag id> "text"
+  // (helpers.describeElement), when it reaches it with getElementById('x')
+  // or querySelector('…') on the document and the page has it; '' else.
+  function focusTarget(el, handler) {
+    const m =
+      /getElementById\(\s*(['"])([^'"]+)\1\s*\)\s*\.\s*focus\s*\(/.exec(handler) ||
+      /querySelector\(\s*(['"])([^'"]+)\1\s*\)\s*\.\s*focus\s*\(/.exec(handler);
+    if (!m) return '';
+    try {
+      const doc = dom.ownerDocument(el);
+      const t = /^getElementById/.test(m[0])
+        ? dom.getElementById(doc, m[2])
+        : dom.querySelector(doc, m[2]);
+      if (!t || t === el) return '';
+      return typeof helpers.describeElement === 'function'
+        ? helpers.describeElement(t, { text: true })
+        : `<${String(dom.tagName(t) || '').toLowerCase()}>`;
+    } catch {
+      return '';
+    }
   }
 
   // The handler's top-level statements: split on the semicolons and the
@@ -410,7 +418,7 @@ function runInPage(ctx) {
       fails.push(
         helpers.reportOccurrence(el, {
           summary: SUMMARIES.self,
-          hint: 'Remove the blur() call so focus stays on the element, or make the element unfocusable if it should not take focus at all (WCAG failure F55).',
+          hint: 'Remove the blur() call so focus stays on the element, or make the element unfocusable if it should not take focus at all.',
           i18n: {
             summaryKey: 'focusNotRemovedByScript_summary_fail_self',
             hintKey: 'focusNotRemovedByScript_hint_fail',
@@ -472,15 +480,28 @@ function runInPage(ctx) {
         }
       };
     }
+    // Where a handler that moves focus sends it, when it names the element
+    // by id or selector and the page has it.
+    const target = kind === 'moves' ? focusTarget(el, handler) : '';
     occurrences.push(
       helpers.reportOccurrence(el, {
         ...(lean ? { lean } : {}),
         summary: SUMMARIES[kind],
-        hint: 'Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.',
+        hint:
+          kind !== 'moves'
+            ? 'Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it: remove the blur() call, or make the element unfocusable if it should not take focus at all.'
+            : target
+              ? `Tab to the element and check that focus stays on it. Its handler sends focus to ${target}: stop moving focus away as the element receives it, or make the element unfocusable if it should not take focus at all.`
+              : 'Tab to the element and check that focus stays on it. A script must not move focus away from an element as it receives it: stop moving focus in the handler, or make the element unfocusable if it should not take focus at all.',
         i18n: {
           summaryKey: `focusNotRemovedByScript_summary_cantTell_${kind}`,
-          hintKey: 'focusNotRemovedByScript_hint_cantTell',
-          params: { element: tag, handler: shown }
+          hintKey:
+            kind !== 'moves'
+              ? 'focusNotRemovedByScript_hint_cantTell'
+              : target
+                ? 'focusNotRemovedByScript_hint_cantTell_movesTarget'
+                : 'focusNotRemovedByScript_hint_cantTell_moves',
+          params: { element: tag, handler: shown, ...(target ? { target } : {}) }
         },
         uncertainty: {
           code: 'judgement-required',
@@ -490,7 +511,8 @@ function runInPage(ctx) {
           details: {
             reasonCode: CODES[kind],
             handler: shown,
-            tabbable: focus.tabbable
+            tabbable: focus.tabbable,
+            ...(target ? { focusTarget: target } : {})
           }
         }
       })

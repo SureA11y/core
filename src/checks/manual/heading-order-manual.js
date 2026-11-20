@@ -9,10 +9,14 @@
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies whenever the page contains two or more heading elements
- *   (native <h1>-<h6>, or explicit role="heading" with aria-level;
- *   default level 2 per the ARIA spec when aria-level is absent/invalid).
- *   A native <hx> with a valid aria-level (a positive integer) takes that
- *   level, as browsers expose it; otherwise it takes its tag level.
+ *   (native <h1>-<h6>, or explicit role="heading" with aria-level).
+ *   Headings in an area excluded with `excludeSelectors` are part of the
+ *   outline, as readers meet it, and are never reported on.
+ *   A valid aria-level (an integer from 1 to 9, read as browsers read it:
+ *   the leading integer, so "2.5" is 2) gives a heading its level, as
+ *   browsers expose it; any other value is ignored (ARIA 1.2, and Chromium
+ *   for levels above 9). Without one, a native <hx> takes its tag level, also with
+ *   role="heading", and any other heading the ARIA default, level 2.
  *   A native <hx> marked role="none" or "presentation" is still a heading
  *   when it can take focus or carries a global ARIA attribute, as
  *   WAI-ARIA's presentational roles conflict resolution has browsers
@@ -33,6 +37,8 @@
  *     <h3>).
  *   - `toLevel`: this heading's level, more than one deeper than
  *     `fromLevel`.
+ *   - `previousText`, `previousSelector`: the previous exposed heading,
+ *     its text (shortened) and a selector for it.
  * @reason-codes
  *   - `HEADING_ORDER_SKIPPED_LEVEL` (cantTell): a heading is more than one
  *     level deeper than the previous heading exposed to assistive
@@ -76,22 +82,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    HEADING_ORDER_SKIPPED_LEVEL: {
-      steps: [
-        "Find the heading the report names and note its level and the previous heading's level (from the report or the Accessibility pane).",
-        "List the page's headings in order, with a screen reader's headings list or by inspecting them, and look at the section around the skip.",
-        'Decide whether the heading belongs one level below the previous heading, or whether a level is missing.'
-      ],
-      passWhen:
-        'Each heading is at most one level deeper than the heading before it, so the outline has no gap.',
-      failWhen:
-        'The heading jumps more than one level deeper than the one before it (an h2 followed by an h4), leaving a gap in the outline, a best-practice miss (G141).'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {
@@ -124,6 +115,19 @@ function runInPage(ctx) {
     return info && info.status === 'set' ? normalizeWs(info.value) : '';
   }
 
+  // A positive integer read from aria-level as browsers read it, the leading
+  // integer ("2.5" is 2, "3x" is 3), or 0 when it gives none.
+  function parseLevel(raw) {
+    const n =
+      typeof helpers.parseHtmlInteger === 'function'
+        ? helpers.parseHtmlInteger(raw)
+        : parseInt(raw, 10);
+    // Levels 1 to 9: Chromium ignores a larger one and keeps the heading's
+    // own level, and ARIA has a value below 1 or no integer ignored (Chromium
+    // exposes those as 1, against ARIA; the rule follows ARIA).
+    return Number.isFinite(n) && n >= 1 && n <= 9 ? n : 0;
+  }
+
   function getHeadingLevel(el) {
     let explicit = getExplicitRoleToken(el);
     // A focusable <hx>, or one with a global ARIA attribute, stays a heading
@@ -133,28 +137,29 @@ function runInPage(ctx) {
       helpers.isPresentationalRoleIgnored(el)
     )
       explicit = '';
-    if (explicit) {
-      if (explicit !== 'heading') return 0;
-      const raw = ariaLevelOf(el);
-      const n = parseInt(raw, 10);
-      return Number.isFinite(n) && n >= 1 ? n : 2;
-    }
+    if (explicit && explicit !== 'heading') return 0;
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const m = /^h([1-6])$/.exec(tag);
-    if (!m) return 0;
-    // Browsers expose a valid aria-level on <hx> in place of the tag level.
-    const ariaLevel = normalizeWs(
-      dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level')
-    );
-    if (/^[0-9]+$/.test(ariaLevel) && parseInt(ariaLevel, 10) >= 1) {
-      return parseInt(ariaLevel, 10);
-    }
-    return parseInt(m[1], 10);
+    if (!explicit && !m) return 0;
+    // Browsers expose a valid aria-level in place of any other level. Without
+    // one, an <hx> keeps its tag level, also with role="heading" (Chromium,
+    // Firefox and WebKit all expose <h3 role="heading"> at level 3), and any
+    // other heading takes the ARIA default, 2.
+    const ariaLevel = parseLevel(ariaLevelOf(el));
+    if (ariaLevel) return ariaLevel;
+    return m ? parseInt(m[1], 10) : 2;
   }
 
+  // Excluded areas are part of the page's outline as its readers meet it
+  // (excludeSelectors keeps findings out of them, not their headings out of
+  // the outline): read as context, reported on never.
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', { internalsRoles: true })
+    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', {
+        internalsRoles: true,
+        excluded: true
+      })
     : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
+  const excludedEl = (el) => typeof helpers.isExcluded === 'function' && !!helpers.isExcluded(el);
 
   const headings = [];
   const seen = new Set();
@@ -229,25 +234,43 @@ function runInPage(ctx) {
     for (const p of placed.sort(compareFlat)) headings.push(p.h);
   }
 
-  if (headings.length < 2) {
+  // Two headings to compare, one of them outside the excluded areas to judge.
+  if (headings.length < 2 || headings.every((h) => excludedEl(h.el))) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   const occurrences = [];
   let previousLevel = headings[0].level;
+  let previousEl = headings[0].el;
+  // A heading's text, shortened, for the message.
+  const shortText = (h) => {
+    const all = String(dom.textContent(h) || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return all.length > 60 ? `${all.slice(0, 59)}…` : all;
+  };
 
   for (let i = 1; i < headings.length; i += 1) {
     const { el, level } = headings[i];
 
-    if (level > previousLevel + 1) {
+    if (level > previousLevel + 1 && !excludedEl(el)) {
+      // The heading it jumps from, which can be far above it or in another
+      // landmark, named so the reviewer finds it.
+      const text = shortText(el);
+      const previousText = shortText(previousEl);
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `This heading jumps from level ${previousLevel} to level ${level}, skipping a level.`,
+          summary: `This level-${level} heading "${text}" follows the level-${previousLevel} heading "${previousText}", skipping a level.`,
           hint: 'Go down one level at a time, so an <h2> is followed by an <h3> rather than an <h4>, and the outline of the page stays easy to follow.',
           i18n: {
-            summaryKey: 'headingOrder_summary_cantTell',
+            summaryKey: 'headingOrder_summary_cantTell_previous',
             hintKey: 'headingOrder_hint_cantTell',
-            params: { fromLevel: String(previousLevel), toLevel: String(level) }
+            params: {
+              fromLevel: String(previousLevel),
+              toLevel: String(level),
+              text,
+              previousText
+            }
           },
           lean: {
             toward: 'fail',
@@ -259,7 +282,9 @@ function runInPage(ctx) {
             details: {
               reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
               fromLevel: previousLevel,
-              toLevel: level
+              toLevel: level,
+              previousText,
+              previousSelector: helpers.buildSelector ? helpers.buildSelector(previousEl) : null
             }
           }
         })
@@ -267,6 +292,7 @@ function runInPage(ctx) {
     }
 
     previousLevel = level;
+    previousEl = el;
   }
 
   if (occurrences.length) {

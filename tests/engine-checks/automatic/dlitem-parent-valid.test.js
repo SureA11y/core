@@ -34,25 +34,25 @@ test(`${RULE_ID}: pass when dt/dd is wrapped in a single div under dl`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when dt's parent is a plain div outside dl`, () => {
+test(`${RULE_ID}: cantTell when dt's parent is a plain div outside dl`, () => {
   const html = `<!doctype html><html><body><div><dt id="a">orphan</dt></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.equal(rule.occurrences[0].data.details.parentElement, 'div');
 });
 
-test(`${RULE_ID}: fail when dd has no dl ancestor at all`, () => {
+test(`${RULE_ID}: cantTell when dd has no dl ancestor at all`, () => {
   const html = `<!doctype html><html><body><section><dd id="b">Definition</dd></section></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div><dt id="a">orphan</dt></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'Description-list items must be inside a description list');
 });
 
@@ -66,7 +66,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/dlitem-parent-valid-all-scena
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
 
   const expectedFailIds = ['dip_case_03', 'dip_case_04', 'dip_case_05'];
   const expectedNoOccIds = ['dip_case_01', 'dip_case_02'];
@@ -77,4 +77,29 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/dlitem-parent-valid-all-scena
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
+});
+
+test(`${RULE_ID}: an item a <dl> holds through two wrappers says so`, () => {
+  const html = `<!doctype html><html><body>
+    <dl><div class="group"><div><dt id="t">Term</dt><dd id="d">Definition</dd></div></div></dl>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const dt = rule.occurrences.find((o) => o.html.includes('id="t"'));
+  assert.strictEqual(dt.data.details.reasonCode, 'DLITEM_INVALID_PARENT');
+  assert.strictEqual(dt.i18n.summaryKey, 'dlitemParentValid_summary_fail_wrapped');
+  assert.strictEqual(
+    dt.summary,
+    'This <dt> is inside a <dl>, but through <div>, <div class="group">; only a single <div> may sit between a <dl> and its <dt>/<dd>.'
+  );
+  assert.deepStrictEqual(dt.data.details.wrappedBy, ['<div>', '<div class="group">']);
+  assert.match(dt.hint, /^Remove the extra wrapper, so the <dt> sits directly in the <dl>/);
+});
+
+test(`${RULE_ID}: an item in no <dl> keeps the general message`, () => {
+  const html = `<!doctype html><html><body><section><dt>Term</dt></section></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'dlitemParentValid_summary_fail');
+  assert.strictEqual(rule.occurrences[0].data.details.wrappedBy, undefined);
 });

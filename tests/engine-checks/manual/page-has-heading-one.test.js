@@ -75,6 +75,19 @@ test(`${RULE_ID}: a native heading's valid aria-level is its level, as heading-o
   // An invalid aria-level leaves the tag's level.
   assert.equal(outcome('<h1 aria-level="0">Title</h1>'), 'pass');
   assert.equal(outcome('<h2 aria-level="one">Title</h2>'), 'cantTell');
+  // Browsers read the leading integer.
+  assert.equal(outcome('<h2 aria-level="1.5">Title</h2>'), 'pass');
+});
+
+// Chromium, Firefox and WebKit all expose <h1 role="heading"> at level 1.
+test(`${RULE_ID}: role="heading" on a native heading keeps its tag level`, () => {
+  const outcome = (body) =>
+    runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+      runOnly: [RULE_ID]
+    }).checksResults.find((c) => c.ruleId === RULE_ID).outcome;
+  assert.equal(outcome('<h1 role="heading">Title</h1>'), 'pass');
+  assert.equal(outcome('<h2 role="heading">Title</h2>'), 'cantTell');
+  assert.equal(outcome('<h2 role="heading" aria-level="1">Title</h2>'), 'pass');
 });
 
 test(`${RULE_ID}: cantTell when the page has headings but no level-one heading`, () => {
@@ -209,4 +222,55 @@ test(`${RULE_ID}: an <h1> whose role="none" is ignored is still the page's h1`, 
       maxOccurrences: 0
     });
   }
+});
+
+test(`${RULE_ID}: names the <h1> that is in the markup and why it does not count`, () => {
+  const run = (body) => {
+    const html = `<!doctype html><html><head><style>.mob{display:none}</style></head><body>${body}</body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+    return rule.occurrences[0];
+  };
+
+  const hidden = run('<header class="mob"><h1>Acme Shoes</h1></header><main><h2>Sale</h2></main>');
+  assert.strictEqual(
+    hidden.summary,
+    'This page has no level-one heading that screen readers can reach. Its <h1> "Acme Shoes" is hidden: an ancestor <header class="mob"> has display: none.'
+  );
+  assert.strictEqual(hidden.i18n.summaryKey, 'pageHasHeadingOne_summary_h1HiddenAncestor');
+  assert.strictEqual(hidden.i18n.hintKey, 'pageHasHeadingOne_hint_h1Hidden');
+  assert.strictEqual(hidden.data.details.reasonCode, 'HEADING_ONE_MISSING');
+  assert.deepStrictEqual(hidden.data.details.skippedH1, {
+    cause: 'hidden',
+    text: 'Acme Shoes',
+    hiddenBy: 'display: none',
+    hiddenByElement: '<header class="mob">'
+  });
+
+  const app = run('<div id="app" aria-hidden="true"><h1>Acme</h1></div>');
+  assert.match(app.summary, /an ancestor <div id="app"> has aria-hidden="true"\.$/);
+
+  const relevelled = run('<h1 aria-level="2">Acme</h1>');
+  assert.strictEqual(
+    relevelled.summary,
+    'This page has no level-one heading. Its <h1> "Acme" is exposed as level 2 by aria-level="2".'
+  );
+  assert.strictEqual(relevelled.i18n.summaryKey, 'pageHasHeadingOne_summary_h1Relevelled');
+
+  const role = run('<h1 role="banner">Acme</h1>');
+  assert.strictEqual(role.i18n.summaryKey, 'pageHasHeadingOne_summary_h1Role');
+  assert.strictEqual(role.i18n.params.role, 'banner');
+
+  const none = run('<h2>Sale</h2>');
+  assert.strictEqual(none.summary, 'This page has no level-one heading.');
+  assert.strictEqual(none.data.details.skippedH1, undefined);
+});
+
+// An excluded area's level-one heading is still the page's.
+test("page-has-heading-one: an <h1> in an excluded area is the page's", () => {
+  const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+  const rule = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><header id="x"><h1>Site</h1></header><main><h2>Section</h2></main></body></html>',
+    { runOnly: ['page-has-heading-one'], engineOptions: { excludeSelectors: ['#x'] } }
+  ).checksResults.find((r) => r.ruleId === 'page-has-heading-one');
+  assert.strictEqual(rule.outcome, 'pass');
 });

@@ -19,6 +19,8 @@
  *   - `accesskey`: the shared key, in lower case.
  *   - `duplicateCount`: how many elements on the page share it, this one
  *     included.
+ *   - `others`: the other elements with this key, the first three, as the
+ *     message names them (`<button> "Save"`).
  * @reason-codes
  *   - `ACCESSKEY_DUPLICATE` (cantTell): this element's accesskey value is
  *     also used by another element on the page, so the shortcut may not
@@ -49,22 +51,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ACCESSKEY_DUPLICATE: {
-      steps: [
-        'Note the access key the report names and find the other elements sharing it.',
-        "Press the browser's access key combination with that key (for example Alt, or Alt+Shift, plus the key) and note which element is focused or activated.",
-        'Press it again and check whether each element sharing the key can be reached.'
-      ],
-      passWhen:
-        'Each element with that key can be reached by it, or the duplicates are intended and harmless.',
-      failWhen:
-        'Only one of the elements responds to the key, so the others cannot be reached by their shortcut (best practice, related to WCAG 2.1.1).'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {
@@ -88,17 +75,31 @@ function runInPage(ctx) {
   }
 
   const occurrences = [];
+  const described = new Map();
+  const describe = (o) => {
+    if (!described.has(o)) described.set(o, helpers.describeElement(o, { text: true }));
+    return described.get(o);
+  };
   for (const [key, els] of groups) {
     if (els.length <= 1) continue;
     for (const el of els) {
+      // The other elements with this key, at most three, for the message.
+      const named = [];
+      for (const o of els) {
+        if (o === el) continue;
+        if (named.length === 3) break;
+        named.push(describe(o));
+      }
+      const others = named.join(', ') + (els.length - 1 > 3 ? ', …' : '');
+      const value = String(dom.getAttribute(el, 'accesskey') || '').trim();
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: "This element's accesskey is shared with another element on the page.",
+          summary: `This element's accesskey="${value}" is also used by ${others}, so the shortcut may reach only one of them.`,
           hint: 'Give each accesskey its own value.',
           i18n: {
-            summaryKey: 'accesskeys_summary_cantTell',
+            summaryKey: 'accesskeys_summary_cantTell_others',
             hintKey: 'accesskeys_hint_cantTell',
-            params: { accesskey: key, duplicateCount: String(els.length) }
+            params: { accesskey: key, duplicateCount: String(els.length), value, others }
           },
           lean: {
             toward: 'fail',
@@ -110,7 +111,8 @@ function runInPage(ctx) {
             details: {
               reasonCode: 'ACCESSKEY_DUPLICATE',
               accesskey: key,
-              duplicateCount: els.length
+              duplicateCount: els.length,
+              others: named
             }
           }
         })

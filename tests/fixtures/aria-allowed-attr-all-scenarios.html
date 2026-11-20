@@ -69,17 +69,17 @@
   <h2>B. Invalid</h2>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — FAIL: aria-valuenow is not permitted for role=checkbox</div>
+    <div class="case-title">03 — CANTTELL: aria-valuenow is not permitted for role=checkbox</div>
     <div role="checkbox" aria-valuenow="1" id="aaa_case_03"></div>
   </div>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — FAIL: two disallowed attributes on the same element (one occurrence each)</div>
+    <div class="case-title">04 — CANTTELL: two disallowed attributes on the same element (one occurrence each)</div>
     <div role="checkbox" aria-valuenow="1" aria-valuemin="0" id="aaa_case_04"></div>
   </div>
 
   <div class="case" id="case_13">
-    <div class="case-title">13 — FAIL: aria-modal is not permitted for role=checkbox (checkbox was not widened to support it)</div>
+    <div class="case-title">13 — CANTTELL: aria-modal is not permitted for role=checkbox (checkbox was not widened to support it)</div>
     <div role="checkbox" aria-checked="true" aria-modal="true" id="aaa_case_13"></div>
   </div>
 
@@ -93,7 +93,7 @@
   <h2>D. Not applicable (skipped, not counted)</h2>
 
   <div class="case" id="case_05">
-    <div class="case-title">05 — FAIL: aria-valuenow is not supported on role="button"</div>
+    <div class="case-title">05 — CANTTELL: aria-valuenow is not supported on role="button"</div>
     <div role="button" aria-valuenow="1" id="aaa_case_05"></div>
   </div>
 
@@ -105,7 +105,7 @@
   <h2>E. Judged by a role the element has without declaring one</h2>
 
   <div class="case" id="case_15">
-    <div class="case-title">15 — FAIL: an element HTML-AAM maps to no role at all supports no role-specific attribute</div>
+    <div class="case-title">15 — CANTTELL: an element HTML-AAM maps to no role at all supports no role-specific attribute</div>
     <audio src="clip.mp3" controls aria-orientation="horizontal" id="aaa_case_15"></audio>
   </div>
 
@@ -115,12 +115,12 @@
   </div>
 
   <div class="case" id="case_17">
-    <div class="case-title">17 — FAIL: the generic role a bare &lt;div&gt; carries supports nothing role-specific</div>
+    <div class="case-title">17 — CANTTELL: the generic role a bare &lt;div&gt; carries supports nothing role-specific</div>
     <div aria-expanded="true" id="aaa_case_17">Panel</div>
   </div>
 
   <div class="case" id="case_18">
-    <div class="case-title">18 — FAIL: a link (a with href) with aria-checked, which link does not support</div>
+    <div class="case-title">18 — CANTTELL: a link (a with href) with aria-checked, which link does not support</div>
     <a href="/pricing" aria-checked="true" id="aaa_case_18">Pricing</a>
   </div>
 
@@ -129,32 +129,32 @@
   <h2>F. Elements whose role depends on their attributes</h2>
 
   <div class="case" id="case_19">
-    <div class="case-title">19 — FAIL: a link with aria-pressed</div>
+    <div class="case-title">19 — CANTTELL: a link with aria-pressed</div>
     <a href="#case_19" aria-pressed="true" id="aaa_case_19">Bold</a>
   </div>
 
   <div class="case" id="case_20">
-    <div class="case-title">20 — FAIL: an img with alt text and aria-checked</div>
+    <div class="case-title">20 — CANTTELL: an img with alt text and aria-checked</div>
     <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Logo" aria-checked="true" id="aaa_case_20">
   </div>
 
   <div class="case" id="case_21">
-    <div class="case-title">21 — FAIL: an img with alt="" has no role, so aria-checked is supported by nothing</div>
+    <div class="case-title">21 — CANTTELL: an img with alt="" has no role, so aria-checked is supported by nothing</div>
     <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="" aria-checked="true" id="aaa_case_21">
   </div>
 
   <div class="case" id="case_22">
-    <div class="case-title">22 — FAIL: a drop-down select with aria-pressed</div>
+    <div class="case-title">22 — CANTTELL: a drop-down select with aria-pressed</div>
     <select aria-label="Size" aria-pressed="true" id="aaa_case_22"><option>S</option></select>
   </div>
 
   <div class="case" id="case_23">
-    <div class="case-title">23 — FAIL: a date input with aria-checked</div>
+    <div class="case-title">23 — CANTTELL: a date input with aria-checked</div>
     <input type="date" aria-label="Date" aria-checked="true" id="aaa_case_23">
   </div>
 
   <div class="case" id="case_24">
-    <div class="case-title">24 — FAIL: a color input with aria-required</div>
+    <div class="case-title">24 — CANTTELL: a color input with aria-required</div>
     <input type="color" aria-label="Color" aria-required="true" id="aaa_case_24">
   </div>
 
@@ -183,7 +183,7 @@
   </div>
 
   <div class="case" id="case_30">
-    <div class="case-title">30 — FAIL: a td in a table is a cell, which does not support aria-selected</div>
+    <div class="case-title">30 — CANTTELL: a td in a table is a cell, which does not support aria-selected</div>
     <table><tr><th>Name</th></tr><tr><td aria-selected="true" id="aaa_case_30">Ana</td></tr></table>
   </div>
 
@@ -193,7 +193,7 @@
   </div>
 
   <div class="case" id="case_32">
-    <div class="case-title">32 — FAIL: a td in a presentational table has no role, so aria-colindex is not allowed</div>
+    <div class="case-title">32 — CANTTELL: a td in a presentational table has no role, so aria-colindex is not allowed</div>
     <table role="presentation"><tr><td aria-colindex="1" id="aaa_case_32">Ana</td></tr></table>
   </div>
 
@@ -213,7 +213,7 @@
   </div>
 
   <div class="case" id="case_36">
-    <div class="case-title">36 — FAIL: an input of a type HTML no longer defines is a text field, which can't be pressed</div>
+    <div class="case-title">36 — CANTTELL: an input of a type HTML no longer defines is a text field, which can't be pressed</div>
     <label>Start <input type="datetime" aria-pressed="true" id="aaa_case_36"></label>
   </div>
 </body>

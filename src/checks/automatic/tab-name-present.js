@@ -66,44 +66,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['tab-name-present'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    name_closedContent: {
-      steps: [
-        'Find the tab the report names and note the text or icon it shows on screen.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from content no script can read.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the tab, taken from its content, and the screen reader announces it.',
-      failWhen:
-        'The tab has no name in the accessibility tree, since its content gives none, which fails WCAG 4.1.2.'
-    },
-    name_contentTooDeep: {
-      steps: [
-        'Find the tab the report names and note the text it shows on screen.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from all of its nested content.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the tab, taken from its nested content, and the screen reader announces it.',
-      failWhen:
-        'The tab has no name in the accessibility tree, since its content gives none, which fails WCAG 4.1.2.'
-    },
-    name_internals: {
-      steps: [
-        'Inspect the tab the report names, a custom element, and note its role.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the tab, set through its internals or otherwise, and the screen reader announces it.',
-      failWhen:
-        'The tab has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['tab-name-present'] } }
 };
 
 function runInPage(ctx) {
@@ -299,17 +262,27 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This tab has no accessible name.',
-        hint: 'Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        hint: cause
+          ? cause.hint
+          : 'Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
         i18n: {
           summaryKey: 'tabNamePresent_summary_fail',
-          hintKey: 'tabNamePresent_hint_fail',
-          params: {}
+          hintKey: cause ? cause.hintKey : 'tabNamePresent_hint_fail',
+          params: { ...(cause ? cause.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: 'tab', methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(cause ? { nameCause: cause.detail } : {}),
+            controlType: 'tab',
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

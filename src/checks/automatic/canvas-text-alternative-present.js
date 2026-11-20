@@ -81,7 +81,7 @@ function runInPage(ctx) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -135,6 +135,13 @@ function runInPage(ctx) {
   // global naming attribute, keeps its native role.
   function isPresentationHonoured(el) {
     if (attrText(el, 'aria-label') || attrText(el, 'aria-labelledby')) return false;
+    // Any other global ARIA attribute keeps its role too (presentational
+    // roles conflict resolution).
+    if (typeof helpers.isPresentationalRoleIgnored === 'function') {
+      try {
+        if (helpers.isPresentationalRoleIgnored(el)) return false;
+      } catch {}
+    }
     if (getFocusableInfo) {
       try {
         const fi = getFocusableInfo(el, ctx);
@@ -171,7 +178,7 @@ function runInPage(ctx) {
 
   const canvases = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || []);
+      return [...((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || [])];
     } catch {
       return queryAll('canvas');
     }
@@ -243,18 +250,48 @@ function runInPage(ctx) {
           hintKey: 'canvas_textAltPresent_hint_fail'
         };
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    // Its fallback content counts only without role="img".
+    const cause = helpers.nameCause
+      ? helpers.nameCause(el, { content: !isRoleImg, skip: ['describedbyNotName'] })
+      : null;
+    // An aria-describedby that reaches an element is likely meant as the
+    // text alternative: it gives a description, never a name.
+    let describedBy = '';
+    if (!cause) {
+      const value = String(dom.getAttribute(el, 'aria-describedby') || '').trim();
+      if (value && helpers.resolveIdRefs(value, ctx, {}, el).refs.length) describedBy = value;
+    }
+    const describedByHint = isRoleImg
+      ? `Its aria-describedby adds a description, not a name. Name it with aria-labelledby="${describedBy}" instead, or with aria-label.`
+      : `Its aria-describedby adds a description, not a name. Name it with aria-labelledby="${describedBy}" instead, or add fallback text inside the <canvas>.`;
     const baseOccurrence = {
       selector: '',
       html: '',
       summary: messages.summary,
-      hint: messages.hint,
+      hint: cause ? cause.hint : describedBy ? describedByHint : messages.hint,
       i18n: {
         summaryKey: messages.summaryKey,
-        hintKey: messages.hintKey,
-        params: { element: 'canvas' }
+        hintKey: cause
+          ? cause.hintKey
+          : describedBy
+            ? isRoleImg
+              ? 'canvas_textAltPresent_hint_fail_roleImgDescribedby'
+              : 'canvas_textAltPresent_hint_fail_describedby'
+            : messages.hintKey,
+        params: {
+          element: 'canvas',
+          ...(cause ? cause.params : {}),
+          ...(describedBy ? { ids: describedBy } : {})
+        }
       },
       data: {
-        details: { reasonCode: isRoleImg ? 'ROLE_IMG_NAME_MISSING' : 'TEXT_ALTERNATIVE_MISSING' },
+        details: {
+          reasonCode: isRoleImg ? 'ROLE_IMG_NAME_MISSING' : 'TEXT_ALTERNATIVE_MISSING',
+          ...(cause ? { nameCause: cause.detail } : {}),
+          ...(describedBy ? { describedByOnly: describedBy } : {})
+        },
         // Always log eligibility/filter info (engine contract for targetSet=acc checks)
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         // Debuggable, deterministic helper facts (non-verdict)

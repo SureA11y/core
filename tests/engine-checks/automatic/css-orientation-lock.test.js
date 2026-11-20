@@ -433,3 +433,36 @@ test(`${RULE_ID}: style sheets unreadable only from a web-font host lean pass`, 
   assert.strictEqual(fonts.i18n.whyKey, 'cssOrientationLock_lean_why_fontSheets');
   assert.strictEqual(scan('https://cdnjs.cloudflare.com/ajax/libs/x/1.0/x.css'), undefined);
 });
+
+test(`${RULE_ID}: the summary names the stylesheets it could not read`, () => {
+  const dom = createDom(
+    `<!doctype html><html><head><style>p { color: #222; }</style></head><body><p>Text.</p></body></html>`
+  );
+  const readable = dom.window.document.styleSheets[0];
+  const unreadable = {
+    href: 'https://cdn.example.com/site.css',
+    get cssRules() {
+      throw new dom.window.DOMException('cross-origin', 'SecurityError');
+    }
+  };
+  Object.defineProperty(dom.window.document, 'styleSheets', {
+    configurable: true,
+    get: () => [readable, unreadable]
+  });
+  const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(
+    occ.i18n.summaryKey,
+    'cssOrientationLock_summary_cantTell_unreadableSheetsNamed'
+  );
+  assert.deepStrictEqual(occ.data.details.unreadableSheetUrls, [
+    'https://cdn.example.com/site.css'
+  ]);
+  assert.strictEqual(
+    occ.summary,
+    '1 stylesheet(s) could not be read (https://cdn.example.com/site.css), so whether this page locks its orientation could not be determined.'
+  );
+});

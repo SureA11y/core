@@ -81,7 +81,7 @@ const id = 'no-autoplay-audio';
 const meta = {
   title: 'Autoplaying audio should provide a pause/stop or volume-control mechanism',
   description:
-    'Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.',
+    'Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review of whether the sound plays for more than 3 seconds.',
   i18n: {
     titleKey: 'noAutoplayAudio_title',
     descriptionKey: 'noAutoplayAudio_description'
@@ -102,44 +102,7 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'low',
-  coverage: { facetsBySc: { '1.4.2': ['no-autoplay-audio-evidence'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    AUTOPLAY_CONTROLS_HIDDEN: {
-      steps: [
-        'Load the page with sound on and listen whether the hidden audio or video the report names starts by itself.',
-        'If it plays sound for more than 3 seconds, look for some other visible control on the page that pauses, stops or mutes it.',
-        'Try that control with the keyboard and check the sound stops.'
-      ],
-      passWhen:
-        'No sound plays for more than 3 seconds, or a visible, keyboard-reachable control stops or mutes it.',
-      failWhen:
-        'Sound plays from a hidden player whose controls cannot be reached and nothing else stops it, which fails WCAG 1.4.2 (F23).'
-    },
-    AUTOPLAY_NO_CONTROLS_MECHANISM: {
-      steps: [
-        'Load the page with sound on and listen whether the audio or video the report names starts by itself.',
-        'If it plays sound for more than 3 seconds, look near the top of the page for a control to pause, stop or mute it, or to set its volume.',
-        'Try that control with the keyboard (Tab to it, press Enter or Space) and with a screen reader running, and check the sound stops or drops.'
-      ],
-      passWhen:
-        'No sound plays for more than 3 seconds, or a reachable control near the start of the page pauses, stops or mutes it.',
-      failWhen:
-        'Sound plays by itself for more than 3 seconds with no way to pause, stop or turn it down independently of the system volume, which fails WCAG 1.4.2 (F23).'
-    },
-    EMBEDDED_SOUND_SOURCE: {
-      steps: [
-        'Load the page with sound on and listen whether the embed, object or bgsound the report names plays sound by itself.',
-        'If it plays for more than 3 seconds, look for a control to pause, stop or mute it, in the embedded player or near the top of the page.',
-        'Try that control with the keyboard and check the sound stops.'
-      ],
-      passWhen:
-        'Nothing plays automatically for more than 3 seconds, or a reachable control pauses, stops or mutes it.',
-      failWhen:
-        'Sound plays by itself for more than 3 seconds with no reachable way to stop it or turn it down, which fails WCAG 1.4.2 (F23).'
-    }
-  }
+  coverage: { facetsBySc: { '1.4.2': ['no-autoplay-audio-evidence'] } }
 };
 
 function runInPage(ctx) {
@@ -151,7 +114,7 @@ function runInPage(ctx) {
     const engineOptions = ctx.engineOptions || {};
     const deep =
       engineOptions.includeShadowDom !== false && typeof helpers.queryAllDeep === 'function';
-    const list = Array.from((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || []);
+    const list = [...((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || [])];
     return typeof helpers.isExcluded === 'function'
       ? list.filter((el) => !helpers.isExcluded(el))
       : list;
@@ -201,7 +164,7 @@ function runInPage(ctx) {
     if (seconds != null && seconds <= 3) {
       return {
         toward: 'pass',
-        why: 'It lasts 3 seconds or less, which WCAG 1.4.2 allows.',
+        why: 'It lasts 3 seconds or less, short enough to need no way to stop it.',
         signals: [{ signal: 'media-duration-s', value: seconds }],
         i18n: { whyKey: 'noAutoplayAudio_lean_why_short' }
       };

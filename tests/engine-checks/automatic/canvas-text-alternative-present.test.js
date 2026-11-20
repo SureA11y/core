@@ -291,3 +291,59 @@ test(`${RULE_ID}: role="foo img" fails on fallback content, role="NONE" is decor
   );
   assertRule(none, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: a fail says when the fallback is only an image with alt="", or aria-labelledby points nowhere`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <canvas id="c1"><img src="chart.png" alt=""></canvas>
+  <canvas id="c2" aria-labelledby="cap"></canvas>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('c1').i18n.hintKey, 'nameCause_hint_imageEmptyAlt');
+  assert.equal(
+    occ('c1').hint,
+    'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.'
+  );
+  assert.equal(occ('c1').data.details.nameCause.cause, 'imageEmptyAlt');
+  assert.equal(occ('c2').i18n.hintKey, 'nameCause_hint_labelledbyMissing');
+  assert.equal(
+    occ('c2').hint,
+    'Its aria-labelledby points to "cap", which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.'
+  );
+});
+
+test(`${RULE_ID}: an aria-describedby given as the only text is said to describe, not name`, () => {
+  const run = (body) =>
+    runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${body}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+  const plain = assertRule(
+    run('<canvas aria-describedby="d"></canvas><p id="d">Revenue chart</p>'),
+    RULE_ID,
+    'fail',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  ).occurrences[0];
+  assert.strictEqual(plain.i18n.hintKey, 'canvas_textAltPresent_hint_fail_describedby');
+  assert.strictEqual(plain.i18n.params.ids, 'd');
+  assert.strictEqual(plain.data.details.describedByOnly, 'd');
+  assert.strictEqual(
+    plain.hint,
+    'Its aria-describedby adds a description, not a name. Name it with aria-labelledby="d" instead, or add fallback text inside the <canvas>.'
+  );
+
+  const img = assertRule(
+    run('<canvas role="img" aria-describedby="d"></canvas><p id="d">Revenue chart</p>'),
+    RULE_ID,
+    'fail',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  ).occurrences[0];
+  assert.strictEqual(img.i18n.hintKey, 'canvas_textAltPresent_hint_fail_roleImgDescribedby');
+
+  // A describedby that reaches nothing is no such hint.
+  const none = assertRule(run('<canvas aria-describedby="zz"></canvas>'), RULE_ID, 'fail')
+    .occurrences[0];
+  assert.strictEqual(none.i18n.hintKey, 'canvas_textAltPresent_hint_fail');
+});

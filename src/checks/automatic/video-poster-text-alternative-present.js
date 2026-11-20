@@ -72,20 +72,6 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['video-poster-text-alt-present']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    VIDEO_POSTER_FIGCAPTION_REVIEW: {
-      steps: [
-        'Find the video the report names and look at its poster image before it plays.',
-        "Read the figure's caption shown with it.",
-        'Decide whether the caption tells someone who cannot see the poster what the video is.'
-      ],
-      passWhen: 'The caption identifies the video and what its poster shows.',
-      failWhen:
-        'The caption does not identify the video, so the poster has no text alternative, which fails WCAG 1.1.1.'
-    }
   }
 };
 
@@ -158,15 +144,15 @@ function runInPage(ctx) {
 
   const videos = (() => {
     try {
-      if (queryAllSmart) return Array.from(queryAllSmart('video') || []);
-      if (queryAll) return Array.from(queryAll('video') || []);
+      if (queryAllSmart) return [...(queryAllSmart('video') || [])];
+      if (queryAll) return [...(queryAll('video') || [])];
       return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-        ? Array.from(dom.querySelectorAll(safeRoot, 'video'))
+        ? [...dom.querySelectorAll(safeRoot, 'video')]
         : [];
     } catch {
       try {
         return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-          ? Array.from(dom.querySelectorAll(safeRoot, 'video'))
+          ? [...dom.querySelectorAll(safeRoot, 'video')]
           : [];
       } catch {
         return [];
@@ -236,7 +222,12 @@ function runInPage(ctx) {
         focusable =
           tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
       }
-      if (!focusable) continue;
+      // A global ARIA attribute keeps its role too (presentational roles
+      // conflict resolution), as being focusable does.
+      const keptByGlobal =
+        typeof helpers.isPresentationalRoleIgnored === 'function' &&
+        helpers.isPresentationalRoleIgnored(el);
+      if (!focusable && !keptByGlobal) continue;
     }
 
     applicableCount += 1;
@@ -281,16 +272,39 @@ function runInPage(ctx) {
       continue;
     }
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause), or an alt attribute,
+    // which a <video> does not have: the hint says so.
+    const videoCause = (() => {
+      const raw = String(dom.getAttribute(el, 'alt') || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!raw) return null;
+      const alt = raw.length > 40 ? `${raw.slice(0, 39)}…` : raw;
+      return {
+        hint: `Its alt="${alt}" does nothing: a <video> has no alt attribute. Use aria-label="${alt}" instead.`,
+        hintKey: 'videoPoster_textAltPresent_hint_fail_alt',
+        params: { alt },
+        detail: { cause: 'altOnVideo', alt }
+      };
+    })();
+    const cause =
+      (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || videoCause;
     const baseOccurrence = {
       summary: 'This <video> poster image has no text alternative.',
-      hint: 'Name the video with aria-label or aria-labelledby, saying what the poster shows. A title attribute also works, but less reliably.',
+      hint: cause
+        ? cause.hint
+        : 'Name the video with aria-label or aria-labelledby, saying what the poster shows. A title attribute also works, but less reliably.',
       i18n: {
         summaryKey: 'videoPoster_textAltPresent_summary_fail',
-        hintKey: 'videoPoster_textAltPresent_hint_fail',
-        params: { element: 'video' }
+        hintKey: cause ? cause.hintKey : 'videoPoster_textAltPresent_hint_fail',
+        params: { element: 'video', ...(cause ? cause.params : {}) }
       },
       data: {
-        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
+        details: {
+          reasonCode: 'TEXT_ALTERNATIVE_MISSING',
+          ...(cause ? { nameCause: cause.detail } : {})
+        },
         poster,
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         nameInfo: nameInfo || null

@@ -113,6 +113,100 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(outcome(result), 'fail');
   });
 
+  await t.test('a forced value is asked about only where it applies on screen', async () => {
+    const forced = (sheet) =>
+      page('', `<h1 id="h">Heading</h1>`).replace('</head>', `${sheet}</head>`);
+    const ask = [['h', 'cantTell', 'STYLESHEET_IMPORTANT']];
+    for (const [sheet, want] of [
+      ['<style>h1{letter-spacing:0 !important}</style>', ask],
+      ['<style>@media screen{h1{letter-spacing:0 !important}}</style>', ask],
+      ['<style>@media (min-width:100px){h1{letter-spacing:0 !important}}</style>', ask],
+      ['<style>@supports (display:grid){h1{letter-spacing:0 !important}}</style>', ask],
+      [
+        '<style>h1{letter-spacing:-0.03em} @media print{h1{letter-spacing:0 !important}}</style>',
+        []
+      ],
+      ['<style>@media (max-width:100px){h1{letter-spacing:0 !important}}</style>', []],
+      ['<style>@supports (display:no-such-value){h1{letter-spacing:0 !important}}</style>', []],
+      ['<style>@media screen{@media print{h1{letter-spacing:0 !important}}}</style>', []],
+      ['<style media="print">h1{letter-spacing:0 !important}</style>', []],
+      ['<style>@starting-style{h1{letter-spacing:0 !important}}</style>', []]
+    ]) {
+      assert.deepEqual(findings(await scan(forced(sheet))), want, sheet);
+    }
+  });
+
+  await t.test('a nested or scoped forced value reaches only the text it styles', async () => {
+    const body =
+      '<h1 id="out">Outside</h1><div class="card"><h1 id="in">Inside</h1>' +
+      '<div class="stop"><h1 id="past">Past the limit</h1></div></div>';
+    const html = (css) => page(css, body);
+    for (const css of [
+      '.card { & h1 { letter-spacing:0 !important } }',
+      '.card { h1 { letter-spacing:0 !important } }',
+      '@scope (.card) to (.stop) { h1 { letter-spacing:0 !important } }',
+      '.card > h1 { @media screen { letter-spacing:0 !important } }'
+    ]) {
+      assert.deepEqual(
+        findings(await scan(html(css))),
+        [['in', 'cantTell', 'STYLESHEET_IMPORTANT']],
+        css
+      );
+    }
+    // The message names the selector as the author wrote it.
+    const result = await scan(html('.card { & h1 { letter-spacing:0 !important } }'));
+    const occ = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+    assert.equal(occ.data.details.selector, '& h1');
+  });
+
+  await t.test('a forced value reaches only the elements of its own root', async () => {
+    // A document rule doesn't style a shadow root's elements; a shadow
+    // root's <style> or adopted sheet, and the document's adopted sheet, do.
+    const setup = (p) =>
+      p.evaluate(() => {
+        const one = document.getElementById('one').attachShadow({ mode: 'open' });
+        one.innerHTML =
+          '<h2 id="shadowH2">Shadow h2</h2><h3 id="shadowH3">Shadow h3</h3>' +
+          '<style>h3{letter-spacing:0 !important}</style>';
+        const two = document.getElementById('two').attachShadow({ mode: 'open' });
+        const sheet = new CSSStyleSheet();
+        sheet.replaceSync('h4{letter-spacing:0 !important}');
+        two.adoptedStyleSheets = [sheet];
+        two.innerHTML = '<h4 id="shadowH4">Adopted in a shadow root</h4>';
+        const doc = new CSSStyleSheet();
+        doc.replaceSync('#adopted{letter-spacing:0 !important}');
+        document.adoptedStyleSheets = [doc];
+      });
+    const result = await scan(
+      page(
+        'h2{letter-spacing:0 !important}',
+        '<div id="one"></div><div id="two"></div><h5 id="adopted">Adopted</h5>'
+      ),
+      undefined,
+      {},
+      setup
+    );
+    const ids = (result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences || [])
+      .map((o) => o.selector || '')
+      .sort();
+    assert.deepEqual(ids, ['#adopted', '#shadowH3', '#shadowH4']);
+  });
+
+  await t.test("an @import's forced value is asked about", async () => {
+    const sheet = 'data:text/css,' + encodeURIComponent('h1{letter-spacing:0 !important}');
+    assert.deepEqual(
+      findings(
+        await scan(
+          page('', '<h1 id="h">Heading</h1>').replace(
+            '</head>',
+            `<style>@import url("${sheet}");</style></head>`
+          )
+        )
+      ),
+      [['h', 'cantTell', 'STYLESHEET_IMPORTANT']]
+    );
+  });
+
   await t.test('a line pushed out of a clipping box fails, on either axis', async () => {
     for (const css of [
       // Wraps to a second line that sits wholly below the box.
@@ -123,6 +217,43 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     ]) {
       const result = await scan(page(css, `<div class="fit" id="box">${TEXT}</div>`));
       assert.deepEqual(findings(result), [['box', 'fail', 'TEXT_CLIPPED']], css);
+    }
+  });
+
+  await t.test('the fail names the edge the text crosses and the CSS that clips it', async () => {
+    for (const [css, edge, clipCss] of [
+      ['#box{height:20px;overflow:hidden}', 'bottom', 'height: 20px; overflow: hidden'],
+      [
+        '#box{white-space:nowrap;overflow:hidden}',
+        'right',
+        'white-space: nowrap; overflow: hidden'
+      ],
+      [
+        '#box{overflow-x:clip}#run{white-space:nowrap}',
+        'right',
+        'white-space: nowrap; overflow-x: clip'
+      ]
+    ]) {
+      const result = await scan(
+        page(
+          css,
+          `<div class="fit" id="box" data-text="${TEXT}"><span id="run">${TEXT}</span></div>`
+        )
+      );
+      const [occ] = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences;
+      assert.equal(occ.data.details.reasonCode, 'TEXT_CLIPPED', css);
+      assert.equal(occ.data.details.edge, edge, css);
+      assert.equal(occ.data.details.clipCss, clipCss, css);
+      assert.equal(occ.i18n.params.clipCss, clipCss, css);
+      assert.match(
+        occ.summary,
+        new RegExp(`px past its ${edge} edge\\)\\. The CSS that cuts it off: ${clipCss}\\.$`),
+        css
+      );
+      assert.equal(
+        occ.hint,
+        `Let the container grow with its text: change ${clipCss}, or let it scroll.`
+      );
     }
   });
 
@@ -238,6 +369,34 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   });
 
+  // A body taken out of flow leaves the scroll size at the viewport's; a fixed
+  // box can hold more than the viewport. Either way content already lay beyond.
+  await t.test(
+    'text pushed out of a fixed box already past the viewport is asked about',
+    async () => {
+      for (const [css, body, expected] of [
+        [
+          'body{position:fixed;overflow:hidden;width:100%}',
+          lines(40),
+          [['b', 'cantTell', 'VIEWPORT_SCROLL_LOCKED']]
+        ],
+        [
+          '#panel{position:fixed;top:0;left:0;right:0;bottom:0}',
+          `<div id="panel">${lines(40)}</div>`,
+          [['panel', 'cantTell', 'VIEWPORT_SCROLL_LOCKED']]
+        ],
+        [
+          '#panel{position:fixed;top:0;left:0;right:0}',
+          `<div id="panel">${lines(40)}</div>`,
+          [['panel', 'cantTell', 'VIEWPORT_SCROLL_LOCKED']]
+        ]
+      ]) {
+        const result = await scan(viewportPage(css, body), undefined, small);
+        assert.deepEqual(findings(result), expected, css);
+      }
+    }
+  );
+
   await t.test('a viewport hidden on one axis only cuts off what goes past it there', async () => {
     const result = await scan(
       viewportPage(
@@ -272,6 +431,50 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       )
     );
     assert.deepEqual(findings(result), [['box', 'cantTell', 'TEXT_OVERLAPS']]);
+  });
+
+  // A floating label drawn at scale(0.75) and cut off by its own max-width,
+  // a share of its parent's width. Set from the label's measured width, as
+  // Angular Material sets its notch, the page's script may set it again once
+  // the label grows, so it is asked about; set otherwise, it fails.
+  const notchPage = page(
+    '.notch{position:relative;height:56px;margin-top:40px} .notch label{display:inline-block;white-space:nowrap;overflow:hidden;transform-origin:left top;transform:scale(.75);max-width:calc(133.333% + 1px)}',
+    '<div class="notch" id="notch"><label id="label">Outline form field</label></div>'
+  );
+  // `target` is the element given the inline width: the label or its notch.
+  // W is the label's width, X a width it was not measured from.
+  const sizeNotch = (target, cls, width) => (p) =>
+    p.evaluate(
+      ([target, cls, width]) => {
+        const w = document.getElementById('label').scrollWidth;
+        const el = document.getElementById(target);
+        if (cls) el.classList.add(cls);
+        el.style.width = width.replace('W', String(w)).replace('X', String(w * 0.75 + 12));
+      },
+      [target, cls, width]
+    );
+  await t.test('a box sized by script to the text it cuts off is asked about', async () => {
+    for (const [target, cls, width, expected] of [
+      ['notch', '', 'Xpx', [['label', 'fail', 'TEXT_CLIPPED']]],
+      ['label', '', 'Wpx', [['label', 'cantTell', 'TEXT_CLIPPED_SCRIPT_SIZED']]],
+      [
+        'notch',
+        'mdc-notched-outline__notch',
+        'calc(Wpx * var(--mat-mdc-form-field-floating-label-scale, 0.75) + 9px)',
+        [['label', 'cantTell', 'TEXT_CLIPPED_SCRIPT_SIZED']]
+      ]
+    ]) {
+      const result = await scan(notchPage, undefined, {}, sizeNotch(target, cls, width));
+      assert.deepEqual(findings(result), expected, width);
+      const [occ] = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences;
+      if (cls) {
+        assert.equal(occ.lean.toward, 'pass');
+        assert.equal(occ.lean.i18n.whyKey, 'textSpacingContentLoss_lean_why_scriptSized');
+        assert.equal(occ.data.details.sizedBy.box, 'containing-block');
+      } else {
+        assert.equal(occ.lean, undefined, width);
+      }
+    }
   });
 
   // A fixed or sticky box lies over whatever scrolls under it: text it
@@ -585,10 +788,16 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
 
     const occ = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
     const px = String(Math.round(d.metrics.overflowPx));
-    assert.deepEqual(occ.i18n.params, { text: TEXT, overflowPx: px, viewportWidth: '800' });
+    assert.deepEqual(occ.i18n.params, {
+      text: TEXT,
+      overflowPx: px,
+      viewportWidth: '800',
+      edgeRight: true,
+      clipCss: 'white-space: nowrap; overflow: hidden'
+    });
     assert.match(
       occ.summary,
-      new RegExp(`at a 800px-wide viewport, .* \\(${px}px past its edge\\)`)
+      new RegExp(`at a 800px-wide viewport, .* \\(${px}px past its right edge\\)`)
     );
   });
 

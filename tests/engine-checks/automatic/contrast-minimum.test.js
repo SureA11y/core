@@ -222,16 +222,13 @@ test(`${RULE_ID}: eligible text exists but none computable => notApplicable (noC
 
   const result = run(html);
 
+  // notApplicable names no finding: the counts are on the result itself.
   const rule = assertRule(result, RULE_ID, 'notApplicable', {
-    minOccurrences: 1,
-    maxOccurrences: 1
+    minOccurrences: 0,
+    maxOccurrences: 0
   });
-  assert.strictEqual(
-    rule.occurrences[0].i18n.summaryKey,
-    'contrastMinimum_notApplicable_noComputableText'
-  );
-  assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
-  assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
+  assert.ok(Number(rule.data.details.eligibleTextCount) >= 1);
+  assert.strictEqual(Number(rule.data.details.computableTextCount), 0);
 });
 
 test(`${RULE_ID}: strictConformance + root not opaque => measured on the page's white canvas`, () => {
@@ -268,14 +265,10 @@ test(`${RULE_ID}: root not opaque, the text's color in the page's dark scheme un
     <p>Hello</p>
   </body></html>`;
   const rule = assertRule(run(html), RULE_ID, 'notApplicable', {
-    minOccurrences: 1,
-    maxOccurrences: 1
+    minOccurrences: 0,
+    maxOccurrences: 0
   });
-  assert.strictEqual(
-    rule.occurrences[0].i18n.summaryKey,
-    'contrastMinimum_notApplicable_noComputableText'
-  );
-  assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
+  assert.strictEqual(Number(rule.data.details.computableTextCount), 0);
 });
 
 test(`${RULE_ID}: auditorAssist + root not opaque => pass using rootCanvasFallback`, () => {
@@ -1371,4 +1364,119 @@ test('contrast-minimum: text the dark scheme colors is measured in its colors, i
   assert.deepStrictEqual(light.occurrences.map((o) => o.data.details.colors.foregroundHex).sort(), [
     '#0000ee'
   ]);
+});
+
+// A page whose every text sits on a gradient has nothing this rule can
+// measure. Its notApplicable used to carry an occurrence with no reason
+// code, which a reader of the findings counted as one; the counts now go on
+// the result. The pass describes the scan in an occurrence with its reason
+// code and a hint, in each locale, a variant's too.
+test(`${RULE_ID}: notApplicable carries no occurrence, and the pass's occurrence has a hint`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body style="background:#fff"><main>${body}</main></body></html>`;
+  const gradient = page(
+    '<p style="color:#111;background-image:linear-gradient(#fff,#000)">Hello world</p>'
+  );
+  const plain = page('<p style="color:#111;background:#fff">Hello world</p>');
+  const variant = ratioVariant({ normalTextRatio: 5 });
+  for (const [ruleId, packs] of [
+    [RULE_ID, []],
+    ['ratios-contrast', [variant]]
+  ]) {
+    for (const locale of ['en', 'fr']) {
+      const scan = (html) =>
+        runa11yCoreOnHtml(html, {
+          runOnly: [ruleId, 'contrast-computable'],
+          engineOptions: { packs, locale }
+        }).checksResults.find((c) => c.ruleId === ruleId);
+
+      const na = scan(gradient);
+      assert.strictEqual(na.outcome, 'notApplicable', `${ruleId} ${locale}`);
+      assert.deepStrictEqual(na.occurrences, [], `${ruleId} ${locale}`);
+      assert.strictEqual(na.data.details.eligibleTextCount, 1);
+      assert.strictEqual(na.data.details.computableTextCount, 0);
+
+      const pass = scan(plain);
+      assert.strictEqual(pass.outcome, 'pass', `${ruleId} ${locale}`);
+      assert.strictEqual(pass.occurrences.length, 1);
+      const occ = pass.occurrences[0];
+      assert.strictEqual(occ.data.details.reasonCode, 'ALL_ABOVE_THRESHOLD');
+      assert.strictEqual(occ.i18n.hintKey, 'contrast_hint_pass');
+      assert.ok(occ.hint.trim().length > 20, `${ruleId} ${locale}: ${occ.hint}`);
+      if (locale === 'fr') assert.match(occ.hint, /^Rien à changer/);
+    }
+  }
+});
+
+// A color the CSS gives that is drawn faded: the summary names the CSS color
+// and what fades it, so #adadad doesn't read as a false positive of #333.
+test(`${RULE_ID}: text faded by an ancestor's opacity names the ancestor and the color the CSS gives`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <div class="disabled" style="opacity: 0.4"><p id="faded" style="color: #333">Faded text</p></div>
+  <p id="alpha" style="color: rgba(0, 0, 0, 0.35)">Alpha text</p>
+  <div style="opacity: 0.8"><span id="twice" style="opacity: 0.6; color: #555">Faded twice</span></div>
+  <p id="plain" style="color: #999">Plain grey</p>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const faded = byId('faded');
+  assert.strictEqual(faded.i18n.summaryKey, 'contrastMinimum_fail_belowThreshold');
+  assert.strictEqual(faded.i18n.params.declaredColor, '#333333');
+  assert.strictEqual(faded.i18n.params.fadedBy, '<div class="disabled">');
+  assert.strictEqual(faded.i18n.params.fadedOpacity, '0.4');
+  assert.match(
+    faded.summary,
+    /\(foreground: #adadad,.*\. Its color #333333 is drawn as #adadad because <div class="disabled"> has opacity: 0\.4\.$/
+  );
+  assert.deepStrictEqual(faded.data.details.fade, {
+    declaredColor: '#333333',
+    colorAlpha: 1,
+    fadedBy: [{ element: '<div class="disabled">', opacity: 0.4 }]
+  });
+
+  assert.match(
+    byId('alpha').summary,
+    /Its color rgba\(0, 0, 0, 0\.35\) is semi-transparent, which shows as #a6a6a6 over the background\.$/
+  );
+  assert.match(
+    byId('twice').summary,
+    /Its color #555555 is drawn as #adadad because <span id="twice"> \(0\.6\), <div> \(0\.8\) have opacities that multiply to 0\.48\.$/
+  );
+
+  const plain = byId('plain');
+  assert.strictEqual(plain.i18n.params.declaredColor, undefined);
+  assert.strictEqual(plain.data.details.fade, undefined);
+  assert.doesNotMatch(plain.summary, /Its color/);
+});
+
+// A background painted by an ancestor some levels up: the summary names that
+// ancestor, so a reader can find where #777777 comes from. Not where the text
+// paints its own, or where the color is the page's (<body>).
+test(`${RULE_ID}: a background painted by an ancestor names the ancestor`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <section class="band" style="background: #777"><div><div><p id="deep" style="color: #555">Gray text</p></div></div></section>
+  <section style="background: #777"><p id="own" style="color: #555; background: #777">Own background</p></section>
+  <p id="page" style="color: #eee">On the page</p>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const deep = byId('deep');
+  assert.strictEqual(deep.i18n.params.backgroundFrom, '<section class="band">');
+  assert.strictEqual(deep.data.details.backgroundFrom, '<section class="band">');
+  assert.match(
+    deep.summary,
+    /\(normal text\)\. The background #777777 is painted by its ancestor <section class="band">\.$/
+  );
+  for (const id of ['own', 'page']) {
+    assert.strictEqual(byId(id).i18n.params.backgroundFrom, undefined, id);
+    assert.doesNotMatch(byId(id).summary, /painted by/, id);
+  }
 });

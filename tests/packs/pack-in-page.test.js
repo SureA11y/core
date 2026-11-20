@@ -260,6 +260,16 @@ test('a name an object has by inheritance names no registered set', () => {
   }
 });
 
+test('a pack named twice is said to be, as it is in Node', () => {
+  new Function(packScript([acme]))();
+  try {
+    const { result } = unrun({ packs: [...NAMES, NAMES[0]] });
+    assert.match(result.skippedPacks[0].reason, /is named twice; name each pack once/);
+  } finally {
+    delete globalThis[Symbol.for('surea11y.packs')];
+  }
+});
+
 test('packScript refuses a pack that is not valid', () => {
   assert.throws(
     () => packScript([{ name: 'bad', version: '1.0.0', namespace: 'bad', core: '^99.0.0' }]),

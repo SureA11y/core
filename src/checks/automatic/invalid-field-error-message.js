@@ -134,83 +134,7 @@ const meta = {
   category: 'understandable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '3.3.1': ['invalid-field-error-message'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ERROR_MESSAGE_ARIA_HIDDEN: {
-      steps: [
-        'Find the field the report names and confirm its error message is visible on screen.',
-        'Inspect the message element that aria-errormessage points to and note which of its children carry aria-hidden="true".',
-        'Focus the field with a screen reader running, or read its error message and description in the Accessibility pane.',
-        "Note whether the error's words reach the screen reader through any route."
-      ],
-      passWhen:
-        "A screen reader user is told the same error text that is shown on screen, for example through the field's description or label.",
-      failWhen:
-        'The error is visible but hidden from assistive technology, so screen reader users are not told what is wrong, which fails WCAG 3.3.1.'
-    },
-    ERROR_MESSAGE_EMPTY: {
-      steps: [
-        'Find the field the report names and trigger its error state (submit the form or enter an invalid value) if it is not already shown.',
-        'Inspect the field and find the element its aria-errormessage attribute points to; confirm it is empty.',
-        "Look at the field's label and the text next to it for words that say which field is in error and what is wrong.",
-        'Focus the field with a screen reader running, or check its name and description in the Accessibility pane, and note whether the error is conveyed.'
-      ],
-      passWhen:
-        'Text on the page, such as the label or a message next to the field, says which field is in error and what is wrong.',
-      failWhen:
-        'No text tells the user which field is in error or what is wrong, which fails WCAG 3.3.1.'
-    },
-    ERROR_MESSAGE_HIDDEN: {
-      steps: [
-        'Make the field invalid the way a user would (submit the form empty, or type a wrong value).',
-        'Look for the error message the field points to (its aria-errormessage), and check whether it appears on screen.',
-        "If it doesn't, look for any text that tells you what is wrong: in the label, next to the field, or in a summary at the top of the form.",
-        'With a screen reader, move to the field and listen for the error.'
-      ],
-      passWhen:
-        'The error is shown in text, and announced, somewhere tied to the field, even if not in the message aria-errormessage names.',
-      failWhen:
-        "No text tells you which field is wrong and why, or a screen reader user isn't told, which fails WCAG 3.3.1."
-    },
-    ERROR_MESSAGE_NOT_SHOWN_DESCRIBED: {
-      steps: [
-        'Find the field the report names and trigger its error state if it is not already shown.',
-        'Open the Accessibility pane for the field and read its description (from aria-describedby).',
-        'Compare that description with the error: decide whether it says what is wrong, or is only hint text such as an input format.',
-        'Check that the same error text is visible on screen near the field.'
-      ],
-      passWhen:
-        "The field's description, or other visible text, states the error in words, so both sighted and screen reader users learn what is wrong.",
-      failWhen:
-        'The description is only hint text and no visible text describes the error, which fails WCAG 3.3.1.'
-    },
-    ERROR_MESSAGE_TARGET_MISSING: {
-      steps: [
-        'Find the field the report names and note the id in its aria-errormessage attribute.',
-        'Trigger the error (submit the form or enter an invalid value) and search the Elements panel for an element with that id.',
-        'If the element appears, check that it is shown and has text that describes the error.',
-        'If it never appears, look for other visible text near the field or in its label that says what is wrong.'
-      ],
-      passWhen:
-        'Once the field is in error, a shown message with that id, or other visible text, describes the error.',
-      failWhen:
-        'The field is marked invalid but no text describes the error, which fails WCAG 3.3.1.'
-    },
-    NO_ERROR_MESSAGE: {
-      steps: [
-        'Find the field the report names; it is marked aria-invalid.',
-        'Check whether the field is really in error now; if it is marked invalid before the user has entered anything, enter a valid value and see whether the mark clears.',
-        "Look at the field's label and the text next to it, and any error summary on the page, for words naming this field and saying what is wrong.",
-        'Focus the field with a screen reader running and note whether the error is announced.'
-      ],
-      passWhen:
-        'Visible text identifies the field in error and describes what is wrong, or the field is not actually in error.',
-      failWhen:
-        'The field is in error but no text identifies it and describes the problem, which fails WCAG 3.3.1.'
-    }
-  }
+  coverage: { facetsBySc: { '3.3.1': ['invalid-field-error-message'] } }
 };
 
 function runInPage(ctx) {
@@ -311,6 +235,78 @@ function runInPage(ctx) {
     });
   }
 
+  // Up to 40 characters of an element's text, for a message.
+  function shortText(n) {
+    const all = trim(String(dom.textContent(n) || '').replace(/\s+/g, ' '));
+    return all.length > 40 ? `${all.slice(0, 39)}…` : all;
+  }
+  // An element as a message names it: <div class="errors">.
+  function describeEl(n) {
+    const tag = String(dom.localName(n) || dom.tagName(n) || '').toLowerCase();
+    const cut = (v) => (v.length > 60 ? v.slice(0, 57) + '...' : v);
+    const elId = trim(dom.getAttribute(n, 'id'));
+    if (elId) return `<${tag} id="${cut(elId)}">`;
+    const cls = trim(String(dom.getAttribute(n, 'class') || '').replace(/\s+/g, ' '));
+    return cls ? `<${tag} class="${cut(cls)}">` : `<${tag}>`;
+  }
+  // Whether two ids are at most two edits apart (a typo, or "-err" for
+  // "-error"), ignoring case.
+  function closeIds(a, b) {
+    a = a.toLowerCase();
+    b = b.toLowerCase();
+    if (a === b || Math.abs(a.length - b.length) > 2) return a === b;
+    let prev = [];
+    for (let j = 0; j <= b.length; j++) prev.push(j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(
+          prev[j] + 1,
+          cur[j - 1] + 1,
+          prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+        );
+      }
+      prev = cur;
+    }
+    return prev[b.length] <= 2;
+  }
+  // The element whose id is closest to one aria-errormessage names that no
+  // element has: { id, text }, or null.
+  let idElements = null;
+  function nearIdOf(missingIds) {
+    try {
+      if (!idElements) idElements = [...dom.querySelectorAll(ctx.document, '[id]')].slice(0, 5000);
+      for (const want of missingIds) {
+        for (const cand of idElements) {
+          const candId = String(dom.getAttribute(cand, 'id') || '');
+          if (candId && candId !== want && closeIds(want, candId)) {
+            return { id: candId, text: shortText(cand) };
+          }
+        }
+      }
+    } catch {}
+    return null;
+  }
+  // What hides the first hidden message, as helpers.hiddenCause finds it:
+  // { hiddenBy, element, onAncestor }, or null.
+  function hideCauseOf(refs) {
+    try {
+      if (typeof helpers.hiddenCause !== 'function') return null;
+      for (const ref of refs) {
+        const cause = helpers.hiddenCause(ref);
+        if (cause && cause.element) {
+          return {
+            hiddenBy: cause.hiddenBy,
+            element: describeEl(cause.element),
+            onAncestor: cause.element !== ref,
+            messageText: shortText(ref)
+          };
+        }
+      }
+    } catch {}
+    return null;
+  }
+
   const questions = [];
   let applicableCount = 0;
 
@@ -364,6 +360,14 @@ function runInPage(ctx) {
       eligInfo = helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
     } catch {}
 
+    // The cause the message names: what hides the message, or the ids no
+    // element has and an id close to one of them.
+    const hideCause = reasonCode === 'ERROR_MESSAGE_HIDDEN' ? hideCauseOf(refs) : null;
+    const missingIds =
+      reasonCode === 'ERROR_MESSAGE_TARGET_MISSING' ? errorMessageIds.slice(0) : [];
+    const nearId = missingIds.length ? nearIdOf(missingIds) : null;
+    const missingList = missingIds.map((v) => `"${v}"`).join(', ');
+
     // Only these two codes are reached without asking for a description.
     const hasDescription =
       reasonCode === 'ERROR_MESSAGE_ARIA_HIDDEN' || reasonCode === 'ERROR_MESSAGE_TARGET_MISSING'
@@ -373,9 +377,13 @@ function runInPage(ctx) {
     const messages = {
       ERROR_MESSAGE_HIDDEN: {
         key: 'cantTell_hidden',
-        summary:
-          'This field is marked invalid, but the error message aria-errormessage names is hidden.',
-        hint: 'Show the error message while the field is invalid.',
+        summary: hideCause
+          ? `This field is marked invalid, but the error message aria-errormessage names${hideCause.messageText ? ` ("${hideCause.messageText}")` : ''} is hidden by ${hideCause.hiddenBy} on ${hideCause.element}${hideCause.onAncestor ? ', which contains it' : ''}.`
+          : 'This field is marked invalid, but the error message aria-errormessage names is hidden.',
+        hint:
+          hideCause && hideCause.onAncestor
+            ? `${hideCause.hiddenBy} on ${hideCause.element} hides the error message along with everything else in it. Show ${hideCause.element} while the field is invalid, or move the message out of it.`
+            : 'Show the error message while the field is invalid.',
         uncertainty: 'judgement-required',
         needed: 'Whether the error is described in text elsewhere, such as the field’s label.',
         lean: {
@@ -386,8 +394,9 @@ function runInPage(ctx) {
       },
       ERROR_MESSAGE_HIDDEN_ARIA: {
         key: 'cantTell_hiddenAria',
-        summary:
-          'This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.',
+        summary: hideCause
+          ? `This field is marked invalid, but the error message aria-errormessage names${hideCause.messageText ? ` ("${hideCause.messageText}")` : ''} is hidden from assistive technology by ${hideCause.hiddenBy} on ${hideCause.element}${hideCause.onAncestor ? ', which contains it' : ''}.`
+          : 'This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.',
         hint: 'Remove aria-hidden from the error message, and from what contains it, while the field is invalid.',
         uncertainty: 'judgement-required',
         needed: 'Whether screen reader users are told about the error some other way.',
@@ -460,8 +469,12 @@ function runInPage(ctx) {
       },
       ERROR_MESSAGE_TARGET_MISSING: {
         key: 'cantTell_targetMissing',
-        summary: 'This field is marked invalid, but no element has the id aria-errormessage names.',
-        hint: 'Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.',
+        summary: `This field is marked invalid, but no element has the id aria-errormessage names${missingList ? ` (${missingList})` : ''}.`,
+        hint:
+          'Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.' +
+          (nearId
+            ? ` An element has the id "${nearId.id}"${nearId.text ? `, with the text "${nearId.text}"` : ''}; did you mean that one?`
+            : ''),
         uncertainty: 'runtime-dependent',
         needed: 'Whether a script adds the error message the field names.',
         // aria-invalid says the field is in error now, so its message
@@ -496,10 +509,37 @@ function runInPage(ctx) {
       i18n: {
         summaryKey: `invalidFieldErrorMessage_summary_${m.key}`,
         hintKey: `invalidFieldErrorMessage_hint_${m.key}`,
-        params: {}
+        params: {
+          ...(hideCause
+            ? {
+                hiddenBy: hideCause.hiddenBy,
+                hiddenElement: hideCause.element,
+                onAncestor: hideCause.onAncestor,
+                messageText: hideCause.messageText
+              }
+            : {}),
+          ...(missingIds.length ? { missingIds: missingList } : {}),
+          ...(nearId ? { nearId: nearId.id, nearText: nearId.text } : {})
+        }
       },
       data: {
-        details: { reasonCode, ariaInvalid, errorMessageIds, ...(hiddenBy ? { hiddenBy } : {}) },
+        details: {
+          reasonCode,
+          ariaInvalid,
+          errorMessageIds,
+          ...(hiddenBy ? { hiddenBy } : {}),
+          ...(hideCause
+            ? {
+                hiddenCause: {
+                  hiddenBy: hideCause.hiddenBy,
+                  element: hideCause.element,
+                  onAncestor: hideCause.onAncestor
+                }
+              }
+            : {}),
+          ...(missingIds.length ? { missingIds } : {}),
+          ...(nearId ? { nearId: nearId.id } : {})
+        },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };

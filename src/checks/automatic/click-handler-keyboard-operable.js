@@ -193,64 +193,6 @@ const meta = {
       '2.1.1': ['click-handler-keyboard-operable'],
       '2.1.3': ['click-handler-keyboard-operable']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    CLICK_HANDLER_FOCUS_LISTENER: {
-      steps: [
-        'Click the element the report names and note what happens.',
-        'Reload, then press Tab until the element has focus.',
-        'Press Enter, then Space, and compare with what the click did.'
-      ],
-      passWhen:
-        'Enter (and Space for button-like controls) does what a click does, or, for a tab, moving focus to it already shows its panel.',
-      failWhen:
-        'Pressing Enter or Space does nothing even after focus arrives, which fails WCAG 2.1.1 (F54).'
-    },
-    CLICK_HANDLER_KEY_LISTENER_ABOVE: {
-      steps: [
-        'Click the element the report names and note what happens.',
-        'Press Tab until the element has focus.',
-        'Press Enter, then Space (and the arrow keys if it sits in a group), and compare with the click.'
-      ],
-      passWhen: 'Enter (and Space for button-like controls) does what a click does.',
-      failWhen:
-        'Pressing Enter or Space does nothing on the element, so the listener above does not handle it, which fails WCAG 2.1.1.'
-    },
-    CLICK_HANDLER_NOT_FOCUSABLE: {
-      steps: [
-        'Click the element the report names and note what its click does.',
-        'Press Tab through the page and check that the element never takes focus.',
-        'If it is an item in a list, grid or combobox, focus that widget and use the arrow keys to see whether the item becomes active and Enter performs the action.',
-        'Otherwise look for another keyboard-operable control on the page that does the same thing.'
-      ],
-      passWhen:
-        'The same action can be done by keyboard, through the managing widget or another control.',
-      failWhen: 'The action can only be done with a mouse, which fails WCAG 2.1.1 (F54, F42).'
-    },
-    CLICK_HANDLER_NOT_IN_TAB_ORDER: {
-      steps: [
-        'Click the element the report names and note what happens.',
-        'Press Tab through the page and check whether focus ever lands on it.',
-        'If it is part of a group (tabs, menu, toolbar, list), Tab into the group and use the arrow keys to see whether they move focus to it.',
-        'Once it has focus, press Enter or Space and compare with the click.'
-      ],
-      passWhen:
-        'The element can be reached by keyboard (Tab or arrow keys within its group) and Enter or Space does what a click does.',
-      failWhen:
-        'No key moves focus to the element, so its action is mouse-only, which fails WCAG 2.1.1.'
-    },
-    CLICK_HANDLER_NO_KEY_HANDLER: {
-      steps: [
-        'Click the element the report names and note what happens.',
-        'Reload, then press Tab until the element has focus.',
-        'Press Enter, then Space, and compare with what the click did.'
-      ],
-      passWhen: 'Enter (and Space for button-like controls) does what a click does.',
-      failWhen:
-        'Pressing Enter or Space does nothing, or less than a click, which fails WCAG 2.1.1 (F54).'
-    }
   }
 };
 
@@ -852,18 +794,31 @@ function runInPage(ctx) {
     );
     const managedFromAbove = keyAbove || hookKeyAbove || focusKeeper;
 
+    // An <a> or <area> without href is no link and takes no focus, which a
+    // reader expecting a link to be focusable would not guess (WCAG F42).
+    const noHref = (tag === 'a' || tag === 'area') && !dom.hasAttribute(el, 'href');
+
     if (FAIL_ROLES.has(role) && !managedFromAbove) {
       fails.push(
         helpers.reportOccurrence(el, {
           summary: `This element has role="${role}" and a click handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.`,
-          hint: `Use the native element (<button>, <a href> or <input type="checkbox">), or add tabindex="0" and make the keys a ${role} answers to do what a click does.`,
+          hint: noHref
+            ? `An <${tag}> without href is not a link and can't take keyboard focus. Give it a real href if it leads somewhere, or use a <button> for an action; or add tabindex="0" and make the keys a ${role} answers to do what a click does.`
+            : `Use the native element (<button>, <a href> or <input type="checkbox">), or add tabindex="0" and make the keys a ${role} answers to do what a click does.`,
           i18n: {
             summaryKey: 'clickHandlerKeyboardOperable_summary_fail_notFocusable',
-            hintKey: 'clickHandlerKeyboardOperable_hint_fail_notFocusable',
-            params: { role }
+            hintKey: noHref
+              ? 'clickHandlerKeyboardOperable_hint_fail_notFocusableNoHref'
+              : 'clickHandlerKeyboardOperable_hint_fail_notFocusable',
+            params: { role, element: tag }
           },
           data: {
-            details: { reasonCode: 'CLICK_HANDLER_CONTROL_NOT_FOCUSABLE', role, focusable: false }
+            details: {
+              reasonCode: 'CLICK_HANDLER_CONTROL_NOT_FOCUSABLE',
+              role,
+              focusable: false,
+              ...(noHref ? { noHref: true } : {})
+            }
           }
         })
       );
@@ -909,10 +864,14 @@ function runInPage(ctx) {
       helpers.reportOccurrence(el, {
         ...(notFocusableLean ? { lean: notFocusableLean } : {}),
         summary: `This <${tag}> runs a click handler, but neither it nor anything in it can take keyboard focus.`,
-        hint: 'Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex="0" and handle Enter and Space.',
+        hint: noHref
+          ? `An <${tag}> without href is not a link and can't take keyboard focus. Check that a keyboard user can do the same thing with another control of the page; if not, give it a real href if it leads somewhere, or use a <button> for an action.`
+          : 'Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex="0" and handle Enter and Space.',
         i18n: {
           summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_notFocusable',
-          hintKey: 'clickHandlerKeyboardOperable_hint_cantTell_notFocusable',
+          hintKey: noHref
+            ? 'clickHandlerKeyboardOperable_hint_cantTell_notFocusableNoHref'
+            : 'clickHandlerKeyboardOperable_hint_cantTell_notFocusable',
           params: { element: tag }
         },
         uncertainty: {
@@ -922,7 +881,12 @@ function runInPage(ctx) {
           evidence: { role, focusable: false, managedFromAbove }
         },
         data: {
-          details: { reasonCode: 'CLICK_HANDLER_NOT_FOCUSABLE', role, focusable: false }
+          details: {
+            reasonCode: 'CLICK_HANDLER_NOT_FOCUSABLE',
+            role,
+            focusable: false,
+            ...(noHref ? { noHref: true } : {})
+          }
         }
       })
     );

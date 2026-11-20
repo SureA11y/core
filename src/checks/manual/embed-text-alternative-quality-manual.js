@@ -66,20 +66,6 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TEXT_ALTERNATIVE_REVIEW: {
-      steps: [
-        'Look at what the embedded content the report names shows or does.',
-        'Read its text alternative (aria-label, aria-labelledby text or title, as the report gives it).',
-        'Check that the text says what the embedded content is or describes it.'
-      ],
-      passWhen: 'The text alternative identifies or describes the embedded content accurately.',
-      failWhen:
-        'The text alternative is generic, wrong or does not describe the embedded content, which fails WCAG 1.1.1.'
-    }
   }
 };
 
@@ -100,7 +86,7 @@ function runInPage(ctx) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -151,7 +137,7 @@ function runInPage(ctx) {
 
   const els = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('embed') : queryAll('embed')) || []);
+      return [...((queryAllSmart ? queryAllSmart('embed') : queryAll('embed')) || [])];
     } catch {
       return queryAll('embed');
     }
@@ -255,14 +241,35 @@ function runInPage(ctx) {
           }
         : null;
 
+    // The name under review, quoted: from aria-labelledby it is not in the
+    // snippet.
+    const nameAll = name.replace(/\s+/g, ' ');
+    const shownName = nameAll.length > 80 ? `${nameAll.slice(0, 79)}…` : nameAll;
+    const ids =
+      !ariaLabel && labelledByText
+        ? ariaLabelledBy
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((x) => `#${x}`)
+            .join(' ')
+        : '';
+
     const baseOccurrence = {
       ...(lean ? { lean } : {}),
-      summary: 'Check that the text alternative of this <embed> is accurate.',
+      summary: ids
+        ? `Check that the text alternative of this <embed>, "${shownName}", taken from ${ids} by aria-labelledby, is accurate.`
+        : `Check that the text alternative of this <embed>, "${shownName}", is accurate.`,
       hint: 'The ARIA name or title should say what is embedded.',
       i18n: {
-        summaryKey: 'embed_textAltQuality_summary_cantTell',
+        summaryKey: ids
+          ? 'embed_textAltQuality_summary_cantTell_labelledby'
+          : 'embed_textAltQuality_summary_cantTell_name',
         hintKey: 'embed_textAltQuality_hint_cantTell',
-        params: { element: (dom.tagName(el) || '').toLowerCase() }
+        params: {
+          element: (dom.tagName(el) || '').toLowerCase(),
+          name: shownName,
+          ...(ids ? { ids } : {})
+        }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

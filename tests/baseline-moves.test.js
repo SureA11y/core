@@ -17,12 +17,40 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
+const MOVES = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '..', 'src', 'baseline-moves.json'), 'utf8')
+).moves;
+
+// How matching follows a move is tested with two moves 1.14 made, whatever
+// the table holds now: each release freeze empties it of the minor release
+// before. The table is swapped for them before src/baseline.js reads it.
+const MOVES_TABLE = require.resolve('../src/baseline-moves.json');
+require.cache[MOVES_TABLE] = {
+  id: MOVES_TABLE,
+  filename: MOVES_TABLE,
+  loaded: true,
+  exports: {
+    moves: [
+      {
+        ruleId: 'img-alt-present',
+        from: 'DEFAULT',
+        to: ['TEXT_ALTERNATIVE_MISSING'],
+        since: '1.14'
+      },
+      {
+        ruleId: 'list-children-valid',
+        from: 'LIST_INVALID_CHILD',
+        to: ['LIST_ITEM_ROLE_OVERRIDDEN'],
+        stillGiven: true,
+        since: '1.14'
+      }
+    ]
+  }
+};
 const { matchBaseline, migrateBaselineEntries } = require('../src/baseline.js');
 const { renderJunitReport } = require('../src/junit.js');
 const { renderSarifReport } = require('../src/sarif.js');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
-
-const MOVES = require('../src/baseline-moves.json').moves;
 const readData = (name) =>
   JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'scripts', 'data', name), 'utf8'));
 const RELEASED = readData('released-finding-ids.json');

@@ -137,3 +137,44 @@ test(`${RULE_ID}: no lean when copies differ and the first is the nearest`, () =
     undefined
   );
 });
+
+// Each copy says whether it is the one the reference reaches, by which
+// attribute, and on a later copy the referring element next to it.
+test(`${RULE_ID}: each copy says whether the reference reaches it`, () => {
+  const html = `<!doctype html><html><body>
+    <div class="f"><input aria-label="Email" aria-describedby="err"><span id="err" class="one">Email required</span></div>
+    <div class="f"><input aria-label="Phone" aria-describedby="err"><span id="err" class="two">Phone required</span></div>
+    <p id="x" class="a">A</p><p id="x" class="b">B</p><button aria-controls="x">Toggle</button>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 4, maxOccurrences: 4 });
+  const byClass = (c) => rule.occurrences.find((o) => o.html.includes(`class="${c}"`));
+
+  const first = byClass('one');
+  assert.strictEqual(first.i18n.summaryKey, 'duplicateIdAria_summary_cantTell_first');
+  assert.strictEqual(
+    first.summary,
+    'The id "err" is used by 2 elements; this one is the first, the one aria-describedby reaches.'
+  );
+  assert.strictEqual(first.data.details.reached, true);
+
+  const second = byClass('two');
+  assert.strictEqual(second.i18n.summaryKey, 'duplicateIdAria_summary_cantTell_nearerCopy');
+  assert.strictEqual(
+    second.summary,
+    'The aria-describedby on the <input> next to this element refers to "err", but it reaches the first element with that id ("Email required"), not this one ("Phone required").'
+  );
+  assert.deepStrictEqual(second.data.details.nearReferrer, {
+    element: '<input>',
+    attribute: 'aria-describedby'
+  });
+
+  const later = byClass('b');
+  assert.strictEqual(later.i18n.summaryKey, 'duplicateIdAria_summary_cantTell');
+  assert.strictEqual(
+    later.summary,
+    'The id "x" is used by 2 elements; aria-controls reaches the first one ("A"), not this one ("B").'
+  );
+  assert.deepStrictEqual(later.data.details.referringAttributes, ['aria-controls']);
+  assert.strictEqual(later.data.details.reached, false);
+});

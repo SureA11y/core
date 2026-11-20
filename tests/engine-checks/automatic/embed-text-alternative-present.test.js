@@ -201,3 +201,18 @@ test(`${RULE_ID}: an upper-case role resolves too: role="NONE" is excluded when 
   );
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: a fail says an alt on the <embed> is not read`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><embed src="chart.svg" alt="Sales chart 2024" type="image/svg+xml"></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.hintKey, 'embed_textAltPresent_hint_fail_alt');
+  assert.strictEqual(
+    occ.hint,
+    'Its alt="Sales chart 2024" is not read: an <embed> has no alt attribute. Move the text to aria-label.'
+  );
+  assert.strictEqual(occ.data.details.nameCause.cause, 'altOnEmbed');
+});

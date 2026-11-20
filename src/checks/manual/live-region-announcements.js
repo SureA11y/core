@@ -45,11 +45,20 @@
  *   it is in the page, shown and reachable, before its text changes.
  * @reports
  *   - `politeness`: the region's, `polite` or `assertive`.
+ *   - `messageKind`: the kind of message the region declares it carries,
+ *     from its role and live-region attributes, never from its text:
+ *     `status` (role status, an <output>, or aria-live="polite" with
+ *     aria-atomic="true"), `alert` (role alert, or aria-live="assertive"),
+ *     `log` (role log), `progress` (role progressbar, or a <progress>), or
+ *     `unknown` (any other live region, such as a plain aria-live="polite").
+ *     A role, given or the element's own, wins over aria-live.
  *   - `hiddenBy`: for `LIVE_REGION_HIDDEN`, `aria-hidden`, `inert`, or
  *     `modal` for a region behind an open modal <dialog>. A region behind
  *     the dialog is `modal` whatever else hides it (inert or aria-hidden on
  *     it or above it, with or without includeHiddenElements): while the
  *     dialog is open, it is the cause in effect.
+ *   - `hiddenByElement`: for `aria-hidden` or `inert` on an ancestor, that
+ *     ancestor (`<div id="app">`).
  *   - `text`: for the hook's two findings, the text the region was given
  *     (up to 300 characters).
  *   - `removed`: for the hook's two findings, true when the region was no
@@ -134,55 +143,6 @@ const meta = {
   ],
   coverage: {
     facetsBySc: { '4.1.3': ['live-region-reachable-evidence', 'live-region-changes-evidence'] }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    LIVE_REGION_BUSY: {
-      steps: [
-        'Find the live region the report names; it had aria-busy="true" when the page was scanned.',
-        'Trigger the action that updates the region, then inspect it in the developer tools and see whether aria-busy changes to false or is removed once the update finishes.',
-        'Repeat the action with a screen reader running and listen for the message.'
-      ],
-      passWhen:
-        'aria-busy is cleared when the update finishes and the screen reader announces the message.',
-      failWhen:
-        'aria-busy stays true, so the screen reader holds back or skips the message, which fails WCAG 4.1.3.'
-    },
-    LIVE_REGION_HIDDEN: {
-      steps: [
-        'Find the live region the report names and note what hides it, as the report says: aria-hidden="true" or inert on it or on an ancestor, or a modal dialog open in front of it.',
-        'Check whether a modal dialog was open when the page was scanned; if so, note whether the page writes to the region while it is open, then close it and see whether the region is still hidden.',
-        'Trigger the action that updates the region (submit a form, add to cart, run a search) with a screen reader running.',
-        'Listen for the message, and check in the Accessibility pane of the developer tools that the region is in the tree when its text changes.'
-      ],
-      passWhen:
-        'The region is not hidden, nor behind an open modal dialog, when its text changes (or is never used for messages), and the screen reader announces the message without focus moving.',
-      failWhen:
-        'The region is still hidden by aria-hidden, inert or an open modal dialog when the message arrives, so the screen reader says nothing, which fails WCAG 4.1.3.'
-    },
-    LIVE_REGION_INSERTED_WITH_CONTENT: {
-      steps: [
-        'Find the message the report quotes and the action that shows it (the report gives the text and the region).',
-        'Start a screen reader, then perform that action.',
-        'Listen for the message without moving focus to it.',
-        'If it is not read, check in the developer tools whether the page adds the region already filled; an empty region should be on the page first, with the text written into it later.'
-      ],
-      passWhen: 'The screen reader announces the message when it appears, without focus moving.',
-      failWhen:
-        'The message appears on screen but the screen reader does not announce it, because the region was added with its text already in it, which fails WCAG 4.1.3 (ARIA22).'
-    },
-    LIVE_REGION_SHOWN_AND_FILLED: {
-      steps: [
-        'Find the message the report quotes and the action that shows it.',
-        'Start a screen reader, then perform that action.',
-        'Listen for the message without moving focus to it.',
-        'If it is not read, check in the developer tools whether the region is hidden until the moment its text is set; it should be visible (or present and empty) before the text arrives.'
-      ],
-      passWhen: 'The screen reader announces the message when it appears, without focus moving.',
-      failWhen:
-        'The message appears but the screen reader does not announce it, because the region was shown and filled at the same moment, which fails WCAG 4.1.3 (ARIA22).'
-    }
   }
 };
 
@@ -209,6 +169,28 @@ function runInPage(ctx) {
     if (!role && String(dom.localName(el) || '').toLowerCase() === 'output') return 'polite';
     return '';
   }
+  // What kind of message the region declares it carries, from its role and
+  // its live-region attributes, never from its text: 'status' (role status,
+  // an <output>, or aria-live="polite" with aria-atomic="true"), 'alert'
+  // (role alert, or aria-live="assertive"), 'log' (role log), 'progress'
+  // (role progressbar, or a <progress>), else 'unknown'. The role
+  // attribute's, or the element's own, wins over aria-live.
+  const MESSAGE_KINDS = { status: 'status', alert: 'alert', log: 'log', progressbar: 'progress' };
+  function messageKind(el) {
+    const role = helpers.aria.getExplicitRole(el);
+    if (role && Object.prototype.hasOwnProperty.call(MESSAGE_KINDS, role)) {
+      return MESSAGE_KINDS[role];
+    }
+    if (!role) {
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      if (tag === 'output') return 'status';
+      if (tag === 'progress') return 'progress';
+    }
+    const live = attr(el, 'aria-live');
+    if (live === 'assertive') return 'alert';
+    if (live === 'polite' && attr(el, 'aria-atomic') === 'true') return 'status';
+    return 'unknown';
+  }
   // Whether display: none, [hidden] or visibility: hidden keeps the region
   // from being drawn, on it or above it.
   function drawn(el) {
@@ -223,11 +205,16 @@ function runInPage(ctx) {
   // What keeps a drawn region from assistive technology: 'aria-hidden',
   // 'inert', or ''.
   function hiddenBy(el) {
+    const c = hiddenCarrier(el);
+    return c ? c.by : '';
+  }
+  // The same, with the element that carries it: { by, element } or null.
+  function hiddenCarrier(el) {
     for (let n = el; n && dom.nodeType(n) === 1; n = helpers.composedParent(n)) {
-      if (attr(n, 'aria-hidden') === 'true') return 'aria-hidden';
-      if (dom.hasAttribute(n, 'inert')) return 'inert';
+      if (attr(n, 'aria-hidden') === 'true') return { by: 'aria-hidden', element: n };
+      if (dom.hasAttribute(n, 'inert')) return { by: 'inert', element: n };
     }
-    return '';
+    return null;
   }
   function eligibility(el) {
     try {
@@ -298,24 +285,20 @@ function runInPage(ctx) {
   // decides it, whatever else hides it: while the dialog is open, the dialog
   // is the cause in effect, so such a region is reported with hiddenBy
   // 'modal' even under inert or aria-hidden, with or without
-  // includeHiddenElements.
+  // includeHiddenElements. With several open, a region in one under the
+  // topmost is behind it too (helpers.isModalInert).
   function insideOf(box, el) {
     for (let n = el, guard = 0; n && guard < 500; n = helpers.composedParent(n), guard++) {
       if (n === box) return true;
     }
     return false;
   }
-  let openModals = null;
   function behindModal(el) {
-    if (openModals === null) {
-      try {
-        openModals = helpers.getOpenModalDialogs() || [];
-      } catch {
-        openModals = [];
-      }
+    try {
+      return helpers.isModalInert(el);
+    } catch {
+      return false;
     }
-    if (!openModals.length) return false;
-    return !openModals.some((d) => insideOf(d, el) || insideOf(el, d));
   }
   // The hook records the last time each <dialog> in the document was opened
   // (record.dialogsOpened), and the order in which the page made each change
@@ -412,15 +395,32 @@ function runInPage(ctx) {
     const by = dialogOpen && behindModal(el) ? 'modal' : hiddenBy(el);
     if (by) {
       const lean = by === 'modal' ? modalLean(el) : hiddenLean();
+      // aria-hidden or inert on an ancestor: name it, as the region's own
+      // markup does not show it.
+      const carrier = by === 'modal' ? null : hiddenCarrier(el);
+      const ancestor =
+        carrier && carrier.element !== el ? helpers.describeElement(carrier.element) : '';
+      const summary = ancestor
+        ? by === 'aria-hidden'
+          ? [
+              `This live region is inside ${ancestor}, which has aria-hidden="true", so nothing it is given can be announced.`,
+              'liveRegionAnnouncements_summary_cantTell_ariaHiddenAncestor'
+            ]
+          : [
+              `This live region is inside ${ancestor}, which is inert, so nothing it is given can be announced.`,
+              'liveRegionAnnouncements_summary_cantTell_inertAncestor'
+            ]
+        : SUMMARY[by];
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: SUMMARY[by][0],
+          summary: summary[0],
           hint:
             by === 'modal'
               ? 'Check whether the page writes status messages to it while the dialog is open; if so, put them in a live region inside the dialog.'
               : 'Check whether the page uses it for status messages; if so, keep it out of aria-hidden and inert content.',
           i18n: {
-            summaryKey: SUMMARY[by][1],
+            summaryKey: summary[1],
+            ...(ancestor ? { params: { ancestor } } : {}),
             hintKey:
               by === 'modal'
                 ? 'liveRegionAnnouncements_hint_cantTell_modal'
@@ -428,7 +428,13 @@ function runInPage(ctx) {
           },
           ...(lean ? { lean } : {}),
           data: {
-            details: { reasonCode: 'LIVE_REGION_HIDDEN', politeness: level, hiddenBy: by },
+            details: {
+              reasonCode: 'LIVE_REGION_HIDDEN',
+              politeness: level,
+              messageKind: messageKind(el),
+              hiddenBy: by,
+              ...(ancestor ? { hiddenByElement: ancestor } : {})
+            },
             visibilityFilter: eligibility(el)
           }
         })
@@ -447,7 +453,11 @@ function runInPage(ctx) {
             hintKey: 'liveRegionAnnouncements_hint_cantTell_busy'
           },
           data: {
-            details: { reasonCode: 'LIVE_REGION_BUSY', politeness: level },
+            details: {
+              reasonCode: 'LIVE_REGION_BUSY',
+              politeness: level,
+              messageKind: messageKind(el)
+            },
             visibilityFilter: eligibility(el)
           }
         })
@@ -474,7 +484,12 @@ function runInPage(ctx) {
 
       const inserted = f.code === 'LIVE_REGION_INSERTED_WITH_CONTENT';
       const level = politeness(el) || 'polite';
-      const details = { reasonCode: f.code, politeness: level, text: f.text };
+      const details = {
+        reasonCode: f.code,
+        politeness: level,
+        messageKind: messageKind(el),
+        text: f.text
+      };
       if (!connected) {
         details.removed = true;
         details.region = {

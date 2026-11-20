@@ -700,3 +700,22 @@ test('a result that records no level or version keeps every criterion', () => {
   assert.deepStrictEqual(suiteNames(bothDoc), ['WCAG 1.4.3']);
   assert.strictEqual(attr(bothDoc.documentElement, 'failures'), '1');
 });
+
+test('renderJunitReport: a scan of several profiles names them all, comma-separated', () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  result.engine = {
+    ...result.engine,
+    profile: 'wcag22-aa',
+    profiles: ['wcag22-aa', 'en301549-v4.1.1']
+  };
+  const properties = (r) =>
+    Array.from(suites(parse(renderJunitReport(r)))[0].getElementsByTagName('property')).map((p) => [
+      attr(p, 'name'),
+      attr(p, 'value')
+    ]);
+  const named = properties(result);
+  assert.ok(named.some(([n, v]) => n === 'profile' && v === 'wcag22-aa'));
+  assert.ok(named.some(([n, v]) => n === 'profiles' && v === 'wcag22-aa,en301549-v4.1.1'));
+  delete result.engine.profiles;
+  assert.ok(!properties(result).some(([n]) => n === 'profiles'));
+});

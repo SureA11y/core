@@ -17,22 +17,33 @@
  *   of listitem in WAI-ARIA 1.2), "presentation", or "none". An <li> used
  *   outside a real list container (e.g. as a generic flex/grid item under
  *   a <div>) is not exposed as a list item to assistive technologies.
+ *   It FAILS where the page still draws the <li> as a list item (display
+ *   list-item with a marker): an item a reader sees that the markup puts in
+ *   no list, a relationship not programmatically determinable (SC 1.3.1).
+ *   An <li> drawn with no marker, as a plain layout box, shows no list, so
+ *   the broken content model is reported at CANTTELL (H48 is only a
+ *   sufficient technique) for a person to say whether it reads as a list.
+ *   jsdom does not resolve the list-style shorthand, so there
+ *   `list-style: none` set that way still reads as a marker.
  * @reports
  *   - `reasonCode`: `LIST_ROLE_OVERRIDDEN` when the parent is a <ul>, <ol>
  *     or <menu> whose explicit role replaces list (`<ul role="tablist">`),
- *     `LISTITEM_INVALID_PARENT` otherwise. Both fail.
+ *     `LISTITEM_INVALID_PARENT` otherwise. Both fail where the <li> is
+ *     drawn as a list item, and are asked about where it is not.
  *   - `parentElement`: the tag name of the `<li>`'s parent, the container
  *     it is in instead of a list.
  *   - `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
  *   - `parentElement` is a stable contract, unlike the
  *     rest of `data.details`.
  * @reason-codes
- *   - `LISTITEM_INVALID_PARENT` (fail): an li is not inside a ul, ol, menu or
- *     an element with role list, so it is not exposed as a list item.
+ *   - `LISTITEM_INVALID_PARENT` (fail, cantTell): an li is not inside a ul,
+ *     ol, menu or an element with role list, so it is not exposed as a list
+ *     item. It fails where the li is drawn as a list item.
  *     Basis: WCAG 1.3.1; H48; HTML li element contexts (MUST); WAI-ARIA 1.2
  *     listitem role (MUST).
- *   - `LIST_ROLE_OVERRIDDEN` (fail): the li's parent is a ul, ol or menu
- *     whose explicit role replaces list, so the li is not in a list.
+ *   - `LIST_ROLE_OVERRIDDEN` (fail, cantTell): the li's parent is a ul, ol
+ *     or menu whose explicit role replaces list, so the li is not in a list.
+ *     It fails where the li is drawn as a list item.
  *     Basis: WCAG 1.3.1; WAI-ARIA 1.2 listitem role (MUST).
  * @implementation-notes
  * - The parent is the <li>'s parent in the flat tree, as the page renders
@@ -124,8 +135,52 @@ function runInPage(ctx) {
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
-  const occurrences = [];
+  // An element as a message names it: <div class="item-wrap">.
+  function describeEl(n) {
+    const tag = String(dom.localName(n) || dom.tagName(n) || '').toLowerCase();
+    const cut = (v) => (v.length > 60 ? v.slice(0, 57) + '...' : v);
+    const elId = String(dom.getAttribute(n, 'id') || '').trim();
+    if (elId) return `<${tag} id="${cut(elId)}">`;
+    const cls = String(dom.getAttribute(n, 'class') || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return cls ? `<${tag} class="${cut(cls)}">` : `<${tag}>`;
+  }
+
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // Whether the page draws the <li> as a list item: display list-item with a
+  // marker. An item a reader sees that the markup puts in no list is a
+  // relationship not programmatically determinable (SC 1.3.1); an <li> used
+  // as a plain layout box, with no marker, shows no list.
+  function drawnAsListItem(li) {
+    try {
+      const cs = helpers.computedStyle(li) || {};
+      if (!/\blist-item\b/.test(String(cs.display || ''))) return false;
+      const type = String(cs.listStyleType || '').trim();
+      const image = String(cs.listStyleImage || '').trim();
+      return (type !== '' && type !== 'none') || (image !== '' && image !== 'none');
+    } catch {
+      return false;
+    }
+  }
+  function tierFor(li) {
+    if (drawnAsListItem(li))
+      return { bucket: failOccurrences, extra: { occurrenceOutcome: 'fail' } };
+    return {
+      bucket: cantTellOccurrences,
+      extra: {
+        occurrenceOutcome: 'cantTell',
+        uncertainty: {
+          code: 'spec-only',
+          needed: 'Whether the page shows this element as an item of a list.',
+          evidence: { drawnAsListItem: false }
+        }
+      }
+    };
+  }
 
   for (const el of nodes) {
     if (!el) continue;
@@ -173,9 +228,11 @@ function runInPage(ctx) {
     // else, so this <li> is a stray listitem in it. Still a failure, with its
     // own reason, since the fix differs: give the <li> the role the container
     // expects, rather than put it in a list.
+    const { bucket, extra } = tierFor(el);
     if (explicitRole && (parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu')) {
-      occurrences.push(
+      bucket.push(
         helpers.reportOccurrence(el, {
+          ...extra,
           summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
           hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
           i18n: {
@@ -195,17 +252,62 @@ function runInPage(ctx) {
       continue;
     }
 
-    occurrences.push(
+    // A <ul>, <ol> or <menu> one to three levels up, a list still: the
+    // wrappers between them (a <div>, an <a> around the item) break it,
+    // and giving the wrapper role="list" would nest a second list. The
+    // walk stops at another list or list item, which is not a wrapper.
+    let listElement = '';
+    const between = [];
+    for (let cur = parent, i = 0; cur && i < 3; i++) {
+      between.push(describeEl(cur));
+      const up = flatParent(cur);
+      const upTag = up && dom.tagName(up) ? dom.tagName(up).toLowerCase() : '';
+      if (!upTag) break;
+      if (upTag === 'ul' || upTag === 'ol' || upTag === 'menu') {
+        const upRole = resolvedRole(up);
+        if (!upRole || upRole === 'list') listElement = upTag;
+        break;
+      }
+      if (upTag === 'li') break;
+      cur = up;
+    }
+    const wrapper = listElement && between.length === 1 ? between[0] : '';
+    // Named from the list down to the item, as they read in the markup.
+    const wrappers = listElement && between.length > 1 ? between.slice(0).reverse().join(', ') : '';
+
+    bucket.push(
       helpers.reportOccurrence(el, {
-        summary: 'This list item is not contained by a list container.',
-        hint: 'Place this <li> inside a <ul> or <ol>, or give its parent role="list".',
+        ...extra,
+        summary: wrappers
+          ? `This <li> is inside a <${listElement}>, but the ${wrappers} between them break the list: a list's items must be its children.`
+          : listElement
+            ? `This <li> is inside a <${listElement}>, but the ${wrapper} between them breaks the list: a list's items must be its children.`
+            : 'This list item is not contained by a list container.',
+        hint: wrappers
+          ? `Remove the elements between them, or move them inside the <li>, so the <li> is a child of the <${listElement}>.`
+          : listElement
+            ? `Move the <${parentTag}> inside the <li>, or remove it, so the <li> is a child of the <${listElement}>.`
+            : 'Place this <li> inside a <ul> or <ol>, or give its parent role="list".',
         i18n: {
-          summaryKey: 'listitemParentValid_summary_fail',
-          hintKey: 'listitemParentValid_hint_fail',
-          params: { parentElement: parentTag }
+          summaryKey: wrappers
+            ? 'listitemParentValid_summary_fail_wrappedMany'
+            : listElement
+              ? 'listitemParentValid_summary_fail_wrapped'
+              : 'listitemParentValid_summary_fail',
+          hintKey: wrappers
+            ? 'listitemParentValid_hint_fail_wrappedMany'
+            : listElement
+              ? 'listitemParentValid_hint_fail_wrapped'
+              : 'listitemParentValid_hint_fail',
+          params: { parentElement: parentTag, listElement, wrapper, wrappers }
         },
         data: {
-          details: { reasonCode: 'LISTITEM_INVALID_PARENT', parentElement: parentTag }
+          details: {
+            reasonCode: 'LISTITEM_INVALID_PARENT',
+            parentElement: parentTag,
+            ...(wrapper ? { listElement, wrapper } : {}),
+            ...(wrappers ? { listElement, wrappedBy: between.slice(0) } : {})
+          }
         }
       })
     );
@@ -214,15 +316,14 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(
+      failOccurrences,
+      cantTellOccurrences,
+      rule.defaultSeverity || 'serious'
+    )
+  };
 }
 
 module.exports = { id, meta, runInPage };

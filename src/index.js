@@ -23,6 +23,9 @@ const { listenerHookScript } = require('./core/listener-hook.js');
 // The opt-in live-region hook: records what a page's live regions are given
 // (src/core/live-region-hook.js).
 const { liveRegionHookScript } = require('./core/live-region-hook.js');
+// Puts a page in the state a finding was made in, and out again, for a
+// binding's screenshots (src/core/evidence-state.js).
+const { evidenceState, EVIDENCE_STATES } = require('./core/evidence-state.js');
 // The reason codes each hook decides or changes, for a binding's docs.
 const { HOOK_REASON_CODES } = require('./hook-reason-codes.js');
 
@@ -83,12 +86,40 @@ function withPacks(engineOptions) {
 // lists the core rules they replace with the overrides of customRules
 // (overriddenBuiltinIds), and the packs it skipped (skippedPacks) when there
 // are any.
-function stampPacks(result, engine) {
+function stampPacks(result, engine, given = []) {
+  // The profiles of the packs it skipped: one a scan of several asked for
+  // did not run because its pack was skipped, which the scan of each
+  // profile, run before this stamp, could not tell from no such profile.
+  const skippedNames = new Set(engine.skipped.map((s) => s && s.name).filter(Boolean));
+  const skippedProfiles = new Set();
+  for (const pack of Array.isArray(given) ? given : []) {
+    const named = pack && typeof pack === 'object' && pack.name;
+    const id = named && pack.version ? `${pack.name}@${pack.version}` : named;
+    if (!named || (!skippedNames.has(named) && !skippedNames.has(id))) continue;
+    // A standard's profiles, or a checklist pack's own (its top-level
+    // profiles, which its standard is made from).
+    const profiles = pack.standard ? pack.standard.profiles : pack.profiles;
+    for (const name of Object.keys(profiles && typeof profiles === 'object' ? profiles : {})) {
+      skippedProfiles.add(name.toLowerCase());
+    }
+  }
+  const notRun = (e) =>
+    e && Array.isArray(e.profilesNotRun) && skippedProfiles.size
+      ? {
+          profilesNotRun: e.profilesNotRun.map((n) =>
+            n &&
+            n.reason === 'unknown-profile' &&
+            skippedProfiles.has(String(n.profile).toLowerCase())
+              ? { ...n, reason: 'pack-skipped' }
+              : n
+          )
+        }
+      : {};
   const stamp = (r) =>
     r && typeof r === 'object'
       ? {
           ...r,
-          engine: { ...r.engine, packs: engine.packs.slice() },
+          engine: { ...r.engine, packs: engine.packs.slice(), ...notRun(r.engine) },
           ...(engine.overrides.length
             ? {
                 overriddenBuiltinIds: Array.from(
@@ -154,6 +185,62 @@ function howToCheckFor(ruleId, reasonCode, locale, options) {
   return m ? m.howToCheckFor(ruleId, reasonCode, locale, options) : null;
 }
 
+// How a person assesses a criterion by hand (src/procedures.js) reads the
+// procedures' dictionaries from disk, so it is loaded as the steps are, and
+// in a browser bundle says once where to get it instead.
+let proceduresModule;
+let warnedNoProcedures = false;
+function procedures(name, fallback) {
+  if (proceduresModule === undefined) {
+    proceduresModule = null;
+    try {
+      if (typeof module === 'object' && module && typeof module.require === 'function') {
+        const id = './procedures.js';
+        proceduresModule = module.require(id);
+      }
+    } catch {
+      proceduresModule = null;
+    }
+  }
+  if (proceduresModule) return proceduresModule[name];
+  if (!warnedNoProcedures) {
+    warnedNoProcedures = true;
+    try {
+      console.warn(
+        `[surea11y] ${name} reads the procedures from disk, in Node. In a browser bundle, ` +
+          'use @surea11y/core/procedures (proceduresFrom, listProceduresFrom, ' +
+          'procedureChecklistFrom, procedureLanguagesFrom, relatedRequirements, renderProceduresFrom) with the dictionaries from ' +
+          '@surea11y/core/procedures/<locale>.'
+      );
+    } catch {}
+  }
+  return () => fallback;
+}
+
+function proceduresFor(requirement, options) {
+  return procedures('proceduresFor', null)(requirement, options);
+}
+
+function listProcedures(options) {
+  return procedures('listProcedures', null)(options);
+}
+
+function procedureChecklist(options) {
+  return procedures('procedureChecklist', null)(options);
+}
+
+function procedureLanguages(options) {
+  return procedures('procedureLanguages', null)(options);
+}
+
+function relatedRequirements(requirement, options) {
+  return procedures('relatedRequirements', [])(requirement, options);
+}
+
+function renderProcedures(input, options) {
+  return procedures('renderProcedures', null)(input, options);
+}
+
 // A result gains its undecided findings' steps here, after the scan, with
 // the packs it ran; a result that is a promise, once it settles. Without
 // Node it is returned as it is, silently.
@@ -195,7 +282,8 @@ function scanInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return stampPacks(
     p.engine.runtime.runDomRulesInPage(pageUrl, contextSelector, p.engineOptions, runOnly),
-    p.engine
+    p.engine,
+    engineOptions.packs
   );
 }
 
@@ -260,6 +348,12 @@ module.exports = {
   runDomRulesInPage,
   addHowToCheck,
   howToCheckFor,
+  proceduresFor,
+  listProcedures,
+  procedureChecklist,
+  procedureLanguages,
+  relatedRequirements,
+  renderProcedures,
   flattenCrossFrameResult,
   occurrenceOutcome,
   reviewGroupOf,
@@ -267,5 +361,7 @@ module.exports = {
   internalsHookScript,
   listenerHookScript,
   liveRegionHookScript,
+  evidenceState,
+  EVIDENCE_STATES,
   HOOK_REASON_CODES
 };

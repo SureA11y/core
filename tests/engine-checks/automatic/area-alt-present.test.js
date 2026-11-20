@@ -251,3 +251,21 @@ test(`${RULE_ID}: an image map is used only when its usemap names it exactly`, (
   assert.strictEqual(outcome(page('map', 'name="map"')), 'notApplicable');
   assert.strictEqual(outcome(page('#map ', 'name="map"')), 'notApplicable');
 });
+
+test(`${RULE_ID}: a fail says when aria-labelledby points to a missing id`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <map name="m"><area id="a1" href="/a" alt="" aria-labelledby="zz" shape="rect" coords="0,0,10,10"></map>
+  <img usemap="#m" src="x.png" alt="Map">
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('a1').i18n.hintKey, 'nameCause_hint_labelledbyMissing');
+  assert.equal(
+    occ('a1').hint,
+    'Its aria-labelledby points to "zz", which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.'
+  );
+  assert.equal(occ('a1').data.details.nameCause.cause, 'labelledbyMissing');
+});

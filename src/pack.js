@@ -24,7 +24,17 @@
 
 const core = require('./core.js');
 const { version: CORE_VERSION } = require('../package.json');
+const { experimentalUses } = require('./experimental.js');
+const { checkStandardData, standardFromData, standardDataOf } = require('./standard-data.js');
+const { deriveStandard } = require('./derive-standard.js');
+const { standardLawProblems, lawOf } = require('./laws.js');
 const { NORMATIVE_STANDARDS, createRegistry } = require('./coverage/standards.js');
+const {
+  languageProblems,
+  languagesOf,
+  packTranslationCoverage,
+  withTitleKeys
+} = require('./pack-languages.js');
 const {
   prepareStandards,
   prepareRules,
@@ -40,6 +50,17 @@ const {
 const { settingsProblems } = require('./core/rule-variants.js');
 const { ruleMappedStandard } = require('./profile-kit.js');
 const { wcagTags, WCAG_CRITERIA } = require('./wcag.js');
+const { PROCEDURES, TOOLS } = require('./procedures/registry.js');
+const { FACETS } = require('./coverage/wcag-facets.js');
+const {
+  claimsOf,
+  ownRulesOf,
+  prefixOfKey,
+  sameReview,
+  standardReviewKeys,
+  standardReviewStem
+} = require('./pack-review.js');
+const { placeholderNames, placeholderProblems } = require('./review-placeholders.js');
 
 const PACK_KEYS = [
   'name',
@@ -55,17 +76,69 @@ const PACK_KEYS = [
   'profiles',
   'rollups',
   'probes',
-  'dictionaries'
+  'dictionaries',
+  'uses'
 ];
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
-const ACTS = ['count', 'cantTell', 'ignore'];
+// The packs a pack uses (pack.uses, experimental): those it names, then the
+// ones they use, each once, nearest first. A cycle stops the walk; usesProblems
+// reports it.
+function usedPacks(pack) {
+  const out = [];
+  const seen = new Set([pack]);
+  const walk = (p) => {
+    for (const used of Array.isArray(p.uses) ? p.uses : []) {
+      if (!isObject(used) || seen.has(used)) continue;
+      seen.add(used);
+      out.push(used);
+      walk(used);
+    }
+  };
+  walk(pack);
+  return out;
+}
+
+// What is wrong with pack.uses: not a list of packs, a pack that isn't
+// valid, one that is the pack itself or uses it back (a cycle), or two
+// versions of one pack along the chain.
+function usesProblems(pack) {
+  if (pack.uses === undefined) return [];
+  if (!Array.isArray(pack.uses)) return ['uses must be a list of the packs it builds on'];
+  // A cycle first: checking the packs of one would never end.
+  const chain = usedPacks(pack);
+  if (
+    pack.uses.includes(pack) ||
+    chain.some((p) => p.name === pack.name || usedPacks(p).includes(pack))
+  ) {
+    return ['uses goes round in a circle: a pack it uses uses it back, or is the pack itself'];
+  }
+  const problems = [];
+  pack.uses.forEach((used, i) => {
+    const at = `uses[${i}]`;
+    if (!isObject(used)) return problems.push(`${at} must be a pack, not ${JSON.stringify(used)}`);
+    const own = packProblems(used, false, false);
+    if (own.length)
+      problems.push(`${at} (${used.name || 'a pack'}) is not valid: ${own.join('; ')}`);
+  });
+  const byName = new Map();
+  for (const p of chain) {
+    const other = byName.get(p.name);
+    if (other && other.version !== p.version) {
+      problems.push(`uses reaches two versions of ${p.name}: ${other.version} and ${p.version}`);
+    }
+    byName.set(p.name, p);
+  }
+  return problems;
+}
+
+const ACTS = ['count', 'cantTell', 'fail', 'ignore'];
 
 /**
  * Problems with a standard's rollup's meta.contributions, the rules it
  * judges by their findings: { [ruleId]: { default, codes, findings } }, each
- * act 'count', 'cantTell' or 'ignore', or { act, requirements } naming
+ * act 'count', 'cantTell', 'fail' or 'ignore', or { act, requirements } naming
  * requirements of the rollup's own meta.standardMappings. `at` starts each
  * message.
  */
@@ -137,6 +210,13 @@ function contributionProblems(rollup, at) {
 // and digits in parts joined by "-", dots allowed within a part (sample-1.0);
 // a rollup id may keep the capitals of its requirement's number (S1, A.1).
 const ID = /^[a-z0-9]+(\.[a-z0-9]+)*(-[a-z0-9]+(\.[a-z0-9]+)*)*$/;
+
+// What is wrong with a profile name: its namespace first, then the
+// characters it may have, so the message names the problem it has.
+function profileNameProblem(name, ns) {
+  if (!name.startsWith(ns + '-')) return `profile name "${name}" must start with "${ns}-"`;
+  return `profile name "${name}" may have only lowercase letters, digits, dots and hyphens, as "${ns}-1.0"`;
+}
 const ROLLUP_ID = /^[A-Za-z0-9]+(\.[A-Za-z0-9]+)*(-[A-Za-z0-9]+(\.[A-Za-z0-9]+)*)*$/;
 // npm's rules for a package name: lowercase, a scope or none, no spaces.
 const PACKAGE_NAME = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
@@ -384,9 +464,17 @@ function keepsParsingProblems(keepsParsing, where) {
 
 // What is wrong with a pack's shape, as messages; none for a pack that can be
 // prepared. Whether its rules, standard and dictionaries hold together with
-// core's is found by preparing it (preparePacks).
+// core's is found by preparing it (preparePacks). It also reports what
+// doesn't keep the pack from loading but reads wrong: a rule's steps that a
+// dictionary translates only in part (reviewPartialProblems).
 function checkPack(pack) {
-  return packProblems(pack, true);
+  return packProblems(pack, true, true);
+}
+
+// What keeps a pack from being loaded: checkPack's problems without those it
+// only reports. A scan and describePacks go by it.
+function loadProblems(pack) {
+  return packProblems(pack, true, false);
 }
 
 // What is wrong with a rule's meta.review, the steps a person follows to
@@ -443,6 +531,603 @@ function reviewProblems(rule, where) {
     }
     if (!text(entry.passWhen)) problems.push(`${at}.passWhen must be a non-empty string`);
     if (!text(entry.failWhen)) problems.push(`${at}.failWhen must be a non-empty string`);
+    problems.push(...entryPlaceholderProblems(entry, at));
+    problems.push(...filingProblems(rule, review, code, entry, at));
+  }
+  return problems;
+}
+
+// What is wrong with the placeholders ({{name|text}}) of a review entry's
+// steps, passWhen and failWhen.
+function entryPlaceholderProblems(entry, at) {
+  const problems = [];
+  const texts = [
+    ...(Array.isArray(entry.steps) ? entry.steps.map((t, i) => [`steps[${i}]`, t]) : []),
+    ['passWhen', entry.passWhen],
+    ['failWhen', entry.failWhen]
+  ];
+  for (const [field, t] of texts) {
+    for (const p of placeholderProblems(t)) problems.push(`${at}.${field}: ${p}`);
+  }
+  return problems;
+}
+
+// The codes of each core rule core gives steps for (src/procedures): the
+// codes a finding of it can be undecided with, by rule id.
+let coreReviewCodes = null;
+function coreReviewCodesOf() {
+  if (coreReviewCodes) return coreReviewCodes;
+  coreReviewCodes = new Map();
+  const visit = (node) => {
+    if (!isObject(node)) return;
+    if (isObject(node.variants)) {
+      for (const [ruleId, codes] of Object.entries(node.variants)) {
+        if (!coreReviewCodes.has(ruleId)) coreReviewCodes.set(ruleId, new Set());
+        for (const code of Array.isArray(codes) ? codes : []) coreReviewCodes.get(ruleId).add(code);
+      }
+    }
+    for (const [key, child] of Object.entries(node)) if (key !== 'variants') visit(child);
+  };
+  visit(PROCEDURES);
+  return coreReviewCodes;
+}
+
+// standard.review: the standard's own steps for core rules' undecided
+// codes, { ruleId: { CODE: { steps, passWhen, failWhen } } }, in English,
+// read in place of core's for a finding only the standard's profiles ask
+// about. Each rule is a core rule and each code one core gives steps for.
+function standardReviewProblems(review) {
+  if (review === undefined) return [];
+  const shape = 'standard.review must be { ruleId: { CODE: { steps, passWhen, failWhen } } }';
+  if (!isObject(review)) return [shape];
+  const problems = [];
+  const codes = coreReviewCodesOf();
+  const text = (v) => typeof v === 'string' && v.trim() !== '';
+  for (const [ruleId, byCode] of Object.entries(review)) {
+    if (!isObject(byCode)) {
+      problems.push(shape);
+      continue;
+    }
+    if (!codes.has(ruleId)) {
+      problems.push(
+        `standard.review.${ruleId}: no core rule of that id gives steps (src/procedures); a pack rule writes its own in meta.review`
+      );
+      continue;
+    }
+    for (const [code, entry] of Object.entries(byCode)) {
+      const at = `standard.review.${ruleId}.${code}`;
+      if (!codes.get(ruleId).has(code)) {
+        problems.push(`${at}: "${code}" is not a code ${ruleId} gives steps for`);
+        continue;
+      }
+      if (!isObject(entry)) {
+        problems.push(`${at} must be { steps, passWhen, failWhen }`);
+        continue;
+      }
+      if (
+        !Array.isArray(entry.steps) ||
+        entry.steps.length < 1 ||
+        entry.steps.length > 6 ||
+        !entry.steps.every(text)
+      ) {
+        problems.push(`${at}.steps must list 1 to 6 steps, each a non-empty string`);
+      }
+      if (!text(entry.passWhen)) problems.push(`${at}.passWhen must be a non-empty string`);
+      if (!text(entry.failWhen)) problems.push(`${at}.failWhen must be a non-empty string`);
+      problems.push(...entryPlaceholderProblems(entry, at));
+    }
+  }
+  return problems;
+}
+
+// Where a reason code's steps go in the procedures (docs/PROCEDURES.md): its
+// entry's facet, one the rule claims in meta.coverage, and criterion, the
+// criterion or requirement it claims that facet under, where it claims it
+// under several. A rule that names the facet of one code names every code's,
+// where it claims several facets; one that names none files its codes under
+// its one facet, or, claiming several, under none, as before facet existed.
+function filingProblems(rule, review, code, entry, at) {
+  const claims = claimsOf(rule);
+  const list = (keys) => keys.map((k) => JSON.stringify(k)).join(', ');
+  if (entry.facet === undefined) {
+    if (entry.criterion !== undefined) return [`${at}.criterion needs the facet it is for`];
+    const named = Object.values(review).some((e) => isObject(e) && e.facet !== undefined);
+    return named && claims.length > 1
+      ? [
+          `${at} needs facet: ${rule.id} claims several facets and names the facet of its other codes`
+        ]
+      : [];
+  }
+  const under = claims.filter((c) => c.facet === entry.facet);
+  if (typeof entry.facet !== 'string' || !under.length) {
+    return [
+      `${at}.facet ${JSON.stringify(entry.facet)} is not a facet ${rule.id} claims in meta.coverage`
+    ];
+  }
+  if (entry.criterion === undefined) {
+    return under.length > 1
+      ? [
+          `${at}.criterion must say which of ${list(under.map((c) => c.key))} the facet ${entry.facet} is under`
+        ]
+      : [];
+  }
+  return under.some((c) => c.key === entry.criterion)
+    ? []
+    : [
+        `${at}.criterion ${JSON.stringify(entry.criterion)}: ${rule.id} claims ${entry.facet} under ${list(under.map((c) => c.key))}`
+      ];
+}
+
+// meta.coverage.facetsByRequirement: the facets of its pack's own
+// requirements a rule claims, by requirement, each one of the facets that
+// requirement gives in standard.procedures (in any version).
+function requirementClaimProblems(pack, rule, where) {
+  const coverage = isObject(rule.meta) ? rule.meta.coverage : undefined;
+  const claims = isObject(coverage) ? coverage.facetsByRequirement : undefined;
+  if (claims === undefined) return [];
+  const at = `${where}: ${rule.id}'s meta.coverage.facetsByRequirement`;
+  if (!isObject(claims)) return [`${at} must be { requirement: [facet ids] }`];
+  const st = isObject(pack.standard) ? pack.standard : null;
+  if (!st || !isObject(st.procedures)) {
+    return [
+      `${at} needs the pack's standard to give its requirements' facets in standard.procedures`
+    ];
+  }
+  const problems = [];
+  for (const [id, facets] of Object.entries(claims)) {
+    if (!Array.isArray(facets) || !facets.length || !facets.every((f) => typeof f === 'string')) {
+      problems.push(`${at}[${JSON.stringify(id)}] must list facet ids`);
+      continue;
+    }
+    const own = new Set();
+    for (const requirements of Object.values(st.procedures)) {
+      const entry = isObject(requirements) ? requirements[id] : null;
+      if (isObject(entry) && Array.isArray(entry.facets)) {
+        for (const f of entry.facets) if (isObject(f)) own.add(f.id);
+      }
+    }
+    if (!own.size) {
+      problems.push(
+        `${at}: ${JSON.stringify(id)} is no requirement with facets of its own in standard.procedures`
+      );
+      continue;
+    }
+    for (const f of facets) {
+      if (!own.has(f)) {
+        problems.push(
+          `${at}[${JSON.stringify(id)}]: ${JSON.stringify(f)} is not one of its facets`
+        );
+      }
+    }
+  }
+  return problems;
+}
+
+// A pack's dictionary may translate its rules' steps under the keys their
+// English has (`<prefix>_review_<CODE>_step<n>`, `_pass`, `_fail`): a code
+// of the rule's meta.review, and no step its English lacks. The English is
+// meta.review itself, so the English dictionary carries none.
+const REVIEW_SUFFIX = /^(step([1-9][0-9]*)|pass|fail)$/;
+function reviewKeyProblems(pack, locale, dict) {
+  const problems = [];
+  const rules = ownRulesOf(pack)
+    .map((rule) => ({
+      rule,
+      prefix: prefixOfKey(
+        isObject(rule.meta) && isObject(rule.meta.i18n) ? rule.meta.i18n.titleKey : null
+      )
+    }))
+    .filter((r) => r.prefix);
+  for (const key of Object.keys(dict)) {
+    const owner = rules.find((r) => key.startsWith(`${r.prefix}_review_`));
+    if (!owner) continue;
+    const at = `dictionaries.${locale}: ${key}`;
+    if (locale.toLowerCase() === 'en') {
+      problems.push(`${at}: a rule's English steps are its meta.review, not a dictionary's`);
+      continue;
+    }
+    const rest = key.slice(`${owner.prefix}_review_`.length);
+    const sep = rest.lastIndexOf('_');
+    const code = sep > 0 ? rest.slice(0, sep) : '';
+    const suffix = REVIEW_SUFFIX.exec(sep > 0 ? rest.slice(sep + 1) : '');
+    const review = isObject(owner.rule.meta) ? owner.rule.meta.review : null;
+    const entry =
+      isObject(review) && Object.prototype.hasOwnProperty.call(review, code) ? review[code] : null;
+    if (!suffix) {
+      problems.push(`${at}: a step's key ends in _step<n>, _pass or _fail`);
+    } else if (!isObject(entry)) {
+      problems.push(`${at}: ${owner.rule.id}'s meta.review has no ${JSON.stringify(code)}`);
+    } else if (
+      suffix[2] &&
+      Number(suffix[2]) > (Array.isArray(entry.steps) ? entry.steps.length : 0)
+    ) {
+      problems.push(`${at}: ${owner.rule.id}'s meta.review.${code} has no step ${suffix[2]}`);
+    }
+  }
+  return problems;
+}
+
+// A rule's steps that a dictionary translates in part: some of an entry's
+// keys (`<prefix>_review_<CODE>_step<n>`, `_pass`, `_fail`) and not the
+// others. The pack still loads, and each key the locale lacks is read in
+// English, so a person reads the steps in two languages: checkPack reports
+// it, naming the keys missing, and definePack and a scan accept it.
+function reviewPartialProblems(pack, locale, dict) {
+  if (locale.toLowerCase() === 'en') return [];
+  const problems = [];
+  for (const rule of ownRulesOf(pack)) {
+    const meta = isObject(rule.meta) ? rule.meta : null;
+    const prefix = prefixOfKey(meta && isObject(meta.i18n) ? meta.i18n.titleKey : null);
+    if (!prefix || !isObject(meta.review)) continue;
+    for (const [code, entry] of Object.entries(meta.review)) {
+      if (!isObject(entry) || !Array.isArray(entry.steps)) continue;
+      const stem = `${prefix}_review_${code}_`;
+      const suffixes = entry.steps.map((_, i) => `step${i + 1}`).concat(['pass', 'fail']);
+      const missing = suffixes.filter((x) => !hasOwn(dict, stem + x));
+      if (missing.length && missing.length < suffixes.length) {
+        problems.push(
+          `dictionaries.${locale}: ${stem}*: translates only part of ${rule.id}'s meta.review.${code}, whose other keys are read in English; it lacks ${missing.join(', ')}`
+        );
+      }
+    }
+  }
+  return problems;
+}
+
+// A pack's dictionary may translate its standard's own steps for core
+// rules' codes (standard.review) under
+// `<standard key>_standardReview_<rule id>_<CODE>_step<n>`, `_pass` and
+// `_fail`: an entry standard.review has, as a whole, since a finding reads
+// the entry in English where the locale lacks any of it, and with the
+// placeholders the English names. The English is standard.review itself,
+// so the English dictionary carries none.
+const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+function standardReviewKeyProblems(pack, locale, dict) {
+  const st = isObject(pack.standard) ? pack.standard : null;
+  if (!st || typeof st.key !== 'string' || !st.key) return [];
+  const start = `${st.key}_standardReview_`;
+  const review = isObject(st.review) ? st.review : {};
+  const entryOf = (ruleId, code) =>
+    hasOwn(review, ruleId) && isObject(review[ruleId]) && hasOwn(review[ruleId], code)
+      ? review[ruleId][code]
+      : null;
+  const problems = [];
+  for (const key of Object.keys(dict)) {
+    if (!key.startsWith(start)) continue;
+    const at = `dictionaries.${locale}: ${key}`;
+    if (locale.toLowerCase() === 'en') {
+      problems.push(
+        `${at}: the standard's English steps are its standard.review, not a dictionary's`
+      );
+      continue;
+    }
+    // <rule id>_<CODE>_<suffix>: a core rule's id has no _.
+    const rest = key.slice(start.length);
+    const first = rest.indexOf('_');
+    const last = rest.lastIndexOf('_');
+    const ruleId = first > 0 ? rest.slice(0, first) : '';
+    const code = last > first + 1 ? rest.slice(first + 1, last) : '';
+    const suffix = REVIEW_SUFFIX.exec(last > first + 1 ? rest.slice(last + 1) : '');
+    const entry = entryOf(ruleId, code);
+    if (!suffix) {
+      problems.push(`${at}: a step's key ends in _step<n>, _pass or _fail`);
+    } else if (!isObject(entry)) {
+      problems.push(
+        `${at}: standard.review has no ${JSON.stringify(code)} for ${JSON.stringify(ruleId)}`
+      );
+    } else if (
+      suffix[2] &&
+      Number(suffix[2]) > (Array.isArray(entry.steps) ? entry.steps.length : 0)
+    ) {
+      problems.push(`${at}: standard.review.${ruleId}.${code} has no step ${suffix[2]}`);
+    }
+  }
+  if (locale.toLowerCase() === 'en') return problems;
+  // Each entry translated as a whole, or not at all, with its placeholders.
+  for (const [ruleId, byCode] of Object.entries(review)) {
+    if (!isObject(byCode)) continue;
+    for (const [code, entry] of Object.entries(byCode)) {
+      if (
+        !isObject(entry) ||
+        !Array.isArray(entry.steps) ||
+        !entry.steps.every((t) => typeof t === 'string')
+      ) {
+        continue;
+      }
+      const keys = standardReviewKeys(st.key, ruleId, code, entry);
+      const english = [...entry.steps, entry.passWhen, entry.failWhen];
+      const given = keys.filter((k) => hasOwn(dict, k));
+      if (!given.length) continue;
+      const stem = standardReviewStem(st.key, ruleId, code);
+      if (given.length < keys.length) {
+        const missing = keys.filter((k) => !hasOwn(dict, k)).map((k) => k.slice(stem.length));
+        problems.push(
+          `dictionaries.${locale}: ${stem}*: translates only part of standard.review.${ruleId}.${code}, which is then read in English; it lacks ${missing.join(', ')}`
+        );
+      }
+      keys.forEach((k, i) => {
+        if (!hasOwn(dict, k) || typeof dict[k] !== 'string') return;
+        const where = `dictionaries.${locale}: ${k}`;
+        if (!dict[k].trim()) problems.push(`${where} must be a non-empty string`);
+        for (const p of placeholderProblems(dict[k])) problems.push(`${where}: ${p}`);
+        const names = (t) => placeholderNames(t).sort().join(' ');
+        if (typeof english[i] === 'string' && names(dict[k]) !== names(english[i])) {
+          problems.push(`${where} must name the placeholders its English names`);
+        }
+      });
+    }
+  }
+  return problems;
+}
+
+// The standardReview keys name no version of the standard: they translate
+// standard.review's entry, and a version whose own steps replace it
+// (standard.reviewByVersion) is read in English there. Reported, so a pack
+// whose versions' steps differ, as RGAA 4's and 5's would, translates them
+// by id (standard.texts) instead of finding them in English.
+function standardReviewVersionProblems(pack, locale, dict) {
+  const st = isObject(pack.standard) ? pack.standard : null;
+  if (!st || typeof st.key !== 'string' || !st.key || locale.toLowerCase() === 'en') return [];
+  if (!isObject(st.review) || !isObject(st.reviewByVersion)) return [];
+  const problems = [];
+  for (const [ruleId, byCode] of Object.entries(st.review)) {
+    if (!isObject(byCode)) continue;
+    for (const [code, entry] of Object.entries(byCode)) {
+      if (!isObject(entry) || !Array.isArray(entry.steps)) continue;
+      const keys = standardReviewKeys(st.key, ruleId, code, entry);
+      if (!keys.some((k) => hasOwn(dict, k))) continue;
+      for (const [version, table] of Object.entries(st.reviewByVersion)) {
+        const own =
+          isObject(table) &&
+          hasOwn(table, ruleId) &&
+          isObject(table[ruleId]) &&
+          hasOwn(table[ruleId], code)
+            ? table[ruleId][code]
+            : null;
+        if (!isObject(own) || sameReview(st.review, ruleId, code, own)) continue;
+        problems.push(
+          `dictionaries.${locale}: ${standardReviewStem(st.key, ruleId, code)}*: translates standard.review.${ruleId}.${code}, which version ${version} replaces with steps of its own (standard.reviewByVersion), read in English there; translate them by id (standard.texts, review.${ruleId}.${code})`
+        );
+      }
+    }
+  }
+  return problems;
+}
+
+// standard.procedures: how a person assesses each requirement by hand
+// (docs/PROCEDURES.md), by version and requirement. A requirement takes a
+// WCAG criterion's procedures ({ wcag: '1.4.3' }), and may replace the
+// general procedure of some of its facets with its own ({ wcag, replace:
+// { facet: { tools, steps, passWhen, failWhen } } }), or gives its own
+// facets, in English ({ title, facets: [{ id, label, automation, tools,
+// steps, passWhen, failWhen }] }).
+const AUTOMATION = ['full', 'partial', 'manual'];
+
+// A procedure a pack writes: its tools, steps, passWhen and failWhen.
+function packProcedureProblems(f, at) {
+  const problems = [];
+  const text = (v) => typeof v === 'string' && v.trim() !== '';
+  if (
+    f.tools !== undefined &&
+    (!Array.isArray(f.tools) || !f.tools.every((t) => TOOLS.includes(t)))
+  ) {
+    problems.push(`${at}.tools must list tools of ${TOOLS.join(', ')}`);
+  }
+  if (!Array.isArray(f.steps) || f.steps.length < 1 || f.steps.length > 8 || !f.steps.every(text)) {
+    problems.push(`${at}.steps must list 1 to 8 steps, each a non-empty string`);
+  }
+  if (!text(f.passWhen)) problems.push(`${at}.passWhen must be a non-empty string`);
+  if (!text(f.failWhen)) problems.push(`${at}.failWhen must be a non-empty string`);
+  return problems;
+}
+
+// A requirement's replace: general procedures of its criterion's facets, by
+// facet. A technology facet has none to replace: its coveredBy facet's
+// procedure assesses it.
+function replaceProblems(replace, criterion, where) {
+  if (replace === undefined) return [];
+  const at = `${where}.replace`;
+  if (!isObject(replace) || !Object.keys(replace).length) {
+    return [`${at} must be { facet: { steps, passWhen, failWhen } }`];
+  }
+  if (!WCAG_SC.has(criterion)) return [];
+  const facets = (FACETS[criterion] && FACETS[criterion].facets) || [];
+  const registry = PROCEDURES.wcag[criterion] || {};
+  const problems = [];
+  for (const [id, entry] of Object.entries(replace)) {
+    const fa = `${at}[${JSON.stringify(id)}]`;
+    if (!facets.some((f) => f.id === id)) {
+      problems.push(`${fa}: ${criterion} has no facet ${JSON.stringify(id)}`);
+      continue;
+    }
+    const coveredBy = registry[id] && registry[id].coveredBy;
+    if (typeof coveredBy === 'string') {
+      problems.push(
+        `${fa}: ${JSON.stringify(id)} has no procedure of its own; replace ${JSON.stringify(coveredBy)}'s, which assesses it`
+      );
+      continue;
+    }
+    if (!isObject(entry)) {
+      problems.push(`${fa} must be { steps, passWhen, failWhen }`);
+      continue;
+    }
+    problems.push(...packProcedureProblems(entry, fa));
+  }
+  return problems;
+}
+
+// standard.notes: what the standard says of itself, by version, in English,
+// for the header of a page of its procedures ({ version: ['...'] }).
+function notesProblems(notes, versions) {
+  if (notes === undefined) return [];
+  const shape = "standard.notes must be { version: ['<text>'] }";
+  if (!isObject(notes)) return [shape];
+  const problems = [];
+  for (const [version, list] of Object.entries(notes)) {
+    const at = `standard.notes.${version}`;
+    if (!versions.includes(version)) {
+      problems.push(`${at}: ${JSON.stringify(version)} is not one of the standard's versions`);
+    } else if (!Array.isArray(list) || list.some((n) => typeof n !== 'string' || !n.trim())) {
+      problems.push(`${at} must be a list of texts`);
+    }
+  }
+  return problems;
+}
+
+// standard.groups: how the standard groups its requirements, by version, as
+// a list or a table of contents shows them ({ version: [{ id, title,
+// requirements, groups }] }). Each requirement is one of the version's
+// procedures, in one group at most.
+function groupsProblems(groups, procedures, versions) {
+  if (groups === undefined) return [];
+  const shape = 'standard.groups must be { version: [{ id, title, requirements, groups }] }';
+  if (!isObject(groups)) return [shape];
+  if (!isObject(procedures)) return ['standard.groups needs standard.procedures, which it groups'];
+  const problems = [];
+  const text = (v) => typeof v === 'string' && v.trim() !== '';
+  for (const [version, list] of Object.entries(groups)) {
+    const at = `standard.groups.${version}`;
+    if (!versions.includes(version)) {
+      problems.push(`${at}: ${JSON.stringify(version)} is not one of the standard's versions`);
+      continue;
+    }
+    if (!Array.isArray(list)) {
+      problems.push(shape);
+      continue;
+    }
+    const known = isObject(procedures[version]) ? procedures[version] : {};
+    const ids = new Set();
+    const placed = new Set();
+    const walk = (items, where) => {
+      items.forEach((g, i) => {
+        const ga = `${where}[${i}]`;
+        if (!isObject(g)) {
+          problems.push(`${ga} must be { id, title, requirements, groups }`);
+          return;
+        }
+        if (!text(g.id) || ids.has(g.id))
+          problems.push(`${ga}.id must be a non-empty string, unique in the version`);
+        ids.add(g.id);
+        if (!text(g.title)) problems.push(`${ga}.title must be a non-empty string`);
+        if (g.requirements !== undefined && !Array.isArray(g.requirements)) {
+          problems.push(`${ga}.requirements must list requirements`);
+        }
+        for (const id of Array.isArray(g.requirements) ? g.requirements : []) {
+          if (!Object.prototype.hasOwnProperty.call(known, id)) {
+            problems.push(
+              `${ga}: ${JSON.stringify(id)} is no requirement of standard.procedures.${version}`
+            );
+          } else if (placed.has(id)) {
+            problems.push(`${ga}: ${JSON.stringify(id)} is in another group already`);
+          }
+          placed.add(id);
+        }
+        if (g.groups !== undefined && !Array.isArray(g.groups)) {
+          problems.push(`${ga}.groups must list groups`);
+        } else if (g.groups) walk(g.groups, `${ga}.groups`);
+      });
+    };
+    walk(list, at);
+  }
+  return problems;
+}
+
+function proceduresProblems(procedures, versions) {
+  if (procedures === undefined) return [];
+  const shape =
+    "standard.procedures must be { version: { requirement: { wcag: '<criterion>' } or { facets } } }";
+  if (!isObject(procedures)) return [shape];
+  const problems = [];
+  const text = (v) => typeof v === 'string' && v.trim() !== '';
+  for (const [version, requirements] of Object.entries(procedures)) {
+    const at = `standard.procedures.${version}`;
+    if (!versions.includes(version)) {
+      problems.push(`${at}: ${JSON.stringify(version)} is not one of the standard's versions`);
+      continue;
+    }
+    if (!isObject(requirements)) {
+      problems.push(shape);
+      continue;
+    }
+    for (const [id, entry] of Object.entries(requirements)) {
+      const where = `${at}[${JSON.stringify(id)}]`;
+      if (!isObject(entry)) {
+        problems.push(`${where} must be { wcag } or { facets }`);
+        continue;
+      }
+      if (entry.title !== undefined && !text(entry.title)) {
+        problems.push(`${where}.title must be a non-empty string`);
+      }
+      if (entry.note !== undefined && !text(entry.note)) {
+        problems.push(`${where}.note must be a non-empty string`);
+      }
+      // A requirement with nothing to assess, such as a clause the version
+      // leaves void, says so in its note, with no wcag or facets.
+      if (entry.wcag === undefined && entry.facets === undefined && text(entry.note)) {
+        if (entry.relatesTo !== undefined || entry.replace !== undefined) {
+          problems.push(`${where}: a requirement with only a note has no relatesTo or replace`);
+        }
+        continue;
+      }
+      if ((entry.wcag === undefined) === (entry.facets === undefined)) {
+        problems.push(`${where} must give either wcag or facets, or only a note`);
+        continue;
+      }
+      if (entry.wcag !== undefined) {
+        if (entry.relatesTo !== undefined) {
+          problems.push(`${where}.relatesTo goes with facets: a requirement with wcag restates it`);
+        }
+        if (!WCAG_SC.has(entry.wcag)) {
+          problems.push(`${where}.wcag names no WCAG criterion: ${JSON.stringify(entry.wcag)}`);
+        }
+        problems.push(...replaceProblems(entry.replace, entry.wcag, where));
+        continue;
+      }
+      if (entry.replace !== undefined) {
+        problems.push(`${where}.replace goes with wcag: its own facets give their procedures`);
+      }
+      if (
+        entry.relatesTo !== undefined &&
+        (!Array.isArray(entry.relatesTo) || !entry.relatesTo.every((sc) => WCAG_SC.has(sc)))
+      ) {
+        problems.push(`${where}.relatesTo must list WCAG criteria ('1.3.1')`);
+      }
+      if (!Array.isArray(entry.facets) || !entry.facets.length) {
+        problems.push(`${where}.facets must list its facets`);
+        continue;
+      }
+      const ids = new Set();
+      entry.facets.forEach((f, i) => {
+        const fa = `${where}.facets[${i}]`;
+        if (!isObject(f)) {
+          problems.push(`${fa} must be { id, label, steps, passWhen, failWhen }`);
+          return;
+        }
+        if (!text(f.id) || !ID.test(f.id) || ids.has(f.id)) {
+          problems.push(`${fa}.id must be a lower-case id, unique in the requirement`);
+        }
+        ids.add(f.id);
+        if (!text(f.label)) problems.push(`${fa}.label must be a non-empty string`);
+        if (f.automation !== undefined && !AUTOMATION.includes(f.automation)) {
+          problems.push(`${fa}.automation must be one of ${AUTOMATION.join(', ')}`);
+        }
+        // The requirement ids of the standard's mapping (its mappingsFor
+        // entries' requirement) the facet assesses, such as a test of the
+        // requirement: the core rules mapped to them are listed under it.
+        if (
+          f.mappedRequirements !== undefined &&
+          (!Array.isArray(f.mappedRequirements) ||
+            !f.mappedRequirements.length ||
+            !f.mappedRequirements.every(text) ||
+            new Set(f.mappedRequirements).size !== f.mappedRequirements.length)
+        ) {
+          problems.push(
+            `${fa}.mappedRequirements must list requirement ids of the standard's mapping, each once`
+          );
+        }
+        problems.push(...packProcedureProblems(f, fa));
+      });
+    }
   }
   return problems;
 }
@@ -467,8 +1152,9 @@ function variantProblems(pack, rule, where) {
 // withCoreVersion: whether this core's version must be in the pack's range.
 // definePack leaves that to the scan, which skips the pack: a range that
 // leaves out the core a host installed is no mistake in the pack, and must
-// not stop the host from loading it.
-function packProblems(pack, withCoreVersion) {
+// not stop the host from loading it. withReported: whether to include what
+// checkPack reports but doesn't keep the pack from loading.
+function packProblems(pack, withCoreVersion, withReported) {
   if (typeof pack === 'string') {
     return [
       `"${pack}" is a pack's name: in Node, pass the pack itself; names are for a page where packScript registered it`
@@ -506,6 +1192,28 @@ function packProblems(pack, withCoreVersion) {
   } else if (!fits && withCoreVersion) {
     problems.push(`it supports core ${pack.core}, and this is core ${CORE_VERSION}`);
   }
+  // A pack that uses an experimental API (src/experimental.js) can't take
+  // the next minor on trust: that minor may change what it uses. It is
+  // reported, not refused: the pack works with the core it is checked with.
+  if (fits !== null && withReported) {
+    const uses = experimentalUses(pack);
+    const [major, minor] = parseVersion(CORE_VERSION);
+    // The next minor, or the next major, which may change it as well: a
+    // range that takes either (`~1.17.0 || ^2.0.0`) is reported.
+    const next = [`${major}.${minor + 1}.0`, `${major + 1}.0.0`].find((v) =>
+      satisfiesRange(v, pack.core)
+    );
+    if (uses.length && next) {
+      problems.push(
+        `core ${pack.core} takes core ${next}, which may change the experimental ${uses
+          .map((u) => u.id)
+          .join(', ')} it uses: declare "~${major}.${minor}.0" until ${
+          uses.length > 1 ? 'they are' : 'it is'
+        } stable (docs/API_STABILITY.md, "Experimental")`
+      );
+    }
+  }
+  problems.push(...usesProblems(pack));
   // Core rules the pack's rules replace, by id (decision: explicit, never
   // inferred from a shared id).
   const overrides = Array.isArray(pack.overrides) ? pack.overrides : [];
@@ -563,6 +1271,7 @@ function packProblems(pack, withCoreVersion) {
       }
       if (typeof rule.from === 'string') problems.push(...variantProblems(pack, rule, where));
       problems.push(...reviewProblems(rule, where));
+      problems.push(...requirementClaimProblems(pack, rule, where));
       problems.push(...pageCodeProblems(rule, where));
     });
   }
@@ -598,9 +1307,32 @@ function packProblems(pack, withCoreVersion) {
       problems.push(`standard.ruleTag must be the namespace "${ns}"`);
     }
     const versions = Array.isArray(st.versions) ? st.versions : [];
+    problems.push(...proceduresProblems(st.procedures, versions));
+    problems.push(...groupsProblems(st.groups, st.procedures, versions));
+    problems.push(...standardReviewProblems(st.review));
+    if (st.reviewByVersion !== undefined) {
+      if (!isObject(st.reviewByVersion)) {
+        problems.push('standard.reviewByVersion must be { version: { ruleId: { CODE: entry } } }');
+      } else {
+        for (const [version, review] of Object.entries(st.reviewByVersion)) {
+          if (!versions.includes(version)) {
+            problems.push(`standard.reviewByVersion: the standard has no version ${version}`);
+            continue;
+          }
+          problems.push(
+            ...standardReviewProblems(review).map((p) =>
+              p.replace(/^standard\.review/, `standard.reviewByVersion.${version}`)
+            )
+          );
+        }
+      }
+    }
+    problems.push(...notesProblems(st.notes, versions));
+    problems.push(...languageProblems(st));
+    problems.push(...standardLawProblems(st));
     for (const [name, profile] of Object.entries(isObject(st.profiles) ? st.profiles : {})) {
       if (!name.startsWith(ns + '-') || !ID.test(name)) {
-        problems.push(`standard.profiles: profile name "${name}" must start with "${ns}-"`);
+        problems.push(`standard.profiles: ${profileNameProblem(name, ns)}`);
       }
       if (!isObject(profile)) continue;
       // A version the standard lacks maps no rule and makes no rollup.
@@ -620,13 +1352,26 @@ function packProblems(pack, withCoreVersion) {
       } catch (e) {
         problems.push(`standard.composites() throws: ${e && e.message ? e.message : e}`);
       }
+      // Each rollup's id once: the engine loads no pack whose rollups share
+      // one, so a standard whose version and requirement ids join into the
+      // same id (version 1 with a-b, version 1-a with b) is refused here.
+      const seenIds = new Set();
       for (const r of Array.isArray(rollups) ? rollups : []) {
         const id = isObject(r) ? r.id : undefined;
-        if (typeof id !== 'string' || !id.startsWith(ns + '-') || !ROLLUP_ID.test(id)) {
+        if (typeof id !== 'string' || !id.startsWith(ns + '-')) {
           problems.push(
             `standard.composites(): rollup id ${JSON.stringify(id)} must start with "${ns}-"`
           );
+        } else if (!ROLLUP_ID.test(id)) {
+          problems.push(
+            `standard.composites(): rollup id ${JSON.stringify(id)} must be letters and digits joined by "-" and "."`
+          );
+        } else if (seenIds.has(id)) {
+          problems.push(
+            `standard.composites(): two rollups have the id ${JSON.stringify(id)}; give a version or requirement an id that doesn't join into another's`
+          );
         }
+        if (typeof id === 'string') seenIds.add(id);
         if (isObject(r) && isObject(r.meta) && r.meta.contributions !== undefined) {
           problems.push(...contributionProblems(r, `standard.composites(): ${id}`));
         }
@@ -674,7 +1419,7 @@ function packProblems(pack, withCoreVersion) {
     else {
       for (const [name, profile] of Object.entries(pack.profiles)) {
         if (typeof ns === 'string' && (!name.startsWith(ns + '-') || !ID.test(name))) {
-          problems.push(`profiles: profile name "${name}" must start with "${ns}-"`);
+          problems.push(`profiles: ${profileNameProblem(name, ns)}`);
         }
         if (
           !isObject(profile) ||
@@ -768,6 +1513,13 @@ function packProblems(pack, withCoreVersion) {
           problems.push(`dictionaries: "${locale}" is not a locale`);
         } else if (!isObject(dict) || Object.values(dict).some((t) => typeof t !== 'string')) {
           problems.push(`dictionaries.${locale} must map keys to strings`);
+        } else {
+          problems.push(...reviewKeyProblems(pack, locale, dict));
+          problems.push(...standardReviewKeyProblems(pack, locale, dict));
+          if (withReported) {
+            problems.push(...reviewPartialProblems(pack, locale, dict));
+            problems.push(...standardReviewVersionProblems(pack, locale, dict));
+          }
         }
       }
     }
@@ -777,7 +1529,7 @@ function packProblems(pack, withCoreVersion) {
 
 // A pack, checked: returns it, or throws a TypeError listing what is wrong.
 function definePack(pack) {
-  const problems = packProblems(pack, false);
+  const problems = packProblems(pack, false, false);
   if (problems.length) {
     const name = isObject(pack) && typeof pack.name === 'string' ? pack.name : 'pack';
     throw new TypeError(`${name}: ${problems.join('; ')}`);
@@ -807,13 +1559,14 @@ const describePack = (pack) => `${pack.name}@${pack.version}`;
 // rules read. A pack that is not valid is described by its problems.
 function describePacks(packs) {
   return (Array.isArray(packs) ? packs : [packs]).map((pack) => {
-    const problems = checkPack(pack);
+    const problems = loadProblems(pack);
     if (problems.length) {
       return { name: isObject(pack) && typeof pack.name === 'string' ? pack.name : null, problems };
     }
     const ids = (list) => (list || []).map((r) => r.id);
     const overrides = (pack.overrides || []).slice();
     const standard = standardOf(pack);
+    const experimental = experimentalUses(pack);
     return {
       name: pack.name,
       version: pack.version,
@@ -828,12 +1581,28 @@ function describePacks(packs) {
         ids(pack.variants)
       ),
       overrides,
+      // The packs it uses (experimental), as name@version.
+      ...(Array.isArray(pack.uses) && pack.uses.length
+        ? { uses: pack.uses.map(describePack) }
+        : {}),
       standard: standard
         ? {
             key: standard.key,
             standard: standard.standard,
             versions: standard.versions.slice(),
             profiles: Object.keys(standard.profiles || {}),
+            // Its laws as written, each with the profiles that serve it
+            // (experimental), where it has any.
+            ...(isObject(standard.laws) && Object.keys(standard.laws).length
+              ? {
+                  laws: Object.keys(standard.laws).map((id) => ({
+                    ...lawOf(standard, id),
+                    profiles: Object.entries(standard.profiles || {})
+                      .filter(([, p]) => isObject(p) && p.law === id)
+                      .map(([name]) => name)
+                  }))
+                }
+              : {}),
             rollups:
               typeof standard.composites === 'function'
                 ? standard.composites().map((c) => c.id)
@@ -845,7 +1614,9 @@ function describePacks(packs) {
         path,
         description: p.description,
         readBy: Array.isArray(p.readBy) ? p.readBy.slice() : []
-      }))
+      })),
+      // The experimental APIs it uses, listed only when it uses one.
+      ...(experimental.length ? { experimental } : {})
     };
   });
 }
@@ -932,9 +1703,13 @@ function standardRules(pack) {
       out.push({ ruleId: e.mod.id, wcagSc: (e.mod.meta && e.mod.meta.wcagSc) || [] });
     }
   }
-  for (const r of Array.isArray(pack.rules) ? pack.rules : []) {
-    if (isObject(r) && typeof r.id === 'string') {
-      out.push({ ruleId: r.id, wcagSc: (isObject(r.meta) && r.meta.wcagSc) || [] });
+  // The pack's own rules, and those of the packs it uses (pack.uses), which
+  // its standard may map as it maps core's.
+  for (const p of [pack, ...usedPacks(pack)]) {
+    for (const r of Array.isArray(p.rules) ? p.rules : []) {
+      if (isObject(r) && typeof r.id === 'string') {
+        out.push({ ruleId: r.id, wcagSc: (isObject(r.meta) && r.meta.wcagSc) || [] });
+      }
     }
   }
   return out;
@@ -1048,7 +1823,28 @@ function prepareCatalog(packs) {
     }
     names.set(st.standard, p.name);
   }
-  const registry = createRegistry(builtIn.concat(packs.map(standardOf).filter(Boolean)));
+  // A standard whose translations give its rollups' titles names them by
+  // keys, with the titles under them in each locale (docs/PACKS.md).
+  const titled = new Map(
+    packs.map((p) => [p, p.standard ? withTitleKeys(p.standard, p.namespace) : null])
+  );
+  // A standard whose pack uses others (pack.uses) may map their rules: by
+  // its key, the rule tags of their standards.
+  const uses = {};
+  for (const p of packs) {
+    const st = standardOf(p);
+    const tags = usedPacks(p)
+      .map((u) => standardOf(u))
+      .filter((u) => u && u.ruleTag)
+      .map((u) => u.ruleTag);
+    if (st && tags.length) uses[st.key] = tags;
+  }
+  const registry = createRegistry(
+    builtIn.concat(
+      packs.map((p) => (titled.get(p) ? titled.get(p).standard : standardOf(p))).filter(Boolean)
+    ),
+    { uses }
+  );
   // A rule a pack lists in `overrides` takes the core rule's place: the meta
   // fields it doesn't give are the core rule's, so it runs where that rule
   // would, until its own meta says otherwise.
@@ -1129,11 +1925,13 @@ function prepareCatalog(packs) {
       .map(([locale, dict]) => ({ locale, label: `core ${locale}`, dict }))
       .concat(
         packs.flatMap((p) =>
-          Object.entries(p.dictionaries || {}).map(([locale, dict]) => ({
-            locale,
-            label: `${p.name} ${locale}`,
-            dict
-          }))
+          Object.entries(p.dictionaries || {})
+            .map(([locale, dict]) => ({ locale, label: `${p.name} ${locale}`, dict }))
+            .concat(
+              Object.entries(titled.get(p) ? titled.get(p).dictionaries : {}).map(
+                ([locale, dict]) => ({ locale, label: `${p.name} titles ${locale}`, dict })
+              )
+            )
         )
       )
   );
@@ -1157,12 +1955,13 @@ function prepareCatalog(packs) {
   // the pack's choice: they don't count as missing from that locale.
   const i18nLeftOut = JSON.parse(JSON.stringify(built.i18nLeftOut || {}));
   for (const p of packs) {
-    const own = p.dictionaries || {};
-    const english = Object.keys(own.en || {});
-    for (const locale of Object.keys(i18n)) {
-      if (locale === 'en' || own[locale] || !english.length) continue;
-      const left = (i18nLeftOut[locale] = i18nLeftOut[locale] || {});
-      for (const key of english) left[key] = true;
+    for (const own of [p.dictionaries || {}, titled.get(p) ? titled.get(p).dictionaries : {}]) {
+      const english = Object.keys(own.en || {});
+      for (const locale of Object.keys(i18n)) {
+        if (locale === 'en' || own[locale] || !english.length) continue;
+        const left = (i18nLeftOut[locale] = i18nLeftOut[locale] || {});
+        for (const key of english) left[key] = true;
+      }
     }
   }
   const knownLocales = Array.from(new Set(built.knownLocales.concat(Object.keys(i18n)))).sort();
@@ -1259,10 +2058,11 @@ function preparePacks(list, { strict = false } = {}) {
   const valid = [];
   const skipped = [];
   for (const pack of list) {
-    let problems = checkPack(pack);
+    let problems = loadProblems(pack);
     if (!problems.length) {
       try {
-        prepareCatalog([pack]);
+        // With the packs it uses, whose rules it may run.
+        prepareCatalog([...usedPacks(pack).reverse(), pack]);
       } catch (e) {
         problems = [e && e.message ? e.message : String(e)];
       }
@@ -1294,6 +2094,22 @@ function preparePacks(list, { strict = false } = {}) {
     if (strict) throw packsError(TypeError, `engineOptions.packs: ${valid[i].name}: ${reason}`);
     skipped.push({ name: valid[i].name, reason });
     valid.splice(i--, 1);
+  }
+  // A pack that uses others runs only with them in the scan, at the version
+  // it was made with; otherwise it is skipped, and so is one that uses it.
+  for (let changed = true; changed;) {
+    changed = false;
+    for (let i = 0; i < valid.length; i++) {
+      const missing = (valid[i].uses || []).find(
+        (u) => !valid.some((p) => p.name === u.name && p.version === u.version)
+      );
+      if (!missing) continue;
+      const reason = `it uses ${describePack(missing)}, which this scan doesn't have: pass it in the same packs`;
+      if (strict) throw packsError(TypeError, `engineOptions.packs: ${valid[i].name}: ${reason}`);
+      skipped.push({ name: valid[i].name, reason });
+      valid.splice(i--, 1);
+      changed = true;
+    }
   }
   let catalog;
   try {
@@ -1438,6 +2254,10 @@ function packScript(packs) {
   const data = { ...catalog, i18n };
   delete data.impls;
   const key = engine.packs.slice().sort().join(',');
+  const packProfiles = (Array.isArray(packs) ? packs : [packs]).map((pack) => [
+    describePack(pack),
+    Object.keys((standardOf(pack) || {}).profiles || {})
+  ]);
   const script = [
     // The names as data: written as text, a line break in one would end the
     // comment and the rest would run.
@@ -1462,6 +2282,9 @@ function packScript(packs) {
     `  data.core = ${scriptJson(CORE_VERSION)};`,
     `  data.packs = ${scriptJson(engine.packs)};`,
     `  data.overrides = ${scriptJson(engine.overrides)};`,
+    // Each pack's own profiles, by name@version: a scan that names some of
+    // them, and so isn't run, tells their profiles from the others'.
+    `  data.packProfiles = ${scriptJson(packProfiles)};`,
     '  data.impls = {',
     impls.join(',\n'),
     '  };',
@@ -1493,9 +2316,16 @@ module.exports = {
   checkPack,
   describePacks,
   packScript,
+  languagesOf,
+  packTranslationCoverage,
   buildBrowserBundle,
   preparePacks,
   satisfiesRange,
   ruleMappedStandard,
+  checkStandardData,
+  standardFromData,
+  standardDataOf,
+  deriveStandard,
+  lawOf,
   wcagTags
 };

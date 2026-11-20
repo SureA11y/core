@@ -31,6 +31,11 @@
  *   A custom element whose ElementInternals give it one of those roles
  *   (this.attachInternals().role), with no role attribute naming another, is
  *   in scope too: that is its default role, and no other rule checks it.
+ *   A variant with the setting roles: 'all' also checks application,
+ *   marquee, table, tabpanel and treegrid, the other name-from-author roles
+ *   WAI-ARIA requires a name for: a standard for WAI-ARIA asks it, and a WCAG
+ *   scan does not, as an unnamed table is common and usually no WCAG
+ *   failure.
  * @expectation
  *   The element has a non-empty aria-label, an aria-labelledby that resolves
  *   to non-empty text, or a non-empty title. Every role in the set is
@@ -41,14 +46,29 @@
  *   role: the first child <legend> of a <fieldset>, the first child
  *   <caption> of a <table>, and an associated <label> on a labelable
  *   element such as <progress> or <meter>.
+ *   A missing name is reported at CANTTELL, not FAIL. The requirement is
+ *   WAI-ARIA's ("Accessible Name Required: True"), and none of these roles is
+ *   by itself a user interface component in WCAG's sense, "a single control
+ *   for a distinct function": a grid, tree or radiogroup is a container of
+ *   controls (its cells, items or radios, each named by its own rule), and a
+ *   meter or progressbar is no control at all. So a missing name proves the
+ *   WAI-ARIA violation, not a failure of SC 4.1.2. It can still be one, or a
+ *   failure of another criterion, depending on the page: a visible question
+ *   above a radiogroup that is not tied to it, a visible title for a grid that
+ *   is not tied to it. A person settles that. A meter or progressbar with no
+ *   text alternative fails SC 1.1.1 through meter-name-present and
+ *   progressbar-name-present.
  * @reports
  *   - `role`: the role that needs a name, one of `grid`, `meter`,
  *     `progressbar`, `radiogroup` and `tree`. A stable contract,
  *     unlike the rest of `data.details`.
  * @reason-codes
- *   - `name_missing` (fail): an element whose role requires an accessible name
- *     has none from aria-label, aria-labelledby, title or its host element.
- *     Basis: WCAG 4.1.2; WAI-ARIA 1.2 accessible name required; accname 1.2.
+ *   - `name_missing` (cantTell): an element whose role requires an accessible
+ *     name has none from aria-label, aria-labelledby, title or its host
+ *     element. A WAI-ARIA violation; whether it also fails a WCAG criterion
+ *     depends on what the page shows.
+ *     Basis: WAI-ARIA 1.2 accessible name required (MUST); accname 1.2; WCAG
+ *     4.1.2 (not settled).
  *   - `name_internals` (cantTell): the element is a custom element that may
  *     give itself a name through ElementInternals, which no script can read, so
  *     whether it has one could not be told.
@@ -85,21 +105,6 @@ const meta = {
     facetsBySc: {
       '4.1.2': ['aria-role-name-present']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    name_internals: {
-      steps: [
-        'Inspect the custom element the report names and note its role.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the element, set through its internals or otherwise, and the screen reader announces it.',
-      failWhen:
-        'The element has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
-    }
   }
 };
 
@@ -117,7 +122,7 @@ function runInPage(ctx) {
           try {
             const scope = rt || safeRoot;
             return scope && dom.get(scope, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(scope, sel))
+              ? [...dom.querySelectorAll(scope, sel)]
               : [];
           } catch {
             return [];
@@ -182,6 +187,24 @@ function runInPage(ctx) {
   // <generated:aria-name-required-roles>
   const NAME_REQUIRED_ROLES = new Set(['grid', 'meter', 'progressbar', 'radiogroup', 'tree']);
   // </generated:aria-name-required-roles>
+
+  // With the setting roles: 'all' (a variant's, docs/RULE_AUTHORING.md,
+  // "Rule variants"), the other name-from-author roles WAI-ARIA 1.2 requires
+  // a name for, which no WCAG rule owns: an unnamed table is common and
+  // usually no WCAG failure, so a WCAG scan leaves them out.
+  // <generated:aria-name-required-roles-all>
+  const ALL_ONLY_NAME_REQUIRED_ROLES = new Set([
+    'application',
+    'marquee',
+    'table',
+    'tabpanel',
+    'treegrid'
+  ]);
+  // </generated:aria-name-required-roles-all>
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  if (cfg.roles === 'all') {
+    for (const r of ALL_ONLY_NAME_REQUIRED_ROLES) NAME_REQUIRED_ROLES.add(r);
+  }
 
   // Derived from the set above so the two cannot drift apart.
   // `~=` matches the token anywhere in the role fallback list; the loop
@@ -272,19 +295,31 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
     const baseOccurrence = {
-      summary: 'This element has no accessible name.',
-      hint: 'Name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.',
+      summary: `This ${role} element has no accessible name.`,
+      hint: cause
+        ? cause.hint
+        : 'Name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.',
       i18n: {
-        summaryKey: 'ariaRoleNamePresent_summary_fail',
-        hintKey: 'ariaRoleNamePresent_hint_fail',
-        params: { role }
+        summaryKey: 'ariaRoleNamePresent_summary_cantTell_role',
+        hintKey: cause ? cause.hintKey : 'ariaRoleNamePresent_hint_fail',
+        params: { role, ...(cause ? cause.params : {}) }
+      },
+      uncertainty: {
+        code: 'spec-only',
+        needed:
+          'Whether the page shows a name or question for this element that people rely on, such as a visible title or group label not tied to it.',
+        evidence: { role, source: 'WAI-ARIA 1.2, Accessible Name Required' }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details: {
           reasonCode: 'name_missing',
           role,
+          ...(cause ? { nameCause: cause.detail } : {}),
           nameSourcesChecked: ['aria-label', 'aria-labelledby', 'title']
         }
       }
@@ -301,23 +336,35 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  // Tiered only when there is a question, so a plain failure reads as before.
-  if (questions.length) {
-    return {
-      ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
-    };
-  }
-  if (!occurrences.length) {
+  if (!occurrences.length && !questions.length) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
-
+  // Every finding is a question: a missing name proves the WAI-ARIA
+  // violation, not a WCAG failure (see @expectation).
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
-    severity: rule.defaultSeverity || 'minor',
-    occurrences
+    ...helpers.resolveTieredOutcome(
+      [],
+      [...occurrences, ...questions],
+      rule.defaultSeverity || 'minor'
+    )
   };
 }
 
-module.exports = { id, meta, runInPage };
+// What a variant may change (docs/RULE_AUTHORING.md, "Rule variants"): which
+// of the roles WAI-ARIA requires a name for the rule checks.
+const settings = {
+  roles: 'wcag'
+};
+
+// What each setting changes, for the catalog and docs/RULE_SETTINGS.md.
+const settingsInfo = {
+  roles: {
+    values: ['wcag', 'all'],
+    description:
+      'The roles checked: wcag, grid, meter, progressbar, radiogroup and tree; or all, those and every other name-from-author role WAI-ARIA 1.2 requires a name for that no other rule owns (application, marquee, table, tabpanel and treegrid).',
+    basis: 'WAI-ARIA 1.2, "Accessible Name Required: True"'
+  }
+};
+
+module.exports = { id, meta, runInPage, settings, settingsInfo };

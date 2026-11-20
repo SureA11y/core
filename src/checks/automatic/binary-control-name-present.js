@@ -74,21 +74,6 @@ const meta = {
   defaultConfidence: 'high',
   coverage: {
     facetsBySc: { '4.1.2': ['checkbox-name-present', 'radio-name-present', 'switch-name-present'] }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    name_internals: {
-      steps: [
-        'Inspect the control the report names, a custom element, and note its role.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the control, set through its internals or otherwise, and the screen reader announces it.',
-      failWhen:
-        'The control has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
-    }
   }
 };
 
@@ -280,18 +265,24 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This control has no accessible name.',
-        hint: 'Name the control with a <label>, aria-label or aria-labelledby, so screen reader users know what it is for.',
+        hint: cause
+          ? cause.hint
+          : 'Name the control with a <label>, aria-label or aria-labelledby, so screen reader users know what it is for.',
         i18n: {
           summaryKey: 'binaryControlNamePresent_summary_fail',
-          hintKey: 'binaryControlNamePresent_hint_fail',
-          params: { controlType }
+          hintKey: cause ? cause.hintKey : 'binaryControlNamePresent_hint_fail',
+          params: { controlType, ...(cause ? cause.params : {}) }
         },
         data: {
           details: {
             reasonCode: 'name_missing',
+            ...(cause ? { nameCause: cause.detail } : {}),
             controlType,
             methodTried: res.method
           },

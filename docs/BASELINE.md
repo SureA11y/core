@@ -68,7 +68,9 @@ Leans arrive in minor releases, so an upgrade can bring likely failures a baseli
 
 A finding's identity includes its reason code, and a minor release may give a finding a new one: a rule that gave none (`DEFAULT`) now gives one, or one code is split in two by cause ([`API_STABILITY.md`](./API_STABILITY.md#finding-identity)). The finding is the same, and a baseline written before the upgrade still matches it: each move is listed in [`src/baseline-moves.json`](../src/baseline-moves.json) (rule, old code, new codes), and an entry under the old code matches the finding under a new one when the rest of its identity, the rule, the markup and the frame, is the same. `matchBaseline`, and the `baselineEntries` option of the SARIF and JUnit reporters, all read it. An entry is looked up under the finding's own code first, so it never goes to a moved finding when another finding has that exact identity.
 
-1.14 moves these, from 1.13:
+The table covers one minor release: a move is listed from the release it shipped in until the next minor release, which drops it when its finding identities are frozen (`npm run finding-ids:release`, as the `retired` list of `released-finding-ids.json` is emptied). 1.15 and 1.16 moved no finding, so the table is empty.
+
+1.14 moved these, from 1.13, and 1.15 dropped them:
 
 | Rule | Old code | New code |
 |---|---|---|
@@ -87,7 +89,7 @@ A finding's identity includes its reason code, and a minor release may give a fi
 | `valid-lang` | `ELEMENT_LANG_INVALID` | `DEFAULT_LANG_INVALID` |
 | `p-as-heading` | `BOLD_LARGE_PARAGRAPH`, `BOLD_LARGE_DIV` | `HEADING_LIKE_NUMBER`, `HEADING_LIKE_LINK` |
 
-The table covers one minor release: a move is listed from the release it shipped in until the next minor release, which drops it when its finding identities are frozen (`npm run finding-ids:release`, as the `retired` list of `released-finding-ids.json` is emptied). So a baseline written by 1.13 keeps matching under 1.14.x, and needs regenerating before 1.15.
+So a baseline written by 1.13 keeps matching these under 1.14.x, not under 1.15: there an entry under an old code is stale and its finding is new. Bring such a baseline up to date under 1.14.x, as below, before moving to 1.15; `migrateBaselineEntries` in 1.15 no longer knows these moves.
 
 Regenerating the baseline with `--write-baseline` (or `buildBaselineEntries`) after an upgrade writes every finding under its current code, and removes the need for the table. It also accepts any finding the upgrade newly reports, so look at its diff. To bring the codes up to date without accepting anything new, rewrite the file with `migrateBaselineEntries` from `@surea11y/core/baseline`:
 
@@ -122,7 +124,7 @@ A single baseline written from every width still gates correctly, since a findin
 }
 ```
 
-`matchBaseline`, and the `baselineEntries` option of the SARIF and JUnit reporters, take the file as saved (`JSON.parse` of it) or its `entries` list.
+`matchBaseline`, and the `baselineEntries` option of the SARIF and JUnit reporters, take the file as saved (`JSON.parse` of it) or its `entries` list. `null` or no baseline has no entries, so every failure is new. Anything else throws a `TypeError` with `code: 'INVALID_BASELINE'` and a message naming what is wrong: a string or an object with no `entries` list (`matchBaseline: the baseline must be a list of entries or a baseline file ({ entries: [...] }), not the string "…"`), an entry that isn't an object (`baseline entry 0 is null, …`) or has no `ruleId`, or a `reasonCode`, `selector` or `html` that is neither a string nor `null`, or a `frame` that isn't a list of strings. `migrateBaselineEntries` checks it the same way. Before, such a value was read as an empty baseline, which made every failure new without a word.
 
 `--baseline <path>` rejects a file that isn't `{ version: 1, entries: [...] }` with a clear exit-2 error rather than guessing at an older/different format.
 
@@ -136,3 +138,7 @@ When `--baseline` or `--write-baseline` is used together with `--json`, the prin
 ## Alternative: diff two scans yourself
 
 If your pages don't fit this model (heavy dynamic content inside the flagged elements themselves), the always-available fallback is to diff two full `--json` outputs yourself — see [`INTEGRATION.md`](./INTEGRATION.md#ci-gating-a-build-on-the-result). That gives you full control over the identity/matching logic at the cost of writing it yourself.
+
+## A scan of several profiles
+
+A result of several profiles (`engineOptions.profile` as a list) lists each finding once, with what each profile makes of it in `verdicts`. A baseline entry is the finding, by rule, reason code and markup, so one entry covers it under every profile, and a baseline written from a scan of one profile still matches the same findings in a scan of several.

@@ -230,7 +230,13 @@ function runInPage(ctx) {
     return false;
   }
 
+  // What stopped the ancestor walk short, for the message: the ancestor
+  // whose own role blocked it, and an ancestor whose role attribute names
+  // no ARIA role (helpers.roleTypo), which the walk passes as roleless.
+  let walkNote = null;
+
   function hasAcceptableAncestorContext(el, acceptableRoles, ownRole) {
+    walkNote = { blocker: null, blockerRole: '', typoEl: null, typo: null };
     const allowsGroup = acceptableRoles.has('group');
     let cur = getComposedParent(el);
     let guard = 0;
@@ -247,6 +253,13 @@ function runInPage(ctx) {
         continue;
       }
       const role = getRealContextRole(cur);
+      if (!walkNote.typo && typeof helpers.roleTypo === 'function') {
+        const typo = helpers.roleTypo(cur);
+        if (typo) {
+          walkNote.typo = typo;
+          walkNote.typoEl = cur;
+        }
+      }
       if (!role) {
         cur = getComposedParent(cur);
         continue;
@@ -257,10 +270,32 @@ function runInPage(ctx) {
         cur = getComposedParent(cur);
         continue;
       }
-      return roles.has(role);
+      if (!roles.has(role)) {
+        walkNote.blocker = cur;
+        walkNote.blockerRole = role;
+        return false;
+      }
+      return true;
     }
     return false;
   }
+
+  // The nearest ancestor above a blocking one whose role the element
+  // needs: the parent it was meant to have.
+  function acceptableAbove(blocker, acceptableRoles) {
+    let cur = getComposedParent(blocker);
+    let guard = 0;
+    while (cur && guard++ < 200) {
+      if (dom.nodeType(cur) === 1) {
+        const role = ariaHelpers.getContainmentRole(cur);
+        if (role && acceptableRoles.has(role)) return { el: cur, role };
+      }
+      cur = getComposedParent(cur);
+    }
+    return null;
+  }
+
+  const tagOf = (n) => String(dom.tagName(n) || '').toLowerCase();
 
   // The elements with aria-owns, by each id they name, in tree order. Built
   // once, the first time an element needs it: looking through every owner
@@ -334,26 +369,73 @@ function runInPage(ctx) {
 
     if (hasContext) continue;
 
+    // A deprecated context role (directory) is accepted, not advised.
+    const requiredRoles = requiredContext
+      .filter((r) => !ariaHelpers.isDeprecatedRole(r))
+      .join(', ');
+
+    // Why none was found, where the page shows it: an ancestor with the
+    // role it needs sits above another one that has a role of its own (a
+    // plain <li> between a menu and its menuitem), or an ancestor's role
+    // attribute names no ARIA role (role="lisbox"), so it has none.
+    const note = walkNote || {};
+    const above =
+      note.blocker && note.blockerRole !== 'generic'
+        ? acceptableAbove(note.blocker, acceptableRoles)
+        : null;
+    const typo = note.typo;
+    const typoFirst = typo && typo.suggestion && acceptableRoles.has(typo.suggestion);
+    let summary = 'This role requires a specific ancestor/owner context role, which was not found.';
+    let hint =
+      'Place it inside an element with one of these roles, or have that element reference it with aria-owns.';
+    let summaryKey = 'ariaRequiredParent_summary_fail';
+    let hintKey = 'ariaRequiredParent_hint_fail';
+    let params = { role, requiredRoles };
+    let cause = null;
+    if (typo && (typoFirst || !above)) {
+      const parentElement = tagOf(note.typoEl);
+      summary = `role="${role}" must sit inside an element with one of these roles: ${requiredRoles}. An ancestor <${parentElement}> has role "${typo.written}", which is not an ARIA role, so it has none.`;
+      if (typo.suggestion) {
+        hint = `Did you mean role="${typo.suggestion}"? Fix the ancestor’s role.`;
+        hintKey = 'ariaRequiredParent_hint_fail_typoNear';
+      }
+      summaryKey = 'ariaRequiredParent_summary_fail_typo';
+      params = { ...params, parentElement, written: typo.written, suggestion: typo.suggestion };
+      cause = { cause: 'ancestorRoleTypo', element: parentElement, roleTypo: typo };
+    } else if (above) {
+      const blocker = tagOf(note.blocker);
+      const parentElement = tagOf(above.el);
+      summary = `role="${role}" must sit directly inside one of these roles: ${requiredRoles}. A ${above.role} (<${parentElement}>) is above it, but the <${blocker}> between them is a ${note.blockerRole}, so the ${above.role} is not its parent.`;
+      hint = `Give the <${blocker}> role="none" so the ${role} belongs to the ${above.role}, or move the ${role} directly inside the ${above.role}.`;
+      summaryKey = 'ariaRequiredParent_summary_fail_blocked';
+      hintKey = 'ariaRequiredParent_hint_fail_blocked';
+      params = {
+        ...params,
+        parentRole: above.role,
+        parentElement,
+        blocker,
+        blockerRole: note.blockerRole
+      };
+      cause = {
+        cause: 'blockedByAncestor',
+        blocker,
+        blockerRole: note.blockerRole,
+        parentElement,
+        parentRole: above.role
+      };
+    }
+
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This role requires a specific ancestor/owner context role, which was not found.',
-        hint: 'Place it inside an element with one of these roles, or have that element reference it with aria-owns.',
-        i18n: {
-          summaryKey: 'ariaRequiredParent_summary_fail',
-          hintKey: 'ariaRequiredParent_hint_fail',
-          // A deprecated context role (directory) is accepted, not advised.
-          params: {
-            role,
-            requiredRoles: requiredContext
-              .filter((r) => !ariaHelpers.isDeprecatedRole(r))
-              .join(', ')
-          }
-        },
+        summary,
+        hint,
+        i18n: { summaryKey, hintKey, params },
         data: {
           details: {
             reasonCode: 'ARIA_REQUIRED_PARENT_MISSING',
             role,
-            requiredContextRoles: requiredContext
+            requiredContextRoles: requiredContext,
+            ...(cause ? { parentCause: cause } : {})
           }
         }
       })

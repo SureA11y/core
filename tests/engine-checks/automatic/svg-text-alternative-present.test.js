@@ -346,3 +346,56 @@ test(`${RULE_ID}: role="img" with a blank aria-label still fails`, () => {
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'blank'));
 });
+
+test(`${RULE_ID}: the hint says which <title>, <text> or alt the author meant as its name`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <svg id="s1" role="img"><g><title>Logo</title><path d="M0 0h1v1H0z"></path></g></svg>
+  <svg id="s2" role="img"><title></title><desc>Sales by month</desc></svg>
+  <svg id="s3" role="img"><title> </title></svg>
+  <svg id="s4" role="img"><text x="0" y="10">Sales up 20%</text></svg>
+  <svg id="s5" role="img" alt="Logo"></svg>
+  <svg id="s6" role="img" aria-labelledby="nope"></svg>
+  <svg id="s7" role="img"></svg>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 7,
+    maxOccurrences: 7
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('s1').i18n.hintKey, 'svg_textAltPresent_hint_fail_nestedTitle');
+  assert.equal(
+    occ('s1').hint,
+    'Its <title> ("Logo") is inside a <g>, where it names that element, not the <svg>: only a <title> that is a direct child of the <svg> names it. Move it there.'
+  );
+  assert.equal(occ('s1').data.details.nameCause.cause, 'nestedTitle');
+  assert.equal(occ('s2').i18n.hintKey, 'svg_textAltPresent_hint_fail_emptyTitleDesc');
+  assert.equal(
+    occ('s2').hint,
+    'Its <title> is empty, and the <desc> ("Sales by month") gives a description, not a name. Put the name in the <title>.'
+  );
+  assert.equal(occ('s2').data.details.nameCause.cause, 'emptyTitle');
+  assert.equal(occ('s3').i18n.hintKey, 'svg_textAltPresent_hint_fail_emptyTitle');
+  assert.equal(occ('s3').hint, 'Its <title> is empty, so it gives no name. Put the name in it.');
+  assert.equal(occ('s4').i18n.hintKey, 'svg_textAltPresent_hint_fail_textInside');
+  assert.equal(
+    occ('s4').hint,
+    'Its <text> "Sales up 20%" is drawn on screen, but text inside an <svg> does not name it. Add a <title> or aria-label with that text.'
+  );
+  assert.equal(occ('s4').data.details.nameCause.cause, 'textInside');
+  assert.equal(occ('s5').i18n.hintKey, 'svg_textAltPresent_hint_fail_alt');
+  assert.equal(
+    occ('s5').hint,
+    'Its alt="Logo" does nothing: an <svg> has no alt attribute. Add a <title> child with that text, or aria-label="Logo".'
+  );
+  assert.equal(occ('s5').data.details.nameCause.cause, 'altOnSvg');
+  assert.equal(occ('s6').i18n.hintKey, 'nameCause_hint_labelledbyMissing');
+  assert.equal(
+    occ('s6').hint,
+    'Its aria-labelledby points to "nope", which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.'
+  );
+  assert.equal(occ('s7').i18n.hintKey, 'svg_textAltPresent_hint_fail');
+  assert.equal(
+    occ('s7').hint,
+    'Add a <title> with text, or name it with aria-label or aria-labelledby. A <desc> alone does not give it a name.'
+  );
+});

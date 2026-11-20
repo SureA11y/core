@@ -14,6 +14,7 @@
  *   normalizeRuleMeta (src/core/rule-meta.js -- used for engineOptions.customRules),
  *   resolveMappingSelection, filterNormativeMappings (engineOptions.mappings),
  *   warnDeprecatedStandards (a deprecated built-in standard's notice, once),
+ *   warnDeprecatedProfile (a deprecated profile of core's notice, once),
  *   RULE_MAPPED_STANDARDS (standards mapped rule by rule, for rollups),
  *   RESTATED_PREFIXES (their requirements that restate a WCAG criterion),
  *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
@@ -43,7 +44,7 @@ const { readLiveRegionHook } = require('./live-region-hook');
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
-   warnDeprecatedStandards, RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
+   warnDeprecatedStandards, warnDeprecatedProfile, RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
    profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, strictOf,
    STANDARD_REPORTS, t, PROFILE_SEVERITY, PROFILE_WCAG_VERSIONS, CATALOG, switchOf,
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
@@ -569,7 +570,7 @@ function rollupCompositeResults(
       return true;
     }
 
-    // An act of a contribution: 'count', 'cantTell' or 'ignore', or
+    // An act of a contribution: 'count', 'cantTell', 'fail' or 'ignore', or
     // { act, requirements } naming the rollup's requirements the finding
     // counts toward. null requirements: those of the rule, as without them.
     function readAct(a) {
@@ -584,7 +585,8 @@ function rollupCompositeResults(
 
     // A check's outcome for one rollup of a standard whose mapping sends
     // findings elsewhere: each finding is counted, made a question
-    // ('cantTell') or left out ('ignore') by the first of
+    // ('cantTell'), made a failure ('fail': the standard is certain where the
+    // rule asks) or left out ('ignore') by the first of
     // contribution.findings it matches, else by its code
     // (contribution.codes), else contribution.default. A fail or cantTell
     // whose findings all go elsewhere is a pass here: the rule found nothing
@@ -600,6 +602,9 @@ function rollupCompositeResults(
       if (!occurrences.length) return { outcome, named: { fail: null, cantTell: null } };
       let fail = false;
       let ask = false;
+      // What this rollup makes of each finding, in order: 'fail',
+      // 'cantTell', or null for one it doesn't count.
+      const findings = [];
       const name = (tier, requirements) => {
         if (named[tier] === null) return;
         if (!requirements) named[tier] = null;
@@ -618,17 +623,22 @@ function rollupCompositeResults(
               ? contribution.codes[code]
               : contribution.default
         );
-        if (act === 'ignore') continue;
+        if (act === 'ignore') {
+          findings.push(null);
+          continue;
+        }
         const tier = (o && o.occurrenceOutcome) || outcome;
-        if (tier === 'fail' && act !== 'cantTell') {
+        if ((tier === 'fail' && act !== 'cantTell') || act === 'fail') {
           fail = true;
+          findings.push('fail');
           name('fail', requirements);
         } else {
           ask = true;
+          findings.push('cantTell');
           name('cantTell', requirements);
         }
       }
-      return { outcome: fail ? 'fail' : ask ? 'cantTell' : 'pass', named };
+      return { outcome: fail ? 'fail' : ask ? 'cantTell' : 'pass', named, findings };
     }
 
     // Whether to report a rollup the selection does not select: true when a
@@ -763,6 +773,9 @@ function rollupCompositeResults(
           severity: childSev || null,
           ...custom,
           ...(contribution ? { byReasonCode: true, checkOutcome: child.outcome } : {}),
+          // Per finding, what the rollup made of it: what a scan of several
+          // profiles reads each finding's verdict by (src/core/multi-profile.js).
+          ...(routed && routed.findings ? { findingOutcomes: routed.findings.slice() } : {}),
           ...(routedNames && routedNames.length ? { requirements: routedNames.slice() } : {})
         });
 
@@ -935,6 +948,15 @@ function rollupCompositeResults(
           for (const m of child.meta.normativeMappings || []) {
             if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
           }
+        }
+        // A rollup cantTell because its rules found nothing they look for,
+        // and they check only part of the requirement: no rule decided it,
+        // and the rollup still judged its own requirement, a person's to
+        // answer.
+        if (reasonCode === 'composite.rollup.cantTell.partialCoverage' && own.standard) {
+          produced.add(
+            keyOf({ standard: own.standard, version: own.version, requirement: own.criterion })
+          );
         }
         // A requirement that restates the WCAG criterion is named whatever decided.
         const restated = (m) => {
@@ -1307,6 +1329,188 @@ function holdPageColors(doc) {
 }
 
 /**
+ * Lays out, for the scan, the content `content-visibility: auto` lets the
+ * browser skip, then lets the browser skip it again.
+ *
+ * An element with `content-visibility: auto` that isn't near the viewport
+ * skips its content: the element keeps the size `contain-intrinsic-size`
+ * gives it (or the size it last had), and the content, which script can
+ * still measure, is laid out spilling out of a box of that size, over
+ * whatever follows. No reader ever sees that: once the element nears the
+ * viewport, the browser lays it out at its real size. Measured as skipped,
+ * a long card under a 200px placeholder came to overlap the next card's
+ * text under the WCAG text spacing, its last button lay past the end of the
+ * page, where scrolling can't bring it, and its text sat over the next
+ * card's background.
+ *
+ * So each such element is laid out as it is once near the viewport:
+ * `content-visibility: visible` with the layout, style and paint
+ * containment `auto` gives it (CSS Contain 2, added to its own `contain`),
+ * set in its style attribute with `!important`. That is how the browser
+ * renders it whether its content is skipped or not, so every element with
+ * `auto` is set, nested ones included, and an element already near the
+ * viewport is measured as before. No style sheet selects elements by their
+ * computed `content-visibility`, hence the style attribute: restore() sets
+ * back the attribute's own text, or takes it off where there was none. As
+ * with settleAnimations, a scan is one synchronous task, so the browser
+ * never paints the change, and the skipping resumes at the next frame.
+ * Elements in open shadow roots are reached; those in closed ones are not.
+ *
+ * `count` is how many of them had their content skipped, where the browser
+ * can say (checkVisibility with contentVisibilityAuto). `paintContained` is
+ * those whose own `contain` had no paint containment: what they clip, they
+ * clip for `content-visibility: auto`, which a rule reading their computed
+ * style during the scan, `visible` by then, can't tell. Without a layout
+ * (jsdom) nothing is read or done.
+ */
+function layOutSkippedContent(doc) {
+  const dom = createSafeDom();
+  const nothing = { count: 0, paintContained: new Set(), restore() {} };
+  let view;
+  try {
+    view = doc ? dom.defaultView(doc) : null;
+    if (!view || typeof view.getComputedStyle !== 'function') return nothing;
+    // Only with a layout, as readRenderingEnvironment tells one. jsdom
+    // computes content-visibility too, but reading any computed style
+    // before the rules changes what it computes later: the text-shadow of
+    // an inline style read as transparent, and a shadowed text that
+    // contrast-minimum asks about was failed.
+    const root = dom.documentElement(doc);
+    const rects =
+      root && typeof dom.get(root, 'getClientRects') === 'function'
+        ? dom.getClientRects(root)
+        : null;
+    if (!rects || !rects.length) return nothing;
+    if (typeof view.getComputedStyle(root).contentVisibility !== 'string') return nothing;
+  } catch {
+    return nothing;
+  }
+  // The document and its open shadow roots, and whether a style attribute
+  // or a style sheet of theirs names content-visibility. Computed styles
+  // are read only where one does, or a sheet can't be read (another
+  // origin's): most pages never set it, and reading every element's
+  // computed style cost about 50 ms on a page of 40,000.
+  const elements = [];
+  const roots = [doc];
+  let named = false;
+  const NAME = /content-visibility/i;
+  try {
+    const docEl = dom.documentElement(doc);
+    const tops = docEl ? [docEl] : [];
+    for (let i = 0; i < tops.length; i++) {
+      const walker = dom.createTreeWalker(doc, tops[i], 1);
+      for (let el = walker.currentNode; el; el = walker.nextNode()) {
+        if (dom.nodeType(el) !== 1) continue;
+        elements.push(el);
+        if (!named && NAME.test(String(dom.getAttribute(el, 'style') || ''))) named = true;
+        const shadow = dom.shadowRoot(el);
+        if (shadow) {
+          tops.push(shadow);
+          roots.push(shadow);
+        }
+      }
+    }
+  } catch {}
+  const sheetNames = (sheet, depth) => {
+    let rules;
+    try {
+      rules = sheet.cssRules;
+    } catch {
+      return true;
+    }
+    if (!rules) return true;
+    for (let i = 0; i < rules.length; i++) {
+      const rule = rules[i];
+      if (NAME.test(String(rule.cssText || ''))) return true;
+      if (rule.styleSheet && depth < 10 && sheetNames(rule.styleSheet, depth + 1)) return true;
+    }
+    return false;
+  };
+  for (let i = 0; !named && i < roots.length; i++) {
+    try {
+      const own = [...(dom.styleSheets(roots[i]) || [])];
+      const adopted = [...(dom.get(roots[i], 'adoptedStyleSheets') || [])];
+      for (const sheet of own.concat(adopted)) {
+        if (sheetNames(sheet, 0)) {
+          named = true;
+          break;
+        }
+      }
+    } catch {
+      named = true;
+    }
+  }
+  if (!named) return nothing;
+  // Every element with content-visibility: auto, read before any is changed,
+  // so laying out one doesn't make the next read update the page's layout.
+  const found = [];
+  for (const el of elements) {
+    let cs;
+    try {
+      cs = view.getComputedStyle(el);
+    } catch {
+      continue;
+    }
+    if (!cs || cs.contentVisibility !== 'auto') continue;
+    found.push({ el, contain: String(cs.contain || 'none') });
+  }
+  if (!found.length) return nothing;
+  // Whether an element's content is skipped: a child the browser renders
+  // that checkVisibility counts as hidden only once skipped content counts.
+  let count = 0;
+  for (const { el } of found) {
+    try {
+      const child = dom.firstElementChild(el);
+      if (
+        child &&
+        typeof dom.get(child, 'checkVisibility') === 'function' &&
+        dom.checkVisibility(child) &&
+        !dom.checkVisibility(child, { contentVisibilityAuto: true })
+      )
+        count++;
+    } catch {}
+  }
+  // Its own containment, with what content-visibility: auto adds to it.
+  // (`content` is layout, paint and style; `strict` adds size.)
+  const containOf = (contain) => {
+    const words = contain.trim().split(/\s+/);
+    if (words.includes('strict')) return 'strict';
+    const kept = words.filter((w) => w && w !== 'none' && w !== 'content');
+    return kept.concat(['layout', 'style', 'paint'].filter((w) => !kept.includes(w))).join(' ');
+  };
+  const changed = [];
+  const paintContained = new Set();
+  for (const { el, contain } of found) {
+    try {
+      const had = dom.hasAttribute(el, 'style');
+      const text = had ? dom.getAttribute(el, 'style') : null;
+      const style = el.style;
+      if (!style || typeof style.setProperty !== 'function') continue;
+      changed.push({ el, had, text });
+      style.setProperty('content-visibility', 'visible', 'important');
+      style.setProperty('contain', containOf(contain), 'important');
+      if (!/\b(paint|strict|content)\b/.test(contain)) paintContained.add(el);
+    } catch {}
+  }
+  return {
+    count,
+    paintContained,
+    restore() {
+      for (const { el, had, text } of changed) {
+        try {
+          // Chromium writes a style changed through el.style into the
+          // attribute only when the attribute is next read; removed before
+          // that, the attribute came back empty (style="").
+          dom.getAttribute(el, 'style');
+          if (had) dom.setAttribute(el, 'style', text);
+          else dom.removeAttribute(el, 'style');
+        } catch {}
+      }
+    }
+  };
+}
+
+/**
  * engineOptions.customRules, checked as a scan checks them: the valid rules'
  * definitions (by id, in the catalog's shape) and implementations, the
  * entries that are not valid with the reason, and the built-in ids the
@@ -1543,7 +1747,10 @@ function isThenable(value) {
 // broken one it relies on (Array.prototype.filter returning its input, a
 // Map that doesn't keep what it is given) would give a result that reads
 // well and is wrong, an empty one even; so the scan stops instead, with a
-// coded error naming each.
+// coded error naming each. Core's own code makes arrays with spread, not
+// Array.from, which old libraries replace with one that drops Sets, Map
+// iterators and the mapping function; assertArrayFromFor checks Array.from
+// for the rules of a pack or caller that use it.
 function assertPageBuiltins() {
   // Recorded by index and joined by hand, as push or join may be what is
   // broken.
@@ -1570,7 +1777,21 @@ function assertPageBuiltins() {
     for (const x of [1, 2]) sum += x;
     return sum === 3;
   });
-  check('Array.from', () => Array.from(new Set([1, 2])).length === 2);
+  check('Set iteration', () => [...new Set([1, 2])].length === 2);
+  check('Map iteration', () => {
+    const [entry] = [...new Map([['a', 1]])];
+    return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
+  });
+  // Built at run time: a bundle loaded without its charset would read the
+  // character in a literal as several.
+  check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
+  check('NodeList iteration', () => {
+    if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
+    // Read from Node.prototype: a named element could stand in for
+    // document.childNodes.
+    const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(document);
+    return [...nodes].length === nodes.length;
+  });
   check('Map', () => {
     const m = new Map();
     m.set('a', 1);
@@ -1596,6 +1817,7 @@ function assertPageBuiltins() {
   });
   check('String.prototype.trim', () => '  a '.trim() === 'a');
   check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+  check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
   check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
   if (!broken.length) return;
   let names = '';
@@ -1608,6 +1830,48 @@ function assertPageBuiltins() {
   err.code = 'PAGE_BUILTINS_BROKEN';
   err.broken = broken;
   throw err;
+}
+
+// Whether Array.from works as the language defines it, for the rules of a
+// pack or caller that use it: on a page whose scripts replaced it (Prototype
+// gives an empty list for a Set or a Map iterator and ignores the mapping
+// function; others wrap anything that is not an array in one), such a rule
+// would give a result that reads well and is wrong, so the scan stops, as
+// for any other broken built-in. Core's own rules don't use it, and a scan
+// that runs no rule using it goes ahead. fns: the rules' functions.
+function assertArrayFromFor(fns) {
+  let works;
+  /* eslint-disable no-restricted-properties -- the check is of Array.from itself */
+  try {
+    const mapped = Array.from(new Set([1, 2]), (x) => x * 2);
+    works =
+      mapped.length === 2 &&
+      mapped[1] === 4 &&
+      Array.from(new Map([['a', 1]]).values())[0] === 1 &&
+      Array.from('a' + String.fromCodePoint(0x1f600)).length === 2 &&
+      Array.from({ length: 1, 0: 'a' })[0] === 'a';
+  } catch {
+    works = false;
+  }
+  /* eslint-enable no-restricted-properties */
+  if (works) return;
+  const toSource = Function.prototype.toString;
+  for (let i = 0; i < fns.length; i++) {
+    let source;
+    try {
+      source = typeof fns[i] === 'function' ? toSource.call(fns[i]) : '';
+    } catch {
+      source = '';
+    }
+    if (source.indexOf('Array.from') === -1) continue;
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (Array.from), ' +
+        "so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = ['Array.from'];
+    throw err;
+  }
 }
 
 function runCore(
@@ -1632,6 +1896,10 @@ function runCore(
     settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
+    // Content content-visibility: auto skips, laid out as a reader sees it.
+    const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
+    // For helpers.paintContainedByContentVisibility.
+    layOutSkippedContent.paintContained = laidOut.paintContained;
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -1646,10 +1914,15 @@ function runCore(
       );
       try {
         const env = result && result.engine && result.engine.environment;
-        if (env && env.layout) env.animationsSettled = settled.count;
+        if (env && env.layout) {
+          env.animationsSettled = settled.count;
+          if (laidOut.count) env.contentVisibilitySkipped = laidOut.count;
+        }
       } catch {}
       return result;
     } finally {
+      laidOut.restore();
+      layOutSkippedContent.paintContained = null;
       colorsHeld.restore();
       settled.restore();
       settleAnimations.atScanStart = [];
@@ -1740,6 +2013,24 @@ function runCoreSettled(
   // which child <iframe>/<frame> elements fall within the same scan scope).
   // An unparseable selector throws here, before any rule runs.
   const { ctxSelector, roots, unmatchedSelectors } = resolveContextRoots(document, contextSelector);
+  // An empty selector or list ('', [], ['  ']) names no scope, so the whole
+  // page is scanned, as with null; it may be a list built empty by mistake,
+  // which a caller would read as "nothing to scan". Said so, and thrown
+  // under strictOptions.
+  if (contextSelector != null && !ctxSelector) {
+    const message =
+      'contextSelector: ' +
+      (Array.isArray(contextSelector) ? 'an empty list' : 'an empty selector') +
+      ' names no part of the page; pass null to scan the whole page, or a selector';
+    if (strictOf(engineOptions)) {
+      const err = new Error(message + '. (strictOptions)');
+      err.code = 'INVALID_CONTEXT_SELECTOR';
+      throw err;
+    }
+    try {
+      console.warn('[surea11y] ' + message + '; the whole page was scanned.');
+    } catch {}
+  }
   // Reported on the result whenever a selector was given, so a caller can
   // tell a scope that matched nothing (every rule notApplicable) from a clean
   // scan of what it asked for.
@@ -1837,6 +2128,15 @@ function runCoreSettled(
     includeHiddenElements,
     excludeSelectors,
     fragment,
+    embeddedAriaHidden: !!(
+      engineOptionsResolved && engineOptionsResolved.embeddedAriaHidden === true
+    ),
+    embeddedInert: !!(engineOptionsResolved && engineOptionsResolved.embeddedInert === true),
+    assumeModal: !!(engineOptionsResolved && switchOf(engineOptionsResolved.assumeModal) === true),
+    topLevelDocument:
+      engineOptionsResolved && typeof engineOptionsResolved.topLevelDocument === 'boolean'
+        ? engineOptionsResolved.topLevelDocument
+        : null,
     styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
@@ -1848,6 +2148,15 @@ function runCoreSettled(
       ? settleAnimations.atScanStart
       : [];
     sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+  }
+  // The elements whose box clips its content only for content-visibility:
+  // auto, as the scan lays them out (layOutSkippedContent).
+  {
+    const paintContained =
+      layOutSkippedContent.paintContained instanceof Set
+        ? layOutSkippedContent.paintContained
+        : new Set();
+    sharedHelpers.paintContainedByContentVisibility = (el) => paintContained.has(el);
   }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
@@ -1999,9 +2308,9 @@ function runCoreSettled(
   const overriddenBuiltinIds = resolvedCustom.overriddenBuiltinIds;
   for (const id of resolvedCustom.defs.keys()) customRuleIds.add(id);
   if (resolvedCustom.defs.size) {
-    effectiveCheckDefs = CHECK_DEFS.filter((d) => !resolvedCustom.defs.has(d.ruleId)).concat(
-      Array.from(resolvedCustom.defs.values())
-    );
+    effectiveCheckDefs = CHECK_DEFS.filter((d) => !resolvedCustom.defs.has(d.ruleId)).concat([
+      ...resolvedCustom.defs.values()
+    ]);
     effectiveRuleImpls = { ...RULE_IMPLS, ...resolvedCustom.impls };
   }
   if (overriddenBuiltinIds.length) {
@@ -2106,6 +2415,8 @@ function runCoreSettled(
       );
     } catch {}
   }
+  // A deprecated profile of core's (section508) still runs, and says so once.
+  if (typeof requestedProfile === 'string') warnDeprecatedProfile(requestedProfile);
 
   // engineOptions.optInRules: the opt-in rule tags unlocked for this run.
   // The result names those that added a rule the rest of the selection would
@@ -2430,9 +2741,9 @@ function runCoreSettled(
         return out;
       }
       if (kind === '[object Map]') {
-        return Array.from(v.entries(), ([k, x]) => [plainData(k, path), plainData(x, path)]);
+        return [...v.entries()].map(([k, x]) => [plainData(k, path), plainData(x, path)]);
       }
-      if (kind === '[object Set]') return Array.from(v.values(), (x) => plainData(x, path));
+      if (kind === '[object Set]') return [...v.values()].map((x) => plainData(x, path));
       if (typeof v.toJSON === 'function') return plainData(v.toJSON(), path);
       const out = {};
       for (const key of Object.keys(v)) {
@@ -2529,14 +2840,14 @@ function runCoreSettled(
         const added = new Set();
         const removed = new Set();
         for (const r of records) {
-          for (const n of Array.from(r.addedNodes || [])) added.add(n);
-          for (const n of Array.from(r.removedNodes || [])) removed.add(n);
+          for (const n of [...(r.addedNodes || [])]) added.add(n);
+          for (const n of [...(r.removedNodes || [])]) removed.add(n);
         }
         const transient = (n) => added.has(n) && removed.has(n);
         let n = 0;
         for (const r of records) {
           if (r.type === 'childList') {
-            const nodes = Array.from(r.addedNodes || []).concat(Array.from(r.removedNodes || []));
+            const nodes = [...(r.addedNodes || [])].concat([...(r.removedNodes || [])]);
             if (nodes.length && nodes.every(transient)) continue;
           } else if (transient(r.target)) {
             continue;
@@ -2563,6 +2874,26 @@ function runCoreSettled(
         .filter((d) => !foreignCode.has(d.ruleId))
         .concat(effectiveCheckDefs.filter((d) => foreignCode.has(d.ruleId)))
     : effectiveCheckDefs;
+  // The pack's and caller's rules this selection runs, an override where its
+  // built-in would: those that use Array.from need it to work.
+  if (foreignCode.size) {
+    const foreignFns = [];
+    for (const def of runOrder) {
+      if (!foreignCode.has(def.ruleId)) continue;
+      const selected =
+        ruleMatchesRunOnly(resolveRuleDefI18n(def, engineOptionsResolved), runOnly, ENGINE_TAG) ||
+        (overriddenBuiltinIds.includes(def.ruleId) &&
+          CHECK_DEFS.some(
+            (d) =>
+              d &&
+              d.ruleId === def.ruleId &&
+              ruleMatchesRunOnly(resolveRuleDefI18n(d, engineOptionsResolved), runOnly, ENGINE_TAG)
+          ));
+      const impl = selected ? effectiveRuleImpls[def.ruleId] : null;
+      if (impl) foreignFns.push(impl.run, impl.applicability);
+    }
+    assertArrayFromFor(foreignFns);
+  }
   const readOnlyViews = new WeakMap();
   const ruleEngineOptions =
     engineOptionsResolved && typeof engineOptionsResolved === 'object' ? engineOptionsResolved : {};
@@ -3122,14 +3453,28 @@ function runCoreSettled(
     nameStandards(r.meta.normativeMappings);
     if (r.meta.standard) named.add(r.meta.standard);
   }
+  // A standard that declares its languages shows its rollups' titles in the
+  // scan's locale where it has that locale, and in its own otherwise: its
+  // titleLang then says which, where it isn't the scan's.
+  const scanLocale = String(resolveLocale(engineOptionsResolved).resolved || 'en').toLowerCase();
+  const baseOf = (tag) => String(tag).toLowerCase().split('-')[0];
+  const titleLangOf = (s) => {
+    if (!Array.isArray(s.locales)) return s.titleLang;
+    if (s.locales.includes(scanLocale) || s.locales.includes(baseOf(scanLocale))) return null;
+    // Another locale reads the English dictionary: the standard's English
+    // translation, where it has one, or else its own text.
+    const shown = s.locales.includes('en') ? 'en' : s.lang;
+    return baseOf(shown) === baseOf(scanLocale) ? null : shown;
+  };
   const standards = (Array.isArray(STANDARD_REPORTS) ? STANDARD_REPORTS : [])
     .filter((s) => named.has(s.standard))
     .map((s) => {
       const note = s.noteKey ? t(s.noteKey, '', null, engineOptionsResolved) : '';
+      const titleLang = titleLangOf(s);
       return {
         key: s.key,
         standard: s.standard,
-        ...(s.titleLang ? { titleLang: s.titleLang } : {}),
+        ...(titleLang ? { titleLang } : {}),
         ...(note ? { note } : {})
       };
     });
@@ -3187,6 +3532,12 @@ function runCoreSettled(
       wcagVersion: targetWcagVersion,
       ...(wcagLevel ? { wcagLevel } : {}),
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      // The law the profile serves (standard.laws).
+      ...(appliedProfile &&
+      Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, appliedProfile) &&
+      PROFILE_TARGETS[appliedProfile].law
+        ? { law: { ...PROFILE_TARGETS[appliedProfile].law } }
+        : {}),
       // What the profile left out, when it excludes anything.
       ...(appliedProfile && runOnly && runOnly.profileExcludes
         ? { profileExcludes: runOnly.profileExcludes }
@@ -3215,11 +3566,13 @@ function runCoreSettled(
 module.exports = {
   isThenable,
   assertPageBuiltins,
+  assertArrayFromFor,
   resolveCustomRules,
   runCore,
   runCoreSettled,
   settleAnimations,
   holdPageColors,
+  layOutSkippedContent,
   rollupCompositeResults,
   noteEmptySelection,
   rollupMembers,

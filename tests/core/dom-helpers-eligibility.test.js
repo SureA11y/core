@@ -385,10 +385,56 @@ test('isAccTreeEligible: aria-hidden on an <a> WITH an href is overridden; on an
   assert.deepEqual(noHref.reasons, ['ariaHidden']);
 });
 
+// jsdom can't open a modal dialog (no showModal()), so an open <dialog> with
+// aria-modal="true" is not modal there, as in a browser. With
+// engineOptions.assumeModal it stands in for one opened with showModal(), in
+// a shadow root as in the document (modal-dialog-chromium.test.js has the
+// browser's own). ASSUME passes that option to the helpers.
+const ASSUME = { assumeModal: true };
+
+test('an open <dialog aria-modal="true"> is not modal under jsdom: nothing is inert behind it, and all of it takes focus', () => {
+  const { helpers, document } = helpersFor(
+    '<a id="outside" href="/">Background</a>' +
+      '<dialog id="dlg" open aria-modal="true"><button id="inside">OK</button></dialog>'
+  );
+  assert.equal(helpers.isModalDialogOpen(), false);
+  assert.deepEqual(helpers.getOpenModalDialogs(), []);
+  for (const id of ['outside', 'inside']) {
+    assert.equal(helpers.isModalInert(byId(document, id)), false, id);
+    assert.equal(helpers.isAccTreeEligible(byId(document, id)).eligible, true, id);
+    assert.equal(helpers.getFocusableInfo(byId(document, id)).tabbable, true, id);
+  }
+});
+
+test('isModalInert and getFocusableInfo: behind an open modal dialog, nothing takes focus; in it, and around it, as before', () => {
+  const { helpers, document } = helpersFor(
+    '<a id="outside" href="/">Background</a><div id="tab" tabindex="0">Tab stop</div>' +
+      '<div id="wrapper" tabindex="-1"><dialog id="dlg" open aria-modal="true"><button id="inside">OK</button></dialog></div>',
+    ASSUME
+  );
+  for (const id of ['outside', 'tab']) {
+    const el = byId(document, id);
+    assert.equal(helpers.isModalInert(el), true, id);
+    assert.deepEqual(
+      helpers.getFocusableInfo(el),
+      { focusable: false, tabbable: false, mechanism: 'none', flags: ['modalInert'] },
+      id
+    );
+  }
+  for (const id of ['inside', 'dlg', 'wrapper']) {
+    assert.equal(helpers.isModalInert(byId(document, id)), false, id);
+  }
+  assert.equal(helpers.isModalInert(document.body), false);
+  assert.equal(helpers.isModalInert(document.createTextNode('x')), false);
+  assert.equal(helpers.getFocusableInfo(byId(document, 'inside')).tabbable, true);
+  assert.equal(helpers.getFocusableInfo(byId(document, 'wrapper')).focusable, true);
+});
+
 test('isAccTreeEligible: content outside an open, aria-modal dialog is ineligible ("modalInert"); content inside it stays eligible', () => {
   const { helpers, document } = helpersFor(
     '<div id="outside">Background</div>' +
-      '<dialog id="dlg" open aria-modal="true"><p id="inside">Dialog content</p></dialog>'
+      '<dialog id="dlg" open aria-modal="true"><p id="inside">Dialog content</p></dialog>',
+    ASSUME
   );
   const outside = helpers.isAccTreeEligible(byId(document, 'outside'));
   assert.equal(outside.eligible, false);
@@ -401,7 +447,8 @@ test('isAccTreeEligible: content outside an open, aria-modal dialog is ineligibl
 test('isAccTreeEligible: an element that contains an open modal dialog (body, a wrapper) stays eligible; it is not what assistive technology is denied', () => {
   const { helpers, document } = helpersFor(
     '<div id="outside">Background</div>' +
-      '<div id="wrapper"><dialog id="dlg" open aria-modal="true"><p id="inside">Dialog</p></dialog></div>'
+      '<div id="wrapper"><dialog id="dlg" open aria-modal="true"><p id="inside">Dialog</p></dialog></div>',
+    ASSUME
   );
   assert.equal(helpers.isAccTreeEligible(document.body).eligible, true);
   assert.equal(helpers.isAccTreeEligible(byId(document, 'wrapper')).eligible, true);
@@ -410,7 +457,8 @@ test('isAccTreeEligible: an element that contains an open modal dialog (body, a 
 
 test('isAccTreeEligible: content of a shadow root inside an open modal dialog is inside it', () => {
   const { helpers, document } = helpersFor(
-    '<dialog id="dlg" open aria-modal="true"><div id="host"></div></dialog><p id="outside">x</p>'
+    '<dialog id="dlg" open aria-modal="true"><div id="host"></div></dialog><p id="outside">x</p>',
+    ASSUME
   );
   const root = byId(document, 'host').attachShadow({ mode: 'open' });
   root.innerHTML = '<span id="shadowed">In the dialog</span>';
@@ -420,22 +468,24 @@ test('isAccTreeEligible: content of a shadow root inside an open modal dialog is
 
 test('isModalDialogOpen: true only while an open modal dialog is in the document', () => {
   assert.equal(
-    helpersFor('<dialog open aria-modal="true">x</dialog>').helpers.isModalDialogOpen(),
+    helpersFor('<dialog open aria-modal="true">x</dialog>', ASSUME).helpers.isModalDialogOpen(),
     true
   );
-  assert.equal(helpersFor('<dialog open>x</dialog>').helpers.isModalDialogOpen(), false);
+  assert.equal(helpersFor('<dialog open>x</dialog>', ASSUME).helpers.isModalDialogOpen(), false);
   assert.equal(
-    helpersFor('<dialog aria-modal="true">x</dialog>').helpers.isModalDialogOpen(),
+    helpersFor('<dialog aria-modal="true">x</dialog>', ASSUME).helpers.isModalDialogOpen(),
+    false
+  );
+  assert.equal(
+    helpersFor('<dialog open aria-modal="true">x</dialog>').helpers.isModalDialogOpen(),
     false
   );
 });
 
-// jsdom has no top layer: an open dialog with aria-modal="true" stands in
-// for one opened with showModal(), in a shadow root as in the document
-// (modal-dialog-chromium.test.js has the browser's own).
 test('a modal dialog in an open shadow root blocks the rest of the document', () => {
   const { helpers, document } = helpersFor(
-    '<p id="outside">Background</p><div id="wrapper"><div id="host"><span id="slotted">Slotted</span></div></div>'
+    '<p id="outside">Background</p><div id="wrapper"><div id="host"><span id="slotted">Slotted</span></div></div>',
+    ASSUME
   );
   const outer = byId(document, 'host').attachShadow({ mode: 'open' });
   outer.innerHTML = '<div id="inner"></div><slot></slot><p id="beside">Beside</p>';
@@ -463,7 +513,10 @@ test('a modal dialog in an open shadow root blocks the rest of the document', ()
 });
 
 test('a dialog in a shadow root that is not modal blocks nothing', () => {
-  const { helpers, document } = helpersFor('<p id="outside">Background</p><div id="host"></div>');
+  const { helpers, document } = helpersFor(
+    '<p id="outside">Background</p><div id="host"></div>',
+    ASSUME
+  );
   byId(document, 'host').attachShadow({ mode: 'open' }).innerHTML =
     '<dialog open><p>Dialog</p></dialog><dialog aria-modal="true"><p>Closed</p></dialog>';
   assert.equal(helpers.isModalDialogOpen(), false);

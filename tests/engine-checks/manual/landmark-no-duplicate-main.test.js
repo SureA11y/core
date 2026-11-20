@@ -67,3 +67,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-no-duplicate-main-al
   assert.ok(hasOccurrenceForId(rule, 'ndm_case_01a'));
   assert.ok(hasOccurrenceForId(rule, 'ndm_case_01b'));
 });
+
+test(`${RULE_ID}: names the other main landmark`, () => {
+  const html = `<!doctype html><html><body><main id="m1">One</main><div role="main">Two</div></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const m1 = rule.occurrences.find((o) => o.html.includes('id="m1"'));
+  assert.strictEqual(
+    m1.summary,
+    'This page has 2 main landmarks: this one and <div role="main"> "Two".'
+  );
+  assert.strictEqual(m1.i18n.summaryKey, 'landmarkNoDuplicateMain_summary_cantTell_others');
+  assert.deepStrictEqual(m1.data.details.others, ['<div role="main"> "Two"']);
+});

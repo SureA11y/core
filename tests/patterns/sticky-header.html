@@ -6,6 +6,8 @@
 <title>Sticky header over scrolled content – Acme component patterns</title>
 <link rel="stylesheet" href="_base.css">
 <style>
+/* Focus scrolls an element clear of the header and toolbar (56px + 58px), not under them: WCAG 2.4.11, C43. */
+html { scroll-padding-top: 120px; }
 header.app { position: sticky; top: 0; z-index: 10; }
 .toolbar { position: sticky; top: 56px; z-index: 9; display: flex; gap: 8px; padding: 8px 16px; background: #e8eef6; }
 </style>

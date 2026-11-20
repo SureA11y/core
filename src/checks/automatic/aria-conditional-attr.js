@@ -16,7 +16,10 @@
  *   other than `"false"` (i.e. `"true"`, `"grammar"`, or `"spelling"`).
  *   An element with `aria-errormessage` but `aria-invalid` absent or
  *   `"false"` silently drops the error message from the accessibility
- *   tree, authors almost always intend it to be exposed.
+ *   tree, authors almost always intend it to be exposed. Any other value
+ *   (aria-invalid="yes") is read as "true", as WAI-ARIA 1.2 requires of a
+ *   value not in its list, so the message is exposed and the element passes;
+ *   the value itself is `aria-valid-attr-value`'s finding.
  *   Reported at CANTTELL rather than FAIL: aria-errormessage is only
  *   exposed once aria-invalid is set, so the reference is currently inert.
  *   Whether that costs the user anything depends on whether the message is
@@ -71,23 +74,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-conditional-attr'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID: {
-      steps: [
-        'Inspect the field the report names and note the id in its aria-errormessage.',
-        'Enter an invalid value (or leave a required field empty) and submit or leave the field, so any error appears.',
-        'Look whether the element with that id now shows error text, and inspect the field again for aria-invalid="true".',
-        'With a screen reader, move back to the field and listen for the error message.'
-      ],
-      passWhen:
-        'When the error is shown, the field gets aria-invalid="true" (or the message is in aria-describedby) and the screen reader announces it; when no error is shown, nothing needs exposing.',
-      failWhen:
-        'Error text is visible but aria-invalid stays absent or false and the message is not announced, which fails WCAG 3.3.1 / 4.1.2 (see ARIA21).'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['aria-conditional-attr'] } }
 };
 
 function runInPage(ctx) {
@@ -180,17 +167,38 @@ function runInPage(ctx) {
 
     const invalidValue = trim(dom.getAttribute(el, 'aria-invalid')).toLowerCase();
     if (TRUTHY_INVALID_VALUES.has(invalidValue)) continue;
+    // Any other value but "false" is read as "true" (WAI-ARIA 1.2,
+    // aria-invalid: "Any value not recognized in the list of allowed values
+    // MUST be treated as if the value true had been provided"), so the error
+    // message is exposed. That the value is not one of aria-invalid's tokens
+    // (aria-invalid="yes") is aria-valid-attr-value's finding, not this one's.
+    const absentAttr = dom.getAttribute(el, 'aria-invalid') == null;
+    if (!absentAttr && invalidValue !== '' && invalidValue !== 'false') continue;
 
     const tag = (dom.tagName(el) || '').toLowerCase();
     const lean = leanFor(el, errorMessageRef);
 
+    // Which case it is: no aria-invalid, or aria-invalid="false" (an empty
+    // value counts as false).
+    const absent = dom.getAttribute(el, 'aria-invalid') == null;
+    const variant = absent ? 'missing' : invalidValue === 'false' ? 'false' : '';
+    const SUMMARIES = {
+      missing:
+        'This element has aria-errormessage but no aria-invalid, so the error message is not exposed.',
+      false:
+        'This element has aria-errormessage but aria-invalid="false", so the error message is not exposed.'
+    };
+
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary:
-          'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
+        summary: variant
+          ? SUMMARIES[variant]
+          : 'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
         hint: 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
         i18n: {
-          summaryKey: 'ariaConditionalAttr_summary_fail',
+          summaryKey: variant
+            ? `ariaConditionalAttr_summary_fail_${variant}`
+            : 'ariaConditionalAttr_summary_fail',
           hintKey: 'ariaConditionalAttr_hint_fail',
           params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
         },

@@ -53,12 +53,33 @@ test(`${RULE_ID}: a live region inside or on aria-hidden is asked about`, () => 
     'cantTell'
   );
   assert.deepEqual(details(rule), [
-    ['#a', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'aria-hidden' }],
-    ['#b', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'assertive', hiddenBy: 'aria-hidden' }]
+    [
+      '#a',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'aria-hidden',
+        hiddenByElement: '<div>'
+      }
+    ],
+    [
+      '#b',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'assertive',
+        messageKind: 'alert',
+        hiddenBy: 'aria-hidden'
+      }
+    ]
   ]);
   assert.equal(rule.occurrences[0].uncertainty, undefined, 'a manual rule carries no uncertainty');
   assert.equal(
     rule.occurrences[0].i18n.summaryKey,
+    'liveRegionAnnouncements_summary_cantTell_ariaHiddenAncestor'
+  );
+  assert.equal(
+    rule.occurrences[1].i18n.summaryKey,
     'liveRegionAnnouncements_summary_cantTell_ariaHidden'
   );
 });
@@ -66,7 +87,16 @@ test(`${RULE_ID}: a live region inside or on aria-hidden is asked about`, () => 
 test(`${RULE_ID}: a live region in inert content is asked about`, () => {
   const rule = assertRule(run('<div inert><output id="o"></output></div>'), RULE_ID, 'cantTell');
   assert.deepEqual(details(rule), [
-    ['#o', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'inert' }]
+    [
+      '#o',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'inert',
+        hiddenByElement: '<div>'
+      }
+    ]
   ]);
 });
 
@@ -77,7 +107,7 @@ test(`${RULE_ID}: a live region left busy is asked about`, () => {
     'cantTell'
   );
   assert.deepEqual(details(rule), [
-    ['#l', { reasonCode: 'LIVE_REGION_BUSY', politeness: 'polite' }]
+    ['#l', { reasonCode: 'LIVE_REGION_BUSY', politeness: 'polite', messageKind: 'log' }]
   ]);
 });
 
@@ -90,7 +120,16 @@ test(`${RULE_ID}: aria-live decides over the role, either way`, () => {
     'cantTell'
   );
   assert.deepEqual(details(rule), [
-    ['#p', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'aria-hidden' }]
+    [
+      '#p',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'unknown',
+        hiddenBy: 'aria-hidden',
+        hiddenByElement: '<div>'
+      }
+    ]
   ]);
 });
 
@@ -235,20 +274,30 @@ test(`${RULE_ID}: text given to a region behind an open modal dialog was not ann
 
 // A live region behind an open modal <dialog>: the browser makes it inert,
 // so what the page writes to it while the dialog is open is not announced.
-// jsdom has no top layer: an open dialog with aria-modal="true" stands in
-// for one opened with showModal() (modal-dialog.test.js).
+// jsdom can't open a modal dialog: with engineOptions.assumeModal, an open
+// dialog with aria-modal="true" stands in for one opened with showModal()
+// (modal-dialog.test.js).
+const ASSUME = { assumeModal: true };
 const MODAL_DIALOG =
   '<dialog open aria-modal="true" aria-label="Sign in"><div id="in" role="status"></div><button>OK</button></dialog>';
 
 test(`${RULE_ID}: a live region behind an open modal dialog is asked about, with no lean`, () => {
   const rule = assertRule(
-    run('<div id="behind" role="status"></div>' + MODAL_DIALOG),
+    run('<div id="behind" role="status"></div>' + MODAL_DIALOG, ASSUME),
     RULE_ID,
     'cantTell',
     { minOccurrences: 1, maxOccurrences: 1 }
   );
   assert.deepEqual(details(rule), [
-    ['#behind', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'modal' }]
+    [
+      '#behind',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'modal'
+      }
+    ]
   ]);
   const occ = rule.occurrences[0];
   assert.equal(occ.i18n.summaryKey, 'liveRegionAnnouncements_summary_cantTell_modal');
@@ -266,13 +315,46 @@ test(`${RULE_ID}: behind an open modal dialog, the dialog is what hides a region
       '<div inert><div id="inside" role="status"></div></div><button>'
     );
   const expected = [
-    ['#inert', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'modal' }],
-    ['#hidden', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'modal' }],
-    ['#both', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'modal' }],
+    [
+      '#inert',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'modal'
+      }
+    ],
+    [
+      '#hidden',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'modal'
+      }
+    ],
+    [
+      '#both',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'modal'
+      }
+    ],
     // Inside the dialog, inert hides it.
-    ['#inside', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'inert' }]
+    [
+      '#inside',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'inert',
+        hiddenByElement: '<div>'
+      }
+    ]
   ];
-  for (const engineOptions of [undefined, { includeHiddenElements: true }]) {
+  for (const engineOptions of [ASSUME, { ...ASSUME, includeHiddenElements: true }]) {
     const rule = assertRule(run(body, engineOptions), RULE_ID, 'cantTell', {
       minOccurrences: 4,
       maxOccurrences: 4
@@ -289,7 +371,7 @@ test(`${RULE_ID}: behind an open modal dialog, the dialog is what hides a region
 });
 
 test(`${RULE_ID}: a live region inside the open modal dialog is judged as before`, () => {
-  assertRule(run('<p>Page</p>' + MODAL_DIALOG), RULE_ID, 'pass', { maxOccurrences: 0 });
+  assertRule(run('<p>Page</p>' + MODAL_DIALOG, ASSUME), RULE_ID, 'pass', { maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: with no modal dialog open, a live region is judged as before`, () => {
@@ -338,10 +420,15 @@ test(`${RULE_ID}: behind an open modal dialog, the hook's record decides the lea
         dropped: { announcements: 0, findings: 0, dialogsOpened: dropped }
       })
     });
-    const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
-      minOccurrences: 1,
-      maxOccurrences: 1
-    });
+    const rule = assertRule(
+      runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions: ASSUME }),
+      RULE_ID,
+      'cantTell',
+      {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      }
+    );
     assert.equal(rule.occurrences[0].data.details.hiddenBy, 'modal');
     return rule.occurrences[0].lean;
   }
@@ -389,9 +476,72 @@ test(`${RULE_ID}: the hook's findings on a region behind an open modal dialog st
       dropped: { announcements: 0, findings: 0 }
     })
   });
-  const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
-    minOccurrences: 1,
-    maxOccurrences: 1
-  });
+  const rule = assertRule(
+    runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions: ASSUME }),
+    RULE_ID,
+    'cantTell',
+    {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    }
+  );
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LIVE_REGION_HIDDEN');
+});
+
+// details.messageKind: the kind of message a region declares it carries, from
+// its role and live-region attributes, never from its text.
+test(`${RULE_ID}: each finding says what kind of message its region declares (messageKind)`, () => {
+  const cases = [
+    ['status', '<div id="x" role="status"></div>'],
+    ['status', '<output id="x"></output>'],
+    ['status', '<div id="x" aria-live="polite" aria-atomic="true"></div>'],
+    ['alert', '<div id="x" role="alert"></div>'],
+    ['alert', '<div id="x" aria-live="assertive"></div>'],
+    ['log', '<div id="x" role="log"></div>'],
+    ['log', '<div id="x" role="log" aria-live="assertive"></div>'],
+    ['progress', '<div id="x" role="progressbar" aria-live="polite"></div>'],
+    ['progress', '<progress id="x" aria-live="polite"></progress>'],
+    ['unknown', '<div id="x" aria-live="polite"></div>'],
+    ['unknown', '<div id="x" aria-live="polite" aria-atomic="false">Saved</div>'],
+    ['unknown', '<div id="x" role="timer" aria-live="polite"></div>']
+  ];
+  for (const [kind, region] of cases) {
+    const rule = assertRule(run(`<div aria-hidden="true">${region}</div>`), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.strictEqual(rule.occurrences[0].data.details.messageKind, kind, region);
+  }
+  const busy = assertRule(run('<div role="alert" aria-busy="true"></div>'), RULE_ID, 'cantTell');
+  assert.strictEqual(busy.occurrences[0].data.details.messageKind, 'alert');
+});
+
+test(`${RULE_ID}: names the ancestor that carries aria-hidden or inert`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="app" aria-hidden="true"><main><div role="status" id="s1"></div></main></div>
+    <div class="backdrop" inert><p role="alert" id="s2"></p></div>
+    <div role="status" id="s3" aria-hidden="true"></div>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const s1 = byId('s1');
+  assert.strictEqual(
+    s1.summary,
+    'This live region is inside <div id="app">, which has aria-hidden="true", so nothing it is given can be announced.'
+  );
+  assert.strictEqual(
+    s1.i18n.summaryKey,
+    'liveRegionAnnouncements_summary_cantTell_ariaHiddenAncestor'
+  );
+  assert.strictEqual(s1.data.details.hiddenBy, 'aria-hidden');
+  assert.strictEqual(s1.data.details.hiddenByElement, '<div id="app">');
+
+  const s2 = byId('s2');
+  assert.strictEqual(s2.i18n.summaryKey, 'liveRegionAnnouncements_summary_cantTell_inertAncestor');
+  assert.strictEqual(s2.i18n.params.ancestor, '<div class="backdrop">');
+
+  const s3 = byId('s3');
+  assert.strictEqual(s3.i18n.summaryKey, 'liveRegionAnnouncements_summary_cantTell_ariaHidden');
+  assert.strictEqual(s3.data.details.hiddenByElement, undefined);
 });
