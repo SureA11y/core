@@ -9,14 +9,19 @@
  * @standard WCAG 2.2
  * @sc 1.3.1
  * @applicability
- *   `<table>` elements with at least 2 rows and at least 2 columns (a
- *   single row or column has no rows and columns for a header to relate),
+ *   `<table>` elements with at least 2 rows and at least 2 columns as a
+ *   reader meets them: rows shown that hold something, columns with
+ *   something in some row (a single row or column has no rows and columns
+ *   for a header to relate, and an empty or hidden row or an empty column
+ *   doesn't make one a table of two),
  *   and with NO `colspan`/`rowspan` anywhere in the table (a `rowspan` of 0, which
  *   grows the cell to the end of its row group, is a span; a `colspan` of 0
  *   is 1). A table whose role (the
  *   role attribute's first known, non-abstract token, in any case) is
  *   anything but table, grid or treegrid, such as a layout table with
- *   role="presentation", is left out: it has no data cells.
+ *   role="presentation", is left out: it has no data cells. A presentation
+ *   or none role that browsers ignore, on a table with a global ARIA
+ *   attribute or that can take focus, leaves it a table.
  * @expectation
  *   A table with no header cell at all is asked about once, on the table:
  *   markup can't tell a layout table, which needs no headers, from a data
@@ -296,7 +301,17 @@ function runInPage(ctx) {
   for (const table of tables) {
     if (!table || !table.rows) continue;
 
-    const tableRole = firstRole(table);
+    let tableRole = firstRole(table);
+    // role="presentation" or "none" on a table with a global ARIA attribute
+    // (aria-label) or that can take focus is ignored by browsers (WAI-ARIA's
+    // presentational roles conflict resolution): it stays a table.
+    if (
+      (tableRole === 'presentation' || tableRole === 'none') &&
+      typeof helpers.isPresentationalRoleIgnored === 'function' &&
+      helpers.isPresentationalRoleIgnored(table)
+    ) {
+      tableRole = '';
+    }
     if (tableRole && !TABLE_ROLES.includes(tableRole)) continue;
 
     const rows = [...table.rows];
@@ -305,6 +320,16 @@ function runInPage(ctx) {
     const rowCells = rows.map((r) => [...(r.cells || [])]);
     const maxCols = rowCells.reduce((m, cells) => Math.max(m, cells.length), 0);
     if (maxCols < MIN_SIZE) continue;
+    // Its size as a reader meets it: the rows shown with a cell that holds
+    // something, and the columns with such a cell in some row. A spacer row,
+    // a hidden template row or an empty column doesn't make a single row or
+    // column a table of two.
+    const shownRows = rowCells.filter(
+      (cells, i) => isEligible(rows[i]) && cells.some((c) => !isEmptyCell(c))
+    );
+    const usedColumns = new Set();
+    for (const cells of shownRows) cells.forEach((c, i) => !isEmptyCell(c) && usedColumns.add(i));
+    if (shownRows.length < MIN_SIZE || usedColumns.size < MIN_SIZE) continue;
 
     // A rowspan of 0 spans too: the cell grows down to the end of its row
     // group (HTML, forming a table). A colspan of 0 is 1. parseInt reads

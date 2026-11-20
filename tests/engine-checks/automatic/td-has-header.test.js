@@ -463,3 +463,34 @@ test(`${RULE_ID}: a table with no header cells names the <th> that does not coun
     'If the table holds data, make the cells of its header row <th>. If it only lays out content, give the table role="presentation".'
   );
 });
+
+// A table is sized as a reader meets it: an empty or hidden row, or an empty
+// column, doesn't make one row or column a table of two.
+test('td-has-header: a table that is really one row or one column is left out', () => {
+  const outcome = (table) =>
+    runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${table}</body></html>`, {
+      runOnly: ['td-has-header']
+    }).checksResults.find((r) => r.ruleId === 'td-has-header').outcome;
+  for (const table of [
+    '<table><tr><td>A</td><td>B</td></tr><tr></tr></table>',
+    '<table><tr><td>A</td><td>B</td></tr><tr style="display:none"><td>C</td><td>D</td></tr></table>',
+    '<table><tr><td>A</td><td></td></tr><tr><td>C</td><td></td></tr></table>'
+  ]) {
+    assert.strictEqual(outcome(table), 'notApplicable', table);
+  }
+  assert.strictEqual(
+    outcome('<table><tr><td>A</td><td>B</td></tr><tr><td>C</td><td>D</td></tr></table>'),
+    'cantTell'
+  );
+});
+
+// role="presentation" with a global ARIA attribute is ignored (WAI-ARIA's
+// presentational roles conflict resolution): the table is a table.
+test('td-has-header: a presentation role browsers ignore leaves the table a table', () => {
+  const rule = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><body><table role="presentation" aria-label="Prices"><tr><td>Tea</td><td>2</td></tr><tr><td>Coffee</td><td>3</td></tr></table></body></html>',
+    { runOnly: ['td-has-header'] }
+  ).checksResults.find((r) => r.ruleId === 'td-has-header');
+  assert.strictEqual(rule.outcome, 'cantTell');
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'TD_TABLE_NO_HEADERS');
+});
