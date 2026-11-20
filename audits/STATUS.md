@@ -15,10 +15,11 @@ Nothing is in flight: no pull request from the audit work is open. Seven rounds 
 - **Round 7** (at `ec664338`): 38 findings, all fixed in #411, merged 2026-11-20, with R4:OP-P1.
 - **The leftovers of rounds 4 and 5**, and the four questions that waited on a decision: fixed and decided in #412, merged 2026-11-20.
 - **The safe features of `FINDINGS.md` §2** (R5:AP-7's `checkPack` report, invariants over every rule, pixel checks of native controls): done in #413, merged 2026-11-20, with a shadow-root selector fix the invariants found.
+- **target-size-minimum's speed** on long pages: done in #414, merged 2026-11-20.
 
 What is left: no finding to fix and no question to decide (`FINDINGS.md` §1). The features of `FINDINGS.md` §2 remain, the sixth round's three among them (R6:CE-4 to CE-6).
 
-**Next step:** decide which of the remaining features of `FINDINGS.md` §2 to take: those left change what a scan does (a 1.4.4 clipping check, a first-heading best practice, a time budget, speed work, reporter changes, a shared event-path helper, profiles without forking core). Before the next round, merge `main` into this branch (README, "Before running an audit").
+**Next step:** decide which of the remaining features of `FINDINGS.md` §2 to take: those left change what a scan does (a 1.4.4 clipping check, a first-heading best practice, a time budget, speed work on contrast-computable and label-in-name, reporter changes, a shared event-path helper, profiles without forking core). Before the next round, merge `main` into this branch (README, "Before running an audit").
 
 **Before 1.18.0 is used by the packs:** `pack-rgaa`, `pack-raweb` and `pack-en301549` declare `~1.17.0`, so each needs a release to accept it; `pack-rgaa`'s test of the experimental APIs it uses ("the profile serves article 47…") needs updating then, as it uses none any more. With #411, two more package tests need a one-line update: `pack-wai-aria`'s "an unnamed grid: a question for WCAG, a failure of WAI-ARIA" (the check now fails under the WAI-ARIA profile alone, R7:IF-7) and `pack-rgaa`'s "RGAA 9.3 and WCAG 1.3.1 both ask about `<li>` items in a role="list"" (WCAG 1.3.1 is now `passedInPart`, R7:AN-6). With #412, one more: `pack-rgaa`'s "9.3 asks about a plain `<li>` in a list with a widget role" expects `listitem-parent-valid` to fail, where it now asks (R5 list lead, decided); RGAA 9.3's outcome is unchanged.
 

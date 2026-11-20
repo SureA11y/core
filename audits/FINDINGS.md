@@ -50,7 +50,7 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 | # | Feature | From |
 |---|---|---|
 | C-20 | Profiles without forking core (`profile-kit` export or a runtime option), paused; the README contradiction is fixed (§3). Includes, from C-13: custom composites (rollups a caller defines, such as one per requirement of a standard core doesn't ship) and custom rules counting toward a standard's own rollups, which only a standard registered from outside core needs; profiles inside core already define their own rollups | Round 1 |
-| R3 (speed) | target-size-minimum about 3× 1.10.0, contrast-computable 33% slower than 1.10.0 (the paint-backdrop check), label-in-name 276–448 ms over the saved pages: speed work left after 1.11.0 ([outcomes §3](./2026-10-stress-test-3-outcomes.md#3-what-is-left)) | Round 3 |
+| R3 (speed) | contrast-computable 33% slower than 1.10.0 (the paint-backdrop check), label-in-name 276–448 ms over the saved pages: speed work left after 1.11.0 ([outcomes §3](./2026-10-stress-test-3-outcomes.md#3-what-is-left)). target-size-minimum's largest cost, hit tests below the fold, is gone (#414, §3); what is left of it is spread over shared helpers and its region geometry | Round 3 |
 | R3 (time budget) | `timeBudgetMs`, off by default: stop starting rules once spent and list the rest as not run (a time limit outside the engine is documented in INTEGRATION.md) | Round 3 |
 | R3 (suggestions) | Reporters naming packs and their versions; a cap on occurrences per rule; a smaller pack script | Round 3 |
 | R5:RB5-8 (rest) | Scans with thousands of running animations: the engine's loop is linear since `31c2aa8a`, but Chromium's own `getAnimations()` still costs about 6.6 s at 10,000; calling it less often or more narrowly is the only further cut | Round 5 |
@@ -61,6 +61,10 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 ---
 
 ## 3. Fixed — history
+
+### target-size speed (in `main`)
+
+Pull request [#414](https://github.com/SureA11y/core/pull/414) (`a1bdb230`, `e2001ca6`), merged 2026-11-20; unreleased, for 1.18.0. `isCoveredNear` hit-tested up to 25 points per neighbour pair, and on a long page most pairs lie below the fold, where every point answers `null`: points outside the viewport are skipped, the middle ones come first, and a target's own cover and the inline exception are kept per target. 2,000 inline links: 35,191 hit tests to 2,736, 165 to 117 ms; a form of 1,500 elements 75 to 50 ms; findings identical on all 157 scenario pages; a Chromium test pins the count. The 12 published packages gave the results of `main`.
 
 ### Safe features (in `main`)
 
