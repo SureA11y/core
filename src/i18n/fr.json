@@ -1629,6 +1629,8 @@
   "reflowHorizontalScroll_lean_caution_carousel": "Vérifier que chaque élément est accessible au clavier et que rien n’y est coupé.",
   "reflowHorizontalScroll_lean_why_clipped": "Le bord de la fenêtre coupe l’élément, et la page ne défile pas jusqu’au reste.",
   "reflowHorizontalScroll_lean_caution_clipped": "Un carrousel ou un menu peut montrer le reste autrement.",
+  "reflowHorizontalScroll_lean_why_fieldCut": "Un champ de formulaire de l’élément est coupé, et rien ne fait défiler jusqu’au reste : un champ doit être vu et utilisé en entier.",
+  "reflowHorizontalScroll_lean_caution_fieldCut": "Vérifiez que le champ est coupé parce que la largeur est étroite : un champ coupé à toute largeur est un problème, mais pas de redistribution.",
   "report_title_default": "Rapport d’analyse surea11y",
   "report_generated": "généré le {{date}}",
   "report_noUrl": "(aucune URL)",

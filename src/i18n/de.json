@@ -1629,6 +1629,8 @@
   "reflowHorizontalScroll_lean_caution_carousel": "Prüfen Sie, dass jedes Element mit der Tastatur erreichbar ist und in keinem etwas abgeschnitten wird.",
   "reflowHorizontalScroll_lean_why_clipped": "Der Rand des Viewports schneidet das Element ab, und die Seite scrollt nicht zum Rest.",
   "reflowHorizontalScroll_lean_caution_clipped": "Ein Karussell oder ein Menü kann den Rest auf andere Weise zeigen.",
+  "reflowHorizontalScroll_lean_why_fieldCut": "Ein Formularfeld im Element ist abgeschnitten, und nichts scrollt zum Rest: Ein Feld muss ganz zu sehen und zu bedienen sein.",
+  "reflowHorizontalScroll_lean_caution_fieldCut": "Prüfen Sie, ob das Feld wegen der geringen Breite abgeschnitten ist: Ein Feld, das bei jeder Breite abgeschnitten ist, ist ein Problem, aber keines des Umfließens.",
   "report_title_default": "surea11y-Scanbericht",
   "report_generated": "erstellt {{date}}",
   "report_noUrl": "(keine URL)",

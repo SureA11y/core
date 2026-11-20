@@ -44,14 +44,18 @@
  *     (`visibility: hidden` or `collapse`, with no part set back to
  *     visible) is left out at every edge and in every box: there is nothing
  *     to reach. When it is what reaches past the edge, the page may scroll,
- *     but scrolling shows nothing, so it passes. Open shadow roots are read like the rest of
- *     the page, and a box around a shadow host is a box around what its
- *     shadow tree shows.
+ *     but scrolling shows nothing, so it passes. Open shadow roots are read
+ *     like the rest of the page, and a box around a shadow host is a box
+ *     around what its shadow tree shows.
+ *   - Content cut off with nothing to scroll to it (below) is asked about,
+ *     never failed: it is a loss only if the narrow width is what cuts it,
+ *     and one view of the page can't tell that. A cut field leans fail.
+ *     Only scrolling sideways, which the rule measures as it is, fails.
  *   - Text, an image, media or a field that the start edge cuts through
  *     (the left, or the right in right-to-left text, as a negative margin
  *     or a relative offset leaves it) can't be reached, as nothing scrolls
  *     past the start, whether or not the page scrolls: it is asked about
- *     (CLIPPED_AT_VIEWPORT_EDGE, its `edge` the start's), and fails where a
+ *     (CLIPPED_AT_VIEWPORT_EDGE, its `edge` the start's), leaning fail where a
  *     field is cut. A box alone is not content (a background, a negative
  *     margin its padding takes back), and what lies wholly past the edge
  *     waits there on purpose (a skip link, replaced text).
@@ -59,15 +63,15 @@
  *     hidden` or `clip` on the root, or on the body that passes it on), an
  *     element that the viewport's end edge cuts through is asked about
  *     (CLIPPED_AT_VIEWPORT_EDGE): part of it can't be reached. It leans
- *     fail, and fails where a field in it is cut. One wholly past
+ *     fail, the more so where a field in it is cut. One wholly past
  *     the edge is left out: off-canvas menus and slides wait there on
  *     purpose.
  *   - A box fixed to the viewport (`position: fixed`, with no box around it
  *     that holds what is fixed in it, through a transform, a filter or
  *     containment) doesn't widen the page and stays put as it scrolls, so
  *     what of it lies past the edge is never reached, whether or not the
- *     page scrolls: where the edge cuts through it, it is asked about, or
- *     fails, the same way (CLIPPED_AT_VIEWPORT_EDGE).
+ *     page scrolls: where the edge cuts through it, it is asked about the
+ *     same way (CLIPPED_AT_VIEWPORT_EDGE).
  *   - When the root's overflow isn't visible, the body's stays its own, and
  *     the body is a box like any other below. A box that scrolls on its own
  *     and fills the viewport while the page itself doesn't scroll, as an
@@ -91,8 +95,8 @@
  *     from scrolling, but what sticks out
  *     of the box is cut off with no way to reach it, whether or not the page
  *     scrolls. Where it starts, such an element is asked about
- *     (CLIPPED_BY_CONTAINER) and leans fail, or fails where a field in it is
- *     cut (a table, code or media is still asked about). Left out: an
+ *     (CLIPPED_BY_CONTAINER) and leans fail, the more so where a field in it
+ *     is cut. Left out: an
  *     element wholly outside the box (waiting there on purpose), one above
  *     or below a box that also hides what overflows downwards (a collapsed
  *     panel), a box a pixel wide (visually
@@ -153,13 +157,15 @@
  *     Basis: WCAG 1.4.10 (not settled).
  *   - `CLIPPED_BY_CONTAINER` (cantTell): a box around this element hides what
  *     overflows it (`overflow-x: hidden` or `clip`), and the element sticks
- *     out of the box, so part of it can't be reached. It leans fail, and fails
- *     where a field in it is cut off, which no exception
- *     covers.
+ *     out of the box, so part of it can't be reached. It leans fail, with its
+ *     own reason where a field in it is cut off: whether the narrow width
+ *     is what cuts it is for a person to judge.
  *     Basis: WCAG 1.4.10 (not settled).
  *   - `CLIPPED_AT_VIEWPORT_EDGE` (cantTell): the page doesn't scroll
  *     sideways, but the edge of the viewport cuts through this element, so
- *     part of it can't be reached. It leans fail.
+ *     part of it can't be reached, at the end edge or the start edge, or of
+ *     a box fixed to the viewport. It leans fail, with its own reason where
+ *     a field in it is cut off.
  *     Basis: WCAG 1.4.10 (not settled).
  * @implementation-notes
  *   The rule reads the browser's own measures: the scrolling box's
@@ -1201,6 +1207,19 @@ function runInPage(ctx) {
         cautionKey: 'reflowHorizontalScroll_lean_caution_clipped'
       }
     },
+    // A field cut off with nothing to scroll to it: likely a loss, but one
+    // view can't tell whether the narrow width is what cut it.
+    fieldCut: {
+      toward: 'fail',
+      why: 'A form field in the element is cut off, and nothing scrolls to the rest of it: a field has to be seen and used whole.',
+      signals: [{ signal: 'cut-form-field', value: true }],
+      caution:
+        'Check that the field is cut because the width is narrow: a field cut at every width is a problem, but not one of reflow.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_fieldCut',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_fieldCut'
+      }
+    },
     clipped: {
       toward: 'fail',
       why: 'The edge of the viewport cuts through the element, and the page does not scroll to the rest of it.',
@@ -1350,17 +1369,20 @@ function runInPage(ctx) {
           : null;
     report(code, el, hit, lean);
   }
-  // Fields cut off: no exception covers a form, so it fails. A table, code
-  // or media is left to a person.
+  // Content cut off, with nothing to scroll to it, is a loss only if the
+  // narrow width is what cuts it, which one view of the page can't tell: it
+  // is asked about, and a cut field leans fail. Only scrolling sideways is
+  // measured as it is (a page, or a box with a field it cuts, that scrolls).
   const pastEnd = (rect) => ({ over: overflowOf(rect) });
+  const cutLean = (el, pastOf, otherwise) => (cutsFields(el, pastOf) ? LEANS.fieldCut : otherwise);
 
   for (const { el, tag, hit, fixed, start } of found) {
     if (start) {
-      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, LEANS.clipped, cutsFields(el, beforeStartOf));
+      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, cutLean(el, beforeStartOf, LEANS.clipped));
       continue;
     }
     if (!pageScrolls || fixed) {
-      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, LEANS.clipped, cutsFields(el, pastEnd));
+      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, cutLean(el, pastEnd, LEANS.clipped));
       continue;
     }
     reportOnPage(el, tag, hit);
@@ -1374,17 +1396,25 @@ function runInPage(ctx) {
       });
       continue;
     }
-    report(
-      clip.scrolls ? 'SCROLLS_IN_CONTAINER' : 'CLIPPED_BY_CONTAINER',
-      el,
-      { over: clip.over, rect: clip.rect },
-      clip.scrolls
-        ? isCarousel(el, clip.box)
-          ? LEANS.carousel
-          : LEANS.scrollBox
-        : LEANS.clippedBox,
-      cutsFields(el, (rect) => pastBox(rect, clip.box))
-    );
+    const pastClip = (rect) => pastBox(rect, clip.box);
+    if (clip.scrolls) {
+      // A box that scrolls sideways to show a field it cuts: scrolling in two
+      // dimensions to use the form, which no exception covers.
+      report(
+        'SCROLLS_IN_CONTAINER',
+        el,
+        { over: clip.over, rect: clip.rect },
+        isCarousel(el, clip.box) ? LEANS.carousel : LEANS.scrollBox,
+        cutsFields(el, pastClip)
+      );
+    } else {
+      report(
+        'CLIPPED_BY_CONTAINER',
+        el,
+        { over: clip.over, rect: clip.rect },
+        cutLean(el, pastClip, LEANS.clippedBox)
+      );
+    }
   }
 
   // Only what reaches past the end edge explains why the page scrolls; what

@@ -73,6 +73,9 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.close();
     }
   }
+  // The reason a lean gives: fieldCut, clipped, clippedBox, scrollBox…
+  const leanWhy = (o) =>
+    o && o.lean ? o.lean.i18n.whyKey.replace('reflowHorizontalScroll_lean_why_', '') : null;
   const findings = (check) =>
     (check.occurrences || []).map((o) => [
       (String(o.html || '').match(/id="([^"]+)"/) || [])[1] || o.data.details.element,
@@ -173,16 +176,23 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(fits.outcome, 'pass');
   });
 
-  await t.test('fields cut off by a box that hides overflow fail', async () => {
-    const check = await scan(
-      page(
-        '.card{overflow:hidden;border:1px solid} .grid{display:flex;width:560px} .grid>div{flex:none;width:270px}',
-        '<div class="card"><div class="grid" id="g"><div><label>Type <input></label></div><div><label>Direction <input></label></div></div></div>'
-      )
-    );
-    assert.equal(check.outcome, 'fail');
-    assert.deepEqual(findings(check), [['g', 'fail', 'CLIPPED_BY_CONTAINER', null]]);
-  });
+  // Content cut off with nothing to scroll to it is a loss only if the
+  // narrow width cuts it, which one view can't tell: a cut field is asked
+  // about, leaning fail. Only scrolling sideways fails.
+  await t.test(
+    'fields cut off by a box that hides overflow are asked about, leaning fail',
+    async () => {
+      const check = await scan(
+        page(
+          '.card{overflow:hidden;border:1px solid} .grid{display:flex;width:560px} .grid>div{flex:none;width:270px}',
+          '<div class="card"><div class="grid" id="g"><div><label>Type <input></label></div><div><label>Direction <input></label></div></div></div>'
+        )
+      );
+      assert.equal(check.outcome, 'cantTell');
+      assert.deepEqual(findings(check), [['g', 'cantTell', 'CLIPPED_BY_CONTAINER', 'fail']]);
+      assert.equal(leanWhy(check.occurrences[0]), 'fieldCut');
+    }
+  );
 
   await t.test(
     'a carousel of links and a data table with a field are still asked about',
@@ -337,7 +347,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   });
 
   await t.test(
-    'a fixed box the edge cuts through is asked about, and fails with fields',
+    'a fixed box the edge cuts through is asked about, leaning fail with fields',
     async () => {
       // Fixed boxes don't widen the page, so nothing scrolls to what of them
       // lies past the edge.
@@ -356,7 +366,9 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
           '<div class="b" id="bar"><label>From <input></label><label>To <input></label></div>'
         )
       );
-      assert.deepEqual(findings(fields), [['bar', 'fail', 'CLIPPED_AT_VIEWPORT_EDGE', null]]);
+      assert.deepEqual(findings(fields), [['bar', 'cantTell', 'CLIPPED_AT_VIEWPORT_EDGE', 'fail']]);
+      assert.equal(leanWhy(fields.occurrences[0]), 'fieldCut');
+      assert.equal(leanWhy(banner.occurrences[0]), 'clipped');
       // Wholly past the edge, as an off-canvas menu waits, or held by a box
       // with a transform that scrolls it in: not reported.
       const offCanvas = await scan(
@@ -404,6 +416,8 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
           '<table role="presentation"><tr><td><div class="s"><form id="f"><label>A <input></label><label>B <input></label></form></div></td></tr></table>'
         )
       );
+      // A box that scrolls sideways to show the fields it cuts: scrolling in
+      // two dimensions to use the form, which still fails.
       assert.deepEqual(findings(outerTable), [['f', 'fail', 'SCROLLS_IN_CONTAINER', null]]);
       const ellipsis = await scan(
         page(
@@ -411,7 +425,8 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
           '<div class="card"><div class="row" id="r"><label>A <input></label><label>B <input></label></div></div>'
         )
       );
-      assert.deepEqual(findings(ellipsis), [['r', 'fail', 'CLIPPED_BY_CONTAINER', null]]);
+      assert.deepEqual(findings(ellipsis), [['r', 'cantTell', 'CLIPPED_BY_CONTAINER', 'fail']]);
+      assert.equal(leanWhy(ellipsis.occurrences[0]), 'fieldCut');
     }
   );
 
@@ -536,15 +551,20 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(check.outcome, 'pass');
   });
 
-  await t.test('only a field that is itself cut off fails', async () => {
+  await t.test('only a field that is itself cut off is a cut field', async () => {
     const card = (row, css = '') =>
       page(
         '.card{overflow:hidden;width:280px} .row{display:flex;width:560px} .row>*{flex:none;width:270px} ' +
           css,
         `<div class="card"><div class="row" id="r">${row}</div></div>`
       );
-    const tier = async (html) => (await scan(html)).occurrences[0].occurrenceOutcome;
-    assert.equal(await tier(card('<label>A <input></label><label>B <input></label>')), 'fail');
+    // Every one is a question; the lean says whether a field is cut.
+    const tier = async (html) => {
+      const o = (await scan(html)).occurrences[0];
+      assert.equal(o.occurrenceOutcome, 'cantTell');
+      return leanWhy(o) === 'fieldCut' ? 'field' : 'other';
+    };
+    assert.equal(await tier(card('<label>A <input></label><label>B <input></label>')), 'field');
     // The field shows whole; only its help text is cut.
     assert.equal(
       await tier(
@@ -553,7 +573,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
           '.row>*{width:auto}'
         )
       ),
-      'cantTell'
+      'other'
     );
     // Hidden, disabled, or a button: not a field a person fills in.
     assert.equal(
@@ -563,15 +583,15 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
           'input{display:none}'
         )
       ),
-      'cantTell'
+      'other'
     );
     assert.equal(
       await tier(card('<label>A <input disabled></label><label>B <input disabled></label>')),
-      'cantTell'
+      'other'
     );
     assert.equal(
       await tier(card('<button>Accept</button><input type="submit" value="Reject">')),
-      'cantTell'
+      'other'
     );
     assert.equal(
       await tier(
@@ -580,7 +600,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
           '<div class="card"><div class="ed" contenteditable="plaintext-only">Edit</div></div>'
         )
       ),
-      'fail'
+      'field'
     );
   });
 
@@ -666,6 +686,13 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       engineOptions: { excludeSelectors: ['#x'] }
     });
     assert.equal(findings(check).length, 0);
+  });
+
+  await t.test('a field the start edge cuts through is asked about, leaning fail', async () => {
+    const check = await scan(page('#f{margin-left:-60px}', '<input id="f" aria-label="Name">'));
+    assert.deepEqual(findings(check), [['f', 'cantTell', 'CLIPPED_AT_VIEWPORT_EDGE', 'fail']]);
+    assert.equal(leanWhy(check.occurrences[0]), 'fieldCut');
+    assert.equal(check.occurrences[0].data.details.edge, 'left');
   });
 
   // visibility: hidden or collapse draws nothing, yet keeps its place in the
