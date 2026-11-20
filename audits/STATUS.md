@@ -2,7 +2,7 @@
 
 Where the work on the audit's findings stands, written so that another person or session can pick it up without the history of this one. The findings themselves, open and fixed, are in [`FINDINGS.md`](./FINDINGS.md); this page says what is in flight, what is decided, and how the work is done.
 
-Last updated 2026-11-20, on `main` at `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work).
+Last updated 2026-11-20, on `main` at `78354cc4` (1.17.0 plus the unreleased 1.18.0 work).
 
 ## 1. Open now
 
@@ -14,10 +14,11 @@ Nothing is in flight: no pull request from the audit work is open. Seven rounds 
 - **Round 6** (the unreleased 1.18.0 work, at `23e0a387`): fixed in #406 and #407, merged 2026-11-20, unreleased; every open item of the register re-checked on `c1bb82de` the same day. RF-16's last part fixed by #408.
 - **Round 7** (at `ec664338`): 38 findings, all fixed in #411, merged 2026-11-20, with R4:OP-P1.
 - **The leftovers of rounds 4 and 5**, and the four questions that waited on a decision: fixed and decided in #412, merged 2026-11-20.
+- **The safe features of `FINDINGS.md` §2** (R5:AP-7's `checkPack` report, invariants over every rule, pixel checks of native controls): done in #413, merged 2026-11-20, with a shadow-root selector fix the invariants found.
 
 What is left: no finding to fix and no question to decide (`FINDINGS.md` §1). The features of `FINDINGS.md` §2 remain, the sixth round's three among them (R6:CE-4 to CE-6).
 
-**Next step:** go through the features of `FINDINGS.md` §2 and decide which to take. Before the next round, merge `main` into this branch (README, "Before running an audit").
+**Next step:** decide which of the remaining features of `FINDINGS.md` §2 to take: those left change what a scan does (a 1.4.4 clipping check, a first-heading best practice, a time budget, speed work, reporter changes, a shared event-path helper, profiles without forking core). Before the next round, merge `main` into this branch (README, "Before running an audit").
 
 **Before 1.18.0 is used by the packs:** `pack-rgaa`, `pack-raweb` and `pack-en301549` declare `~1.17.0`, so each needs a release to accept it; `pack-rgaa`'s test of the experimental APIs it uses ("the profile serves article 47…") needs updating then, as it uses none any more. With #411, two more package tests need a one-line update: `pack-wai-aria`'s "an unnamed grid: a question for WCAG, a failure of WAI-ARIA" (the check now fails under the WAI-ARIA profile alone, R7:IF-7) and `pack-rgaa`'s "RGAA 9.3 and WCAG 1.3.1 both ask about `<li>` items in a role="list"" (WCAG 1.3.1 is now `passedInPart`, R7:AN-6). With #412, one more: `pack-rgaa`'s "9.3 asks about a plain `<li>` in a list with a widget role" expects `listitem-parent-valid` to fail, where it now asks (R5 list lead, decided); RGAA 9.3's outcome is unchanged.
 
@@ -33,6 +34,7 @@ What is left: no finding to fix and no question to decide (`FINDINGS.md` §1). T
 - Round 6, all on 2026-11-19: excluded areas are context for rules that judge the whole page (no findings in them, their content still read); every experimental API due at 1.18.0 made stable after its fixes, `skip-link`'s `details.lean` and the `standard.review` keys included, as `pack-rgaa` uses both; requirement-level laws kept experimental until 1.20.0 and honoured by the scan; invalid `aria-level` values follow WAI-ARIA's default where Chromium exposes 1.
 - Round 7, all on 2026-11-20: `reflow-horizontal-scroll` becomes a manual rule that asks and never fails, a region filling the viewport is the page, and `opacity: 0` is hidden; `p-as-heading` drops `BOLD_SHORT_DIV` and `BOLD_LEAD_LINE`, keeping `BOLD_SHORT_PARAGRAPH`; a pack's profile scanned alone keeps the pack's verdict; an invalid `aria-checked` on a native checkbox or radio is asked about.
 - After round 7, on 2026-11-20: `strictOptions` refuses unknown `mappings` and `optInRules` tags and invalid `excludeSelectors` CSS; an `<li>` in a list whose role replaces list is asked about, leaning fail; an input whose `list` names no datalist is a textbox, as Chromium exposes it; `focus-not-removed-by-script` keeps its criteria, without 3.2.1; ids, tags and profile names match case in ASCII only.
+- R6:CE-6: no lean for a small table of plain text with no `<th>` (2026-11-20).
 - Nothing is waiting on a decision.
 
 ## 3. How the work is done

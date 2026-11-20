@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Verified against** | `main` at `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the leftovers fixed in #412; `ec664338`, 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
+| **Verified against** | `main` at `78354cc4`, 2026-11-20, for #413's features; `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the leftovers fixed in #412; `ec664338`, 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
 | **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)), [second](./2026-10-stress-test-2.md) (`cfefc02`), [third](./2026-10-stress-test-3.md) (`eaa5d3f1`, with its [outcomes log](./2026-10-stress-test-3-outcomes.md)), [fourth](./2026-10-stress-test-4.md) (`3af2008`) [fifth](./2026-10-stress-test-5.md) (`c528af08`), [sixth](./2026-11-stress-test-6.md) (`23e0a387`) and [seventh](./2026-11-stress-test-7.md) (`ec664338`) |
 | **How it is kept** | See [`README.md`](./README.md): before each audit, merge `main`; after it, re-run every open item, move fixed ones to §3, and add new ones |
 
@@ -54,15 +54,24 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 | R3 (time budget) | `timeBudgetMs`, off by default: stop starting rules once spent and list the rest as not run (a time limit outside the engine is documented in INTEGRATION.md) | Round 3 |
 | R3 (suggestions) | Reporters naming packs and their versions; a cap on occurrences per rule; a smaller pack script | Round 3 |
 | R5:RB5-8 (rest) | Scans with thousands of running animations: the engine's loop is linear since `31c2aa8a`, but Chromium's own `getAnimations()` still costs about 6.6 s at 10,000; calling it less often or more narrowly is the only further cut | Round 5 |
-| R5:AP-7 (rest) | `checkPack` could refuse a standard's `reasonCodes` row naming a code no rule emits (now that every rule's occurrences carry one) | Round 5 |
 | R6:CE-4 | A cheap 1.4.4 check for text clipped at 640px wide, as ACT rule 59br37 and Alfa's dr83 do ([round 6](./2026-11-stress-test-6.md#other-engines)) | Round 6 |
 | R6:CE-5 | "The page starts with an `<h1>`" as a best practice, as Alfa's r61 does | Round 6 |
-| R6:CE-6 | A lean for a 2 by 2 table with no `<th>`, which IBM fails | Round 6 |
-| R5 (§3) | The fifth round's other suggestions: a shared event-path helper for the listener rules, a lint rule or fuzz invariant for tables indexed by page values, pixel checks of the native controls the engine models, the shadow-root selector invariant in the fuzz harness ([§3](./2026-10-stress-test-5.md#3-improvements-and-features)) | Round 5 |
+| R5 (§3) | What is left of the fifth round's other suggestions: a shared event-path helper for the listener rules (a change to how they read listeners, not taken as safe on 2026-11-20). The fuzz invariants for tables indexed by page values and for shadow-root selectors, and the pixel checks of native controls, are done (#413, §3) ([§3](./2026-10-stress-test-5.md#3-improvements-and-features)) | Round 5 |
 
 ---
 
 ## 3. Fixed — history
+
+### Safe features (in `main`)
+
+Pull request [#413](https://github.com/SureA11y/core/pull/413) (`47280aad` to `57e58d7b`), merged 2026-11-20; unreleased, for 1.18.0. The features of §2 that change nothing a scan reports about a page. The 12 published packages gave the results of `main`.
+
+| # | Feature | Done in |
+|---|---|---|
+| R5:AP-7 (rest) | `checkPack` reports a `reasonCodes` row for a code its rule never gives (a core rule's codes from its `@reason-codes` header, a pack rule's from `meta.reasonCodes`); only reported, `definePack` and a scan still take the pack. None of the four published standard packs has one | #413, `47280aad` |
+| R5 (§3, fuzz) | Invariants over every rule (`tests/engine-invariants.test.js`): a page whose names and values are `Object.prototype` keys scans without errors or pollution; every finding's selector finds exactly its element in the shadow root its `shadowHostSelectors` lead to | #413, `aef9af63` |
+| R5:RB5-9 (rest) | Found by that invariant: two siblings at the top of a shadow root that share a tag both got `tag:not(* > *)`, which finds the first; the selector now counts them with `:nth-of-type` | #413, `aef9af63` |
+| R5 (§3, pixels) | A Chromium test checks the native controls the engine models against painted pixels, light and dark: a drop-down select in the Field color, fields and buttons in their computed background, checkboxes and radios 12 to 16 px | #413, `57e58d7b` |
 
 ### The register's leftovers (in `main`)
 
@@ -835,6 +844,7 @@ Checked and decided. Don't reopen without new evidence.
 
 | # | Finding | Decision | Reason |
 |---|---|---|---|
+| R6:CE-6 | A lean for a 2 by 2 table with no `<th>`, which IBM fails | No lean for plain text (decided 2026-11-20) | `td-has-header` already leans fail where a small table shows signs of data (numbers, a caption, a head, a first row or column drawn as headers); a table of plain short text looks the same as data and as layout (a navigation or contact block), so it is asked about with no lean |
 | C-21 | `profile:new` accepts the key `section508` | Not a bug | A scaffold's profile is `section508-1.0`; the built-in profile is unaffected. Re-checked. (Using `section508` both as a profile name and a `mappings` name can confuse; a note in the scaffold docs would help.) |
 | S-7 (rest) | `deprecated-elements-not-used` and `server-side-image-map-absent` pass on an empty scope | Not a bug | They pass on a whole page with nothing relevant too; a scoped pass is consistent. |
 | — | `getChecksCatalog({ profile: 'bogus' })` returns the full catalog | Not a bug | A profile changes mappings, not which rules are listed. (It doesn't warn about the unknown name, as a scan does: minor.) |
