@@ -98,6 +98,21 @@ test('packScript refuses rule code with "<!--" then "<script", which can keep an
     ]
   });
   assert.throws(() => packScript([pack]), /"<!--" followed by "<script"/);
+  // "--!>" ends a comment in markup, but not inside a <script> element.
+  const bang = definePack({
+    name: 'bang-pack',
+    version: '1.0.0',
+    namespace: 'bg',
+    core: '*',
+    rules: [
+      {
+        id: 'bg-rule',
+        meta: { title: 'T', description: 'd', tags: ['bg'] },
+        runInPage: new Function("return { outcome: 'pass', note: '<!-- --!> <script>' };")
+      }
+    ]
+  });
+  assert.throws(() => packScript([bang]), /"<!--" followed by "<script"/);
   // "<!--" closed by "-->" first, as a rule stripping comments writes it,
   // is harmless.
   const comments = definePack({

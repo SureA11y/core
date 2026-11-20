@@ -2224,20 +2224,25 @@ function pageCodeProblems(rule, where) {
   return problems;
 }
 
-// JSON as script text: "<" escaped so no "</script" can end an inline script,
-// and U+2028 and U+2029, which end a line comment, escaped too.
 // The "<script" an inline script's text opens after "<!--" with no "-->"
-// first (HTML's script data double escaped state), or null.
+// first (HTML's script data double escaped state), or null. Inside a
+// <script> element only "-->" leaves the escaped state: "--!>", which ends a
+// comment in markup, does not (after "--", HTML's tokenizer takes "!" back
+// to the escaped state), so it is matched to be passed over, never as an end.
 function unclosedScriptInComment(text) {
-  const re = /<!--|-->|<script(?=[\s/>])/gi;
+  const re = /<!--|--!?>|<script(?=[\s/>])/gi;
   let inComment = false;
   for (let m = re.exec(text); m; m = re.exec(text)) {
     if (m[0] === '<!--') inComment = true;
     else if (m[0] === '-->') inComment = false;
+    else if (m[0] === '--!>') continue;
     else if (inComment) return m[0];
   }
   return null;
 }
+
+// JSON as script text: "<" escaped so no "</script" can end an inline script,
+// and U+2028 and U+2029, which end a line comment, escaped too.
 
 const scriptJson = (value) =>
   JSON.stringify(value)
