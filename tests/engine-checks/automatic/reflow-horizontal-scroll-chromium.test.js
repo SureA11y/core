@@ -478,8 +478,10 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       );
       const rtlPage = await scan(
         page(
-          '#p{position:relative;left:120px}',
-          '<p id="p">نص يبدأ بعد الحافة</p>',
+          // Moved less than the text's width in any Arabic font, so part
+          // of it shows: text wholly past the edge is left alone.
+          '#p{position:relative;left:60px}',
+          '<p id="p">نص طويل يبدأ بعد الحافة اليمنى للصفحة ويستمر</p>',
           'lang="ar" dir="rtl"'
         )
       );
