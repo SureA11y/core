@@ -461,6 +461,54 @@ test("data's procedures, groups, notes and texts become core's", () => {
   );
 });
 
+// A test belongs to the requirements that list it, or, where a requirement
+// lists none, to those the test names: its texts are translated either way.
+test("a test's texts are translated whether its requirement lists it or only the test names it", () => {
+  const unlisted = copy(data);
+  delete unlisted.data[4].requirements['1.1'].tests;
+  const pack = definePack({
+    name: 'rg-pack',
+    version: '1.0.0',
+    namespace: 'rg',
+    core: '*',
+    standard: standardFromData(unlisted)
+  });
+  const en = proceduresFor('1.1', { packs: [pack], standard: 'rg', locale: 'en' });
+  assert.equal(en.facets[0].id, '1.1.1');
+  assert.equal(en.facets[0].label, 'An <img> has alt');
+  assert.deepEqual(en.facets[0].procedure.steps, ['Find the images.', 'Check the alt.']);
+});
+
+// Keys join ids with dots: a requirement `a` with a test `b.facets.c` and a
+// requirement `a.facets.b` with a test `c` would share their texts' keys.
+test('two parts of a standard whose text keys would be the same are named', () => {
+  const clash = copy(data);
+  const d = clash.data[4];
+  const proc = (s) => ({ steps: [s], passWhen: `Yes ${s}`, failWhen: `No ${s}` });
+  d.groups = [{ id: '1', title: 'All', requirements: ['a', 'a.facets.b'] }];
+  d.requirements = {
+    a: { title: 'A', wcagSc: [], tests: ['b.facets.c'] },
+    'a.facets.b': { title: 'B', wcagSc: [], tests: ['c'] }
+  };
+  d.tests = {
+    'b.facets.c': { title: 'One', requirements: ['a'], procedure: proc('one') },
+    c: { title: 'Two', requirements: ['a.facets.b'], procedure: proc('two') }
+  };
+  d.ruleMap = {};
+  d.texts = { en: { 'tests.c.title': 'Two (en)' } };
+  assert.throws(
+    () =>
+      definePack({
+        name: 'rg-pack',
+        version: '1.0.0',
+        namespace: 'rg',
+        core: '*',
+        standard: standardFromData(clash)
+      }),
+    /both key their texts requirements\.a\.facets\.b\.facets\.c\.\*/
+  );
+});
+
 test('a derived standard takes its base texts where its source is the base, and not where it rewords', () => {
   const own = {
     format: 'surea11y-standard/1',

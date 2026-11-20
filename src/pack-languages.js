@@ -22,7 +22,7 @@
  * '…', 'requirements.1.1.facets.1.1.1.steps': ['…', '…'] } } }. A text with
  * one is read from it first, and from `standard.translations` otherwise, so
  * two texts worded alike can be translated apart, and a version can word an
- * id its own way. Experimental (src/experimental.js). The keys
+ * id its own way. The keys
  * (textKeysOf):
  *   requirements.<id>.title, requirements.<id>.note,
  *   requirements.<id>.facets.<facet>.label | steps | passWhen | failWhen,
@@ -356,6 +356,42 @@ function languageProblems(st) {
   return problems;
 }
 
+// Keys join ids with dots, so two parts of a standard could share one: a
+// requirement `a` whose facet is `b.facets.c` and a requirement
+// `a.facets.b` whose facet is `c` both key their texts
+// requirements.a.facets.b.facets.c, and a translation of one would be read
+// for both. Each part named once, by version.
+function keyClashes(st) {
+  const problems = [];
+  for (const [version, requirements] of Object.entries(
+    isObject(st.procedures) ? st.procedures : {}
+  )) {
+    if (!isObject(requirements)) continue;
+    // Each stem, with the part it is the stem of.
+    const owner = new Map();
+    const claim = (stem, part) => {
+      const other = owner.get(stem);
+      if (other === undefined) owner.set(stem, part);
+      else if (other !== part) {
+        problems.push(
+          `standard.texts: in version ${version}, ${other} and ${part} both key their texts ${stem}.*, so a translation would be read for both; give one an id with no "facets" or "replace" in it`
+        );
+      }
+    };
+    for (const [id, entry] of Object.entries(requirements)) {
+      if (!isObject(entry)) continue;
+      claim(`requirements.${id}`, `requirement ${id}`);
+      for (const f of Array.isArray(entry.facets) ? entry.facets : []) {
+        if (isObject(f)) claim(`requirements.${id}.facets.${f.id}`, `facet ${f.id} of ${id}`);
+      }
+      for (const fid of Object.keys(isObject(entry.replace) ? entry.replace : {})) {
+        claim(`requirements.${id}.replace.${fid}`, `the replacement of ${fid} in ${id}`);
+      }
+    }
+  }
+  return problems;
+}
+
 // What is wrong with standard.texts: a locale that is no tag or is the
 // standard's own, a version it doesn't have, a key that names no text of
 // it, a list where the source has one text or one where it has a list, a
@@ -371,6 +407,7 @@ function idTextProblems(st) {
   // The source texts by version and key; a list's by its key and index.
   const known = {};
   const lists = {};
+  problems.push(...keyClashes(st));
   for (const u of unitsOf(st)) {
     if (isUnsafeKey(u.version) || isUnsafeKey(u.key)) continue;
     (known[u.version] = known[u.version] || {})[u.key] = u.text;
