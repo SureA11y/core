@@ -185,6 +185,7 @@
     "src/pack-languages.js",
     "src/texts-by-id.js",
     "src/laws.js",
+    "src/law-applies.js",
     "src/pack-review.js",
     "src/review-dictionary.d.ts",
     "src/i18n/review/*.json",

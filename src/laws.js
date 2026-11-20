@@ -16,6 +16,7 @@
  */
 
 const { isUnsafeKey, TAG } = require('./texts-by-id.js');
+const { appliesUnder } = require('./law-applies.js');
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const isText = (v) => typeof v === 'string' && v.trim() !== '';
@@ -180,16 +181,6 @@ function lawOf(st, id, locale) {
     }
   }
   return out;
-}
-
-/**
- * Whether a requirement of standard.procedures applies under a profile's
- * law: one that names no laws applies under every profile; one that names
- * some, under a profile whose law is one of them.
- */
-function appliesUnder(entry, law) {
-  if (!isObject(entry) || !Array.isArray(entry.laws)) return true;
-  return typeof law === 'string' && entry.laws.includes(law);
 }
 
 module.exports = {

@@ -105,7 +105,7 @@
 const { EN301549_VERSIONS, en301549MappingsForScs } = require('./en301549-map');
 const { wcagTags } = require('../wcag');
 const { wcagLinks } = require('./wcag-criteria');
-const { appliesUnder } = require('../laws.js');
+const { appliesUnder } = require('../law-applies.js');
 const PROFILES = require('../../profiles');
 
 // The WCAG A and AA tags of the WCAG version an EN 301 549 version is built on.
