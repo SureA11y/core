@@ -415,7 +415,7 @@ function frameSuites(result, frame, baseline, opts, totals) {
     const suite = suites.get(key);
     const entries = suite.entries
       .slice()
-      .sort((a, b) => a.check.ruleId.localeCompare(b.check.ruleId));
+      .sort((a, b) => a.check.ruleId.localeCompare(b.check.ruleId, 'en'));
     const criterion = key === OTHER_SUITE ? null : criterionOf(composites.get(key));
     // Names are the same in every locale, since CI test history is keyed
     // on them: a scan read in French must not give "new" tests. The title,
@@ -440,7 +440,7 @@ function frameSuites(result, frame, baseline, opts, totals) {
       ...(suite.level ? [['wcagLevel', suite.level]] : []),
       ...standards.flatMap((standard) =>
         [...(suite.standards.get(standard.key) || [])]
-          .sort((a, b) => compareCriteria(a, b) || a.localeCompare(b))
+          .sort((a, b) => compareCriteria(a, b) || a.localeCompare(b, 'en'))
           .map((requirement) => [standard.key, requirement])
       ),
       ...(criterion && criterion.outcome ? [['criterionOutcome', criterion.outcome]] : []),

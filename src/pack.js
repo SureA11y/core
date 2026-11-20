@@ -1154,7 +1154,31 @@ function variantProblems(pack, rule, where) {
 // leaves out the core a host installed is no mistake in the pack, and must
 // not stop the host from loading it. withReported: whether to include what
 // checkPack reports but doesn't keep the pack from loading.
+// A pack's name, read without letting a getter or a Proxy that throws
+// escape: null when it can't be read or isn't a string.
+function safePackName(pack) {
+  try {
+    return isObject(pack) && typeof pack.name === 'string' ? pack.name : null;
+  } catch {
+    return null;
+  }
+}
+
+// What is wrong with a pack. One that throws while it is read (a getter, or
+// a Proxy whose traps throw) is a problem, as PACKS.md promises checkPack
+// reports problems without throwing: the scan skips it and describePacks
+// lists it, rather than every one of them throwing.
 function packProblems(pack, withCoreVersion, withReported) {
+  try {
+    return readPackProblems(pack, withCoreVersion, withReported);
+  } catch (e) {
+    const name = safePackName(pack);
+    const why = e && e.message ? e.message : String(e);
+    return [`${name || 'a pack'} can't be read: ${why}`];
+  }
+}
+
+function readPackProblems(pack, withCoreVersion, withReported) {
   if (typeof pack === 'string') {
     return [
       `"${pack}" is a pack's name: in Node, pass the pack itself; names are for a page where packScript registered it`
@@ -1561,7 +1585,7 @@ function describePacks(packs) {
   return (Array.isArray(packs) ? packs : [packs]).map((pack) => {
     const problems = loadProblems(pack);
     if (problems.length) {
-      return { name: isObject(pack) && typeof pack.name === 'string' ? pack.name : null, problems };
+      return { name: safePackName(pack), problems };
     }
     const ids = (list) => (list || []).map((r) => r.id);
     const overrides = (pack.overrides || []).slice();
@@ -2071,7 +2095,7 @@ function preparePacks(list, { strict = false } = {}) {
       valid.push(pack);
       continue;
     }
-    const name = isObject(pack) && typeof pack.name === 'string' ? pack.name : null;
+    const name = safePackName(pack);
     const reason = problems.join('; ');
     if (strict) throw packsError(TypeError, `engineOptions.packs: ${name || 'a pack'}: ${reason}`);
     skipped.push({ name, reason });

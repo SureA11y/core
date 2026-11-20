@@ -208,7 +208,7 @@ What reads such a result:
   },
   excludedOccurrences?: {  // present only when the rule reported on elements left out with excludeSelectors
     dropped: number,       // the occurrences dropped
-    coercedFrom?: "fail" | "cantTell"  // none was left, so the outcome became notApplicable
+    coercedFrom?: "fail" | "cantTell" | "pass"  // none was left, so the outcome became notApplicable
   },
   error?: string           // present when the rule did not complete, or the engine noted a change to what it returned — see below
 }
@@ -243,7 +243,7 @@ A `notApplicable` from core names no occurrence. When the contrast rules are not
   summary: string,
   hint: string,
   i18n: { summaryKey: string, hintKey: string, params: object } | null,
-  occurrenceOutcome?: "fail" | "cantTell",   // present when the rule graded its findings into tiers
+  occurrenceOutcome?: "fail" | "cantTell" | "pass",   // present when the rule graded its findings into tiers; "pass" marks one that passes
   uncertainty?: {          // present only on a cantTell-tier occurrence
     code: "not-computable" | "runtime-dependent" | "spec-only"
         | "equivalence-unknown" | "judgement-required" | "out-of-scope",

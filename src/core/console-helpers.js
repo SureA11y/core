@@ -72,7 +72,11 @@ function consoleHelpers(global, api, scriptSrc) {
     'includeRuleIds',
     'excludeRuleIds',
     'includeTestIds',
-    'excludeTestIds'
+    'excludeTestIds',
+    // The older tag selection, { type: 'tag', values: [...] }, is a
+    // selection too: at the top level it would run every rule.
+    'type',
+    'values'
   ];
 
   function rank(table, value) {
@@ -101,6 +105,9 @@ function consoleHelpers(global, api, scriptSrc) {
       if (c.outcome === 'fail' || c.outcome === 'cantTell') {
         for (var j = 0; j < occurrences.length; j++) {
           var o = occurrences[j] || {};
+          // A passing occurrence of a failing or undecided rule is no
+          // finding: the reports leave it out, and so does the table.
+          if (o.occurrenceOutcome === 'pass') continue;
           var outcome = o.occurrenceOutcome || c.outcome;
           var toward = o.lean && o.lean.toward;
           rows.push({
@@ -269,6 +276,8 @@ function consoleHelpers(global, api, scriptSrc) {
       var occurrences = Array.isArray(c.occurrences) ? c.occurrences : [];
       for (var j = 0; j < occurrences.length; j++) {
         var o = occurrences[j] || {};
+        // A passing occurrence is boxed neither red nor amber.
+        if (o.occurrenceOutcome === 'pass') continue;
         var el = locate(doc, o);
         if (!el) continue;
         var entry = byElement.get(el) || { fail: false, rules: [] };

@@ -72,6 +72,7 @@ const {
   profileOptionsOf,
   mayBeSkippedPackProfile,
   runProfiles,
+  withOwnVerdicts,
   mergeProfileResults,
   noteProfileNotApplied
 } = require('../src/core/multi-profile');
@@ -2020,11 +2021,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     const tiers = Array.isArray(out.occurrences)
       ? out.occurrences.map((o) => (o && typeof o === 'object' ? o.occurrenceOutcome : undefined))
       : [];
-    if ((out.outcome === 'cantTell' || out.outcome === 'pass') && tiers.includes('fail')) {
-      out.outcome = 'fail';
-    } else if (out.outcome === 'fail' && tiers.length && tiers.every((x) => x === 'cantTell')) {
-      out.outcome = 'cantTell';
-    }
+    // An occurrence with no tier has the outcome's. The outcome is the
+    // worst of them: fail if any fails, cantTell if any asks, pass when all
+    // pass; the same table the exclusion filter above settles by.
+    const eff = tiers.map((x) => x || out.outcome);
+    if (eff.includes('fail')) out.outcome = 'fail';
+    else if (eff.includes('cantTell')) out.outcome = 'cantTell';
+    else if (eff.length && eff.every((x) => x === 'pass')) out.outcome = 'pass';
     // A fail the policy doesn't allow stays cantTell, whichever layer said
     // fail, and its fail-tier occurrences go with it, as a manual rule's do:
     // otherwise the tiers would undo the policy above.
@@ -2483,6 +2486,7 @@ ${inlineConstFunction('profileNamesOf', profileNamesOf)}
 ${inlineConstFunction('profileOptionsOf', profileOptionsOf)}
 ${inlineConstFunction('mayBeSkippedPackProfile', mayBeSkippedPackProfile)}
 ${inlineConstFunction('runProfiles', runProfiles)}
+${inlineConstFunction('withOwnVerdicts', withOwnVerdicts)}
 ${inlineConstFunction('mergeProfileResults', mergeProfileResults)}
 ${inlineConstFunction('noteProfileNotApplied', noteProfileNotApplied)}
 `.trim();

@@ -121,6 +121,36 @@ test('table() puts the questions that lean fail before those that lean pass and 
   dom.window.close();
 });
 
+test('table() leaves out a passing occurrence of a failing rule (IF-2)', async () => {
+  const dom = await load();
+  const { a11ycore } = dom.window;
+  const result = {
+    checksResults: [
+      {
+        ruleId: 'org-x',
+        outcome: 'fail',
+        severity: 'serious',
+        occurrences: [
+          { selector: '#a', summary: 'A fails', occurrenceOutcome: 'fail' },
+          { selector: '#b', summary: 'B passes', occurrenceOutcome: 'pass' }
+        ]
+      }
+    ]
+  };
+  const original = dom.window.console.table;
+  dom.window.console.table = () => {};
+  try {
+    const rows = plain(a11ycore.table(result));
+    assert.deepEqual(
+      rows.map((r) => r.outcome),
+      ['fail']
+    );
+  } finally {
+    dom.window.console.table = original;
+  }
+  dom.window.close();
+});
+
 test('table(result, { all: true }) adds the rules that passed or did not apply', async () => {
   const dom = await load();
   dom.window.console.table = () => {};
@@ -159,7 +189,8 @@ test('run() refuses options that would quietly run every rule', async () => {
     /^TypeError: run: options must be an object, not a list\. .*runOnly/
   );
   await assert.rejects(a11ycore.run('img-alt-present'), /not string\./);
-  for (const key of ['wcag', 'bestPractices', 'includeRuleIds']) {
+  // type and values: the older { type: 'tag', values } selection (IF-6).
+  for (const key of ['wcag', 'bestPractices', 'includeRuleIds', 'type', 'values']) {
     await assert.rejects(
       a11ycore.run({ [key]: ['x'] }),
       new RegExp(`^TypeError: run: ${key} is part of the selection, which goes under runOnly`)

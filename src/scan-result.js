@@ -276,11 +276,16 @@ const OUTCOMES = ['fail', 'pass', 'cantTell', 'notApplicable'];
 // returned as it is.
 function tieredCheck(check) {
   if (!check || typeof check !== 'object' || !Array.isArray(check.occurrences)) return check;
-  const tiers = check.occurrences.map(tierOf);
+  // Each occurrence's tier, a pass tier included; one with none has the
+  // outcome's. The same table the engine settles by (normalizeRuleResult).
+  const tiers = check.occurrences.map((o) =>
+    o && typeof o === 'object' && o.occurrenceOutcome === 'pass' ? 'pass' : tierOf(o)
+  );
+  const eff = tiers.map((t) => t || check.outcome);
   let outcome = check.outcome;
-  if ((outcome === 'cantTell' || outcome === 'pass') && tiers.includes('fail')) outcome = 'fail';
-  else if (outcome === 'fail' && tiers.length && tiers.every((t) => t === 'cantTell'))
-    outcome = 'cantTell';
+  if (eff.includes('fail')) outcome = 'fail';
+  else if (eff.includes('cantTell')) outcome = 'cantTell';
+  else if (eff.length && eff.every((t) => t === 'pass')) outcome = 'pass';
   let policyOutcome = check.policyOutcome;
   let demoted = false;
   if (outcome === 'fail') {
