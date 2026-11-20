@@ -56,6 +56,7 @@ const {
   claimsOf,
   ownRulesOf,
   prefixOfKey,
+  sameReview,
   standardReviewKeys,
   standardReviewStem
 } = require('./pack-review.js');
@@ -859,6 +860,40 @@ function standardReviewKeyProblems(pack, locale, dict) {
   return problems;
 }
 
+// The standardReview keys name no version of the standard: they translate
+// standard.review's entry, and a version whose own steps replace it
+// (standard.reviewByVersion) is read in English there. Reported, so a pack
+// whose versions' steps differ, as RGAA 4's and 5's would, translates them
+// by id (standard.texts) instead of finding them in English.
+function standardReviewVersionProblems(pack, locale, dict) {
+  const st = isObject(pack.standard) ? pack.standard : null;
+  if (!st || typeof st.key !== 'string' || !st.key || locale.toLowerCase() === 'en') return [];
+  if (!isObject(st.review) || !isObject(st.reviewByVersion)) return [];
+  const problems = [];
+  for (const [ruleId, byCode] of Object.entries(st.review)) {
+    if (!isObject(byCode)) continue;
+    for (const [code, entry] of Object.entries(byCode)) {
+      if (!isObject(entry) || !Array.isArray(entry.steps)) continue;
+      const keys = standardReviewKeys(st.key, ruleId, code, entry);
+      if (!keys.some((k) => hasOwn(dict, k))) continue;
+      for (const [version, table] of Object.entries(st.reviewByVersion)) {
+        const own =
+          isObject(table) &&
+          hasOwn(table, ruleId) &&
+          isObject(table[ruleId]) &&
+          hasOwn(table[ruleId], code)
+            ? table[ruleId][code]
+            : null;
+        if (!isObject(own) || sameReview(st.review, ruleId, code, own)) continue;
+        problems.push(
+          `dictionaries.${locale}: ${standardReviewStem(st.key, ruleId, code)}*: translates standard.review.${ruleId}.${code}, which version ${version} replaces with steps of its own (standard.reviewByVersion), read in English there; translate them by id (standard.texts, review.${ruleId}.${code})`
+        );
+      }
+    }
+  }
+  return problems;
+}
+
 // standard.procedures: how a person assesses each requirement by hand
 // (docs/PROCEDURES.md), by version and requirement. A requirement takes a
 // WCAG criterion's procedures ({ wcag: '1.4.3' }), and may replace the
@@ -1464,7 +1499,10 @@ function packProblems(pack, withCoreVersion, withReported) {
         } else {
           problems.push(...reviewKeyProblems(pack, locale, dict));
           problems.push(...standardReviewKeyProblems(pack, locale, dict));
-          if (withReported) problems.push(...reviewPartialProblems(pack, locale, dict));
+          if (withReported) {
+            problems.push(...reviewPartialProblems(pack, locale, dict));
+            problems.push(...standardReviewVersionProblems(pack, locale, dict));
+          }
         }
       }
     }

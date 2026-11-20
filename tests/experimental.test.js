@@ -173,33 +173,37 @@ function skipPack(row) {
 
 const ids = (pack) => experimentalUses(pack).map((u) => u.id);
 
-test("routing skip-link's findings by their lean uses an experimental field", () => {
+// skip-link's details.lean and the standard.review dictionary keys were
+// experimental from 1.16.0, and became stable in 1.18.0: a pack that uses
+// them uses nothing experimental.
+test("routing skip-link's findings by their lean uses nothing experimental", () => {
   const byLean = skipPack({
     requirements: ['S1'],
     findings: [{ when: { lean: 'fail' }, requirements: ['S2'] }]
   });
-  assert.deepEqual(ids(byLean), ['skip-link details.lean']);
-  // By the row alone, it doesn't.
-  assert.deepEqual(ids(skipPack({ requirements: ['S1'] })), []);
+  assert.deepEqual(ids(byLean), []);
 });
 
-test("translating a standard's own steps uses experimental dictionary keys", () => {
-  const pack = { ...sample, core: TILDE };
-  assert.deepEqual(ids(pack), []);
+test("translating a standard's own steps uses nothing experimental", () => {
   const translated = {
-    ...pack,
+    ...sample,
+    core: TILDE,
     dictionaries: {
-      ...pack.dictionaries,
+      ...sample.dictionaries,
       fr: { 'sample_standardReview_aria-valid-attr-value_ARIA_HASPOPUP_ROLE_MISMATCH_pass': 'x' }
     }
   };
-  assert.deepEqual(ids(translated), ['standard.review dictionary keys']);
+  assert.deepEqual(ids(translated), []);
 });
 
 test('the experimental APIs of 1.16 are settled by 1.18.0', () => {
-  const listed = Object.fromEntries(EXPERIMENTAL.map((e) => [e.id, [e.since, e.until]]));
-  assert.deepEqual(listed['skip-link details.lean'], ['1.16.0', '1.18.0']);
-  assert.deepEqual(listed['standard.review dictionary keys'], ['1.16.0', '1.18.0']);
+  const ids16 = EXPERIMENTAL.filter((e) => e.since === '1.16.0').map((e) => e.id);
+  for (const id of ['skip-link details.lean', 'standard.review dictionary keys']) {
+    assert.ok(!ids16.includes(id), `${id} is stable`);
+  }
+  for (const e of EXPERIMENTAL.filter((x) => x.since === '1.16.0')) {
+    assert.equal(e.until, '1.18.0', e.id);
+  }
 });
 
 test('a pack built from standard data, or on two levels, uses experimental APIs', () => {
