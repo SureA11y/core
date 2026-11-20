@@ -109418,9 +109418,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // target with a letter or a digit in it. Separators alone (|, ›, ·) make
   // no sentence: links between them are judged, and where they crowd only
   // each other the inline-link-run cantTell below applies.
+  // Asked for each target's every neighbour, so the answer is kept.
+  const __inlineException = new WeakMap();
   function isInlineTextExceptionTarget(el) {
+    if (el && typeof el === 'object' && __inlineException.has(el)) return __inlineException.get(el);
     const around = textAround(el);
-    return !!around && around.words;
+    const out = !!around && around.words;
+    if (el && typeof el === 'object') __inlineException.set(el, out);
+    return out;
   }
   // The stretch of text an inline target is in, as { words, symbols }: text
   // with a letter or digit in it, and other text that isn't white space.
@@ -110655,44 +110660,79 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // 24px of the target's centre are hit-tested. A point outside the viewport
   // hits nothing, which proves nothing, so `other` counts as covered only when
   // a point did hit something and no point hit `other`.
+  // The window's size, read once: the layout viewport's, scroll bars
+  // included, which bounds every point elementFromPoint can answer for.
+  let __viewportSize;
+  function viewportSize() {
+    if (__viewportSize === undefined) {
+      __viewportSize = null;
+      try {
+        const win = dom.defaultView(document);
+        const w = win && Number(win.innerWidth);
+        const h = win && Number(win.innerHeight);
+        if (w > 0 && h > 0) __viewportSize = { w, h };
+      } catch {}
+    }
+    return __viewportSize;
+  }
+  const COVER_STEPS = [0.1, 0.3, 0.5, 0.7, 0.9];
+  const COVER_POINTS = COVER_STEPS.flatMap((fx) => COVER_STEPS.map((fy) => [fx, fy])).sort(
+    (a, b) => Math.hypot(a[0] - 0.5, a[1] - 0.5) - Math.hypot(b[0] - 0.5, b[1] - 0.5)
+  );
   function isCoveredNear(other, target) {
     // Out of view, neither is where a pointer would find it.
     if (scrolledOutOf(other.el) || scrolledOutOf(target.el)) return false;
-    // The target itself is covered too (a consent backdrop over both, at the
-    // moment of the scan): the cover hides both, and says nothing of how
-    // close they are once it is gone.
-    if (coveredAtCentre(target)) return false;
     const r = other.rect;
     const x0 = Math.max(r.left, target.center.cx - SPACING);
     const x1 = Math.min(r.right, target.center.cx + SPACING);
     const y0 = Math.max(r.top, target.center.cy - SPACING);
     const y1 = Math.min(r.bottom, target.center.cy + SPACING);
     if (x1 <= x0 || y1 <= y0) return false;
+    // A point outside the viewport hits nothing (CSSOM View's
+    // elementFromPoint), so it isn't asked: on a long page, most targets'
+    // neighbours lie below the fold, where all 25 points came back empty.
+    const vp = viewportSize();
+    if (vp && (x0 > vp.w || y0 > vp.h || x1 < 0 || y1 < 0)) return false;
+    // The target itself is covered too (a consent backdrop over both, at the
+    // moment of the scan): the cover hides both, and says nothing of how
+    // close they are once it is gone.
+    if (coveredAtCentre(target)) return false;
+    // The points nearest the middle first: a point that hits `other`
+    // settles it, and one usually does at once. The answer doesn't depend
+    // on the order.
     let answered = false;
-    for (const fx of [0.1, 0.3, 0.5, 0.7, 0.9]) {
-      for (const fy of [0.1, 0.3, 0.5, 0.7, 0.9]) {
-        const hit = elementFromPoint(x0 + (x1 - x0) * fx, y0 + (y1 - y0) * fy);
-        if (!hit) continue;
-        answered = true;
-        try {
-          if (hit === other.el || dom.contains(other.el, hit)) return false;
-        } catch {
-          return false;
-        }
+    for (const [fx, fy] of COVER_POINTS) {
+      const x = x0 + (x1 - x0) * fx;
+      const y = y0 + (y1 - y0) * fy;
+      if (vp && (x < 0 || y < 0 || x > vp.w || y > vp.h)) continue;
+      const hit = elementFromPoint(x, y);
+      if (!hit) continue;
+      answered = true;
+      try {
+        if (hit === other.el || dom.contains(other.el, hit)) return false;
+      } catch {
+        return false;
       }
     }
     return answered;
   }
 
-  // Whether something else is drawn at the target's centre.
+  // Whether something else is drawn at the target's centre. Asked for each
+  // neighbour of the target, so the answer is kept.
+  const __coveredAtCentre = new WeakMap();
   function coveredAtCentre(target) {
+    if (__coveredAtCentre.has(target)) return __coveredAtCentre.get(target);
+    let out = false;
     const hit = elementFromPoint(target.center.cx, target.center.cy);
-    if (!hit) return false;
-    try {
-      return !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
-    } catch {
-      return false;
+    if (hit) {
+      try {
+        out = !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
+      } catch {
+        out = false;
+      }
     }
+    __coveredAtCentre.set(target, out);
+    return out;
   }
 
   // --- spacing evaluation ---
@@ -111300,9 +111340,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // target with a letter or a digit in it. Separators alone (|, ›, ·) make
   // no sentence: links between them are judged, and where they crowd only
   // each other the inline-link-run cantTell below applies.
+  // Asked for each target's every neighbour, so the answer is kept.
+  const __inlineException = new WeakMap();
   function isInlineTextExceptionTarget(el) {
+    if (el && typeof el === 'object' && __inlineException.has(el)) return __inlineException.get(el);
     const around = textAround(el);
-    return !!around && around.words;
+    const out = !!around && around.words;
+    if (el && typeof el === 'object') __inlineException.set(el, out);
+    return out;
   }
   // The stretch of text an inline target is in, as { words, symbols }: text
   // with a letter or digit in it, and other text that isn't white space.
@@ -112537,44 +112582,79 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // 24px of the target's centre are hit-tested. A point outside the viewport
   // hits nothing, which proves nothing, so `other` counts as covered only when
   // a point did hit something and no point hit `other`.
+  // The window's size, read once: the layout viewport's, scroll bars
+  // included, which bounds every point elementFromPoint can answer for.
+  let __viewportSize;
+  function viewportSize() {
+    if (__viewportSize === undefined) {
+      __viewportSize = null;
+      try {
+        const win = dom.defaultView(document);
+        const w = win && Number(win.innerWidth);
+        const h = win && Number(win.innerHeight);
+        if (w > 0 && h > 0) __viewportSize = { w, h };
+      } catch {}
+    }
+    return __viewportSize;
+  }
+  const COVER_STEPS = [0.1, 0.3, 0.5, 0.7, 0.9];
+  const COVER_POINTS = COVER_STEPS.flatMap((fx) => COVER_STEPS.map((fy) => [fx, fy])).sort(
+    (a, b) => Math.hypot(a[0] - 0.5, a[1] - 0.5) - Math.hypot(b[0] - 0.5, b[1] - 0.5)
+  );
   function isCoveredNear(other, target) {
     // Out of view, neither is where a pointer would find it.
     if (scrolledOutOf(other.el) || scrolledOutOf(target.el)) return false;
-    // The target itself is covered too (a consent backdrop over both, at the
-    // moment of the scan): the cover hides both, and says nothing of how
-    // close they are once it is gone.
-    if (coveredAtCentre(target)) return false;
     const r = other.rect;
     const x0 = Math.max(r.left, target.center.cx - SPACING);
     const x1 = Math.min(r.right, target.center.cx + SPACING);
     const y0 = Math.max(r.top, target.center.cy - SPACING);
     const y1 = Math.min(r.bottom, target.center.cy + SPACING);
     if (x1 <= x0 || y1 <= y0) return false;
+    // A point outside the viewport hits nothing (CSSOM View's
+    // elementFromPoint), so it isn't asked: on a long page, most targets'
+    // neighbours lie below the fold, where all 25 points came back empty.
+    const vp = viewportSize();
+    if (vp && (x0 > vp.w || y0 > vp.h || x1 < 0 || y1 < 0)) return false;
+    // The target itself is covered too (a consent backdrop over both, at the
+    // moment of the scan): the cover hides both, and says nothing of how
+    // close they are once it is gone.
+    if (coveredAtCentre(target)) return false;
+    // The points nearest the middle first: a point that hits `other`
+    // settles it, and one usually does at once. The answer doesn't depend
+    // on the order.
     let answered = false;
-    for (const fx of [0.1, 0.3, 0.5, 0.7, 0.9]) {
-      for (const fy of [0.1, 0.3, 0.5, 0.7, 0.9]) {
-        const hit = elementFromPoint(x0 + (x1 - x0) * fx, y0 + (y1 - y0) * fy);
-        if (!hit) continue;
-        answered = true;
-        try {
-          if (hit === other.el || dom.contains(other.el, hit)) return false;
-        } catch {
-          return false;
-        }
+    for (const [fx, fy] of COVER_POINTS) {
+      const x = x0 + (x1 - x0) * fx;
+      const y = y0 + (y1 - y0) * fy;
+      if (vp && (x < 0 || y < 0 || x > vp.w || y > vp.h)) continue;
+      const hit = elementFromPoint(x, y);
+      if (!hit) continue;
+      answered = true;
+      try {
+        if (hit === other.el || dom.contains(other.el, hit)) return false;
+      } catch {
+        return false;
       }
     }
     return answered;
   }
 
-  // Whether something else is drawn at the target's centre.
+  // Whether something else is drawn at the target's centre. Asked for each
+  // neighbour of the target, so the answer is kept.
+  const __coveredAtCentre = new WeakMap();
   function coveredAtCentre(target) {
+    if (__coveredAtCentre.has(target)) return __coveredAtCentre.get(target);
+    let out = false;
     const hit = elementFromPoint(target.center.cx, target.center.cy);
-    if (!hit) return false;
-    try {
-      return !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
-    } catch {
-      return false;
+    if (hit) {
+      try {
+        out = !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
+      } catch {
+        out = false;
+      }
     }
+    __coveredAtCentre.set(target, out);
+    return out;
   }
 
   // --- spacing evaluation ---

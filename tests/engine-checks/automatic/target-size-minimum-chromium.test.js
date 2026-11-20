@@ -347,4 +347,36 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.close();
     }
   });
+  // Speed: a point outside the viewport hits nothing, so on a long page the
+  // neighbours below the fold are not hit-tested 25 times each.
+  await t.test('targets below the fold cost no hit tests of their own', async () => {
+    const p = await browser.newPage({ viewport: { width: 800, height: 600 } });
+    try {
+      let links = '';
+      for (let i = 0; i < 600; i++) links += `<a href="/l${i}">Read more</a> `;
+      await p.setContent(
+        `<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>h</h1><p>${links}</p></main></body></html>`
+      );
+      await addBundle(p);
+      const got = await p.evaluate(() => {
+        let calls = 0;
+        const original = Document.prototype.elementFromPoint;
+        Document.prototype.elementFromPoint = function (...args) {
+          calls++;
+          return original.apply(this, args);
+        };
+        try {
+          const r = window.a11ycore.runa11yCoreInPage(null, null, {}, ['target-size-minimum']);
+          return { calls, findings: r.checksResults[0].occurrences.length };
+        } finally {
+          Document.prototype.elementFromPoint = original;
+        }
+      });
+      assert.equal(got.findings, 600);
+      // About 17 per target before; now those in view only.
+      assert.ok(got.calls < 2 * got.findings, `${got.calls} hit tests`);
+    } finally {
+      await p.close();
+    }
+  });
 });
