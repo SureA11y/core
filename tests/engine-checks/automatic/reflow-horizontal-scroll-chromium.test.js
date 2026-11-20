@@ -667,4 +667,50 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     });
     assert.equal(findings(check).length, 0);
   });
+
+  // visibility: hidden or collapse draws nothing, yet keeps its place in the
+  // layout: what of it is past an edge has nothing to reach. A part set back
+  // to visible is drawn (R6:RF-16 on audit/register).
+  await t.test('content nothing of which is drawn is left out at every edge', async () => {
+    const reasons = (check) => [
+      check.outcome,
+      check.occurrences.map((o) => o.data.details.reasonCode).join(',')
+    ];
+    const panel = (extra) =>
+      page(
+        `body{margin:0;overflow-x:hidden} #m{position:absolute;top:0;left:200px;width:280px;${extra}}`,
+        '<nav id="m"><a href="/a">Home page</a> <a href="/b">About us</a></nav>'
+      );
+    for (const [label, html, want] of [
+      ['a hidden panel past the edge', panel('visibility:hidden'), ['pass', '']],
+      ['a collapsed panel past the edge', panel('visibility:collapse'), ['pass', '']],
+      ['a shown panel past the edge', panel(''), ['cantTell', 'CLIPPED_AT_VIEWPORT_EDGE']],
+      [
+        'a hidden panel with a link set back to visible',
+        panel('visibility:hidden} #m a{visibility:visible'),
+        ['cantTell', 'CLIPPED_AT_VIEWPORT_EDGE']
+      ],
+      // The page scrolls, but scrolling shows nothing: no content needs it.
+      [
+        'a hidden box that makes the page scroll',
+        page('body{margin:0} #w{width:600px;visibility:hidden}', '<div id="w">Wide</div>'),
+        ['pass', '']
+      ],
+      [
+        'hidden text cut by a card',
+        page(
+          '.c{width:200px;overflow:hidden} .c p{white-space:nowrap;visibility:hidden}',
+          '<div class="c"><p>A long line that does not wrap and runs past the card</p></div>'
+        ),
+        ['pass', '']
+      ],
+      [
+        'a hidden field cut at the start edge',
+        page('#f{margin-left:-60px;visibility:hidden}', '<label>Name <input id="f"></label>'),
+        ['pass', '']
+      ]
+    ]) {
+      assert.deepEqual(reasons(await scan(html)), want, label);
+    }
+  });
 });
