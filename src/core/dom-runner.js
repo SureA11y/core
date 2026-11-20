@@ -1929,6 +1929,20 @@ function runCore(
     }
   } finally {
     restoreDomProtection();
+    // The run's element-keyed caches (set up in createDomHelpers and
+    // createContrastHelpers) go with it: left on the window, they kept every
+    // scanned element, and the strings read from it, alive until the next
+    // scan, even after the page removed them.
+    try {
+      const dom = createSafeDom();
+      const w =
+        typeof window !== 'undefined'
+          ? window
+          : typeof document !== 'undefined' && document
+            ? dom.defaultView(document)
+            : null;
+      if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
+    } catch {}
   }
 }
 

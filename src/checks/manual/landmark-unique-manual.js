@@ -32,7 +32,8 @@
  *     Empty when they are all unnamed.
  *   - `groupSize`: how many landmarks of that role share that name.
  *   - `others`: the other landmarks in the group, as the message names
- *     them (`<nav id="pages">`, with their text when they are unnamed).
+ *     them (`<nav id="pages">`, with their text when they are unnamed);
+ *     the first ten, `groupSize` says how many there are.
  * @reason-codes
  *   - `LANDMARK_NOT_UNIQUE` (cantTell): two or more landmarks with the same
  *     role share one accessible name, or are all unnamed; a person judges
@@ -158,7 +159,12 @@ function runInPage(ctx) {
       for (const { el, name } of group) {
         // The others in the group, named (with their text when they have no
         // name), so a reviewer finds them; and this one's name as written.
-        const otherEls = group.filter((o) => o.el !== el).map((o) => o.el);
+        // The first ten only: a page with hundreds of unnamed landmarks would
+        // otherwise list every one in every finding.
+        const otherEls = group
+          .filter((o) => o.el !== el)
+          .slice(0, 10)
+          .map((o) => o.el);
         const otherNames = otherEls.map((o) =>
           helpers.describeElement(o, { role: true, text: !normalizedName })
         );

@@ -13924,6 +13924,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return v.slice(0, code >= 0xd800 && code <= 0xdbff ? max - 2 : max - 1) + '…';
   };
 
+  // Items listed in a message: the first five, then an ellipsis, so an
+  // attribute naming hundreds of ids doesn't put every one in the hint.
+  // `show` turns an item into its text, and only for those shown.
+  const shortList = (items, show = (x) => x, max = 5) => {
+    const shown = items.slice(0, max).map(show).join(', ');
+    return items.length > max ? `${shown}, …` : shown;
+  };
+
   // An element's child elements in the flat tree (flatChildNodes).
   const flatChildElements = (el) => flatChildNodes(el).filter((n) => dom.nodeType(n) === 1);
 
@@ -15308,12 +15316,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const ids = labelledby.split(/\s+/);
         const targets = ids.map(byId);
         if (targets.every((t) => !t)) {
-          const list = ids.map((id) => `"${id}"`).join(', ');
+          const list = shortList(ids.map((id) => `"${quoteText(id, 60)}"`));
           return {
             hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyMissing',
             params: { ids: list },
-            detail: { cause: 'labelledbyMissing', ids }
+            detail: { cause: 'labelledbyMissing', ids: ids.slice(0, 10) }
           };
         }
         // Every target is there, and none has text or a name of its own.
@@ -15326,12 +15334,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
           dom.querySelector(t, 'img, svg, input, select, textarea, [aria-label], [title]');
         const tagWithId = (t) => `<${tagOf(t)} id="${attr(t, 'id')}">`;
         if (targets.every((t) => t && t !== el && !gives(t))) {
-          const list = targets.map(tagWithId).join(', ');
+          const list = shortList(targets.map(tagWithId));
           return {
             hint: `Its aria-labelledby points only to elements with no text (${list}), so it gives no name. Put the text in the element it points to, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyEmpty',
             params: { targets: list },
-            detail: { cause: 'labelledbyEmpty', ids }
+            detail: { cause: 'labelledbyEmpty', ids: ids.slice(0, 10) }
           };
         }
         // The element names nothing, so a target with text has it hidden
@@ -15356,17 +15364,26 @@ const createDomHelpers = (function createDomHelpers(opts) {
               hint: `Its aria-labelledby points to ${target}, whose text "${text}" is in a <${hiddenElement}> hidden from screen readers by ${hiddenBy}, so it gives no name. Let screen readers read that text, or name it with aria-label.`,
               hintKey: 'nameCause_hint_labelledbyHiddenText',
               params: { target, text, hiddenElement, hiddenBy },
-              detail: { cause: 'labelledbyHiddenText', ids, text, hiddenBy: reason }
+              detail: {
+                cause: 'labelledbyHiddenText',
+                ids: ids.slice(0, 10),
+                text,
+                hiddenBy: reason
+              }
             };
           }
           if (missing.length && found.length) {
-            const missingIds = missing.map((id) => `"${id}"`).join(', ');
-            const list = found.map(tagWithId).join(', ');
+            const missingIds = shortList(missing.map((id) => `"${quoteText(id, 60)}"`));
+            const list = shortList(found.map(tagWithId));
             return {
               hint: `Its aria-labelledby gives no name: no element on the page has ${missingIds}, and what it does point to (${list}) has no text screen readers read. Point it at elements with text, or name it with aria-label.`,
               hintKey: 'nameCause_hint_labelledbyMixed',
               params: { ids: missingIds, targets: list },
-              detail: { cause: 'labelledbyMixed', ids, missing }
+              detail: {
+                cause: 'labelledbyMixed',
+                ids: ids.slice(0, 10),
+                missing: missing.slice(0, 10)
+              }
             };
           }
         }
@@ -15673,7 +15690,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           .map(byId)
           .filter((t) => t && t !== el && HIDDEN_TEXT_RE.test(String(dom.textContent(t) || '')));
         if (described.length && !skip('describedbyNotName')) {
-          const targets = described.map((t) => describeElement(t, { text: true })).join(', ');
+          const targets = shortList(described, (t) => describeElement(t, { text: true }));
           return {
             hint: `Its aria-describedby points to ${targets}, which gives a description, not a name. Point aria-labelledby at it instead, or name it with aria-label.`,
             hintKey: 'nameCause_hint_describedbyNotName',
@@ -26846,6 +26863,20 @@ const runCore = (function runCore(
     }
   } finally {
     restoreDomProtection();
+    // The run's element-keyed caches (set up in createDomHelpers and
+    // createContrastHelpers) go with it: left on the window, they kept every
+    // scanned element, and the strings read from it, alive until the next
+    // scan, even after the page removed them.
+    try {
+      const dom = createSafeDom();
+      const w =
+        typeof window !== 'undefined'
+          ? window
+          : typeof document !== 'undefined' && document
+            ? dom.defaultView(document)
+            : null;
+      if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
+    } catch {}
   }
 });
 
@@ -80553,15 +80584,51 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
 
   // How deep the deepest ancestor two elements share is.
+  // An element's ancestors with their distance from it, once per element.
+  const chains = new Map();
+  function chainOf(a) {
+    let chain = chains.get(a);
+    if (!chain) {
+      chain = new Map();
+      let depth = 0;
+      for (let n = a; n; n = dom.parentNode(n)) chain.set(n, depth++);
+      chain.total = depth;
+      chains.set(a, chain);
+    }
+    return chain;
+  }
   function sharedDepth(a, b) {
-    const chain = new Map();
-    let depth = 0;
-    for (let n = a; n; n = dom.parentNode(n)) chain.set(n, depth++);
-    const total = depth;
+    const chain = chainOf(a);
     for (let n = b; n; n = dom.parentNode(n)) {
-      if (chain.has(n)) return total - chain.get(n);
+      if (chain.has(n)) return chain.total - chain.get(n);
     }
     return 0;
+  }
+
+  // Each referring element's nearest copy of the id (the one it shares the
+  // deepest ancestor with, alone), worked out once per id: { r, nearest }
+  // for each referrer with a nearest copy. Asked once per copy, it cost
+  // copies × referrers × copies on a page of repeated cards.
+  const nearestMemo = new Map();
+  function nearestCopies(refId, els) {
+    if (nearestMemo.has(refId)) return nearestMemo.get(refId);
+    const out = [];
+    for (const r of referrers.get(refId) || []) {
+      let best = -1;
+      let nearest = null;
+      let tie = false;
+      for (const e of els) {
+        const d = sharedDepth(r.el, e);
+        if (d > best) {
+          best = d;
+          nearest = e;
+          tie = false;
+        } else if (d === best) tie = true;
+      }
+      if (nearest && !tie) out.push({ r, nearest });
+    }
+    nearestMemo.set(refId, out);
+    return out;
   }
 
   // Which way a duplicated, referenced id points. Copies that all say the
@@ -80581,19 +80648,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         i18n: { whyKey: 'duplicateIdAria_lean_why_sameText' }
       };
     }
-    for (const r of refs) {
-      let best = -1;
-      let nearest = null;
-      let tie = false;
-      for (const e of els) {
-        const d = sharedDepth(r.el, e);
-        if (d > best) {
-          best = d;
-          nearest = e;
-          tie = false;
-        } else if (d === best) tie = true;
-      }
-      if (nearest && !tie && nearest !== els[0]) {
+    for (const { nearest } of nearestCopies(refId, els)) {
+      if (nearest !== els[0]) {
         return {
           toward: 'fail',
           why: 'An element that refers to this id sits next to a later copy of it, but the reference goes to the first one, elsewhere in the page.',
@@ -80632,21 +80688,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // component whose reference was meant for its own copy. { el, attr } or
   // null.
   function nearReferrerOf(refId, els, copy) {
-    for (const r of referrers.get(refId) || []) {
-      let best = -1;
-      let nearest = null;
-      let tie = false;
-      for (const e of els) {
-        const d = sharedDepth(r.el, e);
-        if (d > best) {
-          best = d;
-          nearest = e;
-          tie = false;
-        } else if (d === best) tie = true;
-      }
-      if (nearest === copy && !tie) return r;
-    }
-    return null;
+    const found = nearestCopies(refId, els).find((x) => x.nearest === copy);
+    return found ? found.r : null;
   }
 
   for (const refId of referencedIds) {
@@ -92464,7 +92507,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       for (const { el, name } of group) {
         // The others in the group, named (with their text when they have no
         // name), so a reviewer finds them; and this one's name as written.
-        const otherEls = group.filter((o) => o.el !== el).map((o) => o.el);
+        // The first ten only: a page with hundreds of unnamed landmarks would
+        // otherwise list every one in every finding.
+        const otherEls = group
+          .filter((o) => o.el !== el)
+          .slice(0, 10)
+          .map((o) => o.el);
         const otherNames = otherEls.map((o) =>
           helpers.describeElement(o, { role: true, text: !normalizedName })
         );
@@ -139683,6 +139731,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return v.slice(0, code >= 0xd800 && code <= 0xdbff ? max - 2 : max - 1) + '…';
   };
 
+  // Items listed in a message: the first five, then an ellipsis, so an
+  // attribute naming hundreds of ids doesn't put every one in the hint.
+  // `show` turns an item into its text, and only for those shown.
+  const shortList = (items, show = (x) => x, max = 5) => {
+    const shown = items.slice(0, max).map(show).join(', ');
+    return items.length > max ? `${shown}, …` : shown;
+  };
+
   // An element's child elements in the flat tree (flatChildNodes).
   const flatChildElements = (el) => flatChildNodes(el).filter((n) => dom.nodeType(n) === 1);
 
@@ -141067,12 +141123,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const ids = labelledby.split(/\s+/);
         const targets = ids.map(byId);
         if (targets.every((t) => !t)) {
-          const list = ids.map((id) => `"${id}"`).join(', ');
+          const list = shortList(ids.map((id) => `"${quoteText(id, 60)}"`));
           return {
             hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyMissing',
             params: { ids: list },
-            detail: { cause: 'labelledbyMissing', ids }
+            detail: { cause: 'labelledbyMissing', ids: ids.slice(0, 10) }
           };
         }
         // Every target is there, and none has text or a name of its own.
@@ -141085,12 +141141,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
           dom.querySelector(t, 'img, svg, input, select, textarea, [aria-label], [title]');
         const tagWithId = (t) => `<${tagOf(t)} id="${attr(t, 'id')}">`;
         if (targets.every((t) => t && t !== el && !gives(t))) {
-          const list = targets.map(tagWithId).join(', ');
+          const list = shortList(targets.map(tagWithId));
           return {
             hint: `Its aria-labelledby points only to elements with no text (${list}), so it gives no name. Put the text in the element it points to, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyEmpty',
             params: { targets: list },
-            detail: { cause: 'labelledbyEmpty', ids }
+            detail: { cause: 'labelledbyEmpty', ids: ids.slice(0, 10) }
           };
         }
         // The element names nothing, so a target with text has it hidden
@@ -141115,17 +141171,26 @@ const createDomHelpers = (function createDomHelpers(opts) {
               hint: `Its aria-labelledby points to ${target}, whose text "${text}" is in a <${hiddenElement}> hidden from screen readers by ${hiddenBy}, so it gives no name. Let screen readers read that text, or name it with aria-label.`,
               hintKey: 'nameCause_hint_labelledbyHiddenText',
               params: { target, text, hiddenElement, hiddenBy },
-              detail: { cause: 'labelledbyHiddenText', ids, text, hiddenBy: reason }
+              detail: {
+                cause: 'labelledbyHiddenText',
+                ids: ids.slice(0, 10),
+                text,
+                hiddenBy: reason
+              }
             };
           }
           if (missing.length && found.length) {
-            const missingIds = missing.map((id) => `"${id}"`).join(', ');
-            const list = found.map(tagWithId).join(', ');
+            const missingIds = shortList(missing.map((id) => `"${quoteText(id, 60)}"`));
+            const list = shortList(found.map(tagWithId));
             return {
               hint: `Its aria-labelledby gives no name: no element on the page has ${missingIds}, and what it does point to (${list}) has no text screen readers read. Point it at elements with text, or name it with aria-label.`,
               hintKey: 'nameCause_hint_labelledbyMixed',
               params: { ids: missingIds, targets: list },
-              detail: { cause: 'labelledbyMixed', ids, missing }
+              detail: {
+                cause: 'labelledbyMixed',
+                ids: ids.slice(0, 10),
+                missing: missing.slice(0, 10)
+              }
             };
           }
         }
@@ -141432,7 +141497,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           .map(byId)
           .filter((t) => t && t !== el && HIDDEN_TEXT_RE.test(String(dom.textContent(t) || '')));
         if (described.length && !skip('describedbyNotName')) {
-          const targets = described.map((t) => describeElement(t, { text: true })).join(', ');
+          const targets = shortList(described, (t) => describeElement(t, { text: true }));
           return {
             hint: `Its aria-describedby points to ${targets}, which gives a description, not a name. Point aria-labelledby at it instead, or name it with aria-label.`,
             hintKey: 'nameCause_hint_describedbyNotName',
@@ -152605,6 +152670,20 @@ const runCore = (function runCore(
     }
   } finally {
     restoreDomProtection();
+    // The run's element-keyed caches (set up in createDomHelpers and
+    // createContrastHelpers) go with it: left on the window, they kept every
+    // scanned element, and the strings read from it, alive until the next
+    // scan, even after the page removed them.
+    try {
+      const dom = createSafeDom();
+      const w =
+        typeof window !== 'undefined'
+          ? window
+          : typeof document !== 'undefined' && document
+            ? dom.defaultView(document)
+            : null;
+      if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
+    } catch {}
   }
 });
 
