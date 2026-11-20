@@ -83,7 +83,7 @@ test('rootCanvasFallback refuses what is not an opaque color as CSS writes it (R
   }
 });
 
-test('packScript refuses rule code with "<!--", which can keep an inline script open (R4:OP-P5)', () => {
+test('packScript refuses rule code with "<!--" then "<script", which can keep an inline script open (R4:OP-P5)', () => {
   const pack = definePack({
     name: 'html-comment-pack',
     version: '1.0.0',
@@ -93,11 +93,29 @@ test('packScript refuses rule code with "<!--", which can keep an inline script 
       {
         id: 'hc-rule',
         meta: { title: 'T', description: 'd', tags: ['hc'] },
-        runInPage: new Function("return { outcome: 'pass', note: '<!--<script' };")
+        runInPage: new Function("return { outcome: 'pass', note: '<!--<script>' };")
       }
     ]
   });
-  assert.throws(() => packScript([pack]), /contains "<!--"/);
+  assert.throws(() => packScript([pack]), /"<!--" followed by "<script"/);
+  // "<!--" closed by "-->" first, as a rule stripping comments writes it,
+  // is harmless.
+  const comments = definePack({
+    name: 'comment-strip-pack',
+    version: '1.0.0',
+    namespace: 'cs',
+    core: '*',
+    rules: [
+      {
+        id: 'cs-rule',
+        meta: { title: 'T', description: 'd', tags: ['cs'] },
+        runInPage: new Function(
+          "return { outcome: 'pass', note: 'x'.replace(/<!--[\\s\\S]*?(-->|$)/g, '') };"
+        )
+      }
+    ]
+  });
+  assert.ok(packScript([comments]).length > 0);
 });
 
 test('a hole in an option list is refused as a null is (R4:OP-P6)', () => {
