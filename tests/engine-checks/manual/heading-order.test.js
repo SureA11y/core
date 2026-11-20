@@ -283,3 +283,15 @@ test(`${RULE_ID}: names the heading it jumps from`, () => {
   assert.strictEqual(occ.data.details.previousSelector, '#p');
   assert.strictEqual(occ.data.details.fromLevel, 2);
 });
+
+// aria-level from 1 to 9: Chromium ignores a larger one, and ARIA has any
+// value below 1 or no integer ignored. The heading keeps its own level.
+test('heading-order: an aria-level outside 1 to 9 is ignored', () => {
+  for (const level of ['10', '99', '99999999999999999999', '0', '-1', 'abc']) {
+    const html = `<!doctype html><html lang="en"><body><h1>A</h1><h2 aria-level="${level}">B</h2></body></html>`;
+    const rule = runa11yCoreOnHtml(html, { runOnly: ['heading-order'] }).checksResults.find(
+      (r) => r.ruleId === 'heading-order'
+    );
+    assert.strictEqual(rule.outcome, 'pass', level);
+  }
+});

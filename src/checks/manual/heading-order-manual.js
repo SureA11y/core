@@ -10,9 +10,10 @@
  * @applicability
  *   Applies whenever the page contains two or more heading elements
  *   (native <h1>-<h6>, or explicit role="heading" with aria-level).
- *   A valid aria-level (a positive integer, read as browsers read it: the
- *   leading integer, so "2.5" is 2) gives a heading its level, as browsers
- *   expose it. Without one, a native <hx> takes its tag level, also with
+ *   A valid aria-level (an integer from 1 to 9, read as browsers read it:
+ *   the leading integer, so "2.5" is 2) gives a heading its level, as
+ *   browsers expose it; any other value is ignored (ARIA 1.2, and Chromium
+ *   for levels above 9). Without one, a native <hx> takes its tag level, also with
  *   role="heading", and any other heading the ARIA default, level 2.
  *   A native <hx> marked role="none" or "presentation" is still a heading
  *   when it can take focus or carries a global ARIA attribute, as
@@ -119,7 +120,10 @@ function runInPage(ctx) {
       typeof helpers.parseHtmlInteger === 'function'
         ? helpers.parseHtmlInteger(raw)
         : parseInt(raw, 10);
-    return Number.isFinite(n) && n >= 1 ? n : 0;
+    // Levels 1 to 9: Chromium ignores a larger one and keeps the heading's
+    // own level, and ARIA has a value below 1 or no integer ignored (Chromium
+    // exposes those as 1, against ARIA; the rule follows ARIA).
+    return Number.isFinite(n) && n >= 1 && n <= 9 ? n : 0;
   }
 
   function getHeadingLevel(el) {

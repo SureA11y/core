@@ -85246,7 +85246,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof helpers.parseHtmlInteger === 'function'
         ? helpers.parseHtmlInteger(raw)
         : parseInt(raw, 10);
-    return Number.isFinite(n) && n >= 1 ? n : 0;
+    // Levels 1 to 9: Chromium ignores a larger one and keeps the heading's
+    // own level, and ARIA has a value below 1 or no integer ignored (Chromium
+    // exposes those as 1, against ARIA; the rule follows ARIA).
+    return Number.isFinite(n) && n >= 1 && n <= 9 ? n : 0;
   }
 
   function getHeadingLevel(el) {
@@ -100416,15 +100419,73 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       helpers.contrast && typeof helpers.contrast.renderedTextScale === 'function'
         ? helpers.contrast.renderedTextScale(holder, cs)
         : 1;
-    // jsdom keeps a keyword or a calc() as written; parsePx reads them at a
-    // browser's sizes.
-    const size =
-      helpers.contrast && typeof helpers.contrast.parsePx === 'function'
-        ? helpers.contrast.parsePx(cs.fontSize)
-        : Number.parseFloat(cs.fontSize);
-    const px = Number(size) * scale;
+    const px = Number(fontPxOf(holder, cs)) * scale;
     return Number.isFinite(px) && px > 0 ? { px, bold, weight } : null;
   }
+
+  // An element's font size in pixels. A browser computes it; jsdom keeps it
+  // as written, so a size relative to the parent's (em, %, larger, smaller)
+  // is read against the parent's, and one relative to the root's (rem)
+  // against the root's, as a browser would; parsePx reads a keyword or a
+  // calc() at a browser's sizes.
+  const sizeMemo = new Map();
+  function fontPxOf(el, cs) {
+    if (sizeMemo.has(el)) return sizeMemo.get(el);
+    const raw = trim(cs && cs.fontSize).toLowerCase();
+    const parentPx = () => {
+      const parent = dom.parentElement(el);
+      return parent ? fontPxOf(parent, safeComputedStyle(parent)) : 16;
+    };
+    let px;
+    const rel = /^(\d*\.?\d+)(em|%)$/.exec(raw);
+    // jsdom hands a child the size its parent specified ("150%") rather than
+    // the size it resolved to: the same relative size as the parent's is the
+    // parent's, inherited (a box at 150% set directly in another at 150% is
+    // read so too, which a browser would grow again).
+    const parent = dom.parentElement(el);
+    const parentRaw = parent
+      ? trim(safeComputedStyle(parent) && safeComputedStyle(parent).fontSize).toLowerCase()
+      : '';
+    if ((rel || raw === 'larger' || raw === 'smaller') && raw === parentRaw) px = parentPx();
+    else if (rel) px = Number(rel[1]) * (rel[2] === '%' ? parentPx() / 100 : parentPx());
+    else if (raw === 'larger') px = parentPx() * 1.2;
+    else if (raw === 'smaller') px = parentPx() / 1.2;
+    else if (/^\d*\.?\d+rem$/.test(raw)) {
+      const root = dom.documentElement(dom.ownerDocument(el));
+      px =
+        Number.parseFloat(raw) *
+        (root && root !== el ? fontPxOf(root, safeComputedStyle(root)) : 16);
+    } else {
+      px =
+        helpers.contrast && typeof helpers.contrast.parsePx === 'function'
+          ? helpers.contrast.parsePx(raw)
+          : Number.parseFloat(raw);
+    }
+    px = Number(px);
+    if (!Number.isFinite(px) || px <= 0) px = 0;
+    sizeMemo.set(el, px);
+    return px;
+  }
+
+  // The element shown next after el, past what is hidden or only for screen
+  // readers; where el is the only element of a wrapper, the one after the
+  // wrapper. Null when there is none.
+  function shownSibling(el, step) {
+    for (let n = step(el); n; n = step(n)) {
+      if (isRendered(n) && !isScreenReaderOnly(n)) return n;
+    }
+    const parent = dom.parentElement(el);
+    if (
+      parent &&
+      String(dom.localName(parent) || '').toLowerCase() === 'div' &&
+      dom.childElementCount(parent) === 1
+    ) {
+      return shownSibling(parent, step);
+    }
+    return null;
+  }
+  const nextShown = (el) => shownSibling(el, (n) => dom.nextElementSibling(n));
+  const prevShown = (el) => shownSibling(el, (n) => dom.previousElementSibling(n));
 
   // The text a sighted reader sees, when all of it is bold; else null. Each
   // piece carries its size, so the caller can tell large bold text from
@@ -100432,7 +100493,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // as it costs far more than reading the style.
   function headingLikePieces(el) {
     const isSeen = (holder) => isRendered(holder) && !isScreenReaderOnly(holder);
-    const blockWeight = weightNumOf(safeComputedStyle(el));
+    // Heavier than the text around it: the block's own weight, or its
+    // parent's where the block itself is set heavier (a semibold title <p>).
+    const parentEl = dom.parentElement(el);
+    const blockWeight = Math.min(
+      weightNumOf(safeComputedStyle(el)),
+      parentEl ? weightNumOf(safeComputedStyle(parentEl)) : 400
+    );
     const headingLike = [];
     const others = [];
     const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
@@ -100464,17 +100531,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // be asked about. Both tests hold for any subset of the pieces, so they
     // never leave out text the full test would ask about. With lighter text
     // too, the test below usually settles it first, as it did before.
-    if (
-      !others.length &&
-      !headingLike.some((piece) => piece.bold && piece.fontSizePx >= MIN_FONT_SIZE_PX)
-    ) {
+    if (!others.length && !headingLike.some((piece) => isLargeTitle(piece))) {
       if (String(dom.localName(el) || '').toLowerCase() !== 'p') return null;
       const heaviest = Math.max(...headingLike.map((piece) => piece.weight));
-      if (!hasPlainText(dom.nextElementSibling(el), heaviest)) return null;
+      if (!hasPlainText(nextShown(el), heaviest)) return null;
     }
     if (others.some(isSeen)) return null;
     return headingLike.filter((piece) => isSeen(piece.holder));
   }
+
+  // Large text a title: 18px or more, and bold, or semibold (600) heavier
+  // than the text around it, as design systems set their titles.
+  const isLargeTitle = (piece) =>
+    piece.fontSizePx >= MIN_FONT_SIZE_PX && (piece.bold || piece.weight >= 600);
 
   function shownTextOf(pieces) {
     return pieces
@@ -100589,19 +100658,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The next element after el holds plain text: not bold, and smaller than
   // el's text. A title over body text.
   function followedByBodyText(el, fontSizePx) {
-    const next = dom.nextElementSibling(el);
+    const next = nextShown(el);
     if (!next || !/\p{L}/u.test(String(dom.textContent(next) || ''))) return false;
     if (!isRendered(next)) return false;
     const cs = safeComputedStyle(next);
     return !!cs && !isBoldWeight(cs) && pxOf(cs) < fontSizePx;
   }
 
-  // Sentence punctuation at the end reads as a sentence, not a title.
-  const SENTENCE_END = /[.!?:;…。！？：]$/;
+  // Sentence punctuation at the end reads as a sentence, not a title: past
+  // closing quotes and brackets ("Stay home."), and in other scripts (Arabic
+  // and Urdu, Devanagari, Armenian, Ethiopic, CJK full-width).
+  const SENTENCE_END = /[.!?:;…。！？：؟۔।॥։።．｡]$/u;
+  const CLOSERS = /[\s"'’”»›」』)\]）】〕〉》]+$/u;
+  const endsAsSentenceOf = (text) => SENTENCE_END.test(String(text).replace(CLOSERS, ''));
 
   function styleLean(el, pieces, fontSizePx, isParagraph) {
     const shown = shownTextOf(pieces);
-    const endsAsSentence = SENTENCE_END.test(shown);
+    const endsAsSentence = endsAsSentenceOf(shown);
     const matches = matchesRealHeadingStyle(pieces[0].holder);
     const followed = followedByBodyText(el, fontSizePx);
     const signals = [
@@ -100665,11 +100738,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // Bold body text: only a paragraph with both signs of a title. Large
     // text is judged as before: every piece bold outright and 18px or more.
-    const large = fontSizePx >= MIN_FONT_SIZE_PX && pieces.every((piece) => piece.bold);
+    const large = pieces.every((piece) => isLargeTitle(piece));
     if (!large) {
-      if (!isParagraph || kindCode || SENTENCE_END.test(shown)) return;
+      // Body size only: large text not bold enough to be a title is not
+      // asked about as bold body text either.
+      if (fontSizePx >= MIN_FONT_SIZE_PX) return;
+      if (!isParagraph || kindCode || endsAsSentenceOf(shown)) return;
       const titleWeight = Math.min(...pieces.map((piece) => piece.weight));
-      if (!hasPlainText(dom.nextElementSibling(el), titleWeight)) return;
+      if (!hasPlainText(nextShown(el), titleWeight)) return;
+      // The last of a run of bold lines (an address, a list of names): the
+      // line before it is bold too, and it is no title over the text after.
+      const prev = prevShown(el);
+      if (
+        prev &&
+        String(dom.localName(prev) || '').toLowerCase() === 'p' &&
+        /\p{L}/u.test(String(dom.textContent(prev) || '')) &&
+        trim(dom.textContent(prev)).length <= MAX_HEADING_LIKE_CHARS &&
+        !hasPlainText(prev, titleWeight) &&
+        !endsAsSentenceOf(trim(dom.textContent(prev)))
+      ) {
+        return;
+      }
       const occurrence = helpers.reportOccurrence(el, {
         summary:
           'This short paragraph is entirely bold and comes before plain text, as a heading does.',
@@ -100837,7 +100926,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof helpers.parseHtmlInteger === 'function'
         ? helpers.parseHtmlInteger(raw)
         : parseInt(raw, 10);
-    return Number.isFinite(n) && n >= 1 ? n : 0;
+    // Levels 1 to 9: Chromium ignores a larger one and keeps the heading's
+    // own level, and ARIA has a value below 1 or no integer ignored (Chromium
+    // exposes those as 1, against ARIA; the rule follows ARIA).
+    return Number.isFinite(n) && n >= 1 && n <= 9 ? n : 0;
   }
 
   function isLevelOneHeading(el) {
@@ -112350,7 +112442,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const table of tables) {
     if (!table || !table.rows) continue;
 
-    const tableRole = firstRole(table);
+    let tableRole = firstRole(table);
+    // role="presentation" or "none" on a table with a global ARIA attribute
+    // (aria-label) or that can take focus is ignored by browsers (WAI-ARIA's
+    // presentational roles conflict resolution): it stays a table.
+    if (
+      (tableRole === 'presentation' || tableRole === 'none') &&
+      typeof helpers.isPresentationalRoleIgnored === 'function' &&
+      helpers.isPresentationalRoleIgnored(table)
+    ) {
+      tableRole = '';
+    }
     if (tableRole && !TABLE_ROLES.includes(tableRole)) continue;
 
     const rows = [...table.rows];
@@ -112359,6 +112461,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const rowCells = rows.map((r) => [...(r.cells || [])]);
     const maxCols = rowCells.reduce((m, cells) => Math.max(m, cells.length), 0);
     if (maxCols < MIN_SIZE) continue;
+    // Its size as a reader meets it: the rows shown with a cell that holds
+    // something, and the columns with such a cell in some row. A spacer row,
+    // a hidden template row or an empty column doesn't make a single row or
+    // column a table of two.
+    const shownRows = rowCells.filter(
+      (cells, i) => isEligible(rows[i]) && cells.some((c) => !isEmptyCell(c))
+    );
+    const usedColumns = new Set();
+    for (const cells of shownRows) cells.forEach((c, i) => !isEmptyCell(c) && usedColumns.add(i));
+    if (shownRows.length < MIN_SIZE || usedColumns.size < MIN_SIZE) continue;
 
     // A rowspan of 0 spans too: the cell grows down to the end of its row
     // group (HTML, forming a table). A colspan of 0 is 1. parseInt reads

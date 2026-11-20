@@ -22,8 +22,9 @@
  *   when it can take focus or carries a global ARIA attribute, as
  *   WAI-ARIA's presentational roles conflict resolution has browsers
  *   ignore that role then.
- *   A valid aria-level (a positive integer, read as browsers read it: the
- *   leading integer) gives a heading its level, as browsers expose it:
+ *   A valid aria-level (an integer from 1 to 9, read as browsers read it:
+ *   the leading integer; any other value is ignored, as ARIA 1.2 says and
+ *   Chromium does above 9) gives a heading its level, as browsers expose it:
  *   <h2 aria-level="1"> is a level-one heading and <h1 aria-level="2"> is
  *   not, as heading-order reads them. Without one, a native <hx> keeps its
  *   tag level, also with role="heading": <h1 role="heading"> is a
@@ -133,7 +134,10 @@ function runInPage(ctx) {
       typeof helpers.parseHtmlInteger === 'function'
         ? helpers.parseHtmlInteger(raw)
         : parseInt(raw, 10);
-    return Number.isFinite(n) && n >= 1 ? n : 0;
+    // Levels 1 to 9: Chromium ignores a larger one and keeps the heading's
+    // own level, and ARIA has a value below 1 or no integer ignored (Chromium
+    // exposes those as 1, against ARIA; the rule follows ARIA).
+    return Number.isFinite(n) && n >= 1 && n <= 9 ? n : 0;
   }
 
   function isLevelOneHeading(el) {

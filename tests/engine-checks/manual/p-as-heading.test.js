@@ -475,3 +475,81 @@ test(`${RULE_ID}: at body size, text heavier than its paragraph counts as bold`,
     maxOccurrences: 0
   });
 });
+
+// What the stress test of 1.18.0 found, each pinned.
+const codesOf = (html) => {
+  const rule = runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${html}</body></html>`, {
+    runOnly: [RULE_ID]
+  }).checksResults.find((r) => r.ruleId === RULE_ID);
+  return (rule.occurrences || []).map((o) => o.data.details.reasonCode);
+};
+
+test(`${RULE_ID}: the last of a run of bold lines, as an address is, is no title`, () => {
+  assert.deepEqual(
+    codesOf(
+      '<p><b>Acme Ltd</b></p><p><b>1 Main St</b></p><p><b>Springfield</b></p><p>Phone 123</p>'
+    ),
+    []
+  );
+  // A single bold line over plain text still is.
+  assert.deepEqual(codesOf('<p><b>Opening hours</b></p><p>Monday to Friday</p>'), [
+    'BOLD_SHORT_PARAGRAPH'
+  ]);
+});
+
+test(`${RULE_ID}: a sentence ends past closing quotes and in other scripts`, () => {
+  for (const text of [
+    'He said "Stay home."',
+    'Read the “terms.”',
+    'See the note (below).',
+    'هل هذا صحيح؟',
+    'यह वाक्य है।'
+  ]) {
+    assert.deepEqual(
+      codesOf(`<p><strong>${text}</strong></p><p>Plain text after it.</p>`),
+      [],
+      text
+    );
+  }
+});
+
+test(`${RULE_ID}: a semibold <p> over lighter text is asked about; large text is not body size`, () => {
+  assert.deepEqual(codesOf('<p style="font-weight:600">Opening hours</p><p>Monday to Friday</p>'), [
+    'BOLD_SHORT_PARAGRAPH'
+  ]);
+  // From 18px, a semibold title has the large text's code, never the body-size one.
+  assert.deepEqual(
+    codesOf(
+      '<p style="font-size:30px"><span style="font-weight:600">Opening hours</span></p><p>Monday</p>'
+    ),
+    ['BOLD_LARGE_PARAGRAPH']
+  );
+});
+
+test(`${RULE_ID}: under jsdom, em and % sizes are read against the parent's`, () => {
+  // 1.4em of 12px is 16.8px: body size, not large.
+  assert.deepEqual(
+    codesOf(
+      '<div style="font-size:12px"><div style="font-size:1.4em;font-weight:700">Title</div></div>'
+    ),
+    []
+  );
+  // 150% of 10px is 15px: a body-size paragraph, not a large one.
+  assert.deepEqual(
+    codesOf(
+      '<div style="font-size:10px"><p style="font-size:150%"><b>Title</b></p><p>Plain text after.</p></div>'
+    ),
+    ['BOLD_SHORT_PARAGRAPH']
+  );
+});
+
+test(`${RULE_ID}: the text that follows is the next one shown`, () => {
+  // A hidden element between them, or the title alone in a wrapper.
+  assert.deepEqual(codesOf('<p><b>Opening hours</b></p><p hidden>x</p><p>Monday to Friday</p>'), [
+    'BOLD_SHORT_PARAGRAPH'
+  ]);
+  assert.deepEqual(
+    codesOf('<div><p><b>Opening hours</b></p></div><div><p>Monday to Friday</p></div>'),
+    ['BOLD_SHORT_PARAGRAPH']
+  );
+});
