@@ -144,15 +144,51 @@ function runInPage(ctx) {
       .trim();
 
   // How deep the deepest ancestor two elements share is.
+  // An element's ancestors with their distance from it, once per element.
+  const chains = new Map();
+  function chainOf(a) {
+    let chain = chains.get(a);
+    if (!chain) {
+      chain = new Map();
+      let depth = 0;
+      for (let n = a; n; n = dom.parentNode(n)) chain.set(n, depth++);
+      chain.total = depth;
+      chains.set(a, chain);
+    }
+    return chain;
+  }
   function sharedDepth(a, b) {
-    const chain = new Map();
-    let depth = 0;
-    for (let n = a; n; n = dom.parentNode(n)) chain.set(n, depth++);
-    const total = depth;
+    const chain = chainOf(a);
     for (let n = b; n; n = dom.parentNode(n)) {
-      if (chain.has(n)) return total - chain.get(n);
+      if (chain.has(n)) return chain.total - chain.get(n);
     }
     return 0;
+  }
+
+  // Each referring element's nearest copy of the id (the one it shares the
+  // deepest ancestor with, alone), worked out once per id: { r, nearest }
+  // for each referrer with a nearest copy. Asked once per copy, it cost
+  // copies × referrers × copies on a page of repeated cards.
+  const nearestMemo = new Map();
+  function nearestCopies(refId, els) {
+    if (nearestMemo.has(refId)) return nearestMemo.get(refId);
+    const out = [];
+    for (const r of referrers.get(refId) || []) {
+      let best = -1;
+      let nearest = null;
+      let tie = false;
+      for (const e of els) {
+        const d = sharedDepth(r.el, e);
+        if (d > best) {
+          best = d;
+          nearest = e;
+          tie = false;
+        } else if (d === best) tie = true;
+      }
+      if (nearest && !tie) out.push({ r, nearest });
+    }
+    nearestMemo.set(refId, out);
+    return out;
   }
 
   // Which way a duplicated, referenced id points. Copies that all say the
@@ -172,19 +208,8 @@ function runInPage(ctx) {
         i18n: { whyKey: 'duplicateIdAria_lean_why_sameText' }
       };
     }
-    for (const r of refs) {
-      let best = -1;
-      let nearest = null;
-      let tie = false;
-      for (const e of els) {
-        const d = sharedDepth(r.el, e);
-        if (d > best) {
-          best = d;
-          nearest = e;
-          tie = false;
-        } else if (d === best) tie = true;
-      }
-      if (nearest && !tie && nearest !== els[0]) {
+    for (const { nearest } of nearestCopies(refId, els)) {
+      if (nearest !== els[0]) {
         return {
           toward: 'fail',
           why: 'An element that refers to this id sits next to a later copy of it, but the reference goes to the first one, elsewhere in the page.',
@@ -223,21 +248,8 @@ function runInPage(ctx) {
   // component whose reference was meant for its own copy. { el, attr } or
   // null.
   function nearReferrerOf(refId, els, copy) {
-    for (const r of referrers.get(refId) || []) {
-      let best = -1;
-      let nearest = null;
-      let tie = false;
-      for (const e of els) {
-        const d = sharedDepth(r.el, e);
-        if (d > best) {
-          best = d;
-          nearest = e;
-          tie = false;
-        } else if (d === best) tie = true;
-      }
-      if (nearest === copy && !tie) return r;
-    }
-    return null;
+    const found = nearestCopies(refId, els).find((x) => x.nearest === copy);
+    return found ? found.r : null;
   }
 
   for (const refId of referencedIds) {

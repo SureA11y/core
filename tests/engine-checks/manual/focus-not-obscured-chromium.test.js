@@ -318,7 +318,8 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
             : FOOTER(css);
         const res = await scan(doc(LINKS(20) + footer));
         assert.equal(res[RULE_ID].outcome, 'pass', name);
-        assert.deepEqual(brief(res, ENHANCED), ['#footer FOCUS_OBSCURED_ENTIRELY lean fail'], name);
+        // Seen through, it is obscured in part, never entirely hidden.
+        assert.deepEqual(brief(res, ENHANCED), ['#footer FOCUS_OBSCURED_PARTLY lean fail'], name);
       }
     }
   );
@@ -327,5 +328,34 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
     const res = await scan(doc(LINKS(30) + FOOTER()), { scrollY: 450 });
     assert.equal(res[RULE_ID].outcome, 'cantTell');
     assert.ok(res.restored);
+  });
+
+  // Seventh stress test (VL-3, VL-4, VL-5 on audit/register).
+  await t.test('a scroll-padding in percent or calc() clears the box, as px does', async () => {
+    const header =
+      '<header style="position:sticky;top:0;height:60px;background:#fff">Site</header>';
+    for (const pad of ['10%', 'calc(10% + 2px)', '60px']) {
+      const res = await scan(doc(header + LINKS(40), `html{scroll-padding-top:${pad}}`));
+      assert.equal(res[RULE_ID].outcome, 'pass', pad);
+    }
+  });
+
+  await t.test('without a doctype, the window is the viewport, not the document', async () => {
+    const html = doc(LINKS(40) + FOOTER()).replace('<!doctype html>', '');
+    const res = await scan(html);
+    assert.equal(res[RULE_ID].outcome, 'cantTell');
+    const f = res[RULE_ID].findings[0];
+    assert.equal(f.code, 'FOCUS_OBSCURED_ENTIRELY');
+    assert.ok(f.metrics.entirelyCount > 10, JSON.stringify(f.metrics));
+  });
+
+  await t.test('a header inside a shadow root covers as any other does', async () => {
+    const res = await scan(
+      doc(
+        '<x-hd></x-hd><script>customElements.define("x-hd", class extends HTMLElement { constructor() { super(); this.attachShadow({ mode: "open" }).innerHTML = "<header style=\'position:fixed;top:0;left:0;right:0;height:60px;background:#fff\'>Site</header>"; } });</script>' +
+          LINKS(40)
+      )
+    );
+    assert.equal(res[RULE_ID].outcome, 'cantTell');
   });
 });

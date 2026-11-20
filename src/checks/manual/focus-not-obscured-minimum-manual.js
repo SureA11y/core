@@ -166,6 +166,29 @@ function runInPage(ctx) {
     const m = /^(-?\d*\.?\d+)px$/.exec(lower(v));
     return m ? Number.parseFloat(m[1]) : 0;
   };
+  // A length a browser may keep as written: px, a percentage of `ref`, or a
+  // calc() adding the two ("calc(10% + 2px)"). Anything else reads as 0.
+  const lengthOf = (v, ref) => {
+    const raw = lower(v);
+    if (!raw || raw === 'auto') return 0;
+    const pct = /^(-?\d*\.?\d+)%$/.exec(raw);
+    if (pct) return (Number.parseFloat(pct[1]) * ref) / 100;
+    const calc = /^calc\((.*)\)$/.exec(raw);
+    if (calc) {
+      let total = 0;
+      let rest = calc[1].replace(/\s+/g, '');
+      const term = /^([+-]?)(\d*\.?\d+)(px|%)/;
+      while (rest) {
+        const m = term.exec(rest);
+        if (!m) return 0;
+        const n = Number.parseFloat(m[2]) * (m[1] === '-' ? -1 : 1);
+        total += m[3] === '%' ? (n * ref) / 100 : n;
+        rest = rest.slice(m[0].length);
+      }
+      return total;
+    }
+    return px(raw);
+  };
   const styleOf = (el) => {
     try {
       return view.getComputedStyle(el);
@@ -239,11 +262,15 @@ function runInPage(ctx) {
   const scrollY = Number(dom.get(view, 'scrollY')) || 0;
   const scrollX = Number(dom.get(view, 'scrollX')) || 0;
   const scroller = dom.get(document, 'scrollingElement') || html;
-  const vh = Number(dom.get(html, 'clientHeight')) || 0;
+  // The viewport's height: the scrolling element's clientHeight, which is
+  // the root's in standards mode and the body's in quirks mode, where the
+  // root's is the document's height (CSSOM View).
+  const vh = Number(dom.get(scroller, 'clientHeight')) || Number(dom.get(view, 'innerHeight')) || 0;
   const maxScroll = Math.max(0, (Number(dom.get(scroller, 'scrollHeight')) || 0) - vh);
   const htmlCs = styleOf(html);
-  const padTop = px(htmlCs && htmlCs.scrollPaddingTop);
-  const padBottom = px(htmlCs && htmlCs.scrollPaddingBottom);
+  // A percentage is of the scrollport's height (CSS Scroll Snap).
+  const padTop = lengthOf(htmlCs && htmlCs.scrollPaddingTop, vh);
+  const padBottom = lengthOf(htmlCs && htmlCs.scrollPaddingBottom, vh);
 
   // What an element is, as a candidate or a box, doesn't depend on the
   // settings: it is kept for the scan, keyed by element, so the variant run
@@ -444,7 +471,19 @@ function runInPage(ctx) {
     };
   });
   const covers = [];
-  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+  // Every element, inside open shadow roots too: a web component's sticky
+  // header covers as any other does.
+  const deepElements = [];
+  const roots = [document];
+  while (roots.length) {
+    const root = roots.shift();
+    for (const el of [...dom.querySelectorAll(root, root === document ? 'body *' : '*')]) {
+      deepElements.push(el);
+      const shadow = dom.shadowRoot(el);
+      if (shadow) roots.push(shadow);
+    }
+  }
+  for (const el of deepElements) {
     const cover = coverOf(el);
     if (cover) covers.push(cover);
   }
@@ -493,7 +532,9 @@ function runInPage(ctx) {
       const horizontallySome = cover.left < c.right - 0.5 && cover.right > c.left + 0.5;
       let kind = null;
       let at = null;
-      if (horizontallyAll) {
+      // A box that shows what is under it hides nothing entirely, only in
+      // part (2.4.12 still asks about that).
+      if (horizontallyAll && cover.opaque) {
         at = placement(c, cover, true);
         if (at != null) kind = 'entirely';
       }
@@ -564,6 +605,14 @@ function runInPage(ctx) {
         let top;
         try {
           top = dom.call(document, 'elementFromPoint', x, y);
+          // Through open shadow roots: the document answers with the host.
+          for (let depth = 0; top && depth < 32; depth++) {
+            const shadow = dom.shadowRoot(top);
+            if (!shadow) break;
+            const inner = dom.call(shadow, 'elementFromPoint', x, y);
+            if (!inner || inner === top) break;
+            top = inner;
+          }
         } catch {
           top = null;
         }

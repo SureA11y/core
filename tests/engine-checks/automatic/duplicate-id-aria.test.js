@@ -178,3 +178,21 @@ test(`${RULE_ID}: each copy says whether the reference reaches it`, () => {
   assert.deepStrictEqual(later.data.details.referringAttributes, ['aria-controls']);
   assert.strictEqual(later.data.details.reached, false);
 });
+
+test(`${RULE_ID}: many repeated cards with the same ids stay fast (SP-1)`, () => {
+  // 400 product cards, each a copy with the same ids and its own referrers:
+  // the nearest copy of each id used to be searched from every referrer
+  // against every copy, each time walking both ancestor chains.
+  const card = (i) =>
+    `<section><h2 id="t">Card ${i}</h2><p id="d">Text ${i}</p><button aria-labelledby="t" aria-describedby="d">Buy</button></section>`;
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${Array.from(
+    { length: 400 },
+    (_, i) => card(i)
+  ).join('')}</main></body></html>`;
+  const start = Date.now();
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const ms = Date.now() - start;
+  const rule = result.checksResults.find((c) => c.ruleId === RULE_ID);
+  assert.ok(rule.occurrences.length > 0);
+  assert.ok(ms < 5000, `${ms} ms`);
+});

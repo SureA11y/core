@@ -476,11 +476,18 @@ function optionText(value) {
   }
 }
 
+// Rule ids, tags and profile names are matched ignoring case in ASCII only:
+// a full Unicode fold reads the Kelvin sign (U+212A) as "k", so
+// "linK-name-present" written with it would select link-name-present.
+function asciiLowerChar(c) {
+  return c.toLowerCase();
+}
+
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
   if (Array.isArray(value)) {
     const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
-    const norm = lower ? arr.map((s) => s.toLowerCase()) : arr.slice();
+    const norm = lower ? arr.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : arr.slice();
     // de-dupe while preserving first-seen order (deterministic)
     const seen = new Set();
     const out = [];
@@ -491,7 +498,7 @@ function parseCommaList(value, { lower = false } = {}) {
   }
   if (typeof value !== 'string') return [];
   const raw = value.split(',').map((s) => String(s).trim()).filter(Boolean);
-  const norm = lower ? raw.map((s) => s.toLowerCase()) : raw.slice();
+  const norm = lower ? raw.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : raw.slice();
   const seen = new Set();
   const out = [];
   for (const v of norm) {
@@ -501,7 +508,7 @@ function parseCommaList(value, { lower = false } = {}) {
 }
 
 function normalizeIncludeMode(mode) {
-  const m = typeof mode === 'string' ? mode.trim().toLowerCase() : '';
+  const m = typeof mode === 'string' ? mode.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
   return m === 'or' ? 'or' : 'and';
 }
 
@@ -699,7 +706,7 @@ const WCAG_LEVEL_TAGS = (function () {
   const out = Object.create(null);
   const prefix = { '2.0': 'wcag2', '2.1': 'wcag21', '2.2': 'wcag22' };
   for (const version of WCAG_TARGET_VERSIONS) {
-    for (const level of WCAG_TARGET_LEVELS) out[prefix[version] + level.toLowerCase()] = { version, level };
+    for (const level of WCAG_TARGET_LEVELS) out[prefix[version] + level.replace(/[A-Z]/g, asciiLowerChar)] = { version, level };
   }
   return out;
 })();
@@ -709,7 +716,7 @@ const WCAG_LEVEL_TAGS = (function () {
 // WCAG 2.2 removed. A custom tag that only starts with "wcag" (wcagteam) is
 // none of them.
 function isWcagTag(tag) {
-  const t = String(tag).toLowerCase();
+  const t = String(tag).replace(/[A-Z]/g, asciiLowerChar);
   return (
     t === 'wcag22-removed' ||
     Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t) ||
@@ -763,7 +770,7 @@ function criterionInWcagTarget(sc, target) {
 function wcagCriteriaOfDef(def) {
   const out = [];
   for (const t of Array.isArray(def.tags) ? def.tags : []) {
-    const tag = String(t).toLowerCase();
+    const tag = String(t).replace(/[A-Z]/g, asciiLowerChar);
     if (Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, tag)) out.push(WCAG_SC_BY_TAG[tag]);
   }
   const details = def.data && def.data.details;
@@ -774,7 +781,7 @@ function wcagCriteriaOfDef(def) {
 }
 
 function normalizeProfileName(v) {
-  return typeof v === 'string' ? v.trim().toLowerCase() : '';
+  return typeof v === 'string' ? v.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
 }
 
 /**
@@ -860,7 +867,7 @@ const PROFILE_OWN_TAGS = CATALOG.profileOwnTags || {};
 // or, for a custom rule, the opt-in tags it carries.
 function optInTagsOf(def) {
   if (def && def.custom) {
-    const tags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    const tags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
     return tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   }
   const id = def && typeof def.ruleId === 'string' ? def.ruleId : '';
@@ -945,7 +952,7 @@ function resolveMappingSelection(engineOptions, appliedProfile) {
   const unknown = [];
   for (const token of requested) {
     const sep = token.indexOf(':');
-    const name = (sep < 0 ? token : token.slice(0, sep)).trim().toLowerCase();
+    const name = (sep < 0 ? token : token.slice(0, sep)).trim().replace(/[A-Z]/g, asciiLowerChar);
     const std = Object.prototype.hasOwnProperty.call(NORMATIVE_MAPPING_STANDARDS, name)
       ? NORMATIVE_MAPPING_STANDARDS[name]
       : null;
@@ -957,8 +964,8 @@ function resolveMappingSelection(engineOptions, appliedProfile) {
       whole.add(name);
       continue;
     }
-    const wanted = token.slice(sep + 1).trim().toLowerCase();
-    const version = std.versions.find((v) => v.toLowerCase() === wanted);
+    const wanted = token.slice(sep + 1).trim().replace(/[A-Z]/g, asciiLowerChar);
+    const version = std.versions.find((v) => v.replace(/[A-Z]/g, asciiLowerChar) === wanted);
     if (!version) {
       unknown.push(token);
       continue;
@@ -1115,14 +1122,14 @@ function knownSelectionNames(engineOptions) {
   const tags = new Set();
   for (const d of CHECK_DEFS) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
-    for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
+    for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).replace(/[A-Z]/g, asciiLowerChar));
   }
   // A standard's own rollups carry its rule tag, which selects them, even
   // when the standard brings no rule of its own to carry it too.
   for (const entry of Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []) {
     const metaTags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
     for (const t of metaTags) {
-      const tag = String(t).trim().toLowerCase();
+      const tag = String(t).trim().replace(/[A-Z]/g, asciiLowerChar);
       if (tag) tags.add(tag);
     }
   }
@@ -1132,17 +1139,17 @@ function knownSelectionNames(engineOptions) {
   const resolved = resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG);
   for (const d of resolved.defs.values()) {
     ruleIds.add(d.ruleId);
-    for (const t of Array.isArray(d.tags) ? d.tags : []) tags.add(String(t).toLowerCase());
+    for (const t of Array.isArray(d.tags) ? d.tags : []) tags.add(String(t).replace(/[A-Z]/g, asciiLowerChar));
   }
   const skippedReasons = new Map();
   for (const sk of resolved.skipped) if (sk.id && !skippedReasons.has(sk.id)) skippedReasons.set(sk.id, sk.reason);
   // Rule ids that differ only in case name the same rule (the runner skips a
   // custom rule spelt like another in another case), so IMG-ALT-PRESENT is
   // img-alt-present, as tags and engineOptions.rules[ruleId] are read.
-  const prefix = String(ENGINE_TAG).toLowerCase() + '-';
+  const prefix = String(ENGINE_TAG).replace(/[A-Z]/g, asciiLowerChar) + '-';
   const byLower = new Map();
   for (const id of [...ruleIds, ...Object.keys(COMPOSITE_RULE_INDEX)]) {
-    if (!byLower.has(id.toLowerCase())) byLower.set(id.toLowerCase(), id);
+    if (!byLower.has(id.replace(/[A-Z]/g, asciiLowerChar))) byLower.set(id.replace(/[A-Z]/g, asciiLowerChar), id);
   }
   const isRuleId = (v) =>
     !!compositeIdOf(v) || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG));
@@ -1154,19 +1161,19 @@ function knownSelectionNames(engineOptions) {
         ? ' (a custom rule that was skipped: ' + skippedReasons.get(String(v).trim()) + ')'
         : ''),
     isRuleId,
-    isTag: (v) => tags.has(String(v).toLowerCase()),
+    isTag: (v) => tags.has(String(v).replace(/[A-Z]/g, asciiLowerChar)),
     // A rule id as the engine spells it, for one given in another case; any
     // other value as given.
     canonical: (v) => {
       if (typeof v !== 'string' || isRuleId(v)) return v;
-      let lower = v.trim().toLowerCase();
+      let lower = v.trim().replace(/[A-Z]/g, asciiLowerChar);
       if (!byLower.has(lower) && lower.startsWith(prefix)) lower = lower.slice(prefix.length);
       return byLower.get(lower) || v;
     },
     // A WCAG version/level tag no rule carries: a real tag, for criteria the
     // engine has no rule for, not a typo.
     isUntestedWcagTag: (v) => {
-      const t = String(v).toLowerCase();
+      const t = String(v).replace(/[A-Z]/g, asciiLowerChar);
       return !tags.has(t) && Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t);
     }
   };
@@ -1174,7 +1181,7 @@ function knownSelectionNames(engineOptions) {
 
 // 'WCAG 2.2 Level A ("wcag22a")', for messages.
 function describeWcagLevelTag(tag) {
-  const t = WCAG_LEVEL_TAGS[String(tag).toLowerCase()];
+  const t = WCAG_LEVEL_TAGS[String(tag).replace(/[A-Z]/g, asciiLowerChar)];
   return 'WCAG ' + t.version + ' Level ' + t.level + ' ("' + tag + '")';
 }
 
@@ -1199,7 +1206,7 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
     );
   }
   if (asRules.length === values.length) return { includeRuleIds: values };
-  if (asRules.length === 0) return { tags: values.map((v) => v.toLowerCase()) };
+  if (asRules.length === 0) return { tags: values.map((v) => v.replace(/[A-Z]/g, asciiLowerChar)) };
   throw invalidRunOnly(
     'runOnly: an array lists either rule ids or tags, not both; use { includeRuleIds, tags } to combine them.'
   );
@@ -1339,7 +1346,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // any rule ids or tags, and the other keys beside it (excludeTags,
   // excludeRuleIds...) still apply.
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
-    const kind = String(runOnly.type).trim().toLowerCase();
+    const kind = String(runOnly.type).trim().replace(/[A-Z]/g, asciiLowerChar);
     const rest = { ...runOnly };
     delete rest.type;
     delete rest.values;
@@ -1355,7 +1362,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     ['engineOptions.includeMode', eo.includeMode]
   ]) {
     if (value === undefined || value === null) continue;
-    const mode = typeof value === 'string' ? value.trim().toLowerCase() : '';
+    const mode = typeof value === 'string' ? value.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
     if (mode === 'and' || mode === 'or') continue;
     const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
     if (strictOf(eo)) throw invalidRunOnly(message);
@@ -1542,7 +1549,7 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const norm = normalizeRunOnly(runOnly);
   const includeMode = normalizeIncludeMode(norm.includeMode);
 
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
 
   const hasRuleInclude = norm.includeRuleIds.length > 0;
   const hasTestInclude = norm.includeTestIds.length > 0;
@@ -1656,7 +1663,7 @@ function ruleExcludedByRunOnly(def, runOnly, engineTag) {
   }
 
   if (norm.excludeTags.length) {
-    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
     if (defTags.some((t) => norm.excludeTags.includes(t))) return true;
   }
 
@@ -1683,9 +1690,9 @@ function ruleNamedOnItsOwn(def, runOnly, engineTag) {
   ) {
     return true;
   }
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
   // The engine's own tag is on every rule and rollup, so it names them all.
-  const namesCriteria = (t) => isWcagTag(t) || t === tag.toLowerCase();
+  const namesCriteria = (t) => isWcagTag(t) || t === tag.replace(/[A-Z]/g, asciiLowerChar);
   if (defTags.some((t) => norm.tags.includes(t) && !namesCriteria(t))) return true;
   if (optInTagsOf(def).some((t) => norm.ownTags.includes(t) || norm.optInTags.includes(t))) return true;
   return norm.bestPractices && defTags.includes(BEST_PRACTICE_TAG);
@@ -1696,7 +1703,7 @@ function ruleNamedOnItsOwn(def, runOnly, engineTag) {
 // (rollupCompositeResults), not the rule's other criteria.
 function criteriaNamingRule(def, runOnly) {
   const norm = normalizeRunOnly(runOnly);
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
   return defTags
     .filter((t) => norm.tags.includes(t) && Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, t))
     .map((t) => WCAG_SC_BY_TAG[t]);
@@ -1822,11 +1829,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     const tiers = Array.isArray(out.occurrences)
       ? out.occurrences.map((o) => (o && typeof o === 'object' ? o.occurrenceOutcome : undefined))
       : [];
-    if ((out.outcome === 'cantTell' || out.outcome === 'pass') && tiers.includes('fail')) {
-      out.outcome = 'fail';
-    } else if (out.outcome === 'fail' && tiers.length && tiers.every((x) => x === 'cantTell')) {
-      out.outcome = 'cantTell';
-    }
+    // An occurrence with no tier has the outcome's. The outcome is the
+    // worst of them: fail if any fails, cantTell if any asks, pass when all
+    // pass; the same table the exclusion filter above settles by.
+    const eff = tiers.map((x) => x || out.outcome);
+    if (eff.includes('fail')) out.outcome = 'fail';
+    else if (eff.includes('cantTell')) out.outcome = 'cantTell';
+    else if (eff.length && eff.every((x) => x === 'pass')) out.outcome = 'pass';
     // A fail the policy doesn't allow stays cantTell, whichever layer said
     // fail, and its fail-tier occurrences go with it, as a manual rule's do:
     // otherwise the tiers would undo the policy above.
@@ -2266,6 +2275,7 @@ const SAFE_DOM_METHODS = [
   "setAttribute"
 ];
 const SAFE_DOM_OTHER_NAMES = [
+  "customElements",
   "adoptedStyleSheets",
   "ariaActiveDescendantElement",
   "ariaControlsElements",
@@ -8095,6 +8105,32 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       });
       if (!gen.readable) return blocked('GENERATED_TEXT_UNREADABLE', 'content', gen.value);
 
+      // A ::before or ::after made a block container, with a negative
+      // text-indent, moves its text by that much (text-indent: -9999px, an
+      // image replacement): drawn wholly left of the page, nothing is
+      // painted. Its text ends, at most, where the element's box ends.
+      try {
+        const indent = Number.parseFloat(ps.textIndent) || 0;
+        const display = String(ps.display || '');
+        const position = String(ps.position || '');
+        if (
+          indent < 0 &&
+          display &&
+          display !== 'inline' &&
+          display !== 'contents' &&
+          display !== 'none' &&
+          position !== 'absolute' &&
+          position !== 'fixed' &&
+          typeof dom.get(el, 'getBoundingClientRect') === 'function'
+        ) {
+          const r = dom.getBoundingClientRect(el);
+          const doc = dom.ownerDocument(el);
+          const win = doc && dom.defaultView(doc);
+          const sx = (win && win.scrollX) || 0;
+          if (r && r.width > 0 && r.right + indent + sx <= 0) return null;
+        }
+      } catch {}
+
       // Effects on the generated text itself, which draw something other
       // than its declared colors.
       if (hasBlendMode(ps)) return blocked('MIX_BLEND_MODE', 'mix-blend-mode', ps.mixBlendMode);
@@ -11091,10 +11127,18 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return includeMain && token === 'main';
   }
 
+  // Ancestors in the flat tree, as the accessibility tree is built: through
+  // the slot an element is assigned to, and from a shadow root to its host.
+  // A web component's <header> inside an <article> in the page is the
+  // article's header, not the page's banner (HTML-AAM).
+  const flatParent =
+    shared && typeof shared.flatParentElement === 'function'
+      ? (n) => shared.flatParentElement(n) || null
+      : (n) => dom.parentElement(n);
   function hasLandmarkScopingAncestor(el, opts) {
     if (!isElement(el)) return false;
     const includeMain = !!(opts && opts.includeMain);
-    let cur = dom.parentElement(el);
+    let cur = flatParent(el);
     let guard = 0;
     while (cur && guard++ < 10000) {
       if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
@@ -11102,7 +11146,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       // (or fragment) scan should never let ancestry OUTSIDE the
       // analyzed subtree affect a role computed WITHIN it.
       if (ariaRoots.includes(cur)) break;
-      cur = dom.parentElement(cur);
+      cur = flatParent(cur);
     }
     return false;
   }
@@ -11845,7 +11889,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // the row groups) from its "descendant of a table" ones (tr, td, th), which
   // sit inside a rowgroup in most real tables.
   const NATIVE_CONTAINMENT_CONTEXT = {
-    li: { tags: ['ul', 'ol', 'menu'], directParent: true },
+    // An <li> in an element with role list is a listitem too, as browsers
+    // expose it and listitem-parent-valid accepts it.
+    li: { tags: ['ul', 'ol', 'menu'], roles: ['list'], directParent: true },
     option: { tags: ['select', 'datalist', 'optgroup'], directParent: true },
     thead: { tags: ['table'], directParent: true },
     tbody: { tags: ['table'], directParent: true },
@@ -11866,6 +11912,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     while (cur && guard++ < 10000) {
       const tag = lower(dom.tagName(cur) || '');
       if (tags.indexOf(tag) !== -1) return true;
+      if (context.roles && context.roles.indexOf(getAuthorRole(cur)) !== -1) return true;
       if (context.directParent) return false;
       cur = dom.parentElement(cur);
     }
@@ -12777,8 +12824,9 @@ const describeOptionValue = (function describeOptionValue(v) {
   return 'an object';
 });
 const engineOptionSpec = (function engineOptionSpec() {
+  // Spread reads a hole ([, 'main']) as undefined, which every() skips.
   const list = (v) =>
-    typeof v === 'string' || (Array.isArray(v) && v.every((x) => typeof x === 'string'));
+    typeof v === 'string' || (Array.isArray(v) && [...v].every((x) => typeof x === 'string'));
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
   const T = {
     any: { test: () => true, expected: 'any value' },
@@ -12797,7 +12845,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     }),
     // A non-empty list of some of `values`.
     someOf: (values) => ({
-      test: (v) => Array.isArray(v) && v.length > 0 && v.every((x) => values.includes(x)),
+      test: (v) => Array.isArray(v) && v.length > 0 && [...v].every((x) => values.includes(x)),
       expected: 'a non-empty list of ' + values.map((x) => JSON.stringify(x)).join(', ')
     })
   };
@@ -12823,7 +12871,11 @@ const engineOptionSpec = (function engineOptionSpec() {
       expected: 'true or false'
     },
     locale: T.string,
-    wcagVersion: T.oneOf(['2.0', '2.1', '2.2']),
+    // Read trimmed, as wcagLevel is read trimmed and in any case.
+    wcagVersion: {
+      test: (v) => typeof v === 'string' && ['2.0', '2.1', '2.2'].includes(v.trim()),
+      expected: 'one of "2.0", "2.1", "2.2"'
+    },
     wcagLevel: {
       test: (v) => typeof v === 'string' && ['A', 'AA', 'AAA'].includes(v.trim().toUpperCase()),
       expected: '"A", "AA" or "AAA", in any case'
@@ -12846,7 +12898,9 @@ const engineOptionSpec = (function engineOptionSpec() {
     styleSheetTexts: {
       test: (v) =>
         Array.isArray(v) &&
-        v.every((s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'),
+        [...v].every(
+          (s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'
+        ),
       expected: '[{ href, text }]'
     },
     timestamp: T.string,
@@ -12939,7 +12993,9 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
   function describe(v) {
     if (v === null) return 'null';
     if (Array.isArray(v)) {
-      // Short lists of plain values are shown, so the one at fault is seen.
+      // Short lists of plain values are shown, so the one at fault is seen;
+      // a hole as undefined.
+      v = [...v];
       const plain =
         v.length > 0 && v.length <= 6 && v.every((x) => x === null || typeof x !== 'object');
       const text = plain
@@ -13897,6 +13953,25 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } else out.push(...flatChildNodes(c, depth + 1));
     }
     return out;
+  };
+
+  // Page text quoted in a message, cut to `max` characters with an ellipsis,
+  // never splitting a surrogate pair: a 1 MB label or address would
+  // otherwise be copied whole into the summary, its parameters and every
+  // report.
+  const quoteText = (value, max = 120) => {
+    const v = String(value == null ? '' : value);
+    if (v.length <= max) return v;
+    const code = v.charCodeAt(max - 2);
+    return v.slice(0, code >= 0xd800 && code <= 0xdbff ? max - 2 : max - 1) + '…';
+  };
+
+  // Items listed in a message: the first five, then an ellipsis, so an
+  // attribute naming hundreds of ids doesn't put every one in the hint.
+  // `show` turns an item into its text, and only for those shown.
+  const shortList = (items, show = (x) => x, max = 5) => {
+    const shown = items.slice(0, max).map(show).join(', ');
+    return items.length > max ? `${shown}, …` : shown;
   };
 
   // An element's child elements in the flat tree (flatChildNodes).
@@ -15283,12 +15358,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const ids = labelledby.split(/\s+/);
         const targets = ids.map(byId);
         if (targets.every((t) => !t)) {
-          const list = ids.map((id) => `"${id}"`).join(', ');
+          const list = shortList(ids.map((id) => `"${quoteText(id, 60)}"`));
           return {
             hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyMissing',
             params: { ids: list },
-            detail: { cause: 'labelledbyMissing', ids }
+            detail: { cause: 'labelledbyMissing', ids: ids.slice(0, 10) }
           };
         }
         // Every target is there, and none has text or a name of its own.
@@ -15301,12 +15376,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
           dom.querySelector(t, 'img, svg, input, select, textarea, [aria-label], [title]');
         const tagWithId = (t) => `<${tagOf(t)} id="${attr(t, 'id')}">`;
         if (targets.every((t) => t && t !== el && !gives(t))) {
-          const list = targets.map(tagWithId).join(', ');
+          const list = shortList(targets.map(tagWithId));
           return {
             hint: `Its aria-labelledby points only to elements with no text (${list}), so it gives no name. Put the text in the element it points to, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyEmpty',
             params: { targets: list },
-            detail: { cause: 'labelledbyEmpty', ids }
+            detail: { cause: 'labelledbyEmpty', ids: ids.slice(0, 10) }
           };
         }
         // The element names nothing, so a target with text has it hidden
@@ -15331,17 +15406,26 @@ const createDomHelpers = (function createDomHelpers(opts) {
               hint: `Its aria-labelledby points to ${target}, whose text "${text}" is in a <${hiddenElement}> hidden from screen readers by ${hiddenBy}, so it gives no name. Let screen readers read that text, or name it with aria-label.`,
               hintKey: 'nameCause_hint_labelledbyHiddenText',
               params: { target, text, hiddenElement, hiddenBy },
-              detail: { cause: 'labelledbyHiddenText', ids, text, hiddenBy: reason }
+              detail: {
+                cause: 'labelledbyHiddenText',
+                ids: ids.slice(0, 10),
+                text,
+                hiddenBy: reason
+              }
             };
           }
           if (missing.length && found.length) {
-            const missingIds = missing.map((id) => `"${id}"`).join(', ');
-            const list = found.map(tagWithId).join(', ');
+            const missingIds = shortList(missing.map((id) => `"${quoteText(id, 60)}"`));
+            const list = shortList(found.map(tagWithId));
             return {
               hint: `Its aria-labelledby gives no name: no element on the page has ${missingIds}, and what it does point to (${list}) has no text screen readers read. Point it at elements with text, or name it with aria-label.`,
               hintKey: 'nameCause_hint_labelledbyMixed',
               params: { ids: missingIds, targets: list },
-              detail: { cause: 'labelledbyMixed', ids, missing }
+              detail: {
+                cause: 'labelledbyMixed',
+                ids: ids.slice(0, 10),
+                missing: missing.slice(0, 10)
+              }
             };
           }
         }
@@ -15648,7 +15732,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           .map(byId)
           .filter((t) => t && t !== el && HIDDEN_TEXT_RE.test(String(dom.textContent(t) || '')));
         if (described.length && !skip('describedbyNotName')) {
-          const targets = described.map((t) => describeElement(t, { text: true })).join(', ');
+          const targets = shortList(described, (t) => describeElement(t, { text: true }));
           return {
             hint: `Its aria-describedby points to ${targets}, which gives a description, not a name. Point aria-labelledby at it instead, or name it with aria-label.`,
             hintKey: 'nameCause_hint_describedbyNotName',
@@ -15711,7 +15795,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!allEmpty) return null;
       const count = imgs.length;
       return {
-        hint: `Its content is ${count} images, all with alt="", so it gives no name. Give one of them alt text that says what it does or where it leads, or name the element with aria-label.`,
+        hint: `Its content is ${count} images, all with alt="", so it gives no name. Give one of them alt text that says what it stands for here, or name the element with aria-label.`,
         hintKey: 'nameCause_hint_imagesEmptyAlt',
         params: { count },
         detail: { cause: 'imagesEmptyAlt', count }
@@ -15785,7 +15869,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const alt = dom.getAttribute(img, 'alt');
       if (alt === null) {
         return {
-          hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.',
           hintKey: 'nameCause_hint_imageNoAlt',
           params: {},
           detail: { cause: 'imageNoAlt' }
@@ -15793,7 +15877,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
       if (!trim(alt)) {
         return {
-          hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.',
           hintKey: 'nameCause_hint_imageEmptyAlt',
           params: {},
           detail: { cause: 'imageEmptyAlt' }
@@ -15808,7 +15892,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       );
     if (svgNamed) return null;
     return {
-      hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.',
+      hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it stands for here, or name the element with aria-label.',
       hintKey: 'nameCause_hint_svgNoName',
       params: {},
       detail: { cause: 'svgNoName' }
@@ -17515,6 +17599,49 @@ const createDomHelpers = (function createDomHelpers(opts) {
   const LABELABLE_SELECTOR =
     'input:not([type="hidden"]), select, textarea, button, meter, output, progress';
 
+  // HTML's labelable elements also include form-associated custom elements:
+  // an autonomous custom element whose class sets `static formAssociated =
+  // true`. No selector finds them, so the page's custom element registry
+  // is asked, for elements with a hyphen in their name only.
+  function isFormAssociatedCustom(el) {
+    try {
+      const name = String(dom.localName(el) || '');
+      if (name.indexOf('-') === -1) return false;
+      const doc = dom.ownerDocument(el);
+      const win = doc && dom.defaultView(doc);
+      // Asked once per name and scan, as the internals lookup asks.
+      const ctor = __customElementDefinition(win, lower(name));
+      return !!(ctor && ctor.formAssociated === true);
+    } catch {
+      return false;
+    }
+  }
+  function isLabelableElement(el) {
+    try {
+      if (!el || !dom.get(el, 'matches')) return false;
+      return dom.matches(el, LABELABLE_SELECTOR) || isFormAssociatedCustom(el);
+    } catch {
+      return false;
+    }
+  }
+  // A label's first labelable descendant, in tree order.
+  function firstLabelableIn(label) {
+    try {
+      const plain = dom.querySelector(label, LABELABLE_SELECTOR);
+      // A custom element may come before it: look for one only if the label
+      // holds any element with a hyphen in its name.
+      const walker = dom.createTreeWalker(dom.ownerDocument(label), label, 1);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (n === plain) return plain;
+        if (String(dom.localName(n) || '').indexOf('-') !== -1 && isFormAssociatedCustom(n))
+          return n;
+      }
+      return plain;
+    } catch {
+      return null;
+    }
+  }
+
   // Real `<label>` elements associated with `el`, replicating the native
   // `.labels` API's result (a `<label for="id">` pointing at `el`, plus a
   // wrapping `<label>` with no `for` attribute whose first labelable
@@ -17544,13 +17671,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // `<label for="x">`/wrapping `<label>` around a non-labelable element
     // (e.g. a `<div role="combobox">`) produces no accessible name in
     // either browser's accessibility tree.
-    let isLabelable;
-    try {
-      isLabelable = !!(el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR));
-    } catch {
-      isLabelable = false;
-    }
-    if (!isLabelable) return out;
+    if (!isLabelableElement(el)) return out;
 
     const id = trim(getAttr(el, 'id'));
     if (id) {
@@ -17576,15 +17697,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         !(dom.get(wrap, 'hasAttribute') && dom.hasAttribute(wrap, 'for')) &&
         out.indexOf(wrap) === -1
       ) {
-        let firstControl = null;
-        try {
-          firstControl = dom.get(wrap, 'querySelector')
-            ? dom.querySelector(wrap, LABELABLE_SELECTOR)
-            : null;
-        } catch {
-          firstControl = null;
-        }
-        if (firstControl === el) out.push(wrap);
+        if (firstLabelableIn(wrap) === el) out.push(wrap);
       }
     } catch {}
     // Usually 0-1 elements; a second only shows up for genuinely unusual
@@ -17621,9 +17734,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
             ? root
             : dom.ownerDocument(label);
         const el = scope ? dom.getElementById(scope, id) : null;
-        return el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR) ? el : null;
+        return isLabelableElement(el) ? el : null;
       }
-      return dom.get(label, 'querySelector') ? dom.querySelector(label, LABELABLE_SELECTOR) : null;
+      return firstLabelableIn(label);
     } catch {
       return null;
     }
@@ -18840,8 +18953,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (type === 'button' || type === 'submit' || type === 'reset' || type === 'image') {
         const v = getAttr(el, 'value');
         if (v != null) {
-          const t = trim(v);
-          if (t) return t;
+          // A value attribute is the label, even empty: the default label
+          // is for a submit or reset button with none.
+          return trim(v);
         }
         if (type === 'submit') return 'Submit';
         if (type === 'reset') return 'Reset';
@@ -22645,7 +22759,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl, getCustomElementInternals }
+    { trim, getLabelControl, getCustomElementInternals, flatParentElement }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -22913,6 +23027,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getTextAlternativeInfo,
     getTextAlternativeSignal,
     describeTextAlternativeSignal,
+    quoteText,
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
@@ -24882,7 +24997,9 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
     // told apart in a report, and IMG-ALT-PRESENT is most likely meant as
     // img-alt-present. A custom rule spelt like a built-in in another case
     // overrides it, under the built-in's id, and is said so.
-    const sameId = (a, b) => typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
+    const sameId = (a, b) =>
+      typeof b === 'string' &&
+      a.replace(/[A-Z]/g, (c) => c.toLowerCase()) === b.replace(/[A-Z]/g, (c) => c.toLowerCase());
     const earlier = [...defs.keys()].find((k) => sameId(ruleId, k));
     // A second rule with the same id would silently replace the first; a
     // composite's id would put one id in both checksResults and
@@ -25114,6 +25231,48 @@ const runCoreSettled = (function runCoreSettled(
   const excludeSelectors = normalizeSelectorList(
     engineOptionsResolved && engineOptionsResolved.excludeSelectors
   );
+  // Under strictOptions, a selector that isn't valid CSS, which would
+  // exclude nothing, is refused before anything runs: globally and for each
+  // rule (engineOptions.rules[id].excludeSelectors). Otherwise it is warned
+  // about where it is used, and the other selectors still apply.
+  if (strictOf(engineOptionsResolved)) {
+    const probe = dom.get(document, 'documentElement');
+    const invalid = (list) =>
+      normalizeSelectorList(list).filter((sel) => {
+        try {
+          if (probe) dom.matches(probe, sel);
+          return false;
+        } catch {
+          return true;
+        }
+      });
+    const bad = invalid(excludeSelectors).map((sel) => 'excludeSelectors: "' + sel + '"');
+    const ruleSettings =
+      engineOptionsResolved.rules &&
+      typeof engineOptionsResolved.rules === 'object' &&
+      !Array.isArray(engineOptionsResolved.rules)
+        ? engineOptionsResolved.rules
+        : null;
+    if (ruleSettings) {
+      for (const id of Object.keys(ruleSettings)) {
+        const own = ruleSettings[id];
+        if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
+        for (const sel of invalid(own.excludeSelectors)) {
+          bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
+        }
+      }
+    }
+    if (bad.length) {
+      const err = new Error(
+        'engineOptions.' +
+          bad.join('; engineOptions.') +
+          (bad.length > 1 ? ' are' : ' is') +
+          ' not valid CSS, and would exclude nothing. (strictOptions)'
+      );
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
+  }
   // Default off: explicit opt-in for "this scan target was never meant to
   // represent a real page" -- see helpers.isWholeDocumentScope().
   const fragment = !!(engineOptionsResolved && switchOf(engineOptionsResolved.fragment) === true);
@@ -25226,6 +25385,24 @@ const runCoreSettled = (function runCoreSettled(
     } catch {
       rgba = { a: 1 };
     }
+    // The color parser reads computed styles, which the browser has already
+    // checked, so it is lenient: a keyword that depends on the page
+    // (inherit, currentColor) or rgb() with a wrong number of values would
+    // pass. A color the caller writes is checked as CSS would check it.
+    const text = String(given).trim();
+    const lower = text.toLowerCase();
+    const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
+    const badSyntax =
+      ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'].includes(lower) ||
+      (fn &&
+        (() => {
+          const body = fn[2].trim();
+          const parts = body.includes(',')
+            ? body.split(',').map((x) => x.trim())
+            : body.split('/').flatMap((x, i) => (i === 0 ? x.trim().split(/\s+/) : [x.trim()]));
+          return parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
+        })());
+    if (badSyntax) rgba = null;
     if (!rgba || !(rgba.a >= 1)) {
       const message =
         'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
@@ -25482,16 +25659,21 @@ const runCoreSettled = (function runCoreSettled(
   const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
   const optInRulesRan = new Set();
   if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
+    const message =
+      'engineOptions.optInRules: ' +
+      runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
+      ', no such opt-in rule tag (' +
+      (OPT_IN_RULE_TAGS.length
+        ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
+        : 'this version has none') +
+      ')';
+    if (strictOf(engineOptionsResolved)) {
+      const err = new Error(message + '. (strictOptions)');
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
     try {
-      console.warn(
-        '[surea11y] engineOptions.optInRules: ignoring ' +
-          runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such opt-in rule tag (' +
-          (OPT_IN_RULE_TAGS.length
-            ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
-            : 'this version has none') +
-          ').'
-      );
+      console.warn('[surea11y] ' + message.replace(': ', ': ignoring ') + '.');
     } catch {}
   }
 
@@ -25500,11 +25682,17 @@ const runCoreSettled = (function runCoreSettled(
   // result carries only those asked for, or implied by the applied profile.
   const mappingSelection = resolveMappingSelection(engineOptionsResolved, appliedProfile);
   if (mappingSelection.unknown.length) {
+    const named = mappingSelection.unknown.map((s) => '"' + s + '"').join(', ');
+    if (strictOf(engineOptionsResolved)) {
+      const err = new Error(
+        'engineOptions.mappings: ' + named + ', no such standard or version. (strictOptions)'
+      );
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
     try {
       console.warn(
-        '[surea11y] engineOptions.mappings: ignoring ' +
-          mappingSelection.unknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such standard or version.'
+        '[surea11y] engineOptions.mappings: ignoring ' + named + ', no such standard or version.'
       );
     } catch {}
   }
@@ -25648,7 +25836,9 @@ const runCoreSettled = (function runCoreSettled(
       .map((d) => d.ruleId)
       .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
     const byLower = new Map();
-    for (const id of knownIds) if (typeof id === 'string') byLower.set(id.toLowerCase(), id);
+    // ASCII case only, as the selection matches ids (asciiLowerChar).
+    const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
+    for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
     const legacy = String(ENGINE_TAG || 'a11ycore').toLowerCase() + '-';
     const unknownRuleKeys = [];
     const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
@@ -25656,7 +25846,7 @@ const runCoreSettled = (function runCoreSettled(
       for (const key of keys) {
         const value = rulesOption[key];
         if (!value || typeof value !== 'object') continue;
-        const lower = key.trim().toLowerCase();
+        const lower = lowerAscii(key.trim());
         let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
         if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
         if (exact) {
@@ -26083,7 +26273,7 @@ const runCoreSettled = (function runCoreSettled(
     }
 
     if (typeof applicabilityFn === 'function') {
-      let applicable = true;
+      let applicable;
       try {
         const res = applicabilityFn(ctx);
         // Rules run synchronously: a Promise is truthy, and would have
@@ -26097,6 +26287,15 @@ const runCoreSettled = (function runCoreSettled(
         if (typeof res === 'boolean') applicable = res;
         else if (res && typeof res === 'object' && typeof res.applicable === 'boolean')
           applicable = res.applicable;
+        else {
+          // undefined (a forgotten return), 0, null or 'false' ran the rule
+          // everywhere: what was meant can't be known, so the rule says so.
+          throw new Error(
+            'applicability returned ' +
+              describeOptionValue(res) +
+              '; it must return true or false (or { applicable: true | false })'
+          );
+        }
       } catch (err) {
         const raw = {
           outcome: 'cantTell',
@@ -26790,6 +26989,20 @@ const runCore = (function runCore(
     }
   } finally {
     restoreDomProtection();
+    // The run's element-keyed caches (set up in createDomHelpers and
+    // createContrastHelpers) go with it: left on the window, they kept every
+    // scanned element, and the strings read from it, alive until the next
+    // scan, even after the page removed them.
+    try {
+      const dom = createSafeDom();
+      const w =
+        typeof window !== 'undefined'
+          ? window
+          : typeof document !== 'undefined' && document
+            ? dom.defaultView(document)
+            : null;
+      if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
+    } catch {}
   }
 });
 
@@ -27073,8 +27286,8 @@ const runProfiles = (function runProfiles(engineOptions, run) {
       }
     }
     if (unique.length <= 1) {
-      return run(
-        Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+      return withOwnVerdicts(
+        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined }))
       );
     }
     const runs = [];
@@ -27092,7 +27305,40 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     };
     return step(0);
   }
-  return run(engineOptions);
+  return withOwnVerdicts(run(engineOptions));
+});
+const withOwnVerdicts = (function withOwnVerdicts(result) {
+  // A result first: a page may add then to Object.prototype, which makes
+  // any object look like a promise.
+  if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
+    return result.then(withOwnVerdicts);
+  }
+  if (!result || !Array.isArray(result.checksResults)) return result;
+  const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
+  for (const check of result.checksResults) {
+    const occurrences = check && Array.isArray(check.occurrences) ? check.occurrences : [];
+    if (!occurrences.length || check.outcome === 'fail') continue;
+    const fails = occurrences.map(() => false);
+    for (const rollup of rollups) {
+      const details = rollup && rollup.data && rollup.data.details;
+      const contributors =
+        details && Array.isArray(details.contributors) ? details.contributors : [];
+      const c = contributors.find((x) => x && x.testId === check.ruleId);
+      if (!c || !c.byReasonCode || !Array.isArray(c.findingOutcomes)) continue;
+      occurrences.forEach((o, i) => {
+        if (c.findingOutcomes[i] === 'fail') fails[i] = true;
+      });
+    }
+    if (!fails.some(Boolean)) continue;
+    check.occurrences = occurrences.map((o, i) =>
+      fails[i] && o && typeof o === 'object'
+        ? Object.assign({}, o, { occurrenceOutcome: 'fail' })
+        : o
+    );
+    check.outcome = 'fail';
+    check.outcomeNormalized = 'fail';
+  }
+  return result;
 });
 const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   const RANK = { fail: 4, cantTell: 3, pass: 2, notApplicable: 1 };
@@ -35959,7 +36205,7 @@ const RUNTIME_CATALOG = {
   {
     "ruleId": "p-as-heading",
     "title": "Text styled to look like a heading should probably be a real heading",
-    "description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, short all-bold <p> and <div> elements at body size that read as a title before plain text, and blocks that open with a bold line ended by a line break before plain text, for manual review of whether a real heading element should be used instead.",
+    "description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, and short all-bold <p> elements at body size that read as a title before plain text, for manual review of whether a real heading element should be used instead.",
     "i18n": {
       "titleKey": "pAsHeading_title",
       "descriptionKey": "pAsHeading_description"
@@ -36524,7 +36770,7 @@ const RUNTIME_CATALOG = {
   {
     "ruleId": "reflow-horizontal-scroll",
     "title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
-    "description": "At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.",
+    "description": "At a viewport 320 CSS pixels wide, measures whether the page scrolls sideways or cuts content off, and asks about each element that sticks out past an edge, for manual review of whether reading the page needs scrolling in two directions.",
     "i18n": {
       "titleKey": "reflowHorizontalScroll_title",
       "descriptionKey": "reflowHorizontalScroll_description"
@@ -36535,7 +36781,7 @@ const RUNTIME_CATALOG = {
       "wcag1410",
       "structure",
       "atomic",
-      "automatic",
+      "manual",
       "a11ycore"
     ],
     "wcagSc": [
@@ -36571,8 +36817,8 @@ const RUNTIME_CATALOG = {
       }
     ],
     "defaultSeverity": "serious",
-    "defaultConfidence": "high",
-    "type": "automatic",
+    "defaultConfidence": "medium",
+    "type": "manual",
     "coverage": {
       "facetsBySc": {
         "1.4.10": [
@@ -40382,7 +40628,7 @@ const RUNTIME_CATALOG = {
   "presentation-role-conflict": { run: require("./checks/manual/presentation-role-conflict-manual.js").runInPage, applicability: require("./checks/manual/presentation-role-conflict-manual.js").applicability || null },
   "presentational-children-focusable-absent": { run: require("./checks/automatic/presentational-children-focusable-absent.js").runInPage, applicability: require("./checks/automatic/presentational-children-focusable-absent.js").applicability || null },
   "progressbar-name-present": { run: require("./checks/automatic/progressbar-name-present.js").runInPage, applicability: require("./checks/automatic/progressbar-name-present.js").applicability || null },
-  "reflow-horizontal-scroll": { run: require("./checks/automatic/reflow-horizontal-scroll.js").runInPage, applicability: require("./checks/automatic/reflow-horizontal-scroll.js").applicability || null },
+  "reflow-horizontal-scroll": { run: require("./checks/manual/reflow-horizontal-scroll-manual.js").runInPage, applicability: require("./checks/manual/reflow-horizontal-scroll-manual.js").applicability || null },
   "region": { run: require("./checks/manual/region-manual.js").runInPage, applicability: require("./checks/manual/region-manual.js").applicability || null },
   "role-img-text-alternative-present": { run: require("./checks/automatic/role-img-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/role-img-text-alternative-present.js").applicability || null },
   "scope-attr-valid": { run: require("./checks/manual/scope-attr-valid-manual.js").runInPage, applicability: require("./checks/manual/scope-attr-valid-manual.js").applicability || null },
@@ -41285,8 +41531,10 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "Der Eintrag wird mit Aufzählungszeichen oder Nummer gezeichnet, als Eintrag einer Liste, die das Markup nicht mehr bereitstellt.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "Einige Links oder Bedienelemente, etwa die einer Navigationsleiste, sind ohne die Liste womöglich ebenso gut lesbar.",
       "listitemParentValid_summary_fail_wrapped": "Dieses <li> liegt in einem <{{listElement}}>, aber das {{wrapper}} dazwischen unterbricht die Liste: Die Einträge einer Liste müssen ihre Kinder sein.",
       "listitemParentValid_hint_fail_wrapped": "Verschieben Sie das <{{parentElement}}> in das <li> oder entfernen Sie es, sodass das <li> ein Kind des <{{listElement}}> ist.",
       "listitemParentValid_summary_fail_wrappedMany": "Dieses <li> liegt in einem <{{listElement}}>, aber die Elemente {{wrappers}} dazwischen unterbrechen die Liste: Die Einträge einer Liste müssen ihre Kinder sein.",
@@ -41553,7 +41801,9 @@ const RUNTIME_CATALOG = {
       "metaViewportLarge_lean_why": "Das Viewport-Meta-Tag begrenzt den Zoom auf unter 500 %.",
       "presentationRoleConflict_title": "Eine präsentationale Rolle darf nicht mit einem globalen ARIA-Attribut oder Fokussierbarkeit im Konflikt stehen",
       "presentationRoleConflict_description": "Prüft, ob role=\"presentation\"/\"none\" (einschließlich der impliziten presentation-Rolle eines <img alt=\"\">) nicht mit einem globalen ARIA-Attribut (aria-label, aria-hidden, aria-describedby, …) oder Fokussierbarkeit (tabindex/nativ) kombiniert wird.",
-      "presentationRoleConflict_summary_cantTell": "Dieses Element mit role=\"{{role}}\" hat außerdem {{attrs}}, daher ignorieren Browser die Rolle und geben das Element trotzdem aus.",
+      "presentationRoleConflict_summary_cantTell": "Dieses Element ist mit {{marker}} gekennzeichnet, hat aber auch {{attrs}}, daher ignorieren Browser die Kennzeichnung und geben es trotzdem aus.",
+      "presentationRoleConflict_summary_cantTell_focusable": "Dieses Element ist mit {{marker}} gekennzeichnet, kann aber den Fokus erhalten, daher ignorieren Browser die Kennzeichnung und geben es trotzdem aus.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "Dieses Element ist mit {{marker}} gekennzeichnet, hat aber auch {{attrs}} und kann den Fokus erhalten, daher ignorieren Browser die Kennzeichnung und geben es trotzdem aus.",
       "presentationRoleConflict_hint_cantTell": "Soll es vor assistiven Technologien verborgen bleiben, entfernen Sie die Namensattribute und machen Sie es nicht fokussierbar. Soll es ausgegeben werden, entfernen Sie role=\"presentation\" bzw. role=\"none\".",
       "presentationRoleConflict_lean_why": "Browser ignorieren hier die Präsentationsrolle und stellen die eigene Rolle des Elements bereit.",
       "region_title": "Der Seiteninhalt sollte sich innerhalb einer Landmarke befinden",
@@ -41875,17 +42125,13 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_lean_why_scrolls": "Der Inhalt des Elements läuft über seine Box hinaus und es scrollt; sein Tab-Stopp lässt Tastaturnutzende es scrollen.",
       "focusOrderSemantics_lean_why_documentInApplication": "Ein Dokument innerhalb einer Anwendung wird fokussierbar gemacht, damit Screenreader-Nutzende es lesen können.",
       "pAsHeading_title": "Text, der wie eine Überschrift gestaltet ist, sollte wahrscheinlich eine echte Überschrift sein",
-      "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett ist und mit mindestens 18px dargestellt wird, kurze, vollständig fette <p>- und <div>-Elemente in Fließtextgröße, die vor normalem Text wie ein Titel wirken, sowie Blöcke, die mit einer fetten, durch einen Zeilenumbruch beendeten Zeile vor normalem Text beginnen, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
+      "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett ist und mit mindestens 18px dargestellt wird, sowie kurze, vollständig fette <p>-Elemente in Fließtextgröße, die vor normalem Text wie ein Titel wirken, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
       "pAsHeading_summary_cantTell": "Dieser Absatz ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
       "pAsHeading_hint_cantTell": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriften-Element (<h1>-<h6> oder role=\"heading\"), anstatt einen Absatz so zu gestalten, dass er wie eine Überschrift aussieht.",
       "pAsHeading_summary_cantTell_div": "Dieser Textblock ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
       "pAsHeading_hint_cantTell_div": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriftenelement (<h1>-<h6> oder role=\"heading\"), statt ein <div> wie eine Überschrift zu gestalten.",
       "pAsHeading_summary_cantTell_bodySize": "Dieser kurze Absatz ist vollständig fett und steht vor normalem Text, wie eine Überschrift.",
       "pAsHeading_hint_cantTell_bodySize": "Wenn dieser Text den folgenden Text einleitet, machen Sie ihn zu einer echten Überschrift (<h1>-<h6> oder role=\"heading\") statt zu einem fetten Absatz.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "Dieser kurze Textblock ist vollständig fett und steht vor einem Abschnitt normalen Textes, wie eine Überschrift.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "Wenn dieser Text den folgenden Text einleitet, machen Sie ihn zu einer echten Überschrift (<h1>-<h6> oder role=\"heading\") statt zu einem fetten <div>.",
-      "pAsHeading_summary_cantTell_leadLine": "Dieser Block beginnt mit einer fetten Zeile, die ein Zeilenumbruch beendet, vor normalem Text, wie eine Überschrift.",
-      "pAsHeading_hint_cantTell_leadLine": "Wenn die fette Zeile den folgenden Text betitelt, machen Sie sie zu einer echten Überschrift (<h1>-<h6> oder role=\"heading\") und setzen Sie diesen Text in ein eigenes Element.",
       "pAsHeading_lean_why_headingStyle": "Der Text hat Schriftgröße, -stärke und -familie einer echten Überschrift dieser Seite und endet nicht wie ein Satz.",
       "pAsHeading_lean_why_bodyFollows": "Auf den Text folgt kleinerer, nicht fetter Fließtext, und er endet nicht wie ein Satz, wie bei einem Abschnittstitel.",
       "pAsHeading_lean_caution_style": "Auch ein einleitender Satz oder ein hervorgehobenes Zitat kann vor dem Fließtext stehen, und ein Designsystem kann Überschriftenstile für anderen Text wiederverwenden.",
@@ -42019,7 +42265,7 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "Der Name dieses Links („{{name}}“) ist eine allgemeine Formulierung: Nur der Text um ihn herum sagt, wohin er führt.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Formulieren Sie den Linktext selbst so, dass er sagt, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Hier klicken“, damit er auch allein verständlich ist, etwa in einer Linkliste.",
       "reflowHorizontalScroll_title": "Inhalte passen sich bei 320 CSS-Pixeln Breite ohne seitliches Scrollen an",
-      "reflowHorizontalScroll_description": "Prüft bei einem 320 CSS-Pixel breiten Viewport, dass die Seite nicht seitlich scrollt, nennt die Elemente, die über ihren Rand hinausragen, und fragt nach Tabellen, Medien und vorformatiertem Text, die ihr Layout brauchen können.",
+      "reflowHorizontalScroll_description": "Misst bei einem 320 CSS-Pixel breiten Viewport, ob die Seite seitlich scrollt oder Inhalte abschneidet, und fragt nach jedem Element, das über einen Rand hinausragt, zur manuellen Prüfung, ob zum Lesen der Seite in zwei Richtungen gescrollt werden muss.",
       "reflowHorizontalScroll_summary_fail": "Bei {{viewportWidth}} Pixeln Breite ragt dieses Element {{overflowPx}} Pixel über den Rand hinaus, sodass die Seite seitlich scrollt.",
       "reflowHorizontalScroll_hint_fail": "Lassen Sie es in die Breite passen: keine feste Breite, die breiter als der Bildschirm ist, max-width: 100% für Bilder und eingebettete Inhalte, und lange Wörter oder Adressen dürfen umbrechen (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "Bei {{viewportWidth}} Pixeln Breite scrollt die Seite um {{overflowPx}} Pixel seitlich.",
@@ -42049,6 +42295,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_clipped": "Ein Karussell oder ein Menü kann den Rest auf andere Weise zeigen.",
       "reflowHorizontalScroll_lean_why_fieldCut": "Ein Formularfeld im Element ist abgeschnitten, und nichts scrollt zum Rest: Ein Feld muss ganz zu sehen und zu bedienen sein.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Prüfen Sie, ob das Feld wegen der geringen Breite abgeschnitten ist: Ein Feld, das bei jeder Breite abgeschnitten ist, ist ein Problem, aber keines des Umfließens.",
+      "reflowHorizontalScroll_lean_why_scrolls": "Die Seite scrollt bei dieser Breite seitlich: Inhalte müssen in die Breite passen, damit sie mit Scrollen in nur einer Richtung gelesen werden.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Prüfen Sie, ob seitliches Scrollen Inhalte zeigt und ob es keine Inhalte sind, die zwei Dimensionen brauchen, etwa eine Datentabelle, eine Karte oder ein Diagramm.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "Es ließ sich kein Element benennen: Der Überlauf kann von einem Rand, generierten Inhalten oder einem geschlossenen Shadow Root stammen. Prüfen Sie, ob seitliches Scrollen Inhalte zeigt.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -42186,10 +42435,10 @@ const RUNTIME_CATALOG = {
       "nameCause_hint_labelWrapsOther": "Es steht in dem <label> „{{text}}“, aber ein Label benennt nur das erste Feld darin, und das ist ein anderes <{{firstTag}}>. Geben Sie diesem Feld ein eigenes <label> oder aria-label.",
       "nameCause_hint_labelNotTied": "Das <label> „{{text}}“ daneben ist nicht mit ihm verknüpft: Das Label hat kein for-Attribut und umschließt das Feld nicht. Fügen Sie dem Label for=\"{{id}}\" hinzu, oder setzen Sie das Feld in das Label.",
       "nameCause_hint_labelNotTiedNoId": "Das <label> „{{text}}“ daneben ist nicht mit ihm verknüpft: Das Label hat kein for-Attribut und umschließt das Feld nicht. Geben Sie dem Feld eine id und dem Label ein for-Attribut mit dieser id, oder setzen Sie das Feld in das Label.",
-      "nameCause_hint_imageNoAlt": "Sein einziger Inhalt ist ein Bild ohne alt-Attribut, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Sein einziger Inhalt ist ein Bild mit alt=\"\", das es als dekorativ kennzeichnet, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
-      "nameCause_hint_svgNoName": "Sein einziger Inhalt ist ein <svg> ohne Namen (kein <title> und kein aria-label), sodass es keinen Namen liefert. Geben Sie dem svg einen <title> oder ein aria-label, das sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Sein Inhalt sind {{count}} Bilder, alle mit alt=\"\", sodass er keinen Namen liefert. Geben Sie einem davon einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imageNoAlt": "Sein einziger Inhalt ist ein Bild ohne alt-Attribut, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Sein einziger Inhalt ist ein Bild mit alt=\"\", das es als dekorativ kennzeichnet, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_svgNoName": "Sein einziger Inhalt ist ein <svg> ohne Namen (kein <title> und kein aria-label), sodass es keinen Namen liefert. Geben Sie dem svg einen <title> oder ein aria-label, das sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Sein Inhalt sind {{count}} Bilder, alle mit alt=\"\", sodass er keinen Namen liefert. Geben Sie einem davon einen alt-Text, der sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
       "nameCause_hint_iconEmpty": "Sein einziger Inhalt ist ein leeres <{{iconTag}} class=\"{{iconClass}}\">, ein per CSS gezeichnetes Icon, das keinen Text hat, der einen Namen liefern könnte. Fügen Sie visuell verborgenen Text hinzu, oder benennen Sie das Element mit aria-label.",
       "nameCause_hint_iconGenerated": "Sein einziger Inhalt ist ein per CSS gezeichnetes Icon-Font-Zeichen ({{pseudo}} auf {{host}}), das Screenreader nicht als Namen lesen können. Fügen Sie visuell verborgenen Text hinzu, oder benennen Sie das Element mit aria-label.",
       "nameCause_hint_iconHidden": "Sein einziger Inhalt ist ein <{{imageTag}}>, das durch aria-hidden=\"true\" verborgen ist, sodass Screenreader es überspringen und es keinen Namen liefert. Fügen Sie Text hinzu, den ein Screenreader liest (ein visuell verborgenes <span>), oder benennen Sie das Element mit aria-label.",
@@ -43071,8 +43320,10 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "A few links or controls, such as a navigation bar’s, may read as well without the list.",
       "listitemParentValid_summary_fail_wrapped": "This <li> is inside a <{{listElement}}>, but the {{wrapper}} between them breaks the list: a list's items must be its children.",
       "listitemParentValid_hint_fail_wrapped": "Move the <{{parentElement}}> inside the <li>, or remove it, so the <li> is a child of the <{{listElement}}>.",
       "listitemParentValid_summary_fail_wrappedMany": "This <li> is inside a <{{listElement}}>, but the {{wrappers}} between them break the list: a list's items must be its children.",
@@ -43339,7 +43590,9 @@ const RUNTIME_CATALOG = {
       "metaViewportLarge_lean_why": "The viewport meta tag keeps zoom below 500%.",
       "presentationRoleConflict_title": "Presentational role must not conflict with a global ARIA attribute or focusability",
       "presentationRoleConflict_description": "Checks that role=\"presentation\"/\"none\" (including an <img alt=\"\"> implicit presentation role) is not combined with a global ARIA attribute (aria-label, aria-hidden, aria-describedby, ...) or focusability (tabindex/native).",
-      "presentationRoleConflict_summary_cantTell": "This role=\"{{role}}\" element also has {{attrs}}, so browsers ignore the role and expose the element anyway.",
+      "presentationRoleConflict_summary_cantTell": "This element is marked {{marker}} but also has {{attrs}}, so browsers ignore the marking and expose it anyway.",
+      "presentationRoleConflict_summary_cantTell_focusable": "This element is marked {{marker}} but can take focus, so browsers ignore the marking and expose it anyway.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "This element is marked {{marker}} but also has {{attrs}} and can take focus, so browsers ignore the marking and expose it anyway.",
       "presentationRoleConflict_hint_cantTell": "If it should stay hidden from assistive technology, remove the naming attributes and make it unfocusable. If it should be exposed, remove role=\"presentation\" or role=\"none\".",
       "presentationRoleConflict_lean_why": "Browsers ignore the presentational role here and expose the element's own role.",
       "region_title": "Page content should be inside a landmark region",
@@ -43661,17 +43914,13 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_lean_why_scrolls": "The element’s content overflows its box and it scrolls, so its tab stop lets keyboard users scroll it.",
       "focusOrderSemantics_lean_why_documentInApplication": "A document inside an application is made focusable so screen reader users can read it.",
       "pAsHeading_title": "Text styled to look like a heading should probably be a real heading",
-      "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, short all-bold <p> and <div> elements at body size that read as a title before plain text, and blocks that open with a bold line ended by a line break before plain text, for manual review of whether a real heading element should be used instead.",
+      "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, and short all-bold <p> elements at body size that read as a title before plain text, for manual review of whether a real heading element should be used instead.",
       "pAsHeading_summary_cantTell": "This paragraph is entirely bold and rendered at a heading-like size.",
       "pAsHeading_hint_cantTell": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a paragraph to look like one.",
       "pAsHeading_summary_cantTell_div": "This block of text is entirely bold and rendered at a heading-like size.",
       "pAsHeading_hint_cantTell_div": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a <div> to look like one.",
       "pAsHeading_summary_cantTell_bodySize": "This short paragraph is entirely bold and comes before plain text, as a heading does.",
       "pAsHeading_hint_cantTell_bodySize": "If this text introduces the text after it, make it a real heading (<h1>-<h6> or role=\"heading\") instead of a bold paragraph.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "This short block of text is entirely bold and comes before a passage of plain text, as a heading does.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "If this text introduces the text after it, make it a real heading (<h1>-<h6> or role=\"heading\") instead of a bold <div>.",
-      "pAsHeading_summary_cantTell_leadLine": "This block starts with a bold line, ended by a line break, before plain text, as a heading does.",
-      "pAsHeading_hint_cantTell_leadLine": "If the bold line titles the text after it, make it a real heading (<h1>-<h6> or role=\"heading\") and put that text in an element of its own.",
       "pAsHeading_lean_why_headingStyle": "The text has a real heading's font size, weight and family on this page, and it doesn't end as a sentence does.",
       "pAsHeading_lean_why_bodyFollows": "The text is followed by smaller, plain body text, and it doesn't end as a sentence does, as a section title is.",
       "pAsHeading_lean_caution_style": "A lead-in sentence or a pull quote can also come before body text, and a design system may reuse heading styles for other text.",
@@ -43805,7 +44054,7 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "This link's name (\"{{name}}\") is a generic phrase: only the text around it says where it leads.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Make the link text itself say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Click here\", so it is clear when read on its own, as in a list of links.",
       "reflowHorizontalScroll_title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
-      "reflowHorizontalScroll_description": "At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.",
+      "reflowHorizontalScroll_description": "At a viewport 320 CSS pixels wide, measures whether the page scrolls sideways or cuts content off, and asks about each element that sticks out past an edge, for manual review of whether reading the page needs scrolling in two directions.",
       "reflowHorizontalScroll_summary_fail": "At {{viewportWidth}} pixels wide, this element reaches {{overflowPx}} pixels past the edge, so the page scrolls sideways.",
       "reflowHorizontalScroll_hint_fail": "Let it fit the width: no fixed width wider than the screen, max-width: 100% on images and embeds, and long words or addresses allowed to wrap (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "At {{viewportWidth}} pixels wide, the page scrolls sideways by {{overflowPx}} pixels.",
@@ -43835,6 +44084,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_clipped": "A carousel or a menu may show the rest another way.",
       "reflowHorizontalScroll_lean_why_fieldCut": "A form field in the element is cut off, and nothing scrolls to the rest of it: a field has to be seen and used whole.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Check that the field is cut because the width is narrow: a field cut at every width is a problem, but not one of reflow.",
+      "reflowHorizontalScroll_lean_why_scrolls": "The page scrolls sideways at this width: content has to fit the width, so that it is read by scrolling in one direction only.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Check that scrolling sideways shows content, and that it is not content that needs two dimensions, such as a data table, a map or a diagram.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -43972,10 +44224,10 @@ const RUNTIME_CATALOG = {
       "nameCause_hint_labelWrapsOther": "It sits inside the <label> \"{{text}}\", but a label names only the first field in it, which is another <{{firstTag}}>. Give this field its own <label> or aria-label.",
       "nameCause_hint_labelNotTied": "The <label> \"{{text}}\" beside it is not tied to it: the label has no for attribute and does not wrap the field. Add for=\"{{id}}\" to the label, or put the field inside the label.",
       "nameCause_hint_labelNotTiedNoId": "The <label> \"{{text}}\" beside it is not tied to it: the label has no for attribute and does not wrap the field. Give the field an id and add a for attribute with that id to the label, or put the field inside the label.",
-      "nameCause_hint_imageNoAlt": "Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Its only content is an image with alt=\"\", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.",
-      "nameCause_hint_svgNoName": "Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Its content is {{count}} images, all with alt=\"\", so it gives no name. Give one of them alt text that says what it does or where it leads, or name the element with aria-label.",
+      "nameCause_hint_imageNoAlt": "Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Its only content is an image with alt=\"\", which marks it as decorative, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.",
+      "nameCause_hint_svgNoName": "Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it stands for here, or name the element with aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Its content is {{count}} images, all with alt=\"\", so it gives no name. Give one of them alt text that says what it stands for here, or name the element with aria-label.",
       "nameCause_hint_iconEmpty": "Its only content is an empty <{{iconTag}} class=\"{{iconClass}}\">, an icon drawn by CSS, which has no text to give a name. Add visually-hidden text, or name the element with aria-label.",
       "nameCause_hint_iconGenerated": "Its only content is an icon-font character drawn by CSS ({{pseudo}} on {{host}}), which screen readers can't read as a name. Add visually-hidden text, or name the element with aria-label.",
       "nameCause_hint_iconHidden": "Its only content is an <{{imageTag}}> hidden by aria-hidden=\"true\", so screen readers skip it and it gives no name. Add text a screen reader reads (a visually-hidden <span>), or name the element with aria-label.",
@@ -44857,8 +45109,10 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "El elemento se dibuja con viñeta o número, como elemento de una lista que el marcado ya no expone.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "Unos pocos enlaces o controles, como los de una barra de navegación, pueden leerse igual de bien sin la lista.",
       "listitemParentValid_summary_fail_wrapped": "Este <li> está dentro de un <{{listElement}}>, pero el {{wrapper}} que hay entre ellos rompe la lista: los elementos de una lista deben ser sus hijos.",
       "listitemParentValid_hint_fail_wrapped": "Mover el <{{parentElement}}> dentro del <li>, o quitarlo, para que el <li> sea hijo del <{{listElement}}>.",
       "listitemParentValid_summary_fail_wrappedMany": "Este <li> está dentro de un <{{listElement}}>, pero los elementos {{wrappers}} que hay entre ellos rompen la lista: los elementos de una lista deben ser sus hijos.",
@@ -45125,7 +45379,9 @@ const RUNTIME_CATALOG = {
       "metaViewportLarge_lean_why": "La etiqueta meta viewport limita el zoom por debajo del 500 %.",
       "presentationRoleConflict_title": "El rol presentacional no debe entrar en conflicto con un atributo ARIA global ni con la capacidad de enfoque",
       "presentationRoleConflict_description": "Comprueba que role=\"presentation\"/\"none\" (incluido el rol de presentación implícito de <img alt=\"\">) no se combine con un atributo ARIA global (aria-label, aria-hidden, aria-describedby, ...) ni con la capacidad de enfoque (tabindex/nativa).",
-      "presentationRoleConflict_summary_cantTell": "Este elemento con role=\"{{role}}\" también tiene {{attrs}}, así que los navegadores ignoran el rol y exponen el elemento de todos modos.",
+      "presentationRoleConflict_summary_cantTell": "Este elemento está marcado con {{marker}} pero también tiene {{attrs}}, así que los navegadores ignoran la marca y lo exponen de todos modos.",
+      "presentationRoleConflict_summary_cantTell_focusable": "Este elemento está marcado con {{marker}} pero puede recibir el foco, así que los navegadores ignoran la marca y lo exponen de todos modos.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "Este elemento está marcado con {{marker}} pero también tiene {{attrs}} y puede recibir el foco, así que los navegadores ignoran la marca y lo exponen de todos modos.",
       "presentationRoleConflict_hint_cantTell": "Si debe permanecer oculto a las tecnologías de apoyo, quitar los atributos de nombre y hacer que no pueda recibir el foco. Si debe exponerse, quitar role=\"presentation\" o role=\"none\".",
       "presentationRoleConflict_lean_why": "Los navegadores ignoran aquí el rol de presentación y exponen el rol propio del elemento.",
       "region_title": "El contenido de la página debería estar dentro de una región de referencia",
@@ -45447,17 +45703,13 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_lean_why_scrolls": "El contenido del elemento desborda su caja y se desplaza, así que su parada de tabulación permite desplazarlo con el teclado.",
       "focusOrderSemantics_lean_why_documentInApplication": "Un documento dentro de una aplicación se hace enfocable para que los usuarios de lectores de pantalla puedan leerlo.",
       "pAsHeading_title": "Un texto con estilo de encabezado probablemente debería ser un encabezado real",
-      "pAsHeading_description": "Señala los elementos <p> y <div> cortos cuyo texto está entero en negrita y se muestra a 18 px o más, los <p> y <div> cortos enteros en negrita a tamaño de texto normal que se leen como un título antes de texto normal, y los bloques que empiezan con una línea en negrita terminada por un salto de línea antes de texto normal, para revisar manualmente si debería usarse un elemento de encabezado real.",
+      "pAsHeading_description": "Señala los elementos <p> y <div> cortos cuyo texto está entero en negrita y se muestra a 18 px o más, y los <p> cortos enteros en negrita a tamaño de texto normal que se leen como un título antes de texto normal, para revisar manualmente si debería usarse un elemento de encabezado real.",
       "pAsHeading_summary_cantTell": "Este párrafo está completamente en negrita y se renderiza con un tamaño similar al de un encabezado.",
       "pAsHeading_hint_cantTell": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un párrafo el estilo de un encabezado.",
       "pAsHeading_summary_cantTell_div": "Este bloque de texto está completamente en negrita y se muestra con un tamaño similar al de un encabezado.",
       "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
       "pAsHeading_summary_cantTell_bodySize": "Este párrafo corto está entero en negrita y va antes de texto normal, como un encabezado.",
       "pAsHeading_hint_cantTell_bodySize": "Si este texto introduce el texto que lo sigue, conviértelo en un encabezado real (<h1>-<h6> o role=\"heading\") en lugar de un párrafo en negrita.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "Este bloque corto de texto está entero en negrita y va antes de un pasaje de texto normal, como un encabezado.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "Si este texto introduce el texto que lo sigue, conviértelo en un encabezado real (<h1>-<h6> o role=\"heading\") en lugar de un <div> en negrita.",
-      "pAsHeading_summary_cantTell_leadLine": "Este bloque empieza con una línea en negrita, terminada por un salto de línea, antes de texto normal, como un encabezado.",
-      "pAsHeading_hint_cantTell_leadLine": "Si la línea en negrita titula el texto que la sigue, conviértela en un encabezado real (<h1>-<h6> o role=\"heading\") y pon ese texto en un elemento propio.",
       "pAsHeading_lean_why_headingStyle": "El texto tiene el tamaño, el grosor y la familia de fuente de un encabezado real de esta página, y no termina como una frase.",
       "pAsHeading_lean_why_bodyFollows": "El texto va seguido de texto normal más pequeño y sin negrita, y no termina como una frase, igual que un título de sección.",
       "pAsHeading_lean_caution_style": "Una frase introductoria o una cita destacada también pueden ir antes del texto normal, y un sistema de diseño puede reutilizar los estilos de encabezado para otros textos.",
@@ -45591,7 +45843,7 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "El nombre de este enlace (\"{{name}}\") es una frase genérica: solo el texto que lo rodea dice adónde lleva.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Haz que el propio texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios de 2026\" en lugar de \"Haz clic aquí\", para que se entienda leído por sí solo, como en una lista de enlaces.",
       "reflowHorizontalScroll_title": "El contenido se reajusta a 320 píxeles CSS de ancho sin desplazamiento lateral",
-      "reflowHorizontalScroll_description": "Con una ventana de 320 píxeles CSS de ancho, comprueba que la página no se desplace hacia los lados, señala los elementos que sobresalen de su borde y pregunta por las tablas, el contenido multimedia y el texto preformateado que pueden necesitar su disposición.",
+      "reflowHorizontalScroll_description": "Con una ventana de 320 píxeles CSS de ancho, mide si la página se desplaza hacia los lados o corta contenido, y pregunta por cada elemento que sobresale de un borde, para revisar manualmente si leer la página exige desplazarse en dos direcciones.",
       "reflowHorizontalScroll_summary_fail": "Con {{viewportWidth}} píxeles de ancho, este elemento sobresale {{overflowPx}} píxeles del borde, así que la página se desplaza hacia los lados.",
       "reflowHorizontalScroll_hint_fail": "Haz que quepa en el ancho: ningún ancho fijo mayor que la pantalla, max-width: 100% en imágenes y contenido incrustado, y que las palabras o direcciones largas puedan partirse (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "Con {{viewportWidth}} píxeles de ancho, la página se desplaza {{overflowPx}} píxeles hacia los lados.",
@@ -45621,6 +45873,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrusel o un menú pueden mostrar el resto de otra forma.",
       "reflowHorizontalScroll_lean_why_fieldCut": "Un campo de formulario del elemento está cortado y nada se desplaza hasta el resto: un campo tiene que verse y usarse entero.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Comprobar que el campo está cortado porque el ancho es estrecho: un campo cortado en cualquier ancho es un problema, pero no de reajuste.",
+      "reflowHorizontalScroll_lean_why_scrolls": "La página se desplaza hacia los lados con este ancho: el contenido tiene que caber en el ancho para leerse desplazándose en una sola dirección.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Comprobar que el desplazamiento lateral muestra contenido y que no es contenido que necesita dos dimensiones, como una tabla de datos, un mapa o un diagrama.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "No se pudo nombrar ningún elemento: el desbordamiento puede venir de un margen, de contenido generado o de un shadow root cerrado. Comprobar que el desplazamiento lateral muestra contenido.",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -45758,10 +46013,10 @@ const RUNTIME_CATALOG = {
       "nameCause_hint_labelWrapsOther": "Está dentro del <label> «{{text}}», pero una etiqueta solo nombra el primer campo que contiene, que es otro <{{firstTag}}>. Dar a este campo su propio <label> o aria-label.",
       "nameCause_hint_labelNotTied": "El <label> «{{text}}» que tiene al lado no está ligado a él: la etiqueta no tiene atributo for y no envuelve el campo. Agregar for=\"{{id}}\" a la etiqueta, o poner el campo dentro de la etiqueta.",
       "nameCause_hint_labelNotTiedNoId": "El <label> «{{text}}» que tiene al lado no está ligado a él: la etiqueta no tiene atributo for y no envuelve el campo. Dar un id al campo y agregar a la etiqueta un atributo for con ese id, o poner el campo dentro de la etiqueta.",
-      "nameCause_hint_imageNoAlt": "Su único contenido es una imagen sin atributo alt, así que no da nombre. Dar a la imagen un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Su único contenido es una imagen con alt=\"\", que la marca como decorativa, así que no da nombre. Dar a la imagen un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
-      "nameCause_hint_svgNoName": "Su único contenido es un <svg> sin nombre (sin <title> ni aria-label), así que no da nombre. Dar al svg un <title> o aria-label que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Su contenido son {{count}} imágenes, todas con alt=\"\", así que no da nombre. Dar a una de ellas un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imageNoAlt": "Su único contenido es una imagen sin atributo alt, así que no da nombre. Dar a la imagen un texto alt que diga qué representa aquí, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Su único contenido es una imagen con alt=\"\", que la marca como decorativa, así que no da nombre. Dar a la imagen un texto alt que diga qué representa aquí, o nombrar el elemento con aria-label.",
+      "nameCause_hint_svgNoName": "Su único contenido es un <svg> sin nombre (sin <title> ni aria-label), así que no da nombre. Dar al svg un <title> o aria-label que diga qué representa aquí, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Su contenido son {{count}} imágenes, todas con alt=\"\", así que no da nombre. Dar a una de ellas un texto alt que diga qué representa aquí, o nombrar el elemento con aria-label.",
       "nameCause_hint_iconEmpty": "Su único contenido es un <{{iconTag}} class=\"{{iconClass}}\"> vacío, un icono dibujado con CSS, que no tiene texto que dé un nombre. Agregar texto visualmente oculto, o nombrar el elemento con aria-label.",
       "nameCause_hint_iconGenerated": "Su único contenido es un carácter de fuente de iconos dibujado con CSS ({{pseudo}} en {{host}}), que los lectores de pantalla no pueden leer como nombre. Agregar texto visualmente oculto, o nombrar el elemento con aria-label.",
       "nameCause_hint_iconHidden": "Su único contenido es un <{{imageTag}}> oculto con aria-hidden=\"true\", así que los lectores de pantalla lo omiten y no da nombre. Agregar texto que lea un lector de pantalla (un <span> visualmente oculto), o nombrar el elemento con aria-label.",
@@ -46643,8 +46898,10 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "L’élément est dessiné avec une puce ou un numéro, comme élément d’une liste que le balisage n’expose plus.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "Quelques liens ou commandes, comme ceux d’une barre de navigation, peuvent se lire aussi bien sans la liste.",
       "listitemParentValid_summary_fail_wrapped": "Cet élément <li> est dans un <{{listElement}}>, mais l’élément {{wrapper}} entre les deux rompt la liste : les éléments d’une liste doivent être ses enfants.",
       "listitemParentValid_hint_fail_wrapped": "Placez l’élément <{{parentElement}}> à l’intérieur du <li>, ou supprimez-le, pour que le <li> soit un enfant du <{{listElement}}>.",
       "listitemParentValid_summary_fail_wrappedMany": "Cet élément <li> est dans un <{{listElement}}>, mais les éléments {{wrappers}} entre les deux rompent la liste : les éléments d’une liste doivent être ses enfants.",
@@ -46911,7 +47168,9 @@ const RUNTIME_CATALOG = {
       "metaViewportLarge_lean_why": "La balise meta viewport limite le zoom en dessous de 500 %.",
       "presentationRoleConflict_title": "Un rôle de présentation ne doit pas entrer en conflit avec un attribut ARIA global ou la focalisabilité",
       "presentationRoleConflict_description": "Vérifie que role=\"presentation\"/\"none\" (y compris le rôle presentation implicite d’un <img alt=\"\">) n’est pas combiné avec un attribut ARIA global (aria-label, aria-hidden, aria-describedby, ...) ou avec la focalisabilité (tabindex/native).",
-      "presentationRoleConflict_summary_cantTell": "Cet élément avec role=\"{{role}}\" a aussi {{attrs}} : les navigateurs ignorent donc le rôle et exposent l’élément malgré tout.",
+      "presentationRoleConflict_summary_cantTell": "Cet élément est marqué {{marker}} mais a aussi {{attrs}} : les navigateurs ignorent donc ce marquage et l’exposent malgré tout.",
+      "presentationRoleConflict_summary_cantTell_focusable": "Cet élément est marqué {{marker}} mais peut recevoir le focus : les navigateurs ignorent donc ce marquage et l’exposent malgré tout.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "Cet élément est marqué {{marker}} mais a aussi {{attrs}} et peut recevoir le focus : les navigateurs ignorent donc ce marquage et l’exposent malgré tout.",
       "presentationRoleConflict_hint_cantTell": "S’il doit rester caché aux technologies d’assistance, retirez les attributs de nom et rendez-le non focalisable. S’il doit être exposé, retirez role=\"presentation\" ou role=\"none\".",
       "presentationRoleConflict_lean_why": "Les navigateurs ignorent ici le rôle de présentation et exposent le rôle propre de l’élément.",
       "region_title": "Le contenu de la page devrait se trouver à l’intérieur d’un point de repère",
@@ -47233,17 +47492,13 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_lean_why_scrolls": "Le contenu de l’élément déborde de sa boîte et il défile : son arrêt de tabulation permet de le faire défiler au clavier.",
       "focusOrderSemantics_lean_why_documentInApplication": "Un document dans une application est rendu focalisable pour que les utilisateurs de lecteurs d’écran puissent le lire.",
       "pAsHeading_title": "Un texte mis en forme comme un titre devrait probablement être un véritable titre",
-      "pAsHeading_description": "Signale les éléments <p> et <div> courts dont le texte est entièrement en gras et affiché à 18 px ou plus, les <p> et <div> courts entièrement en gras à la taille du texte courant qui se lisent comme un titre avant du texte normal, ainsi que les blocs qui commencent par une ligne en gras terminée par un saut de ligne avant du texte normal, pour vérifier manuellement si un vrai élément de titre devrait être utilisé à la place.",
+      "pAsHeading_description": "Signale les éléments <p> et <div> courts dont le texte est entièrement en gras et affiché à 18 px ou plus, ainsi que les <p> courts entièrement en gras à la taille du texte courant qui se lisent comme un titre avant du texte normal, pour vérifier manuellement si un vrai élément de titre devrait être utilisé à la place.",
       "pAsHeading_summary_cantTell": "Ce paragraphe est entièrement en gras et affiché à une taille évoquant un titre.",
       "pAsHeading_hint_cantTell": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler un paragraphe pour qu’il y ressemble.",
       "pAsHeading_summary_cantTell_div": "Ce bloc de texte est entièrement en gras et affiché à une taille évoquant un titre.",
       "pAsHeading_hint_cantTell_div": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler une balise <div> pour qu’elle y ressemble.",
       "pAsHeading_summary_cantTell_bodySize": "Ce court paragraphe est entièrement en gras et précède du texte normal, comme un titre.",
       "pAsHeading_hint_cantTell_bodySize": "Si ce texte introduit le texte qui le suit, faites-en un vrai titre (<h1>-<h6> ou role=\"heading\") plutôt qu’un paragraphe en gras.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "Ce court bloc de texte est entièrement en gras et précède un passage de texte normal, comme un titre.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "Si ce texte introduit le texte qui le suit, faites-en un vrai titre (<h1>-<h6> ou role=\"heading\") plutôt qu’un <div> en gras.",
-      "pAsHeading_summary_cantTell_leadLine": "Ce bloc commence par une ligne en gras, terminée par un saut de ligne, avant du texte normal, comme un titre.",
-      "pAsHeading_hint_cantTell_leadLine": "Si la ligne en gras sert de titre au texte qui la suit, faites-en un vrai titre (<h1>-<h6> ou role=\"heading\") et placez ce texte dans un élément à part.",
       "pAsHeading_lean_why_headingStyle": "Le texte a la taille, la graisse et la police d’un vrai titre de cette page, et il ne se termine pas comme une phrase.",
       "pAsHeading_lean_why_bodyFollows": "Le texte est suivi d’un texte courant plus petit et non gras, et il ne se termine pas comme une phrase, comme un titre de section.",
       "pAsHeading_lean_caution_style": "Une phrase d’introduction ou une citation mise en exergue peut aussi précéder le texte courant, et un système de design peut réutiliser les styles de titre pour d’autres textes.",
@@ -47377,7 +47632,7 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "Le nom de ce lien (« {{name}} ») est une formule générique : seul le texte qui l’entoure dit où il mène.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Faites dire au texte du lien lui-même où il mène ou ce qu’il fait, par exemple « Télécharger la grille tarifaire 2026 » plutôt que « Cliquez ici », pour qu’il soit clair lu seul, comme dans une liste de liens.",
       "reflowHorizontalScroll_title": "Le contenu se redistribue à 320 pixels CSS de large sans défilement horizontal",
-      "reflowHorizontalScroll_description": "Avec une fenêtre de 320 pixels CSS de large, vérifie que la page ne défile pas horizontalement, nomme les éléments qui dépassent de son bord et pose une question sur les tableaux, les médias et le texte préformaté qui peuvent avoir besoin de leur mise en page.",
+      "reflowHorizontalScroll_description": "Avec une fenêtre de 320 pixels CSS de large, mesure si la page défile horizontalement ou coupe du contenu, et interroge sur chaque élément qui dépasse d’un bord, pour vérifier manuellement si lire la page exige de défiler dans deux directions.",
       "reflowHorizontalScroll_summary_fail": "À {{viewportWidth}} pixels de large, cet élément dépasse le bord de {{overflowPx}} pixels, donc la page défile horizontalement.",
       "reflowHorizontalScroll_hint_fail": "Faites-le tenir dans la largeur : aucune largeur fixe plus grande que l’écran, max-width: 100% sur les images et les contenus intégrés, et laissez les mots ou adresses longs passer à la ligne (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "À {{viewportWidth}} pixels de large, la page défile horizontalement de {{overflowPx}} pixels.",
@@ -47407,6 +47662,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrousel ou un menu peut montrer le reste autrement.",
       "reflowHorizontalScroll_lean_why_fieldCut": "Un champ de formulaire de l’élément est coupé, et rien ne fait défiler jusqu’au reste : un champ doit être vu et utilisé en entier.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Vérifiez que le champ est coupé parce que la largeur est étroite : un champ coupé à toute largeur est un problème, mais pas de redistribution.",
+      "reflowHorizontalScroll_lean_why_scrolls": "La page défile horizontalement à cette largeur : le contenu doit tenir dans la largeur, pour se lire en défilant dans une seule direction.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Vérifiez que le défilement horizontal montre du contenu, et que ce n’est pas un contenu qui a besoin de deux dimensions, comme un tableau de données, une carte ou un diagramme.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "Aucun élément n’a pu être nommé : le débordement peut venir d’une marge, d’un contenu généré ou d’un shadow root fermé. Vérifiez que le défilement horizontal montre du contenu.",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -47544,10 +47802,10 @@ const RUNTIME_CATALOG = {
       "nameCause_hint_labelWrapsOther": "Il se trouve dans le <label> « {{text}} », mais un label ne nomme que le premier champ qu’il contient, qui est un autre <{{firstTag}}>. Donnez à ce champ son propre <label> ou un aria-label.",
       "nameCause_hint_labelNotTied": "Le <label> « {{text}} » à côté n’y est pas lié : le label n’a pas d’attribut for et n’entoure pas le champ. Ajoutez for=\"{{id}}\" au label, ou placez le champ dans le label.",
       "nameCause_hint_labelNotTiedNoId": "Le <label> « {{text}} » à côté n’y est pas lié : le label n’a pas d’attribut for et n’entoure pas le champ. Donnez un id au champ et ajoutez au label un attribut for avec cet id, ou placez le champ dans le label.",
-      "nameCause_hint_imageNoAlt": "Son seul contenu est une image sans attribut alt, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle fait ou où elle mène, ou nommez l’élément avec aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Son seul contenu est une image avec alt=\"\", qui la marque comme décorative, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle fait ou où elle mène, ou nommez l’élément avec aria-label.",
-      "nameCause_hint_svgNoName": "Son seul contenu est un <svg> sans nom (ni <title> ni aria-label), il ne donne donc aucun nom. Donnez au svg un <title> ou un aria-label qui dit ce qu’il fait ou où il mène, ou nommez l’élément avec aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Son contenu est fait de {{count}} images, toutes avec alt=\"\", il ne donne donc aucun nom. Donnez à l’une d’elles un texte alt qui dit ce qu’il fait ou où il mène, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imageNoAlt": "Son seul contenu est une image sans attribut alt, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle représente ici, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Son seul contenu est une image avec alt=\"\", qui la marque comme décorative, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle représente ici, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_svgNoName": "Son seul contenu est un <svg> sans nom (ni <title> ni aria-label), il ne donne donc aucun nom. Donnez au svg un <title> ou un aria-label qui dit ce qu’il représente ici, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Son contenu est fait de {{count}} images, toutes avec alt=\"\", il ne donne donc aucun nom. Donnez à l’une d’elles un texte alt qui dit ce qu’il représente ici, ou nommez l’élément avec aria-label.",
       "nameCause_hint_iconEmpty": "Son seul contenu est un <{{iconTag}} class=\"{{iconClass}}\"> vide, une icône dessinée en CSS, qui n’a aucun texte pour donner un nom. Ajoutez du texte visuellement masqué, ou nommez l’élément avec aria-label.",
       "nameCause_hint_iconGenerated": "Son seul contenu est un caractère de police d’icônes dessiné en CSS ({{pseudo}} sur {{host}}), que les lecteurs d’écran ne peuvent pas lire comme un nom. Ajoutez du texte visuellement masqué, ou nommez l’élément avec aria-label.",
       "nameCause_hint_iconHidden": "Son seul contenu est un <{{imageTag}}> masqué par aria-hidden=\"true\", les lecteurs d’écran le sautent donc et il ne donne aucun nom. Ajoutez du texte qu’un lecteur d’écran lit (un <span> visuellement masqué), ou nommez l’élément avec aria-label.",
@@ -48429,8 +48687,10 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
-      "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
-      "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_lean_why_listRoleOverridden": "この項目は行頭記号や番号付きで、マークアップがもう公開していないリストの項目として描画されています。",
+      "listitemParentValid_lean_caution_listRoleOverridden": "ナビゲーションバーのリンクなど、数個のリンクやコントロールはリストがなくても同じように読める場合があります。",
       "listitemParentValid_summary_fail_wrapped": "この <li> は <{{listElement}}> の中にありますが、間にある {{wrapper}} がリストを途切れさせています。リストの項目はリストの子要素である必要があります。",
       "listitemParentValid_hint_fail_wrapped": "<{{parentElement}}> を <li> の中に移すか削除して、<li> が <{{listElement}}> の子要素になるようにしてください。",
       "listitemParentValid_summary_fail_wrappedMany": "この <li> は <{{listElement}}> の中にありますが、間にある {{wrappers}} がリストを途切れさせています。リストの項目はリストの子要素である必要があります。",
@@ -48697,7 +48957,9 @@ const RUNTIME_CATALOG = {
       "metaViewportLarge_lean_why": "viewport メタタグがズームを 500% 未満に制限しています。",
       "presentationRoleConflict_title": "プレゼンテーショナルなロールが、グローバル ARIA 属性やフォーカス可能性と矛盾してはならない",
       "presentationRoleConflict_description": "role=\"presentation\"/\"none\" (<img alt=\"\"> の暗黙の presentation ロールを含む) が、グローバル ARIA 属性 (aria-label、aria-hidden、aria-describedby など) やフォーカス可能性 (tabindex/ネイティブ) と組み合わされていないかを確認します。",
-      "presentationRoleConflict_summary_cantTell": "role=\"{{role}}\" のこの要素には {{attrs}} もあるため、ブラウザーはロールを無視し、要素をそのまま公開します。",
+      "presentationRoleConflict_summary_cantTell": "この要素は {{marker}} で示されていますが {{attrs}} もあるため、ブラウザーはその指定を無視し、要素をそのまま公開します。",
+      "presentationRoleConflict_summary_cantTell_focusable": "この要素は {{marker}} で示されていますがフォーカスを受け取れるため、ブラウザーはその指定を無視し、要素をそのまま公開します。",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "この要素は {{marker}} で示されていますが {{attrs}} もあり、フォーカスも受け取れるため、ブラウザーはその指定を無視し、要素をそのまま公開します。",
       "presentationRoleConflict_hint_cantTell": "支援技術から隠したままにする場合は、名前を付ける属性を外し、フォーカスできないようにしてください。公開する場合は、role=\"presentation\" または role=\"none\" を削除してください。",
       "presentationRoleConflict_lean_why": "ブラウザーはここでプレゼンテーションロールを無視し、要素本来のロールを公開します。",
       "region_title": "ページのコンテンツはランドマーク領域内にあることが望ましい",
@@ -49019,17 +49281,13 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_lean_why_scrolls": "この要素の内容はボックスからはみ出してスクロールするため、タブストップによってキーボードでスクロールできます。",
       "focusOrderSemantics_lean_why_documentInApplication": "アプリケーション内のドキュメントは、スクリーン リーダー利用者が読めるようにフォーカス可能にされています。",
       "pAsHeading_title": "見出しのように装飾されたテキストは、本来の見出し要素にすることが望ましい場合がある",
-      "pAsHeading_description": "テキストがすべて太字で 18px 以上で表示される短い <p> 要素と <div> 要素、本文サイズですべて太字で通常のテキストの前にタイトルのように読まれる短い <p> 要素と <div> 要素、および通常のテキストの前に改行で終わる太字の行で始まるブロックを、本当の見出し要素を使うべきかどうかの手動確認のために示します。",
+      "pAsHeading_description": "テキストがすべて太字で 18px 以上で表示される短い <p> 要素と <div> 要素、および本文サイズですべて太字で通常のテキストの前にタイトルのように読まれる短い <p> 要素を、本当の見出し要素を使うべきかどうかの手動確認のために示します。",
       "pAsHeading_summary_cantTell": "この段落はテキスト全体が太字で、見出しのようなサイズで表示されています。",
       "pAsHeading_hint_cantTell": "このテキストが新しいセクションの始まりを示すなら、段落を見出しのように装飾するのではなく、本来の見出し要素 (<h1>〜<h6> または role=\"heading\") を使用してください。",
       "pAsHeading_summary_cantTell_div": "このテキストのブロックは全体が太字で、見出しのようなサイズで表示されています。",
       "pAsHeading_hint_cantTell_div": "このテキストが新しいセクションの始まりであれば、<div> を見出しのように装飾するのではなく、本来の見出し要素 (<h1>-<h6> または role=\"heading\") を使用してください。",
       "pAsHeading_summary_cantTell_bodySize": "この短い段落はすべて太字で、見出しのように通常のテキストの前にあります。",
       "pAsHeading_hint_cantTell_bodySize": "このテキストが後に続くテキストを導入している場合は、太字の段落ではなく、本当の見出し (<h1>-<h6> または role=\"heading\") にしてください。",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "この短いテキストのブロックはすべて太字で、見出しのように通常のテキストの文章の前にあります。",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "このテキストが後に続くテキストを導入している場合は、太字の <div> ではなく、本当の見出し (<h1>-<h6> または role=\"heading\") にしてください。",
-      "pAsHeading_summary_cantTell_leadLine": "このブロックは改行で終わる太字の行で始まり、見出しのように通常のテキストの前にあります。",
-      "pAsHeading_hint_cantTell_leadLine": "太字の行が後に続くテキストのタイトルになっている場合は、本当の見出し (<h1>-<h6> または role=\"heading\") にし、そのテキストを独立した要素に入れてください。",
       "pAsHeading_lean_why_headingStyle": "このテキストはこのページの実際の見出しと同じフォントサイズ、太さ、ファミリーで、文のようには終わっていません。",
       "pAsHeading_lean_why_bodyFollows": "このテキストの後には太字でない小さな本文が続き、セクションの見出しのように文の形で終わっていません。",
       "pAsHeading_lean_caution_style": "導入文や引用の強調表示が本文の前に来ることもあり、デザインシステムが見出しのスタイルを別のテキストに使い回すこともあります。",
@@ -49163,7 +49421,7 @@ const RUNTIME_CATALOG = {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "このリンクの名前 (\"{{name}}\") は一般的な語句です。リンク先を示しているのは周囲のテキストだけです。",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "リンクの一覧のように単独で読んでもわかるよう、「こちらをクリック」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキスト自体でリンク先や動作を示してください。",
       "reflowHorizontalScroll_title": "幅 320 CSS ピクセルで、横スクロールなしにコンテンツがリフローする",
-      "reflowHorizontalScroll_description": "幅 320 CSS ピクセルのビューポートで、ページが横にスクロールしないことを確認し、端からはみ出す要素を示します。レイアウトが必要な場合がある表、メディア、整形済みテキストについては確認を求めます。",
+      "reflowHorizontalScroll_description": "幅 320 CSS ピクセルのビューポートで、ページが横にスクロールするか、コンテンツが切れるかを測定し、端からはみ出す各要素について、ページを読むのに 2 方向のスクロールが必要かどうかの手動確認のために示します。",
       "reflowHorizontalScroll_summary_fail": "幅 {{viewportWidth}} ピクセルで、この要素は端から {{overflowPx}} ピクセルはみ出しており、ページが横にスクロールします。",
       "reflowHorizontalScroll_hint_fail": "幅に収まるようにしてください。画面より広い固定幅を使わず、画像や埋め込みには max-width: 100% を指定し、長い単語やアドレスは折り返せるようにします（overflow-wrap: anywhere）。",
       "reflowHorizontalScroll_summary_unattributed": "幅 {{viewportWidth}} ピクセルで、ページが {{overflowPx}} ピクセル横にスクロールします。",
@@ -49193,6 +49451,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_clipped": "カルーセルやメニューは、残りを別の方法で表示できる場合があります。",
       "reflowHorizontalScroll_lean_why_fieldCut": "要素内のフォーム フィールドが切れており、残りの部分へスクロールする手段がありません。フィールドは全体が見えて操作できる必要があります。",
       "reflowHorizontalScroll_lean_caution_fieldCut": "幅が狭いためにフィールドが切れているかを確認してください。どの幅でも切れているフィールドは問題ですが、リフローの問題ではありません。",
+      "reflowHorizontalScroll_lean_why_scrolls": "この幅でページが横にスクロールします。コンテンツは 1 方向のスクロールだけで読めるよう、幅に収まる必要があります。",
+      "reflowHorizontalScroll_lean_caution_scrolls": "横スクロールでコンテンツが表示されるか、またそれがデータ テーブル、地図、図のように 2 次元を必要とするコンテンツでないかを確認してください。",
+      "reflowHorizontalScroll_lean_caution_unattributed": "要素を特定できませんでした。はみ出しはマージン、生成コンテンツ、または閉じたシャドウ ルートによる可能性があります。横スクロールでコンテンツが表示されるかを確認してください。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",
@@ -49330,10 +49591,10 @@ const RUNTIME_CATALOG = {
       "nameCause_hint_labelWrapsOther": "<label>「{{text}}」の中にありますが、label が名前を付けるのは中の最初のフィールドだけで、それは別の <{{firstTag}}> です。このフィールドに専用の <label> か aria-label を付けてください。",
       "nameCause_hint_labelNotTied": "隣の <label>「{{text}}」はこのフィールドと結び付いていません。label に for 属性がなく、フィールドを囲んでもいません。label に for=\"{{id}}\" を追加するか、フィールドを label の中に入れてください。",
       "nameCause_hint_labelNotTiedNoId": "隣の <label>「{{text}}」はこのフィールドと結び付いていません。label に for 属性がなく、フィールドを囲んでもいません。フィールドに id を付けてその id の for 属性を label に追加するか、フィールドを label の中に入れてください。",
-      "nameCause_hint_imageNoAlt": "唯一の内容が alt 属性のない画像のため、名前になりません。何をするか、どこへ移動するかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
-      "nameCause_hint_imageEmptyAlt": "唯一の内容が alt=\"\" の画像で、装飾として扱われるため、名前になりません。何をするか、どこへ移動するかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
-      "nameCause_hint_svgNoName": "唯一の内容が名前のない <svg> (<title> も aria-label もない) のため、名前になりません。何をするか、どこへ移動するかを示す <title> または aria-label を svg に付けるか、aria-label で要素に名前を付けてください。",
-      "nameCause_hint_imagesEmptyAlt": "内容は {{count}} 個の画像で、すべて alt=\"\" のため、名前になりません。そのうち 1 つに、何をするか、どこへ移動するかを示す alt テキストを付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imageNoAlt": "唯一の内容が alt 属性のない画像のため、名前になりません。ここで何を表すかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imageEmptyAlt": "唯一の内容が alt=\"\" の画像で、装飾として扱われるため、名前になりません。ここで何を表すかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_svgNoName": "唯一の内容が名前のない <svg> (<title> も aria-label もない) のため、名前になりません。ここで何を表すかを示す <title> または aria-label を svg に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imagesEmptyAlt": "内容は {{count}} 個の画像で、すべて alt=\"\" のため、名前になりません。そのうち 1 つに、ここで何を表すかを示す alt テキストを付けるか、aria-label で要素に名前を付けてください。",
       "nameCause_hint_iconEmpty": "唯一の内容が空の <{{iconTag}} class=\"{{iconClass}}\"> (CSS で描かれたアイコン) で、名前になるテキストがありません。視覚的に隠したテキストを追加するか、aria-label で要素に名前を付けてください。",
       "nameCause_hint_iconGenerated": "唯一の内容が CSS で描かれたアイコンフォントの文字 ({{host}} の {{pseudo}}) で、スクリーンリーダーはこれを名前として読めません。視覚的に隠したテキストを追加するか、aria-label で要素に名前を付けてください。",
       "nameCause_hint_iconHidden": "唯一の内容が aria-hidden=\"true\" で隠された <{{imageTag}}> のため、スクリーンリーダーが読み飛ばし、名前になりません。スクリーンリーダーが読むテキスト (視覚的に隠した <span>) を追加するか、aria-label で要素に名前を付けてください。",
@@ -49601,7 +49862,7 @@ const RULE_MODULES = [
   "./checks/manual/presentation-role-conflict-manual.js",
   "./checks/automatic/presentational-children-focusable-absent.js",
   "./checks/automatic/progressbar-name-present.js",
-  "./checks/automatic/reflow-horizontal-scroll.js",
+  "./checks/manual/reflow-horizontal-scroll-manual.js",
   "./checks/manual/region-manual.js",
   "./checks/automatic/role-img-text-alternative-present.js",
   "./checks/manual/scope-attr-valid-manual.js",
@@ -57941,7 +58202,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "p-as-heading",
     "title": "Text styled to look like a heading should probably be a real heading",
-    "description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, short all-bold <p> and <div> elements at body size that read as a title before plain text, and blocks that open with a bold line ended by a line break before plain text, for manual review of whether a real heading element should be used instead.",
+    "description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, and short all-bold <p> elements at body size that read as a title before plain text, for manual review of whether a real heading element should be used instead.",
     "i18n": {
       "titleKey": "pAsHeading_title",
       "descriptionKey": "pAsHeading_description"
@@ -58506,7 +58767,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "reflow-horizontal-scroll",
     "title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
-    "description": "At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.",
+    "description": "At a viewport 320 CSS pixels wide, measures whether the page scrolls sideways or cuts content off, and asks about each element that sticks out past an edge, for manual review of whether reading the page needs scrolling in two directions.",
     "i18n": {
       "titleKey": "reflowHorizontalScroll_title",
       "descriptionKey": "reflowHorizontalScroll_description"
@@ -58517,7 +58778,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcag1410",
       "structure",
       "atomic",
-      "automatic",
+      "manual",
       "a11ycore"
     ],
     "wcagSc": [
@@ -58553,8 +58814,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     ],
     "defaultSeverity": "serious",
-    "defaultConfidence": "high",
-    "type": "automatic",
+    "defaultConfidence": "medium",
+    "type": "manual",
     "coverage": {
       "facetsBySc": {
         "1.4.10": [
@@ -69777,10 +70038,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return '';
     }
   }
+  // A native control whose own state browsers expose, whatever the ARIA
+  // attribute says: a checkbox's or radio's checked state, an <option>'s
+  // selectedness, a <summary>'s open state. An invalid value of the
+  // matching attribute leaves nothing unstated, so it is asked about.
+  const NATIVE_STATE = {
+    'aria-checked': (tag, type) => tag === 'input' && (type === 'checkbox' || type === 'radio'),
+    'aria-selected': (tag) => tag === 'option',
+    'aria-expanded': (tag) => tag === 'summary'
+  };
+  function nativeStateExposed(el, attr) {
+    const test = NATIVE_STATE[attr];
+    if (!test || roleOf(el)) return false;
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    const type = trim(dom.getAttribute(el, 'type') || '').toLowerCase();
+    return test(tag, type);
+  }
   function invalidValueFailsWcag(el, item) {
     // An active descendant that names no element: the focused item is not
     // exposed.
     if (item.name === 'aria-activedescendant') return true;
+    if (nativeStateExposed(el, item.name)) return false;
     return USER_SETTABLE_STATE_ATTRS.has(item.name) && CONTROL_ROLES.has(controlRoleOf(el));
   }
 
@@ -69922,7 +70200,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       (wcagFail ? failOccurrences : cantTellOccurrences).push(
         helpers.reportOccurrence(el, {
           summary: idMissing
-            ? `${item.name} points to id "${item.value}", which no element on the page has.`
+            ? `${item.name} points to id "${helpers.quoteText(item.value)}", which no element on the page has.`
             : 'This element has an ARIA attribute with an invalid value.',
           hint: vh
             ? vh.text
@@ -69933,7 +70211,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               ? 'ariaValidAttrValue_summary_fail_idrefMissing'
               : 'ariaValidAttrValue_summary_fail',
             hintKey: vh ? vh.key : 'ariaValidAttrValue_hint_fail',
-            params: { attr: item.name, value: item.value, ...(vh ? vh.params : {}) }
+            params: {
+              attr: item.name,
+              value: helpers.quoteText(item.value),
+              ...(vh ? vh.params : {})
+            }
           },
           ...(wcagFail
             ? {}
@@ -69942,14 +70224,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                   code: 'spec-only',
                   needed:
                     'Whether the attribute carries information the page shows and conveys no other way.',
-                  evidence: { attribute: item.name, value: item.value, valueReason: item.reason }
+                  evidence: {
+                    attribute: item.name,
+                    value: helpers.quoteText(item.value),
+                    valueReason: item.reason
+                  }
                 }
               }),
           data: {
             details: {
               reasonCode: 'ARIA_ATTR_VALUE_INVALID',
               attr: item.name,
-              value: item.value,
+              value: helpers.quoteText(item.value),
               valueReason: item.reason,
               ...(fix || {})
             }
@@ -69985,7 +70271,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                   : controls
                     ? 'ariaValidAttrValue_hint_cantTell_idref'
                     : 'ariaValidAttrValue_hint_cantTell_idrefList',
-            params: { attr: item.name, value: item.value, ...(fix || {}) }
+            params: { attr: item.name, value: helpers.quoteText(item.value), ...(fix || {}) }
           },
           uncertainty: {
             code: 'runtime-dependent',
@@ -69994,7 +70280,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               : 'Whether the referenced element is added later, and whether its absence loses a name, description or relationship.',
             evidence: {
               attribute: item.name,
-              referencedId: item.value,
+              referencedId: helpers.quoteText(item.value),
               resolvedAtScanTime: false
             }
           },
@@ -70003,7 +70289,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             details: {
               reasonCode: 'ARIA_ATTR_VALUE_TARGET_ABSENT',
               attr: item.name,
-              value: item.value,
+              value: helpers.quoteText(item.value),
               valueReason: item.reason,
               ...(fix || {})
             }
@@ -70996,8 +71282,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const title = getAttr(el, 'title');
     if (title) return { ok: true, method: 'title' };
 
-    // Native input label association (for input[type=checkbox|radio])
-    if (controlType === 'checkbox' || controlType === 'radio') {
+    // Label association: a native checkbox or radio, or a form-associated
+    // custom element, which HTML makes labelable too (the helper gives no
+    // label to anything else).
+    {
       const lab = getNativeLabelText(el);
       if (lab) return { ok: true, method: 'label' };
     }
@@ -71157,9 +71445,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         vAttr != null ? vAttr : typeof el.value === 'string' ? el.value : ''
       );
       if (explicit) return explicit;
-      // HTML spec: input[type=submit]/[type=reset] with no `value` fall back
-      // to a UA-supplied default label ("Submit"/"Reset"), so they are never
-      // actually nameless -- unlike type=button, whose value defaults to "".
+      // HTML spec: input[type=submit]/[type=reset] with no `value` attribute
+      // fall back to a UA-supplied default label ("Submit"/"Reset"), unlike
+      // type=button, whose value defaults to "". A value attribute that is
+      // there but empty or blank is the label, so the button has none
+      // (Chromium names it "").
+      if (vAttr != null) return '';
       if (type === 'submit') return 'Submit';
       if (type === 'reset') return 'Reset';
       return '';
@@ -71487,7 +71778,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function queryAll(selector) {
     try {
       return helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart(selector, { internalsRoles: true })
+        ? helpers.queryAllSmart(selector, { internalsRoles: true, excluded: true })
         : dom.querySelectorAll(document, selector);
     } catch {
       return [];
@@ -71580,7 +71871,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       links =
         helpers && typeof helpers.queryAllSmart === 'function'
-          ? helpers.queryAllSmart('a[href]')
+          ? helpers.queryAllSmart('a[href]', { excluded: true })
           : dom.querySelectorAll(document, 'a[href]');
     } catch {
       links = [];
@@ -80433,15 +80724,51 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
 
   // How deep the deepest ancestor two elements share is.
+  // An element's ancestors with their distance from it, once per element.
+  const chains = new Map();
+  function chainOf(a) {
+    let chain = chains.get(a);
+    if (!chain) {
+      chain = new Map();
+      let depth = 0;
+      for (let n = a; n; n = dom.parentNode(n)) chain.set(n, depth++);
+      chain.total = depth;
+      chains.set(a, chain);
+    }
+    return chain;
+  }
   function sharedDepth(a, b) {
-    const chain = new Map();
-    let depth = 0;
-    for (let n = a; n; n = dom.parentNode(n)) chain.set(n, depth++);
-    const total = depth;
+    const chain = chainOf(a);
     for (let n = b; n; n = dom.parentNode(n)) {
-      if (chain.has(n)) return total - chain.get(n);
+      if (chain.has(n)) return chain.total - chain.get(n);
     }
     return 0;
+  }
+
+  // Each referring element's nearest copy of the id (the one it shares the
+  // deepest ancestor with, alone), worked out once per id: { r, nearest }
+  // for each referrer with a nearest copy. Asked once per copy, it cost
+  // copies × referrers × copies on a page of repeated cards.
+  const nearestMemo = new Map();
+  function nearestCopies(refId, els) {
+    if (nearestMemo.has(refId)) return nearestMemo.get(refId);
+    const out = [];
+    for (const r of referrers.get(refId) || []) {
+      let best = -1;
+      let nearest = null;
+      let tie = false;
+      for (const e of els) {
+        const d = sharedDepth(r.el, e);
+        if (d > best) {
+          best = d;
+          nearest = e;
+          tie = false;
+        } else if (d === best) tie = true;
+      }
+      if (nearest && !tie) out.push({ r, nearest });
+    }
+    nearestMemo.set(refId, out);
+    return out;
   }
 
   // Which way a duplicated, referenced id points. Copies that all say the
@@ -80461,19 +80788,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         i18n: { whyKey: 'duplicateIdAria_lean_why_sameText' }
       };
     }
-    for (const r of refs) {
-      let best = -1;
-      let nearest = null;
-      let tie = false;
-      for (const e of els) {
-        const d = sharedDepth(r.el, e);
-        if (d > best) {
-          best = d;
-          nearest = e;
-          tie = false;
-        } else if (d === best) tie = true;
-      }
-      if (nearest && !tie && nearest !== els[0]) {
+    for (const { nearest } of nearestCopies(refId, els)) {
+      if (nearest !== els[0]) {
         return {
           toward: 'fail',
           why: 'An element that refers to this id sits next to a later copy of it, but the reference goes to the first one, elsewhere in the page.',
@@ -80512,21 +80828,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // component whose reference was meant for its own copy. { el, attr } or
   // null.
   function nearReferrerOf(refId, els, copy) {
-    for (const r of referrers.get(refId) || []) {
-      let best = -1;
-      let nearest = null;
-      let tie = false;
-      for (const e of els) {
-        const d = sharedDepth(r.el, e);
-        if (d > best) {
-          best = d;
-          nearest = e;
-          tie = false;
-        } else if (d === best) tie = true;
-      }
-      if (nearest === copy && !tie) return r;
-    }
-    return null;
+    const found = nearestCopies(refId, els).find((x) => x.nearest === copy);
+    return found ? found.r : null;
   }
 
   for (const refId of referencedIds) {
@@ -81529,6 +81832,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const m = /^(-?\d*\.?\d+)px$/.exec(lower(v));
     return m ? Number.parseFloat(m[1]) : 0;
   };
+  // A length a browser may keep as written: px, a percentage of `ref`, or a
+  // calc() adding the two ("calc(10% + 2px)"). Anything else reads as 0.
+  const lengthOf = (v, ref) => {
+    const raw = lower(v);
+    if (!raw || raw === 'auto') return 0;
+    const pct = /^(-?\d*\.?\d+)%$/.exec(raw);
+    if (pct) return (Number.parseFloat(pct[1]) * ref) / 100;
+    const calc = /^calc\((.*)\)$/.exec(raw);
+    if (calc) {
+      let total = 0;
+      let rest = calc[1].replace(/\s+/g, '');
+      const term = /^([+-]?)(\d*\.?\d+)(px|%)/;
+      while (rest) {
+        const m = term.exec(rest);
+        if (!m) return 0;
+        const n = Number.parseFloat(m[2]) * (m[1] === '-' ? -1 : 1);
+        total += m[3] === '%' ? (n * ref) / 100 : n;
+        rest = rest.slice(m[0].length);
+      }
+      return total;
+    }
+    return px(raw);
+  };
   const styleOf = (el) => {
     try {
       return view.getComputedStyle(el);
@@ -81602,11 +81928,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const scrollY = Number(dom.get(view, 'scrollY')) || 0;
   const scrollX = Number(dom.get(view, 'scrollX')) || 0;
   const scroller = dom.get(document, 'scrollingElement') || html;
-  const vh = Number(dom.get(html, 'clientHeight')) || 0;
+  // The viewport's height: the scrolling element's clientHeight, which is
+  // the root's in standards mode and the body's in quirks mode, where the
+  // root's is the document's height (CSSOM View).
+  const vh = Number(dom.get(scroller, 'clientHeight')) || Number(dom.get(view, 'innerHeight')) || 0;
   const maxScroll = Math.max(0, (Number(dom.get(scroller, 'scrollHeight')) || 0) - vh);
   const htmlCs = styleOf(html);
-  const padTop = px(htmlCs && htmlCs.scrollPaddingTop);
-  const padBottom = px(htmlCs && htmlCs.scrollPaddingBottom);
+  // A percentage is of the scrollport's height (CSS Scroll Snap).
+  const padTop = lengthOf(htmlCs && htmlCs.scrollPaddingTop, vh);
+  const padBottom = lengthOf(htmlCs && htmlCs.scrollPaddingBottom, vh);
 
   // What an element is, as a candidate or a box, doesn't depend on the
   // settings: it is kept for the scan, keyed by element, so the variant run
@@ -81807,7 +82137,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   });
   const covers = [];
-  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+  // Every element, inside open shadow roots too: a web component's sticky
+  // header covers as any other does.
+  const deepElements = [];
+  const roots = [document];
+  while (roots.length) {
+    const root = roots.shift();
+    for (const el of [...dom.querySelectorAll(root, root === document ? 'body *' : '*')]) {
+      deepElements.push(el);
+      const shadow = dom.shadowRoot(el);
+      if (shadow) roots.push(shadow);
+    }
+  }
+  for (const el of deepElements) {
     const cover = coverOf(el);
     if (cover) covers.push(cover);
   }
@@ -81856,7 +82198,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const horizontallySome = cover.left < c.right - 0.5 && cover.right > c.left + 0.5;
       let kind = null;
       let at = null;
-      if (horizontallyAll) {
+      // A box that shows what is under it hides nothing entirely, only in
+      // part (2.4.12 still asks about that).
+      if (horizontallyAll && cover.opaque) {
         at = placement(c, cover, true);
         if (at != null) kind = 'entirely';
       }
@@ -81927,6 +82271,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         let top;
         try {
           top = dom.call(document, 'elementFromPoint', x, y);
+          // Through open shadow roots: the document answers with the host.
+          for (let depth = 0; top && depth < 32; depth++) {
+            const shadow = dom.shadowRoot(top);
+            if (!shadow) break;
+            const inner = dom.call(shadow, 'elementFromPoint', x, y);
+            if (!inner || inner === top) break;
+            top = inner;
+          }
         } catch {
           top = null;
         }
@@ -82159,6 +82511,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const m = /^(-?\d*\.?\d+)px$/.exec(lower(v));
     return m ? Number.parseFloat(m[1]) : 0;
   };
+  // A length a browser may keep as written: px, a percentage of `ref`, or a
+  // calc() adding the two ("calc(10% + 2px)"). Anything else reads as 0.
+  const lengthOf = (v, ref) => {
+    const raw = lower(v);
+    if (!raw || raw === 'auto') return 0;
+    const pct = /^(-?\d*\.?\d+)%$/.exec(raw);
+    if (pct) return (Number.parseFloat(pct[1]) * ref) / 100;
+    const calc = /^calc\((.*)\)$/.exec(raw);
+    if (calc) {
+      let total = 0;
+      let rest = calc[1].replace(/\s+/g, '');
+      const term = /^([+-]?)(\d*\.?\d+)(px|%)/;
+      while (rest) {
+        const m = term.exec(rest);
+        if (!m) return 0;
+        const n = Number.parseFloat(m[2]) * (m[1] === '-' ? -1 : 1);
+        total += m[3] === '%' ? (n * ref) / 100 : n;
+        rest = rest.slice(m[0].length);
+      }
+      return total;
+    }
+    return px(raw);
+  };
   const styleOf = (el) => {
     try {
       return view.getComputedStyle(el);
@@ -82232,11 +82607,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const scrollY = Number(dom.get(view, 'scrollY')) || 0;
   const scrollX = Number(dom.get(view, 'scrollX')) || 0;
   const scroller = dom.get(document, 'scrollingElement') || html;
-  const vh = Number(dom.get(html, 'clientHeight')) || 0;
+  // The viewport's height: the scrolling element's clientHeight, which is
+  // the root's in standards mode and the body's in quirks mode, where the
+  // root's is the document's height (CSSOM View).
+  const vh = Number(dom.get(scroller, 'clientHeight')) || Number(dom.get(view, 'innerHeight')) || 0;
   const maxScroll = Math.max(0, (Number(dom.get(scroller, 'scrollHeight')) || 0) - vh);
   const htmlCs = styleOf(html);
-  const padTop = px(htmlCs && htmlCs.scrollPaddingTop);
-  const padBottom = px(htmlCs && htmlCs.scrollPaddingBottom);
+  // A percentage is of the scrollport's height (CSS Scroll Snap).
+  const padTop = lengthOf(htmlCs && htmlCs.scrollPaddingTop, vh);
+  const padBottom = lengthOf(htmlCs && htmlCs.scrollPaddingBottom, vh);
 
   // What an element is, as a candidate or a box, doesn't depend on the
   // settings: it is kept for the scan, keyed by element, so the variant run
@@ -82437,7 +82816,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   });
   const covers = [];
-  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+  // Every element, inside open shadow roots too: a web component's sticky
+  // header covers as any other does.
+  const deepElements = [];
+  const roots = [document];
+  while (roots.length) {
+    const root = roots.shift();
+    for (const el of [...dom.querySelectorAll(root, root === document ? 'body *' : '*')]) {
+      deepElements.push(el);
+      const shadow = dom.shadowRoot(el);
+      if (shadow) roots.push(shadow);
+    }
+  }
+  for (const el of deepElements) {
     const cover = coverOf(el);
     if (cover) covers.push(cover);
   }
@@ -82486,7 +82877,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const horizontallySome = cover.left < c.right - 0.5 && cover.right > c.left + 0.5;
       let kind = null;
       let at = null;
-      if (horizontallyAll) {
+      // A box that shows what is under it hides nothing entirely, only in
+      // part (2.4.12 still asks about that).
+      if (horizontallyAll && cover.opaque) {
         at = placement(c, cover, true);
         if (at != null) kind = 'entirely';
       }
@@ -82557,6 +82950,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         let top;
         try {
           top = dom.call(document, 'elementFromPoint', x, y);
+          // Through open shadow roots: the document answers with the host.
+          for (let depth = 0; top && depth < 32; depth++) {
+            const shadow = dom.shadowRoot(top);
+            if (!shadow) break;
+            const inner = dom.call(shadow, 'elementFromPoint', x, y);
+            if (!inner || inner === top) break;
+            top = inner;
+          }
         } catch {
           top = null;
         }
@@ -84278,10 +84679,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     const others = otherFields.join(', ') + (shared.length - 1 > 3 ? ', …' : '');
+    // The label as quoted in the message and its details, capped.
+    const shownLabel = helpers.quoteText(field.labelText);
     const summaryByReason = {
-      PLACEHOLDER_LABEL_TEXT: `This field's visible label ("${field.labelText}") is a placeholder rather than a description of what the field is for.`,
-      DUPLICATE_LABEL_TEXT: `This field's visible label ("${field.labelText}") is also the label of ${others}, with no visible heading, legend or row text telling them apart.`,
-      PARTIALLY_HIDDEN_LABEL: `This field's label is split: "${field.labelText}" is what renders, while ${field.hiddenParts} other part(s) of the label are hidden from sight.`
+      PLACEHOLDER_LABEL_TEXT: `This field's visible label ("${shownLabel}") is a placeholder rather than a description of what the field is for.`,
+      DUPLICATE_LABEL_TEXT: `This field's visible label ("${shownLabel}") is also the label of ${others}, with no visible heading, legend or row text telling them apart.`,
+      PARTIALLY_HIDDEN_LABEL: `This field's label is split: "${shownLabel}" is what renders, while ${field.hiddenParts} other part(s) of the label are hidden from sight.`
     };
     const hintByReason = {
       PLACEHOLDER_LABEL_TEXT:
@@ -84310,7 +84713,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           summaryKey: SUMMARY_KEY_BY_REASON[reasonCode],
           hintKey: HINT_KEY_BY_REASON[reasonCode],
           params: {
-            label: field.labelText,
+            label: shownLabel,
             count: String(shared.length - 1),
             hiddenCount: String(field.hiddenParts),
             others
@@ -84320,7 +84723,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         data: {
           details: {
             reasonCode,
-            label: field.labelText,
+            label: shownLabel,
             sharedWith: isDuplicate ? shared.length - 1 : 0,
             ...(isDuplicate ? { sharedWithFields: otherFields } : {}),
             hiddenLabelParts: field.hiddenParts
@@ -86587,11 +86990,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       const page = new URL(dom.baseURI(document));
       const u = new URL(href, page);
-      if (u.origin === page.origin) return u.pathname + u.search + u.hash;
+      if (u.origin === page.origin) return helpers.quoteText(u.pathname + u.search + u.hash);
     } catch {
       /* as written */
     }
-    return href;
+    return helpers.quoteText(href);
   }
 
   // ---- Lean ----
@@ -86754,7 +87157,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           details: {
             reasonCode: 'SAME_NAME_DIFFERENT_DESTINATION',
             name,
-            href,
+            href: helpers.quoteText(href),
             distinctDestinationCount: distinctHrefs.size,
             otherDestinations: others,
             linkKind: helpers.getLinkKind(el)
@@ -87639,10 +88042,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         i18n: {
           summaryKey: 'imageRedundantAlt_summary_cantTell',
           hintKey: 'imageRedundantAlt_hint_cantTell',
-          params: { alt }
+          params: { alt: helpers.quoteText(alt) }
         },
         data: {
-          details: { reasonCode: 'IMAGE_ALT_REDUNDANT', alt }
+          details: { reasonCode: 'IMAGE_ALT_REDUNDANT', alt: helpers.quoteText(alt) }
         }
       })
     );
@@ -90319,8 +90722,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const code = v.charCodeAt(1999);
     return v.slice(0, code >= 0xd800 && code <= 0xdbff ? 1999 : 2000) + '…';
   }
+  // At most 200 words, each capped as text is: one word may be a whole
+  // 1 MB value with no space in it.
   function capWords(list) {
-    return Array.isArray(list) && list.length > 200 ? list.slice(0, 200) : list;
+    if (!Array.isArray(list)) return list;
+    return (list.length > 200 ? list.slice(0, 200) : list).map((w) => capText(w));
   }
 
   // The label's words the name does not have, each once, in label order.
@@ -91928,7 +92334,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart('main, [role]', { internalsRoles: true });
+    // An excluded area is still part of the page (excludeSelectors): a main
+    // landmark in it is the page's main.
+    nodes = helpers.queryAllSmart('main, [role]', { internalsRoles: true, excluded: true });
   } catch {
     nodes = [];
   }
@@ -92239,7 +92647,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       for (const { el, name } of group) {
         // The others in the group, named (with their text when they have no
         // name), so a reviewer finds them; and this one's name as written.
-        const otherEls = group.filter((o) => o.el !== el).map((o) => o.el);
+        // The first ten only: a page with hundreds of unnamed landmarks would
+        // otherwise list every one in every finding.
+        const otherEls = group
+          .filter((o) => o.el !== el)
+          .slice(0, 10)
+          .map((o) => o.el);
         const otherNames = otherEls.map((o) =>
           helpers.describeElement(o, { role: true, text: !normalizedName })
         );
@@ -96599,20 +97012,48 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (valid) continue;
 
     // A <ul>, <ol> or <menu> whose role replaces list (tablist, menu, menubar,
-    // group…): the markup is a valid list, but the author made it something
-    // else, so this <li> is a stray listitem in it. Still a failure, with its
-    // own reason, since the fix differs: give the <li> the role the container
-    // expects, rather than put it in a list.
+    // group, navigation…): the markup is a valid list, but the author made it
+    // something else, so this <li> is a stray listitem in it, with its own
+    // reason, since the fix differs: give the <li> the role the container
+    // expects, rather than put it in a list. The list's semantics are gone
+    // for certain; whether that loses information depends on the content (a
+    // few links in a navigation read as well without it), so it is asked
+    // about, leaning fail where the item is drawn as one of a list.
     const { bucket, extra } = tierFor(el);
     if (explicitRole && (parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu')) {
-      bucket.push(
+      const drawn = extra.occurrenceOutcome === 'fail';
+      cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
-          ...extra,
+          occurrenceOutcome: 'cantTell',
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the content loses information without the list: its items, their number or their order.',
+            evidence: { drawnAsListItem: drawn, parentRole: explicitRole }
+          },
+          ...(drawn
+            ? {
+                lean: {
+                  toward: 'fail',
+                  why: 'The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.',
+                  signals: [
+                    { signal: 'drawn-as-list-item', value: true },
+                    { signal: 'parent-role', value: explicitRole }
+                  ],
+                  caution:
+                    'A few links or controls, such as a navigation bar’s, may read as well without the list.',
+                  i18n: {
+                    whyKey: 'listitemParentValid_lean_why_listRoleOverridden',
+                    cautionKey: 'listitemParentValid_lean_caution_listRoleOverridden'
+                  }
+                }
+              }
+            : {}),
           summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
           hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
           i18n: {
-            summaryKey: 'listitemParentValid_summary_fail_listRoleOverridden',
-            hintKey: 'listitemParentValid_hint_fail_listRoleOverridden',
+            summaryKey: 'listitemParentValid_summary_cantTell_listRoleOverridden',
+            hintKey: 'listitemParentValid_hint_cantTell_listRoleOverridden',
             params: { parentElement: parentTag, parentRole: explicitRole }
           },
           data: {
@@ -100274,8 +100715,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Number.isFinite(n) && n >= 700;
   }
 
-  // A computed weight as a number. A browser reports one; jsdom may keep a
-  // keyword, read here as CSS defines it against a normal (400) parent.
+  // An element's weight as a number. A browser computes it; jsdom may keep
+  // `bolder` or `lighter` as written, which CSS Fonts resolves against the
+  // parent's weight (bolder: under 350 gives 400, under 550 gives 700, under
+  // 900 gives 900; lighter: under 550 gives 100, under 750 gives 400, else
+  // 700). A child handed the same keyword as its parent inherited it, as
+  // jsdom passes the specified value down: it has the parent's weight.
+  const weightMemo = new Map();
+  function weightOf(el) {
+    if (!el) return 400;
+    if (weightMemo.has(el)) return weightMemo.get(el);
+    const raw = trim(safeComputedStyle(el) && safeComputedStyle(el).fontWeight).toLowerCase();
+    let value;
+    if (raw === 'bolder' || raw === 'lighter') {
+      const parent = dom.parentElement(el);
+      const parentRaw = parent
+        ? trim(safeComputedStyle(parent) && safeComputedStyle(parent).fontWeight).toLowerCase()
+        : '';
+      const base = parent ? weightOf(parent) : 400;
+      if (parentRaw === raw) value = base;
+      else if (raw === 'bolder')
+        value = base < 350 ? 400 : base < 550 ? 700 : base < 900 ? 900 : base;
+      else value = base < 100 ? base : base < 550 ? 100 : base < 750 ? 400 : 700;
+    } else {
+      value = weightNumOf(safeComputedStyle(el));
+    }
+    weightMemo.set(el, value);
+    return value;
+  }
+
+  // A computed weight as a number, from the style alone; a keyword is read
+  // against a normal (400) parent. `weightOf` resolves it against the real one.
   function weightNumOf(cs) {
     const w = trim(cs && cs.fontWeight).toLowerCase();
     if (w === 'bold' || w === 'bolder') return 700;
@@ -100457,9 +100927,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // is large enough is the caller's call.
   function boldStyleOf(holder, blockWeight) {
     const cs = safeComputedStyle(holder);
-    // One read of the weight: weightNumOf takes bold and bolder as 700, so
-    // this is isBoldWeight's test.
-    const weight = weightNumOf(cs);
+    // One read of the weight, `bolder` resolved against the parent's: 700 or
+    // more is bold outright, as isBoldWeight reads it.
+    const weight = weightOf(holder);
     const bold = weight >= 700;
     if (!bold && !(weight > blockWeight)) return null;
     const scale =
@@ -100543,10 +101013,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Heavier than the text around it: the block's own weight, or its
     // parent's where the block itself is set heavier (a semibold title <p>).
     const parentEl = dom.parentElement(el);
-    const blockWeight = Math.min(
-      weightNumOf(safeComputedStyle(el)),
-      parentEl ? weightNumOf(safeComputedStyle(parentEl)) : 400
-    );
+    const blockWeight = Math.min(weightOf(el), parentEl ? weightOf(parentEl) : 400);
     const headingLike = [];
     const others = [];
     const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
@@ -100579,10 +101046,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // never leave out text the full test would ask about. With lighter text
     // too, the test below usually settles it first, as it did before.
     if (!others.length && !headingLike.some((piece) => isLargeTitle(piece))) {
+      if (String(dom.localName(el) || '').toLowerCase() !== 'p') return null;
       const heaviest = Math.max(...headingLike.map((piece) => piece.weight));
-      if (String(dom.localName(el) || '').toLowerCase() === 'p') {
-        if (!hasPlainText(nextShown(el), heaviest)) return null;
-      } else if (!titlesPassage(el, heaviest)) return null;
+      if (!hasPlainText(nextShown(el), heaviest)) return null;
     }
     if (others.some(isSeen)) return null;
     return headingLike.filter((piece) => isSeen(piece.holder));
@@ -100621,11 +101087,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return link;
   }
 
-  // Digits with only spacing and punctuation around them: "2024", "12.",
-  // "1/3", "#4".
+  // Digits with only spacing, punctuation, a currency sign or a percent
+  // sign around them: "2024", "12.", "1/3", "#4", "$29.99", "29,99 €", "45%".
   // Two plain tests rather than one pattern with a digit in the middle,
   // which backtracks on long text.
-  const NUMBER_CHARS = /^[\s\d.,:;/#№°'’()\-–—]+$/;
+  const NUMBER_CHARS = /^[\s\d.,:;/#№°'’()\-–—%‰\p{Sc}]+$/u;
   const isNumberOnly = (text) => NUMBER_CHARS.test(text) && /\d/.test(text);
 
   function minFontSize(pieces) {
@@ -100659,138 +101125,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!/\p{L}/u.test(String(dom.nodeValue(node) || ''))) continue;
       seen += 1;
       const holder = dom.parentElement(node);
-      if (holder && weightNumOf(safeComputedStyle(holder)) < titleWeight && isRendered(holder))
-        return true;
+      if (holder && weightOf(holder) < titleWeight && isRendered(holder)) return true;
     }
     return false;
-  }
-
-  // A passage of body text, not a value: long enough to be read rather
-  // than glanced at, or a sentence of some length. A label's value ("$20",
-  // "Paris") and a badge's line ("Our latest products.") are neither.
-  const PASSAGE_CHARS = 80;
-  const SENTENCE_PASSAGE_CHARS = 40;
-  function isPassage(text) {
-    const t = String(text || '')
-      .replace(/\s+/g, ' ')
-      .trim();
-    if (t.length >= PASSAGE_CHARS) return true;
-    return (
-      t.length >= SENTENCE_PASSAGE_CHARS &&
-      (endsAsSentenceOf(t) || /[.!?。！？؟।][\s"'’”»)]/u.test(t))
-    );
-  }
-
-  // Side by side with what follows it, as a label and its value are: an
-  // inline box, or an item of a flex row or of a grid with columns.
-  function laidOutAsLabel(el) {
-    const own = safeComputedStyle(el);
-    if (own && /^inline/.test(trim(own.display).toLowerCase())) return true;
-    const parent = dom.parentElement(el);
-    const cs = parent ? safeComputedStyle(parent) : null;
-    if (!cs) return false;
-    const display = trim(cs.display).toLowerCase();
-    if (/flex$/.test(display)) return !/^column/.test(trim(cs.flexDirection).toLowerCase());
-    if (/grid$/.test(display)) {
-      const columns = trim(cs.gridTemplateColumns).toLowerCase();
-      return !!columns && columns !== 'none' && (/\s/.test(columns) || /repeat\(/.test(columns));
-    }
-    return false;
-  }
-
-  // A bold <div> at body size titling the text after it: lighter text that
-  // is a passage, below it rather than beside it. A <div> at this size is
-  // more often a label, a badge or a price than a <p> is, so it needs more
-  // than a <p>: what follows is read, not a value.
-  function titlesPassage(el, titleWeight) {
-    const next = nextShown(el);
-    return (
-      !laidOutAsLabel(el) && opensLighter(next, titleWeight) && isPassage(dom.textContent(next))
-    );
-  }
-
-  // Whether the first text a reader sees in `el` is lighter than the
-  // title's: the passage starts there. A block that opens with a bold line
-  // of its own starts with another title, not with the text this one titles.
-  function opensLighter(el, titleWeight) {
-    if (!el || !isRendered(el)) return false;
-    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
-    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      if (!/\p{L}/u.test(String(dom.nodeValue(node) || ''))) continue;
-      const holder = dom.parentElement(node);
-      if (!holder || !isRendered(holder) || isScreenReaderOnly(holder)) continue;
-      return weightNumOf(safeComputedStyle(holder)) < titleWeight;
-    }
-    return false;
-  }
-
-  // The blocks a <br> breaks a line in, found once: a lead line is only
-  // looked for in them.
-  let brBlocks = null;
-  function hasLineBreak(el) {
-    if (!brBlocks) {
-      brBlocks = new Set();
-      for (const br of helpers.queryAll('br') || []) {
-        const block = dom.closest(br, 'p, div');
-        if (block) brBlocks.add(block);
-      }
-    }
-    return brBlocks.has(el);
-  }
-
-  // A bold first line ended by a <br>, before lighter text in the same block
-  // (<p><strong>Opening hours</strong><br>Monday to Friday, 9 to 5.</p>):
-  // the title and its text written as one paragraph. The pieces of the bold
-  // line, or null. What follows the break must be mostly lighter and a
-  // passage, so a name over an address, or a label over its value, is not
-  // one.
-  function leadLineOf(el) {
-    if (!hasLineBreak(el)) return null;
-    const isSeen = (holder) => isRendered(holder) && !isScreenReaderOnly(holder);
-    const parentEl = dom.parentElement(el);
-    const blockWeight = Math.min(
-      weightNumOf(safeComputedStyle(el)),
-      parentEl ? weightNumOf(safeComputedStyle(parentEl)) : 400
-    );
-    // Elements and text, in order: SHOW_ELEMENT | SHOW_TEXT.
-    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 5);
-    const lead = [];
-    let node = walker.nextNode();
-    for (; node; node = walker.nextNode()) {
-      if (dom.nodeType(node) === 1) {
-        if (String(dom.localName(node) || '').toLowerCase() === 'br' && isRendered(node)) break;
-        continue;
-      }
-      const holder = dom.parentElement(node);
-      if (!holder || !trim(dom.nodeValue(node)) || !isSeen(holder)) continue;
-      const style = boldStyleOf(holder, blockWeight);
-      if (!style) return null;
-      lead.push({
-        holder,
-        raw: String(dom.nodeValue(node)),
-        fontSizePx: style.px,
-        bold: style.bold,
-        weight: style.weight
-      });
-      if (lead.length > 64) return null;
-    }
-    if (!node || !lead.length) return null;
-    const titleWeight = Math.min(...lead.map((piece) => piece.weight));
-    let after = '';
-    let lighter = 0;
-    let heavier = 0;
-    for (node = walker.nextNode(); node && after.length < 2000; node = walker.nextNode()) {
-      if (dom.nodeType(node) !== 3) continue;
-      const raw = String(dom.nodeValue(node) || '');
-      const holder = dom.parentElement(node);
-      if (!holder || !trim(raw) || !isSeen(holder)) continue;
-      after += raw;
-      const letters = (raw.match(/\p{L}/gu) || []).length;
-      if (weightNumOf(safeComputedStyle(holder)) < titleWeight) lighter += letters;
-      else heavier += letters;
-    }
-    if (!lighter || heavier > lighter || !isPassage(after)) return null;
-    return lead;
   }
 
   // ---- Leans ----
@@ -100800,7 +101137,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     trim(cs && cs.fontFamily)
       .toLowerCase()
       .replace(/["']/g, '');
-  const weightOf = (cs) => {
+  const styleWeightOf = (cs) => {
     const w = trim(cs && cs.fontWeight).toLowerCase();
     return w === 'bold' ? '700' : w;
   };
@@ -100826,7 +101163,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return realHeadingStyles().some(
       (h) =>
         Math.abs(pxOf(h) - pxOf(cs)) < 0.5 &&
-        weightOf(h) === weightOf(cs) &&
+        styleWeightOf(h) === styleWeightOf(cs) &&
         familyOf(h) === familyOf(cs)
     );
   }
@@ -100887,44 +101224,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // grid repeats them.
   const linkCandidates = [];
 
-  // A block that opens with a bold line ended by a <br>: an occurrence for
-  // it when that line reads as a title over the text after it.
-  function judgeLeadLine(el) {
-    const lead = leadLineOf(el);
-    if (!lead) return;
-    const shown = shownTextOf(lead);
-    if (shown.length > MAX_HEADING_LIKE_CHARS || endsAsSentenceOf(shown)) return;
-    if (!/\p{L}/u.test(shown) || isNumberOnly(shown) || soleLinkOf(lead, el)) return;
-    if (lead.every((piece) => isInsideControl(piece.holder, el))) return;
-    const fontSizePx = minFontSize(lead);
-    occurrences.push(
-      helpers.reportOccurrence(el, {
-        summary:
-          'This block starts with a bold line, ended by a line break, before plain text, as a heading does.',
-        hint: 'If the bold line titles the text after it, make it a real heading (<h1>-<h6> or role="heading") and put that text in an element of its own.',
-        i18n: {
-          summaryKey: 'pAsHeading_summary_cantTell_leadLine',
-          hintKey: 'pAsHeading_hint_cantTell_leadLine',
-          params: { fontSizePx: String(fontSizePx) }
-        },
-        data: { details: { reasonCode: 'BOLD_LEAD_LINE', fontSizePx } }
-      })
-    );
-  }
-
   // One <p> or <div>: a heading-like occurrence for it, or nothing.
   function judgeBlock(el) {
     if (!isCandidate(el)) return;
 
     const pieces = headingLikePieces(el);
-    // Not all bold: perhaps a bold first line over the text after a <br>.
-    if (!pieces) {
-      judgeLeadLine(el);
-      return;
-    }
-    // Nothing a sighted reader sees (screen-reader-only text).
-    if (!pieces.length) return;
+    // Not heading-like, or nothing a sighted reader sees (screen-reader-only text).
+    if (!pieces || !pieces.length) return;
     if (shownTextOf(pieces).length > MAX_HEADING_LIKE_CHARS) return;
+    // Text with no letter or digit (a star rating, a scene break "* * *",
+    // an emoji) titles nothing.
+    if (!/[\p{L}\p{N}]/u.test(shownTextOf(pieces))) return;
 
     const fontSizePx = minFontSize(pieces);
     // Two kinds a reader may set aside as a group: text that is only a
@@ -100949,18 +101259,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Body size only: large text not bold enough to be a title is not
       // asked about as bold body text either.
       if (fontSizePx >= MIN_FONT_SIZE_PX) return;
-      if (kindCode || endsAsSentenceOf(shown)) return;
+      if (!isParagraph || kindCode || endsAsSentenceOf(shown)) return;
       const titleWeight = Math.min(...pieces.map((piece) => piece.weight));
-      if (isParagraph ? !hasPlainText(nextShown(el), titleWeight) : !titlesPassage(el, titleWeight))
-        return;
+      if (!hasPlainText(nextShown(el), titleWeight)) return;
       // The last of a run of bold lines (an address, a list of names): the
       // line before it is bold too, and it is no title over the text after.
       const prev = prevShown(el);
       if (
         prev &&
-        (isParagraph ? ['p'] : ['p', 'div']).includes(
-          String(dom.localName(prev) || '').toLowerCase()
-        ) &&
+        String(dom.localName(prev) || '').toLowerCase() === 'p' &&
         /\p{L}/u.test(String(dom.textContent(prev) || '')) &&
         trim(dom.textContent(prev)).length <= MAX_HEADING_LIKE_CHARS &&
         !hasPlainText(prev, titleWeight) &&
@@ -100968,32 +101275,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ) {
         return;
       }
-      const occurrence = helpers.reportOccurrence(
-        el,
-        isParagraph
-          ? {
-              summary:
-                'This short paragraph is entirely bold and comes before plain text, as a heading does.',
-              hint: 'If this text introduces the text after it, make it a real heading (<h1>-<h6> or role="heading") instead of a bold paragraph.',
-              i18n: {
-                summaryKey: 'pAsHeading_summary_cantTell_bodySize',
-                hintKey: 'pAsHeading_hint_cantTell_bodySize',
-                params: { fontSizePx: String(fontSizePx) }
-              },
-              data: { details: { reasonCode: 'BOLD_SHORT_PARAGRAPH', fontSizePx } }
-            }
-          : {
-              summary:
-                'This short block of text is entirely bold and comes before a passage of plain text, as a heading does.',
-              hint: 'If this text introduces the text after it, make it a real heading (<h1>-<h6> or role="heading") instead of a bold <div>.',
-              i18n: {
-                summaryKey: 'pAsHeading_summary_cantTell_bodySizeDiv',
-                hintKey: 'pAsHeading_hint_cantTell_bodySizeDiv',
-                params: { fontSizePx: String(fontSizePx) }
-              },
-              data: { details: { reasonCode: 'BOLD_SHORT_DIV', fontSizePx } }
-            }
-      );
+      const occurrence = helpers.reportOccurrence(el, {
+        summary:
+          'This short paragraph is entirely bold and comes before plain text, as a heading does.',
+        hint: 'If this text introduces the text after it, make it a real heading (<h1>-<h6> or role="heading") instead of a bold paragraph.',
+        i18n: {
+          summaryKey: 'pAsHeading_summary_cantTell_bodySize',
+          hintKey: 'pAsHeading_hint_cantTell_bodySize',
+          params: { fontSizePx: String(fontSizePx) }
+        },
+        data: { details: { reasonCode: 'BOLD_SHORT_PARAGRAPH', fontSizePx } }
+      });
       occurrences.push(occurrence);
       return;
     }
@@ -102572,20 +102864,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!present.length && !isFocusable) continue;
 
     const parts = present.slice();
-    if (isFocusable) parts.push('focusable');
 
     // No role token means this matched via the img[alt=""]
-    // implicit-presentation case.
+    // implicit-presentation case: what marks it is its empty alt.
     const role = roleToken || 'presentation';
+    const marker = roleToken ? `role="${roleToken}"` : 'alt=""';
+    const attrs = parts.join(', ');
+    const summary =
+      parts.length && isFocusable
+        ? `This element is marked ${marker} but also has ${attrs} and can take focus, so browsers ignore the marking and expose it anyway.`
+        : parts.length
+          ? `This element is marked ${marker} but also has ${attrs}, so browsers ignore the marking and expose it anyway.`
+          : `This element is marked ${marker} but can take focus, so browsers ignore the marking and expose it anyway.`;
+    const summaryKey =
+      parts.length && isFocusable
+        ? 'presentationRoleConflict_summary_cantTell_attrsFocusable'
+        : parts.length
+          ? 'presentationRoleConflict_summary_cantTell'
+          : 'presentationRoleConflict_summary_cantTell_focusable';
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `This role="${role}" element also has ${parts.join(', ')}, so browsers ignore the role and expose the element anyway.`,
+        summary,
         hint: 'If it should stay hidden from assistive technology, remove the naming attributes and make it unfocusable. If it should be exposed, remove role="presentation" or role="none".',
         i18n: {
-          summaryKey: 'presentationRoleConflict_summary_cantTell',
+          summaryKey,
           hintKey: 'presentationRoleConflict_hint_cantTell',
-          params: { role, attrs: parts.join(', ') }
+          params: { role, marker, attrs }
         },
         ...((() => {
           try {
@@ -103344,12 +103649,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const pageStill =
           (Number(dom.get(scroller, 'scrollHeight')) || 0) <=
           (Number(dom.get(scroller, 'clientHeight')) || 0) + TOLERANCE;
+        // It fills the viewport's width and most of its height: an app bar,
+        // a tab bar or a bottom navigation may take the rest.
         value =
           pageStill &&
           b.left <= TOLERANCE &&
           b.width >= width - TOLERANCE * 16 &&
           viewportHeight > 0 &&
-          b.height >= viewportHeight - TOLERANCE * 16;
+          b.top >= -TOLERANCE &&
+          b.bottom <= viewportHeight + TOLERANCE &&
+          b.height >= viewportHeight / 2;
       }
     } catch {
       value = false;
@@ -103360,25 +103669,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Boxes that keep their content from widening the page: they scroll or
   // clip sideways. Their own box is measured; what is inside them is not.
-  const contained = new Map();
+  // The nearest such box around an element, or null: one it escapes
+  // (fixed, or absolute from outside it) doesn't keep it in, and it widens
+  // the page like anything else.
+  const containerOf = new Map();
   function insideSidewaysBox(el) {
     let node = upOf(el);
     const path = [];
-    let found = false;
+    let box = null;
     while (!top(node)) {
-      if (contained.has(node)) {
-        found = contained.get(node);
+      if (containerOf.has(node)) {
+        box = containerOf.get(node);
         break;
       }
       path.push(node);
       if (boxSetsOverflow(node)) {
-        found = true;
+        box = node;
         break;
       }
       node = upOf(node);
     }
-    for (const n of path) contained.set(n, found);
-    return found;
+    for (const n of path) containerOf.set(n, box);
+    return !!box && !escapes(el, box);
   }
 
   // Boxes that hide what overflows them (not the root: the viewport's own
@@ -103599,6 +103911,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const s = style(el);
     const keepsLines = !!s && (s.whiteSpace === 'pre' || s.whiteSpace === 'nowrap');
     if (keepsLines && (tag === 'code' || dom.querySelector(el, 'code'))) return 'WIDE_PREFORMATTED';
+    // A code editor: editable text kept on its lines (white-space: pre), as
+    // CodeMirror and Monaco lay theirs out. Its lines are code, as the same
+    // text read-only in a <pre> is.
+    // The element may be the editor, or one of its lines.
+    if (
+      s &&
+      s.whiteSpace === 'pre' &&
+      dom.closest(el, '[contenteditable]:not([contenteditable="false" i]), [role~="textbox" i]')
+    ) {
+      return 'WIDE_PREFORMATTED';
+    }
     return 'HORIZONTAL_SCROLL';
   }
 
@@ -103711,11 +104034,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // nothing to reach past the edge. A descendant set back to visible is
   // drawn, and keeps it in.
   const HIDDEN_VISIBILITY = new Set(['hidden', 'collapse']);
+  // Drawn fully transparent: opacity 0 on it or on a box around it, which a
+  // descendant can't set back.
+  const transparentMemo = new Map();
+  function transparent(el) {
+    let node = el;
+    const path = [];
+    let value = false;
+    while (node && node !== html) {
+      if (transparentMemo.has(node)) {
+        value = transparentMemo.get(node);
+        break;
+      }
+      path.push(node);
+      const ns = style(node);
+      if (ns && Number.parseFloat(ns.opacity) === 0) {
+        value = true;
+        break;
+      }
+      node = upOf(node);
+    }
+    for (const n of path) transparentMemo.set(n, value);
+    return value;
+  }
   const undrawnMemo = new Map();
   function undrawn(el) {
     if (undrawnMemo.has(el)) return undrawnMemo.get(el);
-    let value = false;
-    const s = style(el);
+    let value = transparent(el);
+    const s = value ? null : style(el);
     if (s && HIDDEN_VISIBILITY.has(String(s.visibility || ''))) {
       value = true;
       try {
@@ -103870,12 +104216,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!rootClips || hit.inside <= TOLERANCE) return;
     }
     // Last, as they walk: what a clip hides, or nothing of which is drawn,
-    // shows nowhere.
-    if (undrawn(el)) {
+    // shows nowhere. It may be what makes the page scroll, onto nothing.
+    if (undrawn(el) || clipHidden(el)) {
       undrawnPast = true;
       return;
     }
-    if (clipHidden(el)) return;
     if (!inScope(el) || isExcluded(el)) {
       leftOut = true;
       return;
@@ -104024,7 +104369,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  const fails = [];
   const questions = [];
   const perCode = {};
   const viewport = { width: clientWidth, scrollWidth };
@@ -104084,6 +104428,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         cautionKey: 'reflowHorizontalScroll_lean_caution_clipped'
       }
     },
+    // The page scrolls sideways at this width, measured as it is: likely a
+    // failure, unless what is reached that way needs two dimensions.
+    scrolls: {
+      toward: 'fail',
+      why: 'The page scrolls sideways at this width because of this element: content has to fit the width, so that it is read by scrolling in one direction only.',
+      signals: [{ signal: 'page-scrolls-sideways', value: true }],
+      caution:
+        'Check that scrolling sideways shows content, and that it is not content that needs two dimensions, such as a data table, a map or a diagram.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_scrolls',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_scrolls'
+      }
+    },
+    unattributed: {
+      toward: 'fail',
+      why: 'The page scrolls sideways at this width: content has to fit the width, so that it is read by scrolling in one direction only.',
+      signals: [{ signal: 'page-scrolls-sideways', value: true }],
+      caution:
+        'No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_scrolls',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_unattributed'
+      }
+    },
     // A field cut off with nothing to scroll to it: likely a loss, but one
     // view can't tell whether the narrow width is what cut it.
     fieldCut: {
@@ -104116,12 +104484,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const MESSAGES = {
     HORIZONTAL_SCROLL: {
       key: 'fail',
+      needed:
+        'Whether reading or using the page at this width needs scrolling sideways, and whether what is reached that way needs a two-dimensional layout.',
       summary: (p) =>
         `At ${p.viewportWidth} pixels wide, this element reaches ${p.overflowPx} pixels past the edge, so the page scrolls sideways.`,
       hint: 'Let it fit the width: no fixed width wider than the screen, max-width: 100% on images and embeds, and long words or addresses allowed to wrap (overflow-wrap: anywhere).'
     },
     HORIZONTAL_SCROLL_UNATTRIBUTED: {
       key: 'unattributed',
+      needed:
+        'What makes the page scroll sideways at this width, and whether reading or using it needs that scrolling.',
       summary: (p) =>
         `At ${p.viewportWidth} pixels wide, the page scrolls sideways by ${p.overflowPx} pixels.`,
       hint: 'Find what is wider than the screen, such as a margin or generated content, and let it fit the width.'
@@ -104171,8 +104543,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   };
 
-  // asFail: the finding is settled as a failure, not asked about.
-  function report(code, el, hit, lean, asFail) {
+  // Every finding is a question: the rule measures the layout at one width,
+  // and whether that layout loses content or needs two directions of
+  // scrolling to be read is for a person to confirm. The lean says which
+  // way the measures point.
+  function report(code, el, hit, lean) {
     perCode[code] = (perCode[code] || 0) + 1;
     if (perCode[code] > MAX_PER_CODE) return;
     const msg = MESSAGES[code];
@@ -104184,7 +104559,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       element: tag
     };
     const occ = helpers.reportOccurrence(el, {
-      ...(lean && !asFail ? { lean } : {}),
+      ...(lean ? { lean } : {}),
       summary: msg.summary(params),
       hint: msg.hint,
       i18n: {
@@ -104192,16 +104567,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hintKey: `reflowHorizontalScroll_hint_${msg.key}`,
         params
       },
-      ...(msg.needed && !asFail
-        ? {
-            occurrenceOutcome: 'cantTell',
-            uncertainty: {
-              code: 'judgement-required',
-              needed: msg.needed,
-              evidence: { reasonCode: code }
-            }
-          }
-        : { occurrenceOutcome: 'fail' }),
+      occurrenceOutcome: 'cantTell',
+      uncertainty: {
+        code: 'judgement-required',
+        needed: msg.needed,
+        evidence: { reasonCode: code }
+      },
       data: {
         details: {
           reasonCode: code,
@@ -104213,26 +104584,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       }
     });
-    (msg.needed && !asFail ? questions : fails).push(occ);
+    questions.push(occ);
   }
 
   // A row of items each of which fits the box that scrolls it: the row
   // scrolls as a carousel does (G225), each item reflowing within the width.
+  // The row is the element itself, or the row it is an item of: the element
+  // the box cuts is usually one of the items.
   function isCarousel(el, box) {
     try {
       const fit = Number(dom.get(box, 'clientWidth')) || 0;
-      const items = [...(dom.get(el, 'children') || [])].filter((c) => {
-        const rects = dom.getClientRects(c);
-        return rects && rects.length;
-      });
-      return (
-        fit > 0 &&
-        items.length >= 2 &&
-        items.every((c) => dom.getBoundingClientRect(c).width <= fit + TOLERANCE)
-      );
+      if (!(fit > 0)) return false;
+      const parent = upOf(el);
+      const rows = [el];
+      if (parent && (parent === box || dom.contains(box, parent))) rows.push(parent);
+      return rows.some((row) => rowOfFittingItems(row, fit));
     } catch {
       return false;
     }
+  }
+  // Two items or more side by side, each fitting the box.
+  function rowOfFittingItems(row, fit) {
+    const items = [...(dom.get(row, 'children') || [])]
+      .filter((c) => {
+        const rects = dom.getClientRects(c);
+        return rects && rects.length;
+      })
+      .map((c) => dom.getBoundingClientRect(c));
+    if (items.length < 2 || !items.every((r) => r.width <= fit + TOLERANCE)) return false;
+    // Side by side: two of them on one line, one after the other.
+    return items.some((a, i) =>
+      items.some(
+        (b, j) => j !== i && Math.abs(a.top - b.top) <= TOLERANCE && b.left >= a.right - TOLERANCE
+      )
+    );
   }
 
   // What sticks out past the edge of the page, or of a box that is the page.
@@ -104243,13 +104628,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? tableLean(el)
         : code === 'WIDE_MEDIA' && (tag === 'img' || tag === 'video' || tag === 'picture')
           ? LEANS.media
-          : null;
+          : code === 'HORIZONTAL_SCROLL'
+            ? LEANS.scrolls
+            : null;
     report(code, el, hit, lean);
   }
   // Content cut off, with nothing to scroll to it, is a loss only if the
-  // narrow width is what cuts it, which one view of the page can't tell: it
-  // is asked about, and a cut field leans fail. Only scrolling sideways is
-  // measured as it is (a page, or a box with a field it cuts, that scrolls).
+  // narrow width is what cuts it, which one view of the page can't tell: a
+  // cut field leans fail. Scrolling sideways is measured as it is, and
+  // leans fail too; whether what it reaches needs two dimensions is for a
+  // person to say.
   const pastEnd = (rect) => ({ over: overflowOf(rect) });
   const cutLean = (el, pastOf, otherwise) => (cutsFields(el, pastOf) ? LEANS.fieldCut : otherwise);
 
@@ -104281,8 +104669,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         'SCROLLS_IN_CONTAINER',
         el,
         { over: clip.over, rect: clip.rect },
-        isCarousel(el, clip.box) ? LEANS.carousel : LEANS.scrollBox,
-        cutsFields(el, pastClip)
+        // A carousel first: each item fits, so a field in an item shows whole
+        // once its item is scrolled into view.
+        isCarousel(el, clip.box) ? LEANS.carousel : cutLean(el, pastClip, LEANS.scrollBox)
       );
     } else {
       report(
@@ -104303,7 +104692,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     !leftOut &&
     !undrawnPast
   ) {
-    report('HORIZONTAL_SCROLL_UNATTRIBUTED', html, null, null);
+    report('HORIZONTAL_SCROLL_UNATTRIBUTED', html, null, LEANS.unattributed);
   }
 
   // How many more each reason code had than the 50 listed.
@@ -104311,10 +104700,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const [code, n] of Object.entries(perCode)) {
     if (n > MAX_PER_CODE) omitted[code] = n - MAX_PER_CODE;
   }
-  if (fails.length || questions.length) {
+  if (questions.length) {
     return {
       ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious'),
+      ...helpers.resolveTieredOutcome([], questions, rule.defaultSeverity || 'serious'),
       ...(Object.keys(omitted).length ? { data: { omitted } } : {})
     };
   }
@@ -110011,10 +110400,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  // The element drawn at a point, through open shadow roots: the document
+  // answers with a shadow host, and the host's root with what it holds.
   function elementFromPoint(x, y) {
     try {
-      if (document && typeof dom.get(document, 'elementFromPoint') === 'function')
-        return dom.elementFromPoint(document, x, y);
+      if (!document || typeof dom.get(document, 'elementFromPoint') !== 'function') return null;
+      let hit = dom.elementFromPoint(document, x, y);
+      for (let depth = 0; hit && depth < 32; depth++) {
+        const root = dom.shadowRoot(hit);
+        if (!root || typeof dom.get(root, 'elementFromPoint') !== 'function') break;
+        const inner = dom.elementFromPoint(root, x, y);
+        if (!inner || inner === hit) break;
+        hit = inner;
+      }
+      return hit;
     } catch {}
     return null;
   }
@@ -110250,6 +110649,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isCoveredNear(other, target) {
     // Out of view, neither is where a pointer would find it.
     if (scrolledOutOf(other.el) || scrolledOutOf(target.el)) return false;
+    // The target itself is covered too (a consent backdrop over both, at the
+    // moment of the scan): the cover hides both, and says nothing of how
+    // close they are once it is gone.
+    if (coveredAtCentre(target)) return false;
     const r = other.rect;
     const x0 = Math.max(r.left, target.center.cx - SPACING);
     const x1 = Math.min(r.right, target.center.cx + SPACING);
@@ -110272,6 +110675,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return answered;
   }
 
+  // Whether something else is drawn at the target's centre.
+  function coveredAtCentre(target) {
+    const hit = elementFromPoint(target.center.cx, target.center.cy);
+    if (!hit) return false;
+    try {
+      return !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
+    } catch {
+      return false;
+    }
+  }
+
   // --- spacing evaluation ---
   // WCAG 2.5.8's spacing exception, exactly: the 24px circle centred on the
   // target's region must not intersect another target's region, nor the
@@ -110290,7 +110704,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const d = dist(target.center, other.center);
       if (isUndersized(other) && d < SPACING - EPS) {
         if (isCoveredNear(other, target)) continue;
-        return { conflict: true, conflictEl: other.el, decidedBy: 'centerDistance', distancePx: d };
+        // Moving the two apart lengthens both distances alike: the move
+        // that clears the spacing is the larger of the two shortfalls.
+        const reachToo = regionDistance(other.region, c);
+        return {
+          conflict: true,
+          conflictEl: other.el,
+          decidedBy: 'centerDistance',
+          distancePx: d,
+          needPx: Math.max(SPACING - d, RADIUS - reachToo)
+        };
       }
       const reach = regionDistance(other.region, c);
       if (reach < RADIUS - EPS) {
@@ -110322,6 +110745,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // checkbox/radio styling across every CSS framework/design system. If the
   // author hasn't reset it, the browser is still rendering its own default
   // control chrome, so the size is UA-determined rather than authored.
+  // A checkbox or radio sized outside the 12 to 16 CSS px browsers draw it at
+  // was resized by the author, so it isn't ("not modified by the author").
   function isUserAgentSizedControl(el) {
     try {
       if (!el || dom.nodeType(el) !== 1) return false;
@@ -110351,6 +110776,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
       if (appearance === 'none') return false;
+
+      // Resized by the author: browsers draw an unstyled checkbox or radio
+      // at 12 to 16 CSS px (13 in Chromium and Firefox, 14 to 16 in Safari).
+      // A size outside that was set by the author, which the exception
+      // doesn't cover ("not modified by the author").
+      const box = dom.getBoundingClientRect(el);
+      const zoom = Number.parseFloat((cs && cs.zoom) || '1') || 1;
+      const w = box.width / zoom;
+      const h = box.height / zoom;
+      if (w < 12 - EPS || h < 12 - EPS || w > 16 + EPS || h > 16 + EPS) return false;
 
       return true;
     } catch {
@@ -110527,7 +110962,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return {
       distancePx: String(round1(info.distancePx, limit)),
       minDistancePx: String(limit),
-      shortfallPx: String(Math.ceil((limit - info.distancePx) * 10 - 1e-6) / 10)
+      shortfallPx: String(
+        Math.ceil(
+          (Number.isFinite(info.needPx) ? info.needPx : limit - info.distancePx) * 10 - 1e-6
+        ) / 10
+      )
     };
   }
   function spacingHint(decidedBy, s) {
@@ -111843,10 +112282,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  // The element drawn at a point, through open shadow roots: the document
+  // answers with a shadow host, and the host's root with what it holds.
   function elementFromPoint(x, y) {
     try {
-      if (document && typeof dom.get(document, 'elementFromPoint') === 'function')
-        return dom.elementFromPoint(document, x, y);
+      if (!document || typeof dom.get(document, 'elementFromPoint') !== 'function') return null;
+      let hit = dom.elementFromPoint(document, x, y);
+      for (let depth = 0; hit && depth < 32; depth++) {
+        const root = dom.shadowRoot(hit);
+        if (!root || typeof dom.get(root, 'elementFromPoint') !== 'function') break;
+        const inner = dom.elementFromPoint(root, x, y);
+        if (!inner || inner === hit) break;
+        hit = inner;
+      }
+      return hit;
     } catch {}
     return null;
   }
@@ -112082,6 +112531,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isCoveredNear(other, target) {
     // Out of view, neither is where a pointer would find it.
     if (scrolledOutOf(other.el) || scrolledOutOf(target.el)) return false;
+    // The target itself is covered too (a consent backdrop over both, at the
+    // moment of the scan): the cover hides both, and says nothing of how
+    // close they are once it is gone.
+    if (coveredAtCentre(target)) return false;
     const r = other.rect;
     const x0 = Math.max(r.left, target.center.cx - SPACING);
     const x1 = Math.min(r.right, target.center.cx + SPACING);
@@ -112104,6 +112557,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return answered;
   }
 
+  // Whether something else is drawn at the target's centre.
+  function coveredAtCentre(target) {
+    const hit = elementFromPoint(target.center.cx, target.center.cy);
+    if (!hit) return false;
+    try {
+      return !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
+    } catch {
+      return false;
+    }
+  }
+
   // --- spacing evaluation ---
   // WCAG 2.5.8's spacing exception, exactly: the 24px circle centred on the
   // target's region must not intersect another target's region, nor the
@@ -112122,7 +112586,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const d = dist(target.center, other.center);
       if (isUndersized(other) && d < SPACING - EPS) {
         if (isCoveredNear(other, target)) continue;
-        return { conflict: true, conflictEl: other.el, decidedBy: 'centerDistance', distancePx: d };
+        // Moving the two apart lengthens both distances alike: the move
+        // that clears the spacing is the larger of the two shortfalls.
+        const reachToo = regionDistance(other.region, c);
+        return {
+          conflict: true,
+          conflictEl: other.el,
+          decidedBy: 'centerDistance',
+          distancePx: d,
+          needPx: Math.max(SPACING - d, RADIUS - reachToo)
+        };
       }
       const reach = regionDistance(other.region, c);
       if (reach < RADIUS - EPS) {
@@ -112154,6 +112627,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // checkbox/radio styling across every CSS framework/design system. If the
   // author hasn't reset it, the browser is still rendering its own default
   // control chrome, so the size is UA-determined rather than authored.
+  // A checkbox or radio sized outside the 12 to 16 CSS px browsers draw it at
+  // was resized by the author, so it isn't ("not modified by the author").
   function isUserAgentSizedControl(el) {
     try {
       if (!el || dom.nodeType(el) !== 1) return false;
@@ -112183,6 +112658,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
       if (appearance === 'none') return false;
+
+      // Resized by the author: browsers draw an unstyled checkbox or radio
+      // at 12 to 16 CSS px (13 in Chromium and Firefox, 14 to 16 in Safari).
+      // A size outside that was set by the author, which the exception
+      // doesn't cover ("not modified by the author").
+      const box = dom.getBoundingClientRect(el);
+      const zoom = Number.parseFloat((cs && cs.zoom) || '1') || 1;
+      const w = box.width / zoom;
+      const h = box.height / zoom;
+      if (w < 12 - EPS || h < 12 - EPS || w > 16 + EPS || h > 16 + EPS) return false;
 
       return true;
     } catch {
@@ -112359,7 +112844,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return {
       distancePx: String(round1(info.distancePx, limit)),
       minDistancePx: String(limit),
-      shortfallPx: String(Math.ceil((limit - info.distancePx) * 10 - 1e-6) / 10)
+      shortfallPx: String(
+        Math.ceil(
+          (Number.isFinite(info.needPx) ? info.needPx : limit - info.distancePx) * 10 - 1e-6
+        ) / 10
+      )
     };
   }
   function spacingHint(decidedBy, s) {
@@ -117204,8 +117693,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "Der Eintrag wird mit Aufzählungszeichen oder Nummer gezeichnet, als Eintrag einer Liste, die das Markup nicht mehr bereitstellt.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "Einige Links oder Bedienelemente, etwa die einer Navigationsleiste, sind ohne die Liste womöglich ebenso gut lesbar.",
       "listitemParentValid_summary_fail_wrapped": "Dieses <li> liegt in einem <{{listElement}}>, aber das {{wrapper}} dazwischen unterbricht die Liste: Die Einträge einer Liste müssen ihre Kinder sein.",
       "listitemParentValid_hint_fail_wrapped": "Verschieben Sie das <{{parentElement}}> in das <li> oder entfernen Sie es, sodass das <li> ein Kind des <{{listElement}}> ist.",
       "listitemParentValid_summary_fail_wrappedMany": "Dieses <li> liegt in einem <{{listElement}}>, aber die Elemente {{wrappers}} dazwischen unterbrechen die Liste: Die Einträge einer Liste müssen ihre Kinder sein.",
@@ -117472,7 +117963,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportLarge_lean_why": "Das Viewport-Meta-Tag begrenzt den Zoom auf unter 500 %.",
       "presentationRoleConflict_title": "Eine präsentationale Rolle darf nicht mit einem globalen ARIA-Attribut oder Fokussierbarkeit im Konflikt stehen",
       "presentationRoleConflict_description": "Prüft, ob role=\"presentation\"/\"none\" (einschließlich der impliziten presentation-Rolle eines <img alt=\"\">) nicht mit einem globalen ARIA-Attribut (aria-label, aria-hidden, aria-describedby, …) oder Fokussierbarkeit (tabindex/nativ) kombiniert wird.",
-      "presentationRoleConflict_summary_cantTell": "Dieses Element mit role=\"{{role}}\" hat außerdem {{attrs}}, daher ignorieren Browser die Rolle und geben das Element trotzdem aus.",
+      "presentationRoleConflict_summary_cantTell": "Dieses Element ist mit {{marker}} gekennzeichnet, hat aber auch {{attrs}}, daher ignorieren Browser die Kennzeichnung und geben es trotzdem aus.",
+      "presentationRoleConflict_summary_cantTell_focusable": "Dieses Element ist mit {{marker}} gekennzeichnet, kann aber den Fokus erhalten, daher ignorieren Browser die Kennzeichnung und geben es trotzdem aus.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "Dieses Element ist mit {{marker}} gekennzeichnet, hat aber auch {{attrs}} und kann den Fokus erhalten, daher ignorieren Browser die Kennzeichnung und geben es trotzdem aus.",
       "presentationRoleConflict_hint_cantTell": "Soll es vor assistiven Technologien verborgen bleiben, entfernen Sie die Namensattribute und machen Sie es nicht fokussierbar. Soll es ausgegeben werden, entfernen Sie role=\"presentation\" bzw. role=\"none\".",
       "presentationRoleConflict_lean_why": "Browser ignorieren hier die Präsentationsrolle und stellen die eigene Rolle des Elements bereit.",
       "region_title": "Der Seiteninhalt sollte sich innerhalb einer Landmarke befinden",
@@ -117794,17 +118287,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_lean_why_scrolls": "Der Inhalt des Elements läuft über seine Box hinaus und es scrollt; sein Tab-Stopp lässt Tastaturnutzende es scrollen.",
       "focusOrderSemantics_lean_why_documentInApplication": "Ein Dokument innerhalb einer Anwendung wird fokussierbar gemacht, damit Screenreader-Nutzende es lesen können.",
       "pAsHeading_title": "Text, der wie eine Überschrift gestaltet ist, sollte wahrscheinlich eine echte Überschrift sein",
-      "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett ist und mit mindestens 18px dargestellt wird, kurze, vollständig fette <p>- und <div>-Elemente in Fließtextgröße, die vor normalem Text wie ein Titel wirken, sowie Blöcke, die mit einer fetten, durch einen Zeilenumbruch beendeten Zeile vor normalem Text beginnen, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
+      "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett ist und mit mindestens 18px dargestellt wird, sowie kurze, vollständig fette <p>-Elemente in Fließtextgröße, die vor normalem Text wie ein Titel wirken, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
       "pAsHeading_summary_cantTell": "Dieser Absatz ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
       "pAsHeading_hint_cantTell": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriften-Element (<h1>-<h6> oder role=\"heading\"), anstatt einen Absatz so zu gestalten, dass er wie eine Überschrift aussieht.",
       "pAsHeading_summary_cantTell_div": "Dieser Textblock ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
       "pAsHeading_hint_cantTell_div": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriftenelement (<h1>-<h6> oder role=\"heading\"), statt ein <div> wie eine Überschrift zu gestalten.",
       "pAsHeading_summary_cantTell_bodySize": "Dieser kurze Absatz ist vollständig fett und steht vor normalem Text, wie eine Überschrift.",
       "pAsHeading_hint_cantTell_bodySize": "Wenn dieser Text den folgenden Text einleitet, machen Sie ihn zu einer echten Überschrift (<h1>-<h6> oder role=\"heading\") statt zu einem fetten Absatz.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "Dieser kurze Textblock ist vollständig fett und steht vor einem Abschnitt normalen Textes, wie eine Überschrift.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "Wenn dieser Text den folgenden Text einleitet, machen Sie ihn zu einer echten Überschrift (<h1>-<h6> oder role=\"heading\") statt zu einem fetten <div>.",
-      "pAsHeading_summary_cantTell_leadLine": "Dieser Block beginnt mit einer fetten Zeile, die ein Zeilenumbruch beendet, vor normalem Text, wie eine Überschrift.",
-      "pAsHeading_hint_cantTell_leadLine": "Wenn die fette Zeile den folgenden Text betitelt, machen Sie sie zu einer echten Überschrift (<h1>-<h6> oder role=\"heading\") und setzen Sie diesen Text in ein eigenes Element.",
       "pAsHeading_lean_why_headingStyle": "Der Text hat Schriftgröße, -stärke und -familie einer echten Überschrift dieser Seite und endet nicht wie ein Satz.",
       "pAsHeading_lean_why_bodyFollows": "Auf den Text folgt kleinerer, nicht fetter Fließtext, und er endet nicht wie ein Satz, wie bei einem Abschnittstitel.",
       "pAsHeading_lean_caution_style": "Auch ein einleitender Satz oder ein hervorgehobenes Zitat kann vor dem Fließtext stehen, und ein Designsystem kann Überschriftenstile für anderen Text wiederverwenden.",
@@ -117938,7 +118427,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "Der Name dieses Links („{{name}}“) ist eine allgemeine Formulierung: Nur der Text um ihn herum sagt, wohin er führt.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Formulieren Sie den Linktext selbst so, dass er sagt, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Hier klicken“, damit er auch allein verständlich ist, etwa in einer Linkliste.",
       "reflowHorizontalScroll_title": "Inhalte passen sich bei 320 CSS-Pixeln Breite ohne seitliches Scrollen an",
-      "reflowHorizontalScroll_description": "Prüft bei einem 320 CSS-Pixel breiten Viewport, dass die Seite nicht seitlich scrollt, nennt die Elemente, die über ihren Rand hinausragen, und fragt nach Tabellen, Medien und vorformatiertem Text, die ihr Layout brauchen können.",
+      "reflowHorizontalScroll_description": "Misst bei einem 320 CSS-Pixel breiten Viewport, ob die Seite seitlich scrollt oder Inhalte abschneidet, und fragt nach jedem Element, das über einen Rand hinausragt, zur manuellen Prüfung, ob zum Lesen der Seite in zwei Richtungen gescrollt werden muss.",
       "reflowHorizontalScroll_summary_fail": "Bei {{viewportWidth}} Pixeln Breite ragt dieses Element {{overflowPx}} Pixel über den Rand hinaus, sodass die Seite seitlich scrollt.",
       "reflowHorizontalScroll_hint_fail": "Lassen Sie es in die Breite passen: keine feste Breite, die breiter als der Bildschirm ist, max-width: 100% für Bilder und eingebettete Inhalte, und lange Wörter oder Adressen dürfen umbrechen (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "Bei {{viewportWidth}} Pixeln Breite scrollt die Seite um {{overflowPx}} Pixel seitlich.",
@@ -117968,6 +118457,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_clipped": "Ein Karussell oder ein Menü kann den Rest auf andere Weise zeigen.",
       "reflowHorizontalScroll_lean_why_fieldCut": "Ein Formularfeld im Element ist abgeschnitten, und nichts scrollt zum Rest: Ein Feld muss ganz zu sehen und zu bedienen sein.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Prüfen Sie, ob das Feld wegen der geringen Breite abgeschnitten ist: Ein Feld, das bei jeder Breite abgeschnitten ist, ist ein Problem, aber keines des Umfließens.",
+      "reflowHorizontalScroll_lean_why_scrolls": "Die Seite scrollt bei dieser Breite seitlich: Inhalte müssen in die Breite passen, damit sie mit Scrollen in nur einer Richtung gelesen werden.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Prüfen Sie, ob seitliches Scrollen Inhalte zeigt und ob es keine Inhalte sind, die zwei Dimensionen brauchen, etwa eine Datentabelle, eine Karte oder ein Diagramm.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "Es ließ sich kein Element benennen: Der Überlauf kann von einem Rand, generierten Inhalten oder einem geschlossenen Shadow Root stammen. Prüfen Sie, ob seitliches Scrollen Inhalte zeigt.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -118105,10 +118597,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameCause_hint_labelWrapsOther": "Es steht in dem <label> „{{text}}“, aber ein Label benennt nur das erste Feld darin, und das ist ein anderes <{{firstTag}}>. Geben Sie diesem Feld ein eigenes <label> oder aria-label.",
       "nameCause_hint_labelNotTied": "Das <label> „{{text}}“ daneben ist nicht mit ihm verknüpft: Das Label hat kein for-Attribut und umschließt das Feld nicht. Fügen Sie dem Label for=\"{{id}}\" hinzu, oder setzen Sie das Feld in das Label.",
       "nameCause_hint_labelNotTiedNoId": "Das <label> „{{text}}“ daneben ist nicht mit ihm verknüpft: Das Label hat kein for-Attribut und umschließt das Feld nicht. Geben Sie dem Feld eine id und dem Label ein for-Attribut mit dieser id, oder setzen Sie das Feld in das Label.",
-      "nameCause_hint_imageNoAlt": "Sein einziger Inhalt ist ein Bild ohne alt-Attribut, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Sein einziger Inhalt ist ein Bild mit alt=\"\", das es als dekorativ kennzeichnet, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
-      "nameCause_hint_svgNoName": "Sein einziger Inhalt ist ein <svg> ohne Namen (kein <title> und kein aria-label), sodass es keinen Namen liefert. Geben Sie dem svg einen <title> oder ein aria-label, das sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Sein Inhalt sind {{count}} Bilder, alle mit alt=\"\", sodass er keinen Namen liefert. Geben Sie einem davon einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imageNoAlt": "Sein einziger Inhalt ist ein Bild ohne alt-Attribut, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Sein einziger Inhalt ist ein Bild mit alt=\"\", das es als dekorativ kennzeichnet, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_svgNoName": "Sein einziger Inhalt ist ein <svg> ohne Namen (kein <title> und kein aria-label), sodass es keinen Namen liefert. Geben Sie dem svg einen <title> oder ein aria-label, das sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Sein Inhalt sind {{count}} Bilder, alle mit alt=\"\", sodass er keinen Namen liefert. Geben Sie einem davon einen alt-Text, der sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
       "nameCause_hint_iconEmpty": "Sein einziger Inhalt ist ein leeres <{{iconTag}} class=\"{{iconClass}}\">, ein per CSS gezeichnetes Icon, das keinen Text hat, der einen Namen liefern könnte. Fügen Sie visuell verborgenen Text hinzu, oder benennen Sie das Element mit aria-label.",
       "nameCause_hint_iconGenerated": "Sein einziger Inhalt ist ein per CSS gezeichnetes Icon-Font-Zeichen ({{pseudo}} auf {{host}}), das Screenreader nicht als Namen lesen können. Fügen Sie visuell verborgenen Text hinzu, oder benennen Sie das Element mit aria-label.",
       "nameCause_hint_iconHidden": "Sein einziger Inhalt ist ein <{{imageTag}}>, das durch aria-hidden=\"true\" verborgen ist, sodass Screenreader es überspringen und es keinen Namen liefert. Fügen Sie Text hinzu, den ein Screenreader liest (ein visuell verborgenes <span>), oder benennen Sie das Element mit aria-label.",
@@ -118990,8 +119482,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "A few links or controls, such as a navigation bar’s, may read as well without the list.",
       "listitemParentValid_summary_fail_wrapped": "This <li> is inside a <{{listElement}}>, but the {{wrapper}} between them breaks the list: a list's items must be its children.",
       "listitemParentValid_hint_fail_wrapped": "Move the <{{parentElement}}> inside the <li>, or remove it, so the <li> is a child of the <{{listElement}}>.",
       "listitemParentValid_summary_fail_wrappedMany": "This <li> is inside a <{{listElement}}>, but the {{wrappers}} between them break the list: a list's items must be its children.",
@@ -119258,7 +119752,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportLarge_lean_why": "The viewport meta tag keeps zoom below 500%.",
       "presentationRoleConflict_title": "Presentational role must not conflict with a global ARIA attribute or focusability",
       "presentationRoleConflict_description": "Checks that role=\"presentation\"/\"none\" (including an <img alt=\"\"> implicit presentation role) is not combined with a global ARIA attribute (aria-label, aria-hidden, aria-describedby, ...) or focusability (tabindex/native).",
-      "presentationRoleConflict_summary_cantTell": "This role=\"{{role}}\" element also has {{attrs}}, so browsers ignore the role and expose the element anyway.",
+      "presentationRoleConflict_summary_cantTell": "This element is marked {{marker}} but also has {{attrs}}, so browsers ignore the marking and expose it anyway.",
+      "presentationRoleConflict_summary_cantTell_focusable": "This element is marked {{marker}} but can take focus, so browsers ignore the marking and expose it anyway.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "This element is marked {{marker}} but also has {{attrs}} and can take focus, so browsers ignore the marking and expose it anyway.",
       "presentationRoleConflict_hint_cantTell": "If it should stay hidden from assistive technology, remove the naming attributes and make it unfocusable. If it should be exposed, remove role=\"presentation\" or role=\"none\".",
       "presentationRoleConflict_lean_why": "Browsers ignore the presentational role here and expose the element's own role.",
       "region_title": "Page content should be inside a landmark region",
@@ -119580,17 +120076,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_lean_why_scrolls": "The element’s content overflows its box and it scrolls, so its tab stop lets keyboard users scroll it.",
       "focusOrderSemantics_lean_why_documentInApplication": "A document inside an application is made focusable so screen reader users can read it.",
       "pAsHeading_title": "Text styled to look like a heading should probably be a real heading",
-      "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, short all-bold <p> and <div> elements at body size that read as a title before plain text, and blocks that open with a bold line ended by a line break before plain text, for manual review of whether a real heading element should be used instead.",
+      "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, and short all-bold <p> elements at body size that read as a title before plain text, for manual review of whether a real heading element should be used instead.",
       "pAsHeading_summary_cantTell": "This paragraph is entirely bold and rendered at a heading-like size.",
       "pAsHeading_hint_cantTell": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a paragraph to look like one.",
       "pAsHeading_summary_cantTell_div": "This block of text is entirely bold and rendered at a heading-like size.",
       "pAsHeading_hint_cantTell_div": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a <div> to look like one.",
       "pAsHeading_summary_cantTell_bodySize": "This short paragraph is entirely bold and comes before plain text, as a heading does.",
       "pAsHeading_hint_cantTell_bodySize": "If this text introduces the text after it, make it a real heading (<h1>-<h6> or role=\"heading\") instead of a bold paragraph.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "This short block of text is entirely bold and comes before a passage of plain text, as a heading does.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "If this text introduces the text after it, make it a real heading (<h1>-<h6> or role=\"heading\") instead of a bold <div>.",
-      "pAsHeading_summary_cantTell_leadLine": "This block starts with a bold line, ended by a line break, before plain text, as a heading does.",
-      "pAsHeading_hint_cantTell_leadLine": "If the bold line titles the text after it, make it a real heading (<h1>-<h6> or role=\"heading\") and put that text in an element of its own.",
       "pAsHeading_lean_why_headingStyle": "The text has a real heading's font size, weight and family on this page, and it doesn't end as a sentence does.",
       "pAsHeading_lean_why_bodyFollows": "The text is followed by smaller, plain body text, and it doesn't end as a sentence does, as a section title is.",
       "pAsHeading_lean_caution_style": "A lead-in sentence or a pull quote can also come before body text, and a design system may reuse heading styles for other text.",
@@ -119724,7 +120216,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "This link's name (\"{{name}}\") is a generic phrase: only the text around it says where it leads.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Make the link text itself say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Click here\", so it is clear when read on its own, as in a list of links.",
       "reflowHorizontalScroll_title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
-      "reflowHorizontalScroll_description": "At a viewport 320 CSS pixels wide, checks that the page does not scroll sideways, and names the elements that stick out past its edge, asking about tables, media and preformatted text that may need their layout.",
+      "reflowHorizontalScroll_description": "At a viewport 320 CSS pixels wide, measures whether the page scrolls sideways or cuts content off, and asks about each element that sticks out past an edge, for manual review of whether reading the page needs scrolling in two directions.",
       "reflowHorizontalScroll_summary_fail": "At {{viewportWidth}} pixels wide, this element reaches {{overflowPx}} pixels past the edge, so the page scrolls sideways.",
       "reflowHorizontalScroll_hint_fail": "Let it fit the width: no fixed width wider than the screen, max-width: 100% on images and embeds, and long words or addresses allowed to wrap (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "At {{viewportWidth}} pixels wide, the page scrolls sideways by {{overflowPx}} pixels.",
@@ -119754,6 +120246,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_clipped": "A carousel or a menu may show the rest another way.",
       "reflowHorizontalScroll_lean_why_fieldCut": "A form field in the element is cut off, and nothing scrolls to the rest of it: a field has to be seen and used whole.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Check that the field is cut because the width is narrow: a field cut at every width is a problem, but not one of reflow.",
+      "reflowHorizontalScroll_lean_why_scrolls": "The page scrolls sideways at this width: content has to fit the width, so that it is read by scrolling in one direction only.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Check that scrolling sideways shows content, and that it is not content that needs two dimensions, such as a data table, a map or a diagram.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -119891,10 +120386,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameCause_hint_labelWrapsOther": "It sits inside the <label> \"{{text}}\", but a label names only the first field in it, which is another <{{firstTag}}>. Give this field its own <label> or aria-label.",
       "nameCause_hint_labelNotTied": "The <label> \"{{text}}\" beside it is not tied to it: the label has no for attribute and does not wrap the field. Add for=\"{{id}}\" to the label, or put the field inside the label.",
       "nameCause_hint_labelNotTiedNoId": "The <label> \"{{text}}\" beside it is not tied to it: the label has no for attribute and does not wrap the field. Give the field an id and add a for attribute with that id to the label, or put the field inside the label.",
-      "nameCause_hint_imageNoAlt": "Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Its only content is an image with alt=\"\", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.",
-      "nameCause_hint_svgNoName": "Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Its content is {{count}} images, all with alt=\"\", so it gives no name. Give one of them alt text that says what it does or where it leads, or name the element with aria-label.",
+      "nameCause_hint_imageNoAlt": "Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Its only content is an image with alt=\"\", which marks it as decorative, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.",
+      "nameCause_hint_svgNoName": "Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it stands for here, or name the element with aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Its content is {{count}} images, all with alt=\"\", so it gives no name. Give one of them alt text that says what it stands for here, or name the element with aria-label.",
       "nameCause_hint_iconEmpty": "Its only content is an empty <{{iconTag}} class=\"{{iconClass}}\">, an icon drawn by CSS, which has no text to give a name. Add visually-hidden text, or name the element with aria-label.",
       "nameCause_hint_iconGenerated": "Its only content is an icon-font character drawn by CSS ({{pseudo}} on {{host}}), which screen readers can't read as a name. Add visually-hidden text, or name the element with aria-label.",
       "nameCause_hint_iconHidden": "Its only content is an <{{imageTag}}> hidden by aria-hidden=\"true\", so screen readers skip it and it gives no name. Add text a screen reader reads (a visually-hidden <span>), or name the element with aria-label.",
@@ -120776,8 +121271,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "El elemento se dibuja con viñeta o número, como elemento de una lista que el marcado ya no expone.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "Unos pocos enlaces o controles, como los de una barra de navegación, pueden leerse igual de bien sin la lista.",
       "listitemParentValid_summary_fail_wrapped": "Este <li> está dentro de un <{{listElement}}>, pero el {{wrapper}} que hay entre ellos rompe la lista: los elementos de una lista deben ser sus hijos.",
       "listitemParentValid_hint_fail_wrapped": "Mover el <{{parentElement}}> dentro del <li>, o quitarlo, para que el <li> sea hijo del <{{listElement}}>.",
       "listitemParentValid_summary_fail_wrappedMany": "Este <li> está dentro de un <{{listElement}}>, pero los elementos {{wrappers}} que hay entre ellos rompen la lista: los elementos de una lista deben ser sus hijos.",
@@ -121044,7 +121541,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportLarge_lean_why": "La etiqueta meta viewport limita el zoom por debajo del 500 %.",
       "presentationRoleConflict_title": "El rol presentacional no debe entrar en conflicto con un atributo ARIA global ni con la capacidad de enfoque",
       "presentationRoleConflict_description": "Comprueba que role=\"presentation\"/\"none\" (incluido el rol de presentación implícito de <img alt=\"\">) no se combine con un atributo ARIA global (aria-label, aria-hidden, aria-describedby, ...) ni con la capacidad de enfoque (tabindex/nativa).",
-      "presentationRoleConflict_summary_cantTell": "Este elemento con role=\"{{role}}\" también tiene {{attrs}}, así que los navegadores ignoran el rol y exponen el elemento de todos modos.",
+      "presentationRoleConflict_summary_cantTell": "Este elemento está marcado con {{marker}} pero también tiene {{attrs}}, así que los navegadores ignoran la marca y lo exponen de todos modos.",
+      "presentationRoleConflict_summary_cantTell_focusable": "Este elemento está marcado con {{marker}} pero puede recibir el foco, así que los navegadores ignoran la marca y lo exponen de todos modos.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "Este elemento está marcado con {{marker}} pero también tiene {{attrs}} y puede recibir el foco, así que los navegadores ignoran la marca y lo exponen de todos modos.",
       "presentationRoleConflict_hint_cantTell": "Si debe permanecer oculto a las tecnologías de apoyo, quitar los atributos de nombre y hacer que no pueda recibir el foco. Si debe exponerse, quitar role=\"presentation\" o role=\"none\".",
       "presentationRoleConflict_lean_why": "Los navegadores ignoran aquí el rol de presentación y exponen el rol propio del elemento.",
       "region_title": "El contenido de la página debería estar dentro de una región de referencia",
@@ -121366,17 +121865,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_lean_why_scrolls": "El contenido del elemento desborda su caja y se desplaza, así que su parada de tabulación permite desplazarlo con el teclado.",
       "focusOrderSemantics_lean_why_documentInApplication": "Un documento dentro de una aplicación se hace enfocable para que los usuarios de lectores de pantalla puedan leerlo.",
       "pAsHeading_title": "Un texto con estilo de encabezado probablemente debería ser un encabezado real",
-      "pAsHeading_description": "Señala los elementos <p> y <div> cortos cuyo texto está entero en negrita y se muestra a 18 px o más, los <p> y <div> cortos enteros en negrita a tamaño de texto normal que se leen como un título antes de texto normal, y los bloques que empiezan con una línea en negrita terminada por un salto de línea antes de texto normal, para revisar manualmente si debería usarse un elemento de encabezado real.",
+      "pAsHeading_description": "Señala los elementos <p> y <div> cortos cuyo texto está entero en negrita y se muestra a 18 px o más, y los <p> cortos enteros en negrita a tamaño de texto normal que se leen como un título antes de texto normal, para revisar manualmente si debería usarse un elemento de encabezado real.",
       "pAsHeading_summary_cantTell": "Este párrafo está completamente en negrita y se renderiza con un tamaño similar al de un encabezado.",
       "pAsHeading_hint_cantTell": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un párrafo el estilo de un encabezado.",
       "pAsHeading_summary_cantTell_div": "Este bloque de texto está completamente en negrita y se muestra con un tamaño similar al de un encabezado.",
       "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
       "pAsHeading_summary_cantTell_bodySize": "Este párrafo corto está entero en negrita y va antes de texto normal, como un encabezado.",
       "pAsHeading_hint_cantTell_bodySize": "Si este texto introduce el texto que lo sigue, conviértelo en un encabezado real (<h1>-<h6> o role=\"heading\") en lugar de un párrafo en negrita.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "Este bloque corto de texto está entero en negrita y va antes de un pasaje de texto normal, como un encabezado.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "Si este texto introduce el texto que lo sigue, conviértelo en un encabezado real (<h1>-<h6> o role=\"heading\") en lugar de un <div> en negrita.",
-      "pAsHeading_summary_cantTell_leadLine": "Este bloque empieza con una línea en negrita, terminada por un salto de línea, antes de texto normal, como un encabezado.",
-      "pAsHeading_hint_cantTell_leadLine": "Si la línea en negrita titula el texto que la sigue, conviértela en un encabezado real (<h1>-<h6> o role=\"heading\") y pon ese texto en un elemento propio.",
       "pAsHeading_lean_why_headingStyle": "El texto tiene el tamaño, el grosor y la familia de fuente de un encabezado real de esta página, y no termina como una frase.",
       "pAsHeading_lean_why_bodyFollows": "El texto va seguido de texto normal más pequeño y sin negrita, y no termina como una frase, igual que un título de sección.",
       "pAsHeading_lean_caution_style": "Una frase introductoria o una cita destacada también pueden ir antes del texto normal, y un sistema de diseño puede reutilizar los estilos de encabezado para otros textos.",
@@ -121510,7 +122005,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "El nombre de este enlace (\"{{name}}\") es una frase genérica: solo el texto que lo rodea dice adónde lleva.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Haz que el propio texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios de 2026\" en lugar de \"Haz clic aquí\", para que se entienda leído por sí solo, como en una lista de enlaces.",
       "reflowHorizontalScroll_title": "El contenido se reajusta a 320 píxeles CSS de ancho sin desplazamiento lateral",
-      "reflowHorizontalScroll_description": "Con una ventana de 320 píxeles CSS de ancho, comprueba que la página no se desplace hacia los lados, señala los elementos que sobresalen de su borde y pregunta por las tablas, el contenido multimedia y el texto preformateado que pueden necesitar su disposición.",
+      "reflowHorizontalScroll_description": "Con una ventana de 320 píxeles CSS de ancho, mide si la página se desplaza hacia los lados o corta contenido, y pregunta por cada elemento que sobresale de un borde, para revisar manualmente si leer la página exige desplazarse en dos direcciones.",
       "reflowHorizontalScroll_summary_fail": "Con {{viewportWidth}} píxeles de ancho, este elemento sobresale {{overflowPx}} píxeles del borde, así que la página se desplaza hacia los lados.",
       "reflowHorizontalScroll_hint_fail": "Haz que quepa en el ancho: ningún ancho fijo mayor que la pantalla, max-width: 100% en imágenes y contenido incrustado, y que las palabras o direcciones largas puedan partirse (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "Con {{viewportWidth}} píxeles de ancho, la página se desplaza {{overflowPx}} píxeles hacia los lados.",
@@ -121540,6 +122035,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrusel o un menú pueden mostrar el resto de otra forma.",
       "reflowHorizontalScroll_lean_why_fieldCut": "Un campo de formulario del elemento está cortado y nada se desplaza hasta el resto: un campo tiene que verse y usarse entero.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Comprobar que el campo está cortado porque el ancho es estrecho: un campo cortado en cualquier ancho es un problema, pero no de reajuste.",
+      "reflowHorizontalScroll_lean_why_scrolls": "La página se desplaza hacia los lados con este ancho: el contenido tiene que caber en el ancho para leerse desplazándose en una sola dirección.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Comprobar que el desplazamiento lateral muestra contenido y que no es contenido que necesita dos dimensiones, como una tabla de datos, un mapa o un diagrama.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "No se pudo nombrar ningún elemento: el desbordamiento puede venir de un margen, de contenido generado o de un shadow root cerrado. Comprobar que el desplazamiento lateral muestra contenido.",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -121677,10 +122175,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameCause_hint_labelWrapsOther": "Está dentro del <label> «{{text}}», pero una etiqueta solo nombra el primer campo que contiene, que es otro <{{firstTag}}>. Dar a este campo su propio <label> o aria-label.",
       "nameCause_hint_labelNotTied": "El <label> «{{text}}» que tiene al lado no está ligado a él: la etiqueta no tiene atributo for y no envuelve el campo. Agregar for=\"{{id}}\" a la etiqueta, o poner el campo dentro de la etiqueta.",
       "nameCause_hint_labelNotTiedNoId": "El <label> «{{text}}» que tiene al lado no está ligado a él: la etiqueta no tiene atributo for y no envuelve el campo. Dar un id al campo y agregar a la etiqueta un atributo for con ese id, o poner el campo dentro de la etiqueta.",
-      "nameCause_hint_imageNoAlt": "Su único contenido es una imagen sin atributo alt, así que no da nombre. Dar a la imagen un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Su único contenido es una imagen con alt=\"\", que la marca como decorativa, así que no da nombre. Dar a la imagen un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
-      "nameCause_hint_svgNoName": "Su único contenido es un <svg> sin nombre (sin <title> ni aria-label), así que no da nombre. Dar al svg un <title> o aria-label que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Su contenido son {{count}} imágenes, todas con alt=\"\", así que no da nombre. Dar a una de ellas un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imageNoAlt": "Su único contenido es una imagen sin atributo alt, así que no da nombre. Dar a la imagen un texto alt que diga qué representa aquí, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Su único contenido es una imagen con alt=\"\", que la marca como decorativa, así que no da nombre. Dar a la imagen un texto alt que diga qué representa aquí, o nombrar el elemento con aria-label.",
+      "nameCause_hint_svgNoName": "Su único contenido es un <svg> sin nombre (sin <title> ni aria-label), así que no da nombre. Dar al svg un <title> o aria-label que diga qué representa aquí, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Su contenido son {{count}} imágenes, todas con alt=\"\", así que no da nombre. Dar a una de ellas un texto alt que diga qué representa aquí, o nombrar el elemento con aria-label.",
       "nameCause_hint_iconEmpty": "Su único contenido es un <{{iconTag}} class=\"{{iconClass}}\"> vacío, un icono dibujado con CSS, que no tiene texto que dé un nombre. Agregar texto visualmente oculto, o nombrar el elemento con aria-label.",
       "nameCause_hint_iconGenerated": "Su único contenido es un carácter de fuente de iconos dibujado con CSS ({{pseudo}} en {{host}}), que los lectores de pantalla no pueden leer como nombre. Agregar texto visualmente oculto, o nombrar el elemento con aria-label.",
       "nameCause_hint_iconHidden": "Su único contenido es un <{{imageTag}}> oculto con aria-hidden=\"true\", así que los lectores de pantalla lo omiten y no da nombre. Agregar texto que lea un lector de pantalla (un <span> visualmente oculto), o nombrar el elemento con aria-label.",
@@ -122562,8 +123060,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "L’élément est dessiné avec une puce ou un numéro, comme élément d’une liste que le balisage n’expose plus.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "Quelques liens ou commandes, comme ceux d’une barre de navigation, peuvent se lire aussi bien sans la liste.",
       "listitemParentValid_summary_fail_wrapped": "Cet élément <li> est dans un <{{listElement}}>, mais l’élément {{wrapper}} entre les deux rompt la liste : les éléments d’une liste doivent être ses enfants.",
       "listitemParentValid_hint_fail_wrapped": "Placez l’élément <{{parentElement}}> à l’intérieur du <li>, ou supprimez-le, pour que le <li> soit un enfant du <{{listElement}}>.",
       "listitemParentValid_summary_fail_wrappedMany": "Cet élément <li> est dans un <{{listElement}}>, mais les éléments {{wrappers}} entre les deux rompent la liste : les éléments d’une liste doivent être ses enfants.",
@@ -122830,7 +123330,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportLarge_lean_why": "La balise meta viewport limite le zoom en dessous de 500 %.",
       "presentationRoleConflict_title": "Un rôle de présentation ne doit pas entrer en conflit avec un attribut ARIA global ou la focalisabilité",
       "presentationRoleConflict_description": "Vérifie que role=\"presentation\"/\"none\" (y compris le rôle presentation implicite d’un <img alt=\"\">) n’est pas combiné avec un attribut ARIA global (aria-label, aria-hidden, aria-describedby, ...) ou avec la focalisabilité (tabindex/native).",
-      "presentationRoleConflict_summary_cantTell": "Cet élément avec role=\"{{role}}\" a aussi {{attrs}} : les navigateurs ignorent donc le rôle et exposent l’élément malgré tout.",
+      "presentationRoleConflict_summary_cantTell": "Cet élément est marqué {{marker}} mais a aussi {{attrs}} : les navigateurs ignorent donc ce marquage et l’exposent malgré tout.",
+      "presentationRoleConflict_summary_cantTell_focusable": "Cet élément est marqué {{marker}} mais peut recevoir le focus : les navigateurs ignorent donc ce marquage et l’exposent malgré tout.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "Cet élément est marqué {{marker}} mais a aussi {{attrs}} et peut recevoir le focus : les navigateurs ignorent donc ce marquage et l’exposent malgré tout.",
       "presentationRoleConflict_hint_cantTell": "S’il doit rester caché aux technologies d’assistance, retirez les attributs de nom et rendez-le non focalisable. S’il doit être exposé, retirez role=\"presentation\" ou role=\"none\".",
       "presentationRoleConflict_lean_why": "Les navigateurs ignorent ici le rôle de présentation et exposent le rôle propre de l’élément.",
       "region_title": "Le contenu de la page devrait se trouver à l’intérieur d’un point de repère",
@@ -123152,17 +123654,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_lean_why_scrolls": "Le contenu de l’élément déborde de sa boîte et il défile : son arrêt de tabulation permet de le faire défiler au clavier.",
       "focusOrderSemantics_lean_why_documentInApplication": "Un document dans une application est rendu focalisable pour que les utilisateurs de lecteurs d’écran puissent le lire.",
       "pAsHeading_title": "Un texte mis en forme comme un titre devrait probablement être un véritable titre",
-      "pAsHeading_description": "Signale les éléments <p> et <div> courts dont le texte est entièrement en gras et affiché à 18 px ou plus, les <p> et <div> courts entièrement en gras à la taille du texte courant qui se lisent comme un titre avant du texte normal, ainsi que les blocs qui commencent par une ligne en gras terminée par un saut de ligne avant du texte normal, pour vérifier manuellement si un vrai élément de titre devrait être utilisé à la place.",
+      "pAsHeading_description": "Signale les éléments <p> et <div> courts dont le texte est entièrement en gras et affiché à 18 px ou plus, ainsi que les <p> courts entièrement en gras à la taille du texte courant qui se lisent comme un titre avant du texte normal, pour vérifier manuellement si un vrai élément de titre devrait être utilisé à la place.",
       "pAsHeading_summary_cantTell": "Ce paragraphe est entièrement en gras et affiché à une taille évoquant un titre.",
       "pAsHeading_hint_cantTell": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler un paragraphe pour qu’il y ressemble.",
       "pAsHeading_summary_cantTell_div": "Ce bloc de texte est entièrement en gras et affiché à une taille évoquant un titre.",
       "pAsHeading_hint_cantTell_div": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler une balise <div> pour qu’elle y ressemble.",
       "pAsHeading_summary_cantTell_bodySize": "Ce court paragraphe est entièrement en gras et précède du texte normal, comme un titre.",
       "pAsHeading_hint_cantTell_bodySize": "Si ce texte introduit le texte qui le suit, faites-en un vrai titre (<h1>-<h6> ou role=\"heading\") plutôt qu’un paragraphe en gras.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "Ce court bloc de texte est entièrement en gras et précède un passage de texte normal, comme un titre.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "Si ce texte introduit le texte qui le suit, faites-en un vrai titre (<h1>-<h6> ou role=\"heading\") plutôt qu’un <div> en gras.",
-      "pAsHeading_summary_cantTell_leadLine": "Ce bloc commence par une ligne en gras, terminée par un saut de ligne, avant du texte normal, comme un titre.",
-      "pAsHeading_hint_cantTell_leadLine": "Si la ligne en gras sert de titre au texte qui la suit, faites-en un vrai titre (<h1>-<h6> ou role=\"heading\") et placez ce texte dans un élément à part.",
       "pAsHeading_lean_why_headingStyle": "Le texte a la taille, la graisse et la police d’un vrai titre de cette page, et il ne se termine pas comme une phrase.",
       "pAsHeading_lean_why_bodyFollows": "Le texte est suivi d’un texte courant plus petit et non gras, et il ne se termine pas comme une phrase, comme un titre de section.",
       "pAsHeading_lean_caution_style": "Une phrase d’introduction ou une citation mise en exergue peut aussi précéder le texte courant, et un système de design peut réutiliser les styles de titre pour d’autres textes.",
@@ -123296,7 +123794,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "Le nom de ce lien (« {{name}} ») est une formule générique : seul le texte qui l’entoure dit où il mène.",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "Faites dire au texte du lien lui-même où il mène ou ce qu’il fait, par exemple « Télécharger la grille tarifaire 2026 » plutôt que « Cliquez ici », pour qu’il soit clair lu seul, comme dans une liste de liens.",
       "reflowHorizontalScroll_title": "Le contenu se redistribue à 320 pixels CSS de large sans défilement horizontal",
-      "reflowHorizontalScroll_description": "Avec une fenêtre de 320 pixels CSS de large, vérifie que la page ne défile pas horizontalement, nomme les éléments qui dépassent de son bord et pose une question sur les tableaux, les médias et le texte préformaté qui peuvent avoir besoin de leur mise en page.",
+      "reflowHorizontalScroll_description": "Avec une fenêtre de 320 pixels CSS de large, mesure si la page défile horizontalement ou coupe du contenu, et interroge sur chaque élément qui dépasse d’un bord, pour vérifier manuellement si lire la page exige de défiler dans deux directions.",
       "reflowHorizontalScroll_summary_fail": "À {{viewportWidth}} pixels de large, cet élément dépasse le bord de {{overflowPx}} pixels, donc la page défile horizontalement.",
       "reflowHorizontalScroll_hint_fail": "Faites-le tenir dans la largeur : aucune largeur fixe plus grande que l’écran, max-width: 100% sur les images et les contenus intégrés, et laissez les mots ou adresses longs passer à la ligne (overflow-wrap: anywhere).",
       "reflowHorizontalScroll_summary_unattributed": "À {{viewportWidth}} pixels de large, la page défile horizontalement de {{overflowPx}} pixels.",
@@ -123326,6 +123824,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrousel ou un menu peut montrer le reste autrement.",
       "reflowHorizontalScroll_lean_why_fieldCut": "Un champ de formulaire de l’élément est coupé, et rien ne fait défiler jusqu’au reste : un champ doit être vu et utilisé en entier.",
       "reflowHorizontalScroll_lean_caution_fieldCut": "Vérifiez que le champ est coupé parce que la largeur est étroite : un champ coupé à toute largeur est un problème, mais pas de redistribution.",
+      "reflowHorizontalScroll_lean_why_scrolls": "La page défile horizontalement à cette largeur : le contenu doit tenir dans la largeur, pour se lire en défilant dans une seule direction.",
+      "reflowHorizontalScroll_lean_caution_scrolls": "Vérifiez que le défilement horizontal montre du contenu, et que ce n’est pas un contenu qui a besoin de deux dimensions, comme un tableau de données, une carte ou un diagramme.",
+      "reflowHorizontalScroll_lean_caution_unattributed": "Aucun élément n’a pu être nommé : le débordement peut venir d’une marge, d’un contenu généré ou d’un shadow root fermé. Vérifiez que le défilement horizontal montre du contenu.",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -123463,10 +123964,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameCause_hint_labelWrapsOther": "Il se trouve dans le <label> « {{text}} », mais un label ne nomme que le premier champ qu’il contient, qui est un autre <{{firstTag}}>. Donnez à ce champ son propre <label> ou un aria-label.",
       "nameCause_hint_labelNotTied": "Le <label> « {{text}} » à côté n’y est pas lié : le label n’a pas d’attribut for et n’entoure pas le champ. Ajoutez for=\"{{id}}\" au label, ou placez le champ dans le label.",
       "nameCause_hint_labelNotTiedNoId": "Le <label> « {{text}} » à côté n’y est pas lié : le label n’a pas d’attribut for et n’entoure pas le champ. Donnez un id au champ et ajoutez au label un attribut for avec cet id, ou placez le champ dans le label.",
-      "nameCause_hint_imageNoAlt": "Son seul contenu est une image sans attribut alt, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle fait ou où elle mène, ou nommez l’élément avec aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Son seul contenu est une image avec alt=\"\", qui la marque comme décorative, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle fait ou où elle mène, ou nommez l’élément avec aria-label.",
-      "nameCause_hint_svgNoName": "Son seul contenu est un <svg> sans nom (ni <title> ni aria-label), il ne donne donc aucun nom. Donnez au svg un <title> ou un aria-label qui dit ce qu’il fait ou où il mène, ou nommez l’élément avec aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Son contenu est fait de {{count}} images, toutes avec alt=\"\", il ne donne donc aucun nom. Donnez à l’une d’elles un texte alt qui dit ce qu’il fait ou où il mène, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imageNoAlt": "Son seul contenu est une image sans attribut alt, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle représente ici, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Son seul contenu est une image avec alt=\"\", qui la marque comme décorative, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle représente ici, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_svgNoName": "Son seul contenu est un <svg> sans nom (ni <title> ni aria-label), il ne donne donc aucun nom. Donnez au svg un <title> ou un aria-label qui dit ce qu’il représente ici, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Son contenu est fait de {{count}} images, toutes avec alt=\"\", il ne donne donc aucun nom. Donnez à l’une d’elles un texte alt qui dit ce qu’il représente ici, ou nommez l’élément avec aria-label.",
       "nameCause_hint_iconEmpty": "Son seul contenu est un <{{iconTag}} class=\"{{iconClass}}\"> vide, une icône dessinée en CSS, qui n’a aucun texte pour donner un nom. Ajoutez du texte visuellement masqué, ou nommez l’élément avec aria-label.",
       "nameCause_hint_iconGenerated": "Son seul contenu est un caractère de police d’icônes dessiné en CSS ({{pseudo}} sur {{host}}), que les lecteurs d’écran ne peuvent pas lire comme un nom. Ajoutez du texte visuellement masqué, ou nommez l’élément avec aria-label.",
       "nameCause_hint_iconHidden": "Son seul contenu est un <{{imageTag}}> masqué par aria-hidden=\"true\", les lecteurs d’écran le sautent donc et il ne donne aucun nom. Ajoutez du texte qu’un lecteur d’écran lit (un <span> visuellement masqué), ou nommez l’élément avec aria-label.",
@@ -124348,8 +124849,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
-      "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
-      "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_lean_why_listRoleOverridden": "この項目は行頭記号や番号付きで、マークアップがもう公開していないリストの項目として描画されています。",
+      "listitemParentValid_lean_caution_listRoleOverridden": "ナビゲーションバーのリンクなど、数個のリンクやコントロールはリストがなくても同じように読める場合があります。",
       "listitemParentValid_summary_fail_wrapped": "この <li> は <{{listElement}}> の中にありますが、間にある {{wrapper}} がリストを途切れさせています。リストの項目はリストの子要素である必要があります。",
       "listitemParentValid_hint_fail_wrapped": "<{{parentElement}}> を <li> の中に移すか削除して、<li> が <{{listElement}}> の子要素になるようにしてください。",
       "listitemParentValid_summary_fail_wrappedMany": "この <li> は <{{listElement}}> の中にありますが、間にある {{wrappers}} がリストを途切れさせています。リストの項目はリストの子要素である必要があります。",
@@ -124616,7 +125119,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportLarge_lean_why": "viewport メタタグがズームを 500% 未満に制限しています。",
       "presentationRoleConflict_title": "プレゼンテーショナルなロールが、グローバル ARIA 属性やフォーカス可能性と矛盾してはならない",
       "presentationRoleConflict_description": "role=\"presentation\"/\"none\" (<img alt=\"\"> の暗黙の presentation ロールを含む) が、グローバル ARIA 属性 (aria-label、aria-hidden、aria-describedby など) やフォーカス可能性 (tabindex/ネイティブ) と組み合わされていないかを確認します。",
-      "presentationRoleConflict_summary_cantTell": "role=\"{{role}}\" のこの要素には {{attrs}} もあるため、ブラウザーはロールを無視し、要素をそのまま公開します。",
+      "presentationRoleConflict_summary_cantTell": "この要素は {{marker}} で示されていますが {{attrs}} もあるため、ブラウザーはその指定を無視し、要素をそのまま公開します。",
+      "presentationRoleConflict_summary_cantTell_focusable": "この要素は {{marker}} で示されていますがフォーカスを受け取れるため、ブラウザーはその指定を無視し、要素をそのまま公開します。",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "この要素は {{marker}} で示されていますが {{attrs}} もあり、フォーカスも受け取れるため、ブラウザーはその指定を無視し、要素をそのまま公開します。",
       "presentationRoleConflict_hint_cantTell": "支援技術から隠したままにする場合は、名前を付ける属性を外し、フォーカスできないようにしてください。公開する場合は、role=\"presentation\" または role=\"none\" を削除してください。",
       "presentationRoleConflict_lean_why": "ブラウザーはここでプレゼンテーションロールを無視し、要素本来のロールを公開します。",
       "region_title": "ページのコンテンツはランドマーク領域内にあることが望ましい",
@@ -124938,17 +125443,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_lean_why_scrolls": "この要素の内容はボックスからはみ出してスクロールするため、タブストップによってキーボードでスクロールできます。",
       "focusOrderSemantics_lean_why_documentInApplication": "アプリケーション内のドキュメントは、スクリーン リーダー利用者が読めるようにフォーカス可能にされています。",
       "pAsHeading_title": "見出しのように装飾されたテキストは、本来の見出し要素にすることが望ましい場合がある",
-      "pAsHeading_description": "テキストがすべて太字で 18px 以上で表示される短い <p> 要素と <div> 要素、本文サイズですべて太字で通常のテキストの前にタイトルのように読まれる短い <p> 要素と <div> 要素、および通常のテキストの前に改行で終わる太字の行で始まるブロックを、本当の見出し要素を使うべきかどうかの手動確認のために示します。",
+      "pAsHeading_description": "テキストがすべて太字で 18px 以上で表示される短い <p> 要素と <div> 要素、および本文サイズですべて太字で通常のテキストの前にタイトルのように読まれる短い <p> 要素を、本当の見出し要素を使うべきかどうかの手動確認のために示します。",
       "pAsHeading_summary_cantTell": "この段落はテキスト全体が太字で、見出しのようなサイズで表示されています。",
       "pAsHeading_hint_cantTell": "このテキストが新しいセクションの始まりを示すなら、段落を見出しのように装飾するのではなく、本来の見出し要素 (<h1>〜<h6> または role=\"heading\") を使用してください。",
       "pAsHeading_summary_cantTell_div": "このテキストのブロックは全体が太字で、見出しのようなサイズで表示されています。",
       "pAsHeading_hint_cantTell_div": "このテキストが新しいセクションの始まりであれば、<div> を見出しのように装飾するのではなく、本来の見出し要素 (<h1>-<h6> または role=\"heading\") を使用してください。",
       "pAsHeading_summary_cantTell_bodySize": "この短い段落はすべて太字で、見出しのように通常のテキストの前にあります。",
       "pAsHeading_hint_cantTell_bodySize": "このテキストが後に続くテキストを導入している場合は、太字の段落ではなく、本当の見出し (<h1>-<h6> または role=\"heading\") にしてください。",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "この短いテキストのブロックはすべて太字で、見出しのように通常のテキストの文章の前にあります。",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "このテキストが後に続くテキストを導入している場合は、太字の <div> ではなく、本当の見出し (<h1>-<h6> または role=\"heading\") にしてください。",
-      "pAsHeading_summary_cantTell_leadLine": "このブロックは改行で終わる太字の行で始まり、見出しのように通常のテキストの前にあります。",
-      "pAsHeading_hint_cantTell_leadLine": "太字の行が後に続くテキストのタイトルになっている場合は、本当の見出し (<h1>-<h6> または role=\"heading\") にし、そのテキストを独立した要素に入れてください。",
       "pAsHeading_lean_why_headingStyle": "このテキストはこのページの実際の見出しと同じフォントサイズ、太さ、ファミリーで、文のようには終わっていません。",
       "pAsHeading_lean_why_bodyFollows": "このテキストの後には太字でない小さな本文が続き、セクションの見出しのように文の形で終わっていません。",
       "pAsHeading_lean_caution_style": "導入文や引用の強調表示が本文の前に来ることもあり、デザインシステムが見出しのスタイルを別のテキストに使い回すこともあります。",
@@ -125082,7 +125583,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQualityLinkOnly_summary_cantTell_inContext": "このリンクの名前 (\"{{name}}\") は一般的な語句です。リンク先を示しているのは周囲のテキストだけです。",
       "linkNameQualityLinkOnly_hint_cantTell_inContext": "リンクの一覧のように単独で読んでもわかるよう、「こちらをクリック」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキスト自体でリンク先や動作を示してください。",
       "reflowHorizontalScroll_title": "幅 320 CSS ピクセルで、横スクロールなしにコンテンツがリフローする",
-      "reflowHorizontalScroll_description": "幅 320 CSS ピクセルのビューポートで、ページが横にスクロールしないことを確認し、端からはみ出す要素を示します。レイアウトが必要な場合がある表、メディア、整形済みテキストについては確認を求めます。",
+      "reflowHorizontalScroll_description": "幅 320 CSS ピクセルのビューポートで、ページが横にスクロールするか、コンテンツが切れるかを測定し、端からはみ出す各要素について、ページを読むのに 2 方向のスクロールが必要かどうかの手動確認のために示します。",
       "reflowHorizontalScroll_summary_fail": "幅 {{viewportWidth}} ピクセルで、この要素は端から {{overflowPx}} ピクセルはみ出しており、ページが横にスクロールします。",
       "reflowHorizontalScroll_hint_fail": "幅に収まるようにしてください。画面より広い固定幅を使わず、画像や埋め込みには max-width: 100% を指定し、長い単語やアドレスは折り返せるようにします（overflow-wrap: anywhere）。",
       "reflowHorizontalScroll_summary_unattributed": "幅 {{viewportWidth}} ピクセルで、ページが {{overflowPx}} ピクセル横にスクロールします。",
@@ -125112,6 +125613,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_clipped": "カルーセルやメニューは、残りを別の方法で表示できる場合があります。",
       "reflowHorizontalScroll_lean_why_fieldCut": "要素内のフォーム フィールドが切れており、残りの部分へスクロールする手段がありません。フィールドは全体が見えて操作できる必要があります。",
       "reflowHorizontalScroll_lean_caution_fieldCut": "幅が狭いためにフィールドが切れているかを確認してください。どの幅でも切れているフィールドは問題ですが、リフローの問題ではありません。",
+      "reflowHorizontalScroll_lean_why_scrolls": "この幅でページが横にスクロールします。コンテンツは 1 方向のスクロールだけで読めるよう、幅に収まる必要があります。",
+      "reflowHorizontalScroll_lean_caution_scrolls": "横スクロールでコンテンツが表示されるか、またそれがデータ テーブル、地図、図のように 2 次元を必要とするコンテンツでないかを確認してください。",
+      "reflowHorizontalScroll_lean_caution_unattributed": "要素を特定できませんでした。はみ出しはマージン、生成コンテンツ、または閉じたシャドウ ルートによる可能性があります。横スクロールでコンテンツが表示されるかを確認してください。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",
@@ -125249,10 +125753,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameCause_hint_labelWrapsOther": "<label>「{{text}}」の中にありますが、label が名前を付けるのは中の最初のフィールドだけで、それは別の <{{firstTag}}> です。このフィールドに専用の <label> か aria-label を付けてください。",
       "nameCause_hint_labelNotTied": "隣の <label>「{{text}}」はこのフィールドと結び付いていません。label に for 属性がなく、フィールドを囲んでもいません。label に for=\"{{id}}\" を追加するか、フィールドを label の中に入れてください。",
       "nameCause_hint_labelNotTiedNoId": "隣の <label>「{{text}}」はこのフィールドと結び付いていません。label に for 属性がなく、フィールドを囲んでもいません。フィールドに id を付けてその id の for 属性を label に追加するか、フィールドを label の中に入れてください。",
-      "nameCause_hint_imageNoAlt": "唯一の内容が alt 属性のない画像のため、名前になりません。何をするか、どこへ移動するかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
-      "nameCause_hint_imageEmptyAlt": "唯一の内容が alt=\"\" の画像で、装飾として扱われるため、名前になりません。何をするか、どこへ移動するかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
-      "nameCause_hint_svgNoName": "唯一の内容が名前のない <svg> (<title> も aria-label もない) のため、名前になりません。何をするか、どこへ移動するかを示す <title> または aria-label を svg に付けるか、aria-label で要素に名前を付けてください。",
-      "nameCause_hint_imagesEmptyAlt": "内容は {{count}} 個の画像で、すべて alt=\"\" のため、名前になりません。そのうち 1 つに、何をするか、どこへ移動するかを示す alt テキストを付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imageNoAlt": "唯一の内容が alt 属性のない画像のため、名前になりません。ここで何を表すかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imageEmptyAlt": "唯一の内容が alt=\"\" の画像で、装飾として扱われるため、名前になりません。ここで何を表すかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_svgNoName": "唯一の内容が名前のない <svg> (<title> も aria-label もない) のため、名前になりません。ここで何を表すかを示す <title> または aria-label を svg に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imagesEmptyAlt": "内容は {{count}} 個の画像で、すべて alt=\"\" のため、名前になりません。そのうち 1 つに、ここで何を表すかを示す alt テキストを付けるか、aria-label で要素に名前を付けてください。",
       "nameCause_hint_iconEmpty": "唯一の内容が空の <{{iconTag}} class=\"{{iconClass}}\"> (CSS で描かれたアイコン) で、名前になるテキストがありません。視覚的に隠したテキストを追加するか、aria-label で要素に名前を付けてください。",
       "nameCause_hint_iconGenerated": "唯一の内容が CSS で描かれたアイコンフォントの文字 ({{host}} の {{pseudo}}) で、スクリーンリーダーはこれを名前として読めません。視覚的に隠したテキストを追加するか、aria-label で要素に名前を付けてください。",
       "nameCause_hint_iconHidden": "唯一の内容が aria-hidden=\"true\" で隠された <{{imageTag}}> のため、スクリーンリーダーが読み飛ばし、名前になりません。スクリーンリーダーが読むテキスト (視覚的に隠した <span>) を追加するか、aria-label で要素に名前を付けてください。",
@@ -125957,11 +126461,18 @@ function optionText(value) {
   }
 }
 
+// Rule ids, tags and profile names are matched ignoring case in ASCII only:
+// a full Unicode fold reads the Kelvin sign (U+212A) as "k", so
+// "linK-name-present" written with it would select link-name-present.
+function asciiLowerChar(c) {
+  return c.toLowerCase();
+}
+
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
   if (Array.isArray(value)) {
     const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
-    const norm = lower ? arr.map((s) => s.toLowerCase()) : arr.slice();
+    const norm = lower ? arr.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : arr.slice();
     // de-dupe while preserving first-seen order (deterministic)
     const seen = new Set();
     const out = [];
@@ -125972,7 +126483,7 @@ function parseCommaList(value, { lower = false } = {}) {
   }
   if (typeof value !== 'string') return [];
   const raw = value.split(',').map((s) => String(s).trim()).filter(Boolean);
-  const norm = lower ? raw.map((s) => s.toLowerCase()) : raw.slice();
+  const norm = lower ? raw.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : raw.slice();
   const seen = new Set();
   const out = [];
   for (const v of norm) {
@@ -125982,7 +126493,7 @@ function parseCommaList(value, { lower = false } = {}) {
 }
 
 function normalizeIncludeMode(mode) {
-  const m = typeof mode === 'string' ? mode.trim().toLowerCase() : '';
+  const m = typeof mode === 'string' ? mode.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
   return m === 'or' ? 'or' : 'and';
 }
 
@@ -126180,7 +126691,7 @@ const WCAG_LEVEL_TAGS = (function () {
   const out = Object.create(null);
   const prefix = { '2.0': 'wcag2', '2.1': 'wcag21', '2.2': 'wcag22' };
   for (const version of WCAG_TARGET_VERSIONS) {
-    for (const level of WCAG_TARGET_LEVELS) out[prefix[version] + level.toLowerCase()] = { version, level };
+    for (const level of WCAG_TARGET_LEVELS) out[prefix[version] + level.replace(/[A-Z]/g, asciiLowerChar)] = { version, level };
   }
   return out;
 })();
@@ -126190,7 +126701,7 @@ const WCAG_LEVEL_TAGS = (function () {
 // WCAG 2.2 removed. A custom tag that only starts with "wcag" (wcagteam) is
 // none of them.
 function isWcagTag(tag) {
-  const t = String(tag).toLowerCase();
+  const t = String(tag).replace(/[A-Z]/g, asciiLowerChar);
   return (
     t === 'wcag22-removed' ||
     Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t) ||
@@ -126244,7 +126755,7 @@ function criterionInWcagTarget(sc, target) {
 function wcagCriteriaOfDef(def) {
   const out = [];
   for (const t of Array.isArray(def.tags) ? def.tags : []) {
-    const tag = String(t).toLowerCase();
+    const tag = String(t).replace(/[A-Z]/g, asciiLowerChar);
     if (Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, tag)) out.push(WCAG_SC_BY_TAG[tag]);
   }
   const details = def.data && def.data.details;
@@ -126255,7 +126766,7 @@ function wcagCriteriaOfDef(def) {
 }
 
 function normalizeProfileName(v) {
-  return typeof v === 'string' ? v.trim().toLowerCase() : '';
+  return typeof v === 'string' ? v.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
 }
 
 /**
@@ -126341,7 +126852,7 @@ const PROFILE_OWN_TAGS = CATALOG.profileOwnTags || {};
 // or, for a custom rule, the opt-in tags it carries.
 function optInTagsOf(def) {
   if (def && def.custom) {
-    const tags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    const tags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
     return tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   }
   const id = def && typeof def.ruleId === 'string' ? def.ruleId : '';
@@ -126426,7 +126937,7 @@ function resolveMappingSelection(engineOptions, appliedProfile) {
   const unknown = [];
   for (const token of requested) {
     const sep = token.indexOf(':');
-    const name = (sep < 0 ? token : token.slice(0, sep)).trim().toLowerCase();
+    const name = (sep < 0 ? token : token.slice(0, sep)).trim().replace(/[A-Z]/g, asciiLowerChar);
     const std = Object.prototype.hasOwnProperty.call(NORMATIVE_MAPPING_STANDARDS, name)
       ? NORMATIVE_MAPPING_STANDARDS[name]
       : null;
@@ -126438,8 +126949,8 @@ function resolveMappingSelection(engineOptions, appliedProfile) {
       whole.add(name);
       continue;
     }
-    const wanted = token.slice(sep + 1).trim().toLowerCase();
-    const version = std.versions.find((v) => v.toLowerCase() === wanted);
+    const wanted = token.slice(sep + 1).trim().replace(/[A-Z]/g, asciiLowerChar);
+    const version = std.versions.find((v) => v.replace(/[A-Z]/g, asciiLowerChar) === wanted);
     if (!version) {
       unknown.push(token);
       continue;
@@ -126596,14 +127107,14 @@ function knownSelectionNames(engineOptions) {
   const tags = new Set();
   for (const d of CHECK_DEFS) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
-    for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
+    for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).replace(/[A-Z]/g, asciiLowerChar));
   }
   // A standard's own rollups carry its rule tag, which selects them, even
   // when the standard brings no rule of its own to carry it too.
   for (const entry of Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []) {
     const metaTags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
     for (const t of metaTags) {
-      const tag = String(t).trim().toLowerCase();
+      const tag = String(t).trim().replace(/[A-Z]/g, asciiLowerChar);
       if (tag) tags.add(tag);
     }
   }
@@ -126613,17 +127124,17 @@ function knownSelectionNames(engineOptions) {
   const resolved = resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG);
   for (const d of resolved.defs.values()) {
     ruleIds.add(d.ruleId);
-    for (const t of Array.isArray(d.tags) ? d.tags : []) tags.add(String(t).toLowerCase());
+    for (const t of Array.isArray(d.tags) ? d.tags : []) tags.add(String(t).replace(/[A-Z]/g, asciiLowerChar));
   }
   const skippedReasons = new Map();
   for (const sk of resolved.skipped) if (sk.id && !skippedReasons.has(sk.id)) skippedReasons.set(sk.id, sk.reason);
   // Rule ids that differ only in case name the same rule (the runner skips a
   // custom rule spelt like another in another case), so IMG-ALT-PRESENT is
   // img-alt-present, as tags and engineOptions.rules[ruleId] are read.
-  const prefix = String(ENGINE_TAG).toLowerCase() + '-';
+  const prefix = String(ENGINE_TAG).replace(/[A-Z]/g, asciiLowerChar) + '-';
   const byLower = new Map();
   for (const id of [...ruleIds, ...Object.keys(COMPOSITE_RULE_INDEX)]) {
-    if (!byLower.has(id.toLowerCase())) byLower.set(id.toLowerCase(), id);
+    if (!byLower.has(id.replace(/[A-Z]/g, asciiLowerChar))) byLower.set(id.replace(/[A-Z]/g, asciiLowerChar), id);
   }
   const isRuleId = (v) =>
     !!compositeIdOf(v) || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG));
@@ -126635,19 +127146,19 @@ function knownSelectionNames(engineOptions) {
         ? ' (a custom rule that was skipped: ' + skippedReasons.get(String(v).trim()) + ')'
         : ''),
     isRuleId,
-    isTag: (v) => tags.has(String(v).toLowerCase()),
+    isTag: (v) => tags.has(String(v).replace(/[A-Z]/g, asciiLowerChar)),
     // A rule id as the engine spells it, for one given in another case; any
     // other value as given.
     canonical: (v) => {
       if (typeof v !== 'string' || isRuleId(v)) return v;
-      let lower = v.trim().toLowerCase();
+      let lower = v.trim().replace(/[A-Z]/g, asciiLowerChar);
       if (!byLower.has(lower) && lower.startsWith(prefix)) lower = lower.slice(prefix.length);
       return byLower.get(lower) || v;
     },
     // A WCAG version/level tag no rule carries: a real tag, for criteria the
     // engine has no rule for, not a typo.
     isUntestedWcagTag: (v) => {
-      const t = String(v).toLowerCase();
+      const t = String(v).replace(/[A-Z]/g, asciiLowerChar);
       return !tags.has(t) && Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t);
     }
   };
@@ -126655,7 +127166,7 @@ function knownSelectionNames(engineOptions) {
 
 // 'WCAG 2.2 Level A ("wcag22a")', for messages.
 function describeWcagLevelTag(tag) {
-  const t = WCAG_LEVEL_TAGS[String(tag).toLowerCase()];
+  const t = WCAG_LEVEL_TAGS[String(tag).replace(/[A-Z]/g, asciiLowerChar)];
   return 'WCAG ' + t.version + ' Level ' + t.level + ' ("' + tag + '")';
 }
 
@@ -126680,7 +127191,7 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
     );
   }
   if (asRules.length === values.length) return { includeRuleIds: values };
-  if (asRules.length === 0) return { tags: values.map((v) => v.toLowerCase()) };
+  if (asRules.length === 0) return { tags: values.map((v) => v.replace(/[A-Z]/g, asciiLowerChar)) };
   throw invalidRunOnly(
     'runOnly: an array lists either rule ids or tags, not both; use { includeRuleIds, tags } to combine them.'
   );
@@ -126820,7 +127331,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // any rule ids or tags, and the other keys beside it (excludeTags,
   // excludeRuleIds...) still apply.
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
-    const kind = String(runOnly.type).trim().toLowerCase();
+    const kind = String(runOnly.type).trim().replace(/[A-Z]/g, asciiLowerChar);
     const rest = { ...runOnly };
     delete rest.type;
     delete rest.values;
@@ -126836,7 +127347,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     ['engineOptions.includeMode', eo.includeMode]
   ]) {
     if (value === undefined || value === null) continue;
-    const mode = typeof value === 'string' ? value.trim().toLowerCase() : '';
+    const mode = typeof value === 'string' ? value.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
     if (mode === 'and' || mode === 'or') continue;
     const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
     if (strictOf(eo)) throw invalidRunOnly(message);
@@ -127023,7 +127534,7 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const norm = normalizeRunOnly(runOnly);
   const includeMode = normalizeIncludeMode(norm.includeMode);
 
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
 
   const hasRuleInclude = norm.includeRuleIds.length > 0;
   const hasTestInclude = norm.includeTestIds.length > 0;
@@ -127137,7 +127648,7 @@ function ruleExcludedByRunOnly(def, runOnly, engineTag) {
   }
 
   if (norm.excludeTags.length) {
-    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
     if (defTags.some((t) => norm.excludeTags.includes(t))) return true;
   }
 
@@ -127164,9 +127675,9 @@ function ruleNamedOnItsOwn(def, runOnly, engineTag) {
   ) {
     return true;
   }
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
   // The engine's own tag is on every rule and rollup, so it names them all.
-  const namesCriteria = (t) => isWcagTag(t) || t === tag.toLowerCase();
+  const namesCriteria = (t) => isWcagTag(t) || t === tag.replace(/[A-Z]/g, asciiLowerChar);
   if (defTags.some((t) => norm.tags.includes(t) && !namesCriteria(t))) return true;
   if (optInTagsOf(def).some((t) => norm.ownTags.includes(t) || norm.optInTags.includes(t))) return true;
   return norm.bestPractices && defTags.includes(BEST_PRACTICE_TAG);
@@ -127177,7 +127688,7 @@ function ruleNamedOnItsOwn(def, runOnly, engineTag) {
 // (rollupCompositeResults), not the rule's other criteria.
 function criteriaNamingRule(def, runOnly) {
   const norm = normalizeRunOnly(runOnly);
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
   return defTags
     .filter((t) => norm.tags.includes(t) && Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, t))
     .map((t) => WCAG_SC_BY_TAG[t]);
@@ -127303,11 +127814,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     const tiers = Array.isArray(out.occurrences)
       ? out.occurrences.map((o) => (o && typeof o === 'object' ? o.occurrenceOutcome : undefined))
       : [];
-    if ((out.outcome === 'cantTell' || out.outcome === 'pass') && tiers.includes('fail')) {
-      out.outcome = 'fail';
-    } else if (out.outcome === 'fail' && tiers.length && tiers.every((x) => x === 'cantTell')) {
-      out.outcome = 'cantTell';
-    }
+    // An occurrence with no tier has the outcome's. The outcome is the
+    // worst of them: fail if any fails, cantTell if any asks, pass when all
+    // pass; the same table the exclusion filter above settles by.
+    const eff = tiers.map((x) => x || out.outcome);
+    if (eff.includes('fail')) out.outcome = 'fail';
+    else if (eff.includes('cantTell')) out.outcome = 'cantTell';
+    else if (eff.length && eff.every((x) => x === 'pass')) out.outcome = 'pass';
     // A fail the policy doesn't allow stays cantTell, whichever layer said
     // fail, and its fail-tier occurrences go with it, as a manual rule's do:
     // otherwise the tiers would undo the policy above.
@@ -127747,6 +128260,7 @@ const SAFE_DOM_METHODS = [
   "setAttribute"
 ];
 const SAFE_DOM_OTHER_NAMES = [
+  "customElements",
   "adoptedStyleSheets",
   "ariaActiveDescendantElement",
   "ariaControlsElements",
@@ -133576,6 +134090,32 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       });
       if (!gen.readable) return blocked('GENERATED_TEXT_UNREADABLE', 'content', gen.value);
 
+      // A ::before or ::after made a block container, with a negative
+      // text-indent, moves its text by that much (text-indent: -9999px, an
+      // image replacement): drawn wholly left of the page, nothing is
+      // painted. Its text ends, at most, where the element's box ends.
+      try {
+        const indent = Number.parseFloat(ps.textIndent) || 0;
+        const display = String(ps.display || '');
+        const position = String(ps.position || '');
+        if (
+          indent < 0 &&
+          display &&
+          display !== 'inline' &&
+          display !== 'contents' &&
+          display !== 'none' &&
+          position !== 'absolute' &&
+          position !== 'fixed' &&
+          typeof dom.get(el, 'getBoundingClientRect') === 'function'
+        ) {
+          const r = dom.getBoundingClientRect(el);
+          const doc = dom.ownerDocument(el);
+          const win = doc && dom.defaultView(doc);
+          const sx = (win && win.scrollX) || 0;
+          if (r && r.width > 0 && r.right + indent + sx <= 0) return null;
+        }
+      } catch {}
+
       // Effects on the generated text itself, which draw something other
       // than its declared colors.
       if (hasBlendMode(ps)) return blocked('MIX_BLEND_MODE', 'mix-blend-mode', ps.mixBlendMode);
@@ -136572,10 +137112,18 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return includeMain && token === 'main';
   }
 
+  // Ancestors in the flat tree, as the accessibility tree is built: through
+  // the slot an element is assigned to, and from a shadow root to its host.
+  // A web component's <header> inside an <article> in the page is the
+  // article's header, not the page's banner (HTML-AAM).
+  const flatParent =
+    shared && typeof shared.flatParentElement === 'function'
+      ? (n) => shared.flatParentElement(n) || null
+      : (n) => dom.parentElement(n);
   function hasLandmarkScopingAncestor(el, opts) {
     if (!isElement(el)) return false;
     const includeMain = !!(opts && opts.includeMain);
-    let cur = dom.parentElement(el);
+    let cur = flatParent(el);
     let guard = 0;
     while (cur && guard++ < 10000) {
       if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
@@ -136583,7 +137131,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       // (or fragment) scan should never let ancestry OUTSIDE the
       // analyzed subtree affect a role computed WITHIN it.
       if (ariaRoots.includes(cur)) break;
-      cur = dom.parentElement(cur);
+      cur = flatParent(cur);
     }
     return false;
   }
@@ -137326,7 +137874,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // the row groups) from its "descendant of a table" ones (tr, td, th), which
   // sit inside a rowgroup in most real tables.
   const NATIVE_CONTAINMENT_CONTEXT = {
-    li: { tags: ['ul', 'ol', 'menu'], directParent: true },
+    // An <li> in an element with role list is a listitem too, as browsers
+    // expose it and listitem-parent-valid accepts it.
+    li: { tags: ['ul', 'ol', 'menu'], roles: ['list'], directParent: true },
     option: { tags: ['select', 'datalist', 'optgroup'], directParent: true },
     thead: { tags: ['table'], directParent: true },
     tbody: { tags: ['table'], directParent: true },
@@ -137347,6 +137897,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     while (cur && guard++ < 10000) {
       const tag = lower(dom.tagName(cur) || '');
       if (tags.indexOf(tag) !== -1) return true;
+      if (context.roles && context.roles.indexOf(getAuthorRole(cur)) !== -1) return true;
       if (context.directParent) return false;
       cur = dom.parentElement(cur);
     }
@@ -138258,8 +138809,9 @@ const describeOptionValue = (function describeOptionValue(v) {
   return 'an object';
 });
 const engineOptionSpec = (function engineOptionSpec() {
+  // Spread reads a hole ([, 'main']) as undefined, which every() skips.
   const list = (v) =>
-    typeof v === 'string' || (Array.isArray(v) && v.every((x) => typeof x === 'string'));
+    typeof v === 'string' || (Array.isArray(v) && [...v].every((x) => typeof x === 'string'));
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
   const T = {
     any: { test: () => true, expected: 'any value' },
@@ -138278,7 +138830,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     }),
     // A non-empty list of some of `values`.
     someOf: (values) => ({
-      test: (v) => Array.isArray(v) && v.length > 0 && v.every((x) => values.includes(x)),
+      test: (v) => Array.isArray(v) && v.length > 0 && [...v].every((x) => values.includes(x)),
       expected: 'a non-empty list of ' + values.map((x) => JSON.stringify(x)).join(', ')
     })
   };
@@ -138304,7 +138856,11 @@ const engineOptionSpec = (function engineOptionSpec() {
       expected: 'true or false'
     },
     locale: T.string,
-    wcagVersion: T.oneOf(['2.0', '2.1', '2.2']),
+    // Read trimmed, as wcagLevel is read trimmed and in any case.
+    wcagVersion: {
+      test: (v) => typeof v === 'string' && ['2.0', '2.1', '2.2'].includes(v.trim()),
+      expected: 'one of "2.0", "2.1", "2.2"'
+    },
     wcagLevel: {
       test: (v) => typeof v === 'string' && ['A', 'AA', 'AAA'].includes(v.trim().toUpperCase()),
       expected: '"A", "AA" or "AAA", in any case'
@@ -138327,7 +138883,9 @@ const engineOptionSpec = (function engineOptionSpec() {
     styleSheetTexts: {
       test: (v) =>
         Array.isArray(v) &&
-        v.every((s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'),
+        [...v].every(
+          (s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'
+        ),
       expected: '[{ href, text }]'
     },
     timestamp: T.string,
@@ -138420,7 +138978,9 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
   function describe(v) {
     if (v === null) return 'null';
     if (Array.isArray(v)) {
-      // Short lists of plain values are shown, so the one at fault is seen.
+      // Short lists of plain values are shown, so the one at fault is seen;
+      // a hole as undefined.
+      v = [...v];
       const plain =
         v.length > 0 && v.length <= 6 && v.every((x) => x === null || typeof x !== 'object');
       const text = plain
@@ -139378,6 +139938,25 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } else out.push(...flatChildNodes(c, depth + 1));
     }
     return out;
+  };
+
+  // Page text quoted in a message, cut to `max` characters with an ellipsis,
+  // never splitting a surrogate pair: a 1 MB label or address would
+  // otherwise be copied whole into the summary, its parameters and every
+  // report.
+  const quoteText = (value, max = 120) => {
+    const v = String(value == null ? '' : value);
+    if (v.length <= max) return v;
+    const code = v.charCodeAt(max - 2);
+    return v.slice(0, code >= 0xd800 && code <= 0xdbff ? max - 2 : max - 1) + '…';
+  };
+
+  // Items listed in a message: the first five, then an ellipsis, so an
+  // attribute naming hundreds of ids doesn't put every one in the hint.
+  // `show` turns an item into its text, and only for those shown.
+  const shortList = (items, show = (x) => x, max = 5) => {
+    const shown = items.slice(0, max).map(show).join(', ');
+    return items.length > max ? `${shown}, …` : shown;
   };
 
   // An element's child elements in the flat tree (flatChildNodes).
@@ -140764,12 +141343,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const ids = labelledby.split(/\s+/);
         const targets = ids.map(byId);
         if (targets.every((t) => !t)) {
-          const list = ids.map((id) => `"${id}"`).join(', ');
+          const list = shortList(ids.map((id) => `"${quoteText(id, 60)}"`));
           return {
             hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyMissing',
             params: { ids: list },
-            detail: { cause: 'labelledbyMissing', ids }
+            detail: { cause: 'labelledbyMissing', ids: ids.slice(0, 10) }
           };
         }
         // Every target is there, and none has text or a name of its own.
@@ -140782,12 +141361,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
           dom.querySelector(t, 'img, svg, input, select, textarea, [aria-label], [title]');
         const tagWithId = (t) => `<${tagOf(t)} id="${attr(t, 'id')}">`;
         if (targets.every((t) => t && t !== el && !gives(t))) {
-          const list = targets.map(tagWithId).join(', ');
+          const list = shortList(targets.map(tagWithId));
           return {
             hint: `Its aria-labelledby points only to elements with no text (${list}), so it gives no name. Put the text in the element it points to, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyEmpty',
             params: { targets: list },
-            detail: { cause: 'labelledbyEmpty', ids }
+            detail: { cause: 'labelledbyEmpty', ids: ids.slice(0, 10) }
           };
         }
         // The element names nothing, so a target with text has it hidden
@@ -140812,17 +141391,26 @@ const createDomHelpers = (function createDomHelpers(opts) {
               hint: `Its aria-labelledby points to ${target}, whose text "${text}" is in a <${hiddenElement}> hidden from screen readers by ${hiddenBy}, so it gives no name. Let screen readers read that text, or name it with aria-label.`,
               hintKey: 'nameCause_hint_labelledbyHiddenText',
               params: { target, text, hiddenElement, hiddenBy },
-              detail: { cause: 'labelledbyHiddenText', ids, text, hiddenBy: reason }
+              detail: {
+                cause: 'labelledbyHiddenText',
+                ids: ids.slice(0, 10),
+                text,
+                hiddenBy: reason
+              }
             };
           }
           if (missing.length && found.length) {
-            const missingIds = missing.map((id) => `"${id}"`).join(', ');
-            const list = found.map(tagWithId).join(', ');
+            const missingIds = shortList(missing.map((id) => `"${quoteText(id, 60)}"`));
+            const list = shortList(found.map(tagWithId));
             return {
               hint: `Its aria-labelledby gives no name: no element on the page has ${missingIds}, and what it does point to (${list}) has no text screen readers read. Point it at elements with text, or name it with aria-label.`,
               hintKey: 'nameCause_hint_labelledbyMixed',
               params: { ids: missingIds, targets: list },
-              detail: { cause: 'labelledbyMixed', ids, missing }
+              detail: {
+                cause: 'labelledbyMixed',
+                ids: ids.slice(0, 10),
+                missing: missing.slice(0, 10)
+              }
             };
           }
         }
@@ -141129,7 +141717,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           .map(byId)
           .filter((t) => t && t !== el && HIDDEN_TEXT_RE.test(String(dom.textContent(t) || '')));
         if (described.length && !skip('describedbyNotName')) {
-          const targets = described.map((t) => describeElement(t, { text: true })).join(', ');
+          const targets = shortList(described, (t) => describeElement(t, { text: true }));
           return {
             hint: `Its aria-describedby points to ${targets}, which gives a description, not a name. Point aria-labelledby at it instead, or name it with aria-label.`,
             hintKey: 'nameCause_hint_describedbyNotName',
@@ -141192,7 +141780,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!allEmpty) return null;
       const count = imgs.length;
       return {
-        hint: `Its content is ${count} images, all with alt="", so it gives no name. Give one of them alt text that says what it does or where it leads, or name the element with aria-label.`,
+        hint: `Its content is ${count} images, all with alt="", so it gives no name. Give one of them alt text that says what it stands for here, or name the element with aria-label.`,
         hintKey: 'nameCause_hint_imagesEmptyAlt',
         params: { count },
         detail: { cause: 'imagesEmptyAlt', count }
@@ -141266,7 +141854,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const alt = dom.getAttribute(img, 'alt');
       if (alt === null) {
         return {
-          hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.',
           hintKey: 'nameCause_hint_imageNoAlt',
           params: {},
           detail: { cause: 'imageNoAlt' }
@@ -141274,7 +141862,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
       if (!trim(alt)) {
         return {
-          hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.',
           hintKey: 'nameCause_hint_imageEmptyAlt',
           params: {},
           detail: { cause: 'imageEmptyAlt' }
@@ -141289,7 +141877,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       );
     if (svgNamed) return null;
     return {
-      hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.',
+      hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it stands for here, or name the element with aria-label.',
       hintKey: 'nameCause_hint_svgNoName',
       params: {},
       detail: { cause: 'svgNoName' }
@@ -142996,6 +143584,49 @@ const createDomHelpers = (function createDomHelpers(opts) {
   const LABELABLE_SELECTOR =
     'input:not([type="hidden"]), select, textarea, button, meter, output, progress';
 
+  // HTML's labelable elements also include form-associated custom elements:
+  // an autonomous custom element whose class sets `static formAssociated =
+  // true`. No selector finds them, so the page's custom element registry
+  // is asked, for elements with a hyphen in their name only.
+  function isFormAssociatedCustom(el) {
+    try {
+      const name = String(dom.localName(el) || '');
+      if (name.indexOf('-') === -1) return false;
+      const doc = dom.ownerDocument(el);
+      const win = doc && dom.defaultView(doc);
+      // Asked once per name and scan, as the internals lookup asks.
+      const ctor = __customElementDefinition(win, lower(name));
+      return !!(ctor && ctor.formAssociated === true);
+    } catch {
+      return false;
+    }
+  }
+  function isLabelableElement(el) {
+    try {
+      if (!el || !dom.get(el, 'matches')) return false;
+      return dom.matches(el, LABELABLE_SELECTOR) || isFormAssociatedCustom(el);
+    } catch {
+      return false;
+    }
+  }
+  // A label's first labelable descendant, in tree order.
+  function firstLabelableIn(label) {
+    try {
+      const plain = dom.querySelector(label, LABELABLE_SELECTOR);
+      // A custom element may come before it: look for one only if the label
+      // holds any element with a hyphen in its name.
+      const walker = dom.createTreeWalker(dom.ownerDocument(label), label, 1);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (n === plain) return plain;
+        if (String(dom.localName(n) || '').indexOf('-') !== -1 && isFormAssociatedCustom(n))
+          return n;
+      }
+      return plain;
+    } catch {
+      return null;
+    }
+  }
+
   // Real `<label>` elements associated with `el`, replicating the native
   // `.labels` API's result (a `<label for="id">` pointing at `el`, plus a
   // wrapping `<label>` with no `for` attribute whose first labelable
@@ -143025,13 +143656,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // `<label for="x">`/wrapping `<label>` around a non-labelable element
     // (e.g. a `<div role="combobox">`) produces no accessible name in
     // either browser's accessibility tree.
-    let isLabelable;
-    try {
-      isLabelable = !!(el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR));
-    } catch {
-      isLabelable = false;
-    }
-    if (!isLabelable) return out;
+    if (!isLabelableElement(el)) return out;
 
     const id = trim(getAttr(el, 'id'));
     if (id) {
@@ -143057,15 +143682,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         !(dom.get(wrap, 'hasAttribute') && dom.hasAttribute(wrap, 'for')) &&
         out.indexOf(wrap) === -1
       ) {
-        let firstControl = null;
-        try {
-          firstControl = dom.get(wrap, 'querySelector')
-            ? dom.querySelector(wrap, LABELABLE_SELECTOR)
-            : null;
-        } catch {
-          firstControl = null;
-        }
-        if (firstControl === el) out.push(wrap);
+        if (firstLabelableIn(wrap) === el) out.push(wrap);
       }
     } catch {}
     // Usually 0-1 elements; a second only shows up for genuinely unusual
@@ -143102,9 +143719,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
             ? root
             : dom.ownerDocument(label);
         const el = scope ? dom.getElementById(scope, id) : null;
-        return el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR) ? el : null;
+        return isLabelableElement(el) ? el : null;
       }
-      return dom.get(label, 'querySelector') ? dom.querySelector(label, LABELABLE_SELECTOR) : null;
+      return firstLabelableIn(label);
     } catch {
       return null;
     }
@@ -144321,8 +144938,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (type === 'button' || type === 'submit' || type === 'reset' || type === 'image') {
         const v = getAttr(el, 'value');
         if (v != null) {
-          const t = trim(v);
-          if (t) return t;
+          // A value attribute is the label, even empty: the default label
+          // is for a submit or reset button with none.
+          return trim(v);
         }
         if (type === 'submit') return 'Submit';
         if (type === 'reset') return 'Reset';
@@ -148126,7 +148744,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl, getCustomElementInternals }
+    { trim, getLabelControl, getCustomElementInternals, flatParentElement }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -148394,6 +149012,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getTextAlternativeInfo,
     getTextAlternativeSignal,
     describeTextAlternativeSignal,
+    quoteText,
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
@@ -150363,7 +150982,9 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
     // told apart in a report, and IMG-ALT-PRESENT is most likely meant as
     // img-alt-present. A custom rule spelt like a built-in in another case
     // overrides it, under the built-in's id, and is said so.
-    const sameId = (a, b) => typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
+    const sameId = (a, b) =>
+      typeof b === 'string' &&
+      a.replace(/[A-Z]/g, (c) => c.toLowerCase()) === b.replace(/[A-Z]/g, (c) => c.toLowerCase());
     const earlier = [...defs.keys()].find((k) => sameId(ruleId, k));
     // A second rule with the same id would silently replace the first; a
     // composite's id would put one id in both checksResults and
@@ -150595,6 +151216,48 @@ const runCoreSettled = (function runCoreSettled(
   const excludeSelectors = normalizeSelectorList(
     engineOptionsResolved && engineOptionsResolved.excludeSelectors
   );
+  // Under strictOptions, a selector that isn't valid CSS, which would
+  // exclude nothing, is refused before anything runs: globally and for each
+  // rule (engineOptions.rules[id].excludeSelectors). Otherwise it is warned
+  // about where it is used, and the other selectors still apply.
+  if (strictOf(engineOptionsResolved)) {
+    const probe = dom.get(document, 'documentElement');
+    const invalid = (list) =>
+      normalizeSelectorList(list).filter((sel) => {
+        try {
+          if (probe) dom.matches(probe, sel);
+          return false;
+        } catch {
+          return true;
+        }
+      });
+    const bad = invalid(excludeSelectors).map((sel) => 'excludeSelectors: "' + sel + '"');
+    const ruleSettings =
+      engineOptionsResolved.rules &&
+      typeof engineOptionsResolved.rules === 'object' &&
+      !Array.isArray(engineOptionsResolved.rules)
+        ? engineOptionsResolved.rules
+        : null;
+    if (ruleSettings) {
+      for (const id of Object.keys(ruleSettings)) {
+        const own = ruleSettings[id];
+        if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
+        for (const sel of invalid(own.excludeSelectors)) {
+          bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
+        }
+      }
+    }
+    if (bad.length) {
+      const err = new Error(
+        'engineOptions.' +
+          bad.join('; engineOptions.') +
+          (bad.length > 1 ? ' are' : ' is') +
+          ' not valid CSS, and would exclude nothing. (strictOptions)'
+      );
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
+  }
   // Default off: explicit opt-in for "this scan target was never meant to
   // represent a real page" -- see helpers.isWholeDocumentScope().
   const fragment = !!(engineOptionsResolved && switchOf(engineOptionsResolved.fragment) === true);
@@ -150707,6 +151370,24 @@ const runCoreSettled = (function runCoreSettled(
     } catch {
       rgba = { a: 1 };
     }
+    // The color parser reads computed styles, which the browser has already
+    // checked, so it is lenient: a keyword that depends on the page
+    // (inherit, currentColor) or rgb() with a wrong number of values would
+    // pass. A color the caller writes is checked as CSS would check it.
+    const text = String(given).trim();
+    const lower = text.toLowerCase();
+    const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
+    const badSyntax =
+      ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'].includes(lower) ||
+      (fn &&
+        (() => {
+          const body = fn[2].trim();
+          const parts = body.includes(',')
+            ? body.split(',').map((x) => x.trim())
+            : body.split('/').flatMap((x, i) => (i === 0 ? x.trim().split(/\s+/) : [x.trim()]));
+          return parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
+        })());
+    if (badSyntax) rgba = null;
     if (!rgba || !(rgba.a >= 1)) {
       const message =
         'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
@@ -150963,16 +151644,21 @@ const runCoreSettled = (function runCoreSettled(
   const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
   const optInRulesRan = new Set();
   if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
+    const message =
+      'engineOptions.optInRules: ' +
+      runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
+      ', no such opt-in rule tag (' +
+      (OPT_IN_RULE_TAGS.length
+        ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
+        : 'this version has none') +
+      ')';
+    if (strictOf(engineOptionsResolved)) {
+      const err = new Error(message + '. (strictOptions)');
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
     try {
-      console.warn(
-        '[surea11y] engineOptions.optInRules: ignoring ' +
-          runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such opt-in rule tag (' +
-          (OPT_IN_RULE_TAGS.length
-            ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
-            : 'this version has none') +
-          ').'
-      );
+      console.warn('[surea11y] ' + message.replace(': ', ': ignoring ') + '.');
     } catch {}
   }
 
@@ -150981,11 +151667,17 @@ const runCoreSettled = (function runCoreSettled(
   // result carries only those asked for, or implied by the applied profile.
   const mappingSelection = resolveMappingSelection(engineOptionsResolved, appliedProfile);
   if (mappingSelection.unknown.length) {
+    const named = mappingSelection.unknown.map((s) => '"' + s + '"').join(', ');
+    if (strictOf(engineOptionsResolved)) {
+      const err = new Error(
+        'engineOptions.mappings: ' + named + ', no such standard or version. (strictOptions)'
+      );
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
     try {
       console.warn(
-        '[surea11y] engineOptions.mappings: ignoring ' +
-          mappingSelection.unknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such standard or version.'
+        '[surea11y] engineOptions.mappings: ignoring ' + named + ', no such standard or version.'
       );
     } catch {}
   }
@@ -151129,7 +151821,9 @@ const runCoreSettled = (function runCoreSettled(
       .map((d) => d.ruleId)
       .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
     const byLower = new Map();
-    for (const id of knownIds) if (typeof id === 'string') byLower.set(id.toLowerCase(), id);
+    // ASCII case only, as the selection matches ids (asciiLowerChar).
+    const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
+    for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
     const legacy = String(ENGINE_TAG || 'a11ycore').toLowerCase() + '-';
     const unknownRuleKeys = [];
     const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
@@ -151137,7 +151831,7 @@ const runCoreSettled = (function runCoreSettled(
       for (const key of keys) {
         const value = rulesOption[key];
         if (!value || typeof value !== 'object') continue;
-        const lower = key.trim().toLowerCase();
+        const lower = lowerAscii(key.trim());
         let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
         if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
         if (exact) {
@@ -151564,7 +152258,7 @@ const runCoreSettled = (function runCoreSettled(
     }
 
     if (typeof applicabilityFn === 'function') {
-      let applicable = true;
+      let applicable;
       try {
         const res = applicabilityFn(ctx);
         // Rules run synchronously: a Promise is truthy, and would have
@@ -151578,6 +152272,15 @@ const runCoreSettled = (function runCoreSettled(
         if (typeof res === 'boolean') applicable = res;
         else if (res && typeof res === 'object' && typeof res.applicable === 'boolean')
           applicable = res.applicable;
+        else {
+          // undefined (a forgotten return), 0, null or 'false' ran the rule
+          // everywhere: what was meant can't be known, so the rule says so.
+          throw new Error(
+            'applicability returned ' +
+              describeOptionValue(res) +
+              '; it must return true or false (or { applicable: true | false })'
+          );
+        }
       } catch (err) {
         const raw = {
           outcome: 'cantTell',
@@ -152271,6 +152974,20 @@ const runCore = (function runCore(
     }
   } finally {
     restoreDomProtection();
+    // The run's element-keyed caches (set up in createDomHelpers and
+    // createContrastHelpers) go with it: left on the window, they kept every
+    // scanned element, and the strings read from it, alive until the next
+    // scan, even after the page removed them.
+    try {
+      const dom = createSafeDom();
+      const w =
+        typeof window !== 'undefined'
+          ? window
+          : typeof document !== 'undefined' && document
+            ? dom.defaultView(document)
+            : null;
+      if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
+    } catch {}
   }
 });
 
@@ -152554,8 +153271,8 @@ const runProfiles = (function runProfiles(engineOptions, run) {
       }
     }
     if (unique.length <= 1) {
-      return run(
-        Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+      return withOwnVerdicts(
+        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined }))
       );
     }
     const runs = [];
@@ -152573,7 +153290,40 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     };
     return step(0);
   }
-  return run(engineOptions);
+  return withOwnVerdicts(run(engineOptions));
+});
+const withOwnVerdicts = (function withOwnVerdicts(result) {
+  // A result first: a page may add then to Object.prototype, which makes
+  // any object look like a promise.
+  if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
+    return result.then(withOwnVerdicts);
+  }
+  if (!result || !Array.isArray(result.checksResults)) return result;
+  const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
+  for (const check of result.checksResults) {
+    const occurrences = check && Array.isArray(check.occurrences) ? check.occurrences : [];
+    if (!occurrences.length || check.outcome === 'fail') continue;
+    const fails = occurrences.map(() => false);
+    for (const rollup of rollups) {
+      const details = rollup && rollup.data && rollup.data.details;
+      const contributors =
+        details && Array.isArray(details.contributors) ? details.contributors : [];
+      const c = contributors.find((x) => x && x.testId === check.ruleId);
+      if (!c || !c.byReasonCode || !Array.isArray(c.findingOutcomes)) continue;
+      occurrences.forEach((o, i) => {
+        if (c.findingOutcomes[i] === 'fail') fails[i] = true;
+      });
+    }
+    if (!fails.some(Boolean)) continue;
+    check.occurrences = occurrences.map((o, i) =>
+      fails[i] && o && typeof o === 'object'
+        ? Object.assign({}, o, { occurrenceOutcome: 'fail' })
+        : o
+    );
+    check.outcome = 'fail';
+    check.outcomeNormalized = 'fail';
+  }
+  return result;
 });
 const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   const RANK = { fail: 4, cantTell: 3, pass: 2, notApplicable: 1 };
@@ -153150,6 +153900,7 @@ const __a11yCoreCrossFrameApi = (function () {
   "setAttribute"
 ];
 const SAFE_DOM_OTHER_NAMES = [
+  "customElements",
   "adoptedStyleSheets",
   "ariaActiveDescendantElement",
   "ariaControlsElements",

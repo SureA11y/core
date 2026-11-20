@@ -1367,10 +1367,20 @@ function runInPage(ctx) {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  // The element drawn at a point, through open shadow roots: the document
+  // answers with a shadow host, and the host's root with what it holds.
   function elementFromPoint(x, y) {
     try {
-      if (document && typeof dom.get(document, 'elementFromPoint') === 'function')
-        return dom.elementFromPoint(document, x, y);
+      if (!document || typeof dom.get(document, 'elementFromPoint') !== 'function') return null;
+      let hit = dom.elementFromPoint(document, x, y);
+      for (let depth = 0; hit && depth < 32; depth++) {
+        const root = dom.shadowRoot(hit);
+        if (!root || typeof dom.get(root, 'elementFromPoint') !== 'function') break;
+        const inner = dom.elementFromPoint(root, x, y);
+        if (!inner || inner === hit) break;
+        hit = inner;
+      }
+      return hit;
     } catch {}
     return null;
   }
@@ -1606,6 +1616,10 @@ function runInPage(ctx) {
   function isCoveredNear(other, target) {
     // Out of view, neither is where a pointer would find it.
     if (scrolledOutOf(other.el) || scrolledOutOf(target.el)) return false;
+    // The target itself is covered too (a consent backdrop over both, at the
+    // moment of the scan): the cover hides both, and says nothing of how
+    // close they are once it is gone.
+    if (coveredAtCentre(target)) return false;
     const r = other.rect;
     const x0 = Math.max(r.left, target.center.cx - SPACING);
     const x1 = Math.min(r.right, target.center.cx + SPACING);
@@ -1628,6 +1642,17 @@ function runInPage(ctx) {
     return answered;
   }
 
+  // Whether something else is drawn at the target's centre.
+  function coveredAtCentre(target) {
+    const hit = elementFromPoint(target.center.cx, target.center.cy);
+    if (!hit) return false;
+    try {
+      return !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
+    } catch {
+      return false;
+    }
+  }
+
   // --- spacing evaluation ---
   // WCAG 2.5.8's spacing exception, exactly: the 24px circle centred on the
   // target's region must not intersect another target's region, nor the
@@ -1646,7 +1671,16 @@ function runInPage(ctx) {
       const d = dist(target.center, other.center);
       if (isUndersized(other) && d < SPACING - EPS) {
         if (isCoveredNear(other, target)) continue;
-        return { conflict: true, conflictEl: other.el, decidedBy: 'centerDistance', distancePx: d };
+        // Moving the two apart lengthens both distances alike: the move
+        // that clears the spacing is the larger of the two shortfalls.
+        const reachToo = regionDistance(other.region, c);
+        return {
+          conflict: true,
+          conflictEl: other.el,
+          decidedBy: 'centerDistance',
+          distancePx: d,
+          needPx: Math.max(SPACING - d, RADIUS - reachToo)
+        };
       }
       const reach = regionDistance(other.region, c);
       if (reach < RADIUS - EPS) {
@@ -1678,6 +1712,8 @@ function runInPage(ctx) {
   // checkbox/radio styling across every CSS framework/design system. If the
   // author hasn't reset it, the browser is still rendering its own default
   // control chrome, so the size is UA-determined rather than authored.
+  // A checkbox or radio sized outside the 12 to 16 CSS px browsers draw it at
+  // was resized by the author, so it isn't ("not modified by the author").
   function isUserAgentSizedControl(el) {
     try {
       if (!el || dom.nodeType(el) !== 1) return false;
@@ -1707,6 +1743,16 @@ function runInPage(ctx) {
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
       if (appearance === 'none') return false;
+
+      // Resized by the author: browsers draw an unstyled checkbox or radio
+      // at 12 to 16 CSS px (13 in Chromium and Firefox, 14 to 16 in Safari).
+      // A size outside that was set by the author, which the exception
+      // doesn't cover ("not modified by the author").
+      const box = dom.getBoundingClientRect(el);
+      const zoom = Number.parseFloat((cs && cs.zoom) || '1') || 1;
+      const w = box.width / zoom;
+      const h = box.height / zoom;
+      if (w < 12 - EPS || h < 12 - EPS || w > 16 + EPS || h > 16 + EPS) return false;
 
       return true;
     } catch {
@@ -1883,7 +1929,11 @@ function runInPage(ctx) {
     return {
       distancePx: String(round1(info.distancePx, limit)),
       minDistancePx: String(limit),
-      shortfallPx: String(Math.ceil((limit - info.distancePx) * 10 - 1e-6) / 10)
+      shortfallPx: String(
+        Math.ceil(
+          (Number.isFinite(info.needPx) ? info.needPx : limit - info.distancePx) * 10 - 1e-6
+        ) / 10
+      )
     };
   }
   function spacingHint(decidedBy, s) {

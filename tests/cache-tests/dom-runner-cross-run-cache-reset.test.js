@@ -15,12 +15,13 @@ const RULE_ID = 'bypass-blocks-present';
 /**
  * Regression coverage for https://github.com/SureA11y/core/issues/2
  *
- * createDomHelpers() persists element-keyed caches (outerHtmlCache,
- * selectorCache, etc.) on window.__a11ycoreSharedCache so multiple helper
- * instances created *within one run* can share them. Because the cache is
- * keyed by element reference (not content) and document.body keeps the same
- * reference for the lifetime of a window, a window reused across SEPARATE
- * runs -- e.g. a Jest jsdom environment reused across it() blocks -- could
+ * createDomHelpers() keeps element-keyed caches (outerHtmlCache,
+ * selectorCache, etc.) on window.__a11ycoreSharedCache while a run lasts so
+ * multiple helper instances created *within one run* can share them. Because
+ * the cache is keyed by element reference (not content) and document.body
+ * keeps the same reference for the lifetime of a window, a window reused
+ * across SEPARATE runs -- e.g. a Jest jsdom environment reused across it()
+ * blocks -- could
  * read back a previous run's stale outerHTML snapshot for an element whose
  * content changed via innerHTML mutation in between.
  */
@@ -55,27 +56,19 @@ test('regression: bypass-blocks-present does not report stale occurrences[].html
   );
 });
 
-test('regression: window.__a11ycoreSharedCache is reset at the start of every run, not reused across runs (GH #2)', () => {
+test('regression: window.__a11ycoreSharedCache does not outlive a run (GH #2)', () => {
+  // Removed when the run ends, so nothing cached by one run is read by the
+  // next, and scanned elements are not kept alive in between.
   const dom = createDom('<!doctype html><html><body><main>Content</main></body></html>');
   const { window } = dom;
 
   runa11yCoreOnDom(dom, { entryPointParity: false });
-  assert.ok(
-    window.__a11ycoreSharedCache && window.__a11ycoreSharedCache.dom,
-    'expected shared dom cache to be populated after run 1'
-  );
-  const outerHtmlCacheRun1 = window.__a11ycoreSharedCache.dom.outerHtmlCache;
-  assert.ok(
-    outerHtmlCacheRun1 instanceof WeakMap,
-    'expected outerHtmlCache to be a WeakMap after run 1'
-  );
+  assert.strictEqual(window.__a11ycoreSharedCache, undefined, 'left on the window after run 1');
 
+  // A cache left by something else (an older engine on the same window) is
+  // not read either: the run starts from a fresh one.
+  const stale = { dom: { outerHtmlCache: new WeakMap() } };
+  window.__a11ycoreSharedCache = stale;
   runa11yCoreOnDom(dom, { entryPointParity: false });
-  const outerHtmlCacheRun2 = window.__a11ycoreSharedCache.dom.outerHtmlCache;
-
-  assert.notStrictEqual(
-    outerHtmlCacheRun2,
-    outerHtmlCacheRun1,
-    'expected a fresh outerHtmlCache instance for run 2 (shared cache must not survive across separate runs)'
-  );
+  assert.strictEqual(window.__a11ycoreSharedCache, undefined, 'left on the window after run 2');
 });

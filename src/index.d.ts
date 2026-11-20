@@ -443,6 +443,7 @@ export interface RuleHelpers {
   hasSkipLinkWording: RuleHelper;
   getLinkKind: RuleHelper;
   reportOccurrence: RuleHelper;
+  quoteText: RuleHelper;
   resolveTieredOutcome: RuleHelper;
   getPerfStats: RuleHelper;
   resetPerfStats: RuleHelper;
@@ -687,7 +688,7 @@ export interface Occurrence {
   hint: string;
   i18n: { summaryKey: string; hintKey: string; params: Record<string, unknown> } | null;
   /** Present when the rule graded its findings into tiers. */
-  occurrenceOutcome?: 'fail' | 'cantTell';
+  occurrenceOutcome?: 'fail' | 'cantTell' | 'pass';
   /** A scan of several profiles only: what each profile that ran the rule makes of the finding. */
   verdicts?: Record<string, Outcome>;
   /** Present only on a cantTell-tier occurrence. */

@@ -1154,7 +1154,31 @@ function variantProblems(pack, rule, where) {
 // leaves out the core a host installed is no mistake in the pack, and must
 // not stop the host from loading it. withReported: whether to include what
 // checkPack reports but doesn't keep the pack from loading.
+// A pack's name, read without letting a getter or a Proxy that throws
+// escape: null when it can't be read or isn't a string.
+function safePackName(pack) {
+  try {
+    return isObject(pack) && typeof pack.name === 'string' ? pack.name : null;
+  } catch {
+    return null;
+  }
+}
+
+// What is wrong with a pack. One that throws while it is read (a getter, or
+// a Proxy whose traps throw) is a problem, as PACKS.md promises checkPack
+// reports problems without throwing: the scan skips it and describePacks
+// lists it, rather than every one of them throwing.
 function packProblems(pack, withCoreVersion, withReported) {
+  try {
+    return readPackProblems(pack, withCoreVersion, withReported);
+  } catch (e) {
+    const name = safePackName(pack);
+    const why = e && e.message ? e.message : String(e);
+    return [`${name || 'a pack'} can't be read: ${why}`];
+  }
+}
+
+function readPackProblems(pack, withCoreVersion, withReported) {
   if (typeof pack === 'string') {
     return [
       `"${pack}" is a pack's name: in Node, pass the pack itself; names are for a page where packScript registered it`
@@ -1561,7 +1585,7 @@ function describePacks(packs) {
   return (Array.isArray(packs) ? packs : [packs]).map((pack) => {
     const problems = loadProblems(pack);
     if (problems.length) {
-      return { name: isObject(pack) && typeof pack.name === 'string' ? pack.name : null, problems };
+      return { name: safePackName(pack), problems };
     }
     const ids = (list) => (list || []).map((r) => r.id);
     const overrides = (pack.overrides || []).slice();
@@ -2071,7 +2095,7 @@ function preparePacks(list, { strict = false } = {}) {
       valid.push(pack);
       continue;
     }
-    const name = isObject(pack) && typeof pack.name === 'string' ? pack.name : null;
+    const name = safePackName(pack);
     const reason = problems.join('; ');
     if (strict) throw packsError(TypeError, `engineOptions.packs: ${name || 'a pack'}: ${reason}`);
     skipped.push({ name, reason });
@@ -2200,8 +2224,26 @@ function pageCodeProblems(rule, where) {
   return problems;
 }
 
+// The "<script" an inline script's text opens after "<!--" with no "-->"
+// first (HTML's script data double escaped state), or null. Inside a
+// <script> element only "-->" leaves the escaped state: "--!>", which ends a
+// comment in markup, does not (after "--", HTML's tokenizer takes "!" back
+// to the escaped state), so it is matched to be passed over, never as an end.
+function unclosedScriptInComment(text) {
+  const re = /<!--|--!?>|<script(?=[\s/>])/gi;
+  let inComment = false;
+  for (let m = re.exec(text); m; m = re.exec(text)) {
+    if (m[0] === '<!--') inComment = true;
+    else if (m[0] === '-->') inComment = false;
+    else if (m[0] === '--!>') continue;
+    else if (inComment) return m[0];
+  }
+  return null;
+}
+
 // JSON as script text: "<" escaped so no "</script" can end an inline script,
 // and U+2028 and U+2029, which end a line comment, escaped too.
+
 const scriptJson = (value) =>
   JSON.stringify(value)
     .replace(/</g, '\\u003c')
@@ -2292,6 +2334,16 @@ function packScript(packs) {
     "})(typeof globalThis !== 'undefined' ? globalThis : this);",
     ''
   ].join('\n');
+  // Inline, after "<!--" then "<script" with no "-->" between them, HTML no
+  // longer ends the element at "</script>", so the rest of the page would be
+  // read as script. "<!--" alone, or closed by "-->" first (a rule that
+  // strips comments with /<!--[\s\S]*?-->/), is harmless.
+  const opened = unclosedScriptInComment(script);
+  if (opened) {
+    throw new Error(
+      `packScript: the packs' code has "<!--" followed by "${opened}" with no "-->" between them, which keeps an inline <script> element from ending: write one of them as '<' + '!--' or '<' + 'script'`
+    );
+  }
   // What is written must parse: a page that can't run it loses every pack in it.
   try {
     new (require('node:vm').Script)(script);

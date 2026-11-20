@@ -320,8 +320,11 @@ function runInPage(ctx) {
     const code = v.charCodeAt(1999);
     return v.slice(0, code >= 0xd800 && code <= 0xdbff ? 1999 : 2000) + '…';
   }
+  // At most 200 words, each capped as text is: one word may be a whole
+  // 1 MB value with no space in it.
   function capWords(list) {
-    return Array.isArray(list) && list.length > 200 ? list.slice(0, 200) : list;
+    if (!Array.isArray(list)) return list;
+    return (list.length > 200 ? list.slice(0, 200) : list).map((w) => capText(w));
   }
 
   // The label's words the name does not have, each once, in label order.

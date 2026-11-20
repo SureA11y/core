@@ -2079,12 +2079,12 @@
       "testFile": "tests/engine-checks/manual/p-as-heading.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/p-as-heading-all-scenarios.html",
-      "totalCases": 30,
+      "totalCases": 26,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 15,
-        "OTHER": 15
+        "CANTTELL": 13,
+        "OTHER": 13
       }
     },
     {
@@ -2236,12 +2236,12 @@
     {
       "ruleId": "reflow-horizontal-scroll",
       "title": "Content reflows at 320 CSS pixels wide without scrolling sideways",
-      "type": "automatic",
+      "type": "manual",
       "wcagSc": [
         "1.4.10"
       ],
-      "ruleFile": "src/checks/automatic/reflow-horizontal-scroll.js",
-      "testFile": "tests/engine-checks/automatic/reflow-horizontal-scroll-chromium.test.js",
+      "ruleFile": "src/checks/manual/reflow-horizontal-scroll-manual.js",
+      "testFile": "tests/engine-checks/automatic/reflow-horizontal-scroll.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/reflow-horizontal-scroll-all-scenarios.html",
       "totalCases": 8,

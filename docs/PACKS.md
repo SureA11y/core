@@ -386,7 +386,7 @@ A row can also send a rule's findings of one reason code elsewhere, with `reason
 }
 ```
 
-It fails the standard's requirement only: the check result's own outcome, and every WCAG rollup, stay as they were. List only the codes the standard states for certain; a code left out is judged by the rule's own outcome. A pack that uses `outcome: 'fail'` needs core 1.15 or later, so its `core` range starts there (`'^1.15.0'`).
+It fails the standard's requirement, and in a scan of the standard's profile the finding fails, and so does its check, as in a scan of several profiles: SARIF, JUnit and baselines gate on it. Every WCAG rollup stays as it was, and the contributor keeps the rule's own outcome in `checkOutcome`, which EARL asserts the rule's WCAG criteria by. List only the codes the standard states for certain; a code left out is judged by the rule's own outcome. A pack that uses `outcome: 'fail'` needs core 1.15 or later, so its `core` range starts there (`'^1.15.0'`).
 
 A row can send findings by what they record as well, with `findings: [{ when, requirements, outcome }]`: `when` gives values that fields of a finding's `data.details` must equal, named by dotted path, and `requirements` and `outcome` work as in `reasonCodes`. A finding goes by the first entry it matches, else by its reason code, else by the row. So a standard can file one rule's failures under the test for their text size, though they share a reason code:
 

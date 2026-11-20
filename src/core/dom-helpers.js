@@ -950,6 +950,25 @@ function createDomHelpers(opts) {
     return out;
   };
 
+  // Page text quoted in a message, cut to `max` characters with an ellipsis,
+  // never splitting a surrogate pair: a 1 MB label or address would
+  // otherwise be copied whole into the summary, its parameters and every
+  // report.
+  const quoteText = (value, max = 120) => {
+    const v = String(value == null ? '' : value);
+    if (v.length <= max) return v;
+    const code = v.charCodeAt(max - 2);
+    return v.slice(0, code >= 0xd800 && code <= 0xdbff ? max - 2 : max - 1) + '…';
+  };
+
+  // Items listed in a message: the first five, then an ellipsis, so an
+  // attribute naming hundreds of ids doesn't put every one in the hint.
+  // `show` turns an item into its text, and only for those shown.
+  const shortList = (items, show = (x) => x, max = 5) => {
+    const shown = items.slice(0, max).map(show).join(', ');
+    return items.length > max ? `${shown}, …` : shown;
+  };
+
   // An element's child elements in the flat tree (flatChildNodes).
   const flatChildElements = (el) => flatChildNodes(el).filter((n) => dom.nodeType(n) === 1);
 
@@ -2334,12 +2353,12 @@ function createDomHelpers(opts) {
         const ids = labelledby.split(/\s+/);
         const targets = ids.map(byId);
         if (targets.every((t) => !t)) {
-          const list = ids.map((id) => `"${id}"`).join(', ');
+          const list = shortList(ids.map((id) => `"${quoteText(id, 60)}"`));
           return {
             hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyMissing',
             params: { ids: list },
-            detail: { cause: 'labelledbyMissing', ids }
+            detail: { cause: 'labelledbyMissing', ids: ids.slice(0, 10) }
           };
         }
         // Every target is there, and none has text or a name of its own.
@@ -2352,12 +2371,12 @@ function createDomHelpers(opts) {
           dom.querySelector(t, 'img, svg, input, select, textarea, [aria-label], [title]');
         const tagWithId = (t) => `<${tagOf(t)} id="${attr(t, 'id')}">`;
         if (targets.every((t) => t && t !== el && !gives(t))) {
-          const list = targets.map(tagWithId).join(', ');
+          const list = shortList(targets.map(tagWithId));
           return {
             hint: `Its aria-labelledby points only to elements with no text (${list}), so it gives no name. Put the text in the element it points to, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyEmpty',
             params: { targets: list },
-            detail: { cause: 'labelledbyEmpty', ids }
+            detail: { cause: 'labelledbyEmpty', ids: ids.slice(0, 10) }
           };
         }
         // The element names nothing, so a target with text has it hidden
@@ -2382,17 +2401,26 @@ function createDomHelpers(opts) {
               hint: `Its aria-labelledby points to ${target}, whose text "${text}" is in a <${hiddenElement}> hidden from screen readers by ${hiddenBy}, so it gives no name. Let screen readers read that text, or name it with aria-label.`,
               hintKey: 'nameCause_hint_labelledbyHiddenText',
               params: { target, text, hiddenElement, hiddenBy },
-              detail: { cause: 'labelledbyHiddenText', ids, text, hiddenBy: reason }
+              detail: {
+                cause: 'labelledbyHiddenText',
+                ids: ids.slice(0, 10),
+                text,
+                hiddenBy: reason
+              }
             };
           }
           if (missing.length && found.length) {
-            const missingIds = missing.map((id) => `"${id}"`).join(', ');
-            const list = found.map(tagWithId).join(', ');
+            const missingIds = shortList(missing.map((id) => `"${quoteText(id, 60)}"`));
+            const list = shortList(found.map(tagWithId));
             return {
               hint: `Its aria-labelledby gives no name: no element on the page has ${missingIds}, and what it does point to (${list}) has no text screen readers read. Point it at elements with text, or name it with aria-label.`,
               hintKey: 'nameCause_hint_labelledbyMixed',
               params: { ids: missingIds, targets: list },
-              detail: { cause: 'labelledbyMixed', ids, missing }
+              detail: {
+                cause: 'labelledbyMixed',
+                ids: ids.slice(0, 10),
+                missing: missing.slice(0, 10)
+              }
             };
           }
         }
@@ -2699,7 +2727,7 @@ function createDomHelpers(opts) {
           .map(byId)
           .filter((t) => t && t !== el && HIDDEN_TEXT_RE.test(String(dom.textContent(t) || '')));
         if (described.length && !skip('describedbyNotName')) {
-          const targets = described.map((t) => describeElement(t, { text: true })).join(', ');
+          const targets = shortList(described, (t) => describeElement(t, { text: true }));
           return {
             hint: `Its aria-describedby points to ${targets}, which gives a description, not a name. Point aria-labelledby at it instead, or name it with aria-label.`,
             hintKey: 'nameCause_hint_describedbyNotName',
@@ -2762,7 +2790,7 @@ function createDomHelpers(opts) {
       if (!allEmpty) return null;
       const count = imgs.length;
       return {
-        hint: `Its content is ${count} images, all with alt="", so it gives no name. Give one of them alt text that says what it does or where it leads, or name the element with aria-label.`,
+        hint: `Its content is ${count} images, all with alt="", so it gives no name. Give one of them alt text that says what it stands for here, or name the element with aria-label.`,
         hintKey: 'nameCause_hint_imagesEmptyAlt',
         params: { count },
         detail: { cause: 'imagesEmptyAlt', count }
@@ -2836,7 +2864,7 @@ function createDomHelpers(opts) {
       const alt = dom.getAttribute(img, 'alt');
       if (alt === null) {
         return {
-          hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.',
           hintKey: 'nameCause_hint_imageNoAlt',
           params: {},
           detail: { cause: 'imageNoAlt' }
@@ -2844,7 +2872,7 @@ function createDomHelpers(opts) {
       }
       if (!trim(alt)) {
         return {
-          hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.',
           hintKey: 'nameCause_hint_imageEmptyAlt',
           params: {},
           detail: { cause: 'imageEmptyAlt' }
@@ -2859,7 +2887,7 @@ function createDomHelpers(opts) {
       );
     if (svgNamed) return null;
     return {
-      hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.',
+      hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it stands for here, or name the element with aria-label.',
       hintKey: 'nameCause_hint_svgNoName',
       params: {},
       detail: { cause: 'svgNoName' }
@@ -4566,6 +4594,49 @@ function createDomHelpers(opts) {
   const LABELABLE_SELECTOR =
     'input:not([type="hidden"]), select, textarea, button, meter, output, progress';
 
+  // HTML's labelable elements also include form-associated custom elements:
+  // an autonomous custom element whose class sets `static formAssociated =
+  // true`. No selector finds them, so the page's custom element registry
+  // is asked, for elements with a hyphen in their name only.
+  function isFormAssociatedCustom(el) {
+    try {
+      const name = String(dom.localName(el) || '');
+      if (name.indexOf('-') === -1) return false;
+      const doc = dom.ownerDocument(el);
+      const win = doc && dom.defaultView(doc);
+      // Asked once per name and scan, as the internals lookup asks.
+      const ctor = __customElementDefinition(win, lower(name));
+      return !!(ctor && ctor.formAssociated === true);
+    } catch {
+      return false;
+    }
+  }
+  function isLabelableElement(el) {
+    try {
+      if (!el || !dom.get(el, 'matches')) return false;
+      return dom.matches(el, LABELABLE_SELECTOR) || isFormAssociatedCustom(el);
+    } catch {
+      return false;
+    }
+  }
+  // A label's first labelable descendant, in tree order.
+  function firstLabelableIn(label) {
+    try {
+      const plain = dom.querySelector(label, LABELABLE_SELECTOR);
+      // A custom element may come before it: look for one only if the label
+      // holds any element with a hyphen in its name.
+      const walker = dom.createTreeWalker(dom.ownerDocument(label), label, 1);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (n === plain) return plain;
+        if (String(dom.localName(n) || '').indexOf('-') !== -1 && isFormAssociatedCustom(n))
+          return n;
+      }
+      return plain;
+    } catch {
+      return null;
+    }
+  }
+
   // Real `<label>` elements associated with `el`, replicating the native
   // `.labels` API's result (a `<label for="id">` pointing at `el`, plus a
   // wrapping `<label>` with no `for` attribute whose first labelable
@@ -4595,13 +4666,7 @@ function createDomHelpers(opts) {
     // `<label for="x">`/wrapping `<label>` around a non-labelable element
     // (e.g. a `<div role="combobox">`) produces no accessible name in
     // either browser's accessibility tree.
-    let isLabelable;
-    try {
-      isLabelable = !!(el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR));
-    } catch {
-      isLabelable = false;
-    }
-    if (!isLabelable) return out;
+    if (!isLabelableElement(el)) return out;
 
     const id = trim(getAttr(el, 'id'));
     if (id) {
@@ -4627,15 +4692,7 @@ function createDomHelpers(opts) {
         !(dom.get(wrap, 'hasAttribute') && dom.hasAttribute(wrap, 'for')) &&
         out.indexOf(wrap) === -1
       ) {
-        let firstControl = null;
-        try {
-          firstControl = dom.get(wrap, 'querySelector')
-            ? dom.querySelector(wrap, LABELABLE_SELECTOR)
-            : null;
-        } catch {
-          firstControl = null;
-        }
-        if (firstControl === el) out.push(wrap);
+        if (firstLabelableIn(wrap) === el) out.push(wrap);
       }
     } catch {}
     // Usually 0-1 elements; a second only shows up for genuinely unusual
@@ -4672,9 +4729,9 @@ function createDomHelpers(opts) {
             ? root
             : dom.ownerDocument(label);
         const el = scope ? dom.getElementById(scope, id) : null;
-        return el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR) ? el : null;
+        return isLabelableElement(el) ? el : null;
       }
-      return dom.get(label, 'querySelector') ? dom.querySelector(label, LABELABLE_SELECTOR) : null;
+      return firstLabelableIn(label);
     } catch {
       return null;
     }
@@ -5891,8 +5948,9 @@ function createDomHelpers(opts) {
       if (type === 'button' || type === 'submit' || type === 'reset' || type === 'image') {
         const v = getAttr(el, 'value');
         if (v != null) {
-          const t = trim(v);
-          if (t) return t;
+          // A value attribute is the label, even empty: the default label
+          // is for a submit or reset button with none.
+          return trim(v);
         }
         if (type === 'submit') return 'Submit';
         if (type === 'reset') return 'Reset';
@@ -9696,7 +9754,7 @@ function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl, getCustomElementInternals }
+    { trim, getLabelControl, getCustomElementInternals, flatParentElement }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -9964,6 +10022,7 @@ function createDomHelpers(opts) {
     getTextAlternativeInfo,
     getTextAlternativeSignal,
     describeTextAlternativeSignal,
+    quoteText,
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,

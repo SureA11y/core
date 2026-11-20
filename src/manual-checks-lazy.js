@@ -117,7 +117,7 @@ function scopesOf(result, packs, levels) {
     (a, b) =>
       order.indexOf(a.standard) - order.indexOf(b.standard) ||
       at(a) - at(b) ||
-      String(a.version).localeCompare(String(b.version), undefined, { numeric: true })
+      String(a.version).localeCompare(String(b.version), 'en', { numeric: true })
   );
 }
 

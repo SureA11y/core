@@ -1927,20 +1927,7 @@ A `<div>` holding only text is checked like a `<p>`, and the bold can come from 
 <p><strong>Opening hours</strong></p>
 <p>Monday to Friday, from nine to five.</p>
 ```
-A bold line at body size that doesn't end as a sentence and comes before plain text reads as a title (`BOLD_SHORT_PARAGRAPH`). A bold sentence ending in a full stop, a run of bold lines such as an address, a bold number and a bold link alone are not asked about at this size.
-
-**Flagged (cantTell)**
-```html
-<div><b>Our story</b></div>
-<div>We started in a garage in 1998 and grew to three hundred people in four cities.</div>
-```
-A bold `<div>` at body size is asked about above a passage of lighter text (`BOLD_SHORT_DIV`). A `<div>` is more often a label, a badge or a price, so it isn't asked about above a short line such as a price or "Our latest products.", nor beside what follows it in a flex row or a grid with columns.
-
-**Flagged (cantTell)**
-```html
-<p><strong>Opening hours</strong><br>Monday to Friday, from nine in the morning to five in the evening.</p>
-```
-A bold first line ended by a line break, before a passage of lighter text in the same paragraph, reads as a title written into the paragraph (`BOLD_LEAD_LINE`). A bold name over an address, a label over a phone number and a line ending in a colon are not asked about.
+A bold line at body size that doesn't end as a sentence and comes before plain text reads as a title (`BOLD_SHORT_PARAGRAPH`). A bold sentence ending in a full stop, a run of bold lines such as an address, a bold `<div>`, a bold number and a bold link alone are not asked about at this size.
 
 ## page-has-heading-one
 
@@ -2108,11 +2095,11 @@ No accessible name from any supported mechanism.
 ```
 The text wraps and the image shrinks to the width, so the page scrolls only up and down.
 
-**Failed (at 320 CSS pixels wide)**
+**Flagged (cantTell) (at 320 CSS pixels wide)**
 ```html
 <div style="width:600px">Opening hours today.</div>
 ```
-A box 600 pixels wide sticks out past the edge of a 320 pixel screen, so the page scrolls sideways (WCAG 1.4.10).
+A box 600 pixels wide sticks out past the edge of a 320 pixel screen, so the page scrolls sideways. The rule asks rather than fails, leaning fail: a person confirms that scrolling sideways shows content that has to fit the width (WCAG 1.4.10).
 
 **Flagged (cantTell) (at 320 CSS pixels wide)**
 ```html

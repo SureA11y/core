@@ -81,7 +81,11 @@
  *     where the value leaves a control's state, value or focus unstated: one
  *     of aria-checked, aria-pressed, aria-selected, aria-expanded or
  *     aria-valuenow on an element with a widget role (explicit or native), or
- *     any invalid aria-activedescendant. Anywhere else (aria-level="abc",
+ *     any invalid aria-activedescendant. A native control whose own state
+ *     browsers expose whatever the attribute says (aria-checked on a
+ *     checkbox or radio input, aria-selected on an <option>, aria-expanded on
+ *     a <summary>, with no role attribute) is asked about instead: the state
+ *     is still stated. Anywhere else (aria-level="abc",
  *     aria-live="loud", aria-checked on an element with no widget role) it is
  *     asked about: a WAI-ARIA violation whose WCAG effect depends on what the
  *     attribute was meant to convey.
@@ -626,10 +630,27 @@ function runInPage(ctx) {
       return '';
     }
   }
+  // A native control whose own state browsers expose, whatever the ARIA
+  // attribute says: a checkbox's or radio's checked state, an <option>'s
+  // selectedness, a <summary>'s open state. An invalid value of the
+  // matching attribute leaves nothing unstated, so it is asked about.
+  const NATIVE_STATE = {
+    'aria-checked': (tag, type) => tag === 'input' && (type === 'checkbox' || type === 'radio'),
+    'aria-selected': (tag) => tag === 'option',
+    'aria-expanded': (tag) => tag === 'summary'
+  };
+  function nativeStateExposed(el, attr) {
+    const test = NATIVE_STATE[attr];
+    if (!test || roleOf(el)) return false;
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    const type = trim(dom.getAttribute(el, 'type') || '').toLowerCase();
+    return test(tag, type);
+  }
   function invalidValueFailsWcag(el, item) {
     // An active descendant that names no element: the focused item is not
     // exposed.
     if (item.name === 'aria-activedescendant') return true;
+    if (nativeStateExposed(el, item.name)) return false;
     return USER_SETTABLE_STATE_ATTRS.has(item.name) && CONTROL_ROLES.has(controlRoleOf(el));
   }
 
@@ -771,7 +792,7 @@ function runInPage(ctx) {
       (wcagFail ? failOccurrences : cantTellOccurrences).push(
         helpers.reportOccurrence(el, {
           summary: idMissing
-            ? `${item.name} points to id "${item.value}", which no element on the page has.`
+            ? `${item.name} points to id "${helpers.quoteText(item.value)}", which no element on the page has.`
             : 'This element has an ARIA attribute with an invalid value.',
           hint: vh
             ? vh.text
@@ -782,7 +803,11 @@ function runInPage(ctx) {
               ? 'ariaValidAttrValue_summary_fail_idrefMissing'
               : 'ariaValidAttrValue_summary_fail',
             hintKey: vh ? vh.key : 'ariaValidAttrValue_hint_fail',
-            params: { attr: item.name, value: item.value, ...(vh ? vh.params : {}) }
+            params: {
+              attr: item.name,
+              value: helpers.quoteText(item.value),
+              ...(vh ? vh.params : {})
+            }
           },
           ...(wcagFail
             ? {}
@@ -791,14 +816,18 @@ function runInPage(ctx) {
                   code: 'spec-only',
                   needed:
                     'Whether the attribute carries information the page shows and conveys no other way.',
-                  evidence: { attribute: item.name, value: item.value, valueReason: item.reason }
+                  evidence: {
+                    attribute: item.name,
+                    value: helpers.quoteText(item.value),
+                    valueReason: item.reason
+                  }
                 }
               }),
           data: {
             details: {
               reasonCode: 'ARIA_ATTR_VALUE_INVALID',
               attr: item.name,
-              value: item.value,
+              value: helpers.quoteText(item.value),
               valueReason: item.reason,
               ...(fix || {})
             }
@@ -834,7 +863,7 @@ function runInPage(ctx) {
                   : controls
                     ? 'ariaValidAttrValue_hint_cantTell_idref'
                     : 'ariaValidAttrValue_hint_cantTell_idrefList',
-            params: { attr: item.name, value: item.value, ...(fix || {}) }
+            params: { attr: item.name, value: helpers.quoteText(item.value), ...(fix || {}) }
           },
           uncertainty: {
             code: 'runtime-dependent',
@@ -843,7 +872,7 @@ function runInPage(ctx) {
               : 'Whether the referenced element is added later, and whether its absence loses a name, description or relationship.',
             evidence: {
               attribute: item.name,
-              referencedId: item.value,
+              referencedId: helpers.quoteText(item.value),
               resolvedAtScanTime: false
             }
           },
@@ -852,7 +881,7 @@ function runInPage(ctx) {
             details: {
               reasonCode: 'ARIA_ATTR_VALUE_TARGET_ABSENT',
               attr: item.name,
-              value: item.value,
+              value: helpers.quoteText(item.value),
               valueReason: item.reason,
               ...(fix || {})
             }

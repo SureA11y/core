@@ -64,8 +64,8 @@ function runProfiles(engineOptions, run) {
       }
     }
     if (unique.length <= 1) {
-      return run(
-        Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+      return withOwnVerdicts(
+        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined }))
       );
     }
     const runs = [];
@@ -83,7 +83,49 @@ function runProfiles(engineOptions, run) {
     };
     return step(0);
   }
-  return run(engineOptions);
+  return withOwnVerdicts(run(engineOptions));
+}
+
+/**
+ * A scan of one profile gives a finding the verdict the profile's own
+ * rollups give it, as a scan of several does (mergeProfileResults): where a
+ * rollup judges a check by its findings' reason codes (a pack's standard,
+ * such as WAI-ARIA's), a finding it settles as a failure fails, and so does
+ * its check, so SARIF, JUnit and baselines gate on it. A check no rollup
+ * judges that way keeps its outcome. A promise gets the same once it settles.
+ */
+function withOwnVerdicts(result) {
+  // A result first: a page may add then to Object.prototype, which makes
+  // any object look like a promise.
+  if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
+    return result.then(withOwnVerdicts);
+  }
+  if (!result || !Array.isArray(result.checksResults)) return result;
+  const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
+  for (const check of result.checksResults) {
+    const occurrences = check && Array.isArray(check.occurrences) ? check.occurrences : [];
+    if (!occurrences.length || check.outcome === 'fail') continue;
+    const fails = occurrences.map(() => false);
+    for (const rollup of rollups) {
+      const details = rollup && rollup.data && rollup.data.details;
+      const contributors =
+        details && Array.isArray(details.contributors) ? details.contributors : [];
+      const c = contributors.find((x) => x && x.testId === check.ruleId);
+      if (!c || !c.byReasonCode || !Array.isArray(c.findingOutcomes)) continue;
+      occurrences.forEach((o, i) => {
+        if (c.findingOutcomes[i] === 'fail') fails[i] = true;
+      });
+    }
+    if (!fails.some(Boolean)) continue;
+    check.occurrences = occurrences.map((o, i) =>
+      fails[i] && o && typeof o === 'object'
+        ? Object.assign({}, o, { occurrenceOutcome: 'fail' })
+        : o
+    );
+    check.outcome = 'fail';
+    check.outcomeNormalized = 'fail';
+  }
+  return result;
 }
 
 /**
@@ -524,6 +566,7 @@ module.exports = {
   profileOptionsOf,
   mayBeSkippedPackProfile,
   runProfiles,
+  withOwnVerdicts,
   mergeProfileResults,
   noteProfileNotApplied
 };

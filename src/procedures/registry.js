@@ -235,8 +235,6 @@ const PROCEDURES = {
           'p-as-heading': [
             'BOLD_LARGE_DIV',
             'BOLD_LARGE_PARAGRAPH',
-            'BOLD_LEAD_LINE',
-            'BOLD_SHORT_DIV',
             'BOLD_SHORT_PARAGRAPH',
             'HEADING_LIKE_LINK',
             'HEADING_LIKE_NUMBER'
@@ -443,6 +441,8 @@ const PROCEDURES = {
         tools: ['devtools', 'zoom'],
         variants: {
           'reflow-horizontal-scroll': [
+            'HORIZONTAL_SCROLL',
+            'HORIZONTAL_SCROLL_UNATTRIBUTED',
             'WIDE_TABLE',
             'WIDE_MEDIA',
             'WIDE_PREFORMATTED',

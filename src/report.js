@@ -428,7 +428,7 @@ function renderWcagRollup(rulesResults, standards, ui) {
         .sort((a, b) =>
           (a.mapping ? a.mapping.requirement : '').localeCompare(
             b.mapping ? b.mapping.requirement : '',
-            undefined,
+            'en',
             { numeric: true }
           )
         )
@@ -637,7 +637,7 @@ function renderStandardRollup(standard, results, ui, headingId, version) {
     String((r.data && r.data.details && r.data.details.criterion) || r.ruleId || '');
   const rows = results
     .slice()
-    .sort((a, b) => byCriterion(a).localeCompare(byCriterion(b), undefined, { numeric: true }))
+    .sort((a, b) => byCriterion(a).localeCompare(byCriterion(b), 'en', { numeric: true }))
     .map((rule) => {
       const info = OUTCOME_INFO[rule.outcome] || OUTCOME_INFO.notApplicable;
       const details = (rule.data && rule.data.details) || {};
@@ -880,9 +880,11 @@ function renderCards(checksResults, ui) {
           .join('')
       : '';
     const hasMixedOutcomes = occurrenceCounts.fail > 0 && occurrenceCounts.cantTell > 0;
+    // The elements found: a passing occurrence of a failing rule is no finding.
+    const found = occurrenceCounts.fail + occurrenceCounts.cantTell || occs.length;
     const countLabel =
-      occs.length > 1
-        ? ` <span class="card-count">× ${ui.num(occs.length)}${hasMixedOutcomes ? ` ${esc(ui.tr('report_card_mixed', { fail: ui.num(occurrenceCounts.fail), review: ui.num(occurrenceCounts.cantTell) }))}` : ''}</span>`
+      found > 1
+        ? ` <span class="card-count">× ${ui.num(found)}${hasMixedOutcomes ? ` ${esc(ui.tr('report_card_mixed', { fail: ui.num(occurrenceCounts.fail), review: ui.num(occurrenceCounts.cantTell) }))}` : ''}</span>`
         : '';
     // How to answer the question, for an undecided finding.
     const how = cardOutcome === 'cantTell' && representative.howToCheck;
@@ -1036,7 +1038,7 @@ function renderHtmlReport(input, options = {}) {
     if (versions.length < 2) return results.length ? [{ standard, results }] : [];
     const known = Array.isArray(standard.versions) ? standard.versions : [];
     const at = (v) => (known.includes(v) ? known.indexOf(v) : known.length);
-    versions.sort((a, b) => at(a) - at(b) || a.localeCompare(b, undefined, { numeric: true }));
+    versions.sort((a, b) => at(a) - at(b) || a.localeCompare(b, 'en', { numeric: true }));
     return versions.map((version) => ({
       standard,
       version,

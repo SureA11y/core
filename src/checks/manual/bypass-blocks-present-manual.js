@@ -172,7 +172,7 @@ function runInPage(ctx) {
   function queryAll(selector) {
     try {
       return helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart(selector, { internalsRoles: true })
+        ? helpers.queryAllSmart(selector, { internalsRoles: true, excluded: true })
         : dom.querySelectorAll(document, selector);
     } catch {
       return [];
@@ -265,7 +265,7 @@ function runInPage(ctx) {
     try {
       links =
         helpers && typeof helpers.queryAllSmart === 'function'
-          ? helpers.queryAllSmart('a[href]')
+          ? helpers.queryAllSmart('a[href]', { excluded: true })
           : dom.querySelectorAll(document, 'a[href]');
     } catch {
       links = [];
