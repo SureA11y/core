@@ -320,6 +320,152 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.deepEqual(findings(other), [['w', 'fail', 'HORIZONTAL_SCROLL', null]]);
   });
 
+  await t.test('a phone that zooms out to show a wide page still runs the rule', async () => {
+    // A phone browser zooms out to show a page wider than its layout
+    // viewport, which widens innerWidth exactly when the page overflows.
+    const meta = (body) =>
+      '<!doctype html><html lang="en"><head><title>t</title><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>' +
+      body +
+      '</body></html>';
+    const phone = { viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true };
+    const wide = await scan(meta('<div id="w" style="width:600px">Wide</div>'), {
+      pageOptions: phone
+    });
+    assert.deepEqual(findings(wide), [['w', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    const fits = await scan(meta('<p>Fits</p>'), { pageOptions: phone });
+    assert.equal(fits.outcome, 'pass');
+  });
+
+  await t.test(
+    'a fixed box the edge cuts through is asked about, and fails with fields',
+    async () => {
+      // Fixed boxes don't widen the page, so nothing scrolls to what of them
+      // lies past the edge.
+      const banner = await scan(
+        page(
+          '.b{position:fixed;left:0;bottom:0;width:600px;display:flex} .b>button{flex:none;width:280px}',
+          '<div class="b" id="banner"><button>Accept</button><button>Reject</button></div><p>Text</p>'
+        )
+      );
+      assert.deepEqual(findings(banner), [
+        ['banner', 'cantTell', 'CLIPPED_AT_VIEWPORT_EDGE', 'fail']
+      ]);
+      const fields = await scan(
+        page(
+          '.b{position:fixed;left:0;top:0;width:600px;display:flex} .b>label{flex:none;width:280px}',
+          '<div class="b" id="bar"><label>From <input></label><label>To <input></label></div>'
+        )
+      );
+      assert.deepEqual(findings(fields), [['bar', 'fail', 'CLIPPED_AT_VIEWPORT_EDGE', null]]);
+      // Wholly past the edge, as an off-canvas menu waits, or held by a box
+      // with a transform that scrolls it in: not reported.
+      const offCanvas = await scan(
+        page(
+          '.m{position:fixed;top:0;left:100%;width:280px}',
+          '<nav class="m">Menu</nav><p>Text</p>'
+        )
+      );
+      assert.equal(offCanvas.outcome, 'pass');
+    }
+  );
+
+  await t.test("an app's shell that scrolls is judged as the page", async () => {
+    const shell = 'html,body{height:100%;overflow:hidden;margin:0} #app{height:100%;overflow:auto}';
+    const div = await scan(
+      page(shell, '<div id="app"><div id="w" style="width:600px">Wide text</div></div>')
+    );
+    assert.deepEqual(findings(div), [['w', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    const table = await scan(
+      page(
+        shell + ' table{width:600px}',
+        '<div id="app"><table id="t" role="presentation"><tr><td>A</td><td>B</td></tr></table></div>'
+      )
+    );
+    assert.deepEqual(findings(table), [['t', 'cantTell', 'WIDE_TABLE', 'fail']]);
+  });
+
+  await t.test('a layout table in a box that scrolls on its own is asked about', async () => {
+    const check = await scan(
+      page(
+        '.s{overflow-x:auto} table{width:600px}',
+        '<div class="s"><table id="t" role="presentation"><tr><td>A</td><td>B</td></tr></table></div>'
+      )
+    );
+    assert.equal(check.outcome, 'cantTell');
+    assert.deepEqual(findings(check)[0].slice(0, 3), ['t', 'cantTell', 'SCROLLS_IN_CONTAINER']);
+  });
+
+  await t.test(
+    'only what a box holds is exempt, and an ellipsis covers text, not fields',
+    async () => {
+      const outerTable = await scan(
+        page(
+          '.s{overflow-x:auto;width:280px} form{width:600px;display:flex} label{flex:none;width:290px}',
+          '<table role="presentation"><tr><td><div class="s"><form id="f"><label>A <input></label><label>B <input></label></form></div></td></tr></table>'
+        )
+      );
+      assert.deepEqual(findings(outerTable), [['f', 'fail', 'SCROLLS_IN_CONTAINER', null]]);
+      const ellipsis = await scan(
+        page(
+          '.card{overflow:hidden;text-overflow:ellipsis;border:1px solid} .row{display:flex;width:560px} .row>label{flex:none;width:270px}',
+          '<div class="card"><div class="row" id="r"><label>A <input></label><label>B <input></label></div></div>'
+        )
+      );
+      assert.deepEqual(findings(ellipsis), [['r', 'fail', 'CLIPPED_BY_CONTAINER', null]]);
+    }
+  );
+
+  await t.test(
+    'paint containment and a body that is a box of its own cut off content',
+    async () => {
+      for (const [css, body] of [
+        [
+          '.c{contain:paint}',
+          '<div class="c"><div id="w" style="width:600px">Wide text</div></div>'
+        ],
+        [
+          '.c{content-visibility:auto}',
+          '<section class="c"><div id="w" style="width:600px">Wide text</div></section>'
+        ],
+        [
+          'html{overflow-y:scroll} body{overflow-x:hidden}',
+          '<div id="w" style="width:600px">Wide text</div>'
+        ]
+      ]) {
+        const check = await scan(page(css, body));
+        assert.equal(check.outcome, 'cantTell', css);
+        assert.deepEqual(findings(check)[0].slice(0, 2), ['w', 'cantTell'], css);
+      }
+    }
+  );
+
+  await t.test("the verdict doesn't depend on where a box is scrolled", async () => {
+    const html = page(
+      '.s{overflow-x:auto;width:280px} form{width:600px;display:flex} label{flex:none;width:290px}',
+      '<div class="s" id="s"><form id="f"><label>A <input></label><label>B <input></label></form></div>'
+    );
+    const p = await browser.newPage(PHONE);
+    try {
+      await p.setContent(html);
+      await addBundle(p);
+      const run = () =>
+        p.evaluate(
+          (o) =>
+            window.a11ycore
+              .runa11yCoreInPage(null, null, o, null)
+              .checksResults.find((r) => r.ruleId === 'reflow-horizontal-scroll').outcome,
+          { rules: { include: RULE_ID } }
+        );
+      assert.equal(await run(), 'fail');
+      await p.evaluate(() => {
+        document.getElementById('s').scrollLeft = 10000;
+      });
+      assert.equal(await run(), 'fail');
+    } finally {
+      await p.close();
+    }
+  });
+
   await t.test('excluded areas are left out', async () => {
     const check = await scan(page('.wide{width:600px}', '<div class="wide" id="x">Wide</div>'), {
       engineOptions: { excludeSelectors: ['#x'] }

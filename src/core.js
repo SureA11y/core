@@ -102778,7 +102778,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return notApplicable('noLayout');
   }
 
-  const width = Number(dom.get(view, 'innerWidth')) || 0;
+  // The layout viewport's width: the root's clientWidth. A phone browser
+  // zooms out to show a page wider than its layout viewport, which widens
+  // innerWidth exactly when the page overflows, so innerWidth alone would
+  // turn the rule off on the pages it is for.
+  const innerWidth = Number(dom.get(view, 'innerWidth')) || 0;
+  const layoutWidth = Number(dom.get(html, 'clientWidth')) || 0;
+  const width = layoutWidth ? Math.min(layoutWidth, innerWidth || layoutWidth) : innerWidth;
   if (!width || width > REFLOW_WIDTH) return notApplicable('viewportWider');
 
   function style(el) {
@@ -102800,8 +102806,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Whether the viewport scrolls sideways: the root's overflow-x, or the
   // body's when the root's is visible (CSS Overflow 3, propagation).
   const clips = (s) => !!s && (s.overflowX === 'hidden' || s.overflowX === 'clip');
-  const rootClips =
-    clips(rootStyle) || (rootStyle && rootStyle.overflowX === 'visible' && clips(bodyStyle));
+  // The body's overflow goes to the viewport only while the root's is
+  // visible on both axes; otherwise the body is a box of its own, which
+  // hides or scrolls what overflows it like any other.
+  const bodyPropagates =
+    !!rootStyle && rootStyle.overflowX === 'visible' && rootStyle.overflowY === 'visible';
+  const rootClips = clips(rootStyle) || (bodyPropagates && clips(bodyStyle));
+  // Where the walks up from an element stop: at the body, unless it is a box
+  // of its own.
+  const top = (node) => !node || node === html || (node === body && bodyPropagates);
 
   const scroller = dom.get(document, 'scrollingElement') || html;
   const clientWidth = Number(dom.get(scroller, 'clientWidth')) || width;
@@ -102841,6 +102854,98 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Paint containment clips what overflows the box, as overflow: clip does,
+  // though overflow-x stays visible: contain: paint (or content, strict),
+  // and content-visibility: auto or hidden, which apply it.
+  function containsPaint(s) {
+    if (!s) return false;
+    const contain = String(s.contain || '');
+    if (/\b(paint|content|strict)\b/.test(contain)) return true;
+    const cv = String(s.contentVisibility || '');
+    return cv === 'auto' || cv === 'hidden';
+  }
+  // Whether a box sets overflow sideways: it scrolls or clips.
+  const setsOverflow = (s) => !!s && (s.overflowX !== 'visible' || containsPaint(s));
+  // Whether a box makes itself the containing block of what is fixed in it
+  // (CSS Transforms, Filter Effects, Containment, Will Change).
+  function holdsFixed(s) {
+    if (!s) return false;
+    if (s.transform && s.transform !== 'none') return true;
+    if (s.perspective && s.perspective !== 'none') return true;
+    if (s.filter && s.filter !== 'none') return true;
+    if (s.backdropFilter && s.backdropFilter !== 'none') return true;
+    if (/\b(transform|perspective|filter)\b/.test(String(s.willChange || ''))) return true;
+    return /\b(paint|layout|content|strict)\b/.test(String(s.contain || ''));
+  }
+  // The element, or the ancestor, that is fixed to the viewport: it stays put
+  // as the page scrolls, so what of it lies past the edge is never reached.
+  // Null when none is, or when a box around it holds what is fixed in it.
+  const fixedMemo = new Map();
+  function fixedOf(el) {
+    if (fixedMemo.has(el)) return fixedMemo.get(el);
+    let value = null;
+    let node = el;
+    const path = [];
+    while (node && node !== html) {
+      if (fixedMemo.has(node)) {
+        value = fixedMemo.get(node);
+        break;
+      }
+      path.push(node);
+      const s = style(node);
+      if (s && s.position === 'fixed') {
+        let up = dom.parentElement(node);
+        let held = false;
+        while (up && up !== html) {
+          if (holdsFixed(style(up))) {
+            held = true;
+            break;
+          }
+          up = dom.parentElement(up);
+        }
+        if (!held) value = node;
+        break;
+      }
+      node = dom.parentElement(node);
+    }
+    for (const n of path) fixedMemo.set(n, value);
+    return value;
+  }
+
+  // A box that scrolls on its own and fills the viewport, as an app's shell
+  // does when the root and body hide overflow: it is the page, so what it
+  // holds is judged as the page's content.
+  const viewportHeight =
+    Number(dom.get(html, 'clientHeight')) || Number(dom.get(view, 'innerHeight')) || 0;
+  const shellMemo = new Map();
+  function isShell(box) {
+    if (shellMemo.has(box)) return shellMemo.get(box);
+    let value = false;
+    try {
+      const s = style(box);
+      if (
+        s &&
+        (s.overflowX === 'auto' || s.overflowX === 'scroll') &&
+        (rootClips || !bodyPropagates)
+      ) {
+        const b = dom.getBoundingClientRect(box);
+        const pageStill =
+          (Number(dom.get(scroller, 'scrollHeight')) || 0) <=
+          (Number(dom.get(scroller, 'clientHeight')) || 0) + TOLERANCE;
+        value =
+          pageStill &&
+          b.left <= TOLERANCE &&
+          b.width >= width - TOLERANCE * 16 &&
+          viewportHeight > 0 &&
+          b.height >= viewportHeight - TOLERANCE * 16;
+      }
+    } catch {
+      value = false;
+    }
+    shellMemo.set(box, value);
+    return value;
+  }
+
   // Boxes that keep their content from widening the page: they scroll or
   // clip sideways. Their own box is measured; what is inside them is not.
   const contained = new Map();
@@ -102848,14 +102953,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let node = dom.parentElement(el);
     const path = [];
     let found = false;
-    while (node && node !== body && node !== html) {
+    while (!top(node)) {
       if (contained.has(node)) {
         found = contained.get(node);
         break;
       }
       path.push(node);
       const s = style(node);
-      if (s && s.overflowX !== 'visible') {
+      if (setsOverflow(s)) {
         found = true;
         break;
       }
@@ -102868,7 +102973,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Boxes that hide what overflows them (not the root: the viewport's own
   // clipping is judged above). What sticks out of one is cut off, and the
   // page doesn't scroll to it.
-  const cuts = (s) => !!s && (s.overflowX === 'hidden' || s.overflowX === 'clip');
+  const cuts = (s) =>
+    !!s && (s.overflowX === 'hidden' || s.overflowX === 'clip' || containsPaint(s));
   // The nearest box around `start` (itself included when `self`) that sets
   // overflow sideways, whether it hides what overflows or scrolls it; null
   // when there is none.
@@ -102877,14 +102983,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let node = self ? start : dom.parentElement(start);
     const path = [];
     let found = null;
-    while (node && node !== body && node !== html) {
+    while (!top(node)) {
       if (cutterMemo.has(node)) {
         found = cutterMemo.get(node);
         break;
       }
       path.push(node);
       const s = style(node);
-      if (s && s.overflowX !== 'visible') {
+      if (setsOverflow(s)) {
         found = node;
         path.pop();
         cutterMemo.set(node, found);
@@ -102897,25 +103003,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   // Whether the element is placed out of the box: fixed, or absolute with no
   // positioned box between it and the cutter.
+  // A box between them, or the cutter itself, that holds what is fixed in
+  // it (a transform, a filter, containment) keeps a fixed element in.
   function escapes(el, box) {
     let node = el;
     while (node && node !== box) {
       const s = style(node);
       const position = s ? s.position : 'static';
-      if (position === 'fixed') return true;
-      if (position === 'absolute') {
+      if (position === 'fixed' || position === 'absolute') {
         let up = dom.parentElement(node);
-        let positioned = false;
+        let held = false;
         while (up) {
           const us = style(up);
-          if (us && (us.position !== 'static' || (us.transform && us.transform !== 'none'))) {
-            positioned = true;
+          if (us && (holdsFixed(us) || (position === 'absolute' && us.position !== 'static'))) {
+            held = true;
             break;
           }
           if (up === box) break;
           up = dom.parentElement(up);
         }
-        if (!positioned) return true;
+        if (!held) return true;
       }
       node = dom.parentElement(node);
     }
@@ -102935,23 +103042,46 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const ch = Number(dom.get(box, 'clientHeight')) || 0;
     // A box a pixel wide hides text on purpose (visually hidden text).
     if (cw < 2 || ch < 2) return null;
+    // Where the element lies with the box scrolled to its start, so the
+    // verdict doesn't depend on where a script or a person left it: a
+    // scrolled box moves its content by scrollLeft (negative in
+    // right-to-left text, as browsers now agree).
+    const shift = Number(dom.get(box, 'scrollLeft')) || 0;
+    const l = rect.left + shift;
+    const r = rect.right + shift;
     // The end edge of the visible area: the right, or the left in
     // right-to-left text.
     const edge = rtl ? left : left + cw;
-    return rtl
-      ? { over: edge - rect.left, inside: rect.right - edge }
-      : { over: rect.right - edge, inside: edge - rect.left };
+    return rtl ? { over: edge - l, inside: r - edge } : { over: r - edge, inside: edge - l };
   }
   // What a box that scrolls on its own may hold at full width: a table, a
   // preformatted block, media. Anything else in it, a form, text, a menu, that
   // sticks out of the box needs sideways scrolling too.
-  function exemptInScrollBox(el) {
+  // Only what is inside the box counts: a table around the box is not what
+  // scrolls in it. A table used for layout has to fit, in a box as on the
+  // page. A box that is the page (an app's shell) exempts nothing.
+  function exemptInScrollBox(el, box) {
     try {
-      if (dom.closest(el, 'table, pre')) return true;
+      if (isShell(box)) return false;
+      const holder = dom.closest(el, 'table, pre');
+      if (holder && holder !== box && dom.contains(box, holder)) {
+        return !(
+          String(dom.tagName(holder) || '').toLowerCase() === 'table' && isLayoutTable(holder)
+        );
+      }
       return kindOf(el) !== 'HORIZONTAL_SCROLL';
     } catch {
       return false;
     }
+  }
+  // text-overflow: ellipsis shortens a line of text on purpose: it covers
+  // inline content, not a block, a row of fields or a control it cuts off.
+  function ellipsisCovers(el, bs) {
+    if (!bs || bs.textOverflow !== 'ellipsis') return false;
+    const s = style(el);
+    const display = s ? String(s.display || '') : '';
+    if (display && display !== 'inline' && display !== 'contents') return false;
+    return !holdsFormControls(el);
   }
   const clipMemo = new Map();
   // Where `el` is cut by its nearest hiding box: { box, over }, or null.
@@ -102968,10 +103098,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (
           rects &&
           rects.length &&
-          !(!scrolls && bs && bs.textOverflow === 'ellipsis') &&
+          !(!scrolls && ellipsisCovers(el, bs)) &&
           !(es && es.visibility === 'hidden') &&
           !escapes(el, box) &&
-          !(scrolls && exemptInScrollBox(el))
+          !(scrolls && exemptInScrollBox(el, box))
         ) {
           const rect = dom.getBoundingClientRect(el);
           if (rect.width > 0 || rect.height > 0) {
@@ -102979,7 +103109,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             // Part shows inside the box and part is cut off; one wholly past
             // its edge waits there on purpose.
             if (hit && hit.over > TOLERANCE && hit.inside > TOLERANCE) {
-              value = { box, over: hit.over, rect, scrolls };
+              value = { box, over: hit.over, rect, scrolls, shell: scrolls && isShell(box) };
             }
           }
         }
@@ -102989,6 +103119,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     clipMemo.set(el, value);
     return value;
+  }
+
+  // A table marked as layout, or with no header cell or caption.
+  function isLayoutTable(el) {
+    const role = String(
+      (helpers.aria && helpers.aria.getExplicitRole && helpers.aria.getExplicitRole(el)) || ''
+    ).toLowerCase();
+    if (role === 'presentation' || role === 'none') return true;
+    return !dom.querySelector(el, 'th, caption, [scope]');
   }
 
   const MEDIA = new Set(['img', 'video', 'canvas', 'svg', 'object', 'embed', 'iframe', 'picture']);
@@ -103076,12 +103215,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // page may scroll because of it, which is not for this scan to judge.
   let leftOut = false;
   function consider(start, hit, own) {
+    // Fixed to the viewport: it doesn't widen the page, and what of it lies
+    // past the edge is never reached, however the page scrolls. One wholly
+    // past the edge waits there on purpose (an off-canvas menu).
+    const fixed = fixedOf(start);
+    if (fixed) {
+      // A box between them, or the fixed element itself, that scrolls or
+      // clips: what is in it is judged against that box (below).
+      let n = start === fixed ? null : dom.parentElement(start);
+      while (n) {
+        if (setsOverflow(style(n))) return;
+        if (n === fixed) break;
+        n = dom.parentElement(n);
+      }
+      if (!own) {
+        if (setsOverflow(style(start))) return;
+        if (crossing(start)) return;
+      }
+      if (hit.inside <= TOLERANCE || taken.has(start)) return;
+      const up = start === fixed ? null : dom.parentElement(start);
+      if (up && crossing(up)) return;
+      if (!inScope(start) || isExcluded(start)) {
+        leftOut = true;
+        return;
+      }
+      taken.add(start);
+      found.push({
+        el: start,
+        tag: String(dom.tagName(start) || '').toLowerCase(),
+        hit,
+        fixed: true
+      });
+      return;
+    }
     // Kept from widening the page by a box that scrolls or clips sideways:
     // one around it, or, for text, its own.
     if (insideSidewaysBox(start)) return;
     if (!own) {
-      const s = style(start);
-      if (s && s.overflowX !== 'visible') return;
+      if (setsOverflow(style(start))) return;
       // Text in a box that sticks out itself: the box is reported.
       if (crossing(start)) return;
     }
@@ -103089,14 +103260,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let el = start;
     const pre = dom.closest(start, 'pre');
     if (pre && pre !== start) {
-      const s = style(pre);
-      if (s && s.overflowX !== 'visible') return;
+      if (setsOverflow(style(pre))) return;
       el = pre;
     }
     if (taken.has(el)) return;
     // Where it starts: its parent stays inside.
     const parent = dom.parentElement(el);
-    if (parent && parent !== body && parent !== html && crossing(parent)) return;
+    if (parent && parent !== body && parent !== html && crossing(parent) && !fixedOf(parent))
+      return;
     if (!pageScrolls) {
       // The page is kept from scrolling: only what the edge cuts through
       // can't be reached; what is wholly past it waits there on purpose.
@@ -103162,11 +103333,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             box &&
             !(!scrolls && bs && bs.textOverflow === 'ellipsis') &&
             !escapes(owner, box) &&
-            !(scrolls && exemptInScrollBox(owner))
+            !(scrolls && exemptInScrollBox(owner, box))
           ) {
             const hit = pastBox(rect, box);
             if (hit && hit.over > TOLERANCE && hit.inside > TOLERANCE) {
-              considerClipped(owner, { box, over: hit.over, rect, scrolls });
+              considerClipped(owner, {
+                box,
+                over: hit.over,
+                rect,
+                scrolls,
+                shell: scrolls && isShell(box)
+              });
             }
           }
         }
@@ -103237,12 +103414,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 
   function tableLean(el) {
-    const role = String(
-      (helpers.aria && helpers.aria.getExplicitRole && helpers.aria.getExplicitRole(el)) || ''
-    ).toLowerCase();
-    if (role === 'presentation' || role === 'none') return LEANS.tableLayout;
-    const data = !!dom.querySelector(el, 'th, caption, [scope]');
-    return data ? LEANS.tableData : LEANS.tableLayout;
+    return isLayoutTable(el) ? LEANS.tableLayout : LEANS.tableData;
   }
 
   const MESSAGES = {
@@ -103348,11 +103520,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     (msg.needed && !asFail ? questions : fails).push(occ);
   }
 
-  for (const { el, tag, hit } of found) {
-    if (!pageScrolls) {
-      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, LEANS.clipped);
-      continue;
-    }
+  // What sticks out past the edge of the page, or of a box that is the page.
+  function reportOnPage(el, tag, hit) {
     const code = kindOf(el);
     const lean =
       code === 'WIDE_TABLE'
@@ -103362,21 +103531,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           : null;
     report(code, el, hit, lean);
   }
+  // Fields cut off: no exception covers a form, so it fails. A table, code
+  // or media is left to a person.
+  const cutFields = (el) => kindOf(el) === 'HORIZONTAL_SCROLL' && holdsFormControls(el);
+
+  for (const { el, tag, hit, fixed } of found) {
+    if (!pageScrolls || fixed) {
+      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, LEANS.clipped, cutFields(el));
+      continue;
+    }
+    reportOnPage(el, tag, hit);
+  }
 
   for (const { el, clip } of clipped) {
-    // Fields cut off or scrolled sideways in a box: no exception covers a
-    // form, so it fails. A table, code or media is left to a person.
-    const asFail = kindOf(el) === 'HORIZONTAL_SCROLL' && holdsFormControls(el);
+    if (clip.shell) {
+      reportOnPage(el, String(dom.tagName(el) || '').toLowerCase(), {
+        over: clip.over,
+        rect: clip.rect
+      });
+      continue;
+    }
     report(
       clip.scrolls ? 'SCROLLS_IN_CONTAINER' : 'CLIPPED_BY_CONTAINER',
       el,
       { over: clip.over, rect: clip.rect },
       clip.scrolls ? LEANS.scrollBox : LEANS.clippedBox,
-      asFail
+      cutFields(el)
     );
   }
 
-  if (pageScrolls && !found.length && wholeDocument && !leftOut) {
+  if (pageScrolls && !found.some((f) => !f.fixed) && wholeDocument && !leftOut) {
     report('HORIZONTAL_SCROLL_UNATTRIBUTED', html, null, null);
   }
 
