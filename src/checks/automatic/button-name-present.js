@@ -132,9 +132,12 @@ function runInPage(ctx) {
         vAttr != null ? vAttr : typeof el.value === 'string' ? el.value : ''
       );
       if (explicit) return explicit;
-      // HTML spec: input[type=submit]/[type=reset] with no `value` fall back
-      // to a UA-supplied default label ("Submit"/"Reset"), so they are never
-      // actually nameless -- unlike type=button, whose value defaults to "".
+      // HTML spec: input[type=submit]/[type=reset] with no `value` attribute
+      // fall back to a UA-supplied default label ("Submit"/"Reset"), unlike
+      // type=button, whose value defaults to "". A value attribute that is
+      // there but empty or blank is the label, so the button has none
+      // (Chromium names it "").
+      if (vAttr != null) return '';
       if (type === 'submit') return 'Submit';
       if (type === 'reset') return 'Reset';
       return '';

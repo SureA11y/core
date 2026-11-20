@@ -104,7 +104,9 @@ function runInPage(ctx) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart('main, [role]', { internalsRoles: true });
+    // An excluded area is still part of the page (excludeSelectors): a main
+    // landmark in it is the page's main.
+    nodes = helpers.queryAllSmart('main, [role]', { internalsRoles: true, excluded: true });
   } catch {
     nodes = [];
   }

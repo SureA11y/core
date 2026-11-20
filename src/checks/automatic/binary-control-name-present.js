@@ -200,8 +200,10 @@ function runInPage(ctx) {
     const title = getAttr(el, 'title');
     if (title) return { ok: true, method: 'title' };
 
-    // Native input label association (for input[type=checkbox|radio])
-    if (controlType === 'checkbox' || controlType === 'radio') {
+    // Label association: a native checkbox or radio, or a form-associated
+    // custom element, which HTML makes labelable too (the helper gives no
+    // label to anything else).
+    {
       const lab = getNativeLabelText(el);
       if (lab) return { ok: true, method: 'label' };
     }

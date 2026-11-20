@@ -1090,10 +1090,12 @@ function runInPage(ctx) {
       }
     }
     const others = otherFields.join(', ') + (shared.length - 1 > 3 ? ', …' : '');
+    // The label as quoted in the message and its details, capped.
+    const shownLabel = helpers.quoteText(field.labelText);
     const summaryByReason = {
-      PLACEHOLDER_LABEL_TEXT: `This field's visible label ("${field.labelText}") is a placeholder rather than a description of what the field is for.`,
-      DUPLICATE_LABEL_TEXT: `This field's visible label ("${field.labelText}") is also the label of ${others}, with no visible heading, legend or row text telling them apart.`,
-      PARTIALLY_HIDDEN_LABEL: `This field's label is split: "${field.labelText}" is what renders, while ${field.hiddenParts} other part(s) of the label are hidden from sight.`
+      PLACEHOLDER_LABEL_TEXT: `This field's visible label ("${shownLabel}") is a placeholder rather than a description of what the field is for.`,
+      DUPLICATE_LABEL_TEXT: `This field's visible label ("${shownLabel}") is also the label of ${others}, with no visible heading, legend or row text telling them apart.`,
+      PARTIALLY_HIDDEN_LABEL: `This field's label is split: "${shownLabel}" is what renders, while ${field.hiddenParts} other part(s) of the label are hidden from sight.`
     };
     const hintByReason = {
       PLACEHOLDER_LABEL_TEXT:
@@ -1122,7 +1124,7 @@ function runInPage(ctx) {
           summaryKey: SUMMARY_KEY_BY_REASON[reasonCode],
           hintKey: HINT_KEY_BY_REASON[reasonCode],
           params: {
-            label: field.labelText,
+            label: shownLabel,
             count: String(shared.length - 1),
             hiddenCount: String(field.hiddenParts),
             others
@@ -1132,7 +1134,7 @@ function runInPage(ctx) {
         data: {
           details: {
             reasonCode,
-            label: field.labelText,
+            label: shownLabel,
             sharedWith: isDuplicate ? shared.length - 1 : 0,
             ...(isDuplicate ? { sharedWithFields: otherFields } : {}),
             hiddenLabelParts: field.hiddenParts

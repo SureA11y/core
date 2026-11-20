@@ -2266,6 +2266,7 @@ const SAFE_DOM_METHODS = [
   "setAttribute"
 ];
 const SAFE_DOM_OTHER_NAMES = [
+  "customElements",
   "adoptedStyleSheets",
   "ariaActiveDescendantElement",
   "ariaControlsElements",
@@ -11091,10 +11092,18 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return includeMain && token === 'main';
   }
 
+  // Ancestors in the flat tree, as the accessibility tree is built: through
+  // the slot an element is assigned to, and from a shadow root to its host.
+  // A web component's <header> inside an <article> in the page is the
+  // article's header, not the page's banner (HTML-AAM).
+  const flatParent =
+    shared && typeof shared.flatParentElement === 'function'
+      ? (n) => shared.flatParentElement(n) || null
+      : (n) => dom.parentElement(n);
   function hasLandmarkScopingAncestor(el, opts) {
     if (!isElement(el)) return false;
     const includeMain = !!(opts && opts.includeMain);
-    let cur = dom.parentElement(el);
+    let cur = flatParent(el);
     let guard = 0;
     while (cur && guard++ < 10000) {
       if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
@@ -11102,7 +11111,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       // (or fragment) scan should never let ancestry OUTSIDE the
       // analyzed subtree affect a role computed WITHIN it.
       if (ariaRoots.includes(cur)) break;
-      cur = dom.parentElement(cur);
+      cur = flatParent(cur);
     }
     return false;
   }
@@ -11845,7 +11854,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // the row groups) from its "descendant of a table" ones (tr, td, th), which
   // sit inside a rowgroup in most real tables.
   const NATIVE_CONTAINMENT_CONTEXT = {
-    li: { tags: ['ul', 'ol', 'menu'], directParent: true },
+    // An <li> in an element with role list is a listitem too, as browsers
+    // expose it and listitem-parent-valid accepts it.
+    li: { tags: ['ul', 'ol', 'menu'], roles: ['list'], directParent: true },
     option: { tags: ['select', 'datalist', 'optgroup'], directParent: true },
     thead: { tags: ['table'], directParent: true },
     tbody: { tags: ['table'], directParent: true },
@@ -11866,6 +11877,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     while (cur && guard++ < 10000) {
       const tag = lower(dom.tagName(cur) || '');
       if (tags.indexOf(tag) !== -1) return true;
+      if (context.roles && context.roles.indexOf(getAuthorRole(cur)) !== -1) return true;
       if (context.directParent) return false;
       cur = dom.parentElement(cur);
     }
@@ -13899,6 +13911,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return out;
   };
 
+  // Page text quoted in a message, cut to `max` characters with an ellipsis,
+  // never splitting a surrogate pair: a 1 MB label or address would
+  // otherwise be copied whole into the summary, its parameters and every
+  // report.
+  const quoteText = (value, max = 120) => {
+    const v = String(value == null ? '' : value);
+    if (v.length <= max) return v;
+    const code = v.charCodeAt(max - 2);
+    return v.slice(0, code >= 0xd800 && code <= 0xdbff ? max - 2 : max - 1) + '…';
+  };
+
   // An element's child elements in the flat tree (flatChildNodes).
   const flatChildElements = (el) => flatChildNodes(el).filter((n) => dom.nodeType(n) === 1);
 
@@ -15711,7 +15734,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!allEmpty) return null;
       const count = imgs.length;
       return {
-        hint: `Its content is ${count} images, all with alt="", so it gives no name. Give one of them alt text that says what it does or where it leads, or name the element with aria-label.`,
+        hint: `Its content is ${count} images, all with alt="", so it gives no name. Give one of them alt text that says what it stands for here, or name the element with aria-label.`,
         hintKey: 'nameCause_hint_imagesEmptyAlt',
         params: { count },
         detail: { cause: 'imagesEmptyAlt', count }
@@ -15785,7 +15808,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const alt = dom.getAttribute(img, 'alt');
       if (alt === null) {
         return {
-          hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.',
           hintKey: 'nameCause_hint_imageNoAlt',
           params: {},
           detail: { cause: 'imageNoAlt' }
@@ -15793,7 +15816,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
       if (!trim(alt)) {
         return {
-          hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.',
           hintKey: 'nameCause_hint_imageEmptyAlt',
           params: {},
           detail: { cause: 'imageEmptyAlt' }
@@ -15808,7 +15831,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       );
     if (svgNamed) return null;
     return {
-      hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.',
+      hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it stands for here, or name the element with aria-label.',
       hintKey: 'nameCause_hint_svgNoName',
       params: {},
       detail: { cause: 'svgNoName' }
@@ -17515,6 +17538,49 @@ const createDomHelpers = (function createDomHelpers(opts) {
   const LABELABLE_SELECTOR =
     'input:not([type="hidden"]), select, textarea, button, meter, output, progress';
 
+  // HTML's labelable elements also include form-associated custom elements:
+  // an autonomous custom element whose class sets `static formAssociated =
+  // true`. No selector finds them, so the page's custom element registry
+  // is asked, for elements with a hyphen in their name only.
+  function isFormAssociatedCustom(el) {
+    try {
+      const name = String(dom.localName(el) || '');
+      if (name.indexOf('-') === -1) return false;
+      const doc = dom.ownerDocument(el);
+      const win = doc && dom.defaultView(doc);
+      const registry = win && dom.get(win, 'customElements');
+      const ctor = registry && typeof registry.get === 'function' ? registry.get(name) : null;
+      return !!(ctor && ctor.formAssociated === true);
+    } catch {
+      return false;
+    }
+  }
+  function isLabelableElement(el) {
+    try {
+      if (!el || !dom.get(el, 'matches')) return false;
+      return dom.matches(el, LABELABLE_SELECTOR) || isFormAssociatedCustom(el);
+    } catch {
+      return false;
+    }
+  }
+  // A label's first labelable descendant, in tree order.
+  function firstLabelableIn(label) {
+    try {
+      const plain = dom.querySelector(label, LABELABLE_SELECTOR);
+      // A custom element may come before it: look for one only if the label
+      // holds any element with a hyphen in its name.
+      const walker = dom.createTreeWalker(dom.ownerDocument(label), label, 1);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (n === plain) return plain;
+        if (String(dom.localName(n) || '').indexOf('-') !== -1 && isFormAssociatedCustom(n))
+          return n;
+      }
+      return plain;
+    } catch {
+      return null;
+    }
+  }
+
   // Real `<label>` elements associated with `el`, replicating the native
   // `.labels` API's result (a `<label for="id">` pointing at `el`, plus a
   // wrapping `<label>` with no `for` attribute whose first labelable
@@ -17544,13 +17610,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // `<label for="x">`/wrapping `<label>` around a non-labelable element
     // (e.g. a `<div role="combobox">`) produces no accessible name in
     // either browser's accessibility tree.
-    let isLabelable;
-    try {
-      isLabelable = !!(el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR));
-    } catch {
-      isLabelable = false;
-    }
-    if (!isLabelable) return out;
+    if (!isLabelableElement(el)) return out;
 
     const id = trim(getAttr(el, 'id'));
     if (id) {
@@ -17576,15 +17636,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         !(dom.get(wrap, 'hasAttribute') && dom.hasAttribute(wrap, 'for')) &&
         out.indexOf(wrap) === -1
       ) {
-        let firstControl = null;
-        try {
-          firstControl = dom.get(wrap, 'querySelector')
-            ? dom.querySelector(wrap, LABELABLE_SELECTOR)
-            : null;
-        } catch {
-          firstControl = null;
-        }
-        if (firstControl === el) out.push(wrap);
+        if (firstLabelableIn(wrap) === el) out.push(wrap);
       }
     } catch {}
     // Usually 0-1 elements; a second only shows up for genuinely unusual
@@ -17621,9 +17673,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
             ? root
             : dom.ownerDocument(label);
         const el = scope ? dom.getElementById(scope, id) : null;
-        return el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR) ? el : null;
+        return isLabelableElement(el) ? el : null;
       }
-      return dom.get(label, 'querySelector') ? dom.querySelector(label, LABELABLE_SELECTOR) : null;
+      return firstLabelableIn(label);
     } catch {
       return null;
     }
@@ -18840,8 +18892,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (type === 'button' || type === 'submit' || type === 'reset' || type === 'image') {
         const v = getAttr(el, 'value');
         if (v != null) {
-          const t = trim(v);
-          if (t) return t;
+          // A value attribute is the label, even empty: the default label
+          // is for a submit or reset button with none.
+          return trim(v);
         }
         if (type === 'submit') return 'Submit';
         if (type === 'reset') return 'Reset';
@@ -22645,7 +22698,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl, getCustomElementInternals }
+    { trim, getLabelControl, getCustomElementInternals, flatParentElement }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -22913,6 +22966,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getTextAlternativeInfo,
     getTextAlternativeSignal,
     describeTextAlternativeSignal,
+    quoteText,
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
@@ -41553,7 +41607,9 @@ const RUNTIME_CATALOG = {
       "metaViewportLarge_lean_why": "Das Viewport-Meta-Tag begrenzt den Zoom auf unter 500 %.",
       "presentationRoleConflict_title": "Eine präsentationale Rolle darf nicht mit einem globalen ARIA-Attribut oder Fokussierbarkeit im Konflikt stehen",
       "presentationRoleConflict_description": "Prüft, ob role=\"presentation\"/\"none\" (einschließlich der impliziten presentation-Rolle eines <img alt=\"\">) nicht mit einem globalen ARIA-Attribut (aria-label, aria-hidden, aria-describedby, …) oder Fokussierbarkeit (tabindex/nativ) kombiniert wird.",
-      "presentationRoleConflict_summary_cantTell": "Dieses Element mit role=\"{{role}}\" hat außerdem {{attrs}}, daher ignorieren Browser die Rolle und geben das Element trotzdem aus.",
+      "presentationRoleConflict_summary_cantTell": "Dieses Element ist mit {{marker}} gekennzeichnet, hat aber auch {{attrs}}, daher ignorieren Browser die Kennzeichnung und geben es trotzdem aus.",
+      "presentationRoleConflict_summary_cantTell_focusable": "Dieses Element ist mit {{marker}} gekennzeichnet, kann aber den Fokus erhalten, daher ignorieren Browser die Kennzeichnung und geben es trotzdem aus.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "Dieses Element ist mit {{marker}} gekennzeichnet, hat aber auch {{attrs}} und kann den Fokus erhalten, daher ignorieren Browser die Kennzeichnung und geben es trotzdem aus.",
       "presentationRoleConflict_hint_cantTell": "Soll es vor assistiven Technologien verborgen bleiben, entfernen Sie die Namensattribute und machen Sie es nicht fokussierbar. Soll es ausgegeben werden, entfernen Sie role=\"presentation\" bzw. role=\"none\".",
       "presentationRoleConflict_lean_why": "Browser ignorieren hier die Präsentationsrolle und stellen die eigene Rolle des Elements bereit.",
       "region_title": "Der Seiteninhalt sollte sich innerhalb einer Landmarke befinden",
@@ -42185,10 +42241,10 @@ const RUNTIME_CATALOG = {
       "nameCause_hint_labelWrapsOther": "Es steht in dem <label> „{{text}}“, aber ein Label benennt nur das erste Feld darin, und das ist ein anderes <{{firstTag}}>. Geben Sie diesem Feld ein eigenes <label> oder aria-label.",
       "nameCause_hint_labelNotTied": "Das <label> „{{text}}“ daneben ist nicht mit ihm verknüpft: Das Label hat kein for-Attribut und umschließt das Feld nicht. Fügen Sie dem Label for=\"{{id}}\" hinzu, oder setzen Sie das Feld in das Label.",
       "nameCause_hint_labelNotTiedNoId": "Das <label> „{{text}}“ daneben ist nicht mit ihm verknüpft: Das Label hat kein for-Attribut und umschließt das Feld nicht. Geben Sie dem Feld eine id und dem Label ein for-Attribut mit dieser id, oder setzen Sie das Feld in das Label.",
-      "nameCause_hint_imageNoAlt": "Sein einziger Inhalt ist ein Bild ohne alt-Attribut, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Sein einziger Inhalt ist ein Bild mit alt=\"\", das es als dekorativ kennzeichnet, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
-      "nameCause_hint_svgNoName": "Sein einziger Inhalt ist ein <svg> ohne Namen (kein <title> und kein aria-label), sodass es keinen Namen liefert. Geben Sie dem svg einen <title> oder ein aria-label, das sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Sein Inhalt sind {{count}} Bilder, alle mit alt=\"\", sodass er keinen Namen liefert. Geben Sie einem davon einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imageNoAlt": "Sein einziger Inhalt ist ein Bild ohne alt-Attribut, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Sein einziger Inhalt ist ein Bild mit alt=\"\", das es als dekorativ kennzeichnet, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_svgNoName": "Sein einziger Inhalt ist ein <svg> ohne Namen (kein <title> und kein aria-label), sodass es keinen Namen liefert. Geben Sie dem svg einen <title> oder ein aria-label, das sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Sein Inhalt sind {{count}} Bilder, alle mit alt=\"\", sodass er keinen Namen liefert. Geben Sie einem davon einen alt-Text, der sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
       "nameCause_hint_iconEmpty": "Sein einziger Inhalt ist ein leeres <{{iconTag}} class=\"{{iconClass}}\">, ein per CSS gezeichnetes Icon, das keinen Text hat, der einen Namen liefern könnte. Fügen Sie visuell verborgenen Text hinzu, oder benennen Sie das Element mit aria-label.",
       "nameCause_hint_iconGenerated": "Sein einziger Inhalt ist ein per CSS gezeichnetes Icon-Font-Zeichen ({{pseudo}} auf {{host}}), das Screenreader nicht als Namen lesen können. Fügen Sie visuell verborgenen Text hinzu, oder benennen Sie das Element mit aria-label.",
       "nameCause_hint_iconHidden": "Sein einziger Inhalt ist ein <{{imageTag}}>, das durch aria-hidden=\"true\" verborgen ist, sodass Screenreader es überspringen und es keinen Namen liefert. Fügen Sie Text hinzu, den ein Screenreader liest (ein visuell verborgenes <span>), oder benennen Sie das Element mit aria-label.",
@@ -43338,7 +43394,9 @@ const RUNTIME_CATALOG = {
       "metaViewportLarge_lean_why": "The viewport meta tag keeps zoom below 500%.",
       "presentationRoleConflict_title": "Presentational role must not conflict with a global ARIA attribute or focusability",
       "presentationRoleConflict_description": "Checks that role=\"presentation\"/\"none\" (including an <img alt=\"\"> implicit presentation role) is not combined with a global ARIA attribute (aria-label, aria-hidden, aria-describedby, ...) or focusability (tabindex/native).",
-      "presentationRoleConflict_summary_cantTell": "This role=\"{{role}}\" element also has {{attrs}}, so browsers ignore the role and expose the element anyway.",
+      "presentationRoleConflict_summary_cantTell": "This element is marked {{marker}} but also has {{attrs}}, so browsers ignore the marking and expose it anyway.",
+      "presentationRoleConflict_summary_cantTell_focusable": "This element is marked {{marker}} but can take focus, so browsers ignore the marking and expose it anyway.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "This element is marked {{marker}} but also has {{attrs}} and can take focus, so browsers ignore the marking and expose it anyway.",
       "presentationRoleConflict_hint_cantTell": "If it should stay hidden from assistive technology, remove the naming attributes and make it unfocusable. If it should be exposed, remove role=\"presentation\" or role=\"none\".",
       "presentationRoleConflict_lean_why": "Browsers ignore the presentational role here and expose the element's own role.",
       "region_title": "Page content should be inside a landmark region",
@@ -43970,10 +44028,10 @@ const RUNTIME_CATALOG = {
       "nameCause_hint_labelWrapsOther": "It sits inside the <label> \"{{text}}\", but a label names only the first field in it, which is another <{{firstTag}}>. Give this field its own <label> or aria-label.",
       "nameCause_hint_labelNotTied": "The <label> \"{{text}}\" beside it is not tied to it: the label has no for attribute and does not wrap the field. Add for=\"{{id}}\" to the label, or put the field inside the label.",
       "nameCause_hint_labelNotTiedNoId": "The <label> \"{{text}}\" beside it is not tied to it: the label has no for attribute and does not wrap the field. Give the field an id and add a for attribute with that id to the label, or put the field inside the label.",
-      "nameCause_hint_imageNoAlt": "Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Its only content is an image with alt=\"\", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.",
-      "nameCause_hint_svgNoName": "Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Its content is {{count}} images, all with alt=\"\", so it gives no name. Give one of them alt text that says what it does or where it leads, or name the element with aria-label.",
+      "nameCause_hint_imageNoAlt": "Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Its only content is an image with alt=\"\", which marks it as decorative, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.",
+      "nameCause_hint_svgNoName": "Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it stands for here, or name the element with aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Its content is {{count}} images, all with alt=\"\", so it gives no name. Give one of them alt text that says what it stands for here, or name the element with aria-label.",
       "nameCause_hint_iconEmpty": "Its only content is an empty <{{iconTag}} class=\"{{iconClass}}\">, an icon drawn by CSS, which has no text to give a name. Add visually-hidden text, or name the element with aria-label.",
       "nameCause_hint_iconGenerated": "Its only content is an icon-font character drawn by CSS ({{pseudo}} on {{host}}), which screen readers can't read as a name. Add visually-hidden text, or name the element with aria-label.",
       "nameCause_hint_iconHidden": "Its only content is an <{{imageTag}}> hidden by aria-hidden=\"true\", so screen readers skip it and it gives no name. Add text a screen reader reads (a visually-hidden <span>), or name the element with aria-label.",
@@ -45123,7 +45181,9 @@ const RUNTIME_CATALOG = {
       "metaViewportLarge_lean_why": "La etiqueta meta viewport limita el zoom por debajo del 500 %.",
       "presentationRoleConflict_title": "El rol presentacional no debe entrar en conflicto con un atributo ARIA global ni con la capacidad de enfoque",
       "presentationRoleConflict_description": "Comprueba que role=\"presentation\"/\"none\" (incluido el rol de presentación implícito de <img alt=\"\">) no se combine con un atributo ARIA global (aria-label, aria-hidden, aria-describedby, ...) ni con la capacidad de enfoque (tabindex/nativa).",
-      "presentationRoleConflict_summary_cantTell": "Este elemento con role=\"{{role}}\" también tiene {{attrs}}, así que los navegadores ignoran el rol y exponen el elemento de todos modos.",
+      "presentationRoleConflict_summary_cantTell": "Este elemento está marcado con {{marker}} pero también tiene {{attrs}}, así que los navegadores ignoran la marca y lo exponen de todos modos.",
+      "presentationRoleConflict_summary_cantTell_focusable": "Este elemento está marcado con {{marker}} pero puede recibir el foco, así que los navegadores ignoran la marca y lo exponen de todos modos.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "Este elemento está marcado con {{marker}} pero también tiene {{attrs}} y puede recibir el foco, así que los navegadores ignoran la marca y lo exponen de todos modos.",
       "presentationRoleConflict_hint_cantTell": "Si debe permanecer oculto a las tecnologías de apoyo, quitar los atributos de nombre y hacer que no pueda recibir el foco. Si debe exponerse, quitar role=\"presentation\" o role=\"none\".",
       "presentationRoleConflict_lean_why": "Los navegadores ignoran aquí el rol de presentación y exponen el rol propio del elemento.",
       "region_title": "El contenido de la página debería estar dentro de una región de referencia",
@@ -45755,10 +45815,10 @@ const RUNTIME_CATALOG = {
       "nameCause_hint_labelWrapsOther": "Está dentro del <label> «{{text}}», pero una etiqueta solo nombra el primer campo que contiene, que es otro <{{firstTag}}>. Dar a este campo su propio <label> o aria-label.",
       "nameCause_hint_labelNotTied": "El <label> «{{text}}» que tiene al lado no está ligado a él: la etiqueta no tiene atributo for y no envuelve el campo. Agregar for=\"{{id}}\" a la etiqueta, o poner el campo dentro de la etiqueta.",
       "nameCause_hint_labelNotTiedNoId": "El <label> «{{text}}» que tiene al lado no está ligado a él: la etiqueta no tiene atributo for y no envuelve el campo. Dar un id al campo y agregar a la etiqueta un atributo for con ese id, o poner el campo dentro de la etiqueta.",
-      "nameCause_hint_imageNoAlt": "Su único contenido es una imagen sin atributo alt, así que no da nombre. Dar a la imagen un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Su único contenido es una imagen con alt=\"\", que la marca como decorativa, así que no da nombre. Dar a la imagen un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
-      "nameCause_hint_svgNoName": "Su único contenido es un <svg> sin nombre (sin <title> ni aria-label), así que no da nombre. Dar al svg un <title> o aria-label que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Su contenido son {{count}} imágenes, todas con alt=\"\", así que no da nombre. Dar a una de ellas un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imageNoAlt": "Su único contenido es una imagen sin atributo alt, así que no da nombre. Dar a la imagen un texto alt que diga qué representa aquí, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Su único contenido es una imagen con alt=\"\", que la marca como decorativa, así que no da nombre. Dar a la imagen un texto alt que diga qué representa aquí, o nombrar el elemento con aria-label.",
+      "nameCause_hint_svgNoName": "Su único contenido es un <svg> sin nombre (sin <title> ni aria-label), así que no da nombre. Dar al svg un <title> o aria-label que diga qué representa aquí, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Su contenido son {{count}} imágenes, todas con alt=\"\", así que no da nombre. Dar a una de ellas un texto alt que diga qué representa aquí, o nombrar el elemento con aria-label.",
       "nameCause_hint_iconEmpty": "Su único contenido es un <{{iconTag}} class=\"{{iconClass}}\"> vacío, un icono dibujado con CSS, que no tiene texto que dé un nombre. Agregar texto visualmente oculto, o nombrar el elemento con aria-label.",
       "nameCause_hint_iconGenerated": "Su único contenido es un carácter de fuente de iconos dibujado con CSS ({{pseudo}} en {{host}}), que los lectores de pantalla no pueden leer como nombre. Agregar texto visualmente oculto, o nombrar el elemento con aria-label.",
       "nameCause_hint_iconHidden": "Su único contenido es un <{{imageTag}}> oculto con aria-hidden=\"true\", así que los lectores de pantalla lo omiten y no da nombre. Agregar texto que lea un lector de pantalla (un <span> visualmente oculto), o nombrar el elemento con aria-label.",
@@ -46908,7 +46968,9 @@ const RUNTIME_CATALOG = {
       "metaViewportLarge_lean_why": "La balise meta viewport limite le zoom en dessous de 500 %.",
       "presentationRoleConflict_title": "Un rôle de présentation ne doit pas entrer en conflit avec un attribut ARIA global ou la focalisabilité",
       "presentationRoleConflict_description": "Vérifie que role=\"presentation\"/\"none\" (y compris le rôle presentation implicite d’un <img alt=\"\">) n’est pas combiné avec un attribut ARIA global (aria-label, aria-hidden, aria-describedby, ...) ou avec la focalisabilité (tabindex/native).",
-      "presentationRoleConflict_summary_cantTell": "Cet élément avec role=\"{{role}}\" a aussi {{attrs}} : les navigateurs ignorent donc le rôle et exposent l’élément malgré tout.",
+      "presentationRoleConflict_summary_cantTell": "Cet élément est marqué {{marker}} mais a aussi {{attrs}} : les navigateurs ignorent donc ce marquage et l’exposent malgré tout.",
+      "presentationRoleConflict_summary_cantTell_focusable": "Cet élément est marqué {{marker}} mais peut recevoir le focus : les navigateurs ignorent donc ce marquage et l’exposent malgré tout.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "Cet élément est marqué {{marker}} mais a aussi {{attrs}} et peut recevoir le focus : les navigateurs ignorent donc ce marquage et l’exposent malgré tout.",
       "presentationRoleConflict_hint_cantTell": "S’il doit rester caché aux technologies d’assistance, retirez les attributs de nom et rendez-le non focalisable. S’il doit être exposé, retirez role=\"presentation\" ou role=\"none\".",
       "presentationRoleConflict_lean_why": "Les navigateurs ignorent ici le rôle de présentation et exposent le rôle propre de l’élément.",
       "region_title": "Le contenu de la page devrait se trouver à l’intérieur d’un point de repère",
@@ -47540,10 +47602,10 @@ const RUNTIME_CATALOG = {
       "nameCause_hint_labelWrapsOther": "Il se trouve dans le <label> « {{text}} », mais un label ne nomme que le premier champ qu’il contient, qui est un autre <{{firstTag}}>. Donnez à ce champ son propre <label> ou un aria-label.",
       "nameCause_hint_labelNotTied": "Le <label> « {{text}} » à côté n’y est pas lié : le label n’a pas d’attribut for et n’entoure pas le champ. Ajoutez for=\"{{id}}\" au label, ou placez le champ dans le label.",
       "nameCause_hint_labelNotTiedNoId": "Le <label> « {{text}} » à côté n’y est pas lié : le label n’a pas d’attribut for et n’entoure pas le champ. Donnez un id au champ et ajoutez au label un attribut for avec cet id, ou placez le champ dans le label.",
-      "nameCause_hint_imageNoAlt": "Son seul contenu est une image sans attribut alt, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle fait ou où elle mène, ou nommez l’élément avec aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Son seul contenu est une image avec alt=\"\", qui la marque comme décorative, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle fait ou où elle mène, ou nommez l’élément avec aria-label.",
-      "nameCause_hint_svgNoName": "Son seul contenu est un <svg> sans nom (ni <title> ni aria-label), il ne donne donc aucun nom. Donnez au svg un <title> ou un aria-label qui dit ce qu’il fait ou où il mène, ou nommez l’élément avec aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Son contenu est fait de {{count}} images, toutes avec alt=\"\", il ne donne donc aucun nom. Donnez à l’une d’elles un texte alt qui dit ce qu’il fait ou où il mène, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imageNoAlt": "Son seul contenu est une image sans attribut alt, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle représente ici, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Son seul contenu est une image avec alt=\"\", qui la marque comme décorative, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle représente ici, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_svgNoName": "Son seul contenu est un <svg> sans nom (ni <title> ni aria-label), il ne donne donc aucun nom. Donnez au svg un <title> ou un aria-label qui dit ce qu’il représente ici, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Son contenu est fait de {{count}} images, toutes avec alt=\"\", il ne donne donc aucun nom. Donnez à l’une d’elles un texte alt qui dit ce qu’il représente ici, ou nommez l’élément avec aria-label.",
       "nameCause_hint_iconEmpty": "Son seul contenu est un <{{iconTag}} class=\"{{iconClass}}\"> vide, une icône dessinée en CSS, qui n’a aucun texte pour donner un nom. Ajoutez du texte visuellement masqué, ou nommez l’élément avec aria-label.",
       "nameCause_hint_iconGenerated": "Son seul contenu est un caractère de police d’icônes dessiné en CSS ({{pseudo}} sur {{host}}), que les lecteurs d’écran ne peuvent pas lire comme un nom. Ajoutez du texte visuellement masqué, ou nommez l’élément avec aria-label.",
       "nameCause_hint_iconHidden": "Son seul contenu est un <{{imageTag}}> masqué par aria-hidden=\"true\", les lecteurs d’écran le sautent donc et il ne donne aucun nom. Ajoutez du texte qu’un lecteur d’écran lit (un <span> visuellement masqué), ou nommez l’élément avec aria-label.",
@@ -48693,7 +48755,9 @@ const RUNTIME_CATALOG = {
       "metaViewportLarge_lean_why": "viewport メタタグがズームを 500% 未満に制限しています。",
       "presentationRoleConflict_title": "プレゼンテーショナルなロールが、グローバル ARIA 属性やフォーカス可能性と矛盾してはならない",
       "presentationRoleConflict_description": "role=\"presentation\"/\"none\" (<img alt=\"\"> の暗黙の presentation ロールを含む) が、グローバル ARIA 属性 (aria-label、aria-hidden、aria-describedby など) やフォーカス可能性 (tabindex/ネイティブ) と組み合わされていないかを確認します。",
-      "presentationRoleConflict_summary_cantTell": "role=\"{{role}}\" のこの要素には {{attrs}} もあるため、ブラウザーはロールを無視し、要素をそのまま公開します。",
+      "presentationRoleConflict_summary_cantTell": "この要素は {{marker}} で示されていますが {{attrs}} もあるため、ブラウザーはその指定を無視し、要素をそのまま公開します。",
+      "presentationRoleConflict_summary_cantTell_focusable": "この要素は {{marker}} で示されていますがフォーカスを受け取れるため、ブラウザーはその指定を無視し、要素をそのまま公開します。",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "この要素は {{marker}} で示されていますが {{attrs}} もあり、フォーカスも受け取れるため、ブラウザーはその指定を無視し、要素をそのまま公開します。",
       "presentationRoleConflict_hint_cantTell": "支援技術から隠したままにする場合は、名前を付ける属性を外し、フォーカスできないようにしてください。公開する場合は、role=\"presentation\" または role=\"none\" を削除してください。",
       "presentationRoleConflict_lean_why": "ブラウザーはここでプレゼンテーションロールを無視し、要素本来のロールを公開します。",
       "region_title": "ページのコンテンツはランドマーク領域内にあることが望ましい",
@@ -49325,10 +49389,10 @@ const RUNTIME_CATALOG = {
       "nameCause_hint_labelWrapsOther": "<label>「{{text}}」の中にありますが、label が名前を付けるのは中の最初のフィールドだけで、それは別の <{{firstTag}}> です。このフィールドに専用の <label> か aria-label を付けてください。",
       "nameCause_hint_labelNotTied": "隣の <label>「{{text}}」はこのフィールドと結び付いていません。label に for 属性がなく、フィールドを囲んでもいません。label に for=\"{{id}}\" を追加するか、フィールドを label の中に入れてください。",
       "nameCause_hint_labelNotTiedNoId": "隣の <label>「{{text}}」はこのフィールドと結び付いていません。label に for 属性がなく、フィールドを囲んでもいません。フィールドに id を付けてその id の for 属性を label に追加するか、フィールドを label の中に入れてください。",
-      "nameCause_hint_imageNoAlt": "唯一の内容が alt 属性のない画像のため、名前になりません。何をするか、どこへ移動するかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
-      "nameCause_hint_imageEmptyAlt": "唯一の内容が alt=\"\" の画像で、装飾として扱われるため、名前になりません。何をするか、どこへ移動するかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
-      "nameCause_hint_svgNoName": "唯一の内容が名前のない <svg> (<title> も aria-label もない) のため、名前になりません。何をするか、どこへ移動するかを示す <title> または aria-label を svg に付けるか、aria-label で要素に名前を付けてください。",
-      "nameCause_hint_imagesEmptyAlt": "内容は {{count}} 個の画像で、すべて alt=\"\" のため、名前になりません。そのうち 1 つに、何をするか、どこへ移動するかを示す alt テキストを付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imageNoAlt": "唯一の内容が alt 属性のない画像のため、名前になりません。ここで何を表すかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imageEmptyAlt": "唯一の内容が alt=\"\" の画像で、装飾として扱われるため、名前になりません。ここで何を表すかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_svgNoName": "唯一の内容が名前のない <svg> (<title> も aria-label もない) のため、名前になりません。ここで何を表すかを示す <title> または aria-label を svg に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imagesEmptyAlt": "内容は {{count}} 個の画像で、すべて alt=\"\" のため、名前になりません。そのうち 1 つに、ここで何を表すかを示す alt テキストを付けるか、aria-label で要素に名前を付けてください。",
       "nameCause_hint_iconEmpty": "唯一の内容が空の <{{iconTag}} class=\"{{iconClass}}\"> (CSS で描かれたアイコン) で、名前になるテキストがありません。視覚的に隠したテキストを追加するか、aria-label で要素に名前を付けてください。",
       "nameCause_hint_iconGenerated": "唯一の内容が CSS で描かれたアイコンフォントの文字 ({{host}} の {{pseudo}}) で、スクリーンリーダーはこれを名前として読めません。視覚的に隠したテキストを追加するか、aria-label で要素に名前を付けてください。",
       "nameCause_hint_iconHidden": "唯一の内容が aria-hidden=\"true\" で隠された <{{imageTag}}> のため、スクリーンリーダーが読み飛ばし、名前になりません。スクリーンリーダーが読むテキスト (視覚的に隠した <span>) を追加するか、aria-label で要素に名前を付けてください。",
@@ -69772,10 +69836,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return '';
     }
   }
+  // A native control whose own state browsers expose, whatever the ARIA
+  // attribute says: a checkbox's or radio's checked state, an <option>'s
+  // selectedness, a <summary>'s open state. An invalid value of the
+  // matching attribute leaves nothing unstated, so it is asked about.
+  const NATIVE_STATE = {
+    'aria-checked': (tag, type) => tag === 'input' && (type === 'checkbox' || type === 'radio'),
+    'aria-selected': (tag) => tag === 'option',
+    'aria-expanded': (tag) => tag === 'summary'
+  };
+  function nativeStateExposed(el, attr) {
+    const test = NATIVE_STATE[attr];
+    if (!test || roleOf(el)) return false;
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    const type = trim(dom.getAttribute(el, 'type') || '').toLowerCase();
+    return test(tag, type);
+  }
   function invalidValueFailsWcag(el, item) {
     // An active descendant that names no element: the focused item is not
     // exposed.
     if (item.name === 'aria-activedescendant') return true;
+    if (nativeStateExposed(el, item.name)) return false;
     return USER_SETTABLE_STATE_ATTRS.has(item.name) && CONTROL_ROLES.has(controlRoleOf(el));
   }
 
@@ -69917,7 +69998,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       (wcagFail ? failOccurrences : cantTellOccurrences).push(
         helpers.reportOccurrence(el, {
           summary: idMissing
-            ? `${item.name} points to id "${item.value}", which no element on the page has.`
+            ? `${item.name} points to id "${helpers.quoteText(item.value)}", which no element on the page has.`
             : 'This element has an ARIA attribute with an invalid value.',
           hint: vh
             ? vh.text
@@ -69928,7 +70009,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               ? 'ariaValidAttrValue_summary_fail_idrefMissing'
               : 'ariaValidAttrValue_summary_fail',
             hintKey: vh ? vh.key : 'ariaValidAttrValue_hint_fail',
-            params: { attr: item.name, value: item.value, ...(vh ? vh.params : {}) }
+            params: {
+              attr: item.name,
+              value: helpers.quoteText(item.value),
+              ...(vh ? vh.params : {})
+            }
           },
           ...(wcagFail
             ? {}
@@ -69937,14 +70022,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                   code: 'spec-only',
                   needed:
                     'Whether the attribute carries information the page shows and conveys no other way.',
-                  evidence: { attribute: item.name, value: item.value, valueReason: item.reason }
+                  evidence: {
+                    attribute: item.name,
+                    value: helpers.quoteText(item.value),
+                    valueReason: item.reason
+                  }
                 }
               }),
           data: {
             details: {
               reasonCode: 'ARIA_ATTR_VALUE_INVALID',
               attr: item.name,
-              value: item.value,
+              value: helpers.quoteText(item.value),
               valueReason: item.reason,
               ...(fix || {})
             }
@@ -69980,7 +70069,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                   : controls
                     ? 'ariaValidAttrValue_hint_cantTell_idref'
                     : 'ariaValidAttrValue_hint_cantTell_idrefList',
-            params: { attr: item.name, value: item.value, ...(fix || {}) }
+            params: { attr: item.name, value: helpers.quoteText(item.value), ...(fix || {}) }
           },
           uncertainty: {
             code: 'runtime-dependent',
@@ -69989,7 +70078,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               : 'Whether the referenced element is added later, and whether its absence loses a name, description or relationship.',
             evidence: {
               attribute: item.name,
-              referencedId: item.value,
+              referencedId: helpers.quoteText(item.value),
               resolvedAtScanTime: false
             }
           },
@@ -69998,7 +70087,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             details: {
               reasonCode: 'ARIA_ATTR_VALUE_TARGET_ABSENT',
               attr: item.name,
-              value: item.value,
+              value: helpers.quoteText(item.value),
               valueReason: item.reason,
               ...(fix || {})
             }
@@ -70991,8 +71080,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const title = getAttr(el, 'title');
     if (title) return { ok: true, method: 'title' };
 
-    // Native input label association (for input[type=checkbox|radio])
-    if (controlType === 'checkbox' || controlType === 'radio') {
+    // Label association: a native checkbox or radio, or a form-associated
+    // custom element, which HTML makes labelable too (the helper gives no
+    // label to anything else).
+    {
       const lab = getNativeLabelText(el);
       if (lab) return { ok: true, method: 'label' };
     }
@@ -71152,9 +71243,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         vAttr != null ? vAttr : typeof el.value === 'string' ? el.value : ''
       );
       if (explicit) return explicit;
-      // HTML spec: input[type=submit]/[type=reset] with no `value` fall back
-      // to a UA-supplied default label ("Submit"/"Reset"), so they are never
-      // actually nameless -- unlike type=button, whose value defaults to "".
+      // HTML spec: input[type=submit]/[type=reset] with no `value` attribute
+      // fall back to a UA-supplied default label ("Submit"/"Reset"), unlike
+      // type=button, whose value defaults to "". A value attribute that is
+      // there but empty or blank is the label, so the button has none
+      // (Chromium names it "").
+      if (vAttr != null) return '';
       if (type === 'submit') return 'Submit';
       if (type === 'reset') return 'Reset';
       return '';
@@ -71482,7 +71576,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function queryAll(selector) {
     try {
       return helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart(selector, { internalsRoles: true })
+        ? helpers.queryAllSmart(selector, { internalsRoles: true, excluded: true })
         : dom.querySelectorAll(document, selector);
     } catch {
       return [];
@@ -71575,7 +71669,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       links =
         helpers && typeof helpers.queryAllSmart === 'function'
-          ? helpers.queryAllSmart('a[href]')
+          ? helpers.queryAllSmart('a[href]', { excluded: true })
           : dom.querySelectorAll(document, 'a[href]');
     } catch {
       links = [];
@@ -84371,10 +84465,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     const others = otherFields.join(', ') + (shared.length - 1 > 3 ? ', …' : '');
+    // The label as quoted in the message and its details, capped.
+    const shownLabel = helpers.quoteText(field.labelText);
     const summaryByReason = {
-      PLACEHOLDER_LABEL_TEXT: `This field's visible label ("${field.labelText}") is a placeholder rather than a description of what the field is for.`,
-      DUPLICATE_LABEL_TEXT: `This field's visible label ("${field.labelText}") is also the label of ${others}, with no visible heading, legend or row text telling them apart.`,
-      PARTIALLY_HIDDEN_LABEL: `This field's label is split: "${field.labelText}" is what renders, while ${field.hiddenParts} other part(s) of the label are hidden from sight.`
+      PLACEHOLDER_LABEL_TEXT: `This field's visible label ("${shownLabel}") is a placeholder rather than a description of what the field is for.`,
+      DUPLICATE_LABEL_TEXT: `This field's visible label ("${shownLabel}") is also the label of ${others}, with no visible heading, legend or row text telling them apart.`,
+      PARTIALLY_HIDDEN_LABEL: `This field's label is split: "${shownLabel}" is what renders, while ${field.hiddenParts} other part(s) of the label are hidden from sight.`
     };
     const hintByReason = {
       PLACEHOLDER_LABEL_TEXT:
@@ -84403,7 +84499,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           summaryKey: SUMMARY_KEY_BY_REASON[reasonCode],
           hintKey: HINT_KEY_BY_REASON[reasonCode],
           params: {
-            label: field.labelText,
+            label: shownLabel,
             count: String(shared.length - 1),
             hiddenCount: String(field.hiddenParts),
             others
@@ -84413,7 +84509,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         data: {
           details: {
             reasonCode,
-            label: field.labelText,
+            label: shownLabel,
             sharedWith: isDuplicate ? shared.length - 1 : 0,
             ...(isDuplicate ? { sharedWithFields: otherFields } : {}),
             hiddenLabelParts: field.hiddenParts
@@ -86680,11 +86776,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       const page = new URL(dom.baseURI(document));
       const u = new URL(href, page);
-      if (u.origin === page.origin) return u.pathname + u.search + u.hash;
+      if (u.origin === page.origin) return helpers.quoteText(u.pathname + u.search + u.hash);
     } catch {
       /* as written */
     }
-    return href;
+    return helpers.quoteText(href);
   }
 
   // ---- Lean ----
@@ -86847,7 +86943,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           details: {
             reasonCode: 'SAME_NAME_DIFFERENT_DESTINATION',
             name,
-            href,
+            href: helpers.quoteText(href),
             distinctDestinationCount: distinctHrefs.size,
             otherDestinations: others,
             linkKind: helpers.getLinkKind(el)
@@ -87732,10 +87828,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         i18n: {
           summaryKey: 'imageRedundantAlt_summary_cantTell',
           hintKey: 'imageRedundantAlt_hint_cantTell',
-          params: { alt }
+          params: { alt: helpers.quoteText(alt) }
         },
         data: {
-          details: { reasonCode: 'IMAGE_ALT_REDUNDANT', alt }
+          details: { reasonCode: 'IMAGE_ALT_REDUNDANT', alt: helpers.quoteText(alt) }
         }
       })
     );
@@ -90412,8 +90508,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const code = v.charCodeAt(1999);
     return v.slice(0, code >= 0xd800 && code <= 0xdbff ? 1999 : 2000) + '…';
   }
+  // At most 200 words, each capped as text is: one word may be a whole
+  // 1 MB value with no space in it.
   function capWords(list) {
-    return Array.isArray(list) && list.length > 200 ? list.slice(0, 200) : list;
+    if (!Array.isArray(list)) return list;
+    return (list.length > 200 ? list.slice(0, 200) : list).map((w) => capText(w));
   }
 
   // The label's words the name does not have, each once, in label order.
@@ -92021,7 +92120,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart('main, [role]', { internalsRoles: true });
+    // An excluded area is still part of the page (excludeSelectors): a main
+    // landmark in it is the page's main.
+    nodes = helpers.queryAllSmart('main, [role]', { internalsRoles: true, excluded: true });
   } catch {
     nodes = [];
   }
@@ -102516,20 +102617,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!present.length && !isFocusable) continue;
 
     const parts = present.slice();
-    if (isFocusable) parts.push('focusable');
 
     // No role token means this matched via the img[alt=""]
-    // implicit-presentation case.
+    // implicit-presentation case: what marks it is its empty alt.
     const role = roleToken || 'presentation';
+    const marker = roleToken ? `role="${roleToken}"` : 'alt=""';
+    const attrs = parts.join(', ');
+    const summary =
+      parts.length && isFocusable
+        ? `This element is marked ${marker} but also has ${attrs} and can take focus, so browsers ignore the marking and expose it anyway.`
+        : parts.length
+          ? `This element is marked ${marker} but also has ${attrs}, so browsers ignore the marking and expose it anyway.`
+          : `This element is marked ${marker} but can take focus, so browsers ignore the marking and expose it anyway.`;
+    const summaryKey =
+      parts.length && isFocusable
+        ? 'presentationRoleConflict_summary_cantTell_attrsFocusable'
+        : parts.length
+          ? 'presentationRoleConflict_summary_cantTell'
+          : 'presentationRoleConflict_summary_cantTell_focusable';
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `This role="${role}" element also has ${parts.join(', ')}, so browsers ignore the role and expose the element anyway.`,
+        summary,
         hint: 'If it should stay hidden from assistive technology, remove the naming attributes and make it unfocusable. If it should be exposed, remove role="presentation" or role="none".',
         i18n: {
-          summaryKey: 'presentationRoleConflict_summary_cantTell',
+          summaryKey,
           hintKey: 'presentationRoleConflict_hint_cantTell',
-          params: { role, attrs: parts.join(', ') }
+          params: { role, marker, attrs }
         },
         ...((() => {
           try {
@@ -117600,7 +117714,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportLarge_lean_why": "Das Viewport-Meta-Tag begrenzt den Zoom auf unter 500 %.",
       "presentationRoleConflict_title": "Eine präsentationale Rolle darf nicht mit einem globalen ARIA-Attribut oder Fokussierbarkeit im Konflikt stehen",
       "presentationRoleConflict_description": "Prüft, ob role=\"presentation\"/\"none\" (einschließlich der impliziten presentation-Rolle eines <img alt=\"\">) nicht mit einem globalen ARIA-Attribut (aria-label, aria-hidden, aria-describedby, …) oder Fokussierbarkeit (tabindex/nativ) kombiniert wird.",
-      "presentationRoleConflict_summary_cantTell": "Dieses Element mit role=\"{{role}}\" hat außerdem {{attrs}}, daher ignorieren Browser die Rolle und geben das Element trotzdem aus.",
+      "presentationRoleConflict_summary_cantTell": "Dieses Element ist mit {{marker}} gekennzeichnet, hat aber auch {{attrs}}, daher ignorieren Browser die Kennzeichnung und geben es trotzdem aus.",
+      "presentationRoleConflict_summary_cantTell_focusable": "Dieses Element ist mit {{marker}} gekennzeichnet, kann aber den Fokus erhalten, daher ignorieren Browser die Kennzeichnung und geben es trotzdem aus.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "Dieses Element ist mit {{marker}} gekennzeichnet, hat aber auch {{attrs}} und kann den Fokus erhalten, daher ignorieren Browser die Kennzeichnung und geben es trotzdem aus.",
       "presentationRoleConflict_hint_cantTell": "Soll es vor assistiven Technologien verborgen bleiben, entfernen Sie die Namensattribute und machen Sie es nicht fokussierbar. Soll es ausgegeben werden, entfernen Sie role=\"presentation\" bzw. role=\"none\".",
       "presentationRoleConflict_lean_why": "Browser ignorieren hier die Präsentationsrolle und stellen die eigene Rolle des Elements bereit.",
       "region_title": "Der Seiteninhalt sollte sich innerhalb einer Landmarke befinden",
@@ -118232,10 +118348,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameCause_hint_labelWrapsOther": "Es steht in dem <label> „{{text}}“, aber ein Label benennt nur das erste Feld darin, und das ist ein anderes <{{firstTag}}>. Geben Sie diesem Feld ein eigenes <label> oder aria-label.",
       "nameCause_hint_labelNotTied": "Das <label> „{{text}}“ daneben ist nicht mit ihm verknüpft: Das Label hat kein for-Attribut und umschließt das Feld nicht. Fügen Sie dem Label for=\"{{id}}\" hinzu, oder setzen Sie das Feld in das Label.",
       "nameCause_hint_labelNotTiedNoId": "Das <label> „{{text}}“ daneben ist nicht mit ihm verknüpft: Das Label hat kein for-Attribut und umschließt das Feld nicht. Geben Sie dem Feld eine id und dem Label ein for-Attribut mit dieser id, oder setzen Sie das Feld in das Label.",
-      "nameCause_hint_imageNoAlt": "Sein einziger Inhalt ist ein Bild ohne alt-Attribut, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Sein einziger Inhalt ist ein Bild mit alt=\"\", das es als dekorativ kennzeichnet, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
-      "nameCause_hint_svgNoName": "Sein einziger Inhalt ist ein <svg> ohne Namen (kein <title> und kein aria-label), sodass es keinen Namen liefert. Geben Sie dem svg einen <title> oder ein aria-label, das sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Sein Inhalt sind {{count}} Bilder, alle mit alt=\"\", sodass er keinen Namen liefert. Geben Sie einem davon einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imageNoAlt": "Sein einziger Inhalt ist ein Bild ohne alt-Attribut, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Sein einziger Inhalt ist ein Bild mit alt=\"\", das es als dekorativ kennzeichnet, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_svgNoName": "Sein einziger Inhalt ist ein <svg> ohne Namen (kein <title> und kein aria-label), sodass es keinen Namen liefert. Geben Sie dem svg einen <title> oder ein aria-label, das sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Sein Inhalt sind {{count}} Bilder, alle mit alt=\"\", sodass er keinen Namen liefert. Geben Sie einem davon einen alt-Text, der sagt, wofür es hier steht, oder benennen Sie das Element mit aria-label.",
       "nameCause_hint_iconEmpty": "Sein einziger Inhalt ist ein leeres <{{iconTag}} class=\"{{iconClass}}\">, ein per CSS gezeichnetes Icon, das keinen Text hat, der einen Namen liefern könnte. Fügen Sie visuell verborgenen Text hinzu, oder benennen Sie das Element mit aria-label.",
       "nameCause_hint_iconGenerated": "Sein einziger Inhalt ist ein per CSS gezeichnetes Icon-Font-Zeichen ({{pseudo}} auf {{host}}), das Screenreader nicht als Namen lesen können. Fügen Sie visuell verborgenen Text hinzu, oder benennen Sie das Element mit aria-label.",
       "nameCause_hint_iconHidden": "Sein einziger Inhalt ist ein <{{imageTag}}>, das durch aria-hidden=\"true\" verborgen ist, sodass Screenreader es überspringen und es keinen Namen liefert. Fügen Sie Text hinzu, den ein Screenreader liest (ein visuell verborgenes <span>), oder benennen Sie das Element mit aria-label.",
@@ -119385,7 +119501,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportLarge_lean_why": "The viewport meta tag keeps zoom below 500%.",
       "presentationRoleConflict_title": "Presentational role must not conflict with a global ARIA attribute or focusability",
       "presentationRoleConflict_description": "Checks that role=\"presentation\"/\"none\" (including an <img alt=\"\"> implicit presentation role) is not combined with a global ARIA attribute (aria-label, aria-hidden, aria-describedby, ...) or focusability (tabindex/native).",
-      "presentationRoleConflict_summary_cantTell": "This role=\"{{role}}\" element also has {{attrs}}, so browsers ignore the role and expose the element anyway.",
+      "presentationRoleConflict_summary_cantTell": "This element is marked {{marker}} but also has {{attrs}}, so browsers ignore the marking and expose it anyway.",
+      "presentationRoleConflict_summary_cantTell_focusable": "This element is marked {{marker}} but can take focus, so browsers ignore the marking and expose it anyway.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "This element is marked {{marker}} but also has {{attrs}} and can take focus, so browsers ignore the marking and expose it anyway.",
       "presentationRoleConflict_hint_cantTell": "If it should stay hidden from assistive technology, remove the naming attributes and make it unfocusable. If it should be exposed, remove role=\"presentation\" or role=\"none\".",
       "presentationRoleConflict_lean_why": "Browsers ignore the presentational role here and expose the element's own role.",
       "region_title": "Page content should be inside a landmark region",
@@ -120017,10 +120135,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameCause_hint_labelWrapsOther": "It sits inside the <label> \"{{text}}\", but a label names only the first field in it, which is another <{{firstTag}}>. Give this field its own <label> or aria-label.",
       "nameCause_hint_labelNotTied": "The <label> \"{{text}}\" beside it is not tied to it: the label has no for attribute and does not wrap the field. Add for=\"{{id}}\" to the label, or put the field inside the label.",
       "nameCause_hint_labelNotTiedNoId": "The <label> \"{{text}}\" beside it is not tied to it: the label has no for attribute and does not wrap the field. Give the field an id and add a for attribute with that id to the label, or put the field inside the label.",
-      "nameCause_hint_imageNoAlt": "Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Its only content is an image with alt=\"\", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.",
-      "nameCause_hint_svgNoName": "Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Its content is {{count}} images, all with alt=\"\", so it gives no name. Give one of them alt text that says what it does or where it leads, or name the element with aria-label.",
+      "nameCause_hint_imageNoAlt": "Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Its only content is an image with alt=\"\", which marks it as decorative, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.",
+      "nameCause_hint_svgNoName": "Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it stands for here, or name the element with aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Its content is {{count}} images, all with alt=\"\", so it gives no name. Give one of them alt text that says what it stands for here, or name the element with aria-label.",
       "nameCause_hint_iconEmpty": "Its only content is an empty <{{iconTag}} class=\"{{iconClass}}\">, an icon drawn by CSS, which has no text to give a name. Add visually-hidden text, or name the element with aria-label.",
       "nameCause_hint_iconGenerated": "Its only content is an icon-font character drawn by CSS ({{pseudo}} on {{host}}), which screen readers can't read as a name. Add visually-hidden text, or name the element with aria-label.",
       "nameCause_hint_iconHidden": "Its only content is an <{{imageTag}}> hidden by aria-hidden=\"true\", so screen readers skip it and it gives no name. Add text a screen reader reads (a visually-hidden <span>), or name the element with aria-label.",
@@ -121170,7 +121288,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportLarge_lean_why": "La etiqueta meta viewport limita el zoom por debajo del 500 %.",
       "presentationRoleConflict_title": "El rol presentacional no debe entrar en conflicto con un atributo ARIA global ni con la capacidad de enfoque",
       "presentationRoleConflict_description": "Comprueba que role=\"presentation\"/\"none\" (incluido el rol de presentación implícito de <img alt=\"\">) no se combine con un atributo ARIA global (aria-label, aria-hidden, aria-describedby, ...) ni con la capacidad de enfoque (tabindex/nativa).",
-      "presentationRoleConflict_summary_cantTell": "Este elemento con role=\"{{role}}\" también tiene {{attrs}}, así que los navegadores ignoran el rol y exponen el elemento de todos modos.",
+      "presentationRoleConflict_summary_cantTell": "Este elemento está marcado con {{marker}} pero también tiene {{attrs}}, así que los navegadores ignoran la marca y lo exponen de todos modos.",
+      "presentationRoleConflict_summary_cantTell_focusable": "Este elemento está marcado con {{marker}} pero puede recibir el foco, así que los navegadores ignoran la marca y lo exponen de todos modos.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "Este elemento está marcado con {{marker}} pero también tiene {{attrs}} y puede recibir el foco, así que los navegadores ignoran la marca y lo exponen de todos modos.",
       "presentationRoleConflict_hint_cantTell": "Si debe permanecer oculto a las tecnologías de apoyo, quitar los atributos de nombre y hacer que no pueda recibir el foco. Si debe exponerse, quitar role=\"presentation\" o role=\"none\".",
       "presentationRoleConflict_lean_why": "Los navegadores ignoran aquí el rol de presentación y exponen el rol propio del elemento.",
       "region_title": "El contenido de la página debería estar dentro de una región de referencia",
@@ -121802,10 +121922,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameCause_hint_labelWrapsOther": "Está dentro del <label> «{{text}}», pero una etiqueta solo nombra el primer campo que contiene, que es otro <{{firstTag}}>. Dar a este campo su propio <label> o aria-label.",
       "nameCause_hint_labelNotTied": "El <label> «{{text}}» que tiene al lado no está ligado a él: la etiqueta no tiene atributo for y no envuelve el campo. Agregar for=\"{{id}}\" a la etiqueta, o poner el campo dentro de la etiqueta.",
       "nameCause_hint_labelNotTiedNoId": "El <label> «{{text}}» que tiene al lado no está ligado a él: la etiqueta no tiene atributo for y no envuelve el campo. Dar un id al campo y agregar a la etiqueta un atributo for con ese id, o poner el campo dentro de la etiqueta.",
-      "nameCause_hint_imageNoAlt": "Su único contenido es una imagen sin atributo alt, así que no da nombre. Dar a la imagen un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Su único contenido es una imagen con alt=\"\", que la marca como decorativa, así que no da nombre. Dar a la imagen un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
-      "nameCause_hint_svgNoName": "Su único contenido es un <svg> sin nombre (sin <title> ni aria-label), así que no da nombre. Dar al svg un <title> o aria-label que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Su contenido son {{count}} imágenes, todas con alt=\"\", así que no da nombre. Dar a una de ellas un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imageNoAlt": "Su único contenido es una imagen sin atributo alt, así que no da nombre. Dar a la imagen un texto alt que diga qué representa aquí, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Su único contenido es una imagen con alt=\"\", que la marca como decorativa, así que no da nombre. Dar a la imagen un texto alt que diga qué representa aquí, o nombrar el elemento con aria-label.",
+      "nameCause_hint_svgNoName": "Su único contenido es un <svg> sin nombre (sin <title> ni aria-label), así que no da nombre. Dar al svg un <title> o aria-label que diga qué representa aquí, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Su contenido son {{count}} imágenes, todas con alt=\"\", así que no da nombre. Dar a una de ellas un texto alt que diga qué representa aquí, o nombrar el elemento con aria-label.",
       "nameCause_hint_iconEmpty": "Su único contenido es un <{{iconTag}} class=\"{{iconClass}}\"> vacío, un icono dibujado con CSS, que no tiene texto que dé un nombre. Agregar texto visualmente oculto, o nombrar el elemento con aria-label.",
       "nameCause_hint_iconGenerated": "Su único contenido es un carácter de fuente de iconos dibujado con CSS ({{pseudo}} en {{host}}), que los lectores de pantalla no pueden leer como nombre. Agregar texto visualmente oculto, o nombrar el elemento con aria-label.",
       "nameCause_hint_iconHidden": "Su único contenido es un <{{imageTag}}> oculto con aria-hidden=\"true\", así que los lectores de pantalla lo omiten y no da nombre. Agregar texto que lea un lector de pantalla (un <span> visualmente oculto), o nombrar el elemento con aria-label.",
@@ -122955,7 +123075,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportLarge_lean_why": "La balise meta viewport limite le zoom en dessous de 500 %.",
       "presentationRoleConflict_title": "Un rôle de présentation ne doit pas entrer en conflit avec un attribut ARIA global ou la focalisabilité",
       "presentationRoleConflict_description": "Vérifie que role=\"presentation\"/\"none\" (y compris le rôle presentation implicite d’un <img alt=\"\">) n’est pas combiné avec un attribut ARIA global (aria-label, aria-hidden, aria-describedby, ...) ou avec la focalisabilité (tabindex/native).",
-      "presentationRoleConflict_summary_cantTell": "Cet élément avec role=\"{{role}}\" a aussi {{attrs}} : les navigateurs ignorent donc le rôle et exposent l’élément malgré tout.",
+      "presentationRoleConflict_summary_cantTell": "Cet élément est marqué {{marker}} mais a aussi {{attrs}} : les navigateurs ignorent donc ce marquage et l’exposent malgré tout.",
+      "presentationRoleConflict_summary_cantTell_focusable": "Cet élément est marqué {{marker}} mais peut recevoir le focus : les navigateurs ignorent donc ce marquage et l’exposent malgré tout.",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "Cet élément est marqué {{marker}} mais a aussi {{attrs}} et peut recevoir le focus : les navigateurs ignorent donc ce marquage et l’exposent malgré tout.",
       "presentationRoleConflict_hint_cantTell": "S’il doit rester caché aux technologies d’assistance, retirez les attributs de nom et rendez-le non focalisable. S’il doit être exposé, retirez role=\"presentation\" ou role=\"none\".",
       "presentationRoleConflict_lean_why": "Les navigateurs ignorent ici le rôle de présentation et exposent le rôle propre de l’élément.",
       "region_title": "Le contenu de la page devrait se trouver à l’intérieur d’un point de repère",
@@ -123587,10 +123709,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameCause_hint_labelWrapsOther": "Il se trouve dans le <label> « {{text}} », mais un label ne nomme que le premier champ qu’il contient, qui est un autre <{{firstTag}}>. Donnez à ce champ son propre <label> ou un aria-label.",
       "nameCause_hint_labelNotTied": "Le <label> « {{text}} » à côté n’y est pas lié : le label n’a pas d’attribut for et n’entoure pas le champ. Ajoutez for=\"{{id}}\" au label, ou placez le champ dans le label.",
       "nameCause_hint_labelNotTiedNoId": "Le <label> « {{text}} » à côté n’y est pas lié : le label n’a pas d’attribut for et n’entoure pas le champ. Donnez un id au champ et ajoutez au label un attribut for avec cet id, ou placez le champ dans le label.",
-      "nameCause_hint_imageNoAlt": "Son seul contenu est une image sans attribut alt, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle fait ou où elle mène, ou nommez l’élément avec aria-label.",
-      "nameCause_hint_imageEmptyAlt": "Son seul contenu est une image avec alt=\"\", qui la marque comme décorative, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle fait ou où elle mène, ou nommez l’élément avec aria-label.",
-      "nameCause_hint_svgNoName": "Son seul contenu est un <svg> sans nom (ni <title> ni aria-label), il ne donne donc aucun nom. Donnez au svg un <title> ou un aria-label qui dit ce qu’il fait ou où il mène, ou nommez l’élément avec aria-label.",
-      "nameCause_hint_imagesEmptyAlt": "Son contenu est fait de {{count}} images, toutes avec alt=\"\", il ne donne donc aucun nom. Donnez à l’une d’elles un texte alt qui dit ce qu’il fait ou où il mène, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imageNoAlt": "Son seul contenu est une image sans attribut alt, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle représente ici, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Son seul contenu est une image avec alt=\"\", qui la marque comme décorative, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle représente ici, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_svgNoName": "Son seul contenu est un <svg> sans nom (ni <title> ni aria-label), il ne donne donc aucun nom. Donnez au svg un <title> ou un aria-label qui dit ce qu’il représente ici, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imagesEmptyAlt": "Son contenu est fait de {{count}} images, toutes avec alt=\"\", il ne donne donc aucun nom. Donnez à l’une d’elles un texte alt qui dit ce qu’il représente ici, ou nommez l’élément avec aria-label.",
       "nameCause_hint_iconEmpty": "Son seul contenu est un <{{iconTag}} class=\"{{iconClass}}\"> vide, une icône dessinée en CSS, qui n’a aucun texte pour donner un nom. Ajoutez du texte visuellement masqué, ou nommez l’élément avec aria-label.",
       "nameCause_hint_iconGenerated": "Son seul contenu est un caractère de police d’icônes dessiné en CSS ({{pseudo}} sur {{host}}), que les lecteurs d’écran ne peuvent pas lire comme un nom. Ajoutez du texte visuellement masqué, ou nommez l’élément avec aria-label.",
       "nameCause_hint_iconHidden": "Son seul contenu est un <{{imageTag}}> masqué par aria-hidden=\"true\", les lecteurs d’écran le sautent donc et il ne donne aucun nom. Ajoutez du texte qu’un lecteur d’écran lit (un <span> visuellement masqué), ou nommez l’élément avec aria-label.",
@@ -124740,7 +124862,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportLarge_lean_why": "viewport メタタグがズームを 500% 未満に制限しています。",
       "presentationRoleConflict_title": "プレゼンテーショナルなロールが、グローバル ARIA 属性やフォーカス可能性と矛盾してはならない",
       "presentationRoleConflict_description": "role=\"presentation\"/\"none\" (<img alt=\"\"> の暗黙の presentation ロールを含む) が、グローバル ARIA 属性 (aria-label、aria-hidden、aria-describedby など) やフォーカス可能性 (tabindex/ネイティブ) と組み合わされていないかを確認します。",
-      "presentationRoleConflict_summary_cantTell": "role=\"{{role}}\" のこの要素には {{attrs}} もあるため、ブラウザーはロールを無視し、要素をそのまま公開します。",
+      "presentationRoleConflict_summary_cantTell": "この要素は {{marker}} で示されていますが {{attrs}} もあるため、ブラウザーはその指定を無視し、要素をそのまま公開します。",
+      "presentationRoleConflict_summary_cantTell_focusable": "この要素は {{marker}} で示されていますがフォーカスを受け取れるため、ブラウザーはその指定を無視し、要素をそのまま公開します。",
+      "presentationRoleConflict_summary_cantTell_attrsFocusable": "この要素は {{marker}} で示されていますが {{attrs}} もあり、フォーカスも受け取れるため、ブラウザーはその指定を無視し、要素をそのまま公開します。",
       "presentationRoleConflict_hint_cantTell": "支援技術から隠したままにする場合は、名前を付ける属性を外し、フォーカスできないようにしてください。公開する場合は、role=\"presentation\" または role=\"none\" を削除してください。",
       "presentationRoleConflict_lean_why": "ブラウザーはここでプレゼンテーションロールを無視し、要素本来のロールを公開します。",
       "region_title": "ページのコンテンツはランドマーク領域内にあることが望ましい",
@@ -125372,10 +125496,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameCause_hint_labelWrapsOther": "<label>「{{text}}」の中にありますが、label が名前を付けるのは中の最初のフィールドだけで、それは別の <{{firstTag}}> です。このフィールドに専用の <label> か aria-label を付けてください。",
       "nameCause_hint_labelNotTied": "隣の <label>「{{text}}」はこのフィールドと結び付いていません。label に for 属性がなく、フィールドを囲んでもいません。label に for=\"{{id}}\" を追加するか、フィールドを label の中に入れてください。",
       "nameCause_hint_labelNotTiedNoId": "隣の <label>「{{text}}」はこのフィールドと結び付いていません。label に for 属性がなく、フィールドを囲んでもいません。フィールドに id を付けてその id の for 属性を label に追加するか、フィールドを label の中に入れてください。",
-      "nameCause_hint_imageNoAlt": "唯一の内容が alt 属性のない画像のため、名前になりません。何をするか、どこへ移動するかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
-      "nameCause_hint_imageEmptyAlt": "唯一の内容が alt=\"\" の画像で、装飾として扱われるため、名前になりません。何をするか、どこへ移動するかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
-      "nameCause_hint_svgNoName": "唯一の内容が名前のない <svg> (<title> も aria-label もない) のため、名前になりません。何をするか、どこへ移動するかを示す <title> または aria-label を svg に付けるか、aria-label で要素に名前を付けてください。",
-      "nameCause_hint_imagesEmptyAlt": "内容は {{count}} 個の画像で、すべて alt=\"\" のため、名前になりません。そのうち 1 つに、何をするか、どこへ移動するかを示す alt テキストを付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imageNoAlt": "唯一の内容が alt 属性のない画像のため、名前になりません。ここで何を表すかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imageEmptyAlt": "唯一の内容が alt=\"\" の画像で、装飾として扱われるため、名前になりません。ここで何を表すかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_svgNoName": "唯一の内容が名前のない <svg> (<title> も aria-label もない) のため、名前になりません。ここで何を表すかを示す <title> または aria-label を svg に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imagesEmptyAlt": "内容は {{count}} 個の画像で、すべて alt=\"\" のため、名前になりません。そのうち 1 つに、ここで何を表すかを示す alt テキストを付けるか、aria-label で要素に名前を付けてください。",
       "nameCause_hint_iconEmpty": "唯一の内容が空の <{{iconTag}} class=\"{{iconClass}}\"> (CSS で描かれたアイコン) で、名前になるテキストがありません。視覚的に隠したテキストを追加するか、aria-label で要素に名前を付けてください。",
       "nameCause_hint_iconGenerated": "唯一の内容が CSS で描かれたアイコンフォントの文字 ({{host}} の {{pseudo}}) で、スクリーンリーダーはこれを名前として読めません。視覚的に隠したテキストを追加するか、aria-label で要素に名前を付けてください。",
       "nameCause_hint_iconHidden": "唯一の内容が aria-hidden=\"true\" で隠された <{{imageTag}}> のため、スクリーンリーダーが読み飛ばし、名前になりません。スクリーンリーダーが読むテキスト (視覚的に隠した <span>) を追加するか、aria-label で要素に名前を付けてください。",
@@ -127870,6 +127994,7 @@ const SAFE_DOM_METHODS = [
   "setAttribute"
 ];
 const SAFE_DOM_OTHER_NAMES = [
+  "customElements",
   "adoptedStyleSheets",
   "ariaActiveDescendantElement",
   "ariaControlsElements",
@@ -136695,10 +136820,18 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return includeMain && token === 'main';
   }
 
+  // Ancestors in the flat tree, as the accessibility tree is built: through
+  // the slot an element is assigned to, and from a shadow root to its host.
+  // A web component's <header> inside an <article> in the page is the
+  // article's header, not the page's banner (HTML-AAM).
+  const flatParent =
+    shared && typeof shared.flatParentElement === 'function'
+      ? (n) => shared.flatParentElement(n) || null
+      : (n) => dom.parentElement(n);
   function hasLandmarkScopingAncestor(el, opts) {
     if (!isElement(el)) return false;
     const includeMain = !!(opts && opts.includeMain);
-    let cur = dom.parentElement(el);
+    let cur = flatParent(el);
     let guard = 0;
     while (cur && guard++ < 10000) {
       if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
@@ -136706,7 +136839,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       // (or fragment) scan should never let ancestry OUTSIDE the
       // analyzed subtree affect a role computed WITHIN it.
       if (ariaRoots.includes(cur)) break;
-      cur = dom.parentElement(cur);
+      cur = flatParent(cur);
     }
     return false;
   }
@@ -137449,7 +137582,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // the row groups) from its "descendant of a table" ones (tr, td, th), which
   // sit inside a rowgroup in most real tables.
   const NATIVE_CONTAINMENT_CONTEXT = {
-    li: { tags: ['ul', 'ol', 'menu'], directParent: true },
+    // An <li> in an element with role list is a listitem too, as browsers
+    // expose it and listitem-parent-valid accepts it.
+    li: { tags: ['ul', 'ol', 'menu'], roles: ['list'], directParent: true },
     option: { tags: ['select', 'datalist', 'optgroup'], directParent: true },
     thead: { tags: ['table'], directParent: true },
     tbody: { tags: ['table'], directParent: true },
@@ -137470,6 +137605,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     while (cur && guard++ < 10000) {
       const tag = lower(dom.tagName(cur) || '');
       if (tags.indexOf(tag) !== -1) return true;
+      if (context.roles && context.roles.indexOf(getAuthorRole(cur)) !== -1) return true;
       if (context.directParent) return false;
       cur = dom.parentElement(cur);
     }
@@ -139503,6 +139639,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return out;
   };
 
+  // Page text quoted in a message, cut to `max` characters with an ellipsis,
+  // never splitting a surrogate pair: a 1 MB label or address would
+  // otherwise be copied whole into the summary, its parameters and every
+  // report.
+  const quoteText = (value, max = 120) => {
+    const v = String(value == null ? '' : value);
+    if (v.length <= max) return v;
+    const code = v.charCodeAt(max - 2);
+    return v.slice(0, code >= 0xd800 && code <= 0xdbff ? max - 2 : max - 1) + '…';
+  };
+
   // An element's child elements in the flat tree (flatChildNodes).
   const flatChildElements = (el) => flatChildNodes(el).filter((n) => dom.nodeType(n) === 1);
 
@@ -141315,7 +141462,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!allEmpty) return null;
       const count = imgs.length;
       return {
-        hint: `Its content is ${count} images, all with alt="", so it gives no name. Give one of them alt text that says what it does or where it leads, or name the element with aria-label.`,
+        hint: `Its content is ${count} images, all with alt="", so it gives no name. Give one of them alt text that says what it stands for here, or name the element with aria-label.`,
         hintKey: 'nameCause_hint_imagesEmptyAlt',
         params: { count },
         detail: { cause: 'imagesEmptyAlt', count }
@@ -141389,7 +141536,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const alt = dom.getAttribute(img, 'alt');
       if (alt === null) {
         return {
-          hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.',
           hintKey: 'nameCause_hint_imageNoAlt',
           params: {},
           detail: { cause: 'imageNoAlt' }
@@ -141397,7 +141544,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
       if (!trim(alt)) {
         return {
-          hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.',
           hintKey: 'nameCause_hint_imageEmptyAlt',
           params: {},
           detail: { cause: 'imageEmptyAlt' }
@@ -141412,7 +141559,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       );
     if (svgNamed) return null;
     return {
-      hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.',
+      hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it stands for here, or name the element with aria-label.',
       hintKey: 'nameCause_hint_svgNoName',
       params: {},
       detail: { cause: 'svgNoName' }
@@ -143119,6 +143266,49 @@ const createDomHelpers = (function createDomHelpers(opts) {
   const LABELABLE_SELECTOR =
     'input:not([type="hidden"]), select, textarea, button, meter, output, progress';
 
+  // HTML's labelable elements also include form-associated custom elements:
+  // an autonomous custom element whose class sets `static formAssociated =
+  // true`. No selector finds them, so the page's custom element registry
+  // is asked, for elements with a hyphen in their name only.
+  function isFormAssociatedCustom(el) {
+    try {
+      const name = String(dom.localName(el) || '');
+      if (name.indexOf('-') === -1) return false;
+      const doc = dom.ownerDocument(el);
+      const win = doc && dom.defaultView(doc);
+      const registry = win && dom.get(win, 'customElements');
+      const ctor = registry && typeof registry.get === 'function' ? registry.get(name) : null;
+      return !!(ctor && ctor.formAssociated === true);
+    } catch {
+      return false;
+    }
+  }
+  function isLabelableElement(el) {
+    try {
+      if (!el || !dom.get(el, 'matches')) return false;
+      return dom.matches(el, LABELABLE_SELECTOR) || isFormAssociatedCustom(el);
+    } catch {
+      return false;
+    }
+  }
+  // A label's first labelable descendant, in tree order.
+  function firstLabelableIn(label) {
+    try {
+      const plain = dom.querySelector(label, LABELABLE_SELECTOR);
+      // A custom element may come before it: look for one only if the label
+      // holds any element with a hyphen in its name.
+      const walker = dom.createTreeWalker(dom.ownerDocument(label), label, 1);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (n === plain) return plain;
+        if (String(dom.localName(n) || '').indexOf('-') !== -1 && isFormAssociatedCustom(n))
+          return n;
+      }
+      return plain;
+    } catch {
+      return null;
+    }
+  }
+
   // Real `<label>` elements associated with `el`, replicating the native
   // `.labels` API's result (a `<label for="id">` pointing at `el`, plus a
   // wrapping `<label>` with no `for` attribute whose first labelable
@@ -143148,13 +143338,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // `<label for="x">`/wrapping `<label>` around a non-labelable element
     // (e.g. a `<div role="combobox">`) produces no accessible name in
     // either browser's accessibility tree.
-    let isLabelable;
-    try {
-      isLabelable = !!(el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR));
-    } catch {
-      isLabelable = false;
-    }
-    if (!isLabelable) return out;
+    if (!isLabelableElement(el)) return out;
 
     const id = trim(getAttr(el, 'id'));
     if (id) {
@@ -143180,15 +143364,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         !(dom.get(wrap, 'hasAttribute') && dom.hasAttribute(wrap, 'for')) &&
         out.indexOf(wrap) === -1
       ) {
-        let firstControl = null;
-        try {
-          firstControl = dom.get(wrap, 'querySelector')
-            ? dom.querySelector(wrap, LABELABLE_SELECTOR)
-            : null;
-        } catch {
-          firstControl = null;
-        }
-        if (firstControl === el) out.push(wrap);
+        if (firstLabelableIn(wrap) === el) out.push(wrap);
       }
     } catch {}
     // Usually 0-1 elements; a second only shows up for genuinely unusual
@@ -143225,9 +143401,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
             ? root
             : dom.ownerDocument(label);
         const el = scope ? dom.getElementById(scope, id) : null;
-        return el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR) ? el : null;
+        return isLabelableElement(el) ? el : null;
       }
-      return dom.get(label, 'querySelector') ? dom.querySelector(label, LABELABLE_SELECTOR) : null;
+      return firstLabelableIn(label);
     } catch {
       return null;
     }
@@ -144444,8 +144620,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (type === 'button' || type === 'submit' || type === 'reset' || type === 'image') {
         const v = getAttr(el, 'value');
         if (v != null) {
-          const t = trim(v);
-          if (t) return t;
+          // A value attribute is the label, even empty: the default label
+          // is for a submit or reset button with none.
+          return trim(v);
         }
         if (type === 'submit') return 'Submit';
         if (type === 'reset') return 'Reset';
@@ -148249,7 +148426,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl, getCustomElementInternals }
+    { trim, getLabelControl, getCustomElementInternals, flatParentElement }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -148517,6 +148694,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getTextAlternativeInfo,
     getTextAlternativeSignal,
     describeTextAlternativeSignal,
+    quoteText,
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
@@ -153273,6 +153451,7 @@ const __a11yCoreCrossFrameApi = (function () {
   "setAttribute"
 ];
 const SAFE_DOM_OTHER_NAMES = [
+  "customElements",
   "adoptedStyleSheets",
   "ariaActiveDescendantElement",
   "ariaControlsElements",

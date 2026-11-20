@@ -173,10 +173,10 @@ function runInPage(ctx) {
         i18n: {
           summaryKey: 'imageRedundantAlt_summary_cantTell',
           hintKey: 'imageRedundantAlt_hint_cantTell',
-          params: { alt }
+          params: { alt: helpers.quoteText(alt) }
         },
         data: {
-          details: { reasonCode: 'IMAGE_ALT_REDUNDANT', alt }
+          details: { reasonCode: 'IMAGE_ALT_REDUNDANT', alt: helpers.quoteText(alt) }
         }
       })
     );

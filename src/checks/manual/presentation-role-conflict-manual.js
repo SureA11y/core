@@ -208,20 +208,33 @@ function runInPage(ctx) {
     if (!present.length && !isFocusable) continue;
 
     const parts = present.slice();
-    if (isFocusable) parts.push('focusable');
 
     // No role token means this matched via the img[alt=""]
-    // implicit-presentation case.
+    // implicit-presentation case: what marks it is its empty alt.
     const role = roleToken || 'presentation';
+    const marker = roleToken ? `role="${roleToken}"` : 'alt=""';
+    const attrs = parts.join(', ');
+    const summary =
+      parts.length && isFocusable
+        ? `This element is marked ${marker} but also has ${attrs} and can take focus, so browsers ignore the marking and expose it anyway.`
+        : parts.length
+          ? `This element is marked ${marker} but also has ${attrs}, so browsers ignore the marking and expose it anyway.`
+          : `This element is marked ${marker} but can take focus, so browsers ignore the marking and expose it anyway.`;
+    const summaryKey =
+      parts.length && isFocusable
+        ? 'presentationRoleConflict_summary_cantTell_attrsFocusable'
+        : parts.length
+          ? 'presentationRoleConflict_summary_cantTell'
+          : 'presentationRoleConflict_summary_cantTell_focusable';
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `This role="${role}" element also has ${parts.join(', ')}, so browsers ignore the role and expose the element anyway.`,
+        summary,
         hint: 'If it should stay hidden from assistive technology, remove the naming attributes and make it unfocusable. If it should be exposed, remove role="presentation" or role="none".',
         i18n: {
-          summaryKey: 'presentationRoleConflict_summary_cantTell',
+          summaryKey,
           hintKey: 'presentationRoleConflict_hint_cantTell',
-          params: { role, attrs: parts.join(', ') }
+          params: { role, marker, attrs }
         },
         ...((() => {
           try {
