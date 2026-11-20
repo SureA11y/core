@@ -20,13 +20,6 @@
       "marked": "cantTell",
       "engine": "fail",
       "label": "heading's only text content is inside a CSS display:none descendant — never exposed to assistive technology, so it must …"
-    },
-    {
-      "ruleId": "p-as-heading",
-      "caseId": "case_02",
-      "marked": "notApplicable",
-      "engine": "cantTell",
-      "label": "normal weight, normal size"
     }
   ]
 }

@@ -35959,7 +35959,7 @@ const RUNTIME_CATALOG = {
   {
     "ruleId": "p-as-heading",
     "title": "Text styled to look like a heading should probably be a real heading",
-    "description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, short all-bold <p> and <div> elements at body size that read as a title before plain text, and blocks that open with a bold line ended by a line break before plain text, for manual review of whether a real heading element should be used instead.",
+    "description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, and short all-bold <p> elements at body size that read as a title before plain text, for manual review of whether a real heading element should be used instead.",
     "i18n": {
       "titleKey": "pAsHeading_title",
       "descriptionKey": "pAsHeading_description"
@@ -41875,17 +41875,13 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_lean_why_scrolls": "Der Inhalt des Elements läuft über seine Box hinaus und es scrollt; sein Tab-Stopp lässt Tastaturnutzende es scrollen.",
       "focusOrderSemantics_lean_why_documentInApplication": "Ein Dokument innerhalb einer Anwendung wird fokussierbar gemacht, damit Screenreader-Nutzende es lesen können.",
       "pAsHeading_title": "Text, der wie eine Überschrift gestaltet ist, sollte wahrscheinlich eine echte Überschrift sein",
-      "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett ist und mit mindestens 18px dargestellt wird, kurze, vollständig fette <p>- und <div>-Elemente in Fließtextgröße, die vor normalem Text wie ein Titel wirken, sowie Blöcke, die mit einer fetten, durch einen Zeilenumbruch beendeten Zeile vor normalem Text beginnen, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
+      "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett ist und mit mindestens 18px dargestellt wird, sowie kurze, vollständig fette <p>-Elemente in Fließtextgröße, die vor normalem Text wie ein Titel wirken, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
       "pAsHeading_summary_cantTell": "Dieser Absatz ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
       "pAsHeading_hint_cantTell": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriften-Element (<h1>-<h6> oder role=\"heading\"), anstatt einen Absatz so zu gestalten, dass er wie eine Überschrift aussieht.",
       "pAsHeading_summary_cantTell_div": "Dieser Textblock ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
       "pAsHeading_hint_cantTell_div": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriftenelement (<h1>-<h6> oder role=\"heading\"), statt ein <div> wie eine Überschrift zu gestalten.",
       "pAsHeading_summary_cantTell_bodySize": "Dieser kurze Absatz ist vollständig fett und steht vor normalem Text, wie eine Überschrift.",
       "pAsHeading_hint_cantTell_bodySize": "Wenn dieser Text den folgenden Text einleitet, machen Sie ihn zu einer echten Überschrift (<h1>-<h6> oder role=\"heading\") statt zu einem fetten Absatz.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "Dieser kurze Textblock ist vollständig fett und steht vor einem Abschnitt normalen Textes, wie eine Überschrift.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "Wenn dieser Text den folgenden Text einleitet, machen Sie ihn zu einer echten Überschrift (<h1>-<h6> oder role=\"heading\") statt zu einem fetten <div>.",
-      "pAsHeading_summary_cantTell_leadLine": "Dieser Block beginnt mit einer fetten Zeile, die ein Zeilenumbruch beendet, vor normalem Text, wie eine Überschrift.",
-      "pAsHeading_hint_cantTell_leadLine": "Wenn die fette Zeile den folgenden Text betitelt, machen Sie sie zu einer echten Überschrift (<h1>-<h6> oder role=\"heading\") und setzen Sie diesen Text in ein eigenes Element.",
       "pAsHeading_lean_why_headingStyle": "Der Text hat Schriftgröße, -stärke und -familie einer echten Überschrift dieser Seite und endet nicht wie ein Satz.",
       "pAsHeading_lean_why_bodyFollows": "Auf den Text folgt kleinerer, nicht fetter Fließtext, und er endet nicht wie ein Satz, wie bei einem Abschnittstitel.",
       "pAsHeading_lean_caution_style": "Auch ein einleitender Satz oder ein hervorgehobenes Zitat kann vor dem Fließtext stehen, und ein Designsystem kann Überschriftenstile für anderen Text wiederverwenden.",
@@ -43661,17 +43657,13 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_lean_why_scrolls": "The element’s content overflows its box and it scrolls, so its tab stop lets keyboard users scroll it.",
       "focusOrderSemantics_lean_why_documentInApplication": "A document inside an application is made focusable so screen reader users can read it.",
       "pAsHeading_title": "Text styled to look like a heading should probably be a real heading",
-      "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, short all-bold <p> and <div> elements at body size that read as a title before plain text, and blocks that open with a bold line ended by a line break before plain text, for manual review of whether a real heading element should be used instead.",
+      "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, and short all-bold <p> elements at body size that read as a title before plain text, for manual review of whether a real heading element should be used instead.",
       "pAsHeading_summary_cantTell": "This paragraph is entirely bold and rendered at a heading-like size.",
       "pAsHeading_hint_cantTell": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a paragraph to look like one.",
       "pAsHeading_summary_cantTell_div": "This block of text is entirely bold and rendered at a heading-like size.",
       "pAsHeading_hint_cantTell_div": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a <div> to look like one.",
       "pAsHeading_summary_cantTell_bodySize": "This short paragraph is entirely bold and comes before plain text, as a heading does.",
       "pAsHeading_hint_cantTell_bodySize": "If this text introduces the text after it, make it a real heading (<h1>-<h6> or role=\"heading\") instead of a bold paragraph.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "This short block of text is entirely bold and comes before a passage of plain text, as a heading does.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "If this text introduces the text after it, make it a real heading (<h1>-<h6> or role=\"heading\") instead of a bold <div>.",
-      "pAsHeading_summary_cantTell_leadLine": "This block starts with a bold line, ended by a line break, before plain text, as a heading does.",
-      "pAsHeading_hint_cantTell_leadLine": "If the bold line titles the text after it, make it a real heading (<h1>-<h6> or role=\"heading\") and put that text in an element of its own.",
       "pAsHeading_lean_why_headingStyle": "The text has a real heading's font size, weight and family on this page, and it doesn't end as a sentence does.",
       "pAsHeading_lean_why_bodyFollows": "The text is followed by smaller, plain body text, and it doesn't end as a sentence does, as a section title is.",
       "pAsHeading_lean_caution_style": "A lead-in sentence or a pull quote can also come before body text, and a design system may reuse heading styles for other text.",
@@ -45447,17 +45439,13 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_lean_why_scrolls": "El contenido del elemento desborda su caja y se desplaza, así que su parada de tabulación permite desplazarlo con el teclado.",
       "focusOrderSemantics_lean_why_documentInApplication": "Un documento dentro de una aplicación se hace enfocable para que los usuarios de lectores de pantalla puedan leerlo.",
       "pAsHeading_title": "Un texto con estilo de encabezado probablemente debería ser un encabezado real",
-      "pAsHeading_description": "Señala los elementos <p> y <div> cortos cuyo texto está entero en negrita y se muestra a 18 px o más, los <p> y <div> cortos enteros en negrita a tamaño de texto normal que se leen como un título antes de texto normal, y los bloques que empiezan con una línea en negrita terminada por un salto de línea antes de texto normal, para revisar manualmente si debería usarse un elemento de encabezado real.",
+      "pAsHeading_description": "Señala los elementos <p> y <div> cortos cuyo texto está entero en negrita y se muestra a 18 px o más, y los <p> cortos enteros en negrita a tamaño de texto normal que se leen como un título antes de texto normal, para revisar manualmente si debería usarse un elemento de encabezado real.",
       "pAsHeading_summary_cantTell": "Este párrafo está completamente en negrita y se renderiza con un tamaño similar al de un encabezado.",
       "pAsHeading_hint_cantTell": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un párrafo el estilo de un encabezado.",
       "pAsHeading_summary_cantTell_div": "Este bloque de texto está completamente en negrita y se muestra con un tamaño similar al de un encabezado.",
       "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
       "pAsHeading_summary_cantTell_bodySize": "Este párrafo corto está entero en negrita y va antes de texto normal, como un encabezado.",
       "pAsHeading_hint_cantTell_bodySize": "Si este texto introduce el texto que lo sigue, conviértelo en un encabezado real (<h1>-<h6> o role=\"heading\") en lugar de un párrafo en negrita.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "Este bloque corto de texto está entero en negrita y va antes de un pasaje de texto normal, como un encabezado.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "Si este texto introduce el texto que lo sigue, conviértelo en un encabezado real (<h1>-<h6> o role=\"heading\") en lugar de un <div> en negrita.",
-      "pAsHeading_summary_cantTell_leadLine": "Este bloque empieza con una línea en negrita, terminada por un salto de línea, antes de texto normal, como un encabezado.",
-      "pAsHeading_hint_cantTell_leadLine": "Si la línea en negrita titula el texto que la sigue, conviértela en un encabezado real (<h1>-<h6> o role=\"heading\") y pon ese texto en un elemento propio.",
       "pAsHeading_lean_why_headingStyle": "El texto tiene el tamaño, el grosor y la familia de fuente de un encabezado real de esta página, y no termina como una frase.",
       "pAsHeading_lean_why_bodyFollows": "El texto va seguido de texto normal más pequeño y sin negrita, y no termina como una frase, igual que un título de sección.",
       "pAsHeading_lean_caution_style": "Una frase introductoria o una cita destacada también pueden ir antes del texto normal, y un sistema de diseño puede reutilizar los estilos de encabezado para otros textos.",
@@ -47233,17 +47221,13 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_lean_why_scrolls": "Le contenu de l’élément déborde de sa boîte et il défile : son arrêt de tabulation permet de le faire défiler au clavier.",
       "focusOrderSemantics_lean_why_documentInApplication": "Un document dans une application est rendu focalisable pour que les utilisateurs de lecteurs d’écran puissent le lire.",
       "pAsHeading_title": "Un texte mis en forme comme un titre devrait probablement être un véritable titre",
-      "pAsHeading_description": "Signale les éléments <p> et <div> courts dont le texte est entièrement en gras et affiché à 18 px ou plus, les <p> et <div> courts entièrement en gras à la taille du texte courant qui se lisent comme un titre avant du texte normal, ainsi que les blocs qui commencent par une ligne en gras terminée par un saut de ligne avant du texte normal, pour vérifier manuellement si un vrai élément de titre devrait être utilisé à la place.",
+      "pAsHeading_description": "Signale les éléments <p> et <div> courts dont le texte est entièrement en gras et affiché à 18 px ou plus, ainsi que les <p> courts entièrement en gras à la taille du texte courant qui se lisent comme un titre avant du texte normal, pour vérifier manuellement si un vrai élément de titre devrait être utilisé à la place.",
       "pAsHeading_summary_cantTell": "Ce paragraphe est entièrement en gras et affiché à une taille évoquant un titre.",
       "pAsHeading_hint_cantTell": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler un paragraphe pour qu’il y ressemble.",
       "pAsHeading_summary_cantTell_div": "Ce bloc de texte est entièrement en gras et affiché à une taille évoquant un titre.",
       "pAsHeading_hint_cantTell_div": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler une balise <div> pour qu’elle y ressemble.",
       "pAsHeading_summary_cantTell_bodySize": "Ce court paragraphe est entièrement en gras et précède du texte normal, comme un titre.",
       "pAsHeading_hint_cantTell_bodySize": "Si ce texte introduit le texte qui le suit, faites-en un vrai titre (<h1>-<h6> ou role=\"heading\") plutôt qu’un paragraphe en gras.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "Ce court bloc de texte est entièrement en gras et précède un passage de texte normal, comme un titre.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "Si ce texte introduit le texte qui le suit, faites-en un vrai titre (<h1>-<h6> ou role=\"heading\") plutôt qu’un <div> en gras.",
-      "pAsHeading_summary_cantTell_leadLine": "Ce bloc commence par une ligne en gras, terminée par un saut de ligne, avant du texte normal, comme un titre.",
-      "pAsHeading_hint_cantTell_leadLine": "Si la ligne en gras sert de titre au texte qui la suit, faites-en un vrai titre (<h1>-<h6> ou role=\"heading\") et placez ce texte dans un élément à part.",
       "pAsHeading_lean_why_headingStyle": "Le texte a la taille, la graisse et la police d’un vrai titre de cette page, et il ne se termine pas comme une phrase.",
       "pAsHeading_lean_why_bodyFollows": "Le texte est suivi d’un texte courant plus petit et non gras, et il ne se termine pas comme une phrase, comme un titre de section.",
       "pAsHeading_lean_caution_style": "Une phrase d’introduction ou une citation mise en exergue peut aussi précéder le texte courant, et un système de design peut réutiliser les styles de titre pour d’autres textes.",
@@ -49019,17 +49003,13 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_lean_why_scrolls": "この要素の内容はボックスからはみ出してスクロールするため、タブストップによってキーボードでスクロールできます。",
       "focusOrderSemantics_lean_why_documentInApplication": "アプリケーション内のドキュメントは、スクリーン リーダー利用者が読めるようにフォーカス可能にされています。",
       "pAsHeading_title": "見出しのように装飾されたテキストは、本来の見出し要素にすることが望ましい場合がある",
-      "pAsHeading_description": "テキストがすべて太字で 18px 以上で表示される短い <p> 要素と <div> 要素、本文サイズですべて太字で通常のテキストの前にタイトルのように読まれる短い <p> 要素と <div> 要素、および通常のテキストの前に改行で終わる太字の行で始まるブロックを、本当の見出し要素を使うべきかどうかの手動確認のために示します。",
+      "pAsHeading_description": "テキストがすべて太字で 18px 以上で表示される短い <p> 要素と <div> 要素、および本文サイズですべて太字で通常のテキストの前にタイトルのように読まれる短い <p> 要素を、本当の見出し要素を使うべきかどうかの手動確認のために示します。",
       "pAsHeading_summary_cantTell": "この段落はテキスト全体が太字で、見出しのようなサイズで表示されています。",
       "pAsHeading_hint_cantTell": "このテキストが新しいセクションの始まりを示すなら、段落を見出しのように装飾するのではなく、本来の見出し要素 (<h1>〜<h6> または role=\"heading\") を使用してください。",
       "pAsHeading_summary_cantTell_div": "このテキストのブロックは全体が太字で、見出しのようなサイズで表示されています。",
       "pAsHeading_hint_cantTell_div": "このテキストが新しいセクションの始まりであれば、<div> を見出しのように装飾するのではなく、本来の見出し要素 (<h1>-<h6> または role=\"heading\") を使用してください。",
       "pAsHeading_summary_cantTell_bodySize": "この短い段落はすべて太字で、見出しのように通常のテキストの前にあります。",
       "pAsHeading_hint_cantTell_bodySize": "このテキストが後に続くテキストを導入している場合は、太字の段落ではなく、本当の見出し (<h1>-<h6> または role=\"heading\") にしてください。",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "この短いテキストのブロックはすべて太字で、見出しのように通常のテキストの文章の前にあります。",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "このテキストが後に続くテキストを導入している場合は、太字の <div> ではなく、本当の見出し (<h1>-<h6> または role=\"heading\") にしてください。",
-      "pAsHeading_summary_cantTell_leadLine": "このブロックは改行で終わる太字の行で始まり、見出しのように通常のテキストの前にあります。",
-      "pAsHeading_hint_cantTell_leadLine": "太字の行が後に続くテキストのタイトルになっている場合は、本当の見出し (<h1>-<h6> または role=\"heading\") にし、そのテキストを独立した要素に入れてください。",
       "pAsHeading_lean_why_headingStyle": "このテキストはこのページの実際の見出しと同じフォントサイズ、太さ、ファミリーで、文のようには終わっていません。",
       "pAsHeading_lean_why_bodyFollows": "このテキストの後には太字でない小さな本文が続き、セクションの見出しのように文の形で終わっていません。",
       "pAsHeading_lean_caution_style": "導入文や引用の強調表示が本文の前に来ることもあり、デザインシステムが見出しのスタイルを別のテキストに使い回すこともあります。",
@@ -57941,7 +57921,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "p-as-heading",
     "title": "Text styled to look like a heading should probably be a real heading",
-    "description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, short all-bold <p> and <div> elements at body size that read as a title before plain text, and blocks that open with a bold line ended by a line break before plain text, for manual review of whether a real heading element should be used instead.",
+    "description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, and short all-bold <p> elements at body size that read as a title before plain text, for manual review of whether a real heading element should be used instead.",
     "i18n": {
       "titleKey": "pAsHeading_title",
       "descriptionKey": "pAsHeading_description"
@@ -100579,10 +100559,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // never leave out text the full test would ask about. With lighter text
     // too, the test below usually settles it first, as it did before.
     if (!others.length && !headingLike.some((piece) => isLargeTitle(piece))) {
+      if (String(dom.localName(el) || '').toLowerCase() !== 'p') return null;
       const heaviest = Math.max(...headingLike.map((piece) => piece.weight));
-      if (String(dom.localName(el) || '').toLowerCase() === 'p') {
-        if (!hasPlainText(nextShown(el), heaviest)) return null;
-      } else if (!titlesPassage(el, heaviest)) return null;
+      if (!hasPlainText(nextShown(el), heaviest)) return null;
     }
     if (others.some(isSeen)) return null;
     return headingLike.filter((piece) => isSeen(piece.holder));
@@ -100621,11 +100600,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return link;
   }
 
-  // Digits with only spacing and punctuation around them: "2024", "12.",
-  // "1/3", "#4".
+  // Digits with only spacing, punctuation, a currency sign or a percent
+  // sign around them: "2024", "12.", "1/3", "#4", "$29.99", "29,99 €", "45%".
   // Two plain tests rather than one pattern with a digit in the middle,
   // which backtracks on long text.
-  const NUMBER_CHARS = /^[\s\d.,:;/#№°'’()\-–—]+$/;
+  const NUMBER_CHARS = /^[\s\d.,:;/#№°'’()\-–—%‰\p{Sc}]+$/u;
   const isNumberOnly = (text) => NUMBER_CHARS.test(text) && /\d/.test(text);
 
   function minFontSize(pieces) {
@@ -100663,134 +100642,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         return true;
     }
     return false;
-  }
-
-  // A passage of body text, not a value: long enough to be read rather
-  // than glanced at, or a sentence of some length. A label's value ("$20",
-  // "Paris") and a badge's line ("Our latest products.") are neither.
-  const PASSAGE_CHARS = 80;
-  const SENTENCE_PASSAGE_CHARS = 40;
-  function isPassage(text) {
-    const t = String(text || '')
-      .replace(/\s+/g, ' ')
-      .trim();
-    if (t.length >= PASSAGE_CHARS) return true;
-    return (
-      t.length >= SENTENCE_PASSAGE_CHARS &&
-      (endsAsSentenceOf(t) || /[.!?。！？؟।][\s"'’”»)]/u.test(t))
-    );
-  }
-
-  // Side by side with what follows it, as a label and its value are: an
-  // inline box, or an item of a flex row or of a grid with columns.
-  function laidOutAsLabel(el) {
-    const own = safeComputedStyle(el);
-    if (own && /^inline/.test(trim(own.display).toLowerCase())) return true;
-    const parent = dom.parentElement(el);
-    const cs = parent ? safeComputedStyle(parent) : null;
-    if (!cs) return false;
-    const display = trim(cs.display).toLowerCase();
-    if (/flex$/.test(display)) return !/^column/.test(trim(cs.flexDirection).toLowerCase());
-    if (/grid$/.test(display)) {
-      const columns = trim(cs.gridTemplateColumns).toLowerCase();
-      return !!columns && columns !== 'none' && (/\s/.test(columns) || /repeat\(/.test(columns));
-    }
-    return false;
-  }
-
-  // A bold <div> at body size titling the text after it: lighter text that
-  // is a passage, below it rather than beside it. A <div> at this size is
-  // more often a label, a badge or a price than a <p> is, so it needs more
-  // than a <p>: what follows is read, not a value.
-  function titlesPassage(el, titleWeight) {
-    const next = nextShown(el);
-    return (
-      !laidOutAsLabel(el) && opensLighter(next, titleWeight) && isPassage(dom.textContent(next))
-    );
-  }
-
-  // Whether the first text a reader sees in `el` is lighter than the
-  // title's: the passage starts there. A block that opens with a bold line
-  // of its own starts with another title, not with the text this one titles.
-  function opensLighter(el, titleWeight) {
-    if (!el || !isRendered(el)) return false;
-    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
-    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      if (!/\p{L}/u.test(String(dom.nodeValue(node) || ''))) continue;
-      const holder = dom.parentElement(node);
-      if (!holder || !isRendered(holder) || isScreenReaderOnly(holder)) continue;
-      return weightNumOf(safeComputedStyle(holder)) < titleWeight;
-    }
-    return false;
-  }
-
-  // The blocks a <br> breaks a line in, found once: a lead line is only
-  // looked for in them.
-  let brBlocks = null;
-  function hasLineBreak(el) {
-    if (!brBlocks) {
-      brBlocks = new Set();
-      for (const br of helpers.queryAll('br') || []) {
-        const block = dom.closest(br, 'p, div');
-        if (block) brBlocks.add(block);
-      }
-    }
-    return brBlocks.has(el);
-  }
-
-  // A bold first line ended by a <br>, before lighter text in the same block
-  // (<p><strong>Opening hours</strong><br>Monday to Friday, 9 to 5.</p>):
-  // the title and its text written as one paragraph. The pieces of the bold
-  // line, or null. What follows the break must be mostly lighter and a
-  // passage, so a name over an address, or a label over its value, is not
-  // one.
-  function leadLineOf(el) {
-    if (!hasLineBreak(el)) return null;
-    const isSeen = (holder) => isRendered(holder) && !isScreenReaderOnly(holder);
-    const parentEl = dom.parentElement(el);
-    const blockWeight = Math.min(
-      weightNumOf(safeComputedStyle(el)),
-      parentEl ? weightNumOf(safeComputedStyle(parentEl)) : 400
-    );
-    // Elements and text, in order: SHOW_ELEMENT | SHOW_TEXT.
-    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 5);
-    const lead = [];
-    let node = walker.nextNode();
-    for (; node; node = walker.nextNode()) {
-      if (dom.nodeType(node) === 1) {
-        if (String(dom.localName(node) || '').toLowerCase() === 'br' && isRendered(node)) break;
-        continue;
-      }
-      const holder = dom.parentElement(node);
-      if (!holder || !trim(dom.nodeValue(node)) || !isSeen(holder)) continue;
-      const style = boldStyleOf(holder, blockWeight);
-      if (!style) return null;
-      lead.push({
-        holder,
-        raw: String(dom.nodeValue(node)),
-        fontSizePx: style.px,
-        bold: style.bold,
-        weight: style.weight
-      });
-      if (lead.length > 64) return null;
-    }
-    if (!node || !lead.length) return null;
-    const titleWeight = Math.min(...lead.map((piece) => piece.weight));
-    let after = '';
-    let lighter = 0;
-    let heavier = 0;
-    for (node = walker.nextNode(); node && after.length < 2000; node = walker.nextNode()) {
-      if (dom.nodeType(node) !== 3) continue;
-      const raw = String(dom.nodeValue(node) || '');
-      const holder = dom.parentElement(node);
-      if (!holder || !trim(raw) || !isSeen(holder)) continue;
-      after += raw;
-      const letters = (raw.match(/\p{L}/gu) || []).length;
-      if (weightNumOf(safeComputedStyle(holder)) < titleWeight) lighter += letters;
-      else heavier += letters;
-    }
-    if (!lighter || heavier > lighter || !isPassage(after)) return null;
-    return lead;
   }
 
   // ---- Leans ----
@@ -100887,44 +100738,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // grid repeats them.
   const linkCandidates = [];
 
-  // A block that opens with a bold line ended by a <br>: an occurrence for
-  // it when that line reads as a title over the text after it.
-  function judgeLeadLine(el) {
-    const lead = leadLineOf(el);
-    if (!lead) return;
-    const shown = shownTextOf(lead);
-    if (shown.length > MAX_HEADING_LIKE_CHARS || endsAsSentenceOf(shown)) return;
-    if (!/\p{L}/u.test(shown) || isNumberOnly(shown) || soleLinkOf(lead, el)) return;
-    if (lead.every((piece) => isInsideControl(piece.holder, el))) return;
-    const fontSizePx = minFontSize(lead);
-    occurrences.push(
-      helpers.reportOccurrence(el, {
-        summary:
-          'This block starts with a bold line, ended by a line break, before plain text, as a heading does.',
-        hint: 'If the bold line titles the text after it, make it a real heading (<h1>-<h6> or role="heading") and put that text in an element of its own.',
-        i18n: {
-          summaryKey: 'pAsHeading_summary_cantTell_leadLine',
-          hintKey: 'pAsHeading_hint_cantTell_leadLine',
-          params: { fontSizePx: String(fontSizePx) }
-        },
-        data: { details: { reasonCode: 'BOLD_LEAD_LINE', fontSizePx } }
-      })
-    );
-  }
-
   // One <p> or <div>: a heading-like occurrence for it, or nothing.
   function judgeBlock(el) {
     if (!isCandidate(el)) return;
 
     const pieces = headingLikePieces(el);
-    // Not all bold: perhaps a bold first line over the text after a <br>.
-    if (!pieces) {
-      judgeLeadLine(el);
-      return;
-    }
-    // Nothing a sighted reader sees (screen-reader-only text).
-    if (!pieces.length) return;
+    // Not heading-like, or nothing a sighted reader sees (screen-reader-only text).
+    if (!pieces || !pieces.length) return;
     if (shownTextOf(pieces).length > MAX_HEADING_LIKE_CHARS) return;
+    // Text with no letter or digit (a star rating, a scene break "* * *",
+    // an emoji) titles nothing.
+    if (!/[\p{L}\p{N}]/u.test(shownTextOf(pieces))) return;
 
     const fontSizePx = minFontSize(pieces);
     // Two kinds a reader may set aside as a group: text that is only a
@@ -100949,18 +100773,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Body size only: large text not bold enough to be a title is not
       // asked about as bold body text either.
       if (fontSizePx >= MIN_FONT_SIZE_PX) return;
-      if (kindCode || endsAsSentenceOf(shown)) return;
+      if (!isParagraph || kindCode || endsAsSentenceOf(shown)) return;
       const titleWeight = Math.min(...pieces.map((piece) => piece.weight));
-      if (isParagraph ? !hasPlainText(nextShown(el), titleWeight) : !titlesPassage(el, titleWeight))
-        return;
+      if (!hasPlainText(nextShown(el), titleWeight)) return;
       // The last of a run of bold lines (an address, a list of names): the
       // line before it is bold too, and it is no title over the text after.
       const prev = prevShown(el);
       if (
         prev &&
-        (isParagraph ? ['p'] : ['p', 'div']).includes(
-          String(dom.localName(prev) || '').toLowerCase()
-        ) &&
+        String(dom.localName(prev) || '').toLowerCase() === 'p' &&
         /\p{L}/u.test(String(dom.textContent(prev) || '')) &&
         trim(dom.textContent(prev)).length <= MAX_HEADING_LIKE_CHARS &&
         !hasPlainText(prev, titleWeight) &&
@@ -100968,32 +100789,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ) {
         return;
       }
-      const occurrence = helpers.reportOccurrence(
-        el,
-        isParagraph
-          ? {
-              summary:
-                'This short paragraph is entirely bold and comes before plain text, as a heading does.',
-              hint: 'If this text introduces the text after it, make it a real heading (<h1>-<h6> or role="heading") instead of a bold paragraph.',
-              i18n: {
-                summaryKey: 'pAsHeading_summary_cantTell_bodySize',
-                hintKey: 'pAsHeading_hint_cantTell_bodySize',
-                params: { fontSizePx: String(fontSizePx) }
-              },
-              data: { details: { reasonCode: 'BOLD_SHORT_PARAGRAPH', fontSizePx } }
-            }
-          : {
-              summary:
-                'This short block of text is entirely bold and comes before a passage of plain text, as a heading does.',
-              hint: 'If this text introduces the text after it, make it a real heading (<h1>-<h6> or role="heading") instead of a bold <div>.',
-              i18n: {
-                summaryKey: 'pAsHeading_summary_cantTell_bodySizeDiv',
-                hintKey: 'pAsHeading_hint_cantTell_bodySizeDiv',
-                params: { fontSizePx: String(fontSizePx) }
-              },
-              data: { details: { reasonCode: 'BOLD_SHORT_DIV', fontSizePx } }
-            }
-      );
+      const occurrence = helpers.reportOccurrence(el, {
+        summary:
+          'This short paragraph is entirely bold and comes before plain text, as a heading does.',
+        hint: 'If this text introduces the text after it, make it a real heading (<h1>-<h6> or role="heading") instead of a bold paragraph.',
+        i18n: {
+          summaryKey: 'pAsHeading_summary_cantTell_bodySize',
+          hintKey: 'pAsHeading_hint_cantTell_bodySize',
+          params: { fontSizePx: String(fontSizePx) }
+        },
+        data: { details: { reasonCode: 'BOLD_SHORT_PARAGRAPH', fontSizePx } }
+      });
       occurrences.push(occurrence);
       return;
     }
@@ -117794,17 +117600,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_lean_why_scrolls": "Der Inhalt des Elements läuft über seine Box hinaus und es scrollt; sein Tab-Stopp lässt Tastaturnutzende es scrollen.",
       "focusOrderSemantics_lean_why_documentInApplication": "Ein Dokument innerhalb einer Anwendung wird fokussierbar gemacht, damit Screenreader-Nutzende es lesen können.",
       "pAsHeading_title": "Text, der wie eine Überschrift gestaltet ist, sollte wahrscheinlich eine echte Überschrift sein",
-      "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett ist und mit mindestens 18px dargestellt wird, kurze, vollständig fette <p>- und <div>-Elemente in Fließtextgröße, die vor normalem Text wie ein Titel wirken, sowie Blöcke, die mit einer fetten, durch einen Zeilenumbruch beendeten Zeile vor normalem Text beginnen, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
+      "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett ist und mit mindestens 18px dargestellt wird, sowie kurze, vollständig fette <p>-Elemente in Fließtextgröße, die vor normalem Text wie ein Titel wirken, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
       "pAsHeading_summary_cantTell": "Dieser Absatz ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
       "pAsHeading_hint_cantTell": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriften-Element (<h1>-<h6> oder role=\"heading\"), anstatt einen Absatz so zu gestalten, dass er wie eine Überschrift aussieht.",
       "pAsHeading_summary_cantTell_div": "Dieser Textblock ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
       "pAsHeading_hint_cantTell_div": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriftenelement (<h1>-<h6> oder role=\"heading\"), statt ein <div> wie eine Überschrift zu gestalten.",
       "pAsHeading_summary_cantTell_bodySize": "Dieser kurze Absatz ist vollständig fett und steht vor normalem Text, wie eine Überschrift.",
       "pAsHeading_hint_cantTell_bodySize": "Wenn dieser Text den folgenden Text einleitet, machen Sie ihn zu einer echten Überschrift (<h1>-<h6> oder role=\"heading\") statt zu einem fetten Absatz.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "Dieser kurze Textblock ist vollständig fett und steht vor einem Abschnitt normalen Textes, wie eine Überschrift.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "Wenn dieser Text den folgenden Text einleitet, machen Sie ihn zu einer echten Überschrift (<h1>-<h6> oder role=\"heading\") statt zu einem fetten <div>.",
-      "pAsHeading_summary_cantTell_leadLine": "Dieser Block beginnt mit einer fetten Zeile, die ein Zeilenumbruch beendet, vor normalem Text, wie eine Überschrift.",
-      "pAsHeading_hint_cantTell_leadLine": "Wenn die fette Zeile den folgenden Text betitelt, machen Sie sie zu einer echten Überschrift (<h1>-<h6> oder role=\"heading\") und setzen Sie diesen Text in ein eigenes Element.",
       "pAsHeading_lean_why_headingStyle": "Der Text hat Schriftgröße, -stärke und -familie einer echten Überschrift dieser Seite und endet nicht wie ein Satz.",
       "pAsHeading_lean_why_bodyFollows": "Auf den Text folgt kleinerer, nicht fetter Fließtext, und er endet nicht wie ein Satz, wie bei einem Abschnittstitel.",
       "pAsHeading_lean_caution_style": "Auch ein einleitender Satz oder ein hervorgehobenes Zitat kann vor dem Fließtext stehen, und ein Designsystem kann Überschriftenstile für anderen Text wiederverwenden.",
@@ -119580,17 +119382,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_lean_why_scrolls": "The element’s content overflows its box and it scrolls, so its tab stop lets keyboard users scroll it.",
       "focusOrderSemantics_lean_why_documentInApplication": "A document inside an application is made focusable so screen reader users can read it.",
       "pAsHeading_title": "Text styled to look like a heading should probably be a real heading",
-      "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, short all-bold <p> and <div> elements at body size that read as a title before plain text, and blocks that open with a bold line ended by a line break before plain text, for manual review of whether a real heading element should be used instead.",
+      "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, and short all-bold <p> elements at body size that read as a title before plain text, for manual review of whether a real heading element should be used instead.",
       "pAsHeading_summary_cantTell": "This paragraph is entirely bold and rendered at a heading-like size.",
       "pAsHeading_hint_cantTell": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a paragraph to look like one.",
       "pAsHeading_summary_cantTell_div": "This block of text is entirely bold and rendered at a heading-like size.",
       "pAsHeading_hint_cantTell_div": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a <div> to look like one.",
       "pAsHeading_summary_cantTell_bodySize": "This short paragraph is entirely bold and comes before plain text, as a heading does.",
       "pAsHeading_hint_cantTell_bodySize": "If this text introduces the text after it, make it a real heading (<h1>-<h6> or role=\"heading\") instead of a bold paragraph.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "This short block of text is entirely bold and comes before a passage of plain text, as a heading does.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "If this text introduces the text after it, make it a real heading (<h1>-<h6> or role=\"heading\") instead of a bold <div>.",
-      "pAsHeading_summary_cantTell_leadLine": "This block starts with a bold line, ended by a line break, before plain text, as a heading does.",
-      "pAsHeading_hint_cantTell_leadLine": "If the bold line titles the text after it, make it a real heading (<h1>-<h6> or role=\"heading\") and put that text in an element of its own.",
       "pAsHeading_lean_why_headingStyle": "The text has a real heading's font size, weight and family on this page, and it doesn't end as a sentence does.",
       "pAsHeading_lean_why_bodyFollows": "The text is followed by smaller, plain body text, and it doesn't end as a sentence does, as a section title is.",
       "pAsHeading_lean_caution_style": "A lead-in sentence or a pull quote can also come before body text, and a design system may reuse heading styles for other text.",
@@ -121366,17 +121164,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_lean_why_scrolls": "El contenido del elemento desborda su caja y se desplaza, así que su parada de tabulación permite desplazarlo con el teclado.",
       "focusOrderSemantics_lean_why_documentInApplication": "Un documento dentro de una aplicación se hace enfocable para que los usuarios de lectores de pantalla puedan leerlo.",
       "pAsHeading_title": "Un texto con estilo de encabezado probablemente debería ser un encabezado real",
-      "pAsHeading_description": "Señala los elementos <p> y <div> cortos cuyo texto está entero en negrita y se muestra a 18 px o más, los <p> y <div> cortos enteros en negrita a tamaño de texto normal que se leen como un título antes de texto normal, y los bloques que empiezan con una línea en negrita terminada por un salto de línea antes de texto normal, para revisar manualmente si debería usarse un elemento de encabezado real.",
+      "pAsHeading_description": "Señala los elementos <p> y <div> cortos cuyo texto está entero en negrita y se muestra a 18 px o más, y los <p> cortos enteros en negrita a tamaño de texto normal que se leen como un título antes de texto normal, para revisar manualmente si debería usarse un elemento de encabezado real.",
       "pAsHeading_summary_cantTell": "Este párrafo está completamente en negrita y se renderiza con un tamaño similar al de un encabezado.",
       "pAsHeading_hint_cantTell": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un párrafo el estilo de un encabezado.",
       "pAsHeading_summary_cantTell_div": "Este bloque de texto está completamente en negrita y se muestra con un tamaño similar al de un encabezado.",
       "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
       "pAsHeading_summary_cantTell_bodySize": "Este párrafo corto está entero en negrita y va antes de texto normal, como un encabezado.",
       "pAsHeading_hint_cantTell_bodySize": "Si este texto introduce el texto que lo sigue, conviértelo en un encabezado real (<h1>-<h6> o role=\"heading\") en lugar de un párrafo en negrita.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "Este bloque corto de texto está entero en negrita y va antes de un pasaje de texto normal, como un encabezado.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "Si este texto introduce el texto que lo sigue, conviértelo en un encabezado real (<h1>-<h6> o role=\"heading\") en lugar de un <div> en negrita.",
-      "pAsHeading_summary_cantTell_leadLine": "Este bloque empieza con una línea en negrita, terminada por un salto de línea, antes de texto normal, como un encabezado.",
-      "pAsHeading_hint_cantTell_leadLine": "Si la línea en negrita titula el texto que la sigue, conviértela en un encabezado real (<h1>-<h6> o role=\"heading\") y pon ese texto en un elemento propio.",
       "pAsHeading_lean_why_headingStyle": "El texto tiene el tamaño, el grosor y la familia de fuente de un encabezado real de esta página, y no termina como una frase.",
       "pAsHeading_lean_why_bodyFollows": "El texto va seguido de texto normal más pequeño y sin negrita, y no termina como una frase, igual que un título de sección.",
       "pAsHeading_lean_caution_style": "Una frase introductoria o una cita destacada también pueden ir antes del texto normal, y un sistema de diseño puede reutilizar los estilos de encabezado para otros textos.",
@@ -123152,17 +122946,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_lean_why_scrolls": "Le contenu de l’élément déborde de sa boîte et il défile : son arrêt de tabulation permet de le faire défiler au clavier.",
       "focusOrderSemantics_lean_why_documentInApplication": "Un document dans une application est rendu focalisable pour que les utilisateurs de lecteurs d’écran puissent le lire.",
       "pAsHeading_title": "Un texte mis en forme comme un titre devrait probablement être un véritable titre",
-      "pAsHeading_description": "Signale les éléments <p> et <div> courts dont le texte est entièrement en gras et affiché à 18 px ou plus, les <p> et <div> courts entièrement en gras à la taille du texte courant qui se lisent comme un titre avant du texte normal, ainsi que les blocs qui commencent par une ligne en gras terminée par un saut de ligne avant du texte normal, pour vérifier manuellement si un vrai élément de titre devrait être utilisé à la place.",
+      "pAsHeading_description": "Signale les éléments <p> et <div> courts dont le texte est entièrement en gras et affiché à 18 px ou plus, ainsi que les <p> courts entièrement en gras à la taille du texte courant qui se lisent comme un titre avant du texte normal, pour vérifier manuellement si un vrai élément de titre devrait être utilisé à la place.",
       "pAsHeading_summary_cantTell": "Ce paragraphe est entièrement en gras et affiché à une taille évoquant un titre.",
       "pAsHeading_hint_cantTell": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler un paragraphe pour qu’il y ressemble.",
       "pAsHeading_summary_cantTell_div": "Ce bloc de texte est entièrement en gras et affiché à une taille évoquant un titre.",
       "pAsHeading_hint_cantTell_div": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler une balise <div> pour qu’elle y ressemble.",
       "pAsHeading_summary_cantTell_bodySize": "Ce court paragraphe est entièrement en gras et précède du texte normal, comme un titre.",
       "pAsHeading_hint_cantTell_bodySize": "Si ce texte introduit le texte qui le suit, faites-en un vrai titre (<h1>-<h6> ou role=\"heading\") plutôt qu’un paragraphe en gras.",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "Ce court bloc de texte est entièrement en gras et précède un passage de texte normal, comme un titre.",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "Si ce texte introduit le texte qui le suit, faites-en un vrai titre (<h1>-<h6> ou role=\"heading\") plutôt qu’un <div> en gras.",
-      "pAsHeading_summary_cantTell_leadLine": "Ce bloc commence par une ligne en gras, terminée par un saut de ligne, avant du texte normal, comme un titre.",
-      "pAsHeading_hint_cantTell_leadLine": "Si la ligne en gras sert de titre au texte qui la suit, faites-en un vrai titre (<h1>-<h6> ou role=\"heading\") et placez ce texte dans un élément à part.",
       "pAsHeading_lean_why_headingStyle": "Le texte a la taille, la graisse et la police d’un vrai titre de cette page, et il ne se termine pas comme une phrase.",
       "pAsHeading_lean_why_bodyFollows": "Le texte est suivi d’un texte courant plus petit et non gras, et il ne se termine pas comme une phrase, comme un titre de section.",
       "pAsHeading_lean_caution_style": "Une phrase d’introduction ou une citation mise en exergue peut aussi précéder le texte courant, et un système de design peut réutiliser les styles de titre pour d’autres textes.",
@@ -124938,17 +124728,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_lean_why_scrolls": "この要素の内容はボックスからはみ出してスクロールするため、タブストップによってキーボードでスクロールできます。",
       "focusOrderSemantics_lean_why_documentInApplication": "アプリケーション内のドキュメントは、スクリーン リーダー利用者が読めるようにフォーカス可能にされています。",
       "pAsHeading_title": "見出しのように装飾されたテキストは、本来の見出し要素にすることが望ましい場合がある",
-      "pAsHeading_description": "テキストがすべて太字で 18px 以上で表示される短い <p> 要素と <div> 要素、本文サイズですべて太字で通常のテキストの前にタイトルのように読まれる短い <p> 要素と <div> 要素、および通常のテキストの前に改行で終わる太字の行で始まるブロックを、本当の見出し要素を使うべきかどうかの手動確認のために示します。",
+      "pAsHeading_description": "テキストがすべて太字で 18px 以上で表示される短い <p> 要素と <div> 要素、および本文サイズですべて太字で通常のテキストの前にタイトルのように読まれる短い <p> 要素を、本当の見出し要素を使うべきかどうかの手動確認のために示します。",
       "pAsHeading_summary_cantTell": "この段落はテキスト全体が太字で、見出しのようなサイズで表示されています。",
       "pAsHeading_hint_cantTell": "このテキストが新しいセクションの始まりを示すなら、段落を見出しのように装飾するのではなく、本来の見出し要素 (<h1>〜<h6> または role=\"heading\") を使用してください。",
       "pAsHeading_summary_cantTell_div": "このテキストのブロックは全体が太字で、見出しのようなサイズで表示されています。",
       "pAsHeading_hint_cantTell_div": "このテキストが新しいセクションの始まりであれば、<div> を見出しのように装飾するのではなく、本来の見出し要素 (<h1>-<h6> または role=\"heading\") を使用してください。",
       "pAsHeading_summary_cantTell_bodySize": "この短い段落はすべて太字で、見出しのように通常のテキストの前にあります。",
       "pAsHeading_hint_cantTell_bodySize": "このテキストが後に続くテキストを導入している場合は、太字の段落ではなく、本当の見出し (<h1>-<h6> または role=\"heading\") にしてください。",
-      "pAsHeading_summary_cantTell_bodySizeDiv": "この短いテキストのブロックはすべて太字で、見出しのように通常のテキストの文章の前にあります。",
-      "pAsHeading_hint_cantTell_bodySizeDiv": "このテキストが後に続くテキストを導入している場合は、太字の <div> ではなく、本当の見出し (<h1>-<h6> または role=\"heading\") にしてください。",
-      "pAsHeading_summary_cantTell_leadLine": "このブロックは改行で終わる太字の行で始まり、見出しのように通常のテキストの前にあります。",
-      "pAsHeading_hint_cantTell_leadLine": "太字の行が後に続くテキストのタイトルになっている場合は、本当の見出し (<h1>-<h6> または role=\"heading\") にし、そのテキストを独立した要素に入れてください。",
       "pAsHeading_lean_why_headingStyle": "このテキストはこのページの実際の見出しと同じフォントサイズ、太さ、ファミリーで、文のようには終わっていません。",
       "pAsHeading_lean_why_bodyFollows": "このテキストの後には太字でない小さな本文が続き、セクションの見出しのように文の形で終わっていません。",
       "pAsHeading_lean_caution_style": "導入文や引用の強調表示が本文の前に来ることもあり、デザインシステムが見出しのスタイルを別のテキストに使い回すこともあります。",
