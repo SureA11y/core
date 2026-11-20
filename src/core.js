@@ -16676,14 +16676,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
         continue;
       }
       if (isExcluded(node)) return true;
-      let doc = null;
+      let doc;
       try {
         doc = dom.ownerDocument(node);
       } catch {
         doc = null;
       }
       if (!doc || !document || doc === document) return false;
-      let frame = null;
+      let frame;
       try {
         const view = dom.defaultView(doc);
         frame = view ? dom.get(view, 'frameElement') : null;
@@ -141349,14 +141349,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
         continue;
       }
       if (isExcluded(node)) return true;
-      let doc = null;
+      let doc;
       try {
         doc = dom.ownerDocument(node);
       } catch {
         doc = null;
       }
       if (!doc || !document || doc === document) return false;
-      let frame = null;
+      let frame;
       try {
         const view = dom.defaultView(doc);
         frame = view ? dom.get(view, 'frameElement') : null;
