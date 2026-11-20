@@ -1629,6 +1629,8 @@
   "reflowHorizontalScroll_lean_caution_carousel": "Check that each item can be reached with the keyboard, and that nothing in an item is cut off.",
   "reflowHorizontalScroll_lean_why_clipped": "The edge of the viewport cuts through the element, and the page does not scroll to the rest of it.",
   "reflowHorizontalScroll_lean_caution_clipped": "A carousel or a menu may show the rest another way.",
+  "reflowHorizontalScroll_lean_why_fieldCut": "A form field in the element is cut off, and nothing scrolls to the rest of it: a field has to be seen and used whole.",
+  "reflowHorizontalScroll_lean_caution_fieldCut": "Check that the field is cut because the width is narrow: a field cut at every width is a problem, but not one of reflow.",
   "report_title_default": "surea11y scan report",
   "report_generated": "generated {{date}}",
   "report_noUrl": "(no url)",

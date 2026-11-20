@@ -1629,6 +1629,8 @@
   "reflowHorizontalScroll_lean_caution_carousel": "各項目にキーボードで到達でき、どの項目も切れていないことを確認します。",
   "reflowHorizontalScroll_lean_why_clipped": "ビューポートの端が要素を切っており、ページは残りの部分までスクロールしません。",
   "reflowHorizontalScroll_lean_caution_clipped": "カルーセルやメニューは、残りを別の方法で表示できる場合があります。",
+  "reflowHorizontalScroll_lean_why_fieldCut": "要素内のフォーム フィールドが切れており、残りの部分へスクロールする手段がありません。フィールドは全体が見えて操作できる必要があります。",
+  "reflowHorizontalScroll_lean_caution_fieldCut": "幅が狭いためにフィールドが切れているかを確認してください。どの幅でも切れているフィールドは問題ですが、リフローの問題ではありません。",
   "report_title_default": "surea11y スキャンレポート",
   "report_generated": "生成日時: {{date}}",
   "report_noUrl": "(URL なし)",

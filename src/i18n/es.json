@@ -1629,6 +1629,8 @@
   "reflowHorizontalScroll_lean_caution_carousel": "Comprobar que cada elemento se puede alcanzar con el teclado y que nada de un elemento queda cortado.",
   "reflowHorizontalScroll_lean_why_clipped": "El borde de la ventana corta el elemento y la página no se desplaza hasta el resto.",
   "reflowHorizontalScroll_lean_caution_clipped": "Un carrusel o un menú pueden mostrar el resto de otra forma.",
+  "reflowHorizontalScroll_lean_why_fieldCut": "Un campo de formulario del elemento está cortado y nada se desplaza hasta el resto: un campo tiene que verse y usarse entero.",
+  "reflowHorizontalScroll_lean_caution_fieldCut": "Comprobar que el campo está cortado porque el ancho es estrecho: un campo cortado en cualquier ancho es un problema, pero no de reajuste.",
   "report_title_default": "Informe de análisis de surea11y",
   "report_generated": "generado el {{date}}",
   "report_noUrl": "(sin URL)",
