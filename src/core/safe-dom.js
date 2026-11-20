@@ -142,6 +142,7 @@ const SAFE_DOM_OTHER_NAMES = [
   'checked',
   'clientHeight',
   'clientLeft',
+  'clientTop',
   'clientWidth',
   'compatMode',
   'currentCSSZoom',

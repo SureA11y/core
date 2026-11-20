@@ -2279,6 +2279,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "checked",
   "clientHeight",
   "clientLeft",
+  "clientTop",
   "clientWidth",
   "compatMode",
   "currentCSSZoom",
@@ -102811,14 +102812,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return null;
     }
   }
+  // An element's parent as the page renders it: through a slot, and from a
+  // shadow root to its host, so a box around a shadow host is a box around
+  // what its shadow tree shows.
+  const upOf = (node) => {
+    if (typeof helpers.flatParentElement === 'function') {
+      try {
+        return helpers.flatParentElement(node) || null;
+      } catch {
+        // Read as the light DOM below.
+      }
+    }
+    return dom.parentElement(node);
+  };
   const rootStyle = style(html);
   const bodyStyle = style(body);
+  // The page's principal writing mode and direction are the body's: the
+  // root takes them from it (CSS Writing Modes, "the principal writing
+  // mode"), as browsers lay out and scroll the page by them.
+  const principal = bodyStyle || rootStyle;
   // Vertical text reflows at 256 CSS pixels high, which this rule doesn't
   // measure.
-  if (rootStyle && /^vertical|^sideways/.test(String(rootStyle.writingMode || ''))) {
+  if (principal && /^vertical|^sideways/.test(String(principal.writingMode || ''))) {
     return notApplicable('verticalWritingMode');
   }
-  const rtl = rootStyle ? rootStyle.direction === 'rtl' : false;
+  const rtl = principal ? principal.direction === 'rtl' : false;
 
   // Whether the viewport scrolls sideways: the root's overflow-x, or the
   // body's when the root's is visible (CSS Overflow 3, propagation).
@@ -102849,6 +102867,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (rtl) return rect.right + scrollX;
     return clientWidth - (rect.left + scrollX);
   }
+  // How far it reaches past the start edge (the left, or the right in
+  // right-to-left text), where the page can't scroll: nothing scrolls to
+  // what lies before its start. And how much of it shows.
+  function beforeStartOf(rect) {
+    if (rtl) {
+      return {
+        over: rect.right + scrollX - clientWidth,
+        inside: clientWidth - (rect.left + scrollX)
+      };
+    }
+    return { over: -(rect.left + scrollX), inside: rect.right + scrollX };
+  }
+  const startEdge = rtl ? 'right' : 'left';
 
   const roots = (Array.isArray(ctx.root) ? ctx.root : [ctx.root]).filter(Boolean);
   const wholeDocument =
@@ -102911,19 +102942,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       path.push(node);
       const s = style(node);
       if (s && s.position === 'fixed') {
-        let up = dom.parentElement(node);
+        let up = upOf(node);
         let held = false;
         while (up && up !== html) {
           if (holdsFixed(style(up))) {
             held = true;
             break;
           }
-          up = dom.parentElement(up);
+          up = upOf(up);
         }
         if (!held) value = node;
         break;
       }
-      node = dom.parentElement(node);
+      node = upOf(node);
     }
     for (const n of path) fixedMemo.set(n, value);
     return value;
@@ -102967,7 +102998,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // clip sideways. Their own box is measured; what is inside them is not.
   const contained = new Map();
   function insideSidewaysBox(el) {
-    let node = dom.parentElement(el);
+    let node = upOf(el);
     const path = [];
     let found = false;
     while (!top(node)) {
@@ -102981,7 +103012,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         found = true;
         break;
       }
-      node = dom.parentElement(node);
+      node = upOf(node);
     }
     for (const n of path) contained.set(n, found);
     return found;
@@ -102997,7 +103028,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // when there is none.
   const cutterMemo = new Map();
   function cutterOf(start, self) {
-    let node = self ? start : dom.parentElement(start);
+    let node = self ? start : upOf(start);
     const path = [];
     let found = null;
     while (!top(node)) {
@@ -103013,7 +103044,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         cutterMemo.set(node, found);
         break;
       }
-      node = dom.parentElement(node);
+      node = upOf(node);
     }
     for (const n of path) cutterMemo.set(n, found);
     return found;
@@ -103028,7 +103059,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const s = style(node);
       const position = s ? s.position : 'static';
       if (position === 'fixed' || position === 'absolute') {
-        let up = dom.parentElement(node);
+        let up = upOf(node);
         let held = false;
         while (up) {
           const us = style(up);
@@ -103037,11 +103068,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             break;
           }
           if (up === box) break;
-          up = dom.parentElement(up);
+          up = upOf(up);
         }
         if (!held) return true;
       }
-      node = dom.parentElement(node);
+      node = upOf(node);
     }
     return false;
   }
@@ -103059,6 +103090,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const ch = Number(dom.get(box, 'clientHeight')) || 0;
     // A box a pixel wide hides text on purpose (visually hidden text).
     if (cw < 2 || ch < 2) return null;
+    // A box that also hides what overflows it downwards (a collapsed panel)
+    // hides what lies above or below it on purpose: only what shows in its
+    // height can be cut off sideways. One that scrolls downwards shows it.
+    const bs = style(box);
+    if (bs && (bs.overflowY === 'hidden' || bs.overflowY === 'clip' || containsPaint(bs))) {
+      const topEdge = b.top + (Number(dom.get(box, 'clientTop')) || 0);
+      if (rect.bottom <= topEdge + TOLERANCE || rect.top >= topEdge + ch - TOLERANCE) return null;
+    }
     // Where the element lies with the box scrolled to its start, so the
     // verdict doesn't depend on where a script or a person left it: a
     // scrolled box moves its content by scrollLeft (negative in
@@ -103162,7 +103201,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Fields a person fills in: a form needs no two-dimensional layout to be
   // used or understood, so the exception does not cover it.
-  const NATIVE_CONTROLS = 'input:not([type="hidden"]), select, textarea, [contenteditable="true"]';
+  // Buttons are not fields: a button cut off is asked about as anything
+  // else is.
+  const NATIVE_CONTROLS =
+    'input:not([type="hidden" i]):not([type="submit" i]):not([type="button" i]):not([type="reset" i]):not([type="image" i]), select, textarea, [contenteditable]:not([contenteditable="false" i])';
   const CONTROL_ROLES = new Set([
     'textbox',
     'combobox',
@@ -103182,13 +103224,48 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return CONTROL_ROLES.has(role);
   }
   function holdsFormControls(el) {
+    return fieldsIn(el).length > 0;
+  }
+  // The fields in an element, itself included, that a person can fill in:
+  // shown (with a box, not visibility: hidden) and not disabled.
+  function fieldsIn(el) {
+    const out = [];
     try {
-      if (dom.matches(el, NATIVE_CONTROLS) || dom.querySelector(el, NATIVE_CONTROLS)) return true;
-      if (dom.matches(el, ROLE_CONTROLS) && isRoleControl(el)) return true;
-      return [...(dom.querySelectorAll(el, ROLE_CONTROLS) || [])].some(isRoleControl);
+      const candidates = [
+        el,
+        ...(dom.querySelectorAll(el, NATIVE_CONTROLS) || []),
+        ...(dom.querySelectorAll(el, ROLE_CONTROLS) || [])
+      ];
+      for (const c of candidates) {
+        if (out.includes(c)) continue;
+        const native = dom.matches(c, NATIVE_CONTROLS);
+        if (!native && !(dom.matches(c, ROLE_CONTROLS) && isRoleControl(c))) continue;
+        if (native && dom.matches(c, ':disabled')) continue;
+        if (String(dom.getAttribute(c, 'aria-disabled') || '').toLowerCase() === 'true') continue;
+        const rects = dom.getClientRects(c);
+        if (!rects || !rects.length) continue;
+        const cs = style(c);
+        if (cs && cs.visibility === 'hidden') continue;
+        out.push(c);
+      }
     } catch {
-      return false;
+      return out;
     }
+    return out;
+  }
+  // Whether a field in the element is itself cut off: past the edge `pastOf`
+  // measures (a box's, the viewport's end or start edge), in part or whole.
+  // Help text cut beside a field that shows whole is asked about, not failed.
+  function cutsFields(el, pastOf) {
+    if (kindOf(el) !== 'HORIZONTAL_SCROLL') return false;
+    return fieldsIn(el).some((c) => {
+      try {
+        const hit = pastOf(dom.getBoundingClientRect(c));
+        return !!hit && hit.over > TOLERANCE;
+      } catch {
+        return false;
+      }
+    });
   }
 
   // Each element that crosses the edge while its parent doesn't: the place
@@ -103204,7 +103281,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'meta',
     'link'
   ]);
-  const all = dom.querySelectorAll(body, '*');
+  // Every element of the body, and of the open shadow roots in it unless
+  // the scan leaves shadow DOM out (engineOptions.includeShadowDom: false).
+  // Excluded and out-of-scope elements stay in: whether one of them is what
+  // makes the page scroll is known here (leftOut).
+  const deep = (ctx.engineOptions || {}).includeShadowDom !== false;
+  const all = [];
+  // Where text is walked: the body and each open shadow root.
+  const textRoots = [];
+  {
+    const queue = [body];
+    while (queue.length) {
+      const root = queue.shift();
+      textRoots.push(root);
+      for (const el of dom.querySelectorAll(root, '*') || []) {
+        all.push(el);
+        const shadow = deep ? dom.shadowRoot(el) : null;
+        if (shadow) queue.push(shadow);
+      }
+    }
+  }
   const crosses = new Map();
   function crossing(el) {
     if (crosses.has(el)) return crosses.get(el);
@@ -103239,18 +103335,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (fixed) {
       // A box between them, or the fixed element itself, that scrolls or
       // clips: what is in it is judged against that box (below).
-      let n = start === fixed ? null : dom.parentElement(start);
+      let n = start === fixed ? null : upOf(start);
       while (n) {
         if (setsOverflow(style(n))) return;
         if (n === fixed) break;
-        n = dom.parentElement(n);
+        n = upOf(n);
       }
       if (!own) {
         if (setsOverflow(style(start))) return;
         if (crossing(start)) return;
       }
       if (hit.inside <= TOLERANCE || taken.has(start)) return;
-      const up = start === fixed ? null : dom.parentElement(start);
+      const up = start === fixed ? null : upOf(start);
       if (up && crossing(up)) return;
       if (!inScope(start) || isExcluded(start)) {
         leftOut = true;
@@ -103282,7 +103378,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     if (taken.has(el)) return;
     // Where it starts: its parent stays inside.
-    const parent = dom.parentElement(el);
+    const parent = upOf(el);
     if (parent && parent !== body && parent !== html && crossing(parent) && !fixedOf(parent))
       return;
     if (!pageScrolls) {
@@ -103304,7 +103400,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const clippedTaken = new Set();
   function considerClipped(el, clip) {
     if (!clip || clippedTaken.has(el)) return;
-    const parent = dom.parentElement(el);
+    const parent = upOf(el);
     if (parent && parent !== clip.box) {
       const up = clippedBy(parent);
       if (up && up.box === clip.box) return;
@@ -103317,6 +103413,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     clipped.push({ el, clip });
   }
 
+  // Content past the start edge: the page can't scroll there, so what of
+  // it lies past the edge is never reached, whether or not the page scrolls.
+  // Text, media and fields are content; a box alone (a background, a
+  // negative margin a padding takes back) is not. One wholly past it waits
+  // there on purpose (a skip link, hidden text); one in a box that scrolls
+  // or clips sideways is that box's to show.
+  const START_CONTENT = new Set([
+    'img',
+    'video',
+    'canvas',
+    'svg',
+    'object',
+    'embed',
+    'iframe',
+    'input',
+    'select',
+    'textarea',
+    'button'
+  ]);
+  function considerStart(el, rect) {
+    if (taken.has(el)) return;
+    const hit = beforeStartOf(rect);
+    if (!(hit.over > TOLERANCE && hit.inside > TOLERANCE)) return;
+    const s = style(el);
+    if (s && s.visibility === 'hidden') return;
+    if (!fixedOf(el) && insideSidewaysBox(el)) return;
+    if (!inScope(el) || isExcluded(el)) return;
+    taken.add(el);
+    found.push({
+      el,
+      tag: String(dom.tagName(el) || '').toLowerCase(),
+      hit: { rect, over: hit.over, inside: hit.inside, edge: startEdge },
+      start: true
+    });
+  }
+
   for (const el of all) {
     const tag = String(dom.tagName(el) || '').toLowerCase();
     if (SKIP.has(tag)) continue;
@@ -103325,49 +103457,66 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hit = crossing(el);
     if (hit) consider(el, hit, true);
     considerClipped(el, clippedBy(el));
+    if (START_CONTENT.has(tag)) {
+      try {
+        const rects = dom.getClientRects(el);
+        if (rects && rects.length) considerStart(el, dom.getBoundingClientRect(el));
+      } catch {
+        // No box: nothing shows.
+      }
+    }
   }
 
   // Text that runs past the edge out of a box that fits, such as a long
   // address that can't wrap: its element is where the overflow starts.
-  try {
-    const walker = dom.call(document, 'createTreeWalker', body, 4 /* SHOW_TEXT */);
-    const range = dom.call(document, 'createRange');
-    let node = dom.call(walker, 'nextNode');
-    while (node) {
-      const owner = dom.parentElement(node);
-      const value = String(dom.get(node, 'nodeValue') || '');
-      if (owner && /\S/.test(value) && !SKIP.has(String(dom.tagName(owner) || '').toLowerCase())) {
-        dom.call(range, 'selectNodeContents', node);
-        const rect = dom.call(range, 'getBoundingClientRect');
-        if (rect && (rect.width > 0 || rect.height > 0)) {
-          const over = overflowOf(rect);
-          if (over > TOLERANCE) consider(owner, { rect, over, inside: insideOf(rect) }, false);
-          // Text cut by its own box, or one around it, that hides overflow.
-          const box = cutterOf(owner, true);
-          const bs = box ? style(box) : null;
-          const scrolls = box ? !cuts(bs) : false;
-          if (
-            box &&
-            !(!scrolls && bs && bs.textOverflow === 'ellipsis') &&
-            !escapes(owner, box) &&
-            !(scrolls && exemptInScrollBox(owner, box))
-          ) {
-            const hit = pastBox(rect, box);
-            if (hit && hit.over > TOLERANCE && hit.inside > TOLERANCE) {
-              considerClipped(owner, {
-                box,
-                over: hit.over,
-                rect,
-                scrolls,
-                shell: scrolls && isShell(box)
-              });
+  for (const textRoot of textRoots) {
+    try {
+      const walker = dom.call(document, 'createTreeWalker', textRoot, 4 /* SHOW_TEXT */);
+      const range = dom.call(document, 'createRange');
+      let node = dom.call(walker, 'nextNode');
+      while (node) {
+        const owner = upOf(node);
+        const value = String(dom.get(node, 'nodeValue') || '');
+        if (
+          owner &&
+          /\S/.test(value) &&
+          !SKIP.has(String(dom.tagName(owner) || '').toLowerCase())
+        ) {
+          dom.call(range, 'selectNodeContents', node);
+          const rect = dom.call(range, 'getBoundingClientRect');
+          if (rect && (rect.width > 0 || rect.height > 0)) {
+            const over = overflowOf(rect);
+            if (over > TOLERANCE) consider(owner, { rect, over, inside: insideOf(rect) }, false);
+            considerStart(owner, rect);
+            // Text cut by its own box, or one around it, that hides overflow.
+            const box = cutterOf(owner, true);
+            const bs = box ? style(box) : null;
+            const scrolls = box ? !cuts(bs) : false;
+            if (
+              box &&
+              !(!scrolls && bs && bs.textOverflow === 'ellipsis') &&
+              !escapes(owner, box) &&
+              !(scrolls && exemptInScrollBox(owner, box))
+            ) {
+              const hit = pastBox(rect, box);
+              if (hit && hit.over > TOLERANCE && hit.inside > TOLERANCE) {
+                considerClipped(owner, {
+                  box,
+                  over: hit.over,
+                  rect,
+                  scrolls,
+                  shell: scrolls && isShell(box)
+                });
+              }
             }
           }
         }
+        node = dom.call(walker, 'nextNode');
       }
-      node = dom.call(walker, 'nextNode');
+    } catch {
+      // A root the page won't let us walk: its text is not read.
     }
-  } catch {}
+  }
 
   const fails = [];
   const questions = [];
@@ -103529,7 +103678,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           element: tag,
           overflowPx,
           widthPx: hit ? Math.round(hit.rect.width) : Math.round(scrollWidth),
-          edge,
+          edge: (hit && hit.edge) || edge,
           viewport
         }
       }
@@ -103550,11 +103699,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   // Fields cut off: no exception covers a form, so it fails. A table, code
   // or media is left to a person.
-  const cutFields = (el) => kindOf(el) === 'HORIZONTAL_SCROLL' && holdsFormControls(el);
+  const pastEnd = (rect) => ({ over: overflowOf(rect) });
 
-  for (const { el, tag, hit, fixed } of found) {
+  for (const { el, tag, hit, fixed, start } of found) {
+    if (start) {
+      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, LEANS.clipped, cutsFields(el, beforeStartOf));
+      continue;
+    }
     if (!pageScrolls || fixed) {
-      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, LEANS.clipped, cutFields(el));
+      report('CLIPPED_AT_VIEWPORT_EDGE', el, hit, LEANS.clipped, cutsFields(el, pastEnd));
       continue;
     }
     reportOnPage(el, tag, hit);
@@ -103573,11 +103726,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       el,
       { over: clip.over, rect: clip.rect },
       clip.scrolls ? LEANS.scrollBox : LEANS.clippedBox,
-      cutFields(el)
+      cutsFields(el, (rect) => pastBox(rect, clip.box))
     );
   }
 
-  if (pageScrolls && !found.some((f) => !f.fixed) && wholeDocument && !leftOut) {
+  // Only what reaches past the end edge explains why the page scrolls.
+  if (pageScrolls && !found.some((f) => !f.fixed && !f.start) && wholeDocument && !leftOut) {
     report('HORIZONTAL_SCROLL_UNATTRIBUTED', html, null, null);
   }
 
@@ -126969,6 +127123,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "checked",
   "clientHeight",
   "clientLeft",
+  "clientTop",
   "clientWidth",
   "compatMode",
   "currentCSSZoom",
@@ -152362,6 +152517,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "checked",
   "clientHeight",
   "clientLeft",
+  "clientTop",
   "clientWidth",
   "compatMode",
   "currentCSSZoom",
