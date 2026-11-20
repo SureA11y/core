@@ -295,3 +295,32 @@ test('heading-order: an aria-level outside 1 to 9 is ignored', () => {
     assert.strictEqual(rule.outcome, 'pass', level);
   }
 });
+
+// An excluded area is part of the page's outline as its readers meet it:
+// its headings are read as context, and nothing is reported on them.
+test('heading-order: excluded headings are context, never findings', () => {
+  const outcome = (body, excludeSelectors) => {
+    const rule = runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${body}</body></html>`, {
+      runOnly: ['heading-order'],
+      engineOptions: { excludeSelectors }
+    }).checksResults.find((r) => r.ruleId === 'heading-order');
+    return [rule.outcome, (rule.occurrences || []).map((o) => o.data.details.toLevel)];
+  };
+  // The excluded <h2> bridges the <h1> and the <h3>: no skip a reader meets.
+  assert.deepStrictEqual(outcome('<h1>A</h1><div id="x"><h2>B</h2></div><h3>C</h3>', ['#x']), [
+    'pass',
+    []
+  ]);
+  // A skip into the page from an excluded heading is reported on the page's own.
+  assert.deepStrictEqual(outcome('<div id="x"><h2>A</h2></div><h4>B</h4>', ['#x']), [
+    'cantTell',
+    [4]
+  ]);
+  // A skip onto an excluded heading is not reported.
+  assert.deepStrictEqual(outcome('<h1>A</h1><div id="x"><h3>B</h3></div>', ['#x']), ['pass', []]);
+  // Every heading excluded: nothing to judge.
+  assert.deepStrictEqual(outcome('<div id="x"><h1>A</h1><h3>B</h3></div>', ['#x']), [
+    'notApplicable',
+    []
+  ]);
+});

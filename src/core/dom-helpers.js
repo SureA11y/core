@@ -3799,7 +3799,10 @@ function createDomHelpers(opts) {
     return out;
   }
 
-  function queryAllDeep(sel) {
+  // keepExcluded (internal): excluded elements stay in, for a rule that reads
+  // the whole page as context (queryAllSmart's { excluded: true }).
+  function queryAllDeep(sel, keepExcluded = false) {
+    const out = (el) => !keepExcluded && isExcluded(el);
     if (!roots.length) return [];
     // Performance note:
     // Avoid the old "querySelectorAll('*')" approach which is O(N) per shadow host
@@ -3819,7 +3822,7 @@ function createDomHelpers(opts) {
       }
       // NodeList is iterable; no copy, to reduce allocations.
       for (const el of els) {
-        if (el && !seen.has(el) && !isExcluded(el)) {
+        if (el && !seen.has(el) && !out(el)) {
           seen.add(el);
           results.push(el);
         }
@@ -3832,7 +3835,7 @@ function createDomHelpers(opts) {
         dom.nodeType(scope) === 1 &&
         typeof dom.get(scope, 'matches') === 'function' &&
         !seen.has(scope) &&
-        !isExcluded(scope)
+        !out(scope)
       ) {
         try {
           if (dom.matches(scope, sel)) {
@@ -3897,7 +3900,7 @@ function createDomHelpers(opts) {
       const roots = [];
       for (const el of hosts) {
         if (!el || dom.nodeType(el) !== 1) continue;
-        if (isExcluded(el)) continue;
+        if (out(el)) continue;
         const sr = dom.shadowRoot(el);
         if (sr) roots.push(sr);
       }
@@ -3918,7 +3921,7 @@ function createDomHelpers(opts) {
 
       // querySelectorAll('*') never returns curRoot itself, so a scope
       // that is a shadow host would leave out its own shadow root.
-      if (dom.nodeType(curRoot) === 1 && dom.shadowRoot(curRoot) && !isExcluded(curRoot)) {
+      if (dom.nodeType(curRoot) === 1 && dom.shadowRoot(curRoot) && !out(curRoot)) {
         q.push(dom.shadowRoot(curRoot));
       }
       const childShadowRoots = collectShadowRoots(curRoot);
@@ -4085,7 +4088,11 @@ function createDomHelpers(opts) {
   // `opts.inert: true` keeps inert content, for a rule about how content
   // looks (isHiddenContent).
   function queryAllSmart(sel, opts) {
-    let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+    // { excluded: true } keeps the elements excludeSelectors leaves out, for
+    // a rule that reads the whole page as context (a page's outline, its
+    // level-one heading) and reports nothing on them (isExcluded tells).
+    const keepExcluded = !!(opts && opts.excluded === true);
+    let list = includeShadowDom ? queryAllDeep(sel, keepExcluded) : queryAll(sel);
 
     // { internalsRoles: true } adds the custom elements whose internals give
     // them a role the selector's role attribute selectors name: a rule that
@@ -4126,7 +4133,9 @@ function createDomHelpers(opts) {
     // rendered visibility by default (unless includeHiddenElements:true).
     if (!includeHiddenElements) list = list.filter((el) => !isHiddenContent(el, opts));
 
-    return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
+    return __getEffectiveExcludeSelectors().length && !keepExcluded
+      ? list.filter((el) => !isExcluded(el))
+      : list;
   }
 
   // Same deep query as queryAllSmart (shadow roots when includeShadowDom,
