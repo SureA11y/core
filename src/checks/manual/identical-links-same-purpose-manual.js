@@ -199,11 +199,11 @@ function runInPage(ctx) {
     try {
       const page = new URL(dom.baseURI(document));
       const u = new URL(href, page);
-      if (u.origin === page.origin) return u.pathname + u.search + u.hash;
+      if (u.origin === page.origin) return helpers.quoteText(u.pathname + u.search + u.hash);
     } catch {
       /* as written */
     }
-    return href;
+    return helpers.quoteText(href);
   }
 
   // ---- Lean ----
@@ -366,7 +366,7 @@ function runInPage(ctx) {
           details: {
             reasonCode: 'SAME_NAME_DIFFERENT_DESTINATION',
             name,
-            href,
+            href: helpers.quoteText(href),
             distinctDestinationCount: distinctHrefs.size,
             otherDestinations: others,
             linkKind: helpers.getLinkKind(el)

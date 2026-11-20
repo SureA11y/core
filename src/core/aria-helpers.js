@@ -142,10 +142,18 @@ function createAriaHelpers(opts, shared) {
     return includeMain && token === 'main';
   }
 
+  // Ancestors in the flat tree, as the accessibility tree is built: through
+  // the slot an element is assigned to, and from a shadow root to its host.
+  // A web component's <header> inside an <article> in the page is the
+  // article's header, not the page's banner (HTML-AAM).
+  const flatParent =
+    shared && typeof shared.flatParentElement === 'function'
+      ? (n) => shared.flatParentElement(n) || null
+      : (n) => dom.parentElement(n);
   function hasLandmarkScopingAncestor(el, opts) {
     if (!isElement(el)) return false;
     const includeMain = !!(opts && opts.includeMain);
-    let cur = dom.parentElement(el);
+    let cur = flatParent(el);
     let guard = 0;
     while (cur && guard++ < 10000) {
       if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
@@ -153,7 +161,7 @@ function createAriaHelpers(opts, shared) {
       // (or fragment) scan should never let ancestry OUTSIDE the
       // analyzed subtree affect a role computed WITHIN it.
       if (ariaRoots.includes(cur)) break;
-      cur = dom.parentElement(cur);
+      cur = flatParent(cur);
     }
     return false;
   }
@@ -896,7 +904,9 @@ function createAriaHelpers(opts, shared) {
   // the row groups) from its "descendant of a table" ones (tr, td, th), which
   // sit inside a rowgroup in most real tables.
   const NATIVE_CONTAINMENT_CONTEXT = {
-    li: { tags: ['ul', 'ol', 'menu'], directParent: true },
+    // An <li> in an element with role list is a listitem too, as browsers
+    // expose it and listitem-parent-valid accepts it.
+    li: { tags: ['ul', 'ol', 'menu'], roles: ['list'], directParent: true },
     option: { tags: ['select', 'datalist', 'optgroup'], directParent: true },
     thead: { tags: ['table'], directParent: true },
     tbody: { tags: ['table'], directParent: true },
@@ -917,6 +927,7 @@ function createAriaHelpers(opts, shared) {
     while (cur && guard++ < 10000) {
       const tag = lower(dom.tagName(cur) || '');
       if (tags.indexOf(tag) !== -1) return true;
+      if (context.roles && context.roles.indexOf(getAuthorRole(cur)) !== -1) return true;
       if (context.directParent) return false;
       cur = dom.parentElement(cur);
     }

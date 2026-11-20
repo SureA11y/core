@@ -562,6 +562,13 @@ The message for a `getTextAlternativeSignal` result: English `summary` and `hint
 how the summary names the element: `'img'`, `'area'`, `'input type="image"'`. Each hint
 says when the text is fine after all. `null` for no signal.
 
+### `quoteText(value, max = 120)` → `string`
+
+Page text as a message quotes it: cut to `max` characters with an ellipsis, never
+splitting a surrogate pair. Use it for any label, name, address or attribute value a
+summary, a hint, `i18n.params` or `data.details` quotes, so a 1 MB value doesn't copy
+itself whole into every result and report.
+
 ### `getContentNameInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
 
 Recursive "name from content" (accname step 2F): walks children using each child's
