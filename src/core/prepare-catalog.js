@@ -311,7 +311,7 @@ function prepareRules(entries, { registry, engineTag, where = '', describeFile =
   }
 
   mods.sort((a, b) =>
-    a.ruleId.localeCompare(b.ruleId, undefined, { numeric: true, sensitivity: 'base' })
+    a.ruleId.localeCompare(b.ruleId, 'en', { numeric: true, sensitivity: 'base' })
   );
 
   // A standard mapped rule by rule names rules and requirements by id;

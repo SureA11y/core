@@ -257,7 +257,7 @@ function catalogRows(catalog, ids, prose) {
       margin: r.margin || null,
       variantSettings: Array.isArray(r.variantSettings) ? r.variantSettings : []
     }))
-    .sort((a, b) => a.ruleId.localeCompare(b.ruleId));
+    .sort((a, b) => a.ruleId.localeCompare(b.ruleId, 'en'));
 }
 
 const REGENERATE =
@@ -295,7 +295,7 @@ function settingsTable(list) {
 function renderSettingsIndex(catalog, { regenerate = REGENERATE } = {}) {
   const rules = catalog
     .filter((r) => Array.isArray(r.variantSettings) && r.variantSettings.length)
-    .sort((a, b) => a.ruleId.localeCompare(b.ruleId));
+    .sort((a, b) => a.ruleId.localeCompare(b.ruleId, 'en'));
   const count = rules.reduce((n, r) => n + r.variantSettings.length, 0);
   const sections = rules.map(
     (r) =>
@@ -417,7 +417,7 @@ function renderCatalog(
 
   const compositeLines = composites
     .slice()
-    .sort((a, b) => a.id.localeCompare(b.id))
+    .sort((a, b) => a.id.localeCompare(b.id, 'en'))
     .map(
       (c) =>
         `| \`${c.id}\` | ${escapePipes(c.meta && c.meta.title)} | ${escapePipes((c.meta && c.meta.description) || '')} | ${((c.meta && c.meta.wcagSc) || []).join(', ') || '—'} | ${(c.meta && c.meta.level) || '—'} | ${c.checksIds.length} |`
@@ -481,7 +481,7 @@ Each groups rules into one result, as a WCAG rollup does; the standard's own rep
 |---|---|---|
 ${rollups
   .slice()
-  .sort((a, b) => a.id.localeCompare(b.id))
+  .sort((a, b) => a.id.localeCompare(b.id, 'en'))
   .map(
     (c) =>
       `| \`${c.id}\` | ${escapePipes(c.title)} | ${c.checksIds.map((id) => `\`${id}\``).join(', ')} |`

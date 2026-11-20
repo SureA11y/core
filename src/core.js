@@ -1822,11 +1822,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     const tiers = Array.isArray(out.occurrences)
       ? out.occurrences.map((o) => (o && typeof o === 'object' ? o.occurrenceOutcome : undefined))
       : [];
-    if ((out.outcome === 'cantTell' || out.outcome === 'pass') && tiers.includes('fail')) {
-      out.outcome = 'fail';
-    } else if (out.outcome === 'fail' && tiers.length && tiers.every((x) => x === 'cantTell')) {
-      out.outcome = 'cantTell';
-    }
+    // An occurrence with no tier has the outcome's. The outcome is the
+    // worst of them: fail if any fails, cantTell if any asks, pass when all
+    // pass; the same table the exclusion filter above settles by.
+    const eff = tiers.map((x) => x || out.outcome);
+    if (eff.includes('fail')) out.outcome = 'fail';
+    else if (eff.includes('cantTell')) out.outcome = 'cantTell';
+    else if (eff.length && eff.every((x) => x === 'pass')) out.outcome = 'pass';
     // A fail the policy doesn't allow stays cantTell, whichever layer said
     // fail, and its fail-tier occurrences go with it, as a manual rule's do:
     // otherwise the tiers would undo the policy above.
@@ -27127,8 +27129,8 @@ const runProfiles = (function runProfiles(engineOptions, run) {
       }
     }
     if (unique.length <= 1) {
-      return run(
-        Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+      return withOwnVerdicts(
+        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined }))
       );
     }
     const runs = [];
@@ -27146,7 +27148,36 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     };
     return step(0);
   }
-  return run(engineOptions);
+  return withOwnVerdicts(run(engineOptions));
+});
+const withOwnVerdicts = (function withOwnVerdicts(result) {
+  if (result && typeof result.then === 'function') return result.then(withOwnVerdicts);
+  if (!result || !Array.isArray(result.checksResults)) return result;
+  const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
+  for (const check of result.checksResults) {
+    const occurrences = check && Array.isArray(check.occurrences) ? check.occurrences : [];
+    if (!occurrences.length || check.outcome === 'fail') continue;
+    const fails = occurrences.map(() => false);
+    for (const rollup of rollups) {
+      const details = rollup && rollup.data && rollup.data.details;
+      const contributors =
+        details && Array.isArray(details.contributors) ? details.contributors : [];
+      const c = contributors.find((x) => x && x.testId === check.ruleId);
+      if (!c || !c.byReasonCode || !Array.isArray(c.findingOutcomes)) continue;
+      occurrences.forEach((o, i) => {
+        if (c.findingOutcomes[i] === 'fail') fails[i] = true;
+      });
+    }
+    if (!fails.some(Boolean)) continue;
+    check.occurrences = occurrences.map((o, i) =>
+      fails[i] && o && typeof o === 'object'
+        ? Object.assign({}, o, { occurrenceOutcome: 'fail' })
+        : o
+    );
+    check.outcome = 'fail';
+    check.outcomeNormalized = 'fail';
+  }
+  return result;
 });
 const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   const RANK = { fail: 4, cantTell: 3, pass: 2, notApplicable: 1 };
@@ -127550,11 +127581,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     const tiers = Array.isArray(out.occurrences)
       ? out.occurrences.map((o) => (o && typeof o === 'object' ? o.occurrenceOutcome : undefined))
       : [];
-    if ((out.outcome === 'cantTell' || out.outcome === 'pass') && tiers.includes('fail')) {
-      out.outcome = 'fail';
-    } else if (out.outcome === 'fail' && tiers.length && tiers.every((x) => x === 'cantTell')) {
-      out.outcome = 'cantTell';
-    }
+    // An occurrence with no tier has the outcome's. The outcome is the
+    // worst of them: fail if any fails, cantTell if any asks, pass when all
+    // pass; the same table the exclusion filter above settles by.
+    const eff = tiers.map((x) => x || out.outcome);
+    if (eff.includes('fail')) out.outcome = 'fail';
+    else if (eff.includes('cantTell')) out.outcome = 'cantTell';
+    else if (eff.length && eff.every((x) => x === 'pass')) out.outcome = 'pass';
     // A fail the policy doesn't allow stays cantTell, whichever layer said
     // fail, and its fail-tier occurrences go with it, as a manual rule's do:
     // otherwise the tiers would undo the policy above.
@@ -152855,8 +152888,8 @@ const runProfiles = (function runProfiles(engineOptions, run) {
       }
     }
     if (unique.length <= 1) {
-      return run(
-        Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+      return withOwnVerdicts(
+        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined }))
       );
     }
     const runs = [];
@@ -152874,7 +152907,36 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     };
     return step(0);
   }
-  return run(engineOptions);
+  return withOwnVerdicts(run(engineOptions));
+});
+const withOwnVerdicts = (function withOwnVerdicts(result) {
+  if (result && typeof result.then === 'function') return result.then(withOwnVerdicts);
+  if (!result || !Array.isArray(result.checksResults)) return result;
+  const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
+  for (const check of result.checksResults) {
+    const occurrences = check && Array.isArray(check.occurrences) ? check.occurrences : [];
+    if (!occurrences.length || check.outcome === 'fail') continue;
+    const fails = occurrences.map(() => false);
+    for (const rollup of rollups) {
+      const details = rollup && rollup.data && rollup.data.details;
+      const contributors =
+        details && Array.isArray(details.contributors) ? details.contributors : [];
+      const c = contributors.find((x) => x && x.testId === check.ruleId);
+      if (!c || !c.byReasonCode || !Array.isArray(c.findingOutcomes)) continue;
+      occurrences.forEach((o, i) => {
+        if (c.findingOutcomes[i] === 'fail') fails[i] = true;
+      });
+    }
+    if (!fails.some(Boolean)) continue;
+    check.occurrences = occurrences.map((o, i) =>
+      fails[i] && o && typeof o === 'object'
+        ? Object.assign({}, o, { occurrenceOutcome: 'fail' })
+        : o
+    );
+    check.outcome = 'fail';
+    check.outcomeNormalized = 'fail';
+  }
+  return result;
 });
 const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   const RANK = { fail: 4, cantTell: 3, pass: 2, notApplicable: 1 };

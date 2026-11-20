@@ -168,8 +168,16 @@ function codesUnder(rule, key, facet, requirement) {
 function packReviewDictionaries(packs) {
   const out = { en: {} };
   for (const pack of Array.isArray(packs) ? packs : []) {
+    // A pack that can't be read (a getter or a Proxy trap that throws) was
+    // skipped by the scan, and gives no steps.
+    let rules;
+    try {
+      rules = ownRulesOf(pack);
+    } catch {
+      continue;
+    }
     const stems = new Set();
-    for (const rule of ownRulesOf(pack)) {
+    for (const rule of rules) {
       const prefix = prefixOf(rule);
       if (!prefix) continue;
       const review = reviewOf(rule);

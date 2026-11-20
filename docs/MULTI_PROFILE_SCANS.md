@@ -63,7 +63,7 @@ A rule map row routes a rule's findings by reason code (`reasonCodes`) or by a s
 }
 ```
 
-A finding made a failure this way is a failure of the pack's requirement only: the check result's own outcome, and every other profile's verdict, are unchanged. The contributor says so (`byReasonCode: true`, the rule's outcome in `checkOutcome`), as it does now for `'cantTell'`.
+A finding made a failure this way fails the pack's requirement, and is the pack profile's verdict of it: in a scan of that profile alone the finding and its check fail, as in a scan of several, so a pack scanned on its own gates CI on what it states for certain. Every other profile's verdict is unchanged. The contributor says so (`byReasonCode: true`, the rule's outcome in `checkOutcome`), as it does now for `'cantTell'`.
 
 ## 3. `@surea11y/pack-wai-aria`
 
