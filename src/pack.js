@@ -2226,6 +2226,19 @@ function pageCodeProblems(rule, where) {
 
 // JSON as script text: "<" escaped so no "</script" can end an inline script,
 // and U+2028 and U+2029, which end a line comment, escaped too.
+// The "<script" an inline script's text opens after "<!--" with no "-->"
+// first (HTML's script data double escaped state), or null.
+function unclosedScriptInComment(text) {
+  const re = /<!--|-->|<script(?=[\s/>])/gi;
+  let inComment = false;
+  for (let m = re.exec(text); m; m = re.exec(text)) {
+    if (m[0] === '<!--') inComment = true;
+    else if (m[0] === '-->') inComment = false;
+    else if (inComment) return m[0];
+  }
+  return null;
+}
+
 const scriptJson = (value) =>
   JSON.stringify(value)
     .replace(/</g, '\\u003c')
@@ -2250,17 +2263,10 @@ function packScript(packs) {
     const code = (fn) => {
       const expr = functionExpression(fn);
       // A script can be inlined in a <script> element (buildBrowserBundle), which
-      // the first "</script" in it ends, whatever follows running as markup;
-      // and after "<!--" then "<script", HTML no longer ends the element at
-      // "</script", so the rest of the page is taken as script.
+      // the first "</script" in it ends, whatever follows running as markup.
       if (/<\/script/i.test(expr)) {
         throw new Error(
           `${id}'s code contains "</script", which ends an inline <script> element: write it as '<' + '/script'`
-        );
-      }
-      if (/<!--/.test(expr)) {
-        throw new Error(
-          `${id}'s code contains "<!--", which with a later "<script" keeps an inline <script> element from ending: write it as '<' + '!--'`
         );
       }
       return expr;
@@ -2323,6 +2329,16 @@ function packScript(packs) {
     "})(typeof globalThis !== 'undefined' ? globalThis : this);",
     ''
   ].join('\n');
+  // Inline, after "<!--" then "<script" with no "-->" between them, HTML no
+  // longer ends the element at "</script>", so the rest of the page would be
+  // read as script. "<!--" alone, or closed by "-->" first (a rule that
+  // strips comments with /<!--[\s\S]*?-->/), is harmless.
+  const opened = unclosedScriptInComment(script);
+  if (opened) {
+    throw new Error(
+      `packScript: the packs' code has "<!--" followed by "${opened}" with no "-->" between them, which keeps an inline <script> element from ending: write one of them as '<' + '!--' or '<' + 'script'`
+    );
+  }
   // What is written must parse: a page that can't run it loses every pack in it.
   try {
     new (require('node:vm').Script)(script);
