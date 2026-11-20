@@ -40,7 +40,11 @@
  *     overflow comes from a margin, a pseudo-element, a closed shadow root,
  *     or an open one the scan leaves out with `includeShadowDom: false`),
  *     the document fails (HORIZONTAL_SCROLL_UNATTRIBUTED): that it scrolls
- *     is measured, not guessed. Open shadow roots are read like the rest of
+ *     is measured, not guessed. Content nothing of which is drawn
+ *     (`visibility: hidden` or `collapse`, with no part set back to
+ *     visible) is left out at every edge and in every box: there is nothing
+ *     to reach. When it is what reaches past the edge, the page may scroll,
+ *     but scrolling shows nothing, so it passes. Open shadow roots are read like the rest of
  *     the page, and a box around a shadow host is a box around what its
  *     shadow tree shows.
  *   - Text, an image, media or a field that the start edge cuts through
@@ -649,7 +653,6 @@ function runInPage(ctx) {
       if (box) {
         const bs = style(box);
         const rects = dom.getClientRects(el);
-        const es = style(el);
         const scrolls = !boxCuts(box);
         // Where it lies first, which is cheap; what may leave it out after.
         const rect = rects && rects.length ? dom.getBoundingClientRect(el) : null;
@@ -660,7 +663,7 @@ function runInPage(ctx) {
           hit &&
           hit.over > TOLERANCE &&
           hit.inside > TOLERANCE &&
-          !(es && es.visibility === 'hidden') &&
+          !undrawn(el) &&
           !(!scrolls && ellipsisCovers(el, bs)) &&
           !escapes(el, box) &&
           !(scrolls && exemptInScrollBox(el, box))
@@ -819,6 +822,36 @@ function runInPage(ctx) {
     return value;
   }
 
+  // Nothing of it drawn: it is visibility: hidden or collapse (inherited, so
+  // from any box around it too), and so is everything in it. It still takes
+  // its place in the layout, and may still widen the page, but there is
+  // nothing to reach past the edge. A descendant set back to visible is
+  // drawn, and keeps it in.
+  const HIDDEN_VISIBILITY = new Set(['hidden', 'collapse']);
+  const undrawnMemo = new Map();
+  function undrawn(el) {
+    if (undrawnMemo.has(el)) return undrawnMemo.get(el);
+    let value = false;
+    const s = style(el);
+    if (s && HIDDEN_VISIBILITY.has(String(s.visibility || ''))) {
+      value = true;
+      try {
+        const walker = dom.call(document, 'createTreeWalker', el, 1 /* SHOW_ELEMENT */);
+        for (let n = dom.call(walker, 'nextNode'); n; n = dom.call(walker, 'nextNode')) {
+          const ns = style(n);
+          if (ns && !HIDDEN_VISIBILITY.has(String(ns.visibility || ''))) {
+            value = false;
+            break;
+          }
+        }
+      } catch {
+        value = false;
+      }
+    }
+    undrawnMemo.set(el, value);
+    return value;
+  }
+
   // Each element that crosses the edge while its parent doesn't: the place
   // the overflow starts.
   const found = [];
@@ -879,6 +912,10 @@ function runInPage(ctx) {
   // Whether something past the edge was outside the scope or excluded: the
   // page may scroll because of it, which is not for this scan to judge.
   let leftOut = false;
+  // Whether something past the edge was left out because nothing of it is
+  // drawn: it may be what makes the page scroll, and scrolling there shows
+  // nothing, so no content needs it.
+  let undrawnPast = false;
   function consider(start, hit, own) {
     // Fixed to the viewport: it doesn't widen the page, and what of it lies
     // past the edge is never reached, however the page scrolls. One wholly
@@ -900,6 +937,7 @@ function runInPage(ctx) {
       if (hit.inside <= TOLERANCE || taken.has(start)) return;
       const up = start === fixed ? null : upOf(start);
       if (up && crossing(up)) return;
+      if (undrawn(start)) return;
       if (!inScope(start) || isExcluded(start)) {
         leftOut = true;
         return;
@@ -948,7 +986,12 @@ function runInPage(ctx) {
       // can't be reached; what is wholly past it waits there on purpose.
       if (!rootClips || hit.inside <= TOLERANCE) return;
     }
-    // Last, as it walks up: what a clip hides shows nowhere.
+    // Last, as they walk: what a clip hides, or nothing of which is drawn,
+    // shows nowhere.
+    if (undrawn(el)) {
+      undrawnPast = true;
+      return;
+    }
     if (clipHidden(el)) return;
     if (!inScope(el) || isExcluded(el)) {
       leftOut = true;
@@ -969,7 +1012,7 @@ function runInPage(ctx) {
       const up = clippedBy(parent);
       if (up && up.box === clip.box) return;
     }
-    if (clipHidden(el)) return;
+    if (undrawn(el) || clipHidden(el)) return;
     if (!inScope(el) || isExcluded(el)) {
       leftOut = true;
       return;
@@ -1001,9 +1044,7 @@ function runInPage(ctx) {
     // Where it lies first, which is cheap: most content is inside the edge.
     const hit = beforeStartOf(rect);
     if (!(hit.over > TOLERANCE && hit.inside > TOLERANCE)) return;
-    if (taken.has(el) || clipHidden(el)) return;
-    const s = style(el);
-    if (s && s.visibility === 'hidden') return;
+    if (taken.has(el) || undrawn(el) || clipHidden(el)) return;
     if (!fixedOf(el) && insideSidewaysBox(el)) return;
     if (!inScope(el) || isExcluded(el)) return;
     taken.add(el);
@@ -1346,8 +1387,15 @@ function runInPage(ctx) {
     );
   }
 
-  // Only what reaches past the end edge explains why the page scrolls.
-  if (pageScrolls && !found.some((f) => !f.fixed && !f.start) && wholeDocument && !leftOut) {
+  // Only what reaches past the end edge explains why the page scrolls; what
+  // is drawn nowhere explains it too, with nothing to reach.
+  if (
+    pageScrolls &&
+    !found.some((f) => !f.fixed && !f.start) &&
+    wholeDocument &&
+    !leftOut &&
+    !undrawnPast
+  ) {
     report('HORIZONTAL_SCROLL_UNATTRIBUTED', html, null, null);
   }
 
