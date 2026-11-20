@@ -799,8 +799,14 @@ function runInPage(ctx) {
         break;
       }
       path.push(node);
+      // Only a box with a clip or a clip-path can be hidden by one: the
+      // computed style says so at once (the rule runs in a browser), and the
+      // helper, which also reads the declared clip, is asked only then.
+      const ns = style(node);
+      const clipped =
+        !!ns && ((ns.clipPath && ns.clipPath !== 'none') || (ns.clip && ns.clip !== 'auto'));
       try {
-        if (helpers.isElementClipHidden(node, style(node))) {
+        if (clipped && helpers.isElementClipHidden(node, ns)) {
           value = true;
           break;
         }
@@ -932,7 +938,7 @@ function runInPage(ctx) {
       if (!up || up === body || up === html || kindOf(up) !== 'HORIZONTAL_SCROLL') break;
       el = up;
     }
-    if (taken.has(el) || clipHidden(el)) return;
+    if (taken.has(el)) return;
     // Where it starts: its parent stays inside. The body sticks out only when
     // it is itself too wide (a min-width), and is then the cause.
     const parent = upOf(el);
@@ -942,6 +948,8 @@ function runInPage(ctx) {
       // can't be reached; what is wholly past it waits there on purpose.
       if (!rootClips || hit.inside <= TOLERANCE) return;
     }
+    // Last, as it walks up: what a clip hides shows nowhere.
+    if (clipHidden(el)) return;
     if (!inScope(el) || isExcluded(el)) {
       leftOut = true;
       return;
@@ -955,12 +963,13 @@ function runInPage(ctx) {
   const clipped = [];
   const clippedTaken = new Set();
   function considerClipped(el, clip) {
-    if (!clip || clippedTaken.has(el) || clipHidden(el)) return;
+    if (!clip || clippedTaken.has(el)) return;
     const parent = upOf(el);
     if (parent && parent !== clip.box) {
       const up = clippedBy(parent);
       if (up && up.box === clip.box) return;
     }
+    if (clipHidden(el)) return;
     if (!inScope(el) || isExcluded(el)) {
       leftOut = true;
       return;
