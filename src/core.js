@@ -42019,7 +42019,7 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_hint_widePreformatted": "Lassen Sie ihn umbrechen (white-space: pre-wrap) oder, wenn seine Zeilen bleiben müssen, wie sie sind, für sich allein in einem Kasten mit overflow-x: auto scrollen.",
       "reflowHorizontalScroll_summary_clippedBox": "Bei {{viewportWidth}} Pixeln Breite verbirgt ein Kasten um dieses {{element}}-Element die {{overflowPx}} Pixel, die darüber hinausragen, und nichts scrollt dorthin.",
       "reflowHorizontalScroll_hint_clippedBox": "Lassen Sie es in die Breite seines Kastens passen, damit nichts davon abgeschnitten wird. Bei einer Datentabelle: Legen Sie sie in einen Kasten mit overflow-x: auto.",
-      "reflowHorizontalScroll_summary_scrollBox": "Bei {{viewportWidth}} Pixeln Breite ist dieses {{element}}-Element {{overflowPx}} Pixel breiter als der Kasten um es, sodass dieser seitlich scrollen muss, um es zu zeigen.",
+      "reflowHorizontalScroll_summary_scrollBox": "Bei {{viewportWidth}} Pixeln Breite reicht dieses {{element}}-Element {{overflowPx}} Pixel über den Rand des Kastens um es hinaus, sodass dieser seitlich scrollen muss, um es zu zeigen.",
       "reflowHorizontalScroll_hint_scrollBox": "Lassen Sie es in die Breite seines Kastens passen, damit nichts seitliches Scrollen braucht. Nur eine Datentabelle, ein Codeblock oder eine Karte darf für sich seitlich scrollen.",
       "reflowHorizontalScroll_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite schneidet der Bildschirmrand dieses Element ab, und die Seite scrollt nicht zum Rest.",
       "reflowHorizontalScroll_hint_clipped": "Lassen Sie es in die Breite passen, damit nichts davon abgeschnitten wird.",
@@ -42030,6 +42030,8 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_why_clippedBox": "Ein Kasten um das Element verbirgt, was überläuft, und nichts scrollt zum Rest.",
       "reflowHorizontalScroll_lean_why_scrollBox": "Das Element ist breiter als der Kasten um es, der seitlich scrollen muss, um es zu zeigen: Text, Felder und Menüs müssen in die Breite passen.",
       "reflowHorizontalScroll_lean_caution_scrollBox": "Eine Datentabelle, ein Codeblock oder ein Karussell kann sein Layout brauchen.",
+      "reflowHorizontalScroll_lean_why_carousel": "Jedes Element passt in den Kasten; nur ihre Reihe scrollt seitlich, wie bei einem Karussell.",
+      "reflowHorizontalScroll_lean_caution_carousel": "Prüfen Sie, dass jedes Element mit der Tastatur erreichbar ist und in keinem etwas abgeschnitten wird.",
       "reflowHorizontalScroll_lean_why_clipped": "Der Rand des Viewports schneidet das Element ab, und die Seite scrollt nicht zum Rest.",
       "reflowHorizontalScroll_lean_caution_clipped": "Ein Karussell oder ein Menü kann den Rest auf andere Weise zeigen.",
       "report_title_default": "surea11y-Scanbericht",
@@ -43797,7 +43799,7 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_hint_widePreformatted": "Let it wrap (white-space: pre-wrap), or, if its lines must stay as they are, let it scroll on its own in a box with overflow-x: auto.",
       "reflowHorizontalScroll_summary_clippedBox": "At {{viewportWidth}} pixels wide, a box around this {{element}} element hides the {{overflowPx}} pixels that stick out of it, and nothing scrolls to them.",
       "reflowHorizontalScroll_hint_clippedBox": "Let it fit the width of its box, so that nothing in it is cut off. If it is a data table, put it in a box with overflow-x: auto.",
-      "reflowHorizontalScroll_summary_scrollBox": "At {{viewportWidth}} pixels wide, this {{element}} element is {{overflowPx}} pixels wider than the box around it, so that box has to scroll sideways to show it.",
+      "reflowHorizontalScroll_summary_scrollBox": "At {{viewportWidth}} pixels wide, this {{element}} element reaches {{overflowPx}} pixels past the edge of the box around it, so that box has to scroll sideways to show it.",
       "reflowHorizontalScroll_hint_scrollBox": "Let it fit the width of its box, so that nothing needs sideways scrolling. Only a data table, a code block or a map may scroll sideways on its own.",
       "reflowHorizontalScroll_summary_clipped": "At {{viewportWidth}} pixels wide, the edge of the screen cuts through this element, and the page does not scroll to the rest of it.",
       "reflowHorizontalScroll_hint_clipped": "Let it fit the width, so that nothing in it is cut off.",
@@ -43808,6 +43810,8 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_why_clippedBox": "A box around the element hides what overflows it, and nothing scrolls to the rest of it.",
       "reflowHorizontalScroll_lean_why_scrollBox": "The element is wider than the box around it, which has to scroll sideways to show it: text, fields and menus have to fit the width.",
       "reflowHorizontalScroll_lean_caution_scrollBox": "A data table, a code block or a carousel may need its layout.",
+      "reflowHorizontalScroll_lean_why_carousel": "Each item fits the box; only the row of them scrolls sideways, as a carousel does.",
+      "reflowHorizontalScroll_lean_caution_carousel": "Check that each item can be reached with the keyboard, and that nothing in an item is cut off.",
       "reflowHorizontalScroll_lean_why_clipped": "The edge of the viewport cuts through the element, and the page does not scroll to the rest of it.",
       "reflowHorizontalScroll_lean_caution_clipped": "A carousel or a menu may show the rest another way.",
       "report_title_default": "surea11y scan report",
@@ -45575,7 +45579,7 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_hint_widePreformatted": "Deja que se parta en líneas (white-space: pre-wrap) o, si sus líneas deben quedar como están, que se desplace por sí solo en una caja con overflow-x: auto.",
       "reflowHorizontalScroll_summary_clippedBox": "Con {{viewportWidth}} píxeles de ancho, una caja alrededor de este elemento {{element}} oculta los {{overflowPx}} píxeles que sobresalen, y nada se desplaza hasta ellos.",
       "reflowHorizontalScroll_hint_clippedBox": "Haz que quepa en el ancho de su caja, para que no se corte nada de él. Si es una tabla de datos, ponla en una caja con overflow-x: auto.",
-      "reflowHorizontalScroll_summary_scrollBox": "Con {{viewportWidth}} píxeles de ancho, este elemento {{element}} es {{overflowPx}} píxeles más ancho que la caja que lo rodea, por lo que esa caja tiene que desplazarse de lado para mostrarlo.",
+      "reflowHorizontalScroll_summary_scrollBox": "Con {{viewportWidth}} píxeles de ancho, este elemento {{element}} sobresale {{overflowPx}} píxeles del borde de la caja que lo rodea, por lo que esa caja tiene que desplazarse de lado para mostrarlo.",
       "reflowHorizontalScroll_hint_scrollBox": "Haz que quepa en el ancho de su caja, para que nada necesite desplazamiento lateral. Solo una tabla de datos, un bloque de código o un mapa pueden desplazarse de lado por su cuenta.",
       "reflowHorizontalScroll_summary_clipped": "Con {{viewportWidth}} píxeles de ancho, el borde de la pantalla corta este elemento y la página no se desplaza hasta el resto.",
       "reflowHorizontalScroll_hint_clipped": "Haz que quepa en el ancho, para que no se corte nada de él.",
@@ -45586,6 +45590,8 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_why_clippedBox": "Una caja alrededor del elemento oculta lo que desborda y nada se desplaza hasta el resto.",
       "reflowHorizontalScroll_lean_why_scrollBox": "El elemento es más ancho que la caja que lo rodea, que tiene que desplazarse de lado para mostrarlo: el texto, los campos y los menús tienen que caber en el ancho.",
       "reflowHorizontalScroll_lean_caution_scrollBox": "Una tabla de datos, un bloque de código o un carrusel pueden necesitar su disposición.",
+      "reflowHorizontalScroll_lean_why_carousel": "Cada elemento cabe en la caja; solo su fila se desplaza de lado, como en un carrusel.",
+      "reflowHorizontalScroll_lean_caution_carousel": "Comprobar que cada elemento se puede alcanzar con el teclado y que nada de un elemento queda cortado.",
       "reflowHorizontalScroll_lean_why_clipped": "El borde de la ventana corta el elemento y la página no se desplaza hasta el resto.",
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrusel o un menú pueden mostrar el resto de otra forma.",
       "report_title_default": "Informe de análisis de surea11y",
@@ -47353,7 +47359,7 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_hint_widePreformatted": "Laissez-le passer à la ligne (white-space: pre-wrap) ou, si ses lignes doivent rester telles quelles, laissez-le défiler seul dans un bloc avec overflow-x: auto.",
       "reflowHorizontalScroll_summary_clippedBox": "À {{viewportWidth}} pixels de large, une boîte autour de cet élément {{element}} masque les {{overflowPx}} pixels qui dépassent, et rien ne défile jusqu’à eux.",
       "reflowHorizontalScroll_hint_clippedBox": "Faites-le tenir dans la largeur de sa boîte, pour que rien n’en soit coupé. S’il s’agit d’un tableau de données, mettez-le dans une boîte avec overflow-x: auto.",
-      "reflowHorizontalScroll_summary_scrollBox": "À {{viewportWidth}} pixels de large, cet élément {{element}} est plus large de {{overflowPx}} pixels que la boîte qui l’entoure, si bien que cette boîte doit défiler latéralement pour l’afficher.",
+      "reflowHorizontalScroll_summary_scrollBox": "À {{viewportWidth}} pixels de large, cet élément {{element}} dépasse de {{overflowPx}} pixels le bord de la boîte qui l’entoure, si bien que cette boîte doit défiler latéralement pour l’afficher.",
       "reflowHorizontalScroll_hint_scrollBox": "Faites-le tenir dans la largeur de sa boîte, pour que rien ne demande de défilement latéral. Seuls un tableau de données, un bloc de code ou une carte peuvent défiler latéralement d’eux-mêmes.",
       "reflowHorizontalScroll_summary_clipped": "À {{viewportWidth}} pixels de large, le bord de l’écran coupe cet élément, et la page ne défile pas jusqu’au reste.",
       "reflowHorizontalScroll_hint_clipped": "Faites-le tenir dans la largeur, pour que rien n’en soit coupé.",
@@ -47364,6 +47370,8 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_why_clippedBox": "Une boîte autour de l’élément masque ce qui déborde, et rien ne défile jusqu’au reste.",
       "reflowHorizontalScroll_lean_why_scrollBox": "L’élément est plus large que la boîte qui l’entoure, qui doit défiler latéralement pour l’afficher : le texte, les champs et les menus doivent tenir dans la largeur.",
       "reflowHorizontalScroll_lean_caution_scrollBox": "Un tableau de données, un bloc de code ou un carrousel peut avoir besoin de sa mise en page.",
+      "reflowHorizontalScroll_lean_why_carousel": "Chaque élément tient dans la boîte ; seule leur rangée défile latéralement, comme un carrousel.",
+      "reflowHorizontalScroll_lean_caution_carousel": "Vérifier que chaque élément est accessible au clavier et que rien n’y est coupé.",
       "reflowHorizontalScroll_lean_why_clipped": "Le bord de la fenêtre coupe l’élément, et la page ne défile pas jusqu’au reste.",
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrousel ou un menu peut montrer le reste autrement.",
       "report_title_default": "Rapport d’analyse surea11y",
@@ -49131,7 +49139,7 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_hint_widePreformatted": "折り返せるようにするか（white-space: pre-wrap）、行をそのまま保つ必要がある場合は、overflow-x: auto のボックスの中でそれ自体をスクロールさせてください。",
       "reflowHorizontalScroll_summary_clippedBox": "幅 {{viewportWidth}} ピクセルで、この {{element}} 要素を囲むボックスがはみ出した {{overflowPx}} ピクセル分を隠しており、そこまでスクロールできません。",
       "reflowHorizontalScroll_hint_clippedBox": "何も切れないように、ボックスの幅に収まるようにしてください。データテーブルの場合は、overflow-x: auto のボックスに入れてください。",
-      "reflowHorizontalScroll_summary_scrollBox": "幅 {{viewportWidth}} ピクセルで、この {{element}} 要素は囲むボックスより {{overflowPx}} ピクセル広く、表示するにはそのボックスを横にスクロールする必要があります。",
+      "reflowHorizontalScroll_summary_scrollBox": "幅 {{viewportWidth}} ピクセルで、この {{element}} 要素は囲むボックスの端から {{overflowPx}} ピクセルはみ出しており、表示するにはそのボックスを横にスクロールする必要があります。",
       "reflowHorizontalScroll_hint_scrollBox": "横スクロールが要らないように、ボックスの幅に収まるようにしてください。単独で横スクロールしてよいのは、データテーブル、コードブロック、地図だけです。",
       "reflowHorizontalScroll_summary_clipped": "幅 {{viewportWidth}} ピクセルで、画面の端がこの要素を切っており、ページは残りの部分までスクロールしません。",
       "reflowHorizontalScroll_hint_clipped": "何も切れないように、幅に収まるようにしてください。",
@@ -49142,6 +49150,8 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_why_clippedBox": "要素を囲むボックスがはみ出した部分を隠しており、残りの部分までスクロールできません。",
       "reflowHorizontalScroll_lean_why_scrollBox": "要素が囲むボックスより広く、表示するにはそのボックスを横にスクロールする必要があります。テキスト、フィールド、メニューは幅に収まる必要があります。",
       "reflowHorizontalScroll_lean_caution_scrollBox": "データテーブル、コードブロック、カルーセルは、そのレイアウトが必要な場合があります。",
+      "reflowHorizontalScroll_lean_why_carousel": "各項目はボックスに収まり、カルーセルのように項目の列だけが横にスクロールします。",
+      "reflowHorizontalScroll_lean_caution_carousel": "各項目にキーボードで到達でき、どの項目も切れていないことを確認します。",
       "reflowHorizontalScroll_lean_why_clipped": "ビューポートの端が要素を切っており、ページは残りの部分までスクロールしません。",
       "reflowHorizontalScroll_lean_caution_clipped": "カルーセルやメニューは、残りを別の方法で表示できる場合があります。",
       "report_title_default": "surea11y スキャンレポート",
@@ -102787,6 +102797,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const html = dom.documentElement(document);
   const body = dom.body(document);
   if (!view || !html || !body) return notApplicable('noLayout');
+  // A frameset shows other documents, each laid out in its frame: each is
+  // judged as its own page, when a host scans it.
+  if (String(dom.tagName(body) || '').toLowerCase() === 'frameset') {
+    return notApplicable('frameset');
+  }
 
   // A layout: the root has boxes (jsdom gives none).
   try {
@@ -102805,17 +102820,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const width = layoutWidth ? Math.min(layoutWidth, innerWidth || layoutWidth) : innerWidth;
   if (!width || width > REFLOW_WIDTH) return notApplicable('viewportWider');
 
+  // Each element's computed style, read once: the walks up from every
+  // element read the same boxes' over and over. Live, so it stays current.
+  const styleMemo = new Map();
   function style(el) {
+    if (styleMemo.has(el)) return styleMemo.get(el);
+    let value;
     try {
-      return view.getComputedStyle(el);
+      value = view.getComputedStyle(el);
     } catch {
-      return null;
+      value = null;
     }
+    styleMemo.set(el, value);
+    return value;
   }
   // An element's parent as the page renders it: through a slot, and from a
   // shadow root to its host, so a box around a shadow host is a box around
   // what its shadow tree shows.
+  // A page with no open shadow root and no slot renders its light DOM: the
+  // parent is the parent (set once the page's elements are listed, below).
+  let plainTree = false;
+  const upMemo = new Map();
   const upOf = (node) => {
+    if (plainTree) return dom.parentElement(node);
+    if (!upMemo.has(node)) upMemo.set(node, flatUp(node));
+    return upMemo.get(node);
+  };
+  const flatUp = (node) => {
+    // Light DOM, as most of a page is: a parent that is no shadow host and no
+    // slot is the parent the page renders it in.
+    const parent = dom.parentElement(node);
+    if (parent && !dom.shadowRoot(parent) && String(dom.tagName(parent)).toLowerCase() !== 'slot') {
+      return parent;
+    }
     if (typeof helpers.flatParentElement === 'function') {
       try {
         return helpers.flatParentElement(node) || null;
@@ -102907,13 +102944,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // and content-visibility: auto or hidden, which apply it.
   function containsPaint(s) {
     if (!s) return false;
-    const contain = String(s.contain || '');
-    if (/\b(paint|content|strict)\b/.test(contain)) return true;
-    const cv = String(s.contentVisibility || '');
+    const contain = s.contain;
+    if (contain && contain !== 'none' && /\b(paint|content|strict)\b/.test(contain)) return true;
+    const cv = s.contentVisibility;
     return cv === 'auto' || cv === 'hidden';
   }
   // Whether a box sets overflow sideways: it scrolls or clips.
   const setsOverflow = (s) => !!s && (s.overflowX !== 'visible' || containsPaint(s));
+  // The same, per element and once: every walk up reads the same boxes.
+  const setsMemo = new Map();
+  const boxSetsOverflow = (el) => {
+    if (!setsMemo.has(el)) setsMemo.set(el, setsOverflow(style(el)));
+    return setsMemo.get(el);
+  };
   // Whether a box makes itself the containing block of what is fixed in it
   // (CSS Transforms, Filter Effects, Containment, Will Change).
   function holdsFixed(s) {
@@ -103007,8 +103050,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         break;
       }
       path.push(node);
-      const s = style(node);
-      if (setsOverflow(s)) {
+      if (boxSetsOverflow(node)) {
         found = true;
         break;
       }
@@ -103023,6 +103065,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // page doesn't scroll to it.
   const cuts = (s) =>
     !!s && (s.overflowX === 'hidden' || s.overflowX === 'clip' || containsPaint(s));
+  const cutsMemo = new Map();
+  const boxCuts = (box) => {
+    if (!cutsMemo.has(box)) cutsMemo.set(box, cuts(style(box)));
+    return cutsMemo.get(box);
+  };
   // The nearest box around `start` (itself included when `self`) that sets
   // overflow sideways, whether it hides what overflows or scrolls it; null
   // when there is none.
@@ -103037,8 +103084,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         break;
       }
       path.push(node);
-      const s = style(node);
-      if (setsOverflow(s)) {
+      if (boxSetsOverflow(node)) {
         found = node;
         path.pop();
         cutterMemo.set(node, found);
@@ -103053,7 +103099,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // positioned box between it and the cutter.
   // A box between them, or the cutter itself, that holds what is fixed in
   // it (a transform, a filter, containment) keeps a fixed element in.
+  const escapesMemo = new Map();
   function escapes(el, box) {
+    let byBox = escapesMemo.get(el);
+    if (!byBox) escapesMemo.set(el, (byBox = new Map()));
+    if (!byBox.has(box)) byBox.set(box, escapesFrom(el, box));
+    return byBox.get(box);
+  }
+  function escapesFrom(el, box) {
     let node = el;
     while (node && node !== box) {
       const s = style(node);
@@ -103105,9 +103158,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const shift = Number(dom.get(box, 'scrollLeft')) || 0;
     const l = rect.left + shift;
     const r = rect.right + shift;
+    // overflow: clip paints what overflows within overflow-clip-margin.
+    let margin = 0;
+    if (bs && bs.overflowX === 'clip') {
+      const m = /(-?\d+(?:\.\d+)?)px/.exec(String(bs.overflowClipMargin || ''));
+      if (m) margin = Math.max(0, Number(m[1]));
+    }
     // The end edge of the visible area: the right, or the left in
     // right-to-left text.
-    const edge = rtl ? left : left + cw;
+    const edge = rtl ? left - margin : left + cw + margin;
     return rtl ? { over: edge - l, inside: r - edge } : { over: r - edge, inside: edge - l };
   }
   // What a box that scrolls on its own may hold at full width: a table, a
@@ -103116,7 +103175,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Only what is inside the box counts: a table around the box is not what
   // scrolls in it. A table used for layout has to fit, in a box as on the
   // page. A box that is the page (an app's shell) exempts nothing.
+  const exemptMemo = new Map();
   function exemptInScrollBox(el, box) {
+    let byBox = exemptMemo.get(el);
+    if (!byBox) exemptMemo.set(el, (byBox = new Map()));
+    if (!byBox.has(box)) byBox.set(box, exemptFrom(el, box));
+    return byBox.get(box);
+  }
+  function exemptFrom(el, box) {
     try {
       if (isShell(box)) return false;
       const holder = dom.closest(el, 'table, pre');
@@ -103150,24 +103216,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const bs = style(box);
         const rects = dom.getClientRects(el);
         const es = style(el);
-        const scrolls = !cuts(bs);
+        const scrolls = !boxCuts(box);
+        // Where it lies first, which is cheap; what may leave it out after.
+        const rect = rects && rects.length ? dom.getBoundingClientRect(el) : null;
+        const hit = rect && (rect.width > 0 || rect.height > 0) ? pastBox(rect, box) : null;
+        // Part shows inside the box and part is cut off; one wholly past
+        // its edge waits there on purpose.
         if (
-          rects &&
-          rects.length &&
-          !(!scrolls && ellipsisCovers(el, bs)) &&
+          hit &&
+          hit.over > TOLERANCE &&
+          hit.inside > TOLERANCE &&
           !(es && es.visibility === 'hidden') &&
+          !(!scrolls && ellipsisCovers(el, bs)) &&
           !escapes(el, box) &&
           !(scrolls && exemptInScrollBox(el, box))
         ) {
-          const rect = dom.getBoundingClientRect(el);
-          if (rect.width > 0 || rect.height > 0) {
-            const hit = pastBox(rect, box);
-            // Part shows inside the box and part is cut off; one wholly past
-            // its edge waits there on purpose.
-            if (hit && hit.over > TOLERANCE && hit.inside > TOLERANCE) {
-              value = { box, over: hit.over, rect, scrolls, shell: scrolls && isShell(box) };
-            }
-          }
+          value = { box, over: hit.over, rect, scrolls, shell: scrolls && isShell(box) };
         }
       }
     } catch {
@@ -103177,20 +103241,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return value;
   }
 
-  // A table marked as layout, or with no header cell or caption.
-  function isLayoutTable(el) {
-    const role = String(
+  const roleOf = (el) =>
+    String(
       (helpers.aria && helpers.aria.getExplicitRole && helpers.aria.getExplicitRole(el)) || ''
     ).toLowerCase();
+  // A table marked as layout, or with no header cell or caption. A grid is
+  // data. Once per table: every cell of a wide table asks it.
+  const layoutMemo = new Map();
+  function isLayoutTable(el) {
+    if (!layoutMemo.has(el)) layoutMemo.set(el, readLayoutTable(el));
+    return layoutMemo.get(el);
+  }
+  function readLayoutTable(el) {
+    const role = roleOf(el);
+    if (role === 'grid' || role === 'treegrid') return false;
     if (role === 'presentation' || role === 'none') return true;
     return !dom.querySelector(el, 'th, caption, [scope]');
   }
 
   const MEDIA = new Set(['img', 'video', 'canvas', 'svg', 'object', 'embed', 'iframe', 'picture']);
+  // Two-dimensional content the exception may cover: a grid widget as a
+  // table, an application (a map, a game) and a formula as media.
+  const kindMemo = new Map();
   function kindOf(el) {
+    if (!kindMemo.has(el)) kindMemo.set(el, readKind(el));
+    return kindMemo.get(el);
+  }
+  function readKind(el) {
     const tag = String(dom.tagName(el) || '').toLowerCase();
     if (tag === 'table') return 'WIDE_TABLE';
-    if (MEDIA.has(tag)) return 'WIDE_MEDIA';
+    if (MEDIA.has(tag) || tag === 'math') return 'WIDE_MEDIA';
+    const role = roleOf(el);
+    if (role === 'grid' || role === 'treegrid') return 'WIDE_TABLE';
+    if (role === 'application') return 'WIDE_MEDIA';
     if (tag === 'pre') return 'WIDE_PREFORMATTED';
     // Code kept on its lines by its style, as a highlighter's block is.
     const s = style(el);
@@ -103268,6 +103351,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     });
   }
 
+  // Hidden by a clip or an empty clip-path, itself or a box around it, as
+  // visually hidden text is: nothing of it shows, at any edge.
+  const clipHiddenMemo = new Map();
+  function clipHidden(el) {
+    if (typeof helpers.isElementClipHidden !== 'function') return false;
+    let node = el;
+    const path = [];
+    let value = false;
+    while (node && node !== body && node !== html) {
+      if (clipHiddenMemo.has(node)) {
+        value = clipHiddenMemo.get(node);
+        break;
+      }
+      path.push(node);
+      try {
+        if (helpers.isElementClipHidden(node, style(node))) {
+          value = true;
+          break;
+        }
+      } catch {
+        // Read as shown.
+      }
+      node = upOf(node);
+    }
+    for (const n of path) clipHiddenMemo.set(n, value);
+    return value;
+  }
+
   // Each element that crosses the edge while its parent doesn't: the place
   // the overflow starts.
   const found = [];
@@ -103300,6 +103411,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (shadow) queue.push(shadow);
       }
     }
+    plainTree = textRoots.length === 1 && !dom.querySelector(body, 'slot');
   }
   const crosses = new Map();
   function crossing(el) {
@@ -103337,12 +103449,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // clips: what is in it is judged against that box (below).
       let n = start === fixed ? null : upOf(start);
       while (n) {
-        if (setsOverflow(style(n))) return;
+        if (boxSetsOverflow(n)) return;
         if (n === fixed) break;
         n = upOf(n);
       }
       if (!own) {
-        if (setsOverflow(style(start))) return;
+        if (boxSetsOverflow(start)) return;
         if (crossing(start)) return;
       }
       if (hit.inside <= TOLERANCE || taken.has(start)) return;
@@ -103365,7 +103477,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // one around it, or, for text, its own.
     if (insideSidewaysBox(start)) return;
     if (!own) {
-      if (setsOverflow(style(start))) return;
+      if (boxSetsOverflow(start)) return;
       // Text in a box that sticks out itself: the box is reported.
       if (crossing(start)) return;
     }
@@ -103373,14 +103485,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let el = start;
     const pre = dom.closest(start, 'pre');
     if (pre && pre !== start) {
-      if (setsOverflow(style(pre))) return;
+      if (boxSetsOverflow(pre)) return;
       el = pre;
     }
-    if (taken.has(el)) return;
-    // Where it starts: its parent stays inside.
+    // A line that doesn't wrap: its inline pieces stick out, and the block
+    // that holds the line is where it starts, named once.
+    for (;;) {
+      if (kindOf(el) !== 'HORIZONTAL_SCROLL') break;
+      const s = style(el);
+      if (!s || !String(s.display || '').startsWith('inline')) break;
+      const up = upOf(el);
+      if (!up || up === body || up === html || kindOf(up) !== 'HORIZONTAL_SCROLL') break;
+      el = up;
+    }
+    if (taken.has(el) || clipHidden(el)) return;
+    // Where it starts: its parent stays inside. The body sticks out only when
+    // it is itself too wide (a min-width), and is then the cause.
     const parent = upOf(el);
-    if (parent && parent !== body && parent !== html && crossing(parent) && !fixedOf(parent))
-      return;
+    if (parent && parent !== html && crossing(parent) && !fixedOf(parent)) return;
     if (!pageScrolls) {
       // The page is kept from scrolling: only what the edge cuts through
       // can't be reached; what is wholly past it waits there on purpose.
@@ -103399,7 +103521,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const clipped = [];
   const clippedTaken = new Set();
   function considerClipped(el, clip) {
-    if (!clip || clippedTaken.has(el)) return;
+    if (!clip || clippedTaken.has(el) || clipHidden(el)) return;
     const parent = upOf(el);
     if (parent && parent !== clip.box) {
       const up = clippedBy(parent);
@@ -103433,9 +103555,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'button'
   ]);
   function considerStart(el, rect) {
-    if (taken.has(el)) return;
+    // Where it lies first, which is cheap: most content is inside the edge.
     const hit = beforeStartOf(rect);
     if (!(hit.over > TOLERANCE && hit.inside > TOLERANCE)) return;
+    if (taken.has(el) || clipHidden(el)) return;
     const s = style(el);
     if (s && s.visibility === 'hidden') return;
     if (!fixedOf(el) && insideSidewaysBox(el)) return;
@@ -103449,14 +103572,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     });
   }
 
+  // Whether the page has a formula, once: looking for one around each
+  // element would walk every ancestor of every element.
+  const hasMath = textRoots.some((r) => !!dom.querySelector(r, 'math'));
+
+  // The body is too wide itself (a min-width): the cause, named once.
+  {
+    const bodyHit = crossing(body);
+    if (bodyHit) consider(body, bodyHit, true);
+  }
+
   for (const el of all) {
     const tag = String(dom.tagName(el) || '').toLowerCase();
     if (SKIP.has(tag)) continue;
-    // Inside an SVG, the SVG is what is measured.
+    // Inside an SVG or a formula, the SVG or the formula is what is measured.
     if (dom.get(el, 'ownerSVGElement')) continue;
+    if (hasMath && tag !== 'math' && dom.closest(el, 'math')) continue;
     const hit = crossing(el);
     if (hit) consider(el, hit, true);
-    considerClipped(el, clippedBy(el));
+    // Inside an element its box already cuts, it is reported through that
+    // element: not measured again, as every cell of a wide table would be.
+    const parentClip = clipMemo.get(upOf(el));
+    if (parentClip && parentClip.box === cutterOf(el, false)) clipMemo.set(el, parentClip);
+    else considerClipped(el, clippedBy(el));
     if (START_CONTENT.has(tag)) {
       try {
         const rects = dom.getClientRects(el);
@@ -103475,7 +103613,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const range = dom.call(document, 'createRange');
       let node = dom.call(walker, 'nextNode');
       while (node) {
-        const owner = upOf(node);
+        const parentEl = upOf(node);
+        const owner = (hasMath && parentEl && dom.closest(parentEl, 'math')) || parentEl;
         const value = String(dom.get(node, 'nodeValue') || '');
         if (
           owner &&
@@ -103491,7 +103630,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             // Text cut by its own box, or one around it, that hides overflow.
             const box = cutterOf(owner, true);
             const bs = box ? style(box) : null;
-            const scrolls = box ? !cuts(bs) : false;
+            const scrolls = box ? !boxCuts(box) : false;
             if (
               box &&
               !(!scrolls && bs && bs.textOverflow === 'ellipsis') &&
@@ -103555,6 +103694,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       i18n: {
         whyKey: 'reflowHorizontalScroll_lean_why_scrollBox',
         cautionKey: 'reflowHorizontalScroll_lean_caution_scrollBox'
+      }
+    },
+    carousel: {
+      toward: 'pass',
+      why: 'Each item fits the box; only the row of them scrolls sideways, as a carousel does.',
+      signals: [{ signal: 'items-fit-box', value: true }],
+      caution:
+        'Check that each item can be reached with the keyboard, and that nothing in an item is cut off.',
+      i18n: {
+        whyKey: 'reflowHorizontalScroll_lean_why_carousel',
+        cautionKey: 'reflowHorizontalScroll_lean_caution_carousel'
       }
     },
     clippedBox: {
@@ -103622,7 +103772,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       key: 'scrollBox',
       needed: 'Whether the element needs its width to be used or understood.',
       summary: (p) =>
-        `At ${p.viewportWidth} pixels wide, this ${p.element} element is ${p.overflowPx} pixels wider than the box around it, so that box has to scroll sideways to show it.`,
+        `At ${p.viewportWidth} pixels wide, this ${p.element} element reaches ${p.overflowPx} pixels past the edge of the box around it, so that box has to scroll sideways to show it.`,
       hint: 'Let it fit the width of its box, so that nothing needs sideways scrolling. Only a data table, a code block or a map may scroll sideways on its own.'
     },
     CLIPPED_BY_CONTAINER: {
@@ -103686,6 +103836,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     (msg.needed && !asFail ? questions : fails).push(occ);
   }
 
+  // A row of items each of which fits the box that scrolls it: the row
+  // scrolls as a carousel does (G225), each item reflowing within the width.
+  function isCarousel(el, box) {
+    try {
+      const fit = Number(dom.get(box, 'clientWidth')) || 0;
+      const items = [...(dom.get(el, 'children') || [])].filter((c) => {
+        const rects = dom.getClientRects(c);
+        return rects && rects.length;
+      });
+      return (
+        fit > 0 &&
+        items.length >= 2 &&
+        items.every((c) => dom.getBoundingClientRect(c).width <= fit + TOLERANCE)
+      );
+    } catch {
+      return false;
+    }
+  }
+
   // What sticks out past the edge of the page, or of a box that is the page.
   function reportOnPage(el, tag, hit) {
     const code = kindOf(el);
@@ -103725,7 +103894,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       clip.scrolls ? 'SCROLLS_IN_CONTAINER' : 'CLIPPED_BY_CONTAINER',
       el,
       { over: clip.over, rect: clip.rect },
-      clip.scrolls ? LEANS.scrollBox : LEANS.clippedBox,
+      clip.scrolls
+        ? isCarousel(el, clip.box)
+          ? LEANS.carousel
+          : LEANS.scrollBox
+        : LEANS.clippedBox,
       cutsFields(el, (rect) => pastBox(rect, clip.box))
     );
   }
@@ -103735,10 +103908,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     report('HORIZONTAL_SCROLL_UNATTRIBUTED', html, null, null);
   }
 
+  // How many more each reason code had than the 50 listed.
+  const omitted = {};
+  for (const [code, n] of Object.entries(perCode)) {
+    if (n > MAX_PER_CODE) omitted[code] = n - MAX_PER_CODE;
+  }
   if (fails.length || questions.length) {
     return {
       ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious')
+      ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious'),
+      ...(Object.keys(omitted).length ? { data: { omitted } } : {})
     };
   }
   if (!wholeDocument || leftOut) return notApplicable(null);
@@ -117350,7 +117529,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_hint_widePreformatted": "Lassen Sie ihn umbrechen (white-space: pre-wrap) oder, wenn seine Zeilen bleiben müssen, wie sie sind, für sich allein in einem Kasten mit overflow-x: auto scrollen.",
       "reflowHorizontalScroll_summary_clippedBox": "Bei {{viewportWidth}} Pixeln Breite verbirgt ein Kasten um dieses {{element}}-Element die {{overflowPx}} Pixel, die darüber hinausragen, und nichts scrollt dorthin.",
       "reflowHorizontalScroll_hint_clippedBox": "Lassen Sie es in die Breite seines Kastens passen, damit nichts davon abgeschnitten wird. Bei einer Datentabelle: Legen Sie sie in einen Kasten mit overflow-x: auto.",
-      "reflowHorizontalScroll_summary_scrollBox": "Bei {{viewportWidth}} Pixeln Breite ist dieses {{element}}-Element {{overflowPx}} Pixel breiter als der Kasten um es, sodass dieser seitlich scrollen muss, um es zu zeigen.",
+      "reflowHorizontalScroll_summary_scrollBox": "Bei {{viewportWidth}} Pixeln Breite reicht dieses {{element}}-Element {{overflowPx}} Pixel über den Rand des Kastens um es hinaus, sodass dieser seitlich scrollen muss, um es zu zeigen.",
       "reflowHorizontalScroll_hint_scrollBox": "Lassen Sie es in die Breite seines Kastens passen, damit nichts seitliches Scrollen braucht. Nur eine Datentabelle, ein Codeblock oder eine Karte darf für sich seitlich scrollen.",
       "reflowHorizontalScroll_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite schneidet der Bildschirmrand dieses Element ab, und die Seite scrollt nicht zum Rest.",
       "reflowHorizontalScroll_hint_clipped": "Lassen Sie es in die Breite passen, damit nichts davon abgeschnitten wird.",
@@ -117361,6 +117540,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_why_clippedBox": "Ein Kasten um das Element verbirgt, was überläuft, und nichts scrollt zum Rest.",
       "reflowHorizontalScroll_lean_why_scrollBox": "Das Element ist breiter als der Kasten um es, der seitlich scrollen muss, um es zu zeigen: Text, Felder und Menüs müssen in die Breite passen.",
       "reflowHorizontalScroll_lean_caution_scrollBox": "Eine Datentabelle, ein Codeblock oder ein Karussell kann sein Layout brauchen.",
+      "reflowHorizontalScroll_lean_why_carousel": "Jedes Element passt in den Kasten; nur ihre Reihe scrollt seitlich, wie bei einem Karussell.",
+      "reflowHorizontalScroll_lean_caution_carousel": "Prüfen Sie, dass jedes Element mit der Tastatur erreichbar ist und in keinem etwas abgeschnitten wird.",
       "reflowHorizontalScroll_lean_why_clipped": "Der Rand des Viewports schneidet das Element ab, und die Seite scrollt nicht zum Rest.",
       "reflowHorizontalScroll_lean_caution_clipped": "Ein Karussell oder ein Menü kann den Rest auf andere Weise zeigen.",
       "report_title_default": "surea11y-Scanbericht",
@@ -119128,7 +119309,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_hint_widePreformatted": "Let it wrap (white-space: pre-wrap), or, if its lines must stay as they are, let it scroll on its own in a box with overflow-x: auto.",
       "reflowHorizontalScroll_summary_clippedBox": "At {{viewportWidth}} pixels wide, a box around this {{element}} element hides the {{overflowPx}} pixels that stick out of it, and nothing scrolls to them.",
       "reflowHorizontalScroll_hint_clippedBox": "Let it fit the width of its box, so that nothing in it is cut off. If it is a data table, put it in a box with overflow-x: auto.",
-      "reflowHorizontalScroll_summary_scrollBox": "At {{viewportWidth}} pixels wide, this {{element}} element is {{overflowPx}} pixels wider than the box around it, so that box has to scroll sideways to show it.",
+      "reflowHorizontalScroll_summary_scrollBox": "At {{viewportWidth}} pixels wide, this {{element}} element reaches {{overflowPx}} pixels past the edge of the box around it, so that box has to scroll sideways to show it.",
       "reflowHorizontalScroll_hint_scrollBox": "Let it fit the width of its box, so that nothing needs sideways scrolling. Only a data table, a code block or a map may scroll sideways on its own.",
       "reflowHorizontalScroll_summary_clipped": "At {{viewportWidth}} pixels wide, the edge of the screen cuts through this element, and the page does not scroll to the rest of it.",
       "reflowHorizontalScroll_hint_clipped": "Let it fit the width, so that nothing in it is cut off.",
@@ -119139,6 +119320,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_why_clippedBox": "A box around the element hides what overflows it, and nothing scrolls to the rest of it.",
       "reflowHorizontalScroll_lean_why_scrollBox": "The element is wider than the box around it, which has to scroll sideways to show it: text, fields and menus have to fit the width.",
       "reflowHorizontalScroll_lean_caution_scrollBox": "A data table, a code block or a carousel may need its layout.",
+      "reflowHorizontalScroll_lean_why_carousel": "Each item fits the box; only the row of them scrolls sideways, as a carousel does.",
+      "reflowHorizontalScroll_lean_caution_carousel": "Check that each item can be reached with the keyboard, and that nothing in an item is cut off.",
       "reflowHorizontalScroll_lean_why_clipped": "The edge of the viewport cuts through the element, and the page does not scroll to the rest of it.",
       "reflowHorizontalScroll_lean_caution_clipped": "A carousel or a menu may show the rest another way.",
       "report_title_default": "surea11y scan report",
@@ -120906,7 +121089,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_hint_widePreformatted": "Deja que se parta en líneas (white-space: pre-wrap) o, si sus líneas deben quedar como están, que se desplace por sí solo en una caja con overflow-x: auto.",
       "reflowHorizontalScroll_summary_clippedBox": "Con {{viewportWidth}} píxeles de ancho, una caja alrededor de este elemento {{element}} oculta los {{overflowPx}} píxeles que sobresalen, y nada se desplaza hasta ellos.",
       "reflowHorizontalScroll_hint_clippedBox": "Haz que quepa en el ancho de su caja, para que no se corte nada de él. Si es una tabla de datos, ponla en una caja con overflow-x: auto.",
-      "reflowHorizontalScroll_summary_scrollBox": "Con {{viewportWidth}} píxeles de ancho, este elemento {{element}} es {{overflowPx}} píxeles más ancho que la caja que lo rodea, por lo que esa caja tiene que desplazarse de lado para mostrarlo.",
+      "reflowHorizontalScroll_summary_scrollBox": "Con {{viewportWidth}} píxeles de ancho, este elemento {{element}} sobresale {{overflowPx}} píxeles del borde de la caja que lo rodea, por lo que esa caja tiene que desplazarse de lado para mostrarlo.",
       "reflowHorizontalScroll_hint_scrollBox": "Haz que quepa en el ancho de su caja, para que nada necesite desplazamiento lateral. Solo una tabla de datos, un bloque de código o un mapa pueden desplazarse de lado por su cuenta.",
       "reflowHorizontalScroll_summary_clipped": "Con {{viewportWidth}} píxeles de ancho, el borde de la pantalla corta este elemento y la página no se desplaza hasta el resto.",
       "reflowHorizontalScroll_hint_clipped": "Haz que quepa en el ancho, para que no se corte nada de él.",
@@ -120917,6 +121100,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_why_clippedBox": "Una caja alrededor del elemento oculta lo que desborda y nada se desplaza hasta el resto.",
       "reflowHorizontalScroll_lean_why_scrollBox": "El elemento es más ancho que la caja que lo rodea, que tiene que desplazarse de lado para mostrarlo: el texto, los campos y los menús tienen que caber en el ancho.",
       "reflowHorizontalScroll_lean_caution_scrollBox": "Una tabla de datos, un bloque de código o un carrusel pueden necesitar su disposición.",
+      "reflowHorizontalScroll_lean_why_carousel": "Cada elemento cabe en la caja; solo su fila se desplaza de lado, como en un carrusel.",
+      "reflowHorizontalScroll_lean_caution_carousel": "Comprobar que cada elemento se puede alcanzar con el teclado y que nada de un elemento queda cortado.",
       "reflowHorizontalScroll_lean_why_clipped": "El borde de la ventana corta el elemento y la página no se desplaza hasta el resto.",
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrusel o un menú pueden mostrar el resto de otra forma.",
       "report_title_default": "Informe de análisis de surea11y",
@@ -122684,7 +122869,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_hint_widePreformatted": "Laissez-le passer à la ligne (white-space: pre-wrap) ou, si ses lignes doivent rester telles quelles, laissez-le défiler seul dans un bloc avec overflow-x: auto.",
       "reflowHorizontalScroll_summary_clippedBox": "À {{viewportWidth}} pixels de large, une boîte autour de cet élément {{element}} masque les {{overflowPx}} pixels qui dépassent, et rien ne défile jusqu’à eux.",
       "reflowHorizontalScroll_hint_clippedBox": "Faites-le tenir dans la largeur de sa boîte, pour que rien n’en soit coupé. S’il s’agit d’un tableau de données, mettez-le dans une boîte avec overflow-x: auto.",
-      "reflowHorizontalScroll_summary_scrollBox": "À {{viewportWidth}} pixels de large, cet élément {{element}} est plus large de {{overflowPx}} pixels que la boîte qui l’entoure, si bien que cette boîte doit défiler latéralement pour l’afficher.",
+      "reflowHorizontalScroll_summary_scrollBox": "À {{viewportWidth}} pixels de large, cet élément {{element}} dépasse de {{overflowPx}} pixels le bord de la boîte qui l’entoure, si bien que cette boîte doit défiler latéralement pour l’afficher.",
       "reflowHorizontalScroll_hint_scrollBox": "Faites-le tenir dans la largeur de sa boîte, pour que rien ne demande de défilement latéral. Seuls un tableau de données, un bloc de code ou une carte peuvent défiler latéralement d’eux-mêmes.",
       "reflowHorizontalScroll_summary_clipped": "À {{viewportWidth}} pixels de large, le bord de l’écran coupe cet élément, et la page ne défile pas jusqu’au reste.",
       "reflowHorizontalScroll_hint_clipped": "Faites-le tenir dans la largeur, pour que rien n’en soit coupé.",
@@ -122695,6 +122880,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_why_clippedBox": "Une boîte autour de l’élément masque ce qui déborde, et rien ne défile jusqu’au reste.",
       "reflowHorizontalScroll_lean_why_scrollBox": "L’élément est plus large que la boîte qui l’entoure, qui doit défiler latéralement pour l’afficher : le texte, les champs et les menus doivent tenir dans la largeur.",
       "reflowHorizontalScroll_lean_caution_scrollBox": "Un tableau de données, un bloc de code ou un carrousel peut avoir besoin de sa mise en page.",
+      "reflowHorizontalScroll_lean_why_carousel": "Chaque élément tient dans la boîte ; seule leur rangée défile latéralement, comme un carrousel.",
+      "reflowHorizontalScroll_lean_caution_carousel": "Vérifier que chaque élément est accessible au clavier et que rien n’y est coupé.",
       "reflowHorizontalScroll_lean_why_clipped": "Le bord de la fenêtre coupe l’élément, et la page ne défile pas jusqu’au reste.",
       "reflowHorizontalScroll_lean_caution_clipped": "Un carrousel ou un menu peut montrer le reste autrement.",
       "report_title_default": "Rapport d’analyse surea11y",
@@ -124462,7 +124649,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_hint_widePreformatted": "折り返せるようにするか（white-space: pre-wrap）、行をそのまま保つ必要がある場合は、overflow-x: auto のボックスの中でそれ自体をスクロールさせてください。",
       "reflowHorizontalScroll_summary_clippedBox": "幅 {{viewportWidth}} ピクセルで、この {{element}} 要素を囲むボックスがはみ出した {{overflowPx}} ピクセル分を隠しており、そこまでスクロールできません。",
       "reflowHorizontalScroll_hint_clippedBox": "何も切れないように、ボックスの幅に収まるようにしてください。データテーブルの場合は、overflow-x: auto のボックスに入れてください。",
-      "reflowHorizontalScroll_summary_scrollBox": "幅 {{viewportWidth}} ピクセルで、この {{element}} 要素は囲むボックスより {{overflowPx}} ピクセル広く、表示するにはそのボックスを横にスクロールする必要があります。",
+      "reflowHorizontalScroll_summary_scrollBox": "幅 {{viewportWidth}} ピクセルで、この {{element}} 要素は囲むボックスの端から {{overflowPx}} ピクセルはみ出しており、表示するにはそのボックスを横にスクロールする必要があります。",
       "reflowHorizontalScroll_hint_scrollBox": "横スクロールが要らないように、ボックスの幅に収まるようにしてください。単独で横スクロールしてよいのは、データテーブル、コードブロック、地図だけです。",
       "reflowHorizontalScroll_summary_clipped": "幅 {{viewportWidth}} ピクセルで、画面の端がこの要素を切っており、ページは残りの部分までスクロールしません。",
       "reflowHorizontalScroll_hint_clipped": "何も切れないように、幅に収まるようにしてください。",
@@ -124473,6 +124660,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_why_clippedBox": "要素を囲むボックスがはみ出した部分を隠しており、残りの部分までスクロールできません。",
       "reflowHorizontalScroll_lean_why_scrollBox": "要素が囲むボックスより広く、表示するにはそのボックスを横にスクロールする必要があります。テキスト、フィールド、メニューは幅に収まる必要があります。",
       "reflowHorizontalScroll_lean_caution_scrollBox": "データテーブル、コードブロック、カルーセルは、そのレイアウトが必要な場合があります。",
+      "reflowHorizontalScroll_lean_why_carousel": "各項目はボックスに収まり、カルーセルのように項目の列だけが横にスクロールします。",
+      "reflowHorizontalScroll_lean_caution_carousel": "各項目にキーボードで到達でき、どの項目も切れていないことを確認します。",
       "reflowHorizontalScroll_lean_why_clipped": "ビューポートの端が要素を切っており、ページは残りの部分までスクロールしません。",
       "reflowHorizontalScroll_lean_caution_clipped": "カルーセルやメニューは、残りを別の方法で表示できる場合があります。",
       "report_title_default": "surea11y スキャンレポート",

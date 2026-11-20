@@ -582,6 +582,83 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     );
   });
 
+  await t.test('a carousel of items that each fit leans pass; wider items lean fail', async () => {
+    const row = (w) =>
+      page(
+        `.s{overflow-x:auto;width:290px} .row{display:flex;gap:8px;width:max-content} .row>a{flex:none;width:${w}px}`,
+        '<div class="s"><div class="row" id="row"><a href="#1">One</a><a href="#2">Two</a><a href="#3">Three</a></div></div>'
+      );
+    assert.deepEqual(findings(await scan(row(260))), [
+      ['row', 'cantTell', 'SCROLLS_IN_CONTAINER', 'pass']
+    ]);
+    assert.deepEqual(findings(await scan(row(400))), [
+      ['row', 'cantTell', 'SCROLLS_IN_CONTAINER', 'fail']
+    ]);
+  });
+
+  await t.test('a grid, an application and a formula are two-dimensional content', async () => {
+    const grid = await scan(
+      page(
+        '#g{width:600px}',
+        '<div role="grid" id="g"><div role="row"><div role="gridcell">A</div></div></div>'
+      )
+    );
+    assert.deepEqual(findings(grid), [['g', 'cantTell', 'WIDE_TABLE', 'pass']]);
+    const app = await scan(
+      page('#m{width:600px}', '<div role="application" id="m" aria-label="Map">Map</div>')
+    );
+    assert.deepEqual(findings(app), [['m', 'cantTell', 'WIDE_MEDIA', null]]);
+    const terms = Array.from({ length: 20 }, (_, i) => `<mi>x${i}</mi><mo>+</mo>`).join('');
+    const formula = await scan(page('', `<p>Sum: <math id="f">${terms}<mi>y</mi></math></p>`));
+    assert.deepEqual(findings(formula), [['f', 'cantTell', 'WIDE_MEDIA', null]]);
+  });
+
+  await t.test('one cause, one finding: a body too wide, a line that does not wrap', async () => {
+    const body = await scan(
+      page('body{min-width:600px}', '<header>Head</header><main>Main</main><footer>Foot</footer>')
+    );
+    assert.deepEqual(findings(body), [['body', 'fail', 'HORIZONTAL_SCROLL', null]]);
+    const nav = await scan(
+      page(
+        'nav{white-space:nowrap}',
+        '<nav id="n"><a href="#">Home</a> <a href="#">Products and services</a> <a href="#">About us</a> <a href="#">Contact</a></nav>'
+      )
+    );
+    assert.deepEqual(findings(nav), [['n', 'fail', 'HORIZONTAL_SCROLL', null]]);
+  });
+
+  await t.test(
+    'what shows is measured: clip margins, clip-hidden text, framesets, and the cap',
+    async () => {
+      const margin = await scan(
+        page(
+          '.c{overflow:clip;overflow-clip-margin:30px;width:280px} .w{width:300px}',
+          '<div class="c"><div class="w">Within the margin</div></div>'
+        )
+      );
+      assert.equal(margin.outcome, 'pass');
+      const hidden = await scan(
+        page(
+          'body{overflow-x:hidden} .vh{position:absolute;clip-path:inset(50%);width:400px;white-space:nowrap}',
+          '<span class="vh">Visually hidden text that runs past the edge</span><p>Shown</p>'
+        )
+      );
+      assert.equal(hidden.outcome, 'pass');
+      const frames = await scan(
+        '<!doctype html><html><head><title>t</title></head><frameset cols="50%,50%"><frame src="about:blank"><frame src="about:blank"></frameset></html>'
+      );
+      assert.deepEqual([frames.outcome, frames.data.reason], ['notApplicable', 'frameset']);
+      const many = await scan(
+        page(
+          'p{width:400px;margin:0}',
+          Array.from({ length: 55 }, (_, i) => `<div><p>Paragraph ${i}</p></div>`).join('')
+        )
+      );
+      assert.equal(many.occurrences.length, 50);
+      assert.deepEqual(many.data.omitted, { HORIZONTAL_SCROLL: 5 });
+    }
+  );
+
   await t.test('excluded areas are left out', async () => {
     const check = await scan(page('.wide{width:600px}', '<div class="wide" id="x">Wide</div>'), {
       engineOptions: { excludeSelectors: ['#x'] }

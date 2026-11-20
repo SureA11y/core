@@ -3328,13 +3328,16 @@ WCAG 1.4.10: at that width, content is shown without scrolling in two directions
 - An element inside a box that hides what overflows it (`overflow-x: hidden` or `clip`, or paint containment: `contain: paint`, `content` or `strict`, `content-visibility: auto` or `hidden`) keeps the page from scrolling, but what sticks out of the box is cut off with no way to reach it, whether or not the page scrolls. Where it starts, such an element is asked about (CLIPPED_BY_CONTAINER) and leans fail, or fails where a field in it is cut (a table, code or media is still asked about). Left out: an element wholly outside the box (waiting there on purpose), one above or below a box that also hides what overflows downwards (a collapsed panel), a box a pixel wide (visually hidden text), inline text truncated with an ellipsis (not a block or a field the box cuts off), and an element placed out of the box (fixed, or absolute from outside it).
 - A pass is given only for a scan of the whole document; a scoped scan reports what it finds in its scope, and is otherwise notApplicable.
 
-At most 50 elements are listed per reason code.
+At most 50 elements are listed per reason code; the result's `data.omitted` says how many more each had.
+
+- One cause is named once: a body too wide itself (a min-width) is named, not each of its children, and a line that doesn't wrap names the block that holds it, not each inline piece of it.
+- What doesn't show isn't measured: text hidden by a clip or an empty clip-path (visually hidden text), content within an `overflow: clip` box's `overflow-clip-margin`, and a frameset's own document, whose frames are judged as their own pages (notApplicable).
 
 **What a finding reports.**
 
 - `overflowPx`: how far the element reaches past the viewport's end edge, in CSS pixels.
 - `widthPx`: the element's width, in CSS pixels.
-- `edge`: `right`, or `left` in right-to-left text.
+- `edge`: the edge it reaches past or is cut at: the end edge, `right`, or `left` in right-to-left text, or the start edge for content cut there.
 - `viewport.width`: the width content is laid out in (the viewport less any vertical scrollbar), and `viewport.scrollWidth`: the page's.
 - `element`: the element's tag name.
 
@@ -3344,11 +3347,11 @@ At most 50 elements are listed per reason code.
 |---|---|---|---|
 | `HORIZONTAL_SCROLL` | fail | At 320 CSS pixels wide the page scrolls sideways, and this element sticks out past the edge of the viewport. | WCAG 1.4.10 |
 | `HORIZONTAL_SCROLL_UNATTRIBUTED` | fail | The page scrolls sideways at 320 CSS pixels wide, and no element can be named as the cause. | WCAG 1.4.10 |
-| `WIDE_TABLE` | cantTell | A table sticks out past the edge; a data table is covered by the exception for content that needs a two-dimensional layout, a layout table is not. It leans pass for a table with header cells or a caption, and fail for one marked as layout (role presentation or none) or with neither. | WCAG 1.4.10 (exception: two-dimensional layout) |
-| `WIDE_MEDIA` | cantTell | An image, video, canvas, SVG, embedded object or frame sticks out past the edge; a map, diagram or game may need its size. It leans fail for an image or a video, which can usually be scaled to fit. | WCAG 1.4.10 (exception: two-dimensional layout) |
+| `WIDE_TABLE` | cantTell | A table, or a grid widget (role grid or treegrid), sticks out past the edge; a data table is covered by the exception for content that needs a two-dimensional layout, a layout table is not. It leans pass for a grid or a table with header cells or a caption, and fail for one marked as layout (role presentation or none) or with neither. | WCAG 1.4.10 (exception: two-dimensional layout) |
+| `WIDE_MEDIA` | cantTell | An image, video, canvas, SVG, embedded object, frame, formula (MathML) or application (role application, as a map or a game is) sticks out past the edge; it may need its size. It leans fail for an image or a video, which can usually be scaled to fit. | WCAG 1.4.10 (exception: two-dimensional layout) |
 | `WIDE_PREFORMATTED` | cantTell | Preformatted text, such as code, doesn't wrap and sticks out past the edge; whether its layout is needed to understand it is for a person to judge. | WCAG 1.4.10 (not settled) |
-| `SCROLLS_IN_CONTAINER` | cantTell | This element, not a table, code block or media, is wider than the box around it, which scrolls sideways (`overflow-x: auto` or `scroll`) to show it. It leans fail, and fails where the element is, or holds, a form control, which no exception covers. | WCAG 1.4.10 (not settled) |
-| `CLIPPED_BY_CONTAINER` | cantTell | A box around this element hides what overflows it (`overflow-x: hidden` or `clip`), and the element sticks out of the box, so part of it can't be reached. It leans fail, and fails where the element is, or holds, a form control, which no exception covers. | WCAG 1.4.10 (not settled) |
+| `SCROLLS_IN_CONTAINER` | cantTell | This element, not a table, code block or media, reaches past the edge of the box around it, which scrolls sideways (`overflow-x: auto` or `scroll`) to show it. It leans fail, and fails where a field in it is cut off, which no exception covers. It leans pass for a row of items each of which fits the box, as a carousel is (G225): only the row scrolls. | WCAG 1.4.10 (not settled) |
+| `CLIPPED_BY_CONTAINER` | cantTell | A box around this element hides what overflows it (`overflow-x: hidden` or `clip`), and the element sticks out of the box, so part of it can't be reached. It leans fail, and fails where a field in it is cut off, which no exception covers. | WCAG 1.4.10 (not settled) |
 | `CLIPPED_AT_VIEWPORT_EDGE` | cantTell | The page doesn't scroll sideways, but the edge of the viewport cuts through this element, so part of it can't be reached. It leans fail. | WCAG 1.4.10 (not settled) |
 
 ### `region`
