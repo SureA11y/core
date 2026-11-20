@@ -74,7 +74,7 @@ const { WCAG_VERSIONS, wcagCriterion, wcagTags } = require('./wcag.js');
 
 // What an entry is based on in other standards (a requirement's or test's
 // basedOn), carried into its results so a derived standard's result names
-// its base's requirement too. Experimental (src/experimental.js).
+// its base's requirement too.
 function basedOnOf(item) {
   const list = item && Array.isArray(item.basedOn) ? item.basedOn : null;
   return list && list.length ? { basedOn: list.map((b) => ({ ...b })) } : {};

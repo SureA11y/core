@@ -6,7 +6,7 @@
  * A standard built on others: deriveStandard(bases, own) resolves the data of
  * a standard whose versions, requirements and tests say what they are based
  * on (`basedOn`) in one or more base standards, into complete standard data
- * (src/standard-data.js). Experimental (src/experimental.js).
+ * (src/standard-data.js).
  *
  * The rules (packs-roadmap's design, §5):
  *
@@ -47,6 +47,14 @@ const { checkStandardData, sourceTexts } = require('./standard-data.js');
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const listOf = (v) => (Array.isArray(v) ? v : []);
 const copy = (v) => JSON.parse(JSON.stringify(v));
+const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+// An id names an entry only where the table has it as its own: "toString"
+// or "valueOf" names nothing, not a method every object inherits.
+const ownEntry = (table, id) => (isObject(table) && hasOwn(table, id) ? table[id] : undefined);
+// Ids in code-unit order: the same on every machine, whatever its locale.
+const byCodeUnit = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+// Test ids in their natural order ('1.2' before '1.10'), in one fixed locale.
+const NATURAL = new Intl.Collator('en', { numeric: true });
 
 // Keys that would reach Object.prototype through an assignment: data can
 // carry them (JSON keeps "__proto__" as a key), so nothing written by key
@@ -56,7 +64,8 @@ const isUnsafeKey = (k) => k === '__proto__' || k === 'constructor' || k === 'pr
 // The base standard's tables for a version, or null.
 function baseTables(bases, key, version) {
   const base = bases.get(key);
-  return base && isObject(base.data) && isObject(base.data[version]) ? base.data[version] : null;
+  const tables = base && typeof version === 'string' ? ownEntry(base.data, version) : undefined;
+  return isObject(tables) ? tables : null;
 }
 
 // Where a value holds a key no data may have (isUnsafeKey), as messages.
@@ -101,8 +110,9 @@ function deriveStandard(bases, own) {
     const version = v.version;
     const at = `data.${version}`;
     const mine = isObject(out.data[version]) ? out.data[version] : (out.data[version] = {});
-    // The base versions this version is built on: { standard: version }.
-    const baseVersion = {};
+    // The base versions this version is built on: { standard: version },
+    // with no prototype, so a standard named "toString" finds nothing.
+    const baseVersion = Object.create(null);
     for (const b of listOf(v.basedOn)) {
       if (!isObject(b) || typeof b.standard !== 'string') continue;
       if (!byKey.has(b.standard)) {
@@ -111,7 +121,11 @@ function deriveStandard(bases, own) {
         );
         continue;
       }
-      if (typeof b.version !== 'string' || !baseTables(byKey, b.standard, b.version)) {
+      if (typeof b.version !== 'string') {
+        problems.push(`versions: ${version} is based on ${b.standard} with no version; name one`);
+        continue;
+      }
+      if (!baseTables(byKey, b.standard, b.version)) {
         problems.push(
           `versions: ${version} is based on ${b.standard} ${b.version}, which that base doesn't have`
         );
@@ -138,8 +152,8 @@ function deriveStandard(bases, own) {
         problems.push(`${where}: ${b.standard} ${bv} is not among the bases`);
         return null;
       }
-      const req = isObject(tables.requirements) && tables.requirements[b.id];
-      const test = isObject(tables.tests) && tables.tests[b.id];
+      const req = ownEntry(tables.requirements, b.id);
+      const test = ownEntry(tables.tests, b.id);
       if (!req && !test) {
         problems.push(`${where}: ${b.standard} ${bv} has no requirement or test ${b.id}`);
         return null;
@@ -161,6 +175,19 @@ function deriveStandard(bases, own) {
 
     // Rule 1 and 2: requirements take their base's fields; a base
     // requirement's tests come with it unless the requirement lists its own.
+    // Its tests are those it lists, or, where it lists none, those that name
+    // it, as the procedures read them (src/standard-data.js).
+    const testsOfBase = (first, listed) => {
+      if (Array.isArray(listed)) return listed.slice();
+      const all = isObject(first.tables.tests) ? first.tables.tests : {};
+      return Object.keys(all)
+        .filter((t) => isObject(all[t]) && listOf(all[t].requirements).includes(first.id))
+        .sort(NATURAL.compare);
+    };
+    // The tests derivation brings in, as opposed to those the standard
+    // declares: one of them is shared by every derived requirement based on
+    // the same base requirement.
+    const broughtIn = new Set();
     for (const [id, req] of Object.entries(requirements)) {
       if (!isObject(req) || req.basedOn === undefined) continue;
       const resolved = listOf(req.basedOn).map((b, i) =>
@@ -179,11 +206,19 @@ function deriveStandard(bases, own) {
         ...fields
       } = copy(first.entry);
       requirements[id] = { ...fields, ...req };
-      if (first.kind !== 'requirement' || req.tests !== undefined || !Array.isArray(baseTests))
-        continue;
-      requirements[id].tests = baseTests.slice();
-      for (const t of baseTests) {
-        if (tests[t] !== undefined) continue;
+      if (first.kind !== 'requirement' || req.tests !== undefined) continue;
+      const brought = testsOfBase(first, baseTests);
+      if (!brought.length) continue;
+      requirements[id].tests = brought;
+      for (const t of brought) {
+        if (broughtIn.has(t)) {
+          // Already brought in for another requirement based on the same
+          // base requirement: it belongs to both.
+          if (!tests[t].requirements.includes(id)) tests[t].requirements.push(id);
+          continue;
+        }
+        if (hasOwn(tests, t)) continue;
+        broughtIn.add(t);
         tests[t] = {
           requirements: [id],
           basedOn: [
@@ -298,9 +333,7 @@ function deriveStandard(bases, own) {
         ? ownRows[ruleId]
         : row;
     }
-    mine.ruleMap = Object.fromEntries(
-      Object.entries(ruleMap).sort(([a], [b]) => a.localeCompare(b))
-    );
+    mine.ruleMap = Object.fromEntries(Object.entries(ruleMap).sort(([a], [b]) => byCodeUnit(a, b)));
 
     // Rule 6: review from the bases, own entries replacing them.
     const ownReview = isObject(mine.review) ? mine.review : {};

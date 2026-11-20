@@ -157,6 +157,95 @@ test("only what is declared exists, and a base requirement's tests come with it"
   assert.equal(d.data[1].tests['3.2.1'], undefined);
 });
 
+// A base's tests are its requirement's whether the requirement lists them
+// or only the tests name it: both forms of the data say the same.
+test("a base requirement's tests come with it when only the tests name it", () => {
+  const unlisted = copy(rg);
+  for (const r of Object.values(unlisted.data[4].requirements)) delete r.tests;
+  assert.deepEqual(checkStandardData(unlisted), []);
+  const d = deriveStandard([unlisted, en], lux);
+  assert.deepEqual(d.data[1].requirements['1.1'].tests, ['1.1.1', '1.1.2']);
+  assert.deepEqual(d.data[1].tests['1.1.2'].basedOn, [{ standard: 'rg', id: '1.1.2' }]);
+  assert.deepEqual(d.data[1].ruleMap, deriveStandard([rg, en], lux).data[1].ruleMap);
+});
+
+// Two requirements on one base requirement share its tests, as a test may
+// belong to several requirements; the pack is defined.
+test('two derived requirements based on one base requirement share its tests', () => {
+  const own = {
+    format: 'surea11y-standard/1',
+    key: 'two',
+    standard: 'Two',
+    versions: [{ version: '1', wcagVersion: '2.1', basedOn: [{ standard: 'rg', version: '4' }] }],
+    data: {
+      1: {
+        requirements: {
+          X: { basedOn: [{ standard: 'rg', id: '1.1' }] },
+          Y: { title: 'Images again', basedOn: [{ standard: 'rg', id: '1.1' }] }
+        },
+        ruleMap: {}
+      }
+    }
+  };
+  const d = deriveStandard([rg], own);
+  assert.deepEqual(d.data[1].tests['1.1.1'].requirements, ['X', 'Y']);
+  assert.deepEqual(d.data[1].requirements.Y.tests, ['1.1.1', '1.1.2']);
+  assert.doesNotThrow(() =>
+    definePack({
+      name: 'two-pack',
+      version: '1.0.0',
+      namespace: 'two',
+      core: '*',
+      standard: standardFromData(d)
+    })
+  );
+});
+
+// An id names an entry only where the table has it as its own.
+test('a basedOn naming an inherited property is an error naming it, not a crash', () => {
+  for (const id of ['toString', 'valueOf', 'hasOwnProperty', 'constructor', '__proto__']) {
+    const own = copy(lux);
+    own.data[1].requirements['1.1'].basedOn = [{ standard: 'rg', id }];
+    assert.throws(
+      () => deriveStandard([rg, en], own),
+      (e) => e instanceof TypeError && e.message.includes(`has no requirement or test ${id}`),
+      id
+    );
+  }
+  const own = copy(lux);
+  own.versions[0].basedOn = [{ standard: 'rg' }];
+  assert.throws(() => deriveStandard([rg, en], own), /is based on rg with no version; name one/);
+});
+
+// The rule map's order is the ids' code units, whatever the machine's locale.
+test("the rule map's order doesn't depend on the locale", () => {
+  const base = copy(en);
+  base.data.V3.ruleMap = {
+    'zz-rule': { requirements: ['9.1.1.1'] },
+    'ch-rule': { requirements: ['9.1.1.1'] },
+    'aa-rule': { requirements: ['9.1.1.1'] },
+    'h-rule': { requirements: ['9.1.1.1'] }
+  };
+  const own = {
+    format: 'surea11y-standard/1',
+    key: 'ord',
+    standard: 'Ord',
+    versions: [{ version: '1', wcagVersion: '2.1', basedOn: [{ standard: 'en', version: 'V3' }] }],
+    data: {
+      1: { requirements: { A: { basedOn: [{ standard: 'en', id: '9.1.1.1' }] } }, ruleMap: {} }
+    }
+  };
+  const { execFileSync } = require('node:child_process');
+  const script = `const { deriveStandard } = require(${JSON.stringify(require.resolve('../src/derive-standard.js'))});
+process.stdout.write(Object.keys(deriveStandard([${JSON.stringify(base)}], ${JSON.stringify(own)}).data[1].ruleMap).join(' '));`;
+  const orders = ['en_US.UTF-8', 'da_DK.UTF-8', 'cs_CZ.UTF-8'].map((locale) =>
+    execFileSync(process.execPath, ['-e', script], {
+      env: { ...process.env, LANG: locale, LC_ALL: locale }
+    }).toString()
+  );
+  assert.deepEqual(orders, Array(3).fill('aa-rule ch-rule h-rule zz-rule'));
+});
+
 test('the rule map flows through provenance, and a row left with nothing is dropped', () => {
   const d = deriveStandard([rg, en], lux);
   const map = d.data[1].ruleMap;
