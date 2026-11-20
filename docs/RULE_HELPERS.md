@@ -52,6 +52,11 @@ passes `queryAllSmart(selector, { inert: true })` to keep inert content, which i
 drawn and still in the markup; the page behind a modal stays out. See `RULE_AUTHORING.md` §6.1 — write rules assuming
 open shadow roots are in scope and let this helper honor the caller's choice.
 
+`queryAllSmart(selector, { excluded: true })` keeps the elements `excludeSelectors` leaves
+out, for a rule that reads the whole page as context, as `heading-order` reads a page's
+outline: it must report nothing on them (`isExcluded` tells which), and the engine drops
+what it does report there.
+
 `queryAllSmart(selector, { internalsRoles: true })` also returns the custom elements whose
 `ElementInternals` give them a role the selector's role attribute selectors name
 (`this.attachInternals().role = 'button'`, with no role attribute naming another): no

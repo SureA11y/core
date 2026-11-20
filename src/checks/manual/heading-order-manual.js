@@ -10,6 +10,8 @@
  * @applicability
  *   Applies whenever the page contains two or more heading elements
  *   (native <h1>-<h6>, or explicit role="heading" with aria-level).
+ *   Headings in an area excluded with `excludeSelectors` are part of the
+ *   outline, as readers meet it, and are never reported on.
  *   A valid aria-level (an integer from 1 to 9, read as browsers read it:
  *   the leading integer, so "2.5" is 2) gives a heading its level, as
  *   browsers expose it; any other value is ignored (ARIA 1.2, and Chromium
@@ -148,9 +150,16 @@ function runInPage(ctx) {
     return m ? parseInt(m[1], 10) : 2;
   }
 
+  // Excluded areas are part of the page's outline as its readers meet it
+  // (excludeSelectors keeps findings out of them, not their headings out of
+  // the outline): read as context, reported on never.
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', { internalsRoles: true })
+    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', {
+        internalsRoles: true,
+        excluded: true
+      })
     : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
+  const excludedEl = (el) => typeof helpers.isExcluded === 'function' && !!helpers.isExcluded(el);
 
   const headings = [];
   const seen = new Set();
@@ -225,7 +234,8 @@ function runInPage(ctx) {
     for (const p of placed.sort(compareFlat)) headings.push(p.h);
   }
 
-  if (headings.length < 2) {
+  // Two headings to compare, one of them outside the excluded areas to judge.
+  if (headings.length < 2 || headings.every((h) => excludedEl(h.el))) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
@@ -243,7 +253,7 @@ function runInPage(ctx) {
   for (let i = 1; i < headings.length; i += 1) {
     const { el, level } = headings[i];
 
-    if (level > previousLevel + 1) {
+    if (level > previousLevel + 1 && !excludedEl(el)) {
       // The heading it jumps from, which can be far above it or in another
       // landmark, named so the reviewer finds it.
       const text = shortText(el);

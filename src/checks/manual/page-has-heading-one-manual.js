@@ -18,6 +18,8 @@
  *   A custom element whose ElementInternals give it the heading role
  *   (this.attachInternals().role) and level 1 (its aria-level attribute or
  *   its internals' ariaLevel) counts as an <h1>.
+ *   A level-one heading in an area excluded with `excludeSelectors` is
+ *   still the page's.
  *   A native <hx> marked role="none" or "presentation" is still a heading
  *   when it can take focus or carries a global ARIA attribute, as
  *   WAI-ARIA's presentational roles conflict resolution has browsers
@@ -182,7 +184,12 @@ function runInPage(ctx) {
   try {
     nodes =
       helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', { internalsRoles: true })
+        ? // An excluded area's level-one heading is still the page's: exclusion
+          // keeps findings out of an area, not its headings out of the page.
+          helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', {
+            internalsRoles: true,
+            excluded: true
+          })
         : dom.querySelectorAll(document, 'h1, h2, h3, h4, h5, h6, [role]');
   } catch {
     nodes = [];

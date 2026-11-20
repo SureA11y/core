@@ -264,3 +264,13 @@ test(`${RULE_ID}: names the <h1> that is in the markup and why it does not count
   assert.strictEqual(none.summary, 'This page has no level-one heading.');
   assert.strictEqual(none.data.details.skippedH1, undefined);
 });
+
+// An excluded area's level-one heading is still the page's.
+test("page-has-heading-one: an <h1> in an excluded area is the page's", () => {
+  const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+  const rule = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><header id="x"><h1>Site</h1></header><main><h2>Section</h2></main></body></html>',
+    { runOnly: ['page-has-heading-one'], engineOptions: { excludeSelectors: ['#x'] } }
+  ).checksResults.find((r) => r.ruleId === 'page-has-heading-one');
+  assert.strictEqual(rule.outcome, 'pass');
+});
