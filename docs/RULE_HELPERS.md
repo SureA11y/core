@@ -33,9 +33,12 @@ reports what it finds should query with `queryAllSmart`, which applies both.
 
 ### `queryAllDeep(selector)` → `Element[]`
 
-Same as `queryAll`, but also descends into open shadow roots (BFS over discovered
-`shadowRoot`s). Ignores `includeShadowDom`/hidden-content policy — it's the raw
-traversal `queryAllSmart` builds on.
+`queryAll` across the context root(s), also descending into open shadow roots (BFS over
+discovered `shadowRoot`s), and leaving out excluded elements (`excludeSelectors`, global
+or rule-scoped), unlike `queryAll`. It ignores `includeShadowDom` and the hidden-content
+policy: it's the traversal `queryAllSmart` builds on. A rule that must know whether an
+excluded element is what it finds (to say a page scrolls because of one, say) walks the
+shadow roots itself.
 
 ### `queryAllSmart(selector, opts?)` → `Element[]`
 

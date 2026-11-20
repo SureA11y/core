@@ -183,6 +183,12 @@ test('lawOf reads a law in a language, its base language, or as written', () => 
   assert.equal(lawOf(st, 'city-public', 'fr').sources.length, 1);
   assert.equal(lawOf(st, 'nope', 'fr'), null);
   assert.equal(lawOf(null, 'city-public'), null);
+  // Tags are matched without regard to case and given back in their
+  // canonical case: fr-CA, not fr-ca.
+  const regional = cityPack({
+    lawTexts: { 'FR-ca': { 'laws.city-public.name': 'Loi publique' } }
+  }).standard;
+  assert.equal(lawOf(regional, 'city-public', 'fr-ca').lang, 'fr-CA');
 });
 
 test("results name the profile's law, and so does each profile of a scan of several", () => {

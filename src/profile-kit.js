@@ -656,6 +656,16 @@ function twoLevelStandard({
         problems.push(`version ${version}: wcagVersion must be one of ${WCAG_VERSIONS.join(', ')}`);
         continue;
       }
+      // The tests that name each requirement, read once per version: a
+      // filter of every test for every requirement made defining a pack
+      // quadratic in the standard's size.
+      const namingOf = new Map();
+      for (const [t, test] of Object.entries(testsOf(version))) {
+        for (const r of listOf(test && test.requirements)) {
+          if (!namingOf.has(r)) namingOf.set(r, []);
+          namingOf.get(r).push(t);
+        }
+      }
       for (const [id, req] of Object.entries(reqsOf(version))) {
         if (req && req.partial !== undefined && typeof req.partial !== 'boolean') {
           problems.push(`${version} ${id}: partial must be true or false`);
@@ -666,9 +676,7 @@ function twoLevelStandard({
           }
         }
         if (req && req.tests !== undefined) {
-          const naming = Object.keys(testsOf(version))
-            .filter((t) => listOf(testsOf(version)[t].requirements).includes(id))
-            .sort();
+          const naming = [...new Set(namingOf.get(id) || [])].sort();
           const listedTests = listOf(req.tests).slice().sort();
           if (!Array.isArray(req.tests) || naming.join() !== listedTests.join()) {
             problems.push(

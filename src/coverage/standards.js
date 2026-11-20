@@ -105,7 +105,7 @@
 const { EN301549_VERSIONS, en301549MappingsForScs } = require('./en301549-map');
 const { wcagTags } = require('../wcag');
 const { wcagLinks } = require('./wcag-criteria');
-const { appliesUnder } = require('../law-applies.js');
+const { appliesUnder, canonicalTag } = require('../law-applies.js');
 const PROFILES = require('../../profiles');
 
 // The WCAG A and AA tags of the WCAG version an EN 301 549 version is built on.
@@ -144,7 +144,8 @@ function lawOfProfile(s, p) {
   if (typeof id !== 'string' || !laws || !Object.prototype.hasOwnProperty.call(laws, id)) return {};
   const law = laws[id];
   if (!law || typeof law.name !== 'string') return {};
-  const lang = typeof s.lang === 'string' && s.lang.trim() ? s.lang.trim().toLowerCase() : 'en';
+  // In its canonical case ('fr-CA'), as lawOf gives it.
+  const lang = typeof s.lang === 'string' && s.lang.trim() ? canonicalTag(s.lang.trim()) : 'en';
   return { law: { id, name: law.name, jurisdiction: String(law.jurisdiction), lang } };
 }
 
