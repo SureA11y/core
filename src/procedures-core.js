@@ -726,6 +726,11 @@ function listing(dictionaries, options, wrap = same) {
   const read = wrap(reader(withPackReview(dictionaries, opts.packs), opts.locale));
   const packRules = packRulesOf(opts.packs);
   // A profile names its pack's standard, so it needs no standard of its own.
+  // One that is no profile's name lists nothing, as an unknown name doesn't:
+  // read as no profile, it would list all of WCAG.
+  if (opts.profile !== undefined && !(typeof opts.profile === 'string' && opts.profile)) {
+    return null;
+  }
   const byProfile = typeof opts.profile === 'string' && opts.profile;
   const standard =
     typeof opts.standard === 'string' && opts.standard ? opts.standard : byProfile ? null : 'wcag';
