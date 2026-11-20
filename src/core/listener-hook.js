@@ -33,7 +33,9 @@
  * signal already aborted is not added, so not counted. A type given as an
  * object (new String('keydown')) is read as its string, as the DOM reads it.
  * A listener added through another realm's addEventListener (an iframe's,
- * called on this page's element) is not seen.
+ * called on this page's element) is recorded in the registry of the window
+ * the element belongs to, where core reads it, when both realms have the
+ * hook; with the hook in only one of them, it is not seen.
  *
  * The registry it leaves is a frozen object on the global, under
  * Symbol.for('surea11y.listeners'), which no page markup or named access can
@@ -106,6 +108,32 @@ const LISTENER_HOOK_SOURCE = [
   `    var TYPES = new Set(${JSON.stringify(LISTENER_TYPES)});`,
   '    var has = Set.prototype.has;',
   '    var map = new WeakMap();',
+  // The record for a target goes where core reads it: the registry of the
+  // window the target belongs to. A listener added through another realm's
+  // addEventListener (an iframe's, called on this page's element) is then
+  // seen, where both realms have the hook.
+  '    var ownerDocOf = null;',
+  '    var viewOf = null;',
+  '    try {',
+  "      var odDesc = Object.getOwnPropertyDescriptor(global.Node.prototype, 'ownerDocument');",
+  "      var dvDesc = Object.getOwnPropertyDescriptor(global.Document.prototype, 'defaultView');",
+  "      ownerDocOf = odDesc && typeof odDesc.get === 'function' ? odDesc.get : null;",
+  "      viewOf = dvDesc && typeof dvDesc.get === 'function' ? dvDesc.get : null;",
+  '    } catch (e) {}',
+  '    function mapFor(target) {',
+  '      if (!ownerDocOf || !viewOf) return map;',
+  '      try {',
+  '        var doc = apply(ownerDocOf, target, []) || target;',
+  '        var win = apply(viewOf, doc, []);',
+  '        if (!win || win === global) return map;',
+  '        var other = Object.getOwnPropertyDescriptor(win, KEY);',
+  "        var reg = other && 'value' in other ? other.value : null;",
+  '        var theirs = reg && reg.version === 1 ? reg.map : null;',
+  "        return theirs && Object.prototype.toString.call(theirs) === '[object WeakMap]' ? theirs : map;",
+  '      } catch (e) {',
+  '        return map;',
+  '      }',
+  '    }',
   // The capture flag of the options argument, as the DOM reads it.
   '    function captureOf(options) {',
   "      if (options && typeof options === 'object') return !!options.capture;",
@@ -151,11 +179,12 @@ const LISTENER_HOOK_SOURCE = [
   "      if (typeof type !== 'string' || !apply(has, TYPES, [type])) return;",
   "      if (!listener || (typeof listener !== 'function' && typeof listener !== 'object')) return;",
   '      var bit = captureOf(options) ? 2 : 1;',
-  '      var byType = apply(mapGet, map, [target]);',
+  '      var into = mapFor(target);',
+  '      var byType = apply(mapGet, into, [target]);',
   '      if (!byType) {',
   '        if (!adding) return;',
   '        byType = new MapCtor();',
-  '        apply(mapSet, map, [target, byType]);',
+  '        apply(mapSet, into, [target, byType]);',
   '      }',
   '      var byListener = apply(get, byType, [type]);',
   '      if (!byListener) {',

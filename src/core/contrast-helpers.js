@@ -5241,6 +5241,32 @@ function createContrastHelpers(opts, shared) {
       });
       if (!gen.readable) return blocked('GENERATED_TEXT_UNREADABLE', 'content', gen.value);
 
+      // A ::before or ::after made a block container, with a negative
+      // text-indent, moves its text by that much (text-indent: -9999px, an
+      // image replacement): drawn wholly left of the page, nothing is
+      // painted. Its text ends, at most, where the element's box ends.
+      try {
+        const indent = Number.parseFloat(ps.textIndent) || 0;
+        const display = String(ps.display || '');
+        const position = String(ps.position || '');
+        if (
+          indent < 0 &&
+          display &&
+          display !== 'inline' &&
+          display !== 'contents' &&
+          display !== 'none' &&
+          position !== 'absolute' &&
+          position !== 'fixed' &&
+          typeof dom.get(el, 'getBoundingClientRect') === 'function'
+        ) {
+          const r = dom.getBoundingClientRect(el);
+          const doc = dom.ownerDocument(el);
+          const win = doc && dom.defaultView(doc);
+          const sx = (win && win.scrollX) || 0;
+          if (r && r.width > 0 && r.right + indent + sx <= 0) return null;
+        }
+      } catch {}
+
       // Effects on the generated text itself, which draw something other
       // than its declared colors.
       if (hasBlendMode(ps)) return blocked('MIX_BLEND_MODE', 'mix-blend-mode', ps.mixBlendMode);

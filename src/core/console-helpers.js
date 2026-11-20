@@ -13,8 +13,10 @@
  * @param {object} api The bundle's own object, for its scan functions.
  * @param {string|null} scriptSrc Where the bundle was loaded from, for
  *   finding surea11y.report.js beside it.
+ * @param {string[]} [optionKeys] The engine options' names, so run() can
+ *   say which keys it was given that no option has.
  */
-function consoleHelpers(global, api, scriptSrc) {
+function consoleHelpers(global, api, scriptSrc, optionKeys) {
   // Reads DOM properties through the prototypes, so a page's named form
   // controls and images can't redirect them (#90): the same lookup as
   // src/core/safe-dom.js, repeated because this function travels alone.
@@ -779,6 +781,36 @@ function consoleHelpers(global, api, scriptSrc) {
               RUN_ONLY_KEYS[i] +
               ': ... } }).'
           )
+        );
+      }
+    }
+    // run() takes the engine options themselves, not wrapped in an object.
+    if (options && Object.prototype.hasOwnProperty.call(options, 'engineOptions')) {
+      return Promise.reject(
+        new TypeError(
+          "run: the engine options go at the top level, run({ locale: 'fr' }), not under engineOptions."
+        )
+      );
+    }
+    // A key no engine option has is most likely a typo: the scan runs
+    // without it, so say so. A custom rule may read its own keys, so it is
+    // not refused.
+    if (options && Array.isArray(optionKeys)) {
+      var unknown = Object.keys(options).filter(function (k) {
+        return k !== 'context' && k !== 'runOnly' && optionKeys.indexOf(k) === -1;
+      });
+      if (unknown.length && global.console) {
+        global.console.warn(
+          '[surea11y] run: ' +
+            unknown
+              .map(function (k) {
+                return '"' + k + '"';
+              })
+              .join(', ') +
+            (unknown.length > 1 ? ' are' : ' is') +
+            ' not an engine option, so the scan ignores it unless a custom rule reads it. The options are: context, runOnly, ' +
+            optionKeys.join(', ') +
+            '.'
         );
       }
     }

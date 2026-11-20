@@ -20,6 +20,13 @@
       "marked": "cantTell",
       "engine": "fail",
       "label": "heading's only text content is inside a CSS display:none descendant — never exposed to assistive technology, so it must …"
+    },
+    {
+      "ruleId": "listitem-parent-valid",
+      "caseId": "case_09",
+      "marked": "fail",
+      "engine": "cantTell",
+      "label": "li inside ul role=\"menu\" — an explicit role overrides the <ul>'s native \"list\" role entirely, so the tag alone no longer…"
     }
   ]
 }

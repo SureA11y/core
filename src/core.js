@@ -476,11 +476,18 @@ function optionText(value) {
   }
 }
 
+// Rule ids, tags and profile names are matched ignoring case in ASCII only:
+// a full Unicode fold reads the Kelvin sign (U+212A) as "k", so
+// "linK-name-present" written with it would select link-name-present.
+function asciiLowerChar(c) {
+  return c.toLowerCase();
+}
+
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
   if (Array.isArray(value)) {
     const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
-    const norm = lower ? arr.map((s) => s.toLowerCase()) : arr.slice();
+    const norm = lower ? arr.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : arr.slice();
     // de-dupe while preserving first-seen order (deterministic)
     const seen = new Set();
     const out = [];
@@ -491,7 +498,7 @@ function parseCommaList(value, { lower = false } = {}) {
   }
   if (typeof value !== 'string') return [];
   const raw = value.split(',').map((s) => String(s).trim()).filter(Boolean);
-  const norm = lower ? raw.map((s) => s.toLowerCase()) : raw.slice();
+  const norm = lower ? raw.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : raw.slice();
   const seen = new Set();
   const out = [];
   for (const v of norm) {
@@ -501,7 +508,7 @@ function parseCommaList(value, { lower = false } = {}) {
 }
 
 function normalizeIncludeMode(mode) {
-  const m = typeof mode === 'string' ? mode.trim().toLowerCase() : '';
+  const m = typeof mode === 'string' ? mode.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
   return m === 'or' ? 'or' : 'and';
 }
 
@@ -699,7 +706,7 @@ const WCAG_LEVEL_TAGS = (function () {
   const out = Object.create(null);
   const prefix = { '2.0': 'wcag2', '2.1': 'wcag21', '2.2': 'wcag22' };
   for (const version of WCAG_TARGET_VERSIONS) {
-    for (const level of WCAG_TARGET_LEVELS) out[prefix[version] + level.toLowerCase()] = { version, level };
+    for (const level of WCAG_TARGET_LEVELS) out[prefix[version] + level.replace(/[A-Z]/g, asciiLowerChar)] = { version, level };
   }
   return out;
 })();
@@ -709,7 +716,7 @@ const WCAG_LEVEL_TAGS = (function () {
 // WCAG 2.2 removed. A custom tag that only starts with "wcag" (wcagteam) is
 // none of them.
 function isWcagTag(tag) {
-  const t = String(tag).toLowerCase();
+  const t = String(tag).replace(/[A-Z]/g, asciiLowerChar);
   return (
     t === 'wcag22-removed' ||
     Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t) ||
@@ -763,7 +770,7 @@ function criterionInWcagTarget(sc, target) {
 function wcagCriteriaOfDef(def) {
   const out = [];
   for (const t of Array.isArray(def.tags) ? def.tags : []) {
-    const tag = String(t).toLowerCase();
+    const tag = String(t).replace(/[A-Z]/g, asciiLowerChar);
     if (Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, tag)) out.push(WCAG_SC_BY_TAG[tag]);
   }
   const details = def.data && def.data.details;
@@ -774,7 +781,7 @@ function wcagCriteriaOfDef(def) {
 }
 
 function normalizeProfileName(v) {
-  return typeof v === 'string' ? v.trim().toLowerCase() : '';
+  return typeof v === 'string' ? v.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
 }
 
 /**
@@ -860,7 +867,7 @@ const PROFILE_OWN_TAGS = CATALOG.profileOwnTags || {};
 // or, for a custom rule, the opt-in tags it carries.
 function optInTagsOf(def) {
   if (def && def.custom) {
-    const tags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    const tags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
     return tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   }
   const id = def && typeof def.ruleId === 'string' ? def.ruleId : '';
@@ -945,7 +952,7 @@ function resolveMappingSelection(engineOptions, appliedProfile) {
   const unknown = [];
   for (const token of requested) {
     const sep = token.indexOf(':');
-    const name = (sep < 0 ? token : token.slice(0, sep)).trim().toLowerCase();
+    const name = (sep < 0 ? token : token.slice(0, sep)).trim().replace(/[A-Z]/g, asciiLowerChar);
     const std = Object.prototype.hasOwnProperty.call(NORMATIVE_MAPPING_STANDARDS, name)
       ? NORMATIVE_MAPPING_STANDARDS[name]
       : null;
@@ -957,8 +964,8 @@ function resolveMappingSelection(engineOptions, appliedProfile) {
       whole.add(name);
       continue;
     }
-    const wanted = token.slice(sep + 1).trim().toLowerCase();
-    const version = std.versions.find((v) => v.toLowerCase() === wanted);
+    const wanted = token.slice(sep + 1).trim().replace(/[A-Z]/g, asciiLowerChar);
+    const version = std.versions.find((v) => v.replace(/[A-Z]/g, asciiLowerChar) === wanted);
     if (!version) {
       unknown.push(token);
       continue;
@@ -1115,14 +1122,14 @@ function knownSelectionNames(engineOptions) {
   const tags = new Set();
   for (const d of CHECK_DEFS) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
-    for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
+    for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).replace(/[A-Z]/g, asciiLowerChar));
   }
   // A standard's own rollups carry its rule tag, which selects them, even
   // when the standard brings no rule of its own to carry it too.
   for (const entry of Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []) {
     const metaTags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
     for (const t of metaTags) {
-      const tag = String(t).trim().toLowerCase();
+      const tag = String(t).trim().replace(/[A-Z]/g, asciiLowerChar);
       if (tag) tags.add(tag);
     }
   }
@@ -1132,17 +1139,17 @@ function knownSelectionNames(engineOptions) {
   const resolved = resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG);
   for (const d of resolved.defs.values()) {
     ruleIds.add(d.ruleId);
-    for (const t of Array.isArray(d.tags) ? d.tags : []) tags.add(String(t).toLowerCase());
+    for (const t of Array.isArray(d.tags) ? d.tags : []) tags.add(String(t).replace(/[A-Z]/g, asciiLowerChar));
   }
   const skippedReasons = new Map();
   for (const sk of resolved.skipped) if (sk.id && !skippedReasons.has(sk.id)) skippedReasons.set(sk.id, sk.reason);
   // Rule ids that differ only in case name the same rule (the runner skips a
   // custom rule spelt like another in another case), so IMG-ALT-PRESENT is
   // img-alt-present, as tags and engineOptions.rules[ruleId] are read.
-  const prefix = String(ENGINE_TAG).toLowerCase() + '-';
+  const prefix = String(ENGINE_TAG).replace(/[A-Z]/g, asciiLowerChar) + '-';
   const byLower = new Map();
   for (const id of [...ruleIds, ...Object.keys(COMPOSITE_RULE_INDEX)]) {
-    if (!byLower.has(id.toLowerCase())) byLower.set(id.toLowerCase(), id);
+    if (!byLower.has(id.replace(/[A-Z]/g, asciiLowerChar))) byLower.set(id.replace(/[A-Z]/g, asciiLowerChar), id);
   }
   const isRuleId = (v) =>
     !!compositeIdOf(v) || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG));
@@ -1154,19 +1161,19 @@ function knownSelectionNames(engineOptions) {
         ? ' (a custom rule that was skipped: ' + skippedReasons.get(String(v).trim()) + ')'
         : ''),
     isRuleId,
-    isTag: (v) => tags.has(String(v).toLowerCase()),
+    isTag: (v) => tags.has(String(v).replace(/[A-Z]/g, asciiLowerChar)),
     // A rule id as the engine spells it, for one given in another case; any
     // other value as given.
     canonical: (v) => {
       if (typeof v !== 'string' || isRuleId(v)) return v;
-      let lower = v.trim().toLowerCase();
+      let lower = v.trim().replace(/[A-Z]/g, asciiLowerChar);
       if (!byLower.has(lower) && lower.startsWith(prefix)) lower = lower.slice(prefix.length);
       return byLower.get(lower) || v;
     },
     // A WCAG version/level tag no rule carries: a real tag, for criteria the
     // engine has no rule for, not a typo.
     isUntestedWcagTag: (v) => {
-      const t = String(v).toLowerCase();
+      const t = String(v).replace(/[A-Z]/g, asciiLowerChar);
       return !tags.has(t) && Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t);
     }
   };
@@ -1174,7 +1181,7 @@ function knownSelectionNames(engineOptions) {
 
 // 'WCAG 2.2 Level A ("wcag22a")', for messages.
 function describeWcagLevelTag(tag) {
-  const t = WCAG_LEVEL_TAGS[String(tag).toLowerCase()];
+  const t = WCAG_LEVEL_TAGS[String(tag).replace(/[A-Z]/g, asciiLowerChar)];
   return 'WCAG ' + t.version + ' Level ' + t.level + ' ("' + tag + '")';
 }
 
@@ -1199,7 +1206,7 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
     );
   }
   if (asRules.length === values.length) return { includeRuleIds: values };
-  if (asRules.length === 0) return { tags: values.map((v) => v.toLowerCase()) };
+  if (asRules.length === 0) return { tags: values.map((v) => v.replace(/[A-Z]/g, asciiLowerChar)) };
   throw invalidRunOnly(
     'runOnly: an array lists either rule ids or tags, not both; use { includeRuleIds, tags } to combine them.'
   );
@@ -1339,7 +1346,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // any rule ids or tags, and the other keys beside it (excludeTags,
   // excludeRuleIds...) still apply.
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
-    const kind = String(runOnly.type).trim().toLowerCase();
+    const kind = String(runOnly.type).trim().replace(/[A-Z]/g, asciiLowerChar);
     const rest = { ...runOnly };
     delete rest.type;
     delete rest.values;
@@ -1355,7 +1362,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     ['engineOptions.includeMode', eo.includeMode]
   ]) {
     if (value === undefined || value === null) continue;
-    const mode = typeof value === 'string' ? value.trim().toLowerCase() : '';
+    const mode = typeof value === 'string' ? value.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
     if (mode === 'and' || mode === 'or') continue;
     const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
     if (strictOf(eo)) throw invalidRunOnly(message);
@@ -1542,7 +1549,7 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const norm = normalizeRunOnly(runOnly);
   const includeMode = normalizeIncludeMode(norm.includeMode);
 
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
 
   const hasRuleInclude = norm.includeRuleIds.length > 0;
   const hasTestInclude = norm.includeTestIds.length > 0;
@@ -1656,7 +1663,7 @@ function ruleExcludedByRunOnly(def, runOnly, engineTag) {
   }
 
   if (norm.excludeTags.length) {
-    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
     if (defTags.some((t) => norm.excludeTags.includes(t))) return true;
   }
 
@@ -1683,9 +1690,9 @@ function ruleNamedOnItsOwn(def, runOnly, engineTag) {
   ) {
     return true;
   }
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
   // The engine's own tag is on every rule and rollup, so it names them all.
-  const namesCriteria = (t) => isWcagTag(t) || t === tag.toLowerCase();
+  const namesCriteria = (t) => isWcagTag(t) || t === tag.replace(/[A-Z]/g, asciiLowerChar);
   if (defTags.some((t) => norm.tags.includes(t) && !namesCriteria(t))) return true;
   if (optInTagsOf(def).some((t) => norm.ownTags.includes(t) || norm.optInTags.includes(t))) return true;
   return norm.bestPractices && defTags.includes(BEST_PRACTICE_TAG);
@@ -1696,7 +1703,7 @@ function ruleNamedOnItsOwn(def, runOnly, engineTag) {
 // (rollupCompositeResults), not the rule's other criteria.
 function criteriaNamingRule(def, runOnly) {
   const norm = normalizeRunOnly(runOnly);
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
   return defTags
     .filter((t) => norm.tags.includes(t) && Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, t))
     .map((t) => WCAG_SC_BY_TAG[t]);
@@ -8098,6 +8105,32 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       });
       if (!gen.readable) return blocked('GENERATED_TEXT_UNREADABLE', 'content', gen.value);
 
+      // A ::before or ::after made a block container, with a negative
+      // text-indent, moves its text by that much (text-indent: -9999px, an
+      // image replacement): drawn wholly left of the page, nothing is
+      // painted. Its text ends, at most, where the element's box ends.
+      try {
+        const indent = Number.parseFloat(ps.textIndent) || 0;
+        const display = String(ps.display || '');
+        const position = String(ps.position || '');
+        if (
+          indent < 0 &&
+          display &&
+          display !== 'inline' &&
+          display !== 'contents' &&
+          display !== 'none' &&
+          position !== 'absolute' &&
+          position !== 'fixed' &&
+          typeof dom.get(el, 'getBoundingClientRect') === 'function'
+        ) {
+          const r = dom.getBoundingClientRect(el);
+          const doc = dom.ownerDocument(el);
+          const win = doc && dom.defaultView(doc);
+          const sx = (win && win.scrollX) || 0;
+          if (r && r.width > 0 && r.right + indent + sx <= 0) return null;
+        }
+      } catch {}
+
       // Effects on the generated text itself, which draw something other
       // than its declared colors.
       if (hasBlendMode(ps)) return blocked('MIX_BLEND_MODE', 'mix-blend-mode', ps.mixBlendMode);
@@ -12791,8 +12824,9 @@ const describeOptionValue = (function describeOptionValue(v) {
   return 'an object';
 });
 const engineOptionSpec = (function engineOptionSpec() {
+  // Spread reads a hole ([, 'main']) as undefined, which every() skips.
   const list = (v) =>
-    typeof v === 'string' || (Array.isArray(v) && v.every((x) => typeof x === 'string'));
+    typeof v === 'string' || (Array.isArray(v) && [...v].every((x) => typeof x === 'string'));
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
   const T = {
     any: { test: () => true, expected: 'any value' },
@@ -12811,7 +12845,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     }),
     // A non-empty list of some of `values`.
     someOf: (values) => ({
-      test: (v) => Array.isArray(v) && v.length > 0 && v.every((x) => values.includes(x)),
+      test: (v) => Array.isArray(v) && v.length > 0 && [...v].every((x) => values.includes(x)),
       expected: 'a non-empty list of ' + values.map((x) => JSON.stringify(x)).join(', ')
     })
   };
@@ -12837,7 +12871,11 @@ const engineOptionSpec = (function engineOptionSpec() {
       expected: 'true or false'
     },
     locale: T.string,
-    wcagVersion: T.oneOf(['2.0', '2.1', '2.2']),
+    // Read trimmed, as wcagLevel is read trimmed and in any case.
+    wcagVersion: {
+      test: (v) => typeof v === 'string' && ['2.0', '2.1', '2.2'].includes(v.trim()),
+      expected: 'one of "2.0", "2.1", "2.2"'
+    },
     wcagLevel: {
       test: (v) => typeof v === 'string' && ['A', 'AA', 'AAA'].includes(v.trim().toUpperCase()),
       expected: '"A", "AA" or "AAA", in any case'
@@ -12860,7 +12898,9 @@ const engineOptionSpec = (function engineOptionSpec() {
     styleSheetTexts: {
       test: (v) =>
         Array.isArray(v) &&
-        v.every((s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'),
+        [...v].every(
+          (s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'
+        ),
       expected: '[{ href, text }]'
     },
     timestamp: T.string,
@@ -12953,7 +12993,9 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
   function describe(v) {
     if (v === null) return 'null';
     if (Array.isArray(v)) {
-      // Short lists of plain values are shown, so the one at fault is seen.
+      // Short lists of plain values are shown, so the one at fault is seen;
+      // a hole as undefined.
+      v = [...v];
       const plain =
         v.length > 0 && v.length <= 6 && v.every((x) => x === null || typeof x !== 'object');
       const text = plain
@@ -24955,7 +24997,9 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
     // told apart in a report, and IMG-ALT-PRESENT is most likely meant as
     // img-alt-present. A custom rule spelt like a built-in in another case
     // overrides it, under the built-in's id, and is said so.
-    const sameId = (a, b) => typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
+    const sameId = (a, b) =>
+      typeof b === 'string' &&
+      a.replace(/[A-Z]/g, (c) => c.toLowerCase()) === b.replace(/[A-Z]/g, (c) => c.toLowerCase());
     const earlier = [...defs.keys()].find((k) => sameId(ruleId, k));
     // A second rule with the same id would silently replace the first; a
     // composite's id would put one id in both checksResults and
@@ -25187,6 +25231,48 @@ const runCoreSettled = (function runCoreSettled(
   const excludeSelectors = normalizeSelectorList(
     engineOptionsResolved && engineOptionsResolved.excludeSelectors
   );
+  // Under strictOptions, a selector that isn't valid CSS, which would
+  // exclude nothing, is refused before anything runs: globally and for each
+  // rule (engineOptions.rules[id].excludeSelectors). Otherwise it is warned
+  // about where it is used, and the other selectors still apply.
+  if (strictOf(engineOptionsResolved)) {
+    const probe = dom.get(document, 'documentElement');
+    const invalid = (list) =>
+      normalizeSelectorList(list).filter((sel) => {
+        try {
+          if (probe) dom.matches(probe, sel);
+          return false;
+        } catch {
+          return true;
+        }
+      });
+    const bad = invalid(excludeSelectors).map((sel) => 'excludeSelectors: "' + sel + '"');
+    const ruleSettings =
+      engineOptionsResolved.rules &&
+      typeof engineOptionsResolved.rules === 'object' &&
+      !Array.isArray(engineOptionsResolved.rules)
+        ? engineOptionsResolved.rules
+        : null;
+    if (ruleSettings) {
+      for (const id of Object.keys(ruleSettings)) {
+        const own = ruleSettings[id];
+        if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
+        for (const sel of invalid(own.excludeSelectors)) {
+          bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
+        }
+      }
+    }
+    if (bad.length) {
+      const err = new Error(
+        'engineOptions.' +
+          bad.join('; engineOptions.') +
+          (bad.length > 1 ? ' are' : ' is') +
+          ' not valid CSS, and would exclude nothing. (strictOptions)'
+      );
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
+  }
   // Default off: explicit opt-in for "this scan target was never meant to
   // represent a real page" -- see helpers.isWholeDocumentScope().
   const fragment = !!(engineOptionsResolved && switchOf(engineOptionsResolved.fragment) === true);
@@ -25299,6 +25385,24 @@ const runCoreSettled = (function runCoreSettled(
     } catch {
       rgba = { a: 1 };
     }
+    // The color parser reads computed styles, which the browser has already
+    // checked, so it is lenient: a keyword that depends on the page
+    // (inherit, currentColor) or rgb() with a wrong number of values would
+    // pass. A color the caller writes is checked as CSS would check it.
+    const text = String(given).trim();
+    const lower = text.toLowerCase();
+    const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
+    const badSyntax =
+      ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'].includes(lower) ||
+      (fn &&
+        (() => {
+          const body = fn[2].trim();
+          const parts = body.includes(',')
+            ? body.split(',').map((x) => x.trim())
+            : body.split('/').flatMap((x, i) => (i === 0 ? x.trim().split(/\s+/) : [x.trim()]));
+          return parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
+        })());
+    if (badSyntax) rgba = null;
     if (!rgba || !(rgba.a >= 1)) {
       const message =
         'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
@@ -25555,16 +25659,21 @@ const runCoreSettled = (function runCoreSettled(
   const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
   const optInRulesRan = new Set();
   if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
+    const message =
+      'engineOptions.optInRules: ' +
+      runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
+      ', no such opt-in rule tag (' +
+      (OPT_IN_RULE_TAGS.length
+        ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
+        : 'this version has none') +
+      ')';
+    if (strictOf(engineOptionsResolved)) {
+      const err = new Error(message + '. (strictOptions)');
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
     try {
-      console.warn(
-        '[surea11y] engineOptions.optInRules: ignoring ' +
-          runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such opt-in rule tag (' +
-          (OPT_IN_RULE_TAGS.length
-            ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
-            : 'this version has none') +
-          ').'
-      );
+      console.warn('[surea11y] ' + message.replace(': ', ': ignoring ') + '.');
     } catch {}
   }
 
@@ -25573,11 +25682,17 @@ const runCoreSettled = (function runCoreSettled(
   // result carries only those asked for, or implied by the applied profile.
   const mappingSelection = resolveMappingSelection(engineOptionsResolved, appliedProfile);
   if (mappingSelection.unknown.length) {
+    const named = mappingSelection.unknown.map((s) => '"' + s + '"').join(', ');
+    if (strictOf(engineOptionsResolved)) {
+      const err = new Error(
+        'engineOptions.mappings: ' + named + ', no such standard or version. (strictOptions)'
+      );
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
     try {
       console.warn(
-        '[surea11y] engineOptions.mappings: ignoring ' +
-          mappingSelection.unknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such standard or version.'
+        '[surea11y] engineOptions.mappings: ignoring ' + named + ', no such standard or version.'
       );
     } catch {}
   }
@@ -25721,7 +25836,9 @@ const runCoreSettled = (function runCoreSettled(
       .map((d) => d.ruleId)
       .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
     const byLower = new Map();
-    for (const id of knownIds) if (typeof id === 'string') byLower.set(id.toLowerCase(), id);
+    // ASCII case only, as the selection matches ids (asciiLowerChar).
+    const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
+    for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
     const legacy = String(ENGINE_TAG || 'a11ycore').toLowerCase() + '-';
     const unknownRuleKeys = [];
     const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
@@ -25729,7 +25846,7 @@ const runCoreSettled = (function runCoreSettled(
       for (const key of keys) {
         const value = rulesOption[key];
         if (!value || typeof value !== 'object') continue;
-        const lower = key.trim().toLowerCase();
+        const lower = lowerAscii(key.trim());
         let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
         if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
         if (exact) {
@@ -26156,7 +26273,7 @@ const runCoreSettled = (function runCoreSettled(
     }
 
     if (typeof applicabilityFn === 'function') {
-      let applicable = true;
+      let applicable;
       try {
         const res = applicabilityFn(ctx);
         // Rules run synchronously: a Promise is truthy, and would have
@@ -26170,6 +26287,15 @@ const runCoreSettled = (function runCoreSettled(
         if (typeof res === 'boolean') applicable = res;
         else if (res && typeof res === 'object' && typeof res.applicable === 'boolean')
           applicable = res.applicable;
+        else {
+          // undefined (a forgotten return), 0, null or 'false' ran the rule
+          // everywhere: what was meant can't be known, so the rule says so.
+          throw new Error(
+            'applicability returned ' +
+              describeOptionValue(res) +
+              '; it must return true or false (or { applicable: true | false })'
+          );
+        }
       } catch (err) {
         const raw = {
           outcome: 'cantTell',
@@ -41405,8 +41531,10 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "Der Eintrag wird mit Aufzählungszeichen oder Nummer gezeichnet, als Eintrag einer Liste, die das Markup nicht mehr bereitstellt.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "Einige Links oder Bedienelemente, etwa die einer Navigationsleiste, sind ohne die Liste womöglich ebenso gut lesbar.",
       "listitemParentValid_summary_fail_wrapped": "Dieses <li> liegt in einem <{{listElement}}>, aber das {{wrapper}} dazwischen unterbricht die Liste: Die Einträge einer Liste müssen ihre Kinder sein.",
       "listitemParentValid_hint_fail_wrapped": "Verschieben Sie das <{{parentElement}}> in das <li> oder entfernen Sie es, sodass das <li> ein Kind des <{{listElement}}> ist.",
       "listitemParentValid_summary_fail_wrappedMany": "Dieses <li> liegt in einem <{{listElement}}>, aber die Elemente {{wrappers}} dazwischen unterbrechen die Liste: Die Einträge einer Liste müssen ihre Kinder sein.",
@@ -43192,8 +43320,10 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "A few links or controls, such as a navigation bar’s, may read as well without the list.",
       "listitemParentValid_summary_fail_wrapped": "This <li> is inside a <{{listElement}}>, but the {{wrapper}} between them breaks the list: a list's items must be its children.",
       "listitemParentValid_hint_fail_wrapped": "Move the <{{parentElement}}> inside the <li>, or remove it, so the <li> is a child of the <{{listElement}}>.",
       "listitemParentValid_summary_fail_wrappedMany": "This <li> is inside a <{{listElement}}>, but the {{wrappers}} between them break the list: a list's items must be its children.",
@@ -44979,8 +45109,10 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "El elemento se dibuja con viñeta o número, como elemento de una lista que el marcado ya no expone.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "Unos pocos enlaces o controles, como los de una barra de navegación, pueden leerse igual de bien sin la lista.",
       "listitemParentValid_summary_fail_wrapped": "Este <li> está dentro de un <{{listElement}}>, pero el {{wrapper}} que hay entre ellos rompe la lista: los elementos de una lista deben ser sus hijos.",
       "listitemParentValid_hint_fail_wrapped": "Mover el <{{parentElement}}> dentro del <li>, o quitarlo, para que el <li> sea hijo del <{{listElement}}>.",
       "listitemParentValid_summary_fail_wrappedMany": "Este <li> está dentro de un <{{listElement}}>, pero los elementos {{wrappers}} que hay entre ellos rompen la lista: los elementos de una lista deben ser sus hijos.",
@@ -46766,8 +46898,10 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "L’élément est dessiné avec une puce ou un numéro, comme élément d’une liste que le balisage n’expose plus.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "Quelques liens ou commandes, comme ceux d’une barre de navigation, peuvent se lire aussi bien sans la liste.",
       "listitemParentValid_summary_fail_wrapped": "Cet élément <li> est dans un <{{listElement}}>, mais l’élément {{wrapper}} entre les deux rompt la liste : les éléments d’une liste doivent être ses enfants.",
       "listitemParentValid_hint_fail_wrapped": "Placez l’élément <{{parentElement}}> à l’intérieur du <li>, ou supprimez-le, pour que le <li> soit un enfant du <{{listElement}}>.",
       "listitemParentValid_summary_fail_wrappedMany": "Cet élément <li> est dans un <{{listElement}}>, mais les éléments {{wrappers}} entre les deux rompent la liste : les éléments d’une liste doivent être ses enfants.",
@@ -48553,8 +48687,10 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
-      "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
-      "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_lean_why_listRoleOverridden": "この項目は行頭記号や番号付きで、マークアップがもう公開していないリストの項目として描画されています。",
+      "listitemParentValid_lean_caution_listRoleOverridden": "ナビゲーションバーのリンクなど、数個のリンクやコントロールはリストがなくても同じように読める場合があります。",
       "listitemParentValid_summary_fail_wrapped": "この <li> は <{{listElement}}> の中にありますが、間にある {{wrapper}} がリストを途切れさせています。リストの項目はリストの子要素である必要があります。",
       "listitemParentValid_hint_fail_wrapped": "<{{parentElement}}> を <li> の中に移すか削除して、<li> が <{{listElement}}> の子要素になるようにしてください。",
       "listitemParentValid_summary_fail_wrappedMany": "この <li> は <{{listElement}}> の中にありますが、間にある {{wrappers}} がリストを途切れさせています。リストの項目はリストの子要素である必要があります。",
@@ -96876,20 +97012,48 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (valid) continue;
 
     // A <ul>, <ol> or <menu> whose role replaces list (tablist, menu, menubar,
-    // group…): the markup is a valid list, but the author made it something
-    // else, so this <li> is a stray listitem in it. Still a failure, with its
-    // own reason, since the fix differs: give the <li> the role the container
-    // expects, rather than put it in a list.
+    // group, navigation…): the markup is a valid list, but the author made it
+    // something else, so this <li> is a stray listitem in it, with its own
+    // reason, since the fix differs: give the <li> the role the container
+    // expects, rather than put it in a list. The list's semantics are gone
+    // for certain; whether that loses information depends on the content (a
+    // few links in a navigation read as well without it), so it is asked
+    // about, leaning fail where the item is drawn as one of a list.
     const { bucket, extra } = tierFor(el);
     if (explicitRole && (parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu')) {
-      bucket.push(
+      const drawn = extra.occurrenceOutcome === 'fail';
+      cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
-          ...extra,
+          occurrenceOutcome: 'cantTell',
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the content loses information without the list: its items, their number or their order.',
+            evidence: { drawnAsListItem: drawn, parentRole: explicitRole }
+          },
+          ...(drawn
+            ? {
+                lean: {
+                  toward: 'fail',
+                  why: 'The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.',
+                  signals: [
+                    { signal: 'drawn-as-list-item', value: true },
+                    { signal: 'parent-role', value: explicitRole }
+                  ],
+                  caution:
+                    'A few links or controls, such as a navigation bar’s, may read as well without the list.',
+                  i18n: {
+                    whyKey: 'listitemParentValid_lean_why_listRoleOverridden',
+                    cautionKey: 'listitemParentValid_lean_caution_listRoleOverridden'
+                  }
+                }
+              }
+            : {}),
           summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
           hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
           i18n: {
-            summaryKey: 'listitemParentValid_summary_fail_listRoleOverridden',
-            hintKey: 'listitemParentValid_hint_fail_listRoleOverridden',
+            summaryKey: 'listitemParentValid_summary_cantTell_listRoleOverridden',
+            hintKey: 'listitemParentValid_hint_cantTell_listRoleOverridden',
             params: { parentElement: parentTag, parentRole: explicitRole }
           },
           data: {
@@ -117529,8 +117693,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "Der Eintrag wird mit Aufzählungszeichen oder Nummer gezeichnet, als Eintrag einer Liste, die das Markup nicht mehr bereitstellt.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "Einige Links oder Bedienelemente, etwa die einer Navigationsleiste, sind ohne die Liste womöglich ebenso gut lesbar.",
       "listitemParentValid_summary_fail_wrapped": "Dieses <li> liegt in einem <{{listElement}}>, aber das {{wrapper}} dazwischen unterbricht die Liste: Die Einträge einer Liste müssen ihre Kinder sein.",
       "listitemParentValid_hint_fail_wrapped": "Verschieben Sie das <{{parentElement}}> in das <li> oder entfernen Sie es, sodass das <li> ein Kind des <{{listElement}}> ist.",
       "listitemParentValid_summary_fail_wrappedMany": "Dieses <li> liegt in einem <{{listElement}}>, aber die Elemente {{wrappers}} dazwischen unterbrechen die Liste: Die Einträge einer Liste müssen ihre Kinder sein.",
@@ -119316,8 +119482,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "A few links or controls, such as a navigation bar’s, may read as well without the list.",
       "listitemParentValid_summary_fail_wrapped": "This <li> is inside a <{{listElement}}>, but the {{wrapper}} between them breaks the list: a list's items must be its children.",
       "listitemParentValid_hint_fail_wrapped": "Move the <{{parentElement}}> inside the <li>, or remove it, so the <li> is a child of the <{{listElement}}>.",
       "listitemParentValid_summary_fail_wrappedMany": "This <li> is inside a <{{listElement}}>, but the {{wrappers}} between them break the list: a list's items must be its children.",
@@ -121103,8 +121271,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "El elemento se dibuja con viñeta o número, como elemento de una lista que el marcado ya no expone.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "Unos pocos enlaces o controles, como los de una barra de navegación, pueden leerse igual de bien sin la lista.",
       "listitemParentValid_summary_fail_wrapped": "Este <li> está dentro de un <{{listElement}}>, pero el {{wrapper}} que hay entre ellos rompe la lista: los elementos de una lista deben ser sus hijos.",
       "listitemParentValid_hint_fail_wrapped": "Mover el <{{parentElement}}> dentro del <li>, o quitarlo, para que el <li> sea hijo del <{{listElement}}>.",
       "listitemParentValid_summary_fail_wrappedMany": "Este <li> está dentro de un <{{listElement}}>, pero los elementos {{wrappers}} que hay entre ellos rompen la lista: los elementos de una lista deben ser sus hijos.",
@@ -122890,8 +123060,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
-      "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
-      "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_lean_why_listRoleOverridden": "L’élément est dessiné avec une puce ou un numéro, comme élément d’une liste que le balisage n’expose plus.",
+      "listitemParentValid_lean_caution_listRoleOverridden": "Quelques liens ou commandes, comme ceux d’une barre de navigation, peuvent se lire aussi bien sans la liste.",
       "listitemParentValid_summary_fail_wrapped": "Cet élément <li> est dans un <{{listElement}}>, mais l’élément {{wrapper}} entre les deux rompt la liste : les éléments d’une liste doivent être ses enfants.",
       "listitemParentValid_hint_fail_wrapped": "Placez l’élément <{{parentElement}}> à l’intérieur du <li>, ou supprimez-le, pour que le <li> soit un enfant du <{{listElement}}>.",
       "listitemParentValid_summary_fail_wrappedMany": "Cet élément <li> est dans un <{{listElement}}>, mais les éléments {{wrappers}} entre les deux rompent la liste : les éléments d’une liste doivent être ses enfants.",
@@ -124677,8 +124849,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
-      "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
-      "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_summary_cantTell_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_lean_why_listRoleOverridden": "この項目は行頭記号や番号付きで、マークアップがもう公開していないリストの項目として描画されています。",
+      "listitemParentValid_lean_caution_listRoleOverridden": "ナビゲーションバーのリンクなど、数個のリンクやコントロールはリストがなくても同じように読める場合があります。",
       "listitemParentValid_summary_fail_wrapped": "この <li> は <{{listElement}}> の中にありますが、間にある {{wrapper}} がリストを途切れさせています。リストの項目はリストの子要素である必要があります。",
       "listitemParentValid_hint_fail_wrapped": "<{{parentElement}}> を <li> の中に移すか削除して、<li> が <{{listElement}}> の子要素になるようにしてください。",
       "listitemParentValid_summary_fail_wrappedMany": "この <li> は <{{listElement}}> の中にありますが、間にある {{wrappers}} がリストを途切れさせています。リストの項目はリストの子要素である必要があります。",
@@ -126287,11 +126461,18 @@ function optionText(value) {
   }
 }
 
+// Rule ids, tags and profile names are matched ignoring case in ASCII only:
+// a full Unicode fold reads the Kelvin sign (U+212A) as "k", so
+// "linK-name-present" written with it would select link-name-present.
+function asciiLowerChar(c) {
+  return c.toLowerCase();
+}
+
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
   if (Array.isArray(value)) {
     const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
-    const norm = lower ? arr.map((s) => s.toLowerCase()) : arr.slice();
+    const norm = lower ? arr.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : arr.slice();
     // de-dupe while preserving first-seen order (deterministic)
     const seen = new Set();
     const out = [];
@@ -126302,7 +126483,7 @@ function parseCommaList(value, { lower = false } = {}) {
   }
   if (typeof value !== 'string') return [];
   const raw = value.split(',').map((s) => String(s).trim()).filter(Boolean);
-  const norm = lower ? raw.map((s) => s.toLowerCase()) : raw.slice();
+  const norm = lower ? raw.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : raw.slice();
   const seen = new Set();
   const out = [];
   for (const v of norm) {
@@ -126312,7 +126493,7 @@ function parseCommaList(value, { lower = false } = {}) {
 }
 
 function normalizeIncludeMode(mode) {
-  const m = typeof mode === 'string' ? mode.trim().toLowerCase() : '';
+  const m = typeof mode === 'string' ? mode.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
   return m === 'or' ? 'or' : 'and';
 }
 
@@ -126510,7 +126691,7 @@ const WCAG_LEVEL_TAGS = (function () {
   const out = Object.create(null);
   const prefix = { '2.0': 'wcag2', '2.1': 'wcag21', '2.2': 'wcag22' };
   for (const version of WCAG_TARGET_VERSIONS) {
-    for (const level of WCAG_TARGET_LEVELS) out[prefix[version] + level.toLowerCase()] = { version, level };
+    for (const level of WCAG_TARGET_LEVELS) out[prefix[version] + level.replace(/[A-Z]/g, asciiLowerChar)] = { version, level };
   }
   return out;
 })();
@@ -126520,7 +126701,7 @@ const WCAG_LEVEL_TAGS = (function () {
 // WCAG 2.2 removed. A custom tag that only starts with "wcag" (wcagteam) is
 // none of them.
 function isWcagTag(tag) {
-  const t = String(tag).toLowerCase();
+  const t = String(tag).replace(/[A-Z]/g, asciiLowerChar);
   return (
     t === 'wcag22-removed' ||
     Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t) ||
@@ -126574,7 +126755,7 @@ function criterionInWcagTarget(sc, target) {
 function wcagCriteriaOfDef(def) {
   const out = [];
   for (const t of Array.isArray(def.tags) ? def.tags : []) {
-    const tag = String(t).toLowerCase();
+    const tag = String(t).replace(/[A-Z]/g, asciiLowerChar);
     if (Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, tag)) out.push(WCAG_SC_BY_TAG[tag]);
   }
   const details = def.data && def.data.details;
@@ -126585,7 +126766,7 @@ function wcagCriteriaOfDef(def) {
 }
 
 function normalizeProfileName(v) {
-  return typeof v === 'string' ? v.trim().toLowerCase() : '';
+  return typeof v === 'string' ? v.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
 }
 
 /**
@@ -126671,7 +126852,7 @@ const PROFILE_OWN_TAGS = CATALOG.profileOwnTags || {};
 // or, for a custom rule, the opt-in tags it carries.
 function optInTagsOf(def) {
   if (def && def.custom) {
-    const tags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    const tags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
     return tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   }
   const id = def && typeof def.ruleId === 'string' ? def.ruleId : '';
@@ -126756,7 +126937,7 @@ function resolveMappingSelection(engineOptions, appliedProfile) {
   const unknown = [];
   for (const token of requested) {
     const sep = token.indexOf(':');
-    const name = (sep < 0 ? token : token.slice(0, sep)).trim().toLowerCase();
+    const name = (sep < 0 ? token : token.slice(0, sep)).trim().replace(/[A-Z]/g, asciiLowerChar);
     const std = Object.prototype.hasOwnProperty.call(NORMATIVE_MAPPING_STANDARDS, name)
       ? NORMATIVE_MAPPING_STANDARDS[name]
       : null;
@@ -126768,8 +126949,8 @@ function resolveMappingSelection(engineOptions, appliedProfile) {
       whole.add(name);
       continue;
     }
-    const wanted = token.slice(sep + 1).trim().toLowerCase();
-    const version = std.versions.find((v) => v.toLowerCase() === wanted);
+    const wanted = token.slice(sep + 1).trim().replace(/[A-Z]/g, asciiLowerChar);
+    const version = std.versions.find((v) => v.replace(/[A-Z]/g, asciiLowerChar) === wanted);
     if (!version) {
       unknown.push(token);
       continue;
@@ -126926,14 +127107,14 @@ function knownSelectionNames(engineOptions) {
   const tags = new Set();
   for (const d of CHECK_DEFS) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
-    for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
+    for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).replace(/[A-Z]/g, asciiLowerChar));
   }
   // A standard's own rollups carry its rule tag, which selects them, even
   // when the standard brings no rule of its own to carry it too.
   for (const entry of Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []) {
     const metaTags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
     for (const t of metaTags) {
-      const tag = String(t).trim().toLowerCase();
+      const tag = String(t).trim().replace(/[A-Z]/g, asciiLowerChar);
       if (tag) tags.add(tag);
     }
   }
@@ -126943,17 +127124,17 @@ function knownSelectionNames(engineOptions) {
   const resolved = resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG);
   for (const d of resolved.defs.values()) {
     ruleIds.add(d.ruleId);
-    for (const t of Array.isArray(d.tags) ? d.tags : []) tags.add(String(t).toLowerCase());
+    for (const t of Array.isArray(d.tags) ? d.tags : []) tags.add(String(t).replace(/[A-Z]/g, asciiLowerChar));
   }
   const skippedReasons = new Map();
   for (const sk of resolved.skipped) if (sk.id && !skippedReasons.has(sk.id)) skippedReasons.set(sk.id, sk.reason);
   // Rule ids that differ only in case name the same rule (the runner skips a
   // custom rule spelt like another in another case), so IMG-ALT-PRESENT is
   // img-alt-present, as tags and engineOptions.rules[ruleId] are read.
-  const prefix = String(ENGINE_TAG).toLowerCase() + '-';
+  const prefix = String(ENGINE_TAG).replace(/[A-Z]/g, asciiLowerChar) + '-';
   const byLower = new Map();
   for (const id of [...ruleIds, ...Object.keys(COMPOSITE_RULE_INDEX)]) {
-    if (!byLower.has(id.toLowerCase())) byLower.set(id.toLowerCase(), id);
+    if (!byLower.has(id.replace(/[A-Z]/g, asciiLowerChar))) byLower.set(id.replace(/[A-Z]/g, asciiLowerChar), id);
   }
   const isRuleId = (v) =>
     !!compositeIdOf(v) || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG));
@@ -126965,19 +127146,19 @@ function knownSelectionNames(engineOptions) {
         ? ' (a custom rule that was skipped: ' + skippedReasons.get(String(v).trim()) + ')'
         : ''),
     isRuleId,
-    isTag: (v) => tags.has(String(v).toLowerCase()),
+    isTag: (v) => tags.has(String(v).replace(/[A-Z]/g, asciiLowerChar)),
     // A rule id as the engine spells it, for one given in another case; any
     // other value as given.
     canonical: (v) => {
       if (typeof v !== 'string' || isRuleId(v)) return v;
-      let lower = v.trim().toLowerCase();
+      let lower = v.trim().replace(/[A-Z]/g, asciiLowerChar);
       if (!byLower.has(lower) && lower.startsWith(prefix)) lower = lower.slice(prefix.length);
       return byLower.get(lower) || v;
     },
     // A WCAG version/level tag no rule carries: a real tag, for criteria the
     // engine has no rule for, not a typo.
     isUntestedWcagTag: (v) => {
-      const t = String(v).toLowerCase();
+      const t = String(v).replace(/[A-Z]/g, asciiLowerChar);
       return !tags.has(t) && Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t);
     }
   };
@@ -126985,7 +127166,7 @@ function knownSelectionNames(engineOptions) {
 
 // 'WCAG 2.2 Level A ("wcag22a")', for messages.
 function describeWcagLevelTag(tag) {
-  const t = WCAG_LEVEL_TAGS[String(tag).toLowerCase()];
+  const t = WCAG_LEVEL_TAGS[String(tag).replace(/[A-Z]/g, asciiLowerChar)];
   return 'WCAG ' + t.version + ' Level ' + t.level + ' ("' + tag + '")';
 }
 
@@ -127010,7 +127191,7 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
     );
   }
   if (asRules.length === values.length) return { includeRuleIds: values };
-  if (asRules.length === 0) return { tags: values.map((v) => v.toLowerCase()) };
+  if (asRules.length === 0) return { tags: values.map((v) => v.replace(/[A-Z]/g, asciiLowerChar)) };
   throw invalidRunOnly(
     'runOnly: an array lists either rule ids or tags, not both; use { includeRuleIds, tags } to combine them.'
   );
@@ -127150,7 +127331,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // any rule ids or tags, and the other keys beside it (excludeTags,
   // excludeRuleIds...) still apply.
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
-    const kind = String(runOnly.type).trim().toLowerCase();
+    const kind = String(runOnly.type).trim().replace(/[A-Z]/g, asciiLowerChar);
     const rest = { ...runOnly };
     delete rest.type;
     delete rest.values;
@@ -127166,7 +127347,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     ['engineOptions.includeMode', eo.includeMode]
   ]) {
     if (value === undefined || value === null) continue;
-    const mode = typeof value === 'string' ? value.trim().toLowerCase() : '';
+    const mode = typeof value === 'string' ? value.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
     if (mode === 'and' || mode === 'or') continue;
     const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
     if (strictOf(eo)) throw invalidRunOnly(message);
@@ -127353,7 +127534,7 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const norm = normalizeRunOnly(runOnly);
   const includeMode = normalizeIncludeMode(norm.includeMode);
 
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
 
   const hasRuleInclude = norm.includeRuleIds.length > 0;
   const hasTestInclude = norm.includeTestIds.length > 0;
@@ -127467,7 +127648,7 @@ function ruleExcludedByRunOnly(def, runOnly, engineTag) {
   }
 
   if (norm.excludeTags.length) {
-    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
     if (defTags.some((t) => norm.excludeTags.includes(t))) return true;
   }
 
@@ -127494,9 +127675,9 @@ function ruleNamedOnItsOwn(def, runOnly, engineTag) {
   ) {
     return true;
   }
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
   // The engine's own tag is on every rule and rollup, so it names them all.
-  const namesCriteria = (t) => isWcagTag(t) || t === tag.toLowerCase();
+  const namesCriteria = (t) => isWcagTag(t) || t === tag.replace(/[A-Z]/g, asciiLowerChar);
   if (defTags.some((t) => norm.tags.includes(t) && !namesCriteria(t))) return true;
   if (optInTagsOf(def).some((t) => norm.ownTags.includes(t) || norm.optInTags.includes(t))) return true;
   return norm.bestPractices && defTags.includes(BEST_PRACTICE_TAG);
@@ -127507,7 +127688,7 @@ function ruleNamedOnItsOwn(def, runOnly, engineTag) {
 // (rollupCompositeResults), not the rule's other criteria.
 function criteriaNamingRule(def, runOnly) {
   const norm = normalizeRunOnly(runOnly);
-  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).replace(/[A-Z]/g, asciiLowerChar)) : [];
   return defTags
     .filter((t) => norm.tags.includes(t) && Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, t))
     .map((t) => WCAG_SC_BY_TAG[t]);
@@ -133909,6 +134090,32 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       });
       if (!gen.readable) return blocked('GENERATED_TEXT_UNREADABLE', 'content', gen.value);
 
+      // A ::before or ::after made a block container, with a negative
+      // text-indent, moves its text by that much (text-indent: -9999px, an
+      // image replacement): drawn wholly left of the page, nothing is
+      // painted. Its text ends, at most, where the element's box ends.
+      try {
+        const indent = Number.parseFloat(ps.textIndent) || 0;
+        const display = String(ps.display || '');
+        const position = String(ps.position || '');
+        if (
+          indent < 0 &&
+          display &&
+          display !== 'inline' &&
+          display !== 'contents' &&
+          display !== 'none' &&
+          position !== 'absolute' &&
+          position !== 'fixed' &&
+          typeof dom.get(el, 'getBoundingClientRect') === 'function'
+        ) {
+          const r = dom.getBoundingClientRect(el);
+          const doc = dom.ownerDocument(el);
+          const win = doc && dom.defaultView(doc);
+          const sx = (win && win.scrollX) || 0;
+          if (r && r.width > 0 && r.right + indent + sx <= 0) return null;
+        }
+      } catch {}
+
       // Effects on the generated text itself, which draw something other
       // than its declared colors.
       if (hasBlendMode(ps)) return blocked('MIX_BLEND_MODE', 'mix-blend-mode', ps.mixBlendMode);
@@ -138602,8 +138809,9 @@ const describeOptionValue = (function describeOptionValue(v) {
   return 'an object';
 });
 const engineOptionSpec = (function engineOptionSpec() {
+  // Spread reads a hole ([, 'main']) as undefined, which every() skips.
   const list = (v) =>
-    typeof v === 'string' || (Array.isArray(v) && v.every((x) => typeof x === 'string'));
+    typeof v === 'string' || (Array.isArray(v) && [...v].every((x) => typeof x === 'string'));
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
   const T = {
     any: { test: () => true, expected: 'any value' },
@@ -138622,7 +138830,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     }),
     // A non-empty list of some of `values`.
     someOf: (values) => ({
-      test: (v) => Array.isArray(v) && v.length > 0 && v.every((x) => values.includes(x)),
+      test: (v) => Array.isArray(v) && v.length > 0 && [...v].every((x) => values.includes(x)),
       expected: 'a non-empty list of ' + values.map((x) => JSON.stringify(x)).join(', ')
     })
   };
@@ -138648,7 +138856,11 @@ const engineOptionSpec = (function engineOptionSpec() {
       expected: 'true or false'
     },
     locale: T.string,
-    wcagVersion: T.oneOf(['2.0', '2.1', '2.2']),
+    // Read trimmed, as wcagLevel is read trimmed and in any case.
+    wcagVersion: {
+      test: (v) => typeof v === 'string' && ['2.0', '2.1', '2.2'].includes(v.trim()),
+      expected: 'one of "2.0", "2.1", "2.2"'
+    },
     wcagLevel: {
       test: (v) => typeof v === 'string' && ['A', 'AA', 'AAA'].includes(v.trim().toUpperCase()),
       expected: '"A", "AA" or "AAA", in any case'
@@ -138671,7 +138883,9 @@ const engineOptionSpec = (function engineOptionSpec() {
     styleSheetTexts: {
       test: (v) =>
         Array.isArray(v) &&
-        v.every((s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'),
+        [...v].every(
+          (s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'
+        ),
       expected: '[{ href, text }]'
     },
     timestamp: T.string,
@@ -138764,7 +138978,9 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
   function describe(v) {
     if (v === null) return 'null';
     if (Array.isArray(v)) {
-      // Short lists of plain values are shown, so the one at fault is seen.
+      // Short lists of plain values are shown, so the one at fault is seen;
+      // a hole as undefined.
+      v = [...v];
       const plain =
         v.length > 0 && v.length <= 6 && v.every((x) => x === null || typeof x !== 'object');
       const text = plain
@@ -150766,7 +150982,9 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
     // told apart in a report, and IMG-ALT-PRESENT is most likely meant as
     // img-alt-present. A custom rule spelt like a built-in in another case
     // overrides it, under the built-in's id, and is said so.
-    const sameId = (a, b) => typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
+    const sameId = (a, b) =>
+      typeof b === 'string' &&
+      a.replace(/[A-Z]/g, (c) => c.toLowerCase()) === b.replace(/[A-Z]/g, (c) => c.toLowerCase());
     const earlier = [...defs.keys()].find((k) => sameId(ruleId, k));
     // A second rule with the same id would silently replace the first; a
     // composite's id would put one id in both checksResults and
@@ -150998,6 +151216,48 @@ const runCoreSettled = (function runCoreSettled(
   const excludeSelectors = normalizeSelectorList(
     engineOptionsResolved && engineOptionsResolved.excludeSelectors
   );
+  // Under strictOptions, a selector that isn't valid CSS, which would
+  // exclude nothing, is refused before anything runs: globally and for each
+  // rule (engineOptions.rules[id].excludeSelectors). Otherwise it is warned
+  // about where it is used, and the other selectors still apply.
+  if (strictOf(engineOptionsResolved)) {
+    const probe = dom.get(document, 'documentElement');
+    const invalid = (list) =>
+      normalizeSelectorList(list).filter((sel) => {
+        try {
+          if (probe) dom.matches(probe, sel);
+          return false;
+        } catch {
+          return true;
+        }
+      });
+    const bad = invalid(excludeSelectors).map((sel) => 'excludeSelectors: "' + sel + '"');
+    const ruleSettings =
+      engineOptionsResolved.rules &&
+      typeof engineOptionsResolved.rules === 'object' &&
+      !Array.isArray(engineOptionsResolved.rules)
+        ? engineOptionsResolved.rules
+        : null;
+    if (ruleSettings) {
+      for (const id of Object.keys(ruleSettings)) {
+        const own = ruleSettings[id];
+        if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
+        for (const sel of invalid(own.excludeSelectors)) {
+          bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
+        }
+      }
+    }
+    if (bad.length) {
+      const err = new Error(
+        'engineOptions.' +
+          bad.join('; engineOptions.') +
+          (bad.length > 1 ? ' are' : ' is') +
+          ' not valid CSS, and would exclude nothing. (strictOptions)'
+      );
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
+  }
   // Default off: explicit opt-in for "this scan target was never meant to
   // represent a real page" -- see helpers.isWholeDocumentScope().
   const fragment = !!(engineOptionsResolved && switchOf(engineOptionsResolved.fragment) === true);
@@ -151110,6 +151370,24 @@ const runCoreSettled = (function runCoreSettled(
     } catch {
       rgba = { a: 1 };
     }
+    // The color parser reads computed styles, which the browser has already
+    // checked, so it is lenient: a keyword that depends on the page
+    // (inherit, currentColor) or rgb() with a wrong number of values would
+    // pass. A color the caller writes is checked as CSS would check it.
+    const text = String(given).trim();
+    const lower = text.toLowerCase();
+    const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
+    const badSyntax =
+      ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'].includes(lower) ||
+      (fn &&
+        (() => {
+          const body = fn[2].trim();
+          const parts = body.includes(',')
+            ? body.split(',').map((x) => x.trim())
+            : body.split('/').flatMap((x, i) => (i === 0 ? x.trim().split(/\s+/) : [x.trim()]));
+          return parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
+        })());
+    if (badSyntax) rgba = null;
     if (!rgba || !(rgba.a >= 1)) {
       const message =
         'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
@@ -151366,16 +151644,21 @@ const runCoreSettled = (function runCoreSettled(
   const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
   const optInRulesRan = new Set();
   if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
+    const message =
+      'engineOptions.optInRules: ' +
+      runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
+      ', no such opt-in rule tag (' +
+      (OPT_IN_RULE_TAGS.length
+        ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
+        : 'this version has none') +
+      ')';
+    if (strictOf(engineOptionsResolved)) {
+      const err = new Error(message + '. (strictOptions)');
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
     try {
-      console.warn(
-        '[surea11y] engineOptions.optInRules: ignoring ' +
-          runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such opt-in rule tag (' +
-          (OPT_IN_RULE_TAGS.length
-            ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
-            : 'this version has none') +
-          ').'
-      );
+      console.warn('[surea11y] ' + message.replace(': ', ': ignoring ') + '.');
     } catch {}
   }
 
@@ -151384,11 +151667,17 @@ const runCoreSettled = (function runCoreSettled(
   // result carries only those asked for, or implied by the applied profile.
   const mappingSelection = resolveMappingSelection(engineOptionsResolved, appliedProfile);
   if (mappingSelection.unknown.length) {
+    const named = mappingSelection.unknown.map((s) => '"' + s + '"').join(', ');
+    if (strictOf(engineOptionsResolved)) {
+      const err = new Error(
+        'engineOptions.mappings: ' + named + ', no such standard or version. (strictOptions)'
+      );
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
     try {
       console.warn(
-        '[surea11y] engineOptions.mappings: ignoring ' +
-          mappingSelection.unknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such standard or version.'
+        '[surea11y] engineOptions.mappings: ignoring ' + named + ', no such standard or version.'
       );
     } catch {}
   }
@@ -151532,7 +151821,9 @@ const runCoreSettled = (function runCoreSettled(
       .map((d) => d.ruleId)
       .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
     const byLower = new Map();
-    for (const id of knownIds) if (typeof id === 'string') byLower.set(id.toLowerCase(), id);
+    // ASCII case only, as the selection matches ids (asciiLowerChar).
+    const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
+    for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
     const legacy = String(ENGINE_TAG || 'a11ycore').toLowerCase() + '-';
     const unknownRuleKeys = [];
     const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
@@ -151540,7 +151831,7 @@ const runCoreSettled = (function runCoreSettled(
       for (const key of keys) {
         const value = rulesOption[key];
         if (!value || typeof value !== 'object') continue;
-        const lower = key.trim().toLowerCase();
+        const lower = lowerAscii(key.trim());
         let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
         if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
         if (exact) {
@@ -151967,7 +152258,7 @@ const runCoreSettled = (function runCoreSettled(
     }
 
     if (typeof applicabilityFn === 'function') {
-      let applicable = true;
+      let applicable;
       try {
         const res = applicabilityFn(ctx);
         // Rules run synchronously: a Promise is truthy, and would have
@@ -151981,6 +152272,15 @@ const runCoreSettled = (function runCoreSettled(
         if (typeof res === 'boolean') applicable = res;
         else if (res && typeof res === 'object' && typeof res.applicable === 'boolean')
           applicable = res.applicable;
+        else {
+          // undefined (a forgotten return), 0, null or 'false' ran the rule
+          // everywhere: what was meant can't be known, so the rule says so.
+          throw new Error(
+            'applicability returned ' +
+              describeOptionValue(res) +
+              '; it must return true or false (or { applicable: true | false })'
+          );
+        }
       } catch (err) {
         const raw = {
           outcome: 'cantTell',

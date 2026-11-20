@@ -2705,7 +2705,7 @@ Checks that &lt;li&gt; elements are contained by &lt;ul&gt;, &lt;ol&gt;, &lt;men
 
 **What a finding reports.**
 
-- `reasonCode`: `LIST_ROLE_OVERRIDDEN` when the parent is a &lt;ul&gt;, &lt;ol&gt; or &lt;menu&gt; whose explicit role replaces list (`<ul role="tablist">`), `LISTITEM_INVALID_PARENT` otherwise. Both fail where the &lt;li&gt; is drawn as a list item, and are asked about where it is not.
+- `reasonCode`: `LIST_ROLE_OVERRIDDEN` when the parent is a &lt;ul&gt;, &lt;ol&gt; or &lt;menu&gt; whose explicit role replaces list (`<ul role="tablist">`), asked about, leaning fail where the &lt;li&gt; is drawn as a list item; `LISTITEM_INVALID_PARENT` otherwise, which fails where the &lt;li&gt; is drawn as a list item and is asked about where it is not.
 - `parentElement`: the tag name of the `<li>`'s parent, the container it is in instead of a list.
 - `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
 - `parentElement` is a stable contract, unlike the rest of `data.details`.
@@ -2715,7 +2715,7 @@ Checks that &lt;li&gt; elements are contained by &lt;ul&gt;, &lt;ol&gt;, &lt;men
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `LISTITEM_INVALID_PARENT` | fail, cantTell | An li is not inside a ul, ol, menu or an element with role list, so it is not exposed as a list item. It fails where the li is drawn as a list item. | WCAG 1.3.1; H48; HTML li element contexts (MUST); WAI-ARIA 1.2 listitem role (MUST) |
-| `LIST_ROLE_OVERRIDDEN` | fail, cantTell | The li's parent is a ul, ol or menu whose explicit role replaces list, so the li is not in a list. It fails where the li is drawn as a list item. | WCAG 1.3.1; WAI-ARIA 1.2 listitem role (MUST) |
+| `LIST_ROLE_OVERRIDDEN` | cantTell | The li's parent is a ul, ol or menu whose explicit role replaces list, so the li is not in a list. Whether losing the list loses information depends on the content (a few links in a &lt;ul role="navigation"&gt; read as well without it), so it is asked about, leaning fail where the li is drawn as a list item. | WCAG 1.3.1; WAI-ARIA 1.2 listitem role (MUST) |
 
 ### `live-region-announcements`
 

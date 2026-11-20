@@ -417,3 +417,24 @@ test('openReport() tries again after a load that failed', async () => {
   assert.equal(await window.a11ycore.openReport(result), 'blob:x');
   dom.window.close();
 });
+
+test('run() refuses engine options wrapped in engineOptions, and says which keys no option has (R5:AP-4)', async () => {
+  const dom = await load();
+  const { a11ycore } = dom.window;
+  await assert.rejects(
+    a11ycore.run({ engineOptions: 'x' }),
+    /^TypeError: run: the engine options go at the top level/
+  );
+  const warnings = [];
+  const warn = dom.window.console.warn;
+  dom.window.console.warn = (m) => warnings.push(String(m));
+  try {
+    const result = await a11ycore.run({ foo: 1, locale: 'en', runOnly: ['img-alt-present'] });
+    assert.equal(result.checksResults.length, 1);
+  } finally {
+    dom.window.console.warn = warn;
+  }
+  assert.equal(warnings.length, 1, JSON.stringify(warnings));
+  assert.match(warnings[0], /run: "foo" is not an engine option/);
+  dom.window.close();
+});

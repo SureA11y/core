@@ -13,8 +13,9 @@
  * against it.
  */
 function engineOptionSpec() {
+  // Spread reads a hole ([, 'main']) as undefined, which every() skips.
   const list = (v) =>
-    typeof v === 'string' || (Array.isArray(v) && v.every((x) => typeof x === 'string'));
+    typeof v === 'string' || (Array.isArray(v) && [...v].every((x) => typeof x === 'string'));
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
   const T = {
     any: { test: () => true, expected: 'any value' },
@@ -33,7 +34,7 @@ function engineOptionSpec() {
     }),
     // A non-empty list of some of `values`.
     someOf: (values) => ({
-      test: (v) => Array.isArray(v) && v.length > 0 && v.every((x) => values.includes(x)),
+      test: (v) => Array.isArray(v) && v.length > 0 && [...v].every((x) => values.includes(x)),
       expected: 'a non-empty list of ' + values.map((x) => JSON.stringify(x)).join(', ')
     })
   };
@@ -59,7 +60,11 @@ function engineOptionSpec() {
       expected: 'true or false'
     },
     locale: T.string,
-    wcagVersion: T.oneOf(['2.0', '2.1', '2.2']),
+    // Read trimmed, as wcagLevel is read trimmed and in any case.
+    wcagVersion: {
+      test: (v) => typeof v === 'string' && ['2.0', '2.1', '2.2'].includes(v.trim()),
+      expected: 'one of "2.0", "2.1", "2.2"'
+    },
     wcagLevel: {
       test: (v) => typeof v === 'string' && ['A', 'AA', 'AAA'].includes(v.trim().toUpperCase()),
       expected: '"A", "AA" or "AAA", in any case'
@@ -82,7 +87,9 @@ function engineOptionSpec() {
     styleSheetTexts: {
       test: (v) =>
         Array.isArray(v) &&
-        v.every((s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'),
+        [...v].every(
+          (s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'
+        ),
       expected: '[{ href, text }]'
     },
     timestamp: T.string,
@@ -184,7 +191,9 @@ function checkEngineOptions(engineOptions) {
   function describe(v) {
     if (v === null) return 'null';
     if (Array.isArray(v)) {
-      // Short lists of plain values are shown, so the one at fault is seen.
+      // Short lists of plain values are shown, so the one at fault is seen;
+      // a hole as undefined.
+      v = [...v];
       const plain =
         v.length > 0 && v.length <= 6 && v.every((x) => x === null || typeof x !== 'object');
       const text = plain
