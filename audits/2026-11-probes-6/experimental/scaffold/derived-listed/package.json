@@ -1,0 +1,25 @@
+{
+  "name": "derived-listed",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Accessibility standard for @surea11y/core, built on base-pack",
+  "main": "index.js",
+  "files": [
+    "*.js"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "base-pack": "~2.3.4"
+  },
+  "peerDependencies": {
+    "@surea11y/core": "~1.17.0"
+  },
+  "devDependencies": {
+    "@surea11y/core": "~1.17.0",
+    "eslint": "^10.8.0",
+    "jsdom": "^29.1.1"
+  }
+}

@@ -1,0 +1,12 @@
+const { sd, base, mkPack, index, runa11yCoreOnHtml } = require('./lib.js');
+const proc = (s) => ({ steps: [s], passWhen: 'ok', failWhen: 'no' });
+const d = base();
+d.laws = { 'pub-act': { name: 'Public Act', jurisdiction: 'FR' }, 'priv-act': { name: 'Private Act', jurisdiction: 'EU' } };
+d.data[1].requirements.A.procedure = proc('a'); d.data[1].requirements.B.procedure = proc('b');
+d.data[1].requirements.A.laws = ['priv-act'];
+d.profiles = { 'base-1': { version: '1', tags: ['base'], mappedRules: true, law: 'pub-act' } };
+const p = mkPack(sd.standardFromData(d));
+const l = index.listProcedures({ packs: [p], profile: 'base-1' });
+console.log('listProcedures(profile base-1, law pub-act):', l.requirements.map((r) => r.id));
+const r = runa11yCoreOnHtml('<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="a.png"></main></body></html>', { engineOptions: { packs: [p], profile: 'base-1' } });
+console.log('scan(profile base-1):', r.rulesResults.filter((x) => /^base-1-/.test(x.ruleId)).map((x) => `${x.ruleId}=${x.outcome}`).join(' '));

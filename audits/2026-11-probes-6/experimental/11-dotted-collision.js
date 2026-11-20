@@ -1,0 +1,13 @@
+const { sd, base, mkPack, index } = require('./lib.js');
+const proc = (s) => ({ steps: [s], passWhen: 'ok ' + s, failWhen: 'no ' + s });
+const e = base();
+e.data[1].requirements = { a: { title: 'Req a', tests: ['b.facets.c'] }, 'a.facets.b': { title: 'Req a.facets.b', tests: ['c'] } };
+e.data[1].tests = { 'b.facets.c': { title: 'Test one', requirements: ['a'], procedure: proc('one') }, c: { title: 'Test two', requirements: ['a.facets.b'], procedure: proc('two') } };
+e.data[1].ruleMap = {};
+e.data[1].texts = { fr: { 'tests.c.title': 'Test deux (FR)', 'tests.c.procedure.steps': ['deux'], 'tests.c.procedure.passWhen': 'oui deux', 'tests.c.procedure.failWhen': 'non deux' } };
+console.log('checkStandardData:', JSON.stringify(sd.checkStandardData(e)));
+const st = sd.standardFromData(e);
+console.log('engine texts:', JSON.stringify(st.texts));
+const p = mkPack(st);
+const l = index.listProcedures({ packs: [p], standard: 'base', locale: 'fr' });
+console.log(l.requirements.map((r) => `${r.id}: ${r.facets.map((f) => `[${f.id}] ${f.label}`).join(' | ')}`).join('\n'));

@@ -1,0 +1,37 @@
+const { runa11yCoreOnHtml } = require('/home/user/core/src/testing.js');
+const page = (b) => `<!doctype html><html lang="en"><head><title>T</title></head><body><main>${b}</main></body></html>`;
+const R = ['td-has-header','empty-table-header','table-th-has-data-cells','table-headers-attr-valid'];
+function go(name, body, ids = ['td-has-header','empty-table-header']) {
+  const res = runa11yCoreOnHtml(page(body), { runOnly: ids });
+  const out = ids.map(id => { const r = res.checksResults.find(c => c.ruleId === id); return id + '=' + (r ? r.outcome + JSON.stringify(r.occurrences.map(o => [o.selector.replace('html > body > main > ',''), o.data && o.data.details && o.data.details.reasonCode, o.lean && o.lean.toward])) : 'n/a'); });
+  console.log('## ' + name + '\n   ' + out.join('\n   '));
+}
+go('2x2 no headers, numbers', '<table><tr><td>Mon</td><td>9-17</td></tr><tr><td>Tue</td><td>9-17</td></tr></table>');
+go('empty th row headers', '<table><tr><th></th><th></th></tr><tr><td>1</td><td>2</td></tr></table>');
+go('th with only whitespace/nbsp', '<table><tr><th>&nbsp;</th><th> </th></tr><tr><td>1</td><td>2</td></tr></table>');
+go('2 rows, second row empty <tr>', '<table><tr><td>Name</td><td>Price</td></tr><tr></tr></table>');
+go('2 rows, second row hidden', '<table><tr><td>Name</td><td>Price</td></tr><tr style="display:none"><td>x</td><td>y</td></tr></table>');
+go('2 cols, second column all empty', '<table><tr><td>Alpha</td><td></td></tr><tr><td>Beta</td><td></td></tr></table>');
+go('role=presentation', '<table role="presentation"><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>');
+go('role=presentation + aria-label (conflict resolution => table)', '<table role="presentation" aria-label="Prices"><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>');
+go('role=none', '<table role="none"><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>');
+go('caption only', '<table><caption>Prices</caption><tr><td>Tea</td><td>2</td></tr><tr><td>Coffee</td><td>3</td></tr></table>');
+go('nested data table in layout', '<table><tr><td>Nav</td><td><table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table></td></tr><tr><td>x</td><td>y</td></tr></table>');
+go('headers attr pointing nowhere', '<table><tr><th>A</th><th>B</th></tr><tr><td headers="nope">1</td><td>2</td></tr></table>', ['td-has-header','table-headers-attr-valid']);
+go('only row headers (key-value)', '<table><tr><th>Name</th><td>Ann</td></tr><tr><th>Age</th><td>3</td></tr></table>');
+go('th in last column (rtl-like)', '<table dir="rtl"><tr><td>1</td><th>A</th></tr><tr><td>2</td><th>B</th></tr></table>');
+go('role=grid with gridcells & columnheader', '<table role="grid"><tr><td role="columnheader">A</td><td role="columnheader">B</td></tr><tr><td role="gridcell">1</td><td role="gridcell">2</td></tr></table>');
+go('role=treegrid no headers', '<table role="treegrid"><tr role="row"><td role="gridcell">a</td><td role="gridcell">b</td></tr><tr role="row"><td role="gridcell">c</td><td role="gridcell">d</td></tr></table>');
+go('div-based ARIA table', '<div role="table"><div role="row"><div role="cell">a</div><div role="cell">b</div></div><div role="row"><div role="cell">c</div><div role="cell">d</div></div></div>');
+go('colspan=1 explicit', '<table><tr><td colspan="1">a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>');
+go('rowspan junk "2x"', '<table><tr><th>A</th><th>B</th></tr><tr><td rowspan="2x">c</td><td>d</td></tr><tr><td>e</td></tr></table>');
+go('rowspan > rows (rowspan=5 in last row)', '<table><tr><th>A</th><th>B</th></tr><tr><td rowspan="5">c</td><td>d</td></tr></table>');
+go('thead with td, 2x2', '<table><thead><tr><td>Name</td><td>Price</td></tr></thead><tbody><tr><td>Tea</td><td>2</td></tr></tbody></table>');
+go('th role=presentation inside table', '<table><tr><th role="presentation">A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>');
+go('table display:none', '<table style="display:none"><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>');
+go('aria-hidden table', '<table aria-hidden="true"><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>');
+go('form layout table', '<table><tr><td><label for=a>Name</label></td><td><input id=a></td></tr><tr><td><label for=b>Mail</label></td><td><input id=b></td></tr></table>');
+go('image+caption layout 2x2', '<table><tr><td><img src=a.png alt="A"></td><td>Text about A</td></tr><tr><td><img src=b.png alt="B"></td><td>Text about B</td></tr></table>');
+go('td with role=rowheader in first col', '<table><tr><td role="rowheader">Mon</td><td>9</td></tr><tr><td role="rowheader">Tue</td><td>10</td></tr></table>');
+go('td scope=row (invalid on td)', '<table><tr><td scope="row">Mon</td><td>9</td></tr><tr><td scope="row">Tue</td><td>10</td></tr></table>');
+go('th hidden by visibility', '<table><tr><th style="visibility:hidden">A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>');
