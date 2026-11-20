@@ -3706,6 +3706,59 @@ function createDomHelpers(opts) {
     return result;
   }
 
+  // Whether an occurrence a rule reported lies in an excluded area, however
+  // the rule named its element: a node (an element, or a text node, read
+  // through the element or shadow host that holds it), or only a selector,
+  // read against the document as buildStructuralPath re-finds it. An element
+  // in a frame's document is excluded when the frame is, so the walk goes on
+  // from the frame element up to the scanned document.
+  function isOccurrenceExcluded(occ) {
+    if (!__getEffectiveExcludeSelectors().length || !occ || typeof occ !== 'object') return false;
+    let node = occ.__node || null;
+    if (!node) {
+      const selector = occ.selector;
+      if (!selector || typeof selector !== 'string' || !document) return false;
+      // A selector inside a shadow tree holds only there; read against the
+      // document it would name another element.
+      if (Array.isArray(occ.shadowHostSelectors) && occ.shadowHostSelectors.length) return false;
+      try {
+        node = dom.querySelector(document, selector);
+      } catch {
+        node = null;
+      }
+      if (!node) return false;
+    }
+    for (let guard = 0; node && guard < 64; guard++) {
+      if (dom.nodeType(node) !== 1) {
+        let up = dom.parentElement(node);
+        if (!up) {
+          const parent = dom.parentNode(node);
+          up = parent && dom.nodeType(parent) === 11 ? dom.host(parent) || null : null;
+        }
+        node = up;
+        continue;
+      }
+      if (isExcluded(node)) return true;
+      let doc = null;
+      try {
+        doc = dom.ownerDocument(node);
+      } catch {
+        doc = null;
+      }
+      if (!doc || !document || doc === document) return false;
+      let frame = null;
+      try {
+        const view = dom.defaultView(doc);
+        frame = view ? dom.get(view, 'frameElement') : null;
+      } catch {
+        // A cross-origin parent hides its frame element.
+        frame = null;
+      }
+      node = frame || null;
+    }
+    return false;
+  }
+
   function queryAll(sel) {
     if (!roots.length) return [];
     const out = [];
@@ -9821,6 +9874,7 @@ function createDomHelpers(opts) {
     // Existing (back-compat)
     hasAccessibleName,
     isExcluded,
+    isOccurrenceExcluded,
     isAccTreeEligible,
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,

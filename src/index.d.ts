@@ -812,8 +812,12 @@ export interface CheckResult {
   excludedOccurrences?: {
     /** How many occurrences were dropped. */
     dropped: number;
-    /** Present when none was left, so the outcome became notApplicable: what the rule said. */
-    coercedFrom?: 'fail' | 'cantTell';
+    /**
+     * Present when dropping them changed the outcome: what the rule said. A
+     * result left with no occurrence is notApplicable; one left with
+     * occurrences takes the outcome they say.
+     */
+    coercedFrom?: 'fail' | 'cantTell' | 'pass';
   };
   /**
    * Present when the rule did not complete (cantTell with no occurrences),

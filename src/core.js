@@ -1743,30 +1743,57 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   // to it here. What was dropped is said beside the result and in error, so
   // the rule's author finds out; a rule left with no occurrence found
   // nothing outside those areas, so it is notApplicable, as core can't tell
-  // whether the rest of the page passed. Nothing to do without exclusions:
-  // isExcluded answers at once, from a cache, for each occurrence.
+  // whether the rest of the page passed. A result left with occurrences
+  // takes the outcome they say: a fail whose fail-tier occurrences were all
+  // dropped is no longer a fail (cantTell while a question is left, pass when
+  // only passes are), and a cantTell left with only passes passes. An
+  // occurrence with no tier takes the outcome the rule gave. Nothing to do
+  // without exclusions: isExcluded answers at once, from a cache, for each
+  // occurrence.
   if (
     Array.isArray(out.occurrences) &&
     out.occurrences.length &&
     helpers &&
-    typeof helpers.isExcluded === 'function'
+    (typeof helpers.isOccurrenceExcluded === 'function' || typeof helpers.isExcluded === 'function')
   ) {
     const kept = out.occurrences.filter((o) => {
-      const node = o && typeof o === 'object' ? o.__node : null;
-      if (!node) return true;
+      if (!o || typeof o !== 'object') return true;
       try {
-        return helpers.isExcluded(node) !== true;
+        if (typeof helpers.isOccurrenceExcluded === 'function') return helpers.isOccurrenceExcluded(o) !== true;
+        return !o.__node || helpers.isExcluded(o.__node) !== true;
       } catch {
         return true;
       }
     });
     const dropped = out.occurrences.length - kept.length;
     if (dropped > 0) {
+      const given = out.outcome;
+      const tierOf = (o) =>
+        o && typeof o === 'object' && typeof o.occurrenceOutcome === 'string' ? o.occurrenceOutcome : given;
       out.occurrences = kept;
       out.excludedOccurrences = { dropped };
-      if (!kept.length && (out.outcome === 'fail' || out.outcome === 'cantTell')) {
-        out.excludedOccurrences.coercedFrom = out.outcome;
-        out.outcome = 'notApplicable';
+      let outcome = given;
+      if (given === 'fail' || given === 'cantTell' || given === 'pass') {
+        if (!kept.length) {
+          outcome = 'notApplicable';
+        } else {
+          const tiers = kept.map(tierOf);
+          if (tiers.includes('fail')) outcome = given === 'fail' ? 'fail' : given;
+          else if (tiers.includes('cantTell')) outcome = given === 'pass' ? 'pass' : 'cantTell';
+          else if (tiers.every((x) => x === 'pass')) outcome = 'pass';
+        }
+      }
+      // What the rule could have reported: a manual rule's fail is a
+      // cantTell (below), so it never claims to have been a fail.
+      const reported =
+        given === 'fail' && pol.coerceManualFailToCantTell && def.type === 'manual' ? 'cantTell' : given;
+      if (outcome !== given) {
+        if (outcome !== reported) out.excludedOccurrences.coercedFrom = reported;
+        out.outcome = outcome;
+        delete out.policyOutcome;
+      } else if (out.policyOutcome === 'fail' && !kept.some((o) => tierOf(o) === 'fail')) {
+        // A fail the policy turned into a question, whose failures were all
+        // dropped: there is no fail left to keep.
         delete out.policyOutcome;
       }
       out.error =
@@ -16616,6 +16643,59 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return result;
   }
 
+  // Whether an occurrence a rule reported lies in an excluded area, however
+  // the rule named its element: a node (an element, or a text node, read
+  // through the element or shadow host that holds it), or only a selector,
+  // read against the document as buildStructuralPath re-finds it. An element
+  // in a frame's document is excluded when the frame is, so the walk goes on
+  // from the frame element up to the scanned document.
+  function isOccurrenceExcluded(occ) {
+    if (!__getEffectiveExcludeSelectors().length || !occ || typeof occ !== 'object') return false;
+    let node = occ.__node || null;
+    if (!node) {
+      const selector = occ.selector;
+      if (!selector || typeof selector !== 'string' || !document) return false;
+      // A selector inside a shadow tree holds only there; read against the
+      // document it would name another element.
+      if (Array.isArray(occ.shadowHostSelectors) && occ.shadowHostSelectors.length) return false;
+      try {
+        node = dom.querySelector(document, selector);
+      } catch {
+        node = null;
+      }
+      if (!node) return false;
+    }
+    for (let guard = 0; node && guard < 64; guard++) {
+      if (dom.nodeType(node) !== 1) {
+        let up = dom.parentElement(node);
+        if (!up) {
+          const parent = dom.parentNode(node);
+          up = parent && dom.nodeType(parent) === 11 ? dom.host(parent) || null : null;
+        }
+        node = up;
+        continue;
+      }
+      if (isExcluded(node)) return true;
+      let doc = null;
+      try {
+        doc = dom.ownerDocument(node);
+      } catch {
+        doc = null;
+      }
+      if (!doc || !document || doc === document) return false;
+      let frame = null;
+      try {
+        const view = dom.defaultView(doc);
+        frame = view ? dom.get(view, 'frameElement') : null;
+      } catch {
+        // A cross-origin parent hides its frame element.
+        frame = null;
+      }
+      node = frame || null;
+    }
+    return false;
+  }
+
   function queryAll(sel) {
     if (!roots.length) return [];
     const out = [];
@@ -22731,6 +22811,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Existing (back-compat)
     hasAccessibleName,
     isExcluded,
+    isOccurrenceExcluded,
     isAccTreeEligible,
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,
@@ -126151,30 +126232,57 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   // to it here. What was dropped is said beside the result and in error, so
   // the rule's author finds out; a rule left with no occurrence found
   // nothing outside those areas, so it is notApplicable, as core can't tell
-  // whether the rest of the page passed. Nothing to do without exclusions:
-  // isExcluded answers at once, from a cache, for each occurrence.
+  // whether the rest of the page passed. A result left with occurrences
+  // takes the outcome they say: a fail whose fail-tier occurrences were all
+  // dropped is no longer a fail (cantTell while a question is left, pass when
+  // only passes are), and a cantTell left with only passes passes. An
+  // occurrence with no tier takes the outcome the rule gave. Nothing to do
+  // without exclusions: isExcluded answers at once, from a cache, for each
+  // occurrence.
   if (
     Array.isArray(out.occurrences) &&
     out.occurrences.length &&
     helpers &&
-    typeof helpers.isExcluded === 'function'
+    (typeof helpers.isOccurrenceExcluded === 'function' || typeof helpers.isExcluded === 'function')
   ) {
     const kept = out.occurrences.filter((o) => {
-      const node = o && typeof o === 'object' ? o.__node : null;
-      if (!node) return true;
+      if (!o || typeof o !== 'object') return true;
       try {
-        return helpers.isExcluded(node) !== true;
+        if (typeof helpers.isOccurrenceExcluded === 'function') return helpers.isOccurrenceExcluded(o) !== true;
+        return !o.__node || helpers.isExcluded(o.__node) !== true;
       } catch {
         return true;
       }
     });
     const dropped = out.occurrences.length - kept.length;
     if (dropped > 0) {
+      const given = out.outcome;
+      const tierOf = (o) =>
+        o && typeof o === 'object' && typeof o.occurrenceOutcome === 'string' ? o.occurrenceOutcome : given;
       out.occurrences = kept;
       out.excludedOccurrences = { dropped };
-      if (!kept.length && (out.outcome === 'fail' || out.outcome === 'cantTell')) {
-        out.excludedOccurrences.coercedFrom = out.outcome;
-        out.outcome = 'notApplicable';
+      let outcome = given;
+      if (given === 'fail' || given === 'cantTell' || given === 'pass') {
+        if (!kept.length) {
+          outcome = 'notApplicable';
+        } else {
+          const tiers = kept.map(tierOf);
+          if (tiers.includes('fail')) outcome = given === 'fail' ? 'fail' : given;
+          else if (tiers.includes('cantTell')) outcome = given === 'pass' ? 'pass' : 'cantTell';
+          else if (tiers.every((x) => x === 'pass')) outcome = 'pass';
+        }
+      }
+      // What the rule could have reported: a manual rule's fail is a
+      // cantTell (below), so it never claims to have been a fail.
+      const reported =
+        given === 'fail' && pol.coerceManualFailToCantTell && def.type === 'manual' ? 'cantTell' : given;
+      if (outcome !== given) {
+        if (outcome !== reported) out.excludedOccurrences.coercedFrom = reported;
+        out.outcome = outcome;
+        delete out.policyOutcome;
+      } else if (out.policyOutcome === 'fail' && !kept.some((o) => tierOf(o) === 'fail')) {
+        // A fail the policy turned into a question, whose failures were all
+        // dropped: there is no fail left to keep.
         delete out.policyOutcome;
       }
       out.error =
@@ -141024,6 +141132,59 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return result;
   }
 
+  // Whether an occurrence a rule reported lies in an excluded area, however
+  // the rule named its element: a node (an element, or a text node, read
+  // through the element or shadow host that holds it), or only a selector,
+  // read against the document as buildStructuralPath re-finds it. An element
+  // in a frame's document is excluded when the frame is, so the walk goes on
+  // from the frame element up to the scanned document.
+  function isOccurrenceExcluded(occ) {
+    if (!__getEffectiveExcludeSelectors().length || !occ || typeof occ !== 'object') return false;
+    let node = occ.__node || null;
+    if (!node) {
+      const selector = occ.selector;
+      if (!selector || typeof selector !== 'string' || !document) return false;
+      // A selector inside a shadow tree holds only there; read against the
+      // document it would name another element.
+      if (Array.isArray(occ.shadowHostSelectors) && occ.shadowHostSelectors.length) return false;
+      try {
+        node = dom.querySelector(document, selector);
+      } catch {
+        node = null;
+      }
+      if (!node) return false;
+    }
+    for (let guard = 0; node && guard < 64; guard++) {
+      if (dom.nodeType(node) !== 1) {
+        let up = dom.parentElement(node);
+        if (!up) {
+          const parent = dom.parentNode(node);
+          up = parent && dom.nodeType(parent) === 11 ? dom.host(parent) || null : null;
+        }
+        node = up;
+        continue;
+      }
+      if (isExcluded(node)) return true;
+      let doc = null;
+      try {
+        doc = dom.ownerDocument(node);
+      } catch {
+        doc = null;
+      }
+      if (!doc || !document || doc === document) return false;
+      let frame = null;
+      try {
+        const view = dom.defaultView(doc);
+        frame = view ? dom.get(view, 'frameElement') : null;
+      } catch {
+        // A cross-origin parent hides its frame element.
+        frame = null;
+      }
+      node = frame || null;
+    }
+    return false;
+  }
+
   function queryAll(sel) {
     if (!roots.length) return [];
     const out = [];
@@ -147139,6 +147300,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Existing (back-compat)
     hasAccessibleName,
     isExcluded,
+    isOccurrenceExcluded,
     isAccTreeEligible,
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,
