@@ -238,7 +238,7 @@ test('a pack built from standard data, or on two levels, uses experimental APIs'
   assert.deepEqual(ids(skipPack({ requirements: ['S1'] })), []);
 });
 
-test('a pack built on another standard uses the experimental derivation', () => {
+test('a pack built on another standard uses no experimental derivation', () => {
   const { standardFromData } = require('../src/standard-data.js');
   const { deriveStandard } = require('../src/derive-standard.js');
   const base = {
@@ -272,5 +272,6 @@ test('a pack built on another standard uses the experimental derivation', () => 
     core: TILDE,
     standard: standardFromData(derived)
   });
-  assert.deepEqual(ids(pack), ['standard data', 'standard derivation']);
+  // Derivation is stable since 1.18.0; the data it builds on is listed apart.
+  assert.deepEqual(ids(pack), ['standard data']);
 });

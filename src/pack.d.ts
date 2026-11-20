@@ -582,6 +582,5 @@ export function standardDataOf(standard: unknown): StandardData | null;
  * Only what `own` declares exists. Throws a TypeError naming each basedOn the
  * bases can't answer, and each rule inherited from two bases without a row of
  * its own. Results' entries carry each requirement's and test's `basedOn`.
- * @experimental Until 1.18.0.
  */
 export function deriveStandard(bases: StandardData[], own: Record<string, unknown>): StandardData;
