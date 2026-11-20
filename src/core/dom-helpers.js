@@ -4604,8 +4604,8 @@ function createDomHelpers(opts) {
       if (name.indexOf('-') === -1) return false;
       const doc = dom.ownerDocument(el);
       const win = doc && dom.defaultView(doc);
-      const registry = win && dom.get(win, 'customElements');
-      const ctor = registry && typeof registry.get === 'function' ? registry.get(name) : null;
+      // Asked once per name and scan, as the internals lookup asks.
+      const ctor = __customElementDefinition(win, lower(name));
       return !!(ctor && ctor.formAssociated === true);
     } catch {
       return false;

@@ -443,6 +443,7 @@ export interface RuleHelpers {
   hasSkipLinkWording: RuleHelper;
   getLinkKind: RuleHelper;
   reportOccurrence: RuleHelper;
+  quoteText: RuleHelper;
   resolveTieredOutcome: RuleHelper;
   getPerfStats: RuleHelper;
   resetPerfStats: RuleHelper;

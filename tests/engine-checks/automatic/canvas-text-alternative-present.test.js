@@ -305,7 +305,7 @@ test(`${RULE_ID}: a fail says when the fallback is only an image with alt="", or
   assert.equal(occ('c1').i18n.hintKey, 'nameCause_hint_imageEmptyAlt');
   assert.equal(
     occ('c1').hint,
-    'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.'
+    'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it stands for here, or name the element with aria-label.'
   );
   assert.equal(occ('c1').data.details.nameCause.cause, 'imageEmptyAlt');
   assert.equal(occ('c2').i18n.hintKey, 'nameCause_hint_labelledbyMissing');
