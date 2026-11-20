@@ -17567,8 +17567,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (name.indexOf('-') === -1) return false;
       const doc = dom.ownerDocument(el);
       const win = doc && dom.defaultView(doc);
-      const registry = win && dom.get(win, 'customElements');
-      const ctor = registry && typeof registry.get === 'function' ? registry.get(name) : null;
+      // Asked once per name and scan, as the internals lookup asks.
+      const ctor = __customElementDefinition(win, lower(name));
       return !!(ctor && ctor.formAssociated === true);
     } catch {
       return false;
@@ -27182,7 +27182,11 @@ const runProfiles = (function runProfiles(engineOptions, run) {
   return withOwnVerdicts(run(engineOptions));
 });
 const withOwnVerdicts = (function withOwnVerdicts(result) {
-  if (result && typeof result.then === 'function') return result.then(withOwnVerdicts);
+  // A result first: a page may add then to Object.prototype, which makes
+  // any object look like a promise.
+  if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
+    return result.then(withOwnVerdicts);
+  }
   if (!result || !Array.isArray(result.checksResults)) return result;
   const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
   for (const check of result.checksResults) {
@@ -143374,8 +143378,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (name.indexOf('-') === -1) return false;
       const doc = dom.ownerDocument(el);
       const win = doc && dom.defaultView(doc);
-      const registry = win && dom.get(win, 'customElements');
-      const ctor = registry && typeof registry.get === 'function' ? registry.get(name) : null;
+      // Asked once per name and scan, as the internals lookup asks.
+      const ctor = __customElementDefinition(win, lower(name));
       return !!(ctor && ctor.formAssociated === true);
     } catch {
       return false;
@@ -152989,7 +152993,11 @@ const runProfiles = (function runProfiles(engineOptions, run) {
   return withOwnVerdicts(run(engineOptions));
 });
 const withOwnVerdicts = (function withOwnVerdicts(result) {
-  if (result && typeof result.then === 'function') return result.then(withOwnVerdicts);
+  // A result first: a page may add then to Object.prototype, which makes
+  // any object look like a promise.
+  if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
+    return result.then(withOwnVerdicts);
+  }
   if (!result || !Array.isArray(result.checksResults)) return result;
   const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
   for (const check of result.checksResults) {

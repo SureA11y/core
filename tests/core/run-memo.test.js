@@ -17,8 +17,22 @@ const html = `<!doctype html><html><body>
   <button id="b" data-rect="130,110,10,10">B</button>
 </body></html>`;
 
-const memos = (dom) => {
-  const shared = dom.window.__a11ycoreSharedCache;
+// The scan removes its shared cache from the window when it ends, so a
+// scan is run with the cache caught as the scan sets it.
+const scanKeepingCache = (dom, options) => {
+  let caught;
+  Object.defineProperty(dom.window, '__a11ycoreSharedCache', {
+    configurable: true,
+    get: () => caught,
+    set(v) {
+      caught = v;
+    }
+  });
+  runa11yCoreOnDom(dom, options);
+  return caught;
+};
+
+const memos = (shared) => {
   const out = {};
   for (const [k, v] of Object.entries((shared && shared.dom) || {})) {
     if (k.startsWith('rules:')) out[k] = v;
@@ -31,8 +45,7 @@ test('runMemo gives the rules of one scan one map per name, and the next scan ne
   patchTargetSizeEnv(dom);
   const a = dom.window.document.getElementById('a');
 
-  runa11yCoreOnDom(dom, { engineOptions: { rules: RULES } });
-  const first = memos(dom);
+  const first = memos(scanKeepingCache(dom, { engineOptions: { rules: RULES } }));
   const measure = first['rules:target-size-minimum:measure'];
   assert.ok(measure instanceof dom.window.WeakMap || measure instanceof WeakMap, 'a WeakMap');
   // Both rules measured A; it is kept once, under the base rule's name.
@@ -43,7 +56,8 @@ test('runMemo gives the rules of one scan one map per name, and the next scan ne
     'the variant uses the base rule names'
   );
 
-  runa11yCoreOnDom(dom, { engineOptions: { rules: RULES } });
-  const second = memos(dom)['rules:target-size-minimum:measure'];
+  const second = memos(scanKeepingCache(dom, { engineOptions: { rules: RULES } }))[
+    'rules:target-size-minimum:measure'
+  ];
   assert.ok(second && second !== measure, 'the next scan starts a new map');
 });

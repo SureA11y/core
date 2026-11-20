@@ -4,8 +4,9 @@
 // on a reason code makes a cantTell finding of that code a failure of the
 // standard's requirement. An unnamed role="grid" is cantTell for WCAG 4.1.2,
 // which depends on what the page shows, and fails WAI-ARIA's "Accessible
-// Name Required" for certain. The check's own outcome and the WCAG rollups
-// stay as they were.
+// Name Required" for certain. Scanned under the pack's profile, the check
+// takes the pack's verdict, as it does in a scan of several profiles; under
+// a WCAG profile it and the WCAG rollups stay as they were.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -61,7 +62,7 @@ const UNNAMED_GRID = '<div role="grid"><div role="row"><div role="gridcell">1</d
 
 test('a cantTell finding of a code the map makes a failure fails the requirement', () => {
   const result = scan(UNNAMED_GRID);
-  assert.equal(check(result).outcome, 'cantTell');
+  assert.equal(check(result).outcome, 'fail');
   const r = rollup(result);
   assert.equal(r.outcome, 'fail');
   const c = r.data.details.contributors.find((x) => x.testId === 'aria-role-name-present');
@@ -84,6 +85,6 @@ test('a named grid passes', () => {
 
 test('a stored result read back keeps the failure', () => {
   const read = coercedResult(JSON.parse(JSON.stringify(scan(UNNAMED_GRID))));
-  assert.equal(check(read).outcome, 'cantTell');
+  assert.equal(check(read).outcome, 'fail');
   assert.equal(rollup(read).outcome, 'fail');
 });

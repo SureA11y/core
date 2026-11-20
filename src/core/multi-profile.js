@@ -95,7 +95,11 @@ function runProfiles(engineOptions, run) {
  * judges that way keeps its outcome. A promise gets the same once it settles.
  */
 function withOwnVerdicts(result) {
-  if (result && typeof result.then === 'function') return result.then(withOwnVerdicts);
+  // A result first: a page may add then to Object.prototype, which makes
+  // any object look like a promise.
+  if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
+    return result.then(withOwnVerdicts);
+  }
   if (!result || !Array.isArray(result.checksResults)) return result;
   const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
   for (const check of result.checksResults) {
