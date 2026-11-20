@@ -768,4 +768,83 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       assert.deepEqual(reasons(await scan(html)), want, label);
     }
   });
+
+  // Seventh stress test (RW-1 to RW-6 on audit/register).
+  await t.test(
+    'content hidden by a clip or drawn transparent is not drawn: scrolling onto it passes',
+    async () => {
+      for (const css of [
+        '#p{position:absolute;top:0;left:0;width:600px;clip-path:inset(0 0 100% 0)}',
+        '#p{position:absolute;top:0;left:0;width:600px;clip:rect(0 0 0 0)}',
+        '#p{position:absolute;top:0;left:0;width:600px;opacity:0}'
+      ]) {
+        const check = await scan(
+          page(css, '<p>Page</p><div id="p">Panel <a href="#">Link</a></div>')
+        );
+        assert.equal(check.outcome, 'pass', css);
+      }
+    }
+  );
+
+  await t.test(
+    'a code editor that keeps its lines may scroll in its box, as code does',
+    async () => {
+      for (const body of [
+        '<div style="overflow-x:auto"><div contenteditable role="textbox" aria-multiline="true" style="white-space:pre;display:inline-block;min-width:100%">const result = someFunction(argumentNumberOne, argumentNumberTwo, argumentNumberThree);</div></div>',
+        '<div style="overflow:auto"><div contenteditable style="white-space:pre"><div>const result = someFunction(argumentNumberOne, argumentNumberTwo, argumentNumberThree);</div></div></div>'
+      ]) {
+        assert.equal((await scan(page('', body))).outcome, 'pass', body);
+      }
+    }
+  );
+
+  await t.test(
+    'a row of items that each fit leans pass, items with fields or one child included',
+    async () => {
+      const row = (item) =>
+        page(
+          'ul{display:flex;overflow-x:auto;list-style:none;margin:0;padding:0;gap:8px} li{flex:0 0 85%}',
+          `<ul>${[1, 2, 3, 4].map((i) => `<li>${item(i)}</li>`).join('')}</ul>`
+        );
+      for (const item of [
+        (i) => `<p>Product ${i}</p><label>Qty <input type="number" style="width:150px"></label>`,
+        (i) => `<a class="card" href="#${i}">Product ${i}</a>`
+      ]) {
+        const check = await scan(row(item));
+        assert.ok(check.occurrences.length, 'asked about');
+        for (const o of check.occurrences) {
+          assert.equal(o.data.details.reasonCode, 'SCROLLS_IN_CONTAINER');
+          assert.equal(leanWhy(o), 'carousel');
+        }
+      }
+      // Stacked blocks are not a row.
+      const stacked = await scan(
+        page(
+          '.s{overflow-x:auto} .w{width:600px} .w p{width:250px}',
+          '<div class="s"><div class="w" id="w"><p>One</p><p>Two</p></div></div>'
+        )
+      );
+      assert.notEqual(leanWhy(stacked.occurrences[0]), 'carousel');
+    }
+  );
+
+  await t.test('an app shell under an app bar is the page', async () => {
+    const check = await scan(
+      page(
+        'html,body{height:100%;overflow:hidden;margin:0} .app{display:flex;flex-direction:column;height:100%} header{flex:0 0 56px} main{flex:1;overflow:auto}',
+        '<div class="app"><header>App</header><main><div id="w" style="width:600px">Wide</div></main></div>'
+      )
+    );
+    assert.deepEqual(findings(check), [['w', 'cantTell', 'HORIZONTAL_SCROLL', 'fail']]);
+  });
+
+  await t.test('an element that escapes its box and widens the page is named', async () => {
+    const check = await scan(
+      page(
+        '',
+        '<div style="overflow-x:auto"><p>x</p><div id="tip" style="position:absolute;top:60px;left:200px;width:300px">Tooltip</div></div>'
+      )
+    );
+    assert.deepEqual(findings(check), [['tip', 'cantTell', 'HORIZONTAL_SCROLL', 'fail']]);
+  });
 });
