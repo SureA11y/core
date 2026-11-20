@@ -267,6 +267,19 @@ function standardReviewKeys(key, ruleId, code, entry) {
   return [...entry.steps.map((_, i) => `${stem}step${i + 1}`), `${stem}pass`, `${stem}fail`];
 }
 
+// Whether an entry is standard.review's own for that rule and code, or says
+// the same: what its dictionary keys were written for.
+function sameReview(base, ruleId, code, entry) {
+  const own =
+    isObject(base) && hasOwn(base, ruleId) && isObject(base[ruleId]) && hasOwn(base[ruleId], code)
+      ? base[ruleId][code]
+      : null;
+  if (!isObject(own) || !isObject(entry)) return false;
+  if (own === entry) return true;
+  const texts = (e) => JSON.stringify([e.steps, e.passWhen, e.failWhen]);
+  return texts(own) === texts(entry);
+}
+
 /**
  * An entry of standard.review in the first of `locales` (lower case, most
  * wanted first) whose dictionary of the pack translates all of it: its
@@ -297,7 +310,10 @@ function translatedStandardReview(source, ruleId, code, entry, locales) {
         failWhen: texts[texts.length - 1]
       };
     }
-    if (!keys) continue;
+    // The keys name no version: they translate standard.review's entry, so
+    // a version that gives steps of its own (standard.reviewByVersion) is
+    // read in English unless it is translated by id.
+    if (!keys || !sameReview(source.base, ruleId, code, entry)) continue;
     const dict = dictionaryFor(source.dictionaries, locale);
     if (!dict || !keys.every((k) => hasOwn(dict, k) && isText(dict[k]))) continue;
     const texts = keys.map((k) => dict[k]);
@@ -335,6 +351,7 @@ function standardReviewsOf(packs) {
       if (out.has(key)) continue;
       out.set(key, {
         review,
+        base: isObject(st.review) ? st.review : null,
         key: typeof st.key === 'string' ? st.key : null,
         dictionaries: isObject(pack.dictionaries) ? pack.dictionaries : null,
         version,
@@ -414,6 +431,7 @@ function standardSteps(reviews, profiles, ruleIds, code, locales) {
 }
 
 module.exports = {
+  sameReview,
   reviewForVersion,
   chainOf,
   claimsOf,

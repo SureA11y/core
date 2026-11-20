@@ -250,6 +250,81 @@ test("a standard's own review steps can differ by version, each translated by id
   );
 });
 
+// The standardReview dictionary keys name no version: they translate
+// standard.review, and a version whose own steps replace it is read in
+// English, never in another version's words; checkPack says so.
+test("a dictionary's review keys translate only the versions whose steps they were written for", () => {
+  const std = ruleMappedStandard({
+    standard: 'City',
+    tag: 'city',
+    versions: [
+      { version: '1', wcagVersion: '2.2' },
+      { version: '2', wcagVersion: '2.2' },
+      { version: '3', wcagVersion: '2.2' }
+    ],
+    requirements: {
+      1: { A: { title: 'Images', wcagSc: ['1.1.1'] } },
+      2: { A: { title: 'Images', wcagSc: ['1.1.1'] } },
+      3: { A: { title: 'Images', wcagSc: ['1.1.1'] } }
+    },
+    ruleMap: {
+      1: { 'img-alt-present': { requirements: ['A'] } },
+      2: { 'img-alt-present': { requirements: ['A'] } },
+      3: { 'img-alt-present': { requirements: ['A'] } }
+    }
+  });
+  const v1 = { steps: ['Open the popup.'], passWhen: 'A menu.', failWhen: 'Not a menu.' };
+  const v2 = { steps: ['Open the dialog.'], passWhen: 'A dialog.', failWhen: 'Not a dialog.' };
+  const stem = 'city_standardReview_aria-valid-attr-value_ARIA_HASPOPUP_ROLE_MISMATCH_';
+  const pack = {
+    name: 'city',
+    version: '1.0.0',
+    namespace: 'city',
+    core: '*',
+    dictionaries: {
+      fr: {
+        [`${stem}step1`]: 'Ouvrez le menu.',
+        [`${stem}pass`]: 'Un menu.',
+        [`${stem}fail`]: 'Pas un menu.'
+      }
+    },
+    standard: {
+      key: 'city',
+      standard: 'City',
+      versions: ['1', '2', '3'],
+      lang: 'en',
+      profiles: {
+        'city-1': { version: '1', tags: ['city'], mappedRules: true },
+        'city-2': { version: '2', tags: ['city'], mappedRules: true },
+        'city-3': { version: '3', tags: ['city'], mappedRules: true }
+      },
+      ruleTag: 'city',
+      ruleMapped: true,
+      mappingsFor: std.mappingsFor,
+      composites: std.composites,
+      validate: std.validate,
+      review: { 'aria-valid-attr-value': { ARIA_HASPOPUP_ROLE_MISMATCH: v1 } },
+      // Version 2 has steps of its own; version 3 repeats version 1's.
+      reviewByVersion: {
+        2: { 'aria-valid-attr-value': { ARIA_HASPOPUP_ROLE_MISMATCH: v2 } },
+        3: { 'aria-valid-attr-value': { ARIA_HASPOPUP_ROLE_MISMATCH: copy(v1) } }
+      }
+    }
+  };
+  const defined = definePack(pack);
+  const steps = (profile) =>
+    howToCheckFor('aria-valid-attr-value', 'ARIA_HASPOPUP_ROLE_MISMATCH', 'fr', {
+      packs: [defined],
+      profile
+    }).steps;
+  assert.deepEqual(steps('city-1'), ['Ouvrez le menu.']);
+  assert.deepEqual(steps('city-2'), ['Open the dialog.']);
+  assert.deepEqual(steps('city-3'), ['Ouvrez le menu.']);
+  const reported = checkPack(pack).filter((p) => p.includes('reviewByVersion'));
+  assert.equal(reported.length, 1);
+  assert.match(reported[0], /which version 2 replaces with steps of its own/);
+});
+
 // The same, as data: tests with procedures, a requirement's own, one with a
 // note, notes, review and translations.
 const data = {
