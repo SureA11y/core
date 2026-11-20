@@ -3532,7 +3532,7 @@ function runCoreSettled(
       wcagVersion: targetWcagVersion,
       ...(wcagLevel ? { wcagLevel } : {}),
       ...(appliedProfile ? { profile: appliedProfile } : {}),
-      // The law the profile serves (standard.laws, experimental).
+      // The law the profile serves (standard.laws).
       ...(appliedProfile &&
       Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, appliedProfile) &&
       PROFILE_TARGETS[appliedProfile].law

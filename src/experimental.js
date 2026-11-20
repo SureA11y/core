@@ -24,16 +24,17 @@ const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
 const EXPERIMENTAL = [
   {
-    id: 'standard laws',
-    since: '1.16.0',
-    until: '1.18.0',
-    what: "The law each profile is used for, identified by name, jurisdiction and official texts (standard.laws, standard.lawTexts), the law of each profile, the laws a requirement is asked for under, lawOf, results' engine.law and listProcedures' profile option.",
+    id: 'requirement laws',
+    since: '1.18.0',
+    until: '1.20.0',
+    what: "A requirement asked for under only some of its standard's laws (its laws in standard.procedures; laws on a requirement in standard data): a profile whose law isn't among them, or that serves none, neither lists nor judges it, and engine.profileExcludes.requirements names it. Brought in 1.16.0 with the standard's laws; the scan honours it from 1.18.0, which is listed apart while a pack proves it.",
     usedBy: (pack) => {
       const st = pack && pack.standard;
-      if (!isObject(st)) return false;
-      if (st.laws !== undefined || st.lawTexts !== undefined) return true;
-      return Object.values(isObject(st.profiles) ? st.profiles : {}).some(
-        (p) => isObject(p) && p.law !== undefined
+      if (!isObject(st) || !isObject(st.procedures)) return false;
+      return Object.values(st.procedures).some(
+        (table) =>
+          isObject(table) &&
+          Object.values(table).some((entry) => isObject(entry) && entry.laws !== undefined)
       );
     }
   },

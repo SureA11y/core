@@ -114,7 +114,7 @@ There is no switch to turn them on: they work as any other API does.
 
 | API | What it is | Since | Stable or removed by |
 | --- | ---------- | ----- | -------------------- |
-| Standard laws | The law each profile is used for, identified by name, jurisdiction and official texts (`standard.laws`, its name translated in `standard.lawTexts`), each profile's `law`, the `laws` a requirement is asked for under, `lawOf` from `@surea11y/core/pack`, results' `engine.law` and `profiles[name].law`, the report's law chip, `listProcedures`' `profile` option, and in standard data `laws`, top-level `texts`, a profile's `law` and a requirement's `laws` ([`PACKS.md`](./PACKS.md#the-law-a-profile-is-used-for)). | 1.16.0 | 1.18.0 |
+| Requirement laws | A requirement asked for under only some of its standard's laws: its `laws` in `standard.procedures` (and on a requirement in standard data). A profile whose law isn't among them, or that serves none, neither lists nor judges it, and `engine.profileExcludes.requirements` names it ([`PACKS.md`](./PACKS.md#the-law-a-profile-is-used-for)). Brought in 1.16.0 with the standard's laws, which are stable since 1.18.0; the scan honours it since 1.18.0, so it is listed apart until a pack (BITV-Test's, the EAA's) proves it. | 1.18.0 | 1.20.0 |
 | Pack uses | A pack's `uses`: the packs it builds on, whose own rules its standard maps and its profiles run; a scan runs it only with them, at the version it was made with ([`PACKS.md`](./PACKS.md#a-pack-built-on-another-pack)). | 1.17.0 | 1.19.0 |
 
 The list is `src/experimental.js`, which `checkPack` and `describePacks` read.

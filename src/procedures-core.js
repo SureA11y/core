@@ -780,7 +780,8 @@ function listing(dictionaries, options, wrap = same) {
     };
   }
   // With a profile, the standard and version it targets, and only the
-  // requirements its law asks for (standard.laws, experimental).
+  // requirements its law asks for (standard.laws; a requirement's laws are
+  // experimental).
   const chosen =
     typeof opts.profile === 'string' && opts.profile ? profileIn(opts.packs, opts.profile) : null;
   if (opts.profile !== undefined && !chosen) return null;
