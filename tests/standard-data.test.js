@@ -98,15 +98,76 @@ test('the checker and the schema refuse the same mistakes of shape', () => {
     'a row with an unknown field': (d) => (d.data[1].ruleMap['img-alt-present'].tests = []),
     'an outcome other than cantTell or fail': (d) =>
       (d.data[1].ruleMap['img-alt-present'].reasonCodes = { X: { outcome: 'pass' } }),
-    'a finding without when': (d) => (d.data[1].ruleMap['img-alt-present'].findings = [{}])
+    'a finding without when': (d) => (d.data[1].ruleMap['img-alt-present'].findings = [{}]),
+    'a finding with an empty when': (d) =>
+      (d.data[1].ruleMap['img-alt-present'].findings = [{ when: {} }]),
+    'a finding with an unknown field': (d) =>
+      (d.data[1].ruleMap['img-alt-present'].findings = [{ when: { x: 1 }, tests: [] }]),
+    'a reason code route with an unknown field': (d) =>
+      (d.data[1].ruleMap['img-alt-present'].reasonCodes = { X: { tests: [] } }),
+    'a null row': (d) => (d.data[1].ruleMap['img-alt-present'] = null),
+    'requirements a string, not a list': (d) =>
+      (d.data[1].ruleMap['img-alt-present'].requirements = '1.1.1'),
+    'an empty asks': (d) => (d.data[1].ruleMap['img-alt-present'].asks = []),
+    'lang that is no language tag': (d) => (d.lang = 'English'),
+    'a WCAG version that does not exist': (d) => (d.versions[0].wcagVersion = '7.0'),
+    'published that is no date': (d) => (d.versions[0].published = 'yesterday'),
+    "a version's basedOn without the base's version": (d) =>
+      (d.versions[0].basedOn = [{ standard: 'other' }]),
+    "a version's basedOn naming an id": (d) =>
+      (d.versions[0].basedOn = [{ standard: 'other', version: '3', id: '9.1.1.1' }]),
+    "a requirement's basedOn without an id": (d) =>
+      (d.data[1].requirements['1.1'].basedOn = [{ standard: 'other' }]),
+    'profile tags that are no list': (d) => (d.profiles['two-1'].tags = 'two'),
+    "a law's source in capitals": (d) => {
+      d.laws = {
+        l: { name: 'L', jurisdiction: 'FR', sources: [{ title: 'T', url: 'HTTPS://x.fr' }] }
+      };
+    },
+    "a law's source with no address after https://": (d) => {
+      d.laws = { l: { name: 'L', jurisdiction: 'FR', sources: [{ title: 'T', url: 'https://' }] } };
+    }
   };
   for (const [name, change] of Object.entries(mistakes)) {
     const d = copy(twoLevel);
     change(d);
     assert.equal(validateSchema(d), false, `schema accepts: ${name}`);
-    // The checker leaves rule rows to the entry's validate, which needs the rules.
-    if (/row|outcome|finding/.test(name)) continue;
     assert.ok(checkStandardData(d).length > 0, `checker accepts: ${name}`);
+  }
+});
+
+// What both accept: the forms the shape allows, so neither drifts stricter.
+test('the checker and the schema accept the same forms', () => {
+  const forms = {
+    'published as a year': (d) => (d.versions[0].published = '2026'),
+    'published as a month': (d) => (d.versions[0].published = '2026-02'),
+    'published as a day': (d) => (d.versions[0].published = '2026-02-14'),
+    'lang with a region': (d) => (d.lang = 'pt-BR'),
+    'an empty requirements list with asks': (d) =>
+      (d.data[1].ruleMap['img-alt-present'] = { requirements: [], asks: ['1.1.1'] }),
+    'routes by reason code and by finding': (d) => {
+      d.data[1].ruleMap['img-alt-present'].reasonCodes = {
+        X: { requirements: ['1.1.1'], outcome: 'cantTell' }
+      };
+      d.data[1].ruleMap['img-alt-present'].findings = [
+        { when: { 'data.details.kind': 'x', n: 1, b: true, z: null }, requirements: ['1.1.1'] }
+      ];
+    },
+    "a law's source": (d) => {
+      d.laws = {
+        l: { name: 'L', jurisdiction: 'FR', sources: [{ title: 'T', url: 'https://x.fr/a' }] }
+      };
+    }
+  };
+  for (const [name, change] of Object.entries(forms)) {
+    const d = copy(twoLevel);
+    change(d);
+    assert.equal(
+      validateSchema(d),
+      true,
+      `schema refuses: ${name}: ${JSON.stringify(validateSchema.errors)}`
+    );
+    assert.deepEqual(checkStandardData(d), [], `checker refuses: ${name}`);
   }
 });
 
@@ -146,6 +207,23 @@ test('the checker also refuses what a schema cannot see', () => {
   assert.match(
     problems((d) => (d.data[1].requirements['1.1'].title = () => 't')),
     /is not data/
+  );
+  // The rule map names units of its version, each once.
+  assert.match(
+    problems((d) => (d.data[1].ruleMap['img-alt-present'].requirements = ['9.9.9'])),
+    /ruleMap\.img-alt-present\.requirements names 9\.9\.9, no requirement or test/
+  );
+  assert.match(
+    problems((d) => (d.data[1].ruleMap['img-alt-present'].asks = ['1.1.1'])),
+    /asks names 1\.1\.1, which requirements already counts/
+  );
+  assert.match(
+    problems((d) => (d.data[1].requirements['1.1'].tests = ['1.1.1', '1.1.9'])),
+    /requirements\.1\.1\.tests names 1\.1\.9, no test of the version/
+  );
+  assert.match(
+    problems((d) => d.versions.push({ version: '1', wcagVersion: '2.1' })),
+    /version 1 is given twice/
   );
 });
 
@@ -227,4 +305,21 @@ test('the sample standard built from data scans as the sample pack does', () => 
       profile
     );
   }
+});
+
+// What the data gives is the data's: an extra replacing it would make the
+// standard and standardDataOf(standard), which a derived standard reads,
+// disagree.
+test("standardFromData's extras can't replace what the data gives", () => {
+  for (const field of ['key', 'versions', 'profiles', 'lang', 'texts']) {
+    assert.throws(
+      () => standardFromData(twoLevel, { [field]: field === 'key' ? 'other' : {} }),
+      new RegExp(`extras can't replace what the data gives: ${field}`),
+      field
+    );
+  }
+  // What the data doesn't give, it adds.
+  const entry = standardFromData(twoLevel, { report: { titleLang: 'en' } });
+  assert.deepEqual(entry.report, { titleLang: 'en' });
+  assert.equal(standardDataOf(entry).key, entry.key);
 });

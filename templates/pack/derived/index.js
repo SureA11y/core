@@ -10,8 +10,8 @@
  *
  *   runDomRulesInPage(url, null, { packs: [base, pack], profile: '__NAMESPACE__-1.0' })
  *
- * Standard data, derivation and uses are experimental in core: a later minor
- * may change them, so `core` takes no later minor (README.md).
+ * uses is experimental in core: a later minor may change it, so `core`
+ * takes no later minor (README.md).
  */
 
 const { definePack, standardFromData } = require('@surea11y/core/pack');

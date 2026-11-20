@@ -30,7 +30,8 @@ const JURISDICTION = /^[A-Z]{2}(-[A-Z0-9]{1,8})?$/;
 const LAW_KEYS = ['name', 'jurisdiction', 'sources'];
 
 function isHttpsUrl(v) {
-  if (typeof v !== 'string' || !/^https:\/\//i.test(v)) return false;
+  // As the schema's pattern says it (^https://\S+$): lower case, no spaces.
+  if (typeof v !== 'string' || !/^https:\/\/\S+$/.test(v)) return false;
   try {
     return new URL(v).protocol === 'https:';
   } catch {

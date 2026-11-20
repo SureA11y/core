@@ -24,14 +24,6 @@ const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
 const EXPERIMENTAL = [
   {
-    id: 'standard data',
-    since: '1.16.0',
-    until: '1.18.0',
-    what: 'A standard as data (format surea11y-standard/1, src/schemas/standard.schema.json): checkStandardData, standardFromData and standardDataOf.',
-    usedBy: (pack) =>
-      !!(pack && pack.standard && pack.standard[Symbol.for('surea11y.standardData')])
-  },
-  {
     id: 'standard laws',
     since: '1.16.0',
     until: '1.18.0',
