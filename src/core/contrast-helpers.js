@@ -4798,6 +4798,22 @@ function createContrastHelpers(opts, shared) {
       if (op < 1) {
         acc = { r: acc.r, g: acc.g, b: acc.b, a: clamp01(acc.a * op) };
       }
+
+      // A box in the top layer is painted over its ::backdrop, which is
+      // painted over the rest of the page (a lightbox's dimmed page).
+      const top = acc.a < 1 ? __topLayerOf(cur) : null;
+      if (top && top.color) {
+        if (collectStack) {
+          stack.push({
+            selector:
+              __getSimpleSelectorCached(cur, (dom.tagName(cur) || '').toLowerCase() || 'html') +
+              '::backdrop',
+            bg: { r: top.color.r, g: top.color.g, b: top.color.b, a: top.color.a },
+            opacity: 1
+          });
+        }
+        acc = compositeRgba(acc, top.color);
+      }
     }
 
     let out;
@@ -6747,6 +6763,38 @@ function createContrastHelpers(opts, shared) {
           occluder = cur;
         }
       }
+
+      // The ::backdrop under a box in the top layer: an image, a gradient
+      // or a filter there stops the measurement as one on an ancestor
+      // would, and an opaque one hides the rest of the page.
+      const top = paintOccluded ? null : __topLayerOf(cur);
+      if (top && top.blocker) {
+        const out = {
+          ok: false,
+          reasonCode:
+            top.blocker.property === 'background-image'
+              ? 'BACKGROUND_IMAGE_OR_GRADIENT'
+              : 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+          blockerSelector:
+            __getSimpleSelectorCached(cur, (dom.tagName(cur) || '').toLowerCase() || 'html') +
+            '::backdrop',
+          blockerElement: describeElement(cur) + '::backdrop',
+          blockerIsAncestor: true,
+          blockerProperty: top.blocker.property,
+          blockerValue: truncateCssValue(top.blocker.value, 80),
+          ...(top.blocker.property === 'background-image'
+            ? { backgroundFillType: classifyBackgroundImageValue(top.blocker.value) }
+            : {})
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch {}
+        return out;
+      }
+      if (top && top.color && top.color.a >= 1) {
+        paintOccluded = true;
+        occluder = cur;
+      }
     }
 
     const overlap = __findPaintUnderText(el, chain);
@@ -6851,6 +6899,66 @@ function createContrastHelpers(opts, shared) {
   // than paint behind it, and where they stand depends on the scroll
   // position the scan was taken at.
   const __pinnedCache = new WeakMap();
+  // A box in the top layer (a modal dialog, an open popover, a fullscreen
+  // element) is painted over the whole document, and its ::backdrop
+  // between the two: under the box, over everything else. null for any
+  // other box; for one in the top layer, its backdrop's color (null when
+  // it paints none) and what, if anything, stops measuring through it (a
+  // background image or gradient, a filter or backdrop-filter). The top
+  // layer computes its boxes to position absolute or fixed, which most
+  // boxes aren't, so only those are asked.
+  const __topLayerCache = new WeakMap();
+  const __TOP_LAYER_STATES = [':modal', ':popover-open', ':fullscreen'];
+  function __topLayerOf(node) {
+    if (!node || dom.nodeType(node) !== 1) return null;
+    if (__topLayerCache.has(node)) return __topLayerCache.get(node);
+    let out = null;
+    try {
+      const cs = __contrastComputedStyle(node);
+      const placed = !!cs && (cs.position === 'fixed' || cs.position === 'absolute');
+      const inTop =
+        placed &&
+        __TOP_LAYER_STATES.some((sel) => {
+          try {
+            return !!dom.matches(node, sel);
+          } catch {
+            return false;
+          }
+        });
+      if (inTop) {
+        out = { el: node, color: null, blocker: null };
+        let bcs = null;
+        try {
+          bcs =
+            window && typeof window.getComputedStyle === 'function'
+              ? window.getComputedStyle(node, '::backdrop')
+              : null;
+        } catch {
+          bcs = null;
+        }
+        if (bcs && bcs.display !== 'none') {
+          const filter = trim(bcs.filter);
+          const backdropFilter = trim(bcs.backdropFilter);
+          const op = opacityOf(bcs);
+          if (backdropFilter && backdropFilter !== 'none') {
+            out.blocker = { property: 'backdrop-filter', value: backdropFilter };
+          } else if (filter && filter !== 'none') {
+            out.blocker = { property: 'filter', value: filter };
+          } else if (op > 0 && hasBackgroundImageOrGradient(bcs)) {
+            out.blocker = { property: 'background-image', value: trim(bcs.backgroundImage) };
+          }
+          const bg = parseCssColorToRgba(bcs.backgroundColor);
+          if (bg && bg.a > 0 && op > 0)
+            out.color = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a * op) };
+          out.value = trim(bcs.backgroundColor);
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __topLayerCache.set(node, out);
+    return out;
+  }
   function __isPinned(node) {
     const path = [];
     let cur = node;
@@ -8117,6 +8225,15 @@ function createContrastHelpers(opts, shared) {
       chain.push(cur);
     }
     const inChain = new Set(chain);
+    // The innermost box of the chain in the top layer: everything outside
+    // it is painted under it and its ::backdrop, whatever its z-index.
+    let topLayer = null;
+    for (const a of chain) {
+      topLayer = __topLayerOf(a);
+      if (topLayer) break;
+    }
+    const underTop = (node) =>
+      !!topLayer && node !== topLayer.el && !__isComposedInside(node, topLayer.el);
     const outerSvg = (node) => {
       let found = null;
       for (let cur = node, guard = 0; cur && guard < 1000; cur = composedParent(cur), guard++) {
@@ -8349,6 +8466,11 @@ function createContrastHelpers(opts, shared) {
       if (inChain.has(orderEl)) continue;
       const key = __paintKey(orderEl, p.paint.property === 'element' ? 'content' : 'bg');
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
+      if (underTop(orderEl)) {
+        if (!key) return FALLBACK;
+        behind.push({ p, key, svg: orderEl !== p.el, rect: pr, underTop: true });
+        continue;
+      }
       if (Number.isNaN(c)) return FALLBACK;
       if (c > 0) {
         if (inside || __isPinned(p.el)) continue;
@@ -8363,6 +8485,10 @@ function createContrastHelpers(opts, shared) {
     for (const x of pseudos) {
       if (!rects.some((tr) => __paintsOnLine(x.p, x.rect, tr))) continue;
       const key = __pseudoPaintKey(x.p);
+      if (key && underTop(x.p.el)) {
+        behind.push({ p: x.p, key, svg: false, rect: x.rect, pseudo: x, underTop: true });
+        continue;
+      }
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
       if (Number.isNaN(c)) return FALLBACK;
       if (c > 0) {
@@ -8437,8 +8563,8 @@ function createContrastHelpers(opts, shared) {
       // background, which then covers it.
       const order = __cmpPaintKeys(key, textKey);
       if (Number.isNaN(order)) return FALLBACK;
-      if (order > 0) return blocked(own);
-      layers.push({ el: a, key, color, foreign: null, partial });
+      if (order > 0 && !underTop(a)) return blocked(own);
+      layers.push({ el: a, key, color, foreign: null, partial, underTop: underTop(a) });
     }
     for (const b of behind) {
       const cs = __contrastComputedStyle(b.p.el);
@@ -8499,11 +8625,13 @@ function createContrastHelpers(opts, shared) {
           t.bottom <= r.bottom - radius + 0.5;
         if (!rects.every(inside)) color = null;
       }
-      layers.push({ el: b.p.el, key: b.key, color, foreign: b.p });
+      layers.push({ el: b.p.el, key: b.key, color, foreign: b.p, underTop: !!b.underTop });
     }
 
     let unordered = false;
     layers.sort((x, y) => {
+      // What the top layer holds is over the rest of the page.
+      if (!!x.underTop !== !!y.underTop) return x.underTop ? 1 : -1;
       const c = __cmpPaintKeys(y.key, x.key);
       if (Number.isNaN(c)) {
         unordered = true;
@@ -8512,6 +8640,22 @@ function createContrastHelpers(opts, shared) {
       return c;
     });
     if (unordered) return FALLBACK;
+    // The top layer box's ::backdrop, between the two.
+    if (topLayer && (topLayer.color || topLayer.blocker)) {
+      const at = layers.findIndex((l) => l.underTop);
+      const backdrop = {
+        el: topLayer.el,
+        pseudo: '::backdrop',
+        paint: topLayer.blocker || { property: 'background-color', value: topLayer.value }
+      };
+      layers.splice(at < 0 ? layers.length : at, 0, {
+        el: topLayer.el,
+        key: null,
+        color: topLayer.blocker ? null : topLayer.color,
+        foreign: backdrop,
+        underTop: false
+      });
+    }
 
     // Topmost first, down to the first opaque layer.
     let acc = { r: 0, g: 0, b: 0, a: 0 };

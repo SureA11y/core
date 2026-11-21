@@ -39,7 +39,9 @@
  *   opaque color, and a parsable foreground color. Where either cannot be,
  *   a background image or gradient (a gradient of one color is that color,
  *   and a layer that paints nothing under the text, such as a 1px underline,
- *   is left out), mix-blend-mode, a filter
+ *   is left out; a box in the top layer, such as a modal dialog, lies over
+ *   its ::backdrop, whose image, gradient or filter counts as an
+ *   ancestor's would), mix-blend-mode, a filter
  *   (other than drop-shadow() alone over an opaque background under all of
  *   the text, which hides the shadow) or backdrop-filter, a text-shadow (which may add contrast
  *   this engine has no glyph-rendering model to account for), a
