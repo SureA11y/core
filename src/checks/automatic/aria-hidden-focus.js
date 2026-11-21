@@ -75,6 +75,9 @@
  *   <map>: it counts as focusable when such an image is rendered and not inert.
  * - Elements hidden via CSS in ways that still allow keyboard focus (e.g., opacity:0, off-screen, clip)
  *   remain in-scope and will be flagged when focusable.
+ * - The focus probe (`runtimeProbe`) puts back what focusing moves: focus,
+ *   the document's selection (direction included, and no selection where
+ *   there was none) and the selection or caret in a focused text field.
  */
 
 const id = 'aria-hidden-focus';
@@ -290,6 +293,90 @@ function runInPage(ctx) {
     }
   }
 
+  // The page's selection, and the selection inside a focused text field.
+  // Focusing an element moves the caret and replaces the selection (a
+  // contenteditable puts the caret at its start), and putting focus back
+  // does not bring either back, so the probe saves them first.
+  function selectionOf(doc) {
+    try {
+      const sel = doc ? dom.getSelection(doc) : null;
+      return sel && typeof sel.rangeCount === 'number' ? sel : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function readSelection(sel) {
+    return {
+      count: sel.rangeCount,
+      anchorNode: sel.anchorNode,
+      anchorOffset: sel.anchorOffset,
+      focusNode: sel.focusNode,
+      focusOffset: sel.focusOffset
+    };
+  }
+
+  function saveSelections(focused) {
+    const saved = { docs: [], field: null };
+    const sel = selectionOf(document);
+    if (sel) saved.docs.push({ sel, state: readSelection(sel) });
+    try {
+      if (focused && typeof focused.selectionStart === 'number') {
+        saved.field = {
+          el: focused,
+          start: focused.selectionStart,
+          end: focused.selectionEnd,
+          direction: focused.selectionDirection
+        };
+      }
+    } catch {
+      // An input type without a text selection.
+    }
+    return saved;
+  }
+
+  function sameSelection(a, b) {
+    return (
+      a.count === b.count &&
+      (a.count === 0 ||
+        (a.anchorNode === b.anchorNode &&
+          a.anchorOffset === b.anchorOffset &&
+          a.focusNode === b.focusNode &&
+          a.focusOffset === b.focusOffset))
+    );
+  }
+
+  function restoreSelections(saved) {
+    if (!saved) return;
+    const field = saved.field;
+    if (field) {
+      try {
+        if (
+          field.el.selectionStart !== field.start ||
+          field.el.selectionEnd !== field.end ||
+          field.el.selectionDirection !== field.direction
+        ) {
+          field.el.setSelectionRange(field.start, field.end, field.direction || undefined);
+        }
+      } catch {}
+    }
+    for (let i = 0; i < saved.docs.length; i++) {
+      const { sel, state } = saved.docs[i];
+      try {
+        if (sameSelection(readSelection(sel), state)) continue;
+        sel.removeAllRanges();
+        if (state.count > 0 && state.anchorNode && state.focusNode) {
+          sel.setBaseAndExtent(
+            state.anchorNode,
+            state.anchorOffset,
+            state.focusNode,
+            state.focusOffset
+          );
+        }
+      } catch {}
+    }
+  }
+
   function buildNodeRef(node, rootEl) {
     if (!node) return null;
     const tag = (() => {
@@ -405,7 +492,15 @@ function runInPage(ctx) {
       return null;
     const candidate = entry.probeCandidates[0];
     if (!candidate) return null;
+    const saved = saveSelections(getDeepActiveElement());
+    try {
+      return probeFocus(entry, candidate);
+    } finally {
+      restoreSelections(saved);
+    }
+  }
 
+  function probeFocus(entry, candidate) {
     let focusedByEvent = false;
     const onFocusCapture = () => {
       focusedByEvent = true;

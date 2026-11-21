@@ -112,6 +112,7 @@ const SAFE_DOM_METHODS = [
   'getElementsByTagName',
   'getRootNode',
   'getScreenCTM',
+  'getSelection',
   'hasAttribute',
   'hasChildNodes',
   'insertBefore',
@@ -675,6 +676,10 @@ function createSafeDom() {
       protect && guard(o)
         ? protectedCall(o, 'getScreenCTM', a, b, c, d)
         : o.getScreenCTM(a, b, c, d),
+    getSelection: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getSelection', a, b, c, d)
+        : o.getSelection(a, b, c, d),
     hasAttribute: (o, a, b, c, d) =>
       protect && guard(o)
         ? protectedCall(o, 'hasAttribute', a, b, c, d)
