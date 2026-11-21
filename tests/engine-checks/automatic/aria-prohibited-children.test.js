@@ -646,3 +646,37 @@ test(`${RULE_ID}: a submenu's menu inside a menubar or menu is allowed (round 8,
     maxOccurrences: 1
   });
 });
+
+// --- aria-owns adds children to the container (WAI-ARIA 1.2 aria-owns): the
+// elements it references are judged like its DOM children.
+
+test(`${RULE_ID}: fail when a list owns a tab through aria-owns (ACT bc4a75 Failed Example 5)`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="list" aria-owns="id2"></div>
+    <div id="id2" role="tab">Tab 1</div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'id2'));
+  assert.equal(rule.occurrences[0].data.details.containerRole, 'list');
+});
+
+test(`${RULE_ID}: fail when a list with a real listitem also owns a tab; pass when what it owns is a listitem`, () => {
+  const fail = runa11yCoreOnHtml(
+    `<!doctype html><html><body>
+      <div role="list" aria-owns="x"><div role="listitem">One</div></div>
+      <div id="x" role="tab">Tab</div>
+    </body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(fail, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'x'));
+  const pass = runa11yCoreOnHtml(
+    `<!doctype html><html><body>
+      <div role="list" aria-owns="x"><div role="listitem">One</div></div>
+      <div id="x" role="listitem">Two</div>
+    </body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(pass, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});

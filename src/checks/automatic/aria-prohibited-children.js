@@ -25,7 +25,8 @@
  *   submenu's role="menu" in a menu or menubar, a caption on a grid).
  *   The owned elements are the container's children in the accessibility
  *   tree: its DOM children, looking through generic wrappers (no role, no
- *   name, not focusable). A roleless wrapper with a name (a title) is a
+ *   name, not focusable), and the elements its aria-owns
+ *   references. A roleless wrapper with a name (a title) is a
  *   node of its own; it is still descended into to reach the items a
  *   component library buries inside it, but once one is found there the
  *   rest of that wrapper's subtree is not judged against the container.
@@ -93,6 +94,11 @@
  *   the items a component library buries there, and, when it holds an
  *   item, collects only the items, so the named wrapper's other content
  *   is not attributed to the container.
+ * - The elements the container's aria-owns references are owned children
+ *   too (WAI-ARIA 1.2 aria-owns; ACT bc4a75 Failed Example 5), judged the
+ *   same way as its DOM children and resolved with `helpers.resolveIdRefs`
+ *   as aria-required-children resolves them. An element both in the DOM
+ *   subtree and referenced is judged once.
  * - Recursion stops at the first non-transparent role boundary: a nested
  *   container with its own real role
  *   (e.g. a `<div role="listbox">` inside a menubar) is evaluated as its
@@ -400,6 +406,17 @@ function runInPage(ctx) {
     const allowedSet = new Set(allowedRoles);
     const owned = [];
     collectOwnedRoles(el, owned, 0, requiredSet);
+    // The elements aria-owns adds to the container are its children too
+    // (header comment); one already found in the DOM subtree counts once.
+    const ownsAttr = dom.getAttribute(el, 'aria-owns');
+    if (ownsAttr && helpers.resolveIdRefs) {
+      const resolved = helpers.resolveIdRefs(ownsAttr, ctx, { maxRefs: 50 }, el);
+      const seen = new Set(owned.map((entry) => entry.el));
+      const refs = (resolved.refs || []).filter(
+        (ref) => ref && !seen.has(ref) && !dom.contains(ref, el)
+      );
+      collectFromKids(refs, owned, 0, requiredSet);
+    }
 
     for (const entry of owned) {
       if (entry.role && allowedSet.has(entry.role)) continue;
