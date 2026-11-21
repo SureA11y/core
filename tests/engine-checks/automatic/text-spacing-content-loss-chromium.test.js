@@ -282,6 +282,22 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.deepEqual(findings(blinking), [['box', 'fail', 'TEXT_CLIPPED']]);
   });
 
+  // The document's getAnimations() leaves out a component's animations, so
+  // a marquee in an open shadow root was neither held still nor known to
+  // move (round 9, V9-1).
+  await t.test('a marquee in a component is asked about', async () => {
+    const css =
+      '@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}' +
+      '#box{white-space:nowrap;overflow:hidden;width:150px} #run{display:inline-block;animation:slide 20s linear infinite}';
+    const result = await scan(
+      page(
+        '',
+        `<div id="host"></div><script>document.getElementById('host').attachShadow({mode:'open'}).innerHTML = '<style>${css}</style><div id="box"><span id="run">${TEXT}</span></div>';</script>`
+      )
+    );
+    assert.deepEqual(findings(result), [['box', 'cantTell', 'TEXT_CLIPPED_MOVING']]);
+  });
+
   // A <marquee> moves its text outside the Web Animations API, so the engine
   // can't hold it still: judged, this one's text failed while it bounced
   // near an edge and passed once it had moved away, depending only on when

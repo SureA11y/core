@@ -14,8 +14,10 @@
  *   animation, a CSS transition or one a script started, on a time-based
  *   timeline (not scroll-driven), that is rendered, and that lasts more than
  *   five seconds from its start (its delay and every iteration) or never
- *   ends. Such motion started without the user asking for it. Without a
- *   browser's getAnimations (jsdom) nothing is applicable.
+ *   ends, in the document or in an open shadow root (unless
+ *   includeShadowDom is off). Such motion started without the user asking
+ *   for it. Without a browser's getAnimations (jsdom) nothing is
+ *   applicable.
  * @expectation
  *   WCAG 2.2.2 asks that moving, blinking or scrolling content that starts
  *   automatically, lasts more than five seconds and is shown beside other
@@ -45,7 +47,9 @@
  * - The engine moves every animation to a fixed point while the rules run
  *   (settleAnimations, src/core/dom-runner.js), and a finite one then no
  *   longer shows in getAnimations(). The rule reads the animations as they
- *   were before that, from helpers.animationsAtScanStart().
+ *   were before that, from helpers.animationsAtScanStart(), which also
+ *   holds those of open shadow roots: the document's getAnimations() leaves
+ *   them out. A closed shadow root's are not seen.
  * - An animation that already ended before the scan is not seen. Nor is
  *   motion a script makes by changing styles on a timer, which is not an
  *   animation to the browser, nor a video or a <canvas>.

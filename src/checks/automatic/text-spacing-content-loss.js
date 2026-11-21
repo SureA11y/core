@@ -29,7 +29,8 @@
  *     (TEXT_CLIPPED). A line pushed out by less is asked about
  *     (TEXT_CLIPPED_PARTLY), and so is text that comes to overlap other
  *     text it did not overlap before (TEXT_OVERLAPS). Text moved by an
- *     animation that repeats for ever (a ticker) is asked about however far
+ *     animation that repeats for ever (a ticker), in the document or in an
+ *     open shadow root, is asked about however far
  *     it goes (TEXT_CLIPPED_MOVING): it passes through the edge anyway, and
  *     one frame can't tell whether any of it is lost. Where the page is
  *     scroll-locked, both of the viewport's axes hidden while content already
@@ -1254,19 +1255,36 @@ function runInPage(ctx) {
     // own `offset`, `easing` and `composite` are not properties.
     const MOVING_PROPS =
       /^(transform|translate|rotate|scale|left|right|top|bottom|inset|margin|offsetPath|offsetDistance|offsetAnchor|offsetPosition)/;
-    // The elements such an animation targets, read once from the document's
-    // animations: asking each ancestor of each text for its own costs an
-    // animation lookup per element.
+    // The elements such an animation targets, read once from the animations
+    // running when the scan started: asking each ancestor of each text for
+    // its own costs an animation lookup per element. Those the engine
+    // gathered (helpers.animationsAtScanStart) include the ones in open
+    // shadow roots, which the document's getAnimations() leaves out; only
+    // the elements running one that never ends are asked for theirs.
     let movedForEver = null;
     function movedForEverTargets() {
       if (movedForEver) return movedForEver;
       movedForEver = new Set();
-      let animations;
+      let animations = [];
       try {
-        animations =
-          typeof dom.get(document, 'getAnimations') === 'function'
-            ? dom.getAnimations(document)
-            : [];
+        const started =
+          typeof helpers.animationsAtScanStart === 'function'
+            ? helpers.animationsAtScanStart()
+            : null;
+        if (started) {
+          const looping = new Set();
+          for (const a of started) {
+            if (a && a.target && a.endTime === null) looping.add(a.target);
+          }
+          for (const el of looping) {
+            if (typeof dom.get(el, 'getAnimations') !== 'function') continue;
+            for (const a of dom.getAnimations(el, { subtree: true })) {
+              if (a && a.effect && a.effect.target === el) animations.push(a);
+            }
+          }
+        } else if (typeof dom.get(document, 'getAnimations') === 'function') {
+          animations = dom.getAnimations(document);
+        }
       } catch {
         animations = [];
       }
