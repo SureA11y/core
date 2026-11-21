@@ -166,28 +166,83 @@ function runInPage(ctx) {
     const m = /^(-?\d*\.?\d+)px$/.exec(lower(v));
     return m ? Number.parseFloat(m[1]) : 0;
   };
-  // A length a browser may keep as written: px, a percentage of `ref`, or a
-  // calc() adding the two ("calc(10% + 2px)"). Anything else reads as 0.
+  // A length a browser may keep as written: px, a percentage of `ref`, and
+  // calc(), min(), max() and clamp() of those ("calc(10% + 2px)", "max(10%,
+  // 60px)"): Chromium keeps scroll-padding in that form while a percentage is
+  // in it. Anything else, or anything it can't read, reads as 0.
   const lengthOf = (v, ref) => {
     const raw = lower(v);
     if (!raw || raw === 'auto') return 0;
-    const pct = /^(-?\d*\.?\d+)%$/.exec(raw);
-    if (pct) return (Number.parseFloat(pct[1]) * ref) / 100;
-    const calc = /^calc\((.*)\)$/.exec(raw);
-    if (calc) {
-      let total = 0;
-      let rest = calc[1].replace(/\s+/g, '');
-      const term = /^([+-]?)(\d*\.?\d+)(px|%)/;
-      while (rest) {
-        const m = term.exec(rest);
-        if (!m) return 0;
-        const n = Number.parseFloat(m[2]) * (m[1] === '-' ? -1 : 1);
-        total += m[3] === '%' ? (n * ref) / 100 : n;
-        rest = rest.slice(m[0].length);
+    const tokens = raw.match(/\d*\.?\d+(?:px|%)?|[a-z-]+\(|[()+\-*/,]|\S/g) || [];
+    let i = 0;
+    const peek = () => tokens[i];
+    const expect = (t) => {
+      if (tokens[i++] !== t) throw new Error('unreadable');
+    };
+    // Each value is { n, len }: a number, and whether it is a length (px).
+    let sum = null;
+    const primary = () => {
+      const t = tokens[i++];
+      if (t === '(' || t === 'calc(') {
+        const value = sum();
+        expect(')');
+        return value;
       }
-      return total;
+      if (t === 'min(' || t === 'max(' || t === 'clamp(') {
+        const args = [sum()];
+        while (peek() === ',') {
+          i += 1;
+          args.push(sum());
+        }
+        expect(')');
+        if (!args.every((a) => a.len || a.n === 0)) throw new Error('unreadable');
+        const n = args.map((a) => a.n);
+        if (t === 'min(') return { n: Math.min(...n), len: true };
+        if (t === 'max(') return { n: Math.max(...n), len: true };
+        if (n.length !== 3) throw new Error('unreadable');
+        return { n: Math.max(n[0], Math.min(n[1], n[2])), len: true };
+      }
+      if (t === '-' || t === '+') {
+        const value = primary();
+        return { n: t === '-' ? -value.n : value.n, len: value.len };
+      }
+      const m = /^(\d*\.?\d+)(px|%)?$/.exec(t || '');
+      if (!m) throw new Error('unreadable');
+      const n = Number.parseFloat(m[1]);
+      if (!m[2]) return { n, len: false };
+      return { n: m[2] === '%' ? (n * ref) / 100 : n, len: true };
+    };
+    const product = () => {
+      let value = primary();
+      while (peek() === '*' || peek() === '/') {
+        const op = tokens[i++];
+        const other = primary();
+        if (op === '*') {
+          if (value.len && other.len) throw new Error('unreadable');
+          value = { n: value.n * other.n, len: value.len || other.len };
+        } else {
+          if (other.len || other.n === 0) throw new Error('unreadable');
+          value = { n: value.n / other.n, len: value.len };
+        }
+      }
+      return value;
+    };
+    sum = () => {
+      let value = product();
+      while (peek() === '+' || peek() === '-') {
+        const op = tokens[i++];
+        const other = product();
+        value = { n: op === '+' ? value.n + other.n : value.n - other.n, len: true };
+      }
+      return value;
+    };
+    try {
+      const value = sum();
+      if (i !== tokens.length || (!value.len && value.n !== 0)) return 0;
+      return Number.isFinite(value.n) ? value.n : 0;
+    } catch {
+      return 0;
     }
-    return px(raw);
   };
   const styleOf = (el) => {
     try {

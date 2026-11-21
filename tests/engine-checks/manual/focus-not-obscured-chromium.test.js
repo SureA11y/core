@@ -340,6 +340,26 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
     }
   });
 
+  // Round 8, NW-9: Chromium keeps min(), max() and clamp() in the computed
+  // value while a percentage is in them.
+  await t.test('a scroll-padding in min(), max() or clamp() is worked out', async () => {
+    const header =
+      '<header style="position:sticky;top:0;height:60px;background:#fff">Site</header>';
+    for (const pad of [
+      'max(10%, 60px)',
+      'min(20%, 70px)',
+      'clamp(60px, 10%, 100px)',
+      'calc(min(5%, 30px) + 40px)'
+    ]) {
+      const res = await scan(doc(header + LINKS(40), `html{scroll-padding-top:${pad}}`));
+      assert.equal(res[RULE_ID].outcome, 'pass', pad);
+    }
+    // One that works out under the header's height still leaves it over focus.
+    const res = await scan(doc(header + LINKS(40), 'html{scroll-padding-top:max(5%, 20px)}'));
+    assert.equal(res[RULE_ID].outcome, 'cantTell');
+    assert.equal(res[RULE_ID].findings[0].metrics.scrollPaddingPx, 35);
+  });
+
   await t.test('without a doctype, the window is the viewport, not the document', async () => {
     const html = doc(LINKS(40) + FOOTER()).replace('<!doctype html>', '');
     const res = await scan(html);
