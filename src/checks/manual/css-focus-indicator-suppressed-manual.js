@@ -62,7 +62,12 @@
  *   filter, opacity, transform, and `content` for a pseudo-element
  *   part), matching this engine's other curated-list checks. A rule
  *   setting only `outline-offset` alongside `outline: none` is not a
- *   replacement: it offsets an outline that is no longer drawn.
+ *   replacement: it offsets an outline that is no longer drawn. Nor is a
+ *   value that draws nothing (`box-shadow: none`, `background:
+ *   transparent`, `border: 0`, `color: inherit` or another CSS-wide
+ *   keyword), or one the element already shows unfocused (`text-decoration:
+ *   none` on a link with no underline, the same color, weight or
+ *   opacity): the focused element looks the same.
  * - A stylesheet from another origin is read from its text when the scan
  *   is given it (`engineOptions.styleSheetTexts`, which
  *   `preloadStyleSheets()` fills in a browser; helpers.cssRulesOf), as
@@ -237,12 +242,104 @@ function runInPage(ctx) {
     );
   }
 
-  function providesReplacement(style) {
-    if (drawsOutline(style)) return true;
-    for (const prop of REPLACEMENT_PROPS) {
-      if (getProp(style, prop)) return true;
+  // CSS-wide keywords put back a value from elsewhere; they draw nothing of
+  // their own a person could tell from the unfocused element.
+  const CSS_WIDE = /^(inherit|initial|unset|revert|revert-layer)$/;
+
+  function parseColor(v) {
+    const c = helpers.contrast;
+    if (!c || typeof c.parseCssColorToRgba !== 'function') return null;
+    try {
+      return c.parseCssColorToRgba(v) || null;
+    } catch {
+      return null;
     }
-    return false;
+  }
+
+  function isClearColor(v) {
+    if (v === 'transparent') return true;
+    const parsed = /^(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/.test(v) ? parseColor(v) : null;
+    return !!parsed && parsed.a === 0;
+  }
+
+  // Splits a value on spaces outside parentheses: "0 0 0 2px rgb(0, 0, 0)".
+  function valueTokens(v) {
+    const tokens = [];
+    let depth = 0;
+    let current = '';
+    for (const ch of v) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && /\s/.test(ch)) {
+        if (current) tokens.push(current);
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    if (current) tokens.push(current);
+    return tokens;
+  }
+
+  // Whether a declared value can draw anything at all, whatever the element
+  // looked like before: `box-shadow: none`, `background: transparent` and
+  // `border: 0` are written as focus styles but paint nothing, so they are
+  // no replacement for the outline they sit next to.
+  function valueCanDraw(prop, value) {
+    if (!value || CSS_WIDE.test(value)) return false;
+    const tokens = valueTokens(value.replace(/\s*!important$/, ''));
+    if (!tokens.length) return false;
+    switch (prop) {
+      case 'box-shadow':
+      case 'text-shadow':
+      case 'filter':
+      case 'transform':
+      case 'background-image':
+        return value !== 'none';
+      case 'content':
+        return !/^(none|normal|""|'')$/.test(value);
+      case 'background':
+      case 'background-color':
+        return !tokens.every((t) => t === 'none' || isClearColor(t));
+      case 'border-radius':
+        return !tokens.every((t) => t === '/' || isZeroLength(t));
+      case 'color':
+      case 'text-decoration-color':
+      case 'border-color':
+        return !tokens.every((t) => t === 'currentcolor' || isClearColor(t));
+      case 'border':
+      case 'border-style':
+      case 'border-width':
+      case 'border-top':
+      case 'border-right':
+      case 'border-bottom':
+      case 'border-left':
+        // No line is drawn without a width and a style, nor in a clear colour.
+        return !tokens.some(
+          (t) => t === 'none' || t === 'hidden' || isZeroLength(t) || isClearColor(t)
+        );
+      default:
+        return true;
+    }
+  }
+
+  // The replacement declarations a focus rule makes: those whose value can
+  // draw something. A positive outline is one of them.
+  function replacementDecls(style) {
+    const decls = [];
+    if (drawsOutline(style)) decls.push({ prop: 'outline', value: getProp(style, 'outline') });
+    // A border needs a width, a style and a colour: when the rule clears any
+    // one of them, its other border longhands draw nothing either.
+    const borderGone = ['border', 'border-color', 'border-style', 'border-width'].some((prop) => {
+      const value = getProp(style, prop);
+      return !!value && !CSS_WIDE.test(value) && !valueCanDraw(prop, value);
+    });
+    for (const prop of REPLACEMENT_PROPS) {
+      if (borderGone && /^border-(?!radius)|^border$/.test(prop)) continue;
+      const value = getProp(style, prop);
+      if (valueCanDraw(prop, value)) decls.push({ prop, value });
+    }
+    return decls;
   }
 
   // Splits a selector list on top-level commas only, so a comma inside
@@ -404,7 +501,8 @@ function runInPage(ctx) {
     if (!style || !selectorText) return;
 
     const suppresses = suppressesOutline(style);
-    const provides = providesReplacement(style);
+    const decls = replacementDecls(style);
+    const provides = decls.length ? decls : null;
     if (!suppresses && !provides) return;
 
     for (const part of splitSelectorList(selectorText)) {
@@ -465,8 +563,16 @@ function runInPage(ctx) {
 
     // A replacement is credited to the element that takes focus, wherever
     // the rule paints it: on the element itself, its pseudo-element, a
-    // sibling, or a descendant.
-    if (provides) providers.push({ base: focusedBase, subject: isSubject });
+    // sibling, or a descendant. `own` marks a rule styling the element
+    // itself, whose values can be held against how it looks unfocused.
+    if (provides) {
+      providers.push({
+        base: focusedBase,
+        subject: isSubject,
+        own: isSubject && !hasPseudoElement(part),
+        decls: provides
+      });
+    }
   }
 
   // A nested rule's selector, resolved against its parent's: `&` stands for
@@ -635,6 +741,64 @@ function runInPage(ctx) {
   }
   const INLINE_FOCUS_HANDLERS = '[onfocus], [onfocusin], [onblur], [onfocusout]';
 
+  // Whether a declared value is what the element already shows unfocused:
+  // `a:focus { text-decoration: none }` on a link with no underline changes
+  // nothing. Only values that read back plainly are compared; anything else
+  // counts as a change, as before.
+  function sameAsUnfocused(cs, prop, value) {
+    const now = (name) => getProp(cs, name);
+    if (prop === 'text-decoration' || prop === 'text-decoration-line') {
+      // Some environments only fill in the shorthand, so both are read.
+      const line = now('text-decoration-line');
+      return (
+        value === 'none' &&
+        (!line || line === 'none') &&
+        !/underline|overline|line-through/.test(now('text-decoration'))
+      );
+    }
+    if (prop === 'font-weight') {
+      const weight = (v) => (v === 'normal' ? '400' : v === 'bold' ? '700' : v);
+      return weight(value) === weight(now('font-weight'));
+    }
+    if (prop === 'opacity') {
+      return parseFloat(value) === parseFloat(now('opacity') || '1');
+    }
+    if (prop === 'color' || prop === 'background-color' || prop === 'background') {
+      if (prop === 'background' && now('background-image') && now('background-image') !== 'none') {
+        return false;
+      }
+      const declared = parseColor(value);
+      const current = parseColor(now(prop === 'color' ? 'color' : 'background-color'));
+      return (
+        !!declared &&
+        !!current &&
+        ['r', 'g', 'b', 'a'].every((k) => Math.abs((declared[k] || 0) - (current[k] || 0)) < 0.01)
+      );
+    }
+    return false;
+  }
+
+  const activeElement = (() => {
+    try {
+      return dom.activeElement(document);
+    } catch {
+      return null;
+    }
+  })();
+
+  function changesElement(el, decls) {
+    // Focused now, its computed style already holds the focus rule's values.
+    if (el === activeElement) return true;
+    let cs = null;
+    try {
+      cs = typeof helpers.computedStyle === 'function' ? helpers.computedStyle(el) : null;
+    } catch {
+      cs = null;
+    }
+    if (!cs) return true;
+    return decls.some((d) => !sameAsUnfocused(cs, d.prop, d.value));
+  }
+
   const CANDIDATE_SELECTOR =
     'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
   const candidates = helpers.queryAllSmart
@@ -655,7 +819,9 @@ function runInPage(ctx) {
     if (!suppressing.length) continue;
 
     const indicated = providers.some((p) =>
-      p.subject ? matchesSafe(el, p.base) : matchesSafe(el, p.base) || closestSafe(el, p.base)
+      p.subject
+        ? matchesSafe(el, p.base) && (!p.own || changesElement(el, p.decls))
+        : matchesSafe(el, p.base) || closestSafe(el, p.base)
     );
     if (indicated) continue;
 

@@ -208,6 +208,40 @@ test(`${RULE_ID}: a replacement in the same rule clears the element`, () => {
   }
 });
 
+test(`${RULE_ID}: a focus style that draws nothing is no replacement (round 8, LY-3)`, () => {
+  for (const [css, body] of [
+    ['button:focus{outline:none;box-shadow:none}', '<button type="button" id="a">Go</button>'],
+    ['a:focus{outline:none;background:transparent}', '<a href="/x" id="a">x</a>'],
+    ['a:focus{outline:none;background-color:rgba(0,0,0,0)}', '<a href="/x" id="a">x</a>'],
+    ['button:focus{outline:none;border:0}', '<button type="button" id="a">Go</button>'],
+    [
+      'button:focus{outline:none;border:2px solid transparent}',
+      '<button type="button" id="a">Go</button>'
+    ],
+    ['a:focus{outline:none;color:inherit}', '<a href="/x" id="a">x</a>'],
+    ['a:focus{outline:none;filter:none;transform:none}', '<a href="/x" id="a">x</a>'],
+    // The same value the element already shows unfocused changes nothing.
+    [
+      'a:focus{outline:0;text-decoration:none}',
+      '<a href="/x" id="a" style="text-decoration:none">x</a>'
+    ],
+    ['a:focus{outline:0;color:#c00}', '<a href="/x" id="a" style="color:#c00">x</a>']
+  ]) {
+    const result = runa11yCoreOnHtml(page(css, body), { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'a'), css);
+  }
+  // A value that does change the element is still a replacement.
+  for (const [css, body] of [
+    ['a:focus{outline:0;text-decoration:none}', '<a href="/x">x</a>'],
+    ['a:focus{outline:0;color:#c00}', '<a href="/x" style="color:#00c">x</a>'],
+    ['a:focus{outline:none;background:transparent;box-shadow:0 0 0 2px navy}', '<a href="/x">x</a>']
+  ]) {
+    const result = runa11yCoreOnHtml(page(css, body), { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
 test(`${RULE_ID}: a later rule restoring a positive outline clears the element`, () => {
   const result = runa11yCoreOnHtml(
     page('*:focus{outline:none} a:focus{outline:2px solid navy}', '<a href="/x">x</a>'),
