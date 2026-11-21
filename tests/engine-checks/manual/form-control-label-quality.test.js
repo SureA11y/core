@@ -564,3 +564,26 @@ test(`${RULE_ID}: a shared label names the other field and its name attribute`, 
   assert.strictEqual(a.data.details.sharedWith, 1);
   assert.strictEqual(a.data.details.reasonCode, 'DUPLICATE_LABEL_TEXT');
 });
+
+// A label of punctuation alone has no words to share: "*" and ":" are not
+// one label, nor are two "*".
+test(`${RULE_ID}: labels of punctuation alone are not duplicates (round 9, N9-14)`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  for (const body of [
+    '<label for="a">*</label><input id="a"><label for="e">:</label><input id="e">',
+    '<label for="a">*</label><input id="a"><label for="e">*</label><input id="e">'
+  ]) {
+    const result = runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] });
+    const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+    assert.ok(
+      !rule.occurrences.some((o) => o.data.details.reasonCode === 'DUPLICATE_LABEL_TEXT'),
+      body
+    );
+  }
+  const real = runa11yCoreOnHtml(
+    page('<label for="a">Name:</label><input id="a"><label for="b">Name</label><input id="b">'),
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(real, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+});
