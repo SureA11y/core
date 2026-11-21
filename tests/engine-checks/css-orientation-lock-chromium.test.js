@@ -121,3 +121,53 @@ test(
     }
   }
 );
+
+// A rotation written with var() has no angle in the style sheet: where the
+// media query matches, the turned elements' computed rotation is read
+// (round 9, V9-10).
+test('a rotation written with var() is read where its media query matches', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const PORTRAIT = { width: 390, height: 844 };
+  for (const [description, css, outcome] of [
+    [
+      'a custom property on the root',
+      ':root{--r:90deg} @media (orientation: portrait) { main { transform: rotate(var(--r)) } }',
+      'fail'
+    ],
+    [
+      'a custom property set in the block',
+      '@media (orientation: portrait) { main { --r:90deg; transform: rotate(var(--r)) } }',
+      'fail'
+    ],
+    [
+      'a registered angle on the rotate property',
+      '@property --a{syntax:"<angle>";inherits:false;initial-value:0deg} @media (orientation: portrait) { main { --a:90deg; rotate: var(--a) } }',
+      'fail'
+    ],
+    [
+      'a custom property that turns it half a turn',
+      ':root{--r:180deg} @media (orientation: portrait) { main { transform: rotate(var(--r)) } }',
+      'pass'
+    ]
+  ]) {
+    await t.test(description, async () => {
+      const page = await browser.newPage({ viewport: PORTRAIT });
+      try {
+        await page.setContent(
+          `<!doctype html><html lang="en"><head><title>Orientation</title><style>${css}</style></head><body>${BODY}</body></html>`
+        );
+        await page.evaluate(BUNDLE);
+        const r = await page.evaluate(
+          () =>
+            window.a11ycore
+              .runa11yCoreInPage(location.href, null, {}, ['css-orientation-lock'])
+              .checksResults.find((c) => c.ruleId === 'css-orientation-lock').outcome
+        );
+        assert.equal(r, outcome);
+      } finally {
+        await page.close();
+      }
+    });
+  }
+});
