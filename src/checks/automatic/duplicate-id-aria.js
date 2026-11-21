@@ -137,7 +137,9 @@ function runInPage(ctx) {
       .replace(/\r/g, '\\d ')
       .replace(/\f/g, '\\c ');
   const scopeSelector =
-    reportedIds.length <= 300 ? reportedIds.map((id) => `[id="${attrValue(id)}"]`).join(',') : '[id]';
+    reportedIds.length <= 300
+      ? reportedIds.map((id) => `[id="${attrValue(id)}"]`).join(',')
+      : '[id]';
   let inScope = null;
   if (reportedIds.length && helpers && typeof helpers.queryAllSmart === 'function') {
     try {
