@@ -17,7 +17,9 @@
  *   not applicable: the page's language is the top document's.
  *
  * @expectation
- *   The <html> element has a lang attribute.
+ *   The <html> element has a lang attribute, or, in an XML document
+ *   (XHTML served as application/xhtml+xml), an xml:lang attribute, which
+ *   declares the language there as lang does in HTML.
  *   The lang attribute is not empty and its primary language subtag (the
  *   part before the first hyphen) is a registered language subtag, as ACT
  *   bf051a requires. A malformed later
@@ -44,8 +46,9 @@
  *   Changes of language within the page are covered by SC 3.1.2.
  *
  * @reason-codes
- *   - `lang-missing` (fail): the <html> element has no lang attribute, so the
- *     page's language is not declared.
+ *   - `lang-missing` (fail): the <html> element has no lang attribute (nor,
+ *     in an XML document, an xml:lang attribute), so the page's language is
+ *     not declared.
  *     Basis: WCAG 3.1.1; ACT b5c3f8; H57; HTML lang attribute.
  *   - `lang-empty` (fail): the <html> element's lang attribute is empty or
  *     only whitespace, so it declares no language.
@@ -141,7 +144,20 @@ function runInPage(ctx) {
     return [{ selector: '', html: '', ...baseOccurrence }];
   }
 
-  const rawLang = dom.getAttribute(html, 'lang'); // null if missing
+  // In an XML document (XHTML served as application/xhtml+xml), xml:lang
+  // declares the language as lang does in HTML, and wins over it (HTML,
+  // "The lang and xml:lang attributes"): with no lang, it is the page's.
+  // The HTML parser keeps it as a plain attribute that declares nothing.
+  const isXmlDocument = (() => {
+    try {
+      const type = String(dom.get(document, 'contentType') || '').toLowerCase();
+      return !!type && type !== 'text/html';
+    } catch {
+      return false;
+    }
+  })();
+  const ownLang = dom.getAttribute(html, 'lang'); // null if missing
+  const rawLang = ownLang === null && isXmlDocument ? dom.getAttribute(html, 'xml:lang') : ownLang;
   const lang = (rawLang || '').trim();
 
   if (rawLang === null) {

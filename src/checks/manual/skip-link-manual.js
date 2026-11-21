@@ -27,9 +27,11 @@
  *   the main a link's position is measured against.
  * @expectation
  *   The link's fragment resolves to a real element in the document
- *   (via a matching id, or a legacy <a name="...">), and that target is
- *   currently usable (not hidden from the accessibility tree; and, when
- *   browser geometry is available, rendered with an area that no ancestor
+ *   (via a matching id, or a legacy <a name="...">), or, with neither, is
+ *   "top" in any ASCII case, which HTML resolves to the top of the
+ *   document. A target element is currently usable (not hidden from the
+ *   accessibility tree; and, when browser geometry is available, rendered
+ *   with an area that no ancestor
  *   cuts to nothing: one with `overflow: hidden` collapsed to no size, or
  *   `overflow: clip` keeping it outside). A skip link whose target is
  *   missing or effectively unusable does not provide a reliable bypass
@@ -66,7 +68,8 @@
  *     target hidden at one width can be usable at another.
  * @reason-codes
  *   - `SKIP_LINK_TARGET_MISSING` (cantTell): a skip link's fragment matches
- *     no element id or legacy anchor name in the document.
+ *     no element id or legacy anchor name in the document, and is not
+ *     "top".
  *     It leans fail when the link reads as a skip link, its fragment is not
  *     a route, and an early listener hook saw no click listener on it, its
  *     ancestors, the document or the window.
@@ -479,6 +482,11 @@ function runInPage(ctx) {
         }
       }
     }
+
+    // With no element of that id or name, "#top" (in any ASCII case) is the
+    // top of the document (HTML, "find a potential indicated element"):
+    // the link scrolls there, as "Back to top" links mean it to.
+    if (!target && /^top$/i.test(fragment)) continue;
 
     if (target) {
       const accEligibility = toEligibility(

@@ -406,3 +406,37 @@ test(`${RULE_ID}: a word written for a role is answered with the ARIA role for i
     'ARIA has no role "icon"; use role="img", the ARIA role for it, or remove aria-label.'
   );
 });
+
+// A <p>, <code>, <strong>, <time>, <del> or <sup> has its tag's role
+// (HTML-AAM: paragraph, code, strong, time, deletion, superscript), which
+// prohibits a name: the finding names that role rather than saying the
+// element has none.
+test(`${RULE_ID}: a text-level tag is judged by its implicit role, which the message names (round 9, N9-15)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><p id="p" aria-label="intro"></p><code id="c" aria-label="c"></code><strong id="s" aria-label="s"></strong><time id="t" aria-label="t"></time><del id="d" aria-label="d"></del><sup id="u" aria-label="u"></sup><em id="e" aria-label="e">Note</em></main></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  const expected = {
+    p: ['p', 'paragraph'],
+    c: ['code', 'code'],
+    s: ['strong', 'strong'],
+    t: ['time', 'time'],
+    d: ['del', 'deletion'],
+    u: ['sup', 'superscript']
+  };
+  for (const [id, [tag, role]] of Object.entries(expected)) {
+    const o = byId(id);
+    assert.ok(o, id);
+    assert.strictEqual(o.data.details.reasonCode, 'ARIA_ATTR_PROHIBITED');
+    assert.strictEqual(o.data.details.role, role);
+    assert.strictEqual(o.i18n.summaryKey, 'ariaProhibitedAttr_summary_fail_implicitRole');
+    assert.strictEqual(
+      o.summary,
+      `aria-label is prohibited on a <${tag}>, whose role, ${role}, can't be named.`
+    );
+    assert.doesNotMatch(o.summary, /no role/);
+  }
+  // With text of its own, the label is asked about, as for role="emphasis".
+  assert.strictEqual(byId('e').occurrenceOutcome, 'cantTell');
+  assert.strictEqual(byId('e').data.details.role, 'emphasis');
+});

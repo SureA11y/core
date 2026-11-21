@@ -181,3 +181,57 @@ test(`${RULE_ID}: nothing in an excluded block is asked about`, () => {
     );
   }
 });
+
+// The page's banner or contentinfo counts wherever the landmark rules find
+// it: in an open shadow root, or on a custom element whose ElementInternals
+// give it the role. A block named as that zone is then not asked about.
+test(`${RULE_ID}: a banner or contentinfo in a shadow root or from ElementInternals counts (round 9, N9-8)`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><x-hdr>Site</x-hdr><div id="header">Header</div><main>x</main><div id="footer">Footer text</div><x-foot></x-foot></body></html>'
+  );
+  const w = dom.window;
+  w.customElements.define(
+    'x-hdr',
+    class extends w.HTMLElement {
+      constructor() {
+        super();
+        this._internals = this.attachInternals();
+        this._internals.role = 'banner';
+      }
+    }
+  );
+  w.customElements.define(
+    'x-foot',
+    class extends w.HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: 'open' }).innerHTML = '<footer>Shadow footer</footer>';
+      }
+    }
+  );
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// A block with a composite widget role is that widget: a role="menu" named
+// "menu" by its class is not asked to become a navigation.
+test(`${RULE_ID}: a block with a composite widget role is not asked about (round 9, N9-9)`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><header>Site</header><main>${body}</main><footer>f</footer></body></html>`;
+  for (const role of ['menu', 'menubar', 'listbox', 'tablist', 'tree', 'grid', 'toolbar']) {
+    const html = page(
+      `<div class="menu" role="${role}" aria-label="Actions"><a href="/a">A</a><a href="/b">B</a></div>`
+    );
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+  const plain = page('<div class="menu"><a href="/a">A</a><a href="/b">B</a></div>');
+  const rule = assertRule(runa11yCoreOnHtml(plain, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'NAVIGATION_NOT_EXPOSED');
+});

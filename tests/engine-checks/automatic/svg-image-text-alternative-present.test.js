@@ -252,3 +252,32 @@ test(`${RULE_ID}: a fail says a <title> beside the <image> names its parent`, ()
   );
   assert.strictEqual(occ.data.details.nameCause.parent, 'g');
 });
+
+// An <image> inside an element whose children are presentational, or
+// inside an <svg> that is already named, is part of that image or control:
+// Chromium leaves it out of the accessibility tree, and the name that
+// matters is the container's.
+test(`${RULE_ID}: an <image> inside presentational children or a named <svg> is out of scope (round 9, N9-4)`, () => {
+  const img = 'href="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="10" height="10"';
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  for (const body of [
+    `<svg role="img" aria-label="Sales chart" width="10" height="10"><image ${img} /></svg>`,
+    `<svg role="img" width="10" height="10"><image ${img} /></svg>`,
+    `<button aria-label="Close"><svg width="10" height="10"><image ${img} /></svg></button>`,
+    `<div role="tab" tabindex="0" aria-label="Photos"><svg width="10" height="10"><image ${img} /></svg></div>`,
+    `<svg width="10" height="10"><title>Logo</title><image ${img} /></svg>`,
+    `<svg aria-label="Logo" width="10" height="10"><g><image ${img} /></g></svg>`
+  ]) {
+    const result = runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  for (const body of [
+    `<svg width="10" height="10"><image ${img} /></svg>`,
+    `<svg role="group" aria-label="Map" width="10" height="10"><image ${img} /></svg>`,
+    `<a href="/x"><svg width="10" height="10"><image ${img} /></svg></a>`
+  ]) {
+    const result = runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+});

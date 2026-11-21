@@ -6239,6 +6239,18 @@ function createDomHelpers(opts) {
     // whole label, bounded only by the blunt depth counter.
     effOpts = Object.assign({}, effOpts, { __idrefVisited: visited, __inIdRefTraversal: true });
 
+    // A <script> or <style> is never rendered, so it gives no text, as a
+    // <template> gives none: Chromium names <a href="/" aria-labelledby="s">
+    // </a><script id="s">…</script> "".
+    {
+      const tag = lower(dom.localName(el) || '');
+      if (
+        (tag === 'script' || tag === 'style') &&
+        dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml'
+      )
+        return '';
+    }
+
     __nameComputationDepth += 1;
     try {
       // A referenced node's own aria-labelledby is not followed: accname 1.2
@@ -7567,6 +7579,14 @@ function createDomHelpers(opts) {
           const svgRoot = dom.closest(node, 'svg');
           if (svgRoot && svgRoot !== el && dom.contains(el, svgRoot)) return;
         }
+        // Nor is a ruby annotation (<rt>) or its fallback parenthesis
+        // (<rp>): Chromium names <button><ruby>漢<rt>kan</rt></ruby></button>
+        // "漢", from the base text alone.
+        if (
+          (local === 'rt' || local === 'rp') &&
+          dom.namespaceURI(node) === 'http://www.w3.org/1999/xhtml'
+        )
+          return;
       }
 
       // opts.skipNode: the control a <label> is being read for. Its own name

@@ -146,6 +146,7 @@ const SAFE_DOM_OTHER_NAMES = [
   'clientTop',
   'clientWidth',
   'compatMode',
+  'contentType',
   'currentCSSZoom',
   'currentSrc',
   'delegatesFocus',

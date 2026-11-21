@@ -14,8 +14,11 @@
  *   banner, nav, navigation, menu, footer, and their French, German and
  *   Spanish names), at search forms (a form with a search field, or one
  *   named q, s, search or query), and at the page's first <header> and last
- *   <footer>. Elements left out with excludeSelectors are not looked at. A
- *   page with none of them is notApplicable.
+ *   <footer>. Elements left out with excludeSelectors are not looked at,
+ *   nor is a block whose role is a composite widget (menu, menubar,
+ *   listbox, tablist, tree, treegrid, grid, combobox, radiogroup,
+ *   toolbar): it is that widget, not a landmark. A page with none of them
+ *   is notApplicable.
  * @expectation
  *   Each zone is exposed as the landmark of its nature, by its element or a
  *   role: the header as banner, a navigation as navigation, the search as
@@ -54,7 +57,9 @@
  * - Names are read as whole tokens of the id and class (site-header, menu,
  *   pied-de-page), not as substrings: "headerless" or "menuitem" is no zone.
  * - Landmarks come from helpers.getLandmarkRole, so an implicit role lost by
- *   nesting is lost here too.
+ *   nesting is lost here too. Whether the page has a banner or a
+ *   contentinfo is read as the landmark rules read it: in open shadow roots
+ *   too, and from a custom element's ElementInternals.
  */
 
 const id = 'page-zones-landmark';
@@ -211,7 +216,22 @@ function runInPage(ctx) {
     );
   }
 
-  const all = [...dom.querySelectorAll(document, helpers.landmarkCandidateSelector)];
+  // Every landmark of the page, as the landmark rules find them: in open
+  // shadow roots too (a <footer> a component renders), and custom elements
+  // whose ElementInternals give them a landmark role. An element
+  // excludeSelectors leaves out is still part of the page's structure.
+  const all = (() => {
+    try {
+      return [
+        ...helpers.queryAllSmart(helpers.landmarkCandidateSelector, {
+          internalsRoles: true,
+          excluded: true
+        })
+      ];
+    } catch {
+      return [...dom.querySelectorAll(document, helpers.landmarkCandidateSelector)];
+    }
+  })();
   const pageHas = (role) => all.some((el) => roleOf(el) === role && exposed(el));
 
   const SECTIONING = new Set(['article', 'aside', 'main', 'nav', 'section']);
@@ -330,7 +350,29 @@ function runInPage(ctx) {
   const named = [...dom.querySelectorAll(document, 'body [id], body [class]')].filter(
     (el) => !['html', 'body'].includes(tagOf(el)) && zoneNamed(el) && usable(el)
   );
+  // A block given a composite widget role (a menu, a menubar, a tablist...)
+  // is that widget, whatever its class says: it is no landmark to become.
+  const WIDGET_ROLES = new Set([
+    'combobox',
+    'grid',
+    'listbox',
+    'menu',
+    'menubar',
+    'radiogroup',
+    'tablist',
+    'toolbar',
+    'tree',
+    'treegrid'
+  ]);
+  const isWidget = (el) => {
+    try {
+      return WIDGET_ROLES.has(helpers.aria.getAuthorRole(el));
+    } catch {
+      return false;
+    }
+  };
   for (const el of named) {
+    if (isWidget(el)) continue;
     const zone = zoneNamed(el);
     const tag = tagOf(el);
     if (zone === 'navigation') {

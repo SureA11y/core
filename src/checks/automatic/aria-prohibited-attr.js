@@ -14,11 +14,14 @@
  *   list for naming attributes (pure text-semantics / non-naming
  *   structural roles: caption, code, deletion, emphasis, generic,
  *   insertion, mark, none, paragraph, presentation, strong, subscript,
- *   suggestion, superscript, time), plus a native <caption> with no valid
- *   explicit role, whose implicit role is caption, and (b) elements with no
- *   role at all:
- *   native HTML tags verified to carry no implicit role (such as <div>,
- *   <span>, <p>, <strong>, <em>, <code> and <time>), or any autonomous
+ *   suggestion, superscript, time), plus a native element with no valid
+ *   explicit role whose implicit role (HTML-AAM) is one of them: <caption>
+ *   (caption), <p> (paragraph), <code> (code), <strong> (strong), <em>
+ *   (emphasis), <time> (time), <del> and <s> (deletion), <ins>
+ *   (insertion), <sub> (subscript), <sup> (superscript), <mark> (mark),
+ *   and (b) elements with no role at all:
+ *   native HTML tags verified to carry no implicit role other than generic
+ *   (such as <div>, <span>, <b> and <small>), or any autonomous
  *   custom element (a hyphenated, author-defined tag per the Custom
  *   Elements spec). In both cases, only elements that
  *   also carry aria-label or aria-labelledby.
@@ -88,9 +91,13 @@
  *   explicit role="", no implicit/native role either), e.g. icon-only
  *   `<span aria-label="...">` tiles with no other accessible-name source.
  *   ROLELESS_NATIVE_TAGS below is a curated, intentionally conservative
- *   list of native tags confirmed to carry no implicit role (common
- *   text-level tags like `<p>`/`<strong>`/`<em>`/`<code>`/`<mark>`/`<time>`
- *   resolve to role `null`, same as a bare `<div>`/`<span>`);
+ *   list of native tags confirmed to carry no implicit role other than
+ *   generic (`<b>`, `<i>`, `<small>`, `<abbr>`..., the same as a bare
+ *   `<div>`/`<span>`). The text-level tags HTML-AAM maps to a role that
+ *   prohibits a name (`<p>` paragraph, `<strong>` strong, `<em>` emphasis,
+ *   `<code>` code, `<mark>` mark, `<time>` time, `<del>`/`<s>` deletion,
+ *   `<ins>` insertion, `<sub>` subscript, `<sup>` superscript) are judged
+ *   by that role, as role="paragraph" is, with the message naming it;
  *   `<section>`/`<form>`/`<a>` are excluded even though they can also
  *   resolve to no role, because their native role is conditional
  *   (name-dependent/href-dependent) and already has dedicated handling in
@@ -191,6 +198,48 @@ function runInPage(ctx) {
   const cantTellOccurrences = [];
   let applicableCount = 0;
 
+  // The findings for an element whose role, explicit or implicit, prohibits
+  // the attributes in `present`: a fail, or, where its own text already names
+  // it or the attribute is a role description, a question.
+  // `implicitTag` names the element when the role is its tag's (a <p> is a
+  // paragraph), which the message says, as no role attribute shows it.
+  function reportProhibited(el, role, present, hasOwnContent, implicitTag) {
+    for (const attr of present) {
+      const roleDescription = PROHIBITED_ROLE_DESCRIPTION_ATTRS.includes(attr);
+      const asked = roleDescription || hasOwnContent;
+      (asked ? cantTellOccurrences : failOccurrences).push(
+        helpers.reportOccurrence(el, {
+          occurrenceOutcome: asked ? 'cantTell' : 'fail',
+          summary: implicitTag
+            ? `${attr} is prohibited on a <${implicitTag}>, whose role, ${role}, can't be named.`
+            : 'This attribute is prohibited on this element’s role.',
+          hint: "Remove this attribute. Elements with this role can't be named, so assistive technology may ignore it.",
+          i18n: {
+            summaryKey: implicitTag
+              ? 'ariaProhibitedAttr_summary_fail_implicitRole'
+              : 'ariaProhibitedAttr_summary_fail',
+            hintKey: 'ariaProhibitedAttr_hint_fail',
+            params: implicitTag ? { attr, role, element: implicitTag } : { attr, role }
+          },
+          ...(asked
+            ? {
+                uncertainty: {
+                  code: 'spec-only',
+                  needed: roleDescription
+                    ? 'Nothing for a WCAG criterion: the role description refines no role a user operates. Remove it to conform to WAI-ARIA.'
+                    : 'Whether the label says something the element’s own text does not, which is lost where it is ignored.',
+                  evidence: { attribute: attr, role, hasOwnContent }
+                }
+              }
+            : {}),
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_PROHIBITED', attr, role }
+          }
+        })
+      );
+    }
+  }
+
   // --- Tier 1: explicit, valid role from the naming-prohibited set ---
 
   // A native <caption> has the caption role without saying so, and is judged
@@ -238,36 +287,7 @@ function runInPage(ctx) {
       String(tier1NameInfo.value || '').trim() !== ''
     );
 
-    for (const attr of present) {
-      const roleDescription = PROHIBITED_ROLE_DESCRIPTION_ATTRS.includes(attr);
-      const asked = roleDescription || tier1HasContent;
-      (asked ? cantTellOccurrences : failOccurrences).push(
-        helpers.reportOccurrence(el, {
-          occurrenceOutcome: asked ? 'cantTell' : 'fail',
-          summary: 'This attribute is prohibited on this element’s role.',
-          hint: "Remove this attribute. Elements with this role can't be named, so assistive technology may ignore it.",
-          i18n: {
-            summaryKey: 'ariaProhibitedAttr_summary_fail',
-            hintKey: 'ariaProhibitedAttr_hint_fail',
-            params: { attr, role }
-          },
-          ...(asked
-            ? {
-                uncertainty: {
-                  code: 'spec-only',
-                  needed: roleDescription
-                    ? 'Nothing for a WCAG criterion: the role description refines no role a user operates. Remove it to conform to WAI-ARIA.'
-                    : 'Whether the label says something the element’s own text does not, which is lost where it is ignored.',
-                  evidence: { attribute: attr, role, hasOwnContent: tier1HasContent }
-                }
-              }
-            : {}),
-          data: {
-            details: { reasonCode: 'ARIA_ATTR_PROHIBITED', attr, role }
-          }
-        })
-      );
-    }
+    reportProhibited(el, role, present, tier1HasContent);
   }
 
   // --- Tier 2: no role at all (see header comment for the full rationale
@@ -278,21 +298,11 @@ function runInPage(ctx) {
   // conditionally roleless too, but already handled with more nuance
   // elsewhere in this engine (see header comment).
   const ROLELESS_NATIVE_TAGS = new Set([
-    'p',
     'b',
     'i',
-    'em',
-    'strong',
     'span',
     'div',
-    'code',
-    'mark',
-    'time',
-    'ins',
-    'del',
     'small',
-    'sub',
-    'sup',
     'abbr',
     'cite',
     'q',
@@ -310,6 +320,23 @@ function runInPage(ctx) {
     'br',
     'legend'
   ]);
+
+  // Native tags whose implicit role (HTML-AAM) is one of the roles that
+  // prohibit a name: judged by that role, as Tier 1 judges role="paragraph",
+  // not as an element with no role.
+  const IMPLICIT_NAME_PROHIBITED_ROLES = {
+    code: 'code',
+    del: 'deletion',
+    em: 'emphasis',
+    ins: 'insertion',
+    mark: 'mark',
+    p: 'paragraph',
+    s: 'deletion',
+    strong: 'strong',
+    sub: 'subscript',
+    sup: 'superscript',
+    time: 'time'
+  };
 
   // WAI-ARIA roles typed as "widget" (the role set the roleless-branch
   // exemption below branches on, not the six-category WAI-ARIA taxonomy).
@@ -420,9 +447,29 @@ function runInPage(ctx) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const tag = String(dom.tagName(el) || '').toLowerCase();
-    if (!ROLELESS_NATIVE_TAGS.has(tag) && !isRolelessCustomElementTag(tag)) continue;
+    const implicitRole = Object.prototype.hasOwnProperty.call(IMPLICIT_NAME_PROHIBITED_ROLES, tag)
+      ? IMPLICIT_NAME_PROHIBITED_ROLES[tag]
+      : '';
+    if (!implicitRole && !ROLELESS_NATIVE_TAGS.has(tag) && !isRolelessCustomElementTag(tag))
+      continue;
     const explicitRole = ariaHelpers.getExplicitRole(el);
     if (explicitRole && ariaHelpers.isValidConcreteRole(explicitRole)) continue; // has a real, recognized role: Tier 1's concern (if in ROLES_PROHIBITING_NAME) or a role this rule has no opinion on. An INVALID role token (e.g. a typo) is ignored per spec, same as no role attribute at all, and must still fall through to this branch.
+    if (implicitRole) {
+      // A <p>, <strong>, <code>... has its tag's role, which prohibits a
+      // name, as an explicit one does in Tier 1.
+      const named = prohibitedAttrsFor(implicitRole).filter((attr) => {
+        const v = dom.getAttribute(el, attr);
+        return v != null && String(v).trim() !== '';
+      });
+      if (!named.length) continue;
+      applicableCount += 1;
+      const ancestor = getNearestAncestorRole(el);
+      if (ancestor && WIDGET_TYPE_ROLES.has(ancestor)) continue;
+      const own = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
+      const hasOwn = !!(own && own.present && String(own.value || '').trim() !== '');
+      reportProhibited(el, implicitRole, named, hasOwn, tag);
+      continue;
+    }
     if (ariaHelpers.getNativeRoleForElement(el)) continue; // has a real implicit role after all, not this branch's concern
 
     const present = [];

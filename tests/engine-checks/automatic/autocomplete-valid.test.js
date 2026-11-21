@@ -221,3 +221,31 @@ test(`${RULE_ID}: a fail names what is wrong with the value`, () => {
     if (hint) assert.equal(occ.hint, hint, value);
   }
 });
+
+// ACT 73f2c2 leaves out a field that is neither visible nor in the
+// accessibility tree, as a honeypot field a form hides to catch bots. A
+// field hidden from only one of the two is still checked.
+test(`${RULE_ID}: a field neither visible nor in the accessibility tree is out of scope (round 9, N9-11)`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main><form>${body}</form></main></body></html>`;
+  for (const body of [
+    '<div style="position:absolute;left:-5000px" aria-hidden="true"><input type="text" name="b_123" tabindex="-1" value="" autocomplete="nope"></div>',
+    '<div aria-hidden="true" style="opacity:0"><input type="text" tabindex="-1" autocomplete="nope"></div>',
+    '<input type="text" style="display:none" autocomplete="nope">'
+  ]) {
+    assertRule(runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+  for (const body of [
+    '<div aria-hidden="true"><input type="text" tabindex="-1" autocomplete="nope"></div>',
+    '<div style="position:absolute;left:-5000px"><input aria-label="x" type="text" autocomplete="nope"></div>',
+    '<div style="position:absolute;left:-5000px" aria-hidden="true"><input type="text" autocomplete="nope"></div>'
+  ]) {
+    assertRule(runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+  }
+});

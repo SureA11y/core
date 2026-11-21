@@ -354,3 +354,27 @@ test(`${RULE_ID}: the hint says when the language is in xml:lang or on <body>, o
     assert.equal(o.hint, hint, htmlTag);
   }
 });
+
+// In an XML document (XHTML served as application/xhtml+xml), xml:lang on
+// the root declares the page's language, as lang does in HTML. In an HTML
+// document it declares nothing.
+test(`${RULE_ID}: xml:lang declares the language of an XML document (round 9, N9-12)`, () => {
+  const xhtml = (attrs) =>
+    `<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" ${attrs}><head><title>T</title></head><body><p>Hello world</p></body></html>`;
+  const run = (attrs, contentType) =>
+    runa11yCoreOnHtml(xhtml(attrs), { contentType, runOnly: [RULE_ID] });
+  assertRule(run('xml:lang="en"', 'application/xhtml+xml'), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  const invalid = assertRule(run('xml:lang="zz-top"', 'application/xhtml+xml'), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(invalid.occurrences[0].data.details.reasonCode, 'lang-invalid-bcp47');
+  const html = assertRule(run('xml:lang="en"', 'text/html'), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(html.occurrences[0].data.details.reasonCode, 'lang-missing');
+});
