@@ -143,3 +143,22 @@ test('the reporters read null options as none, and warn about a misspelt one (A9
     console.warn = saved;
   }
 });
+
+test('the procedures refuse an unknown tool or automation level, and read a numeric version (A9-12)', () => {
+  const core = require('../src/index.js');
+  const { listProceduresFrom } = require('../src/procedures-core.js');
+  const en = require('../src/i18n/procedures/en.json');
+  for (const list of [core.listProcedures, core.procedureChecklist]) {
+    assert.throws(() => list({ tools: ['screenreader'] }), /unknown tool screenreader; one of/);
+    assert.throws(() => list({ tools: 'screen-reader, zoom' }), /unknown tool screen-reader, zoom/);
+    assert.throws(() => list({ automation: 'manuel' }), /unknown automation level manuel; one of/);
+    assert.throws(() => list({ levels: ['AAAA'] }), /unknown WCAG level AAAA/);
+    assert.equal(list({ version: 2.1 }).version, '2.1');
+    assert.equal(list({ version: 2 }).version, '2.0');
+    assert.deepEqual(list({ version: 2.1, levels: 'A' }), list({ version: '2.1', levels: 'A' }));
+  }
+  assert.ok(
+    core.listProcedures({ tools: 'screen-reader', automation: ['manual'] }).requirements.length
+  );
+  assert.throws(() => listProceduresFrom({ en }, { tools: 'mouse' }), /unknown tool mouse/);
+});
