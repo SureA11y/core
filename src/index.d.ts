@@ -211,7 +211,8 @@ export interface EngineOptionFields {
    * Off by default. Once the scan has spent this many milliseconds (a number
    * above 0), it starts no more rules: those it selected and didn't start are
    * listed in the result's `notRun`, and `engine.incomplete` says the scan
-   * was cut short. In a scan of several profiles, it is the whole scan's.
+   * was cut short. In a scan of several profiles, or across frames, it is
+   * the whole scan's. `Infinity` means no limit, as leaving it out does.
    */
   timeBudgetMs?: number;
   /** Read only by runa11yCoreAcrossFrames, in milliseconds. */
