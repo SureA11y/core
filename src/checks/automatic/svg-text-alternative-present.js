@@ -11,9 +11,11 @@
  * @applicability
  *   Applies to inline <svg> elements that are exposed to assistive technologies AND appear intended to be conveyed.
  *   "Intended to be conveyed" is approximated deterministically by at least one of:
- *     - role="img", role="graphics-symbol", or role="graphics-document"
- *       on the SVG root element itself (the WAI-ARIA Graphics Module
- *       roles, alongside img). Does NOT extend to arbitrary
+ *     - role="img" or role="graphics-symbol" on the SVG root element
+ *       itself (the WAI-ARIA Graphics Module role, alongside img).
+ *       role="graphics-document" is the <svg>'s implicit role (SVG-AAM),
+ *       so restating it signals nothing: such an <svg> is judged as a
+ *       plain one, as Chromium exposes it. Does NOT extend to arbitrary
  *       role="img"/"graphics-symbol"/"graphics-document" descendants
  *       nested inside an <svg>. This check's scope is the <svg> root
  *       only; role-img-text-alternative-present covers those same three
@@ -238,10 +240,10 @@ function runInPage(ctx) {
     const descText = titleText ? '' : nonEmptyDescText(el); // avoid second scan if title already passes
     const hasTitleOrDesc = !!(titleText || descText);
 
+    // role="graphics-document" restates the <svg>'s implicit role: no intent.
     const hasIntent =
       role === 'img' ||
       role === 'graphics-symbol' ||
-      role === 'graphics-document' ||
       hasAriaNamingAttr ||
       hasTitleOrDesc ||
       focusable;

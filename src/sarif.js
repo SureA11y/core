@@ -184,7 +184,7 @@ function buildResult(check, occurrence, level, artifactUri, framePath = [], outs
     partialFingerprints: {
       'surea11y/violation/v2': crypto
         .createHash('sha256')
-        .update(computeBaselineKey(check.ruleId, reasonCode, html, framePath))
+        .update(computeBaselineKey(check.ruleId, reasonCode, html, framePath, where))
         .digest('hex')
     },
     properties: {

@@ -35,8 +35,13 @@
  *   Text part of which a ::first-line or ::first-letter paints in a color
  *   of its own is measured in both colors: where both reach their ratio it
  *   passes, where both fall short it fails (`pseudoElementColor` names the
- *   pseudo-element), and where they disagree it is left to
- *   contrast-computable.
+ *   pseudo-element). Where they disagree, a color that falls short fails
+ *   the text where it certainly paints some of it, measured in that color
+ *   and its own font size (a drop cap may be large text): the
+ *   pseudo-element's where the element's text starts with text of its own
+ *   (there is a first letter, and a first line, whichever words it holds),
+ *   the element's own past a ::first-letter where a second letter follows.
+ *   Otherwise it is left to contrast-computable.
  *   Text with no opaque background behind it, up to the root, is measured
  *   on the canvas the browser paints under the page, in the color scheme
  *   the page is drawn in, and, on a page that supports light and dark, in
@@ -722,7 +727,11 @@ function runInPage(ctx) {
   // ratio, or both fall short of it, every reading of the text does too
   // (helpers.contrast.measurePseudoElementText). It is measured then by the
   // colors closest to their ratio when both reach it, and by the best when
-  // both fall short; where they disagree it is left to contrast-computable.
+  // both fall short. Where they disagree, a color that certainly paints
+  // some of the text (paintsText: the pseudo-element's where the text
+  // starts with the element's own, in its own font size, so a drop cap may
+  // be large text) and falls short fails it, measured in that color;
+  // otherwise it is left to contrast-computable.
   function pseudoColorAnalysis(el, blocker) {
     if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
       return null;
@@ -755,15 +764,21 @@ function runInPage(ctx) {
       threshold: helpers.contrast.requiredRatio('AAA', pLarge)
     };
     const ownPasses = own.ratio >= own.threshold;
-    if (ownPasses !== pseudo.ratio >= pseudo.threshold) return null;
     const share = (x) => x.ratio / x.threshold;
-    const pick = ownPasses
-      ? share(pseudo) < share(own)
-        ? pseudo
-        : own
-      : share(pseudo) > share(own)
-        ? pseudo
-        : own;
+    let pick;
+    if (ownPasses !== pseudo.ratio >= pseudo.threshold) {
+      const failing = ownPasses ? pseudo : own;
+      if (!failing.paintsText) return null;
+      pick = failing;
+    } else {
+      pick = ownPasses
+        ? share(pseudo) < share(own)
+          ? pseudo
+          : own
+        : share(pseudo) > share(own)
+          ? pseudo
+          : own;
+    }
     return {
       computable: true,
       ratio: pick.ratio,

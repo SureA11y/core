@@ -15,9 +15,14 @@
  *   the implicit role list) or with role "presentation" or "none" (the
  *   list's presentation passes to its <li> children), or an element with
  *   an explicit role of "list" or "directory" (deprecated, but a required
- *   parent of listitem in WAI-ARIA 1.2). role "presentation" or "none" on
- *   any other element (<div role="none">) only removes that element's own
- *   role: the <li> is still in no list. An <li> used
+ *   parent of listitem in WAI-ARIA 1.2). A wrapper the accessibility tree
+ *   sees through is skipped, as Chromium does: an element other than a
+ *   list or <li> whose role is "presentation" or "none" (not kept by a
+ *   global ARIA attribute or focus), or one with no role, native or given (nor a link or button),
+ *   drawn with display: contents. So <ul><div role="none"><li> and
+ *   <ul><div style="display: contents"><li> are in the list. Such a
+ *   wrapper outside any list (<div role="none"><li>) leaves the <li> in no
+ *   list. An <li> used
  *   outside a real list container (e.g. as a generic flex/grid item under
  *   a <div>) is not exposed as a list item to assistive technologies.
  *   It FAILS where the page still draws the <li> as a list item (display
@@ -81,8 +86,8 @@
  *   applied elsewhere in this engine), so an <li> inside it is invalid
  *   despite the <ul> tag (e.g. `<ul role="menu"><li>...`). Conversely
  *   role="presentation"/"none" on a <ul>, <ol> or <menu> parent is still
- *   a valid (list-semantics-suppressing) parent; on another element it is
- *   not.
+ *   a valid (list-semantics-suppressing) parent; on another element it
+ *   makes a wrapper the accessibility tree sees through (see @expectation).
  * - The SAME "explicit role wins" principle applies to the <li> ELEMENT
  *   ITSELF: an <li role="tab">/role="menuitem">/role="presentation"> etc.
  *   is exposed to AT with that role, never "listitem". The whole point
@@ -148,6 +153,51 @@ function runInPage(ctx) {
     } catch {
       return '';
     }
+  }
+
+  // A wrapper the accessibility tree sees through, as Chromium does: an
+  // element other than a list or list item whose role is none or
+  // presentation (not kept by a global ARIA attribute or focus), or one
+  // with no role, native or given, drawn with display: contents.
+  // list-children-valid sees through the same wrappers.
+  function isTransparentWrapper(n) {
+    const tag = dom.tagName(n) ? dom.tagName(n).toLowerCase() : '';
+    if (!tag || tag === 'ul' || tag === 'ol' || tag === 'menu' || tag === 'li') return false;
+    const role = resolvedRole(n);
+    if (role === 'none' || role === 'presentation') {
+      return !(
+        typeof helpers.isPresentationalRoleIgnored === 'function' &&
+        helpers.isPresentationalRoleIgnored(n)
+      );
+    }
+    if (role) return false;
+    try {
+      // A native element with a role of its own (a named <section>, a <nav>)
+      // or a link or button is no wrapper the tree sees through.
+      if (helpers.aria.getContainmentRole(n)) return false;
+      if (/^(a|area|button)$/.test(String(dom.tagName(n) || '').toLowerCase())) return false;
+      const cs = helpers.computedStyle(n) || {};
+      return String(cs.display || '').trim() === 'contents';
+    } catch {
+      return false;
+    }
+  }
+  // The container the <li> is in for the accessibility tree: past the
+  // wrappers it sees through, when a list or an element with a role of its
+  // own is above them; otherwise its parent, which the message names.
+  function containerOf(parent) {
+    let cur = parent;
+    for (let i = 0; cur && i < 32 && isTransparentWrapper(cur); i++) {
+      const up = flatParent(cur);
+      if (!up) return parent;
+      cur = up;
+    }
+    if (cur === parent) return parent;
+    const tag = dom.tagName(cur) ? dom.tagName(cur).toLowerCase() : '';
+    const role = resolvedRole(cur);
+    return tag === 'ul' || tag === 'ol' || tag === 'menu' || role === 'list' || role === 'directory'
+      ? cur
+      : parent;
   }
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
@@ -217,8 +267,9 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el) continue;
-    const parent = flatParent(el);
-    if (!parent) continue;
+    const directParent = flatParent(el);
+    if (!directParent) continue;
+    const parent = containerOf(directParent);
 
     // An explicit role on the <li> ITSELF overrides its native "listitem"
     // role entirely, the same "any explicit role wins over the tag's
@@ -244,18 +295,10 @@ function runInPage(ctx) {
       // role none or presentation is a valid parent only on a <ul>, <ol> or
       // <menu>: the list's presentation passes to its <li> children
       // (WAI-ARIA 1.2, required owned elements), which are no list items
-      // then. On any other element (<div role="none">) it only removes that
-      // element's own role, and the <li> is still in no list. A role none
-      // wrapper inside a list (<ul><div role="none"><li>) is left as it was,
-      // passing here, pending a decision (round 9, N9-5 b); list-children-valid
-      // reports the wrapper.
-      const grand = flatParent(parent);
-      const grandTag = grand && dom.tagName(grand) ? dom.tagName(grand).toLowerCase() : '';
-      const grandRole = grand ? resolvedRole(grand) : '';
-      const inList =
-        grandRole === 'list' ||
-        (!grandRole && (grandTag === 'ul' || grandTag === 'ol' || grandTag === 'menu'));
-      valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu' || inList;
+      // then. A wrapper inside a list (<ul><div role="none"><li>) was seen
+      // through above (containerOf); one in no list (<div role="none"><li>)
+      // leaves the <li> in no list.
+      valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu';
     } else if (explicitRole) {
       // An explicit role always wins over the tag's native role, in either
       // direction, see the header comment.

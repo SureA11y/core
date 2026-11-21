@@ -35,8 +35,13 @@
  *   Text part of which a ::first-line or ::first-letter paints in a color
  *   of its own is measured in both colors: where both reach their ratio it
  *   passes, where both fall short it fails (`pseudoElementColor` names the
- *   pseudo-element), and where they disagree it is left to
- *   contrast-computable.
+ *   pseudo-element). Where they disagree, a color that falls short fails
+ *   the text where it certainly paints some of it, measured in that color
+ *   and its own font size (a drop cap may be large text): the
+ *   pseudo-element's where the element's text starts with text of its own
+ *   (there is a first letter, and a first line, whichever words it holds),
+ *   the element's own past a ::first-letter where a second letter follows.
+ *   Otherwise it is left to contrast-computable.
  *   contrast-computable decides what to ask about at WCAG's ratios. At
  *   ratios of this rule's own (a variant's settings), text in two colors
  *   that disagree only at those ratios, and text drawn by an outline or a
@@ -970,7 +975,11 @@ function runInPage(ctx) {
   // ratio, or both fall short of it, every reading of the text does too
   // (helpers.contrast.measurePseudoElementText). It is measured then by the
   // colors closest to their ratio when both reach it, and by the best when
-  // both fall short; where they disagree it is left to contrast-computable.
+  // both fall short. Where they disagree, a color that certainly paints
+  // some of the text (paintsText: the pseudo-element's where the text
+  // starts with the element's own, in its own font size, so a drop cap may
+  // be large text) and falls short fails it, measured in that color;
+  // otherwise it is left to contrast-computable.
   function pseudoColorAnalysis(el, blocker) {
     if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
       return null;
@@ -1004,7 +1013,9 @@ function runInPage(ctx) {
     const own = { ...m.own, font: ownFont, threshold: thresholdFor(ownFont.isLargeText) };
     const pseudo = { ...m.pseudo, font: pseudoFont, threshold: thresholdFor(pLarge) };
     const ownPasses = own.ratio >= own.threshold;
-    if (ownPasses !== pseudo.ratio >= pseudo.threshold) {
+    const failing = ownPasses ? pseudo : own;
+    const disagree = ownPasses !== pseudo.ratio >= pseudo.threshold;
+    if (disagree && !failing.paintsText) {
       // contrast-computable asks where the colors disagree at WCAG's AA or
       // AAA ratio. Where they disagree only at ratios of this rule's own (a
       // variant's settings), no one else asks, so this rule does.
@@ -1019,13 +1030,15 @@ function runInPage(ctx) {
       };
     }
     const share = (x) => x.ratio / x.threshold;
-    const pick = ownPasses
-      ? share(pseudo) < share(own)
-        ? pseudo
-        : own
-      : share(pseudo) > share(own)
-        ? pseudo
-        : own;
+    const pick = disagree
+      ? failing
+      : ownPasses
+        ? share(pseudo) < share(own)
+          ? pseudo
+          : own
+        : share(pseudo) > share(own)
+          ? pseudo
+          : own;
     return {
       computable: true,
       ratio: pick.ratio,

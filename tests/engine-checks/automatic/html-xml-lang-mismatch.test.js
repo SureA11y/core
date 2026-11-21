@@ -104,8 +104,10 @@ test('html-xml-lang-mismatch: notApplicable when xml:lang has no primary languag
   assert.strictEqual(outcome('lang="en" xml:lang="x-foo"'), 'notApplicable');
   assert.strictEqual(outcome('lang="en" xml:lang="!!"'), 'notApplicable');
   assert.strictEqual(outcome('lang="en" xml:lang="1-en"'), 'notApplicable');
-  // A primary subtag, known or not, is compared as before.
+  // A known primary subtag is compared; one naming no known language
+  // ("zz", "english") has no language to differ in (round 9).
   assert.strictEqual(outcome('lang="en" xml:lang="fr"'), 'fail');
-  assert.strictEqual(outcome('lang="en" xml:lang="zz"'), 'fail');
+  assert.strictEqual(outcome('lang="en" xml:lang="zz"'), 'notApplicable');
+  assert.strictEqual(outcome('lang="en" xml:lang="english"'), 'notApplicable');
   assert.strictEqual(outcome('lang="en" xml:lang="EN-gb"'), 'pass');
 });

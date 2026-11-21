@@ -95,9 +95,13 @@
  *   anywhere in its subtree does it fall back to a composed-tree walk that
  *   expands <slot> elements via assignedElements({flatten:true}). Plain
  *   querySelectorAll only sees a <slot>'s unrendered fallback content, never
- *   what's actually distributed into it. Scoped to slot
- *   expansion only, not a general "also descend into any nested custom
- *   element's own shadow root" walk, no known case needs that yet.
+ *   what's actually distributed into it. Unless the scan leaves shadow DOM
+ *   out (`includeShadowDom: false`), the fallback walk also runs without a
+ *   <slot> and goes into the open shadow root of the container or of any
+ *   element in it, as the flat tree has them: a <div role="table"> holding
+ *   an <x-row> whose shadow root draws the role="row" has its row, as
+ *   aria-required-parent finds the table from the row and Chromium exposes
+ *   it. A closed shadow root stays unseen.
  */
 
 const id = 'aria-required-children';
@@ -261,13 +265,19 @@ function runInPage(ctx) {
   // of bug as aria-required-parent's ancestor search, just in the opposite
   // (descendant) direction.
   //
-  // Scoped to slot expansion only, does NOT separately
-  // descend into an unrelated nested custom element's own shadow root
-  // (e.g. a <my-widget> child with no <slot> involvement at all). That's a
-  // qualitatively different question (does an arbitrary component's own
-  // internal structure count as this container's "owned children"?) with
-  // no known case driving it yet; slot projection is the shape that
-  // actually comes up.
+  // Unless the scan leaves shadow DOM out, it also goes into an element's
+  // open shadow root, in place of its light children (the flat tree), as
+  // aria-required-parent climbs out of one: a role="row" a component draws
+  // in its shadow root is a row of the table the component is in.
+  const deepShadow = (ctx.engineOptions || {}).includeShadowDom !== false;
+  function openShadowRoot(node) {
+    if (!deepShadow) return null;
+    try {
+      return dom.nodeType(node) === 1 ? dom.shadowRoot(node) || null : null;
+    } catch {
+      return null;
+    }
+  }
   // An element's child elements by sibling links, not el.children: in jsdom
   // that collection stays live once read, and each later change under a
   // large parent (a list of thousands of items) rebuilds it.
@@ -278,9 +288,11 @@ function runInPage(ctx) {
     return out;
   }
 
-  function collectComposedDescendants(node, out, seen, limit) {
-    if (!node || !dom.firstElementChild(node)) return;
-    for (const child of childElementsOf(node)) {
+  function collectComposedDescendants(node, out, seen, limit, depth = 0) {
+    if (!node || depth > 64) return;
+    const from = openShadowRoot(node) || node;
+    if (!dom.firstElementChild(from)) return;
+    for (const child of childElementsOf(from)) {
       if (out.length >= limit) return;
       if (seen.has(child)) continue;
 
@@ -299,7 +311,7 @@ function runInPage(ctx) {
           seen.add(a);
           out.push(a);
           if (out.length >= limit) return;
-          collectComposedDescendants(a, out, seen, limit);
+          collectComposedDescendants(a, out, seen, limit, depth + 1);
           if (out.length >= limit) return;
         }
         continue; // a <slot>'s own childNodes are unrendered fallback content once something is assigned
@@ -307,7 +319,7 @@ function runInPage(ctx) {
 
       seen.add(child);
       out.push(child);
-      collectComposedDescendants(child, out, seen, limit);
+      collectComposedDescendants(child, out, seen, limit, depth + 1);
     }
   }
 
@@ -357,14 +369,17 @@ function runInPage(ctx) {
     }
 
     // Slow path only when the fast path found nothing AND there's an actual
-    // <slot> somewhere in the subtree to expand, bounds the extra cost to
-    // exactly the containers that could possibly need it.
+    // <slot> somewhere in the subtree to expand, or shadow roots may be
+    // gone into: it bounds the extra cost to containers missing their
+    // children.
     if (!found) {
-      let hasSlot;
-      try {
-        hasSlot = !!dom.querySelector(el, 'slot');
-      } catch {
-        hasSlot = false;
+      let hasSlot = deepShadow;
+      if (!hasSlot) {
+        try {
+          hasSlot = !!dom.querySelector(el, 'slot');
+        } catch {
+          hasSlot = false;
+        }
       }
       if (hasSlot) {
         const composed = [];

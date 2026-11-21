@@ -115,6 +115,42 @@ test(`${RULE_ID}: cantTell when a shadow-DOM container has a <slot> but nothing 
   assert.ok(hasOccurrenceForId(rule, 'list'));
 });
 
+// A child's open shadow root is gone into, as the flat tree has it and as
+// aria-required-parent climbs out of one; a closed one, or a scan leaving
+// shadow DOM out, is not.
+test(`${RULE_ID}: finds a required child a component draws in its open shadow root (round 9, N9-19)`, () => {
+  const build = (mode) => {
+    const dom = createDom(`<!doctype html><html lang="en"><head><title>t</title></head><body>
+      <div id="t" role="table" aria-label="Prices"><x-row id="h"></x-row></div>
+      <div id="l" role="list"><x-li id="k">a</x-li></div>
+    </body></html>`);
+    const doc = dom.window.document;
+    doc.getElementById('h').attachShadow({ mode }).innerHTML =
+      '<div role="row"><div role="cell">1</div></div>';
+    doc.getElementById('k').attachShadow({ mode }).innerHTML =
+      '<div role="listitem"><slot></slot></div>';
+    return dom;
+  };
+  assertRule(runa11yCoreOnDom(build('open'), { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  for (const [dom, engineOptions] of [
+    [build('closed'), {}],
+    [build('open'), { includeShadowDom: false }]
+  ]) {
+    const rule = assertRule(
+      runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions }),
+      RULE_ID,
+      'fail',
+      {
+        minOccurrences: 1
+      }
+    );
+    assert.ok(hasOccurrenceForId(rule, 't') || hasOccurrenceForId(rule, 'l'));
+  }
+});
+
 test(`${RULE_ID}: notApplicable when the container has the hidden attribute (not currently exposed to the accessibility tree)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="menu" hidden></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
