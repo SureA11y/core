@@ -187,7 +187,12 @@
  *   Only text wholly inside the viewport before the spacing is judged
  *   against it.
  * - Lines are read with Range.getClientRects() on each text node, up to
- *   3,000 text nodes per page.
+ *   3,000 text nodes per page: the body's, then those of each open shadow
+ *   root (none with `includeShadowDom: false`). The boxes that clip a text
+ *   are found along the flat tree, so a box in a shadow root clips the
+ *   light text slotted into it. The spacing sheet is the document's: text
+ *   in a shadow root takes the spacing by inheritance, except where the
+ *   shadow tree's own styles set it.
  * - The thresholds are the ones avoid-inline-spacing uses: line-height 1.5,
  *   letter-spacing 0.12, word-spacing 0.16, as multiples of the font size.
  */
@@ -601,27 +606,90 @@ function runInPage(ctx) {
       return found;
     }
 
+    // The next element up in the flat tree, as the page lays it out: a
+    // slotted node's slot, a shadow root's host.
+    function upOf(a) {
+      let p = a;
+      for (let i = 0; p && i < 100; i++) {
+        p =
+          typeof helpers.composedParent === 'function'
+            ? helpers.composedParent(p)
+            : dom.parentElement(p);
+        if (p && dom.nodeType(p) === 1) return p;
+        if (!p || dom.nodeType(p) !== 11) return null;
+      }
+      return null;
+    }
+    // The element a text lays out in: its parent, the host for text straight
+    // under a shadow root, and for text slotted into a shadow root the box
+    // its slot sits in, since a <slot> has no box of its own (display:
+    // contents). The clipping and painting walks go up from it, so a box in
+    // a shadow root clips the light text slotted into it.
+    function boxParentOf(n) {
+      let p = upOf(n);
+      for (let i = 0; p && i < 100 && String(dom.localName(p)) === 'slot'; i++) {
+        const cs = styleOf(p);
+        if (cs && cs.display !== 'contents') break;
+        p = upOf(p);
+      }
+      return p;
+    }
+
+    // Where text is walked: the body and each open shadow root in it, unless
+    // the scan leaves shadow DOM out (engineOptions.includeShadowDom: false).
+    const textRoots = [];
+    {
+      const deep = (ctx.engineOptions || {}).includeShadowDom !== false;
+      const queue = [dom.body(document)];
+      while (queue.length) {
+        const root = queue.shift();
+        if (!root) continue;
+        textRoots.push(root);
+        if (!deep) continue;
+        try {
+          for (const el of dom.querySelectorAll(root, '*') || []) {
+            const shadow = dom.shadowRoot(el);
+            if (shadow) queue.push(shadow);
+          }
+        } catch {
+          // the roots found so far are walked
+        }
+      }
+    }
+
     const nodes = [];
     const judged = new Set();
-    const walker = dom.createTreeWalker(document, dom.body(document), 4);
-    for (let n = walker.nextNode(); n && nodes.length < MAX_TEXT_NODES; n = walker.nextNode()) {
-      if (!/\S/.test(dom.nodeValue(n) || '')) continue;
-      const parent = dom.parentElement(n);
-      if (!parent || SKIP.has(String(dom.localName(parent)))) continue;
-      if (isBehindModal(parent) || inMarquee(parent)) continue;
-      // Text the page does not render (display:none, a closed <details>,
-      // content-visibility:hidden) is never judged, so it does not take a
-      // place in the budget either.
-      try {
-        if (
-          typeof dom.get(parent, 'checkVisibility') === 'function' &&
-          !dom.checkVisibility(parent)
-        )
-          continue;
-      } catch {}
-      nodes.push(n);
-      if (inScope(parent) && !isExcluded(parent)) judged.add(n);
+    // Per text: the element it lays out in (boxParentOf), and the element
+    // holding it in its own tree, whose text a finding quotes.
+    const boxOfText = new Map();
+    const holderOfText = new Map();
+    for (const root of textRoots) {
+      if (nodes.length >= MAX_TEXT_NODES) break;
+      const walker = dom.createTreeWalker(document, root, 4);
+      for (let n = walker.nextNode(); n && nodes.length < MAX_TEXT_NODES; n = walker.nextNode()) {
+        if (!/\S/.test(dom.nodeValue(n) || '')) continue;
+        const parent = boxParentOf(n);
+        const holder = dom.parentElement(n) || parent;
+        if (!parent || SKIP.has(String(dom.localName(holder)))) continue;
+        if (isBehindModal(parent) || inMarquee(parent)) continue;
+        // Text the page does not render (display:none, a closed <details>,
+        // content-visibility:hidden) is never judged, so it does not take a
+        // place in the budget either.
+        try {
+          if (
+            typeof dom.get(parent, 'checkVisibility') === 'function' &&
+            !dom.checkVisibility(parent)
+          )
+            continue;
+        } catch {}
+        nodes.push(n);
+        boxOfText.set(n, parent);
+        holderOfText.set(n, holder);
+        if (inScope(holder) && !isExcluded(holder)) judged.add(n);
+      }
     }
+    const textEl = (n) => boxOfText.get(n);
+    const holderOf = (n) => holderOfText.get(n);
 
     // The three walks below go up from a text's element, and the texts
     // inside one box share the walk above it: each keeps its answer per
@@ -835,11 +903,7 @@ function runInPage(ctx) {
       if (pinnedCache.has(el)) return pinnedCache.get(el);
       const path = [];
       let found = false;
-      for (
-        let a = el, i = 0;
-        a && dom.nodeType(a) === 1 && i < 100000;
-        a = dom.parentElement(a), i++
-      ) {
+      for (let a = el, i = 0; a && dom.nodeType(a) === 1 && i < 100000; a = upOf(a), i++) {
         if (pinnedCache.has(a)) {
           found = pinnedCache.get(a);
           break;
@@ -921,10 +985,10 @@ function runInPage(ctx) {
       const boxes = new Map();
       for (const n of nodes) {
         lines.set(n, linesOf(n));
-        for (const c of clippersOf(dom.parentElement(n))) {
+        for (const c of clippersOf(textEl(n))) {
           if (!boxes.has(keyOf(c))) boxes.set(keyOf(c), c.viewport ? viewportBox() : boxOf(c.el));
         }
-        for (const c of paintClippersOf(dom.parentElement(n))) {
+        for (const c of paintClippersOf(textEl(n))) {
           if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
         }
       }
@@ -977,7 +1041,7 @@ function runInPage(ctx) {
     }
     const fontSizes = new Map();
     for (const n of nodes) {
-      const cs = styleOf(dom.parentElement(n));
+      const cs = styleOf(textEl(n));
       fontSizes.set(n, px(cs && cs.fontSize) || 16);
     }
 
@@ -988,8 +1052,8 @@ function runInPage(ctx) {
     const visibleBefore = new Set();
     for (const n of nodes) {
       const lines = before.lines.get(n) || [];
-      if (!lines.length || !shown(dom.parentElement(n))) continue;
-      const inside = clippersOf(dom.parentElement(n)).every((c) => {
+      if (!lines.length || !shown(textEl(n))) continue;
+      const inside = clippersOf(textEl(n)).every((c) => {
         if (c.viewport) return true;
         const b0 = before.boxes.get(keyOf(c));
         return (
@@ -1114,7 +1178,7 @@ function runInPage(ctx) {
       const targets = movedForEverTargets();
       if (!targets.size) return false;
       // Bounded as a safety net only: a walk up a real tree always ends.
-      for (let el = from, i = 0; el && el !== stop && i < 100000; el = dom.parentElement(el), i++) {
+      for (let el = from, i = 0; el && el !== stop && i < 100000; el = upOf(el), i++) {
         if (targets.has(el)) return true;
       }
       return false;
@@ -1150,7 +1214,7 @@ function runInPage(ctx) {
         const parts = [];
         if (axis === 'x') {
           let ws = '';
-          for (let cur = textEl, i = 0; cur && i < 100; cur = dom.parentElement(cur), i++) {
+          for (let cur = textEl, i = 0; cur && i < 100; cur = upOf(cur), i++) {
             const st = styleOf(cur);
             const v = st ? String(st.whiteSpace || st.textWrapMode || '') : '';
             if (/^(nowrap|pre)$/.test(v) || (st && st.textWrapMode === 'nowrap')) {
@@ -1253,7 +1317,7 @@ function runInPage(ctx) {
       if (!linesAfter.length || !visibleBefore.has(n) || !judged.has(n)) continue;
       textCount += 1;
       const fontSize = fontSizes.get(n);
-      for (const c of clippersOf(dom.parentElement(n))) {
+      for (const c of clippersOf(textEl(n))) {
         if (reportedClip.has(c.el)) continue;
         const b1 = after.boxes.get(keyOf(c));
         if (!b1) continue;
@@ -1281,7 +1345,7 @@ function runInPage(ctx) {
               worst = { lost, ...m, edge: edgeOf(l, b1, m.axis) };
           }
         }
-        const moved = isMovedForEver(dom.parentElement(n), c.el);
+        const moved = isMovedForEver(textEl(n), c.el);
         if (worst) {
           reportedClip.add(c.el);
           const sizing =
@@ -1302,11 +1366,8 @@ function runInPage(ctx) {
             // The edge the text crosses, and the CSS that keeps the box from
             // growing past it and clips it there.
             edge: worst.edge,
-            clipCss:
-              c.viewport || c.contentVisibility
-                ? ''
-                : clipCssOf(c, dom.parentElement(n), worst.axis),
-            text: textOf(dom.parentElement(n)),
+            clipCss: c.viewport || c.contentVisibility ? '' : clipCssOf(c, textEl(n), worst.axis),
+            text: textOf(holderOf(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
               thresholdPx: round1(worst.thresholdPx),
@@ -1323,19 +1384,13 @@ function runInPage(ctx) {
         // Text a repeating animation moves is left out: where it stands
         // depends on the point the animation was held at, not on the layout.
         if (moved || c.locked) continue;
-        const approach = closestApproach(
-          linesAfter,
-          b1,
-          c,
-          dom.parentElement(n),
-          before.boxes.get(keyOf(c))
-        );
+        const approach = closestApproach(linesAfter, b1, c, textEl(n), before.boxes.get(keyOf(c)));
         if (approach) {
           marginCandidates.push({
             el: c.el,
             value: approach.value,
             threshold: approach.threshold,
-            context: { axis: approach.axis, text: textOf(dom.parentElement(n)) }
+            context: { axis: approach.axis, text: textOf(holderOf(n)) }
           });
         }
       }
@@ -1351,8 +1406,8 @@ function runInPage(ctx) {
       if (visibleBefore.has(n) || !judged.has(n)) continue;
       const linesBefore = before.lines.get(n) || [];
       const linesAfter = (after && after.lines.get(n)) || [];
-      if (!linesBefore.length || !linesAfter.length || !shown(dom.parentElement(n))) continue;
-      const clippers = clippersOf(dom.parentElement(n)).filter((c) => !c.viewport);
+      if (!linesBefore.length || !linesAfter.length || !shown(textEl(n))) continue;
+      const clippers = clippersOf(textEl(n)).filter((c) => !c.viewport);
       // A line is shown in full when every box that clips it keeps it:
       // visually hidden text, cut by a 1px box of its own, shows none.
       const keeps = (l, boxes, c) => {
@@ -1370,14 +1425,14 @@ function runInPage(ctx) {
         (c) =>
           !reportedClip.has(c.el) &&
           linesAfter.some((l) => !keeps(l, after.boxes, c)) &&
-          !isMovedForEver(dom.parentElement(n), c.el)
+          !isMovedForEver(textEl(n), c.el)
       );
       if (!cutter) continue;
       const b1 = after.boxes.get(cutter.el);
       reportedClip.add(cutter.el);
       clippedFurther.push({
         el: cutter.el,
-        text: textOf(dom.parentElement(n)),
+        text: textOf(holderOf(n)),
         lines: { shownBefore, shownAfter: shownIn(linesAfter, after.boxes) },
         container: {
           widthPx: round1(b1.right - b1.left),
@@ -1392,12 +1447,12 @@ function runInPage(ctx) {
       const buckets = new Map();
       const entries = [];
       for (const n of nodes) {
-        if (!visibleBefore.has(n) || pinned(dom.parentElement(n))) continue;
+        if (!visibleBefore.has(n) || pinned(textEl(n))) continue;
         for (const whole of after.lines.get(n) || []) {
           // Only the part of the line its clipping ancestors still show is
           // painted; what they cut off is the clipping check's.
           const l = { ...whole };
-          for (const c of paintClippersOf(dom.parentElement(n))) {
+          for (const c of paintClippersOf(textEl(n))) {
             const b = after.boxes.get(c.el);
             if (!b) continue;
             if (c.x) {
@@ -1455,8 +1510,8 @@ function runInPage(ctx) {
           // be anywhere on the page.
           const [a, b] = judged.has(list[i].n) ? [list[i], list[j]] : [list[j], list[i]];
           if (!judged.has(a.n)) continue;
-          const pa = dom.parentElement(a.n);
-          const pb = dom.parentElement(b.n);
+          const pa = holderOf(a.n);
+          const pb = holderOf(b.n);
           if (pa === pb || dom.contains(pa, pb) || dom.contains(pb, pa)) continue;
           if (reported.has(pa) || reported.has(pb)) continue;
           if (!intersects(a.l, b.l) || overlappedBefore(a.n, b.n)) continue;
