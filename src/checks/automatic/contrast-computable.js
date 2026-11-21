@@ -128,7 +128,13 @@
  *     so the color it sits on could not be worked out.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_OVERLAP` (cantTell): another element paints under the text,
- *     so the background it sits on could not be worked out.
+ *     so the background it sits on could not be worked out; or the text is
+ *     in a box that stays in place as the page scrolls (position: fixed
+ *     against the viewport, or sticky, which sticks while the page scrolls),
+ *     with no opaque background between the text and that box, inclusive,
+ *     so what lies under it changes with the scroll position
+ *     (`blockerProperty` `position`). It is asked about whatever the scroll
+ *     position is when the page is scanned.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_NOT_COMPUTABLE` (cantTell): the background behind the text
  *     could not be worked out.
@@ -492,7 +498,12 @@ function runInPage(ctx) {
         summaryKey = 'contrastComputable_cantTell_ancestorOpacity';
       else if (rc === 'ELEMENT_OPACITY') summaryKey = 'contrastComputable_cantTell_elementOpacity';
       else if (rc === 'BACKGROUND_OVERLAP')
-        summaryKey = 'contrastComputable_cantTell_backgroundOverlap';
+        // Text in a fixed or sticky box with no opaque background: what is
+        // under it changes as the page scrolls.
+        summaryKey =
+          extraDetails && extraDetails.blockerProperty === 'position'
+            ? 'contrastComputable_cantTell_fixedBox'
+            : 'contrastComputable_cantTell_backgroundOverlap';
       else if (rc === 'BACKGROUND_UNPARSABLE')
         summaryKey = 'contrastComputable_cantTell_backgroundUnparsable';
       else if (rc === 'FOREGROUND_UNPARSABLE')

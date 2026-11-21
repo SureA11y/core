@@ -406,13 +406,13 @@
       "pt": "3d2b7e7232b07eb3"
     },
     "contrast-computable BACKGROUND_OVERLAP": {
-      "en": "3a79e7f9828b9e9b",
-      "de": "b23ef14581e0332b",
-      "es": "b7965c811d37f5e9",
-      "fr": "3c0340c594f5bbb3",
-      "ja": "48059d33c8ef11ff",
-      "fr-CA": "3c0340c594f5bbb3",
-      "pt": "3a79e7f9828b9e9b"
+      "en": "54f450b5d5a5981e",
+      "de": "136ee5799c470765",
+      "es": "f886d8eef026b5b3",
+      "fr": "7a005bedfdeab194",
+      "ja": "ca8256aff2b2bc7d",
+      "fr-CA": "7a005bedfdeab194",
+      "pt": "54f450b5d5a5981e"
     },
     "contrast-computable BACKGROUND_UNPARSABLE": {
       "en": "31ed31f4605fb38b",
@@ -2709,7 +2709,7 @@
     "canvas-text-alternative-present": null,
     "click-handler-keyboard-operable": "615eb3c5f98152a8",
     "combobox-name-present": "b5f627cbc00b8bd6",
-    "contrast-computable": "0041fcc5891aa8a7",
+    "contrast-computable": "29912714c0f5d039",
     "contrast-enhanced": "f05f371829f2daf9",
     "contrast-minimum": "6c39c364ecea644b",
     "css-orientation-lock": "e7320ee9b2d2bb9b",
@@ -2837,10 +2837,10 @@
     "widget-keyboard-focusable": "c8cefbbd4fadee80"
   },
   "dictionaries": {
-    "de": "629c772712196b405455d08fe6080e43e2b799de79ac516f9af48407487a4711",
-    "en": "8c9c2d83d9025b10367537ba4c724dca25070436378474420e1a84f682600694",
-    "es": "23729b58b0d06cf71616c8a0d0c8f52c41e612ad65b301b7ef231b2ee7aff0a0",
-    "fr": "877d13e9046d6fac2a1036f80819aa6aad82ffbb7f3213d4559579f4690b9651",
-    "ja": "56efc3f1ec815ca8cb18a622b7d41e2c19dd74d3ffedcffb55497e53efe77554"
+    "de": "e66bf947b86b84e9497de25bd4f7b1c165c14fa39f30b50c00b213eb9a8da258",
+    "en": "27c9f68c8ae46750b9e9b0ba8796ff843c8b1abc49435ba1c50d9adb19b1fe74",
+    "es": "398d4019476076b4cb5c8f6da149a33c0a4341784bf7c460a16e788e43c8aef1",
+    "fr": "111a651400923cb2ddab20113ec8e3924f8ab903c38dbd695717925e7e300432",
+    "ja": "dc93fee7093a5819b9165bda552f04e967c62d81b931f92035bf616d0de8f1e3"
   }
 }

@@ -291,7 +291,7 @@
   "contrastComputable_review_BACKGROUND_NOT_OPAQUE_AT_ROOT_step4": "比を、最低限のコントラストでは 4.5:1 (大きなテキストは 3:1)、より高いコントラストでは 7:1 (大きなテキストは 4.5:1) と比べてください。",
   "contrastComputable_review_BACKGROUND_OVERLAP_fail": "テキストの背後に実際にある色に対するコントラスト比が基準値を下回るため、WCAG 1.4.3 (または 1.4.6) を満たしません。",
   "contrastComputable_review_BACKGROUND_OVERLAP_pass": "テキストの背後に実際にある色に対して、基準値以上のコントラスト比が得られます。",
-  "contrastComputable_review_BACKGROUND_OVERLAP_step1": "レポートに示されたテキストを見つけ、実際にその背後に描画されている要素を確認してください (要素を調べ、重なっている要素の表示を切り替えます)。",
+  "contrastComputable_review_BACKGROUND_OVERLAP_step1": "レポートに示されたテキストを見つけ、実際にその背後に描画されている要素を確認してください (要素を調べ、重なっている要素の表示を切り替えます)。 テキストが固定されたボックス、またはスクロール時に貼り付くボックスの中にある場合は、ページをスクロールし、その下を通過するページの各部分の上でテキストを確認してください。",
   "contrastComputable_review_BACKGROUND_OVERLAP_step2": "ブラウザーの開発者ツールのカラーピッカー、またはスポイトで色を取得したコントラスト計算ツールを使い、文字の背後に実際に見える色に対して、テキストの色を測定してください。",
   "contrastComputable_review_BACKGROUND_OVERLAP_step3": "比を、最低限のコントラストでは 4.5:1 (大きなテキストは 3:1)、より高いコントラストでは 7:1 (大きなテキストは 4.5:1) と比べてください。",
   "contrastComputable_review_BACKGROUND_UNPARSABLE_fail": "コントラスト比が基準値を下回るため、WCAG 1.4.3 (または 1.4.6) を満たしません。",

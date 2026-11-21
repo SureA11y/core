@@ -335,6 +335,7 @@
   "contrastComputable_cantTell_ancestorOpacity": "祖先要素 {{blockerElement}} に opacity: {{blockerValue}} が指定されており、テキストはその背後に描画されるものと一緒に薄められます。その結果画面に表示される色は CSS から割り出せないため、コントラストを計算できません。",
   "contrastComputable_cantTell_elementOpacity": "この要素に opacity: {{blockerValue}} と独自の背景が指定されており、両方が背後に描画されるものの上で一緒に薄められます。その結果画面に表示される色は CSS から割り出せないため、コントラストを計算できません。",
   "contrastComputable_cantTell_backgroundOverlap": "テキストの祖先要素ではない {{blockerElement}} がテキストの下に描画されており ({{blockerProperty}}={{blockerValue}})、テキストは祖先要素の背景だけを背にして表示されるわけではないため、コントラストを計算できません。",
+  "contrastComputable_cantTell_fixedBox": "テキストが {{blockerElement}} の中にあり、これは position: {{blockerValue}} で独自の不透明な背景がないため、ページのスクロールに応じて下にあるものが変わるので、コントラストを計算できません。",
   "contrastComputable_cantTell_backgroundUnparsable": "{{#blockerAncestor}}祖先要素 {{/blockerAncestor}}{{blockerElement}} の背景色 ({{blockerValue}}) をこのスキャンでは読み取れないため、コントラストを計算できません。",
   "contrastComputable_cantTell_foregroundUnparsable": "テキストの色{{#blockerValue}} ({{blockerValue}}){{/blockerValue}}をこのスキャンでは読み取れないため、コントラストを計算できません。",
   "contrastComputable_cantTell_backgroundNotComputable": "このテキストの背後の背景を CSS から割り出せないため、コントラストを計算できません{{#blockerProperty}} ({{blockerProperty}}={{blockerValue}}){{/blockerProperty}}。",

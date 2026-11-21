@@ -6859,6 +6859,34 @@ function createContrastHelpers(opts, shared) {
         paintOccluded = true;
         occluder = cur;
       }
+
+      // A box that stays in place as the page scrolls (position: fixed,
+      // against the viewport) or sticks while it scrolls (sticky), with no
+      // opaque background between the text and it, inclusive: what lies
+      // under it changes as the page scrolls past, so no one background
+      // stands behind the text, whatever the scroll position is now. A box
+      // in the top layer (a modal dialog) is measured over its ::backdrop
+      // as above.
+      if (!paintOccluded && !top && cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
+        if (cs.position === 'sticky' || __fixedToViewport(cur)) {
+          const out = {
+            ok: false,
+            reasonCode: 'BACKGROUND_OVERLAP',
+            blockerSelector: __getSimpleSelectorCached(
+              cur,
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
+            ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
+            blockerProperty: 'position',
+            blockerValue: cs.position
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch {}
+          return out;
+        }
+      }
     }
 
     const overlap = __findPaintUnderText(el, chain);
@@ -7022,6 +7050,32 @@ function createContrastHelpers(opts, shared) {
     }
     __topLayerCache.set(node, out);
     return out;
+  }
+  // Whether a position: fixed box is placed against the viewport: no
+  // ancestor holds fixed boxes (a transform, a filter, perspective, contain
+  // paint or layout, or a will-change of those), which would make it
+  // scroll with that ancestor.
+  function __fixedToViewport(node) {
+    const set = (v) => !!v && String(v) !== 'none';
+    let guard = 0;
+    for (let cur = composedParent(node); cur && guard++ < 200; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      const cs = __contrastComputedStyle(cur);
+      if (!cs) continue;
+      if (
+        set(cs.transform) ||
+        set(cs.translate) ||
+        set(cs.rotate) ||
+        set(cs.scale) ||
+        set(cs.perspective) ||
+        set(cs.filter) ||
+        set(cs.backdropFilter) ||
+        /\b(paint|layout|strict|content)\b/.test(String(cs.contain || '')) ||
+        /\b(transform|perspective|filter)\b/.test(String(cs.willChange || ''))
+      )
+        return false;
+    }
+    return true;
   }
   function __isPinned(node) {
     const path = [];
