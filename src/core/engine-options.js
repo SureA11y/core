@@ -186,17 +186,13 @@ function engineOptionSpec() {
 }
 
 /**
- * Returns the problems checkEngineOptions finds, in the order of the keys:
- * { path, kind, message, suggestion }. `kind` is 'unknown' for a key the
- * engine doesn't read, with `suggestion` the known key it is closest to, if
- * any is close; 'invalid' for a value of the wrong type or outside its set.
- * Keys the engine passes on unread are not checked: a rule's settings under
- * rules[ruleId], messages' keys, and probes.
+ * The known key a typo most likely meant, or null: two edits away at most,
+ * one for a key of four letters or fewer, so short unrelated keys aren't
+ * matched. Shared by checkEngineOptions and the browser console's run(),
+ * which leaves the warning about a near typo to the scan. Self-contained:
+ * the browser bundle passes its source to the console helpers.
  */
-function checkEngineOptions(engineOptions) {
-  const SPEC = engineOptionSpec();
-  const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
-
+function closestOptionKey(key, known) {
   // Optimal string alignment distance, case ignored: "lcoale" is one from
   // "locale", "includeShadowDOM" none from "includeShadowDom".
   function distance(a, b) {
@@ -216,21 +212,32 @@ function checkEngineOptions(engineOptions) {
     }
     return d[s.length][t.length];
   }
-  // The known key a typo most likely meant: two edits away at most, one for
-  // a key of four letters or fewer, so short unrelated keys aren't matched.
-  function closest(key, known) {
-    let best = null;
-    let bestD = Infinity;
-    for (const k of known) {
-      const dk = distance(key, k);
-      if (dk < bestD) {
-        best = k;
-        bestD = dk;
-      }
+  let best = null;
+  let bestD = Infinity;
+  for (const k of known) {
+    const dk = distance(key, k);
+    if (dk < bestD) {
+      best = k;
+      bestD = dk;
     }
-    const limit = Math.min(key.length, best ? best.length : 0) <= 4 ? 1 : 2;
-    return best !== null && bestD <= limit ? best : null;
   }
+  const limit = Math.min(key.length, best ? best.length : 0) <= 4 ? 1 : 2;
+  return best !== null && bestD <= limit ? best : null;
+}
+
+/**
+ * Returns the problems checkEngineOptions finds, in the order of the keys:
+ * { path, kind, message, suggestion }. `kind` is 'unknown' for a key the
+ * engine doesn't read, with `suggestion` the known key it is closest to, if
+ * any is close; 'invalid' for a value of the wrong type or outside its set.
+ * Keys the engine passes on unread are not checked: a rule's settings under
+ * rules[ruleId], messages' keys, and probes.
+ */
+function checkEngineOptions(engineOptions) {
+  const SPEC = engineOptionSpec();
+  const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+  const closest = closestOptionKey;
   function describe(v) {
     if (v === null) return 'null';
     if (Array.isArray(v)) {
@@ -391,6 +398,7 @@ function strictOf(engineOptions) {
 
 module.exports = {
   isIsoDateTime,
+  closestOptionKey,
   engineOptionSpec,
   checkEngineOptions,
   enforceEngineOptions,

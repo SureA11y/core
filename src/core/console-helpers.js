@@ -15,8 +15,11 @@
  *   finding surea11y.report.js beside it.
  * @param {string[]} [optionKeys] The engine options' names, so run() can
  *   say which keys it was given that no option has.
+ * @param {Function} [closestOptionKey] The option a key is a near typo of,
+ *   or null (src/core/engine-options.js): the scan says those itself, with
+ *   the option meant, so run() leaves them to it.
  */
-function consoleHelpers(global, api, scriptSrc, optionKeys) {
+function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
   // Reads DOM properties through the prototypes, so a page's named form
   // controls and images can't redirect them (#90): the same lookup as
   // src/core/safe-dom.js, repeated because this function travels alone.
@@ -794,10 +797,18 @@ function consoleHelpers(global, api, scriptSrc, optionKeys) {
     }
     // A key no engine option has is most likely a typo: the scan runs
     // without it, so say so. A custom rule may read its own keys, so it is
-    // not refused.
+    // not refused. A near typo of an option ("lcoale") is left to the scan,
+    // which says it with the option meant, so it is said once; report is
+    // openReport's, and taken here too.
     if (options && Array.isArray(optionKeys)) {
       var unknown = Object.keys(options).filter(function (k) {
-        return k !== 'context' && k !== 'runOnly' && optionKeys.indexOf(k) === -1;
+        if (k === 'context' || k === 'runOnly' || k === 'report') return false;
+        if (optionKeys.indexOf(k) !== -1) return false;
+        try {
+          return !(typeof closestOptionKey === 'function' && closestOptionKey(k, optionKeys));
+        } catch {
+          return true;
+        }
       });
       if (unknown.length && global.console) {
         global.console.warn(
@@ -819,6 +830,7 @@ function consoleHelpers(global, api, scriptSrc, optionKeys) {
     var runOnly = engineOptions.runOnly != null ? engineOptions.runOnly : null;
     delete engineOptions.context;
     delete engineOptions.runOnly;
+    delete engineOptions.report;
     clearHighlights();
     var href = global.location ? global.location.href : null;
     return api.runa11yCoreInPageAsync(href, context, engineOptions, runOnly);

@@ -42,6 +42,7 @@ const {
 } = require('../src/core/dom-helpers');
 const {
   isIsoDateTime,
+  closestOptionKey,
   engineOptionSpec,
   checkEngineOptions,
   enforceEngineOptions,
@@ -2489,6 +2490,7 @@ ${inlineConstFunction('readLiveRegionHook', readLiveRegionHook)}
 ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}
 ${inlineConstFunction('describeOptionValue', describeOptionValue)}
 ${inlineConstFunction('isIsoDateTime', isIsoDateTime)}
+${inlineConstFunction('closestOptionKey', closestOptionKey)}
 ${inlineConstFunction('engineOptionSpec', engineOptionSpec)}
 ${inlineConstFunction('checkEngineOptions', checkEngineOptions)}
 ${inlineConstFunction('enforceEngineOptions', enforceEngineOptions)}

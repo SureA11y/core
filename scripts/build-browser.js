@@ -43,7 +43,7 @@ const { preloadStyleSheets } = require('../src/core/stylesheet-preload');
 const { getMargins } = require('../src/core/margin');
 const { readLiveRegionHook, selectAnnouncements } = require('../src/core/live-region-hook');
 const { consoleHelpers } = require('../src/core/console-helpers');
-const { engineOptionSpec } = require('../src/core/engine-options');
+const { engineOptionSpec, closestOptionKey } = require('../src/core/engine-options');
 const { evidenceState } = require('../src/core/evidence-state');
 const { version: PACKAGE_VERSION } = require('../package.json');
 
@@ -192,7 +192,7 @@ ${inPageRunnerSource}
 
   // run(), table(), highlight(), inspect(), clearHighlights() and openReport(), for a
   // scan run by hand from the browser's console (src/core/console-helpers.js).
-  Object.assign(api, (${consoleHelpers.toString()})(global, api, scriptSrc, ${JSON.stringify(Object.keys(engineOptionSpec()))}));
+  Object.assign(api, (${consoleHelpers.toString()})(global, api, scriptSrc, ${JSON.stringify(Object.keys(engineOptionSpec()))}, ${closestOptionKey.toString()}));
 
   // The global is what a <script> tag gets, and what the locale side files
   // register with. A bundler, or Node's require, reads the module's export
