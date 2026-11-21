@@ -8,8 +8,11 @@
  * @summary A "skip" link must resolve to a real, usable target
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to <a href="#fragment"> elements that are skip links by one of
- *   two signs:
+ *   Applies to links to a place in their own document that are skip links
+ *   by one of two signs. Such a link is an <a href="#fragment">, or a full
+ *   URL of the page with a fragment, that stays on the page once its href
+ *   is resolved against the document's base URL: under <base href>, a
+ *   "#main" that leads to another page is not one. The signs:
  *   - the accessible name follows a common skip-link wording in one of the
  *     shipped locales: "skip" or "jump to" (English); "aller au contenu",
  *     "passer au contenu", "accéder au contenu", "accès direct", "évitement"
@@ -445,18 +448,18 @@ function runInPage(ctx) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const href = String(dom.getAttribute(el, 'href') || '').trim();
-    if (href.length < 2 || href.charAt(0) !== '#') continue;
+    // A link to a place in this document, its href resolved against the
+    // base URL: under <base href>, "#main" can lead to another page
+    // (round 9, R9-5).
+    const samePage = helpers.getSamePageFragment(el);
+    if (samePage == null || !/#./.test(href)) continue;
 
     const name = getAccessibleNameText(el);
     if (el !== positionalSkipLink && !hasSkipWording(name)) continue;
 
     applicableCount += 1;
 
-    let fragment = href.slice(1);
-    try {
-      fragment = decodeURIComponent(fragment);
-    } catch {}
-    fragment = fragment.trim();
+    const fragment = samePage;
 
     let target = null;
     if (fragment) {

@@ -9945,6 +9945,41 @@ function createDomHelpers(opts) {
     return SKIP_LINK_WORDING.some((re) => re.test(s));
   }
 
+  // The fragment a link goes to in its own document, decoded and trimmed
+  // ('' for "#"), or null for a link that leads to another document, or
+  // has no fragment. The href is resolved against the document's base URL,
+  // as the browser follows it: under <base href="/">, "#main" on
+  // /products/42 leads to /#main, another page. A link stays on the page
+  // when its URL without the fragment is the document's own URL without
+  // its fragment, so a full URL of the page with a fragment counts too.
+  // Where a URL can't be read, an href that starts with "#" counts, as it
+  // did before.
+  const withoutFragment = (url) => {
+    const at = url.indexOf('#');
+    return at < 0 ? url : url.slice(0, at);
+  };
+  function getSamePageFragment(a) {
+    const href = trim(getAttr(a, 'href'));
+    if (href.indexOf('#') < 0) return null;
+    let fragment;
+    try {
+      const doc = dom.ownerDocument(a) || document;
+      const docUrl = String(dom.get(doc, 'URL') || '');
+      const resolved = new URL(href, dom.baseURI(doc) || docUrl).href;
+      if (withoutFragment(resolved) !== withoutFragment(docUrl)) return null;
+      fragment = resolved.slice(resolved.indexOf('#') + 1);
+    } catch {
+      if (href.charAt(0) !== '#') return null;
+      fragment = href.slice(1);
+    }
+    try {
+      fragment = decodeURIComponent(fragment);
+    } catch {
+      // keep the raw fragment if it isn't valid percent-encoding
+    }
+    return fragment.trim();
+  }
+
   // What a link is made of, for a standard that judges text links, image
   // links and SVG links apart:
   // - 'svg': an <a> in SVG (an SVG link), whatever it holds;
@@ -10033,6 +10068,7 @@ function createDomHelpers(opts) {
     isModalInert,
     getDocumentRoots: documentRoots,
     hasSkipLinkWording,
+    getSamePageFragment,
     getLinkKind,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
