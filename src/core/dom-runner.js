@@ -2458,7 +2458,9 @@ function runCoreSettled(
       : null;
   // A scan of several profiles whose budget ran out before this profile's
   // scan started asks it to start no rule, so it lists its selection in
-  // notRun (runProfilesUncapped). Set by the engine only, not enumerable.
+  // notRun (runProfilesUncapped), as a cross-frame scan does of a frame it
+  // reached with none left (frame-scan.js). Set by the engine only, not
+  // enumerable.
   const budgetSpent = !!(
     engineOptions &&
     typeof engineOptions === 'object' &&
@@ -3873,7 +3875,9 @@ function runCoreSettled(
         '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
           timeBudgetMs +
           (budgetSpent
-            ? ' ms before profile "' + String(engineOptions.profile) + '" started, so it'
+            ? typeof engineOptions.profile === 'string'
+              ? ' ms before profile "' + engineOptions.profile + '" started, so it'
+              : " ms before this frame's scan started, so it"
             : ' ms and') +
           ' did not run ' +
           notRunRules.length +
