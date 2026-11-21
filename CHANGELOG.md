@@ -193,6 +193,8 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - **`aria-required-children` follows the flat tree into a child's open shadow root** (slots included), as `aria-required-parent` does, unless `includeShadowDom` is off. Closed roots stay unseen.
 - **`moving-content-pausable` leaves out animations nothing shows**: keyframes that change nothing or only custom properties, and elements not drawn (clipped to nothing, no size, entirely off the page, hidden, opacity 0 throughout), unless the animation can bring the element into view. The header says SVG's own animation (SMIL) isn't seen.
 - **html-xml-lang-mismatch compares lang with xml:lang only when both name a known language**: `lang="en" xml:lang="english"` failed, though `english` names no language to differ in; such an xml:lang is now out of scope, as an unknown lang is.
+- **`aria-valid-attr` quotes a long `aria-*` attribute name at 120 characters, and measures it quickly**: a 200 KB name was copied whole into the finding, and its lean compared it with every ARIA attribute by edit distance, taking 7.5 s; it now takes about 80 ms.
+- **`duplicate-id-aria` works out its scope for the reported ids only**: it queried every element with an id, and the scope's hidden-content filter computed each one's style, so under jsdom a page of 4,000 cards with unique ids took 10 s; it takes 2.8 s, with the same findings.
 
 ## [1.17.0] - 2026-11-13
 
