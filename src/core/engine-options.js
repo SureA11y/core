@@ -7,6 +7,37 @@
 // inlined together into the generated core.js and the in-page runner.
 
 /**
+ * Whether a timestamp is an ISO 8601 date and time, as new
+ * Date().toISOString() writes one: a date, "T", hours and minutes, seconds
+ * and their fraction optionally, and a zone (Z or an offset) optionally,
+ * each in range. A date alone, or text such as "yesterday", is not one: the
+ * reporters write it as the scan's time (JUnit's timestamp attribute), and
+ * the HTML report used the time of rendering for it without a word.
+ */
+function isIsoDateTime(value) {
+  if (typeof value !== 'string') return false;
+  const m =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](\d{2}):?(\d{2}))?$/i.exec(
+      value.trim()
+    );
+  if (!m) return false;
+  const [year, month, day, hour, minute, second, zoneHour, zoneMinute] = m
+    .slice(1)
+    .map((x) => (x === undefined ? 0 : Number(x)));
+  const daysInMonth =
+    month >= 1 && month <= 12 ? new Date(Date.UTC(year, month, 0)).getUTCDate() : 0;
+  return (
+    day >= 1 &&
+    day <= daysInMonth &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    zoneHour <= 23 &&
+    zoneMinute <= 59
+  );
+}
+
+/**
  * The table of every engine option: for each key, `test` (does a value fit),
  * `expected` (said when it doesn't) and, for an object, `keys`, its own
  * table. docs/ENGINE_OPTIONS.md and the TypeScript types are checked
@@ -24,6 +55,14 @@ function engineOptionSpec() {
     boolean: { test: (v) => switchOf(v) !== null, expected: 'true or false' },
     string: { test: (v) => typeof v === 'string', expected: 'a string' },
     list: { test: list, expected: 'a string or an array of strings' },
+    // A profile, or a list of them. An empty slot, a blank name and a value
+    // that is no name are each refused: each was dropped without a word.
+    profiles: {
+      test: (v) =>
+        typeof v === 'string' ||
+        (Array.isArray(v) && [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
+      expected: 'a profile name or an array of them, none blank'
+    },
     number: {
       test: (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0,
       expected: 'a number of milliseconds, 0 or more'
@@ -70,7 +109,7 @@ function engineOptionSpec() {
       expected: '"A", "AA" or "AAA", in any case'
     },
     // One profile, or a list of them: a scan of several at once.
-    profile: T.list,
+    profile: T.profiles,
     mappings: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
@@ -92,7 +131,11 @@ function engineOptionSpec() {
         ),
       expected: '[{ href, text }]'
     },
-    timestamp: T.string,
+    // Blank is a timestamp not given.
+    timestamp: {
+      test: (v) => typeof v === 'string' && (!v.trim() || isIsoDateTime(v)),
+      expected: 'an ISO 8601 date and time, such as new Date().toISOString()'
+    },
     contrast: {
       test: isObject,
       expected: '{ mode, rootCanvasFallback }',
@@ -143,17 +186,13 @@ function engineOptionSpec() {
 }
 
 /**
- * Returns the problems checkEngineOptions finds, in the order of the keys:
- * { path, kind, message, suggestion }. `kind` is 'unknown' for a key the
- * engine doesn't read, with `suggestion` the known key it is closest to, if
- * any is close; 'invalid' for a value of the wrong type or outside its set.
- * Keys the engine passes on unread are not checked: a rule's settings under
- * rules[ruleId], messages' keys, and probes.
+ * The known key a typo most likely meant, or null: two edits away at most,
+ * one for a key of four letters or fewer, so short unrelated keys aren't
+ * matched. Shared by checkEngineOptions and the browser console's run(),
+ * which leaves the warning about a near typo to the scan. Self-contained:
+ * the browser bundle passes its source to the console helpers.
  */
-function checkEngineOptions(engineOptions) {
-  const SPEC = engineOptionSpec();
-  const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
-
+function closestOptionKey(key, known) {
   // Optimal string alignment distance, case ignored: "lcoale" is one from
   // "locale", "includeShadowDOM" none from "includeShadowDom".
   function distance(a, b) {
@@ -173,21 +212,32 @@ function checkEngineOptions(engineOptions) {
     }
     return d[s.length][t.length];
   }
-  // The known key a typo most likely meant: two edits away at most, one for
-  // a key of four letters or fewer, so short unrelated keys aren't matched.
-  function closest(key, known) {
-    let best = null;
-    let bestD = Infinity;
-    for (const k of known) {
-      const dk = distance(key, k);
-      if (dk < bestD) {
-        best = k;
-        bestD = dk;
-      }
+  let best = null;
+  let bestD = Infinity;
+  for (const k of known) {
+    const dk = distance(key, k);
+    if (dk < bestD) {
+      best = k;
+      bestD = dk;
     }
-    const limit = Math.min(key.length, best ? best.length : 0) <= 4 ? 1 : 2;
-    return best !== null && bestD <= limit ? best : null;
   }
+  const limit = Math.min(key.length, best ? best.length : 0) <= 4 ? 1 : 2;
+  return best !== null && bestD <= limit ? best : null;
+}
+
+/**
+ * Returns the problems checkEngineOptions finds, in the order of the keys:
+ * { path, kind, message, suggestion }. `kind` is 'unknown' for a key the
+ * engine doesn't read, with `suggestion` the known key it is closest to, if
+ * any is close; 'invalid' for a value of the wrong type or outside its set.
+ * Keys the engine passes on unread are not checked: a rule's settings under
+ * rules[ruleId], messages' keys, and probes.
+ */
+function checkEngineOptions(engineOptions) {
+  const SPEC = engineOptionSpec();
+  const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+  const closest = closestOptionKey;
   function describe(v) {
     if (v === null) return 'null';
     if (Array.isArray(v)) {
@@ -346,4 +396,12 @@ function strictOf(engineOptions) {
   return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
 }
 
-module.exports = { engineOptionSpec, checkEngineOptions, enforceEngineOptions, strictOf, switchOf };
+module.exports = {
+  isIsoDateTime,
+  closestOptionKey,
+  engineOptionSpec,
+  checkEngineOptions,
+  enforceEngineOptions,
+  strictOf,
+  switchOf
+};

@@ -264,11 +264,14 @@ function runInPage(ctx) {
       const ownText = isFirst ? firstText : shortText(el);
       const nearReferrer = near ? describeEl(near.el) : '';
       const quoted = (t) => (t ? ` ("${t}")` : '');
+      // The id as quoted, cut to 120 characters: a page's 200 KB id was
+      // copied whole into the summary, its parameters and the details.
+      const shownId = helpers.quoteText(refId);
       const summary = isFirst
-        ? `The id "${refId}" is used by ${els.length} elements; this one is the first, the one ${attributes} reaches.`
+        ? `The id "${shownId}" is used by ${els.length} elements; this one is the first, the one ${attributes} reaches.`
         : near
-          ? `The ${near.attr} on the ${nearReferrer} next to this element refers to "${refId}", but it reaches the first element with that id${quoted(firstText)}, not this one${quoted(ownText)}.`
-          : `The id "${refId}" is used by ${els.length} elements; ${attributes} reaches the first one${quoted(firstText)}, not this one${quoted(ownText)}.`;
+          ? `The ${near.attr} on the ${nearReferrer} next to this element refers to "${shownId}", but it reaches the first element with that id${quoted(firstText)}, not this one${quoted(ownText)}.`
+          : `The id "${shownId}" is used by ${els.length} elements; ${attributes} reaches the first one${quoted(firstText)}, not this one${quoted(ownText)}.`;
 
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
@@ -282,7 +285,7 @@ function runInPage(ctx) {
                 : 'duplicateIdAria_summary_cantTell',
             hintKey: 'duplicateIdAria_hint_cantTell',
             params: {
-              id: refId,
+              id: shownId,
               duplicateCount: String(els.length),
               attributes,
               firstText,
@@ -294,13 +297,13 @@ function runInPage(ctx) {
           uncertainty: {
             code: 'judgement-required',
             needed: 'Whether the first element carrying this id is the intended target.',
-            evidence: { id: refId, duplicateCount: els.length, resolvesTo: 'first' }
+            evidence: { id: shownId, duplicateCount: els.length, resolvesTo: 'first' }
           },
           ...(lean ? { lean } : {}),
           data: {
             details: {
               reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',
-              id: refId,
+              id: shownId,
               duplicateCount: els.length,
               referringAttributes: attrs,
               reached: isFirst,

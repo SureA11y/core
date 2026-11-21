@@ -41,6 +41,8 @@ const {
   createDomHelpers
 } = require('../src/core/dom-helpers');
 const {
+  isIsoDateTime,
+  closestOptionKey,
   engineOptionSpec,
   checkEngineOptions,
   enforceEngineOptions,
@@ -65,7 +67,15 @@ const {
   targetWcagVersionOf,
   targetWcagLevelOf,
   warnIgnoredWcagTarget,
-  readRenderingEnvironment
+  readRenderingEnvironment,
+  unknownOptInRulesMessage,
+  unknownMappingsMessage,
+  readRuleSettings,
+  unknownRuleSettingsMessage,
+  invalidExcludeSelectors,
+  invalidExcludeSelectorsMessage,
+  rootCanvasFallbackIsOpaque,
+  rootCanvasFallbackMessage
 } = require('../src/core/dom-runner');
 const {
   profileNamesOf,
@@ -644,8 +654,13 @@ function t(key, fallback, params, engineOptions) {
 
   const v = localeMessage(key, engineOptions);
 
-  // fallback to English if missing in requested locale
-  const vEn = ownString(I18N && I18N.en, key);
+  // fallback to English if missing in requested locale: the caller's own
+  // English (engineOptions.messages.en) first, as for any locale, then the
+  // built-in one. Without it, a custom rule's keys given only in English
+  // showed empty under another locale.
+  const vEn =
+    ownString(ownDict(getSuppliedMessages(engineOptions), 'en'), key) ||
+    ownString(I18N && I18N.en, key);
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
@@ -687,6 +702,11 @@ function asciiLowerChar(c) {
 
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
+  // A Set of names is read as the list it holds (by its type tag, so a
+  // page's Set read by the bundle in another realm counts too).
+  if (typeof value === 'object' && Object.prototype.toString.call(value) === '[object Set]') {
+    value = [...value];
+  }
   if (Array.isArray(value)) {
     const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
     const norm = lower ? arr.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : arr.slice();
@@ -1552,8 +1572,14 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     const rest = { ...runOnly };
     delete rest.type;
     delete rest.values;
-    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: runOnly.values };
-    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: runOnly.values };
+    // A Set of names is read as the list it holds; passed on as it is, the
+    // checks below took it for no list and ran every rule.
+    const values =
+      runOnly.values && typeof runOnly.values === 'object' && Object.prototype.toString.call(runOnly.values) === '[object Set]'
+        ? [...runOnly.values]
+        : runOnly.values;
+    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
+    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
@@ -1937,6 +1963,44 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.variantOf = variant.of;
     if (out.i18n && variant.messages && typeof variant.messages.from === 'string') {
       out.i18n = { ...out.i18n, variantOfTitleKey: variant.messages.from + '_title' };
+    }
+  }
+
+  // An occurrence's tier is fail, cantTell or pass, read in any case
+  // ('FAIL' is fail). Any other value is dropped, so the occurrence takes
+  // the rule's outcome, and said in error: a custom rule's 'bogus' reached
+  // every reporter as it was.
+  if (Array.isArray(out.occurrences)) {
+    const TIERS = { fail: 'fail', canttell: 'cantTell', pass: 'pass' };
+    const unread = [];
+    out.occurrences = out.occurrences.map((o) => {
+      if (!o || typeof o !== 'object' || o.occurrenceOutcome === undefined || o.occurrenceOutcome === null) return o;
+      const given = o.occurrenceOutcome;
+      const key = typeof given === 'string' ? given.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
+      const tier = Object.prototype.hasOwnProperty.call(TIERS, key) ? TIERS[key] : null;
+      if (tier === given) return o;
+      const next = { ...o };
+      if (tier) next.occurrenceOutcome = tier;
+      else {
+        delete next.occurrenceOutcome;
+        unread.push(given);
+      }
+      return next;
+    });
+    if (unread.length) {
+      let named = '';
+      for (const v of unread.filter((v, i) => unread.indexOf(v) === i)) {
+        let text;
+        try {
+          text = JSON.stringify(v);
+        } catch {
+          text = undefined;
+        }
+        named += (named ? ', ' : '') + (text === undefined ? typeof v : text);
+      }
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule returned occurrenceOutcome ' + named + ', which is not one of fail, cantTell, pass; those occurrences take the outcome of the rule.';
     }
   }
 
@@ -2425,6 +2489,8 @@ ${inlineConstFunction('readLiveRegionHook', readLiveRegionHook)}
 // Inlined from src/core/dom-helpers.js
 ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}
 ${inlineConstFunction('describeOptionValue', describeOptionValue)}
+${inlineConstFunction('isIsoDateTime', isIsoDateTime)}
+${inlineConstFunction('closestOptionKey', closestOptionKey)}
 ${inlineConstFunction('engineOptionSpec', engineOptionSpec)}
 ${inlineConstFunction('checkEngineOptions', checkEngineOptions)}
 ${inlineConstFunction('enforceEngineOptions', enforceEngineOptions)}
@@ -2466,6 +2532,14 @@ ${inlineConstFunction('warnIgnoredWcagTarget', warnIgnoredWcagTarget)}
 ${inlineConstFunction('rollupMembers', rollupMembers)}
 ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
 ${inlineConstFunction('noteEmptySelection', noteEmptySelection)}
+${inlineConstFunction('unknownOptInRulesMessage', unknownOptInRulesMessage)}
+${inlineConstFunction('unknownMappingsMessage', unknownMappingsMessage)}
+${inlineConstFunction('readRuleSettings', readRuleSettings)}
+${inlineConstFunction('unknownRuleSettingsMessage', unknownRuleSettingsMessage)}
+${inlineConstFunction('invalidExcludeSelectors', invalidExcludeSelectors)}
+${inlineConstFunction('invalidExcludeSelectorsMessage', invalidExcludeSelectorsMessage)}
+${inlineConstFunction('rootCanvasFallbackIsOpaque', rootCanvasFallbackIsOpaque)}
+${inlineConstFunction('rootCanvasFallbackMessage', rootCanvasFallbackMessage)}
 
 ${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
 
@@ -2910,9 +2984,85 @@ function catalogCheckDefs(engineOptions) {
 function checkCatalogOptions(engineOptions, runOnly) {
   enforceEngineOptions(engineOptions);
   const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  if (strictOf(eo)) refuseCatalogOptions(eo, runOnly);
   warnIgnoredWcagTarget(eo, () =>
     targetWcagVersionOf(eo, resolveEffectiveRunOnly(engineOptions, runOnly))
   );
+}
+
+// Under strictOptions, what a scan with these options refuses before it
+// runs, in its words (the shared helpers of src/core/dom-runner.js): a
+// profile, opt-in tag or standard that names none, settings for a rule that
+// isn't there, a policyContract or contrast.rootCanvasFallback the scan
+// can't read, and an excludeSelectors that isn't CSS. A catalog function
+// listed rules for options its scan would throw on (round 8, PK-5).
+// Selectors are tested against the page's document where there is one (a
+// jsdom window set as global); without one, the scan tests them.
+function refuseCatalogOptions(eo, runOnly) {
+  const fail = (message) => {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    throw err;
+  };
+  const runs = catalogProfileRuns(eo, runOnly);
+  resolvePolicy(POLICY_CONTRACTS, eo, true);
+  for (const run of runs) {
+    const optIn = unknownOptInRulesMessage(run.selection);
+    if (optIn) fail(optIn);
+    const profile = run.selection && typeof run.selection.profile === 'string' ? run.selection.profile : null;
+    const mappings = unknownMappingsMessage(resolveMappingSelection(run.eo, profile));
+    if (mappings) fail(mappings);
+  }
+  const knownIds = catalogCheckDefs(eo)
+    .defs.map((d) => d.ruleId)
+    .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
+  const rules = unknownRuleSettingsMessage(readRuleSettings(eo.rules, knownIds, ENGINE_TAG));
+  if (rules) fail(rules);
+  const dom = createSafeDom();
+  let probe = null;
+  try {
+    probe = typeof document !== 'undefined' && document ? dom.get(document, 'documentElement') : null;
+  } catch {
+    probe = null;
+  }
+  const contrast = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : null;
+  const canvas = contrast && typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+  // A color the parser can't read (a named one) is read as the page's
+  // browser computes it where there is a page, as the scan does.
+  const computeColor = probe
+    ? (text) => {
+        const span = dom.createElement(document, 'span');
+        span.style.color = text;
+        // A value the platform rejects leaves the property unset, and the
+        // span would report the color it inherits.
+        if (!span.style.color) return '';
+        dom.appendChild(probe, span);
+        const computed = dom.defaultView(document).getComputedStyle(span).color;
+        dom.removeChild(probe, span);
+        return computed;
+      }
+    : null;
+  const view = probe ? dom.defaultView(document) : null;
+  if (canvas && !rootCanvasFallbackIsOpaque(canvas, catalogColorParser(view), computeColor)) {
+    fail(rootCanvasFallbackMessage(canvas));
+  }
+  if (probe) {
+    const selectors = invalidExcludeSelectorsMessage(
+      invalidExcludeSelectors(eo, (sel) => dom.matches(probe, sel))
+    );
+    if (selectors) fail(selectors);
+  }
+}
+
+// The contrast helpers' color parser, which reads a named color through
+// the page's window where there is one, or null where they can't be made.
+function catalogColorParser(view) {
+  try {
+    const helpers = createContrastHelpers({ window: view || null }, { trim: (v) => String(v == null ? '' : v).trim() });
+    return helpers && typeof helpers.parseCssColorToRgba === 'function' ? helpers.parseCssColorToRgba : null;
+  } catch {
+    return null;
+  }
 }
 
 function getCheckDefById(ruleId, engineOptions) {

@@ -110,3 +110,13 @@ export function computeBaselineKey(
 
 /** An occurrence's reason code, or 'DEFAULT'. */
 export function getReasonCode(occurrence: unknown): string;
+
+/** Internal: the reporters' lookup of the occurrences a baseline knows. Not covered by semver. */
+export function knownOccurrences(
+  frames: unknown[],
+  baselineEntries: unknown,
+  caller?: string
+): { known: Set<unknown>; knownLeaning: Set<unknown> };
+
+/** Internal: the entries of a baseline, given as the list or as the saved file. Not covered by semver. */
+export function entriesOf(baseline: unknown): BaselineEntry[];
