@@ -341,3 +341,24 @@ test(`${RULE_ID}: a control in a link names both and keeps the question`, () => 
     "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another."
   );
 });
+
+// Inside a role with presentational children only content in sequential
+// focus navigation counts (ACT 307n5z, as presentational-children-focusable-
+// absent has it): a tabindex="-1" control there takes no tab stop. A tabbable
+// one beside it still fails.
+test(`${RULE_ID}: a tabindex="-1" control inside a tab, button or option is not counted (round 8, NA-2)`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="tablist" aria-label="t"><div role="tab" aria-selected="true" tabindex="0">File.js <button aria-label="Close" tabindex="-1">x</button></div></div>
+    <button>Save <a href="#" tabindex="-1">help</a></button>
+    <div role="listbox" aria-label="l"><div role="option" aria-selected="false" tabindex="0"><input type="checkbox" tabindex="-1" aria-label="A"> A</div></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+
+  const tabbable = `<!doctype html><html><body><button id="t">Save <a href="#" tabindex="-1">help</a> <a href="#">more</a></button></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(tabbable, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.deepStrictEqual(rule.occurrences[0].data.details.nestedElements, ['a']);
+});
