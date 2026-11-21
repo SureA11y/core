@@ -202,20 +202,20 @@
     <label><div>Display Mature Content</div><button id="btn_case_27" aria-pressed="false"><span></span></button></label>
   </div>
 
-  <h2>G. role override to a value-role (content is a VALUE, not a NAME)</h2>
+  <h2>G. role override to another role (left to the rule that names that role)</h2>
 
   <div class="case" id="case_28">
-    <div class="case-title">28 — FAIL: native &lt;button role="combobox"&gt;, no programmatic name — content ("List") is the combobox's selected VALUE, not its name, so it must not be credited</div>
+    <div class="case-title">28 — NEUTRAL: native &lt;button role="combobox"&gt;, no programmatic name — a combobox, not a button: combobox-name-present reports it (its content, "List", is the selected VALUE, not its name)</div>
     <button type="button" role="combobox" aria-expanded="false" id="btn_case_28"><span>List</span></button>
   </div>
 
   <div class="case" id="case_29">
-    <div class="case-title">29 — PASS: &lt;button role="combobox"&gt; with aria-label — programmatic name still works normally for a value-role override</div>
+    <div class="case-title">29 — NEUTRAL: &lt;button role="combobox"&gt; with aria-label — a combobox, left to combobox-name-present, where it passes</div>
     <button type="button" role="combobox" aria-expanded="false" aria-label="Sort order" id="btn_case_29"><span>List</span></button>
   </div>
 
   <div class="case" id="case_30">
-    <div class="case-title">30 — FAIL: native &lt;button role="listbox"&gt;, no programmatic name — same value-role class as case 28, different role</div>
+    <div class="case-title">30 — NEUTRAL: native &lt;button role="listbox"&gt;, no programmatic name — a list box, left to listbox-name-present, as case 28</div>
     <button type="button" role="listbox" id="btn_case_30"><span>Item</span></button>
   </div>
 

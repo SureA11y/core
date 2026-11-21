@@ -565,6 +565,7 @@ function runInPage(ctx) {
   // What scaled the text, as CSS names it.
   const SCALED_BY_LABEL = {
     zoom: 'zoom',
+    transform: 'transform',
     svg: 'SVG transform',
     'font-size-adjust': 'font-size-adjust'
   };

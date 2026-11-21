@@ -5,7 +5,8 @@
  * content is delivered": 12px text under CSS zoom: 2 lays out exactly like
  * 24px text in Chromium, and 10px SVG text in a viewBox scaled eight times
  * is drawn at 80px. #888 on white (3.54:1) passes as large text there, as
- * it does at 24px, and still fails at a plain 12px.
+ * it does at 24px, and still fails at a plain 12px. A uniform transform
+ * scale counts the same way.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -49,6 +50,28 @@ const CASES = [
   [
     '<svg viewBox="0 0 100 20" width="800"><text id="t" x="0" y="15" font-size="10" fill="#888">SVG</text></svg>',
     'pass'
+  ],
+  // A uniform transform scale counts as zoom does, both ways (round 8,
+  // LY-13): 12px under scale(2) is drawn at 24px, and 24px under
+  // scale(0.5) at 12px, held to 4.5:1. A rotation, or a transform on an
+  // inline box, which it doesn't apply to, leaves the font-size as it is.
+  [
+    '<p id="t" style="color:#888; font-size:12px; transform:scale(2); transform-origin:0 0">Scaled text</p>',
+    'pass'
+  ],
+  [
+    '<div style="transform:scale(2); transform-origin:0 0"><p id="t" style="color:#888; font-size:12px">Scaled by its ancestor</p></div>',
+    'pass'
+  ],
+  ['<p id="t" style="color:#888; font-size:12px; scale:2">Scaled text</p>', 'pass'],
+  ['<p id="t" style="color:#888; font-size:24px; transform:scale(0.5)">Shrunk text</p>', 'fail'],
+  [
+    '<p id="t" style="color:#888; font-size:12px; transform:rotate(10deg) scale(2)">Turned text</p>',
+    'fail'
+  ],
+  [
+    '<p><span id="t" style="color:#888; font-size:12px; transform:scale(2)">Inline text</span></p>',
+    'fail'
   ]
 ];
 

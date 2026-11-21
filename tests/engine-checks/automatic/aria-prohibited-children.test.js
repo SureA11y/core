@@ -584,11 +584,11 @@ test(`${RULE_ID}: a plain <li> in a menu is named as an <li> whose implicit role
   assert.strictEqual(occ.i18n.hintKey, 'ariaProhibitedChildren_hint_fail_implicit');
   assert.strictEqual(
     occ.summary,
-    'This <li> is a listitem by default, which isn\'t allowed directly inside a role="menu" container.'
+    'This <li> has the implicit role listitem, which isn\'t allowed directly inside a role="menu" container.'
   );
   assert.strictEqual(
     occ.hint,
-    'Give the <li> one of the roles the container allows (menuitem, menuitemcheckbox, menuitemradio, group, separator), or role="none" so what it holds belongs to the menu.'
+    'Give the <li> one of the roles the container allows (menuitem, menuitemcheckbox, menuitemradio, group, menu, separator), or role="none" so what it holds belongs to the menu.'
   );
 });
 
@@ -602,6 +602,32 @@ test(`${RULE_ID}: a misspelled child role is named, with the role it likely mean
   );
   assert.strictEqual(
     occ.hint,
-    'Did you mean role="menuitem"? Otherwise give it one of the roles the container allows (menuitem, menuitemcheckbox, menuitemradio, group, separator), or role="none".'
+    'Did you mean role="menuitem"? Otherwise give it one of the roles the container allows (menuitem, menuitemcheckbox, menuitemradio, group, menu, separator), or role="none".'
   );
+});
+
+// The W3C APG navigation menubar puts a submenu's role="menu" beside the
+// menuitem that opens it, inside the <li role="none"> the menubar owns; the
+// editor menubar nests one in a menu the same way. Anything else in a menu
+// is still prohibited.
+test(`${RULE_ID}: a submenu's menu inside a menubar or menu is allowed (round 8, NA-1)`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  const menubar = `<nav aria-label="Mythical University"><ul role="menubar" aria-label="Mythical University">
+    <li role="none"><a role="menuitem" aria-haspopup="true" aria-expanded="false" href="#about">About</a>
+      <ul role="menu" aria-label="About"><li role="none"><a role="menuitem" href="#overview">Overview</a></li></ul></li>
+    <li role="none"><a role="menuitem" href="#admissions">Admissions</a></li></ul></nav>`;
+  const submenu = `<ul role="menu" aria-label="Edit"><li role="none"><span role="menuitem" aria-haspopup="true" aria-expanded="true" tabindex="-1">Share</span><ul role="menu" aria-label="Share"><li role="menuitem" tabindex="-1">Email</li></ul></li></ul>`;
+  for (const body of [menubar, submenu]) {
+    const result = runa11yCoreOnHtml(page(body), {
+      runOnly: [RULE_ID, 'aria-required-children']
+    });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+    assertRule(result, 'aria-required-children', 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  const tablist = `<div role="menubar" aria-label="m"><div role="menuitem">a</div><div role="tablist" aria-label="t"><div role="tab">x</div></div></div>`;
+  assertRule(runa11yCoreOnHtml(page(tablist), { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
 });

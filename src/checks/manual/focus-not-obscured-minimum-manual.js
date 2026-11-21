@@ -105,8 +105,11 @@
  *   page is at opacity 0. A transparent box over the element hides nothing.
  * - The hit test (elementFromPoint) skips boxes with pointer-events: none,
  *   so such a box isn't confirmed and isn't reported.
- * - Scrolling is instant and undone before the rule returns. The page's
- *   scroll listeners still see it, after the rule has measured.
+ * - Scrolling is instant and undone before the rule returns. The `scroll`
+ *   and `scrollend` the browser fires for it afterwards are kept from the
+ *   page's listeners by a capturing listener on the window, which goes once
+ *   they have passed (or after half a second). A capturing listener the page
+ *   put on the window itself before the scan still sees them.
  * - What appears later, such as a chat bubble after a delay, is only seen if
  *   it is there when the scan runs, at the scan's window size.
  */
@@ -166,28 +169,83 @@ function runInPage(ctx) {
     const m = /^(-?\d*\.?\d+)px$/.exec(lower(v));
     return m ? Number.parseFloat(m[1]) : 0;
   };
-  // A length a browser may keep as written: px, a percentage of `ref`, or a
-  // calc() adding the two ("calc(10% + 2px)"). Anything else reads as 0.
+  // A length a browser may keep as written: px, a percentage of `ref`, and
+  // calc(), min(), max() and clamp() of those ("calc(10% + 2px)", "max(10%,
+  // 60px)"): Chromium keeps scroll-padding in that form while a percentage is
+  // in it. Anything else, or anything it can't read, reads as 0.
   const lengthOf = (v, ref) => {
     const raw = lower(v);
     if (!raw || raw === 'auto') return 0;
-    const pct = /^(-?\d*\.?\d+)%$/.exec(raw);
-    if (pct) return (Number.parseFloat(pct[1]) * ref) / 100;
-    const calc = /^calc\((.*)\)$/.exec(raw);
-    if (calc) {
-      let total = 0;
-      let rest = calc[1].replace(/\s+/g, '');
-      const term = /^([+-]?)(\d*\.?\d+)(px|%)/;
-      while (rest) {
-        const m = term.exec(rest);
-        if (!m) return 0;
-        const n = Number.parseFloat(m[2]) * (m[1] === '-' ? -1 : 1);
-        total += m[3] === '%' ? (n * ref) / 100 : n;
-        rest = rest.slice(m[0].length);
+    const tokens = raw.match(/\d*\.?\d+(?:px|%)?|[a-z-]+\(|[()+\-*/,]|\S/g) || [];
+    let i = 0;
+    const peek = () => tokens[i];
+    const expect = (t) => {
+      if (tokens[i++] !== t) throw new Error('unreadable');
+    };
+    // Each value is { n, len }: a number, and whether it is a length (px).
+    let sum = null;
+    const primary = () => {
+      const t = tokens[i++];
+      if (t === '(' || t === 'calc(') {
+        const value = sum();
+        expect(')');
+        return value;
       }
-      return total;
+      if (t === 'min(' || t === 'max(' || t === 'clamp(') {
+        const args = [sum()];
+        while (peek() === ',') {
+          i += 1;
+          args.push(sum());
+        }
+        expect(')');
+        if (!args.every((a) => a.len || a.n === 0)) throw new Error('unreadable');
+        const n = args.map((a) => a.n);
+        if (t === 'min(') return { n: Math.min(...n), len: true };
+        if (t === 'max(') return { n: Math.max(...n), len: true };
+        if (n.length !== 3) throw new Error('unreadable');
+        return { n: Math.max(n[0], Math.min(n[1], n[2])), len: true };
+      }
+      if (t === '-' || t === '+') {
+        const value = primary();
+        return { n: t === '-' ? -value.n : value.n, len: value.len };
+      }
+      const m = /^(\d*\.?\d+)(px|%)?$/.exec(t || '');
+      if (!m) throw new Error('unreadable');
+      const n = Number.parseFloat(m[1]);
+      if (!m[2]) return { n, len: false };
+      return { n: m[2] === '%' ? (n * ref) / 100 : n, len: true };
+    };
+    const product = () => {
+      let value = primary();
+      while (peek() === '*' || peek() === '/') {
+        const op = tokens[i++];
+        const other = primary();
+        if (op === '*') {
+          if (value.len && other.len) throw new Error('unreadable');
+          value = { n: value.n * other.n, len: value.len || other.len };
+        } else {
+          if (other.len || other.n === 0) throw new Error('unreadable');
+          value = { n: value.n / other.n, len: value.len };
+        }
+      }
+      return value;
+    };
+    sum = () => {
+      let value = product();
+      while (peek() === '+' || peek() === '-') {
+        const op = tokens[i++];
+        const other = product();
+        value = { n: op === '+' ? value.n + other.n : value.n - other.n, len: true };
+      }
+      return value;
+    };
+    try {
+      const value = sum();
+      if (i !== tokens.length || (!value.len && value.n !== 0)) return 0;
+      return Number.isFinite(value.n) ? value.n : 0;
+    } catch {
+      return 0;
     }
-    return px(raw);
   };
   const styleOf = (el) => {
     try {
@@ -393,6 +451,16 @@ function runInPage(ctx) {
     if (r && r.width > 0 && r.height > 0 && shown(m)) modals.push(m);
   }
   const inModal = (el) => modals.some((m) => dom.contains(m, el));
+  // The parent in the composed tree, through a shadow root to its host, and
+  // whether a node is inside another there.
+  const composedUp = (n) =>
+    typeof helpers.composedParent === 'function' ? helpers.composedParent(n) : dom.parentElement(n);
+  const inComposed = (node, container) => {
+    for (let cur = node, i = 0; cur && i < 100000; cur = composedUp(cur), i++) {
+      if (cur === container) return true;
+    }
+    return false;
+  };
 
   // A sticky box stays inside its containing block, the nearest ancestor
   // that is no inline box, no display: contents and no table row, row group
@@ -581,7 +649,48 @@ function runInPage(ctx) {
     opened.some((t) => t === root || dom.contains(root, t) || dom.contains(t, root));
 
   // ---- Confirm with the browser: scroll a few there and hit-test ----
+  // Scrolling the window makes the browser fire `scroll` and `scrollend` at
+  // the page once the scan is over, though the page is put back where it
+  // was: a page that loads a widget on its first scroll would change under
+  // the next scan. A capturing listener on the window keeps those two
+  // events, for the window's own scrolling only, from the page's listeners,
+  // and goes once the scrollend has passed (where the browser has none, the
+  // scroll), or a moment later where no event comes. Shared with the
+  // variant run in the same scan (focus-not-obscured-enhanced).
+  const guards = memoOf('scrollGuard');
+  function guardScrollEvents() {
+    const current = guards.get(view);
+    if (current && current.active) return;
+    const guard = { active: true };
+    guards.set(view, guard);
+    const withScrollEnd = 'onscrollend' in view;
+    const remove = () => {
+      if (!guard.active) return;
+      guard.active = false;
+      try {
+        dom.removeEventListener(view, 'scroll', stop, true);
+        dom.removeEventListener(view, 'scrollend', stop, true);
+      } catch {}
+    };
+    function stop(e) {
+      if (!guard.active || (e.target !== document && e.target !== view)) return;
+      e.stopImmediatePropagation();
+      if (e.type === 'scrollend' || !withScrollEnd) remove();
+    }
+    try {
+      dom.addEventListener(view, 'scroll', stop, true);
+      dom.addEventListener(view, 'scrollend', stop, true);
+      if (typeof view.setTimeout === 'function') view.setTimeout(remove, 500);
+    } catch {
+      remove();
+    }
+  }
+  let moved = false;
   const scrollTo = (y) => {
+    if (y !== scrollY && !moved) {
+      moved = true;
+      guardScrollEvents();
+    }
     try {
       dom.call(view, 'scrollTo', { left: scrollX, top: y, behavior: 'instant' });
     } catch {
@@ -616,13 +725,16 @@ function runInPage(ctx) {
         } catch {
           top = null;
         }
-        if (!top || top === c.el || dom.contains(c.el, top) || dom.contains(top, c.el)) continue;
-        if (!dom.contains(cover.root, top)) continue;
+        // The hit is read in the composed tree: it may be inside a
+        // component the cover or the focused element holds, where contains()
+        // stops at the shadow boundary (round 8, NW-2).
+        if (!top || top === c.el || inComposed(top, c.el) || inComposed(c.el, top)) continue;
+        if (!inComposed(top, cover.root)) continue;
         // Drawn there: the part hit, or a box around it within the root,
         // and for 2.4.11 drawn opaque, as what shows through hides nothing
         // entirely.
         let drawn = false;
-        for (let n = top, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+        for (let n = top, i = 0; n && i < 10000; n = composedUp(n), i++) {
           const ncs = styleOf(n);
           if (partlyToo ? paints(n, ncs) : opaque(n, ncs)) {
             drawn = true;
@@ -797,7 +909,7 @@ function runInPage(ctx) {
       );
     }
   } finally {
-    scrollTo(scrollY);
+    if (moved) scrollTo(scrollY);
   }
 
   // Only where boxes were left unchecked: how many boxes could hide an

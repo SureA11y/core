@@ -37,7 +37,10 @@
  *     text.
  * @reason-codes
  *   - `TABLE_HEADER_EMPTY` (cantTell): a header cell has no visible text and
- *     no name from aria-label or aria-labelledby.
+ *     no name from aria-label or aria-labelledby. When a control or image
+ *     inside it still names it from its content (a "Select all rows"
+ *     checkbox), the message quotes that name rather than call the cell
+ *     nameless.
  *     It leans fail when the cell is a <th> holding nothing that could name
  *     it (an svg, an element with an ARIA name or title, a control), is not
  *     the top-left corner above a column of row headers, and has a data cell
@@ -54,8 +57,8 @@
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
- * - Two distinct reasonCodes: TABLE_HEADER_EMPTY (no accessible name at
- *   all) vs. TABLE_HEADER_NAME_NOT_VISIBLE_TEXT (has aria-label/
+ * - Two distinct reasonCodes: TABLE_HEADER_EMPTY (no visible text and no
+ *   ARIA name) vs. TABLE_HEADER_NAME_NOT_VISIBLE_TEXT (has aria-label/
  *   aria-labelledby but no visible text), the latter gets a different
  *   summary/hint explaining the AT-support gap, since the header isn't
  *   literally nameless, just unreliably named in practice.
@@ -287,6 +290,34 @@ function runInPage(ctx) {
           },
           data: {
             details: { reasonCode: 'TABLE_HEADER_NAME_NOT_VISIBLE_TEXT', ariaName }
+          }
+        })
+      );
+      continue;
+    }
+
+    // A header holding a named control or image is named from its content
+    // (a "Select all rows" checkbox), though it shows no text: say so rather
+    // than call it nameless.
+    let contentName;
+    try {
+      const info = helpers.getContentNameInfo(el, ctx);
+      contentName = info && info.present ? normalizeWs(info.value) : '';
+    } catch {
+      contentName = '';
+    }
+    if (contentName) {
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This table header cell has no visible text. Its only name, "${contentName}", comes from what it holds, such as a control or an image.`,
+          hint: "Give the header cell text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
+          i18n: {
+            summaryKey: 'emptyTableHeader_summary_cantTell_contentName',
+            hintKey: 'emptyTableHeader_hint_cantTell',
+            params: { name: contentName }
+          },
+          data: {
+            details: { reasonCode: 'TABLE_HEADER_EMPTY' }
           }
         })
       );

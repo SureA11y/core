@@ -1034,8 +1034,7 @@ array), plus small numeric/formatting utilities
 rules work out (`comparePaintOrder`, `isPinned`): `comparePaintOrder(a, b)` is negative
 when `a`'s box is painted before `b`'s, positive when after, `NaN` when it can't be told (another tree), and
 `isPinned(el)` says whether `el` is in a fixed or sticky box, which covers the page at
-one scroll position only; `target-size-minimum` uses both to find the boxes over a
-target (#105). Three read what a text field or a scaled element shows (`textStyleOf`,
+one scroll position only. Three read what a text field or a scaled element shows (`textStyleOf`,
 `isPlaceholderText`, `renderedTextScale`):
 `textStyleOf(el)` is the computed style that sets the color and font of `el`'s text,
 the `::placeholder` style while a text field shows its placeholder (its value is empty)

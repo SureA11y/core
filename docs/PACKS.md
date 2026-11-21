@@ -725,7 +725,7 @@ result.profiles['acme-policy'].rulesResults; // the policy's items, by id
 
 A finding the standard is certain of where WCAG asks (`outcome: 'fail'` in its rule map, above) fails the scan, and says both: its `verdicts` are each profile's. A profile whose pack is skipped is listed in `engine.profilesNotRun`, and the others still run.
 
-The pack is prepared once and kept for the next scan with the same pack object, so a pack must not change once made: `definePack` freezes it, with its lists and objects, and a change throws. A pack made without `definePack` isn't frozen, and a change to it after a scan goes unseen.
+The pack is prepared once and kept for the next scan with the same pack object, so a pack must not change once made: `definePack` freezes it, with its lists and objects, and a change throws. A pack passed to a scan as a plain object, without `definePack`, is frozen the same way on its first use in a scan (its data, not its functions), so a later change to it throws in strict code, or is ignored, rather than going unseen while later scans run the version kept.
 
 **From the CLI** ([`@surea11y/cli`](https://github.com/SureA11y/cli)): `surea11y scan <url> --pack @acme/a11y-pack --profile acme-policy`.
 

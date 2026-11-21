@@ -614,3 +614,31 @@ test(`${RULE_ID}: bolder is read against the parent's weight`, () => {
   );
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'BOLD_SHORT_PARAGRAPH');
 });
+
+// A sign, a footnote star, a times sign, a tilde or a rating star around the
+// digits, and digits of other scripts, leave the text a number: not asked
+// about at body size, and a number when large.
+test(`${RULE_ID}: signed, starred and non-ASCII numbers are numbers (round 8, NW-10)`, () => {
+  const texts = [
+    '+45%',
+    '−5%',
+    '+33 1 23 45 67 89',
+    '$29.99*',
+    '3×',
+    '4.5 ★',
+    '~30',
+    '100+',
+    '٢٠٢٤',
+    '２０２４'
+  ];
+  const page = (size, t) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>Shop</h1><p>Intro paragraph text that reads plainly here.</p><p style="font-size:${size}"><b>${t}</b></p><p style="font-size:16px">Mon to Fri, nine to five, closed on public holidays and weekends.</p></main></body></html>`;
+  for (const t of texts) {
+    const small = runa11yCoreOnHtml(page('16px', t), { runOnly: [RULE_ID] });
+    assert.equal(small.checksResults[0].outcome, 'notApplicable', `${t} at body size`);
+    const large = runa11yCoreOnHtml(page('24px', t), { runOnly: [RULE_ID] });
+    const occ = large.checksResults[0].occurrences;
+    assert.equal(occ.length, 1, `${t} when large`);
+    assert.equal(occ[0].data.details.reasonCode, 'HEADING_LIKE_NUMBER', `${t} when large`);
+  }
+});

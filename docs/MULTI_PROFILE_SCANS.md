@@ -112,6 +112,8 @@ Each profile has a section of its own, `profiles[id]`, named by its id and sayin
 A scan of profiles A and B counts as a scan of one profile C with the rules of both:
 
 - A check result's `outcome` is the worst of its verdicts: `fail`, then `cantTell`, then `pass`, then `notApplicable`. A reporter that reads `outcome` (SARIF, JUnit, the CLI, a lab tally) then counts C without knowing about profiles.
+- A profile that selects a rule but counts none of its findings (its standard sends them to no requirement) gives the check the outcome a scan of that profile alone gives it, the rule's own, not `pass`.
+- A scan's `policy` (or `policyContract`) holds every verdict: where it doesn't allow `fail`, a check a standard fails is `cantTell`, with `policyOutcome: 'fail'`, in a scan of one profile or several.
 - A finding of a rule both profiles select counts once, whatever each makes of it.
 - Findings of different rules count separately, a variant's and its base rule's among them, as they would in C.
 - Any `fail`, under any profile, fails the scan.

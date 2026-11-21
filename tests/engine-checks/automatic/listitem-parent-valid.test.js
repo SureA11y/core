@@ -40,19 +40,65 @@ test(`${RULE_ID}: pass when li is inside role="list"`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-// The list is gone for certain; whether that loses information depends on
-// the content, so it is asked about, leaning fail where the item is drawn
-// as one of a list.
-test(`${RULE_ID}: asks about an li whose <ul> has an explicit role="menu" (the explicit role overrides the tag's native "list" role)`, () => {
+// Under a composite widget role the stray <li> breaks the widget: it fails
+// where it is drawn as a list item, and is asked about where it is not, as
+// any misplaced <li> is (round 8, NW-3).
+test(`${RULE_ID}: fails an li drawn as a list item whose <ul> has an explicit role="menu" (the explicit role overrides the tag's native "list" role)`, () => {
   const html = `<!doctype html><html><body><ul role="menu"><li id="a">orphan</li></ul></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   const o = rule.occurrences[0];
   const details = o.data.details;
   assert.equal(details.reasonCode, 'LIST_ROLE_OVERRIDDEN');
   assert.equal(details.parentRole, 'menu');
   assert.equal(details.parentElement, 'ul');
+  assert.equal(o.i18n.summaryKey, 'listitemParentValid_summary_fail_listRoleOverridden');
+  assert.equal(o.i18n.hintKey, 'listitemParentValid_hint_fail_listRoleOverridden');
+});
+
+test(`${RULE_ID}: an li under a composite widget role fails where drawn as a list item (round 8, NW-3)`, () => {
+  for (const role of [
+    'tablist',
+    'menu',
+    'menubar',
+    'listbox',
+    'tree',
+    'treegrid',
+    'grid',
+    'radiogroup',
+    'toolbar'
+  ]) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><ul role="${role}" aria-label="n"><li><a href="/a">A</a></li><li><a href="/b">B</a></li></ul></main></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 2,
+      maxOccurrences: 2
+    });
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'LIST_ROLE_OVERRIDDEN', role);
+  }
+  // Not drawn as a list item: asked about, as a misplaced <li> is.
+  const plain = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><ul role="tablist" style="list-style:none"><li style="display:inline">A</li></ul></main></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(plain, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const o = rule.occurrences[0];
+  assert.equal(o.data.details.reasonCode, 'LIST_ROLE_OVERRIDDEN');
+  assert.equal(o.i18n.summaryKey, 'listitemParentValid_summary_cantTell_listRoleOverridden');
+  assert.match(o.uncertainty.needed, /shows this element as an item of a list/);
+});
+
+// Under a landmark or structure role the list is gone for certain; whether
+// that loses information depends on the content, so it is asked about,
+// leaning fail where the item is drawn as one of a list.
+test(`${RULE_ID}: asks about an li whose <ul> has an explicit role="region", leaning fail where drawn as a list item`, () => {
+  const html = `<!doctype html><html><body><ul role="region" aria-label="r"><li id="a">orphan</li></ul></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  const o = rule.occurrences[0];
+  assert.equal(o.data.details.reasonCode, 'LIST_ROLE_OVERRIDDEN');
+  assert.equal(o.data.details.parentRole, 'region');
   assert.equal(o.i18n.summaryKey, 'listitemParentValid_summary_cantTell_listRoleOverridden');
   assert.equal(o.lean.toward, 'fail');
   assert.equal(o.lean.i18n.whyKey, 'listitemParentValid_lean_why_listRoleOverridden');
@@ -167,7 +213,7 @@ test(`${RULE_ID}: pass when li is inside a <menu>`, () => {
 test(`${RULE_ID}: a <menu> given another role is not a list container`, () => {
   const html = `<!doctype html><html><body><menu role="toolbar"><li id="a">a</li></menu></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
@@ -227,7 +273,7 @@ test(`${RULE_ID}: the parent's role is a fallback list read in any case (#91)`, 
     <ul role="foo menu"><li id="menu">d</li></ul>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'menu'));
 });
 

@@ -156,6 +156,7 @@ export interface EngineOptionFields {
    * in the page, or what a binding fetched from outside it.
    */
   styleSheetTexts?: Array<{ href: string; text: string }>;
+  /** An ISO 8601 date and time, such as `new Date().toISOString()`; other text is dropped with a warning. */
   timestamp?: string;
   contrast?: {
     mode?: 'strictConformance' | 'auditorAssist';
@@ -188,7 +189,8 @@ export interface EngineOptionFields {
    * Packs from @surea11y/core/pack: their rules, variants, standard and
    * messages join the scan. In Node, the packs themselves (runDomRulesInPage
    * and the catalog functions); in a page, their names as name@version, once
-   * packScript has registered them (runa11yCoreInPage).
+   * packScript has registered them (runa11yCoreInPage). A pack object is
+   * frozen on its first use, as definePack freezes it.
    */
   packs?: import('./pack').Pack[] | string[];
   probes?: unknown;

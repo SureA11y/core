@@ -2348,6 +2348,9 @@ function createDomHelpers(opts) {
         const pos = labelIndex().pos;
         return [...set].filter((l) => pos.has(l)).sort((a, b) => pos.get(a) - pos.get(b));
       };
+      // The ids a detail lists: the first ten, each cut to 60 characters, as
+      // the hint quotes them; a 200 KB id was copied whole into the details.
+      const shownIds = (list) => list.slice(0, 10).map((id) => quoteText(id, 60));
       const labelledby = attr(el, 'aria-labelledby');
       if (labelledby) {
         const ids = labelledby.split(/\s+/);
@@ -2358,7 +2361,7 @@ function createDomHelpers(opts) {
             hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyMissing',
             params: { ids: list },
-            detail: { cause: 'labelledbyMissing', ids: ids.slice(0, 10) }
+            detail: { cause: 'labelledbyMissing', ids: shownIds(ids) }
           };
         }
         // Every target is there, and none has text or a name of its own.
@@ -2376,7 +2379,7 @@ function createDomHelpers(opts) {
             hint: `Its aria-labelledby points only to elements with no text (${list}), so it gives no name. Put the text in the element it points to, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyEmpty',
             params: { targets: list },
-            detail: { cause: 'labelledbyEmpty', ids: ids.slice(0, 10) }
+            detail: { cause: 'labelledbyEmpty', ids: shownIds(ids) }
           };
         }
         // The element names nothing, so a target with text has it hidden
@@ -2403,7 +2406,7 @@ function createDomHelpers(opts) {
               params: { target, text, hiddenElement, hiddenBy },
               detail: {
                 cause: 'labelledbyHiddenText',
-                ids: ids.slice(0, 10),
+                ids: shownIds(ids),
                 text,
                 hiddenBy: reason
               }
@@ -2418,8 +2421,8 @@ function createDomHelpers(opts) {
               params: { ids: missingIds, targets: list },
               detail: {
                 cause: 'labelledbyMixed',
-                ids: ids.slice(0, 10),
-                missing: missing.slice(0, 10)
+                ids: shownIds(ids),
+                missing: shownIds(missing)
               }
             };
           }
@@ -2990,6 +2993,10 @@ function createDomHelpers(opts) {
     let bestDistance = Infinity;
     let tie = false;
     for (const r of aria.concreteRoles()) {
+      // Lengths further apart than the limit are further apart in edits,
+      // so a long token is never measured against every role: a 40 KB one
+      // took seconds.
+      if (Math.abs(t.length - r.length) > limit) continue;
       const d = editDistance(t, r);
       if (d < bestDistance) {
         best = r;
@@ -3007,16 +3014,19 @@ function createDomHelpers(opts) {
     const n = lower(name);
     if (n.slice(0, 5) !== 'aria-' || aria.isValidAriaAttrName(n)) return '';
     const suffix = n.slice(5);
+    const limit = suffix.length <= 5 ? 1 : 2;
     let best = '';
     let bestDistance = Infinity;
     for (const a of aria.ariaAttrNames()) {
+      // As for a role: a length further off than the limit can't be near.
+      if (Math.abs(suffix.length - (a.length - 5)) > limit) continue;
       const d = editDistance(suffix, a.slice(5));
       if (d < bestDistance) {
         best = a;
         bestDistance = d;
       }
     }
-    return bestDistance <= (suffix.length <= 5 ? 1 : 2) ? best : '';
+    return bestDistance <= limit ? best : '';
   }
 
   // Words authors write as a role that ARIA calls by another name, each
@@ -5780,6 +5790,21 @@ function createDomHelpers(opts) {
           const rectCount = rects ? rects.length : 0;
 
           if (!rectCount) {
+            // An element with display: contents (a slot, or a wrapper made
+            // so) generates no box of its own, so it never has client rects,
+            // but its text and children are drawn: it is visible where they
+            // are.
+            const drawn = __contentsDrawn(node);
+            if (drawn) {
+              return __cacheAndReturn(
+                out(true, reasons, {
+                  rectCount: drawn.rectCount,
+                  width: drawn.width,
+                  height: drawn.height,
+                  opacity: opacityProduct
+                })
+              );
+            }
             return __cacheAndReturn(out(false, ['noClientRects'], { rectCount: 0 }));
           }
 
@@ -5806,6 +5831,37 @@ function createDomHelpers(opts) {
     }
 
     return __cacheAndReturn(out(true, reasons, { opacity: opacityProduct }));
+  }
+
+  // For an element with display: contents, the rects its content is drawn
+  // in, as { rectCount, width, height } of their union, or null when it has
+  // another display or nothing of it is drawn.
+  function __contentsDrawn(node) {
+    try {
+      const cs = computedStyle(node);
+      if (!cs || trim(cs.display) !== 'contents') return null;
+      const range = dom.createRange(dom.ownerDocument(node));
+      range.selectNodeContents(node);
+      const all = dom.getClientRects(range);
+      let count = 0;
+      let left = Infinity;
+      let top = Infinity;
+      let right = -Infinity;
+      let bottom = -Infinity;
+      for (let i = 0; all && i < all.length; i++) {
+        const r = all[i];
+        if (!r || !(r.width > 0) || !(r.height > 0)) continue;
+        count++;
+        left = Math.min(left, r.left);
+        top = Math.min(top, r.top);
+        right = Math.max(right, r.right);
+        bottom = Math.max(bottom, r.bottom);
+      }
+      if (!count) return null;
+      return { rectCount: count, width: right - left, height: bottom - top };
+    } catch {
+      return null;
+    }
   }
 
   function getEligibilityInfo(node, _ctx, opts) {
@@ -5971,8 +6027,9 @@ function createDomHelpers(opts) {
   // element (a <label>, an aria-labelledby target, or content a name is
   // computed from), a control speaks with its value, not its name: a
   // textbox its value, a combobox or listbox its chosen options, a range
-  // its aria-valuetext, aria-valuenow or value. Returns null for a node
-  // that is not such a control. A password field gives one bullet per
+  // its aria-valuetext, aria-valuenow or value; an ARIA textbox, or a
+  // combobox that is neither a <select> nor an <input>, its content.
+  // Returns null for a node that is not such a control. A password field gives one bullet per
   // character, as Chromium does, never the value itself.
   const __TEXTBOX_INPUT_TYPES = new Set(['', 'text', 'search', 'email', 'tel', 'url']);
   const __RANGE_ROLES = new Set(['slider', 'spinbutton', 'scrollbar', 'progressbar', 'meter']);
@@ -6004,12 +6061,17 @@ function createDomHelpers(opts) {
     };
     const optionText = (opt) =>
       trim(getAttr(opt, 'label') || dom.textContent(opt) || '').replace(/\s+/g, ' ');
+    const contentValueOf = (el) => {
+      const info = getContentNameInfo(el, null);
+      return info && info.present ? trim(info.value) : '';
+    };
 
     if (role === 'textbox' || role === 'searchbox') {
       if (tag === 'textarea' || (tag === 'input' && nativeRole)) {
         return type === 'password' ? '\u2022'.repeat(valueOf().length) : trim(valueOf());
       }
-      return null; // an ARIA textbox's value is its content
+      // An ARIA textbox's value is its content, as Chromium reads it.
+      return contentValueOf(node);
     }
     if (role === 'combobox' || role === 'listbox') {
       if (isSelect) {
@@ -6033,7 +6095,8 @@ function createDomHelpers(opts) {
           .filter(Boolean)
           .join(' ');
       }
-      return null;
+      // A combobox drawn with a <div> shows its value as its content.
+      return contentValueOf(node);
     }
     if (__RANGE_ROLES.has(role)) {
       const valuetext = trim(getAttr(node, 'aria-valuetext'));
@@ -7496,6 +7559,14 @@ function createDomHelpers(opts) {
           dom.namespaceURI(node) === 'http://www.w3.org/2000/svg'
         )
           return;
+        // Nor is an <svg>'s drawn <text> the content of an element outside
+        // that <svg>: Chromium names <a href="#"><svg><text>Go</text></svg>
+        // </a> "" (the <svg> speaks only with its own name). A link drawn
+        // inside the <svg> is still named from its <text>.
+        if (local === 'text' && dom.namespaceURI(node) === 'http://www.w3.org/2000/svg') {
+          const svgRoot = dom.closest(node, 'svg');
+          if (svgRoot && svgRoot !== el && dom.contains(el, svgRoot)) return;
+        }
       }
 
       // opts.skipNode: the control a <label> is being read for. Its own name
@@ -9748,6 +9819,7 @@ function createDomHelpers(opts) {
     ancestorsIncludingSelf,
     closestCached,
     getLabelControl,
+    getInternalsStateInfo,
     cssRulesOf,
     selectorIndex,
     __contrastSharedCache

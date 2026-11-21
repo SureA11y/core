@@ -50,6 +50,11 @@ const POP =
 const box = (style, pop = POP) =>
   `<div style="position:relative;width:400px"><div style="height:40px;width:200px;${style}"><span>Menu</span>${pop}</div></div>`;
 
+// A host holding `light`, with an open shadow root of `inner`.
+const shadow = (light, inner) =>
+  `<div id="host">${light}</div><script>document.getElementById('host').attachShadow({ mode: 'open' }).innerHTML = ${JSON.stringify(inner)};</script>`;
+const CLIP = 'width:220px;height:20px;overflow:hidden;font-size:16px';
+
 // [description, markup, outcome]
 const CASES = [
   ['a static overflow: hidden box, the popup held outside it', box('overflow:hidden'), 'pass'],
@@ -94,6 +99,45 @@ const CASES = [
   [
     'a short line inside overflow: hidden wrappers at zoom: 1.25',
     '<div style="zoom:1.25"><div style="overflow:hidden"><div style="overflow:hidden"><p style="margin:0">One short line.</p></div></div></div>',
+    'pass'
+  ],
+  // Text in an open shadow root, and light text slotted into a clipping box
+  // in one, are measured along the flat tree (round 8, LY-4).
+  [
+    'text in an open shadow root, in an overflow: hidden box',
+    shadow('', `<div style="${CLIP}">Subscribe to our weekly news</div>`),
+    'fail'
+  ],
+  [
+    'light text slotted into an overflow: hidden box in a shadow root',
+    shadow('Subscribe to our weekly news', `<div style="${CLIP}"><slot></slot></div>`),
+    'fail'
+  ],
+  [
+    'light text slotted into a box that grows with it',
+    shadow('Subscribe to our weekly news', '<div style="width:220px"><slot></slot></div>'),
+    'pass'
+  ],
+  // A clip-path: inset() or clip: rect() clips as overflow: hidden does
+  // (round 8, LY-15); a shape that isn't a rectangle is not measured.
+  [
+    'a fixed-size box with clip-path: inset(0)',
+    '<div style="width:220px;height:20px;clip-path:inset(0);font-size:16px">Subscribe to our weekly news</div>',
+    'fail'
+  ],
+  [
+    'an absolutely positioned box with clip: rect()',
+    '<div style="position:relative;height:60px"><div style="position:absolute;width:220px;height:20px;clip:rect(0, 220px, 20px, 0);font-size:16px">Subscribe to our weekly news</div></div>',
+    'fail'
+  ],
+  [
+    'a box with clip-path: inset(0) that grows with its text',
+    '<div style="width:220px;clip-path:inset(0);font-size:16px">Subscribe to our weekly news</div>',
+    'pass'
+  ],
+  [
+    'a fixed-size box with clip-path: circle()',
+    '<div style="width:220px;height:20px;clip-path:circle(50%);font-size:16px">Subscribe to our weekly news</div>',
     'pass'
   ]
 ];

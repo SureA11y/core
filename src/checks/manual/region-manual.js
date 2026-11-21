@@ -9,8 +9,8 @@
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to a page of its own (not a document shown in a frame, which
- *   sits in the top document's landmarks) whose <body> has content: outside any landmark, an
- *   element with text of its own or an aria-label, an <img>, <video>,
+ *   sits in the top document's landmarks) whose <body> has content: outside any landmark, text
+ *   directly in <body>, an element with text of its own or an aria-label, an <img>, <video>,
  *   <audio>, <canvas>, <object> or <embed>, or an <input> other than
  *   type="hidden"; or a landmark with anything in it. Live regions,
  *   dialogs, buttons, <svg>, <iframe>/<frame> and resolvable skip links are
@@ -62,6 +62,8 @@
  *        children never short-circuits the walk into its descendants,
  *        collect it as a candidate and stop recursing into it.
  *     4. Otherwise recurse into its element children.
+ *     5. Text directly in <body> (no element of its own holds it) is
+ *        reported on <body>, quoting its first words.
  *   Each collected candidate is then walked back UP through parents while
  *   the parent has no "stopper" marker and isn't <body> itself, collapsing
  *   contiguous unplaced content into one occurrence per real gap instead
@@ -318,6 +320,14 @@ function runInPage(ctx) {
   for (let child = dom.firstElementChild(body); child; child = dom.nextElementSibling(child))
     walk(child);
 
+  // Text sitting directly in <body> is outside every landmark too, though
+  // no element of its own holds it: the walk above sees elements only. Its
+  // first words are quoted, as the occurrence can only point at <body>.
+  let bodyText = '';
+  for (let k = dom.firstChild(body); k && !bodyText; k = dom.nextSibling(k)) {
+    if (dom.nodeType(k) === 3) bodyText = normalizeWs(dom.nodeValue(k));
+  }
+
   // Collapse each candidate leaf upward through parents that have no OTHER
   // stopper anywhere in their subtree, so contiguous unplaced content
   // merges into ONE occurrence per real gap instead of one per text node --
@@ -344,18 +354,33 @@ function runInPage(ctx) {
     }
   }
 
+  if (bodyText) collapsed.unshift(body);
+  const quotedBodyText = bodyText.length > 80 ? `${bodyText.slice(0, 79)}…` : bodyText;
+
   // Report the element itself: without a node reference the engine re-finds
   // each one with document.querySelector to build its structuralPath.
   const occurrences = collapsed.map((el) => {
     const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     const partial = {
-      summary: 'This content is outside every landmark region.',
-      hint: 'Move it into a landmark, such as <main>, <nav>, <aside>, or a <section> with a name.',
-      i18n: {
-        summaryKey: 'region_summary_cantTell',
-        hintKey: 'region_hint_cantTell',
-        params: { element: tag }
-      },
+      ...(el === body
+        ? {
+            summary: `Text placed directly in <body>, "${quotedBodyText}", is outside every landmark region.`,
+            hint: 'Move it into a landmark, such as <main>, <nav>, <aside>, or a <section> with a name.',
+            i18n: {
+              summaryKey: 'region_summary_cantTell_bodyText',
+              hintKey: 'region_hint_cantTell',
+              params: { element: tag, text: quotedBodyText }
+            }
+          }
+        : {
+            summary: 'This content is outside every landmark region.',
+            hint: 'Move it into a landmark, such as <main>, <nav>, <aside>, or a <section> with a name.',
+            i18n: {
+              summaryKey: 'region_summary_cantTell',
+              hintKey: 'region_hint_cantTell',
+              params: { element: tag }
+            }
+          }),
       ...(tag !== 'iframe' && tag !== 'frame'
         ? {
             lean: {

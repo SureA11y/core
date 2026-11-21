@@ -97,10 +97,56 @@ test(`${RULE_ID}: a role in a fallback list or in upper case (role="foo button",
   assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
 });
 
-test(`${RULE_ID}: a button token after a real role (role="tab button") is not a target`, () => {
+test(`${RULE_ID}: a button token after a real role (role="tooltip button") is not a target`, () => {
   const html = `<!doctype html><html><body>
-    <div id="a" role="tab button" data-rect="10,80,10,10">A</div>
-    <div id="b" role="tab link" data-rect="25,80,10,10">B</div>
+    <div id="a" role="tooltip button" data-rect="10,80,10,10">A</div>
+    <div id="b" role="note link" data-rect="25,80,10,10">B</div>
+  </body></html>`;
+  assertRule(run(html), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an element with an interactive widget role is a target (round 8, LY-6)`, () => {
+  for (const role of [
+    'tab',
+    'switch',
+    'checkbox',
+    'radio',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'treeitem',
+    'slider',
+    'spinbutton',
+    'combobox',
+    'textbox',
+    'foo tab'
+  ]) {
+    const html = `<!doctype html><html><body>
+      <div id="a" role="${role}" tabindex="0" data-rect="10,80,10,10">A</div>
+      <div id="b" role="${role}" tabindex="-1" data-rect="25,80,10,10">B</div>
+    </body></html>`;
+    const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+    assert.strictEqual(
+      rule.occurrences[0].data.details.reasonCode,
+      'undersized-and-too-close',
+      role
+    );
+  }
+  // A gridcell is one where the grid makes it focusable, as a date picker's day.
+  const cells = (attr) => `<!doctype html><html><body><div role="grid"><div role="row">
+      <div id="a" role="gridcell" ${attr} data-rect="10,80,10,10">1</div>
+      <div id="b" role="gridcell" ${attr} data-rect="25,80,10,10">2</div>
+    </div></div></body></html>`;
+  assertRule(run(cells('tabindex="-1"')), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  assertRule(run(cells('')), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  // A container of such items is not a target itself.
+  const html = `<!doctype html><html><body>
+    <div role="tablist" data-rect="10,80,10,10"></div>
+    <div role="menu" data-rect="25,80,10,10"></div>
   </body></html>`;
   assertRule(run(html), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });

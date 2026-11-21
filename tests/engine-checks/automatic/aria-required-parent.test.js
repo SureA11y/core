@@ -344,7 +344,7 @@ test(`${RULE_ID}: a plain <li> between a menu and its menuitem is named as what 
   assert.strictEqual(occ.i18n.hintKey, 'ariaRequiredParent_hint_fail_blocked');
   assert.strictEqual(
     occ.summary,
-    'role="menuitem" must sit directly inside one of these roles: menu, menubar, group. A menu (<ul>) is above it, but the <li> between them is a listitem, so the menu is not its parent.'
+    'role="menuitem" must sit directly inside one of these roles: menu, menubar, group. A menu (<ul>) is above it, but the <li> between them has role listitem, so the menu is not its parent.'
   );
   assert.strictEqual(
     occ.hint,
@@ -361,4 +361,44 @@ test(`${RULE_ID}: an ancestor with a misspelled role is named, with the role it 
     'role="option" must sit inside an element with one of these roles: listbox, group. An ancestor <div> has role "lisbox", which is not an ARIA role, so it has none.'
   );
   assert.strictEqual(occ.hint, 'Did you mean role="listbox"? Fix the ancestor’s role.');
+});
+
+// A native element with a role of its own between a role and its required
+// context is no transparent wrapper, as <div role="heading"> is not: the
+// heading, article or navigation is the item's parent (round 8, NA-3).
+test(`${RULE_ID}: a native heading, article or nav between a role and its context breaks it (round 8, NA-3)`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  const cases = [
+    [
+      '<div role="tablist" aria-label="t"><h3><button role="tab" aria-selected="true">A</button></h3></div>',
+      'heading'
+    ],
+    [
+      '<div role="listbox" aria-label="l"><h3><div role="option" aria-selected="false">A</div></h3></div>',
+      'heading'
+    ],
+    ['<div role="list"><article><div role="listitem">A</div></article></div>', 'article'],
+    [
+      '<div role="menu" aria-label="m"><nav aria-label="n"><div role="menuitem">A</div></nav></div>',
+      'navigation'
+    ]
+  ];
+  for (const [body, between] of cases) {
+    const result = runa11yCoreOnHtml(page(body), {
+      runOnly: [RULE_ID, 'aria-prohibited-children']
+    });
+    const parent = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.match(
+      parent.occurrences[0].summary,
+      new RegExp(`between them has role ${between},`),
+      body
+    );
+    const prohibited = assertRule(result, 'aria-prohibited-children', 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.strictEqual(prohibited.occurrences[0].data.details.childRole, between, body);
+    assert.doesNotMatch(prohibited.occurrences[0].summary, /has no role/, body);
+  }
 });

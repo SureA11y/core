@@ -321,6 +321,13 @@ function createContrastHelpers(opts, shared) {
             .toLowerCase()
         : '';
       if (ad === 'true') return true;
+      // A custom element disabled through its ElementInternals
+      // (internals.ariaDisabled = 'true'), where it has no aria-disabled
+      // attribute of its own, is disabled as the attribute would make it.
+      if (!ad && typeof shared.getInternalsStateInfo === 'function') {
+        const info = shared.getInternalsStateInfo(node, 'aria-disabled');
+        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') return true;
+      }
     } catch {}
     return false;
   }
@@ -826,6 +833,35 @@ function createContrastHelpers(opts, shared) {
         return r.right + indent + sx <= 0;
       };
 
+      // A <marquee> moves its content through its box on a timer of its
+      // own, which the scan can't hold still (it is no CSS animation):
+      // where the text is at the moment of a scan is chance, in view, off
+      // the box or off the page. It passes through the whole box, so it is
+      // taken as there, and measured the same on every scan. The marquee
+      // around el, or null.
+      const marqueeCache = new WeakMap();
+      const marqueeOf = (el) => {
+        const chain = [];
+        let found = null;
+        for (
+          let cur = composedParent(el), depth = 0;
+          cur && dom.nodeType(cur) === 1 && depth < 1000;
+          cur = composedParent(cur), depth++
+        ) {
+          if (marqueeCache.has(cur)) {
+            found = marqueeCache.get(cur);
+            break;
+          }
+          chain.push(cur);
+          if (String(dom.localName(cur) || '').toLowerCase() === 'marquee') {
+            found = cur;
+            break;
+          }
+        }
+        for (const c of chain) marqueeCache.set(c, found);
+        return found;
+      };
+
       const scrollOf = new Map();
       const isUndrawn = (el) => {
         const cs = __contrastComputedStyle(el);
@@ -841,8 +877,14 @@ function createContrastHelpers(opts, shared) {
         ) {
           return false;
         }
-        const r = dom.getBoundingClientRect(el);
+        let r = dom.getBoundingClientRect(el);
         if (!r || !(r.width > 0) || !(r.height > 0)) return false;
+        // Text a <marquee> moves is placed by its box (see below).
+        const marquee = marqueeOf(el);
+        if (marquee) {
+          r = dom.getBoundingClientRect(marquee);
+          if (!r || !(r.width > 0) || !(r.height > 0)) return true;
+        }
         const win = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
         let scroll = scrollOf.get(win);
         if (!scroll) {
@@ -854,12 +896,14 @@ function createContrastHelpers(opts, shared) {
         if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
         // A negative text-indent moves the first line, not the box: text
         // moved wholly off the page (text-indent: -9999px) is drawn nowhere.
-        if (Number.parseFloat(cs.textIndent) < 0 && textOffPage(el, r, cs, sx)) return true;
+        if (!marquee && Number.parseFloat(cs.textIndent) < 0 && textOffPage(el, r, cs, sx))
+          return true;
         let left = r.left;
         let top = r.top;
         let right = r.right;
         let bottom = r.bottom;
-        let cur = composedParent(el);
+        // Inside a marquee, only the boxes around the marquee clip.
+        let cur = composedParent(marquee || el);
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
@@ -1435,7 +1479,8 @@ function createContrastHelpers(opts, shared) {
   // page itself: an SVG text element by its viewBox and transforms (the
   // scale of its screen CTM, which includes any CSS zoom), any other element
   // by CSS zoom (currentCSSZoom, the product over its ancestors, not the
-  // user's browser zoom); and either by font-size-adjust, which draws the
+  // user's browser zoom) and a uniform transform scale on it or its
+  // ancestors (__uniformTransformScale); and either by font-size-adjust, which draws the
   // font at another size than its font-size. WCAG's large-scale size is the
   // size as delivered, so 12px text under zoom: 2 is 24px. 1 where none
   // applies or can be read, such as in jsdom.
@@ -1444,7 +1489,8 @@ function createContrastHelpers(opts, shared) {
   }
 
   // The same, with what scaled it: { scale, by }, `by` listing 'zoom',
-  // 'svg' and 'font-size-adjust' for each that changed the size. `style` is
+  // 'transform', 'svg' and 'font-size-adjust' for each that changed the
+  // size. `style` is
   // the text's style where it isn't the element's own (a placeholder's).
   function renderedTextSize(el, style) {
     const by = [];
@@ -1465,6 +1511,11 @@ function createContrastHelpers(opts, shared) {
           scale *= z;
           by.push('zoom');
         }
+        const t = __uniformTransformScale(el);
+        if (t !== 1) {
+          scale *= t;
+          by.push('transform');
+        }
       }
       const adjust = fontSizeAdjustScale(el, style);
       if (adjust !== null && adjust !== 1) {
@@ -1473,6 +1524,74 @@ function createContrastHelpers(opts, shared) {
       }
     } catch {}
     return { scale, by };
+  }
+
+  // How much a uniform scale on el or its ancestors (transform: scale(2),
+  // or the scale property) draws its text larger or smaller: 12px text
+  // under scale(2) is drawn at 24px, as under zoom: 2. The product over
+  // the boxes a transform applies to (not inline boxes, not display:
+  // contents). 1 where none applies, and where any of them rotates, skews,
+  // scales unevenly or transforms in 3D: the drawn size is then no one
+  // number, and the text keeps its font-size. In a browser, which gives
+  // a computed transform as a matrix; jsdom keeps it as written and is
+  // left at 1, as it is for zoom.
+  const __ownTransformScale = new WeakMap();
+  function __ownTransformScaleOf(node) {
+    if (__ownTransformScale.has(node)) return __ownTransformScale.get(node);
+    let out = 1;
+    const cs = __contrastComputedStyle(node);
+    const display = trim(cs && cs.display);
+    if (cs && display !== 'inline' && display !== 'contents' && display !== 'none') {
+      const t = trim(cs.transform);
+      if (t && t !== 'none') {
+        const m = /^matrix\(([^)]*)\)$/.exec(t);
+        const n = m ? m[1].split(',').map(Number) : [];
+        out =
+          n.length === 6 && n.every(Number.isFinite) && n[1] === 0 && n[2] === 0 && n[0] === n[3]
+            ? n[0]
+            : null;
+      }
+      const sc = trim(cs.scale);
+      if (out !== null && sc && sc !== 'none') {
+        const v = sc.split(/\s+/).map(Number);
+        const x = v[0];
+        const y = v.length > 1 ? v[1] : x;
+        out = v.every(Number.isFinite) && x === y ? out * x : null;
+      }
+      const rot = trim(cs.rotate);
+      if (out !== null && rot && rot !== 'none' && !/^0(?:deg)?$/.test(rot)) out = null;
+      if (out !== null && !(out > 0)) out = null;
+    }
+    __ownTransformScale.set(node, out);
+    return out;
+  }
+  // Remembered for every element on the way up, so the texts of a deep page
+  // don't walk the same ancestors again: the product from each element to
+  // the root, or null where a transform on the way gives up.
+  const __transformScaleUp = new WeakMap();
+  function __uniformTransformScale(el) {
+    // Without a layout (jsdom) a transform is kept as written: nothing to
+    // read, and no walk up a deep page for it.
+    const doc = dom.ownerDocument(el);
+    if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+    if (!__layoutByDoc.get(doc)) return 1;
+    const chain = [];
+    let known = 1;
+    let guard = 0;
+    for (let cur = el; cur && guard++ < 1000; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      if (__transformScaleUp.has(cur)) {
+        known = __transformScaleUp.get(cur);
+        break;
+      }
+      chain.push(cur);
+    }
+    for (let i = chain.length - 1; i >= 0; i--) {
+      const own = known === null ? null : __ownTransformScaleOf(chain[i]);
+      known = own === null ? null : own * known;
+      __transformScaleUp.set(chain[i], known);
+    }
+    return known !== null && Number.isFinite(known) && known > 0 ? known : 1;
   }
 
   // `boldLargeMinPx` overrides the size from which bold text is large. It
@@ -2063,6 +2182,28 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // A mask (mask-image, the mask shorthand, -webkit-mask-box-image) makes
+  // the element and everything in it, text and background together, partly
+  // transparent by amounts that vary across it, over whatever is behind: a
+  // "read more" fade, a 20% mask that leaves black text a pale grey. The
+  // colors that leaves on screen can't be worked out from the CSS, as with
+  // a filter. The value of the first mask property set, or ''.
+  function maskOf(style) {
+    if (!style) return '';
+    for (const prop of ['maskImage', 'webkitMaskImage', 'mask', 'webkitMaskBoxImageSource']) {
+      let v;
+      try {
+        v = trim(style[prop]);
+      } catch {
+        v = '';
+      }
+      // A layer paints a mask when it has an image (url(), a gradient,
+      // image-set()); `none` and the shorthand's other keywords don't.
+      if (v && __splitTopLevel(v).some((layer) => layer.includes('('))) return v;
+    }
+    return '';
+  }
+
   // Whether a filter is drop-shadow() alone, once or more. It draws a
   // shadow of the element's content under that content, so it shows only
   // where the content is not opaque.
@@ -2486,6 +2627,133 @@ function createContrastHelpers(opts, shared) {
     return { colors };
   }
 
+  // -------- Inset box shadows painted as a background --------
+  //
+  // An inset box-shadow is painted inside the padding box, over the
+  // element's background and under its content: `inset 0 0 0 100vmax
+  // rgba(0,0,0,.6)` darkens a card under its title, and a spread as wide as
+  // the box fills it with the shadow's color. What el's inset shadows paint
+  // under textEl's text: null when they paint nothing there (none, outer
+  // shadows only, transparent ones, or a hole clear of the text), { colors }
+  // with the colors of those that fill the whole padding box, topmost first,
+  // or { blocked, value } when one paints under part of the text, or where
+  // it reaches can't be worked out (no layout, a length it can't read, a
+  // scaled or rotated box).
+  const __insetShadowCache = new WeakMap();
+  function __insetShadowUnder(el, cs, textEl) {
+    const raw = trim(cs && cs.boxShadow);
+    if (!raw || raw === 'none' || !/\binset\b/i.test(raw)) return null;
+    let byText = __insetShadowCache.get(el);
+    if (byText && byText.has(textEl)) return byText.get(textEl);
+    const out = __insetShadowUnderUncached(el, cs, textEl, raw);
+    if (!byText) {
+      byText = new Map();
+      __insetShadowCache.set(el, byText);
+    }
+    byText.set(textEl, out);
+    return out;
+  }
+
+  function __insetShadowUnderUncached(el, cs, textEl, raw) {
+    const blocked = { blocked: true, value: truncateCssValue(raw, 80) };
+    const shadows = [];
+    for (const item of __splitTopLevel(raw)) {
+      const toks = __splitTopLevelSpace(item);
+      if (!toks.some((t) => /^inset$/i.test(t))) continue;
+      let color = null;
+      const lengths = [];
+      for (const t of toks) {
+        if (/^inset$/i.test(t)) continue;
+        if (/^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?[a-z%]*$/i.test(t) || /^calc\(/i.test(t)) {
+          // A computed style gives px; a declared one (jsdom) may not.
+          const m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(px)?$/i.exec(t);
+          lengths.push(m && (m[2] || Number(m[1]) === 0) ? Number(m[1]) : Number.NaN);
+        } else {
+          color = /^currentcolor$/i.test(t) ? null : parseCssColorToRgba(t);
+          if (!color) return blocked;
+        }
+      }
+      // A shadow with no color is drawn in the element's own color.
+      if (!color) color = parseCssColorToRgba(cs.color);
+      if (!color) return blocked;
+      if (clamp01(color.a) === 0) continue;
+      const [x = 0, y = 0, blur = 0, spread = 0] = lengths;
+      shadows.push({ color, x, y, fade: Math.max(0, blur), spread });
+    }
+    if (!shadows.length) return null;
+    if (shadows.some((s) => ![s.x, s.y, s.fade, s.spread].every(Number.isFinite))) return blocked;
+    if (__scaledOrRotated(el)) return blocked;
+    let box;
+    try {
+      box = dom.getBoundingClientRect(el);
+    } catch {
+      box = null;
+    }
+    const rects = __ownTextRects(textEl);
+    if (!box || !rects.length) return blocked;
+    const side = (prop) => {
+      const v = Number.parseFloat(cs[prop]);
+      return Number.isFinite(v) ? v : 0;
+    };
+    const left = box.left + side('borderLeftWidth');
+    const top = box.top + side('borderTopWidth');
+    const right = box.right - side('borderRightWidth');
+    const bottom = box.bottom - side('borderBottomWidth');
+    let radius = 0;
+    for (const k of [
+      'borderTopLeftRadius',
+      'borderTopRightRadius',
+      'borderBottomLeftRadius',
+      'borderBottomRightRadius'
+    ]) {
+      for (const t of __splitTopLevelSpace(cs[k] || '0px')) {
+        const v = /^[\d.]+px$/.test(t) ? Number.parseFloat(t) : t === '0' ? 0 : Number.NaN;
+        if (!Number.isFinite(v)) return blocked;
+        radius = Math.max(radius, v);
+      }
+    }
+    const colors = [];
+    for (const s of shadows) {
+      // The shadow fills the padding box outside a hole, the padding box
+      // shrunk by the spread and moved by the offset; the blur fades its
+      // edge over the blur radius on either side.
+      const hole = {
+        left: left + s.spread + s.x,
+        top: top + s.spread + s.y,
+        right: right - s.spread + s.x,
+        bottom: bottom - s.spread + s.y
+      };
+      const fullyPainted =
+        hole.right - hole.left + 2 * s.fade <= 0 || hole.bottom - hole.top + 2 * s.fade <= 0;
+      if (fullyPainted) {
+        colors.push(s.color);
+        // What lies under an opaque shadow is hidden by it.
+        if (clamp01(s.color.a) >= 1) break;
+        continue;
+      }
+      // Clear of the text when every line box lies inside the hole, past
+      // the blur and its rounded corners.
+      const l = hole.left + s.fade;
+      const t = hole.top + s.fade;
+      const r = hole.right - s.fade;
+      const b = hole.bottom - s.fade;
+      const inCorner = (q) =>
+        radius > 0 &&
+        (q.left < l + radius || q.right > r - radius) &&
+        (q.top < t + radius || q.bottom > b - radius);
+      const clear = rects.every(
+        (q) =>
+          q.left >= l - 0.5 &&
+          q.right <= r + 0.5 &&
+          q.top >= t - 0.5 &&
+          q.bottom <= b + 0.5 &&
+          !inCorner(q)
+      );
+      if (!clear) return blocked;
+    }
+    return colors.length ? { colors } : null;
+  }
+
   function __hasBlendModeEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
@@ -2531,6 +2799,11 @@ function createContrastHelpers(opts, shared) {
         return { has: hasTextShadow(value), value };
       }
       if (__textShadowInfoCache.has(el)) return __textShadowInfoCache.get(el);
+      const own = __formControlTextShadow(el);
+      if (own) {
+        __textShadowInfoCache.set(el, own);
+        return own;
+      }
       const raw = cs && cs.textShadow; // single read, cached below -- never read again
       const value = raw == null ? '' : String(raw);
       const info = { has: hasTextShadow(value), value };
@@ -2539,6 +2812,44 @@ function createContrastHelpers(opts, shared) {
     } catch {
       return { has: false, value: '' };
     }
+  }
+
+  // A form control's text-shadow under jsdom, from the page's own rules.
+  // Browsers' style sheets give button, input, select and textarea
+  // `text-shadow: none`, so a shadow on a label around them doesn't reach
+  // their text. jsdom's computed value for them depends on what was read
+  // before: the first read of a button in a label with a shadow gives no
+  // shadow, a later one the label's, so a second scan of the same DOM
+  // measured differently from the first. The control's shadow is the one
+  // an author rule or its style attribute gives it (`inherit` takes its
+  // parent's), and none otherwise. null where that can't be told (a sheet
+  // or selector it can't read, a value it can't resolve), and for any
+  // other element or outside jsdom: the computed value is read then.
+  const __FORM_CONTROLS = new Set(['button', 'input', 'select', 'textarea']);
+  function __formControlTextShadow(el) {
+    if (!__FORM_CONTROLS.has(String(dom.localName(el) || '').toLowerCase())) return null;
+    if (!__underJsdom(dom.ownerDocument(el))) return null;
+    const decl = __authorColorDeclsOf(el, 'text-shadow');
+    if (decl.unknown || decl.uncertain) return null;
+    const value = trim(decl.winner);
+    if (!value) return { has: false, value: 'none' };
+    const keyword = value.toLowerCase().replace(/\s*!important$/, '');
+    if (keyword === 'inherit') {
+      const parent = composedParent(el);
+      return parent && dom.nodeType(parent) === 1
+        ? __textShadowInfoEl(parent, __contrastComputedStyle(parent))
+        : { has: false, value: 'none' };
+    }
+    if (keyword === 'initial' || keyword === 'unset' || keyword === 'revert') {
+      // unset inherits a text-shadow; revert goes back to the browser's none.
+      if (keyword !== 'unset') return { has: false, value: 'none' };
+      const parent = composedParent(el);
+      return parent && dom.nodeType(parent) === 1
+        ? __textShadowInfoEl(parent, __contrastComputedStyle(parent))
+        : { has: false, value: 'none' };
+    }
+    if (/\bvar\(/i.test(value)) return null;
+    return { has: hasTextShadow(value), value };
   }
 
   // Whether a visible -webkit-text-stroke or text-shadow draws el's glyphs.
@@ -4401,7 +4712,7 @@ function createContrastHelpers(opts, shared) {
       }
 
       const cs = __contrastComputedStyle(cur);
-      const bgColor = backgroundColorOf(cs);
+      const bgColor = __forcedSelectBackground(cur, cs) || backgroundColorOf(cs);
       const bg = parseCssColorToRgba(bgColor);
       const op = opacityOf(cs);
 
@@ -4416,6 +4727,24 @@ function createContrastHelpers(opts, shared) {
           value: truncateCssValue(trim(bgColor), 80)
         };
         break;
+      }
+
+      // Inset shadows filling its padding box, over its background.
+      const shadows = __insetShadowUnder(cur, cs, el);
+      if (shadows && shadows.colors) {
+        for (const c of shadows.colors) {
+          if (collectStack) {
+            stack.push({
+              selector: __getSimpleSelectorCached(
+                cur,
+                (dom.tagName(cur) || '').toLowerCase() || 'html'
+              ),
+              bg: { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) },
+              opacity: op
+            });
+          }
+          acc = compositeRgba(acc, { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) });
+        }
       }
 
       // Solid colors its background images paint, over its background color.
@@ -5261,8 +5590,18 @@ function createContrastHelpers(opts, shared) {
         const indent = Number.parseFloat(ps.textIndent) || 0;
         const display = String(ps.display || '');
         const position = String(ps.position || '');
+        // Text aligned to the line's end is drawn from the other side, where
+        // the indent doesn't take it (round 8, NW-8): right or end in
+        // left-to-right text, left or start in right-to-left.
+        const align = String(ps.textAlign || 'start');
+        const rtl = String(ps.direction || '') === 'rtl';
+        const fromEnd = rtl
+          ? align === 'left' || align === 'start' || align === '-webkit-left'
+          : align === 'right' || align === 'end' || align === '-webkit-right';
         if (
           indent < 0 &&
+          !fromEnd &&
+          !rtl &&
           display &&
           display !== 'inline' &&
           display !== 'contents' &&
@@ -5288,6 +5627,8 @@ function createContrastHelpers(opts, shared) {
           ? blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'filter', filter)
           : blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'backdrop-filter', ps.backdropFilter);
       }
+      const psMask = maskOf(ps);
+      if (psMask) return blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'mask-image', psMask);
       if (hasBackgroundImageOrGradient(ps)) {
         return blocked('BACKGROUND_IMAGE_OR_GRADIENT', 'background-image', ps.backgroundImage, {
           backgroundFillType: classifyBackgroundImageValue(ps.backgroundImage)
@@ -5429,6 +5770,12 @@ function createContrastHelpers(opts, shared) {
       const froot = fdoc && dom.documentElement(fdoc);
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
+        // Under forced colors the scan holds the page in its own colors
+        // (forced-color-adjust: none); the blank frame is held so too, or
+        // the browser's placeholder color read there is the forced palette's
+        // and the page's own browser placeholder looks like the page's
+        // choice.
+        froot.style.forcedColorAdjust = 'none';
         const field = dom.createElement(fdoc, tag);
         if (tag === 'input') dom.setAttribute(field, 'type', type);
         dom.setAttribute(field, 'placeholder', 'x');
@@ -5488,6 +5835,64 @@ function createContrastHelpers(opts, shared) {
   // The browser's values are read once per color-scheme in a blank frame,
   // as the placeholder defaults are.
   const __selectFieldDefaults = new Map();
+  // A drop-down select's ButtonFace background and the Field color in each
+  // scheme in Chromium (read in Chromium 153), for a scan under forced
+  // colors, where the browser gives the palette's in their place.
+  const __SELECT_COLORS = {
+    light: { background: 'rgb(239, 239, 239)', field: 'rgb(255, 255, 255)' },
+    dark: { background: 'rgb(107, 107, 107)', field: 'rgb(59, 59, 59)' }
+  };
+  // The scheme a color-scheme value draws in: dark when it names dark alone,
+  // or both and the user prefers dark.
+  function __schemeOfValue(value) {
+    const named = __schemesNamed(value);
+    if (!named.includes('dark')) return 'light';
+    if (!named.includes('light')) return 'dark';
+    try {
+      return window &&
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(prefers-color-scheme: dark)'), 'matches')
+        ? 'dark'
+        : 'light';
+    } catch {
+      return 'light';
+    }
+  }
+  // Whether the page is shown in forced colors, whether or not the scan
+  // holds it in its own (colorsForced is whether it couldn't).
+  let __forcedMedia;
+  function __forcedColorsMedia() {
+    if (__forcedMedia !== undefined) return __forcedMedia;
+    try {
+      __forcedMedia = !!(
+        window &&
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      );
+    } catch {
+      __forcedMedia = false;
+    }
+    return __forcedMedia;
+  }
+  // The background a drop-down select in the browser's own background is
+  // measured on under forced colors (__readSelectFieldDefaults), or null
+  // for any other element, or without forced colors.
+  function __forcedSelectBackground(el, cs) {
+    if (!__forcedColorsMedia()) return null;
+    try {
+      if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
+      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
+      if (appearance === 'none' || appearance === 'base-select') return null;
+      const doc = dom.ownerDocument(el);
+      if (!__hasLayout(doc)) return null;
+      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      if (!ref || !ref.measured || String(cs.backgroundColor) !== ref.background) return null;
+      return ref.measured;
+    } catch {
+      return null;
+    }
+  }
   function __readSelectFieldDefaults(doc, scheme) {
     if (__selectFieldDefaults.has(scheme)) return __selectFieldDefaults.get(scheme);
     let out = null;
@@ -5507,6 +5912,7 @@ function createContrastHelpers(opts, shared) {
       const froot = fdoc && dom.documentElement(fdoc);
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
+        froot.style.forcedColorAdjust = 'none';
         const host = dom.body(fdoc) || froot;
         const select = dom.createElement(fdoc, 'select');
         const swatch = dom.createElement(fdoc, 'div');
@@ -5517,6 +5923,18 @@ function createContrastHelpers(opts, shared) {
           background: String(fview.getComputedStyle(select).backgroundColor),
           field: String(fview.getComputedStyle(swatch).backgroundColor)
         };
+        // Under forced colors the system colors a select is drawn in
+        // (ButtonFace, Field) take the forced palette's values even where
+        // forced-color-adjust is none, so both read the palette's background.
+        // The scan measures the page as drawn without forced colors, so it
+        // takes Chromium's own colors for the scheme; `background` still
+        // tells a select in the browser's background from one the page
+        // colored.
+        if (__forcedColorsMedia()) {
+          const own = __SELECT_COLORS[__schemeOfValue(scheme)];
+          out.measured = own.background;
+          out.field = own.field;
+        }
       }
     } catch {
       out = null;
@@ -5540,7 +5958,7 @@ function createContrastHelpers(opts, shared) {
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
       const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
-      if (!ref || ref.field === ref.background) return null;
+      if (!ref || ref.field === (ref.measured || ref.background)) return null;
       if (String(cs.backgroundColor) !== ref.background) return null;
       if (hasBackgroundImageOrGradient(cs)) return null;
       const rgba = parseCssColorToRgba(ref.field);
@@ -6014,6 +6432,29 @@ function createContrastHelpers(opts, shared) {
         }
       }
 
+      // A mask fades cur and all it holds, text and background together,
+      // by amounts that vary across it, over what is behind: like a filter,
+      // a closer opaque background does not shield the text from it.
+      const mask = maskOf(cs);
+      if (mask) {
+        const out = {
+          ok: false,
+          reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+          blockerSelector: __getSimpleSelectorCached(
+            cur,
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
+          ),
+          blockerElement: describeElement(cur),
+          blockerIsAncestor: cur !== el,
+          blockerProperty: 'mask-image',
+          blockerValue: truncateCssValue(mask, 80)
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch {}
+        return out;
+      }
+
       // text-shadow is a FOREGROUND property, already resolved by
       // inheritance in `cs` on `el` itself -- unlike background-image/
       // filter/blend-mode, it needs no ancestor walk, so it's checked once
@@ -6150,10 +6591,36 @@ function createContrastHelpers(opts, shared) {
         }
       }
 
+      // An inset box-shadow is painted over cur's background: one that
+      // fills the whole padding box is a color like the background's, one
+      // that paints under part of the text stops the measurement as an
+      // image would (see __insetShadowUnder).
+      const shadowUnder = paintOccluded ? null : __insetShadowUnder(cur, cs, el);
+      if (shadowUnder && shadowUnder.blocked) {
+        const out = {
+          ok: false,
+          reasonCode: 'BACKGROUND_IMAGE_OR_GRADIENT',
+          blockerSelector: __getSimpleSelectorCached(
+            cur,
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
+          ),
+          blockerElement: describeElement(cur),
+          blockerIsAncestor: cur !== el,
+          blockerProperty: 'box-shadow',
+          blockerValue: shadowUnder.value
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch {}
+        return out;
+      }
+      // An opaque shadow over the whole box hides cur's own background.
+      const shadowOpaque = !!shadowUnder && shadowUnder.colors.some((c) => clamp01(c.a) >= 1);
+
       // Layers that paint nothing under the text (an underline) or one
       // solid color don't stop the measurement (see __bgLayerKinds).
       const layersUnder =
-        !paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)
+        !paintOccluded && !shadowOpaque && __hasBackgroundImageOrGradientEl(cur, cs)
           ? __bgLayersUnder(cur, cs, el)
           : null;
       if (layersUnder && layersUnder.blocked) {
@@ -6272,6 +6739,7 @@ function createContrastHelpers(opts, shared) {
         chain.push(cur);
         const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
         if (
+          shadowOpaque ||
           (ownBg && clamp01(ownBg.a) >= 1) ||
           (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
         ) {

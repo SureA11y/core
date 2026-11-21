@@ -281,8 +281,13 @@ function t(key, fallback, params, engineOptions) {
 
   const v = localeMessage(key, engineOptions);
 
-  // fallback to English if missing in requested locale
-  const vEn = ownString(I18N && I18N.en, key);
+  // fallback to English if missing in requested locale: the caller's own
+  // English (engineOptions.messages.en) first, as for any locale, then the
+  // built-in one. Without it, a custom rule's keys given only in English
+  // showed empty under another locale.
+  const vEn =
+    ownString(ownDict(getSuppliedMessages(engineOptions), 'en'), key) ||
+    ownString(I18N && I18N.en, key);
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
@@ -485,6 +490,11 @@ function asciiLowerChar(c) {
 
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
+  // A Set of names is read as the list it holds (by its type tag, so a
+  // page's Set read by the bundle in another realm counts too).
+  if (typeof value === 'object' && Object.prototype.toString.call(value) === '[object Set]') {
+    value = [...value];
+  }
   if (Array.isArray(value)) {
     const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
     const norm = lower ? arr.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : arr.slice();
@@ -1350,8 +1360,14 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     const rest = { ...runOnly };
     delete rest.type;
     delete rest.values;
-    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: runOnly.values };
-    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: runOnly.values };
+    // A Set of names is read as the list it holds; passed on as it is, the
+    // checks below took it for no list and ran every rule.
+    const values =
+      runOnly.values && typeof runOnly.values === 'object' && Object.prototype.toString.call(runOnly.values) === '[object Set]'
+        ? [...runOnly.values]
+        : runOnly.values;
+    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
+    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
@@ -1735,6 +1751,44 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.variantOf = variant.of;
     if (out.i18n && variant.messages && typeof variant.messages.from === 'string') {
       out.i18n = { ...out.i18n, variantOfTitleKey: variant.messages.from + '_title' };
+    }
+  }
+
+  // An occurrence's tier is fail, cantTell or pass, read in any case
+  // ('FAIL' is fail). Any other value is dropped, so the occurrence takes
+  // the rule's outcome, and said in error: a custom rule's 'bogus' reached
+  // every reporter as it was.
+  if (Array.isArray(out.occurrences)) {
+    const TIERS = { fail: 'fail', canttell: 'cantTell', pass: 'pass' };
+    const unread = [];
+    out.occurrences = out.occurrences.map((o) => {
+      if (!o || typeof o !== 'object' || o.occurrenceOutcome === undefined || o.occurrenceOutcome === null) return o;
+      const given = o.occurrenceOutcome;
+      const key = typeof given === 'string' ? given.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
+      const tier = Object.prototype.hasOwnProperty.call(TIERS, key) ? TIERS[key] : null;
+      if (tier === given) return o;
+      const next = { ...o };
+      if (tier) next.occurrenceOutcome = tier;
+      else {
+        delete next.occurrenceOutcome;
+        unread.push(given);
+      }
+      return next;
+    });
+    if (unread.length) {
+      let named = '';
+      for (const v of unread.filter((v, i) => unread.indexOf(v) === i)) {
+        let text;
+        try {
+          text = JSON.stringify(v);
+        } catch {
+          text = undefined;
+        }
+        named += (named ? ', ' : '') + (text === undefined ? typeof v : text);
+      }
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule returned occurrenceOutcome ' + named + ', which is not one of fail, cantTell, pass; those occurrences take the outcome of the rule.';
     }
   }
 
@@ -3185,6 +3239,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             .toLowerCase()
         : '';
       if (ad === 'true') return true;
+      // A custom element disabled through its ElementInternals
+      // (internals.ariaDisabled = 'true'), where it has no aria-disabled
+      // attribute of its own, is disabled as the attribute would make it.
+      if (!ad && typeof shared.getInternalsStateInfo === 'function') {
+        const info = shared.getInternalsStateInfo(node, 'aria-disabled');
+        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') return true;
+      }
     } catch {}
     return false;
   }
@@ -3690,6 +3751,35 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return r.right + indent + sx <= 0;
       };
 
+      // A <marquee> moves its content through its box on a timer of its
+      // own, which the scan can't hold still (it is no CSS animation):
+      // where the text is at the moment of a scan is chance, in view, off
+      // the box or off the page. It passes through the whole box, so it is
+      // taken as there, and measured the same on every scan. The marquee
+      // around el, or null.
+      const marqueeCache = new WeakMap();
+      const marqueeOf = (el) => {
+        const chain = [];
+        let found = null;
+        for (
+          let cur = composedParent(el), depth = 0;
+          cur && dom.nodeType(cur) === 1 && depth < 1000;
+          cur = composedParent(cur), depth++
+        ) {
+          if (marqueeCache.has(cur)) {
+            found = marqueeCache.get(cur);
+            break;
+          }
+          chain.push(cur);
+          if (String(dom.localName(cur) || '').toLowerCase() === 'marquee') {
+            found = cur;
+            break;
+          }
+        }
+        for (const c of chain) marqueeCache.set(c, found);
+        return found;
+      };
+
       const scrollOf = new Map();
       const isUndrawn = (el) => {
         const cs = __contrastComputedStyle(el);
@@ -3705,8 +3795,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         ) {
           return false;
         }
-        const r = dom.getBoundingClientRect(el);
+        let r = dom.getBoundingClientRect(el);
         if (!r || !(r.width > 0) || !(r.height > 0)) return false;
+        // Text a <marquee> moves is placed by its box (see below).
+        const marquee = marqueeOf(el);
+        if (marquee) {
+          r = dom.getBoundingClientRect(marquee);
+          if (!r || !(r.width > 0) || !(r.height > 0)) return true;
+        }
         const win = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
         let scroll = scrollOf.get(win);
         if (!scroll) {
@@ -3718,12 +3814,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
         // A negative text-indent moves the first line, not the box: text
         // moved wholly off the page (text-indent: -9999px) is drawn nowhere.
-        if (Number.parseFloat(cs.textIndent) < 0 && textOffPage(el, r, cs, sx)) return true;
+        if (!marquee && Number.parseFloat(cs.textIndent) < 0 && textOffPage(el, r, cs, sx))
+          return true;
         let left = r.left;
         let top = r.top;
         let right = r.right;
         let bottom = r.bottom;
-        let cur = composedParent(el);
+        // Inside a marquee, only the boxes around the marquee clip.
+        let cur = composedParent(marquee || el);
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
@@ -4299,7 +4397,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // page itself: an SVG text element by its viewBox and transforms (the
   // scale of its screen CTM, which includes any CSS zoom), any other element
   // by CSS zoom (currentCSSZoom, the product over its ancestors, not the
-  // user's browser zoom); and either by font-size-adjust, which draws the
+  // user's browser zoom) and a uniform transform scale on it or its
+  // ancestors (__uniformTransformScale); and either by font-size-adjust, which draws the
   // font at another size than its font-size. WCAG's large-scale size is the
   // size as delivered, so 12px text under zoom: 2 is 24px. 1 where none
   // applies or can be read, such as in jsdom.
@@ -4308,7 +4407,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // The same, with what scaled it: { scale, by }, `by` listing 'zoom',
-  // 'svg' and 'font-size-adjust' for each that changed the size. `style` is
+  // 'transform', 'svg' and 'font-size-adjust' for each that changed the
+  // size. `style` is
   // the text's style where it isn't the element's own (a placeholder's).
   function renderedTextSize(el, style) {
     const by = [];
@@ -4329,6 +4429,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           scale *= z;
           by.push('zoom');
         }
+        const t = __uniformTransformScale(el);
+        if (t !== 1) {
+          scale *= t;
+          by.push('transform');
+        }
       }
       const adjust = fontSizeAdjustScale(el, style);
       if (adjust !== null && adjust !== 1) {
@@ -4337,6 +4442,74 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     } catch {}
     return { scale, by };
+  }
+
+  // How much a uniform scale on el or its ancestors (transform: scale(2),
+  // or the scale property) draws its text larger or smaller: 12px text
+  // under scale(2) is drawn at 24px, as under zoom: 2. The product over
+  // the boxes a transform applies to (not inline boxes, not display:
+  // contents). 1 where none applies, and where any of them rotates, skews,
+  // scales unevenly or transforms in 3D: the drawn size is then no one
+  // number, and the text keeps its font-size. In a browser, which gives
+  // a computed transform as a matrix; jsdom keeps it as written and is
+  // left at 1, as it is for zoom.
+  const __ownTransformScale = new WeakMap();
+  function __ownTransformScaleOf(node) {
+    if (__ownTransformScale.has(node)) return __ownTransformScale.get(node);
+    let out = 1;
+    const cs = __contrastComputedStyle(node);
+    const display = trim(cs && cs.display);
+    if (cs && display !== 'inline' && display !== 'contents' && display !== 'none') {
+      const t = trim(cs.transform);
+      if (t && t !== 'none') {
+        const m = /^matrix\(([^)]*)\)$/.exec(t);
+        const n = m ? m[1].split(',').map(Number) : [];
+        out =
+          n.length === 6 && n.every(Number.isFinite) && n[1] === 0 && n[2] === 0 && n[0] === n[3]
+            ? n[0]
+            : null;
+      }
+      const sc = trim(cs.scale);
+      if (out !== null && sc && sc !== 'none') {
+        const v = sc.split(/\s+/).map(Number);
+        const x = v[0];
+        const y = v.length > 1 ? v[1] : x;
+        out = v.every(Number.isFinite) && x === y ? out * x : null;
+      }
+      const rot = trim(cs.rotate);
+      if (out !== null && rot && rot !== 'none' && !/^0(?:deg)?$/.test(rot)) out = null;
+      if (out !== null && !(out > 0)) out = null;
+    }
+    __ownTransformScale.set(node, out);
+    return out;
+  }
+  // Remembered for every element on the way up, so the texts of a deep page
+  // don't walk the same ancestors again: the product from each element to
+  // the root, or null where a transform on the way gives up.
+  const __transformScaleUp = new WeakMap();
+  function __uniformTransformScale(el) {
+    // Without a layout (jsdom) a transform is kept as written: nothing to
+    // read, and no walk up a deep page for it.
+    const doc = dom.ownerDocument(el);
+    if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+    if (!__layoutByDoc.get(doc)) return 1;
+    const chain = [];
+    let known = 1;
+    let guard = 0;
+    for (let cur = el; cur && guard++ < 1000; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      if (__transformScaleUp.has(cur)) {
+        known = __transformScaleUp.get(cur);
+        break;
+      }
+      chain.push(cur);
+    }
+    for (let i = chain.length - 1; i >= 0; i--) {
+      const own = known === null ? null : __ownTransformScaleOf(chain[i]);
+      known = own === null ? null : own * known;
+      __transformScaleUp.set(chain[i], known);
+    }
+    return known !== null && Number.isFinite(known) && known > 0 ? known : 1;
   }
 
   // `boldLargeMinPx` overrides the size from which bold text is large. It
@@ -4927,6 +5100,28 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // A mask (mask-image, the mask shorthand, -webkit-mask-box-image) makes
+  // the element and everything in it, text and background together, partly
+  // transparent by amounts that vary across it, over whatever is behind: a
+  // "read more" fade, a 20% mask that leaves black text a pale grey. The
+  // colors that leaves on screen can't be worked out from the CSS, as with
+  // a filter. The value of the first mask property set, or ''.
+  function maskOf(style) {
+    if (!style) return '';
+    for (const prop of ['maskImage', 'webkitMaskImage', 'mask', 'webkitMaskBoxImageSource']) {
+      let v;
+      try {
+        v = trim(style[prop]);
+      } catch {
+        v = '';
+      }
+      // A layer paints a mask when it has an image (url(), a gradient,
+      // image-set()); `none` and the shorthand's other keywords don't.
+      if (v && __splitTopLevel(v).some((layer) => layer.includes('('))) return v;
+    }
+    return '';
+  }
+
   // Whether a filter is drop-shadow() alone, once or more. It draws a
   // shadow of the element's content under that content, so it shows only
   // where the content is not opaque.
@@ -5350,6 +5545,133 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return { colors };
   }
 
+  // -------- Inset box shadows painted as a background --------
+  //
+  // An inset box-shadow is painted inside the padding box, over the
+  // element's background and under its content: `inset 0 0 0 100vmax
+  // rgba(0,0,0,.6)` darkens a card under its title, and a spread as wide as
+  // the box fills it with the shadow's color. What el's inset shadows paint
+  // under textEl's text: null when they paint nothing there (none, outer
+  // shadows only, transparent ones, or a hole clear of the text), { colors }
+  // with the colors of those that fill the whole padding box, topmost first,
+  // or { blocked, value } when one paints under part of the text, or where
+  // it reaches can't be worked out (no layout, a length it can't read, a
+  // scaled or rotated box).
+  const __insetShadowCache = new WeakMap();
+  function __insetShadowUnder(el, cs, textEl) {
+    const raw = trim(cs && cs.boxShadow);
+    if (!raw || raw === 'none' || !/\binset\b/i.test(raw)) return null;
+    let byText = __insetShadowCache.get(el);
+    if (byText && byText.has(textEl)) return byText.get(textEl);
+    const out = __insetShadowUnderUncached(el, cs, textEl, raw);
+    if (!byText) {
+      byText = new Map();
+      __insetShadowCache.set(el, byText);
+    }
+    byText.set(textEl, out);
+    return out;
+  }
+
+  function __insetShadowUnderUncached(el, cs, textEl, raw) {
+    const blocked = { blocked: true, value: truncateCssValue(raw, 80) };
+    const shadows = [];
+    for (const item of __splitTopLevel(raw)) {
+      const toks = __splitTopLevelSpace(item);
+      if (!toks.some((t) => /^inset$/i.test(t))) continue;
+      let color = null;
+      const lengths = [];
+      for (const t of toks) {
+        if (/^inset$/i.test(t)) continue;
+        if (/^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?[a-z%]*$/i.test(t) || /^calc\(/i.test(t)) {
+          // A computed style gives px; a declared one (jsdom) may not.
+          const m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(px)?$/i.exec(t);
+          lengths.push(m && (m[2] || Number(m[1]) === 0) ? Number(m[1]) : Number.NaN);
+        } else {
+          color = /^currentcolor$/i.test(t) ? null : parseCssColorToRgba(t);
+          if (!color) return blocked;
+        }
+      }
+      // A shadow with no color is drawn in the element's own color.
+      if (!color) color = parseCssColorToRgba(cs.color);
+      if (!color) return blocked;
+      if (clamp01(color.a) === 0) continue;
+      const [x = 0, y = 0, blur = 0, spread = 0] = lengths;
+      shadows.push({ color, x, y, fade: Math.max(0, blur), spread });
+    }
+    if (!shadows.length) return null;
+    if (shadows.some((s) => ![s.x, s.y, s.fade, s.spread].every(Number.isFinite))) return blocked;
+    if (__scaledOrRotated(el)) return blocked;
+    let box;
+    try {
+      box = dom.getBoundingClientRect(el);
+    } catch {
+      box = null;
+    }
+    const rects = __ownTextRects(textEl);
+    if (!box || !rects.length) return blocked;
+    const side = (prop) => {
+      const v = Number.parseFloat(cs[prop]);
+      return Number.isFinite(v) ? v : 0;
+    };
+    const left = box.left + side('borderLeftWidth');
+    const top = box.top + side('borderTopWidth');
+    const right = box.right - side('borderRightWidth');
+    const bottom = box.bottom - side('borderBottomWidth');
+    let radius = 0;
+    for (const k of [
+      'borderTopLeftRadius',
+      'borderTopRightRadius',
+      'borderBottomLeftRadius',
+      'borderBottomRightRadius'
+    ]) {
+      for (const t of __splitTopLevelSpace(cs[k] || '0px')) {
+        const v = /^[\d.]+px$/.test(t) ? Number.parseFloat(t) : t === '0' ? 0 : Number.NaN;
+        if (!Number.isFinite(v)) return blocked;
+        radius = Math.max(radius, v);
+      }
+    }
+    const colors = [];
+    for (const s of shadows) {
+      // The shadow fills the padding box outside a hole, the padding box
+      // shrunk by the spread and moved by the offset; the blur fades its
+      // edge over the blur radius on either side.
+      const hole = {
+        left: left + s.spread + s.x,
+        top: top + s.spread + s.y,
+        right: right - s.spread + s.x,
+        bottom: bottom - s.spread + s.y
+      };
+      const fullyPainted =
+        hole.right - hole.left + 2 * s.fade <= 0 || hole.bottom - hole.top + 2 * s.fade <= 0;
+      if (fullyPainted) {
+        colors.push(s.color);
+        // What lies under an opaque shadow is hidden by it.
+        if (clamp01(s.color.a) >= 1) break;
+        continue;
+      }
+      // Clear of the text when every line box lies inside the hole, past
+      // the blur and its rounded corners.
+      const l = hole.left + s.fade;
+      const t = hole.top + s.fade;
+      const r = hole.right - s.fade;
+      const b = hole.bottom - s.fade;
+      const inCorner = (q) =>
+        radius > 0 &&
+        (q.left < l + radius || q.right > r - radius) &&
+        (q.top < t + radius || q.bottom > b - radius);
+      const clear = rects.every(
+        (q) =>
+          q.left >= l - 0.5 &&
+          q.right <= r + 0.5 &&
+          q.top >= t - 0.5 &&
+          q.bottom <= b + 0.5 &&
+          !inCorner(q)
+      );
+      if (!clear) return blocked;
+    }
+    return colors.length ? { colors } : null;
+  }
+
   function __hasBlendModeEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
@@ -5395,6 +5717,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return { has: hasTextShadow(value), value };
       }
       if (__textShadowInfoCache.has(el)) return __textShadowInfoCache.get(el);
+      const own = __formControlTextShadow(el);
+      if (own) {
+        __textShadowInfoCache.set(el, own);
+        return own;
+      }
       const raw = cs && cs.textShadow; // single read, cached below -- never read again
       const value = raw == null ? '' : String(raw);
       const info = { has: hasTextShadow(value), value };
@@ -5403,6 +5730,44 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       return { has: false, value: '' };
     }
+  }
+
+  // A form control's text-shadow under jsdom, from the page's own rules.
+  // Browsers' style sheets give button, input, select and textarea
+  // `text-shadow: none`, so a shadow on a label around them doesn't reach
+  // their text. jsdom's computed value for them depends on what was read
+  // before: the first read of a button in a label with a shadow gives no
+  // shadow, a later one the label's, so a second scan of the same DOM
+  // measured differently from the first. The control's shadow is the one
+  // an author rule or its style attribute gives it (`inherit` takes its
+  // parent's), and none otherwise. null where that can't be told (a sheet
+  // or selector it can't read, a value it can't resolve), and for any
+  // other element or outside jsdom: the computed value is read then.
+  const __FORM_CONTROLS = new Set(['button', 'input', 'select', 'textarea']);
+  function __formControlTextShadow(el) {
+    if (!__FORM_CONTROLS.has(String(dom.localName(el) || '').toLowerCase())) return null;
+    if (!__underJsdom(dom.ownerDocument(el))) return null;
+    const decl = __authorColorDeclsOf(el, 'text-shadow');
+    if (decl.unknown || decl.uncertain) return null;
+    const value = trim(decl.winner);
+    if (!value) return { has: false, value: 'none' };
+    const keyword = value.toLowerCase().replace(/\s*!important$/, '');
+    if (keyword === 'inherit') {
+      const parent = composedParent(el);
+      return parent && dom.nodeType(parent) === 1
+        ? __textShadowInfoEl(parent, __contrastComputedStyle(parent))
+        : { has: false, value: 'none' };
+    }
+    if (keyword === 'initial' || keyword === 'unset' || keyword === 'revert') {
+      // unset inherits a text-shadow; revert goes back to the browser's none.
+      if (keyword !== 'unset') return { has: false, value: 'none' };
+      const parent = composedParent(el);
+      return parent && dom.nodeType(parent) === 1
+        ? __textShadowInfoEl(parent, __contrastComputedStyle(parent))
+        : { has: false, value: 'none' };
+    }
+    if (/\bvar\(/i.test(value)) return null;
+    return { has: hasTextShadow(value), value };
   }
 
   // Whether a visible -webkit-text-stroke or text-shadow draws el's glyphs.
@@ -7265,7 +7630,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
 
       const cs = __contrastComputedStyle(cur);
-      const bgColor = backgroundColorOf(cs);
+      const bgColor = __forcedSelectBackground(cur, cs) || backgroundColorOf(cs);
       const bg = parseCssColorToRgba(bgColor);
       const op = opacityOf(cs);
 
@@ -7280,6 +7645,24 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           value: truncateCssValue(trim(bgColor), 80)
         };
         break;
+      }
+
+      // Inset shadows filling its padding box, over its background.
+      const shadows = __insetShadowUnder(cur, cs, el);
+      if (shadows && shadows.colors) {
+        for (const c of shadows.colors) {
+          if (collectStack) {
+            stack.push({
+              selector: __getSimpleSelectorCached(
+                cur,
+                (dom.tagName(cur) || '').toLowerCase() || 'html'
+              ),
+              bg: { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) },
+              opacity: op
+            });
+          }
+          acc = compositeRgba(acc, { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) });
+        }
       }
 
       // Solid colors its background images paint, over its background color.
@@ -8125,8 +8508,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const indent = Number.parseFloat(ps.textIndent) || 0;
         const display = String(ps.display || '');
         const position = String(ps.position || '');
+        // Text aligned to the line's end is drawn from the other side, where
+        // the indent doesn't take it (round 8, NW-8): right or end in
+        // left-to-right text, left or start in right-to-left.
+        const align = String(ps.textAlign || 'start');
+        const rtl = String(ps.direction || '') === 'rtl';
+        const fromEnd = rtl
+          ? align === 'left' || align === 'start' || align === '-webkit-left'
+          : align === 'right' || align === 'end' || align === '-webkit-right';
         if (
           indent < 0 &&
+          !fromEnd &&
+          !rtl &&
           display &&
           display !== 'inline' &&
           display !== 'contents' &&
@@ -8152,6 +8545,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           ? blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'filter', filter)
           : blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'backdrop-filter', ps.backdropFilter);
       }
+      const psMask = maskOf(ps);
+      if (psMask) return blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'mask-image', psMask);
       if (hasBackgroundImageOrGradient(ps)) {
         return blocked('BACKGROUND_IMAGE_OR_GRADIENT', 'background-image', ps.backgroundImage, {
           backgroundFillType: classifyBackgroundImageValue(ps.backgroundImage)
@@ -8293,6 +8688,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const froot = fdoc && dom.documentElement(fdoc);
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
+        // Under forced colors the scan holds the page in its own colors
+        // (forced-color-adjust: none); the blank frame is held so too, or
+        // the browser's placeholder color read there is the forced palette's
+        // and the page's own browser placeholder looks like the page's
+        // choice.
+        froot.style.forcedColorAdjust = 'none';
         const field = dom.createElement(fdoc, tag);
         if (tag === 'input') dom.setAttribute(field, 'type', type);
         dom.setAttribute(field, 'placeholder', 'x');
@@ -8352,6 +8753,64 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // The browser's values are read once per color-scheme in a blank frame,
   // as the placeholder defaults are.
   const __selectFieldDefaults = new Map();
+  // A drop-down select's ButtonFace background and the Field color in each
+  // scheme in Chromium (read in Chromium 153), for a scan under forced
+  // colors, where the browser gives the palette's in their place.
+  const __SELECT_COLORS = {
+    light: { background: 'rgb(239, 239, 239)', field: 'rgb(255, 255, 255)' },
+    dark: { background: 'rgb(107, 107, 107)', field: 'rgb(59, 59, 59)' }
+  };
+  // The scheme a color-scheme value draws in: dark when it names dark alone,
+  // or both and the user prefers dark.
+  function __schemeOfValue(value) {
+    const named = __schemesNamed(value);
+    if (!named.includes('dark')) return 'light';
+    if (!named.includes('light')) return 'dark';
+    try {
+      return window &&
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(prefers-color-scheme: dark)'), 'matches')
+        ? 'dark'
+        : 'light';
+    } catch {
+      return 'light';
+    }
+  }
+  // Whether the page is shown in forced colors, whether or not the scan
+  // holds it in its own (colorsForced is whether it couldn't).
+  let __forcedMedia;
+  function __forcedColorsMedia() {
+    if (__forcedMedia !== undefined) return __forcedMedia;
+    try {
+      __forcedMedia = !!(
+        window &&
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      );
+    } catch {
+      __forcedMedia = false;
+    }
+    return __forcedMedia;
+  }
+  // The background a drop-down select in the browser's own background is
+  // measured on under forced colors (__readSelectFieldDefaults), or null
+  // for any other element, or without forced colors.
+  function __forcedSelectBackground(el, cs) {
+    if (!__forcedColorsMedia()) return null;
+    try {
+      if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
+      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
+      if (appearance === 'none' || appearance === 'base-select') return null;
+      const doc = dom.ownerDocument(el);
+      if (!__hasLayout(doc)) return null;
+      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      if (!ref || !ref.measured || String(cs.backgroundColor) !== ref.background) return null;
+      return ref.measured;
+    } catch {
+      return null;
+    }
+  }
   function __readSelectFieldDefaults(doc, scheme) {
     if (__selectFieldDefaults.has(scheme)) return __selectFieldDefaults.get(scheme);
     let out = null;
@@ -8371,6 +8830,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const froot = fdoc && dom.documentElement(fdoc);
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
+        froot.style.forcedColorAdjust = 'none';
         const host = dom.body(fdoc) || froot;
         const select = dom.createElement(fdoc, 'select');
         const swatch = dom.createElement(fdoc, 'div');
@@ -8381,6 +8841,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           background: String(fview.getComputedStyle(select).backgroundColor),
           field: String(fview.getComputedStyle(swatch).backgroundColor)
         };
+        // Under forced colors the system colors a select is drawn in
+        // (ButtonFace, Field) take the forced palette's values even where
+        // forced-color-adjust is none, so both read the palette's background.
+        // The scan measures the page as drawn without forced colors, so it
+        // takes Chromium's own colors for the scheme; `background` still
+        // tells a select in the browser's background from one the page
+        // colored.
+        if (__forcedColorsMedia()) {
+          const own = __SELECT_COLORS[__schemeOfValue(scheme)];
+          out.measured = own.background;
+          out.field = own.field;
+        }
       }
     } catch {
       out = null;
@@ -8404,7 +8876,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
       const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
-      if (!ref || ref.field === ref.background) return null;
+      if (!ref || ref.field === (ref.measured || ref.background)) return null;
       if (String(cs.backgroundColor) !== ref.background) return null;
       if (hasBackgroundImageOrGradient(cs)) return null;
       const rgba = parseCssColorToRgba(ref.field);
@@ -8878,6 +9350,29 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
 
+      // A mask fades cur and all it holds, text and background together,
+      // by amounts that vary across it, over what is behind: like a filter,
+      // a closer opaque background does not shield the text from it.
+      const mask = maskOf(cs);
+      if (mask) {
+        const out = {
+          ok: false,
+          reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+          blockerSelector: __getSimpleSelectorCached(
+            cur,
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
+          ),
+          blockerElement: describeElement(cur),
+          blockerIsAncestor: cur !== el,
+          blockerProperty: 'mask-image',
+          blockerValue: truncateCssValue(mask, 80)
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch {}
+        return out;
+      }
+
       // text-shadow is a FOREGROUND property, already resolved by
       // inheritance in `cs` on `el` itself -- unlike background-image/
       // filter/blend-mode, it needs no ancestor walk, so it's checked once
@@ -9014,10 +9509,36 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
 
+      // An inset box-shadow is painted over cur's background: one that
+      // fills the whole padding box is a color like the background's, one
+      // that paints under part of the text stops the measurement as an
+      // image would (see __insetShadowUnder).
+      const shadowUnder = paintOccluded ? null : __insetShadowUnder(cur, cs, el);
+      if (shadowUnder && shadowUnder.blocked) {
+        const out = {
+          ok: false,
+          reasonCode: 'BACKGROUND_IMAGE_OR_GRADIENT',
+          blockerSelector: __getSimpleSelectorCached(
+            cur,
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
+          ),
+          blockerElement: describeElement(cur),
+          blockerIsAncestor: cur !== el,
+          blockerProperty: 'box-shadow',
+          blockerValue: shadowUnder.value
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch {}
+        return out;
+      }
+      // An opaque shadow over the whole box hides cur's own background.
+      const shadowOpaque = !!shadowUnder && shadowUnder.colors.some((c) => clamp01(c.a) >= 1);
+
       // Layers that paint nothing under the text (an underline) or one
       // solid color don't stop the measurement (see __bgLayerKinds).
       const layersUnder =
-        !paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)
+        !paintOccluded && !shadowOpaque && __hasBackgroundImageOrGradientEl(cur, cs)
           ? __bgLayersUnder(cur, cs, el)
           : null;
       if (layersUnder && layersUnder.blocked) {
@@ -9136,6 +9657,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         chain.push(cur);
         const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
         if (
+          shadowOpaque ||
           (ownBg && clamp01(ownBg.a) >= 1) ||
           (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
         ) {
@@ -11622,17 +12144,30 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       'tab',
       'treeitem'
     ],
-    h1: ['tab', 'presentation', 'none'],
-    h2: ['tab', 'presentation', 'none'],
-    h3: ['tab', 'presentation', 'none'],
-    h4: ['tab', 'presentation', 'none'],
-    h5: ['tab', 'presentation', 'none'],
-    h6: ['tab', 'presentation', 'none'],
-    hr: ['none', 'presentation'],
+    h1: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h2: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h3: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h4: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h5: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h6: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    hr: ['none', 'presentation', 'doc-pagebreak'],
     // 'complementary' is <aside>'s own native role, allowed via the
     // native-role fallback below even though it's not in this list
     // (spec: "also allowed, but NOT RECOMMENDED", same shape as <nav>).
-    aside: ['feed', 'none', 'note', 'presentation', 'region', 'search'],
+    aside: [
+      'feed',
+      'none',
+      'note',
+      'presentation',
+      'region',
+      'search',
+      'doc-dedication',
+      'doc-example',
+      'doc-footnote',
+      'doc-glossary',
+      'doc-pullquote',
+      'doc-tip'
+    ],
     form: ['form', 'search', 'none', 'presentation'],
     // The array is identical for both keys; what differs by nesting is only
     // the native-role match (see 'header[toplevel]' below and
@@ -11664,7 +12199,8 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       'slider',
       'switch',
       'tab',
-      'treeitem'
+      'treeitem',
+      'doc-cover'
     ],
     img: ['presentation', 'none'],
     li: [
@@ -11698,7 +12234,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // 'region' is only permitted when the section has an accessible name
     // (its conditional native role in that case, see getElementRoleKey's
     // section[named]/section split above); every other role here is
-    // permitted regardless of naming.
+    // permitted regardless of naming. The doc-* roles are the DPUB roles
+    // ARIA in HTML permits on <section>, as it does those on <aside>, <hr>,
+    // h1-h6 (doc-subtitle) and <img alt> (doc-cover).
     'section[named]': [
       'alert',
       'alertdialog',
@@ -11720,7 +12258,35 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       'region',
       'search',
       'status',
-      'tabpanel'
+      'tabpanel',
+      'doc-abstract',
+      'doc-acknowledgments',
+      'doc-afterword',
+      'doc-appendix',
+      'doc-bibliography',
+      'doc-chapter',
+      'doc-colophon',
+      'doc-conclusion',
+      'doc-credit',
+      'doc-credits',
+      'doc-dedication',
+      'doc-endnotes',
+      'doc-epigraph',
+      'doc-epilogue',
+      'doc-errata',
+      'doc-example',
+      'doc-foreword',
+      'doc-glossary',
+      'doc-index',
+      'doc-introduction',
+      'doc-notice',
+      'doc-pagelist',
+      'doc-part',
+      'doc-preface',
+      'doc-prologue',
+      'doc-pullquote',
+      'doc-qna',
+      'doc-toc'
     ],
     section: [
       'alert',
@@ -11742,7 +12308,35 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       'presentation',
       'search',
       'status',
-      'tabpanel'
+      'tabpanel',
+      'doc-abstract',
+      'doc-acknowledgments',
+      'doc-afterword',
+      'doc-appendix',
+      'doc-bibliography',
+      'doc-chapter',
+      'doc-colophon',
+      'doc-conclusion',
+      'doc-credit',
+      'doc-credits',
+      'doc-dedication',
+      'doc-endnotes',
+      'doc-epigraph',
+      'doc-epilogue',
+      'doc-errata',
+      'doc-example',
+      'doc-foreword',
+      'doc-glossary',
+      'doc-index',
+      'doc-introduction',
+      'doc-notice',
+      'doc-pagelist',
+      'doc-part',
+      'doc-preface',
+      'doc-prologue',
+      'doc-pullquote',
+      'doc-qna',
+      'doc-toc'
     ],
     ol: [
       'group',
@@ -12368,8 +12962,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // Effective role for ownership/context matching only (aria-required-
   // children / aria-required-parent): explicit role wins when present;
   // otherwise falls back to the small NATIVE_CONTAINMENT_ROLE_BY_ELEMENT
-  // map above. Not a general-purpose implicit-role resolver; kept
-  // narrow on purpose, see the table's header comment.
+  // map above, whose conditional roles hold only in their native structure.
+  // An element outside that map gives its own implicit role when it has one
+  // (getOwnNativeRole): a heading or an article is not transparent.
   //
   // The explicit role must be a real, valid concrete ARIA role to count:
   // an invalid/unrecognized role="" token (e.g. a library's own
@@ -12398,13 +12993,43 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         : '';
     }
 
-    if (!Object.prototype.hasOwnProperty.call(NATIVE_CONTAINMENT_ROLE_BY_ELEMENT, tag)) return '';
+    if (!Object.prototype.hasOwnProperty.call(NATIVE_CONTAINMENT_ROLE_BY_ELEMENT, tag)) {
+      return getOwnNativeRole(el, tag);
+    }
 
     // A conditional role only holds inside the structure HTML-AAM names.
     const context = NATIVE_CONTAINMENT_CONTEXT[tag];
     if (context && !hasNativeContext(el, context)) return '';
 
     return NATIVE_CONTAINMENT_ROLE_BY_ELEMENT[tag];
+  }
+
+  // A native element with a role of its own (an <h3>, an <article>, a
+  // <nav>) is no transparent wrapper between a role and its required context:
+  // <div role="tablist"><h3><button role="tab"> puts a heading between them,
+  // as <div role="heading"> would. Its implicit role (as aria-allowed-role
+  // reads it), unless that is generic or presentational. <aside> and
+  // <form> carry theirs only as HTML-AAM conditions them: an <aside> inside
+  // sectioning content, or a <form>, only when named.
+  function getOwnNativeRole(el, tag) {
+    // A link or a button is left out: it takes focus by itself, which the
+    // containment rules weigh on their own (aria-prohibited-children names
+    // its role as a focusable child).
+    if (tag === 'a' || tag === 'area' || tag === 'button') return '';
+    // A named <section> is a region, and a <footer> outside sectioning
+    // content and <main> a contentinfo, as getLandmarkRole has them; the
+    // aria-allowed-role table lists neither as a role to restate.
+    if (tag === 'section') return hasAccessibleNameHint(el) ? 'region' : '';
+    if (tag === 'footer') {
+      return hasLandmarkScopingAncestor(el, { includeMain: true }) ? '' : 'contentinfo';
+    }
+    const role = getNativeRoleForElement(el);
+    if (!role || role === 'generic' || role === 'none' || role === 'presentation') return '';
+    if (tag === 'form' && !hasAccessibleNameHint(el)) return '';
+    // An <img alt=""> is presentational.
+    if (tag === 'img' && getAttr(el, 'alt') === '' && !hasAccessibleNameHint(el)) return '';
+    if (tag === 'aside' && !hasAccessibleNameHint(el) && hasLandmarkScopingAncestor(el)) return '';
+    return role;
   }
 
   // WAI-ARIA's global states and properties. Any of them on an element with
@@ -12835,6 +13460,60 @@ const describeOptionValue = (function describeOptionValue(v) {
   if ('include' in v || 'exclude' in v) return 'an { include, exclude } object';
   return 'an object';
 });
+const isIsoDateTime = (function isIsoDateTime(value) {
+  if (typeof value !== 'string') return false;
+  const m =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](\d{2}):?(\d{2}))?$/i.exec(
+      value.trim()
+    );
+  if (!m) return false;
+  const [year, month, day, hour, minute, second, zoneHour, zoneMinute] = m
+    .slice(1)
+    .map((x) => (x === undefined ? 0 : Number(x)));
+  const daysInMonth =
+    month >= 1 && month <= 12 ? new Date(Date.UTC(year, month, 0)).getUTCDate() : 0;
+  return (
+    day >= 1 &&
+    day <= daysInMonth &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    zoneHour <= 23 &&
+    zoneMinute <= 59
+  );
+});
+const closestOptionKey = (function closestOptionKey(key, known) {
+  // Optimal string alignment distance, case ignored: "lcoale" is one from
+  // "locale", "includeShadowDOM" none from "includeShadowDom".
+  function distance(a, b) {
+    const s = a.toLowerCase();
+    const t = b.toLowerCase();
+    const d = [];
+    for (let i = 0; i <= s.length; i++) d.push([i]);
+    for (let j = 1; j <= t.length; j++) d[0][j] = j;
+    for (let i = 1; i <= s.length; i++) {
+      for (let j = 1; j <= t.length; j++) {
+        const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && s[i - 1] === t[j - 2] && s[i - 2] === t[j - 1]) {
+          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+        }
+      }
+    }
+    return d[s.length][t.length];
+  }
+  let best = null;
+  let bestD = Infinity;
+  for (const k of known) {
+    const dk = distance(key, k);
+    if (dk < bestD) {
+      best = k;
+      bestD = dk;
+    }
+  }
+  const limit = Math.min(key.length, best ? best.length : 0) <= 4 ? 1 : 2;
+  return best !== null && bestD <= limit ? best : null;
+});
 const engineOptionSpec = (function engineOptionSpec() {
   // Spread reads a hole ([, 'main']) as undefined, which every() skips.
   const list = (v) =>
@@ -12847,6 +13526,14 @@ const engineOptionSpec = (function engineOptionSpec() {
     boolean: { test: (v) => switchOf(v) !== null, expected: 'true or false' },
     string: { test: (v) => typeof v === 'string', expected: 'a string' },
     list: { test: list, expected: 'a string or an array of strings' },
+    // A profile, or a list of them. An empty slot, a blank name and a value
+    // that is no name are each refused: each was dropped without a word.
+    profiles: {
+      test: (v) =>
+        typeof v === 'string' ||
+        (Array.isArray(v) && [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
+      expected: 'a profile name or an array of them, none blank'
+    },
     number: {
       test: (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0,
       expected: 'a number of milliseconds, 0 or more'
@@ -12893,7 +13580,7 @@ const engineOptionSpec = (function engineOptionSpec() {
       expected: '"A", "AA" or "AAA", in any case'
     },
     // One profile, or a list of them: a scan of several at once.
-    profile: T.list,
+    profile: T.profiles,
     mappings: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
@@ -12915,7 +13602,11 @@ const engineOptionSpec = (function engineOptionSpec() {
         ),
       expected: '[{ href, text }]'
     },
-    timestamp: T.string,
+    // Blank is a timestamp not given.
+    timestamp: {
+      test: (v) => typeof v === 'string' && (!v.trim() || isIsoDateTime(v)),
+      expected: 'an ISO 8601 date and time, such as new Date().toISOString()'
+    },
     contrast: {
       test: isObject,
       expected: '{ mode, rootCanvasFallback }',
@@ -12968,40 +13659,7 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
   const SPEC = engineOptionSpec();
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
-  // Optimal string alignment distance, case ignored: "lcoale" is one from
-  // "locale", "includeShadowDOM" none from "includeShadowDom".
-  function distance(a, b) {
-    const s = a.toLowerCase();
-    const t = b.toLowerCase();
-    const d = [];
-    for (let i = 0; i <= s.length; i++) d.push([i]);
-    for (let j = 1; j <= t.length; j++) d[0][j] = j;
-    for (let i = 1; i <= s.length; i++) {
-      for (let j = 1; j <= t.length; j++) {
-        const cost = s[i - 1] === t[j - 1] ? 0 : 1;
-        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
-        if (i > 1 && j > 1 && s[i - 1] === t[j - 2] && s[i - 2] === t[j - 1]) {
-          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
-        }
-      }
-    }
-    return d[s.length][t.length];
-  }
-  // The known key a typo most likely meant: two edits away at most, one for
-  // a key of four letters or fewer, so short unrelated keys aren't matched.
-  function closest(key, known) {
-    let best = null;
-    let bestD = Infinity;
-    for (const k of known) {
-      const dk = distance(key, k);
-      if (dk < bestD) {
-        best = k;
-        bestD = dk;
-      }
-    }
-    const limit = Math.min(key.length, best ? best.length : 0) <= 4 ? 1 : 2;
-    return best !== null && bestD <= limit ? best : null;
-  }
+  const closest = closestOptionKey;
   function describe(v) {
     if (v === null) return 'null';
     if (Array.isArray(v)) {
@@ -15365,6 +16023,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const pos = labelIndex().pos;
         return [...set].filter((l) => pos.has(l)).sort((a, b) => pos.get(a) - pos.get(b));
       };
+      // The ids a detail lists: the first ten, each cut to 60 characters, as
+      // the hint quotes them; a 200 KB id was copied whole into the details.
+      const shownIds = (list) => list.slice(0, 10).map((id) => quoteText(id, 60));
       const labelledby = attr(el, 'aria-labelledby');
       if (labelledby) {
         const ids = labelledby.split(/\s+/);
@@ -15375,7 +16036,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
             hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyMissing',
             params: { ids: list },
-            detail: { cause: 'labelledbyMissing', ids: ids.slice(0, 10) }
+            detail: { cause: 'labelledbyMissing', ids: shownIds(ids) }
           };
         }
         // Every target is there, and none has text or a name of its own.
@@ -15393,7 +16054,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
             hint: `Its aria-labelledby points only to elements with no text (${list}), so it gives no name. Put the text in the element it points to, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyEmpty',
             params: { targets: list },
-            detail: { cause: 'labelledbyEmpty', ids: ids.slice(0, 10) }
+            detail: { cause: 'labelledbyEmpty', ids: shownIds(ids) }
           };
         }
         // The element names nothing, so a target with text has it hidden
@@ -15420,7 +16081,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
               params: { target, text, hiddenElement, hiddenBy },
               detail: {
                 cause: 'labelledbyHiddenText',
-                ids: ids.slice(0, 10),
+                ids: shownIds(ids),
                 text,
                 hiddenBy: reason
               }
@@ -15435,8 +16096,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
               params: { ids: missingIds, targets: list },
               detail: {
                 cause: 'labelledbyMixed',
-                ids: ids.slice(0, 10),
-                missing: missing.slice(0, 10)
+                ids: shownIds(ids),
+                missing: shownIds(missing)
               }
             };
           }
@@ -16007,6 +16668,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let bestDistance = Infinity;
     let tie = false;
     for (const r of aria.concreteRoles()) {
+      // Lengths further apart than the limit are further apart in edits,
+      // so a long token is never measured against every role: a 40 KB one
+      // took seconds.
+      if (Math.abs(t.length - r.length) > limit) continue;
       const d = editDistance(t, r);
       if (d < bestDistance) {
         best = r;
@@ -16024,16 +16689,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const n = lower(name);
     if (n.slice(0, 5) !== 'aria-' || aria.isValidAriaAttrName(n)) return '';
     const suffix = n.slice(5);
+    const limit = suffix.length <= 5 ? 1 : 2;
     let best = '';
     let bestDistance = Infinity;
     for (const a of aria.ariaAttrNames()) {
+      // As for a role: a length further off than the limit can't be near.
+      if (Math.abs(suffix.length - (a.length - 5)) > limit) continue;
       const d = editDistance(suffix, a.slice(5));
       if (d < bestDistance) {
         best = a;
         bestDistance = d;
       }
     }
-    return bestDistance <= (suffix.length <= 5 ? 1 : 2) ? best : '';
+    return bestDistance <= limit ? best : '';
   }
 
   // Words authors write as a role that ARIA calls by another name, each
@@ -18797,6 +19465,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
           const rectCount = rects ? rects.length : 0;
 
           if (!rectCount) {
+            // An element with display: contents (a slot, or a wrapper made
+            // so) generates no box of its own, so it never has client rects,
+            // but its text and children are drawn: it is visible where they
+            // are.
+            const drawn = __contentsDrawn(node);
+            if (drawn) {
+              return __cacheAndReturn(
+                out(true, reasons, {
+                  rectCount: drawn.rectCount,
+                  width: drawn.width,
+                  height: drawn.height,
+                  opacity: opacityProduct
+                })
+              );
+            }
             return __cacheAndReturn(out(false, ['noClientRects'], { rectCount: 0 }));
           }
 
@@ -18823,6 +19506,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     return __cacheAndReturn(out(true, reasons, { opacity: opacityProduct }));
+  }
+
+  // For an element with display: contents, the rects its content is drawn
+  // in, as { rectCount, width, height } of their union, or null when it has
+  // another display or nothing of it is drawn.
+  function __contentsDrawn(node) {
+    try {
+      const cs = computedStyle(node);
+      if (!cs || trim(cs.display) !== 'contents') return null;
+      const range = dom.createRange(dom.ownerDocument(node));
+      range.selectNodeContents(node);
+      const all = dom.getClientRects(range);
+      let count = 0;
+      let left = Infinity;
+      let top = Infinity;
+      let right = -Infinity;
+      let bottom = -Infinity;
+      for (let i = 0; all && i < all.length; i++) {
+        const r = all[i];
+        if (!r || !(r.width > 0) || !(r.height > 0)) continue;
+        count++;
+        left = Math.min(left, r.left);
+        top = Math.min(top, r.top);
+        right = Math.max(right, r.right);
+        bottom = Math.max(bottom, r.bottom);
+      }
+      if (!count) return null;
+      return { rectCount: count, width: right - left, height: bottom - top };
+    } catch {
+      return null;
+    }
   }
 
   function getEligibilityInfo(node, _ctx, opts) {
@@ -18988,8 +19702,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // element (a <label>, an aria-labelledby target, or content a name is
   // computed from), a control speaks with its value, not its name: a
   // textbox its value, a combobox or listbox its chosen options, a range
-  // its aria-valuetext, aria-valuenow or value. Returns null for a node
-  // that is not such a control. A password field gives one bullet per
+  // its aria-valuetext, aria-valuenow or value; an ARIA textbox, or a
+  // combobox that is neither a <select> nor an <input>, its content.
+  // Returns null for a node that is not such a control. A password field gives one bullet per
   // character, as Chromium does, never the value itself.
   const __TEXTBOX_INPUT_TYPES = new Set(['', 'text', 'search', 'email', 'tel', 'url']);
   const __RANGE_ROLES = new Set(['slider', 'spinbutton', 'scrollbar', 'progressbar', 'meter']);
@@ -19021,12 +19736,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
     const optionText = (opt) =>
       trim(getAttr(opt, 'label') || dom.textContent(opt) || '').replace(/\s+/g, ' ');
+    const contentValueOf = (el) => {
+      const info = getContentNameInfo(el, null);
+      return info && info.present ? trim(info.value) : '';
+    };
 
     if (role === 'textbox' || role === 'searchbox') {
       if (tag === 'textarea' || (tag === 'input' && nativeRole)) {
         return type === 'password' ? '\u2022'.repeat(valueOf().length) : trim(valueOf());
       }
-      return null; // an ARIA textbox's value is its content
+      // An ARIA textbox's value is its content, as Chromium reads it.
+      return contentValueOf(node);
     }
     if (role === 'combobox' || role === 'listbox') {
       if (isSelect) {
@@ -19050,7 +19770,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
           .filter(Boolean)
           .join(' ');
       }
-      return null;
+      // A combobox drawn with a <div> shows its value as its content.
+      return contentValueOf(node);
     }
     if (__RANGE_ROLES.has(role)) {
       const valuetext = trim(getAttr(node, 'aria-valuetext'));
@@ -20513,6 +21234,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
           dom.namespaceURI(node) === 'http://www.w3.org/2000/svg'
         )
           return;
+        // Nor is an <svg>'s drawn <text> the content of an element outside
+        // that <svg>: Chromium names <a href="#"><svg><text>Go</text></svg>
+        // </a> "" (the <svg> speaks only with its own name). A link drawn
+        // inside the <svg> is still named from its <text>.
+        if (local === 'text' && dom.namespaceURI(node) === 'http://www.w3.org/2000/svg') {
+          const svgRoot = dom.closest(node, 'svg');
+          if (svgRoot && svgRoot !== el && dom.contains(el, svgRoot)) return;
+        }
       }
 
       // opts.skipNode: the control a <label> is being read for. Its own name
@@ -22765,6 +23494,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     ancestorsIncludingSelf,
     closestCached,
     getLabelControl,
+    getInternalsStateInfo,
     cssRulesOf,
     selectorIndex,
     __contrastSharedCache
@@ -24475,6 +25205,185 @@ const noteEmptySelection = (function noteEmptySelection(runOnly, engineOptions) 
     console.warn('[surea11y] ' + message + '.');
   } catch {}
 });
+const unknownOptInRulesMessage = (function unknownOptInRulesMessage(selection) {
+  const unknown =
+    selection && Array.isArray(selection.optInTagsUnknown) ? selection.optInTagsUnknown : [];
+  if (!unknown.length) return null;
+  return (
+    'engineOptions.optInRules: ' +
+    unknown.map((s) => '"' + s + '"').join(', ') +
+    ', no such opt-in rule tag (' +
+    (OPT_IN_RULE_TAGS.length
+      ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
+      : 'this version has none') +
+    ')'
+  );
+});
+const unknownMappingsMessage = (function unknownMappingsMessage(mappingSelection) {
+  if (!mappingSelection || !mappingSelection.unknown.length) return null;
+  return (
+    'engineOptions.mappings: ' +
+    mappingSelection.unknown.map((s) => '"' + s + '"').join(', ') +
+    ', no such standard or version'
+  );
+});
+const readRuleSettings = (function readRuleSettings(rulesOption, knownIds, engineTag) {
+  const config = Object.create(null);
+  const unknown = [];
+  const byLower = new Map();
+  // ASCII case only, as the selection matches ids (asciiLowerChar).
+  const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
+  for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
+  if (!rulesOption || typeof rulesOption !== 'object' || Array.isArray(rulesOption)) {
+    return { config, unknown, byLower };
+  }
+  const legacy = String(engineTag || 'a11ycore').toLowerCase() + '-';
+  const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
+  for (const exact of [true, false]) {
+    for (const key of keys) {
+      const value = rulesOption[key];
+      if (!value || typeof value !== 'object') continue;
+      const lower = lowerAscii(key.trim());
+      let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
+      if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
+      if (exact) {
+        if (id) config[id] = value;
+      } else if (!id) {
+        unknown.push(key);
+      } else if (!(id in config)) {
+        config[id] = value;
+      }
+    }
+  }
+  return { config, unknown, byLower };
+});
+const unknownRuleSettingsMessage = (function unknownRuleSettingsMessage(read) {
+  if (!read || !read.unknown.length) return null;
+  const closestId = (key) => {
+    const a = key.toLowerCase();
+    let best = null;
+    let bestD = Infinity;
+    for (const id of read.byLower.keys()) {
+      if (Math.abs(id.length - a.length) > 3) continue;
+      const prev = [];
+      for (let j = 0; j <= id.length; j++) prev[j] = j;
+      for (let i = 1; i <= a.length; i++) {
+        let diag = prev[0];
+        prev[0] = i;
+        for (let j = 1; j <= id.length; j++) {
+          const up = prev[j];
+          prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === id[j - 1] ? 0 : 1));
+          diag = up;
+        }
+      }
+      if (prev[id.length] < bestD) {
+        bestD = prev[id.length];
+        best = read.byLower.get(id);
+      }
+    }
+    return bestD <= 3 ? best : null;
+  };
+  return (
+    'engineOptions.rules: ' +
+    read.unknown
+      .map((k) => {
+        const near = closestId(k);
+        return 'no rule named "' + k + '"' + (near ? ' (did you mean "' + near + '"?)' : '');
+      })
+      .join('; ')
+  );
+});
+const invalidExcludeSelectors = (function invalidExcludeSelectors(engineOptions, matches) {
+  const invalid = (list) =>
+    normalizeSelectorList(list).filter((sel) => {
+      try {
+        matches(sel);
+        return false;
+      } catch {
+        return true;
+      }
+    });
+  const bad = invalid(engineOptions && engineOptions.excludeSelectors).map(
+    (sel) => 'excludeSelectors: "' + sel + '"'
+  );
+  const ruleSettings =
+    engineOptions &&
+    engineOptions.rules &&
+    typeof engineOptions.rules === 'object' &&
+    !Array.isArray(engineOptions.rules)
+      ? engineOptions.rules
+      : null;
+  if (ruleSettings) {
+    for (const id of Object.keys(ruleSettings)) {
+      const own = ruleSettings[id];
+      if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
+      for (const sel of invalid(own.excludeSelectors)) {
+        bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
+      }
+    }
+  }
+  return bad;
+});
+const invalidExcludeSelectorsMessage = (function invalidExcludeSelectorsMessage(bad) {
+  if (!bad.length) return null;
+  return (
+    'engineOptions.' +
+    bad.join('; engineOptions.') +
+    (bad.length > 1 ? ' are' : ' is') +
+    ' not valid CSS, and would exclude nothing'
+  );
+});
+const rootCanvasFallbackIsOpaque = (function rootCanvasFallbackIsOpaque(given, parse, computeColor) {
+  let rgba;
+  try {
+    rgba = typeof parse === 'function' ? parse(given) : { a: 1 };
+  } catch {
+    rgba = { a: 1 };
+  }
+  const text = String(given).trim();
+  const lower = text.toLowerCase();
+  const KEYWORDS = ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'];
+  let supported = null;
+  try {
+    const css = typeof window !== 'undefined' && window ? window.CSS : null;
+    if (css && typeof css.supports === 'function') supported = !!css.supports('color', text);
+  } catch {
+    supported = null;
+  }
+  const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
+  const formBad = () => {
+    if (!fn) return false;
+    const body = fn[2].trim();
+    if (/^from\s/.test(body)) return false;
+    if (body.includes(',')) {
+      // The legacy form: three or four values, commas only.
+      const parts = body.split(',').map((x) => x.trim());
+      return body.includes('/') || parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
+    }
+    // The modern form: three values, then "/ alpha" optionally.
+    const [main, alpha, extra] = body.split('/');
+    const values = main.trim().split(/\s+/).filter(Boolean);
+    return values.length !== 3 || extra !== undefined || (alpha !== undefined && !alpha.trim());
+  };
+  const badSyntax = KEYWORDS.includes(lower) || (supported === null ? formBad() : !supported);
+  if (badSyntax) rgba = null;
+  else if (!rgba && computeColor === null) return true;
+  else if (!rgba && supported !== false && typeof computeColor === 'function') {
+    // Valid, but not a form the parser reads: as the browser computes it.
+    try {
+      rgba = typeof parse === 'function' ? parse(computeColor(text)) : null;
+    } catch {
+      rgba = null;
+    }
+  }
+  return !!rgba && rgba.a >= 1;
+});
+const rootCanvasFallbackMessage = (function rootCanvasFallbackMessage(given) {
+  return (
+    'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
+    JSON.stringify(given)
+  );
+});
 
 const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // Whether the document's style sheets, its own and adopted ones, hold a
@@ -25071,6 +25980,33 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
       );
       continue;
     }
+    // A wcagSc entry that names no WCAG criterion ('9.9.9') would reach the
+    // result and SARIF as a criterion; definePack refuses the pack for it,
+    // and a custom rule is skipped for it, as for any other invalid meta.
+    const givenSc = c.meta && typeof c.meta === 'object' ? c.meta.wcagSc : undefined;
+    if (Array.isArray(givenSc)) {
+      const unknownSc = givenSc.filter(
+        (v) =>
+          !(
+            typeof v === 'string' &&
+            Object.prototype.hasOwnProperty.call(WCAG_LEVELS_BY_SC, v.trim())
+          )
+      );
+      if (unknownSc.length) {
+        let named = '';
+        for (const v of unknownSc) {
+          let text;
+          try {
+            text = JSON.stringify(v);
+          } catch {
+            text = undefined;
+          }
+          named += (named ? ', ' : '') + (text === undefined ? typeof v : text);
+        }
+        skip(ruleId, 'invalid meta: wcagSc names no WCAG criterion: ' + named);
+        continue;
+      }
+    }
     let normalizedMeta;
     try {
       normalizedMeta = normalizeRuleMeta(ruleId, ruleId, withWcagScMappings(c.meta), ENGINE_TAG);
@@ -25258,38 +26194,13 @@ const runCoreSettled = (function runCoreSettled(
   // about where it is used, and the other selectors still apply.
   if (strictOf(engineOptionsResolved)) {
     const probe = dom.get(document, 'documentElement');
-    const invalid = (list) =>
-      normalizeSelectorList(list).filter((sel) => {
-        try {
-          if (probe) dom.matches(probe, sel);
-          return false;
-        } catch {
-          return true;
-        }
-      });
-    const bad = invalid(excludeSelectors).map((sel) => 'excludeSelectors: "' + sel + '"');
-    const ruleSettings =
-      engineOptionsResolved.rules &&
-      typeof engineOptionsResolved.rules === 'object' &&
-      !Array.isArray(engineOptionsResolved.rules)
-        ? engineOptionsResolved.rules
-        : null;
-    if (ruleSettings) {
-      for (const id of Object.keys(ruleSettings)) {
-        const own = ruleSettings[id];
-        if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
-        for (const sel of invalid(own.excludeSelectors)) {
-          bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
-        }
-      }
-    }
-    if (bad.length) {
-      const err = new Error(
-        'engineOptions.' +
-          bad.join('; engineOptions.') +
-          (bad.length > 1 ? ' are' : ' is') +
-          ' not valid CSS, and would exclude nothing. (strictOptions)'
-      );
+    const message = invalidExcludeSelectorsMessage(
+      invalidExcludeSelectors(engineOptionsResolved, (sel) => {
+        if (probe) dom.matches(probe, sel);
+      })
+    );
+    if (message) {
+      const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
       throw err;
     }
@@ -25333,8 +26244,19 @@ const runCoreSettled = (function runCoreSettled(
       "The result's timestamp is null."
     );
   }
-  const timestamp =
+  // Text that isn't an ISO 8601 date and time ('yesterday') is dropped, and
+  // said so; strictOptions refused it already (engineOptionSpec).
+  const givenTimestamp =
     typeof rawTimestamp === 'string' && rawTimestamp.trim() ? rawTimestamp.trim() : null;
+  if (givenTimestamp && !isIsoDateTime(givenTimestamp)) {
+    warnIgnoredOption(
+      'engineOptions.timestamp',
+      rawTimestamp,
+      'pass an ISO 8601 date and time, such as new Date().toISOString()',
+      "The result's timestamp is null."
+    );
+  }
+  const timestamp = givenTimestamp && isIsoDateTime(givenTimestamp) ? givenTimestamp : null;
 
   // Read before any rule runs: some change the page while they measure it.
   const environment = readRenderingEnvironment(dom.defaultView(document) || window, document);
@@ -25399,35 +26321,20 @@ const runCoreSettled = (function runCoreSettled(
   // the result echoes white; it is said, and thrown under strictOptions.
   {
     const given = engineOptionsResolved.contrast.rootCanvasFallback;
-    let rgba;
-    try {
-      const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
-      rgba = typeof parse === 'function' ? parse(given) : { a: 1 };
-    } catch {
-      rgba = { a: 1 };
-    }
-    // The color parser reads computed styles, which the browser has already
-    // checked, so it is lenient: a keyword that depends on the page
-    // (inherit, currentColor) or rgb() with a wrong number of values would
-    // pass. A color the caller writes is checked as CSS would check it.
-    const text = String(given).trim();
-    const lower = text.toLowerCase();
-    const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
-    const badSyntax =
-      ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'].includes(lower) ||
-      (fn &&
-        (() => {
-          const body = fn[2].trim();
-          const parts = body.includes(',')
-            ? body.split(',').map((x) => x.trim())
-            : body.split('/').flatMap((x, i) => (i === 0 ? x.trim().split(/\s+/) : [x.trim()]));
-          return parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
-        })());
-    if (badSyntax) rgba = null;
-    if (!rgba || !(rgba.a >= 1)) {
-      const message =
-        'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
-        JSON.stringify(given);
+    const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
+    const computeColor = (text) => {
+      const probe = dom.createElement(document, 'span');
+      probe.style.color = text;
+      // A value the platform rejects leaves the property unset, and the
+      // probe would report the color it inherits.
+      if (!probe.style.color) return '';
+      dom.appendChild(dom.documentElement(document), probe);
+      const computed = dom.defaultView(document).getComputedStyle(probe).color;
+      dom.removeChild(dom.documentElement(document), probe);
+      return computed;
+    };
+    if (!rootCanvasFallbackIsOpaque(given, parse, computeColor)) {
+      const message = rootCanvasFallbackMessage(given);
       if (strictOf(engineOptionsResolved)) {
         const err = new Error(message + '. (strictOptions)');
         err.code = 'INVALID_ENGINE_OPTIONS';
@@ -25679,15 +26586,9 @@ const runCoreSettled = (function runCoreSettled(
     runOnly && Array.isArray(runOnly.optInTags) ? runOnly.optInTags.slice() : [];
   const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
   const optInRulesRan = new Set();
-  if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
-    const message =
-      'engineOptions.optInRules: ' +
-      runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
-      ', no such opt-in rule tag (' +
-      (OPT_IN_RULE_TAGS.length
-        ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
-        : 'this version has none') +
-      ')';
+  const optInMessage = unknownOptInRulesMessage(runOnly);
+  if (optInMessage) {
+    const message = optInMessage;
     if (strictOf(engineOptionsResolved)) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
@@ -25702,19 +26603,15 @@ const runCoreSettled = (function runCoreSettled(
   // normativeMappings name. The catalog carries every one of them; a scan
   // result carries only those asked for, or implied by the applied profile.
   const mappingSelection = resolveMappingSelection(engineOptionsResolved, appliedProfile);
-  if (mappingSelection.unknown.length) {
-    const named = mappingSelection.unknown.map((s) => '"' + s + '"').join(', ');
+  const mappingsMessage = unknownMappingsMessage(mappingSelection);
+  if (mappingsMessage) {
     if (strictOf(engineOptionsResolved)) {
-      const err = new Error(
-        'engineOptions.mappings: ' + named + ', no such standard or version. (strictOptions)'
-      );
+      const err = new Error(mappingsMessage + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
       throw err;
     }
     try {
-      console.warn(
-        '[surea11y] engineOptions.mappings: ignoring ' + named + ', no such standard or version.'
-      );
+      console.warn('[surea11y] ' + mappingsMessage.replace(': ', ': ignoring ') + '.');
     } catch {}
   }
   warnDeprecatedStandards(mappingSelection.tokens);
@@ -25729,15 +26626,52 @@ const runCoreSettled = (function runCoreSettled(
     return appliedProfile && keeps.includes(appliedProfile) ? null : 'errata';
   }
 
+  // The WCAG criteria a rule names: its wcagSc, and the requirements of its
+  // WCAG normativeMappings.
+  function wcagCriteriaOfDef(def) {
+    const out = [];
+    if (!def || typeof def !== 'object') return out;
+    const add = (sc) => {
+      const text = typeof sc === 'string' ? sc.trim() : '';
+      if (text && !out.includes(text)) out.push(text);
+    };
+    if (Array.isArray(def.wcagSc)) def.wcagSc.forEach(add);
+    const maps = Array.isArray(def.normativeMappings)
+      ? def.normativeMappings
+      : def.meta && Array.isArray(def.meta.normativeMappings)
+        ? def.meta.normativeMappings
+        : [];
+    for (const m of maps) {
+      if (m && typeof m === 'object' && String(m.standard).trim().toUpperCase() === 'WCAG')
+        add(m.requirement);
+    }
+    return out;
+  }
+
+  // A criterion an earlier WCAG version has and 2.2 removed (4.1.1 Parsing).
+  function isRemovedWcagSc(sc) {
+    const levels = Object.prototype.hasOwnProperty.call(WCAG_LEVELS_BY_SC, sc)
+      ? WCAG_LEVELS_BY_SC[sc]
+      : null;
+    return !!levels && levels[2] === null && (levels[0] !== null || levels[1] !== null);
+  }
+
   function scopeOutcomeToWcagVersion(def, result) {
     const why = removesParsing();
     if (!why) return result;
     if (!result || typeof result !== 'object' || result.outcome !== 'fail') return result;
 
     const defTags = def && Array.isArray(def.tags) ? def.tags : [];
-    if (!defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG)) return result;
+    // A rule is scoped by its tag, or by the criteria it names: a custom or
+    // pack rule mapped only to 4.1.1 rarely carries the tag, and without it
+    // its fail gated a 2.2 run on a criterion 2.2 does not contain.
+    const criteria = wcagCriteriaOfDef(def);
+    const tagged = defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG);
+    const onlyRemoved = criteria.length > 0 && criteria.every(isRemovedWcagSc);
+    if (!tagged && !onlyRemoved) return result;
 
-    const removedSc = def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [];
+    const removedSc =
+      def && Array.isArray(def.wcagSc) && def.wcagSc.length ? def.wcagSc.slice() : criteria;
 
     // Every occurrence becomes cantTell-tier here, so each one states why: the
     // finding stands, the criterion it was made against does not.
@@ -25856,67 +26790,10 @@ const runCoreSettled = (function runCoreSettled(
     const knownIds = effectiveCheckDefs
       .map((d) => d.ruleId)
       .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
-    const byLower = new Map();
-    // ASCII case only, as the selection matches ids (asciiLowerChar).
-    const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
-    for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
-    const legacy = String(ENGINE_TAG || 'a11ycore').toLowerCase() + '-';
-    const unknownRuleKeys = [];
-    const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
-    for (const exact of [true, false]) {
-      for (const key of keys) {
-        const value = rulesOption[key];
-        if (!value || typeof value !== 'object') continue;
-        const lower = lowerAscii(key.trim());
-        let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
-        if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
-        if (exact) {
-          if (id) callerRuleConfig[id] = value;
-        } else if (!id) {
-          unknownRuleKeys.push(key);
-        } else if (!(id in callerRuleConfig)) {
-          callerRuleConfig[id] = value;
-        }
-      }
-    }
-    if (unknownRuleKeys.length) {
-      // The closest id by edit distance, when it is close.
-      const closestId = (key) => {
-        const a = key.toLowerCase();
-        let best = null;
-        let bestD = Infinity;
-        for (const id of byLower.keys()) {
-          if (Math.abs(id.length - a.length) > 3) continue;
-          const prev = [];
-          for (let j = 0; j <= id.length; j++) prev[j] = j;
-          for (let i = 1; i <= a.length; i++) {
-            let diag = prev[0];
-            prev[0] = i;
-            for (let j = 1; j <= id.length; j++) {
-              const up = prev[j];
-              prev[j] = Math.min(
-                prev[j] + 1,
-                prev[j - 1] + 1,
-                diag + (a[i - 1] === id[j - 1] ? 0 : 1)
-              );
-              diag = up;
-            }
-          }
-          if (prev[id.length] < bestD) {
-            bestD = prev[id.length];
-            best = byLower.get(id);
-          }
-        }
-        return bestD <= 3 ? best : null;
-      };
-      const message =
-        'engineOptions.rules: ' +
-        unknownRuleKeys
-          .map((k) => {
-            const near = closestId(k);
-            return 'no rule named "' + k + '"' + (near ? ' (did you mean "' + near + '"?)' : '');
-          })
-          .join('; ');
+    const read = readRuleSettings(rulesOption, knownIds, ENGINE_TAG);
+    for (const id of Object.keys(read.config)) callerRuleConfig[id] = read.config[id];
+    if (read.unknown.length) {
+      const message = unknownRuleSettingsMessage(read);
       if (strictOf(engineOptionsResolved)) {
         const err = new Error(message + '. (strictOptions)');
         err.code = 'INVALID_ENGINE_OPTIONS';
@@ -26842,84 +27719,170 @@ const isThenable = (function isThenable(value) {
   return typeof then === 'function' && then !== Object.prototype.then;
 });
 const assertPageBuiltins = (function assertPageBuiltins() {
-  // Recorded by index and joined by hand, as push or join may be what is
-  // broken.
-  const broken = [];
-  const check = (name, works) => {
-    let ok;
-    try {
-      ok = !!works();
-    } catch {
-      ok = false;
+  // The check itself runs on the built-ins it checks: one broken so badly
+  // that the check throws outside a probe (a throwing RegExp constructor,
+  // a getter on Object.prototype) stops the scan with the same code, not
+  // the page's own error.
+  let ours = null;
+  try {
+    // Recorded by index and joined by hand, as push or join may be what is
+    // broken.
+    const broken = [];
+    const check = (name, works) => {
+      let ok;
+      try {
+        ok = !!works();
+      } catch {
+        ok = false;
+      }
+      if (!ok) broken[broken.length] = name;
+    };
+    check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
+    check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
+    check('Array.prototype.push', () => {
+      const a = [];
+      a.push(1);
+      return a.length === 1 && a[0] === 1;
+    });
+    check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
+    check('Array iteration', () => {
+      let sum = 0;
+      for (const x of [1, 2]) sum += x;
+      return sum === 3;
+    });
+    check('Set iteration', () => [...new Set([1, 2])].length === 2);
+    check('Map iteration', () => {
+      const [entry] = [...new Map([['a', 1]])];
+      return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
+    });
+    // Built at run time: a bundle loaded without its charset would read the
+    // character in a literal as several.
+    check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
+    check('NodeList iteration', () => {
+      if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
+      // Read from Node.prototype: a named element could stand in for
+      // document.childNodes.
+      const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(
+        document
+      );
+      return [...nodes].length === nodes.length;
+    });
+    check('Map', () => {
+      const m = new Map();
+      m.set('a', 1);
+      return m.get('a') === 1 && m.has('a') && m.size === 1;
+    });
+    check('Set', () => {
+      const s = new Set();
+      s.add(1);
+      return s.has(1) && s.size === 1;
+    });
+    check('WeakMap', () => {
+      const k = {};
+      const m = new WeakMap();
+      m.set(k, 1);
+      return m.get(k) === 1;
+    });
+    check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
+    check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
+    check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
+    check('RegExp.prototype.exec', () => {
+      const m = /b(c)/.exec('abc');
+      return !!m && m.index === 1 && m[1] === 'c';
+    });
+    check('String.prototype.trim', () => '  a '.trim() === 'a');
+    check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+    check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
+    check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
+    // Each of these, replaced, changed what rules report without a word
+    // (round 8, PK-6 and RO-5): a probe of what each one does.
+    check('Array.isArray', () => Array.isArray([]) && !Array.isArray({ length: 0 }));
+    check('Array.prototype.slice', () => {
+      const a = [1, 2, 3].slice(1);
+      return a.length === 2 && a[0] === 2 && a[1] === 3;
+    });
+    check('Array.prototype.concat', () => {
+      const a = [1].concat([2], 3);
+      return a.length === 3 && a[1] === 2 && a[2] === 3;
+    });
+    check('Array.prototype.forEach', () => {
+      let sum = 0;
+      [1, 2].forEach((x) => {
+        sum += x;
+      });
+      return sum === 3;
+    });
+    check(
+      'Array.prototype.some',
+      () => [1, 2].some((x) => x === 2) && ![1, 2].some((x) => x === 3)
+    );
+    check('Array.prototype.every', () => [1, 2].every((x) => x > 0) && ![1, 2].every((x) => x > 1));
+    check('Array.prototype.find', () => [1, 2, 3].find((x) => x > 1) === 2);
+    check('Array.prototype.findIndex', () => [1, 2, 3].findIndex((x) => x > 1) === 1);
+    check('Array.prototype.reduce', () => [1, 2, 3].reduce((a, b) => a + b, 0) === 6);
+    check(
+      'Object.prototype.hasOwnProperty',
+      // eslint-disable-next-line no-prototype-builtins -- the check is of the method itself
+      () => ({ a: 1 }).hasOwnProperty('a') && !{}.hasOwnProperty('a')
+    );
+    check('String.prototype.split', () => {
+      const parts = 'a,b'.split(',');
+      return parts.length === 2 && parts[1] === 'b';
+    });
+    check(
+      'String.prototype.replace',
+      () => 'abc'.replace('b', 'x') === 'axc' && 'aba'.replace(/a/g, 'c') === 'cbc'
+    );
+    check('RegExp.prototype.test', () => /b/.test('abc') && !/d/.test('abc'));
+    check('RegExp', () => new RegExp('b+', 'g').exec('abbc')[0] === 'bb');
+    check('Math.round', () => Math.round(1.5) === 2 && Math.round(-0.4) === 0);
+    check('Math.abs', () => Math.abs(-2) === 2);
+    check('Math.max', () => Math.max(1, 3) === 3);
+    check('Math.min', () => Math.min(1, 3) === 1);
+    check('parseFloat', () => parseFloat('1.5px') === 1.5 && Number.parseFloat('2.5') === 2.5);
+    check('NodeFilter', () => {
+      if (typeof NodeFilter === 'undefined') return true;
+      return (
+        NodeFilter.SHOW_ELEMENT === 1 &&
+        NodeFilter.SHOW_TEXT === 4 &&
+        NodeFilter.FILTER_ACCEPT === 1 &&
+        NodeFilter.FILTER_REJECT === 2 &&
+        NodeFilter.FILTER_SKIP === 3
+      );
+    });
+    // A getter a page puts on Object.prototype is read for every key a plain
+    // object lacks: one that throws, or answers, changes what the engine
+    // reads of its own objects (result.type, options.contrast). A method put
+    // there (then, as a library may) is not read as a value, and is allowed.
+    const protoNames = Object.getOwnPropertyNames(Object.prototype);
+    for (let i = 0; i < protoNames.length; i++) {
+      const name = protoNames[i];
+      if (name === '__proto__') continue;
+      const d = Object.getOwnPropertyDescriptor(Object.prototype, name);
+      if (!d || typeof d.get !== 'function') continue;
+      check('Object.prototype.' + name, () => d.get.call({}) === undefined);
     }
-    if (!ok) broken[broken.length] = name;
-  };
-  check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
-  check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
-  check('Array.prototype.push', () => {
-    const a = [];
-    a.push(1);
-    return a.length === 1 && a[0] === 1;
-  });
-  check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
-  check('Array iteration', () => {
-    let sum = 0;
-    for (const x of [1, 2]) sum += x;
-    return sum === 3;
-  });
-  check('Set iteration', () => [...new Set([1, 2])].length === 2);
-  check('Map iteration', () => {
-    const [entry] = [...new Map([['a', 1]])];
-    return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
-  });
-  // Built at run time: a bundle loaded without its charset would read the
-  // character in a literal as several.
-  check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
-  check('NodeList iteration', () => {
-    if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
-    // Read from Node.prototype: a named element could stand in for
-    // document.childNodes.
-    const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(document);
-    return [...nodes].length === nodes.length;
-  });
-  check('Map', () => {
-    const m = new Map();
-    m.set('a', 1);
-    return m.get('a') === 1 && m.has('a') && m.size === 1;
-  });
-  check('Set', () => {
-    const s = new Set();
-    s.add(1);
-    return s.has(1) && s.size === 1;
-  });
-  check('WeakMap', () => {
-    const k = {};
-    const m = new WeakMap();
-    m.set(k, 1);
-    return m.get(k) === 1;
-  });
-  check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
-  check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
-  check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
-  check('RegExp.prototype.exec', () => {
-    const m = /b(c)/.exec('abc');
-    return !!m && m.index === 1 && m[1] === 'c';
-  });
-  check('String.prototype.trim', () => '  a '.trim() === 'a');
-  check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
-  check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
-  check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
-  if (!broken.length) return;
-  let names = '';
-  for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
-  const err = new Error(
-    'The page has changed JavaScript built-ins the engine relies on (' +
-      names +
-      "), so a scan of it can't be trusted. Scan it before its scripts change them."
-  );
-  err.code = 'PAGE_BUILTINS_BROKEN';
-  err.broken = broken;
-  throw err;
+    if (!broken.length) return;
+    let names = '';
+    for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (' +
+        names +
+        "), so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = broken;
+    ours = err;
+    throw err;
+  } catch (e) {
+    if (e === ours) throw e;
+    const err = new Error(
+      "The page has changed JavaScript built-ins the engine relies on, so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = [];
+    throw err;
+  }
 });
 const assertArrayFromFor = (function assertArrayFromFor(fns) {
   let works;
@@ -27257,7 +28220,7 @@ const enableFrameRpcResponder = (function enableFrameRpcResponder(win, handler) 
 const profileNamesOf = (function profileNamesOf(asked) {
   const names = (Array.isArray(asked) ? asked : [])
     .filter((p) => typeof p === 'string' && p.trim())
-    .map((p) => p.trim().toLowerCase());
+    .map((p) => lowerAscii(p.trim()));
   return names.filter((p, i) => names.indexOf(p) === i);
 });
 const profileOptionsOf = (function profileOptionsOf(engineOptions) {
@@ -27269,13 +28232,13 @@ const profileOptionsOf = (function profileOptionsOf(engineOptions) {
   return unique.map((p) => Object.assign({}, engineOptions, { profile: p }));
 });
 const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packNames, declared) {
-  const name = typeof profile === 'string' ? profile.trim().toLowerCase() : '';
+  const name = typeof profile === 'string' ? lowerAscii(profile.trim()) : '';
   if (!name) return false;
   if (Array.isArray(declared) && declared.includes(name)) return true;
   const starts = (prefix) => !!prefix && (name === prefix || name.indexOf(prefix + '-') === 0);
   for (const packName of Array.isArray(packNames) ? packNames : []) {
     if (typeof packName !== 'string') continue;
-    let id = packName.trim().toLowerCase();
+    let id = lowerAscii(packName.trim());
     const at = id.lastIndexOf('@');
     if (at > 0) id = id.slice(0, at);
     const slash = id.indexOf('/');
@@ -27288,19 +28251,26 @@ const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packN
 });
 const runProfiles = (function runProfiles(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
+  const allowFail = policyAllowsFail(engineOptions);
   const asked =
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
   if (Array.isArray(asked)) {
     // Names are matched without case, as a single profile's are: one asked
     // twice in two cases runs once.
     const unique = profileNamesOf(asked);
-    const ignored = asked.filter((p) => typeof p !== 'string');
-    if (ignored.length) {
+    // By index: filter() skips an empty slot ([, 'wcag22-aa']), which was
+    // then dropped without a word, as a blank name was.
+    let ignored = 0;
+    for (let i = 0; i < asked.length; i++) {
+      const p = asked[i];
+      if (typeof p !== 'string' || !p.trim()) ignored++;
+    }
+    if (ignored) {
       try {
         console.warn(
           '[surea11y] engineOptions.profile: ignoring ' +
-            ignored.length +
-            ' item(s) that are not a profile name (a string).'
+            ignored +
+            ' item(s) that are not a profile name (a string that is not blank).'
         );
       } catch {
         // no console
@@ -27308,12 +28278,13 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     }
     if (unique.length <= 1) {
       return withOwnVerdicts(
-        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined }))
+        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })),
+        allowFail
       );
     }
     const runs = [];
     const step = (i) => {
-      if (i >= unique.length) return mergeProfileResults(runs, unique);
+      if (i >= unique.length) return mergeProfileResults(runs, unique, allowFail);
       const result = run(Object.assign({}, engineOptions, { profile: unique[i] }));
       if (thenable(result)) {
         return result.then((r) => {
@@ -27326,13 +28297,13 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     };
     return step(0);
   }
-  return withOwnVerdicts(run(engineOptions));
+  return withOwnVerdicts(run(engineOptions), allowFail);
 });
-const withOwnVerdicts = (function withOwnVerdicts(result) {
+const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
   // A result first: a page may add then to Object.prototype, which makes
   // any object look like a promise.
   if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
-    return result.then(withOwnVerdicts);
+    return result.then((r) => withOwnVerdicts(r, allowFail));
   }
   if (!result || !Array.isArray(result.checksResults)) return result;
   const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
@@ -27358,10 +28329,41 @@ const withOwnVerdicts = (function withOwnVerdicts(result) {
     );
     check.outcome = 'fail';
     check.outcomeNormalized = 'fail';
+    capToPolicy(check, allowFail);
   }
   return result;
 });
-const mergeProfileResults = (function mergeProfileResults(runs, asked) {
+const lowerAscii = (function lowerAscii(value) {
+  return String(value).replace(/[A-Z]/g, (c) => c.toLowerCase());
+});
+const policyAllowsFail = (function policyAllowsFail(engineOptions) {
+  try {
+    const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+    for (const source of [eo.policy, eo.policyContract]) {
+      if (source && typeof source === 'object' && Array.isArray(source.allowedOutcomes)) {
+        return source.allowedOutcomes.includes('fail');
+      }
+    }
+  } catch {
+    // unreadable options: the scan's own reading decides
+  }
+  return true;
+});
+const capToPolicy = (function capToPolicy(check, allowFail) {
+  if (allowFail || !check || check.outcome !== 'fail') return check;
+  check.policyOutcome = 'fail';
+  check.outcome = 'cantTell';
+  check.outcomeNormalized = 'cantTell';
+  if (Array.isArray(check.occurrences)) {
+    check.occurrences = check.occurrences.map((o) =>
+      o && typeof o === 'object' && o.occurrenceOutcome === 'fail'
+        ? Object.assign({}, o, { occurrenceOutcome: 'cantTell' })
+        : o
+    );
+  }
+  return check;
+});
+const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail = true) {
   const RANK = { fail: 4, cantTell: 3, pass: 2, notApplicable: 1 };
   const rank = (o) => RANK[o] || 0;
   const SEVERITY_ORDER = ['minor', 'moderate', 'serious', 'critical'];
@@ -27418,7 +28420,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   for (const r of runs) {
     const applied = r.result && r.result.engine ? r.result.engine.profile : undefined;
     const same =
-      typeof applied === 'string' && applied.toLowerCase() === String(r.profile).toLowerCase();
+      typeof applied === 'string' && lowerAscii(applied) === lowerAscii(String(r.profile));
     if (r.result && typeof r.result === 'object' && same) ran.push(r);
     else {
       // A name no profile has is unknown-profile, unless the scan marked it
@@ -27556,11 +28558,13 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
           });
         }
       }
-      // A check whose findings the profile counts nowhere found nothing it
-      // is about: a pass there, as its rollups read it.
+      // A check whose findings the profile counts nowhere keeps the outcome
+      // its scan of that profile gave, as a scan of the profile alone
+      // reports it (round 8, PK-1: it read as a pass, and SARIF, JUnit and
+      // baselines dropped a failure the profile alone reports).
       merged.verdicts[r.profile] =
         isTier(check.outcome) && occurrences.length
-          ? worst(verdicts.filter((v) => v !== 'notApplicable')) || 'pass'
+          ? worst(verdicts.filter((v) => v !== 'notApplicable')) || check.outcome
           : check.outcome;
     }
   }
@@ -27599,7 +28603,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
       if (isTier(tier) && (m.occurrenceOutcome || tier !== outcome)) m.occurrenceOutcome = tier;
     }
     checksResults.push(
-      Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) })
+      capToPolicy(
+        Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) }),
+        allowFail
+      )
     );
   }
 
@@ -27757,9 +28764,85 @@ function catalogCheckDefs(engineOptions) {
 function checkCatalogOptions(engineOptions, runOnly) {
   enforceEngineOptions(engineOptions);
   const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  if (strictOf(eo)) refuseCatalogOptions(eo, runOnly);
   warnIgnoredWcagTarget(eo, () =>
     targetWcagVersionOf(eo, resolveEffectiveRunOnly(engineOptions, runOnly))
   );
+}
+
+// Under strictOptions, what a scan with these options refuses before it
+// runs, in its words (the shared helpers of src/core/dom-runner.js): a
+// profile, opt-in tag or standard that names none, settings for a rule that
+// isn't there, a policyContract or contrast.rootCanvasFallback the scan
+// can't read, and an excludeSelectors that isn't CSS. A catalog function
+// listed rules for options its scan would throw on (round 8, PK-5).
+// Selectors are tested against the page's document where there is one (a
+// jsdom window set as global); without one, the scan tests them.
+function refuseCatalogOptions(eo, runOnly) {
+  const fail = (message) => {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    throw err;
+  };
+  const runs = catalogProfileRuns(eo, runOnly);
+  resolvePolicy(POLICY_CONTRACTS, eo, true);
+  for (const run of runs) {
+    const optIn = unknownOptInRulesMessage(run.selection);
+    if (optIn) fail(optIn);
+    const profile = run.selection && typeof run.selection.profile === 'string' ? run.selection.profile : null;
+    const mappings = unknownMappingsMessage(resolveMappingSelection(run.eo, profile));
+    if (mappings) fail(mappings);
+  }
+  const knownIds = catalogCheckDefs(eo)
+    .defs.map((d) => d.ruleId)
+    .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
+  const rules = unknownRuleSettingsMessage(readRuleSettings(eo.rules, knownIds, ENGINE_TAG));
+  if (rules) fail(rules);
+  const dom = createSafeDom();
+  let probe = null;
+  try {
+    probe = typeof document !== 'undefined' && document ? dom.get(document, 'documentElement') : null;
+  } catch {
+    probe = null;
+  }
+  const contrast = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : null;
+  const canvas = contrast && typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+  // A color the parser can't read (a named one) is read as the page's
+  // browser computes it where there is a page, as the scan does.
+  const computeColor = probe
+    ? (text) => {
+        const span = dom.createElement(document, 'span');
+        span.style.color = text;
+        // A value the platform rejects leaves the property unset, and the
+        // span would report the color it inherits.
+        if (!span.style.color) return '';
+        dom.appendChild(probe, span);
+        const computed = dom.defaultView(document).getComputedStyle(span).color;
+        dom.removeChild(probe, span);
+        return computed;
+      }
+    : null;
+  const view = probe ? dom.defaultView(document) : null;
+  if (canvas && !rootCanvasFallbackIsOpaque(canvas, catalogColorParser(view), computeColor)) {
+    fail(rootCanvasFallbackMessage(canvas));
+  }
+  if (probe) {
+    const selectors = invalidExcludeSelectorsMessage(
+      invalidExcludeSelectors(eo, (sel) => dom.matches(probe, sel))
+    );
+    if (selectors) fail(selectors);
+  }
+}
+
+// The contrast helpers' color parser, which reads a named color through
+// the page's window where there is one, or null where they can't be made.
+function catalogColorParser(view) {
+  try {
+    const helpers = createContrastHelpers({ window: view || null }, { trim: (v) => String(v == null ? '' : v).trim() });
+    return helpers && typeof helpers.parseCssColorToRgba === 'function' ? helpers.parseCssColorToRgba : null;
+  } catch {
+    return null;
+  }
 }
 
 function getCheckDefById(ruleId, engineOptions) {
@@ -40770,6 +41853,7 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} verbirgt dieses <{{element}}> vor Screenreadern, sodass sein Alternativtext „{{alt}}“ nie vorgelesen wird. Prüfen Sie, ob es rein dekorativ ist.",
       "img_altDecorative_hint_ownHiddenAlt": "Wenn es nur schmückt, ist nichts zu ändern. Wenn es eine Information trägt, entfernen Sie {{hiddenBy}}, damit sein Alternativtext vorgelesen wird.",
       "img_altDecorative_summary_unnamed": "Dieses <{{element}}> hat weder einen Namen noch eine Rolle, daher überspringen Screenreader es. Prüfen Sie, ob es rein dekorativ ist.",
+      "img_altDecorative_summary_unnamedCanvasFallback": "Dieses <{{element}}> hat weder eine Rolle noch einen eigenen Namen, daher überspringen Screenreader die Zeichnung und lesen nur seinen Ersatzinhalt „{{fallback}}“ vor. Prüfen Sie, ob die Zeichnung rein dekorativ ist.",
       "img_altQuality_lean_why": "Ein Dateiname, eine Webadresse oder ein allgemeines Wort sagt nicht, was das Bild zeigt.",
       "img_altQuality_lean_why_overridden": "Der alt-Text „{{alt}}“, nicht der Name, ist ein Dateiname, eine Webadresse oder ein allgemeines Wort. aria-label oder aria-labelledby benennt das Bild stattdessen, aber Browser zeigen den alt-Text weiterhin an, wenn das Bild nicht lädt.",
       "img_altQuality_lean_why_control": "Der Alternativtext ist der Name des Bedienelements, und ein Dateiname oder ein allgemeines Wort sagt nicht, was es tut.",
@@ -40950,6 +42034,8 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_bgImageAndGradient": "Der Kontrast ist nicht berechenbar, weil der Hintergrund ein Bild und einen Verlauf verwendet ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, gesetzt auf dem übergeordneten Element {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_mixBlendMode": "Der Kontrast ist nicht berechenbar, weil mix-blend-mode verwendet wird ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, gesetzt auf dem übergeordneten Element {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_filter": "Der Kontrast ist nicht berechenbar, weil filter verwendet wird ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, gesetzt auf dem übergeordneten Element {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_insetShadow": "Der Kontrast ist nicht berechenbar, weil ein innerer box-shadow (inset) unter einem Teil des Textes gezeichnet wird oder nicht ermittelt werden konnte, wie weit er reicht ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, gesetzt auf dem übergeordneten Element {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_mask": "Der Kontrast ist nicht berechenbar, weil eine Maske den Text und seinen Hintergrund unterschiedlich stark ausblendet ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, gesetzt auf dem übergeordneten Element {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_rootNotOpaque": "Der Kontrast ist nicht berechenbar, weil der effektive Hintergrund an der Wurzel nicht vollständig opak ist (alpha={{backgroundAlpha}}).",
       "contrastComputable_cantTell_engineFailure": "Die Berechenbarkeit des Kontrasts konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastComputable_cantTell_backdropFilter": "Der Kontrast ist nicht berechenbar, weil backdrop-filter verwendet wird ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, gesetzt auf dem übergeordneten Element {{blockerAncestor}}{{/blockerAncestor}}).",
@@ -41119,6 +42205,7 @@ const RUNTIME_CATALOG = {
       "buttonNamePresent_title": "Schaltflächen haben einen zugänglichen Namen",
       "buttonNamePresent_description": "Prüft, ob Schaltflächen einen nicht leeren zugänglichen Namen aufweisen.",
       "buttonNamePresent_summary_fail": "Diese Schaltfläche hat keinen zugänglichen Namen.",
+      "buttonNamePresent_summary_fail_otherRole": "Dieses <{{element}}> hat die Rolle {{role}} und keinen zugänglichen Namen.",
       "buttonNamePresent_hint_fail": "Geben Sie der Schaltfläche sichtbaren Text oder einen Namen mit aria-label, damit Screenreader-Nutzende wissen, was sie tut.",
       "buttonNamePresent_summary_cantTell_closedContent": "Diese Schaltfläche erhält ihren Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob sie einen hat, ließ sich daher nicht feststellen.",
       "buttonNamePresent_hint_cantTell_closedContent": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat sie keinen, geben Sie ihr ein aria-label oder sichtbaren Text.",
@@ -41554,6 +42641,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
       "listitemParentValid_hint_cantTell_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "Der Eintrag wird mit Aufzählungszeichen oder Nummer gezeichnet, als Eintrag einer Liste, die das Markup nicht mehr bereitstellt.",
       "listitemParentValid_lean_caution_listRoleOverridden": "Einige Links oder Bedienelemente, etwa die einer Navigationsleiste, sind ohne die Liste womöglich ebenso gut lesbar.",
       "listitemParentValid_summary_fail_wrapped": "Dieses <li> liegt in einem <{{listElement}}>, aber das {{wrapper}} dazwischen unterbricht die Liste: Die Einträge einer Liste müssen ihre Kinder sein.",
@@ -41797,6 +42886,7 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_title": "Tabellen-Kopfzellen dürfen nicht leer sein",
       "emptyTableHeader_description": "Prüft, ob Kopfzellen (<th> oder ein beliebiges Element mit role=\"columnheader\"/\"rowheader\") sichtbaren Textinhalt haben — eine Kopfzelle, die nur über aria-label/aria-labelledby benannt ist, wird ebenfalls markiert, da die tatsächliche Unterstützung durch Screenreader/Browser dafür uneinheitlich ist.",
       "emptyTableHeader_summary_cantTell": "Diese Tabellen-Kopfzelle hat keinen zugänglichen Namen.",
+      "emptyTableHeader_summary_cantTell_contentName": "Diese Tabellen-Kopfzelle hat keinen sichtbaren Text. Ihr einziger Name, „{{name}}“, stammt aus ihrem Inhalt, etwa einem Bedienelement oder einem Bild.",
       "emptyTableHeader_hint_cantTell": "Geben Sie der Kopfzelle Text oder einen Namen mit aria-label oder aria-labelledby; entfernen Sie sie, wenn sie nicht gebraucht wird.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "Diese Kopfzelle hat keinen sichtbaren Text. Ihr einziger Name stammt aus aria-label oder aria-labelledby, was einige Kombinationen aus Screenreader und Browser, etwa NVDA mit Firefox und VoiceOver unter iOS, bei <th> ignorieren.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Fügen Sie der Kopfzelle sichtbaren Text hinzu, zusätzlich zum ARIA-Namen oder stattdessen. Sichtbarer Text ist der einzige Name, den alle getesteten Screenreader vorlesen.",
@@ -41830,8 +42920,9 @@ const RUNTIME_CATALOG = {
       "region_title": "Der Seiteninhalt sollte sich innerhalb einer Landmarke befinden",
       "region_description": "Prüft, ob Inhalt unter <body> innerhalb einer Landmarke enthalten ist.",
       "region_summary_cantTell": "Dieser Inhalt liegt außerhalb jeder Landmarke.",
+      "region_summary_cantTell_bodyText": "Text, der direkt in <body> steht, „{{text}}“, liegt außerhalb jeder Landmarke.",
       "region_hint_cantTell": "Verschieben Sie ihn in eine Landmarke, etwa <main>, <nav>, <aside> oder eine benannte <section>.",
-      "region_lean_why": "Der Inhalt liegt außerhalb jeder Landmark-Region.",
+      "region_lean_why": "Der Inhalt liegt außerhalb jeder Landmarke.",
       "skipLink_title": "Ein Sprunglink muss ein auflösbares, nutzbares Ziel haben",
       "skipLink_description": "Prüft, ob das href-Fragment eines „Zu … springen“-Links auf ein reales, derzeit nutzbares Element im Dokument aufgelöst wird.",
       "skipLink_summary_cantTell": "Das Ziel dieses Sprunglinks existiert nicht.",
@@ -41985,7 +43076,7 @@ const RUNTIME_CATALOG = {
       "imagesOfText_hint_cantTell_svg": "Verwenden Sie echten, mit CSS gestalteten Text, etwa das SVG direkt in der Seite oder den Text neben dem Bild, es sei denn, die Darstellung des Textes ist wesentlich (ein Logo) oder Benutzer können ändern, wie das Bild ihn zeigt.",
       "scrollableRegionFocusable_title": "Scrollbare Bereiche ohne fokussierbaren Inhalt sollten per Tastatur fokussierbar sein",
       "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
-      "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), aber weder es selbst noch sein Inhalt kann den Tastaturfokus erhalten.",
+      "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
       "scrollableRegionFocusable_hint_cantTell": "Wenn sein Inhalt tatsächlich überläuft, fügen Sie tabindex=\"0\" und einen Namen hinzu, damit Tastaturnutzende es fokussieren und mit den Pfeiltasten scrollen können.",
       "scrollableRegionFocusable_lean_why_overflows": "Sein Inhalt läuft über den Kasten hinaus, und nichts darin kann den Tastaturfokus erhalten, um ihn zu scrollen.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium ab Version 130 und Firefox machen einen scrollbaren Kasten trotzdem per Tastatur erreichbar; Safari nicht.",
@@ -42559,6 +43650,7 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} hides this <{{element}}> from screen readers, so its alt text \"{{alt}}\" is never read. Check whether it is purely decorative.",
       "img_altDecorative_hint_ownHiddenAlt": "If it only decorates, nothing needs to change. If it carries information, remove {{hiddenBy}} so its alt text is read.",
       "img_altDecorative_summary_unnamed": "This <{{element}}> has no name and no role, so screen readers skip it. Check whether it is purely decorative.",
+      "img_altDecorative_summary_unnamedCanvasFallback": "This <{{element}}> has no role and no name of its own, so screen readers skip the drawing and read only its fallback content, \"{{fallback}}\". Check whether the drawing is purely decorative.",
       "img_altQuality_lean_why": "A file name, a web address or a generic word does not say what the image shows.",
       "img_altQuality_lean_why_overridden": "The alt text \"{{alt}}\", not the name, is a file name, a web address or a generic word. aria-label or aria-labelledby names the image instead, but browsers still show the alt when the image does not load.",
       "img_altQuality_lean_why_control": "The alt text is the control's name, and a file name or a generic word does not say what the control does.",
@@ -42739,6 +43831,8 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_bgImageAndGradient": "Contrast is not computable because the background uses an image and a gradient ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, set on its ancestor {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_mixBlendMode": "Contrast is not computable because mix-blend-mode is used ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, set on its ancestor {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_filter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, set on its ancestor {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_insetShadow": "Contrast is not computable because an inset box-shadow paints under part of the text, or where it reaches could not be worked out ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, set on its ancestor {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_mask": "Contrast is not computable because a mask fades the text and its background by amounts that vary across them ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, set on its ancestor {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_rootNotOpaque": "Contrast is not computable because the effective background is not fully opaque at the root (alpha={{backgroundAlpha}}).",
       "contrastComputable_cantTell_engineFailure": "Contrast computability could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, set on its ancestor {{blockerAncestor}}{{/blockerAncestor}}).",
@@ -42908,6 +44002,7 @@ const RUNTIME_CATALOG = {
       "buttonNamePresent_title": "Buttons have an accessible name",
       "buttonNamePresent_description": "Checks that buttons expose a non-empty accessible name.",
       "buttonNamePresent_summary_fail": "This button has no accessible name.",
+      "buttonNamePresent_summary_fail_otherRole": "This <{{element}}> has role {{role}} and no accessible name.",
       "buttonNamePresent_hint_fail": "Give the button visible text, or name it with aria-label, so screen reader users know what it does.",
       "buttonNamePresent_summary_cantTell_closedContent": "This button may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
       "buttonNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
@@ -43248,7 +44343,7 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedChildren_description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles.",
       "ariaProhibitedChildren_summary_fail": "This element has role=\"{{childRole}}\", which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
       "ariaProhibitedChildren_hint_fail": "Remove or change this role so it matches one of the container's allowed owned roles ({{allowedRoles}}), or move this element outside the {{containerRole}} container.",
-      "ariaProhibitedChildren_summary_fail_implicit": "This <{{element}}> is a {{childRole}} by default, which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
+      "ariaProhibitedChildren_summary_fail_implicit": "This <{{element}}> has the implicit role {{childRole}}, which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
       "ariaProhibitedChildren_hint_fail_implicit": "Give the <{{element}}> one of the roles the container allows ({{allowedRoles}}), or role=\"none\" so what it holds belongs to the {{containerRole}}.",
       "ariaProhibitedChildren_summary_fail_typo": "This <{{element}}>’s role \"{{written}}\" is not an ARIA role, so it stays a {{childRole}}, which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
       "ariaProhibitedChildren_hint_fail_typoNear": "Did you mean role=\"{{suggestion}}\"? Otherwise give it one of the roles the container allows ({{allowedRoles}}), or role=\"none\".",
@@ -43262,7 +44357,7 @@ const RUNTIME_CATALOG = {
       "ariaRequiredParent_description": "Checks that roles with a documented \"required context role\" entry (listitem, option, tab, treeitem, row, cell, ...) have an ancestor or aria-owns owner with an acceptable context role.",
       "ariaRequiredParent_summary_fail": "role=\"{{role}}\" must sit inside an element with one of these roles: {{requiredRoles}}. None was found.",
       "ariaRequiredParent_hint_fail": "Place it inside an element with one of these roles, or have that element reference it with aria-owns.",
-      "ariaRequiredParent_summary_fail_blocked": "role=\"{{role}}\" must sit directly inside one of these roles: {{requiredRoles}}. A {{parentRole}} (<{{parentElement}}>) is above it, but the <{{blocker}}> between them is a {{blockerRole}}, so the {{parentRole}} is not its parent.",
+      "ariaRequiredParent_summary_fail_blocked": "role=\"{{role}}\" must sit directly inside one of these roles: {{requiredRoles}}. A {{parentRole}} (<{{parentElement}}>) is above it, but the <{{blocker}}> between them has role {{blockerRole}}, so the {{parentRole}} is not its parent.",
       "ariaRequiredParent_hint_fail_blocked": "Give the <{{blocker}}> role=\"none\" so the {{role}} belongs to the {{parentRole}}, or move the {{role}} directly inside the {{parentRole}}.",
       "ariaRequiredParent_summary_fail_typo": "role=\"{{role}}\" must sit inside an element with one of these roles: {{requiredRoles}}. An ancestor <{{parentElement}}> has role \"{{written}}\", which is not an ARIA role, so it has none.",
       "ariaRequiredParent_hint_fail_typoNear": "Did you mean role=\"{{suggestion}}\"? Fix the ancestor’s role.",
@@ -43343,6 +44438,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
       "listitemParentValid_hint_cantTell_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.",
       "listitemParentValid_lean_caution_listRoleOverridden": "A few links or controls, such as a navigation bar’s, may read as well without the list.",
       "listitemParentValid_summary_fail_wrapped": "This <li> is inside a <{{listElement}}>, but the {{wrapper}} between them breaks the list: a list's items must be its children.",
@@ -43452,7 +44549,7 @@ const RUNTIME_CATALOG = {
       "nestedInteractiveControlsAbsent_description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
       "nestedInteractiveControlsAbsent_summary_fail": "This <{{element}}> has interactive controls nested inside it: {{nestedElements}}.",
       "nestedInteractiveControlsAbsent_hint_fail": "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another.",
-      "nestedInteractiveControlsAbsent_summary_fail_presentational": "This <{{element}}> is a {{outerRole}}, whose content is presentational, and it contains {{nestedList}}: the nested control loses its role but still takes focus.",
+      "nestedInteractiveControlsAbsent_summary_fail_presentational": "This <{{element}}> has role {{outerRole}}, which makes its content presentational, and it contains {{nestedList}}: the nested control loses its role but still takes focus.",
       "nestedInteractiveControlsAbsent_summary_cantTell_nested": "This <{{element}}> ({{outerRole}}) contains {{nestedList}}. Both keep their roles, but a control inside another is hard to reach and operate, and its name may be swallowed by the outer one.",
       "presentationalChildrenFocusableAbsent_title": "Roles with presentational children must not contain focusable content",
       "presentationalChildrenFocusableAbsent_description": "Checks that an element whose role makes its children presentational (button, checkbox, img, option, radio, slider, switch, tab, ...) contains no descendant that takes a tab stop.",
@@ -43586,6 +44683,7 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_title": "Table header cells must not be empty",
       "emptyTableHeader_description": "Checks that table header cells (<th>, or any element with role=\"columnheader\"/\"rowheader\") have visible text content. A header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
       "emptyTableHeader_summary_cantTell": "This table header cell has no accessible name.",
+      "emptyTableHeader_summary_cantTell_contentName": "This table header cell has no visible text. Its only name, \"{{name}}\", comes from what it holds, such as a control or an image.",
       "emptyTableHeader_hint_cantTell": "Give the header cell text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text. Its only name comes from aria-label or aria-labelledby, which some screen reader and browser pairs, such as NVDA with Firefox and VoiceOver on iOS, ignore on <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Add visible text to the header cell, alongside or instead of the ARIA name. Visible text is the only name every tested screen reader reads.",
@@ -43619,6 +44717,7 @@ const RUNTIME_CATALOG = {
       "region_title": "Page content should be inside a landmark region",
       "region_description": "Checks that content under <body> is contained within a landmark region.",
       "region_summary_cantTell": "This content is outside every landmark region.",
+      "region_summary_cantTell_bodyText": "Text placed directly in <body>, \"{{text}}\", is outside every landmark region.",
       "region_hint_cantTell": "Move it into a landmark, such as <main>, <nav>, <aside>, or a <section> with a name.",
       "region_lean_why": "The content is outside every landmark region.",
       "skipLink_title": "Skip link must have a resolvable, usable target",
@@ -43774,7 +44873,7 @@ const RUNTIME_CATALOG = {
       "imagesOfText_hint_cantTell_svg": "Use real text styled with CSS, such as the SVG inline in the page or the text next to the image, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.",
       "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
       "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
-      "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but neither it nor anything inside it can take keyboard focus.",
+      "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
       "scrollableRegionFocusable_hint_cantTell": "If its content does overflow, add tabindex=\"0\" and a name, so keyboard users can focus it and scroll with the arrow keys.",
       "scrollableRegionFocusable_lean_why_overflows": "Its content overflows the box, and nothing in it can take keyboard focus to scroll it.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.",
@@ -44348,6 +45447,7 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} oculta este <{{element}}> a los lectores de pantalla, así que su texto alternativo \"{{alt}}\" nunca se lee. Comprobar si es solo decorativo.",
       "img_altDecorative_hint_ownHiddenAlt": "Si solo decora, no hay que cambiar nada. Si transmite información, quitar {{hiddenBy}} para que se lea su texto alternativo.",
       "img_altDecorative_summary_unnamed": "Este <{{element}}> no tiene nombre ni rol, así que los lectores de pantalla lo omiten. Comprobar si es solo decorativo.",
+      "img_altDecorative_summary_unnamedCanvasFallback": "Este <{{element}}> no tiene rol ni nombre propio, así que los lectores de pantalla omiten el dibujo y solo leen su contenido alternativo, «{{fallback}}». Comprobar si el dibujo es solo decorativo.",
       "img_altQuality_lean_why": "Un nombre de archivo, una dirección web o una palabra genérica no dice lo que muestra la imagen.",
       "img_altQuality_lean_why_overridden": "El texto alt \"{{alt}}\", no el nombre, es un nombre de archivo, una dirección web o una palabra genérica. aria-label o aria-labelledby da nombre a la imagen en su lugar, pero los navegadores siguen mostrando el alt cuando la imagen no carga.",
       "img_altQuality_lean_why_control": "El texto alt es el nombre del control, y un nombre de archivo o una palabra genérica no dice lo que hace.",
@@ -44528,6 +45628,8 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_bgImageAndGradient": "El contraste no es computable porque el fondo usa una imagen y un degradado ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, definido en su ancestro {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_mixBlendMode": "El contraste no es computable porque se usa mix-blend-mode ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, definido en su ancestro {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_filter": "El contraste no es computable porque se usa filter ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, definido en su ancestro {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_insetShadow": "El contraste no es computable porque una sombra interior (box-shadow inset) se pinta bajo parte del texto, o no se pudo determinar hasta dónde llega ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, definido en su ancestro {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_mask": "El contraste no es computable porque una máscara atenúa el texto y su fondo en grados que varían de un punto a otro ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, definido en su ancestro {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_rootNotOpaque": "El contraste no es computable porque el fondo efectivo no es completamente opaco en la raíz (alpha={{backgroundAlpha}}).",
       "contrastComputable_cantTell_engineFailure": "No se pudo determinar la computabilidad del contraste debido a un error interno del motor ({{reasonCode}}).",
       "contrastComputable_cantTell_backdropFilter": "El contraste no es computable porque se usa backdrop-filter ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, definido en su ancestro {{blockerAncestor}}{{/blockerAncestor}}).",
@@ -44697,6 +45799,7 @@ const RUNTIME_CATALOG = {
       "buttonNamePresent_title": "Los botones tienen un nombre accesible",
       "buttonNamePresent_description": "Comprueba que los botones expongan un nombre accesible no vacío.",
       "buttonNamePresent_summary_fail": "Este botón no tiene nombre accesible.",
+      "buttonNamePresent_summary_fail_otherRole": "Este <{{element}}> tiene el rol {{role}} y no tiene nombre accesible.",
       "buttonNamePresent_hint_fail": "Darle al botón texto visible, o un nombre con aria-label, para que quienes usan lector de pantalla sepan lo que hace.",
       "buttonNamePresent_summary_cantTell_closedContent": "Este botón puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
       "buttonNamePresent_hint_cantTell_closedContent": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle un aria-label o un texto visible.",
@@ -45132,6 +46235,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
       "listitemParentValid_hint_cantTell_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "El elemento se dibuja con viñeta o número, como elemento de una lista que el marcado ya no expone.",
       "listitemParentValid_lean_caution_listRoleOverridden": "Unos pocos enlaces o controles, como los de una barra de navegación, pueden leerse igual de bien sin la lista.",
       "listitemParentValid_summary_fail_wrapped": "Este <li> está dentro de un <{{listElement}}>, pero el {{wrapper}} que hay entre ellos rompe la lista: los elementos de una lista deben ser sus hijos.",
@@ -45375,6 +46480,7 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_title": "Las celdas de encabezado de tabla no deben estar vacías",
       "emptyTableHeader_description": "Comprueba que las celdas de encabezado (<th>, o cualquier elemento con role=\"columnheader\"/\"rowheader\") tengan contenido de texto visible; un encabezado nombrado únicamente mediante aria-label/aria-labelledby también se señala, ya que el soporte real de lectores de pantalla/navegadores para eso es inconsistente.",
       "emptyTableHeader_summary_cantTell": "Esta celda de encabezado de tabla no tiene nombre accesible.",
+      "emptyTableHeader_summary_cantTell_contentName": "Esta celda de encabezado de tabla no tiene texto visible. Su único nombre, «{{name}}», procede de lo que contiene, como un control o una imagen.",
       "emptyTableHeader_hint_cantTell": "Darle texto a la celda de encabezado, o un nombre con aria-label o aria-labelledby; quitarla si no hace falta.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "Esta celda de encabezado no tiene texto visible. Su único nombre viene de aria-label o aria-labelledby, que algunas combinaciones de lector de pantalla y navegador, como NVDA con Firefox y VoiceOver en iOS, ignoran en <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Agregar texto visible a la celda de encabezado, junto al nombre ARIA o en su lugar. El texto visible es el único nombre que leen todos los lectores de pantalla probados.",
@@ -45408,6 +46514,7 @@ const RUNTIME_CATALOG = {
       "region_title": "El contenido de la página debería estar dentro de una región de referencia",
       "region_description": "Comprueba que el contenido bajo <body> esté contenido dentro de una región de referencia.",
       "region_summary_cantTell": "Este contenido está fuera de cualquier región de punto de referencia.",
+      "region_summary_cantTell_bodyText": "El texto colocado directamente en <body>, «{{text}}», está fuera de cualquier región de punto de referencia.",
       "region_hint_cantTell": "Moverlo a un punto de referencia, como <main>, <nav>, <aside> o un <section> con nombre.",
       "region_lean_why": "El contenido está fuera de toda región de punto de referencia.",
       "skipLink_title": "El enlace de salto debe tener un destino resoluble y utilizable",
@@ -45563,7 +46670,7 @@ const RUNTIME_CATALOG = {
       "imagesOfText_hint_cantTell_svg": "Usar texto real con estilo CSS, como el SVG insertado en la página o el texto junto a la imagen, salvo que la forma de presentar el texto sea esencial (un logotipo) o el usuario pueda cambiar cómo la imagen lo muestra.",
       "scrollableRegionFocusable_title": "Las regiones desplazables sin contenido enfocable deberían ser enfocables por teclado",
       "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
-      "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero ni él ni nada de su interior puede recibir el foco del teclado.",
+      "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
       "scrollableRegionFocusable_hint_cantTell": "Si su contenido se desborda de verdad, agregar tabindex=\"0\" y un nombre, para que con el teclado se pueda enfocar y desplazar con las flechas.",
       "scrollableRegionFocusable_lean_why_overflows": "Su contenido desborda la caja, y nada en ella puede recibir el foco del teclado para desplazarla.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 y posteriores, y Firefox, permiten igualmente llegar con el teclado a una caja que se desplaza; Safari no.",
@@ -46137,6 +47244,7 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} masque cet élément <{{element}}> aux lecteurs d’écran : son texte alternatif « {{alt}} » n’est donc jamais lu. Vérifiez s’il est purement décoratif.",
       "img_altDecorative_hint_ownHiddenAlt": "S’il ne fait que décorer, rien n’est à changer. S’il porte une information, retirez {{hiddenBy}} pour que son texte alternatif soit lu.",
       "img_altDecorative_summary_unnamed": "Cet élément <{{element}}> n’a ni nom ni rôle : les lecteurs d’écran l’ignorent donc. Vérifiez s’il est purement décoratif.",
+      "img_altDecorative_summary_unnamedCanvasFallback": "Cet élément <{{element}}> n’a ni rôle ni nom propre : les lecteurs d’écran ignorent donc le dessin et ne lisent que son contenu de remplacement, « {{fallback}} ». Vérifiez si le dessin est purement décoratif.",
       "img_altQuality_lean_why": "Un nom de fichier, une adresse web ou un mot générique ne dit pas ce que montre l’image.",
       "img_altQuality_lean_why_overridden": "C’est le texte alt « {{alt}} », non le nom, qui est un nom de fichier, une adresse web ou un mot générique. aria-label ou aria-labelledby nomme l’image à sa place, mais les navigateurs affichent encore l’alt quand l’image ne se charge pas.",
       "img_altQuality_lean_why_control": "Le texte alt est le nom de la commande, et un nom de fichier ou un mot générique ne dit pas ce qu’elle fait.",
@@ -46317,6 +47425,8 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_bgImageAndGradient": "Le contraste ne peut pas être calculé car l’arrière-plan utilise une image et un dégradé ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, défini sur son ancêtre {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_mixBlendMode": "Le contraste n’est pas calculable car mix-blend-mode est utilisé ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, défini sur son ancêtre {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_filter": "Le contraste ne peut pas être calculé car la propriété filter est utilisée ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, défini sur son ancêtre {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_insetShadow": "Le contraste ne peut pas être calculé car une ombre intérieure (box-shadow inset) est peinte sous une partie du texte, ou sa portée n’a pas pu être déterminée ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, défini sur son ancêtre {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_mask": "Le contraste ne peut pas être calculé car un masque estompe le texte et son arrière-plan à des degrés qui varient d’un point à l’autre ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, défini sur son ancêtre {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_rootNotOpaque": "Le contraste n’est pas calculable car l’arrière-plan effectif n’est pas totalement opaque à la racine (alpha={{backgroundAlpha}}).",
       "contrastComputable_cantTell_engineFailure": "La calculabilité du contraste n’a pas pu être déterminée en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, défini sur son ancêtre {{blockerAncestor}}{{/blockerAncestor}}).",
@@ -46486,6 +47596,7 @@ const RUNTIME_CATALOG = {
       "buttonNamePresent_title": "Les boutons ont un nom accessible",
       "buttonNamePresent_description": "Vérifie que les boutons exposent un nom accessible non vide.",
       "buttonNamePresent_summary_fail": "Ce bouton n’a pas de nom accessible.",
+      "buttonNamePresent_summary_fail_otherRole": "Cet élément <{{element}}> a le rôle {{role}} et n’a pas de nom accessible.",
       "buttonNamePresent_hint_fail": "Donnez au bouton un texte visible, ou nommez-le avec aria-label, pour que les utilisateurs de lecteur d’écran sachent ce qu’il fait.",
       "buttonNamePresent_summary_cantTell_closedContent": "Ce bouton tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fermée du shadow DOM) : on n’a pas pu savoir s’il en a un.",
       "buttonNamePresent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
@@ -46921,6 +48032,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
       "listitemParentValid_hint_cantTell_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "L’élément est dessiné avec une puce ou un numéro, comme élément d’une liste que le balisage n’expose plus.",
       "listitemParentValid_lean_caution_listRoleOverridden": "Quelques liens ou commandes, comme ceux d’une barre de navigation, peuvent se lire aussi bien sans la liste.",
       "listitemParentValid_summary_fail_wrapped": "Cet élément <li> est dans un <{{listElement}}>, mais l’élément {{wrapper}} entre les deux rompt la liste : les éléments d’une liste doivent être ses enfants.",
@@ -47164,6 +48277,7 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_title": "Les cellules d’en-tête de tableau ne doivent pas être vides",
       "emptyTableHeader_description": "Vérifie que les cellules d’en-tête (<th>, ou tout élément avec role=\"columnheader\"/\"rowheader\") ont un contenu textuel visible — un en-tête nommé uniquement via aria-label/aria-labelledby est aussi signalé, car la prise en charge réelle par les lecteurs d’écran/navigateurs est incohérente.",
       "emptyTableHeader_summary_cantTell": "Cette cellule d’en-tête de tableau n’a pas de nom accessible.",
+      "emptyTableHeader_summary_cantTell_contentName": "Cette cellule d’en-tête de tableau n’a aucun texte visible. Son seul nom, « {{name}} », vient de ce qu’elle contient, comme un contrôle ou une image.",
       "emptyTableHeader_hint_cantTell": "Donnez du texte à la cellule d’en-tête, ou nommez-la avec aria-label ou aria-labelledby ; retirez-la si elle n’est pas utile.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "Cette cellule d’en-tête n’a pas de texte visible. Son seul nom vient de aria-label ou aria-labelledby, que certaines combinaisons de lecteur d’écran et de navigateur, comme NVDA avec Firefox et VoiceOver sur iOS, ignorent sur <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Ajoutez un texte visible à la cellule d’en-tête, en plus ou à la place du nom ARIA. Le texte visible est le seul nom que lisent tous les lecteurs d’écran testés.",
@@ -47197,6 +48311,7 @@ const RUNTIME_CATALOG = {
       "region_title": "Le contenu de la page devrait se trouver à l’intérieur d’un point de repère",
       "region_description": "Vérifie que le contenu sous <body> est contenu dans un point de repère.",
       "region_summary_cantTell": "Ce contenu se trouve hors de toute région de repère.",
+      "region_summary_cantTell_bodyText": "Le texte placé directement dans <body>, « {{text}} », se trouve hors de toute région de repère.",
       "region_hint_cantTell": "Placez-le dans un repère, comme <main>, <nav>, <aside> ou une <section> nommée.",
       "region_lean_why": "Le contenu se trouve en dehors de toute région de repère.",
       "skipLink_title": "Un lien d’évitement doit avoir une cible qui se résout et qui est utilisable",
@@ -47352,7 +48467,7 @@ const RUNTIME_CATALOG = {
       "imagesOfText_hint_cantTell_svg": "Utilisez du vrai texte mis en forme avec CSS, comme le SVG intégré dans la page ou le texte à côté de l’image, sauf si la présentation du texte est essentielle (un logo) ou si l’utilisateur peut changer la façon dont l’image l’affiche.",
       "scrollableRegionFocusable_title": "Les régions défilantes sans contenu focalisable devraient être focalisables au clavier",
       "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une vérification manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
-      "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais ni lui ni son contenu ne peut recevoir le focus clavier.",
+      "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
       "scrollableRegionFocusable_hint_cantTell": "Si son contenu déborde réellement, ajoutez tabindex=\"0\" et un nom, pour qu’on puisse le focaliser au clavier et le faire défiler avec les flèches.",
       "scrollableRegionFocusable_lean_why_overflows": "Son contenu déborde de la boîte, et rien à l’intérieur ne peut recevoir le focus clavier pour la faire défiler.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 et versions ultérieures, ainsi que Firefox, permettent quand même d’atteindre au clavier une boîte qui défile ; Safari non.",
@@ -47926,6 +49041,7 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} によってこの <{{element}}> はスクリーンリーダーから隠されているため、代替テキスト「{{alt}}」は読み上げられません。純粋に装飾目的かどうか確認してください。",
       "img_altDecorative_hint_ownHiddenAlt": "装飾だけであれば、変更は不要です。情報を伝える場合は、{{hiddenBy}} を削除して、代替テキストが読み上げられるようにしてください。",
       "img_altDecorative_summary_unnamed": "この <{{element}}> には名前もロールもないため、スクリーンリーダーはこれを読み飛ばします。純粋に装飾目的かどうか確認してください。",
+      "img_altDecorative_summary_unnamedCanvasFallback": "この <{{element}}> にはロールも独自の名前もないため、スクリーンリーダーは描画を読み飛ばし、代替コンテンツ「{{fallback}}」だけを読み上げます。描画が純粋に装飾目的かどうか確認してください。",
       "img_altQuality_lean_why": "ファイル名、Web アドレス、汎用的な語では、画像が何を示しているかは伝わりません。",
       "img_altQuality_lean_why_overridden": "名前ではなく alt テキスト「{{alt}}」が、ファイル名、Web アドレス、または汎用的な語です。画像の名前は aria-label または aria-labelledby が代わりに与えますが、画像が読み込まれないときブラウザーは alt を表示します。",
       "img_altQuality_lean_why_control": "代替テキストはこのコントロールの名前であり、ファイル名や汎用的な語では、コントロールの働きは伝わりません。",
@@ -48106,6 +49222,8 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_bgImageAndGradient": "背景に画像とグラデーションが使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
       "contrastComputable_cantTell_mixBlendMode": "mix-blend-mode が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
       "contrastComputable_cantTell_filter": "filter が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
+      "contrastComputable_cantTell_insetShadow": "内側の box-shadow (inset) がテキストの一部の下に描画されているか、その範囲を特定できないため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
+      "contrastComputable_cantTell_mask": "マスクがテキストとその背景を場所によって異なる度合いで透過させているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
       "contrastComputable_cantTell_rootNotOpaque": "ルートで実際の背景が完全に不透明ではないため、コントラストを計算できません (alpha={{backgroundAlpha}})。",
       "contrastComputable_cantTell_engineFailure": "エンジン内部のエラーにより、コントラストを計算できるかどうかを判定できませんでした ({{reasonCode}})。",
       "contrastComputable_cantTell_backdropFilter": "backdrop-filter が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
@@ -48275,6 +49393,7 @@ const RUNTIME_CATALOG = {
       "buttonNamePresent_title": "ボタンにアクセシブルな名前があること",
       "buttonNamePresent_description": "ボタンが空でないアクセシブルな名前を公開しているかを確認します。",
       "buttonNamePresent_summary_fail": "このボタンにはアクセシブルな名前がありません。",
+      "buttonNamePresent_summary_fail_otherRole": "この <{{element}}> のロールは {{role}} で、アクセシブルな名前がありません。",
       "buttonNamePresent_hint_fail": "ボタンに表示テキストを入れるか、aria-label で名前を付けて、スクリーンリーダーの利用者がボタンの働きを分かるようにしてください。",
       "buttonNamePresent_summary_cantTell_closedContent": "このボタンは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
       "buttonNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
@@ -48710,6 +49829,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
       "listitemParentValid_hint_cantTell_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
+      "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
       "listitemParentValid_lean_why_listRoleOverridden": "この項目は行頭記号や番号付きで、マークアップがもう公開していないリストの項目として描画されています。",
       "listitemParentValid_lean_caution_listRoleOverridden": "ナビゲーションバーのリンクなど、数個のリンクやコントロールはリストがなくても同じように読める場合があります。",
       "listitemParentValid_summary_fail_wrapped": "この <li> は <{{listElement}}> の中にありますが、間にある {{wrapper}} がリストを途切れさせています。リストの項目はリストの子要素である必要があります。",
@@ -48953,6 +50074,7 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_title": "表の見出しセルを空にしてはならない",
       "emptyTableHeader_description": "表の見出しセル (<th>、または role=\"columnheader\"/\"rowheader\" を持つ要素) に、表示されるテキストがあるかを確認します。aria-label/aria-labelledby だけで名前が付けられた見出しも検出します。実際のスクリーンリーダーとブラウザーでは、そのサポートにばらつきがあるためです。",
       "emptyTableHeader_summary_cantTell": "この表の見出しセルにはアクセシブルな名前がありません。",
+      "emptyTableHeader_summary_cantTell_contentName": "この表の見出しセルには表示されるテキストがありません。唯一の名前「{{name}}」は、コントロールや画像など、セルの中身から来ています。",
       "emptyTableHeader_hint_cantTell": "見出しセルにテキストを入れるか、aria-label または aria-labelledby で名前を付けてください。不要であれば削除してください。",
       "emptyTableHeader_summary_cantTell_ariaOnly": "この見出しセルには表示テキストがありません。名前は aria-label または aria-labelledby だけから来ていますが、NVDA と Firefox、iOS の VoiceOver など、一部のスクリーンリーダーとブラウザーの組み合わせは <th> 上のこれらを無視します。",
       "emptyTableHeader_hint_cantTell_ariaOnly": "ARIA の名前に加えて、または代わりに、見出しセルに表示テキストを入れてください。テストしたすべてのスクリーンリーダーが読み上げる名前は、表示テキストだけです。",
@@ -48986,6 +50108,7 @@ const RUNTIME_CATALOG = {
       "region_title": "ページのコンテンツはランドマーク領域内にあることが望ましい",
       "region_description": "<body> 以下のコンテンツが、ランドマーク領域に含まれているかを確認します。",
       "region_summary_cantTell": "この内容は、どのランドマーク領域にも含まれていません。",
+      "region_summary_cantTell_bodyText": "<body> の直下に置かれたテキスト「{{text}}」は、どのランドマーク領域にも含まれていません。",
       "region_hint_cantTell": "<main>、<nav>、<aside>、名前付きの <section> などのランドマークの中に移してください。",
       "region_lean_why": "このコンテンツはどのランドマーク領域にも含まれていません。",
       "skipLink_title": "スキップリンクには解決可能で利用できるリンク先が必要",
@@ -49141,7 +50264,7 @@ const RUNTIME_CATALOG = {
       "imagesOfText_hint_cantTell_svg": "ロゴのように描画のされ方が不可欠な場合や、ユーザーが画像での表示方法を変更できる場合を除き、ページに直接埋め込んだ SVG や画像の横のテキストなど、CSS でスタイルを付けた実際のテキストを使ってください。",
       "scrollableRegionFocusable_title": "フォーカス可能なコンテンツのないスクロール領域は、キーボードでフォーカスできることが望ましい",
       "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
-      "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、要素自体もその中身も、キーボードフォーカスを受け取れません。",
+      "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
       "scrollableRegionFocusable_hint_cantTell": "内容が実際にはみ出す場合は、tabindex=\"0\" と名前を付け、キーボードでフォーカスして矢印キーでスクロールできるようにしてください。",
       "scrollableRegionFocusable_lean_why_overflows": "内容がボックスからはみ出しており、スクロールするためにキーボードフォーカスを受けられるものが中にありません。",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 以降と Firefox では、スクロールするボックスにキーボードで到達できます。Safari ではできません。",
@@ -49922,84 +51045,170 @@ const RULE_MODULES = [
 function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Before anything reads the page's built-ins (see assertPageBuiltins).
   const assertPageBuiltinsFirst = (function assertPageBuiltins() {
-  // Recorded by index and joined by hand, as push or join may be what is
-  // broken.
-  const broken = [];
-  const check = (name, works) => {
-    let ok;
-    try {
-      ok = !!works();
-    } catch {
-      ok = false;
+  // The check itself runs on the built-ins it checks: one broken so badly
+  // that the check throws outside a probe (a throwing RegExp constructor,
+  // a getter on Object.prototype) stops the scan with the same code, not
+  // the page's own error.
+  let ours = null;
+  try {
+    // Recorded by index and joined by hand, as push or join may be what is
+    // broken.
+    const broken = [];
+    const check = (name, works) => {
+      let ok;
+      try {
+        ok = !!works();
+      } catch {
+        ok = false;
+      }
+      if (!ok) broken[broken.length] = name;
+    };
+    check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
+    check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
+    check('Array.prototype.push', () => {
+      const a = [];
+      a.push(1);
+      return a.length === 1 && a[0] === 1;
+    });
+    check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
+    check('Array iteration', () => {
+      let sum = 0;
+      for (const x of [1, 2]) sum += x;
+      return sum === 3;
+    });
+    check('Set iteration', () => [...new Set([1, 2])].length === 2);
+    check('Map iteration', () => {
+      const [entry] = [...new Map([['a', 1]])];
+      return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
+    });
+    // Built at run time: a bundle loaded without its charset would read the
+    // character in a literal as several.
+    check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
+    check('NodeList iteration', () => {
+      if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
+      // Read from Node.prototype: a named element could stand in for
+      // document.childNodes.
+      const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(
+        document
+      );
+      return [...nodes].length === nodes.length;
+    });
+    check('Map', () => {
+      const m = new Map();
+      m.set('a', 1);
+      return m.get('a') === 1 && m.has('a') && m.size === 1;
+    });
+    check('Set', () => {
+      const s = new Set();
+      s.add(1);
+      return s.has(1) && s.size === 1;
+    });
+    check('WeakMap', () => {
+      const k = {};
+      const m = new WeakMap();
+      m.set(k, 1);
+      return m.get(k) === 1;
+    });
+    check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
+    check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
+    check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
+    check('RegExp.prototype.exec', () => {
+      const m = /b(c)/.exec('abc');
+      return !!m && m.index === 1 && m[1] === 'c';
+    });
+    check('String.prototype.trim', () => '  a '.trim() === 'a');
+    check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+    check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
+    check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
+    // Each of these, replaced, changed what rules report without a word
+    // (round 8, PK-6 and RO-5): a probe of what each one does.
+    check('Array.isArray', () => Array.isArray([]) && !Array.isArray({ length: 0 }));
+    check('Array.prototype.slice', () => {
+      const a = [1, 2, 3].slice(1);
+      return a.length === 2 && a[0] === 2 && a[1] === 3;
+    });
+    check('Array.prototype.concat', () => {
+      const a = [1].concat([2], 3);
+      return a.length === 3 && a[1] === 2 && a[2] === 3;
+    });
+    check('Array.prototype.forEach', () => {
+      let sum = 0;
+      [1, 2].forEach((x) => {
+        sum += x;
+      });
+      return sum === 3;
+    });
+    check(
+      'Array.prototype.some',
+      () => [1, 2].some((x) => x === 2) && ![1, 2].some((x) => x === 3)
+    );
+    check('Array.prototype.every', () => [1, 2].every((x) => x > 0) && ![1, 2].every((x) => x > 1));
+    check('Array.prototype.find', () => [1, 2, 3].find((x) => x > 1) === 2);
+    check('Array.prototype.findIndex', () => [1, 2, 3].findIndex((x) => x > 1) === 1);
+    check('Array.prototype.reduce', () => [1, 2, 3].reduce((a, b) => a + b, 0) === 6);
+    check(
+      'Object.prototype.hasOwnProperty',
+      // eslint-disable-next-line no-prototype-builtins -- the check is of the method itself
+      () => ({ a: 1 }).hasOwnProperty('a') && !{}.hasOwnProperty('a')
+    );
+    check('String.prototype.split', () => {
+      const parts = 'a,b'.split(',');
+      return parts.length === 2 && parts[1] === 'b';
+    });
+    check(
+      'String.prototype.replace',
+      () => 'abc'.replace('b', 'x') === 'axc' && 'aba'.replace(/a/g, 'c') === 'cbc'
+    );
+    check('RegExp.prototype.test', () => /b/.test('abc') && !/d/.test('abc'));
+    check('RegExp', () => new RegExp('b+', 'g').exec('abbc')[0] === 'bb');
+    check('Math.round', () => Math.round(1.5) === 2 && Math.round(-0.4) === 0);
+    check('Math.abs', () => Math.abs(-2) === 2);
+    check('Math.max', () => Math.max(1, 3) === 3);
+    check('Math.min', () => Math.min(1, 3) === 1);
+    check('parseFloat', () => parseFloat('1.5px') === 1.5 && Number.parseFloat('2.5') === 2.5);
+    check('NodeFilter', () => {
+      if (typeof NodeFilter === 'undefined') return true;
+      return (
+        NodeFilter.SHOW_ELEMENT === 1 &&
+        NodeFilter.SHOW_TEXT === 4 &&
+        NodeFilter.FILTER_ACCEPT === 1 &&
+        NodeFilter.FILTER_REJECT === 2 &&
+        NodeFilter.FILTER_SKIP === 3
+      );
+    });
+    // A getter a page puts on Object.prototype is read for every key a plain
+    // object lacks: one that throws, or answers, changes what the engine
+    // reads of its own objects (result.type, options.contrast). A method put
+    // there (then, as a library may) is not read as a value, and is allowed.
+    const protoNames = Object.getOwnPropertyNames(Object.prototype);
+    for (let i = 0; i < protoNames.length; i++) {
+      const name = protoNames[i];
+      if (name === '__proto__') continue;
+      const d = Object.getOwnPropertyDescriptor(Object.prototype, name);
+      if (!d || typeof d.get !== 'function') continue;
+      check('Object.prototype.' + name, () => d.get.call({}) === undefined);
     }
-    if (!ok) broken[broken.length] = name;
-  };
-  check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
-  check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
-  check('Array.prototype.push', () => {
-    const a = [];
-    a.push(1);
-    return a.length === 1 && a[0] === 1;
-  });
-  check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
-  check('Array iteration', () => {
-    let sum = 0;
-    for (const x of [1, 2]) sum += x;
-    return sum === 3;
-  });
-  check('Set iteration', () => [...new Set([1, 2])].length === 2);
-  check('Map iteration', () => {
-    const [entry] = [...new Map([['a', 1]])];
-    return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
-  });
-  // Built at run time: a bundle loaded without its charset would read the
-  // character in a literal as several.
-  check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
-  check('NodeList iteration', () => {
-    if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
-    // Read from Node.prototype: a named element could stand in for
-    // document.childNodes.
-    const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(document);
-    return [...nodes].length === nodes.length;
-  });
-  check('Map', () => {
-    const m = new Map();
-    m.set('a', 1);
-    return m.get('a') === 1 && m.has('a') && m.size === 1;
-  });
-  check('Set', () => {
-    const s = new Set();
-    s.add(1);
-    return s.has(1) && s.size === 1;
-  });
-  check('WeakMap', () => {
-    const k = {};
-    const m = new WeakMap();
-    m.set(k, 1);
-    return m.get(k) === 1;
-  });
-  check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
-  check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
-  check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
-  check('RegExp.prototype.exec', () => {
-    const m = /b(c)/.exec('abc');
-    return !!m && m.index === 1 && m[1] === 'c';
-  });
-  check('String.prototype.trim', () => '  a '.trim() === 'a');
-  check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
-  check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
-  check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
-  if (!broken.length) return;
-  let names = '';
-  for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
-  const err = new Error(
-    'The page has changed JavaScript built-ins the engine relies on (' +
-      names +
-      "), so a scan of it can't be trusted. Scan it before its scripts change them."
-  );
-  err.code = 'PAGE_BUILTINS_BROKEN';
-  err.broken = broken;
-  throw err;
+    if (!broken.length) return;
+    let names = '';
+    for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (' +
+        names +
+        "), so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = broken;
+    ours = err;
+    throw err;
+  } catch (e) {
+    if (e === ours) throw e;
+    const err = new Error(
+      "The page has changed JavaScript built-ins the engine relies on, so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = [];
+    throw err;
+  }
 });
   assertPageBuiltinsFirst();
   const ENGINE_TAG = "a11ycore";
@@ -66123,12 +67332,53 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // Use helper focusable if it says true; otherwise use fallback focusable.
     // This specifically prevents aria-hidden from suppressing "self focusable".
-    const focusable = (helperInfo && helperInfo.focusable === true) || fallbackFocusable;
+    const focusable =
+      (helperInfo && helperInfo.focusable === true) || fallbackFocusable || isKeyboardScroller(el);
     if (!focusable) return false;
 
     // 2) exclude non-rendered / non-visible-by-style blockers
     // IMPORTANT: Do NOT exclude opacity-based invisibility; opacity:0 remains in-scope.
     return isRenderedForFocus(el);
+  }
+
+  // A scroll container whose content overflows and that holds nothing in
+  // the tab order is a tab stop of its own in Chromium (130 and later) and
+  // Firefox, so keyboard users can scroll it. Only where the page is laid
+  // out: jsdom measures no overflow.
+  const SCROLL_TAB_STOP_SELECTOR =
+    'a[href], button, input, select, textarea, [tabindex], iframe, summary, audio[controls], video[controls], [contenteditable]:not([contenteditable="false"])';
+  let layoutKnown = null;
+  function hasLayout() {
+    if (layoutKnown === null) {
+      try {
+        const probe = dom.documentElement(document);
+        const r = probe && dom.getBoundingClientRect(probe);
+        layoutKnown = !!r && (r.width > 0 || r.height > 0);
+      } catch {
+        layoutKnown = false;
+      }
+    }
+    return layoutKnown;
+  }
+  function isKeyboardScroller(el) {
+    if (!hasLayout() || dom.nodeType(el) !== 1) return false;
+    try {
+      const cs = helpers.computedStyle(el);
+      if (!cs) return false;
+      const sx = /^(auto|scroll)$/.test(String(cs.overflowX || ''));
+      const sy = /^(auto|scroll)$/.test(String(cs.overflowY || ''));
+      if (!sx && !sy) return false;
+      const dx = sx ? Number(dom.get(el, 'scrollWidth')) - Number(dom.get(el, 'clientWidth')) : 0;
+      const dy = sy ? Number(dom.get(el, 'scrollHeight')) - Number(dom.get(el, 'clientHeight')) : 0;
+      if (!(dx > 0 || dy > 0)) return false;
+      for (const d of dom.querySelectorAll(el, SCROLL_TAB_STOP_SELECTOR)) {
+        const info = getFocusableInfo ? getFocusableInfo(d, ctx) : null;
+        if (info && info.tabbable) return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   function hasInertAncestor(el) {
@@ -66210,9 +67460,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // 2) Find focusable candidates once (performance) and bucket those inside aria-hidden.
   // Keep selector fairly small to avoid huge candidate sets while still covering the reference-engine cases.
   // a[*|href]: an SVG <a> may carry its link as xlink:href.
+  // A copy: the list a query returns may be shared with other rules.
   const focusableCandidates = qAll(
     'a[*|href],area[href],button,input,select,textarea,summary,iframe,audio[controls],video[controls],[tabindex],[contenteditable]'
-  );
+  ).slice();
+  // A scroll container inside an aria-hidden root (or the root itself) can
+  // be a tab stop too (isKeyboardScroller), though nothing in its markup
+  // says so: looked for in those subtrees only, where the page is laid out.
+  if (hasLayout()) {
+    const seen = new Set(focusableCandidates);
+    let budget = 5000;
+    for (const hiddenRoot of ariaHiddenRoots.concat(sourceRoots)) {
+      const els = [hiddenRoot].concat([...dom.querySelectorAll(hiddenRoot, '*')]);
+      for (const el of els) {
+        if (budget-- <= 0) break;
+        if (seen.has(el)) continue;
+        seen.add(el);
+        if (isKeyboardScroller(el)) focusableCandidates.push(el);
+      }
+    }
+  }
 
   const bucket = new Map(); // ariaHiddenRoot -> { rootEl, count, offenders: [], hints:Set, rootIsFocusable, probeCandidates: [] }
   const maxOffendersPerRoot = 5;
@@ -67263,8 +68530,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // <generated:aria-allowed-extra-owned-roles>
   const ALLOWED_EXTRA_OWNED_ROLES = {
     grid: ['caption'],
-    menu: ['separator'],
-    menubar: ['separator'],
+    menu: ['menu', 'separator'],
+    menubar: ['menu', 'separator'],
     table: ['caption']
   };
   // </generated:aria-allowed-extra-owned-roles>
@@ -67284,9 +68551,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // focusable.
   // kidRole comes from getContainmentRole, not getExplicitRole: "roleless"
   // here means neither an explicit role="" NOR one of the native
-  // containment tags (li, tr, td, ...), so a bare <li>/<tr>/... is a real
-  // listitem/row boundary, not a transparent wrapper the walk should pass
-  // through.
+  // containment tags (li, tr, td, ...) NOR a native element with a role of
+  // its own (h1-h6, article, nav...), so a bare <li>/<tr>/<h3> is a real
+  // listitem/row/heading boundary, not a transparent wrapper the walk should
+  // pass through.
   // An element's child elements by sibling links, not el.children: in jsdom
   // that collection stays live once read, and each later change under a
   // large parent (a list of thousands of items) rebuilds it.
@@ -67462,7 +68730,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           ? 'ariaProhibitedChildren_hint_fail_typoNear'
           : 'ariaProhibitedChildren_hint_fail_implicit';
       } else if (implicit) {
-        summary = `This <${childElement}> is a ${entry.role} by default, which isn't allowed directly inside a role="${role}" container.`;
+        summary = `This <${childElement}> has the implicit role ${entry.role}, which isn't allowed directly inside a role="${role}" container.`;
         hint = `Give the <${childElement}> one of the roles the container allows (${allowedRoles.join(', ')}), or role="none" so what it holds belongs to the ${role}.`;
         summaryKey = 'ariaProhibitedChildren_summary_fail_implicit';
         hintKey = 'ariaProhibitedChildren_hint_fail_implicit';
@@ -68594,7 +69862,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } else if (above) {
       const blocker = tagOf(note.blocker);
       const parentElement = tagOf(above.el);
-      summary = `role="${role}" must sit directly inside one of these roles: ${requiredRoles}. A ${above.role} (<${parentElement}>) is above it, but the <${blocker}> between them is a ${note.blockerRole}, so the ${above.role} is not its parent.`;
+      summary = `role="${role}" must sit directly inside one of these roles: ${requiredRoles}. A ${above.role} (<${parentElement}>) is above it, but the <${blocker}> between them has role ${note.blockerRole}, so the ${above.role} is not its parent.`;
       hint = `Give the <${blocker}> role="none" so the ${role} belongs to the ${above.role}, or move the ${role} directly inside the ${above.role}.`;
       summaryKey = 'ariaRequiredParent_summary_fail_blocked';
       hintKey = 'ariaRequiredParent_hint_fail_blocked';
@@ -69078,7 +70346,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const usable = tokens.find((t) => ariaHelpers.isKnownRole(t) && !ariaHelpers.isAbstractRole(t));
     if (usable) continue;
 
-    const role = tokens[0];
+    // As quoted, cut to 120 characters (helpers.quoteText): a 200 KB token
+    // was copied whole into the summary, its parameters and the details.
+    const role = helpers.quoteText(tokens[0]);
     const isKnown = tokens.some((t) => ariaHelpers.isKnownRole(t));
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
 
@@ -70553,7 +71823,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const tag = dom.tagName(el).toLowerCase();
 
-    const why = diagnose(raw);
+    // Page text quoted cut to 120 characters (helpers.quoteText): a 200 KB
+    // value was copied whole into the hint, its parameters and the details.
+    const why = { ...diagnose(raw) };
+    for (const k of ['token', 'field']) {
+      if (typeof why[k] === 'string') why[k] = helpers.quoteText(why[k]);
+    }
+    const shownValue = helpers.quoteText(value);
     const hint = {
       unknownToken_suggestion: `"${why.token}" is not an autofill token. Did you mean "${why.suggestion}"?`,
       unknownToken: `"${why.token}" is not an autofill token. Use a field name such as "email", "tel" or "postal-code", after "shipping" or "billing" where it applies.`,
@@ -70571,7 +71847,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: `autocompleteValid_hint_fail_${why.kind}`,
           params: {
             element: tag,
-            value,
+            value: shownValue,
             token: why.token || '',
             suggestion: why.suggestion || '',
             field: why.field || ''
@@ -70581,7 +71857,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           details: {
             reasonCode: 'AUTOCOMPLETE_VALUE_INVALID',
             element: tag,
-            value,
+            value: shownValue,
             problem: why
           }
         }
@@ -71492,6 +72768,49 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // The roles another rule checks the name of: link-name-present,
+  // tab-name-present, binary-control-name-present (checkbox, radio, switch),
+  // menuitem-name-present, option-name-present, combobox-name-present,
+  // listbox-name-present, searchbox-name-present, textbox-name-present,
+  // slider-name-present, spinbutton-name-present, treeitem-name-present,
+  // meter-name-present, progressbar-name-present, aria-role-name-present
+  // (grid, radiogroup, tree), dialog-name-present, tooltip-name-present,
+  // landmark-role-name-present (form, region), empty-heading and
+  // role-img-text-alternative-present (img, graphics-document,
+  // graphics-symbol).
+  const ROLES_NAMED_BY_OTHER_RULES = new Set([
+    'alertdialog',
+    'checkbox',
+    'combobox',
+    'dialog',
+    'form',
+    'graphics-document',
+    'graphics-symbol',
+    'grid',
+    'heading',
+    'img',
+    'link',
+    'listbox',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'region',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'textbox',
+    'tooltip',
+    'tree',
+    'treeitem'
+  ]);
+
   // The role attribute is a fallback list, so role="foo button" and
   // role="BUTTON" are buttons; role="link button" is a link. Select by token,
   // case-insensitively, then keep role-only candidates that resolve to button.
@@ -71527,6 +72846,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tag = (dom.tagName(el) || '').toLowerCase();
     const role = getExplicitRole(el);
     const roleNorm = role;
+
+    // A native button given another role is that role, not a button (ACT
+    // 97a4e1 applies to role button only): the rule that checks that role's
+    // name reports it, not this one as well.
+    if (ROLES_NAMED_BY_OTHER_RULES.has(roleNorm)) continue;
     // The role the name is computed for: the explicit one, unless the
     // presentational-role conflict below restores the implicit role.
     let nameRole = roleNorm;
@@ -71722,16 +73046,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Why it has none, where the page shows a cause the reader would not
       // see from the element alone (helpers.nameCause): the hint says so.
       const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
+      // A native button given a role no other rule names (gridcell,
+      // separator...) is reported here, under the role it has.
+      const otherRole = nameRole && nameRole !== 'button' ? nameRole : '';
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: 'This button has no accessible name.',
+          summary: otherRole
+            ? `This <${tag}> has role ${otherRole} and no accessible name.`
+            : 'This button has no accessible name.',
           hint: cause
             ? cause.hint
             : 'Give the button visible text, or name it with aria-label, so screen reader users know what it does.',
           i18n: {
-            summaryKey: 'buttonNamePresent_summary_fail',
+            summaryKey: otherRole
+              ? 'buttonNamePresent_summary_fail_otherRole'
+              : 'buttonNamePresent_summary_fail',
             hintKey: cause ? cause.hintKey : 'buttonNamePresent_hint_fail',
-            params: { element: tag, ...(cause ? cause.params : {}) }
+            params: {
+              element: tag,
+              ...(otherRole ? { role: otherRole } : {}),
+              ...(cause ? cause.params : {})
+            }
           },
           data: {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
@@ -73766,7 +75101,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             ? String(extraDetails.backgroundFillType || '')
             : '';
 
-        if (t === 'image') summaryKey = 'contrastComputable_cantTell_bgImage';
+        const bp =
+          extraDetails && typeof extraDetails === 'object'
+            ? String(extraDetails.blockerProperty || '')
+            : '';
+        if (bp === 'box-shadow') summaryKey = 'contrastComputable_cantTell_insetShadow';
+        else if (t === 'image') summaryKey = 'contrastComputable_cantTell_bgImage';
         else if (t === 'gradient') summaryKey = 'contrastComputable_cantTell_bgGradient';
         else if (t === 'imageAndGradient')
           summaryKey = 'contrastComputable_cantTell_bgImageAndGradient';
@@ -73778,6 +75118,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             ? String(extraDetails.blockerProperty || '')
             : '';
         if (bp === 'filter') summaryKey = 'contrastComputable_cantTell_filter';
+        else if (bp === 'mask-image') summaryKey = 'contrastComputable_cantTell_mask';
         else if (bp === 'backdrop-filter')
           summaryKey = 'contrastComputable_cantTell_backdropFilter';
         else summaryKey = 'contrastComputable_cantTell_filterOrBackdropFilter';
@@ -74715,6 +76056,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // What scaled the text, as CSS names it.
   const SCALED_BY_LABEL = {
     zoom: 'zoom',
+    transform: 'transform',
     svg: 'SVG transform',
     'font-size-adjust': 'font-size-adjust'
   };
@@ -76008,6 +77350,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // What scaled the text, as CSS names it.
   const SCALED_BY_LABEL = {
     zoom: 'zoom',
+    transform: 'transform',
     svg: 'SVG transform',
     'font-size-adjust': 'font-size-adjust'
   };
@@ -77245,12 +78588,104 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  function providesReplacement(style) {
-    if (drawsOutline(style)) return true;
-    for (const prop of REPLACEMENT_PROPS) {
-      if (getProp(style, prop)) return true;
+  // CSS-wide keywords put back a value from elsewhere; they draw nothing of
+  // their own a person could tell from the unfocused element.
+  const CSS_WIDE = /^(inherit|initial|unset|revert|revert-layer)$/;
+
+  function parseColor(v) {
+    const c = helpers.contrast;
+    if (!c || typeof c.parseCssColorToRgba !== 'function') return null;
+    try {
+      return c.parseCssColorToRgba(v) || null;
+    } catch {
+      return null;
     }
-    return false;
+  }
+
+  function isClearColor(v) {
+    if (v === 'transparent') return true;
+    const parsed = /^(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/.test(v) ? parseColor(v) : null;
+    return !!parsed && parsed.a === 0;
+  }
+
+  // Splits a value on spaces outside parentheses: "0 0 0 2px rgb(0, 0, 0)".
+  function valueTokens(v) {
+    const tokens = [];
+    let depth = 0;
+    let current = '';
+    for (const ch of v) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && /\s/.test(ch)) {
+        if (current) tokens.push(current);
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    if (current) tokens.push(current);
+    return tokens;
+  }
+
+  // Whether a declared value can draw anything at all, whatever the element
+  // looked like before: `box-shadow: none`, `background: transparent` and
+  // `border: 0` are written as focus styles but paint nothing, so they are
+  // no replacement for the outline they sit next to.
+  function valueCanDraw(prop, value) {
+    if (!value || CSS_WIDE.test(value)) return false;
+    const tokens = valueTokens(value.replace(/\s*!important$/, ''));
+    if (!tokens.length) return false;
+    switch (prop) {
+      case 'box-shadow':
+      case 'text-shadow':
+      case 'filter':
+      case 'transform':
+      case 'background-image':
+        return value !== 'none';
+      case 'content':
+        return !/^(none|normal|""|'')$/.test(value);
+      case 'background':
+      case 'background-color':
+        return !tokens.every((t) => t === 'none' || isClearColor(t));
+      case 'border-radius':
+        return !tokens.every((t) => t === '/' || isZeroLength(t));
+      case 'color':
+      case 'text-decoration-color':
+      case 'border-color':
+        return !tokens.every((t) => t === 'currentcolor' || isClearColor(t));
+      case 'border':
+      case 'border-style':
+      case 'border-width':
+      case 'border-top':
+      case 'border-right':
+      case 'border-bottom':
+      case 'border-left':
+        // No line is drawn without a width and a style, nor in a clear colour.
+        return !tokens.some(
+          (t) => t === 'none' || t === 'hidden' || isZeroLength(t) || isClearColor(t)
+        );
+      default:
+        return true;
+    }
+  }
+
+  // The replacement declarations a focus rule makes: those whose value can
+  // draw something. A positive outline is one of them.
+  function replacementDecls(style) {
+    const decls = [];
+    if (drawsOutline(style)) decls.push({ prop: 'outline', value: getProp(style, 'outline') });
+    // A border needs a width, a style and a colour: when the rule clears any
+    // one of them, its other border longhands draw nothing either.
+    const borderGone = ['border', 'border-color', 'border-style', 'border-width'].some((prop) => {
+      const value = getProp(style, prop);
+      return !!value && !CSS_WIDE.test(value) && !valueCanDraw(prop, value);
+    });
+    for (const prop of REPLACEMENT_PROPS) {
+      if (borderGone && /^border-(?!radius)|^border$/.test(prop)) continue;
+      const value = getProp(style, prop);
+      if (valueCanDraw(prop, value)) decls.push({ prop, value });
+    }
+    return decls;
   }
 
   // Splits a selector list on top-level commas only, so a comma inside
@@ -77304,8 +78739,68 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return compounds;
   }
 
+  // Splits on top-level commas, keeping empty items.
+  function splitArgs(text) {
+    const args = [];
+    let depth = 0;
+    let current = '';
+    for (const ch of text) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (ch === ',' && depth === 0) {
+        args.push(current);
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    args.push(current);
+    return args;
+  }
+
+  const MATCHES_ANY = /^:(is|where|matches|-webkit-any)\(/i;
+
+  // The selector with :focus and :focus-visible taken out, as it reads while
+  // the element has focus. Inside :is()/:where() (`a:is(:focus, :hover)`), an
+  // argument left empty is one the focused element meets, so the whole
+  // pseudo-class goes; a non-empty one stays as written.
+  function dropFocus(sel) {
+    let out = '';
+    let rest = '';
+    let i = 0;
+    while (i < sel.length) {
+      const m = sel[i] === ':' ? MATCHES_ANY.exec(sel.slice(i)) : null;
+      if (!m) {
+        rest += sel[i];
+        i += 1;
+        continue;
+      }
+      out += rest.replace(FOCUS_PSEUDO, '');
+      rest = '';
+      const start = i + m[0].length;
+      let depth = 1;
+      let j = start;
+      for (; j < sel.length && depth; j++) {
+        if (sel[j] === '(') depth += 1;
+        else if (sel[j] === ')') depth -= 1;
+      }
+      const inner = sel.slice(start, depth ? j : j - 1);
+      let met = false;
+      const args = splitArgs(inner).map((arg) => {
+        const raw = dropFocus(arg);
+        const kept = trim(raw);
+        if (trim(arg) && !kept) met = true;
+        // `:is(.menu :focus)` keeps its combinator: `.menu *`.
+        return kept && /[\s>+~]:focus(-visible)?$/i.test(trim(arg)) ? `${kept} *` : kept;
+      });
+      if (!met) out += `${m[0]}${args.filter(Boolean).join(', ')})`;
+      i = j;
+    }
+    return out + rest.replace(FOCUS_PSEUDO, '');
+  }
+
   function stripFocusPseudo(compound) {
-    const stripped = trim(String(compound).replace(FOCUS_PSEUDO, ''));
+    const stripped = trim(dropFocus(String(compound)));
     return stripped || '*';
   }
 
@@ -77412,7 +78907,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!style || !selectorText) return;
 
     const suppresses = suppressesOutline(style);
-    const provides = providesReplacement(style);
+    const decls = replacementDecls(style);
+    const provides = decls.length ? decls : null;
     if (!suppresses && !provides) return;
 
     for (const part of splitSelectorList(selectorText)) {
@@ -77473,8 +78969,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // A replacement is credited to the element that takes focus, wherever
     // the rule paints it: on the element itself, its pseudo-element, a
-    // sibling, or a descendant.
-    if (provides) providers.push({ base: focusedBase, subject: isSubject });
+    // sibling, or a descendant. `own` marks a rule styling the element
+    // itself, whose values can be held against how it looks unfocused.
+    if (provides) {
+      providers.push({
+        base: focusedBase,
+        subject: isSubject,
+        own: isSubject && !hasPseudoElement(part),
+        decls: provides
+      });
+    }
   }
 
   // A nested rule's selector, resolved against its parent's: `&` stands for
@@ -77643,6 +79147,64 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   const INLINE_FOCUS_HANDLERS = '[onfocus], [onfocusin], [onblur], [onfocusout]';
 
+  // Whether a declared value is what the element already shows unfocused:
+  // `a:focus { text-decoration: none }` on a link with no underline changes
+  // nothing. Only values that read back plainly are compared; anything else
+  // counts as a change, as before.
+  function sameAsUnfocused(cs, prop, value) {
+    const now = (name) => getProp(cs, name);
+    if (prop === 'text-decoration' || prop === 'text-decoration-line') {
+      // Some environments only fill in the shorthand, so both are read.
+      const line = now('text-decoration-line');
+      return (
+        value === 'none' &&
+        (!line || line === 'none') &&
+        !/underline|overline|line-through/.test(now('text-decoration'))
+      );
+    }
+    if (prop === 'font-weight') {
+      const weight = (v) => (v === 'normal' ? '400' : v === 'bold' ? '700' : v);
+      return weight(value) === weight(now('font-weight'));
+    }
+    if (prop === 'opacity') {
+      return parseFloat(value) === parseFloat(now('opacity') || '1');
+    }
+    if (prop === 'color' || prop === 'background-color' || prop === 'background') {
+      if (prop === 'background' && now('background-image') && now('background-image') !== 'none') {
+        return false;
+      }
+      const declared = parseColor(value);
+      const current = parseColor(now(prop === 'color' ? 'color' : 'background-color'));
+      return (
+        !!declared &&
+        !!current &&
+        ['r', 'g', 'b', 'a'].every((k) => Math.abs((declared[k] || 0) - (current[k] || 0)) < 0.01)
+      );
+    }
+    return false;
+  }
+
+  const activeElement = (() => {
+    try {
+      return dom.activeElement(document);
+    } catch {
+      return null;
+    }
+  })();
+
+  function changesElement(el, decls) {
+    // Focused now, its computed style already holds the focus rule's values.
+    if (el === activeElement) return true;
+    let cs = null;
+    try {
+      cs = typeof helpers.computedStyle === 'function' ? helpers.computedStyle(el) : null;
+    } catch {
+      cs = null;
+    }
+    if (!cs) return true;
+    return decls.some((d) => !sameAsUnfocused(cs, d.prop, d.value));
+  }
+
   const CANDIDATE_SELECTOR =
     'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
   const candidates = helpers.queryAllSmart
@@ -77663,7 +79225,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!suppressing.length) continue;
 
     const indicated = providers.some((p) =>
-      p.subject ? matchesSafe(el, p.base) : matchesSafe(el, p.base) || closestSafe(el, p.base)
+      p.subject
+        ? matchesSafe(el, p.base) && (!p.own || changesElement(el, p.decls))
+        : matchesSafe(el, p.base) || closestSafe(el, p.base)
     );
     if (indicated) continue;
 
@@ -80638,19 +82202,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             })()
           : null;
 
+        // The id as quoted, cut to 120 characters: a page's 200 KB id was
+        // copied whole into the summary, its parameters and the details.
+        const shownId = helpers.quoteText(value);
         occurrences.push(
           helpers.reportOccurrence(el, {
-            summary: `The id "${value}" is used on ${els.length} elements in the same tree.`,
+            summary: `The id "${shownId}" is used on ${els.length} elements in the same tree.`,
             hint: 'Give each element its own id. A duplicate breaks <label for>, fragment links, getElementById and every ID-reference attribute, all of which resolve to the first match only.',
             i18n: {
               summaryKey: 'duplicateId_summary_fail',
               hintKey: 'duplicateId_hint_fail',
-              params: { id: value, count: String(els.length) }
+              params: { id: shownId, count: String(els.length) }
             },
             data: {
               details: {
                 reasonCode: inShadowTree ? 'DUPLICATE_ID_IN_SHADOW_TREE' : 'DUPLICATE_ID',
-                id: value,
+                id: shownId,
                 count: els.length
               },
               visibilityFilter: eligInfo || { targetSet: 'dom', accEligible: null, reasons: [] }
@@ -80744,28 +82311,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .replace(/\s+/g, ' ')
       .trim();
 
-  // How deep the deepest ancestor two elements share is.
-  // An element's ancestors with their distance from it, once per element.
-  const chains = new Map();
-  function chainOf(a) {
-    let chain = chains.get(a);
-    if (!chain) {
-      chain = new Map();
-      let depth = 0;
-      for (let n = a; n; n = dom.parentNode(n)) chain.set(n, depth++);
-      chain.total = depth;
-      chains.set(a, chain);
-    }
-    return chain;
-  }
-  function sharedDepth(a, b) {
-    const chain = chainOf(a);
-    for (let n = b; n; n = dom.parentNode(n)) {
-      if (chain.has(n)) return chain.total - chain.get(n);
-    }
-    return 0;
-  }
-
   // Each referring element's nearest copy of the id (the one it shares the
   // deepest ancestor with, alone), worked out once per id: { r, nearest }
   // for each referrer with a nearest copy. Asked once per copy, it cost
@@ -80774,19 +82319,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function nearestCopies(refId, els) {
     if (nearestMemo.has(refId)) return nearestMemo.get(refId);
     const out = [];
-    for (const r of referrers.get(refId) || []) {
-      let best = -1;
-      let nearest = null;
-      let tie = false;
-      for (const e of els) {
-        const d = sharedDepth(r.el, e);
-        if (d > best) {
-          best = d;
-          nearest = e;
-          tie = false;
-        } else if (d === best) tie = true;
+    // Each ancestor of a copy, with how many copies lie under it and which
+    // (the last met). A referrer's nearest copy is under its deepest
+    // ancestor that has any: the only one there, or a tie between several.
+    // Walked once per copy and once per referrer, where comparing each
+    // referrer with each copy grew with their product (round 8, NW-5).
+    const under = new Map();
+    for (const e of els) {
+      for (let n = e, i = 0; n && i < 100000; n = dom.parentNode(n), i++) {
+        const rec = under.get(n);
+        if (rec) {
+          rec.count += 1;
+          rec.copy = e;
+        } else under.set(n, { count: 1, copy: e });
       }
-      if (nearest && !tie) out.push({ r, nearest });
+    }
+    for (const r of referrers.get(refId) || []) {
+      let found = null;
+      for (let n = r.el, i = 0; n && i < 100000; n = dom.parentNode(n), i++) {
+        found = under.get(n);
+        if (found) break;
+      }
+      // With no shared ancestor, a lone copy is still the nearest.
+      if (found ? found.count === 1 : els.length === 1) {
+        out.push({ r, nearest: found ? found.copy : els[0] });
+      }
     }
     nearestMemo.set(refId, out);
     return out;
@@ -80875,11 +82432,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const ownText = isFirst ? firstText : shortText(el);
       const nearReferrer = near ? describeEl(near.el) : '';
       const quoted = (t) => (t ? ` ("${t}")` : '');
+      // The id as quoted, cut to 120 characters: a page's 200 KB id was
+      // copied whole into the summary, its parameters and the details.
+      const shownId = helpers.quoteText(refId);
       const summary = isFirst
-        ? `The id "${refId}" is used by ${els.length} elements; this one is the first, the one ${attributes} reaches.`
+        ? `The id "${shownId}" is used by ${els.length} elements; this one is the first, the one ${attributes} reaches.`
         : near
-          ? `The ${near.attr} on the ${nearReferrer} next to this element refers to "${refId}", but it reaches the first element with that id${quoted(firstText)}, not this one${quoted(ownText)}.`
-          : `The id "${refId}" is used by ${els.length} elements; ${attributes} reaches the first one${quoted(firstText)}, not this one${quoted(ownText)}.`;
+          ? `The ${near.attr} on the ${nearReferrer} next to this element refers to "${shownId}", but it reaches the first element with that id${quoted(firstText)}, not this one${quoted(ownText)}.`
+          : `The id "${shownId}" is used by ${els.length} elements; ${attributes} reaches the first one${quoted(firstText)}, not this one${quoted(ownText)}.`;
 
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
@@ -80893,7 +82453,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                 : 'duplicateIdAria_summary_cantTell',
             hintKey: 'duplicateIdAria_hint_cantTell',
             params: {
-              id: refId,
+              id: shownId,
               duplicateCount: String(els.length),
               attributes,
               firstText,
@@ -80905,13 +82465,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           uncertainty: {
             code: 'judgement-required',
             needed: 'Whether the first element carrying this id is the intended target.',
-            evidence: { id: refId, duplicateCount: els.length, resolvesTo: 'first' }
+            evidence: { id: shownId, duplicateCount: els.length, resolvesTo: 'first' }
           },
           ...(lean ? { lean } : {}),
           data: {
             details: {
               reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',
-              id: refId,
+              id: shownId,
               duplicateCount: els.length,
               referringAttributes: attrs,
               reached: isFirst,
@@ -81799,6 +83359,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    // A header holding a named control or image is named from its content
+    // (a "Select all rows" checkbox), though it shows no text: say so rather
+    // than call it nameless.
+    let contentName;
+    try {
+      const info = helpers.getContentNameInfo(el, ctx);
+      contentName = info && info.present ? normalizeWs(info.value) : '';
+    } catch {
+      contentName = '';
+    }
+    if (contentName) {
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This table header cell has no visible text. Its only name, "${contentName}", comes from what it holds, such as a control or an image.`,
+          hint: "Give the header cell text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
+          i18n: {
+            summaryKey: 'emptyTableHeader_summary_cantTell_contentName',
+            hintKey: 'emptyTableHeader_hint_cantTell',
+            params: { name: contentName }
+          },
+          data: {
+            details: { reasonCode: 'TABLE_HEADER_EMPTY' }
+          }
+        })
+      );
+      continue;
+    }
+
     let lean = null;
     try {
       lean = emptyHeaderLean(el);
@@ -81853,28 +83441,83 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const m = /^(-?\d*\.?\d+)px$/.exec(lower(v));
     return m ? Number.parseFloat(m[1]) : 0;
   };
-  // A length a browser may keep as written: px, a percentage of `ref`, or a
-  // calc() adding the two ("calc(10% + 2px)"). Anything else reads as 0.
+  // A length a browser may keep as written: px, a percentage of `ref`, and
+  // calc(), min(), max() and clamp() of those ("calc(10% + 2px)", "max(10%,
+  // 60px)"): Chromium keeps scroll-padding in that form while a percentage is
+  // in it. Anything else, or anything it can't read, reads as 0.
   const lengthOf = (v, ref) => {
     const raw = lower(v);
     if (!raw || raw === 'auto') return 0;
-    const pct = /^(-?\d*\.?\d+)%$/.exec(raw);
-    if (pct) return (Number.parseFloat(pct[1]) * ref) / 100;
-    const calc = /^calc\((.*)\)$/.exec(raw);
-    if (calc) {
-      let total = 0;
-      let rest = calc[1].replace(/\s+/g, '');
-      const term = /^([+-]?)(\d*\.?\d+)(px|%)/;
-      while (rest) {
-        const m = term.exec(rest);
-        if (!m) return 0;
-        const n = Number.parseFloat(m[2]) * (m[1] === '-' ? -1 : 1);
-        total += m[3] === '%' ? (n * ref) / 100 : n;
-        rest = rest.slice(m[0].length);
+    const tokens = raw.match(/\d*\.?\d+(?:px|%)?|[a-z-]+\(|[()+\-*/,]|\S/g) || [];
+    let i = 0;
+    const peek = () => tokens[i];
+    const expect = (t) => {
+      if (tokens[i++] !== t) throw new Error('unreadable');
+    };
+    // Each value is { n, len }: a number, and whether it is a length (px).
+    let sum = null;
+    const primary = () => {
+      const t = tokens[i++];
+      if (t === '(' || t === 'calc(') {
+        const value = sum();
+        expect(')');
+        return value;
       }
-      return total;
+      if (t === 'min(' || t === 'max(' || t === 'clamp(') {
+        const args = [sum()];
+        while (peek() === ',') {
+          i += 1;
+          args.push(sum());
+        }
+        expect(')');
+        if (!args.every((a) => a.len || a.n === 0)) throw new Error('unreadable');
+        const n = args.map((a) => a.n);
+        if (t === 'min(') return { n: Math.min(...n), len: true };
+        if (t === 'max(') return { n: Math.max(...n), len: true };
+        if (n.length !== 3) throw new Error('unreadable');
+        return { n: Math.max(n[0], Math.min(n[1], n[2])), len: true };
+      }
+      if (t === '-' || t === '+') {
+        const value = primary();
+        return { n: t === '-' ? -value.n : value.n, len: value.len };
+      }
+      const m = /^(\d*\.?\d+)(px|%)?$/.exec(t || '');
+      if (!m) throw new Error('unreadable');
+      const n = Number.parseFloat(m[1]);
+      if (!m[2]) return { n, len: false };
+      return { n: m[2] === '%' ? (n * ref) / 100 : n, len: true };
+    };
+    const product = () => {
+      let value = primary();
+      while (peek() === '*' || peek() === '/') {
+        const op = tokens[i++];
+        const other = primary();
+        if (op === '*') {
+          if (value.len && other.len) throw new Error('unreadable');
+          value = { n: value.n * other.n, len: value.len || other.len };
+        } else {
+          if (other.len || other.n === 0) throw new Error('unreadable');
+          value = { n: value.n / other.n, len: value.len };
+        }
+      }
+      return value;
+    };
+    sum = () => {
+      let value = product();
+      while (peek() === '+' || peek() === '-') {
+        const op = tokens[i++];
+        const other = product();
+        value = { n: op === '+' ? value.n + other.n : value.n - other.n, len: true };
+      }
+      return value;
+    };
+    try {
+      const value = sum();
+      if (i !== tokens.length || (!value.len && value.n !== 0)) return 0;
+      return Number.isFinite(value.n) ? value.n : 0;
+    } catch {
+      return 0;
     }
-    return px(raw);
   };
   const styleOf = (el) => {
     try {
@@ -82080,6 +83723,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (r && r.width > 0 && r.height > 0 && shown(m)) modals.push(m);
   }
   const inModal = (el) => modals.some((m) => dom.contains(m, el));
+  // The parent in the composed tree, through a shadow root to its host, and
+  // whether a node is inside another there.
+  const composedUp = (n) =>
+    typeof helpers.composedParent === 'function' ? helpers.composedParent(n) : dom.parentElement(n);
+  const inComposed = (node, container) => {
+    for (let cur = node, i = 0; cur && i < 100000; cur = composedUp(cur), i++) {
+      if (cur === container) return true;
+    }
+    return false;
+  };
 
   // A sticky box stays inside its containing block, the nearest ancestor
   // that is no inline box, no display: contents and no table row, row group
@@ -82268,7 +83921,48 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     opened.some((t) => t === root || dom.contains(root, t) || dom.contains(t, root));
 
   // ---- Confirm with the browser: scroll a few there and hit-test ----
+  // Scrolling the window makes the browser fire `scroll` and `scrollend` at
+  // the page once the scan is over, though the page is put back where it
+  // was: a page that loads a widget on its first scroll would change under
+  // the next scan. A capturing listener on the window keeps those two
+  // events, for the window's own scrolling only, from the page's listeners,
+  // and goes once the scrollend has passed (where the browser has none, the
+  // scroll), or a moment later where no event comes. Shared with the
+  // variant run in the same scan (focus-not-obscured-enhanced).
+  const guards = memoOf('scrollGuard');
+  function guardScrollEvents() {
+    const current = guards.get(view);
+    if (current && current.active) return;
+    const guard = { active: true };
+    guards.set(view, guard);
+    const withScrollEnd = 'onscrollend' in view;
+    const remove = () => {
+      if (!guard.active) return;
+      guard.active = false;
+      try {
+        dom.removeEventListener(view, 'scroll', stop, true);
+        dom.removeEventListener(view, 'scrollend', stop, true);
+      } catch {}
+    };
+    function stop(e) {
+      if (!guard.active || (e.target !== document && e.target !== view)) return;
+      e.stopImmediatePropagation();
+      if (e.type === 'scrollend' || !withScrollEnd) remove();
+    }
+    try {
+      dom.addEventListener(view, 'scroll', stop, true);
+      dom.addEventListener(view, 'scrollend', stop, true);
+      if (typeof view.setTimeout === 'function') view.setTimeout(remove, 500);
+    } catch {
+      remove();
+    }
+  }
+  let moved = false;
   const scrollTo = (y) => {
+    if (y !== scrollY && !moved) {
+      moved = true;
+      guardScrollEvents();
+    }
     try {
       dom.call(view, 'scrollTo', { left: scrollX, top: y, behavior: 'instant' });
     } catch {
@@ -82303,13 +83997,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         } catch {
           top = null;
         }
-        if (!top || top === c.el || dom.contains(c.el, top) || dom.contains(top, c.el)) continue;
-        if (!dom.contains(cover.root, top)) continue;
+        // The hit is read in the composed tree: it may be inside a
+        // component the cover or the focused element holds, where contains()
+        // stops at the shadow boundary (round 8, NW-2).
+        if (!top || top === c.el || inComposed(top, c.el) || inComposed(c.el, top)) continue;
+        if (!inComposed(top, cover.root)) continue;
         // Drawn there: the part hit, or a box around it within the root,
         // and for 2.4.11 drawn opaque, as what shows through hides nothing
         // entirely.
         let drawn = false;
-        for (let n = top, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+        for (let n = top, i = 0; n && i < 10000; n = composedUp(n), i++) {
           const ncs = styleOf(n);
           if (partlyToo ? paints(n, ncs) : opaque(n, ncs)) {
             drawn = true;
@@ -82484,7 +84181,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       );
     }
   } finally {
-    scrollTo(scrollY);
+    if (moved) scrollTo(scrollY);
   }
 
   // Only where boxes were left unchecked: how many boxes could hide an
@@ -82532,28 +84229,83 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const m = /^(-?\d*\.?\d+)px$/.exec(lower(v));
     return m ? Number.parseFloat(m[1]) : 0;
   };
-  // A length a browser may keep as written: px, a percentage of `ref`, or a
-  // calc() adding the two ("calc(10% + 2px)"). Anything else reads as 0.
+  // A length a browser may keep as written: px, a percentage of `ref`, and
+  // calc(), min(), max() and clamp() of those ("calc(10% + 2px)", "max(10%,
+  // 60px)"): Chromium keeps scroll-padding in that form while a percentage is
+  // in it. Anything else, or anything it can't read, reads as 0.
   const lengthOf = (v, ref) => {
     const raw = lower(v);
     if (!raw || raw === 'auto') return 0;
-    const pct = /^(-?\d*\.?\d+)%$/.exec(raw);
-    if (pct) return (Number.parseFloat(pct[1]) * ref) / 100;
-    const calc = /^calc\((.*)\)$/.exec(raw);
-    if (calc) {
-      let total = 0;
-      let rest = calc[1].replace(/\s+/g, '');
-      const term = /^([+-]?)(\d*\.?\d+)(px|%)/;
-      while (rest) {
-        const m = term.exec(rest);
-        if (!m) return 0;
-        const n = Number.parseFloat(m[2]) * (m[1] === '-' ? -1 : 1);
-        total += m[3] === '%' ? (n * ref) / 100 : n;
-        rest = rest.slice(m[0].length);
+    const tokens = raw.match(/\d*\.?\d+(?:px|%)?|[a-z-]+\(|[()+\-*/,]|\S/g) || [];
+    let i = 0;
+    const peek = () => tokens[i];
+    const expect = (t) => {
+      if (tokens[i++] !== t) throw new Error('unreadable');
+    };
+    // Each value is { n, len }: a number, and whether it is a length (px).
+    let sum = null;
+    const primary = () => {
+      const t = tokens[i++];
+      if (t === '(' || t === 'calc(') {
+        const value = sum();
+        expect(')');
+        return value;
       }
-      return total;
+      if (t === 'min(' || t === 'max(' || t === 'clamp(') {
+        const args = [sum()];
+        while (peek() === ',') {
+          i += 1;
+          args.push(sum());
+        }
+        expect(')');
+        if (!args.every((a) => a.len || a.n === 0)) throw new Error('unreadable');
+        const n = args.map((a) => a.n);
+        if (t === 'min(') return { n: Math.min(...n), len: true };
+        if (t === 'max(') return { n: Math.max(...n), len: true };
+        if (n.length !== 3) throw new Error('unreadable');
+        return { n: Math.max(n[0], Math.min(n[1], n[2])), len: true };
+      }
+      if (t === '-' || t === '+') {
+        const value = primary();
+        return { n: t === '-' ? -value.n : value.n, len: value.len };
+      }
+      const m = /^(\d*\.?\d+)(px|%)?$/.exec(t || '');
+      if (!m) throw new Error('unreadable');
+      const n = Number.parseFloat(m[1]);
+      if (!m[2]) return { n, len: false };
+      return { n: m[2] === '%' ? (n * ref) / 100 : n, len: true };
+    };
+    const product = () => {
+      let value = primary();
+      while (peek() === '*' || peek() === '/') {
+        const op = tokens[i++];
+        const other = primary();
+        if (op === '*') {
+          if (value.len && other.len) throw new Error('unreadable');
+          value = { n: value.n * other.n, len: value.len || other.len };
+        } else {
+          if (other.len || other.n === 0) throw new Error('unreadable');
+          value = { n: value.n / other.n, len: value.len };
+        }
+      }
+      return value;
+    };
+    sum = () => {
+      let value = product();
+      while (peek() === '+' || peek() === '-') {
+        const op = tokens[i++];
+        const other = product();
+        value = { n: op === '+' ? value.n + other.n : value.n - other.n, len: true };
+      }
+      return value;
+    };
+    try {
+      const value = sum();
+      if (i !== tokens.length || (!value.len && value.n !== 0)) return 0;
+      return Number.isFinite(value.n) ? value.n : 0;
+    } catch {
+      return 0;
     }
-    return px(raw);
   };
   const styleOf = (el) => {
     try {
@@ -82759,6 +84511,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (r && r.width > 0 && r.height > 0 && shown(m)) modals.push(m);
   }
   const inModal = (el) => modals.some((m) => dom.contains(m, el));
+  // The parent in the composed tree, through a shadow root to its host, and
+  // whether a node is inside another there.
+  const composedUp = (n) =>
+    typeof helpers.composedParent === 'function' ? helpers.composedParent(n) : dom.parentElement(n);
+  const inComposed = (node, container) => {
+    for (let cur = node, i = 0; cur && i < 100000; cur = composedUp(cur), i++) {
+      if (cur === container) return true;
+    }
+    return false;
+  };
 
   // A sticky box stays inside its containing block, the nearest ancestor
   // that is no inline box, no display: contents and no table row, row group
@@ -82947,7 +84709,48 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     opened.some((t) => t === root || dom.contains(root, t) || dom.contains(t, root));
 
   // ---- Confirm with the browser: scroll a few there and hit-test ----
+  // Scrolling the window makes the browser fire `scroll` and `scrollend` at
+  // the page once the scan is over, though the page is put back where it
+  // was: a page that loads a widget on its first scroll would change under
+  // the next scan. A capturing listener on the window keeps those two
+  // events, for the window's own scrolling only, from the page's listeners,
+  // and goes once the scrollend has passed (where the browser has none, the
+  // scroll), or a moment later where no event comes. Shared with the
+  // variant run in the same scan (focus-not-obscured-enhanced).
+  const guards = memoOf('scrollGuard');
+  function guardScrollEvents() {
+    const current = guards.get(view);
+    if (current && current.active) return;
+    const guard = { active: true };
+    guards.set(view, guard);
+    const withScrollEnd = 'onscrollend' in view;
+    const remove = () => {
+      if (!guard.active) return;
+      guard.active = false;
+      try {
+        dom.removeEventListener(view, 'scroll', stop, true);
+        dom.removeEventListener(view, 'scrollend', stop, true);
+      } catch {}
+    };
+    function stop(e) {
+      if (!guard.active || (e.target !== document && e.target !== view)) return;
+      e.stopImmediatePropagation();
+      if (e.type === 'scrollend' || !withScrollEnd) remove();
+    }
+    try {
+      dom.addEventListener(view, 'scroll', stop, true);
+      dom.addEventListener(view, 'scrollend', stop, true);
+      if (typeof view.setTimeout === 'function') view.setTimeout(remove, 500);
+    } catch {
+      remove();
+    }
+  }
+  let moved = false;
   const scrollTo = (y) => {
+    if (y !== scrollY && !moved) {
+      moved = true;
+      guardScrollEvents();
+    }
     try {
       dom.call(view, 'scrollTo', { left: scrollX, top: y, behavior: 'instant' });
     } catch {
@@ -82982,13 +84785,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         } catch {
           top = null;
         }
-        if (!top || top === c.el || dom.contains(c.el, top) || dom.contains(top, c.el)) continue;
-        if (!dom.contains(cover.root, top)) continue;
+        // The hit is read in the composed tree: it may be inside a
+        // component the cover or the focused element holds, where contains()
+        // stops at the shadow boundary (round 8, NW-2).
+        if (!top || top === c.el || inComposed(top, c.el) || inComposed(c.el, top)) continue;
+        if (!inComposed(top, cover.root)) continue;
         // Drawn there: the part hit, or a box around it within the root,
         // and for 2.4.11 drawn opaque, as what shows through hides nothing
         // entirely.
         let drawn = false;
-        for (let n = top, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+        for (let n = top, i = 0; n && i < 10000; n = composedUp(n), i++) {
           const ncs = styleOf(n);
           if (partlyToo ? paints(n, ncs) : opaque(n, ncs)) {
             drawn = true;
@@ -83163,7 +84969,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       );
     }
   } finally {
-    scrollTo(scrollY);
+    if (moved) scrollTo(scrollY);
   }
 
   // Only where boxes were left unchecked: how many boxes could hide an
@@ -87166,7 +88972,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             : 'identicalLinksSamePurpose_summary_cantTell_others',
           hintKey: 'identicalLinksSamePurpose_hint_cantTell',
           params: {
-            name,
+            name: helpers.quoteText(name),
             destinationCount: String(distinctHrefs.size),
             shownName,
             href: shown,
@@ -87177,7 +88983,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         data: {
           details: {
             reasonCode: 'SAME_NAME_DIFFERENT_DESTINATION',
-            name,
+            name: helpers.quoteText(name),
             href: helpers.quoteText(href),
             distinctDestinationCount: distinctHrefs.size,
             otherDestinations: others,
@@ -88638,6 +90444,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hintKey: 'img_altDecorative_hint_ownHiddenAlt',
         params: { hiddenBy: role, alt },
         detail: { excludedBy, hiddenBy: role, alt }
+      };
+    }
+    // A canvas's fallback content stays in the accessibility tree: what is
+    // skipped is the drawing, not the text in it.
+    const fallbackRaw =
+      excludedBy === 'unnamed-canvas'
+        ? String(dom.textContent(el) || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+        : '';
+    if (fallbackRaw) {
+      const fallback = fallbackRaw.length > 80 ? `${fallbackRaw.slice(0, 79)}…` : fallbackRaw;
+      return {
+        summary: `This <${tag}> has no role and no name of its own, so screen readers skip the drawing and read only its fallback content, "${fallback}". Check whether the drawing is purely decorative.`,
+        summaryKey: 'img_altDecorative_summary_unnamedCanvasFallback',
+        params: { fallback },
+        detail: { excludedBy }
       };
     }
     if (excludedBy === 'unnamed-svg' || excludedBy === 'unnamed-canvas') {
@@ -90441,7 +92264,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       data: {
         details: {
           reasonCode,
-          ariaInvalid,
+          // Cut to 120 characters: a 200 KB value was copied whole.
+          ariaInvalid: helpers.quoteText(ariaInvalid),
           errorMessageIds,
           ...(hiddenBy ? { hiddenBy } : {}),
           ...(hideCause
@@ -90924,6 +92748,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function readVisibleTextUnder(container) {
     if (!isDomVisible(container)) return { text: '', asShown: '' };
 
+    // A drop-down <select> (an aria-labelledby target, say) shows only its
+    // selected option while closed, not the list of options it holds.
+    const dropDown = dropDownSelectedText(container);
+    if (dropDown !== null) return { text: dropDown, asShown: '' };
+
     const boundaryOf = (n) =>
       typeof helpers.getTextBoundaryKind === 'function' ? helpers.getTextBoundaryKind(n) : 'inline';
     const hidden = (n) =>
@@ -91003,6 +92832,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const BOX_BREAK = {};
+
+  // The text a closed drop-down <select> shows: its selected option's label
+  // or text. null for anything else, a list box (multiple, or a size above
+  // one) included, which shows its options.
+  function dropDownSelectedText(node) {
+    if (String(dom.localName(node) || '').toLowerCase() !== 'select') return null;
+    if (dom.hasAttribute(node, 'multiple')) return null;
+    const size = Number.parseInt(String(dom.getAttribute(node, 'size') || ''), 10);
+    if (size > 1) return null;
+    for (const opt of [...dom.querySelectorAll(node, 'option')]) {
+      let selected;
+      try {
+        selected = !!dom.get(opt, 'selected');
+      } catch {
+        selected = dom.hasAttribute(opt, 'selected');
+      }
+      if (!selected) continue;
+      return String(dom.getAttribute(opt, 'label') || dom.textContent(opt) || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    return '';
+  }
 
   // Whether the page is laid out (a browser), not jsdom's zero-size boxes.
   let layoutKnown = null;
@@ -92769,6 +94621,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // for every <a> whatever the author CSS says, and the longhand as "none"
   // unless the author used the longhand. Either one taken alone is wrong in
   // one direction, so disagreement is the signal to stop trusting both.
+  // Whether two font weights look different: one bold (600 or more) and the
+  // other not. Most fonts draw 500 as they draw 400, and Chromium
+  // synthesises bold from 600 for a font with no bold face.
+  function weightsDiffer(a, b) {
+    return a >= 600 !== b >= 600;
+  }
+
   function decorationInfo(cs) {
     if (!cs) return { underlined: false, trustworthy: false };
 
@@ -93022,11 +94881,46 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return tokens.some((t) => LINE_STYLES.test(t)) && !tokens.some((t) => isZeroWidth(t));
   }
 
+  // Splits on a separator outside parentheses: the shadows of a list, or
+  // the parts of one shadow ("rgba(0, 0, 0, 0) 0px 1px").
+  function splitOutsideParens(v, sep) {
+    const parts = [];
+    let depth = 0;
+    let current = '';
+    for (const ch of v) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && sep.test(ch)) {
+        if (current.trim()) parts.push(current.trim());
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    if (current.trim()) parts.push(current.trim());
+    return parts;
+  }
+
+  // A shadow draws nothing in a fully transparent color, or with no offset,
+  // blur or spread: `box-shadow: 0 1px 0 transparent` is no cue.
+  function shadowDraws(shadow) {
+    const lengths = [];
+    let color = '';
+    for (const token of splitOutsideParens(shadow, /\s/)) {
+      if (token === 'inset') continue;
+      if (/^-?(\d*\.)?\d+([a-z]+)?$/.test(token)) lengths.push(parseFloat(token));
+      else color = token;
+    }
+    if (color && isTransparentColor(color)) return false;
+    return !(lengths.length && lengths.every((n) => n === 0));
+  }
+
   function hasBoxShadow(cs) {
     const v = String(cs.boxShadow || '')
       .trim()
       .toLowerCase();
-    return !!v && v !== 'none';
+    if (!v || v === 'none') return false;
+    return splitOutsideParens(v, /,/).some(shadowDraws);
   }
 
   // Whether a background-image layer draws something seen behind el's text:
@@ -93591,7 +95485,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           color,
           selector: base + '::first-line',
           otherCue:
-            c.normalizeFontWeight(ps.fontWeight) !== c.normalizeFontWeight(blockCs.fontWeight) ||
+            weightsDiffer(
+              c.normalizeFontWeight(ps.fontWeight),
+              c.normalizeFontWeight(blockCs.fontWeight)
+            ) ||
             String(ps.fontStyle || '') !== String(blockCs.fontStyle || '') ||
             String(ps.textDecorationLine || '') !== String(blockCs.textDecorationLine || '') ||
             String(ps.textShadow || '') !== String(blockCs.textShadow || '')
@@ -94115,7 +96012,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (
       c &&
       outerCs &&
-      c.normalizeFontWeight(cs.fontWeight) !== c.normalizeFontWeight(outerCs.fontWeight)
+      weightsDiffer(c.normalizeFontWeight(cs.fontWeight), c.normalizeFontWeight(outerCs.fontWeight))
     ) {
       return true;
     }
@@ -94123,6 +96020,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (hasBorder(cs)) return true;
     const deco = decorationInfo(cs);
     return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
+  }
+
+  // Whether the text around the link is underlined too: by its own element's
+  // text-decoration, or by one an ancestor propagates to it. An underline
+  // the surrounding text also has sets nothing apart, as the same weight
+  // doesn't. Decorations don't propagate into an inline-block, a float or an
+  // absolutely positioned box, so the walk stops at one. Where an element's
+  // decoration can't be read, the style sheets are, and where neither says,
+  // the text is taken as not underlined.
+  function surroundingUnderlined(textEl) {
+    for (
+      let a = textEl, i = 0;
+      a && dom.nodeType(a) === 1 && i < 100;
+      a = dom.parentElement(a), i++
+    ) {
+      const cs = safeComputedStyle(a);
+      if (!cs) return false;
+      const deco = decorationInfo(cs);
+      let underlined = deco.trustworthy && deco.underlined;
+      if (!deco.trustworthy) {
+        const fromCssom = resolveUnderlineFromCssom(a);
+        underlined = fromCssom.resolved && fromCssom.underlined;
+      }
+      if (underlined && !isTransparentColor(cs.textDecorationColor)) return true;
+      const display = String(cs.display || '');
+      const float = String(cs.cssFloat || cs.float || 'none');
+      if (
+        /^inline-/.test(display) ||
+        cs.position === 'absolute' ||
+        cs.position === 'fixed' ||
+        (float && float !== 'none')
+      )
+        return false;
+    }
+    return false;
   }
 
   function textParentOf(el) {
@@ -94133,7 +96065,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (dom.firstElementChild(parent) !== child || dom.lastElementChild(parent) !== child) break;
       const wcs = safeComputedStyle(parent) || {};
       const display = String(wcs.display || '');
-      if (!display.startsWith('inline') || display === 'inline-block') break;
+      // A display: contents wrapper has no box: its content is laid out in
+      // the line around it, as an inline wrapper's is.
+      if (display !== 'contents' && (!display.startsWith('inline') || display === 'inline-block'))
+        break;
       // A wrapper that sets the link apart itself is not transparent: a
       // footnote marker raised by <sup>, or a bold or underlined wrapper.
       const valign = String(wcs.verticalAlign || 'baseline');
@@ -94150,7 +96085,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // surrounding text is not (<a><strong>guide</strong></a>), or that has a
   // background of its own unlike the surrounding text's, as a code chip or
   // <mark> does, or is raised or lowered, as a footnote's <sup> is (#107).
-  function cueOnContent(el, parent, parentCs) {
+  function cueOnContent(el, parent, parentCs, aroundUnderlined) {
     let parentBgHex;
     const backgroundHex = (node) => {
       try {
@@ -94175,13 +96110,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hasCue = (node) => {
       const cs = safeComputedStyle(node);
       if (!cs) return false;
-      if (c && c.normalizeFontWeight(cs.fontWeight) !== parentWeight) return true;
+      if (c && weightsDiffer(c.normalizeFontWeight(cs.fontWeight), parentWeight)) return true;
       if ((cs.fontStyle || 'normal') !== parentStyle) return true;
       if (hasBorder(cs)) return true;
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
       if (hasBackgroundImage(cs, node) || ownBackground(node, cs)) return true;
       const deco = decorationInfo(cs);
-      return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
+      return (
+        deco.trustworthy &&
+        deco.underlined &&
+        !isTransparentColor(cs.textDecorationColor) &&
+        !(aroundUnderlined && aroundUnderlined())
+      );
     };
     let sawText = false;
     const doc = dom.ownerDocument(el);
@@ -94317,7 +96257,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // carrying one is decided even where decoration is unreadable.
     const linkWeight = c && linkCs ? c.normalizeFontWeight(linkCs.fontWeight) : 400;
     const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
-    if (linkWeight !== parentWeight) {
+    if (weightsDiffer(linkWeight, parentWeight)) {
       decidedCount += 1;
       return;
     }
@@ -94332,10 +96272,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // An underline the computed style vouches for settles the link before
     // the costlier marks are looked for (what a ::before or ::after draws).
     const shown = decorationInfo(linkCs);
+    let textUnderlined = null;
+    const aroundUnderlined = () => {
+      if (textUnderlined === null) textUnderlined = surroundingUnderlined(textEl);
+      return textUnderlined;
+    };
     if (
       shown.trustworthy &&
       shown.underlined &&
-      !isTransparentColor(linkCs && linkCs.textDecorationColor)
+      !isTransparentColor(linkCs && linkCs.textDecorationColor) &&
+      !aroundUnderlined()
     ) {
       decidedCount += 1;
       return;
@@ -94343,7 +96289,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // A border, box-shadow, outline, background image, icon or generated
     // content marks the link without relying on color.
-    if (hasNonColorMark(el, linkCs) || cueOnContent(el, parent, parentCs)) {
+    if (hasNonColorMark(el, linkCs) || cueOnContent(el, parent, parentCs, aroundUnderlined)) {
       decidedCount += 1;
       return;
     }
@@ -94368,6 +96314,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const fromCssom = resolveUnderlineFromCssom(el);
       if (fromCssom.resolved) underlined = fromCssom.underlined;
     }
+    // The surrounding text underlined too: the underline is no cue.
+    if (underlined === true && aroundUnderlined()) underlined = false;
     if (underlined === true) {
       decidedCount += 1;
       return;
@@ -96960,6 +98908,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const cantTellOccurrences = [];
   let applicableCount = 0;
 
+  // Composite widget roles (and toolbar), whose children must have the
+  // roles the widget expects: an <li> left in one is a broken widget, not a
+  // list whose loss may or may not matter.
+  const WIDGET_CONTAINER_ROLES = new Set([
+    'combobox',
+    'grid',
+    'listbox',
+    'menu',
+    'menubar',
+    'radiogroup',
+    'tablist',
+    'toolbar',
+    'tree',
+    'treegrid'
+  ]);
+
   // Whether the page draws the <li> as a list item: display list-item with a
   // marker. An item a reader sees that the markup puts in no list is a
   // relationship not programmatically determinable (SC 1.3.1); an <li> used
@@ -97041,6 +99005,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // few links in a navigation read as well without it), so it is asked
     // about, leaning fail where the item is drawn as one of a list.
     const { bucket, extra } = tierFor(el);
+    // Under a composite widget role (a <ul role="tablist">, a menu, a list
+    // box...) the stray item breaks a widget whose children must have the
+    // roles it expects: the <li> fails where it is drawn as a list item, and
+    // is asked about as any misplaced <li> is where it is not. Under a
+    // landmark or structure role (navigation, group, region...) the list is
+    // asked about as below.
+    if (
+      explicitRole &&
+      WIDGET_CONTAINER_ROLES.has(explicitRole) &&
+      (parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu')
+    ) {
+      const fails = extra.occurrenceOutcome === 'fail';
+      bucket.push(
+        helpers.reportOccurrence(el, {
+          ...extra,
+          summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
+          hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
+          i18n: {
+            summaryKey: fails
+              ? 'listitemParentValid_summary_fail_listRoleOverridden'
+              : 'listitemParentValid_summary_cantTell_listRoleOverridden',
+            hintKey: fails
+              ? 'listitemParentValid_hint_fail_listRoleOverridden'
+              : 'listitemParentValid_hint_cantTell_listRoleOverridden',
+            params: { parentElement: parentTag, parentRole: explicitRole }
+          },
+          data: {
+            details: {
+              reasonCode: 'LIST_ROLE_OVERRIDDEN',
+              parentElement: parentTag,
+              parentRole: explicitRole
+            }
+          }
+        })
+      );
+      continue;
+    }
     if (explicitRole && (parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu')) {
       const drawn = extra.occurrenceOutcome === 'fail';
       cantTellOccurrences.push(
@@ -99515,6 +101516,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'switch',
     'tab'
   ]);
+  // In sequential focus navigation (getFocusableInfo's `tabbable`). Without
+  // a focus model every counted control is kept.
+  function isTabbable(node) {
+    if (!getFocusableInfo) return true;
+    try {
+      const info = getFocusableInfo(node, ctx);
+      return !!(info && info.tabbable);
+    } catch {
+      return true;
+    }
+  }
   function effectiveRole(node) {
     const explicit = getExplicitRole(node);
     if (explicit) return explicit;
@@ -99533,7 +101545,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const nested = collectNestedOperable(el);
+    const outerRole = effectiveRole(el);
+    const fails = PRESENTATIONAL_CHILDREN_ROLES.has(outerRole);
+
+    // Inside presentational children only content in sequential focus
+    // navigation counts, as ACT 307n5z and presentational-children-focusable-
+    // absent have it: a tabindex="-1" close button inside a tab takes no tab
+    // stop, so it adds no focus stop whose role is lost.
+    const nested = collectNestedOperable(el).filter((n) => !fails || isTabbable(n));
     if (!nested.length) continue;
 
     const nestedTags = nested.map((n) =>
@@ -99547,8 +101566,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // role: a FAIL. Anywhere else (a control inside a link, say) both keep
     // their roles; HTML's content model forbids the nesting, but whether a
     // name, role or value is lost depends on the page: asked about.
-    const outerRole = effectiveRole(el);
-    const fails = PRESENTATIONAL_CHILDREN_ROLES.has(outerRole);
 
     // Each nested control as the reader finds it in the markup, with what
     // makes it focusable (helpers.describeMarkup): <span role="button"
@@ -99582,7 +101599,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summary: !roleNamed
           ? 'This interactive control contains one or more other interactive controls.'
           : fails
-            ? `This <${tag}> is a ${outerRole}, whose content is presentational, and it contains ${nestedList}: the nested control loses its role but still takes focus.`
+            ? `This <${tag}> has role ${outerRole}, which makes its content presentational, and it contains ${nestedList}: the nested control loses its role but still takes focus.`
             : `This <${tag}> (${outerRole}) contains ${nestedList}. Both keep their roles, but a control inside another is hard to reach and operate, and its name may be swallowed by the outer one.`,
         hint: "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another.",
         i18n: {
@@ -101108,12 +103125,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return link;
   }
 
-  // Digits with only spacing, punctuation, a currency sign or a percent
-  // sign around them: "2024", "12.", "1/3", "#4", "$29.99", "29,99 €", "45%".
+  // Digits with only spacing, punctuation, a sign, a currency sign or a
+  // percent sign around them: "2024", "12.", "1/3", "#4", "$29.99",
+  // "29,99 €", "45%", "+45%", "−5%", "+33 1 23 45 67 89", "$29.99*", "3×",
+  // "4.5 ★", "~30", "100+". Digits of any script count ("٢٠٢٤", "２０２４").
   // Two plain tests rather than one pattern with a digit in the middle,
   // which backtracks on long text.
-  const NUMBER_CHARS = /^[\s\d.,:;/#№°'’()\-–—%‰\p{Sc}]+$/u;
-  const isNumberOnly = (text) => NUMBER_CHARS.test(text) && /\d/.test(text);
+  const NUMBER_CHARS = /^[\s\p{Nd}.,:;/#№°'’()\-–—%‰+−×*~★\p{Sc}]+$/u;
+  const isNumberOnly = (text) => NUMBER_CHARS.test(text) && /\p{Nd}/u.test(text);
 
   function minFontSize(pieces) {
     let minPx = Infinity;
@@ -104931,6 +106950,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (let child = dom.firstElementChild(body); child; child = dom.nextElementSibling(child))
     walk(child);
 
+  // Text sitting directly in <body> is outside every landmark too, though
+  // no element of its own holds it: the walk above sees elements only. Its
+  // first words are quoted, as the occurrence can only point at <body>.
+  let bodyText = '';
+  for (let k = dom.firstChild(body); k && !bodyText; k = dom.nextSibling(k)) {
+    if (dom.nodeType(k) === 3) bodyText = normalizeWs(dom.nodeValue(k));
+  }
+
   // Collapse each candidate leaf upward through parents that have no OTHER
   // stopper anywhere in their subtree, so contiguous unplaced content
   // merges into ONE occurrence per real gap instead of one per text node --
@@ -104957,18 +106984,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  if (bodyText) collapsed.unshift(body);
+  const quotedBodyText = bodyText.length > 80 ? `${bodyText.slice(0, 79)}…` : bodyText;
+
   // Report the element itself: without a node reference the engine re-finds
   // each one with document.querySelector to build its structuralPath.
   const occurrences = collapsed.map((el) => {
     const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     const partial = {
-      summary: 'This content is outside every landmark region.',
-      hint: 'Move it into a landmark, such as <main>, <nav>, <aside>, or a <section> with a name.',
-      i18n: {
-        summaryKey: 'region_summary_cantTell',
-        hintKey: 'region_hint_cantTell',
-        params: { element: tag }
-      },
+      ...(el === body
+        ? {
+            summary: `Text placed directly in <body>, "${quotedBodyText}", is outside every landmark region.`,
+            hint: 'Move it into a landmark, such as <main>, <nav>, <aside>, or a <section> with a name.',
+            i18n: {
+              summaryKey: 'region_summary_cantTell_bodyText',
+              hintKey: 'region_hint_cantTell',
+              params: { element: tag, text: quotedBodyText }
+            }
+          }
+        : {
+            summary: 'This content is outside every landmark region.',
+            hint: 'Move it into a landmark, such as <main>, <nav>, <aside>, or a <section> with a name.',
+            i18n: {
+              summaryKey: 'region_summary_cantTell',
+              hintKey: 'region_hint_cantTell',
+              params: { element: tag }
+            }
+          }),
       ...(tag !== 'iframe' && tag !== 'frame'
         ? {
             lean: {
@@ -105592,7 +107634,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       selector: stableSelector,
       html,
       summary:
-        'This element can scroll (overflow: auto or scroll), but neither it nor anything inside it can take keyboard focus.',
+        'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.',
       hint: 'If this region’s content actually overflows, add tabindex="0" (and a suitable label) so keyboard users can focus it and scroll with the arrow keys.',
       i18n: {
         summaryKey: 'scrollableRegionFocusable_summary_cantTell',
@@ -110466,9 +112508,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const NATIVE_CANDIDATE_SELECTOR = 'button, summary, a[href], area[href], input, select, textarea';
+  // The roles of a control a pointer operates: a button or a link, and each
+  // interactive widget role. A gridcell is one only where the grid makes it
+  // focusable (a tabindex), as a date picker's day is; a cell of a grid read
+  // as a table is not. Containers (tablist, menu, listbox, grid...) are not
+  // targets: their items are.
+  const TARGET_ROLES = new Set([
+    'button',
+    'link',
+    'checkbox',
+    'combobox',
+    'gridcell',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'textbox',
+    'treeitem'
+  ]);
   // role~= matches the token anywhere in the fallback list, so the resolved
-  // role is checked below (role="tab button" is a tab, not a target here).
-  const CANDIDATE_SELECTOR = `${NATIVE_CANDIDATE_SELECTOR}, [role~="button" i], [role~="link" i]`;
+  // role is checked below (role="tooltip button" is a tooltip, not a target).
+  const CANDIDATE_SELECTOR = [
+    NATIVE_CANDIDATE_SELECTOR,
+    ...[...TARGET_ROLES].map((role) => `[role~="${role}" i]`)
+  ].join(', ');
 
   function isCandidate(el) {
     try {
@@ -110479,7 +112549,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         return true;
     } catch {}
     const role = getExplicitRole(el);
-    return role === 'button' || role === 'link';
+    if (role === 'gridcell') {
+      try {
+        return dom.hasAttribute(el, 'tabindex');
+      } catch {
+        return false;
+      }
+    }
+    return TARGET_ROLES.has(role);
   }
 
   // --- candidate collection ---
@@ -110523,7 +112600,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Where a target can be hit at most: its own boxes (with display:
   // contents, its content's) and those of the content inside it. Its region
-  // lies within, since clips and the boxes over it only take away. Cheap
+  // lies within, since clips only take away. Cheap
   // next to the region, it tells which targets need one.
   function extentOfTarget(el) {
     const cs = getStyle(el);
@@ -110721,7 +112798,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!hit) continue;
       answered = true;
       try {
-        if (hit === other.el || dom.contains(other.el, hit)) return false;
+        // The hit test drills into shadow roots, so what it finds may be
+        // inside a component that `other` holds: contains() stops at the
+        // shadow boundary, and `other` would read as covered.
+        if (hit === other.el || isComposedInside(hit, other.el)) return false;
       } catch {
         return false;
       }
@@ -110738,7 +112818,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hit = elementFromPoint(target.center.cx, target.center.cy);
     if (hit) {
       try {
-        out = !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
+        out = !(
+          hit === target.el ||
+          isComposedInside(hit, target.el) ||
+          isComposedInside(target.el, hit)
+        );
       } catch {
         out = false;
       }
@@ -112388,9 +114472,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const NATIVE_CANDIDATE_SELECTOR = 'button, summary, a[href], area[href], input, select, textarea';
+  // The roles of a control a pointer operates: a button or a link, and each
+  // interactive widget role. A gridcell is one only where the grid makes it
+  // focusable (a tabindex), as a date picker's day is; a cell of a grid read
+  // as a table is not. Containers (tablist, menu, listbox, grid...) are not
+  // targets: their items are.
+  const TARGET_ROLES = new Set([
+    'button',
+    'link',
+    'checkbox',
+    'combobox',
+    'gridcell',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'textbox',
+    'treeitem'
+  ]);
   // role~= matches the token anywhere in the fallback list, so the resolved
-  // role is checked below (role="tab button" is a tab, not a target here).
-  const CANDIDATE_SELECTOR = `${NATIVE_CANDIDATE_SELECTOR}, [role~="button" i], [role~="link" i]`;
+  // role is checked below (role="tooltip button" is a tooltip, not a target).
+  const CANDIDATE_SELECTOR = [
+    NATIVE_CANDIDATE_SELECTOR,
+    ...[...TARGET_ROLES].map((role) => `[role~="${role}" i]`)
+  ].join(', ');
 
   function isCandidate(el) {
     try {
@@ -112401,7 +114513,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         return true;
     } catch {}
     const role = getExplicitRole(el);
-    return role === 'button' || role === 'link';
+    if (role === 'gridcell') {
+      try {
+        return dom.hasAttribute(el, 'tabindex');
+      } catch {
+        return false;
+      }
+    }
+    return TARGET_ROLES.has(role);
   }
 
   // --- candidate collection ---
@@ -112445,7 +114564,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Where a target can be hit at most: its own boxes (with display:
   // contents, its content's) and those of the content inside it. Its region
-  // lies within, since clips and the boxes over it only take away. Cheap
+  // lies within, since clips only take away. Cheap
   // next to the region, it tells which targets need one.
   function extentOfTarget(el) {
     const cs = getStyle(el);
@@ -112643,7 +114762,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!hit) continue;
       answered = true;
       try {
-        if (hit === other.el || dom.contains(other.el, hit)) return false;
+        // The hit test drills into shadow roots, so what it finds may be
+        // inside a component that `other` holds: contains() stops at the
+        // shadow boundary, and `other` would read as covered.
+        if (hit === other.el || isComposedInside(hit, other.el)) return false;
       } catch {
         return false;
       }
@@ -112660,7 +114782,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hit = elementFromPoint(target.center.cx, target.center.cy);
     if (hit) {
       try {
-        out = !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
+        out = !(
+          hit === target.el ||
+          isComposedInside(hit, target.el) ||
+          isComposedInside(target.el, hit)
+        );
       } catch {
         out = false;
       }
@@ -113961,27 +116087,90 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return found;
     }
 
+    // The next element up in the flat tree, as the page lays it out: a
+    // slotted node's slot, a shadow root's host.
+    function upOf(a) {
+      let p = a;
+      for (let i = 0; p && i < 100; i++) {
+        p =
+          typeof helpers.composedParent === 'function'
+            ? helpers.composedParent(p)
+            : dom.parentElement(p);
+        if (p && dom.nodeType(p) === 1) return p;
+        if (!p || dom.nodeType(p) !== 11) return null;
+      }
+      return null;
+    }
+    // The element a text lays out in: its parent, the host for text straight
+    // under a shadow root, and for text slotted into a shadow root the box
+    // its slot sits in, since a <slot> has no box of its own (display:
+    // contents). The clipping and painting walks go up from it, so a box in
+    // a shadow root clips the light text slotted into it.
+    function boxParentOf(n) {
+      let p = upOf(n);
+      for (let i = 0; p && i < 100 && String(dom.localName(p)) === 'slot'; i++) {
+        const cs = styleOf(p);
+        if (cs && cs.display !== 'contents') break;
+        p = upOf(p);
+      }
+      return p;
+    }
+
+    // Where text is walked: the body and each open shadow root in it, unless
+    // the scan leaves shadow DOM out (engineOptions.includeShadowDom: false).
+    const textRoots = [];
+    {
+      const deep = (ctx.engineOptions || {}).includeShadowDom !== false;
+      const queue = [dom.body(document)];
+      while (queue.length) {
+        const root = queue.shift();
+        if (!root) continue;
+        textRoots.push(root);
+        if (!deep) continue;
+        try {
+          for (const el of dom.querySelectorAll(root, '*') || []) {
+            const shadow = dom.shadowRoot(el);
+            if (shadow) queue.push(shadow);
+          }
+        } catch {
+          // the roots found so far are walked
+        }
+      }
+    }
+
     const nodes = [];
     const judged = new Set();
-    const walker = dom.createTreeWalker(document, dom.body(document), 4);
-    for (let n = walker.nextNode(); n && nodes.length < MAX_TEXT_NODES; n = walker.nextNode()) {
-      if (!/\S/.test(dom.nodeValue(n) || '')) continue;
-      const parent = dom.parentElement(n);
-      if (!parent || SKIP.has(String(dom.localName(parent)))) continue;
-      if (isBehindModal(parent) || inMarquee(parent)) continue;
-      // Text the page does not render (display:none, a closed <details>,
-      // content-visibility:hidden) is never judged, so it does not take a
-      // place in the budget either.
-      try {
-        if (
-          typeof dom.get(parent, 'checkVisibility') === 'function' &&
-          !dom.checkVisibility(parent)
-        )
-          continue;
-      } catch {}
-      nodes.push(n);
-      if (inScope(parent) && !isExcluded(parent)) judged.add(n);
+    // Per text: the element it lays out in (boxParentOf), and the element
+    // holding it in its own tree, whose text a finding quotes.
+    const boxOfText = new Map();
+    const holderOfText = new Map();
+    for (const root of textRoots) {
+      if (nodes.length >= MAX_TEXT_NODES) break;
+      const walker = dom.createTreeWalker(document, root, 4);
+      for (let n = walker.nextNode(); n && nodes.length < MAX_TEXT_NODES; n = walker.nextNode()) {
+        if (!/\S/.test(dom.nodeValue(n) || '')) continue;
+        const parent = boxParentOf(n);
+        const holder = dom.parentElement(n) || parent;
+        if (!parent || SKIP.has(String(dom.localName(holder)))) continue;
+        if (isBehindModal(parent) || inMarquee(parent)) continue;
+        // Text the page does not render (display:none, a closed <details>,
+        // content-visibility:hidden) is never judged, so it does not take a
+        // place in the budget either.
+        try {
+          if (
+            typeof dom.get(parent, 'checkVisibility') === 'function' &&
+            !dom.checkVisibility(parent)
+          )
+            continue;
+        } catch {}
+        nodes.push(n);
+        boxOfText.set(n, parent);
+        holderOfText.set(n, holder);
+        if (inScope(holder) && !isExcluded(holder)) judged.add(n);
+      }
     }
+    const textEl = (n) => boxOfText.get(n);
+    const holderOf = (n) => holderOfText.get(n);
 
     // The three walks below go up from a text's element, and the texts
     // inside one box share the walk above it: each keeps its answer per
@@ -114093,6 +116282,67 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const hides = (v) => v === 'hidden' || v === 'clip';
       return !(x && hides(cs.overflowX)) && !(y && hides(cs.overflowY));
     }
+    // How far a clip-path: inset() or a clip: rect() cuts into el's border
+    // box on each side, in layout px: { top, right, bottom, left }, or null
+    // where there is none, or the shape can't be measured as a rectangle (a
+    // circle, a polygon, a path, a reference box other than the border box).
+    // An inset's rounded corners are left out.
+    function clipShapeOf(el, cs) {
+      const w = Number(dom.get(el, 'offsetWidth')) || 0;
+      const h = Number(dom.get(el, 'offsetHeight')) || 0;
+      const len = (v, size) => {
+        const m = /^(-?\d*\.?\d+)(px|%)$/.exec(v) || (/^0$/.test(v) ? ['0', '0', 'px'] : null);
+        if (!m) return null;
+        return m[2] === '%' ? (parseFloat(m[1]) * size) / 100 : parseFloat(m[1]);
+      };
+      let shape = null;
+      const cp = String(cs.clipPath || '')
+        .trim()
+        .toLowerCase();
+      const inset = /^inset\((.*)\)(\s+border-box)?$/.exec(cp);
+      if (inset) {
+        const args = inset[1]
+          .split(/\s+round\s+/)[0]
+          .trim()
+          .split(/\s+/);
+        if (args.length >= 1 && args.length <= 4) {
+          const [t, r = t, b = t, l = r] = args;
+          const v = [len(t, h), len(r, w), len(b, h), len(l, w)];
+          if (v.every((n) => n !== null)) {
+            shape = { top: v[0], right: v[1], bottom: v[2], left: v[3] };
+          }
+        }
+      }
+      // clip applies to an absolutely positioned box only; auto is the
+      // border box's own edge.
+      const clip = /^rect\((.*)\)$/.exec(
+        String(cs.clip || '')
+          .trim()
+          .toLowerCase()
+      );
+      if (clip && (cs.position === 'absolute' || cs.position === 'fixed')) {
+        const args = clip[1].split(/[\s,]+/).filter(Boolean);
+        const at = (v, size, auto) => (v === 'auto' ? auto : len(v, size));
+        if (args.length === 4) {
+          const t = at(args[0], h, 0);
+          const r = at(args[1], w, w);
+          const b = at(args[2], h, h);
+          const l = at(args[3], w, 0);
+          if ([t, r, b, l].every((n) => n !== null)) {
+            const fromClip = { top: t, right: w - r, bottom: h - b, left: l };
+            shape = shape
+              ? {
+                  top: Math.max(shape.top, fromClip.top),
+                  right: Math.max(shape.right, fromClip.right),
+                  bottom: Math.max(shape.bottom, fromClip.bottom),
+                  left: Math.max(shape.left, fromClip.left)
+                }
+              : fromClip;
+          }
+        }
+      }
+      return shape;
+    }
     function clippersOf(el) {
       if (clipCache.has(el)) return clipCache.get(el);
       const path = [];
@@ -114122,6 +116372,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           const y =
             !(scrolls & 2) && (paint || cs.overflowY === 'hidden' || cs.overflowY === 'clip');
           if (x || y) own = { el: a, x, y, contentVisibility: byContentVisibility(a, cs, x, y) };
+          // A clip-path: inset() or clip: rect() cuts off what is painted
+          // past it on both axes, as overflow: hidden does at the padding box.
+          const shape = clipShapeOf(a, cs);
+          if (shape && (!(scrolls & 1) || !(scrolls & 2))) {
+            own = {
+              el: a,
+              x: !(scrolls & 1),
+              y: !(scrolls & 2),
+              contentVisibility: false,
+              overflowClip: own ? { x: own.x, y: own.y } : null,
+              shape
+            };
+          }
           if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') after |= 1;
           if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') after |= 2;
         }
@@ -114195,11 +116458,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (pinnedCache.has(el)) return pinnedCache.get(el);
       const path = [];
       let found = false;
-      for (
-        let a = el, i = 0;
-        a && dom.nodeType(a) === 1 && i < 100000;
-        a = dom.parentElement(a), i++
-      ) {
+      for (let a = el, i = 0; a && dom.nodeType(a) === 1 && i < 100000; a = upOf(a), i++) {
         if (pinnedCache.has(a)) {
           found = pinnedCache.get(a);
           break;
@@ -114276,15 +116535,48 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       };
     }
 
+    // The box a clipper keeps what it paints in: its padding box, or for a
+    // clip-path or clip, the shape's rectangle, within the padding box on an
+    // axis its overflow clips too.
+    function clipBoxOf(c) {
+      if (!c.shape) return boxOf(c.el);
+      const r = dom.getBoundingClientRect(c.el);
+      const ow = Number(dom.get(c.el, 'offsetWidth')) || 0;
+      const oh = Number(dom.get(c.el, 'offsetHeight')) || 0;
+      const kx = ow > 0 && r.width > 0 ? r.width / ow : 1;
+      const ky = oh > 0 && r.height > 0 ? r.height / oh : 1;
+      const ox = sx();
+      const oy = sy();
+      const box = {
+        left: r.left + ox + c.shape.left * kx,
+        top: r.top + oy + c.shape.top * ky,
+        right: r.right + ox - c.shape.right * kx,
+        bottom: r.bottom + oy - c.shape.bottom * ky
+      };
+      const o = c.overflowClip;
+      if (o && (o.x || o.y)) {
+        const inner = boxOf(c.el);
+        if (o.x) {
+          box.left = Math.max(box.left, inner.left);
+          box.right = Math.min(box.right, inner.right);
+        }
+        if (o.y) {
+          box.top = Math.max(box.top, inner.top);
+          box.bottom = Math.min(box.bottom, inner.bottom);
+        }
+      }
+      return box;
+    }
+
     function measure() {
       const lines = new Map();
       const boxes = new Map();
       for (const n of nodes) {
         lines.set(n, linesOf(n));
-        for (const c of clippersOf(dom.parentElement(n))) {
-          if (!boxes.has(keyOf(c))) boxes.set(keyOf(c), c.viewport ? viewportBox() : boxOf(c.el));
+        for (const c of clippersOf(textEl(n))) {
+          if (!boxes.has(keyOf(c))) boxes.set(keyOf(c), c.viewport ? viewportBox() : clipBoxOf(c));
         }
-        for (const c of paintClippersOf(dom.parentElement(n))) {
+        for (const c of paintClippersOf(textEl(n))) {
           if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
         }
       }
@@ -114337,7 +116629,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     const fontSizes = new Map();
     for (const n of nodes) {
-      const cs = styleOf(dom.parentElement(n));
+      const cs = styleOf(textEl(n));
       fontSizes.set(n, px(cs && cs.fontSize) || 16);
     }
 
@@ -114348,8 +116640,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const visibleBefore = new Set();
     for (const n of nodes) {
       const lines = before.lines.get(n) || [];
-      if (!lines.length || !shown(dom.parentElement(n))) continue;
-      const inside = clippersOf(dom.parentElement(n)).every((c) => {
+      if (!lines.length || !shown(textEl(n))) continue;
+      const inside = clippersOf(textEl(n)).every((c) => {
         if (c.viewport) return true;
         const b0 = before.boxes.get(keyOf(c));
         return (
@@ -114474,7 +116766,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const targets = movedForEverTargets();
       if (!targets.size) return false;
       // Bounded as a safety net only: a walk up a real tree always ends.
-      for (let el = from, i = 0; el && el !== stop && i < 100000; el = dom.parentElement(el), i++) {
+      for (let el = from, i = 0; el && el !== stop && i < 100000; el = upOf(el), i++) {
         if (targets.has(el)) return true;
       }
       return false;
@@ -114510,7 +116802,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const parts = [];
         if (axis === 'x') {
           let ws = '';
-          for (let cur = textEl, i = 0; cur && i < 100; cur = dom.parentElement(cur), i++) {
+          for (let cur = textEl, i = 0; cur && i < 100; cur = upOf(cur), i++) {
             const st = styleOf(cur);
             const v = st ? String(st.whiteSpace || st.textWrapMode || '') : '';
             if (/^(nowrap|pre)$/.test(v) || (st && st.textWrapMode === 'nowrap')) {
@@ -114531,6 +116823,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (own && own !== 'visible')
           parts.push(ox === oy ? `overflow: ${own}` : `overflow-${axis}: ${own}`);
         else if (cs.contain && cs.contain !== 'none') parts.push(`contain: ${cs.contain}`);
+        else if (c.shape && cs.clipPath && cs.clipPath !== 'none')
+          parts.push(`clip-path: ${cs.clipPath}`);
+        else if (c.shape && cs.clip && cs.clip !== 'auto') parts.push(`clip: ${cs.clip}`);
         else return '';
         if (axis === 'x' && cs.textOverflow === 'ellipsis') parts.push('text-overflow: ellipsis');
         return parts.join('; ');
@@ -114613,7 +116908,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!linesAfter.length || !visibleBefore.has(n) || !judged.has(n)) continue;
       textCount += 1;
       const fontSize = fontSizes.get(n);
-      for (const c of clippersOf(dom.parentElement(n))) {
+      for (const c of clippersOf(textEl(n))) {
         if (reportedClip.has(c.el)) continue;
         const b1 = after.boxes.get(keyOf(c));
         if (!b1) continue;
@@ -114641,7 +116936,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               worst = { lost, ...m, edge: edgeOf(l, b1, m.axis) };
           }
         }
-        const moved = isMovedForEver(dom.parentElement(n), c.el);
+        const moved = isMovedForEver(textEl(n), c.el);
         if (worst) {
           reportedClip.add(c.el);
           const sizing =
@@ -114662,11 +116957,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             // The edge the text crosses, and the CSS that keeps the box from
             // growing past it and clips it there.
             edge: worst.edge,
-            clipCss:
-              c.viewport || c.contentVisibility
-                ? ''
-                : clipCssOf(c, dom.parentElement(n), worst.axis),
-            text: textOf(dom.parentElement(n)),
+            clipCss: c.viewport || c.contentVisibility ? '' : clipCssOf(c, textEl(n), worst.axis),
+            text: textOf(holderOf(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
               thresholdPx: round1(worst.thresholdPx),
@@ -114683,19 +116975,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         // Text a repeating animation moves is left out: where it stands
         // depends on the point the animation was held at, not on the layout.
         if (moved || c.locked) continue;
-        const approach = closestApproach(
-          linesAfter,
-          b1,
-          c,
-          dom.parentElement(n),
-          before.boxes.get(keyOf(c))
-        );
+        const approach = closestApproach(linesAfter, b1, c, textEl(n), before.boxes.get(keyOf(c)));
         if (approach) {
           marginCandidates.push({
             el: c.el,
             value: approach.value,
             threshold: approach.threshold,
-            context: { axis: approach.axis, text: textOf(dom.parentElement(n)) }
+            context: { axis: approach.axis, text: textOf(holderOf(n)) }
           });
         }
       }
@@ -114711,8 +116997,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (visibleBefore.has(n) || !judged.has(n)) continue;
       const linesBefore = before.lines.get(n) || [];
       const linesAfter = (after && after.lines.get(n)) || [];
-      if (!linesBefore.length || !linesAfter.length || !shown(dom.parentElement(n))) continue;
-      const clippers = clippersOf(dom.parentElement(n)).filter((c) => !c.viewport);
+      if (!linesBefore.length || !linesAfter.length || !shown(textEl(n))) continue;
+      const clippers = clippersOf(textEl(n)).filter((c) => !c.viewport);
       // A line is shown in full when every box that clips it keeps it:
       // visually hidden text, cut by a 1px box of its own, shows none.
       const keeps = (l, boxes, c) => {
@@ -114730,14 +117016,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         (c) =>
           !reportedClip.has(c.el) &&
           linesAfter.some((l) => !keeps(l, after.boxes, c)) &&
-          !isMovedForEver(dom.parentElement(n), c.el)
+          !isMovedForEver(textEl(n), c.el)
       );
       if (!cutter) continue;
       const b1 = after.boxes.get(cutter.el);
       reportedClip.add(cutter.el);
       clippedFurther.push({
         el: cutter.el,
-        text: textOf(dom.parentElement(n)),
+        text: textOf(holderOf(n)),
         lines: { shownBefore, shownAfter: shownIn(linesAfter, after.boxes) },
         container: {
           widthPx: round1(b1.right - b1.left),
@@ -114752,12 +117038,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const buckets = new Map();
       const entries = [];
       for (const n of nodes) {
-        if (!visibleBefore.has(n) || pinned(dom.parentElement(n))) continue;
+        if (!visibleBefore.has(n) || pinned(textEl(n))) continue;
         for (const whole of after.lines.get(n) || []) {
           // Only the part of the line its clipping ancestors still show is
           // painted; what they cut off is the clipping check's.
           const l = { ...whole };
-          for (const c of paintClippersOf(dom.parentElement(n))) {
+          for (const c of paintClippersOf(textEl(n))) {
             const b = after.boxes.get(c.el);
             if (!b) continue;
             if (c.x) {
@@ -114815,8 +117101,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           // be anywhere on the page.
           const [a, b] = judged.has(list[i].n) ? [list[i], list[j]] : [list[j], list[i]];
           if (!judged.has(a.n)) continue;
-          const pa = dom.parentElement(a.n);
-          const pb = dom.parentElement(b.n);
+          const pa = holderOf(a.n);
+          const pb = holderOf(b.n);
           if (pa === pb || dom.contains(pa, pb) || dom.contains(pb, pa)) continue;
           if (reported.has(pa) || reported.has(pb)) continue;
           if (!intersects(a.l, b.l) || overlappedBefore(a.n, b.n)) continue;
@@ -116064,24 +118350,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // An almost-right value (en_US, jp, eng): the hint gives the tag it was
     // meant to be (helpers.langTagFix).
     const fix = typeof helpers.langTagFix === 'function' ? helpers.langTagFix(raw) : null;
+    // Page text quoted cut to 120 characters (helpers.quoteText): a 200 KB
+    // value was copied whole into the summary, its parameters and details.
+    const shownValue = helpers.quoteText(raw);
+    const shownSubtag = helpers.quoteText(subtag);
     const fixHints = {
       underscore: `Language tags use a hyphen, not an underscore: lang="${fix && fix.suggestion}".`,
-      country: `"${subtag}" is a country code, not a language code: for the language, use lang="${fix && fix.suggestion}".`,
-      alpha3: `"${subtag}" is a three-letter ISO 639-2 code; a lang attribute uses the two-letter code for that language: lang="${fix && fix.suggestion}".`
+      country: `"${shownSubtag}" is a country code, not a language code: for the language, use lang="${fix && fix.suggestion}".`,
+      alpha3: `"${shownSubtag}" is a three-letter ISO 639-2 code; a lang attribute uses the two-letter code for that language: lang="${fix && fix.suggestion}".`
     };
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: wellFormed
-          ? `This lang attribute value ("${raw}") is well formed, but "${subtag}" names no known language (it is not in the IANA Language Subtag Registry).`
-          : `This lang value ("${raw}") is not a valid language tag.`,
+          ? `This lang attribute value ("${shownValue}") is well formed, but "${shownSubtag}" names no known language (it is not in the IANA Language Subtag Registry).`
+          : `This lang value ("${shownValue}") is not a valid language tag.`,
         hint: fix ? fixHints[fix.kind] : 'Use a valid language tag, such as "fr" or "es-MX".',
         i18n: {
           summaryKey: wellFormed ? 'validLang_summary_unknown' : 'validLang_summary_fail',
           hintKey: fix ? `validLang_hint_fail_${fix.kind}` : 'validLang_hint_fail',
           params: {
             element: tag,
-            value: raw,
-            subtag,
+            value: shownValue,
+            subtag: shownSubtag,
             ...(fix ? { suggestion: fix.suggestion } : {})
           }
         },
@@ -116089,7 +118379,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           details: {
             reasonCode: setsDefault ? 'DEFAULT_LANG_INVALID' : 'ELEMENT_LANG_INVALID',
             element: tag,
-            value: raw,
+            value: shownValue,
             ...(fix ? { suggestion: fix.suggestion, fixKind: fix.kind } : {})
           }
         }
@@ -117012,6 +119302,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} verbirgt dieses <{{element}}> vor Screenreadern, sodass sein Alternativtext „{{alt}}“ nie vorgelesen wird. Prüfen Sie, ob es rein dekorativ ist.",
       "img_altDecorative_hint_ownHiddenAlt": "Wenn es nur schmückt, ist nichts zu ändern. Wenn es eine Information trägt, entfernen Sie {{hiddenBy}}, damit sein Alternativtext vorgelesen wird.",
       "img_altDecorative_summary_unnamed": "Dieses <{{element}}> hat weder einen Namen noch eine Rolle, daher überspringen Screenreader es. Prüfen Sie, ob es rein dekorativ ist.",
+      "img_altDecorative_summary_unnamedCanvasFallback": "Dieses <{{element}}> hat weder eine Rolle noch einen eigenen Namen, daher überspringen Screenreader die Zeichnung und lesen nur seinen Ersatzinhalt „{{fallback}}“ vor. Prüfen Sie, ob die Zeichnung rein dekorativ ist.",
       "img_altQuality_lean_why": "Ein Dateiname, eine Webadresse oder ein allgemeines Wort sagt nicht, was das Bild zeigt.",
       "img_altQuality_lean_why_overridden": "Der alt-Text „{{alt}}“, nicht der Name, ist ein Dateiname, eine Webadresse oder ein allgemeines Wort. aria-label oder aria-labelledby benennt das Bild stattdessen, aber Browser zeigen den alt-Text weiterhin an, wenn das Bild nicht lädt.",
       "img_altQuality_lean_why_control": "Der Alternativtext ist der Name des Bedienelements, und ein Dateiname oder ein allgemeines Wort sagt nicht, was es tut.",
@@ -117192,6 +119483,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_bgImageAndGradient": "Der Kontrast ist nicht berechenbar, weil der Hintergrund ein Bild und einen Verlauf verwendet ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, gesetzt auf dem übergeordneten Element {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_mixBlendMode": "Der Kontrast ist nicht berechenbar, weil mix-blend-mode verwendet wird ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, gesetzt auf dem übergeordneten Element {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_filter": "Der Kontrast ist nicht berechenbar, weil filter verwendet wird ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, gesetzt auf dem übergeordneten Element {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_insetShadow": "Der Kontrast ist nicht berechenbar, weil ein innerer box-shadow (inset) unter einem Teil des Textes gezeichnet wird oder nicht ermittelt werden konnte, wie weit er reicht ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, gesetzt auf dem übergeordneten Element {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_mask": "Der Kontrast ist nicht berechenbar, weil eine Maske den Text und seinen Hintergrund unterschiedlich stark ausblendet ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, gesetzt auf dem übergeordneten Element {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_rootNotOpaque": "Der Kontrast ist nicht berechenbar, weil der effektive Hintergrund an der Wurzel nicht vollständig opak ist (alpha={{backgroundAlpha}}).",
       "contrastComputable_cantTell_engineFailure": "Die Berechenbarkeit des Kontrasts konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastComputable_cantTell_backdropFilter": "Der Kontrast ist nicht berechenbar, weil backdrop-filter verwendet wird ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, gesetzt auf dem übergeordneten Element {{blockerAncestor}}{{/blockerAncestor}}).",
@@ -117361,6 +119654,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "buttonNamePresent_title": "Schaltflächen haben einen zugänglichen Namen",
       "buttonNamePresent_description": "Prüft, ob Schaltflächen einen nicht leeren zugänglichen Namen aufweisen.",
       "buttonNamePresent_summary_fail": "Diese Schaltfläche hat keinen zugänglichen Namen.",
+      "buttonNamePresent_summary_fail_otherRole": "Dieses <{{element}}> hat die Rolle {{role}} und keinen zugänglichen Namen.",
       "buttonNamePresent_hint_fail": "Geben Sie der Schaltfläche sichtbaren Text oder einen Namen mit aria-label, damit Screenreader-Nutzende wissen, was sie tut.",
       "buttonNamePresent_summary_cantTell_closedContent": "Diese Schaltfläche erhält ihren Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob sie einen hat, ließ sich daher nicht feststellen.",
       "buttonNamePresent_hint_cantTell_closedContent": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat sie keinen, geben Sie ihr ein aria-label oder sichtbaren Text.",
@@ -117796,6 +120090,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
       "listitemParentValid_hint_cantTell_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "Der Eintrag wird mit Aufzählungszeichen oder Nummer gezeichnet, als Eintrag einer Liste, die das Markup nicht mehr bereitstellt.",
       "listitemParentValid_lean_caution_listRoleOverridden": "Einige Links oder Bedienelemente, etwa die einer Navigationsleiste, sind ohne die Liste womöglich ebenso gut lesbar.",
       "listitemParentValid_summary_fail_wrapped": "Dieses <li> liegt in einem <{{listElement}}>, aber das {{wrapper}} dazwischen unterbricht die Liste: Die Einträge einer Liste müssen ihre Kinder sein.",
@@ -118039,6 +120335,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_title": "Tabellen-Kopfzellen dürfen nicht leer sein",
       "emptyTableHeader_description": "Prüft, ob Kopfzellen (<th> oder ein beliebiges Element mit role=\"columnheader\"/\"rowheader\") sichtbaren Textinhalt haben — eine Kopfzelle, die nur über aria-label/aria-labelledby benannt ist, wird ebenfalls markiert, da die tatsächliche Unterstützung durch Screenreader/Browser dafür uneinheitlich ist.",
       "emptyTableHeader_summary_cantTell": "Diese Tabellen-Kopfzelle hat keinen zugänglichen Namen.",
+      "emptyTableHeader_summary_cantTell_contentName": "Diese Tabellen-Kopfzelle hat keinen sichtbaren Text. Ihr einziger Name, „{{name}}“, stammt aus ihrem Inhalt, etwa einem Bedienelement oder einem Bild.",
       "emptyTableHeader_hint_cantTell": "Geben Sie der Kopfzelle Text oder einen Namen mit aria-label oder aria-labelledby; entfernen Sie sie, wenn sie nicht gebraucht wird.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "Diese Kopfzelle hat keinen sichtbaren Text. Ihr einziger Name stammt aus aria-label oder aria-labelledby, was einige Kombinationen aus Screenreader und Browser, etwa NVDA mit Firefox und VoiceOver unter iOS, bei <th> ignorieren.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Fügen Sie der Kopfzelle sichtbaren Text hinzu, zusätzlich zum ARIA-Namen oder stattdessen. Sichtbarer Text ist der einzige Name, den alle getesteten Screenreader vorlesen.",
@@ -118072,8 +120369,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "region_title": "Der Seiteninhalt sollte sich innerhalb einer Landmarke befinden",
       "region_description": "Prüft, ob Inhalt unter <body> innerhalb einer Landmarke enthalten ist.",
       "region_summary_cantTell": "Dieser Inhalt liegt außerhalb jeder Landmarke.",
+      "region_summary_cantTell_bodyText": "Text, der direkt in <body> steht, „{{text}}“, liegt außerhalb jeder Landmarke.",
       "region_hint_cantTell": "Verschieben Sie ihn in eine Landmarke, etwa <main>, <nav>, <aside> oder eine benannte <section>.",
-      "region_lean_why": "Der Inhalt liegt außerhalb jeder Landmark-Region.",
+      "region_lean_why": "Der Inhalt liegt außerhalb jeder Landmarke.",
       "skipLink_title": "Ein Sprunglink muss ein auflösbares, nutzbares Ziel haben",
       "skipLink_description": "Prüft, ob das href-Fragment eines „Zu … springen“-Links auf ein reales, derzeit nutzbares Element im Dokument aufgelöst wird.",
       "skipLink_summary_cantTell": "Das Ziel dieses Sprunglinks existiert nicht.",
@@ -118227,7 +120525,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "imagesOfText_hint_cantTell_svg": "Verwenden Sie echten, mit CSS gestalteten Text, etwa das SVG direkt in der Seite oder den Text neben dem Bild, es sei denn, die Darstellung des Textes ist wesentlich (ein Logo) oder Benutzer können ändern, wie das Bild ihn zeigt.",
       "scrollableRegionFocusable_title": "Scrollbare Bereiche ohne fokussierbaren Inhalt sollten per Tastatur fokussierbar sein",
       "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
-      "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), aber weder es selbst noch sein Inhalt kann den Tastaturfokus erhalten.",
+      "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
       "scrollableRegionFocusable_hint_cantTell": "Wenn sein Inhalt tatsächlich überläuft, fügen Sie tabindex=\"0\" und einen Namen hinzu, damit Tastaturnutzende es fokussieren und mit den Pfeiltasten scrollen können.",
       "scrollableRegionFocusable_lean_why_overflows": "Sein Inhalt läuft über den Kasten hinaus, und nichts darin kann den Tastaturfokus erhalten, um ihn zu scrollen.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium ab Version 130 und Firefox machen einen scrollbaren Kasten trotzdem per Tastatur erreichbar; Safari nicht.",
@@ -118801,6 +121099,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} hides this <{{element}}> from screen readers, so its alt text \"{{alt}}\" is never read. Check whether it is purely decorative.",
       "img_altDecorative_hint_ownHiddenAlt": "If it only decorates, nothing needs to change. If it carries information, remove {{hiddenBy}} so its alt text is read.",
       "img_altDecorative_summary_unnamed": "This <{{element}}> has no name and no role, so screen readers skip it. Check whether it is purely decorative.",
+      "img_altDecorative_summary_unnamedCanvasFallback": "This <{{element}}> has no role and no name of its own, so screen readers skip the drawing and read only its fallback content, \"{{fallback}}\". Check whether the drawing is purely decorative.",
       "img_altQuality_lean_why": "A file name, a web address or a generic word does not say what the image shows.",
       "img_altQuality_lean_why_overridden": "The alt text \"{{alt}}\", not the name, is a file name, a web address or a generic word. aria-label or aria-labelledby names the image instead, but browsers still show the alt when the image does not load.",
       "img_altQuality_lean_why_control": "The alt text is the control's name, and a file name or a generic word does not say what the control does.",
@@ -118981,6 +121280,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_bgImageAndGradient": "Contrast is not computable because the background uses an image and a gradient ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, set on its ancestor {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_mixBlendMode": "Contrast is not computable because mix-blend-mode is used ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, set on its ancestor {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_filter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, set on its ancestor {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_insetShadow": "Contrast is not computable because an inset box-shadow paints under part of the text, or where it reaches could not be worked out ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, set on its ancestor {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_mask": "Contrast is not computable because a mask fades the text and its background by amounts that vary across them ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, set on its ancestor {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_rootNotOpaque": "Contrast is not computable because the effective background is not fully opaque at the root (alpha={{backgroundAlpha}}).",
       "contrastComputable_cantTell_engineFailure": "Contrast computability could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, set on its ancestor {{blockerAncestor}}{{/blockerAncestor}}).",
@@ -119150,6 +121451,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "buttonNamePresent_title": "Buttons have an accessible name",
       "buttonNamePresent_description": "Checks that buttons expose a non-empty accessible name.",
       "buttonNamePresent_summary_fail": "This button has no accessible name.",
+      "buttonNamePresent_summary_fail_otherRole": "This <{{element}}> has role {{role}} and no accessible name.",
       "buttonNamePresent_hint_fail": "Give the button visible text, or name it with aria-label, so screen reader users know what it does.",
       "buttonNamePresent_summary_cantTell_closedContent": "This button may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
       "buttonNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
@@ -119490,7 +121792,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedChildren_description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles.",
       "ariaProhibitedChildren_summary_fail": "This element has role=\"{{childRole}}\", which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
       "ariaProhibitedChildren_hint_fail": "Remove or change this role so it matches one of the container's allowed owned roles ({{allowedRoles}}), or move this element outside the {{containerRole}} container.",
-      "ariaProhibitedChildren_summary_fail_implicit": "This <{{element}}> is a {{childRole}} by default, which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
+      "ariaProhibitedChildren_summary_fail_implicit": "This <{{element}}> has the implicit role {{childRole}}, which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
       "ariaProhibitedChildren_hint_fail_implicit": "Give the <{{element}}> one of the roles the container allows ({{allowedRoles}}), or role=\"none\" so what it holds belongs to the {{containerRole}}.",
       "ariaProhibitedChildren_summary_fail_typo": "This <{{element}}>’s role \"{{written}}\" is not an ARIA role, so it stays a {{childRole}}, which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
       "ariaProhibitedChildren_hint_fail_typoNear": "Did you mean role=\"{{suggestion}}\"? Otherwise give it one of the roles the container allows ({{allowedRoles}}), or role=\"none\".",
@@ -119504,7 +121806,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaRequiredParent_description": "Checks that roles with a documented \"required context role\" entry (listitem, option, tab, treeitem, row, cell, ...) have an ancestor or aria-owns owner with an acceptable context role.",
       "ariaRequiredParent_summary_fail": "role=\"{{role}}\" must sit inside an element with one of these roles: {{requiredRoles}}. None was found.",
       "ariaRequiredParent_hint_fail": "Place it inside an element with one of these roles, or have that element reference it with aria-owns.",
-      "ariaRequiredParent_summary_fail_blocked": "role=\"{{role}}\" must sit directly inside one of these roles: {{requiredRoles}}. A {{parentRole}} (<{{parentElement}}>) is above it, but the <{{blocker}}> between them is a {{blockerRole}}, so the {{parentRole}} is not its parent.",
+      "ariaRequiredParent_summary_fail_blocked": "role=\"{{role}}\" must sit directly inside one of these roles: {{requiredRoles}}. A {{parentRole}} (<{{parentElement}}>) is above it, but the <{{blocker}}> between them has role {{blockerRole}}, so the {{parentRole}} is not its parent.",
       "ariaRequiredParent_hint_fail_blocked": "Give the <{{blocker}}> role=\"none\" so the {{role}} belongs to the {{parentRole}}, or move the {{role}} directly inside the {{parentRole}}.",
       "ariaRequiredParent_summary_fail_typo": "role=\"{{role}}\" must sit inside an element with one of these roles: {{requiredRoles}}. An ancestor <{{parentElement}}> has role \"{{written}}\", which is not an ARIA role, so it has none.",
       "ariaRequiredParent_hint_fail_typoNear": "Did you mean role=\"{{suggestion}}\"? Fix the ancestor’s role.",
@@ -119585,6 +121887,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
       "listitemParentValid_hint_cantTell_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.",
       "listitemParentValid_lean_caution_listRoleOverridden": "A few links or controls, such as a navigation bar’s, may read as well without the list.",
       "listitemParentValid_summary_fail_wrapped": "This <li> is inside a <{{listElement}}>, but the {{wrapper}} between them breaks the list: a list's items must be its children.",
@@ -119694,7 +121998,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nestedInteractiveControlsAbsent_description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
       "nestedInteractiveControlsAbsent_summary_fail": "This <{{element}}> has interactive controls nested inside it: {{nestedElements}}.",
       "nestedInteractiveControlsAbsent_hint_fail": "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another.",
-      "nestedInteractiveControlsAbsent_summary_fail_presentational": "This <{{element}}> is a {{outerRole}}, whose content is presentational, and it contains {{nestedList}}: the nested control loses its role but still takes focus.",
+      "nestedInteractiveControlsAbsent_summary_fail_presentational": "This <{{element}}> has role {{outerRole}}, which makes its content presentational, and it contains {{nestedList}}: the nested control loses its role but still takes focus.",
       "nestedInteractiveControlsAbsent_summary_cantTell_nested": "This <{{element}}> ({{outerRole}}) contains {{nestedList}}. Both keep their roles, but a control inside another is hard to reach and operate, and its name may be swallowed by the outer one.",
       "presentationalChildrenFocusableAbsent_title": "Roles with presentational children must not contain focusable content",
       "presentationalChildrenFocusableAbsent_description": "Checks that an element whose role makes its children presentational (button, checkbox, img, option, radio, slider, switch, tab, ...) contains no descendant that takes a tab stop.",
@@ -119828,6 +122132,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_title": "Table header cells must not be empty",
       "emptyTableHeader_description": "Checks that table header cells (<th>, or any element with role=\"columnheader\"/\"rowheader\") have visible text content. A header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
       "emptyTableHeader_summary_cantTell": "This table header cell has no accessible name.",
+      "emptyTableHeader_summary_cantTell_contentName": "This table header cell has no visible text. Its only name, \"{{name}}\", comes from what it holds, such as a control or an image.",
       "emptyTableHeader_hint_cantTell": "Give the header cell text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text. Its only name comes from aria-label or aria-labelledby, which some screen reader and browser pairs, such as NVDA with Firefox and VoiceOver on iOS, ignore on <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Add visible text to the header cell, alongside or instead of the ARIA name. Visible text is the only name every tested screen reader reads.",
@@ -119861,6 +122166,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "region_title": "Page content should be inside a landmark region",
       "region_description": "Checks that content under <body> is contained within a landmark region.",
       "region_summary_cantTell": "This content is outside every landmark region.",
+      "region_summary_cantTell_bodyText": "Text placed directly in <body>, \"{{text}}\", is outside every landmark region.",
       "region_hint_cantTell": "Move it into a landmark, such as <main>, <nav>, <aside>, or a <section> with a name.",
       "region_lean_why": "The content is outside every landmark region.",
       "skipLink_title": "Skip link must have a resolvable, usable target",
@@ -120016,7 +122322,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "imagesOfText_hint_cantTell_svg": "Use real text styled with CSS, such as the SVG inline in the page or the text next to the image, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.",
       "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
       "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
-      "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but neither it nor anything inside it can take keyboard focus.",
+      "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
       "scrollableRegionFocusable_hint_cantTell": "If its content does overflow, add tabindex=\"0\" and a name, so keyboard users can focus it and scroll with the arrow keys.",
       "scrollableRegionFocusable_lean_why_overflows": "Its content overflows the box, and nothing in it can take keyboard focus to scroll it.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.",
@@ -120590,6 +122896,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} oculta este <{{element}}> a los lectores de pantalla, así que su texto alternativo \"{{alt}}\" nunca se lee. Comprobar si es solo decorativo.",
       "img_altDecorative_hint_ownHiddenAlt": "Si solo decora, no hay que cambiar nada. Si transmite información, quitar {{hiddenBy}} para que se lea su texto alternativo.",
       "img_altDecorative_summary_unnamed": "Este <{{element}}> no tiene nombre ni rol, así que los lectores de pantalla lo omiten. Comprobar si es solo decorativo.",
+      "img_altDecorative_summary_unnamedCanvasFallback": "Este <{{element}}> no tiene rol ni nombre propio, así que los lectores de pantalla omiten el dibujo y solo leen su contenido alternativo, «{{fallback}}». Comprobar si el dibujo es solo decorativo.",
       "img_altQuality_lean_why": "Un nombre de archivo, una dirección web o una palabra genérica no dice lo que muestra la imagen.",
       "img_altQuality_lean_why_overridden": "El texto alt \"{{alt}}\", no el nombre, es un nombre de archivo, una dirección web o una palabra genérica. aria-label o aria-labelledby da nombre a la imagen en su lugar, pero los navegadores siguen mostrando el alt cuando la imagen no carga.",
       "img_altQuality_lean_why_control": "El texto alt es el nombre del control, y un nombre de archivo o una palabra genérica no dice lo que hace.",
@@ -120770,6 +123077,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_bgImageAndGradient": "El contraste no es computable porque el fondo usa una imagen y un degradado ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, definido en su ancestro {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_mixBlendMode": "El contraste no es computable porque se usa mix-blend-mode ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, definido en su ancestro {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_filter": "El contraste no es computable porque se usa filter ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, definido en su ancestro {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_insetShadow": "El contraste no es computable porque una sombra interior (box-shadow inset) se pinta bajo parte del texto, o no se pudo determinar hasta dónde llega ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, definido en su ancestro {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_mask": "El contraste no es computable porque una máscara atenúa el texto y su fondo en grados que varían de un punto a otro ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, definido en su ancestro {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_rootNotOpaque": "El contraste no es computable porque el fondo efectivo no es completamente opaco en la raíz (alpha={{backgroundAlpha}}).",
       "contrastComputable_cantTell_engineFailure": "No se pudo determinar la computabilidad del contraste debido a un error interno del motor ({{reasonCode}}).",
       "contrastComputable_cantTell_backdropFilter": "El contraste no es computable porque se usa backdrop-filter ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, definido en su ancestro {{blockerAncestor}}{{/blockerAncestor}}).",
@@ -120939,6 +123248,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "buttonNamePresent_title": "Los botones tienen un nombre accesible",
       "buttonNamePresent_description": "Comprueba que los botones expongan un nombre accesible no vacío.",
       "buttonNamePresent_summary_fail": "Este botón no tiene nombre accesible.",
+      "buttonNamePresent_summary_fail_otherRole": "Este <{{element}}> tiene el rol {{role}} y no tiene nombre accesible.",
       "buttonNamePresent_hint_fail": "Darle al botón texto visible, o un nombre con aria-label, para que quienes usan lector de pantalla sepan lo que hace.",
       "buttonNamePresent_summary_cantTell_closedContent": "Este botón puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
       "buttonNamePresent_hint_cantTell_closedContent": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle un aria-label o un texto visible.",
@@ -121374,6 +123684,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
       "listitemParentValid_hint_cantTell_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "El elemento se dibuja con viñeta o número, como elemento de una lista que el marcado ya no expone.",
       "listitemParentValid_lean_caution_listRoleOverridden": "Unos pocos enlaces o controles, como los de una barra de navegación, pueden leerse igual de bien sin la lista.",
       "listitemParentValid_summary_fail_wrapped": "Este <li> está dentro de un <{{listElement}}>, pero el {{wrapper}} que hay entre ellos rompe la lista: los elementos de una lista deben ser sus hijos.",
@@ -121617,6 +123929,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_title": "Las celdas de encabezado de tabla no deben estar vacías",
       "emptyTableHeader_description": "Comprueba que las celdas de encabezado (<th>, o cualquier elemento con role=\"columnheader\"/\"rowheader\") tengan contenido de texto visible; un encabezado nombrado únicamente mediante aria-label/aria-labelledby también se señala, ya que el soporte real de lectores de pantalla/navegadores para eso es inconsistente.",
       "emptyTableHeader_summary_cantTell": "Esta celda de encabezado de tabla no tiene nombre accesible.",
+      "emptyTableHeader_summary_cantTell_contentName": "Esta celda de encabezado de tabla no tiene texto visible. Su único nombre, «{{name}}», procede de lo que contiene, como un control o una imagen.",
       "emptyTableHeader_hint_cantTell": "Darle texto a la celda de encabezado, o un nombre con aria-label o aria-labelledby; quitarla si no hace falta.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "Esta celda de encabezado no tiene texto visible. Su único nombre viene de aria-label o aria-labelledby, que algunas combinaciones de lector de pantalla y navegador, como NVDA con Firefox y VoiceOver en iOS, ignoran en <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Agregar texto visible a la celda de encabezado, junto al nombre ARIA o en su lugar. El texto visible es el único nombre que leen todos los lectores de pantalla probados.",
@@ -121650,6 +123963,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "region_title": "El contenido de la página debería estar dentro de una región de referencia",
       "region_description": "Comprueba que el contenido bajo <body> esté contenido dentro de una región de referencia.",
       "region_summary_cantTell": "Este contenido está fuera de cualquier región de punto de referencia.",
+      "region_summary_cantTell_bodyText": "El texto colocado directamente en <body>, «{{text}}», está fuera de cualquier región de punto de referencia.",
       "region_hint_cantTell": "Moverlo a un punto de referencia, como <main>, <nav>, <aside> o un <section> con nombre.",
       "region_lean_why": "El contenido está fuera de toda región de punto de referencia.",
       "skipLink_title": "El enlace de salto debe tener un destino resoluble y utilizable",
@@ -121805,7 +124119,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "imagesOfText_hint_cantTell_svg": "Usar texto real con estilo CSS, como el SVG insertado en la página o el texto junto a la imagen, salvo que la forma de presentar el texto sea esencial (un logotipo) o el usuario pueda cambiar cómo la imagen lo muestra.",
       "scrollableRegionFocusable_title": "Las regiones desplazables sin contenido enfocable deberían ser enfocables por teclado",
       "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
-      "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero ni él ni nada de su interior puede recibir el foco del teclado.",
+      "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
       "scrollableRegionFocusable_hint_cantTell": "Si su contenido se desborda de verdad, agregar tabindex=\"0\" y un nombre, para que con el teclado se pueda enfocar y desplazar con las flechas.",
       "scrollableRegionFocusable_lean_why_overflows": "Su contenido desborda la caja, y nada en ella puede recibir el foco del teclado para desplazarla.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 y posteriores, y Firefox, permiten igualmente llegar con el teclado a una caja que se desplaza; Safari no.",
@@ -122379,6 +124693,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} masque cet élément <{{element}}> aux lecteurs d’écran : son texte alternatif « {{alt}} » n’est donc jamais lu. Vérifiez s’il est purement décoratif.",
       "img_altDecorative_hint_ownHiddenAlt": "S’il ne fait que décorer, rien n’est à changer. S’il porte une information, retirez {{hiddenBy}} pour que son texte alternatif soit lu.",
       "img_altDecorative_summary_unnamed": "Cet élément <{{element}}> n’a ni nom ni rôle : les lecteurs d’écran l’ignorent donc. Vérifiez s’il est purement décoratif.",
+      "img_altDecorative_summary_unnamedCanvasFallback": "Cet élément <{{element}}> n’a ni rôle ni nom propre : les lecteurs d’écran ignorent donc le dessin et ne lisent que son contenu de remplacement, « {{fallback}} ». Vérifiez si le dessin est purement décoratif.",
       "img_altQuality_lean_why": "Un nom de fichier, une adresse web ou un mot générique ne dit pas ce que montre l’image.",
       "img_altQuality_lean_why_overridden": "C’est le texte alt « {{alt}} », non le nom, qui est un nom de fichier, une adresse web ou un mot générique. aria-label ou aria-labelledby nomme l’image à sa place, mais les navigateurs affichent encore l’alt quand l’image ne se charge pas.",
       "img_altQuality_lean_why_control": "Le texte alt est le nom de la commande, et un nom de fichier ou un mot générique ne dit pas ce qu’elle fait.",
@@ -122559,6 +124874,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_bgImageAndGradient": "Le contraste ne peut pas être calculé car l’arrière-plan utilise une image et un dégradé ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, défini sur son ancêtre {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_mixBlendMode": "Le contraste n’est pas calculable car mix-blend-mode est utilisé ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, défini sur son ancêtre {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_filter": "Le contraste ne peut pas être calculé car la propriété filter est utilisée ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, défini sur son ancêtre {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_insetShadow": "Le contraste ne peut pas être calculé car une ombre intérieure (box-shadow inset) est peinte sous une partie du texte, ou sa portée n’a pas pu être déterminée ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, défini sur son ancêtre {{blockerAncestor}}{{/blockerAncestor}}).",
+      "contrastComputable_cantTell_mask": "Le contraste ne peut pas être calculé car un masque estompe le texte et son arrière-plan à des degrés qui varient d’un point à l’autre ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, défini sur son ancêtre {{blockerAncestor}}{{/blockerAncestor}}).",
       "contrastComputable_cantTell_rootNotOpaque": "Le contraste n’est pas calculable car l’arrière-plan effectif n’est pas totalement opaque à la racine (alpha={{backgroundAlpha}}).",
       "contrastComputable_cantTell_engineFailure": "La calculabilité du contraste n’a pas pu être déterminée en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}, défini sur son ancêtre {{blockerAncestor}}{{/blockerAncestor}}).",
@@ -122728,6 +125045,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "buttonNamePresent_title": "Les boutons ont un nom accessible",
       "buttonNamePresent_description": "Vérifie que les boutons exposent un nom accessible non vide.",
       "buttonNamePresent_summary_fail": "Ce bouton n’a pas de nom accessible.",
+      "buttonNamePresent_summary_fail_otherRole": "Cet élément <{{element}}> a le rôle {{role}} et n’a pas de nom accessible.",
       "buttonNamePresent_hint_fail": "Donnez au bouton un texte visible, ou nommez-le avec aria-label, pour que les utilisateurs de lecteur d’écran sachent ce qu’il fait.",
       "buttonNamePresent_summary_cantTell_closedContent": "Ce bouton tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fermée du shadow DOM) : on n’a pas pu savoir s’il en a un.",
       "buttonNamePresent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
@@ -123163,6 +125481,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
       "listitemParentValid_hint_cantTell_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "L’élément est dessiné avec une puce ou un numéro, comme élément d’une liste que le balisage n’expose plus.",
       "listitemParentValid_lean_caution_listRoleOverridden": "Quelques liens ou commandes, comme ceux d’une barre de navigation, peuvent se lire aussi bien sans la liste.",
       "listitemParentValid_summary_fail_wrapped": "Cet élément <li> est dans un <{{listElement}}>, mais l’élément {{wrapper}} entre les deux rompt la liste : les éléments d’une liste doivent être ses enfants.",
@@ -123406,6 +125726,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_title": "Les cellules d’en-tête de tableau ne doivent pas être vides",
       "emptyTableHeader_description": "Vérifie que les cellules d’en-tête (<th>, ou tout élément avec role=\"columnheader\"/\"rowheader\") ont un contenu textuel visible — un en-tête nommé uniquement via aria-label/aria-labelledby est aussi signalé, car la prise en charge réelle par les lecteurs d’écran/navigateurs est incohérente.",
       "emptyTableHeader_summary_cantTell": "Cette cellule d’en-tête de tableau n’a pas de nom accessible.",
+      "emptyTableHeader_summary_cantTell_contentName": "Cette cellule d’en-tête de tableau n’a aucun texte visible. Son seul nom, « {{name}} », vient de ce qu’elle contient, comme un contrôle ou une image.",
       "emptyTableHeader_hint_cantTell": "Donnez du texte à la cellule d’en-tête, ou nommez-la avec aria-label ou aria-labelledby ; retirez-la si elle n’est pas utile.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "Cette cellule d’en-tête n’a pas de texte visible. Son seul nom vient de aria-label ou aria-labelledby, que certaines combinaisons de lecteur d’écran et de navigateur, comme NVDA avec Firefox et VoiceOver sur iOS, ignorent sur <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Ajoutez un texte visible à la cellule d’en-tête, en plus ou à la place du nom ARIA. Le texte visible est le seul nom que lisent tous les lecteurs d’écran testés.",
@@ -123439,6 +125760,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "region_title": "Le contenu de la page devrait se trouver à l’intérieur d’un point de repère",
       "region_description": "Vérifie que le contenu sous <body> est contenu dans un point de repère.",
       "region_summary_cantTell": "Ce contenu se trouve hors de toute région de repère.",
+      "region_summary_cantTell_bodyText": "Le texte placé directement dans <body>, « {{text}} », se trouve hors de toute région de repère.",
       "region_hint_cantTell": "Placez-le dans un repère, comme <main>, <nav>, <aside> ou une <section> nommée.",
       "region_lean_why": "Le contenu se trouve en dehors de toute région de repère.",
       "skipLink_title": "Un lien d’évitement doit avoir une cible qui se résout et qui est utilisable",
@@ -123594,7 +125916,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "imagesOfText_hint_cantTell_svg": "Utilisez du vrai texte mis en forme avec CSS, comme le SVG intégré dans la page ou le texte à côté de l’image, sauf si la présentation du texte est essentielle (un logo) ou si l’utilisateur peut changer la façon dont l’image l’affiche.",
       "scrollableRegionFocusable_title": "Les régions défilantes sans contenu focalisable devraient être focalisables au clavier",
       "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une vérification manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
-      "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais ni lui ni son contenu ne peut recevoir le focus clavier.",
+      "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
       "scrollableRegionFocusable_hint_cantTell": "Si son contenu déborde réellement, ajoutez tabindex=\"0\" et un nom, pour qu’on puisse le focaliser au clavier et le faire défiler avec les flèches.",
       "scrollableRegionFocusable_lean_why_overflows": "Son contenu déborde de la boîte, et rien à l’intérieur ne peut recevoir le focus clavier pour la faire défiler.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 et versions ultérieures, ainsi que Firefox, permettent quand même d’atteindre au clavier une boîte qui défile ; Safari non.",
@@ -124168,6 +126490,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} によってこの <{{element}}> はスクリーンリーダーから隠されているため、代替テキスト「{{alt}}」は読み上げられません。純粋に装飾目的かどうか確認してください。",
       "img_altDecorative_hint_ownHiddenAlt": "装飾だけであれば、変更は不要です。情報を伝える場合は、{{hiddenBy}} を削除して、代替テキストが読み上げられるようにしてください。",
       "img_altDecorative_summary_unnamed": "この <{{element}}> には名前もロールもないため、スクリーンリーダーはこれを読み飛ばします。純粋に装飾目的かどうか確認してください。",
+      "img_altDecorative_summary_unnamedCanvasFallback": "この <{{element}}> にはロールも独自の名前もないため、スクリーンリーダーは描画を読み飛ばし、代替コンテンツ「{{fallback}}」だけを読み上げます。描画が純粋に装飾目的かどうか確認してください。",
       "img_altQuality_lean_why": "ファイル名、Web アドレス、汎用的な語では、画像が何を示しているかは伝わりません。",
       "img_altQuality_lean_why_overridden": "名前ではなく alt テキスト「{{alt}}」が、ファイル名、Web アドレス、または汎用的な語です。画像の名前は aria-label または aria-labelledby が代わりに与えますが、画像が読み込まれないときブラウザーは alt を表示します。",
       "img_altQuality_lean_why_control": "代替テキストはこのコントロールの名前であり、ファイル名や汎用的な語では、コントロールの働きは伝わりません。",
@@ -124348,6 +126671,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_bgImageAndGradient": "背景に画像とグラデーションが使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
       "contrastComputable_cantTell_mixBlendMode": "mix-blend-mode が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
       "contrastComputable_cantTell_filter": "filter が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
+      "contrastComputable_cantTell_insetShadow": "内側の box-shadow (inset) がテキストの一部の下に描画されているか、その範囲を特定できないため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
+      "contrastComputable_cantTell_mask": "マスクがテキストとその背景を場所によって異なる度合いで透過させているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
       "contrastComputable_cantTell_rootNotOpaque": "ルートで実際の背景が完全に不透明ではないため、コントラストを計算できません (alpha={{backgroundAlpha}})。",
       "contrastComputable_cantTell_engineFailure": "エンジン内部のエラーにより、コントラストを計算できるかどうかを判定できませんでした ({{reasonCode}})。",
       "contrastComputable_cantTell_backdropFilter": "backdrop-filter が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
@@ -124517,6 +126842,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "buttonNamePresent_title": "ボタンにアクセシブルな名前があること",
       "buttonNamePresent_description": "ボタンが空でないアクセシブルな名前を公開しているかを確認します。",
       "buttonNamePresent_summary_fail": "このボタンにはアクセシブルな名前がありません。",
+      "buttonNamePresent_summary_fail_otherRole": "この <{{element}}> のロールは {{role}} で、アクセシブルな名前がありません。",
       "buttonNamePresent_hint_fail": "ボタンに表示テキストを入れるか、aria-label で名前を付けて、スクリーンリーダーの利用者がボタンの働きを分かるようにしてください。",
       "buttonNamePresent_summary_cantTell_closedContent": "このボタンは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
       "buttonNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
@@ -124952,6 +127278,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
       "listitemParentValid_hint_cantTell_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
+      "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
       "listitemParentValid_lean_why_listRoleOverridden": "この項目は行頭記号や番号付きで、マークアップがもう公開していないリストの項目として描画されています。",
       "listitemParentValid_lean_caution_listRoleOverridden": "ナビゲーションバーのリンクなど、数個のリンクやコントロールはリストがなくても同じように読める場合があります。",
       "listitemParentValid_summary_fail_wrapped": "この <li> は <{{listElement}}> の中にありますが、間にある {{wrapper}} がリストを途切れさせています。リストの項目はリストの子要素である必要があります。",
@@ -125195,6 +127523,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_title": "表の見出しセルを空にしてはならない",
       "emptyTableHeader_description": "表の見出しセル (<th>、または role=\"columnheader\"/\"rowheader\" を持つ要素) に、表示されるテキストがあるかを確認します。aria-label/aria-labelledby だけで名前が付けられた見出しも検出します。実際のスクリーンリーダーとブラウザーでは、そのサポートにばらつきがあるためです。",
       "emptyTableHeader_summary_cantTell": "この表の見出しセルにはアクセシブルな名前がありません。",
+      "emptyTableHeader_summary_cantTell_contentName": "この表の見出しセルには表示されるテキストがありません。唯一の名前「{{name}}」は、コントロールや画像など、セルの中身から来ています。",
       "emptyTableHeader_hint_cantTell": "見出しセルにテキストを入れるか、aria-label または aria-labelledby で名前を付けてください。不要であれば削除してください。",
       "emptyTableHeader_summary_cantTell_ariaOnly": "この見出しセルには表示テキストがありません。名前は aria-label または aria-labelledby だけから来ていますが、NVDA と Firefox、iOS の VoiceOver など、一部のスクリーンリーダーとブラウザーの組み合わせは <th> 上のこれらを無視します。",
       "emptyTableHeader_hint_cantTell_ariaOnly": "ARIA の名前に加えて、または代わりに、見出しセルに表示テキストを入れてください。テストしたすべてのスクリーンリーダーが読み上げる名前は、表示テキストだけです。",
@@ -125228,6 +127557,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "region_title": "ページのコンテンツはランドマーク領域内にあることが望ましい",
       "region_description": "<body> 以下のコンテンツが、ランドマーク領域に含まれているかを確認します。",
       "region_summary_cantTell": "この内容は、どのランドマーク領域にも含まれていません。",
+      "region_summary_cantTell_bodyText": "<body> の直下に置かれたテキスト「{{text}}」は、どのランドマーク領域にも含まれていません。",
       "region_hint_cantTell": "<main>、<nav>、<aside>、名前付きの <section> などのランドマークの中に移してください。",
       "region_lean_why": "このコンテンツはどのランドマーク領域にも含まれていません。",
       "skipLink_title": "スキップリンクには解決可能で利用できるリンク先が必要",
@@ -125383,7 +127713,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "imagesOfText_hint_cantTell_svg": "ロゴのように描画のされ方が不可欠な場合や、ユーザーが画像での表示方法を変更できる場合を除き、ページに直接埋め込んだ SVG や画像の横のテキストなど、CSS でスタイルを付けた実際のテキストを使ってください。",
       "scrollableRegionFocusable_title": "フォーカス可能なコンテンツのないスクロール領域は、キーボードでフォーカスできることが望ましい",
       "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
-      "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、要素自体もその中身も、キーボードフォーカスを受け取れません。",
+      "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
       "scrollableRegionFocusable_hint_cantTell": "内容が実際にはみ出す場合は、tabindex=\"0\" と名前を付け、キーボードでフォーカスして矢印キーでスクロールできるようにしてください。",
       "scrollableRegionFocusable_lean_why_overflows": "内容がボックスからはみ出しており、スクロールするためにキーボードフォーカスを受けられるものが中にありません。",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 以降と Firefox では、スクロールするボックスにキーボードで到達できます。Safari ではできません。",
@@ -126367,8 +128697,13 @@ function t(key, fallback, params, engineOptions) {
 
   const v = localeMessage(key, engineOptions);
 
-  // fallback to English if missing in requested locale
-  const vEn = ownString(I18N && I18N.en, key);
+  // fallback to English if missing in requested locale: the caller's own
+  // English (engineOptions.messages.en) first, as for any locale, then the
+  // built-in one. Without it, a custom rule's keys given only in English
+  // showed empty under another locale.
+  const vEn =
+    ownString(ownDict(getSuppliedMessages(engineOptions), 'en'), key) ||
+    ownString(I18N && I18N.en, key);
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
@@ -126571,6 +128906,11 @@ function asciiLowerChar(c) {
 
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
+  // A Set of names is read as the list it holds (by its type tag, so a
+  // page's Set read by the bundle in another realm counts too).
+  if (typeof value === 'object' && Object.prototype.toString.call(value) === '[object Set]') {
+    value = [...value];
+  }
   if (Array.isArray(value)) {
     const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
     const norm = lower ? arr.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : arr.slice();
@@ -127436,8 +129776,14 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     const rest = { ...runOnly };
     delete rest.type;
     delete rest.values;
-    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: runOnly.values };
-    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: runOnly.values };
+    // A Set of names is read as the list it holds; passed on as it is, the
+    // checks below took it for no list and ran every rule.
+    const values =
+      runOnly.values && typeof runOnly.values === 'object' && Object.prototype.toString.call(runOnly.values) === '[object Set]'
+        ? [...runOnly.values]
+        : runOnly.values;
+    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
+    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
@@ -127821,6 +130167,44 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.variantOf = variant.of;
     if (out.i18n && variant.messages && typeof variant.messages.from === 'string') {
       out.i18n = { ...out.i18n, variantOfTitleKey: variant.messages.from + '_title' };
+    }
+  }
+
+  // An occurrence's tier is fail, cantTell or pass, read in any case
+  // ('FAIL' is fail). Any other value is dropped, so the occurrence takes
+  // the rule's outcome, and said in error: a custom rule's 'bogus' reached
+  // every reporter as it was.
+  if (Array.isArray(out.occurrences)) {
+    const TIERS = { fail: 'fail', canttell: 'cantTell', pass: 'pass' };
+    const unread = [];
+    out.occurrences = out.occurrences.map((o) => {
+      if (!o || typeof o !== 'object' || o.occurrenceOutcome === undefined || o.occurrenceOutcome === null) return o;
+      const given = o.occurrenceOutcome;
+      const key = typeof given === 'string' ? given.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
+      const tier = Object.prototype.hasOwnProperty.call(TIERS, key) ? TIERS[key] : null;
+      if (tier === given) return o;
+      const next = { ...o };
+      if (tier) next.occurrenceOutcome = tier;
+      else {
+        delete next.occurrenceOutcome;
+        unread.push(given);
+      }
+      return next;
+    });
+    if (unread.length) {
+      let named = '';
+      for (const v of unread.filter((v, i) => unread.indexOf(v) === i)) {
+        let text;
+        try {
+          text = JSON.stringify(v);
+        } catch {
+          text = undefined;
+        }
+        named += (named ? ', ' : '') + (text === undefined ? typeof v : text);
+      }
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule returned occurrenceOutcome ' + named + ', which is not one of fail, cantTell, pass; those occurrences take the outcome of the rule.';
     }
   }
 
@@ -129271,6 +131655,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             .toLowerCase()
         : '';
       if (ad === 'true') return true;
+      // A custom element disabled through its ElementInternals
+      // (internals.ariaDisabled = 'true'), where it has no aria-disabled
+      // attribute of its own, is disabled as the attribute would make it.
+      if (!ad && typeof shared.getInternalsStateInfo === 'function') {
+        const info = shared.getInternalsStateInfo(node, 'aria-disabled');
+        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') return true;
+      }
     } catch {}
     return false;
   }
@@ -129776,6 +132167,35 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return r.right + indent + sx <= 0;
       };
 
+      // A <marquee> moves its content through its box on a timer of its
+      // own, which the scan can't hold still (it is no CSS animation):
+      // where the text is at the moment of a scan is chance, in view, off
+      // the box or off the page. It passes through the whole box, so it is
+      // taken as there, and measured the same on every scan. The marquee
+      // around el, or null.
+      const marqueeCache = new WeakMap();
+      const marqueeOf = (el) => {
+        const chain = [];
+        let found = null;
+        for (
+          let cur = composedParent(el), depth = 0;
+          cur && dom.nodeType(cur) === 1 && depth < 1000;
+          cur = composedParent(cur), depth++
+        ) {
+          if (marqueeCache.has(cur)) {
+            found = marqueeCache.get(cur);
+            break;
+          }
+          chain.push(cur);
+          if (String(dom.localName(cur) || '').toLowerCase() === 'marquee') {
+            found = cur;
+            break;
+          }
+        }
+        for (const c of chain) marqueeCache.set(c, found);
+        return found;
+      };
+
       const scrollOf = new Map();
       const isUndrawn = (el) => {
         const cs = __contrastComputedStyle(el);
@@ -129791,8 +132211,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         ) {
           return false;
         }
-        const r = dom.getBoundingClientRect(el);
+        let r = dom.getBoundingClientRect(el);
         if (!r || !(r.width > 0) || !(r.height > 0)) return false;
+        // Text a <marquee> moves is placed by its box (see below).
+        const marquee = marqueeOf(el);
+        if (marquee) {
+          r = dom.getBoundingClientRect(marquee);
+          if (!r || !(r.width > 0) || !(r.height > 0)) return true;
+        }
         const win = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
         let scroll = scrollOf.get(win);
         if (!scroll) {
@@ -129804,12 +132230,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
         // A negative text-indent moves the first line, not the box: text
         // moved wholly off the page (text-indent: -9999px) is drawn nowhere.
-        if (Number.parseFloat(cs.textIndent) < 0 && textOffPage(el, r, cs, sx)) return true;
+        if (!marquee && Number.parseFloat(cs.textIndent) < 0 && textOffPage(el, r, cs, sx))
+          return true;
         let left = r.left;
         let top = r.top;
         let right = r.right;
         let bottom = r.bottom;
-        let cur = composedParent(el);
+        // Inside a marquee, only the boxes around the marquee clip.
+        let cur = composedParent(marquee || el);
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
@@ -130385,7 +132813,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // page itself: an SVG text element by its viewBox and transforms (the
   // scale of its screen CTM, which includes any CSS zoom), any other element
   // by CSS zoom (currentCSSZoom, the product over its ancestors, not the
-  // user's browser zoom); and either by font-size-adjust, which draws the
+  // user's browser zoom) and a uniform transform scale on it or its
+  // ancestors (__uniformTransformScale); and either by font-size-adjust, which draws the
   // font at another size than its font-size. WCAG's large-scale size is the
   // size as delivered, so 12px text under zoom: 2 is 24px. 1 where none
   // applies or can be read, such as in jsdom.
@@ -130394,7 +132823,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // The same, with what scaled it: { scale, by }, `by` listing 'zoom',
-  // 'svg' and 'font-size-adjust' for each that changed the size. `style` is
+  // 'transform', 'svg' and 'font-size-adjust' for each that changed the
+  // size. `style` is
   // the text's style where it isn't the element's own (a placeholder's).
   function renderedTextSize(el, style) {
     const by = [];
@@ -130415,6 +132845,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           scale *= z;
           by.push('zoom');
         }
+        const t = __uniformTransformScale(el);
+        if (t !== 1) {
+          scale *= t;
+          by.push('transform');
+        }
       }
       const adjust = fontSizeAdjustScale(el, style);
       if (adjust !== null && adjust !== 1) {
@@ -130423,6 +132858,74 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     } catch {}
     return { scale, by };
+  }
+
+  // How much a uniform scale on el or its ancestors (transform: scale(2),
+  // or the scale property) draws its text larger or smaller: 12px text
+  // under scale(2) is drawn at 24px, as under zoom: 2. The product over
+  // the boxes a transform applies to (not inline boxes, not display:
+  // contents). 1 where none applies, and where any of them rotates, skews,
+  // scales unevenly or transforms in 3D: the drawn size is then no one
+  // number, and the text keeps its font-size. In a browser, which gives
+  // a computed transform as a matrix; jsdom keeps it as written and is
+  // left at 1, as it is for zoom.
+  const __ownTransformScale = new WeakMap();
+  function __ownTransformScaleOf(node) {
+    if (__ownTransformScale.has(node)) return __ownTransformScale.get(node);
+    let out = 1;
+    const cs = __contrastComputedStyle(node);
+    const display = trim(cs && cs.display);
+    if (cs && display !== 'inline' && display !== 'contents' && display !== 'none') {
+      const t = trim(cs.transform);
+      if (t && t !== 'none') {
+        const m = /^matrix\(([^)]*)\)$/.exec(t);
+        const n = m ? m[1].split(',').map(Number) : [];
+        out =
+          n.length === 6 && n.every(Number.isFinite) && n[1] === 0 && n[2] === 0 && n[0] === n[3]
+            ? n[0]
+            : null;
+      }
+      const sc = trim(cs.scale);
+      if (out !== null && sc && sc !== 'none') {
+        const v = sc.split(/\s+/).map(Number);
+        const x = v[0];
+        const y = v.length > 1 ? v[1] : x;
+        out = v.every(Number.isFinite) && x === y ? out * x : null;
+      }
+      const rot = trim(cs.rotate);
+      if (out !== null && rot && rot !== 'none' && !/^0(?:deg)?$/.test(rot)) out = null;
+      if (out !== null && !(out > 0)) out = null;
+    }
+    __ownTransformScale.set(node, out);
+    return out;
+  }
+  // Remembered for every element on the way up, so the texts of a deep page
+  // don't walk the same ancestors again: the product from each element to
+  // the root, or null where a transform on the way gives up.
+  const __transformScaleUp = new WeakMap();
+  function __uniformTransformScale(el) {
+    // Without a layout (jsdom) a transform is kept as written: nothing to
+    // read, and no walk up a deep page for it.
+    const doc = dom.ownerDocument(el);
+    if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+    if (!__layoutByDoc.get(doc)) return 1;
+    const chain = [];
+    let known = 1;
+    let guard = 0;
+    for (let cur = el; cur && guard++ < 1000; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      if (__transformScaleUp.has(cur)) {
+        known = __transformScaleUp.get(cur);
+        break;
+      }
+      chain.push(cur);
+    }
+    for (let i = chain.length - 1; i >= 0; i--) {
+      const own = known === null ? null : __ownTransformScaleOf(chain[i]);
+      known = own === null ? null : own * known;
+      __transformScaleUp.set(chain[i], known);
+    }
+    return known !== null && Number.isFinite(known) && known > 0 ? known : 1;
   }
 
   // `boldLargeMinPx` overrides the size from which bold text is large. It
@@ -131013,6 +133516,28 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // A mask (mask-image, the mask shorthand, -webkit-mask-box-image) makes
+  // the element and everything in it, text and background together, partly
+  // transparent by amounts that vary across it, over whatever is behind: a
+  // "read more" fade, a 20% mask that leaves black text a pale grey. The
+  // colors that leaves on screen can't be worked out from the CSS, as with
+  // a filter. The value of the first mask property set, or ''.
+  function maskOf(style) {
+    if (!style) return '';
+    for (const prop of ['maskImage', 'webkitMaskImage', 'mask', 'webkitMaskBoxImageSource']) {
+      let v;
+      try {
+        v = trim(style[prop]);
+      } catch {
+        v = '';
+      }
+      // A layer paints a mask when it has an image (url(), a gradient,
+      // image-set()); `none` and the shorthand's other keywords don't.
+      if (v && __splitTopLevel(v).some((layer) => layer.includes('('))) return v;
+    }
+    return '';
+  }
+
   // Whether a filter is drop-shadow() alone, once or more. It draws a
   // shadow of the element's content under that content, so it shows only
   // where the content is not opaque.
@@ -131436,6 +133961,133 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return { colors };
   }
 
+  // -------- Inset box shadows painted as a background --------
+  //
+  // An inset box-shadow is painted inside the padding box, over the
+  // element's background and under its content: `inset 0 0 0 100vmax
+  // rgba(0,0,0,.6)` darkens a card under its title, and a spread as wide as
+  // the box fills it with the shadow's color. What el's inset shadows paint
+  // under textEl's text: null when they paint nothing there (none, outer
+  // shadows only, transparent ones, or a hole clear of the text), { colors }
+  // with the colors of those that fill the whole padding box, topmost first,
+  // or { blocked, value } when one paints under part of the text, or where
+  // it reaches can't be worked out (no layout, a length it can't read, a
+  // scaled or rotated box).
+  const __insetShadowCache = new WeakMap();
+  function __insetShadowUnder(el, cs, textEl) {
+    const raw = trim(cs && cs.boxShadow);
+    if (!raw || raw === 'none' || !/\binset\b/i.test(raw)) return null;
+    let byText = __insetShadowCache.get(el);
+    if (byText && byText.has(textEl)) return byText.get(textEl);
+    const out = __insetShadowUnderUncached(el, cs, textEl, raw);
+    if (!byText) {
+      byText = new Map();
+      __insetShadowCache.set(el, byText);
+    }
+    byText.set(textEl, out);
+    return out;
+  }
+
+  function __insetShadowUnderUncached(el, cs, textEl, raw) {
+    const blocked = { blocked: true, value: truncateCssValue(raw, 80) };
+    const shadows = [];
+    for (const item of __splitTopLevel(raw)) {
+      const toks = __splitTopLevelSpace(item);
+      if (!toks.some((t) => /^inset$/i.test(t))) continue;
+      let color = null;
+      const lengths = [];
+      for (const t of toks) {
+        if (/^inset$/i.test(t)) continue;
+        if (/^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?[a-z%]*$/i.test(t) || /^calc\(/i.test(t)) {
+          // A computed style gives px; a declared one (jsdom) may not.
+          const m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(px)?$/i.exec(t);
+          lengths.push(m && (m[2] || Number(m[1]) === 0) ? Number(m[1]) : Number.NaN);
+        } else {
+          color = /^currentcolor$/i.test(t) ? null : parseCssColorToRgba(t);
+          if (!color) return blocked;
+        }
+      }
+      // A shadow with no color is drawn in the element's own color.
+      if (!color) color = parseCssColorToRgba(cs.color);
+      if (!color) return blocked;
+      if (clamp01(color.a) === 0) continue;
+      const [x = 0, y = 0, blur = 0, spread = 0] = lengths;
+      shadows.push({ color, x, y, fade: Math.max(0, blur), spread });
+    }
+    if (!shadows.length) return null;
+    if (shadows.some((s) => ![s.x, s.y, s.fade, s.spread].every(Number.isFinite))) return blocked;
+    if (__scaledOrRotated(el)) return blocked;
+    let box;
+    try {
+      box = dom.getBoundingClientRect(el);
+    } catch {
+      box = null;
+    }
+    const rects = __ownTextRects(textEl);
+    if (!box || !rects.length) return blocked;
+    const side = (prop) => {
+      const v = Number.parseFloat(cs[prop]);
+      return Number.isFinite(v) ? v : 0;
+    };
+    const left = box.left + side('borderLeftWidth');
+    const top = box.top + side('borderTopWidth');
+    const right = box.right - side('borderRightWidth');
+    const bottom = box.bottom - side('borderBottomWidth');
+    let radius = 0;
+    for (const k of [
+      'borderTopLeftRadius',
+      'borderTopRightRadius',
+      'borderBottomLeftRadius',
+      'borderBottomRightRadius'
+    ]) {
+      for (const t of __splitTopLevelSpace(cs[k] || '0px')) {
+        const v = /^[\d.]+px$/.test(t) ? Number.parseFloat(t) : t === '0' ? 0 : Number.NaN;
+        if (!Number.isFinite(v)) return blocked;
+        radius = Math.max(radius, v);
+      }
+    }
+    const colors = [];
+    for (const s of shadows) {
+      // The shadow fills the padding box outside a hole, the padding box
+      // shrunk by the spread and moved by the offset; the blur fades its
+      // edge over the blur radius on either side.
+      const hole = {
+        left: left + s.spread + s.x,
+        top: top + s.spread + s.y,
+        right: right - s.spread + s.x,
+        bottom: bottom - s.spread + s.y
+      };
+      const fullyPainted =
+        hole.right - hole.left + 2 * s.fade <= 0 || hole.bottom - hole.top + 2 * s.fade <= 0;
+      if (fullyPainted) {
+        colors.push(s.color);
+        // What lies under an opaque shadow is hidden by it.
+        if (clamp01(s.color.a) >= 1) break;
+        continue;
+      }
+      // Clear of the text when every line box lies inside the hole, past
+      // the blur and its rounded corners.
+      const l = hole.left + s.fade;
+      const t = hole.top + s.fade;
+      const r = hole.right - s.fade;
+      const b = hole.bottom - s.fade;
+      const inCorner = (q) =>
+        radius > 0 &&
+        (q.left < l + radius || q.right > r - radius) &&
+        (q.top < t + radius || q.bottom > b - radius);
+      const clear = rects.every(
+        (q) =>
+          q.left >= l - 0.5 &&
+          q.right <= r + 0.5 &&
+          q.top >= t - 0.5 &&
+          q.bottom <= b + 0.5 &&
+          !inCorner(q)
+      );
+      if (!clear) return blocked;
+    }
+    return colors.length ? { colors } : null;
+  }
+
   function __hasBlendModeEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
@@ -131481,6 +134133,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return { has: hasTextShadow(value), value };
       }
       if (__textShadowInfoCache.has(el)) return __textShadowInfoCache.get(el);
+      const own = __formControlTextShadow(el);
+      if (own) {
+        __textShadowInfoCache.set(el, own);
+        return own;
+      }
       const raw = cs && cs.textShadow; // single read, cached below -- never read again
       const value = raw == null ? '' : String(raw);
       const info = { has: hasTextShadow(value), value };
@@ -131489,6 +134146,44 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       return { has: false, value: '' };
     }
+  }
+
+  // A form control's text-shadow under jsdom, from the page's own rules.
+  // Browsers' style sheets give button, input, select and textarea
+  // `text-shadow: none`, so a shadow on a label around them doesn't reach
+  // their text. jsdom's computed value for them depends on what was read
+  // before: the first read of a button in a label with a shadow gives no
+  // shadow, a later one the label's, so a second scan of the same DOM
+  // measured differently from the first. The control's shadow is the one
+  // an author rule or its style attribute gives it (`inherit` takes its
+  // parent's), and none otherwise. null where that can't be told (a sheet
+  // or selector it can't read, a value it can't resolve), and for any
+  // other element or outside jsdom: the computed value is read then.
+  const __FORM_CONTROLS = new Set(['button', 'input', 'select', 'textarea']);
+  function __formControlTextShadow(el) {
+    if (!__FORM_CONTROLS.has(String(dom.localName(el) || '').toLowerCase())) return null;
+    if (!__underJsdom(dom.ownerDocument(el))) return null;
+    const decl = __authorColorDeclsOf(el, 'text-shadow');
+    if (decl.unknown || decl.uncertain) return null;
+    const value = trim(decl.winner);
+    if (!value) return { has: false, value: 'none' };
+    const keyword = value.toLowerCase().replace(/\s*!important$/, '');
+    if (keyword === 'inherit') {
+      const parent = composedParent(el);
+      return parent && dom.nodeType(parent) === 1
+        ? __textShadowInfoEl(parent, __contrastComputedStyle(parent))
+        : { has: false, value: 'none' };
+    }
+    if (keyword === 'initial' || keyword === 'unset' || keyword === 'revert') {
+      // unset inherits a text-shadow; revert goes back to the browser's none.
+      if (keyword !== 'unset') return { has: false, value: 'none' };
+      const parent = composedParent(el);
+      return parent && dom.nodeType(parent) === 1
+        ? __textShadowInfoEl(parent, __contrastComputedStyle(parent))
+        : { has: false, value: 'none' };
+    }
+    if (/\bvar\(/i.test(value)) return null;
+    return { has: hasTextShadow(value), value };
   }
 
   // Whether a visible -webkit-text-stroke or text-shadow draws el's glyphs.
@@ -133351,7 +136046,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
 
       const cs = __contrastComputedStyle(cur);
-      const bgColor = backgroundColorOf(cs);
+      const bgColor = __forcedSelectBackground(cur, cs) || backgroundColorOf(cs);
       const bg = parseCssColorToRgba(bgColor);
       const op = opacityOf(cs);
 
@@ -133366,6 +136061,24 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           value: truncateCssValue(trim(bgColor), 80)
         };
         break;
+      }
+
+      // Inset shadows filling its padding box, over its background.
+      const shadows = __insetShadowUnder(cur, cs, el);
+      if (shadows && shadows.colors) {
+        for (const c of shadows.colors) {
+          if (collectStack) {
+            stack.push({
+              selector: __getSimpleSelectorCached(
+                cur,
+                (dom.tagName(cur) || '').toLowerCase() || 'html'
+              ),
+              bg: { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) },
+              opacity: op
+            });
+          }
+          acc = compositeRgba(acc, { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) });
+        }
       }
 
       // Solid colors its background images paint, over its background color.
@@ -134211,8 +136924,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const indent = Number.parseFloat(ps.textIndent) || 0;
         const display = String(ps.display || '');
         const position = String(ps.position || '');
+        // Text aligned to the line's end is drawn from the other side, where
+        // the indent doesn't take it (round 8, NW-8): right or end in
+        // left-to-right text, left or start in right-to-left.
+        const align = String(ps.textAlign || 'start');
+        const rtl = String(ps.direction || '') === 'rtl';
+        const fromEnd = rtl
+          ? align === 'left' || align === 'start' || align === '-webkit-left'
+          : align === 'right' || align === 'end' || align === '-webkit-right';
         if (
           indent < 0 &&
+          !fromEnd &&
+          !rtl &&
           display &&
           display !== 'inline' &&
           display !== 'contents' &&
@@ -134238,6 +136961,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           ? blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'filter', filter)
           : blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'backdrop-filter', ps.backdropFilter);
       }
+      const psMask = maskOf(ps);
+      if (psMask) return blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'mask-image', psMask);
       if (hasBackgroundImageOrGradient(ps)) {
         return blocked('BACKGROUND_IMAGE_OR_GRADIENT', 'background-image', ps.backgroundImage, {
           backgroundFillType: classifyBackgroundImageValue(ps.backgroundImage)
@@ -134379,6 +137104,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const froot = fdoc && dom.documentElement(fdoc);
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
+        // Under forced colors the scan holds the page in its own colors
+        // (forced-color-adjust: none); the blank frame is held so too, or
+        // the browser's placeholder color read there is the forced palette's
+        // and the page's own browser placeholder looks like the page's
+        // choice.
+        froot.style.forcedColorAdjust = 'none';
         const field = dom.createElement(fdoc, tag);
         if (tag === 'input') dom.setAttribute(field, 'type', type);
         dom.setAttribute(field, 'placeholder', 'x');
@@ -134438,6 +137169,64 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // The browser's values are read once per color-scheme in a blank frame,
   // as the placeholder defaults are.
   const __selectFieldDefaults = new Map();
+  // A drop-down select's ButtonFace background and the Field color in each
+  // scheme in Chromium (read in Chromium 153), for a scan under forced
+  // colors, where the browser gives the palette's in their place.
+  const __SELECT_COLORS = {
+    light: { background: 'rgb(239, 239, 239)', field: 'rgb(255, 255, 255)' },
+    dark: { background: 'rgb(107, 107, 107)', field: 'rgb(59, 59, 59)' }
+  };
+  // The scheme a color-scheme value draws in: dark when it names dark alone,
+  // or both and the user prefers dark.
+  function __schemeOfValue(value) {
+    const named = __schemesNamed(value);
+    if (!named.includes('dark')) return 'light';
+    if (!named.includes('light')) return 'dark';
+    try {
+      return window &&
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(prefers-color-scheme: dark)'), 'matches')
+        ? 'dark'
+        : 'light';
+    } catch {
+      return 'light';
+    }
+  }
+  // Whether the page is shown in forced colors, whether or not the scan
+  // holds it in its own (colorsForced is whether it couldn't).
+  let __forcedMedia;
+  function __forcedColorsMedia() {
+    if (__forcedMedia !== undefined) return __forcedMedia;
+    try {
+      __forcedMedia = !!(
+        window &&
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      );
+    } catch {
+      __forcedMedia = false;
+    }
+    return __forcedMedia;
+  }
+  // The background a drop-down select in the browser's own background is
+  // measured on under forced colors (__readSelectFieldDefaults), or null
+  // for any other element, or without forced colors.
+  function __forcedSelectBackground(el, cs) {
+    if (!__forcedColorsMedia()) return null;
+    try {
+      if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
+      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
+      if (appearance === 'none' || appearance === 'base-select') return null;
+      const doc = dom.ownerDocument(el);
+      if (!__hasLayout(doc)) return null;
+      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      if (!ref || !ref.measured || String(cs.backgroundColor) !== ref.background) return null;
+      return ref.measured;
+    } catch {
+      return null;
+    }
+  }
   function __readSelectFieldDefaults(doc, scheme) {
     if (__selectFieldDefaults.has(scheme)) return __selectFieldDefaults.get(scheme);
     let out = null;
@@ -134457,6 +137246,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const froot = fdoc && dom.documentElement(fdoc);
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
+        froot.style.forcedColorAdjust = 'none';
         const host = dom.body(fdoc) || froot;
         const select = dom.createElement(fdoc, 'select');
         const swatch = dom.createElement(fdoc, 'div');
@@ -134467,6 +137257,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           background: String(fview.getComputedStyle(select).backgroundColor),
           field: String(fview.getComputedStyle(swatch).backgroundColor)
         };
+        // Under forced colors the system colors a select is drawn in
+        // (ButtonFace, Field) take the forced palette's values even where
+        // forced-color-adjust is none, so both read the palette's background.
+        // The scan measures the page as drawn without forced colors, so it
+        // takes Chromium's own colors for the scheme; `background` still
+        // tells a select in the browser's background from one the page
+        // colored.
+        if (__forcedColorsMedia()) {
+          const own = __SELECT_COLORS[__schemeOfValue(scheme)];
+          out.measured = own.background;
+          out.field = own.field;
+        }
       }
     } catch {
       out = null;
@@ -134490,7 +137292,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
       const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
-      if (!ref || ref.field === ref.background) return null;
+      if (!ref || ref.field === (ref.measured || ref.background)) return null;
       if (String(cs.backgroundColor) !== ref.background) return null;
       if (hasBackgroundImageOrGradient(cs)) return null;
       const rgba = parseCssColorToRgba(ref.field);
@@ -134964,6 +137766,29 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
 
+      // A mask fades cur and all it holds, text and background together,
+      // by amounts that vary across it, over what is behind: like a filter,
+      // a closer opaque background does not shield the text from it.
+      const mask = maskOf(cs);
+      if (mask) {
+        const out = {
+          ok: false,
+          reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+          blockerSelector: __getSimpleSelectorCached(
+            cur,
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
+          ),
+          blockerElement: describeElement(cur),
+          blockerIsAncestor: cur !== el,
+          blockerProperty: 'mask-image',
+          blockerValue: truncateCssValue(mask, 80)
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch {}
+        return out;
+      }
+
       // text-shadow is a FOREGROUND property, already resolved by
       // inheritance in `cs` on `el` itself -- unlike background-image/
       // filter/blend-mode, it needs no ancestor walk, so it's checked once
@@ -135100,10 +137925,36 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
 
+      // An inset box-shadow is painted over cur's background: one that
+      // fills the whole padding box is a color like the background's, one
+      // that paints under part of the text stops the measurement as an
+      // image would (see __insetShadowUnder).
+      const shadowUnder = paintOccluded ? null : __insetShadowUnder(cur, cs, el);
+      if (shadowUnder && shadowUnder.blocked) {
+        const out = {
+          ok: false,
+          reasonCode: 'BACKGROUND_IMAGE_OR_GRADIENT',
+          blockerSelector: __getSimpleSelectorCached(
+            cur,
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
+          ),
+          blockerElement: describeElement(cur),
+          blockerIsAncestor: cur !== el,
+          blockerProperty: 'box-shadow',
+          blockerValue: shadowUnder.value
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch {}
+        return out;
+      }
+      // An opaque shadow over the whole box hides cur's own background.
+      const shadowOpaque = !!shadowUnder && shadowUnder.colors.some((c) => clamp01(c.a) >= 1);
+
       // Layers that paint nothing under the text (an underline) or one
       // solid color don't stop the measurement (see __bgLayerKinds).
       const layersUnder =
-        !paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)
+        !paintOccluded && !shadowOpaque && __hasBackgroundImageOrGradientEl(cur, cs)
           ? __bgLayersUnder(cur, cs, el)
           : null;
       if (layersUnder && layersUnder.blocked) {
@@ -135222,6 +138073,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         chain.push(cur);
         const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
         if (
+          shadowOpaque ||
           (ownBg && clamp01(ownBg.a) >= 1) ||
           (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
         ) {
@@ -137708,17 +140560,30 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       'tab',
       'treeitem'
     ],
-    h1: ['tab', 'presentation', 'none'],
-    h2: ['tab', 'presentation', 'none'],
-    h3: ['tab', 'presentation', 'none'],
-    h4: ['tab', 'presentation', 'none'],
-    h5: ['tab', 'presentation', 'none'],
-    h6: ['tab', 'presentation', 'none'],
-    hr: ['none', 'presentation'],
+    h1: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h2: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h3: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h4: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h5: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h6: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    hr: ['none', 'presentation', 'doc-pagebreak'],
     // 'complementary' is <aside>'s own native role, allowed via the
     // native-role fallback below even though it's not in this list
     // (spec: "also allowed, but NOT RECOMMENDED", same shape as <nav>).
-    aside: ['feed', 'none', 'note', 'presentation', 'region', 'search'],
+    aside: [
+      'feed',
+      'none',
+      'note',
+      'presentation',
+      'region',
+      'search',
+      'doc-dedication',
+      'doc-example',
+      'doc-footnote',
+      'doc-glossary',
+      'doc-pullquote',
+      'doc-tip'
+    ],
     form: ['form', 'search', 'none', 'presentation'],
     // The array is identical for both keys; what differs by nesting is only
     // the native-role match (see 'header[toplevel]' below and
@@ -137750,7 +140615,8 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       'slider',
       'switch',
       'tab',
-      'treeitem'
+      'treeitem',
+      'doc-cover'
     ],
     img: ['presentation', 'none'],
     li: [
@@ -137784,7 +140650,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // 'region' is only permitted when the section has an accessible name
     // (its conditional native role in that case, see getElementRoleKey's
     // section[named]/section split above); every other role here is
-    // permitted regardless of naming.
+    // permitted regardless of naming. The doc-* roles are the DPUB roles
+    // ARIA in HTML permits on <section>, as it does those on <aside>, <hr>,
+    // h1-h6 (doc-subtitle) and <img alt> (doc-cover).
     'section[named]': [
       'alert',
       'alertdialog',
@@ -137806,7 +140674,35 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       'region',
       'search',
       'status',
-      'tabpanel'
+      'tabpanel',
+      'doc-abstract',
+      'doc-acknowledgments',
+      'doc-afterword',
+      'doc-appendix',
+      'doc-bibliography',
+      'doc-chapter',
+      'doc-colophon',
+      'doc-conclusion',
+      'doc-credit',
+      'doc-credits',
+      'doc-dedication',
+      'doc-endnotes',
+      'doc-epigraph',
+      'doc-epilogue',
+      'doc-errata',
+      'doc-example',
+      'doc-foreword',
+      'doc-glossary',
+      'doc-index',
+      'doc-introduction',
+      'doc-notice',
+      'doc-pagelist',
+      'doc-part',
+      'doc-preface',
+      'doc-prologue',
+      'doc-pullquote',
+      'doc-qna',
+      'doc-toc'
     ],
     section: [
       'alert',
@@ -137828,7 +140724,35 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       'presentation',
       'search',
       'status',
-      'tabpanel'
+      'tabpanel',
+      'doc-abstract',
+      'doc-acknowledgments',
+      'doc-afterword',
+      'doc-appendix',
+      'doc-bibliography',
+      'doc-chapter',
+      'doc-colophon',
+      'doc-conclusion',
+      'doc-credit',
+      'doc-credits',
+      'doc-dedication',
+      'doc-endnotes',
+      'doc-epigraph',
+      'doc-epilogue',
+      'doc-errata',
+      'doc-example',
+      'doc-foreword',
+      'doc-glossary',
+      'doc-index',
+      'doc-introduction',
+      'doc-notice',
+      'doc-pagelist',
+      'doc-part',
+      'doc-preface',
+      'doc-prologue',
+      'doc-pullquote',
+      'doc-qna',
+      'doc-toc'
     ],
     ol: [
       'group',
@@ -138454,8 +141378,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // Effective role for ownership/context matching only (aria-required-
   // children / aria-required-parent): explicit role wins when present;
   // otherwise falls back to the small NATIVE_CONTAINMENT_ROLE_BY_ELEMENT
-  // map above. Not a general-purpose implicit-role resolver; kept
-  // narrow on purpose, see the table's header comment.
+  // map above, whose conditional roles hold only in their native structure.
+  // An element outside that map gives its own implicit role when it has one
+  // (getOwnNativeRole): a heading or an article is not transparent.
   //
   // The explicit role must be a real, valid concrete ARIA role to count:
   // an invalid/unrecognized role="" token (e.g. a library's own
@@ -138484,13 +141409,43 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         : '';
     }
 
-    if (!Object.prototype.hasOwnProperty.call(NATIVE_CONTAINMENT_ROLE_BY_ELEMENT, tag)) return '';
+    if (!Object.prototype.hasOwnProperty.call(NATIVE_CONTAINMENT_ROLE_BY_ELEMENT, tag)) {
+      return getOwnNativeRole(el, tag);
+    }
 
     // A conditional role only holds inside the structure HTML-AAM names.
     const context = NATIVE_CONTAINMENT_CONTEXT[tag];
     if (context && !hasNativeContext(el, context)) return '';
 
     return NATIVE_CONTAINMENT_ROLE_BY_ELEMENT[tag];
+  }
+
+  // A native element with a role of its own (an <h3>, an <article>, a
+  // <nav>) is no transparent wrapper between a role and its required context:
+  // <div role="tablist"><h3><button role="tab"> puts a heading between them,
+  // as <div role="heading"> would. Its implicit role (as aria-allowed-role
+  // reads it), unless that is generic or presentational. <aside> and
+  // <form> carry theirs only as HTML-AAM conditions them: an <aside> inside
+  // sectioning content, or a <form>, only when named.
+  function getOwnNativeRole(el, tag) {
+    // A link or a button is left out: it takes focus by itself, which the
+    // containment rules weigh on their own (aria-prohibited-children names
+    // its role as a focusable child).
+    if (tag === 'a' || tag === 'area' || tag === 'button') return '';
+    // A named <section> is a region, and a <footer> outside sectioning
+    // content and <main> a contentinfo, as getLandmarkRole has them; the
+    // aria-allowed-role table lists neither as a role to restate.
+    if (tag === 'section') return hasAccessibleNameHint(el) ? 'region' : '';
+    if (tag === 'footer') {
+      return hasLandmarkScopingAncestor(el, { includeMain: true }) ? '' : 'contentinfo';
+    }
+    const role = getNativeRoleForElement(el);
+    if (!role || role === 'generic' || role === 'none' || role === 'presentation') return '';
+    if (tag === 'form' && !hasAccessibleNameHint(el)) return '';
+    // An <img alt=""> is presentational.
+    if (tag === 'img' && getAttr(el, 'alt') === '' && !hasAccessibleNameHint(el)) return '';
+    if (tag === 'aside' && !hasAccessibleNameHint(el) && hasLandmarkScopingAncestor(el)) return '';
+    return role;
   }
 
   // WAI-ARIA's global states and properties. Any of them on an element with
@@ -138921,6 +141876,60 @@ const describeOptionValue = (function describeOptionValue(v) {
   if ('include' in v || 'exclude' in v) return 'an { include, exclude } object';
   return 'an object';
 });
+const isIsoDateTime = (function isIsoDateTime(value) {
+  if (typeof value !== 'string') return false;
+  const m =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](\d{2}):?(\d{2}))?$/i.exec(
+      value.trim()
+    );
+  if (!m) return false;
+  const [year, month, day, hour, minute, second, zoneHour, zoneMinute] = m
+    .slice(1)
+    .map((x) => (x === undefined ? 0 : Number(x)));
+  const daysInMonth =
+    month >= 1 && month <= 12 ? new Date(Date.UTC(year, month, 0)).getUTCDate() : 0;
+  return (
+    day >= 1 &&
+    day <= daysInMonth &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    zoneHour <= 23 &&
+    zoneMinute <= 59
+  );
+});
+const closestOptionKey = (function closestOptionKey(key, known) {
+  // Optimal string alignment distance, case ignored: "lcoale" is one from
+  // "locale", "includeShadowDOM" none from "includeShadowDom".
+  function distance(a, b) {
+    const s = a.toLowerCase();
+    const t = b.toLowerCase();
+    const d = [];
+    for (let i = 0; i <= s.length; i++) d.push([i]);
+    for (let j = 1; j <= t.length; j++) d[0][j] = j;
+    for (let i = 1; i <= s.length; i++) {
+      for (let j = 1; j <= t.length; j++) {
+        const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && s[i - 1] === t[j - 2] && s[i - 2] === t[j - 1]) {
+          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+        }
+      }
+    }
+    return d[s.length][t.length];
+  }
+  let best = null;
+  let bestD = Infinity;
+  for (const k of known) {
+    const dk = distance(key, k);
+    if (dk < bestD) {
+      best = k;
+      bestD = dk;
+    }
+  }
+  const limit = Math.min(key.length, best ? best.length : 0) <= 4 ? 1 : 2;
+  return best !== null && bestD <= limit ? best : null;
+});
 const engineOptionSpec = (function engineOptionSpec() {
   // Spread reads a hole ([, 'main']) as undefined, which every() skips.
   const list = (v) =>
@@ -138933,6 +141942,14 @@ const engineOptionSpec = (function engineOptionSpec() {
     boolean: { test: (v) => switchOf(v) !== null, expected: 'true or false' },
     string: { test: (v) => typeof v === 'string', expected: 'a string' },
     list: { test: list, expected: 'a string or an array of strings' },
+    // A profile, or a list of them. An empty slot, a blank name and a value
+    // that is no name are each refused: each was dropped without a word.
+    profiles: {
+      test: (v) =>
+        typeof v === 'string' ||
+        (Array.isArray(v) && [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
+      expected: 'a profile name or an array of them, none blank'
+    },
     number: {
       test: (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0,
       expected: 'a number of milliseconds, 0 or more'
@@ -138979,7 +141996,7 @@ const engineOptionSpec = (function engineOptionSpec() {
       expected: '"A", "AA" or "AAA", in any case'
     },
     // One profile, or a list of them: a scan of several at once.
-    profile: T.list,
+    profile: T.profiles,
     mappings: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
@@ -139001,7 +142018,11 @@ const engineOptionSpec = (function engineOptionSpec() {
         ),
       expected: '[{ href, text }]'
     },
-    timestamp: T.string,
+    // Blank is a timestamp not given.
+    timestamp: {
+      test: (v) => typeof v === 'string' && (!v.trim() || isIsoDateTime(v)),
+      expected: 'an ISO 8601 date and time, such as new Date().toISOString()'
+    },
     contrast: {
       test: isObject,
       expected: '{ mode, rootCanvasFallback }',
@@ -139054,40 +142075,7 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
   const SPEC = engineOptionSpec();
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
-  // Optimal string alignment distance, case ignored: "lcoale" is one from
-  // "locale", "includeShadowDOM" none from "includeShadowDom".
-  function distance(a, b) {
-    const s = a.toLowerCase();
-    const t = b.toLowerCase();
-    const d = [];
-    for (let i = 0; i <= s.length; i++) d.push([i]);
-    for (let j = 1; j <= t.length; j++) d[0][j] = j;
-    for (let i = 1; i <= s.length; i++) {
-      for (let j = 1; j <= t.length; j++) {
-        const cost = s[i - 1] === t[j - 1] ? 0 : 1;
-        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
-        if (i > 1 && j > 1 && s[i - 1] === t[j - 2] && s[i - 2] === t[j - 1]) {
-          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
-        }
-      }
-    }
-    return d[s.length][t.length];
-  }
-  // The known key a typo most likely meant: two edits away at most, one for
-  // a key of four letters or fewer, so short unrelated keys aren't matched.
-  function closest(key, known) {
-    let best = null;
-    let bestD = Infinity;
-    for (const k of known) {
-      const dk = distance(key, k);
-      if (dk < bestD) {
-        best = k;
-        bestD = dk;
-      }
-    }
-    const limit = Math.min(key.length, best ? best.length : 0) <= 4 ? 1 : 2;
-    return best !== null && bestD <= limit ? best : null;
-  }
+  const closest = closestOptionKey;
   function describe(v) {
     if (v === null) return 'null';
     if (Array.isArray(v)) {
@@ -141451,6 +144439,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const pos = labelIndex().pos;
         return [...set].filter((l) => pos.has(l)).sort((a, b) => pos.get(a) - pos.get(b));
       };
+      // The ids a detail lists: the first ten, each cut to 60 characters, as
+      // the hint quotes them; a 200 KB id was copied whole into the details.
+      const shownIds = (list) => list.slice(0, 10).map((id) => quoteText(id, 60));
       const labelledby = attr(el, 'aria-labelledby');
       if (labelledby) {
         const ids = labelledby.split(/\s+/);
@@ -141461,7 +144452,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
             hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyMissing',
             params: { ids: list },
-            detail: { cause: 'labelledbyMissing', ids: ids.slice(0, 10) }
+            detail: { cause: 'labelledbyMissing', ids: shownIds(ids) }
           };
         }
         // Every target is there, and none has text or a name of its own.
@@ -141479,7 +144470,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
             hint: `Its aria-labelledby points only to elements with no text (${list}), so it gives no name. Put the text in the element it points to, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyEmpty',
             params: { targets: list },
-            detail: { cause: 'labelledbyEmpty', ids: ids.slice(0, 10) }
+            detail: { cause: 'labelledbyEmpty', ids: shownIds(ids) }
           };
         }
         // The element names nothing, so a target with text has it hidden
@@ -141506,7 +144497,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
               params: { target, text, hiddenElement, hiddenBy },
               detail: {
                 cause: 'labelledbyHiddenText',
-                ids: ids.slice(0, 10),
+                ids: shownIds(ids),
                 text,
                 hiddenBy: reason
               }
@@ -141521,8 +144512,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
               params: { ids: missingIds, targets: list },
               detail: {
                 cause: 'labelledbyMixed',
-                ids: ids.slice(0, 10),
-                missing: missing.slice(0, 10)
+                ids: shownIds(ids),
+                missing: shownIds(missing)
               }
             };
           }
@@ -142093,6 +145084,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let bestDistance = Infinity;
     let tie = false;
     for (const r of aria.concreteRoles()) {
+      // Lengths further apart than the limit are further apart in edits,
+      // so a long token is never measured against every role: a 40 KB one
+      // took seconds.
+      if (Math.abs(t.length - r.length) > limit) continue;
       const d = editDistance(t, r);
       if (d < bestDistance) {
         best = r;
@@ -142110,16 +145105,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const n = lower(name);
     if (n.slice(0, 5) !== 'aria-' || aria.isValidAriaAttrName(n)) return '';
     const suffix = n.slice(5);
+    const limit = suffix.length <= 5 ? 1 : 2;
     let best = '';
     let bestDistance = Infinity;
     for (const a of aria.ariaAttrNames()) {
+      // As for a role: a length further off than the limit can't be near.
+      if (Math.abs(suffix.length - (a.length - 5)) > limit) continue;
       const d = editDistance(suffix, a.slice(5));
       if (d < bestDistance) {
         best = a;
         bestDistance = d;
       }
     }
-    return bestDistance <= (suffix.length <= 5 ? 1 : 2) ? best : '';
+    return bestDistance <= limit ? best : '';
   }
 
   // Words authors write as a role that ARIA calls by another name, each
@@ -144883,6 +147881,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
           const rectCount = rects ? rects.length : 0;
 
           if (!rectCount) {
+            // An element with display: contents (a slot, or a wrapper made
+            // so) generates no box of its own, so it never has client rects,
+            // but its text and children are drawn: it is visible where they
+            // are.
+            const drawn = __contentsDrawn(node);
+            if (drawn) {
+              return __cacheAndReturn(
+                out(true, reasons, {
+                  rectCount: drawn.rectCount,
+                  width: drawn.width,
+                  height: drawn.height,
+                  opacity: opacityProduct
+                })
+              );
+            }
             return __cacheAndReturn(out(false, ['noClientRects'], { rectCount: 0 }));
           }
 
@@ -144909,6 +147922,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     return __cacheAndReturn(out(true, reasons, { opacity: opacityProduct }));
+  }
+
+  // For an element with display: contents, the rects its content is drawn
+  // in, as { rectCount, width, height } of their union, or null when it has
+  // another display or nothing of it is drawn.
+  function __contentsDrawn(node) {
+    try {
+      const cs = computedStyle(node);
+      if (!cs || trim(cs.display) !== 'contents') return null;
+      const range = dom.createRange(dom.ownerDocument(node));
+      range.selectNodeContents(node);
+      const all = dom.getClientRects(range);
+      let count = 0;
+      let left = Infinity;
+      let top = Infinity;
+      let right = -Infinity;
+      let bottom = -Infinity;
+      for (let i = 0; all && i < all.length; i++) {
+        const r = all[i];
+        if (!r || !(r.width > 0) || !(r.height > 0)) continue;
+        count++;
+        left = Math.min(left, r.left);
+        top = Math.min(top, r.top);
+        right = Math.max(right, r.right);
+        bottom = Math.max(bottom, r.bottom);
+      }
+      if (!count) return null;
+      return { rectCount: count, width: right - left, height: bottom - top };
+    } catch {
+      return null;
+    }
   }
 
   function getEligibilityInfo(node, _ctx, opts) {
@@ -145074,8 +148118,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // element (a <label>, an aria-labelledby target, or content a name is
   // computed from), a control speaks with its value, not its name: a
   // textbox its value, a combobox or listbox its chosen options, a range
-  // its aria-valuetext, aria-valuenow or value. Returns null for a node
-  // that is not such a control. A password field gives one bullet per
+  // its aria-valuetext, aria-valuenow or value; an ARIA textbox, or a
+  // combobox that is neither a <select> nor an <input>, its content.
+  // Returns null for a node that is not such a control. A password field gives one bullet per
   // character, as Chromium does, never the value itself.
   const __TEXTBOX_INPUT_TYPES = new Set(['', 'text', 'search', 'email', 'tel', 'url']);
   const __RANGE_ROLES = new Set(['slider', 'spinbutton', 'scrollbar', 'progressbar', 'meter']);
@@ -145107,12 +148152,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
     const optionText = (opt) =>
       trim(getAttr(opt, 'label') || dom.textContent(opt) || '').replace(/\s+/g, ' ');
+    const contentValueOf = (el) => {
+      const info = getContentNameInfo(el, null);
+      return info && info.present ? trim(info.value) : '';
+    };
 
     if (role === 'textbox' || role === 'searchbox') {
       if (tag === 'textarea' || (tag === 'input' && nativeRole)) {
         return type === 'password' ? '\u2022'.repeat(valueOf().length) : trim(valueOf());
       }
-      return null; // an ARIA textbox's value is its content
+      // An ARIA textbox's value is its content, as Chromium reads it.
+      return contentValueOf(node);
     }
     if (role === 'combobox' || role === 'listbox') {
       if (isSelect) {
@@ -145136,7 +148186,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
           .filter(Boolean)
           .join(' ');
       }
-      return null;
+      // A combobox drawn with a <div> shows its value as its content.
+      return contentValueOf(node);
     }
     if (__RANGE_ROLES.has(role)) {
       const valuetext = trim(getAttr(node, 'aria-valuetext'));
@@ -146599,6 +149650,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
           dom.namespaceURI(node) === 'http://www.w3.org/2000/svg'
         )
           return;
+        // Nor is an <svg>'s drawn <text> the content of an element outside
+        // that <svg>: Chromium names <a href="#"><svg><text>Go</text></svg>
+        // </a> "" (the <svg> speaks only with its own name). A link drawn
+        // inside the <svg> is still named from its <text>.
+        if (local === 'text' && dom.namespaceURI(node) === 'http://www.w3.org/2000/svg') {
+          const svgRoot = dom.closest(node, 'svg');
+          if (svgRoot && svgRoot !== el && dom.contains(el, svgRoot)) return;
+        }
       }
 
       // opts.skipNode: the control a <label> is being read for. Its own name
@@ -148851,6 +151910,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     ancestorsIncludingSelf,
     closestCached,
     getLabelControl,
+    getInternalsStateInfo,
     cssRulesOf,
     selectorIndex,
     __contrastSharedCache
@@ -150561,6 +153621,185 @@ const noteEmptySelection = (function noteEmptySelection(runOnly, engineOptions) 
     console.warn('[surea11y] ' + message + '.');
   } catch {}
 });
+const unknownOptInRulesMessage = (function unknownOptInRulesMessage(selection) {
+  const unknown =
+    selection && Array.isArray(selection.optInTagsUnknown) ? selection.optInTagsUnknown : [];
+  if (!unknown.length) return null;
+  return (
+    'engineOptions.optInRules: ' +
+    unknown.map((s) => '"' + s + '"').join(', ') +
+    ', no such opt-in rule tag (' +
+    (OPT_IN_RULE_TAGS.length
+      ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
+      : 'this version has none') +
+    ')'
+  );
+});
+const unknownMappingsMessage = (function unknownMappingsMessage(mappingSelection) {
+  if (!mappingSelection || !mappingSelection.unknown.length) return null;
+  return (
+    'engineOptions.mappings: ' +
+    mappingSelection.unknown.map((s) => '"' + s + '"').join(', ') +
+    ', no such standard or version'
+  );
+});
+const readRuleSettings = (function readRuleSettings(rulesOption, knownIds, engineTag) {
+  const config = Object.create(null);
+  const unknown = [];
+  const byLower = new Map();
+  // ASCII case only, as the selection matches ids (asciiLowerChar).
+  const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
+  for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
+  if (!rulesOption || typeof rulesOption !== 'object' || Array.isArray(rulesOption)) {
+    return { config, unknown, byLower };
+  }
+  const legacy = String(engineTag || 'a11ycore').toLowerCase() + '-';
+  const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
+  for (const exact of [true, false]) {
+    for (const key of keys) {
+      const value = rulesOption[key];
+      if (!value || typeof value !== 'object') continue;
+      const lower = lowerAscii(key.trim());
+      let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
+      if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
+      if (exact) {
+        if (id) config[id] = value;
+      } else if (!id) {
+        unknown.push(key);
+      } else if (!(id in config)) {
+        config[id] = value;
+      }
+    }
+  }
+  return { config, unknown, byLower };
+});
+const unknownRuleSettingsMessage = (function unknownRuleSettingsMessage(read) {
+  if (!read || !read.unknown.length) return null;
+  const closestId = (key) => {
+    const a = key.toLowerCase();
+    let best = null;
+    let bestD = Infinity;
+    for (const id of read.byLower.keys()) {
+      if (Math.abs(id.length - a.length) > 3) continue;
+      const prev = [];
+      for (let j = 0; j <= id.length; j++) prev[j] = j;
+      for (let i = 1; i <= a.length; i++) {
+        let diag = prev[0];
+        prev[0] = i;
+        for (let j = 1; j <= id.length; j++) {
+          const up = prev[j];
+          prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === id[j - 1] ? 0 : 1));
+          diag = up;
+        }
+      }
+      if (prev[id.length] < bestD) {
+        bestD = prev[id.length];
+        best = read.byLower.get(id);
+      }
+    }
+    return bestD <= 3 ? best : null;
+  };
+  return (
+    'engineOptions.rules: ' +
+    read.unknown
+      .map((k) => {
+        const near = closestId(k);
+        return 'no rule named "' + k + '"' + (near ? ' (did you mean "' + near + '"?)' : '');
+      })
+      .join('; ')
+  );
+});
+const invalidExcludeSelectors = (function invalidExcludeSelectors(engineOptions, matches) {
+  const invalid = (list) =>
+    normalizeSelectorList(list).filter((sel) => {
+      try {
+        matches(sel);
+        return false;
+      } catch {
+        return true;
+      }
+    });
+  const bad = invalid(engineOptions && engineOptions.excludeSelectors).map(
+    (sel) => 'excludeSelectors: "' + sel + '"'
+  );
+  const ruleSettings =
+    engineOptions &&
+    engineOptions.rules &&
+    typeof engineOptions.rules === 'object' &&
+    !Array.isArray(engineOptions.rules)
+      ? engineOptions.rules
+      : null;
+  if (ruleSettings) {
+    for (const id of Object.keys(ruleSettings)) {
+      const own = ruleSettings[id];
+      if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
+      for (const sel of invalid(own.excludeSelectors)) {
+        bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
+      }
+    }
+  }
+  return bad;
+});
+const invalidExcludeSelectorsMessage = (function invalidExcludeSelectorsMessage(bad) {
+  if (!bad.length) return null;
+  return (
+    'engineOptions.' +
+    bad.join('; engineOptions.') +
+    (bad.length > 1 ? ' are' : ' is') +
+    ' not valid CSS, and would exclude nothing'
+  );
+});
+const rootCanvasFallbackIsOpaque = (function rootCanvasFallbackIsOpaque(given, parse, computeColor) {
+  let rgba;
+  try {
+    rgba = typeof parse === 'function' ? parse(given) : { a: 1 };
+  } catch {
+    rgba = { a: 1 };
+  }
+  const text = String(given).trim();
+  const lower = text.toLowerCase();
+  const KEYWORDS = ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'];
+  let supported = null;
+  try {
+    const css = typeof window !== 'undefined' && window ? window.CSS : null;
+    if (css && typeof css.supports === 'function') supported = !!css.supports('color', text);
+  } catch {
+    supported = null;
+  }
+  const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
+  const formBad = () => {
+    if (!fn) return false;
+    const body = fn[2].trim();
+    if (/^from\s/.test(body)) return false;
+    if (body.includes(',')) {
+      // The legacy form: three or four values, commas only.
+      const parts = body.split(',').map((x) => x.trim());
+      return body.includes('/') || parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
+    }
+    // The modern form: three values, then "/ alpha" optionally.
+    const [main, alpha, extra] = body.split('/');
+    const values = main.trim().split(/\s+/).filter(Boolean);
+    return values.length !== 3 || extra !== undefined || (alpha !== undefined && !alpha.trim());
+  };
+  const badSyntax = KEYWORDS.includes(lower) || (supported === null ? formBad() : !supported);
+  if (badSyntax) rgba = null;
+  else if (!rgba && computeColor === null) return true;
+  else if (!rgba && supported !== false && typeof computeColor === 'function') {
+    // Valid, but not a form the parser reads: as the browser computes it.
+    try {
+      rgba = typeof parse === 'function' ? parse(computeColor(text)) : null;
+    } catch {
+      rgba = null;
+    }
+  }
+  return !!rgba && rgba.a >= 1;
+});
+const rootCanvasFallbackMessage = (function rootCanvasFallbackMessage(given) {
+  return (
+    'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
+    JSON.stringify(given)
+  );
+});
 
 const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // Whether the document's style sheets, its own and adopted ones, hold a
@@ -151157,6 +154396,33 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
       );
       continue;
     }
+    // A wcagSc entry that names no WCAG criterion ('9.9.9') would reach the
+    // result and SARIF as a criterion; definePack refuses the pack for it,
+    // and a custom rule is skipped for it, as for any other invalid meta.
+    const givenSc = c.meta && typeof c.meta === 'object' ? c.meta.wcagSc : undefined;
+    if (Array.isArray(givenSc)) {
+      const unknownSc = givenSc.filter(
+        (v) =>
+          !(
+            typeof v === 'string' &&
+            Object.prototype.hasOwnProperty.call(WCAG_LEVELS_BY_SC, v.trim())
+          )
+      );
+      if (unknownSc.length) {
+        let named = '';
+        for (const v of unknownSc) {
+          let text;
+          try {
+            text = JSON.stringify(v);
+          } catch {
+            text = undefined;
+          }
+          named += (named ? ', ' : '') + (text === undefined ? typeof v : text);
+        }
+        skip(ruleId, 'invalid meta: wcagSc names no WCAG criterion: ' + named);
+        continue;
+      }
+    }
     let normalizedMeta;
     try {
       normalizedMeta = normalizeRuleMeta(ruleId, ruleId, withWcagScMappings(c.meta), ENGINE_TAG);
@@ -151344,38 +154610,13 @@ const runCoreSettled = (function runCoreSettled(
   // about where it is used, and the other selectors still apply.
   if (strictOf(engineOptionsResolved)) {
     const probe = dom.get(document, 'documentElement');
-    const invalid = (list) =>
-      normalizeSelectorList(list).filter((sel) => {
-        try {
-          if (probe) dom.matches(probe, sel);
-          return false;
-        } catch {
-          return true;
-        }
-      });
-    const bad = invalid(excludeSelectors).map((sel) => 'excludeSelectors: "' + sel + '"');
-    const ruleSettings =
-      engineOptionsResolved.rules &&
-      typeof engineOptionsResolved.rules === 'object' &&
-      !Array.isArray(engineOptionsResolved.rules)
-        ? engineOptionsResolved.rules
-        : null;
-    if (ruleSettings) {
-      for (const id of Object.keys(ruleSettings)) {
-        const own = ruleSettings[id];
-        if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
-        for (const sel of invalid(own.excludeSelectors)) {
-          bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
-        }
-      }
-    }
-    if (bad.length) {
-      const err = new Error(
-        'engineOptions.' +
-          bad.join('; engineOptions.') +
-          (bad.length > 1 ? ' are' : ' is') +
-          ' not valid CSS, and would exclude nothing. (strictOptions)'
-      );
+    const message = invalidExcludeSelectorsMessage(
+      invalidExcludeSelectors(engineOptionsResolved, (sel) => {
+        if (probe) dom.matches(probe, sel);
+      })
+    );
+    if (message) {
+      const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
       throw err;
     }
@@ -151419,8 +154660,19 @@ const runCoreSettled = (function runCoreSettled(
       "The result's timestamp is null."
     );
   }
-  const timestamp =
+  // Text that isn't an ISO 8601 date and time ('yesterday') is dropped, and
+  // said so; strictOptions refused it already (engineOptionSpec).
+  const givenTimestamp =
     typeof rawTimestamp === 'string' && rawTimestamp.trim() ? rawTimestamp.trim() : null;
+  if (givenTimestamp && !isIsoDateTime(givenTimestamp)) {
+    warnIgnoredOption(
+      'engineOptions.timestamp',
+      rawTimestamp,
+      'pass an ISO 8601 date and time, such as new Date().toISOString()',
+      "The result's timestamp is null."
+    );
+  }
+  const timestamp = givenTimestamp && isIsoDateTime(givenTimestamp) ? givenTimestamp : null;
 
   // Read before any rule runs: some change the page while they measure it.
   const environment = readRenderingEnvironment(dom.defaultView(document) || window, document);
@@ -151485,35 +154737,20 @@ const runCoreSettled = (function runCoreSettled(
   // the result echoes white; it is said, and thrown under strictOptions.
   {
     const given = engineOptionsResolved.contrast.rootCanvasFallback;
-    let rgba;
-    try {
-      const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
-      rgba = typeof parse === 'function' ? parse(given) : { a: 1 };
-    } catch {
-      rgba = { a: 1 };
-    }
-    // The color parser reads computed styles, which the browser has already
-    // checked, so it is lenient: a keyword that depends on the page
-    // (inherit, currentColor) or rgb() with a wrong number of values would
-    // pass. A color the caller writes is checked as CSS would check it.
-    const text = String(given).trim();
-    const lower = text.toLowerCase();
-    const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
-    const badSyntax =
-      ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'].includes(lower) ||
-      (fn &&
-        (() => {
-          const body = fn[2].trim();
-          const parts = body.includes(',')
-            ? body.split(',').map((x) => x.trim())
-            : body.split('/').flatMap((x, i) => (i === 0 ? x.trim().split(/\s+/) : [x.trim()]));
-          return parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
-        })());
-    if (badSyntax) rgba = null;
-    if (!rgba || !(rgba.a >= 1)) {
-      const message =
-        'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
-        JSON.stringify(given);
+    const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
+    const computeColor = (text) => {
+      const probe = dom.createElement(document, 'span');
+      probe.style.color = text;
+      // A value the platform rejects leaves the property unset, and the
+      // probe would report the color it inherits.
+      if (!probe.style.color) return '';
+      dom.appendChild(dom.documentElement(document), probe);
+      const computed = dom.defaultView(document).getComputedStyle(probe).color;
+      dom.removeChild(dom.documentElement(document), probe);
+      return computed;
+    };
+    if (!rootCanvasFallbackIsOpaque(given, parse, computeColor)) {
+      const message = rootCanvasFallbackMessage(given);
       if (strictOf(engineOptionsResolved)) {
         const err = new Error(message + '. (strictOptions)');
         err.code = 'INVALID_ENGINE_OPTIONS';
@@ -151765,15 +155002,9 @@ const runCoreSettled = (function runCoreSettled(
     runOnly && Array.isArray(runOnly.optInTags) ? runOnly.optInTags.slice() : [];
   const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
   const optInRulesRan = new Set();
-  if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
-    const message =
-      'engineOptions.optInRules: ' +
-      runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
-      ', no such opt-in rule tag (' +
-      (OPT_IN_RULE_TAGS.length
-        ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
-        : 'this version has none') +
-      ')';
+  const optInMessage = unknownOptInRulesMessage(runOnly);
+  if (optInMessage) {
+    const message = optInMessage;
     if (strictOf(engineOptionsResolved)) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
@@ -151788,19 +155019,15 @@ const runCoreSettled = (function runCoreSettled(
   // normativeMappings name. The catalog carries every one of them; a scan
   // result carries only those asked for, or implied by the applied profile.
   const mappingSelection = resolveMappingSelection(engineOptionsResolved, appliedProfile);
-  if (mappingSelection.unknown.length) {
-    const named = mappingSelection.unknown.map((s) => '"' + s + '"').join(', ');
+  const mappingsMessage = unknownMappingsMessage(mappingSelection);
+  if (mappingsMessage) {
     if (strictOf(engineOptionsResolved)) {
-      const err = new Error(
-        'engineOptions.mappings: ' + named + ', no such standard or version. (strictOptions)'
-      );
+      const err = new Error(mappingsMessage + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
       throw err;
     }
     try {
-      console.warn(
-        '[surea11y] engineOptions.mappings: ignoring ' + named + ', no such standard or version.'
-      );
+      console.warn('[surea11y] ' + mappingsMessage.replace(': ', ': ignoring ') + '.');
     } catch {}
   }
   warnDeprecatedStandards(mappingSelection.tokens);
@@ -151815,15 +155042,52 @@ const runCoreSettled = (function runCoreSettled(
     return appliedProfile && keeps.includes(appliedProfile) ? null : 'errata';
   }
 
+  // The WCAG criteria a rule names: its wcagSc, and the requirements of its
+  // WCAG normativeMappings.
+  function wcagCriteriaOfDef(def) {
+    const out = [];
+    if (!def || typeof def !== 'object') return out;
+    const add = (sc) => {
+      const text = typeof sc === 'string' ? sc.trim() : '';
+      if (text && !out.includes(text)) out.push(text);
+    };
+    if (Array.isArray(def.wcagSc)) def.wcagSc.forEach(add);
+    const maps = Array.isArray(def.normativeMappings)
+      ? def.normativeMappings
+      : def.meta && Array.isArray(def.meta.normativeMappings)
+        ? def.meta.normativeMappings
+        : [];
+    for (const m of maps) {
+      if (m && typeof m === 'object' && String(m.standard).trim().toUpperCase() === 'WCAG')
+        add(m.requirement);
+    }
+    return out;
+  }
+
+  // A criterion an earlier WCAG version has and 2.2 removed (4.1.1 Parsing).
+  function isRemovedWcagSc(sc) {
+    const levels = Object.prototype.hasOwnProperty.call(WCAG_LEVELS_BY_SC, sc)
+      ? WCAG_LEVELS_BY_SC[sc]
+      : null;
+    return !!levels && levels[2] === null && (levels[0] !== null || levels[1] !== null);
+  }
+
   function scopeOutcomeToWcagVersion(def, result) {
     const why = removesParsing();
     if (!why) return result;
     if (!result || typeof result !== 'object' || result.outcome !== 'fail') return result;
 
     const defTags = def && Array.isArray(def.tags) ? def.tags : [];
-    if (!defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG)) return result;
+    // A rule is scoped by its tag, or by the criteria it names: a custom or
+    // pack rule mapped only to 4.1.1 rarely carries the tag, and without it
+    // its fail gated a 2.2 run on a criterion 2.2 does not contain.
+    const criteria = wcagCriteriaOfDef(def);
+    const tagged = defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG);
+    const onlyRemoved = criteria.length > 0 && criteria.every(isRemovedWcagSc);
+    if (!tagged && !onlyRemoved) return result;
 
-    const removedSc = def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [];
+    const removedSc =
+      def && Array.isArray(def.wcagSc) && def.wcagSc.length ? def.wcagSc.slice() : criteria;
 
     // Every occurrence becomes cantTell-tier here, so each one states why: the
     // finding stands, the criterion it was made against does not.
@@ -151942,67 +155206,10 @@ const runCoreSettled = (function runCoreSettled(
     const knownIds = effectiveCheckDefs
       .map((d) => d.ruleId)
       .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
-    const byLower = new Map();
-    // ASCII case only, as the selection matches ids (asciiLowerChar).
-    const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
-    for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
-    const legacy = String(ENGINE_TAG || 'a11ycore').toLowerCase() + '-';
-    const unknownRuleKeys = [];
-    const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
-    for (const exact of [true, false]) {
-      for (const key of keys) {
-        const value = rulesOption[key];
-        if (!value || typeof value !== 'object') continue;
-        const lower = lowerAscii(key.trim());
-        let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
-        if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
-        if (exact) {
-          if (id) callerRuleConfig[id] = value;
-        } else if (!id) {
-          unknownRuleKeys.push(key);
-        } else if (!(id in callerRuleConfig)) {
-          callerRuleConfig[id] = value;
-        }
-      }
-    }
-    if (unknownRuleKeys.length) {
-      // The closest id by edit distance, when it is close.
-      const closestId = (key) => {
-        const a = key.toLowerCase();
-        let best = null;
-        let bestD = Infinity;
-        for (const id of byLower.keys()) {
-          if (Math.abs(id.length - a.length) > 3) continue;
-          const prev = [];
-          for (let j = 0; j <= id.length; j++) prev[j] = j;
-          for (let i = 1; i <= a.length; i++) {
-            let diag = prev[0];
-            prev[0] = i;
-            for (let j = 1; j <= id.length; j++) {
-              const up = prev[j];
-              prev[j] = Math.min(
-                prev[j] + 1,
-                prev[j - 1] + 1,
-                diag + (a[i - 1] === id[j - 1] ? 0 : 1)
-              );
-              diag = up;
-            }
-          }
-          if (prev[id.length] < bestD) {
-            bestD = prev[id.length];
-            best = byLower.get(id);
-          }
-        }
-        return bestD <= 3 ? best : null;
-      };
-      const message =
-        'engineOptions.rules: ' +
-        unknownRuleKeys
-          .map((k) => {
-            const near = closestId(k);
-            return 'no rule named "' + k + '"' + (near ? ' (did you mean "' + near + '"?)' : '');
-          })
-          .join('; ');
+    const read = readRuleSettings(rulesOption, knownIds, ENGINE_TAG);
+    for (const id of Object.keys(read.config)) callerRuleConfig[id] = read.config[id];
+    if (read.unknown.length) {
+      const message = unknownRuleSettingsMessage(read);
       if (strictOf(engineOptionsResolved)) {
         const err = new Error(message + '. (strictOptions)');
         err.code = 'INVALID_ENGINE_OPTIONS';
@@ -152928,84 +156135,170 @@ const isThenable = (function isThenable(value) {
   return typeof then === 'function' && then !== Object.prototype.then;
 });
 const assertPageBuiltins = (function assertPageBuiltins() {
-  // Recorded by index and joined by hand, as push or join may be what is
-  // broken.
-  const broken = [];
-  const check = (name, works) => {
-    let ok;
-    try {
-      ok = !!works();
-    } catch {
-      ok = false;
+  // The check itself runs on the built-ins it checks: one broken so badly
+  // that the check throws outside a probe (a throwing RegExp constructor,
+  // a getter on Object.prototype) stops the scan with the same code, not
+  // the page's own error.
+  let ours = null;
+  try {
+    // Recorded by index and joined by hand, as push or join may be what is
+    // broken.
+    const broken = [];
+    const check = (name, works) => {
+      let ok;
+      try {
+        ok = !!works();
+      } catch {
+        ok = false;
+      }
+      if (!ok) broken[broken.length] = name;
+    };
+    check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
+    check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
+    check('Array.prototype.push', () => {
+      const a = [];
+      a.push(1);
+      return a.length === 1 && a[0] === 1;
+    });
+    check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
+    check('Array iteration', () => {
+      let sum = 0;
+      for (const x of [1, 2]) sum += x;
+      return sum === 3;
+    });
+    check('Set iteration', () => [...new Set([1, 2])].length === 2);
+    check('Map iteration', () => {
+      const [entry] = [...new Map([['a', 1]])];
+      return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
+    });
+    // Built at run time: a bundle loaded without its charset would read the
+    // character in a literal as several.
+    check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
+    check('NodeList iteration', () => {
+      if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
+      // Read from Node.prototype: a named element could stand in for
+      // document.childNodes.
+      const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(
+        document
+      );
+      return [...nodes].length === nodes.length;
+    });
+    check('Map', () => {
+      const m = new Map();
+      m.set('a', 1);
+      return m.get('a') === 1 && m.has('a') && m.size === 1;
+    });
+    check('Set', () => {
+      const s = new Set();
+      s.add(1);
+      return s.has(1) && s.size === 1;
+    });
+    check('WeakMap', () => {
+      const k = {};
+      const m = new WeakMap();
+      m.set(k, 1);
+      return m.get(k) === 1;
+    });
+    check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
+    check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
+    check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
+    check('RegExp.prototype.exec', () => {
+      const m = /b(c)/.exec('abc');
+      return !!m && m.index === 1 && m[1] === 'c';
+    });
+    check('String.prototype.trim', () => '  a '.trim() === 'a');
+    check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+    check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
+    check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
+    // Each of these, replaced, changed what rules report without a word
+    // (round 8, PK-6 and RO-5): a probe of what each one does.
+    check('Array.isArray', () => Array.isArray([]) && !Array.isArray({ length: 0 }));
+    check('Array.prototype.slice', () => {
+      const a = [1, 2, 3].slice(1);
+      return a.length === 2 && a[0] === 2 && a[1] === 3;
+    });
+    check('Array.prototype.concat', () => {
+      const a = [1].concat([2], 3);
+      return a.length === 3 && a[1] === 2 && a[2] === 3;
+    });
+    check('Array.prototype.forEach', () => {
+      let sum = 0;
+      [1, 2].forEach((x) => {
+        sum += x;
+      });
+      return sum === 3;
+    });
+    check(
+      'Array.prototype.some',
+      () => [1, 2].some((x) => x === 2) && ![1, 2].some((x) => x === 3)
+    );
+    check('Array.prototype.every', () => [1, 2].every((x) => x > 0) && ![1, 2].every((x) => x > 1));
+    check('Array.prototype.find', () => [1, 2, 3].find((x) => x > 1) === 2);
+    check('Array.prototype.findIndex', () => [1, 2, 3].findIndex((x) => x > 1) === 1);
+    check('Array.prototype.reduce', () => [1, 2, 3].reduce((a, b) => a + b, 0) === 6);
+    check(
+      'Object.prototype.hasOwnProperty',
+      // eslint-disable-next-line no-prototype-builtins -- the check is of the method itself
+      () => ({ a: 1 }).hasOwnProperty('a') && !{}.hasOwnProperty('a')
+    );
+    check('String.prototype.split', () => {
+      const parts = 'a,b'.split(',');
+      return parts.length === 2 && parts[1] === 'b';
+    });
+    check(
+      'String.prototype.replace',
+      () => 'abc'.replace('b', 'x') === 'axc' && 'aba'.replace(/a/g, 'c') === 'cbc'
+    );
+    check('RegExp.prototype.test', () => /b/.test('abc') && !/d/.test('abc'));
+    check('RegExp', () => new RegExp('b+', 'g').exec('abbc')[0] === 'bb');
+    check('Math.round', () => Math.round(1.5) === 2 && Math.round(-0.4) === 0);
+    check('Math.abs', () => Math.abs(-2) === 2);
+    check('Math.max', () => Math.max(1, 3) === 3);
+    check('Math.min', () => Math.min(1, 3) === 1);
+    check('parseFloat', () => parseFloat('1.5px') === 1.5 && Number.parseFloat('2.5') === 2.5);
+    check('NodeFilter', () => {
+      if (typeof NodeFilter === 'undefined') return true;
+      return (
+        NodeFilter.SHOW_ELEMENT === 1 &&
+        NodeFilter.SHOW_TEXT === 4 &&
+        NodeFilter.FILTER_ACCEPT === 1 &&
+        NodeFilter.FILTER_REJECT === 2 &&
+        NodeFilter.FILTER_SKIP === 3
+      );
+    });
+    // A getter a page puts on Object.prototype is read for every key a plain
+    // object lacks: one that throws, or answers, changes what the engine
+    // reads of its own objects (result.type, options.contrast). A method put
+    // there (then, as a library may) is not read as a value, and is allowed.
+    const protoNames = Object.getOwnPropertyNames(Object.prototype);
+    for (let i = 0; i < protoNames.length; i++) {
+      const name = protoNames[i];
+      if (name === '__proto__') continue;
+      const d = Object.getOwnPropertyDescriptor(Object.prototype, name);
+      if (!d || typeof d.get !== 'function') continue;
+      check('Object.prototype.' + name, () => d.get.call({}) === undefined);
     }
-    if (!ok) broken[broken.length] = name;
-  };
-  check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
-  check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
-  check('Array.prototype.push', () => {
-    const a = [];
-    a.push(1);
-    return a.length === 1 && a[0] === 1;
-  });
-  check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
-  check('Array iteration', () => {
-    let sum = 0;
-    for (const x of [1, 2]) sum += x;
-    return sum === 3;
-  });
-  check('Set iteration', () => [...new Set([1, 2])].length === 2);
-  check('Map iteration', () => {
-    const [entry] = [...new Map([['a', 1]])];
-    return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
-  });
-  // Built at run time: a bundle loaded without its charset would read the
-  // character in a literal as several.
-  check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
-  check('NodeList iteration', () => {
-    if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
-    // Read from Node.prototype: a named element could stand in for
-    // document.childNodes.
-    const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(document);
-    return [...nodes].length === nodes.length;
-  });
-  check('Map', () => {
-    const m = new Map();
-    m.set('a', 1);
-    return m.get('a') === 1 && m.has('a') && m.size === 1;
-  });
-  check('Set', () => {
-    const s = new Set();
-    s.add(1);
-    return s.has(1) && s.size === 1;
-  });
-  check('WeakMap', () => {
-    const k = {};
-    const m = new WeakMap();
-    m.set(k, 1);
-    return m.get(k) === 1;
-  });
-  check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
-  check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
-  check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
-  check('RegExp.prototype.exec', () => {
-    const m = /b(c)/.exec('abc');
-    return !!m && m.index === 1 && m[1] === 'c';
-  });
-  check('String.prototype.trim', () => '  a '.trim() === 'a');
-  check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
-  check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
-  check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
-  if (!broken.length) return;
-  let names = '';
-  for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
-  const err = new Error(
-    'The page has changed JavaScript built-ins the engine relies on (' +
-      names +
-      "), so a scan of it can't be trusted. Scan it before its scripts change them."
-  );
-  err.code = 'PAGE_BUILTINS_BROKEN';
-  err.broken = broken;
-  throw err;
+    if (!broken.length) return;
+    let names = '';
+    for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (' +
+        names +
+        "), so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = broken;
+    ours = err;
+    throw err;
+  } catch (e) {
+    if (e === ours) throw e;
+    const err = new Error(
+      "The page has changed JavaScript built-ins the engine relies on, so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = [];
+    throw err;
+  }
 });
 const assertArrayFromFor = (function assertArrayFromFor(fns) {
   let works;
@@ -153343,7 +156636,7 @@ const enableFrameRpcResponder = (function enableFrameRpcResponder(win, handler) 
 const profileNamesOf = (function profileNamesOf(asked) {
   const names = (Array.isArray(asked) ? asked : [])
     .filter((p) => typeof p === 'string' && p.trim())
-    .map((p) => p.trim().toLowerCase());
+    .map((p) => lowerAscii(p.trim()));
   return names.filter((p, i) => names.indexOf(p) === i);
 });
 const profileOptionsOf = (function profileOptionsOf(engineOptions) {
@@ -153355,13 +156648,13 @@ const profileOptionsOf = (function profileOptionsOf(engineOptions) {
   return unique.map((p) => Object.assign({}, engineOptions, { profile: p }));
 });
 const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packNames, declared) {
-  const name = typeof profile === 'string' ? profile.trim().toLowerCase() : '';
+  const name = typeof profile === 'string' ? lowerAscii(profile.trim()) : '';
   if (!name) return false;
   if (Array.isArray(declared) && declared.includes(name)) return true;
   const starts = (prefix) => !!prefix && (name === prefix || name.indexOf(prefix + '-') === 0);
   for (const packName of Array.isArray(packNames) ? packNames : []) {
     if (typeof packName !== 'string') continue;
-    let id = packName.trim().toLowerCase();
+    let id = lowerAscii(packName.trim());
     const at = id.lastIndexOf('@');
     if (at > 0) id = id.slice(0, at);
     const slash = id.indexOf('/');
@@ -153374,19 +156667,26 @@ const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packN
 });
 const runProfiles = (function runProfiles(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
+  const allowFail = policyAllowsFail(engineOptions);
   const asked =
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
   if (Array.isArray(asked)) {
     // Names are matched without case, as a single profile's are: one asked
     // twice in two cases runs once.
     const unique = profileNamesOf(asked);
-    const ignored = asked.filter((p) => typeof p !== 'string');
-    if (ignored.length) {
+    // By index: filter() skips an empty slot ([, 'wcag22-aa']), which was
+    // then dropped without a word, as a blank name was.
+    let ignored = 0;
+    for (let i = 0; i < asked.length; i++) {
+      const p = asked[i];
+      if (typeof p !== 'string' || !p.trim()) ignored++;
+    }
+    if (ignored) {
       try {
         console.warn(
           '[surea11y] engineOptions.profile: ignoring ' +
-            ignored.length +
-            ' item(s) that are not a profile name (a string).'
+            ignored +
+            ' item(s) that are not a profile name (a string that is not blank).'
         );
       } catch {
         // no console
@@ -153394,12 +156694,13 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     }
     if (unique.length <= 1) {
       return withOwnVerdicts(
-        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined }))
+        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })),
+        allowFail
       );
     }
     const runs = [];
     const step = (i) => {
-      if (i >= unique.length) return mergeProfileResults(runs, unique);
+      if (i >= unique.length) return mergeProfileResults(runs, unique, allowFail);
       const result = run(Object.assign({}, engineOptions, { profile: unique[i] }));
       if (thenable(result)) {
         return result.then((r) => {
@@ -153412,13 +156713,13 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     };
     return step(0);
   }
-  return withOwnVerdicts(run(engineOptions));
+  return withOwnVerdicts(run(engineOptions), allowFail);
 });
-const withOwnVerdicts = (function withOwnVerdicts(result) {
+const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
   // A result first: a page may add then to Object.prototype, which makes
   // any object look like a promise.
   if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
-    return result.then(withOwnVerdicts);
+    return result.then((r) => withOwnVerdicts(r, allowFail));
   }
   if (!result || !Array.isArray(result.checksResults)) return result;
   const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
@@ -153444,10 +156745,41 @@ const withOwnVerdicts = (function withOwnVerdicts(result) {
     );
     check.outcome = 'fail';
     check.outcomeNormalized = 'fail';
+    capToPolicy(check, allowFail);
   }
   return result;
 });
-const mergeProfileResults = (function mergeProfileResults(runs, asked) {
+const lowerAscii = (function lowerAscii(value) {
+  return String(value).replace(/[A-Z]/g, (c) => c.toLowerCase());
+});
+const policyAllowsFail = (function policyAllowsFail(engineOptions) {
+  try {
+    const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+    for (const source of [eo.policy, eo.policyContract]) {
+      if (source && typeof source === 'object' && Array.isArray(source.allowedOutcomes)) {
+        return source.allowedOutcomes.includes('fail');
+      }
+    }
+  } catch {
+    // unreadable options: the scan's own reading decides
+  }
+  return true;
+});
+const capToPolicy = (function capToPolicy(check, allowFail) {
+  if (allowFail || !check || check.outcome !== 'fail') return check;
+  check.policyOutcome = 'fail';
+  check.outcome = 'cantTell';
+  check.outcomeNormalized = 'cantTell';
+  if (Array.isArray(check.occurrences)) {
+    check.occurrences = check.occurrences.map((o) =>
+      o && typeof o === 'object' && o.occurrenceOutcome === 'fail'
+        ? Object.assign({}, o, { occurrenceOutcome: 'cantTell' })
+        : o
+    );
+  }
+  return check;
+});
+const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail = true) {
   const RANK = { fail: 4, cantTell: 3, pass: 2, notApplicable: 1 };
   const rank = (o) => RANK[o] || 0;
   const SEVERITY_ORDER = ['minor', 'moderate', 'serious', 'critical'];
@@ -153504,7 +156836,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   for (const r of runs) {
     const applied = r.result && r.result.engine ? r.result.engine.profile : undefined;
     const same =
-      typeof applied === 'string' && applied.toLowerCase() === String(r.profile).toLowerCase();
+      typeof applied === 'string' && lowerAscii(applied) === lowerAscii(String(r.profile));
     if (r.result && typeof r.result === 'object' && same) ran.push(r);
     else {
       // A name no profile has is unknown-profile, unless the scan marked it
@@ -153642,11 +156974,13 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
           });
         }
       }
-      // A check whose findings the profile counts nowhere found nothing it
-      // is about: a pass there, as its rollups read it.
+      // A check whose findings the profile counts nowhere keeps the outcome
+      // its scan of that profile gave, as a scan of the profile alone
+      // reports it (round 8, PK-1: it read as a pass, and SARIF, JUnit and
+      // baselines dropped a failure the profile alone reports).
       merged.verdicts[r.profile] =
         isTier(check.outcome) && occurrences.length
-          ? worst(verdicts.filter((v) => v !== 'notApplicable')) || 'pass'
+          ? worst(verdicts.filter((v) => v !== 'notApplicable')) || check.outcome
           : check.outcome;
     }
   }
@@ -153685,7 +157019,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
       if (isTier(tier) && (m.occurrenceOutcome || tier !== outcome)) m.occurrenceOutcome = tier;
     }
     checksResults.push(
-      Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) })
+      capToPolicy(
+        Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) }),
+        allowFail
+      )
     );
   }
 

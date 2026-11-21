@@ -26,10 +26,15 @@
  * @expectation
  *   A link inside a text block must be visually distinguishable from the
  *   surrounding text by at least one non-color means:
- *     - text-decoration: underline, OR
- *     - a different font-weight or font-style than the surrounding text, OR
+ *     - text-decoration: underline, where the surrounding text is not
+ *       underlined too (by its own style or an ancestor's), OR
+ *     - a different font-weight or font-style than the surrounding text (a
+ *       weight counts as different when one is 600 or more and the other
+ *       under 600: most fonts draw 500 as they draw 400), OR
  *     - another visible mark on the link itself: a border, box-shadow or
- *       outline, a background color different from the surrounding one, a
+ *       outline (a shadow in a transparent color, or with no offset, blur
+ *       or spread, draws nothing), a background color different from the
+ *       surrounding one, a
  *       background image, an image or svg inside it, or a ::before/::after
  *       that draws something (content of its own, or an empty box painting
  *       a background, border, outline or shadow, as an underline drawn
@@ -342,6 +347,13 @@ function runInPage(ctx) {
   // for every <a> whatever the author CSS says, and the longhand as "none"
   // unless the author used the longhand. Either one taken alone is wrong in
   // one direction, so disagreement is the signal to stop trusting both.
+  // Whether two font weights look different: one bold (600 or more) and the
+  // other not. Most fonts draw 500 as they draw 400, and Chromium
+  // synthesises bold from 600 for a font with no bold face.
+  function weightsDiffer(a, b) {
+    return a >= 600 !== b >= 600;
+  }
+
   function decorationInfo(cs) {
     if (!cs) return { underlined: false, trustworthy: false };
 
@@ -595,11 +607,46 @@ function runInPage(ctx) {
     return tokens.some((t) => LINE_STYLES.test(t)) && !tokens.some((t) => isZeroWidth(t));
   }
 
+  // Splits on a separator outside parentheses: the shadows of a list, or
+  // the parts of one shadow ("rgba(0, 0, 0, 0) 0px 1px").
+  function splitOutsideParens(v, sep) {
+    const parts = [];
+    let depth = 0;
+    let current = '';
+    for (const ch of v) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && sep.test(ch)) {
+        if (current.trim()) parts.push(current.trim());
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    if (current.trim()) parts.push(current.trim());
+    return parts;
+  }
+
+  // A shadow draws nothing in a fully transparent color, or with no offset,
+  // blur or spread: `box-shadow: 0 1px 0 transparent` is no cue.
+  function shadowDraws(shadow) {
+    const lengths = [];
+    let color = '';
+    for (const token of splitOutsideParens(shadow, /\s/)) {
+      if (token === 'inset') continue;
+      if (/^-?(\d*\.)?\d+([a-z]+)?$/.test(token)) lengths.push(parseFloat(token));
+      else color = token;
+    }
+    if (color && isTransparentColor(color)) return false;
+    return !(lengths.length && lengths.every((n) => n === 0));
+  }
+
   function hasBoxShadow(cs) {
     const v = String(cs.boxShadow || '')
       .trim()
       .toLowerCase();
-    return !!v && v !== 'none';
+    if (!v || v === 'none') return false;
+    return splitOutsideParens(v, /,/).some(shadowDraws);
   }
 
   // Whether a background-image layer draws something seen behind el's text:
@@ -1164,7 +1211,10 @@ function runInPage(ctx) {
           color,
           selector: base + '::first-line',
           otherCue:
-            c.normalizeFontWeight(ps.fontWeight) !== c.normalizeFontWeight(blockCs.fontWeight) ||
+            weightsDiffer(
+              c.normalizeFontWeight(ps.fontWeight),
+              c.normalizeFontWeight(blockCs.fontWeight)
+            ) ||
             String(ps.fontStyle || '') !== String(blockCs.fontStyle || '') ||
             String(ps.textDecorationLine || '') !== String(blockCs.textDecorationLine || '') ||
             String(ps.textShadow || '') !== String(blockCs.textShadow || '')
@@ -1688,7 +1738,7 @@ function runInPage(ctx) {
     if (
       c &&
       outerCs &&
-      c.normalizeFontWeight(cs.fontWeight) !== c.normalizeFontWeight(outerCs.fontWeight)
+      weightsDiffer(c.normalizeFontWeight(cs.fontWeight), c.normalizeFontWeight(outerCs.fontWeight))
     ) {
       return true;
     }
@@ -1696,6 +1746,41 @@ function runInPage(ctx) {
     if (hasBorder(cs)) return true;
     const deco = decorationInfo(cs);
     return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
+  }
+
+  // Whether the text around the link is underlined too: by its own element's
+  // text-decoration, or by one an ancestor propagates to it. An underline
+  // the surrounding text also has sets nothing apart, as the same weight
+  // doesn't. Decorations don't propagate into an inline-block, a float or an
+  // absolutely positioned box, so the walk stops at one. Where an element's
+  // decoration can't be read, the style sheets are, and where neither says,
+  // the text is taken as not underlined.
+  function surroundingUnderlined(textEl) {
+    for (
+      let a = textEl, i = 0;
+      a && dom.nodeType(a) === 1 && i < 100;
+      a = dom.parentElement(a), i++
+    ) {
+      const cs = safeComputedStyle(a);
+      if (!cs) return false;
+      const deco = decorationInfo(cs);
+      let underlined = deco.trustworthy && deco.underlined;
+      if (!deco.trustworthy) {
+        const fromCssom = resolveUnderlineFromCssom(a);
+        underlined = fromCssom.resolved && fromCssom.underlined;
+      }
+      if (underlined && !isTransparentColor(cs.textDecorationColor)) return true;
+      const display = String(cs.display || '');
+      const float = String(cs.cssFloat || cs.float || 'none');
+      if (
+        /^inline-/.test(display) ||
+        cs.position === 'absolute' ||
+        cs.position === 'fixed' ||
+        (float && float !== 'none')
+      )
+        return false;
+    }
+    return false;
   }
 
   function textParentOf(el) {
@@ -1706,7 +1791,10 @@ function runInPage(ctx) {
       if (dom.firstElementChild(parent) !== child || dom.lastElementChild(parent) !== child) break;
       const wcs = safeComputedStyle(parent) || {};
       const display = String(wcs.display || '');
-      if (!display.startsWith('inline') || display === 'inline-block') break;
+      // A display: contents wrapper has no box: its content is laid out in
+      // the line around it, as an inline wrapper's is.
+      if (display !== 'contents' && (!display.startsWith('inline') || display === 'inline-block'))
+        break;
       // A wrapper that sets the link apart itself is not transparent: a
       // footnote marker raised by <sup>, or a bold or underlined wrapper.
       const valign = String(wcs.verticalAlign || 'baseline');
@@ -1723,7 +1811,7 @@ function runInPage(ctx) {
   // surrounding text is not (<a><strong>guide</strong></a>), or that has a
   // background of its own unlike the surrounding text's, as a code chip or
   // <mark> does, or is raised or lowered, as a footnote's <sup> is (#107).
-  function cueOnContent(el, parent, parentCs) {
+  function cueOnContent(el, parent, parentCs, aroundUnderlined) {
     let parentBgHex;
     const backgroundHex = (node) => {
       try {
@@ -1748,13 +1836,18 @@ function runInPage(ctx) {
     const hasCue = (node) => {
       const cs = safeComputedStyle(node);
       if (!cs) return false;
-      if (c && c.normalizeFontWeight(cs.fontWeight) !== parentWeight) return true;
+      if (c && weightsDiffer(c.normalizeFontWeight(cs.fontWeight), parentWeight)) return true;
       if ((cs.fontStyle || 'normal') !== parentStyle) return true;
       if (hasBorder(cs)) return true;
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
       if (hasBackgroundImage(cs, node) || ownBackground(node, cs)) return true;
       const deco = decorationInfo(cs);
-      return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
+      return (
+        deco.trustworthy &&
+        deco.underlined &&
+        !isTransparentColor(cs.textDecorationColor) &&
+        !(aroundUnderlined && aroundUnderlined())
+      );
     };
     let sawText = false;
     const doc = dom.ownerDocument(el);
@@ -1890,7 +1983,7 @@ function runInPage(ctx) {
     // carrying one is decided even where decoration is unreadable.
     const linkWeight = c && linkCs ? c.normalizeFontWeight(linkCs.fontWeight) : 400;
     const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
-    if (linkWeight !== parentWeight) {
+    if (weightsDiffer(linkWeight, parentWeight)) {
       decidedCount += 1;
       return;
     }
@@ -1905,10 +1998,16 @@ function runInPage(ctx) {
     // An underline the computed style vouches for settles the link before
     // the costlier marks are looked for (what a ::before or ::after draws).
     const shown = decorationInfo(linkCs);
+    let textUnderlined = null;
+    const aroundUnderlined = () => {
+      if (textUnderlined === null) textUnderlined = surroundingUnderlined(textEl);
+      return textUnderlined;
+    };
     if (
       shown.trustworthy &&
       shown.underlined &&
-      !isTransparentColor(linkCs && linkCs.textDecorationColor)
+      !isTransparentColor(linkCs && linkCs.textDecorationColor) &&
+      !aroundUnderlined()
     ) {
       decidedCount += 1;
       return;
@@ -1916,7 +2015,7 @@ function runInPage(ctx) {
 
     // A border, box-shadow, outline, background image, icon or generated
     // content marks the link without relying on color.
-    if (hasNonColorMark(el, linkCs) || cueOnContent(el, parent, parentCs)) {
+    if (hasNonColorMark(el, linkCs) || cueOnContent(el, parent, parentCs, aroundUnderlined)) {
       decidedCount += 1;
       return;
     }
@@ -1941,6 +2040,8 @@ function runInPage(ctx) {
       const fromCssom = resolveUnderlineFromCssom(el);
       if (fromCssom.resolved) underlined = fromCssom.underlined;
     }
+    // The surrounding text underlined too: the underline is no cue.
+    if (underlined === true && aroundUnderlined()) underlined = false;
     if (underlined === true) {
       decidedCount += 1;
       return;

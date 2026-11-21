@@ -137,7 +137,9 @@ test('strictOptions takes a list of profiles', () => {
   assert.doesNotThrow(() => scan({ ...BOTH, strictOptions: true }));
 });
 
-test('a finding a profile does not count is notApplicable there, and its check a pass', () => {
+// A profile that counts none of a check's findings keeps the outcome its own
+// scan gives, as a scan of it alone reports it (round 8, PK-1); it was a pass.
+test('a finding a profile does not count is notApplicable there, and its check keeps its own outcome', () => {
   const finding = (code) => ({
     selector: 'div',
     html: '<div role="grid">',
@@ -167,7 +169,7 @@ test('a finding a profile does not count is notApplicable there, and its check a
     { profile: 'b', result: result('b', 'cantTell', [null]) }
   ]);
   const c = merged.checksResults[0];
-  assert.deepEqual(c.verdicts, { a: 'cantTell', b: 'pass' });
+  assert.deepEqual(c.verdicts, { a: 'cantTell', b: 'cantTell' });
   assert.deepEqual(c.occurrences[0].verdicts, { a: 'cantTell', b: 'notApplicable' });
   assert.equal(c.outcome, 'cantTell');
 });

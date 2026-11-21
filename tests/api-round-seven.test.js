@@ -202,3 +202,23 @@ test('lists in messages stay short however many items there are (SP-3)', () => {
     assert.equal(o.data.details.groupSize, 200);
   }
 });
+
+test('a pack whose name, version or standard throws is skipped by the scan too (round 8, NW-6)', () => {
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    for (const key of ['name', 'version', 'standard', 'core', 'namespace', 'rules', 'profiles']) {
+      const pack = { name: 'thrower', version: '1.0.0', namespace: 'thr', core: '*' };
+      Object.defineProperty(pack, key, {
+        enumerable: true,
+        get() {
+          throw new Error('boom ' + key);
+        }
+      });
+      const r = runa11yCoreOnHtml(HTML, { engineOptions: { packs: [pack] } });
+      assert.equal(r.skippedPacks.length, 1, key);
+    }
+  } finally {
+    console.warn = warn;
+  }
+});

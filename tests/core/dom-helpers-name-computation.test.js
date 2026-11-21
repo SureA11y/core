@@ -1478,6 +1478,54 @@ test('an embedded control gives its value to the name it is part of', () => {
   }
 });
 
+// An ARIA textbox, or a combobox drawn with a <div>, gives its content as
+// its value, ahead of its own aria-label, as Chromium computes it (accname
+// 2C).
+test('an ARIA textbox or div combobox gives its content as its value (round 8, NA-4)', () => {
+  const cases = [
+    [
+      '<div id="r" role="textbox" aria-label="X">typed</div><button id="t" aria-labelledby="r"></button>',
+      'typed'
+    ],
+    [
+      '<div id="c" role="combobox" aria-label="Y" aria-expanded="false" tabindex="0">Apple</div><button id="t" aria-labelledby="c"></button>',
+      'Apple'
+    ],
+    [
+      '<span id="lx">Pay <span role="textbox" aria-label="q">10</span> now</span><input id="t" aria-labelledby="lx">',
+      'Pay 10 now'
+    ]
+  ];
+  for (const [html, name] of cases) {
+    const { helpers, document } = helpersFor(html);
+    const info = helpers.getAccessibleNameInfo(document.getElementById('t'), {});
+    assert.strictEqual(info.value, name, html);
+  }
+});
+
+// An <svg>'s drawn <text> does not name an element outside that <svg>, as
+// Chromium computes it; a link drawn inside the <svg> is still named by it.
+test('SVG <text> names no link or button around its <svg> (round 8, NA-6)', () => {
+  const cases = [
+    ['<a id="t" href="#"><svg width="40" height="20"><text x="0" y="15">Go</text></svg></a>', ''],
+    [
+      '<button id="t"><svg width="40" height="20"><g><text x="0" y="15"><tspan>Save</tspan></text></g></svg></button>',
+      ''
+    ],
+    [
+      '<a id="t" href="#">Next <svg width="40" height="20"><text x="0" y="15">Go</text></svg></a>',
+      'Next'
+    ],
+    ['<a id="t" href="#"><svg aria-label="Home"><text x="0" y="15">Go</text></svg></a>', 'Home'],
+    ['<svg width="80" height="40"><a id="t" href="#"><text x="0" y="15">Go</text></a></svg>', 'Go']
+  ];
+  for (const [html, name] of cases) {
+    const { helpers, document } = helpersFor(html);
+    const info = helpers.getNameFromContentInfo(document.getElementById('t'), {});
+    assert.strictEqual(info.value || '', name, html);
+  }
+});
+
 // HTML's rules for parsing integers, as browsers read tabindex (#156).
 test('parseHtmlInteger reads tabindex as HTML does', () => {
   const { helpers } = helpersFor('');

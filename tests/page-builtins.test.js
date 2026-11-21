@@ -99,3 +99,61 @@ test('a page adding then to Object.prototype is scanned as any other', () => {
   assert.ok(result.checksResults.every((c) => !/Promise/.test(c.error || '')));
   assert.equal(result.checksResults.find((c) => c.ruleId === 'img-alt-present').outcome, 'fail');
 });
+
+test('the built-ins whose replacement changed results without a word are checked too (round 8, PK-6, RO-5)', () => {
+  const cases = [
+    [Array, 'isArray', () => false, 'Array.isArray'],
+    [Array.prototype, 'slice', () => [], 'Array.prototype.slice'],
+    [Array.prototype, 'concat', () => [], 'Array.prototype.concat'],
+    [Array.prototype, 'forEach', () => {}, 'Array.prototype.forEach'],
+    [Array.prototype, 'some', () => false, 'Array.prototype.some'],
+    [Array.prototype, 'every', () => true, 'Array.prototype.every'],
+    [Array.prototype, 'find', () => undefined, 'Array.prototype.find'],
+    [Array.prototype, 'reduce', (f, i) => i, 'Array.prototype.reduce'],
+    [Object.prototype, 'hasOwnProperty', () => false, 'Object.prototype.hasOwnProperty'],
+    [String.prototype, 'split', () => [], 'String.prototype.split'],
+    [String.prototype, 'replace', () => '', 'String.prototype.replace'],
+    [RegExp.prototype, 'test', () => false, 'RegExp.prototype.test'],
+    [Math, 'round', () => 0, 'Math.round'],
+    [Math, 'abs', () => 0, 'Math.abs'],
+    [Math, 'max', () => NaN, 'Math.max'],
+    [globalThis, 'parseFloat', () => NaN, 'parseFloat'],
+    [
+      globalThis,
+      'RegExp',
+      function () {
+        throw new Error('re');
+      },
+      'RegExp'
+    ]
+  ];
+  const [, inPage] = scanBoth();
+  for (const [target, key, value, name] of cases) {
+    withPatched(target, key, value, () => {
+      assert.throws(inPage, (err) => {
+        assert.equal(err.code, 'PAGE_BUILTINS_BROKEN', name);
+        assert.ok(err.broken.includes(name), `${name}: ${err.broken}`);
+        return true;
+      });
+    });
+  }
+});
+
+test('a getter on Object.prototype that throws stops the scan with PAGE_BUILTINS_BROKEN (round 8, RO-5)', () => {
+  const [, inPage] = scanBoth();
+  Object.defineProperty(Object.prototype, 'type', {
+    get() {
+      throw new Error('type');
+    },
+    configurable: true
+  });
+  try {
+    assert.throws(inPage, (err) => {
+      assert.equal(err.code, 'PAGE_BUILTINS_BROKEN');
+      assert.ok(err.broken.includes('Object.prototype.type'), String(err.broken));
+      return true;
+    });
+  } finally {
+    delete Object.prototype.type;
+  }
+});

@@ -143,28 +143,6 @@ function runInPage(ctx) {
       .replace(/\s+/g, ' ')
       .trim();
 
-  // How deep the deepest ancestor two elements share is.
-  // An element's ancestors with their distance from it, once per element.
-  const chains = new Map();
-  function chainOf(a) {
-    let chain = chains.get(a);
-    if (!chain) {
-      chain = new Map();
-      let depth = 0;
-      for (let n = a; n; n = dom.parentNode(n)) chain.set(n, depth++);
-      chain.total = depth;
-      chains.set(a, chain);
-    }
-    return chain;
-  }
-  function sharedDepth(a, b) {
-    const chain = chainOf(a);
-    for (let n = b; n; n = dom.parentNode(n)) {
-      if (chain.has(n)) return chain.total - chain.get(n);
-    }
-    return 0;
-  }
-
   // Each referring element's nearest copy of the id (the one it shares the
   // deepest ancestor with, alone), worked out once per id: { r, nearest }
   // for each referrer with a nearest copy. Asked once per copy, it cost
@@ -173,19 +151,31 @@ function runInPage(ctx) {
   function nearestCopies(refId, els) {
     if (nearestMemo.has(refId)) return nearestMemo.get(refId);
     const out = [];
-    for (const r of referrers.get(refId) || []) {
-      let best = -1;
-      let nearest = null;
-      let tie = false;
-      for (const e of els) {
-        const d = sharedDepth(r.el, e);
-        if (d > best) {
-          best = d;
-          nearest = e;
-          tie = false;
-        } else if (d === best) tie = true;
+    // Each ancestor of a copy, with how many copies lie under it and which
+    // (the last met). A referrer's nearest copy is under its deepest
+    // ancestor that has any: the only one there, or a tie between several.
+    // Walked once per copy and once per referrer, where comparing each
+    // referrer with each copy grew with their product (round 8, NW-5).
+    const under = new Map();
+    for (const e of els) {
+      for (let n = e, i = 0; n && i < 100000; n = dom.parentNode(n), i++) {
+        const rec = under.get(n);
+        if (rec) {
+          rec.count += 1;
+          rec.copy = e;
+        } else under.set(n, { count: 1, copy: e });
       }
-      if (nearest && !tie) out.push({ r, nearest });
+    }
+    for (const r of referrers.get(refId) || []) {
+      let found = null;
+      for (let n = r.el, i = 0; n && i < 100000; n = dom.parentNode(n), i++) {
+        found = under.get(n);
+        if (found) break;
+      }
+      // With no shared ancestor, a lone copy is still the nearest.
+      if (found ? found.count === 1 : els.length === 1) {
+        out.push({ r, nearest: found ? found.copy : els[0] });
+      }
     }
     nearestMemo.set(refId, out);
     return out;
@@ -274,11 +264,14 @@ function runInPage(ctx) {
       const ownText = isFirst ? firstText : shortText(el);
       const nearReferrer = near ? describeEl(near.el) : '';
       const quoted = (t) => (t ? ` ("${t}")` : '');
+      // The id as quoted, cut to 120 characters: a page's 200 KB id was
+      // copied whole into the summary, its parameters and the details.
+      const shownId = helpers.quoteText(refId);
       const summary = isFirst
-        ? `The id "${refId}" is used by ${els.length} elements; this one is the first, the one ${attributes} reaches.`
+        ? `The id "${shownId}" is used by ${els.length} elements; this one is the first, the one ${attributes} reaches.`
         : near
-          ? `The ${near.attr} on the ${nearReferrer} next to this element refers to "${refId}", but it reaches the first element with that id${quoted(firstText)}, not this one${quoted(ownText)}.`
-          : `The id "${refId}" is used by ${els.length} elements; ${attributes} reaches the first one${quoted(firstText)}, not this one${quoted(ownText)}.`;
+          ? `The ${near.attr} on the ${nearReferrer} next to this element refers to "${shownId}", but it reaches the first element with that id${quoted(firstText)}, not this one${quoted(ownText)}.`
+          : `The id "${shownId}" is used by ${els.length} elements; ${attributes} reaches the first one${quoted(firstText)}, not this one${quoted(ownText)}.`;
 
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
@@ -292,7 +285,7 @@ function runInPage(ctx) {
                 : 'duplicateIdAria_summary_cantTell',
             hintKey: 'duplicateIdAria_hint_cantTell',
             params: {
-              id: refId,
+              id: shownId,
               duplicateCount: String(els.length),
               attributes,
               firstText,
@@ -304,13 +297,13 @@ function runInPage(ctx) {
           uncertainty: {
             code: 'judgement-required',
             needed: 'Whether the first element carrying this id is the intended target.',
-            evidence: { id: refId, duplicateCount: els.length, resolvesTo: 'first' }
+            evidence: { id: shownId, duplicateCount: els.length, resolvesTo: 'first' }
           },
           ...(lean ? { lean } : {}),
           data: {
             details: {
               reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',
-              id: refId,
+              id: shownId,
               duplicateCount: els.length,
               referringAttributes: attrs,
               reached: isFirst,

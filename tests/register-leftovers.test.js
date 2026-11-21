@@ -63,7 +63,16 @@ test('an applicability that returns neither true nor false is an error, not run 
 });
 
 test('rootCanvasFallback refuses what is not an opaque color as CSS writes it (R4:OP-P4)', () => {
-  for (const v of ['inherit', 'currentColor', 'initial', 'rgb(1,2,3,4,5)', 'rgb(1,2,3,)']) {
+  // rgb(0 0 0 1) and rgb(0,0,0 / 1) mix the two forms (round 8, NW-13).
+  for (const v of [
+    'inherit',
+    'currentColor',
+    'initial',
+    'rgb(1,2,3,4,5)',
+    'rgb(1,2,3,)',
+    'rgb(0 0 0 1)',
+    'rgb(0,0,0 / 1)'
+  ]) {
     assert.equal(scan({ contrast: { rootCanvasFallback: v } }).warnings.length, 1, v);
     assert.equal(
       scan({ strictOptions: true, contrast: { rootCanvasFallback: v } }).error.code,
@@ -131,6 +140,23 @@ test('packScript refuses rule code with "<!--" then "<script", which can keep an
     ]
   });
   assert.ok(packScript([comments]).length > 0);
+  // "<!-->" and "<!--->" close at once, as HTML reads them (round 8, NW-12).
+  for (const note of ['<!--> <script>', '<!---> <script>']) {
+    const closed = definePack({
+      name: 'closed-pack',
+      version: '1.0.0',
+      namespace: 'cl',
+      core: '*',
+      rules: [
+        {
+          id: 'cl-rule',
+          meta: { title: 'T', description: 'd', tags: ['cl'] },
+          runInPage: new Function(`return { outcome: 'pass', note: ${JSON.stringify(note)} };`)
+        }
+      ]
+    });
+    assert.ok(packScript([closed]).length > 0, note);
+  }
 });
 
 test('a hole in an option list is refused as a null is (R4:OP-P6)', () => {
@@ -156,4 +182,42 @@ test('rule ids match case in ASCII only: the Kelvin sign is no "k" (R4:SE)', () 
   assert.equal(scan({}, ['LINK-name-present']).value.checksResults.length, 1);
   const own = scan({ rules: { [kelvin]: { excludeSelectors: ['main'] } } });
   assert.match(own.warnings.join('\n'), /no rule named/);
+});
+
+test('a profile name with the Kelvin sign is no profile in a list either (round 8, NW-11)', () => {
+  const { ruleMappedStandard } = require('../src/pack.js');
+  const std = ruleMappedStandard({
+    standard: 'Keys',
+    tag: 'keys',
+    versions: [{ version: '1.0', wcagVersion: '2.2' }],
+    requirements: { '1.0': { K1: { title: 'Named', wcagSc: ['4.1.2'] } } },
+    ruleMap: { '1.0': { 'aria-role-name-present': { requirements: ['K1'] } } }
+  });
+  const pack = definePack({
+    name: 'keys-pack',
+    version: '1.0.0',
+    namespace: 'keys',
+    core: '*',
+    standard: {
+      key: 'keys',
+      standard: 'Keys',
+      versions: ['1.0'],
+      profiles: { 'keys-1.0': { version: '1.0', tags: ['keys'], mappedRules: true } },
+      ruleTag: 'keys',
+      ruleMapped: true,
+      mappingsFor: std.mappingsFor,
+      composites: std.composites,
+      validate: std.validate
+    }
+  });
+  const kelvin = 'Keys-1.0';
+  const { value } = scan({ packs: [pack], profile: [kelvin, 'wcag22-aa'] });
+  assert.ok(!value.rulesResults.some((r) => r.ruleId.startsWith('keys-')));
+  assert.deepEqual(
+    value.engine.profilesNotRun.map((n) => n.reason),
+    ['unknown-profile']
+  );
+  // Plain ASCII case still matches.
+  const ascii = scan({ packs: [pack], profile: ['KEYS-1.0', 'wcag22-aa'] }).value;
+  assert.ok(ascii.rulesResults.some((r) => r.ruleId.startsWith('keys-')));
 });

@@ -115,6 +115,12 @@ const CASES = [
     false
   ],
   [
+    'generated text indented off the page but aligned to the end is checked (round 8, NW-8)',
+    `<style>#t::before{content:"Home"; color:#bbb; display:block; text-indent:-9999px; text-align:right}</style><p id="t"></p>`,
+    {},
+    true
+  ],
+  [
     'generated text with a small indent of its own is checked',
     `<style>#t::before{content:"Home"; color:#eee; display:inline-block; text-indent:-2px}</style><p id="t"></p>`,
     {},

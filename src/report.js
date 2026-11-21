@@ -1048,8 +1048,16 @@ function renderHtmlReport(input, options = {}) {
   const OUTCOME_INFO = ui.outcomeInfo;
   // What the scan leaves to a person, in Node, unless asked not to.
   // One part per standard and version a profile of the scan judged by.
+  // manualChecks is true or false, as the reporters' other switches are:
+  // 'false', 'no' or 0 showed the section without a word.
+  const manualChecks = options ? options.manualChecks : undefined;
+  if (manualChecks != null && typeof manualChecks !== 'boolean') {
+    throw new TypeError(
+      `renderHtmlReport: manualChecks must be true or false, not ${JSON.stringify(manualChecks)}`
+    );
+  }
   const lefts =
-    options && options.manualChecks === false
+    manualChecks === false
       ? []
       : leftToAPerson(result, {
           packs: options && options.packs,

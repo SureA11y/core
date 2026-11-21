@@ -110,3 +110,19 @@ export function computeBaselineKey(
 
 /** An occurrence's reason code, or 'DEFAULT'. */
 export function getReasonCode(occurrence: unknown): string;
+
+/** Internal: the reporters' lookup of the occurrences a baseline knows. Not covered by semver. */
+export function knownOccurrences(
+  frames: unknown[],
+  baselineEntries: unknown,
+  caller?: string
+): { known: KnownSet; knownLeaning: KnownSet };
+
+/** A `Set` of occurrences, typed without the ES2015 library so projects on any `lib` compile. */
+interface KnownSet {
+  has(value: unknown): boolean;
+  readonly size: number;
+}
+
+/** Internal: the entries of a baseline, given as the list or as the saved file. Not covered by semver. */
+export function entriesOf(baseline: unknown): BaselineEntry[];

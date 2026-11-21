@@ -278,7 +278,9 @@ function runInPage(ctx) {
     const usable = tokens.find((t) => ariaHelpers.isKnownRole(t) && !ariaHelpers.isAbstractRole(t));
     if (usable) continue;
 
-    const role = tokens[0];
+    // As quoted, cut to 120 characters (helpers.quoteText): a 200 KB token
+    // was copied whole into the summary, its parameters and the details.
+    const role = helpers.quoteText(tokens[0]);
     const isKnown = tokens.some((t) => ariaHelpers.isKnownRole(t));
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
 

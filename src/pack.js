@@ -1568,7 +1568,8 @@ function definePack(pack) {
 // A scan keeps the engine it prepared for the same pack objects, so a pack
 // must not change once made: definePack freezes it, with the lists and
 // objects it holds (its functions excepted), and a change then throws in
-// strict code instead of going unseen.
+// strict code instead of going unseen. A pack passed to a scan as a plain
+// object is frozen the same way on its first use (preparePacks).
 function deepFreeze(value, seen = new Set()) {
   if (!value || typeof value !== 'object' || seen.has(value)) return value;
   seen.add(value);
@@ -2117,6 +2118,21 @@ function preparePacks(list, { strict = false } = {}) {
     return cached;
   }
 
+  // The engine is kept by the identity of these objects, so each is frozen
+  // on its first use, as definePack freezes a pack: a pack passed as a plain
+  // object and changed in place afterwards then throws in strict code, or
+  // the change is ignored, instead of a later scan silently running the
+  // version kept (round 8, PK-10).
+  for (const pack of list) {
+    if (!isObject(pack)) continue;
+    try {
+      deepFreeze(pack);
+    } catch {
+      // An object that can't be frozen (a Proxy that refuses) is checked
+      // below as it is.
+    }
+  }
+
   const valid = [];
   const skipped = [];
   for (const pack of list) {
@@ -2262,21 +2278,35 @@ function pageCodeProblems(rule, where) {
   return problems;
 }
 
-// The "<script" an inline script's text opens after "<!--" with no "-->"
-// first (HTML's script data double escaped state), or null. Inside a
-// <script> element only "-->" leaves the escaped state: "--!>", which ends a
-// comment in markup, does not (after "--", HTML's tokenizer takes "!" back
-// to the escaped state), so it is matched to be passed over, never as an end.
+// Whether an inline script's text leaves HTML's tokenizer in the script
+// data double escaped state, where "</script>" no longer ends the element:
+// "<!--" then "<script" (escaped, then double escaped), with no "-->" or
+// "</script" after. The states as HTML defines them: "<!-->" and "<!--->"
+// close at once; in the double escaped state "</script" goes back to the
+// escaped state and "-->" to plain script data; "--!>", which ends a comment
+// in markup, ends nothing in a script and is matched only to be skipped.
+// Returns the "<script" that opened it, or null (round 8, NW-12).
 function unclosedScriptInComment(text) {
-  const re = /<!--|--!?>|<script(?=[\s/>])/gi;
-  let inComment = false;
+  const re = /<!--->|<!-->|<!--|--!>|-->|<\/script(?=[\s/>])|<script(?=[\s/>])/gi;
+  let state = 'data';
+  let opener = null;
   for (let m = re.exec(text); m; m = re.exec(text)) {
-    if (m[0] === '<!--') inComment = true;
-    else if (m[0] === '-->') inComment = false;
-    else if (m[0] === '--!>') continue;
-    else if (inComment) return m[0];
+    const t = m[0].toLowerCase();
+    if (t === '<!--->' || t === '<!-->' || t === '--!>') continue;
+    if (t === '<!--') {
+      if (state === 'data') state = 'escaped';
+    } else if (t === '-->') {
+      state = 'data';
+    } else if (t === '<script') {
+      if (state === 'escaped') {
+        state = 'double';
+        opener = m[0];
+      }
+    } else if (state === 'double') {
+      state = 'escaped';
+    }
   }
-  return null;
+  return state === 'double' ? opener : null;
 }
 
 // JSON as script text: "<" escaped so no "</script" can end an inline script,
@@ -2379,7 +2409,7 @@ function packScript(packs) {
   const opened = unclosedScriptInComment(script);
   if (opened) {
     throw new Error(
-      `packScript: the packs' code has "<!--" followed by "${opened}" with no "-->" between them, which keeps an inline <script> element from ending: write one of them as '<' + '!--' or '<' + 'script'`
+      `packScript: the packs' code has "<!--" followed by "${opened}" with no "-->" or "</script" after it, which keeps an inline <script> element from ending: write one of them as '<' + '!--' or '<' + 'script'`
     );
   }
   // What is written must parse: a page that can't run it loses every pack in it.
