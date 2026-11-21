@@ -21,7 +21,7 @@ Rounds 3 to 5 were kept on branches of their own until 2026-10-27, when they wer
 
 ## 1. Open — to fix
 
-Every finding of rounds 1 to 8 is fixed, decided or closed (§3, §4). Of round 9's 61, the 48 evident ones are fixed in [#417](https://github.com/SureA11y/core/pull/417), merged 2026-11-21; the rest were decided the same day and are being made on the branch `round-9-decisions`, not merged yet (below). Each fix has a regression test that fails on `main` before it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
+Every finding of rounds 1 to 8 is fixed, decided or closed (§3, §4). Of round 9's 61, the 48 evident ones are fixed in [#417](https://github.com/SureA11y/core/pull/417), merged 2026-11-21; the rest were decided the same day and made in [#418](https://github.com/SureA11y/core/pull/418), merged 2026-11-21 (below). Each fix has a regression test that fails on `main` before it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
 
 ### Still open
 
@@ -29,9 +29,8 @@ Every finding of rounds 1 to 8 is fixed, decided or closed (§3, §4). Of round 
 |---|---|---|---|
 | R8 (leftover) | `aria-valid-attr` copies a whole very long `aria-*` attribute name into its finding, where round 7 and 8 cut other quoted values (`quoteText`) | Low | [round 8 §3](./2026-11-stress-test-8.md#3-what-is-left) |
 | R8 (leftover) | Under jsdom, `getComputedStyle` dominates `duplicate-id-aria`'s time on big pages, now that the rule's own walk is linear (NW-5, RO-1) | Low | [round 8 §3](./2026-11-stress-test-8.md#3-what-is-left) |
-| R9 (lead) | `html-xml-lang-mismatch` fails an unknown `xml:lang` tag as a mismatch; needs a decision | Low | [round 9 §3](./2026-11-stress-test-9.md#3-what-is-left) |
 
-### Decided on 2026-11-21, pending (branch `round-9-decisions`)
+### Decided on 2026-11-21 (round 9, done in [#418](https://github.com/SureA11y/core/pull/418))
 
 | # | Question | Decision |
 |---|---|---|
@@ -50,6 +49,7 @@ Every finding of rounds 1 to 8 is fixed, decided or closed (§3, §4). Of round 
 | R9-2 (rest) | Focus inside a closed shadow root when `aria-hidden-focus` probes | The probe is skipped |
 | R9-8 | A fixed target's verdict depending on the scroll | Fixed and sticky targets judged apart from page targets; possible overlap asked about |
 | R9-9 | Page code running in the contrast probe frames | One helper frame reused per scan, and documented |
+| R9 (lead) | `html-xml-lang-mismatch` failing an `xml:lang` that names no known language (`english`) | Compared only when both attributes name a known language, as ACT 5b7ae0 asks of `lang` |
 
 N9-3 (rest), R9-6 and R9-10 (rest) were decided without a change to verdicts (§4).
 
@@ -922,8 +922,8 @@ Checked and decided. Don't reopen without new evidence.
 | # | Finding | Decision | Reason |
 |---|---|---|---|
 | N9-3 (rest) | `aria-hidden` on `<html>` or `<body>` skips the whole page, though Chromium ignores it there | No change (decided 2026-11-21) | The page stays hidden, as the author marked it; `aria-hidden-body` reports it, on `<html>` too since #417 |
-| R9-6 | `text-spacing-content-loss` quadratic with many broken or `src`-less images in Chromium | Documented only (decided 2026-11-21; doc on `round-9-decisions`) | The time is Chromium's own style recalculation |
-| R9-10 (rest) | Replaced built-ins beyond those probed (`getComputedStyle`…) can change verdicts | Stops at the language's built-ins, documented (decided 2026-11-21; doc on `round-9-decisions`) | #416 and #417 probe the built-ins found changing results; the DOM's own are out of scope |
+| R9-6 | `text-spacing-content-loss` quadratic with many broken or `src`-less images in Chromium | Documented only (decided 2026-11-21; documented in #418) | The time is Chromium's own style recalculation |
+| R9-10 (rest) | Replaced built-ins beyond those probed (`getComputedStyle`…) can change verdicts | Stops at the language's built-ins, documented (decided 2026-11-21; documented in #418) | #416 and #417 probe the built-ins found changing results; the DOM's own are out of scope |
 | R8:RO-6 | Custom elements overriding DOM members are read as they answer | Documented (#416, decided 2026-11-21) | The docs say such elements are read as they answer; working round every override is not attempted |
 | R3 (label-in-name speed) | label-in-name 276 to 448 ms over round 3's saved pages | Examined 2026-11-20, no change | About 5 ms a page over the 157 scenario pages and five large synthetic ones, mostly the scan's fixed cost; on a page of 2,000 product cards (8,000 named controls) 340 ms, linear, about 40 µs a control. Profiled in Chromium: the time is reading each control's visible text, accessible name, visibility and accessibility-tree eligibility, through shared helpers that already keep their answers per element; nothing is worked out and thrown away. Caching the rule's two visibility checks on top of them changed nothing measurable, and was dropped. A real gain would mean the shared name and visibility helpers, which every rule uses |
 | R6:CE-6 | A lean for a 2 by 2 table with no `<th>`, which IBM fails | No lean for plain text (decided 2026-11-20) | `td-has-header` already leans fail where a small table shows signs of data (numbers, a caption, a head, a first row or column drawn as headers); a table of plain short text looks the same as data and as layout (a navigation or contact block), so it is asked about with no lean |

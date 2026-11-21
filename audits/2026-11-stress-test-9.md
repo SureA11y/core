@@ -11,7 +11,7 @@ As in rounds 6 to 8, there is no `FINDINGS.md` per area; each area wrote a short
 | Accessible names, ARIA and landmarks | [`names-aria/`](./2026-11-probes-9/names-aria/) | N9 | jsdom, Chromium | 20 |
 | Robustness: side effects, speed, hostile pages | [`robust/`](./2026-11-probes-9/robust/) | R9 | Chromium, jsdom | 10 |
 
-That makes 61 findings: 3 High, 24 Medium, 6 Low to Medium and 28 Low. **48 were evident and are fixed** in [#417](https://github.com/SureA11y/core/pull/417), merged 2026-11-21 as `ad47fe3e` (one commit on `main`; unreleased, for 1.18.0). The other 13, and the second part of five fixed ones (V9-7, N9-3, N9-5, R9-2, R9-10), needed a decision: 18 in all; the owner took them on 2026-11-21, and they are being made on the branch `round-9-decisions`, not merged yet (§2). One more lead, not numbered, is left open (§3).
+That makes 61 findings: 3 High, 24 Medium, 6 Low to Medium and 28 Low. **48 were evident and are fixed** in [#417](https://github.com/SureA11y/core/pull/417), merged 2026-11-21 as `ad47fe3e` (one commit on `main`; unreleased, for 1.18.0). The other 13, and the second part of five fixed ones (V9-7, N9-3, N9-5, R9-2, R9-10), needed a decision: 18 in all; the owner took them on 2026-11-21, and they are made in [#418](https://github.com/SureA11y/core/pull/418), merged the same day as `48cb9157` (§2). One more lead, not numbered, was decided and made there too (§3).
 
 **Basis**
 - The round 8 branch at `805f33ff`; `main` at `254b644f` and v1.17.0 (`b893e1b7`) for the classification below.
@@ -116,7 +116,7 @@ Ordered by area, most damaging first. *Fixed* means #417; *decided* is in §2.
 
 ## 2. Decisions taken
 
-All taken by the owner on 2026-11-21. They are being made on the branch `round-9-decisions`, **not merged yet**; the register records them as decided, pending.
+All taken by the owner on 2026-11-21. All are made in [#418](https://github.com/SureA11y/core/pull/418), merged 2026-11-21 as `48cb9157`, each with a test that fails on `main` before it.
 
 - **A9-4:** a regional locale falls back `de-AT` → `de` → `en`.
 - **A9-10:** with no HTML, the baseline key falls back to the selector.
@@ -139,5 +139,5 @@ All taken by the owner on 2026-11-21. They are being made on the branch `round-9
 
 ## 3. What is left
 
-- **`html-xml-lang-mismatch` with an unknown `xml:lang` tag** fails, as a mismatch (names area, unnumbered, Low, *decision*; always there). No decision was asked for; it stays open in the register.
-- The decisions of §2, until `round-9-decisions` is merged.
+- **`html-xml-lang-mismatch` with an unknown `xml:lang` tag** failed, as a mismatch (names area, unnumbered, Low; always there). Decided on 2026-11-21 and made in [#418](https://github.com/SureA11y/core/pull/418): the two attributes are compared only when both name a known language.
+- Nothing else: every finding of this round is fixed or decided.
