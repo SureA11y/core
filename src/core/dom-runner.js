@@ -2370,6 +2370,18 @@ function runCore(
           : typeof document !== 'undefined' && document
             ? dom.defaultView(document)
             : null;
+      // The contrast helpers' blank frames, kept for the run
+      // (__openProbeFrame), go with it.
+      const shared = w && w.__a11ycoreSharedCache;
+      const frames = shared && shared.contrast && shared.contrast.probeFrames;
+      if (Array.isArray(frames)) {
+        for (const entry of frames) {
+          try {
+            const parent = entry && entry.holder ? dom.parentNode(entry.holder) : null;
+            if (parent) dom.removeChild(parent, entry.holder);
+          } catch {}
+        }
+      }
       if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
     } catch {}
   }
