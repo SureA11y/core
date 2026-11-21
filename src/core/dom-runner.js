@@ -2456,6 +2456,15 @@ function runCoreSettled(
     engineOptions.timeBudgetMs > 0
       ? engineOptions.timeBudgetMs
       : null;
+  // A scan of several profiles whose budget ran out before this profile's
+  // scan started asks it to start no rule, so it lists its selection in
+  // notRun (runProfilesUncapped). Set by the engine only, not enumerable.
+  const budgetSpent = !!(
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent') &&
+    engineOptions.__budgetSpent === true
+  );
   const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
   // for a key that looks like a typo of a known one.
@@ -3486,7 +3495,7 @@ function runCoreSettled(
     if (typeof impl !== 'function') continue;
     // Past the time budget, a rule is not started: listed, so the scan never
     // reads as one that checked it.
-    if (timeBudgetMs !== null && nowMs() - scanStartMs >= timeBudgetMs) {
+    if (budgetSpent || (timeBudgetMs !== null && nowMs() - scanStartMs >= timeBudgetMs)) {
       notRunRules.push({ ruleId: defResolved.ruleId, reason: 'timeBudget' });
       continue;
     }
@@ -3863,7 +3872,10 @@ function runCoreSettled(
       console.warn(
         '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
           timeBudgetMs +
-          ' ms and did not run ' +
+          (budgetSpent
+            ? ' ms before profile "' + String(engineOptions.profile) + '" started, so it'
+            : ' ms and') +
+          ' did not run ' +
           notRunRules.length +
           ' rule' +
           (notRunRules.length === 1 ? '' : 's') +

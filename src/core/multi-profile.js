@@ -240,10 +240,27 @@ function runProfilesUncapped(engineOptions, run) {
       }
       const left = budget === null ? null : budget - (clock() - started);
       if (left !== null && i > 0 && left <= 0) {
-        const skipped = {};
-        Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
-        runs.push({ profile: unique[i], result: skipped });
-        return step(i + 1);
+        // Not run, but its rules are listed in notRun, as a profile's scan
+        // that ran out lists those it did not start: its scan is asked to
+        // start none (__budgetSpent), which only works out its selection.
+        const dryOptions = Object.assign({}, engineOptions, { profile: unique[i] });
+        Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        const skippedOf = (dry) => {
+          const skipped = {};
+          Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
+          const applied = dry && dry.engine ? dry.engine.profile : undefined;
+          const ids =
+            typeof applied === 'string' &&
+            lowerAscii(applied) === lowerAscii(unique[i]) &&
+            Array.isArray(dry.notRun)
+              ? dry.notRun.filter((n) => n && n.ruleId).map((n) => n.ruleId)
+              : [];
+          Object.defineProperty(skipped, '__rulesNotRun', { value: ids });
+          runs.push({ profile: unique[i], result: skipped });
+          return step(i + 1);
+        };
+        const dry = run(dryOptions);
+        return thenable(dry) ? dry.then(skippedOf) : skippedOf(dry);
       }
       const result = run(
         Object.assign(
@@ -765,10 +782,17 @@ function mergeProfileResults(runs, asked, allowFail = true) {
   if (!oneLaw) delete engine.law;
   // The rules a profile's scan did not start, and the profiles not started,
   // for the time budget: the merged scan is incomplete.
+  // A profile the budget left unstarted lists every rule of its selection.
   const rulesNotRun = [];
-  for (const r of ran) {
-    for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
-      if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+  for (const r of runs) {
+    if (ran.includes(r)) {
+      for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
+        if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+      }
+    } else if (r.result && Array.isArray(r.result.__rulesNotRun)) {
+      for (const ruleId of r.result.__rulesNotRun) {
+        rulesNotRun.push({ ruleId, reason: 'timeBudget', profile: r.profile });
+      }
     }
   }
   const budgetProfiles = notRun.filter((n) => n.reason === 'timeBudget');
