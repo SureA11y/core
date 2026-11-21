@@ -965,11 +965,14 @@ function rollupCompositeResults(
           const unselected =
             added && !inSet(adding.selectedIds, tid) && !profileExcluded.includes(tid);
           if (unselected) notSelectedCount += 1;
+          // Selected and not started: the scan's time budget ran out.
+          const notRun = !!adding && inSet(adding.notRunIds, tid);
           contributors.push({
             testId: tid,
             outcome: 'missing',
             ...custom,
-            ...(unselected ? { notSelected: true } : {})
+            ...(unselected ? { notSelected: true } : {}),
+            ...(notRun ? { notRun: 'timeBudget' } : {})
           });
           continue;
         }
@@ -2441,6 +2444,19 @@ function runCoreSettled(
   COMPOSITE_RULES
 ) {
   const dom = createSafeDom();
+  // engineOptions.timeBudgetMs: once the scan has spent this long, it starts
+  // no more rules, and lists those it didn't start (notRun). Read only when
+  // it is a number above 0; enforceEngineOptions says anything else.
+  const scanStartMs = nowMs();
+  const timeBudgetMs =
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    typeof engineOptions.timeBudgetMs === 'number' &&
+    Number.isFinite(engineOptions.timeBudgetMs) &&
+    engineOptions.timeBudgetMs > 0
+      ? engineOptions.timeBudgetMs
+      : null;
+  const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
   // for a key that looks like a typo of a known one.
   enforceEngineOptions(engineOptions);
@@ -3468,6 +3484,12 @@ function runCoreSettled(
     const applicabilityFn =
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
+    // Past the time budget, a rule is not started: listed, so the scan never
+    // reads as one that checked it.
+    if (timeBudgetMs !== null && nowMs() - scanStartMs >= timeBudgetMs) {
+      notRunRules.push({ ruleId: defResolved.ruleId, reason: 'timeBudget' });
+      continue;
+    }
 
     const callerConfig = callerRuleConfig[defResolved.ruleId] || null;
     // A rule's declared settings (contrast-minimum's thresholds) are its
@@ -3828,8 +3850,27 @@ function runCoreSettled(
     ENGINE_TAG,
     SCHEMA_VERSION,
     resolvedCustom.defs,
-    { wcagVersion: targetWcagVersion, selectedIds, namedIds, namedCriteria }
+    {
+      wcagVersion: targetWcagVersion,
+      selectedIds,
+      namedIds,
+      namedCriteria,
+      notRunIds: notRunRules.map((n) => n.ruleId)
+    }
   );
+  if (notRunRules.length) {
+    try {
+      console.warn(
+        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
+          timeBudgetMs +
+          ' ms and did not run ' +
+          notRunRules.length +
+          ' rule' +
+          (notRunRules.length === 1 ? '' : 's') +
+          ' (result.notRun); its result is incomplete.'
+      );
+    } catch {}
+  }
 
   // A custom rule keeps exactly the mappings it declares; every other result
   // drops the standards this run did not ask for.
@@ -4067,6 +4108,16 @@ function runCoreSettled(
         : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {}),
       ...(findingsOnly ? { outputDetail: 'findings' } : {}),
+      // A scan that did not run every rule it selected: never a clean one.
+      ...(notRunRules.length
+        ? {
+            incomplete: {
+              reason: 'timeBudget',
+              timeBudgetMs,
+              rulesNotRun: notRunRules.length
+            }
+          }
+        : {}),
       environment
     },
     url,
@@ -4079,7 +4130,8 @@ function runCoreSettled(
     rulesResults,
     ...(standards.length ? { standards } : {}),
     overriddenBuiltinIds,
-    skippedCustomRules
+    skippedCustomRules,
+    ...(notRunRules.length ? { notRun: notRunRules } : {})
   };
 }
 

@@ -1,0 +1,236 @@
+'use strict';
+
+// engineOptions.timeBudgetMs: once a scan has spent that long, it starts no
+// more rules, lists those it didn't start (notRun) and says it is incomplete
+// (engine.incomplete); no reporter or gate reads such a scan as clean.
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { pathToFileURL } = require('node:url');
+const { JSDOM } = require('jsdom');
+
+const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
+const { checkEngineOptions } = require('../src/core/engine-options.js');
+const { consoleHelpers } = require('../src/core/console-helpers.js');
+const { renderSarifReport } = require('../src/sarif.js');
+const { renderJunitReport } = require('../src/junit.js');
+const { renderHtmlReport } = require('../src/report.js');
+const { renderEarlReport } = require('../src/earl.js');
+const { matchBaseline, buildBaselineEntries } = require('../src/baseline.js');
+
+// A clean page: every rule that runs passes or doesn't apply.
+const PAGE =
+  '<!doctype html><html lang="en"><head><title>Home</title></head><body><main><h1>Home</h1><p>Hello.</p></main></body></html>';
+// Spent before the first rule starts, whatever the machine.
+const NONE_LEFT = 1e-9;
+
+function quietly(fn) {
+  const warn = console.warn;
+  const said = [];
+  console.warn = (...args) => said.push(args.join(' '));
+  try {
+    return { value: fn(), said };
+  } finally {
+    console.warn = warn;
+  }
+}
+
+function scan(engineOptions, runOnly) {
+  return quietly(() => runa11yCoreOnHtml(PAGE, { engineOptions, runOnly }));
+}
+
+const RUN_ONLY = { includeRuleIds: ['page-title-present', 'html-lang-attr-present'] };
+
+test('timeBudgetMs takes a number of milliseconds above 0, and nothing else', () => {
+  assert.deepEqual(checkEngineOptions({ timeBudgetMs: 250 }), []);
+  assert.deepEqual(checkEngineOptions({ timeBudgetMs: 0.5 }), []);
+  for (const bad of [0, -1, '250', NaN, Infinity, null, true]) {
+    const problems = checkEngineOptions({ timeBudgetMs: bad });
+    assert.equal(problems.length, 1, String(bad));
+    assert.equal(problems[0].kind, 'invalid');
+    assert.match(problems[0].message, /timeBudgetMs must be a number of milliseconds, more than 0/);
+  }
+});
+
+test('under strictOptions an invalid timeBudgetMs throws; otherwise it is warned about and ignored', () => {
+  assert.throws(
+    () => runa11yCoreOnHtml(PAGE, { engineOptions: { strictOptions: true, timeBudgetMs: 0 } }),
+    (err) => err.code === 'INVALID_ENGINE_OPTIONS' && /timeBudgetMs/.test(err.message)
+  );
+  const { value: result, said } = scan({ timeBudgetMs: -5 }, RUN_ONLY);
+  assert.ok(said.some((s) => /timeBudgetMs must be .*; ignored\./.test(s)));
+  assert.equal(result.engine.incomplete, undefined);
+  assert.equal(result.notRun, undefined);
+  assert.equal(result.checksResults.length, 2);
+});
+
+test('a scan within its budget is as without one', () => {
+  const plain = scan({}, RUN_ONLY).value;
+  const { value: budgeted, said } = scan({ timeBudgetMs: 1e9 }, RUN_ONLY);
+  assert.deepEqual(said, []);
+  assert.equal(budgeted.engine.incomplete, undefined);
+  assert.equal('notRun' in budgeted, false);
+  assert.deepEqual(
+    budgeted.checksResults.map((c) => [c.ruleId, c.outcome]),
+    plain.checksResults.map((c) => [c.ruleId, c.outcome])
+  );
+});
+
+test('a scan past its budget starts no more rules, lists them and says it is incomplete', () => {
+  const { value: result, said } = scan({ timeBudgetMs: NONE_LEFT }, RUN_ONLY);
+  assert.deepEqual(result.checksResults, []);
+  assert.deepEqual(result.notRun.map((n) => [n.ruleId, n.reason]).sort(), [
+    ['html-lang-attr-present', 'timeBudget'],
+    ['page-title-present', 'timeBudget']
+  ]);
+  assert.deepEqual(result.engine.incomplete, {
+    reason: 'timeBudget',
+    timeBudgetMs: NONE_LEFT,
+    rulesNotRun: 2
+  });
+  assert.ok(said.some((s) => /time budget .* did not run 2 rules/.test(s)));
+  // No rollup passes: each misses a rule, marked as not run.
+  const target = scan({ timeBudgetMs: NONE_LEFT }, { wcag: { version: '2.2', level: 'A' } }).value;
+  assert.ok(target.rulesResults.length > 0);
+  for (const rollup of target.rulesResults) {
+    assert.equal(rollup.outcome, 'cantTell', rollup.ruleId);
+    const contributors = rollup.data.details.contributors;
+    assert.ok(contributors.some((c) => c.outcome === 'missing' && c.notRun === 'timeBudget'));
+  }
+});
+
+test('in a scan of several profiles the budget is the whole scan’s', () => {
+  const { value: result } = scan({ timeBudgetMs: NONE_LEFT, profile: ['wcag22-aa', 'wcag21-aa'] });
+  assert.deepEqual(result.engine.profiles, ['wcag22-aa']);
+  assert.deepEqual(result.engine.profilesNotRun, [{ profile: 'wcag21-aa', reason: 'timeBudget' }]);
+  assert.equal(result.engine.incomplete.reason, 'timeBudget');
+  assert.equal(result.engine.incomplete.timeBudgetMs, NONE_LEFT);
+  assert.equal(result.engine.incomplete.profilesNotRun, 1);
+  assert.equal(result.engine.incomplete.rulesNotRun, result.notRun.length);
+  assert.ok(result.notRun.length > 0);
+  assert.ok(result.notRun.every((n) => n.profile === 'wcag22-aa' && n.reason === 'timeBudget'));
+
+  const roomy = scan({ timeBudgetMs: 1e9, profile: ['wcag22-aa', 'wcag21-aa'] }).value;
+  assert.equal(roomy.engine.incomplete, undefined);
+  assert.equal(roomy.notRun, undefined);
+  assert.deepEqual(roomy.engine.profiles, ['wcag22-aa', 'wcag21-aa']);
+});
+
+function cutShort() {
+  return scan({ timeBudgetMs: NONE_LEFT }, RUN_ONLY).value;
+}
+
+test('SARIF: each rule not run is an error notification, and the run is not successful', () => {
+  const sarif = JSON.parse(renderSarifReport(cutShort()));
+  const invocation = sarif.runs[0].invocations[0];
+  assert.equal(invocation.executionSuccessful, false);
+  const notes = invocation.toolExecutionNotifications.filter((n) =>
+    /was not run: the scan reached its time budget/.test(n.message.text)
+  );
+  assert.deepEqual(notes.map((n) => [n.level, n.associatedRule.id]).sort(), [
+    ['error', 'html-lang-attr-present'],
+    ['error', 'page-title-present']
+  ]);
+});
+
+test('SARIF and JUnit: a profile the budget left unstarted is an error even with allowProfilesNotRun', () => {
+  const { value: result } = scan({ timeBudgetMs: NONE_LEFT, profile: ['wcag22-aa', 'wcag21-aa'] });
+  const sarif = JSON.parse(renderSarifReport(result, { allowProfilesNotRun: true }));
+  const invocation = sarif.runs[0].invocations[0];
+  assert.equal(invocation.executionSuccessful, false);
+  const profileNote = invocation.toolExecutionNotifications.find((n) =>
+    /profile wcag21-aa was asked for and not run/.test(n.message.text)
+  );
+  assert.equal(profileNote.level, 'error');
+  const xml = renderJunitReport(result, { allowProfilesNotRun: true });
+  assert.match(xml, /<testcase classname="profile" name="wcag21-aa" time="0">\s*<error /);
+});
+
+test('JUnit: each rule not run is an error test case, so the build is not green', () => {
+  const xml = renderJunitReport(cutShort());
+  assert.match(xml, /<testsuites name="surea11y" tests="\d+" failures="0" errors="2"/);
+  assert.match(xml, /<testsuite name="Rules not run" tests="2" failures="0" errors="2"/);
+  assert.match(xml, /<property name="timeBudgetMs" value="1e-9"\/>/);
+  assert.match(xml, /<property name="incomplete" value="timeBudget"\/>/);
+  assert.match(
+    xml,
+    /<testcase classname="not-run" name="page-title-present" time="0">\s*<error type="timeBudget" message="Not run: the scan reached its time budget/
+  );
+});
+
+test('HTML report: says the scan is incomplete, names the rules, and counts them', () => {
+  const html = renderHtmlReport(cutShort(), { manualChecks: false });
+  assert.match(html, /<p class="incomplete" role="note">Incomplete scan: its time budget of/);
+  assert.match(
+    html,
+    /Not run \(2\): (page-title-present, html-lang-attr-present|html-lang-attr-present, page-title-present)/
+  );
+  assert.match(html, /<div><b>2<\/b>rules not run<\/div>/);
+  const de = renderHtmlReport(scan({ timeBudgetMs: NONE_LEFT, locale: 'de' }, RUN_ONLY).value, {
+    manualChecks: false
+  });
+  assert.match(de, /Unvollständiger Scan/);
+  // A complete scan says nothing of the kind.
+  const complete = renderHtmlReport(scan({}, RUN_ONLY).value, { manualChecks: false });
+  assert.doesNotMatch(complete, /class="incomplete"/);
+});
+
+test('EARL: a rule not run is asserted earl:untested', () => {
+  const earl = renderEarlReport(cutShort());
+  const outcomes = earl['@graph'][0].assertions.map((a) => [a.test.title, a.result.outcome]);
+  assert.deepEqual(outcomes.sort(), [
+    ['html-lang-attr-present', 'earl:untested'],
+    ['page-title-present', 'earl:untested']
+  ]);
+});
+
+test('matchBaseline: an incomplete scan says so, so no new failure is not clean', () => {
+  const result = cutShort();
+  const match = matchBaseline(result, buildBaselineEntries(result));
+  assert.equal(match.newCount, 0);
+  assert.deepEqual(match.incomplete.notRun.sort(), [
+    'html-lang-attr-present',
+    'page-title-present'
+  ]);
+  assert.equal('incomplete' in matchBaseline(scan({}, RUN_ONLY).value, []), false);
+});
+
+test('console helpers: table() lists each rule not run and warns that the scan is incomplete', () => {
+  const said = [];
+  const global = { console: { table: () => {}, warn: (m) => said.push(m) } };
+  const helpers = consoleHelpers(global, {}, null);
+  const rows = helpers.table(cutShort());
+  assert.deepEqual(rows.map((r) => [r.outcome, r.rule]).sort(), [
+    ['notRun', 'html-lang-attr-present'],
+    ['notRun', 'page-title-present']
+  ]);
+  assert.ok(said.some((s) => /This scan is incomplete/.test(s)));
+});
+
+test('the browser bundle honors timeBudgetMs', async () => {
+  const src = pathToFileURL(path.join(__dirname, '..', 'surea11y.browser.js')).href;
+  const dom = await new Promise((resolve, reject) => {
+    const d = new JSDOM(PAGE.replace('</body>', `<script src="${src}"></script></body>`), {
+      url: 'https://example.test/',
+      runScripts: 'dangerously',
+      resources: 'usable'
+    });
+    d.window.addEventListener('load', () => resolve(d));
+    d.window.addEventListener('error', (e) => reject(e.error));
+  });
+  try {
+    const { value: result } = quietly(() =>
+      dom.window.a11ycore.runa11yCoreInPage(null, null, { timeBudgetMs: NONE_LEFT }, RUN_ONLY)
+    );
+    assert.equal(result.engine.incomplete.reason, 'timeBudget');
+    assert.equal(result.notRun.length, 2);
+    const { value: full } = quietly(() =>
+      dom.window.a11ycore.runa11yCoreInPage(null, null, { timeBudgetMs: 1e9 }, RUN_ONLY)
+    );
+    assert.equal(full.engine.incomplete, undefined);
+    assert.equal(full.checksResults.length, 2);
+  } finally {
+    dom.window.close();
+  }
+});
