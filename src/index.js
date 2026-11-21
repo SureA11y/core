@@ -342,8 +342,50 @@ function getTestsForRunOnly(runOnly, engineOptions) {
     : core.getTestsForRunOnly(runOnly, engineOptions);
 }
 
+// Every name is listed, each as a plain identifier: Node's ESM loader finds
+// a CommonJS module's named exports by reading this object literal, and a
+// spread (...core) or a member (core.ENGINE_TAG) hides the names from it, so
+// `import { CHECK_DEFS } from '@surea11y/core'` failed (round 9, A9-1).
+const {
+  ENGINE_TAG,
+  SCHEMA_VERSION,
+  DEFAULT_POLICY,
+  POLICY_CONTRACTS,
+  resolvePolicy,
+  CHECK_DEFS,
+  TEST_DEFS,
+  COMPOSITE_RULES,
+  getLocaleCoverage,
+  getProfileWcagTarget,
+  runa11yCoreInPage,
+  runa11yCoreAcrossFrames,
+  a11yCoreEnableFrameResponder,
+  waitForPageReady,
+  preloadStyleSheets,
+  getMargins,
+  getAnnouncements,
+  __internal
+} = core;
+
 module.exports = {
-  ...core,
+  ENGINE_TAG,
+  SCHEMA_VERSION,
+  DEFAULT_POLICY,
+  POLICY_CONTRACTS,
+  resolvePolicy,
+  CHECK_DEFS,
+  TEST_DEFS,
+  COMPOSITE_RULES,
+  getLocaleCoverage,
+  getProfileWcagTarget,
+  runa11yCoreInPage,
+  runa11yCoreAcrossFrames,
+  a11yCoreEnableFrameResponder,
+  waitForPageReady,
+  preloadStyleSheets,
+  getMargins,
+  getAnnouncements,
+  __internal,
   getCheckDefById,
   getChecksCatalog,
   getRulesCatalog,
