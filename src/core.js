@@ -17133,6 +17133,42 @@ const createDomHelpers = (function createDomHelpers(opts) {
     anchor: 'link'
   };
 
+  // Whether an <object> or <embed> loads a resource that is not an image,
+  // audio or video (an HTML page, a PDF, text), or Flash, which no current
+  // browser runs (support ended in 2021): such a resource renders no
+  // non-text content of its own, so 1.1.1 asks nothing of the element (ACT
+  // 8fc3b6's applicability). Read from the `type` attribute, or failing that
+  // the resource URL's file extension (`data` on an object, `src` on an
+  // embed). Only types markup makes known count: an unknown or missing
+  // extension returns false, since the resource may well be an image.
+  const NON_MEDIA_EXTENSIONS = new Set([
+    'htm',
+    'html',
+    'xhtml',
+    'xht',
+    'shtml',
+    'php',
+    'asp',
+    'aspx',
+    'jsp',
+    'txt',
+    'xml',
+    'json',
+    'pdf',
+    'csv',
+    'swf'
+  ]);
+  function embedsNonMedia(type, url) {
+    const t = String(type || '')
+      .trim()
+      .toLowerCase()
+      .split(';')[0]
+      .trim();
+    if (t) return !/^(image|audio|video)\//.test(t);
+    const m = /\.([a-z0-9]+)$/i.exec(String(url || '').split(/[?#]/)[0]);
+    return !!(m && NON_MEDIA_EXTENSIONS.has(m[1].toLowerCase()));
+  }
+
   // A role attribute that gives an element no role because none of its
   // tokens is an ARIA role (role="buton", role="menu-item"): the attribute
   // as written, and the role its first near token misspells ('' when none
@@ -24260,6 +24296,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     nearestRole,
     nearestAriaAttr,
     roleTypo,
+    embedsNonMedia,
     describeElement,
     describeMarkup,
     getTextFromIdRefsIdrefEligible,
@@ -70154,8 +70191,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function collectOwnedRoles(el, out, depth, requiredSet) {
+    collectFromKids(childElementsOf(el), out, depth, requiredSet);
+  }
+
+  function collectFromKids(kids, out, depth, requiredSet) {
     if (depth > MAX_DEPTH) return;
-    const kids = childElementsOf(el);
     for (const kid of kids) {
       if (!kid || dom.nodeType(kid) !== 1) continue;
       if (!isEligibleAcc(kid)) continue;
@@ -70211,25 +70251,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
 
       if (!kidRole) {
-        // A roleless wrapper is NOT removed from the accessibility tree: it is
-        // exposed as a generic node, so strictly speaking nothing inside it is
-        // this container's child at all. The walk descends anyway, because a
-        // component library routinely buries the real item several roleless
-        // levels down (an Angular Material card whose radio sits at
-        // card > header > mat-radio-button > div > div > input[type=radio]),
-        // and refusing to descend would report every such container as
-        // missing its items.
-        //
-        // That leniency has to run one way only. If the wrapper turns out to
-        // hold a required item, the wrapper is an item wrapper and everything
-        // else inside it is the ITEM's content, not the container's children:
-        // a mat-divider sitting in the card body beside the radio is not an
-        // owned child of the radiogroup, and reporting it as one is a false
-        // positive on ordinary component markup. Only the items are collected
-        // in that case. A wrapper holding no item at all is pure interposed
-        // content, so everything found in it is still reported.
+        // A roleless wrapper with no name (no aria-* attribute, which the
+        // branch above reports, and no title) and no focus is a generic
+        // element the accessibility tree leaves out, so whatever it holds is
+        // this container's child: everything found in it is collected
+        // (header comment; ACT bc4a75).
         const nested = [];
         collectOwnedRoles(kid, nested, depth + 1, requiredSet);
+        const title = dom.getAttribute(kid, 'title');
+        if (title == null || !String(title).trim()) {
+          for (const entry of nested) out.push(entry);
+          continue;
+        }
+        // A wrapper with a title is exposed as a named generic node: strictly
+        // nothing in it is this container's child. The walk still descends
+        // to reach the items a component library buries there, and when it
+        // holds one, only the items are collected; one holding no item is
+        // interposed content, and everything in it is reported.
         const items = nested.filter((entry) => entry.role && requiredSet.has(entry.role));
         for (const entry of items.length ? items : nested) out.push(entry);
         continue;
@@ -70272,6 +70310,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const allowedSet = new Set(allowedRoles);
     const owned = [];
     collectOwnedRoles(el, owned, 0, requiredSet);
+    // The elements aria-owns adds to the container are its children too
+    // (header comment); one already found in the DOM subtree counts once.
+    const ownsAttr = dom.getAttribute(el, 'aria-owns');
+    if (ownsAttr && helpers.resolveIdRefs) {
+      const resolved = helpers.resolveIdRefs(ownsAttr, ctx, { maxRefs: 50 }, el);
+      const seen = new Set(owned.map((entry) => entry.el));
+      const refs = (resolved.refs || []).filter(
+        (ref) => ref && !seen.has(ref) && !dom.contains(ref, el)
+      );
+      collectFromKids(refs, owned, 0, requiredSet);
+    }
 
     for (const entry of owned) {
       if (entry.role && allowedSet.has(entry.role)) continue;
@@ -83475,7 +83524,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     /\b(?:pause|stop|hide|freeze|arr[eê]ter|arr[eê]t|masquer|cacher|pausieren|anhalten|stopp|ausblenden|verbergen|pausa|pausar|detener|parar|ocultar)\b|一時停止|停止|止める|非表示/i;
   const CONTROL_SELECTOR =
     'button, input[type="button" i], input[type="submit" i], input[type="image" i], a[href], [role~="button" i], [role~="switch" i], [role~="link" i]';
-  const SCRIPT_STOP = /\.\s*stop\s*\(|\.\s*start\s*\(|marquee/i;
+  // A call to stop() or start(), and the ways a script reaches a marquee
+  // (header): by tag here, by id in reachesMarquee.
+  const STOP_CALL = /\.\s*(?:stop|start)\s*\(/;
+  const MARQUEE_BY_TAG =
+    /getElementsByTagName\s*\(\s*['"`]marquee['"`]|querySelector(?:All)?\s*\(\s*['"`][^'"`]*\bmarquee\b/i;
+  // The engine's own script, injected inline by the page (a script tag holding
+  // the bundle): what it says about marquees is the engine's, not the page's.
+  const isEngineScript = (text) => text.includes('runa11yCoreInPage') && text.includes('a11ycore');
   const HANDLER_ATTRS = ['onclick', 'onkeydown', 'onkeyup', 'onkeypress', 'onchange', 'onfocus'];
 
   const withLean = (lean) => (lean ? { lean } : {});
@@ -83501,10 +83557,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         break;
       }
     }
+    // The ids of the marquees in scope, as a script may name them.
+    const ids = [];
+    for (const m of nodes) {
+      const mid = String(dom.getAttribute(m, 'id') || '').trim();
+      if (mid) ids.push(mid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    }
+    const byId = ids.length
+      ? new RegExp(
+          '[\'"`#](?:' +
+            ids.join('|') +
+            ')[\'"`]|(?:^|[^\\w$.-])(?:' +
+            ids.join('|') +
+            ')\\s*\\.\\s*(?:stop|start)\\s*\\('
+        )
+      : null;
+    const reachesMarquee = (text) => MARQUEE_BY_TAG.test(text) || !!(byId && byId.test(text));
     let stopCall = false;
     const handlerSelector = HANDLER_ATTRS.map((a) => '[' + a + ']').join(', ');
     for (const h of helpers.queryAll(handlerSelector) || []) {
-      if (HANDLER_ATTRS.some((a) => SCRIPT_STOP.test(String(dom.getAttribute(h, a) || '')))) {
+      const onMarquee = String(dom.localName(h) || '').toLowerCase() === 'marquee';
+      const calls = HANDLER_ATTRS.some((a) => {
+        const text = String(dom.getAttribute(h, a) || '');
+        if (!STOP_CALL.test(text)) return false;
+        return (
+          reachesMarquee(text) || (onMarquee && /\bthis\s*\.\s*(?:stop|start)\s*\(/.test(text))
+        );
+      });
+      if (calls) {
         stopCall = true;
         break;
       }
@@ -83512,7 +83592,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!stopCall) {
       const doc = dom.ownerDocument(nodes[0]) || ctx.document;
       for (const sc of dom.querySelectorAll(doc, 'script:not([src])') || []) {
-        if (SCRIPT_STOP.test(String(dom.textContent(sc) || ''))) {
+        const text = String(dom.textContent(sc) || '');
+        if (isEngineScript(text)) continue;
+        if (STOP_CALL.test(text) && reachesMarquee(text)) {
           stopCall = true;
           break;
         }
@@ -84526,6 +84608,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         helpers.isPresentationalRoleIgnored(el);
       if (!focusable && !keptByGlobal) continue;
     }
+
+    // A page, a document or Flash renders no non-text content (header).
+    if (
+      typeof helpers.embedsNonMedia === 'function' &&
+      helpers.embedsNonMedia(dom.getAttribute(el, 'type'), dom.getAttribute(el, 'src'))
+    )
+      continue;
 
     applicableCount += 1;
 
@@ -104591,39 +104680,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "object-text-alternative-present": { run: (function runInPage(ctx) {
-  // Types an object can embed that are not image, audio or video. Only types
-  // known from markup count: an unknown or missing extension leaves the object
-  // in scope, since it may well be an image.
-  const NON_MEDIA_EXTENSIONS = new Set([
-    'htm',
-    'html',
-    'xhtml',
-    'xht',
-    'shtml',
-    'php',
-    'asp',
-    'aspx',
-    'jsp',
-    'txt',
-    'xml',
-    'json',
-    'pdf',
-    'csv',
-    // Flash: no current browser runs it, so only the fallback shows.
-    'swf'
-  ]);
-
-  function embedsNonMedia(type, data) {
-    const t = String(type || '')
-      .trim()
-      .toLowerCase()
-      .split(';')[0]
-      .trim();
-    if (t) return !/^(image|audio|video)\//.test(t);
-    const m = /\.([a-z0-9]+)$/i.exec(String(data || '').split(/[?#]/)[0]);
-    return !!(m && NON_MEDIA_EXTENSIONS.has(m[1].toLowerCase()));
-  }
-
   const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -104742,7 +104798,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (elig && elig.eligible === false) continue;
     }
 
-    if (embedsNonMedia(dom.getAttribute(el, 'type'), dom.getAttribute(el, 'data'))) continue;
+    if (
+      typeof helpers.embedsNonMedia === 'function' &&
+      helpers.embedsNonMedia(dom.getAttribute(el, 'type'), dom.getAttribute(el, 'data'))
+    )
+      continue;
 
     // role presentation/none exclusion only when not focusable
     // The resolved role: the attribute's first known, non-abstract token,
@@ -111036,6 +111096,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Whether the content measurably fits the box on both axes, whatever the
+  // CSS lets scroll: false where it can't be measured (jsdom).
+  function measuredToFit(el) {
+    if (!geometry) return false;
+    try {
+      const dx = Number(dom.get(el, 'scrollWidth')) - Number(dom.get(el, 'clientWidth'));
+      const dy = Number(dom.get(el, 'scrollHeight')) - Number(dom.get(el, 'clientHeight'));
+      return Number.isFinite(dx) && Number.isFinite(dy) && dx <= 2 && dy <= 2;
+    } catch {
+      return false;
+    }
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -111048,6 +111121,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       if (dom.matches(el, 'textarea:disabled')) continue;
     } catch {}
+    // Measured to have nothing to scroll (header; ACT 0ssw9k).
+    if (measuredToFit(el)) continue;
 
     applicableCount += 1;
 
@@ -111094,6 +111169,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               }
             }
           : {
+              // It fits on the axes that scroll, and overflows only on one
+              // that does not (overflow: hidden), else it is not applicable.
               toward: 'pass',
               why: 'Its content fits the box, so there is nothing to scroll.',
               signals: [{ signal: 'overflow-px', value: Math.round(overflow) }],
@@ -149635,6 +149712,42 @@ const createDomHelpers = (function createDomHelpers(opts) {
     anchor: 'link'
   };
 
+  // Whether an <object> or <embed> loads a resource that is not an image,
+  // audio or video (an HTML page, a PDF, text), or Flash, which no current
+  // browser runs (support ended in 2021): such a resource renders no
+  // non-text content of its own, so 1.1.1 asks nothing of the element (ACT
+  // 8fc3b6's applicability). Read from the `type` attribute, or failing that
+  // the resource URL's file extension (`data` on an object, `src` on an
+  // embed). Only types markup makes known count: an unknown or missing
+  // extension returns false, since the resource may well be an image.
+  const NON_MEDIA_EXTENSIONS = new Set([
+    'htm',
+    'html',
+    'xhtml',
+    'xht',
+    'shtml',
+    'php',
+    'asp',
+    'aspx',
+    'jsp',
+    'txt',
+    'xml',
+    'json',
+    'pdf',
+    'csv',
+    'swf'
+  ]);
+  function embedsNonMedia(type, url) {
+    const t = String(type || '')
+      .trim()
+      .toLowerCase()
+      .split(';')[0]
+      .trim();
+    if (t) return !/^(image|audio|video)\//.test(t);
+    const m = /\.([a-z0-9]+)$/i.exec(String(url || '').split(/[?#]/)[0]);
+    return !!(m && NON_MEDIA_EXTENSIONS.has(m[1].toLowerCase()));
+  }
+
   // A role attribute that gives an element no role because none of its
   // tokens is an ARIA role (role="buton", role="menu-item"): the attribute
   // as written, and the role its first near token misspells ('' when none
@@ -156762,6 +156875,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     nearestRole,
     nearestAriaAttr,
     roleTypo,
+    embedsNonMedia,
     describeElement,
     describeMarkup,
     getTextFromIdRefsIdrefEligible,

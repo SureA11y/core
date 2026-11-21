@@ -281,8 +281,8 @@
       "fixtureFile": "tests/fixtures/aria-prohibited-children-all-scenarios.html",
       "totalCases": 20,
       "caseCounts": {
-        "PASS": 10,
-        "FAIL": 8,
+        "PASS": 8,
+        "FAIL": 10,
         "CANTTELL": 0,
         "OTHER": 2
       }
@@ -869,12 +869,12 @@
       "testFile": "tests/engine-checks/automatic/embed-text-alternative-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/embed-text-alternative-present-all-scenarios.html",
-      "totalCases": 15,
+      "totalCases": 18,
       "caseCounts": {
         "PASS": 3,
         "FAIL": 6,
         "CANTTELL": 0,
-        "OTHER": 6
+        "OTHER": 9
       }
     },
     {
