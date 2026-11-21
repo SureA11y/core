@@ -537,6 +537,9 @@ function runInPage(ctx) {
               ? {
                   blockerProperty: details.blockerProperty ? String(details.blockerProperty) : '',
                   blockerValue: details.blockerValue ? String(details.blockerValue) : '',
+                  // What paints part of the text in a color of its own
+                  // (PSEUDO_ELEMENT_COLOR), as p::first-letter.
+                  blockerSelector: details.blockerSelector ? String(details.blockerSelector) : '',
                   // The element that carries it, as <div class="hero">, and
                   // the same where it is an ancestor of the text.
                   blockerElement: details.blockerElement ? String(details.blockerElement) : '',

@@ -274,6 +274,28 @@ const BLOCK_FIRST_LINE = [
   ]
 ];
 
+// The message names what paints the text in a color of its own (round 9,
+// V9-9): it said "painted by  in a color of its own".
+test('the message names the pseudo-element, in Chromium', { skip }, async () => {
+  const browser = await chromium.launch({ executablePath });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(
+      '<!doctype html><html lang="en"><head><title>t</title><style>body{background:#fff} .d{color:#000} .d::first-letter{color:#ccc}</style></head><body><main><p class="d">Once upon a time</p></main></body></html>'
+    );
+    await addBundle(page);
+    const summary = await page.evaluate(
+      () =>
+        window.a11ycore
+          .runa11yCoreInPage(null, null, {}, ['contrast-computable'])
+          .checksResults.find((c) => c.ruleId === 'contrast-computable').occurrences[0].summary
+    );
+    assert.match(summary, /painted by p::first-letter in a color of its own/);
+  } finally {
+    await browser.close();
+  }
+});
+
 test(
   '::first-line and ::first-letter colors measured both ways, in Chromium',
   { skip },
