@@ -8023,6 +8023,35 @@ function createDomHelpers(opts) {
       .toLowerCase();
     if (/^circle\(\s*0(px|%)?(\s|\)|$)/.test(v)) return true;
     if (/^ellipse\(\s*0(px|%)?\s+0(px|%)?(\s|\)|$)/.test(v)) return true;
+    // A polygon of no area: its points all on one line, or all one point,
+    // such as polygon(0 0, 0 0, 0 0). Decided where its coordinates are in
+    // one unit (or zero), or are all the same point.
+    const poly = /^polygon\(\s*(?:(?:nonzero|evenodd)\s*,\s*)?([^)]*)\)/.exec(v);
+    if (poly) {
+      const points = poly[1].split(',').map((pt) => pt.trim().split(/\s+/));
+      if (points.length < 3 || points.some((pt) => pt.length !== 2)) return points.length < 3;
+      if (points.every((pt) => pt.join(' ') === points[0].join(' '))) return true;
+      const units = new Set();
+      const nums = [];
+      for (const pt of points) {
+        const xy = [];
+        for (const c of pt) {
+          const n = /^(-?\d*\.?\d+)(%|[a-z]*)$/.exec(c);
+          if (!n) return false;
+          if (parseFloat(n[1]) !== 0) units.add(n[2] || 'px');
+          xy.push(parseFloat(n[1]));
+        }
+        nums.push(xy);
+      }
+      if (units.size > 1) return false;
+      let area = 0;
+      for (let i = 0; i < nums.length; i++) {
+        const [x1, y1] = nums[i];
+        const [x2, y2] = nums[(i + 1) % nums.length];
+        area += x1 * y2 - x2 * y1;
+      }
+      return Math.abs(area) < 1e-9;
+    }
     const m = /^inset\(([^)]*)\)/.exec(v);
     if (!m) return false;
     const parts = m[1]

@@ -19,14 +19,16 @@
  *   or a hiding rule that stops applying on focus
  *   (`.visually-hidden-focusable:not(:focus) { clip: rect(0 0 0 0) }`).
  *   A focus rule nested in another (`.skip { &:focus { top: 0 } }`) counts
- *   as written out; one whose focus is inside `:has()` counts, for its
- *   subject, as `:focus-within` does. A focus rule that isn't `!important`
+ *   as written out; a shadow root's `::slotted(a:focus)` counts for the
+ *   elements assigned to its slots; one whose focus is inside `:has()`
+ *   counts, for its subject, as `:focus-within` does. A focus rule that isn't `!important`
  *   doesn't override an `!important` declaration that hides the element.
  * @reports
  *   - `metrics.visibilityHints`: how the element is hidden while it can
- *     take focus: `opacityZero`, `offscreen`, `clipped` or
- *     `zeroSizeOverflowHidden` (no size, with overflow hidden) by its own
- *     styles; when they show it, `outOfReach` (a container is positioned
+ *     take focus: `opacityZero`, `offscreen`, `clipped` (a clip or
+ *     clip-path to nothing, or a transform or scale drawing it with no
+ *     area, as `scale(0)`) or `zeroSizeOverflowHidden` (no size, with
+ *     overflow hidden) by its own styles; when they show it, `outOfReach` (a container is positioned
  *     off screen, or is fixed and clips its content where its px lengths
  *     put it wholly outside the viewport, or, in a browser, the box focus would show lies where no
  *     scrolling reaches) or `containerClipped` (a container is clipped to
@@ -211,6 +213,9 @@ function runInPage(ctx) {
           ? helpers.isElementClipHidden(el, cs)
           : helpers.isClipHidden(cs);
       if (clipHidden) out.push('clipped');
+      // A transform or scale drawing the box with no area (scale(0)) hides
+      // it as a clip to nothing does, as it does a container.
+      else if (scaledToNothing(cs)) out.push('clipped');
     } catch {}
 
     // zero-size + overflow hidden/clip
@@ -351,6 +356,7 @@ function runInPage(ctx) {
     'text-indent': 'textIndent',
     transform: 'transform',
     translate: 'translate',
+    scale: 'scale',
     // What says whether a fixed box lies outside the viewport.
     bottom: 'bottom',
     right: 'right',
@@ -387,6 +393,7 @@ function runInPage(ctx) {
     'text-indent': '0px',
     transform: 'none',
     translate: 'none',
+    scale: 'none',
     bottom: 'auto',
     right: 'auto',
     'overflow-x': 'visible',
@@ -472,7 +479,18 @@ function runInPage(ctx) {
         // pseudo-class: GOV.UK Frontend styles a class called ":focus" as
         // `.\:focus`. Escaped colons are hidden from the focus patterns
         // and put back in the selector the element is matched against.
-        const part = raw.replace(/\\:/g, ESCAPED_COLON);
+        let part = raw.replace(/\\:/g, ESCAPED_COLON);
+        // A shadow root's `::slotted(a:focus)` styles the element slotted
+        // into its slot, a light DOM element: read as its argument, for
+        // elements assigned to a slot of that root the part before it
+        // matches (`slot`, or any slot where none is written).
+        let slot = null;
+        const slotted = /^([^]*?)::slotted\(([^]*)\)\s*$/.exec(part);
+        if (slotted) {
+          const before = slotted[1];
+          slot = !trim(before) ? '*' : /[\s>+~]$/.test(before) ? `${trim(before)} *` : trim(before);
+          part = slotted[2];
+        }
         if (hasPseudoElement(part)) continue;
         NOT_FOCUS_STATE.lastIndex = 0;
         if (NOT_FOCUS_STATE.test(part)) {
@@ -485,6 +503,7 @@ function runInPage(ctx) {
               style,
               props,
               root: sheetRoot,
+              slot,
               within: /:focus-within/.test(part)
             });
           continue;
@@ -495,7 +514,8 @@ function runInPage(ctx) {
             importantRules.push({
               selector: unescapeColons(part),
               props: important,
-              root: sheetRoot
+              root: sheetRoot,
+              slot
             });
           continue;
         }
@@ -510,6 +530,7 @@ function runInPage(ctx) {
             style,
             props,
             root: sheetRoot,
+            slot,
             within: true
           });
           continue;
@@ -522,6 +543,7 @@ function runInPage(ctx) {
             style,
             props,
             root: sheetRoot,
+            slot,
             within: /:focus-within/.test(part)
           });
       }
@@ -589,6 +611,18 @@ function runInPage(ctx) {
   // Whether a rule read from the sheets reaches the element: a shadow
   // root's rules reach only the elements in it.
   function ruleReaches(el, r, selector) {
+    // A ::slotted() rule reaches the elements assigned to a slot of its
+    // root, not the elements in it.
+    if (r.slot) {
+      try {
+        const assigned = dom.get(el, 'assignedSlot');
+        if (!assigned || dom.getRootNode(assigned) !== r.root) return false;
+        if (!matchesSafe(assigned, r.slot)) return false;
+      } catch {
+        return false;
+      }
+      return matchesSafe(el, selector);
+    }
     if (r.root && r.root !== document) {
       try {
         if (dom.getRootNode(el) !== r.root) return false;

@@ -88,6 +88,13 @@
  *   rotation combined with another axis). Anything else contributes 0,
  *   same as an unrecognized value, rather than guessing at an angle a
  *   general 3D matrix doesn't uniquely have.
+ * - A rotation written with var() (`rotate(var(--r))`, or `rotate:
+ *   var(--a)` with a registered angle) has no angle in the style sheet. In
+ *   a browser, where the media query matches the window scanned, it is
+ *   read from the computed transform and rotate of the elements the rule
+ *   matches, and those turned a quarter turn are judged as above. Where
+ *   the query doesn't match, or without a layout's matchMedia (jsdom), it
+ *   isn't seen: scan the page in the orientation the query names.
  * - Cross-origin stylesheets throw on `.cssRules` access (browser
  *   security model). Their text can be given in engineOptions.styleSheetTexts,
  *   which preloadStyleSheets() fetches in the page where the server shares
@@ -307,9 +314,22 @@ function runInPage(ctx) {
     return !!display && display !== 'none';
   }
 
-  function judgeStyle(style, selectorText, mediaText, findings, hidings) {
+  // A rotation written with var() (`rotate(var(--r))`, or `rotate:
+  // var(--a)` with a registered angle) has no angle until it is computed:
+  // it is read off the elements the rule turns, where the media query
+  // matches now (see the rotations loop below).
+  function rotationViaVar(styleDecl) {
+    if (!styleDecl || typeof styleDecl.getPropertyValue !== 'function') return false;
+    return ['transform', '-webkit-transform', 'rotate'].some((p) =>
+      /var\(/i.test(trim(styleDecl.getPropertyValue(p)))
+    );
+  }
+
+  function judgeStyle(style, selectorText, mediaText, findings, hidings, mediaTexts) {
     if (!selectorText) return;
     if (isLockingRotation(style)) findings.push({ mediaText, selectorText });
+    else if (rotationViaVar(style))
+      findings.push({ mediaText, selectorText, viaVar: true, mediaTexts: mediaTexts || [] });
     if (hidesContent(style)) hidings.push({ mediaText, selectorText });
     else if (showsElement(style)) shown.push({ mediaText, selectorText });
   }
@@ -346,7 +366,7 @@ function runInPage(ctx) {
           ? resolveNested(r.selectorText, parentSelector)
           : trim(r.selectorText);
         const mediaText = mediaTexts.filter(isOrientationMedia).join(' and ');
-        if (mediaText) judgeStyle(r.style, selectorText, mediaText, findings, hidings);
+        if (mediaText) judgeStyle(r.style, selectorText, mediaText, findings, hidings, mediaTexts);
         if (nested && nested.length) {
           walkRules(nested, mediaTexts, selectorText, depth + 1, findings, hidings);
         }
@@ -357,7 +377,8 @@ function runInPage(ctx) {
       // to that style rule's selector.
       if (parentSelector && r.style && !r.selectorText && !nested) {
         const mediaText = mediaTexts.filter(isOrientationMedia).join(' and ');
-        if (mediaText) judgeStyle(r.style, parentSelector, mediaText, findings, hidings);
+        if (mediaText)
+          judgeStyle(r.style, parentSelector, mediaText, findings, hidings, mediaTexts);
         continue;
       }
       let texts = mediaTexts;
@@ -735,8 +756,28 @@ function runInPage(ctx) {
   const findings = [];
   const rotated = [];
   const seenRotated = new Set();
+  // Whether every media condition a rule sits under matches now.
+  function mediaMatchesNow(texts) {
+    try {
+      const view = dom.defaultView(document);
+      if (!view || typeof view.matchMedia !== 'function') return false;
+      return texts.every((t) => !!dom.get(view.matchMedia(t), 'matches'));
+    } catch {
+      return false;
+    }
+  }
+  function turnedNow(el) {
+    try {
+      const view = dom.defaultView(document);
+      return isLockingRotation(view.getComputedStyle(el));
+    } catch {
+      return false;
+    }
+  }
   for (const r of rotations) {
-    const visible = visibleMatches(r.selectorText, r.root);
+    let visible = visibleMatches(r.selectorText, r.root);
+    // A rotation through var(): the elements it turns a quarter turn now.
+    if (r.viaVar) visible = mediaMatchesNow(r.mediaTexts) ? visible.filter(turnedNow) : [];
     if (!visible.length) continue;
     if (visible.some(holdsPageContent)) {
       findings.push(r);

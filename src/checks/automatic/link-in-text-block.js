@@ -27,18 +27,21 @@
  *   A link inside a text block must be visually distinguishable from the
  *   surrounding text by at least one non-color means:
  *     - text-decoration: underline, where the surrounding text is not
- *       underlined too (by its own style or an ancestor's), OR
+ *       underlined too (by its own style or an ancestor's), in a color
+ *       other than transparent or the one behind the link, OR
  *     - a different font-weight or font-style than the surrounding text (a
  *       weight counts as different when one is 600 or more and the other
  *       under 600: most fonts draw 500 as they draw 400), OR
  *     - another visible mark on the link itself: a border, box-shadow or
  *       outline (a shadow in a transparent color, or with no offset, blur
- *       or spread, draws nothing), a background color different from the
- *       surrounding one, a
- *       background image, an image or svg inside it, or a ::before/::after
- *       that draws something (content of its own, or an empty box painting
- *       a background, border, outline or shadow, as an underline drawn
- *       that way does), OR
+ *       or spread, draws nothing, nor does a border or outline in a
+ *       transparent color or the one behind the link), a background color
+ *       different from the surrounding one, a background image, an image
+ *       or svg inside it (with a layout, one of some area: a 0x0 <svg> is
+ *       none), or a ::before/::after that draws something (content of its
+ *       own other than white space, or an empty or blank box painting a
+ *       background, border, outline or shadow, as an underline drawn that
+ *       way does), OR
  *     - a mark on all of its content: bold, italic, underlined, bordered,
  *       a background unlike the surrounding text's (a code chip, <mark>),
  *       or raised or lowered (a footnote's <sup>).
@@ -580,16 +583,26 @@ function runInPage(ctx) {
     return /^transparent$/i.test(raw);
   }
 
-  function hasBorder(cs) {
+  // A border drawn in the color behind el (sameAsBackground) shows nothing
+  // either.
+  function hasBorder(cs, el) {
     for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
       const style = String(cs['border' + side + 'Style'] || '')
         .trim()
         .toLowerCase();
       if (!style || style === 'none' || style === 'hidden') continue;
       if (isTransparentColor(cs['border' + side + 'Color'])) continue;
-      if (!isZeroWidth(cs['border' + side + 'Width'])) return true;
+      if (isZeroWidth(cs['border' + side + 'Width'])) continue;
+      if (el && sameAsBackground(el, cs['border' + side + 'Color'])) continue;
+      return true;
     }
     return false;
+  }
+
+  // Whether a line in this color shows on el: not transparent, and not the
+  // color behind el.
+  function unseen(el, color) {
+    return isTransparentColor(color) || (!!el && sameAsBackground(el, color));
   }
 
   // Some environments do not expand the `outline` shorthand into its
@@ -605,6 +618,28 @@ function runInPage(ctx) {
       .split(/\s+/)
       .filter(Boolean);
     return tokens.some((t) => LINE_STYLES.test(t)) && !tokens.some((t) => isZeroWidth(t));
+  }
+
+  // The outline's color: its longhand where the style is in the longhands,
+  // else the color in the shorthand, or the text's (currentcolor).
+  function outlineColorOf(cs) {
+    const style = String(cs.outlineStyle || '')
+      .trim()
+      .toLowerCase();
+    if (style && style !== 'none' && style !== 'hidden') return cs.outlineColor;
+    const tokens = splitOutsideParens(
+      String((cs.getPropertyValue && cs.getPropertyValue('outline')) || '')
+        .trim()
+        .toLowerCase(),
+      /\s/
+    );
+    const color = tokens.find(
+      (t) =>
+        !LINE_STYLES.test(t) &&
+        !/^-?(\d*\.)?\d+([a-z%]+)?$/.test(t) &&
+        !/^(thin|medium|thick|none|hidden)$/.test(t)
+    );
+    return !color || color === 'currentcolor' ? cs.color : color;
   }
 
   // Splits on a separator outside parentheses: the shadows of a list, or
@@ -689,6 +724,13 @@ function runInPage(ctx) {
       return false;
     }
     return imgs.some((img) => {
+      // With a layout, an image of no area (a 0x0 <svg>) shows nothing.
+      if (hasLayout()) {
+        try {
+          const r = dom.getBoundingClientRect(img);
+          if (!r || r.width <= 0 || r.height <= 0) return false;
+        } catch {}
+      }
       if (!helpers.isDomVisibleEligible) return true;
       try {
         const vis = helpers.isDomVisibleEligible(img, ctx, {
@@ -703,7 +745,9 @@ function runInPage(ctx) {
   }
 
   const NO_BOX = ['', 'none', 'normal'];
-  const EMPTY_STRING = ['""', "''"];
+  // Content that is an empty string, or one of white space only (`" "`),
+  // draws no text: only what its box paints can show.
+  const isBlankContent = (content) => /^(["'])\s*\1$/.test(String(content || '').trim());
   // Whether a declaration block paints a box: a background, a border, an
   // outline or a shadow. An empty-content ::before/::after drawing an
   // underline this way is a mark (#107).
@@ -747,7 +791,7 @@ function runInPage(ctx) {
         .trim()
         .toLowerCase();
       if (NO_BOX.indexOf(content) !== -1) return;
-      if (EMPTY_STRING.indexOf(content) !== -1 && !declaresPaint(style)) return;
+      if (isBlankContent(content) && !declaresPaint(style)) return;
       for (const part of splitSelectorList(cssRule.selectorText)) {
         if (!/::?(before|after)\s*$/i.test(part)) continue;
         if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
@@ -822,7 +866,7 @@ function runInPage(ctx) {
     if (NO_BOX.indexOf(content.toLowerCase()) !== -1) return false;
     if (cs.display === 'none' || cs.visibility === 'hidden') return false;
     if (Number.parseFloat(cs.opacity) === 0) return false;
-    if (EMPTY_STRING.indexOf(content) === -1) return true;
+    if (!isBlankContent(content)) return true;
     const size = (v) => {
       const n = Number.parseFloat(v);
       return Number.isFinite(n) && n > 0 ? n : 0;
@@ -884,7 +928,13 @@ function runInPage(ctx) {
   }
 
   function hasNonColorMark(el, cs) {
-    if (cs && (hasBorder(cs) || hasOutline(cs) || hasBoxShadow(cs) || hasBackgroundImage(cs, el))) {
+    if (
+      cs &&
+      (hasBorder(cs, el) ||
+        (hasOutline(cs) && !unseen(el, outlineColorOf(cs))) ||
+        hasBoxShadow(cs) ||
+        hasBackgroundImage(cs, el))
+    ) {
       return true;
     }
     return hasVisibleImageChild(el) || hasPseudoContent(el);
@@ -1743,9 +1793,9 @@ function runInPage(ctx) {
       return true;
     }
     if (outerCs && (cs.fontStyle || 'normal') !== (outerCs.fontStyle || 'normal')) return true;
-    if (hasBorder(cs)) return true;
+    if (hasBorder(cs, wrapper)) return true;
     const deco = decorationInfo(cs);
-    return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
+    return deco.trustworthy && deco.underlined && !unseen(wrapper, cs.textDecorationColor);
   }
 
   // Whether the text around the link is underlined too: by its own element's
@@ -1838,7 +1888,7 @@ function runInPage(ctx) {
       if (!cs) return false;
       if (c && weightsDiffer(c.normalizeFontWeight(cs.fontWeight), parentWeight)) return true;
       if ((cs.fontStyle || 'normal') !== parentStyle) return true;
-      if (hasBorder(cs)) return true;
+      if (hasBorder(cs, node)) return true;
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
       if (hasBackgroundImage(cs, node) || ownBackground(node, cs)) return true;
       const deco = decorationInfo(cs);
@@ -2006,7 +2056,7 @@ function runInPage(ctx) {
     if (
       shown.trustworthy &&
       shown.underlined &&
-      !isTransparentColor(linkCs && linkCs.textDecorationColor) &&
+      !unseen(el, linkCs && linkCs.textDecorationColor) &&
       !aroundUnderlined()
     ) {
       decidedCount += 1;
@@ -2033,12 +2083,13 @@ function runInPage(ctx) {
     let underlined = null;
     const decoration = decorationInfo(linkCs);
     if (decoration.trustworthy) {
-      // An underline drawn in a transparent color shows nothing.
-      underlined =
-        decoration.underlined && !isTransparentColor(linkCs && linkCs.textDecorationColor);
+      // An underline drawn in a transparent color, or in the color behind
+      // the link, shows nothing.
+      underlined = decoration.underlined && !unseen(el, linkCs && linkCs.textDecorationColor);
     } else {
       const fromCssom = resolveUnderlineFromCssom(el);
-      if (fromCssom.resolved) underlined = fromCssom.underlined;
+      if (fromCssom.resolved)
+        underlined = fromCssom.underlined && !unseen(el, linkCs && linkCs.textDecorationColor);
     }
     // The surrounding text underlined too: the underline is no cue.
     if (underlined === true && aroundUnderlined()) underlined = false;

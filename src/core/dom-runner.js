@@ -1354,9 +1354,11 @@ function readRenderingEnvironment(win, doc) {
  * and play() are not used, since play() on a CSS animation would pin it as
  * playing over a later animation-play-state from the page. Animations on
  * another timeline (scroll-driven) are not time-based and are left alone.
- * Without getAnimations (jsdom) there is nothing to settle.
+ * Without getAnimations (jsdom) there is nothing to settle. Open shadow
+ * roots give their own animations, which the document's leave out; with
+ * includeShadowDom off they are left alone.
  */
-function settleAnimations(doc) {
+function settleAnimations(doc, includeShadowDom) {
   // One running animation as rules read it: its element, what it is, and its
   // timing in milliseconds; endTime is null for one that never ends.
   function describeAnimation(anim, timing) {
@@ -1393,6 +1395,41 @@ function settleAnimations(doc) {
       animations = dom.getAnimations(doc);
   } catch {
     animations = [];
+  }
+  // The document's getAnimations() leaves out the animations of elements in
+  // shadow trees: each open shadow root, nested ones included, gives its
+  // own. Without them a fade in a component was measured wherever it had
+  // got to, and its motion never reported. Left out with includeShadowDom
+  // off, as the rest of the scan leaves those elements out.
+  if (includeShadowDom !== false) {
+    try {
+      const docEl =
+        doc && typeof dom.get(doc, 'getAnimations') === 'function'
+          ? dom.documentElement(doc)
+          : null;
+      const tops = docEl ? [docEl] : [];
+      const seen = new Set(animations);
+      for (let i = 0; i < tops.length; i++) {
+        const walker = dom.createTreeWalker(doc, tops[i], 1);
+        for (let el = walker.currentNode; el; el = walker.nextNode()) {
+          const shadow = dom.nodeType(el) === 1 ? dom.shadowRoot(el) : null;
+          if (!shadow) continue;
+          tops.push(shadow);
+          let own = [];
+          try {
+            own =
+              typeof dom.get(shadow, 'getAnimations') === 'function'
+                ? dom.getAnimations(shadow)
+                : [];
+          } catch {}
+          for (const a of own) {
+            if (seen.has(a)) continue;
+            seen.add(a);
+            animations.push(a);
+          }
+        }
+      }
+    } catch {}
   }
   // Every animation is read before any is moved: setting currentTime makes
   // the next read update the page's style, so reading and moving one at a
@@ -2225,7 +2262,13 @@ function runCore(
     typeof document !== 'undefined' ? document : null
   );
   try {
-    const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // Shadow trees as the scan reads them: on unless includeShadowDom is off.
+    const shadowDom = !(
+      engineOptions &&
+      typeof engineOptions === 'object' &&
+      switchOf(engineOptions.includeShadowDom) === false
+    );
+    const settled = settleAnimations(typeof document !== 'undefined' ? document : null, shadowDom);
     // The animations as they were before settling, for helpers.animationsAtScanStart.
     settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.

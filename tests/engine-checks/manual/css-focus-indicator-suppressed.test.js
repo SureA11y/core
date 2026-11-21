@@ -232,7 +232,8 @@ test(`${RULE_ID}: a replacement in the same rule clears the element`, () => {
     'box-shadow:0 0 0 3px navy',
     'border:2px solid navy',
     'background-color:navy',
-    'text-decoration:underline'
+    // Not underline: the link shows that already (round 9, V9-6).
+    'text-decoration:overline'
   ]) {
     const result = runa11yCoreOnHtml(page(`a:focus{outline:none;${decl}}`, '<a href="/x">x</a>'), {
       runOnly: [RULE_ID]
@@ -269,6 +270,59 @@ test(`${RULE_ID}: a focus style that draws nothing is no replacement (round 8, L
     ['a:focus{outline:0;text-decoration:none}', '<a href="/x">x</a>'],
     ['a:focus{outline:0;color:#c00}', '<a href="/x" style="color:#00c">x</a>'],
     ['a:focus{outline:none;background:transparent;box-shadow:0 0 0 2px navy}', '<a href="/x">x</a>']
+  ]) {
+    const result = runa11yCoreOnHtml(page(css, body), { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a focus style that draws nothing on the element is no replacement (round 9, V9-6)`, () => {
+  for (const [css, body] of [
+    // The outline's style is still none: a color or a width alone draws nothing.
+    ['a{outline:none} a:focus-visible{outline-color:red}', '<a href="/x" id="a">x</a>'],
+    ['a{outline-style:none} a:focus{outline-width:4px}', '<a href="/x" id="a">x</a>'],
+    ['a{outline:0} a:focus{outline-width:4px;outline-color:red}', '<a href="/x" id="a">x</a>'],
+    ['a{outline:none} a:focus{outline-offset:2px;outline-color:red}', '<a href="/x" id="a">x</a>'],
+    // A border color on an element with no border.
+    ['a{outline:none} a:focus{border-color:red}', '<a href="/x" id="a">x</a>'],
+    // The underline the link already shows.
+    ['a{outline:none} a:focus{text-decoration:underline}', '<a href="/x" id="a">x</a>'],
+    // A shadow in a clear color, or one that reaches past nothing.
+    ['a{outline:none} a:focus{box-shadow:0 0 0 3px transparent}', '<a href="/x" id="a">x</a>'],
+    ['a{outline:none} a:focus{box-shadow:0 0 0 0 red}', '<a href="/x" id="a">x</a>'],
+    ['a{outline:none} a:focus{text-shadow:0 0 0 red}', '<a href="/x" id="a">x</a>'],
+    // A custom property that comes to none.
+    [
+      ':root{--ring:none} a{outline:none} a:focus{box-shadow:var(--ring)}',
+      '<a href="/x" id="a">x</a>'
+    ],
+    ['a{outline:none} a:focus{box-shadow:var(--unset, none)}', '<a href="/x" id="a">x</a>']
+  ]) {
+    const result = runa11yCoreOnHtml(page(css, body), { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'a'), css);
+  }
+  // What does draw is still a replacement.
+  for (const [css, body] of [
+    ['a{outline-color:transparent} a:focus{outline-color:red}', '<a href="/x">x</a>'],
+    ['a{outline-width:0} a:focus{outline-width:3px}', '<a href="/x">x</a>'],
+    ['a{outline:none} a:focus{outline:2px solid red}', '<a href="/x">x</a>'],
+    ['a{outline:none} a:focus{outline-style:solid}', '<a href="/x">x</a>'],
+    [
+      'a{outline:none} a:focus{border-color:red}',
+      '<a href="/x" style="border:1px solid #ccc">x</a>'
+    ],
+    ['a{outline:none} a:focus{border-color:red;border-style:solid}', '<a href="/x">x</a>'],
+    [
+      'a{outline:none} a:focus{text-decoration:underline}',
+      '<a href="/x" style="text-decoration:none">x</a>'
+    ],
+    ['a{outline:none} a:focus{text-decoration:underline overline}', '<a href="/x">x</a>'],
+    ['a{outline:none} a:focus{box-shadow:0 2px 0 red}', '<a href="/x">x</a>'],
+    [
+      ':root{--ring:0 0 0 3px red} a{outline:none} a:focus{box-shadow:var(--ring)}',
+      '<a href="/x">x</a>'
+    ]
   ]) {
     const result = runa11yCoreOnHtml(page(css, body), { runOnly: [RULE_ID] });
     assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });

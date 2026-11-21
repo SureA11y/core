@@ -293,6 +293,31 @@ test(
         '',
         '<span style="background:#fff">guide</span>',
         'fail'
+      ],
+      // Marks that draw nothing (round 9, V9-7).
+      ['a transparent outline', 'a{outline:2px solid transparent}', 'guide', 'fail'],
+      ['an outline that shows', 'a{outline:1px solid #2b5797}', 'guide', 'pass'],
+      [
+        'an underline in the background color',
+        'a{text-decoration:underline;text-decoration-color:#fff}',
+        'guide',
+        'fail'
+      ],
+      [
+        'a bottom border in the background color',
+        'a{border-bottom:1px solid #fff}',
+        'guide',
+        'fail'
+      ],
+      ['a bottom border that shows', 'a{border-bottom:1px solid #2b5797}', 'guide', 'pass'],
+      ['a ::before of white space only', 'a::before{content:" "}', 'guide', 'fail'],
+      ['a ::before with a character', 'a::before{content:"> "}', 'guide', 'pass'],
+      ['a 0x0 <svg> inside the link', '', 'guide<svg width="0" height="0"></svg>', 'fail'],
+      [
+        'an <svg> icon inside the link',
+        '',
+        'guide<svg width="10" height="10"><rect width="10" height="10"/></svg>',
+        'pass'
       ]
     ];
 
