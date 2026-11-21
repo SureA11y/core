@@ -28969,11 +28969,16 @@ const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packN
 const runProfiles = (function runProfiles(engineOptions, run) {
   // output.maxOccurrencesPerRule applies to the result as a whole, once its
   // outcomes, rollups and profiles' verdicts are decided.
-  const capped = (r) =>
-    r && typeof r.then === 'function'
-      ? r.then((x) => capOccurrences(x, engineOptions))
-      : capOccurrences(r, engineOptions);
-  return capped(runProfilesUncapped(engineOptions, run));
+  // Without the option the result is returned as it is. A real promise (an
+  // asynchronous scan) is told apart by its tag, not by a then method: a
+  // page may put then on Object.prototype, and every plain result then has
+  // one.
+  const result = runProfilesUncapped(engineOptions, run);
+  const out = engineOptions && engineOptions.output;
+  if (!out || typeof out !== 'object' || out.maxOccurrencesPerRule === undefined) return result;
+  return Object.prototype.toString.call(result) === '[object Promise]'
+    ? result.then((x) => capOccurrences(x, engineOptions))
+    : capOccurrences(result, engineOptions);
 });
 const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
@@ -161466,11 +161471,16 @@ const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packN
 const runProfiles = (function runProfiles(engineOptions, run) {
   // output.maxOccurrencesPerRule applies to the result as a whole, once its
   // outcomes, rollups and profiles' verdicts are decided.
-  const capped = (r) =>
-    r && typeof r.then === 'function'
-      ? r.then((x) => capOccurrences(x, engineOptions))
-      : capOccurrences(r, engineOptions);
-  return capped(runProfilesUncapped(engineOptions, run));
+  // Without the option the result is returned as it is. A real promise (an
+  // asynchronous scan) is told apart by its tag, not by a then method: a
+  // page may put then on Object.prototype, and every plain result then has
+  // one.
+  const result = runProfilesUncapped(engineOptions, run);
+  const out = engineOptions && engineOptions.output;
+  if (!out || typeof out !== 'object' || out.maxOccurrencesPerRule === undefined) return result;
+  return Object.prototype.toString.call(result) === '[object Promise]'
+    ? result.then((x) => capOccurrences(x, engineOptions))
+    : capOccurrences(result, engineOptions);
 });
 const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';

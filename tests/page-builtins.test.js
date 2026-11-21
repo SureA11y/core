@@ -222,3 +222,25 @@ test('the built-ins the round 9 fuzz found changing results without a word are c
     });
   }
 });
+
+// The occurrence cap reads an asynchronous result by its tag, so a then on
+// Object.prototype doesn't make a capped scan's plain result look like one.
+test('a page adding then to Object.prototype is scanned with output.maxOccurrencesPerRule too', () => {
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="a.png"><img src="b.png"></main></body></html>'
+  );
+  const result = withPatched(
+    Object.prototype,
+    'then',
+    function () {},
+    () =>
+      runa11yCoreOnDom(dom, {
+        entryPointParity: false,
+        engineOptions: { output: { maxOccurrencesPerRule: 1 } }
+      })
+  );
+  const img = result.checksResults.find((c) => c.ruleId === 'img-alt-present');
+  assert.equal(img.outcome, 'fail');
+  assert.equal(img.occurrences.length, 1);
+  assert.equal(img.occurrencesOmitted, 1);
+});
