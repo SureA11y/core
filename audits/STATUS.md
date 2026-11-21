@@ -2,11 +2,11 @@
 
 Where the work on the audit's findings stands, written so that another person or session can pick it up without the history of this one. The findings themselves, open and fixed, are in [`FINDINGS.md`](./FINDINGS.md); this page says what is in flight, what is decided, and how the work is done.
 
-Last updated 2026-11-21, on `main` at `6e2b905c` (1.17.0 plus the unreleased 1.18.0 work).
+Last updated 2026-11-21, on `main` at `462df5b4`, the merge of #421 (1.17.0 plus the unreleased 1.18.0 work).
 
 ## 1. Open now
 
-**Nothing in flight.** Nine rounds have run; their findings are fixed or decided, as recorded in [`FINDINGS.md`](./FINDINGS.md) §3:
+**Nothing in flight.** Ten rounds have run; their findings are fixed or decided, as recorded in [`FINDINGS.md`](./FINDINGS.md) §3:
 - **Rounds 1 and 2:** fixed in #77 to #186 (the sections of §3 below the third round).
 - **Round 3:** fixed in #191 to #194, merged 2026-10-10.
 - **Round 4:** fixed in #212 to #241, merged 2026-10-15; re-checked by round 5.
@@ -15,6 +15,7 @@ Last updated 2026-11-21, on `main` at `6e2b905c` (1.17.0 plus the unreleased 1.1
 - **Round 7** (at `ec664338`): 38 findings, all fixed in #411, merged 2026-11-20, with R4:OP-P1.
 - **Round 8** (at `254b644f`): 60 findings, three of them regressions of round 7's fixes, all fixed in #416, merged 2026-11-21 as `a021f714`; its ten decisions acted on there.
 - **Round 9** (at `805f33ff`, the round 8 branch): 61 findings, none a regression of rounds 7 or 8; the 48 evident ones fixed in #417, merged 2026-11-21 as `ad47fe3e`; the rest decided and made in #418, merged 2026-11-21 as `48cb9157`, with the `xml:lang` lead.
+- **Round 10** (at `6e2b905c`, with #420's new features): a general stress test (9 findings) and a comparison with four other engines (8 findings, 5 coverage gaps); the 11 evident ones fixed and the rest decided and made in #421, merged 2026-11-21 as `462df5b4`, with two new rules (`form-group-name-present`, `symbol-graphic-contrast`); G10-2 and G10-3 closed.
 - **The leftovers of rounds 4 and 5**, and the four questions that waited on a decision: fixed and decided in #412, merged 2026-11-20.
 - **The safe features of `FINDINGS.md` §2** (R5:AP-7's `checkPack` report, invariants over every rule, pixel checks of native controls): done in #413, merged 2026-11-20, with a shadow-root selector fix the invariants found.
 - **target-size-minimum's speed** on long pages: done in #414, merged 2026-11-20.
@@ -25,7 +26,7 @@ What is left (`FINDINGS.md` §1): nothing open; round 8's two Low leftovers are 
 
 **Next step:** decide which of the remaining features of `FINDINGS.md` §2 to take: those left change what a scan does (a 1.4.4 clipping check, a first-heading best practice, a time budget, the paint-order part of contrast-computable's speed, reporter changes, a shared event-path helper, profiles without forking core). Before the next round, merge `main` into this branch (README, "Before running an audit").
 
-**Before 1.18.0 is used by the packs:** `pack-rgaa`, `pack-raweb` and `pack-en301549` declare `~1.17.0`, so each needs a release to accept it; `pack-rgaa`'s test of the experimental APIs it uses ("the profile serves article 47…") needs updating then, as it uses none any more. With #411, two more package tests need a one-line update: `pack-wai-aria`'s "an unnamed grid: a question for WCAG, a failure of WAI-ARIA" (the check now fails under the WAI-ARIA profile alone, R7:IF-7) and `pack-rgaa`'s "RGAA 9.3 and WCAG 1.3.1 both ask about `<li>` items in a role="list"" (WCAG 1.3.1 is now `passedInPart`, R7:AN-6). With #412, one more: `pack-rgaa`'s "9.3 asks about a plain `<li>` in a list with a widget role" expects `listitem-parent-valid` to fail, where it now asks (R5 list lead, decided); RGAA 9.3's outcome is unchanged.
+**Before 1.18.0 is used by the packs:** `pack-rgaa`, `pack-raweb` and `pack-en301549` declare `~1.17.0`, so each needs a release to accept it; `pack-rgaa`'s test of the experimental APIs it uses ("the profile serves article 47…") needs updating then, as it uses none any more. With #411, two more package tests need a one-line update: `pack-wai-aria`'s "an unnamed grid: a question for WCAG, a failure of WAI-ARIA" (the check now fails under the WAI-ARIA profile alone, R7:IF-7) and `pack-rgaa`'s "RGAA 9.3 and WCAG 1.3.1 both ask about `<li>` items in a role="list"" (WCAG 1.3.1 is now `passedInPart`, R7:AN-6). With #412, one more: `pack-rgaa`'s "9.3 asks about a plain `<li>` in a list with a widget role" expects `listitem-parent-valid` to fail, where it now asks (R5 list lead, decided); RGAA 9.3's outcome is unchanged. After round 10, the four packs' draft pull requests for core 1.18 were updated: `pack-rgaa` maps `resize-text-content-loss` to RGAA 10.4.1, `symbol-graphic-contrast` to 3.3.2 and `form-group-name-present` to no test; the CMS repository gave the new rules editor titles (SureA11y/cms#36).
 
 **Not recorded here.** Two pieces of audit work ran on `main` between the fifth and sixth rounds, and their reports were never brought to this branch: a stress test of scans of several profiles, fixed in `86d60598` and `2ddfc07a` (2026-11-03), and an audit of the rules' messages, fixed in #385 and #386 (2026-11-11). Their fixes are in `main`, and the sixth round ran on top of them; only their reports and probes are missing from the register.
 
@@ -41,6 +42,7 @@ What is left (`FINDINGS.md` §1): nothing open; round 8's two Low leftovers are 
 - After round 7, on 2026-11-20: `strictOptions` refuses unknown `mappings` and `optInRules` tags and invalid `excludeSelectors` CSS; an `<li>` in a list whose role replaces list is asked about, leaning fail; an input whose `list` names no datalist is a textbox, as Chromium exposes it; `focus-not-removed-by-script` keeps its criteria, without 3.2.1; ids, tags and profile names match case in ASCII only.
 - Round 8, all on 2026-11-21 ([report §2](./2026-11-stress-test-8.md#2-decisions-taken)): an `<li>` in a list with a composite widget role fails again, one under a landmark or structure role is still asked about, leaning fail; a submenu's `menu` inside a `menubar` or `menu` is allowed; target size measures every interactive widget role; an unnamed `<button role=X>` is left to role X's name rule; forced colors keep the same verdicts; a uniform transform scale counts toward large text both ways; SVG `<text>` and link weight cues follow Chromium; custom elements overriding DOM members are documented only; a plain-object pack is frozen on first use.
 - Round 9, all on 2026-11-21 ([report §2](./2026-11-stress-test-9.md#2-decisions-taken)), made in #418: as listed in `FINDINGS.md` §1 and §4; and the `xml:lang` lead: compared only when both attributes name a known language.
+- Round 10, all on 2026-11-21 ([report §2](./2026-11-stress-test-10.md#2-decisions-taken)), made in #421: one time budget across frames; a bold line ending in ":" asked about; default titles in five languages and CMS defaults, and a lean fail on leaked placeholders; `timeBudgetMs: Infinity` is no limit; a non-focusable click handler drawn as a button asked about, leaning fail; a poster video with no name asked about, leaning fail; new rules `form-group-name-present` and `symbol-graphic-contrast`; a separator beside a radio in a plain card in a `radiogroup` fails (accepted side effect of C10-1). Not done: sensory-word instructions (G10-2), a form with no submit button (G10-3).
 - R6:CE-6: no lean for a small table of plain text with no `<th>` (2026-11-20).
 
 ## 3. How the work is done
@@ -55,7 +57,8 @@ These are the conventions this work has followed; keep them.
 - **Tests.** A Chromium test, `tests/engine-checks/*-chromium.test.js`, where the change touches rendering or the browser, and jsdom tests; each new test fails before its fix. Chromium tests find the browser through `CHROMIUM_EXECUTABLE_PATH`.
 - **Pull requests.** Mirror `.github/PULL_REQUEST_TEMPLATE.md` and the style of #146 and #161, with a "Fixes #N" line per issue at the end. Base `main`; they are merged by rebase.
 - **Since round 8, a lighter guard against regressions.** Round 8 found three regressions of round 7's fixes (R8:NW-1, NW-2: the shadow-root hit tests; NW-4). The agreed measures: a regression test per fix, as before; a shadow-wrapping invariant test (the same page with its content in the light DOM or in open shadow roots gives the same verdicts; added in #416); and one before/after diff of the scenario fixtures per branch.
-- **Rounds 6 to 9 did not follow two of these.** Their findings were fixed in a few pull requests (#406, #407; #411 for round 7 and #412 for the leftovers, each in one at the owner's request; #416 and #417 for rounds 8 and 9, each landing on `main` as one commit) with no issue per item and no separate "Record …" changelog commits: the changelog entries went in with each fix. The other conventions held.
+- **Since round 10, new features are stress-tested before they merge.** Round 10 found four bugs in features merged the same day (#420). The agreed measure: an independent stress test of new features before their pull request is merged.
+- **Rounds 6 to 10 did not follow two of these.** Their findings were fixed in a few pull requests (#406, #407; #411 for round 7 and #412 for the leftovers, each in one at the owner's request; #416 and #417 for rounds 8 and 9, #421 for round 10, each landing on `main` as one commit) with no issue per item and no separate "Record …" changelog commits: the changelog entries went in with each fix. The other conventions held.
 
 ## 4. Verifying a commit
 

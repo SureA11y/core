@@ -1,0 +1,20 @@
+const { runa11yCoreOnHtml } = require('/home/user/core-r10/src/testing.js');
+const { matchBaseline, buildBaselineEntries } = require('/home/user/core-r10/src/baseline.js');
+const { toSarif } = require('/home/user/core-r10/src/sarif.js');
+const junit = require('/home/user/core-r10/src/junit.js');
+const earl = require('/home/user/core-r10/src/earl.js');
+const report = require('/home/user/core-r10/src/report.js');
+const html = '<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>x</h1><img src="a.png" alt="a"><p>hello</p></main></body></html>';
+const slow = { id: 'org-slow', meta: { title: 'slow', tags: ['wcag2a','wcag111'], wcagSc: ['1.1.1'] },
+  runInPage(ctx) { const t = Date.now(); while (Date.now() - t < 400); return { ruleId: ctx.rule.ruleId, outcome: 'pass', severity: 'moderate', occurrences: [] }; } };
+const origWarn = console.warn; const warns = []; console.warn = (...a) => warns.push(a.join(' ').slice(0,200));
+const r = runa11yCoreOnHtml(html, { entryPointParity: false, engineOptions: { profile: ['wcag21-aa', 'wcag22-aa'], timeBudgetMs: 300, customRules: [slow] } });
+console.warn = origWarn;
+console.log('warns', warns);
+console.log('engine.profiles', r.engine.profiles, 'profilesNotRun', JSON.stringify(r.engine.profilesNotRun), 'incomplete', JSON.stringify(r.engine.incomplete));
+console.log('notRun', JSON.stringify(r.notRun));
+const fails = r.rulesResults.filter(x=>x.outcome==='fail').length, passes = r.rulesResults.filter(x=>x.outcome==='pass').map(x=>x.ruleId);
+console.log('rollups pass', passes.length, passes.slice(0,8));
+console.log('baseline', JSON.stringify(matchBaseline(r, buildBaselineEntries(r))));
+console.log(Object.keys(module.exports), Object.keys(junit), Object.keys(earl), Object.keys(report));
+module.exports.r = r;

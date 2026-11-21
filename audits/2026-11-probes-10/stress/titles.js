@@ -1,0 +1,5 @@
+const { runa11yCoreOnHtml } = require('/home/user/core-r10/src/testing.js');
+const W = console.warn;
+const ts = ['Untitled','Document','React App','Vite + React + TS','index.html','Home','-','|','Page 1','🏠','​',' ','Welcome to WordPress','Just another WordPress site','localhost:3000','https://example.com/','undefined','null','{{title}}','${title}','Title','My Site','Login','Ohne Titel','Sans titre','無題','Sin título','Checkout – Step 2 of 4 – Shop'];
+for (const t of ts) { console.warn = () => {}; const r = runa11yCoreOnHtml(`<!doctype html><html lang="en"><head><title>${t}</title></head><body><main><h1>h</h1></main></body></html>`, { entryPointParity:false, runOnly:['page-title-present','page-title-patterns'] }); console.warn = W;
+ console.log(JSON.stringify(t).padEnd(34), r.checksResults.map(c => c.ruleId.replace('page-title-','') + '=' + c.outcome + (c.occurrences.length ? '[' + c.occurrences.map(o => (o.data && o.data.details && o.data.details.reasonCode || '?') + (o.lean ? '/' + o.lean.toward : '')).join(',') + ']' : '')).join(' ')); }

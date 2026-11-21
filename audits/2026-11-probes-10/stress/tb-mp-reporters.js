@@ -1,0 +1,17 @@
+const { r } = require('./tb-multiprofile.js');
+const { renderSarifReport } = require('/home/user/core-r10/src/sarif.js');
+const { renderJunitReport } = require('/home/user/core-r10/src/junit.js');
+const { renderEarlReport } = require('/home/user/core-r10/src/earl.js');
+const { renderHtmlReport } = require('/home/user/core-r10/src/report.js');
+const { matchBaseline, buildBaselineEntries } = require('/home/user/core-r10/src/baseline.js');
+console.log('rollup outcomes', JSON.stringify(r.rulesResults.reduce((a,x)=>(a[x.outcome]=(a[x.outcome]||0)+1,a),{})));
+console.log('profiles keys', JSON.stringify(r.profiles).slice(0,600));
+const s = JSON.parse(renderSarifReport(r));
+console.log('SARIF executionSuccessful', s.runs[0].invocations && s.runs[0].invocations.map(i=>({ok:i.executionSuccessful, notes:(i.toolExecutionNotifications||[]).length})));
+const j = renderJunitReport(r);
+console.log('JUnit', (j.match(/<testsuites[^>]*>/)||[])[0], /not run|incomplete|wcag22/i.test(j) ? 'mentions' : 'NO mention of skipped profile');
+const e = renderEarlReport(r); const es = typeof e==='string'? e : JSON.stringify(e);
+console.log('EARL untested count', (es.match(/untested/g)||[]).length, /wcag22/.test(es));
+const h = renderHtmlReport(r);
+console.log('HTML incomplete?', /incomplete/i.test(h), (h.match(/[^<>]{0,80}(incomplete|not run|wcag22-aa)[^<>]{0,80}/ig)||[]).slice(0,5));
+console.log('baseline', JSON.stringify(matchBaseline(r, buildBaselineEntries(r))));

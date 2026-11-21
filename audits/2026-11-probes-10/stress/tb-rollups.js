@@ -1,0 +1,11 @@
+const { runa11yCoreOnHtml } = require('/home/user/core-r10/src/testing.js');
+const html = '<!doctype html><html lang="en"><head><title>p</title></head><body><main><h1>h</h1><img src=a alt="x"><p>text</p></main></body></html>';
+const W = console.warn; console.warn = () => {};
+const full = runa11yCoreOnHtml(html, { entryPointParity: false, engineOptions: { profile: 'wcag22-aa' } });
+const tiny = runa11yCoreOnHtml(html, { entryPointParity: false, engineOptions: { profile: 'wcag22-aa', timeBudgetMs: 1e-300 } });
+console.warn = W;
+const cnt = r => JSON.stringify(r.rulesResults.reduce((a,x)=>(a[x.outcome]=(a[x.outcome]||0)+1,a),{}));
+console.log('full rollups', full.rulesResults.length, cnt(full), 'checks', full.checksResults.length);
+console.log('tiny rollups', tiny.rulesResults.length, cnt(tiny), 'checks', tiny.checksResults.length, 'notRun', tiny.notRun.length);
+const ids = new Set(tiny.rulesResults.map(x=>x.ruleId)); console.log('missing rollups in tiny', full.rulesResults.filter(x=>!ids.has(x.ruleId)).map(x=>x.ruleId+':'+x.outcome).slice(0,10));
+for (const x of tiny.rulesResults.filter(x=>x.outcome!=='cantTell')) console.log('non-cantTell tiny rollup', x.ruleId, x.outcome);

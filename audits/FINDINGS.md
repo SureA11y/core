@@ -7,21 +7,21 @@
 
 | | |
 |---|---|
-| **Verified against** | `main` at `ad47fe3e`, 2026-11-21, for the ninth round (found at `805f33ff`, the round 8 branch) and its fixes (#417); `a021f714`, 2026-11-21, for the eighth round (found at `254b644f`) and its fixes (#416); `78354cc4`, 2026-11-20, for #413's features; `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the leftovers fixed in #412; `ec664338`, 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
-| **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)), [second](./2026-10-stress-test-2.md) (`cfefc02`), [third](./2026-10-stress-test-3.md) (`eaa5d3f1`, with its [outcomes log](./2026-10-stress-test-3-outcomes.md)), [fourth](./2026-10-stress-test-4.md) (`3af2008`) [fifth](./2026-10-stress-test-5.md) (`c528af08`), [sixth](./2026-11-stress-test-6.md) (`23e0a387`), [seventh](./2026-11-stress-test-7.md) (`ec664338`), [eighth](./2026-11-stress-test-8.md) (`254b644f`) and [ninth](./2026-11-stress-test-9.md) (`805f33ff`) |
+| **Verified against** | `main` at `462df5b4`, 2026-11-21, for the tenth round (found at `6e2b905c`) and its fixes and decisions (#421); `ad47fe3e`, 2026-11-21, for the ninth round (found at `805f33ff`, the round 8 branch) and its fixes (#417); `a021f714`, 2026-11-21, for the eighth round (found at `254b644f`) and its fixes (#416); `78354cc4`, 2026-11-20, for #413's features; `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the leftovers fixed in #412; `ec664338`, 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
+| **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)), [second](./2026-10-stress-test-2.md) (`cfefc02`), [third](./2026-10-stress-test-3.md) (`eaa5d3f1`, with its [outcomes log](./2026-10-stress-test-3-outcomes.md)), [fourth](./2026-10-stress-test-4.md) (`3af2008`) [fifth](./2026-10-stress-test-5.md) (`c528af08`), [sixth](./2026-11-stress-test-6.md) (`23e0a387`), [seventh](./2026-11-stress-test-7.md) (`ec664338`), [eighth](./2026-11-stress-test-8.md) (`254b644f`), [ninth](./2026-11-stress-test-9.md) (`805f33ff`) and [tenth](./2026-11-stress-test-10.md) (`6e2b905c`) |
 | **How it is kept** | See [`README.md`](./README.md): before each audit, merge `main`; after it, re-run every open item, move fixed ones to §3, and add new ones |
 
 **How it was built.** Every first-round item was re-run on `cfefc02`, including those the outcomes log marks as fixed, by the re-check probes in [`2026-10-probes-2/recheck-round-1/`](./2026-10-probes-2/recheck-round-1/). Every second-round item was re-run independently while writing that round's report, except those marked *(not re-run)*. Where two audits found the same problem, the entry keeps the **oldest id** and lists the others.
 
 Rounds 3 to 5 were kept on branches of their own until 2026-10-27, when they were gathered here. The third round's follow-up is recorded item by item in its outcomes log; the fourth round's findings were re-run on `c528af08` by the fifth round ([`RECHECK.md`](./2026-10-probes-5/robust/RECHECK.md)); every fifth-round finding, and every round-4 lead still open, was re-run on `92e54df6` with the round's own probes, in Chromium 153 and jsdom.
 
-**Reading an entry.** The id says where it came from: `C-`, `S-`, `O-` and `R-` are first-round ids (custom rules, options, outputs, rules); `NM-`, `VS-`, `ST-`, `OP-`, `RP-` and `RB-` are second-round ids (names, visual, structure, options, reporters, robustness). From the third round on, an id is written with its round (`R3:`, `R4:`, `R5:`, `R6:`, `R7:`), since those rounds reused prefixes of the second (`RB-`, `OP-`, `RP-`); the round's report and probes use the short id. The sixth round's prefixes are `RF-` (reflow), `CG-` (changed rules, the exclusion filter, reporters), `EX-` (experimental APIs, pack tooling), `CE-` (other engines) and `PF-` (speed and memory); the seventh round's are `RW-` (reflow and `p-as-heading`), `VL-` (target size, focus not obscured), `AN-` (names, ARIA, landmarks), `IF-` (the integrator's API) and `SP-` (robustness, speed, memory); the eighth round's are `NW-` (regressions and new-work checks), `NA-` (names, ARIA), `LY-` (layout, visual), `PK-` (packs, API) and `RO-` (robustness). The ninth round's ids carry their round already (`A9-`, `V9-`, `N9-`, `R9-`: API, visual, names, robustness) and are written as they are. Ids never change and are never reused. Verdicts and severities are defined in the [README](./README.md#running-an-audit). The **Details** link leads to the full evidence: repro, spec quotes, browser evidence, cause.
+**Reading an entry.** The id says where it came from: `C-`, `S-`, `O-` and `R-` are first-round ids (custom rules, options, outputs, rules); `NM-`, `VS-`, `ST-`, `OP-`, `RP-` and `RB-` are second-round ids (names, visual, structure, options, reporters, robustness). From the third round on, an id is written with its round (`R3:`, `R4:`, `R5:`, `R6:`, `R7:`), since those rounds reused prefixes of the second (`RB-`, `OP-`, `RP-`); the round's report and probes use the short id. The sixth round's prefixes are `RF-` (reflow), `CG-` (changed rules, the exclusion filter, reporters), `EX-` (experimental APIs, pack tooling), `CE-` (other engines) and `PF-` (speed and memory); the seventh round's are `RW-` (reflow and `p-as-heading`), `VL-` (target size, focus not obscured), `AN-` (names, ARIA, landmarks), `IF-` (the integrator's API) and `SP-` (robustness, speed, memory); the eighth round's are `NW-` (regressions and new-work checks), `NA-` (names, ARIA), `LY-` (layout, visual), `PK-` (packs, API) and `RO-` (robustness). The ninth round's ids carry their round already (`A9-`, `V9-`, `N9-`, `R9-`: API, visual, names, robustness) and are written as they are, as are the tenth round's (`S10-`: the general stress test; `C10-` and `G10-`: core's findings and coverage gaps from the comparison with other engines). Ids never change and are never reused. Verdicts and severities are defined in the [README](./README.md#running-an-audit). The **Details** link leads to the full evidence: repro, spec quotes, browser evidence, cause.
 
 ---
 
 ## 1. Open — to fix
 
-Every finding of rounds 1 to 8 is fixed, decided or closed (§3, §4). Of round 9's 61, the 48 evident ones are fixed in [#417](https://github.com/SureA11y/core/pull/417), merged 2026-11-21; the rest were decided the same day and made in [#418](https://github.com/SureA11y/core/pull/418), merged 2026-11-21 (below). Each fix has a regression test that fails on `main` before it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
+Every finding of rounds 1 to 8 and 10 is fixed, decided or closed (§3, §4); round 10's are all in [#421](https://github.com/SureA11y/core/pull/421), merged 2026-11-21 (§3). Of round 9's 61, the 48 evident ones are fixed in [#417](https://github.com/SureA11y/core/pull/417), merged 2026-11-21; the rest were decided the same day and made in [#418](https://github.com/SureA11y/core/pull/418), merged 2026-11-21 (below). Each fix has a regression test that fails on `main` before it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
 
 ### Still open
 
@@ -100,6 +100,31 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 ---
 
 ## 3. Fixed — history
+
+### Tenth round's findings (in `main`)
+
+Pull request [#421](https://github.com/SureA11y/core/pull/421), merged 2026-11-21 as the single commit `462df5b4`; unreleased, for 1.18.0. Every finding of the [tenth round](./2026-11-stress-test-10.md) (at `6e2b905c`): a general stress test (S10) and a comparison with four other engines (C10, G10). Each reproduced again while it was fixed, with a regression test that fails without its fix. The general round found four bugs in features merged the same day (#420); the agreed measure is in [`STATUS.md`](./STATUS.md) §3.
+
+| # | Finding | Fixed in |
+|---|---|---|
+| S10-1 to S10-4, S10-6 | A profile the time budget skipped, listed in `notRun`; lean-fail occurrences the cap left out, gated; `resize-text-content-loss` measuring glyphs only, and reading the inline axis from `writing-mode`; "+N more" plurals | #421 |
+| C10-1 to C10-3, C10-5, C10-6, C10-8 | `aria-prohibited-children` through roleless wrappers and `aria-owns`; `<embed>` of a page, PDF or Flash left out; a scroll box measured to fit not applicable; the `<marquee>` lean read from scripts that reach it; the ACT mapping doc on role descriptions | #421 |
+
+Decided by the owner on 2026-11-21 and made in #421:
+
+| # | Question | Decision |
+|---|---|---|
+| S10-5 | `timeBudgetMs` in `runa11yCoreAcrossFrames`, each frame starting the clock again | One budget for the whole scan; a frame reached with none left runs no rule and is incomplete |
+| S10-7 | A bold line ending in ":" in `p-as-heading` | Asked about: a final colon ends no sentence |
+| S10-8 | Default titles outside English; leaked placeholders | Defaults in the five shipped languages, and CMS defaults, are generic; a placeholder is asked about (`placeholderTitle`), leaning fail |
+| S10-9 | `timeBudgetMs: Infinity` | Means no limit |
+| C10-4 | A non-focusable click handler styled as a button | Asked about (`CLICK_HANDLER_NOT_FOCUSABLE`), leaning fail |
+| C10-7 | A poster video with no name | Asked about, leaning fail, instead of failing |
+| G10-1 | Radio buttons or checkboxes sharing a name in no named group (1.3.1) | New rule `form-group-name-present`; radios lean fail |
+| G10-5 | Symbol-only text used as a graphic under 3:1 (1.4.11) | New rule `symbol-graphic-contrast`, leaning fail |
+| C10-1 (side effect) | A separator beside a radio inside a plain card in a `radiogroup` | Accepted: it fails |
+
+G10-4 is covered by C10-4; G10-2 and G10-3 were closed without a change (§4).
 
 ### Ninth round's findings (in `main`)
 
@@ -915,6 +940,8 @@ Checked and decided. Don't reopen without new evidence.
 
 | # | Finding | Decision | Reason |
 |---|---|---|---|
+| G10-2 | Instructions with sensory words ("the round button on the right", 1.3.3), which engine B asks about | Not done (decided 2026-11-21) | Too noisy: a wording heuristic that fired 128 times in 60 files of the comparison |
+| G10-3 | A form with no submit button (3.2.2, H32), which engine D fails | Not done (decided 2026-11-21) | Low value: 10 hits, all in 5 fixture files, none on the realistic pages |
 | C-20 | Profiles without forking core | Closed (decided 2026-11-21) | Packs (`definePack`, `deriveStandard`) cover it; reopen if a user asks |
 | R6:CE-5 | "The page starts with an `<h1>`" as a best practice | Closed (decided 2026-11-21) | Not a WCAG requirement and often noise; `page-has-heading-one` checks an `<h1>` exists |
 | R5:RB5-8 (rest) | Thousands of running animations: Chromium's `getAnimations()` cost | Closed (decided 2026-11-21) | Rare pages, and the cost is Chromium's; calling it less risks missing animations |

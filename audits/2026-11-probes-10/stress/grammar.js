@@ -1,0 +1,10 @@
+const { runa11yCoreOnHtml } = require('/home/user/core-r10/src/testing.js');
+const { renderHtmlReport } = require('/home/user/core-r10/src/report.js');
+const { renderJunitReport } = require('/home/user/core-r10/src/junit.js');
+const T = '<table><tr><td>a</td><td>1</td></tr><tr><td>b</td><td>2</td></tr></table>';
+const W = console.warn; console.warn = () => {};
+const r = runa11yCoreOnHtml(`<!doctype html><html lang="en"><head><title>p</title></head><body><main><h1>h</h1>${T.repeat(3)}${'<img src=a>'.repeat(2)}</main></body></html>`, { entryPointParity:false, engineOptions:{ output:{ maxOccurrencesPerRule: 1 } } });
+console.warn = W;
+const t = renderHtmlReport(r).replace(/<style[\s\S]*?<\/style>/g,'').replace(/<script[\s\S]*?<\/script>/g,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');
+console.log('HTML:', [...new Set(t.match(/\+\d+ more not listed[^.]*\./g))]);
+console.log('JUnit:', [...new Set(renderJunitReport(r).match(/\+\d+ more:[^<\n]*/g))]);

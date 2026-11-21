@@ -1,0 +1,13 @@
+const { runa11yCoreOnHtml } = require('/home/user/core-r10/src/testing.js');
+const W = console.warn;
+const run = (b, ids) => { console.warn = () => {}; const r = runa11yCoreOnHtml(`<!doctype html><html lang="en"><head><title>p</title></head><body><main><h1>h</h1><form>${b}</form></main></body></html>`, { entryPointParity:false, runOnly: ids }); console.warn = W; return r.checksResults.map(c => c.ruleId + '=' + c.outcome + (c.occurrences.length ? '[' + c.occurrences.map(o => (o.data && o.data.details && o.data.details.reasonCode || '?') + (o.lean ? '/' + o.lean.toward : '')).join(',') + ']' : '')).join(' '); };
+const ac = ['section-blue shipping street-address','username webauthn','email webauthn','EMAIL','  email  ','off','on','nope','shipping billing email','home email','work tel','fax tel','home street-address','cc-exp-month','bday-day','one-time-code','webauthn','section- email','section-a section-b email','transaction-amount','tel-extension','x-custom email'];
+for (const a of ac) console.log(JSON.stringify(a).padEnd(40), run(`<label>F <input type="text" autocomplete="${a}"></label>`, ['autocomplete-valid']));
+console.log('type mismatch email on number', run(`<label>F <input type="number" autocomplete="email"></label>`, ['autocomplete-valid']));
+console.log('tel on checkbox', run(`<label>F <input type="checkbox" autocomplete="tel"></label>`, ['autocomplete-valid']));
+console.log('disabled bad', run(`<label>F <input disabled autocomplete="nope"></label>`, ['autocomplete-valid']));
+console.log('hidden type bad', run(`<input type="hidden" autocomplete="nope">`, ['autocomplete-valid']));
+console.log('aria-disabled bad', run(`<label>F <input aria-disabled="true" autocomplete="nope"></label>`, ['autocomplete-valid']));
+console.log('select bday-month', run(`<label>F <select autocomplete="bday-month"><option>1</option></select></label>`, ['autocomplete-valid']));
+console.log('textarea street-address', run(`<label>F <textarea autocomplete="street-address"></textarea></label>`, ['autocomplete-valid']));
+console.log('textarea address-line1', run(`<label>F <textarea autocomplete="address-line1"></textarea></label>`, ['autocomplete-valid']));

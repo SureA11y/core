@@ -1,0 +1,13 @@
+const { runa11yCoreOnHtml } = require('/home/user/core-r10/src/testing.js');
+const { renderSarifReport } = require('/home/user/core-r10/src/sarif.js');
+const { renderJunitReport } = require('/home/user/core-r10/src/junit.js');
+const { renderEarlReport } = require('/home/user/core-r10/src/earl.js');
+const { renderHtmlReport } = require('/home/user/core-r10/src/report.js');
+const W = console.warn; console.warn = () => {};
+const r = runa11yCoreOnHtml('<!doctype html><html lang="en"><head><title>p</title></head><body><main><h1>h</h1></main></body></html>', { entryPointParity:false });
+console.warn = W;
+r.engine.packs = ['@acme/p"><script>alert(1)</script>@1.0.0-</x>', 'evil]]>&amp;@2.0.0"\' onload=x', '@scope/only', 'a@b@c'];
+const j = renderJunitReport(r); console.log('JUNIT', (j.match(/<propert[^\n]*packs[^\n]*/)||[])[0]);
+const h = renderHtmlReport(r); console.log('HTML raw script?', /<script>alert/.test(h), (h.match(/[^\n]{0,60}acme[^\n]{0,160}/)||[])[0]);
+const s = JSON.parse(renderSarifReport(r)); console.log('SARIF', JSON.stringify(s.runs[0].tool.extensions), JSON.stringify(s.runs[0].properties && s.runs[0].properties.packs));
+const e = renderEarlReport(r); console.log('EARL', JSON.stringify((typeof e==='string'?JSON.parse(e):e)['@graph'] ? 'graph' : '').slice(0,50), (typeof e==='string'? e : JSON.stringify(e)).match(/hasPart[^\]]*\]/)[0].slice(0,500));
