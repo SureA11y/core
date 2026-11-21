@@ -182,6 +182,39 @@ test(`${RULE_ID}: .focus-visible outside the polyfill's scope is judged as befor
   }
 });
 
+test(`${RULE_ID}: a focus pseudo inside :is() or :where() is a focus rule (round 8, LY-12)`, () => {
+  for (const css of [
+    'a:is(:focus){outline:none}',
+    'a:where(:focus){outline:none}',
+    'a:is(:focus,:hover){outline:none}',
+    'a:matches(:focus){outline:none}',
+    ':is(a, button):is(:focus){outline:none}',
+    'nav :is(.menu :focus){outline:none}'
+  ]) {
+    const result = runa11yCoreOnHtml(
+      page(css, '<nav class="menu"><a href="/x" id="a">x</a></nav>'),
+      {
+        runOnly: [RULE_ID]
+      }
+    );
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'a'), css);
+    assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, [
+      css.slice(0, css.indexOf('{'))
+    ]);
+  }
+  // Another argument the link does not meet, or a replacement written the same way.
+  for (const css of [
+    'a:is(:focus.other){outline:none}',
+    'a:focus{outline:none} a:is(:focus){box-shadow:0 0 0 2px navy}'
+  ]) {
+    const result = runa11yCoreOnHtml(page(css, '<nav class="menu"><a href="/x">x</a></nav>'), {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
 test(`${RULE_ID}: suppression nested in a grouping rule is found`, () => {
   const result = runa11yCoreOnHtml(
     page('@media screen{a:focus{outline:none}}', '<a href="/x" id="a">x</a>'),
@@ -204,6 +237,40 @@ test(`${RULE_ID}: a replacement in the same rule clears the element`, () => {
     const result = runa11yCoreOnHtml(page(`a:focus{outline:none;${decl}}`, '<a href="/x">x</a>'), {
       runOnly: [RULE_ID]
     });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a focus style that draws nothing is no replacement (round 8, LY-3)`, () => {
+  for (const [css, body] of [
+    ['button:focus{outline:none;box-shadow:none}', '<button type="button" id="a">Go</button>'],
+    ['a:focus{outline:none;background:transparent}', '<a href="/x" id="a">x</a>'],
+    ['a:focus{outline:none;background-color:rgba(0,0,0,0)}', '<a href="/x" id="a">x</a>'],
+    ['button:focus{outline:none;border:0}', '<button type="button" id="a">Go</button>'],
+    [
+      'button:focus{outline:none;border:2px solid transparent}',
+      '<button type="button" id="a">Go</button>'
+    ],
+    ['a:focus{outline:none;color:inherit}', '<a href="/x" id="a">x</a>'],
+    ['a:focus{outline:none;filter:none;transform:none}', '<a href="/x" id="a">x</a>'],
+    // The same value the element already shows unfocused changes nothing.
+    [
+      'a:focus{outline:0;text-decoration:none}',
+      '<a href="/x" id="a" style="text-decoration:none">x</a>'
+    ],
+    ['a:focus{outline:0;color:#c00}', '<a href="/x" id="a" style="color:#c00">x</a>']
+  ]) {
+    const result = runa11yCoreOnHtml(page(css, body), { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'a'), css);
+  }
+  // A value that does change the element is still a replacement.
+  for (const [css, body] of [
+    ['a:focus{outline:0;text-decoration:none}', '<a href="/x">x</a>'],
+    ['a:focus{outline:0;color:#c00}', '<a href="/x" style="color:#00c">x</a>'],
+    ['a:focus{outline:none;background:transparent;box-shadow:0 0 0 2px navy}', '<a href="/x">x</a>']
+  ]) {
+    const result = runa11yCoreOnHtml(page(css, body), { runOnly: [RULE_ID] });
     assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
   }
 });

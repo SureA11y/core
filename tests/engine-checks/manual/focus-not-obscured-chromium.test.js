@@ -330,6 +330,38 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
     assert.ok(res.restored);
   });
 
+  // Round 8, RO-2: the scroll the scan makes and takes back fires no scroll
+  // or scrollend at the page's listeners; the reader's next scroll does.
+  await t.test("the scan's scrolling doesn't reach the page's scroll listeners", async () => {
+    const p = await browser.newPage({ viewport: { width: 1024, height: 700 } });
+    try {
+      await p.setContent(
+        doc(
+          LINKS(30) +
+            FOOTER() +
+            `<script>window.seen = []; for (const t of ['scroll', 'scrollend']) { window.addEventListener(t, () => seen.push('window ' + t)); document.addEventListener(t, () => seen.push('document ' + t)); }</script>`
+        )
+      );
+      await addBundle(p);
+      const outcome = await p.evaluate(
+        (id) =>
+          window.a11ycore
+            .runa11yCoreInPage(null, null, { rules: { include: [id] } }, null)
+            .checksResults.find((c) => c.ruleId === id).outcome,
+        RULE_ID
+      );
+      assert.equal(outcome, 'cantTell');
+      await p.waitForTimeout(700);
+      assert.deepEqual(await p.evaluate(() => window.seen), []);
+      await p.evaluate(() => window.scrollTo({ top: 300, behavior: 'instant' }));
+      await p.waitForTimeout(300);
+      const after = await p.evaluate(() => window.seen);
+      assert.ok(after.includes('window scroll'), JSON.stringify(after));
+    } finally {
+      await p.close();
+    }
+  });
+
   // Seventh stress test (VL-3, VL-4, VL-5 on audit/register).
   await t.test('a scroll-padding in percent or calc() clears the box, as px does', async () => {
     const header =
@@ -338,6 +370,26 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
       const res = await scan(doc(header + LINKS(40), `html{scroll-padding-top:${pad}}`));
       assert.equal(res[RULE_ID].outcome, 'pass', pad);
     }
+  });
+
+  // Round 8, NW-9: Chromium keeps min(), max() and clamp() in the computed
+  // value while a percentage is in them.
+  await t.test('a scroll-padding in min(), max() or clamp() is worked out', async () => {
+    const header =
+      '<header style="position:sticky;top:0;height:60px;background:#fff">Site</header>';
+    for (const pad of [
+      'max(10%, 60px)',
+      'min(20%, 70px)',
+      'clamp(60px, 10%, 100px)',
+      'calc(min(5%, 30px) + 40px)'
+    ]) {
+      const res = await scan(doc(header + LINKS(40), `html{scroll-padding-top:${pad}}`));
+      assert.equal(res[RULE_ID].outcome, 'pass', pad);
+    }
+    // One that works out under the header's height still leaves it over focus.
+    const res = await scan(doc(header + LINKS(40), 'html{scroll-padding-top:max(5%, 20px)}'));
+    assert.equal(res[RULE_ID].outcome, 'cantTell');
+    assert.equal(res[RULE_ID].findings[0].metrics.scrollPaddingPx, 35);
   });
 
   await t.test('without a doctype, the window is the viewport, not the document', async () => {
