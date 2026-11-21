@@ -85,6 +85,7 @@
   "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} hides this <{{element}}> from screen readers, so its alt text \"{{alt}}\" is never read. Check whether it is purely decorative.",
   "img_altDecorative_hint_ownHiddenAlt": "If it only decorates, nothing needs to change. If it carries information, remove {{hiddenBy}} so its alt text is read.",
   "img_altDecorative_summary_unnamed": "This <{{element}}> has no name and no role, so screen readers skip it. Check whether it is purely decorative.",
+  "img_altDecorative_summary_unnamedSvg": "This <svg> has no name, so screen readers skip it. Check whether it is purely decorative.",
   "img_altDecorative_summary_unnamedCanvasFallback": "This <{{element}}> has no role and no name of its own, so screen readers skip the drawing and read only its fallback content, \"{{fallback}}\". Check whether the drawing is purely decorative.",
   "img_altQuality_lean_why": "A file name, a web address or a generic word does not say what the image shows.",
   "img_altQuality_lean_why_overridden": "The alt text \"{{alt}}\", not the name, is a file name, a web address or a generic word. aria-label or aria-labelledby names the image instead, but browsers still show the alt when the image does not load.",

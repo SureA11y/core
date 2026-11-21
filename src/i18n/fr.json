@@ -85,6 +85,7 @@
   "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} masque cet élément <{{element}}> aux lecteurs d’écran : son texte alternatif « {{alt}} » n’est donc jamais lu. Vérifiez s’il est purement décoratif.",
   "img_altDecorative_hint_ownHiddenAlt": "S’il ne fait que décorer, rien n’est à changer. S’il porte une information, retirez {{hiddenBy}} pour que son texte alternatif soit lu.",
   "img_altDecorative_summary_unnamed": "Cet élément <{{element}}> n’a ni nom ni rôle : les lecteurs d’écran l’ignorent donc. Vérifiez s’il est purement décoratif.",
+  "img_altDecorative_summary_unnamedSvg": "Cet élément <svg> n’a pas de nom : les lecteurs d’écran l’ignorent donc. Vérifiez s’il est purement décoratif.",
   "img_altDecorative_summary_unnamedCanvasFallback": "Cet élément <{{element}}> n’a ni rôle ni nom propre : les lecteurs d’écran ignorent donc le dessin et ne lisent que son contenu de remplacement, « {{fallback}} ». Vérifiez si le dessin est purement décoratif.",
   "img_altQuality_lean_why": "Un nom de fichier, une adresse web ou un mot générique ne dit pas ce que montre l’image.",
   "img_altQuality_lean_why_overridden": "C’est le texte alt « {{alt}} », non le nom, qui est un nom de fichier, une adresse web ou un mot générique. aria-label ou aria-labelledby nomme l’image à sa place, mais les navigateurs affichent encore l’alt quand l’image ne se charge pas.",

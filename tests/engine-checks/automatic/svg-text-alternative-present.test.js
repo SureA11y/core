@@ -64,13 +64,13 @@ test(`${RULE_ID}: pass when applicable <svg role="graphics-symbol"> has <title> 
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when applicable <svg role="graphics-document"> has no title/desc and no aria name`, () => {
+test(`${RULE_ID}: an unnamed <svg role="graphics-document"> is left out, as a plain <svg> is (its implicit role)`, () => {
   const html = `<!doctype html><html><body>
-    <svg id="bad_gd" role="graphics-document" xmlns="http://www.w3.org/2000/svg"></svg>
+    <svg id="gd" role="graphics-document" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="5" height="5"></rect></svg>
+    <svg id="plain" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="5" height="5"></rect></svg>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 'bad_gd'));
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: pass when applicable <svg role="graphics-document"> has <title> text`, () => {
@@ -172,7 +172,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-text-alternative-present-
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 14, maxOccurrences: 14 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 13, maxOccurrences: 13 });
 
   const expectedFailIds = [
     'svg_case_01',
@@ -187,12 +187,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-text-alternative-present-
     'svg_case_22', // <desc> as first child still doesn't count as a name
     'svg_case_23', // empty <title> + <desc> second: desc still doesn't count as a name
     'svg_case_24', // <desc> misplaced (not first, not pair-second) does not count
-    'svg_case_25', // role="graphics-symbol" is applicability intent
-    'svg_case_26' // role="graphics-document" is applicability intent
+    'svg_case_25' // role="graphics-symbol" is applicability intent
   ];
 
   const expectedNoOccIds = [
     'svg_case_02',
+    'svg_case_26', // role="graphics-document" is the implicit role: no intent
     'svg_case_21', // a direct child <title> counts wherever it is (#118)
     'svg_case_04',
     'svg_case_05',

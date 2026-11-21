@@ -85,6 +85,7 @@
   "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} によってこの <{{element}}> はスクリーンリーダーから隠されているため、代替テキスト「{{alt}}」は読み上げられません。純粋に装飾目的かどうか確認してください。",
   "img_altDecorative_hint_ownHiddenAlt": "装飾だけであれば、変更は不要です。情報を伝える場合は、{{hiddenBy}} を削除して、代替テキストが読み上げられるようにしてください。",
   "img_altDecorative_summary_unnamed": "この <{{element}}> には名前もロールもないため、スクリーンリーダーはこれを読み飛ばします。純粋に装飾目的かどうか確認してください。",
+  "img_altDecorative_summary_unnamedSvg": "この <svg> には名前がないため、スクリーンリーダーはこれを読み飛ばします。純粋に装飾目的かどうか確認してください。",
   "img_altDecorative_summary_unnamedCanvasFallback": "この <{{element}}> にはロールも独自の名前もないため、スクリーンリーダーは描画を読み飛ばし、代替コンテンツ「{{fallback}}」だけを読み上げます。描画が純粋に装飾目的かどうか確認してください。",
   "img_altQuality_lean_why": "ファイル名、Web アドレス、汎用的な語では、画像が何を示しているかは伝わりません。",
   "img_altQuality_lean_why_overridden": "名前ではなく alt テキスト「{{alt}}」が、ファイル名、Web アドレス、または汎用的な語です。画像の名前は aria-label または aria-labelledby が代わりに与えますが、画像が読み込まれないときブラウザーは alt を表示します。",

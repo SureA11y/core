@@ -85,6 +85,7 @@
   "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} verbirgt dieses <{{element}}> vor Screenreadern, sodass sein Alternativtext „{{alt}}“ nie vorgelesen wird. Prüfen Sie, ob es rein dekorativ ist.",
   "img_altDecorative_hint_ownHiddenAlt": "Wenn es nur schmückt, ist nichts zu ändern. Wenn es eine Information trägt, entfernen Sie {{hiddenBy}}, damit sein Alternativtext vorgelesen wird.",
   "img_altDecorative_summary_unnamed": "Dieses <{{element}}> hat weder einen Namen noch eine Rolle, daher überspringen Screenreader es. Prüfen Sie, ob es rein dekorativ ist.",
+  "img_altDecorative_summary_unnamedSvg": "Dieses <svg> hat keinen Namen, daher überspringen Screenreader es. Prüfen Sie, ob es rein dekorativ ist.",
   "img_altDecorative_summary_unnamedCanvasFallback": "Dieses <{{element}}> hat weder eine Rolle noch einen eigenen Namen, daher überspringen Screenreader die Zeichnung und lesen nur seinen Ersatzinhalt „{{fallback}}“ vor. Prüfen Sie, ob die Zeichnung rein dekorativ ist.",
   "img_altQuality_lean_why": "Ein Dateiname, eine Webadresse oder ein allgemeines Wort sagt nicht, was das Bild zeigt.",
   "img_altQuality_lean_why_overridden": "Der alt-Text „{{alt}}“, nicht der Name, ist ein Dateiname, eine Webadresse oder ein allgemeines Wort. aria-label oder aria-labelledby benennt das Bild stattdessen, aber Browser zeigen den alt-Text weiterhin an, wenn das Bild nicht lädt.",

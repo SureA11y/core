@@ -15,8 +15,9 @@
  *   explicit role="none"/"presentation" not overridden by focusability, an
  *   <img alt=""> (the native decorative marker, same focusability
  *   override; only a literally empty alt, so alt=" " is not one), an
- *   unlabeled <svg> whose implicit role is graphics-document
- *   (no img/graphics-symbol role restatement, aria-name, direct child
+ *   unlabeled <svg> whose implicit role is graphics-document, restated by
+ *   role="graphics-document" or not
+ *   (no img/graphics-symbol role, aria-name, direct child
  *   <title>/<desc> with text wherever it is among the children, or
  *   focusability), or an unlabeled <canvas> with no explicit role at all.
  *   An element is skipped when an ancestor whose name stands for its
@@ -688,7 +689,18 @@ function runInPage(ctx) {
         detail: { excludedBy }
       };
     }
-    if (excludedBy === 'unnamed-svg' || excludedBy === 'unnamed-canvas') {
+    // An <svg> has a role, its implicit graphics-document (SVG-AAM), also
+    // when role="graphics-document" restates it: only the name is missing.
+    if (excludedBy === 'unnamed-svg') {
+      return {
+        summary:
+          'This <svg> has no name, so screen readers skip it. Check whether it is purely decorative.',
+        summaryKey: 'img_altDecorative_summary_unnamedSvg',
+        params: {},
+        detail: { excludedBy }
+      };
+    }
+    if (excludedBy === 'unnamed-canvas') {
       return {
         summary: `This <${tag}> has no name and no role, so screen readers skip it. Check whether it is purely decorative.`,
         summaryKey: 'img_altDecorative_summary_unnamed',
