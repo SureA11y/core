@@ -146,8 +146,8 @@
  * - Spacing: a 24px-diameter circle centered on an undersized target's region
  *   must not intersect another (unrelated) target's region or another
  *   undersized target's own circle. Both are tested exactly: the distance
- *   from the circle's centre to the neighbour's region (its polygons, less
- *   the boxes over them) against 12px, and between the two centres against
+ *   from the circle's centre to the neighbour's region (its polygons)
+ *   against 12px, and between the two centres against
  *   24px; a circle that only touches passes. Ancestor/descendant relationships between
  *   the target and the "other" element are never treated as a conflict (see
  *   isRelated): a nested-interactive shape, a small control inside its own
@@ -1508,7 +1508,7 @@ function runInPage(ctx) {
 
   // Where a target can be hit at most: its own boxes (with display:
   // contents, its content's) and those of the content inside it. Its region
-  // lies within, since clips and the boxes over it only take away. Cheap
+  // lies within, since clips only take away. Cheap
   // next to the region, it tells which targets need one.
   function extentOfTarget(el) {
     const cs = getStyle(el);
