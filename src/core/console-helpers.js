@@ -66,7 +66,9 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
       getBoundingClientRect: call('getBoundingClientRect')
     };
   })();
-  var OUTCOME_RANK = { fail: 0, cantTell: 1, pass: 2, notApplicable: 3 };
+  // A rule the scan's time budget left unstarted (result.notRun) checked
+  // nothing: listed after the questions, before what passed.
+  var OUTCOME_RANK = { fail: 0, cantTell: 1, notRun: 2, pass: 3, notApplicable: 4 };
   var SEVERITY_RANK = { critical: 0, serious: 1, moderate: 2, minor: 3 };
   // Among the questions, those that lean fail first, then those that lean
   // pass, then those only a person can judge, as the HTML report groups them.
@@ -104,8 +106,10 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
   // One row per occurrence of a fail or cantTell rule, worst first: fail
   // before cantTell, the questions by their lean, then by severity, then by
   // rule. A question's row says which way it leans ('fail', 'pass', or ''
-  // when only a person can judge). With { all: true }, a row for each rule
-  // that passed or did not apply follows.
+  // when only a person can judge). Each rule the scan's time budget left
+  // unstarted gets a row too, outcome 'notRun', and the console is told the
+  // scan is incomplete. With { all: true }, a row for each rule that passed
+  // or did not apply follows.
   function table(result, options) {
     var all = !!(options && options.all);
     var rows = [];
@@ -131,6 +135,17 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
             summary: o.summary || ''
           });
         }
+        // What output.maxOccurrencesPerRule left out of the result.
+        if (c.occurrencesOmitted > 0) {
+          rows.push({
+            outcome: c.outcome,
+            lean: '',
+            severity: c.severity || '',
+            rule: c.ruleId,
+            element: '',
+            summary: '+' + c.occurrencesOmitted + ' more not listed (output.maxOccurrencesPerRule)'
+          });
+        }
         if (!occurrences.length) {
           rows.push({
             outcome: c.outcome,
@@ -151,6 +166,30 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
           summary: ''
         });
       }
+    }
+    var notRun = result && Array.isArray(result.notRun) ? result.notRun : [];
+    for (var n = 0; n < notRun.length; n++) {
+      if (!notRun[n] || !notRun[n].ruleId) continue;
+      rows.push({
+        outcome: 'notRun',
+        lean: '',
+        severity: '',
+        rule: notRun[n].ruleId,
+        element: '',
+        summary:
+          'not run: the time budget ran out' +
+          (notRun[n].profile ? ' (' + notRun[n].profile + ')' : '')
+      });
+    }
+    var incomplete = result && result.engine && result.engine.incomplete;
+    if (incomplete && global && global.console && typeof global.console.warn === 'function') {
+      global.console.warn(
+        '[surea11y] This scan is incomplete: its time budget of ' +
+          incomplete.timeBudgetMs +
+          ' ms ran out, and ' +
+          (incomplete.rulesNotRun || 0) +
+          ' rule(s) did not run (rows marked notRun). It is not a pass of them.'
+      );
     }
     rows.sort(function (a, b) {
       return (

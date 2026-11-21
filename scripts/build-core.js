@@ -82,6 +82,8 @@ const {
   profileOptionsOf,
   mayBeSkippedPackProfile,
   runProfiles,
+  runProfilesUncapped,
+  capOccurrences,
   withOwnVerdicts,
   lowerAscii,
   policyAllowsFail,
@@ -2650,6 +2652,8 @@ ${inlineConstFunction('profileNamesOf', profileNamesOf)}
 ${inlineConstFunction('profileOptionsOf', profileOptionsOf)}
 ${inlineConstFunction('mayBeSkippedPackProfile', mayBeSkippedPackProfile)}
 ${inlineConstFunction('runProfiles', runProfiles)}
+${inlineConstFunction('runProfilesUncapped', runProfilesUncapped)}
+${inlineConstFunction('capOccurrences', capOccurrences)}
 ${inlineConstFunction('withOwnVerdicts', withOwnVerdicts)}
 ${inlineConstFunction('lowerAscii', lowerAscii)}
 ${inlineConstFunction('policyAllowsFail', policyAllowsFail)}

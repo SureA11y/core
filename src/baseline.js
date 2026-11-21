@@ -7,7 +7,9 @@ const {
   locationText,
   occurrenceOutcome,
   reasonCodeOf,
-  leaningOccurrencesOf
+  leaningOccurrencesOf,
+  notRunOf,
+  omittedOf
 } = require('./scan-result.js');
 const BASELINE_MOVES = require('./baseline-moves.json');
 
@@ -146,6 +148,24 @@ function isFailOccurrence(check, occurrence) {
 // failures.
 function buildBaselineEntries(result, options) {
   const frames = framesOf(result, 'buildBaselineEntries');
+  // A result that left failures out (output.maxOccurrencesPerRule) or rules
+  // unrun (timeBudgetMs) writes a baseline that doesn't know them: every
+  // later scan then finds them new.
+  const incomplete = incompletenessOf(frames);
+  if (incomplete) {
+    const said = [];
+    if (incomplete.occurrencesOmitted) {
+      said.push(
+        `output.maxOccurrencesPerRule left ${incomplete.occurrencesOmitted} failing occurrence(s) out of it`
+      );
+    }
+    if (incomplete.notRun) said.push(`${incomplete.notRun.length} rule(s) did not run`);
+    try {
+      console.warn(
+        `[surea11y] buildBaselineEntries: the result is incomplete (${said.join('; ')}), so the baseline is incomplete too. Write a baseline from a scan without a cap or a time budget.`
+      );
+    } catch {}
+  }
   const entryOf = (f, extra) => ({
     ruleId: f.ruleId,
     reasonCode: f.reasonCode,
@@ -417,6 +437,25 @@ function compare(findings, remaining) {
   };
 }
 
+// What a result (each frame of it) left unchecked, or null: the rules its
+// time budget left unstarted (engineOptions.timeBudgetMs), each once, and
+// the failing occurrences output.maxOccurrencesPerRule left out of it.
+function incompletenessOf(frames) {
+  const notRun = [];
+  let occurrencesOmitted = 0;
+  for (const { result } of frames) {
+    for (const n of notRunOf(result)) if (!notRun.includes(n.ruleId)) notRun.push(n.ruleId);
+    for (const check of (result && result.checksResults) || []) {
+      if (check && check.outcome === 'fail') occurrencesOmitted += omittedOf(check).fail;
+    }
+  }
+  if (!notRun.length && !occurrencesOmitted) return null;
+  return {
+    ...(notRun.length ? { notRun } : {}),
+    ...(occurrencesOmitted ? { occurrencesOmitted } : {})
+  };
+}
+
 // Which failures the baseline knows. Its entries for findings that lean
 // fail are left out, unless `leanFail: true` asks for those findings to be
 // compared with them too, in `leanFail`.
@@ -433,6 +472,16 @@ function matchBaseline(result, baselineEntries, options) {
   };
   if (options && options.leanFail === true) {
     match.leanFail = compare(leanFindingsOf(frames), entryCounts(baselineEntries, true));
+  }
+  // A scan that did not check everything it selected can't say it found
+  // nothing new: what it left out may hold new failures.
+  const incomplete = incompletenessOf(frames);
+  if (incomplete) match.incomplete = incomplete;
+  // Failing occurrences left out of the result can't be matched, so they
+  // count as new: a capped result never matches as clean.
+  if (incomplete && incomplete.occurrencesOmitted) {
+    match.totalFail += incomplete.occurrencesOmitted;
+    match.newCount += incomplete.occurrencesOmitted;
   }
   return match;
 }

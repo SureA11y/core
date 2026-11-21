@@ -43,7 +43,11 @@ const {
   wcagScopeOf,
   occurrenceOutcome,
   leaningOccurrencesOf,
-  reporterOptions
+  reporterOptions,
+  notRunOf,
+  timeBudgetOf,
+  packsOf,
+  omittedOf
 } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
@@ -274,6 +278,9 @@ function runProperties(result) {
     props.profiles = engine.profiles.slice();
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     props.optInRules = engine.optInRules.slice();
+  // The packs the scan ran with, as name@version (engine.packs); each is
+  // also one of the tool's extensions.
+  if (Array.isArray(engine.packs) && engine.packs.length) props.packs = engine.packs.slice();
   if (engine.environment && typeof engine.environment === 'object')
     props.environment = JSON.parse(JSON.stringify(engine.environment));
   return Object.keys(props).length ? props : null;
@@ -460,6 +467,7 @@ function renderSarifReport(result, given) {
             }
           : null;
 
+      let failsShown = 0;
       for (const occurrence of check.occurrences) {
         if (!occurrence) continue;
 
@@ -467,6 +475,7 @@ function renderSarifReport(result, given) {
         if (outcome === 'fail') {
           // Already known via the baseline: omitted, not re-gated.
           if (known.has(occurrence)) continue;
+          failsShown += 1;
           failResults.push(
             buildResult(
               check,
@@ -490,17 +499,81 @@ function renderSarifReport(result, given) {
           );
         }
       }
+
+      // Occurrences output.maxOccurrencesPerRule left out of the result: a
+      // note says how many. Failures among them that no result above stands
+      // for (the baseline knew every one kept) can't be matched against the
+      // baseline, so they are a result of their own, which gates.
+      const omitted = omittedOf(check);
+      if (omitted.total) {
+        notices.push({
+          level: 'note',
+          message: {
+            text: `+${omitted.total} more occurrence${omitted.total === 1 ? '' : 's'} of the rule ${check.ruleId} not listed: output.maxOccurrencesPerRule kept ${check.occurrences.length}${omitted.fail ? ` (${omitted.fail} of those left out fail)` : ''}`
+          },
+          associatedRule: { id: check.ruleId }
+        });
+      }
+      if (omitted.fail && check.outcome === 'fail' && !failsShown) {
+        failResults.push(
+          buildResult(
+            check,
+            {
+              summary: `${omitted.fail} failing occurrence${omitted.fail === 1 ? ' was' : 's were'} left out of the result by output.maxOccurrencesPerRule, so the baseline can't be matched against ${omitted.fail === 1 ? 'it' : 'them'}.`,
+              html: '',
+              data: { details: { reasonCode: 'OCCURRENCES_OMITTED' } }
+            },
+            outside ? 'note' : 'error',
+            artifactUri,
+            framePath,
+            outside
+          )
+        );
+      }
     }
   }
 
+  // A rule the scan's time budget left unstarted checked nothing: an error,
+  // so the run never reads as a pass of it.
+  let cutShort = false;
+  for (const { frame, result: frameResult } of frames) {
+    if (!frameResult) continue;
+    const budget = timeBudgetOf(frameResult);
+    const where = frame.path.length ? ` in the frame ${framePathText(frame.path)}` : '';
+    for (const n of notRunOf(frameResult)) {
+      cutShort = true;
+      notices.push({
+        level: 'error',
+        message: {
+          text: `The rule ${n.ruleId} was not run${where}${n.profile ? ` for the profile ${n.profile}` : ''}: the scan reached its time budget${budget !== null ? ` of ${budget} ms` : ''} first, so it checked nothing`
+        },
+        associatedRule: { id: n.ruleId }
+      });
+    }
+  }
   const notRun = profilesNotRunOf(frames);
   for (const p of notRun) {
+    // A profile the time budget left unstarted is a scan cut short, which
+    // allowProfilesNotRun does not accept.
+    const budget = String(p.reason).split(', ').includes('timeBudget');
+    if (budget) cutShort = true;
     notices.push({
-      level: allowProfilesNotRun === true ? 'warning' : 'error',
+      level: allowProfilesNotRun === true && !budget ? 'warning' : 'error',
       message: { text: `The profile ${p.profile} was asked for and not run: ${p.reason}` }
     });
   }
-  const executionSuccessful = !(notRun.length && allowProfilesNotRun !== true);
+  const executionSuccessful = !(notRun.length && allowProfilesNotRun !== true) && !cutShort;
+
+  // The packs of every frame's scan, each once.
+  const extensions = [];
+  for (const { result: frameResult } of frames) {
+    for (const p of packsOf(frameResult)) {
+      if (extensions.some((x) => x.name === p.name && x.version === (p.version || undefined)))
+        continue;
+      extensions.push({ name: p.name, ...(p.version ? { version: p.version } : {}) });
+    }
+  }
+  extensions.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 
   const sarifLog = {
     $schema: SARIF_SCHEMA_URI,
@@ -518,7 +591,11 @@ function renderSarifReport(result, given) {
               (top.engine && typeof top.engine.version === 'string' && top.engine.version) ||
               '0.0.0',
             rules
-          }
+          },
+          // Each pack the scan ran with is a component of the tool: its
+          // rules are among the driver's, and its version is the one that
+          // judged them.
+          ...(extensions.length ? { extensions } : {})
         },
         // fail first: matches docs/REPORT.md's own "violations before advisory
         // findings" ordering.

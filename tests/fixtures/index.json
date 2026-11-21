@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 151,
-    "withFixture": 146,
+    "total": 152,
+    "withFixture": 147,
     "withoutFixture": 5
   },
   "rows": [
@@ -2267,6 +2267,25 @@
         "FAIL": 0,
         "CANTTELL": 1,
         "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "resize-text-content-loss",
+      "title": "Text is not cut off at 640 CSS pixels wide (200% zoom)",
+      "type": "manual",
+      "wcagSc": [
+        "1.4.4"
+      ],
+      "ruleFile": "src/checks/manual/resize-text-content-loss-manual.js",
+      "testFile": "tests/engine-checks/manual/resize-text-content-loss-chromium.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/resize-text-content-loss-all-scenarios.html",
+      "totalCases": 12,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 0,
+        "CANTTELL": 6,
+        "OTHER": 4
       }
     },
     {

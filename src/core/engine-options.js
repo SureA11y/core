@@ -159,11 +159,17 @@ function engineOptionSpec() {
     policy: { test: isObject, expected: 'an object', keys: policyFields },
     output: {
       test: isObject,
-      expected: '{ includeSelector, includeHtml, detail }',
+      expected: '{ includeSelector, includeHtml, detail, maxOccurrencesPerRule }',
       keys: {
         includeSelector: T.boolean,
         includeHtml: T.boolean,
-        detail: T.oneOf(['full', 'findings'])
+        detail: T.oneOf(['full', 'findings']),
+        // At most this many occurrences of each rule in the result, the
+        // rest counted (occurrencesOmitted); outcomes and rollups unchanged.
+        maxOccurrencesPerRule: {
+          test: (v) => typeof v === 'number' && Number.isInteger(v) && v >= 1,
+          expected: 'a whole number, 1 or more'
+        }
       }
     },
     // Besides include and exclude, a key of rules is a rule's id and its
@@ -181,6 +187,12 @@ function engineOptionSpec() {
     probes: T.any,
     perfStats: T.boolean,
     profileRules: T.boolean,
+    // Once a scan has spent this long, it starts no more rules; those it
+    // didn't start are listed in its result (notRun). Off when not given.
+    timeBudgetMs: {
+      test: (v) => typeof v === 'number' && Number.isFinite(v) && v > 0,
+      expected: 'a number of milliseconds, more than 0'
+    },
     pingWaitTime: T.number,
     frameWaitTime: T.number
   };

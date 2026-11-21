@@ -666,6 +666,50 @@ function leaningFailures(result, options) {
   return out;
 }
 
+// The rules a scan selected and did not start, since its time budget
+// (engineOptions.timeBudgetMs) ran out first: [{ ruleId, reason, profile? }],
+// `profile` in a scan of several profiles. Empty for a complete scan, and
+// for a stored result that predates the field.
+function notRunOf(result) {
+  const list = result && Array.isArray(result.notRun) ? result.notRun : [];
+  return list.filter((n) => n && typeof n.ruleId === 'string' && n.ruleId);
+}
+
+// The time budget a scan was cut short by, in ms, or null.
+function timeBudgetOf(result) {
+  const incomplete = result && result.engine && result.engine.incomplete;
+  return incomplete && typeof incomplete.timeBudgetMs === 'number' ? incomplete.timeBudgetMs : null;
+}
+
+// The occurrences of a check result that output.maxOccurrencesPerRule left
+// out: { total, fail, cantTell }, zeros for a check that lost none.
+function omittedOf(check) {
+  const total =
+    check && Number.isInteger(check.occurrencesOmitted) && check.occurrencesOmitted > 0
+      ? check.occurrencesOmitted
+      : 0;
+  const by = (check && check.occurrencesOmittedByOutcome) || {};
+  const count = (n) => (total && Number.isInteger(n) && n > 0 ? n : 0);
+  return { total, fail: count(by.fail), cantTell: count(by.cantTell) };
+}
+
+// The packs a result's scan ran with (engine.packs, each name@version), as
+// { name, version }, sorted by name; a scoped name keeps its own "@". An
+// entry with no version gets version null. Empty for a scan without packs.
+function packsOf(result) {
+  const list = result && result.engine && result.engine.packs;
+  const out = [];
+  for (const entry of Array.isArray(list) ? list : []) {
+    if (typeof entry !== 'string' || !entry.trim()) continue;
+    const text = entry.trim();
+    const at = text.lastIndexOf('@');
+    const name = at > 0 ? text.slice(0, at) : text;
+    const version = at > 0 ? text.slice(at + 1) : null;
+    if (!out.some((p) => p.name === name && p.version === version)) out.push({ name, version });
+  }
+  return out.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+}
+
 // A reporter's options as it reads them: undefined, null or anything but an
 // object is no options, as {} is (round 9, A9-11). A key it doesn't read
 // that looks like a typo of one it does, or the start of one ("baseline"
@@ -711,5 +755,9 @@ module.exports = {
   reviewGroupOf,
   reasonCodeOf,
   leaningOccurrencesOf,
-  leaningFailures
+  leaningFailures,
+  notRunOf,
+  timeBudgetOf,
+  packsOf,
+  omittedOf
 };
