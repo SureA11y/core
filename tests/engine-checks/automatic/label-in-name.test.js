@@ -834,3 +834,19 @@ test(`${RULE_ID}: text written without spaces is compared by characters (round 9
   const occ = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
   assert.strictEqual(occ.i18n.params.missingWords, '"検索"');
 });
+
+// A ruby annotation is a reading aid over the base text: the visible label
+// leaves it out, as the name from content does ("漢<rt>kan</rt>" reads "漢").
+test(`${RULE_ID}: a ruby annotation is no part of the visible label (round 9, N9-2)`, async () => {
+  const page = (body) =>
+    `<!doctype html><html lang="ja"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  for (const body of [
+    '<a href="/tokyo" aria-label="東京"><ruby>東京<rt>とうきょう</rt></ruby></a>',
+    '<button aria-label="漢字を読む"><ruby>漢<rp>(</rp><rt>kan</rt><rp>)</rp></ruby>字</button>',
+    '<button lang="en" aria-label="Tokyo tour"><ruby>Tokyo<rt>capital</rt></ruby> tour</button>'
+  ]) {
+    const result = await runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] });
+    const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+    assert.strictEqual(rule.outcome, 'pass', body);
+  }
+});

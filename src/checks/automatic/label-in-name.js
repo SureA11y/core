@@ -28,7 +28,8 @@
  *   a <br> starts a new word, and text in a box nobody can see (clipped away,
  *   1x1 px or fully transparent, as screen-reader-only text is) is left
  *   out, as are the options of a <select> and the text of a <textarea>,
- *   which are a field's value, not label text. A drop-down <select> that is
+ *   which are a field's value, not label text, and a ruby annotation
+ *   (<rt>, <rp>), which the name from content leaves out too. A drop-down <select> that is
  *   itself an aria-labelledby target shows only its selected option, which
  *   is the text read from it. aria-hidden is not
  *   excluded: it changes nothing about what is rendered on screen, which is
@@ -580,9 +581,18 @@ function runInPage(ctx) {
           }
           if (type !== 1 || isNonRenderedTag(n) || hidden(n)) continue;
           // What a <select> or <textarea> shows is its value (its options,
-          // its text), not label text.
+          // its text), not label text. A ruby annotation (<rt>, and the <rp>
+          // parentheses around it) is a reading aid for the base text, left
+          // out as the name from content leaves it out: "漢<rt>kan</rt>"
+          // reads "漢".
           const childTag = String(dom.tagName(n) || '').toLowerCase();
-          if (childTag === 'select' || childTag === 'textarea') continue;
+          if (
+            childTag === 'select' ||
+            childTag === 'textarea' ||
+            childTag === 'rt' ||
+            childTag === 'rp'
+          )
+            continue;
           const apart = boundaryOf(n) === 'block';
           if (apart) parts.push(BOX_BREAK);
           walk(n);

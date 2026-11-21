@@ -91,7 +91,10 @@ const CASES = [
     '<span id="x">Phone</span><span id="y">Home</span><input id="t" aria-labelledby="x y x">',
     'Phone Home Phone'
   ],
-  ['<button id="t">Show <span hidden="until-found"><b>terms</b></span></button>', 'Show terms']
+  ['<button id="t">Show <span hidden="until-found"><b>terms</b></span></button>', 'Show terms'],
+  // A ruby annotation is no part of the name from content (round 9, N9-2).
+  ['<button id="t"><ruby>漢<rt>kan</rt></ruby></button>', '漢'],
+  ['<button id="t"><ruby>漢<rp>(</rp><rt>kan</rt><rp>)</rp></ruby>字</button>', '漢字']
 ];
 
 test('shared name computation agrees with Chromium', { skip }, async (t) => {

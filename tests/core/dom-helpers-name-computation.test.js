@@ -1690,3 +1690,15 @@ test('labels: a hidden label names nothing, unless the control is hidden with it
   assert.equal(name('h4'), 'Clipped');
   assert.equal(name('h5'), 'Both hidden');
 });
+
+test('name from content: a ruby annotation (<rt>, <rp>) is left out, as Chromium leaves it out (round 9, N9-2)', () => {
+  const { helpers, document } = helpersFor(
+    '<button id="r1"><ruby>漢<rt>kan</rt></ruby></button>' +
+      '<button id="r2"><ruby>漢<rp>(</rp><rt>kan</rt><rp>)</rp></ruby>字</button>' +
+      '<span id="r3"><ruby>Tokyo<rt>capital</rt></ruby> tour</span><a href="#" id="r4" aria-labelledby="r3"></a>'
+  );
+  const name = (id) => helpers.getNameFromContentInfo(byId(document, id)).value;
+  assert.equal(name('r1'), '漢');
+  assert.equal(name('r2'), '漢字');
+  assert.equal(helpers.getAccessibleNameInfo(byId(document, 'r4')).value, 'Tokyo tour');
+});

@@ -7567,6 +7567,14 @@ function createDomHelpers(opts) {
           const svgRoot = dom.closest(node, 'svg');
           if (svgRoot && svgRoot !== el && dom.contains(el, svgRoot)) return;
         }
+        // Nor is a ruby annotation (<rt>) or its fallback parenthesis
+        // (<rp>): Chromium names <button><ruby>漢<rt>kan</rt></ruby></button>
+        // "漢", from the base text alone.
+        if (
+          (local === 'rt' || local === 'rp') &&
+          dom.namespaceURI(node) === 'http://www.w3.org/1999/xhtml'
+        )
+          return;
       }
 
       // opts.skipNode: the control a <label> is being read for. Its own name
