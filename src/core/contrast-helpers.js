@@ -6262,11 +6262,15 @@ function createContrastHelpers(opts, shared) {
   // El's text measured in its own colors and in those of the
   // ::first-line or ::first-letter its blocker carries (pseudoColors):
   // { own, pseudo }, each { fg, bg, ratio, fontSizePx, fontWeightNum,
-  // isLargeText }, with `pseudo.pseudo` naming the pseudo-element, and the
-  // background's assumptions. Null when the blocker carries no colors or
-  // the background can't be worked out. Which text the pseudo-element
-  // paints depends on line breaks, but where both colors meet a ratio, or
-  // both fall short of it, every reading of the text does too.
+  // isLargeText, paintsText }, with `pseudo.pseudo` naming the
+  // pseudo-element, and the background's assumptions. Null when the
+  // blocker carries no colors or the background can't be worked out.
+  // paintsText: whether that color certainly paints some of el's own text
+  // (the pseudo-element's where el's text starts with its own text; el's
+  // own past a ::first-letter, with a second letter). Which words a
+  // ::first-line holds depends on line breaks, but where both colors meet
+  // a ratio, or both fall short of it, every reading of the text does too,
+  // and a color that certainly paints text and falls short fails it.
   function measurePseudoElementText(el, bgOpts) {
     try {
       const blocker = getComputabilityBlocker(el);
@@ -6292,8 +6296,34 @@ function createContrastHelpers(opts, shared) {
       const pAlpha = clamp01(pc.color.a * fade);
       const pFg = { ...compositeRgba({ ...pc.color, a: pAlpha }, pBack), a: 1 };
       const pPx = Number.isFinite(pc.fontSizePx) ? pc.fontSizePx * scale : ownPx;
+      // Whether each color certainly paints some of el's own text. Where
+      // el's first child is text with a letter or digit in it, the
+      // pseudo-element paints the start of that text: the first letter, or
+      // the first line, whichever words it holds. The rest of the text is
+      // in el's own colors for certain only past a ::first-letter, where
+      // there is a second letter or digit; past a ::first-line it may all
+      // fit on the first line.
+      const ALNUM = /[\p{L}\p{N}]/u;
+      let first = dom.firstChild(el);
+      while (
+        first &&
+        (dom.nodeType(first) === 8 ||
+          (dom.nodeType(first) === 3 && !/\S/.test(dom.nodeValue(first) || '')))
+      )
+        first = dom.nextSibling(first);
+      const pseudoPaints =
+        !!first && dom.nodeType(first) === 3 && ALNUM.test(dom.nodeValue(first) || '');
+      let letters = 0;
+      if (pseudoPaints && pc.pseudo === '::first-letter') {
+        for (let n = dom.firstChild(el); n && letters < 2; n = dom.nextSibling(n)) {
+          if (dom.nodeType(n) !== 3) continue;
+          const m = String(dom.nodeValue(n) || '').match(/[\p{L}\p{N}]/gu);
+          letters += m ? m.length : 0;
+        }
+      }
       return {
         own: {
+          paintsText: letters >= 2,
           fg: ownFg,
           bg: back,
           ratio: contrastRatio(ownFg, back),
@@ -6303,6 +6333,7 @@ function createContrastHelpers(opts, shared) {
         },
         pseudo: {
           pseudo: pc.pseudo,
+          paintsText: pseudoPaints,
           fg: pFg,
           bg: pBack,
           ratio: contrastRatio(pFg, pBack),

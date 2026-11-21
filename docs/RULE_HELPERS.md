@@ -1081,8 +1081,11 @@ the one `::first-line` or `::first-letter` that differs from the element's, as
 nothing else blocks the measurement and that pseudo-element draws only colors (no
 image, shadow, outline or opacity); `measurePseudoElementText(el, opts)` then measures
 the text both ways (`{ own, pseudo }`, each `{ fg, bg, ratio, fontSizePx,
-fontWeightNum, isLargeText }`, or `null`), so a rule decides where both colors are on
-the same side of its ratio.
+fontWeightNum, isLargeText, paintsText }`, or `null`), so a rule decides where both
+colors are on the same side of its ratio, and where the color that falls short
+certainly paints some of the text (`paintsText`: the pseudo-element's where the
+element's first child is text with a letter or digit, the element's own past a
+`::first-letter` where a second letter or digit follows).
 `getTextScan`'s result lists, besides `elements`, `generated`: one `{ el, pseudo,
 textCount }` per `::before`, `::after` or `::marker` of `el` that draws text, read only
 in a browser; `measureGeneratedText(el, pseudo, opts)` measures it in the
