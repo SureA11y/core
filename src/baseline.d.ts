@@ -1,6 +1,11 @@
 // Types for @surea11y/core/baseline (docs/BASELINE.md).
 
-import type { ScanResult, CrossFrameResult, BindingFramesResult } from './index';
+import type {
+  ScanResult,
+  CompactScanResult,
+  CrossFrameResult,
+  BindingFramesResult
+} from './index';
 
 /** One known failure: what identifies it (ruleId, reasonCode, html) and where it was. */
 export interface BaselineEntry {
@@ -66,7 +71,7 @@ export interface BaselineMatch {
  * A cross-frame result covers every frame. Throws a TypeError for anything else.
  */
 export function buildBaselineEntries(
-  result: ScanResult | CrossFrameResult | BindingFramesResult,
+  result: ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult,
   options?: { leanFail?: boolean }
 ): BaselineEntry[];
 
@@ -79,7 +84,7 @@ export function buildBaselineEntries(
  * [null], an entry without a ruleId, a field of the wrong type) throws a TypeError with code 'INVALID_BASELINE' naming what is wrong.
  */
 export function matchBaseline(
-  result: ScanResult | CrossFrameResult | BindingFramesResult,
+  result: ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult,
   baselineEntries: BaselineEntry[] | BaselineFile | null | undefined,
   options?: { leanFail?: boolean }
 ): BaselineMatch;
@@ -97,7 +102,7 @@ export function matchBaseline(
  */
 export function migrateBaselineEntries(
   baselineEntries: BaselineEntry[] | BaselineFile | null | undefined,
-  result?: ScanResult | CrossFrameResult | BindingFramesResult
+  result?: ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult
 ): BaselineEntry[];
 
 /** The identity of a finding: ruleId, reasonCode and html, and the frame's path for a failure inside a frame. */

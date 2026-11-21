@@ -214,6 +214,14 @@ export interface StrictEngineOptions extends EngineOptionFields {
   strictOptions: true;
 }
 
+/**
+ * What a scan with these options returns: a CompactScanResult when
+ * `output.detail` is `'findings'`, a ScanResult otherwise.
+ */
+export type ScanResultFor<T> = T extends { output: { detail: 'findings' } }
+  ? CompactScanResult
+  : ScanResult;
+
 /** Which outcomes and confidence values a scan may report. See docs/POLICY.md. */
 export interface PolicyContract {
   id?: string;
@@ -1102,7 +1110,7 @@ export type FlatFrame =
  * empty path; anything else gives [].
  */
 export function flattenCrossFrameResult(
-  value: CrossFrameResult | BindingFramesResult | ScanResult
+  value: CrossFrameResult | BindingFramesResult | ScanResult | CompactScanResult
 ): FlatFrame[];
 
 /**
@@ -1152,7 +1160,7 @@ export interface LeaningFailure {
  * covers every frame. Throws a TypeError for anything else.
  */
 export function leaningFailures(
-  result: ScanResult | CrossFrameResult | BindingFramesResult,
+  result: ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult,
   options?: { wcagOnly?: boolean }
 ): LeaningFailure[];
 
@@ -1162,12 +1170,12 @@ export function leaningFailures(
  * Scans the current `window`/`document` (a real page, or jsdom set up on the
  * globals), using the rule modules from the package. For Node.
  */
-export function runDomRulesInPage(
+export function runDomRulesInPage<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
   pageUrl?: string | null,
   contextSelector?: ContextSelector | null,
-  engineOptions?: EngineOptions | StrictEngineOptions | null,
+  engineOptions?: T | null,
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
-): ScanResult;
+): ScanResultFor<T>;
 
 export interface HowToCheck {
   steps: string[];
@@ -1182,7 +1190,9 @@ export interface HowToCheck {
  * it is. runDomRulesInPage does this itself; a binding that runs
  * runa11yCoreInPage in a page calls it on what comes back.
  */
-export function addHowToCheck<T extends ScanResult | CrossFrameResult | BindingFramesResult>(
+export function addHowToCheck<
+  T extends ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult
+>(
   result: T,
   options?: HowToCheckOptions
 ): T;
@@ -1640,12 +1650,12 @@ export function relatedRequirements(
  * The same scan from a single self-contained function, which can be
  * serialized into a page (the browser bindings inject its source).
  */
-export function runa11yCoreInPage(
+export function runa11yCoreInPage<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
   pageUrl?: string | null,
   contextSelector?: ContextSelector | null,
-  engineOptions?: EngineOptions | StrictEngineOptions | null,
+  engineOptions?: T | null,
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
-): ScanResult;
+): ScanResultFor<T>;
 
 /** Options for waitForPageReady. */
 export interface PageReadyOptions {
@@ -1940,7 +1950,13 @@ export function getProfileWcagTarget(profile: string): WcagTarget | null;
  * `frame`, the path to it.
  */
 export function getMargins(
-  result: ScanResult | CrossFrameResult | BindingFramesResult | null | undefined
+  result:
+    | ScanResult
+    | CompactScanResult
+    | CrossFrameResult
+    | BindingFramesResult
+    | null
+    | undefined
 ): Array<Margin & { ruleId: string; frame?: string[] }>;
 
 /**
