@@ -123,10 +123,25 @@ function runInPage(ctx) {
 
   // Detection is document-wide; occurrences are limited to the scanned scope.
   // An inert duplicate still takes the reference, so it stays in scope.
+  // Only the copies of a duplicated id that something refers to are
+  // reported, so only they are queried: the scope's hidden-content filter
+  // works out each element's style, which under jsdom cost most of the
+  // rule's time on a page of many ids (round 8 leftover). Past a few
+  // hundred such ids, one query of every id is shorter than the selector.
+  const reportedIds = [];
+  for (const id of referencedIds) if ((idMap.get(id) || []).length > 1) reportedIds.push(id);
+  const attrValue = (id) =>
+    id
+      .replace(/[\\"]/g, '\\$&')
+      .replace(/\n/g, '\\a ')
+      .replace(/\r/g, '\\d ')
+      .replace(/\f/g, '\\c ');
+  const scopeSelector =
+    reportedIds.length <= 300 ? reportedIds.map((id) => `[id="${attrValue(id)}"]`).join(',') : '[id]';
   let inScope = null;
-  if (helpers && typeof helpers.queryAllSmart === 'function') {
+  if (reportedIds.length && helpers && typeof helpers.queryAllSmart === 'function') {
     try {
-      const scoped = helpers.queryAllSmart('[id]', { inert: true });
+      const scoped = helpers.queryAllSmart(scopeSelector, { inert: true });
       inScope = new Set(Array.isArray(scoped) ? scoped : [...(scoped || [])]);
     } catch {
       inScope = null;
