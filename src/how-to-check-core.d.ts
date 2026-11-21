@@ -3,6 +3,7 @@
 
 import type {
   BindingFramesResult,
+  CompactScanResult,
   CrossFrameResult,
   HowToCheck,
   HowToCheckOptions,
@@ -35,7 +36,9 @@ export type ReviewDictionaries =
  * `_pass`, `_fail`), in English otherwise. In Node, addHowToCheck from @surea11y/core
  * does the same with every dictionary core ships.
  */
-export function applyHowToCheck<T extends ScanResult | CrossFrameResult | BindingFramesResult>(
+export function applyHowToCheck<
+  T extends ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult
+>(
   result: T,
   dictionaries: ReviewDictionaries,
   options?: HowToCheckOptions

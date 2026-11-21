@@ -99,7 +99,7 @@ listProcedures({ packs: [rgaa], standard: 'rgaa', locale: 'fr' }); // a pack's s
 | Option | |
 |---|---|
 | `standard` | `'wcag'` (the default), `'best-practice'`, or a pack's standard by key or name. |
-| `version` | WCAG's (`'2.0'`, `'2.1'`, `'2.2'`, the default), or the pack's standard's (the latest that gives procedures, by default). |
+| `version` | WCAG's (`'2.0'`, `'2.1'`, `'2.2'`, the default), or the pack's standard's (the latest that gives procedures, by default). A number is read as the version it writes: `2.1` as `'2.1'`, `2` as `'2.0'`. |
 | `levels` | WCAG only: `'A'`, `'AA'`, `'AAA'` or a list of them; every level by default. An unknown level throws. |
 | `locale`, `packs` | As for `proceduresFor`. |
 | `tools`, `automation`, `rules` | Filters ([below](#filters)). |
@@ -161,7 +161,7 @@ WCAG's criteria are grouped under their principles and guidelines, as WCAG numbe
 | `automation: ['manual', 'partial']` | with one of these automation levels: what is left for a person after a scan |
 | `rules: 'img-alt-present'` | that one of these rules claims |
 
-Given several filters, a facet must match each. A technology facet that matches keeps the facet it is covered by, whose procedure assesses it. A requirement's `complete` stays its own: whether every facet has a procedure, not only those listed.
+A tool other than `keyboard`, `pointer`, `screen-reader`, `zoom`, `contrast-theme` and `devtools`, or an automation level other than `full`, `partial` and `manual`, throws, as an unknown level does: it would list nothing. Given several filters, a facet must match each. A technology facet that matches keeps the facet it is covered by, whose procedure assesses it. A requirement's `complete` stays its own: whether every facet has a procedure, not only those listed.
 
 ## A checklist
 

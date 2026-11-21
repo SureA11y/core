@@ -132,13 +132,36 @@ ${inPageRunnerSource}
   // reach it as data on engineOptions -- this wrapper is what passes it.
   const registered = Object.create(null);
 
+  // The caller's messages for a locale layer over the side file's for it,
+  // key by key, as they layer over a built-in dictionary: one string given
+  // for 'de' no longer drops the rest of the loaded German (round 9, A9-5).
+  // The locale's case doesn't matter, as it doesn't to the engine.
   function withRegisteredMessages(engineOptions) {
     const options = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
-    if (Object.keys(registered).length === 0) return options;
+    const loaded = Object.keys(registered);
+    if (loaded.length === 0) return options;
 
-    return Object.assign({}, options, {
-      messages: Object.assign({}, registered, options.messages)
-    });
+    const given = options.messages;
+    if (given !== undefined && given !== null && (typeof given !== 'object' || Array.isArray(given))) {
+      // Not a table of locales: the engine says so, as without a side file.
+      return options;
+    }
+    const messages = {};
+    for (const locale of loaded) messages[locale] = registered[locale];
+    for (const locale of Object.keys(given || {})) {
+      const own = given[locale];
+      const lower = locale.toLowerCase();
+      const side = loaded.filter(function (key) {
+        return key.toLowerCase() === lower;
+      })[0];
+      if (side !== undefined && own && typeof own === 'object' && !Array.isArray(own)) {
+        delete messages[side];
+        messages[locale] = Object.assign({}, registered[side], own);
+      } else {
+        messages[locale] = own;
+      }
+    }
+    return Object.assign({}, options, { messages: messages });
   }
 
   const api = {

@@ -107,7 +107,7 @@ test("given the pack, a scan uses the pack's entries instead of the built-in, an
 });
 
 test('a pack named "EN 301 549" under another key is still refused', () => {
-  const other = definePack({
+  const other = {
     name: 'other-en',
     version: '1.0.0',
     namespace: 'otheren',
@@ -119,7 +119,8 @@ test('a pack named "EN 301 549" under another key is still refused', () => {
       profiles: { 'otheren-1': { version: '1', tags: wcagTags('2.2') } },
       mappingsFor: () => []
     }
-  });
+  };
+  assert.throws(() => definePack(other), /named "EN 301 549", as one of core's is/);
   assert.match(preparePacks([other]).skipped[0].reason, /named "EN 301 549", as one of core's is/);
   assert.deepEqual(preparePacks([standIn]).skipped, []);
 });

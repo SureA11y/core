@@ -1,6 +1,11 @@
 // Types for @surea11y/core/sarif (docs/SARIF.md).
 
-import type { ScanResult, CrossFrameResult, BindingFramesResult } from './index';
+import type {
+  ScanResult,
+  CompactScanResult,
+  CrossFrameResult,
+  BindingFramesResult
+} from './index';
 import type { BaselineEntry, BaselineFile } from './baseline';
 
 export interface SarifOptions {
@@ -33,6 +38,6 @@ export interface SarifOptions {
 
 /** A SARIF 2.1.0 log, as JSON text. A cross-frame result covers every frame. Throws a TypeError for anything else. */
 export function renderSarifReport(
-  result: ScanResult | CrossFrameResult | BindingFramesResult,
+  result: ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult,
   options?: SarifOptions
 ): string;

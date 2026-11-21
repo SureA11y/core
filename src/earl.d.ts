@@ -1,6 +1,12 @@
 // Types for @surea11y/core/earl (docs/EARL.md).
 
-import type { ScanResult, CrossFrameResult, BindingFramesResult, Outcome } from './index';
+import type {
+  ScanResult,
+  CompactScanResult,
+  CrossFrameResult,
+  BindingFramesResult,
+  Outcome
+} from './index';
 
 export interface EarlOptions {
   /** { name, version }; null omits assertedBy. The version defaults to the engine version the results carry. */
@@ -38,9 +44,10 @@ export interface EarlReport {
 export function renderEarlReport(
   results:
     | ScanResult
+    | CompactScanResult
     | CrossFrameResult
     | BindingFramesResult
-    | Array<ScanResult | CrossFrameResult | BindingFramesResult>,
+    | Array<ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult>,
   options?: EarlOptions
 ): EarlReport;
 

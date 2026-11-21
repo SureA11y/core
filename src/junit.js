@@ -58,7 +58,8 @@ const {
   standardOfEntryIn,
   wcagScopeOf,
   occurrenceOutcome,
-  leaningOccurrencesOf
+  leaningOccurrencesOf,
+  reporterOptions
 } = require('./scan-result.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -459,7 +460,19 @@ function frameSuites(result, frame, baseline, opts, totals) {
   });
 }
 
-function renderJunitReport(result, options = {}) {
+const JUNIT_OPTIONS = [
+  'cantTellAs',
+  'leanFailAs',
+  'leanFailWcagOnly',
+  'allowProfilesNotRun',
+  'includeNotApplicable',
+  'baselineEntries',
+  'packs',
+  'name'
+];
+
+function renderJunitReport(result, given) {
+  const options = reporterOptions('renderJunitReport', given, JUNIT_OPTIONS);
   let frames = framesOf(result, 'renderJunitReport');
   // cantTellAs is 'skipped' (the default) or 'failure', in any case. Another
   // value is a mistake that would quietly not gate, so it throws.
