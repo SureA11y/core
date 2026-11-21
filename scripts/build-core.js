@@ -687,6 +687,11 @@ function asciiLowerChar(c) {
 
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
+  // A Set of names is read as the list it holds (by its type tag, so a
+  // page's Set read by the bundle in another realm counts too).
+  if (typeof value === 'object' && Object.prototype.toString.call(value) === '[object Set]') {
+    value = [...value];
+  }
   if (Array.isArray(value)) {
     const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
     const norm = lower ? arr.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : arr.slice();
@@ -1552,8 +1557,14 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     const rest = { ...runOnly };
     delete rest.type;
     delete rest.values;
-    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: runOnly.values };
-    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: runOnly.values };
+    // A Set of names is read as the list it holds; passed on as it is, the
+    // checks below took it for no list and ran every rule.
+    const values =
+      runOnly.values && typeof runOnly.values === 'object' && Object.prototype.toString.call(runOnly.values) === '[object Set]'
+        ? [...runOnly.values]
+        : runOnly.values;
+    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
+    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
