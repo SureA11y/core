@@ -27,7 +27,14 @@
  *   custom element whose ElementInternals give it the listitem role). A role
  *   attribute naming no known role leaves the tag to decide. A wrapper
  *   <div> used for styling (no role at all) still breaks list semantics
- *   the same as before. Non-whitespace text directly inside the list is an
+ *   the same as before. A wrapper the accessibility tree sees through is
+ *   not a child of its own: an element other than <li> whose role is none
+ *   or presentation (not kept by a global ARIA attribute or focus), or one
+ *   with no role, native or given (nor a link or button), drawn with
+ *   display: contents. Chromium
+ *   exposes the <li> elements in it as the list's items, so they are
+ *   checked as the list's children, as is any text in the wrapper.
+ *   Non-whitespace text directly inside the list is an
  *   invalid child too: HTML allows only <li> and script-supporting elements
  *   there, and the text belongs to no list item.
  *   A child that does not belong FAILS only where the page shows an item
@@ -200,6 +207,31 @@ function runInPage(ctx) {
     return el ? helpers.flatChildElements(el) : [];
   }
 
+  // A wrapper the accessibility tree sees through, as Chromium does: its
+  // children are the list's (<ul><div role="none"><li>, or a <div> with
+  // display: contents). An <li> is never one: its role is what is checked.
+  function isTransparentWrapper(child, tag) {
+    if (tag === 'li') return false;
+    const role = resolvedExplicitRole(child);
+    if (role === 'none' || role === 'presentation') {
+      return !(
+        typeof helpers.isPresentationalRoleIgnored === 'function' &&
+        helpers.isPresentationalRoleIgnored(child)
+      );
+    }
+    if (role) return false;
+    try {
+      // A native element with a role of its own (a named <section>, a <nav>)
+      // or a link or button is no wrapper the tree sees through.
+      if (helpers.aria.getContainmentRole(child)) return false;
+      if (/^(a|area|button)$/.test(String(dom.tagName(child) || '').toLowerCase())) return false;
+      const cs = helpers.computedStyle(child) || {};
+      return String(cs.display || '').trim() === 'contents';
+    } catch {
+      return false;
+    }
+  }
+
   // Non-whitespace text directly inside, in the flat tree.
   function hasDirectText(el) {
     return (el ? helpers.flatChildNodes(el) : []).some(
@@ -207,9 +239,32 @@ function runInPage(ctx) {
     );
   }
 
+  // The list's children as the accessibility tree has them: the children
+  // of a wrapper it sees through stand in its place, and its text is the
+  // list's. Children not exposed to it are left out.
+  function listChildrenOf(el) {
+    const out = { items: [], text: hasDirectText(el) };
+    const walk = (container, depth) => {
+      for (const child of childElementsOf(container)) {
+        if (!child || !dom.tagName(child)) continue;
+        if (!isExposedToAt(child)) continue;
+        const tag = dom.tagName(child).toLowerCase();
+        if (depth < 32 && isTransparentWrapper(child, tag)) {
+          if (hasDirectText(child)) out.text = true;
+          walk(child, depth + 1);
+          continue;
+        }
+        out.items.push(child);
+      }
+    };
+    walk(el, 0);
+    return out;
+  }
+
   for (const el of nodes) {
     if (!el) continue;
-    const hasText = hasDirectText(el);
+    const listed = listChildrenOf(el);
+    const hasText = listed.text;
     if (!dom.firstElementChild(el) && !hasText) continue;
     const listRole = resolvedExplicitRole(el);
     if (listRole && listRole !== 'list') continue;
@@ -226,9 +281,7 @@ function runInPage(ctx) {
     // in the markup (SC 1.3.1). Any other stray child, or loose text, breaks
     // HTML's content model without such a loss being shown.
     let showsLostItem = false;
-    for (const child of childElementsOf(el)) {
-      if (!child || !dom.tagName(child)) continue;
-      if (!isExposedToAt(child)) continue;
+    for (const child of listed.items) {
       const tag = dom.tagName(child).toLowerCase();
 
       const explicitRole = resolvedExplicitRole(child);
