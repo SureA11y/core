@@ -14028,11 +14028,17 @@ const engineOptionSpec = (function engineOptionSpec() {
     policy: { test: isObject, expected: 'an object', keys: policyFields },
     output: {
       test: isObject,
-      expected: '{ includeSelector, includeHtml, detail }',
+      expected: '{ includeSelector, includeHtml, detail, maxOccurrencesPerRule }',
       keys: {
         includeSelector: T.boolean,
         includeHtml: T.boolean,
-        detail: T.oneOf(['full', 'findings'])
+        detail: T.oneOf(['full', 'findings']),
+        // At most this many occurrences of each rule in the result, the
+        // rest counted (occurrencesOmitted); outcomes and rollups unchanged.
+        maxOccurrencesPerRule: {
+          test: (v) => typeof v === 'number' && Number.isInteger(v) && v >= 1,
+          expected: 'a whole number, 1 or more'
+        }
       }
     },
     // Besides include and exclude, a key of rules is a rule's id and its
@@ -14050,6 +14056,12 @@ const engineOptionSpec = (function engineOptionSpec() {
     probes: T.any,
     perfStats: T.boolean,
     profileRules: T.boolean,
+    // Once a scan has spent this long, it starts no more rules; those it
+    // didn't start are listed in its result (notRun). Off when not given.
+    timeBudgetMs: {
+      test: (v) => typeof v === 'number' && Number.isFinite(v) && v > 0,
+      expected: 'a number of milliseconds, more than 0'
+    },
     pingWaitTime: T.number,
     frameWaitTime: T.number
   };
@@ -25449,11 +25461,14 @@ const rollupCompositeResults = (function rollupCompositeResults(
           const unselected =
             added && !inSet(adding.selectedIds, tid) && !profileExcluded.includes(tid);
           if (unselected) notSelectedCount += 1;
+          // Selected and not started: the scan's time budget ran out.
+          const notRun = !!adding && inSet(adding.notRunIds, tid);
           contributors.push({
             testId: tid,
             outcome: 'missing',
             ...custom,
-            ...(unselected ? { notSelected: true } : {})
+            ...(unselected ? { notSelected: true } : {}),
+            ...(notRun ? { notRun: 'timeBudget' } : {})
           });
           continue;
         }
@@ -26655,6 +26670,19 @@ const runCoreSettled = (function runCoreSettled(
   COMPOSITE_RULES
 ) {
   const dom = createSafeDom();
+  // engineOptions.timeBudgetMs: once the scan has spent this long, it starts
+  // no more rules, and lists those it didn't start (notRun). Read only when
+  // it is a number above 0; enforceEngineOptions says anything else.
+  const scanStartMs = nowMs();
+  const timeBudgetMs =
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    typeof engineOptions.timeBudgetMs === 'number' &&
+    Number.isFinite(engineOptions.timeBudgetMs) &&
+    engineOptions.timeBudgetMs > 0
+      ? engineOptions.timeBudgetMs
+      : null;
+  const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
   // for a key that looks like a typo of a known one.
   enforceEngineOptions(engineOptions);
@@ -27682,6 +27710,12 @@ const runCoreSettled = (function runCoreSettled(
     const applicabilityFn =
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
+    // Past the time budget, a rule is not started: listed, so the scan never
+    // reads as one that checked it.
+    if (timeBudgetMs !== null && nowMs() - scanStartMs >= timeBudgetMs) {
+      notRunRules.push({ ruleId: defResolved.ruleId, reason: 'timeBudget' });
+      continue;
+    }
 
     const callerConfig = callerRuleConfig[defResolved.ruleId] || null;
     // A rule's declared settings (contrast-minimum's thresholds) are its
@@ -28042,8 +28076,27 @@ const runCoreSettled = (function runCoreSettled(
     ENGINE_TAG,
     SCHEMA_VERSION,
     resolvedCustom.defs,
-    { wcagVersion: targetWcagVersion, selectedIds, namedIds, namedCriteria }
+    {
+      wcagVersion: targetWcagVersion,
+      selectedIds,
+      namedIds,
+      namedCriteria,
+      notRunIds: notRunRules.map((n) => n.ruleId)
+    }
   );
+  if (notRunRules.length) {
+    try {
+      console.warn(
+        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
+          timeBudgetMs +
+          ' ms and did not run ' +
+          notRunRules.length +
+          ' rule' +
+          (notRunRules.length === 1 ? '' : 's') +
+          ' (result.notRun); its result is incomplete.'
+      );
+    } catch {}
+  }
 
   // A custom rule keeps exactly the mappings it declares; every other result
   // drops the standards this run did not ask for.
@@ -28281,6 +28334,16 @@ const runCoreSettled = (function runCoreSettled(
         : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {}),
       ...(findingsOnly ? { outputDetail: 'findings' } : {}),
+      // A scan that did not run every rule it selected: never a clean one.
+      ...(notRunRules.length
+        ? {
+            incomplete: {
+              reason: 'timeBudget',
+              timeBudgetMs,
+              rulesNotRun: notRunRules.length
+            }
+          }
+        : {}),
       environment
     },
     url,
@@ -28293,7 +28356,8 @@ const runCoreSettled = (function runCoreSettled(
     rulesResults,
     ...(standards.length ? { standards } : {}),
     overriddenBuiltinIds,
-    skippedCustomRules
+    skippedCustomRules,
+    ...(notRunRules.length ? { notRun: notRunRules } : {})
   };
 });
 const isThenable = (function isThenable(value) {
@@ -28903,6 +28967,15 @@ const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packN
   return false;
 });
 const runProfiles = (function runProfiles(engineOptions, run) {
+  // output.maxOccurrencesPerRule applies to the result as a whole, once its
+  // outcomes, rollups and profiles' verdicts are decided.
+  const capped = (r) =>
+    r && typeof r.then === 'function'
+      ? r.then((x) => capOccurrences(x, engineOptions))
+      : capOccurrences(r, engineOptions);
+  return capped(runProfilesUncapped(engineOptions, run));
+});
+const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
   const allowFail = policyAllowsFail(engineOptions);
   const asked =
@@ -28936,9 +29009,52 @@ const runProfiles = (function runProfiles(engineOptions, run) {
       );
     }
     const runs = [];
+    // engineOptions.timeBudgetMs is the whole scan's: each profile after the
+    // first gets what is left of it, and one that would start with none left
+    // is not run (engine.profilesNotRun, reason timeBudget).
+    const budget =
+      engineOptions &&
+      typeof engineOptions.timeBudgetMs === 'number' &&
+      Number.isFinite(engineOptions.timeBudgetMs) &&
+      engineOptions.timeBudgetMs > 0
+        ? engineOptions.timeBudgetMs
+        : null;
+    const clock = () => {
+      try {
+        if (typeof performance !== 'undefined' && performance && performance.now) {
+          return performance.now();
+        }
+      } catch {
+        // no performance clock
+      }
+      return Date.now();
+    };
+    const started = budget === null ? 0 : clock();
     const step = (i) => {
-      if (i >= unique.length) return mergeProfileResults(runs, unique, allowFail);
-      const result = run(Object.assign({}, engineOptions, { profile: unique[i] }));
+      if (i >= unique.length) {
+        const merged = mergeProfileResults(runs, unique, allowFail);
+        // The budget the scan was given, not what was left of it for the
+        // profile that ran out.
+        if (merged && merged.engine && merged.engine.incomplete) {
+          merged.engine.incomplete.timeBudgetMs = budget;
+        }
+        return merged;
+      }
+      const left = budget === null ? null : budget - (clock() - started);
+      if (left !== null && i > 0 && left <= 0) {
+        const skipped = {};
+        Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
+        runs.push({ profile: unique[i], result: skipped });
+        return step(i + 1);
+      }
+      const result = run(
+        Object.assign(
+          {},
+          engineOptions,
+          { profile: unique[i] },
+          left !== null && i > 0 ? { timeBudgetMs: left } : {}
+        )
+      );
       if (thenable(result)) {
         return result.then((r) => {
           runs.push({ profile: unique[i], result: r });
@@ -28951,6 +29067,101 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     return step(0);
   }
   return withOwnVerdicts(run(engineOptions), allowFail);
+});
+const capOccurrences = (function capOccurrences(result, engineOptions) {
+  const output =
+    engineOptions && typeof engineOptions === 'object' ? engineOptions.output : undefined;
+  const max = output && typeof output === 'object' ? output.maxOccurrencesPerRule : undefined;
+  if (typeof max !== 'number' || !Number.isInteger(max) || max < 1) return result;
+  if (!result || typeof result !== 'object' || !Array.isArray(result.checksResults)) return result;
+  const tierOf = (check, o) => {
+    const own = o && typeof o === 'object' ? o.occurrenceOutcome || o.outcome : undefined;
+    if (own === 'fail' || own === 'cantTell' || own === 'pass') return own;
+    return check.outcome === 'fail' || check.outcome === 'cantTell' || check.outcome === 'pass'
+      ? check.outcome
+      : 'notApplicable';
+  };
+  const rankOf = (check, o) => {
+    const tier = tierOf(check, o);
+    if (tier === 'fail') return 0;
+    if (tier === 'cantTell') return o && o.lean && o.lean.toward === 'fail' ? 1 : 2;
+    return 3;
+  };
+  const keptByRule = new Map();
+  let omittedTotal = 0;
+  const checksResults = result.checksResults.map((check) => {
+    const list = check && Array.isArray(check.occurrences) ? check.occurrences : null;
+    if (!list || list.length <= max) return check;
+    const kept = list
+      .map((o, i) => i)
+      .sort((a, b) => rankOf(check, list[a]) - rankOf(check, list[b]) || a - b)
+      .slice(0, max)
+      .sort((a, b) => a - b);
+    const byOutcome = {};
+    const keep = new Set(kept);
+    list.forEach((o, i) => {
+      if (keep.has(i)) return;
+      const tier = tierOf(check, o);
+      byOutcome[tier] = (byOutcome[tier] || 0) + 1;
+    });
+    const omitted = list.length - kept.length;
+    omittedTotal += omitted;
+    keptByRule.set(check.ruleId, { kept, total: list.length });
+    return Object.assign({}, check, {
+      occurrences: kept.map((i) => list[i]),
+      occurrencesOmitted: omitted,
+      occurrencesOmittedByOutcome: byOutcome
+    });
+  });
+  if (!omittedTotal) return result;
+  // A rollup's record of what it made of each finding follows the findings
+  // kept, as it is in the order of the check's occurrences.
+  const rulesResults = Array.isArray(result.rulesResults)
+    ? result.rulesResults.map((rollup) => {
+        const details = rollup && rollup.data && rollup.data.details;
+        const contributors = details && Array.isArray(details.contributors) && details.contributors;
+        if (!contributors) return rollup;
+        let touched = false;
+        const next = contributors.map((c) => {
+          const cap = c && keptByRule.get(c.testId);
+          if (!cap || !Array.isArray(c.findingOutcomes) || c.findingOutcomes.length !== cap.total)
+            return c;
+          touched = true;
+          return Object.assign({}, c, {
+            findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i])
+          });
+        });
+        if (!touched) return rollup;
+        return Object.assign({}, rollup, {
+          data: Object.assign({}, rollup.data, {
+            details: Object.assign({}, details, { contributors: next })
+          })
+        });
+      })
+    : result.rulesResults;
+  const out = Object.assign({}, result, {
+    engine: Object.assign({}, result.engine, {
+      occurrenceCap: {
+        maxOccurrencesPerRule: max,
+        occurrencesOmitted: omittedTotal,
+        rulesCapped: keptByRule.size
+      }
+    }),
+    checksResults,
+    rulesResults
+  });
+  // A mark the merge of several profiles reads stays with the result.
+  if (result.__profileNotApplied) {
+    try {
+      Object.defineProperty(out, '__profileNotApplied', {
+        value: result.__profileNotApplied,
+        configurable: true
+      });
+    } catch {
+      // nothing to keep
+    }
+  }
+  return out;
 });
 const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
   // A result first: a page may add then to Object.prototype, which makes
@@ -29087,7 +29298,9 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
             ? 'overridden-by-selection'
             : why === 'pack-skipped'
               ? 'pack-skipped'
-              : 'unknown-profile'
+              : why === 'timeBudget'
+                ? 'timeBudget'
+                : 'unknown-profile'
       });
     }
   }
@@ -29356,6 +29569,24 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     ...(packs.length ? { packs } : {})
   });
   if (!oneLaw) delete engine.law;
+  // The rules a profile's scan did not start, and the profiles not started,
+  // for the time budget: the merged scan is incomplete.
+  const rulesNotRun = [];
+  for (const r of ran) {
+    for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
+      if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+    }
+  }
+  const budgetProfiles = notRun.filter((n) => n.reason === 'timeBudget');
+  const incomplete = engines.find((e) => e.incomplete);
+  if (incomplete || budgetProfiles.length) {
+    engine.incomplete = Object.assign(
+      { reason: 'timeBudget' },
+      incomplete ? incomplete.incomplete : {},
+      { rulesNotRun: rulesNotRun.length },
+      budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {}
+    );
+  } else delete engine.incomplete;
   void asked;
   const out = Object.assign({}, first, {
     engine,
@@ -29367,6 +29598,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   if (overridden.length || Array.isArray(first.overriddenBuiltinIds))
     out.overriddenBuiltinIds = overridden;
   if (skippedPacks.length) out.skippedPacks = skippedPacks;
+  if (rulesNotRun.length) out.notRun = rulesNotRun;
+  else delete out.notRun;
   // A custom rule skipped is one no profile ran: one profile's selection
   // can leave out a rule another runs.
   const skippedLists = ran.map((r) =>
@@ -44099,13 +44332,17 @@ const RUNTIME_CATALOG = {
       "report_noUrl": "(keine URL)",
       "report_meta_rulesRun": "ausgeführte Regeln",
       "report_meta_totalOccurrences": "Fundstellen insgesamt",
+      "report_meta_occurrencesOmitted": "Fundstellen nicht aufgeführt",
       "report_meta_engine": "Engine",
       "report_meta_schemaVersion": "Schemaversion",
+      "report_meta_packs": "Pakete",
       "report_meta_target": "Ziel",
       "report_meta_profile": "Profil",
       "report_meta_law": "Gesetz",
       "report_meta_profileNotRun": "nicht ausgeführt",
       "report_meta_optInRules": "Opt-in-Regeln",
+      "report_meta_rulesNotRun": "Regeln nicht ausgeführt",
+      "report_incomplete_timeBudget": "Unvollständiger Scan: Sein Zeitbudget von {{budget}} ms war aufgebraucht, bevor alle ausgewählten Regeln gelaufen sind. Nicht ausgeführt ({{count}}): {{rules}}. Sie haben nichts geprüft; nichts in diesem Bericht gilt für sie als bestanden.",
       "report_meta_viewport": "Viewport",
       "report_meta_colorScheme": "Farbschema",
       "report_meta_fonts": "Webfonts",
@@ -44189,6 +44426,7 @@ const RUNTIME_CATALOG = {
       "report_card_noSelector": "(keiner)",
       "report_card_ruleError": "Die Regel wurde nicht abgeschlossen: {{error}}",
       "report_card_representative": "Selektor und Zusammenfassung oben stammen von einer repräsentativen Fundstelle; insgesamt {{count}} bei dieser Regel.",
+      "report_card_moreOmitted": "+{{count}} weitere, nicht aufgeführt: Der Scan hat {{kept}} Fundstellen dieser Regel behalten (output.maxOccurrencesPerRule). Sie sind oben mitgezählt.",
       "report_card_help": "So beheben Sie {{rule}}",
       "report_card_understanding": "{{sc}} {{title}} verstehen",
       "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
@@ -45912,13 +46150,17 @@ const RUNTIME_CATALOG = {
       "report_noUrl": "(no url)",
       "report_meta_rulesRun": "rules run",
       "report_meta_totalOccurrences": "total occurrences",
+      "report_meta_occurrencesOmitted": "occurrences not listed",
       "report_meta_engine": "engine",
       "report_meta_schemaVersion": "schema version",
+      "report_meta_packs": "packs",
       "report_meta_target": "target",
       "report_meta_profile": "profile",
       "report_meta_law": "law",
       "report_meta_profileNotRun": "not run",
       "report_meta_optInRules": "opt-in rules",
+      "report_meta_rulesNotRun": "rules not run",
+      "report_incomplete_timeBudget": "Incomplete scan: its time budget of {{budget}} ms ran out before every rule it selected had run. Not run ({{count}}): {{rules}}. These checked nothing, so nothing in this report passes them.",
       "report_meta_viewport": "viewport",
       "report_meta_colorScheme": "color scheme",
       "report_meta_fonts": "web fonts",
@@ -46002,6 +46244,7 @@ const RUNTIME_CATALOG = {
       "report_card_noSelector": "(none)",
       "report_card_ruleError": "The rule did not complete: {{error}}",
       "report_card_representative": "Selector/summary above are from one representative occurrence; {{count}} total on this rule.",
+      "report_card_moreOmitted": "+{{count}} more not listed: the scan kept {{kept}} occurrences of this rule (output.maxOccurrencesPerRule). They are counted above.",
       "report_card_help": "How to fix {{rule}}",
       "report_card_understanding": "Understanding {{sc}} {{title}}",
       "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
@@ -47725,13 +47968,17 @@ const RUNTIME_CATALOG = {
       "report_noUrl": "(sin URL)",
       "report_meta_rulesRun": "reglas ejecutadas",
       "report_meta_totalOccurrences": "apariciones en total",
+      "report_meta_occurrencesOmitted": "apariciones sin listar",
       "report_meta_engine": "motor",
       "report_meta_schemaVersion": "versión del esquema",
+      "report_meta_packs": "paquetes",
       "report_meta_target": "objetivo",
       "report_meta_profile": "perfil",
       "report_meta_law": "ley",
       "report_meta_profileNotRun": "no ejecutado",
       "report_meta_optInRules": "reglas activadas explícitamente",
+      "report_meta_rulesNotRun": "reglas no ejecutadas",
+      "report_incomplete_timeBudget": "Análisis incompleto: su presupuesto de tiempo de {{budget}} ms se agotó antes de que se ejecutaran todas las reglas seleccionadas. No ejecutadas ({{count}}): {{rules}}. No comprobaron nada, así que nada en este informe las da por superadas.",
       "report_meta_viewport": "área de visualización",
       "report_meta_colorScheme": "esquema de color",
       "report_meta_fonts": "fuentes web",
@@ -47815,6 +48062,7 @@ const RUNTIME_CATALOG = {
       "report_card_noSelector": "(ninguno)",
       "report_card_ruleError": "La regla no se completó: {{error}}",
       "report_card_representative": "El selector y el resumen anteriores corresponden a una aparición representativa; {{count}} en total en esta regla.",
+      "report_card_moreOmitted": "+{{count}} más, sin listar: el análisis conservó {{kept}} apariciones de esta regla (output.maxOccurrencesPerRule). Se cuentan arriba.",
       "report_card_help": "Cómo corregir {{rule}}",
       "report_card_understanding": "Comprender {{sc}} {{title}}",
       "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
@@ -49538,13 +49786,17 @@ const RUNTIME_CATALOG = {
       "report_noUrl": "(aucune URL)",
       "report_meta_rulesRun": "règles exécutées",
       "report_meta_totalOccurrences": "occurrences au total",
+      "report_meta_occurrencesOmitted": "occurrences non listées",
       "report_meta_engine": "moteur",
       "report_meta_schemaVersion": "version du schéma",
+      "report_meta_packs": "paquets",
       "report_meta_target": "cible",
       "report_meta_profile": "profil",
       "report_meta_law": "loi",
       "report_meta_profileNotRun": "non exécuté",
       "report_meta_optInRules": "règles activées explicitement",
+      "report_meta_rulesNotRun": "règles non exécutées",
+      "report_incomplete_timeBudget": "Analyse incomplète : son budget de temps de {{budget}} ms a été épuisé avant que toutes les règles sélectionnées ne s’exécutent. Non exécutées ({{count}}) : {{rules}}. Elles n’ont rien vérifié : rien dans ce rapport ne les donne comme réussies.",
       "report_meta_viewport": "zone d’affichage",
       "report_meta_colorScheme": "schéma de couleurs",
       "report_meta_fonts": "polices web",
@@ -49628,6 +49880,7 @@ const RUNTIME_CATALOG = {
       "report_card_noSelector": "(aucun)",
       "report_card_ruleError": "La règle ne s'est pas terminée : {{error}}",
       "report_card_representative": "Le sélecteur et le résumé ci-dessus proviennent d’une occurrence représentative ; {{count}} au total pour cette règle.",
+      "report_card_moreOmitted": "+{{count}} de plus, non listées : l’analyse a gardé {{kept}} occurrences de cette règle (output.maxOccurrencesPerRule). Elles sont comptées ci-dessus.",
       "report_card_help": "Comment corriger {{rule}}",
       "report_card_understanding": "Comprendre {{sc}} {{title}}",
       "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
@@ -51351,13 +51604,17 @@ const RUNTIME_CATALOG = {
       "report_noUrl": "(URL なし)",
       "report_meta_rulesRun": "実行したルール",
       "report_meta_totalOccurrences": "検出箇所の合計",
+      "report_meta_occurrencesOmitted": "一覧にない検出箇所",
       "report_meta_engine": "エンジン",
       "report_meta_schemaVersion": "スキーマバージョン",
+      "report_meta_packs": "パック",
       "report_meta_target": "対象",
       "report_meta_profile": "プロファイル",
       "report_meta_law": "法令",
       "report_meta_profileNotRun": "未実行",
       "report_meta_optInRules": "オプトインルール",
+      "report_meta_rulesNotRun": "未実行のルール",
+      "report_incomplete_timeBudget": "不完全なスキャン: 選択されたすべてのルールが実行される前に、{{budget}} ms の時間予算を使い切りました。実行されなかったもの ({{count}}): {{rules}}。これらは何も検査していないため、このレポートのどの結果もこれらの合格を意味しません。",
       "report_meta_viewport": "ビューポート",
       "report_meta_colorScheme": "カラースキーム",
       "report_meta_fonts": "Web フォント",
@@ -51441,6 +51698,7 @@ const RUNTIME_CATALOG = {
       "report_card_noSelector": "(なし)",
       "report_card_ruleError": "ルールは完了しませんでした: {{error}}",
       "report_card_representative": "上記のセレクターと概要は、代表的な 1 件のものです。このルールの検出箇所は合計 {{count}} 件です。",
+      "report_card_moreOmitted": "ほかに {{count}} 件 (一覧には表示されません): スキャンはこのルールの検出箇所を {{kept}} 件まで保持しました (output.maxOccurrencesPerRule)。上の件数には含まれています。",
       "report_card_help": "{{rule}} の修正方法",
       "report_card_understanding": "{{sc}} {{title}} の解説",
       "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
@@ -123676,13 +123934,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_noUrl": "(keine URL)",
       "report_meta_rulesRun": "ausgeführte Regeln",
       "report_meta_totalOccurrences": "Fundstellen insgesamt",
+      "report_meta_occurrencesOmitted": "Fundstellen nicht aufgeführt",
       "report_meta_engine": "Engine",
       "report_meta_schemaVersion": "Schemaversion",
+      "report_meta_packs": "Pakete",
       "report_meta_target": "Ziel",
       "report_meta_profile": "Profil",
       "report_meta_law": "Gesetz",
       "report_meta_profileNotRun": "nicht ausgeführt",
       "report_meta_optInRules": "Opt-in-Regeln",
+      "report_meta_rulesNotRun": "Regeln nicht ausgeführt",
+      "report_incomplete_timeBudget": "Unvollständiger Scan: Sein Zeitbudget von {{budget}} ms war aufgebraucht, bevor alle ausgewählten Regeln gelaufen sind. Nicht ausgeführt ({{count}}): {{rules}}. Sie haben nichts geprüft; nichts in diesem Bericht gilt für sie als bestanden.",
       "report_meta_viewport": "Viewport",
       "report_meta_colorScheme": "Farbschema",
       "report_meta_fonts": "Webfonts",
@@ -123766,6 +124028,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_noSelector": "(keiner)",
       "report_card_ruleError": "Die Regel wurde nicht abgeschlossen: {{error}}",
       "report_card_representative": "Selektor und Zusammenfassung oben stammen von einer repräsentativen Fundstelle; insgesamt {{count}} bei dieser Regel.",
+      "report_card_moreOmitted": "+{{count}} weitere, nicht aufgeführt: Der Scan hat {{kept}} Fundstellen dieser Regel behalten (output.maxOccurrencesPerRule). Sie sind oben mitgezählt.",
       "report_card_help": "So beheben Sie {{rule}}",
       "report_card_understanding": "{{sc}} {{title}} verstehen",
       "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
@@ -125489,13 +125752,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_noUrl": "(no url)",
       "report_meta_rulesRun": "rules run",
       "report_meta_totalOccurrences": "total occurrences",
+      "report_meta_occurrencesOmitted": "occurrences not listed",
       "report_meta_engine": "engine",
       "report_meta_schemaVersion": "schema version",
+      "report_meta_packs": "packs",
       "report_meta_target": "target",
       "report_meta_profile": "profile",
       "report_meta_law": "law",
       "report_meta_profileNotRun": "not run",
       "report_meta_optInRules": "opt-in rules",
+      "report_meta_rulesNotRun": "rules not run",
+      "report_incomplete_timeBudget": "Incomplete scan: its time budget of {{budget}} ms ran out before every rule it selected had run. Not run ({{count}}): {{rules}}. These checked nothing, so nothing in this report passes them.",
       "report_meta_viewport": "viewport",
       "report_meta_colorScheme": "color scheme",
       "report_meta_fonts": "web fonts",
@@ -125579,6 +125846,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_noSelector": "(none)",
       "report_card_ruleError": "The rule did not complete: {{error}}",
       "report_card_representative": "Selector/summary above are from one representative occurrence; {{count}} total on this rule.",
+      "report_card_moreOmitted": "+{{count}} more not listed: the scan kept {{kept}} occurrences of this rule (output.maxOccurrencesPerRule). They are counted above.",
       "report_card_help": "How to fix {{rule}}",
       "report_card_understanding": "Understanding {{sc}} {{title}}",
       "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
@@ -127302,13 +127570,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_noUrl": "(sin URL)",
       "report_meta_rulesRun": "reglas ejecutadas",
       "report_meta_totalOccurrences": "apariciones en total",
+      "report_meta_occurrencesOmitted": "apariciones sin listar",
       "report_meta_engine": "motor",
       "report_meta_schemaVersion": "versión del esquema",
+      "report_meta_packs": "paquetes",
       "report_meta_target": "objetivo",
       "report_meta_profile": "perfil",
       "report_meta_law": "ley",
       "report_meta_profileNotRun": "no ejecutado",
       "report_meta_optInRules": "reglas activadas explícitamente",
+      "report_meta_rulesNotRun": "reglas no ejecutadas",
+      "report_incomplete_timeBudget": "Análisis incompleto: su presupuesto de tiempo de {{budget}} ms se agotó antes de que se ejecutaran todas las reglas seleccionadas. No ejecutadas ({{count}}): {{rules}}. No comprobaron nada, así que nada en este informe las da por superadas.",
       "report_meta_viewport": "área de visualización",
       "report_meta_colorScheme": "esquema de color",
       "report_meta_fonts": "fuentes web",
@@ -127392,6 +127664,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_noSelector": "(ninguno)",
       "report_card_ruleError": "La regla no se completó: {{error}}",
       "report_card_representative": "El selector y el resumen anteriores corresponden a una aparición representativa; {{count}} en total en esta regla.",
+      "report_card_moreOmitted": "+{{count}} más, sin listar: el análisis conservó {{kept}} apariciones de esta regla (output.maxOccurrencesPerRule). Se cuentan arriba.",
       "report_card_help": "Cómo corregir {{rule}}",
       "report_card_understanding": "Comprender {{sc}} {{title}}",
       "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
@@ -129115,13 +129388,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_noUrl": "(aucune URL)",
       "report_meta_rulesRun": "règles exécutées",
       "report_meta_totalOccurrences": "occurrences au total",
+      "report_meta_occurrencesOmitted": "occurrences non listées",
       "report_meta_engine": "moteur",
       "report_meta_schemaVersion": "version du schéma",
+      "report_meta_packs": "paquets",
       "report_meta_target": "cible",
       "report_meta_profile": "profil",
       "report_meta_law": "loi",
       "report_meta_profileNotRun": "non exécuté",
       "report_meta_optInRules": "règles activées explicitement",
+      "report_meta_rulesNotRun": "règles non exécutées",
+      "report_incomplete_timeBudget": "Analyse incomplète : son budget de temps de {{budget}} ms a été épuisé avant que toutes les règles sélectionnées ne s’exécutent. Non exécutées ({{count}}) : {{rules}}. Elles n’ont rien vérifié : rien dans ce rapport ne les donne comme réussies.",
       "report_meta_viewport": "zone d’affichage",
       "report_meta_colorScheme": "schéma de couleurs",
       "report_meta_fonts": "polices web",
@@ -129205,6 +129482,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_noSelector": "(aucun)",
       "report_card_ruleError": "La règle ne s'est pas terminée : {{error}}",
       "report_card_representative": "Le sélecteur et le résumé ci-dessus proviennent d’une occurrence représentative ; {{count}} au total pour cette règle.",
+      "report_card_moreOmitted": "+{{count}} de plus, non listées : l’analyse a gardé {{kept}} occurrences de cette règle (output.maxOccurrencesPerRule). Elles sont comptées ci-dessus.",
       "report_card_help": "Comment corriger {{rule}}",
       "report_card_understanding": "Comprendre {{sc}} {{title}}",
       "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
@@ -130928,13 +131206,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_noUrl": "(URL なし)",
       "report_meta_rulesRun": "実行したルール",
       "report_meta_totalOccurrences": "検出箇所の合計",
+      "report_meta_occurrencesOmitted": "一覧にない検出箇所",
       "report_meta_engine": "エンジン",
       "report_meta_schemaVersion": "スキーマバージョン",
+      "report_meta_packs": "パック",
       "report_meta_target": "対象",
       "report_meta_profile": "プロファイル",
       "report_meta_law": "法令",
       "report_meta_profileNotRun": "未実行",
       "report_meta_optInRules": "オプトインルール",
+      "report_meta_rulesNotRun": "未実行のルール",
+      "report_incomplete_timeBudget": "不完全なスキャン: 選択されたすべてのルールが実行される前に、{{budget}} ms の時間予算を使い切りました。実行されなかったもの ({{count}}): {{rules}}。これらは何も検査していないため、このレポートのどの結果もこれらの合格を意味しません。",
       "report_meta_viewport": "ビューポート",
       "report_meta_colorScheme": "カラースキーム",
       "report_meta_fonts": "Web フォント",
@@ -131018,6 +131300,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_noSelector": "(なし)",
       "report_card_ruleError": "ルールは完了しませんでした: {{error}}",
       "report_card_representative": "上記のセレクターと概要は、代表的な 1 件のものです。このルールの検出箇所は合計 {{count}} 件です。",
+      "report_card_moreOmitted": "ほかに {{count}} 件 (一覧には表示されません): スキャンはこのルールの検出箇所を {{kept}} 件まで保持しました (output.maxOccurrencesPerRule)。上の件数には含まれています。",
       "report_card_help": "{{rule}} の修正方法",
       "report_card_understanding": "{{sc}} {{title}} の解説",
       "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
@@ -145320,11 +145603,17 @@ const engineOptionSpec = (function engineOptionSpec() {
     policy: { test: isObject, expected: 'an object', keys: policyFields },
     output: {
       test: isObject,
-      expected: '{ includeSelector, includeHtml, detail }',
+      expected: '{ includeSelector, includeHtml, detail, maxOccurrencesPerRule }',
       keys: {
         includeSelector: T.boolean,
         includeHtml: T.boolean,
-        detail: T.oneOf(['full', 'findings'])
+        detail: T.oneOf(['full', 'findings']),
+        // At most this many occurrences of each rule in the result, the
+        // rest counted (occurrencesOmitted); outcomes and rollups unchanged.
+        maxOccurrencesPerRule: {
+          test: (v) => typeof v === 'number' && Number.isInteger(v) && v >= 1,
+          expected: 'a whole number, 1 or more'
+        }
       }
     },
     // Besides include and exclude, a key of rules is a rule's id and its
@@ -145342,6 +145631,12 @@ const engineOptionSpec = (function engineOptionSpec() {
     probes: T.any,
     perfStats: T.boolean,
     profileRules: T.boolean,
+    // Once a scan has spent this long, it starts no more rules; those it
+    // didn't start are listed in its result (notRun). Off when not given.
+    timeBudgetMs: {
+      test: (v) => typeof v === 'number' && Number.isFinite(v) && v > 0,
+      expected: 'a number of milliseconds, more than 0'
+    },
     pingWaitTime: T.number,
     frameWaitTime: T.number
   };
@@ -156741,11 +157036,14 @@ const rollupCompositeResults = (function rollupCompositeResults(
           const unselected =
             added && !inSet(adding.selectedIds, tid) && !profileExcluded.includes(tid);
           if (unselected) notSelectedCount += 1;
+          // Selected and not started: the scan's time budget ran out.
+          const notRun = !!adding && inSet(adding.notRunIds, tid);
           contributors.push({
             testId: tid,
             outcome: 'missing',
             ...custom,
-            ...(unselected ? { notSelected: true } : {})
+            ...(unselected ? { notSelected: true } : {}),
+            ...(notRun ? { notRun: 'timeBudget' } : {})
           });
           continue;
         }
@@ -157947,6 +158245,19 @@ const runCoreSettled = (function runCoreSettled(
   COMPOSITE_RULES
 ) {
   const dom = createSafeDom();
+  // engineOptions.timeBudgetMs: once the scan has spent this long, it starts
+  // no more rules, and lists those it didn't start (notRun). Read only when
+  // it is a number above 0; enforceEngineOptions says anything else.
+  const scanStartMs = nowMs();
+  const timeBudgetMs =
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    typeof engineOptions.timeBudgetMs === 'number' &&
+    Number.isFinite(engineOptions.timeBudgetMs) &&
+    engineOptions.timeBudgetMs > 0
+      ? engineOptions.timeBudgetMs
+      : null;
+  const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
   // for a key that looks like a typo of a known one.
   enforceEngineOptions(engineOptions);
@@ -158974,6 +159285,12 @@ const runCoreSettled = (function runCoreSettled(
     const applicabilityFn =
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
+    // Past the time budget, a rule is not started: listed, so the scan never
+    // reads as one that checked it.
+    if (timeBudgetMs !== null && nowMs() - scanStartMs >= timeBudgetMs) {
+      notRunRules.push({ ruleId: defResolved.ruleId, reason: 'timeBudget' });
+      continue;
+    }
 
     const callerConfig = callerRuleConfig[defResolved.ruleId] || null;
     // A rule's declared settings (contrast-minimum's thresholds) are its
@@ -159334,8 +159651,27 @@ const runCoreSettled = (function runCoreSettled(
     ENGINE_TAG,
     SCHEMA_VERSION,
     resolvedCustom.defs,
-    { wcagVersion: targetWcagVersion, selectedIds, namedIds, namedCriteria }
+    {
+      wcagVersion: targetWcagVersion,
+      selectedIds,
+      namedIds,
+      namedCriteria,
+      notRunIds: notRunRules.map((n) => n.ruleId)
+    }
   );
+  if (notRunRules.length) {
+    try {
+      console.warn(
+        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
+          timeBudgetMs +
+          ' ms and did not run ' +
+          notRunRules.length +
+          ' rule' +
+          (notRunRules.length === 1 ? '' : 's') +
+          ' (result.notRun); its result is incomplete.'
+      );
+    } catch {}
+  }
 
   // A custom rule keeps exactly the mappings it declares; every other result
   // drops the standards this run did not ask for.
@@ -159573,6 +159909,16 @@ const runCoreSettled = (function runCoreSettled(
         : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {}),
       ...(findingsOnly ? { outputDetail: 'findings' } : {}),
+      // A scan that did not run every rule it selected: never a clean one.
+      ...(notRunRules.length
+        ? {
+            incomplete: {
+              reason: 'timeBudget',
+              timeBudgetMs,
+              rulesNotRun: notRunRules.length
+            }
+          }
+        : {}),
       environment
     },
     url,
@@ -159585,7 +159931,8 @@ const runCoreSettled = (function runCoreSettled(
     rulesResults,
     ...(standards.length ? { standards } : {}),
     overriddenBuiltinIds,
-    skippedCustomRules
+    skippedCustomRules,
+    ...(notRunRules.length ? { notRun: notRunRules } : {})
   };
 });
 const isThenable = (function isThenable(value) {
@@ -160195,6 +160542,15 @@ const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packN
   return false;
 });
 const runProfiles = (function runProfiles(engineOptions, run) {
+  // output.maxOccurrencesPerRule applies to the result as a whole, once its
+  // outcomes, rollups and profiles' verdicts are decided.
+  const capped = (r) =>
+    r && typeof r.then === 'function'
+      ? r.then((x) => capOccurrences(x, engineOptions))
+      : capOccurrences(r, engineOptions);
+  return capped(runProfilesUncapped(engineOptions, run));
+});
+const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
   const allowFail = policyAllowsFail(engineOptions);
   const asked =
@@ -160228,9 +160584,52 @@ const runProfiles = (function runProfiles(engineOptions, run) {
       );
     }
     const runs = [];
+    // engineOptions.timeBudgetMs is the whole scan's: each profile after the
+    // first gets what is left of it, and one that would start with none left
+    // is not run (engine.profilesNotRun, reason timeBudget).
+    const budget =
+      engineOptions &&
+      typeof engineOptions.timeBudgetMs === 'number' &&
+      Number.isFinite(engineOptions.timeBudgetMs) &&
+      engineOptions.timeBudgetMs > 0
+        ? engineOptions.timeBudgetMs
+        : null;
+    const clock = () => {
+      try {
+        if (typeof performance !== 'undefined' && performance && performance.now) {
+          return performance.now();
+        }
+      } catch {
+        // no performance clock
+      }
+      return Date.now();
+    };
+    const started = budget === null ? 0 : clock();
     const step = (i) => {
-      if (i >= unique.length) return mergeProfileResults(runs, unique, allowFail);
-      const result = run(Object.assign({}, engineOptions, { profile: unique[i] }));
+      if (i >= unique.length) {
+        const merged = mergeProfileResults(runs, unique, allowFail);
+        // The budget the scan was given, not what was left of it for the
+        // profile that ran out.
+        if (merged && merged.engine && merged.engine.incomplete) {
+          merged.engine.incomplete.timeBudgetMs = budget;
+        }
+        return merged;
+      }
+      const left = budget === null ? null : budget - (clock() - started);
+      if (left !== null && i > 0 && left <= 0) {
+        const skipped = {};
+        Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
+        runs.push({ profile: unique[i], result: skipped });
+        return step(i + 1);
+      }
+      const result = run(
+        Object.assign(
+          {},
+          engineOptions,
+          { profile: unique[i] },
+          left !== null && i > 0 ? { timeBudgetMs: left } : {}
+        )
+      );
       if (thenable(result)) {
         return result.then((r) => {
           runs.push({ profile: unique[i], result: r });
@@ -160243,6 +160642,101 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     return step(0);
   }
   return withOwnVerdicts(run(engineOptions), allowFail);
+});
+const capOccurrences = (function capOccurrences(result, engineOptions) {
+  const output =
+    engineOptions && typeof engineOptions === 'object' ? engineOptions.output : undefined;
+  const max = output && typeof output === 'object' ? output.maxOccurrencesPerRule : undefined;
+  if (typeof max !== 'number' || !Number.isInteger(max) || max < 1) return result;
+  if (!result || typeof result !== 'object' || !Array.isArray(result.checksResults)) return result;
+  const tierOf = (check, o) => {
+    const own = o && typeof o === 'object' ? o.occurrenceOutcome || o.outcome : undefined;
+    if (own === 'fail' || own === 'cantTell' || own === 'pass') return own;
+    return check.outcome === 'fail' || check.outcome === 'cantTell' || check.outcome === 'pass'
+      ? check.outcome
+      : 'notApplicable';
+  };
+  const rankOf = (check, o) => {
+    const tier = tierOf(check, o);
+    if (tier === 'fail') return 0;
+    if (tier === 'cantTell') return o && o.lean && o.lean.toward === 'fail' ? 1 : 2;
+    return 3;
+  };
+  const keptByRule = new Map();
+  let omittedTotal = 0;
+  const checksResults = result.checksResults.map((check) => {
+    const list = check && Array.isArray(check.occurrences) ? check.occurrences : null;
+    if (!list || list.length <= max) return check;
+    const kept = list
+      .map((o, i) => i)
+      .sort((a, b) => rankOf(check, list[a]) - rankOf(check, list[b]) || a - b)
+      .slice(0, max)
+      .sort((a, b) => a - b);
+    const byOutcome = {};
+    const keep = new Set(kept);
+    list.forEach((o, i) => {
+      if (keep.has(i)) return;
+      const tier = tierOf(check, o);
+      byOutcome[tier] = (byOutcome[tier] || 0) + 1;
+    });
+    const omitted = list.length - kept.length;
+    omittedTotal += omitted;
+    keptByRule.set(check.ruleId, { kept, total: list.length });
+    return Object.assign({}, check, {
+      occurrences: kept.map((i) => list[i]),
+      occurrencesOmitted: omitted,
+      occurrencesOmittedByOutcome: byOutcome
+    });
+  });
+  if (!omittedTotal) return result;
+  // A rollup's record of what it made of each finding follows the findings
+  // kept, as it is in the order of the check's occurrences.
+  const rulesResults = Array.isArray(result.rulesResults)
+    ? result.rulesResults.map((rollup) => {
+        const details = rollup && rollup.data && rollup.data.details;
+        const contributors = details && Array.isArray(details.contributors) && details.contributors;
+        if (!contributors) return rollup;
+        let touched = false;
+        const next = contributors.map((c) => {
+          const cap = c && keptByRule.get(c.testId);
+          if (!cap || !Array.isArray(c.findingOutcomes) || c.findingOutcomes.length !== cap.total)
+            return c;
+          touched = true;
+          return Object.assign({}, c, {
+            findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i])
+          });
+        });
+        if (!touched) return rollup;
+        return Object.assign({}, rollup, {
+          data: Object.assign({}, rollup.data, {
+            details: Object.assign({}, details, { contributors: next })
+          })
+        });
+      })
+    : result.rulesResults;
+  const out = Object.assign({}, result, {
+    engine: Object.assign({}, result.engine, {
+      occurrenceCap: {
+        maxOccurrencesPerRule: max,
+        occurrencesOmitted: omittedTotal,
+        rulesCapped: keptByRule.size
+      }
+    }),
+    checksResults,
+    rulesResults
+  });
+  // A mark the merge of several profiles reads stays with the result.
+  if (result.__profileNotApplied) {
+    try {
+      Object.defineProperty(out, '__profileNotApplied', {
+        value: result.__profileNotApplied,
+        configurable: true
+      });
+    } catch {
+      // nothing to keep
+    }
+  }
+  return out;
 });
 const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
   // A result first: a page may add then to Object.prototype, which makes
@@ -160379,7 +160873,9 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
             ? 'overridden-by-selection'
             : why === 'pack-skipped'
               ? 'pack-skipped'
-              : 'unknown-profile'
+              : why === 'timeBudget'
+                ? 'timeBudget'
+                : 'unknown-profile'
       });
     }
   }
@@ -160648,6 +161144,24 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     ...(packs.length ? { packs } : {})
   });
   if (!oneLaw) delete engine.law;
+  // The rules a profile's scan did not start, and the profiles not started,
+  // for the time budget: the merged scan is incomplete.
+  const rulesNotRun = [];
+  for (const r of ran) {
+    for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
+      if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+    }
+  }
+  const budgetProfiles = notRun.filter((n) => n.reason === 'timeBudget');
+  const incomplete = engines.find((e) => e.incomplete);
+  if (incomplete || budgetProfiles.length) {
+    engine.incomplete = Object.assign(
+      { reason: 'timeBudget' },
+      incomplete ? incomplete.incomplete : {},
+      { rulesNotRun: rulesNotRun.length },
+      budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {}
+    );
+  } else delete engine.incomplete;
   void asked;
   const out = Object.assign({}, first, {
     engine,
@@ -160659,6 +161173,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   if (overridden.length || Array.isArray(first.overriddenBuiltinIds))
     out.overriddenBuiltinIds = overridden;
   if (skippedPacks.length) out.skippedPacks = skippedPacks;
+  if (rulesNotRun.length) out.notRun = rulesNotRun;
+  else delete out.notRun;
   // A custom rule skipped is one no profile ran: one profile's selection
   // can leave out a rule another runs.
   const skippedLists = ran.map((r) =>
