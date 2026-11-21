@@ -13,8 +13,13 @@
  *   and scroll with the page, and to the boxes the page keeps in place over
  *   it: `position: fixed` or `sticky` boxes that draw something (a
  *   background, an image or a picture), such as a sticky header or footer, a
- *   cookie banner or a chat widget. Without a layout (jsdom) nothing can be
- *   measured, and the rule is notApplicable.
+ *   cookie banner or a chat widget. A fixed box inside an ancestor that is
+ *   its containing block (a transform, translate, rotate, scale,
+ *   perspective, filter or backdrop-filter, transform-style: preserve-3d,
+ *   layout or paint containment, a container type, or will-change of one of
+ *   those) is placed against that ancestor and scrolls with it, so it is
+ *   not kept in place. Without a layout (jsdom) nothing can be measured,
+ *   and the rule is notApplicable.
  * @expectation
  *   No element in the tab order can take focus entirely hidden behind such a
  *   box. A browser scrolls a focused element into view only when it is not
@@ -276,7 +281,48 @@ function runInPage(ctx) {
 
   // ---- The elements in the tab order that scroll with the page ----
   const positionOf = (cs) => lower(cs && cs.position);
-  // The nearest fixed or sticky box an element is in (itself included).
+  // Whether a box is the containing block of the fixed boxes inside it
+  // (CSS Transforms, Filter Effects, Containment, Will Change): a fixed box
+  // there is placed against it and scrolls with it, not with the window.
+  const NONE = (v) => !lower(v) || lower(v) === 'none';
+  function holdsFixed(cs) {
+    if (!cs) return false;
+    if (
+      !NONE(cs.transform) ||
+      !NONE(cs.translate) ||
+      !NONE(cs.rotate) ||
+      !NONE(cs.scale) ||
+      !NONE(cs.perspective) ||
+      !NONE(cs.filter) ||
+      !NONE(cs.backdropFilter) ||
+      !NONE(cs.webkitBackdropFilter)
+    )
+      return true;
+    if (lower(cs.transformStyle) === 'preserve-3d') return true;
+    if (/\b(paint|layout|strict|content)\b/.test(lower(cs.contain))) return true;
+    if (/size/.test(lower(cs.containerType))) return true;
+    return /\b(transform|translate|rotate|scale|perspective|filter|backdrop-filter|contain)\b/.test(
+      lower(cs.willChange)
+    );
+  }
+  // Whether a fixed box is fixed to the window: no box it is in, up to the
+  // page, is its containing block. Up the composed tree, as the browser
+  // places it.
+  function fixedToWindow(el) {
+    for (
+      let n = typeof helpers.composedParent === 'function' ? helpers.composedParent(el) : null,
+        i = 0;
+      n && dom.nodeType(n) === 1 && n !== html && i < 10000;
+      n = helpers.composedParent(n), i++
+    ) {
+      if (holdsFixed(styleOf(n))) return false;
+    }
+    return true;
+  }
+  // The nearest fixed or sticky box an element is in (itself included). A
+  // fixed box inside its containing block (a transformed or filtered
+  // ancestor) scrolls with the page, as anything else in that block does,
+  // so it counts as neither.
   const pinnedCache = new Map();
   function pinnedAncestor(el) {
     const chain = [];
@@ -288,7 +334,7 @@ function runInPage(ctx) {
       }
       chain.push(n);
       const pos = positionOf(styleOf(n));
-      if (pos === 'fixed' || pos === 'sticky') {
+      if (pos === 'sticky' || (pos === 'fixed' && fixedToWindow(n))) {
         found = n;
         break;
       }

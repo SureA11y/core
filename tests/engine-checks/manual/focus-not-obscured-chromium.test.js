@@ -410,6 +410,35 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
     );
     assert.equal(res[RULE_ID].outcome, 'cantTell');
   });
+  // A transform, filter, perspective, containment or will-change on an
+  // ancestor makes it the containing block of the fixed boxes inside it,
+  // which then scroll with it: the header isn't kept in place, whatever
+  // the scroll position (round 9, V9-4).
+  await t.test('a fixed box inside its containing block scrolls with the page', async () => {
+    const header =
+      '<header style="position:fixed;top:0;left:0;right:0;height:60px;background:#036">Site</header>';
+    for (const wrap of [
+      'transform:translateZ(0)',
+      'translate:0 0',
+      'filter:blur(0)',
+      'backdrop-filter:blur(1px)',
+      'perspective:100px',
+      'will-change:transform',
+      'contain:layout',
+      'container-type:inline-size'
+    ]) {
+      for (const scrollY of [0, 900]) {
+        const res = await scan(doc(`<div style="${wrap}">${header}</div>` + LINKS(40)), {
+          scrollY
+        });
+        assert.equal(res[RULE_ID].outcome, 'pass', `${wrap} at ${scrollY}`);
+        assert.equal(res[ENHANCED].outcome, 'pass', `${wrap} at ${scrollY}`);
+      }
+    }
+    // A wrapper that holds none keeps it fixed.
+    const res = await scan(doc(`<div style="opacity:.99">${header}</div>` + LINKS(40)));
+    assert.equal(res[RULE_ID].outcome, 'cantTell');
+  });
   // Round 8, NW-2: the hit test drills into shadow roots, and a point that
   // landed in a component the header holds wasn't counted as the header's.
   await t.test('an opaque sticky header holding a component is asked about', async () => {
