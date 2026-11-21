@@ -36,7 +36,9 @@
  *   rule measures the layout at one width and asks; it never fails. Each
  *   line of the text is measured (Range.getClientRects) against the box
  *   that clips it: its padding box, or the rectangle of its clip-path or
- *   clip.
+ *   clip. Only its characters other than white space are measured: spaces
+ *   that hang past the edge at the end of a line (`white-space: pre-wrap`)
+ *   show nothing, so they cut no content.
  *   - Text that a box cuts short with an ellipsis (`text-overflow:
  *     ellipsis`) or a line clamp is asked about, leaning fail
  *     (TEXT_TRUNCATED_AT_640): part of it is not shown.
@@ -554,6 +556,51 @@ function runInPage(ctx) {
     }
   }
 
+  // The rects of a text's glyphs only: a range over each run of characters
+  // that are not white space. Preserved spaces at the end of a line hang
+  // past the box's edge (white-space: pre-wrap, CSS Text 4.1.3) and show
+  // nothing, so they cut no content. Past MAX_RUNS runs, one range from the
+  // first such character to the last. The runs of one line are joined into
+  // one rect, as linesOf gives it. Null where it can't be measured.
+  function glyphLinesOf(node) {
+    const MAX_RUNS = 400;
+    const data = String(dom.nodeValue(node) || '');
+    const runs = [];
+    const re = /[^\s\u00a0]+/g;
+    for (let m = re.exec(data); m; m = re.exec(data)) {
+      runs.push([m.index, m.index + m[0].length]);
+      if (runs.length > MAX_RUNS) break;
+    }
+    if (!runs.length) return null;
+    const spans =
+      runs.length > MAX_RUNS ? [[runs[0][0], data.replace(/[\s\u00a0]+$/, '').length]] : runs;
+    const range = dom.createRange(document);
+    try {
+      const out = [];
+      for (const [start, end] of spans) {
+        range.setStart(node, start);
+        range.setEnd(node, end);
+        for (const r of dom.getClientRects(range)) {
+          if (r.width < 1 || r.height < 1) continue;
+          const last = out[out.length - 1];
+          if (last && Math.abs(last.top - r.top) < 0.5 && Math.abs(last.bottom - r.bottom) < 0.5) {
+            last.left = Math.min(last.left, r.left);
+            last.right = Math.max(last.right, r.right);
+            continue;
+          }
+          out.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+        }
+      }
+      return out.length ? out : null;
+    } catch {
+      return null;
+    } finally {
+      try {
+        range.detach();
+      } catch {}
+    }
+  }
+
   // How far a line sits outside a box, along the axes the box clips.
   function outside(line, box, c) {
     const dy = c.y ? Math.max(0, box.top - line.top, line.bottom - box.bottom) : 0;
@@ -626,8 +673,22 @@ function runInPage(ctx) {
   for (const { n, box: textEl, holder } of texts) {
     const clippers = clippersOf(textEl);
     if (!clippers.length) continue;
-    const lines = linesOf(n);
+    let lines = linesOf(n);
     if (!lines.length) continue;
+    // A text that goes past a box that clips it is measured again by its
+    // glyphs, so white space alone past the edge is no cut.
+    if (
+      /[\s\u00a0]/.test(String(dom.nodeValue(n) || '')) &&
+      clippers.some((c) => {
+        const b = clipBoxOf(c);
+        return lines.some((l) => {
+          const o = outside(l, b, c);
+          return o.dx > PARTLY_PX || o.dy > PARTLY_PX;
+        });
+      })
+    ) {
+      lines = glyphLinesOf(n) || lines;
+    }
     // Visible text: some of it shows in every box that clips it. A box a
     // pixel wide or high is visually hidden text, not a cut.
     let visible = true;

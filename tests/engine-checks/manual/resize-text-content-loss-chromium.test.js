@@ -149,6 +149,25 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   );
 
+  // Preserved spaces at the end of a line hang past the box and show
+  // nothing (round 10, S10-3).
+  await t.test('white space alone past the edge cuts nothing; a word past it does', async () => {
+    const hanging = await scan(
+      page(
+        '.box{width:200px;overflow:hidden;white-space:pre-wrap}',
+        `<div class="box">Hello world${' '.repeat(50)}</div><div class="box" style="max-width:300px;width:auto">Thanks!   \nSee you tomorrow.${' '.repeat(56)}</div>`
+      )
+    );
+    assert.equal(hanging.outcome, 'pass');
+    const word = await scan(
+      page(
+        '.box{width:200px;overflow:hidden;white-space:pre}',
+        `<div class="box" id="w">Hello world, and a longer line past the edge${' '.repeat(20)}</div>`
+      )
+    );
+    assert.deepEqual(findings(word), [['w', 'cantTell', 'TEXT_CLIPPED_AT_640', 'fail']]);
+  });
+
   await t.test('a box that scrolls keeps its text reachable, on its axis only', async () => {
     const scrolls = await scan(
       page(
