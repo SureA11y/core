@@ -625,17 +625,30 @@ function createAriaHelpers(opts, shared) {
       'tab',
       'treeitem'
     ],
-    h1: ['tab', 'presentation', 'none'],
-    h2: ['tab', 'presentation', 'none'],
-    h3: ['tab', 'presentation', 'none'],
-    h4: ['tab', 'presentation', 'none'],
-    h5: ['tab', 'presentation', 'none'],
-    h6: ['tab', 'presentation', 'none'],
-    hr: ['none', 'presentation'],
+    h1: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h2: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h3: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h4: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h5: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    h6: ['tab', 'presentation', 'none', 'doc-subtitle'],
+    hr: ['none', 'presentation', 'doc-pagebreak'],
     // 'complementary' is <aside>'s own native role, allowed via the
     // native-role fallback below even though it's not in this list
     // (spec: "also allowed, but NOT RECOMMENDED", same shape as <nav>).
-    aside: ['feed', 'none', 'note', 'presentation', 'region', 'search'],
+    aside: [
+      'feed',
+      'none',
+      'note',
+      'presentation',
+      'region',
+      'search',
+      'doc-dedication',
+      'doc-example',
+      'doc-footnote',
+      'doc-glossary',
+      'doc-pullquote',
+      'doc-tip'
+    ],
     form: ['form', 'search', 'none', 'presentation'],
     // The array is identical for both keys; what differs by nesting is only
     // the native-role match (see 'header[toplevel]' below and
@@ -667,7 +680,8 @@ function createAriaHelpers(opts, shared) {
       'slider',
       'switch',
       'tab',
-      'treeitem'
+      'treeitem',
+      'doc-cover'
     ],
     img: ['presentation', 'none'],
     li: [
@@ -701,7 +715,9 @@ function createAriaHelpers(opts, shared) {
     // 'region' is only permitted when the section has an accessible name
     // (its conditional native role in that case, see getElementRoleKey's
     // section[named]/section split above); every other role here is
-    // permitted regardless of naming.
+    // permitted regardless of naming. The doc-* roles are the DPUB roles
+    // ARIA in HTML permits on <section>, as it does those on <aside>, <hr>,
+    // h1-h6 (doc-subtitle) and <img alt> (doc-cover).
     'section[named]': [
       'alert',
       'alertdialog',
@@ -723,7 +739,35 @@ function createAriaHelpers(opts, shared) {
       'region',
       'search',
       'status',
-      'tabpanel'
+      'tabpanel',
+      'doc-abstract',
+      'doc-acknowledgments',
+      'doc-afterword',
+      'doc-appendix',
+      'doc-bibliography',
+      'doc-chapter',
+      'doc-colophon',
+      'doc-conclusion',
+      'doc-credit',
+      'doc-credits',
+      'doc-dedication',
+      'doc-endnotes',
+      'doc-epigraph',
+      'doc-epilogue',
+      'doc-errata',
+      'doc-example',
+      'doc-foreword',
+      'doc-glossary',
+      'doc-index',
+      'doc-introduction',
+      'doc-notice',
+      'doc-pagelist',
+      'doc-part',
+      'doc-preface',
+      'doc-prologue',
+      'doc-pullquote',
+      'doc-qna',
+      'doc-toc'
     ],
     section: [
       'alert',
@@ -745,7 +789,35 @@ function createAriaHelpers(opts, shared) {
       'presentation',
       'search',
       'status',
-      'tabpanel'
+      'tabpanel',
+      'doc-abstract',
+      'doc-acknowledgments',
+      'doc-afterword',
+      'doc-appendix',
+      'doc-bibliography',
+      'doc-chapter',
+      'doc-colophon',
+      'doc-conclusion',
+      'doc-credit',
+      'doc-credits',
+      'doc-dedication',
+      'doc-endnotes',
+      'doc-epigraph',
+      'doc-epilogue',
+      'doc-errata',
+      'doc-example',
+      'doc-foreword',
+      'doc-glossary',
+      'doc-index',
+      'doc-introduction',
+      'doc-notice',
+      'doc-pagelist',
+      'doc-part',
+      'doc-preface',
+      'doc-prologue',
+      'doc-pullquote',
+      'doc-qna',
+      'doc-toc'
     ],
     ol: [
       'group',
