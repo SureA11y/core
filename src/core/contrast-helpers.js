@@ -2063,6 +2063,28 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // A mask (mask-image, the mask shorthand, -webkit-mask-box-image) makes
+  // the element and everything in it, text and background together, partly
+  // transparent by amounts that vary across it, over whatever is behind: a
+  // "read more" fade, a 20% mask that leaves black text a pale grey. The
+  // colors that leaves on screen can't be worked out from the CSS, as with
+  // a filter. The value of the first mask property set, or ''.
+  function maskOf(style) {
+    if (!style) return '';
+    for (const prop of ['maskImage', 'webkitMaskImage', 'mask', 'webkitMaskBoxImageSource']) {
+      let v;
+      try {
+        v = trim(style[prop]);
+      } catch {
+        v = '';
+      }
+      // A layer paints a mask when it has an image (url(), a gradient,
+      // image-set()); `none` and the shorthand's other keywords don't.
+      if (v && __splitTopLevel(v).some((layer) => layer.includes('('))) return v;
+    }
+    return '';
+  }
+
   // Whether a filter is drop-shadow() alone, once or more. It draws a
   // shadow of the element's content under that content, so it shows only
   // where the content is not opaque.
@@ -5443,6 +5465,8 @@ function createContrastHelpers(opts, shared) {
           ? blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'filter', filter)
           : blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'backdrop-filter', ps.backdropFilter);
       }
+      const psMask = maskOf(ps);
+      if (psMask) return blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'mask-image', psMask);
       if (hasBackgroundImageOrGradient(ps)) {
         return blocked('BACKGROUND_IMAGE_OR_GRADIENT', 'background-image', ps.backgroundImage, {
           backgroundFillType: classifyBackgroundImageValue(ps.backgroundImage)
@@ -6167,6 +6191,29 @@ function createContrastHelpers(opts, shared) {
           } catch {}
           return out;
         }
+      }
+
+      // A mask fades cur and all it holds, text and background together,
+      // by amounts that vary across it, over what is behind: like a filter,
+      // a closer opaque background does not shield the text from it.
+      const mask = maskOf(cs);
+      if (mask) {
+        const out = {
+          ok: false,
+          reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+          blockerSelector: __getSimpleSelectorCached(
+            cur,
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
+          ),
+          blockerElement: describeElement(cur),
+          blockerIsAncestor: cur !== el,
+          blockerProperty: 'mask-image',
+          blockerValue: truncateCssValue(mask, 80)
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch {}
+        return out;
       }
 
       // text-shadow is a FOREGROUND property, already resolved by
