@@ -2745,6 +2745,11 @@ function createContrastHelpers(opts, shared) {
         return { has: hasTextShadow(value), value };
       }
       if (__textShadowInfoCache.has(el)) return __textShadowInfoCache.get(el);
+      const own = __formControlTextShadow(el);
+      if (own) {
+        __textShadowInfoCache.set(el, own);
+        return own;
+      }
       const raw = cs && cs.textShadow; // single read, cached below -- never read again
       const value = raw == null ? '' : String(raw);
       const info = { has: hasTextShadow(value), value };
@@ -2753,6 +2758,44 @@ function createContrastHelpers(opts, shared) {
     } catch {
       return { has: false, value: '' };
     }
+  }
+
+  // A form control's text-shadow under jsdom, from the page's own rules.
+  // Browsers' style sheets give button, input, select and textarea
+  // `text-shadow: none`, so a shadow on a label around them doesn't reach
+  // their text. jsdom's computed value for them depends on what was read
+  // before: the first read of a button in a label with a shadow gives no
+  // shadow, a later one the label's, so a second scan of the same DOM
+  // measured differently from the first. The control's shadow is the one
+  // an author rule or its style attribute gives it (`inherit` takes its
+  // parent's), and none otherwise. null where that can't be told (a sheet
+  // or selector it can't read, a value it can't resolve), and for any
+  // other element or outside jsdom: the computed value is read then.
+  const __FORM_CONTROLS = new Set(['button', 'input', 'select', 'textarea']);
+  function __formControlTextShadow(el) {
+    if (!__FORM_CONTROLS.has(String(dom.localName(el) || '').toLowerCase())) return null;
+    if (!__underJsdom(dom.ownerDocument(el))) return null;
+    const decl = __authorColorDeclsOf(el, 'text-shadow');
+    if (decl.unknown || decl.uncertain) return null;
+    const value = trim(decl.winner);
+    if (!value) return { has: false, value: 'none' };
+    const keyword = value.toLowerCase().replace(/\s*!important$/, '');
+    if (keyword === 'inherit') {
+      const parent = composedParent(el);
+      return parent && dom.nodeType(parent) === 1
+        ? __textShadowInfoEl(parent, __contrastComputedStyle(parent))
+        : { has: false, value: 'none' };
+    }
+    if (keyword === 'initial' || keyword === 'unset' || keyword === 'revert') {
+      // unset inherits a text-shadow; revert goes back to the browser's none.
+      if (keyword !== 'unset') return { has: false, value: 'none' };
+      const parent = composedParent(el);
+      return parent && dom.nodeType(parent) === 1
+        ? __textShadowInfoEl(parent, __contrastComputedStyle(parent))
+        : { has: false, value: 'none' };
+    }
+    if (/\bvar\(/i.test(value)) return null;
+    return { has: hasTextShadow(value), value };
   }
 
   // Whether a visible -webkit-text-stroke or text-shadow draws el's glyphs.
