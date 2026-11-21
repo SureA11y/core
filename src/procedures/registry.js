@@ -638,6 +638,7 @@ const PROCEDURES = {
         coveredBy: 'page-title-descriptive',
         variants: {
           'page-title-patterns': [
+            'placeholderTitle',
             'genericTitle',
             'veryShortTitle',
             'templateLikeTitle',

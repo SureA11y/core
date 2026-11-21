@@ -236,6 +236,8 @@
   "pageTitlePatterns_summary_cantTell_veryShort": "The page title “{{titleText}}” is very short and may not say what the page is about.",
   "pageTitlePatterns_summary_cantTell_templateLike": "The page title “{{titleText}}” pairs a site name with the generic word “{{word}}”, and may not say what the page is about.",
   "pageTitlePatterns_summary_cantTell_review": "Check that the page title, “{{titleText}}”, says what the page is about.",
+  "pageTitlePatterns_summary_cantTell_placeholder": "The page title “{{titleText}}” holds “{{token}}”, a placeholder or a value a script left unset, and may not say what the page is about.",
+  "pageTitlePatterns_lean_why_placeholder": "The title holds a template placeholder or a value a script left unset, not words about the page.",
   "pageTitlePatterns_hint_cantTell": "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages.",
   "pageZonesLandmark_title": "The page's header, navigation, search and footer are landmarks",
   "pageZonesLandmark_description": "Asks about blocks that name themselves the page's header, a navigation or its footer, and search forms, that are not exposed as the landmark of their nature, and about a page header or footer nested where it loses its landmark.",

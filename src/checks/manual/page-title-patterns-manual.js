@@ -19,8 +19,16 @@
  * @expectation
  *   The title carries none of the conservative low-descriptiveness signals:
  *   one of the generic titles home, homepage, welcome, untitled, page or
- *   document; fewer than eight characters; or a template shape pairing a
- *   generic token with a brand, such as "Home | Brand". When the
+ *   document (and their equivalents in the page's language); a default
+ *   title an editor, a starter template or a CMS gives an unnamed page in
+ *   any of the engine's languages ("Untitled", "Sin título", "Ohne Titel",
+ *   "Sans titre", "無題", "Document", "New page", "React App", "My
+ *   WordPress Website", or "Just another WordPress site" as one part of the
+ *   title); a placeholder left in it ("undefined", "null", "NaN", "[object
+ *   Object]" as the title or one part of it, or a template token such as
+ *   "{{title}}", "${title}", "%s", "{title}" or "<%= title %>", which
+ *   leans fail); fewer than eight characters; or a template shape pairing
+ *   a generic token with a brand, such as "Home | Brand". When the
  *   crawl.pageTitles probe supplies at least ten pages, cross-page signals
  *   are used instead: one title repeated across distinct URLs, or a prefix
  *   or suffix of twelve characters or more shared across the set. Every
@@ -30,9 +38,12 @@
  *   page-title-present checks, says nothing of whether it describes the
  *   page, so the 2.4.2 rollup claims no more than that.
  * @reports
- *   - `titleText` (a single-page signal: `genericTitle`, `veryShortTitle`,
- *     `templateLikeTitle`, or `titleReview` for a title with none): the
- *     page title, with spacing collapsed.
+ *   - `titleText` (a single-page signal: `placeholderTitle`,
+ *     `genericTitle`, `veryShortTitle`, `templateLikeTitle`, or
+ *     `titleReview` for a title with none): the page title, with spacing
+ *     collapsed.
+ *   - `placeholderToken` (`placeholderTitle`): the placeholder found, as
+ *     written.
  *   - `metrics.pagesAnalyzed` (a cross-page signal): how many pages with a
  *     URL and a title were compared.
  *   - `metrics.duplicateGroups` (a cross-page signal): how many titles are
@@ -46,9 +57,14 @@
  *     repeated titles. One item is the `title` and up to five of the `urls`
  *     that use it.
  * @reason-codes
+ *   - `placeholderTitle` (cantTell): the page title holds a placeholder a
+ *     template or a script left unfilled ("undefined", "{{title}}"). It
+ *     leans fail: such a title names nothing about the page.
+ *     Basis: WCAG 2.4.2 (not settled); F25 (not settled).
  *   - `genericTitle` (cantTell): the page title is a generic word such as
- *     home, welcome or untitled; whether it describes the page is for a
- *     person to judge.
+ *     home, welcome or untitled, or the default title an editor, a starter
+ *     template or a CMS gives an unnamed page, in any of the engine's
+ *     languages; whether it describes the page is for a person to judge.
  *     Basis: WCAG 2.4.2 (not settled); F25 (not settled).
  *   - `veryShortTitle` (cantTell): the page title is under eight characters;
  *     whether so short a title describes the page is for a person to judge.
@@ -354,12 +370,100 @@ function runInPage(ctx) {
     return n;
   }
 
+  // The default titles an editor, a starter template or a CMS gives a page
+  // that nobody named, in the five languages the engine ships, read as
+  // generic whatever the page's language: a German "Ohne Titel" on a page
+  // marked lang="en" is still a default (round 10, S10-8).
+  const DEFAULT_TITLES = new Set([
+    // en
+    'untitled',
+    'untitled document',
+    'untitled page',
+    'document',
+    'new page',
+    'new document',
+    'page title',
+    'site title',
+    'your title here',
+    'react app',
+    'vite app',
+    'vite + react',
+    'vite + react + ts',
+    'vite + vue',
+    'vite + vue + ts',
+    'my wordpress website',
+    'my wordpress blog',
+    'just another wordpress site',
+    // es
+    'sin título',
+    'sin titulo',
+    'documento sin título',
+    'página sin título',
+    'documento',
+    'nueva página',
+    'nuevo documento',
+    'otro sitio realizado con wordpress',
+    // de
+    'ohne titel',
+    'unbenannt',
+    'unbenanntes dokument',
+    'unbenannte seite',
+    'dokument',
+    'neue seite',
+    'neues dokument',
+    'eine weitere wordpress-website',
+    // fr
+    'sans titre',
+    'document sans titre',
+    'page sans titre',
+    'nouvelle page',
+    'nouveau document',
+    'un site utilisant wordpress',
+    // ja
+    '無題',
+    '無題のドキュメント',
+    '無題のページ',
+    'タイトルなし',
+    'ドキュメント',
+    '新しいページ',
+    '新規ページ'
+  ]);
+  // A CMS's default site name or tagline is generic as one part of a title
+  // too: "Sample Page – Just another WordPress site".
+  const DEFAULT_TITLE_PARTS = new Set([
+    'my wordpress website',
+    'my wordpress blog',
+    'just another wordpress site',
+    'otro sitio realizado con wordpress',
+    'eine weitere wordpress-website',
+    'un site utilisant wordpress'
+  ]);
+  const TITLE_SEPARATOR = /\s+[|\-—–·:]\s+|\s*[|—–·]\s*/;
+  const titleParts = titleNorm.split(TITLE_SEPARATOR).filter(Boolean);
+
+  // A placeholder a template or a script left in the title instead of the
+  // page's name: a value never set ("undefined", "null", "NaN", "[object
+  // Object]") as the whole title or one part of it, or a template token
+  // ("{{title}}", "${title}", "%s", "{title}", "<%= title %>"). It names
+  // nothing, so it leans fail.
+  const placeholderToken = (() => {
+    const m =
+      /\{\{[^{}]*\}\}|\$\{[^{}]*\}|<%=?[^%]*%>|\[object [A-Za-z]+\]|\{[A-Za-z_][\w.-]*\}|(?:^|[^%\w])(%[sd])(?![\w])/.exec(
+        titleText
+      );
+    if (m) return m[1] || m[0];
+    const raw = titleText.split(TITLE_SEPARATOR).filter(Boolean);
+    return raw.find((part) => part === 'undefined' || part === 'null' || part === 'NaN') || '';
+  })();
+
   // Conservative signals:
   // - very short title (likely non-descriptive)
   // - title is one of a small set of generic titles
   const isVeryShort = titleText.length > 0 && effectiveLength(titleText) < 8;
   const isGeneric =
     GENERIC_TITLES.en.has(titleNorm) ||
+    DEFAULT_TITLES.has(titleNorm) ||
+    titleParts.some((part) => DEFAULT_TITLE_PARTS.has(part)) ||
     !!(
       pageLang &&
       Object.prototype.hasOwnProperty.call(GENERIC_TITLES, pageLang) &&
@@ -389,22 +493,26 @@ function runInPage(ctx) {
   // with none of the signals is asked about too, so that the title's
   // presence (page-title-present) is all that is claimed of it.
   {
-    const reasonCode = isGeneric
-      ? 'genericTitle'
-      : isVeryShort
-        ? 'veryShortTitle'
-        : templateLike
-          ? 'templateLikeTitle'
-          : 'titleReview';
+    const reasonCode = placeholderToken
+      ? 'placeholderTitle'
+      : isGeneric
+        ? 'genericTitle'
+        : isVeryShort
+          ? 'veryShortTitle'
+          : templateLike
+            ? 'templateLikeTitle'
+            : 'titleReview';
 
     const summaryKey =
-      reasonCode === 'genericTitle'
-        ? 'pageTitlePatterns_summary_cantTell_generic'
-        : reasonCode === 'veryShortTitle'
-          ? 'pageTitlePatterns_summary_cantTell_veryShort'
-          : reasonCode === 'templateLikeTitle'
-            ? 'pageTitlePatterns_summary_cantTell_templateLike'
-            : 'pageTitlePatterns_summary_cantTell_review';
+      reasonCode === 'placeholderTitle'
+        ? 'pageTitlePatterns_summary_cantTell_placeholder'
+        : reasonCode === 'genericTitle'
+          ? 'pageTitlePatterns_summary_cantTell_generic'
+          : reasonCode === 'veryShortTitle'
+            ? 'pageTitlePatterns_summary_cantTell_veryShort'
+            : reasonCode === 'templateLikeTitle'
+              ? 'pageTitlePatterns_summary_cantTell_templateLike'
+              : 'pageTitlePatterns_summary_cantTell_review';
     const review = reasonCode === 'titleReview';
     const shownTitle = titleText.length > 80 ? `${titleText.slice(0, 79)}…` : titleText;
     // The generic word of a templated title, as written: "Home" in "Acme | Home".
@@ -432,13 +540,15 @@ function runInPage(ctx) {
       selector: titleSelector,
       html: '',
       summary:
-        reasonCode === 'genericTitle'
-          ? `The page title “${shownTitle}” is generic and may not say what the page is about.`
-          : reasonCode === 'veryShortTitle'
-            ? `The page title “${shownTitle}” is very short and may not say what the page is about.`
-            : reasonCode === 'templateLikeTitle' && templateWord
-              ? `The page title “${shownTitle}” pairs a site name with the generic word “${templateWord}”, and may not say what the page is about.`
-              : `Check that the page title, “${shownTitle}”, says what the page is about.`,
+        reasonCode === 'placeholderTitle'
+          ? `The page title “${shownTitle}” holds “${placeholderToken}”, a placeholder or a value a script left unset, and may not say what the page is about.`
+          : reasonCode === 'genericTitle'
+            ? `The page title “${shownTitle}” is generic and may not say what the page is about.`
+            : reasonCode === 'veryShortTitle'
+              ? `The page title “${shownTitle}” is very short and may not say what the page is about.`
+              : reasonCode === 'templateLikeTitle' && templateWord
+                ? `The page title “${shownTitle}” pairs a site name with the generic word “${templateWord}”, and may not say what the page is about.`
+                : `Check that the page title, “${shownTitle}”, says what the page is about.`,
       hint: "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages.",
       i18n: {
         summaryKey:
@@ -448,13 +558,25 @@ function runInPage(ctx) {
         hintKey: 'pageTitlePatterns_hint_cantTell',
         params: {
           titleText: shownTitle,
-          ...(templateWord ? { word: templateWord } : {})
+          ...(templateWord ? { word: templateWord } : {}),
+          ...(placeholderToken ? { token: placeholderToken } : {})
         }
       },
+      ...(placeholderToken
+        ? {
+            lean: {
+              toward: 'fail',
+              why: 'The title holds a template placeholder or a value a script left unset, not words about the page.',
+              signals: [{ signal: 'placeholder-token', value: placeholderToken }],
+              i18n: { whyKey: 'pageTitlePatterns_lean_why_placeholder' }
+            }
+          }
+        : {}),
       data: {
         details: {
           reasonCode,
-          titleText
+          titleText,
+          ...(placeholderToken ? { placeholderToken } : {})
         },
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
       }

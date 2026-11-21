@@ -236,6 +236,8 @@
   "pageTitlePatterns_summary_cantTell_veryShort": "Der Seitentitel „{{titleText}}“ ist sehr kurz und sagt möglicherweise nicht, worum es auf der Seite geht.",
   "pageTitlePatterns_summary_cantTell_templateLike": "Der Seitentitel „{{titleText}}“ verbindet einen Website-Namen mit dem allgemeinen Wort „{{word}}“ und sagt möglicherweise nicht, worum es auf der Seite geht.",
   "pageTitlePatterns_summary_cantTell_review": "Prüfen Sie, ob der Seitentitel „{{titleText}}“ sagt, worum es auf der Seite geht.",
+  "pageTitlePatterns_summary_cantTell_placeholder": "Der Seitentitel „{{titleText}}“ enthält „{{token}}“, einen Platzhalter oder einen Wert, den ein Skript nicht gesetzt hat, und sagt möglicherweise nicht, worum es auf der Seite geht.",
+  "pageTitlePatterns_lean_why_placeholder": "Der Titel enthält einen Platzhalter einer Vorlage oder einen Wert, den ein Skript nicht gesetzt hat, statt Worten über die Seite.",
   "pageTitlePatterns_hint_cantTell": "Prüfen Sie, ob der Titel sagt, worum es auf der Seite geht oder wozu sie dient, und sie von den anderen Seiten der Website unterscheidet.",
   "pageZonesLandmark_title": "Kopfbereich, Navigation, Suche und Fußbereich der Seite sind Landmarken",
   "pageZonesLandmark_description": "Fragt nach Blöcken, die sich als Kopfbereich der Seite, als Navigation oder als Fußbereich bezeichnen, und nach Suchformularen, die nicht als Landmarke ihrer Art bereitgestellt sind, sowie nach einem Kopf- oder Fußbereich, der so verschachtelt ist, dass er seine Landmarke verliert.",

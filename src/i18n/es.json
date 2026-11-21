@@ -236,6 +236,8 @@
   "pageTitlePatterns_summary_cantTell_veryShort": "El título de la página, «{{titleText}}», es muy corto y puede que no diga de qué trata.",
   "pageTitlePatterns_summary_cantTell_templateLike": "El título de la página, «{{titleText}}», une el nombre de un sitio con la palabra genérica «{{word}}», y puede que no diga de qué trata.",
   "pageTitlePatterns_summary_cantTell_review": "Comprobar que el título de la página, «{{titleText}}», dice de qué trata la página.",
+  "pageTitlePatterns_summary_cantTell_placeholder": "El título de la página, «{{titleText}}», contiene «{{token}}», un marcador de posición o un valor que un script no rellenó, y puede que no diga de qué trata.",
+  "pageTitlePatterns_lean_why_placeholder": "El título contiene un marcador de posición de una plantilla o un valor que un script no rellenó, no palabras sobre la página.",
   "pageTitlePatterns_hint_cantTell": "Comprobar que el título dice de qué trata la página o para qué sirve, y la distingue de las demás páginas del sitio.",
   "pageZonesLandmark_title": "La cabecera, la navegación, la búsqueda y el pie de la página son regiones de referencia",
   "pageZonesLandmark_description": "Pregunta por los bloques que se nombran cabecera de la página, navegación o pie, y por los formularios de búsqueda, que no se exponen como la región de referencia de su naturaleza, y por una cabecera o un pie anidados donde pierden su región de referencia.",
