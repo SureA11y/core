@@ -833,6 +833,35 @@ function createContrastHelpers(opts, shared) {
         return r.right + indent + sx <= 0;
       };
 
+      // A <marquee> moves its content through its box on a timer of its
+      // own, which the scan can't hold still (it is no CSS animation):
+      // where the text is at the moment of a scan is chance, in view, off
+      // the box or off the page. It passes through the whole box, so it is
+      // taken as there, and measured the same on every scan. The marquee
+      // around el, or null.
+      const marqueeCache = new WeakMap();
+      const marqueeOf = (el) => {
+        const chain = [];
+        let found = null;
+        for (
+          let cur = composedParent(el), depth = 0;
+          cur && dom.nodeType(cur) === 1 && depth < 1000;
+          cur = composedParent(cur), depth++
+        ) {
+          if (marqueeCache.has(cur)) {
+            found = marqueeCache.get(cur);
+            break;
+          }
+          chain.push(cur);
+          if (String(dom.localName(cur) || '').toLowerCase() === 'marquee') {
+            found = cur;
+            break;
+          }
+        }
+        for (const c of chain) marqueeCache.set(c, found);
+        return found;
+      };
+
       const scrollOf = new Map();
       const isUndrawn = (el) => {
         const cs = __contrastComputedStyle(el);
@@ -848,8 +877,14 @@ function createContrastHelpers(opts, shared) {
         ) {
           return false;
         }
-        const r = dom.getBoundingClientRect(el);
+        let r = dom.getBoundingClientRect(el);
         if (!r || !(r.width > 0) || !(r.height > 0)) return false;
+        // Text a <marquee> moves is placed by its box (see below).
+        const marquee = marqueeOf(el);
+        if (marquee) {
+          r = dom.getBoundingClientRect(marquee);
+          if (!r || !(r.width > 0) || !(r.height > 0)) return true;
+        }
         const win = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
         let scroll = scrollOf.get(win);
         if (!scroll) {
@@ -861,12 +896,14 @@ function createContrastHelpers(opts, shared) {
         if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
         // A negative text-indent moves the first line, not the box: text
         // moved wholly off the page (text-indent: -9999px) is drawn nowhere.
-        if (Number.parseFloat(cs.textIndent) < 0 && textOffPage(el, r, cs, sx)) return true;
+        if (!marquee && Number.parseFloat(cs.textIndent) < 0 && textOffPage(el, r, cs, sx))
+          return true;
         let left = r.left;
         let top = r.top;
         let right = r.right;
         let bottom = r.bottom;
-        let cur = composedParent(el);
+        // Inside a marquee, only the boxes around the marquee clip.
+        let cur = composedParent(marquee || el);
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
