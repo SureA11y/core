@@ -143,3 +143,41 @@ test(`${RULE_ID}: a marquee leans pass with a pause control or scrollamount="0",
   );
   assert.equal(lean('<marquee loop="1">News</marquee>'), undefined);
 });
+
+// The fail lean says no script in the page stops the marquee. Only a script
+// that calls stop() or start() on a marquee counts: by its id, by tag, or as
+// `this` in a handler on the marquee itself. A script that only mentions the
+// word, or starts something else, does not; nor does the engine's own bundle
+// when a page injects it inline.
+test(`${RULE_ID}: only a script that stops or starts a marquee takes the fail lean away`, () => {
+  const lean = (body) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${body}</body></html>`, {
+        runOnly: [RULE_ID]
+      }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0].lean;
+
+  for (const unrelated of [
+    '<script>const timer = { start() {} }; timer.start();</script>',
+    '<script>// the old marquee was removed\nplayer.stop();</script>',
+    '<script>/* a11ycore runa11yCoreInPage */ document.querySelector("marquee").stop();</script>',
+    '<button onclick="video.stop()">Play</button>'
+  ]) {
+    const l = lean(`<marquee id="news">News</marquee>${unrelated}`);
+    assert.equal(l && l.toward, 'fail', unrelated);
+  }
+
+  for (const stops of [
+    `<script>document.getElementById('news').stop();</script>`,
+    '<script>document.getElementsByTagName("marquee")[0].stop();</script>',
+    "<script>document.querySelectorAll('main marquee').forEach((m) => m.stop());</script>",
+    '<script>news.start();</script>',
+    `<button onkeydown="document.querySelector('#news').stop()">||</button>`
+  ]) {
+    assert.equal(lean(`<marquee id="news">News</marquee>${stops}`), undefined, stops);
+  }
+  assert.equal(lean('<marquee onclick="this.stop()">News</marquee>'), undefined);
+});
