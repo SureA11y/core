@@ -22,12 +22,13 @@
  *   valid direct child of a composite/container role, where "allowed" is
  *   the container's required-owned roles plus a small set of roles it
  *   may own without being required to (a separator between menu items, a
- *   submenu's role="menu" in a menu or menubar, a caption on a grid). A
- *   roleless wrapper
- *   is descended into to reach the items a component library buries
- *   inside it, but once one is found there the rest of that wrapper's
- *   subtree is the item's own content and is not judged against the
- *   container.
+ *   submenu's role="menu" in a menu or menubar, a caption on a grid).
+ *   The owned elements are the container's children in the accessibility
+ *   tree: its DOM children, looking through generic wrappers (no role, no
+ *   name, not focusable). A roleless wrapper with a name (a title) is a
+ *   node of its own; it is still descended into to reach the items a
+ *   component library buries inside it, but once one is found there the
+ *   rest of that wrapper's subtree is not judged against the container.
  * @reports
  *   - `containerRole`: the container's role.
  *   - `containerSelector`: a selector for the container.
@@ -78,23 +79,20 @@
  *   focusability (e.g. an `<a href>`), so the reported `data.details.attr`
  *   and message correctly say `nativeFocusable` rather than claiming a
  *   tabindex attribute that isn't actually present in the markup.
- * - A roleless wrapper is transparent only as a route to the items inside
- *   it, never as a way to attribute the item's own content to the
- *   container. Unlike role="none"/"presentation", a roleless element is
- *   NOT removed from the accessibility tree: it is exposed as a generic
- *   node, so strictly nothing inside it is the container's child at all.
- *   The walk descends anyway, because component markup routinely buries
- *   the real item several roleless levels down (an Angular Material card
- *   whose radio sits at card > header > mat-radio-button > div > div >
- *   input[type=radio]) and refusing to descend would report every such
- *   container as owning nothing. Applied in both directions, that
- *   leniency turned every role-bearing element anywhere in an item's
- *   subtree into an owned child of the container: a `role="separator"`
- *   dividing two columns inside a radio card was reported as a
- *   prohibited child of the radiogroup. So when a roleless wrapper turns
- *   out to hold a required item, only the items it holds are collected;
- *   a wrapper holding no item at all is interposed content, and
- *   everything found inside it is still reported.
+ * - A roleless wrapper with no name, no global aria-* attribute and no
+ *   focus is a generic element the accessibility tree leaves out
+ *   (WAI-ARIA 1.2 generic; Chromium marks it ignored), so its children are
+ *   the container's children: `role="tablist"` > `div` > `role="tab"` +
+ *   `role="button"` exposes the same tree as the markup without the
+ *   wrapper, and fails the same way (ACT bc4a75). This includes component
+ *   markup such as a card that holds a radio and, beside it, a
+ *   role="separator": the separator is not inside the radio, so the
+ *   radiogroup owns it. A roleless wrapper with a name of its own (a
+ *   `title`) is exposed as a named generic node, so strictly nothing
+ *   inside it is the container's child; the walk descends anyway to reach
+ *   the items a component library buries there, and, when it holds an
+ *   item, collects only the items, so the named wrapper's other content
+ *   is not attributed to the container.
  * - Recursion stops at the first non-transparent role boundary: a nested
  *   container with its own real role
  *   (e.g. a `<div role="listbox">` inside a menubar) is evaluated as its
@@ -283,8 +281,11 @@ function runInPage(ctx) {
   }
 
   function collectOwnedRoles(el, out, depth, requiredSet) {
+    collectFromKids(childElementsOf(el), out, depth, requiredSet);
+  }
+
+  function collectFromKids(kids, out, depth, requiredSet) {
     if (depth > MAX_DEPTH) return;
-    const kids = childElementsOf(el);
     for (const kid of kids) {
       if (!kid || dom.nodeType(kid) !== 1) continue;
       if (!isEligibleAcc(kid)) continue;
@@ -340,25 +341,23 @@ function runInPage(ctx) {
       }
 
       if (!kidRole) {
-        // A roleless wrapper is NOT removed from the accessibility tree: it is
-        // exposed as a generic node, so strictly speaking nothing inside it is
-        // this container's child at all. The walk descends anyway, because a
-        // component library routinely buries the real item several roleless
-        // levels down (an Angular Material card whose radio sits at
-        // card > header > mat-radio-button > div > div > input[type=radio]),
-        // and refusing to descend would report every such container as
-        // missing its items.
-        //
-        // That leniency has to run one way only. If the wrapper turns out to
-        // hold a required item, the wrapper is an item wrapper and everything
-        // else inside it is the ITEM's content, not the container's children:
-        // a mat-divider sitting in the card body beside the radio is not an
-        // owned child of the radiogroup, and reporting it as one is a false
-        // positive on ordinary component markup. Only the items are collected
-        // in that case. A wrapper holding no item at all is pure interposed
-        // content, so everything found in it is still reported.
+        // A roleless wrapper with no name (no aria-* attribute, which the
+        // branch above reports, and no title) and no focus is a generic
+        // element the accessibility tree leaves out, so whatever it holds is
+        // this container's child: everything found in it is collected
+        // (header comment; ACT bc4a75).
         const nested = [];
         collectOwnedRoles(kid, nested, depth + 1, requiredSet);
+        const title = dom.getAttribute(kid, 'title');
+        if (title == null || !String(title).trim()) {
+          for (const entry of nested) out.push(entry);
+          continue;
+        }
+        // A wrapper with a title is exposed as a named generic node: strictly
+        // nothing in it is this container's child. The walk still descends
+        // to reach the items a component library buries there, and when it
+        // holds one, only the items are collected; one holding no item is
+        // interposed content, and everything in it is reported.
         const items = nested.filter((entry) => entry.role && requiredSet.has(entry.role));
         for (const entry of items.length ? items : nested) out.push(entry);
         continue;
