@@ -2207,8 +2207,8 @@ Text content is not a valid name source for an element with an explicit role="im
 
 **Flagged (cantTell)**
 ```html
-<style>.scrollY { overflow-y: auto; height: 100px; }</style>
-<div class="scrollY">Plain long text content with no interactive children at all.</div>
+<style>.scrollY { overflow-y: auto; height: 3em; }</style>
+<div class="scrollY"><p>Plain long text content</p><p>with no interactive children</p><p>at all.</p></div>
 ```
 The region can scroll, but it has no `tabindex` of its own and contains no focusable descendant, so a keyboard user can never reach it to scroll it.
 
