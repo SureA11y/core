@@ -181,3 +181,35 @@ test(`${RULE_ID}: nothing in an excluded block is asked about`, () => {
     );
   }
 });
+
+// The page's banner or contentinfo counts wherever the landmark rules find
+// it: in an open shadow root, or on a custom element whose ElementInternals
+// give it the role. A block named as that zone is then not asked about.
+test(`${RULE_ID}: a banner or contentinfo in a shadow root or from ElementInternals counts (round 9, N9-8)`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><x-hdr>Site</x-hdr><div id="header">Header</div><main>x</main><div id="footer">Footer text</div><x-foot></x-foot></body></html>'
+  );
+  const w = dom.window;
+  w.customElements.define(
+    'x-hdr',
+    class extends w.HTMLElement {
+      constructor() {
+        super();
+        this._internals = this.attachInternals();
+        this._internals.role = 'banner';
+      }
+    }
+  );
+  w.customElements.define(
+    'x-foot',
+    class extends w.HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: 'open' }).innerHTML = '<footer>Shadow footer</footer>';
+      }
+    }
+  );
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});

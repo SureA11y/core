@@ -54,7 +54,9 @@
  * - Names are read as whole tokens of the id and class (site-header, menu,
  *   pied-de-page), not as substrings: "headerless" or "menuitem" is no zone.
  * - Landmarks come from helpers.getLandmarkRole, so an implicit role lost by
- *   nesting is lost here too.
+ *   nesting is lost here too. Whether the page has a banner or a
+ *   contentinfo is read as the landmark rules read it: in open shadow roots
+ *   too, and from a custom element's ElementInternals.
  */
 
 const id = 'page-zones-landmark';
@@ -211,7 +213,22 @@ function runInPage(ctx) {
     );
   }
 
-  const all = [...dom.querySelectorAll(document, helpers.landmarkCandidateSelector)];
+  // Every landmark of the page, as the landmark rules find them: in open
+  // shadow roots too (a <footer> a component renders), and custom elements
+  // whose ElementInternals give them a landmark role. An element
+  // excludeSelectors leaves out is still part of the page's structure.
+  const all = (() => {
+    try {
+      return [
+        ...helpers.queryAllSmart(helpers.landmarkCandidateSelector, {
+          internalsRoles: true,
+          excluded: true
+        })
+      ];
+    } catch {
+      return [...dom.querySelectorAll(document, helpers.landmarkCandidateSelector)];
+    }
+  })();
   const pageHas = (role) => all.some((el) => roleOf(el) === role && exposed(el));
 
   const SECTIONING = new Set(['article', 'aside', 'main', 'nav', 'section']);
