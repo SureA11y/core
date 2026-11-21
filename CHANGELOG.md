@@ -16,6 +16,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - **`engineOptions.timeBudgetMs`**: once a scan has spent that many milliseconds it starts no more rules. The rules it did not start are listed in `notRun` (`{ ruleId, reason: 'timeBudget', profile? }`) and `engine.incomplete` says the scan was cut short. Such a scan never reads as a pass: its rollups are `cantTell`, the HTML report says it is incomplete, SARIF gives an error notification per rule (`executionSuccessful: false`), JUnit an error per rule, EARL `earl:untested`, the console `table()` a `notRun` row, and `matchBaseline` adds `incomplete`. In a scan of several profiles the budget is the whole scan's.
 - **The reports name each pack a scan ran with and its version**: SARIF as `tool.extensions` and `runs[0].properties.packs`, JUnit as a `packs` property, the HTML report beside the engine, and EARL as `dct:hasPart` of the assertor.
 - **`engineOptions.output.maxOccurrencesPerRule`**: each check result keeps at most that many occurrences, failures first, and counts the rest in `occurrencesOmitted` and `occurrencesOmittedByOutcome` (`engine.occurrenceCap` for the scan). Outcomes, rollups, counts and gates are as without it. The reporters show "+N more". Against a baseline an omitted failure counts as new, and `buildBaselineEntries` warns that a capped result writes an incomplete baseline.
+- **`form-group-name-present`**: asks about radio buttons (leaning fail) or checkboxes that share a name but sit in no `<fieldset>` with a `<legend>` and no named `group` or `radiogroup` (WCAG 1.3.1, H71, ARIA17).
+- **`symbol-graphic-contrast`**: asks about symbol-only text used as a graphic (★☆, ●○, arrows, check marks) under 3:1 against its background, leaning fail (WCAG 1.4.11). Text with a letter or digit stays with the text contrast rules.
+- **`page-title-patterns` asks about a placeholder left in the title** (`placeholderTitle`, leaning fail): `undefined`, `null`, `{{title}}`, `${title}`, `%s` and the like.
 
 ### Changed
 
@@ -52,6 +55,11 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - **A `::first-letter` or `::first-line` colour that fails contrast now fails `contrast-minimum` and `contrast-enhanced`**, measured in its own colour and font size (a drop cap may be large text). `contrast-computable` no longer says a first letter "depends on how the lines break".
 - **`contrast-computable` asks about (`BACKGROUND_OVERLAP`) text in a `position: fixed` or `sticky` box with no opaque background between the text and the box**, at any scroll position, since what lies under it changes as the page scrolls. It was measured against whatever was scrolled under it.
 - **`target-size-minimum` spaces a fixed or sticky target only against the targets that move with it, and page targets only against each other.** A small fixed or sticky target that the page's small targets can pass within reach of as the page scrolls is asked about (`undersized-pinned-over-page`), so the verdict is the same at any scroll position.
+- **`timeBudgetMs` is the whole scan's across frames too**: each frame gets what is left, and a frame reached with none left lists its rules in `notRun` and is incomplete; the HTML report says so. `timeBudgetMs: Infinity` means no limit.
+- **`p-as-heading` asks about a bold line ending in a colon** ("Ingredients:", "Step 1:"), a common pseudo-heading in CMS content.
+- **`page-title-patterns` knows default titles in all five languages, and CMS defaults**, as `genericTitle` whatever the page's language.
+- **`click-handler-keyboard-operable` asks about a non-focusable element drawn as a button** (short text, padding, a border or background of its own) even without `cursor: pointer`.
+- **`video-poster-text-alternative-present` asks about an unnamed video with a poster** (leaning fail) instead of failing it, as WCAG 1.1.1's exception for time-based media asks only for a descriptive identification. Its message keys are renamed from `_fail` to `_cantTell`; an override of the old keys no longer applies.
 
 ### Changed (experimental)
 
@@ -199,6 +207,17 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - **html-xml-lang-mismatch compares lang with xml:lang only when both name a known language**: `lang="en" xml:lang="english"` failed, though `english` names no language to differ in; such an xml:lang is now out of scope, as an unknown lang is.
 - **`aria-valid-attr` quotes a long `aria-*` attribute name at 120 characters, and measures it quickly**: a 200 KB name was copied whole into the finding, and its lean compared it with every ARIA attribute by edit distance, taking 7.5 s; it now takes about 80 ms.
 - **`duplicate-id-aria` works out its scope for the reported ids only**: it queried every element with an id, and the scope's hidden-content filter computed each one's style, so under jsdom a page of 4,000 cards with unique ids took 10 s; it takes 2.8 s, with the same findings.
+- **In a scan of several profiles, a profile the time budget left unstarted now has its rules listed in `notRun`** with its `profile`, and the scan warns. `matchBaseline`, EARL, the browser bundle's `table()` and the HTML report now treat such a scan as incomplete, as SARIF and JUnit already did.
+- **`output.maxOccurrencesPerRule` no longer hides undecided findings that lean fail from the lean-fail gates.** A capped check result counts them in `occurrencesOmittedLeaningFail`. `matchBaseline`'s `leanFail` counts them as new (`incomplete.occurrencesOmittedLeaningFail`), JUnit's `leanFailAs: 'failure'` fails the rule and says "+N more", and SARIF's `leanFailAs: 'error'` gives the rule an `error` result.
+- **`resize-text-content-loss` no longer leans fail on text shown in full when only preserved trailing spaces hang past a `white-space: pre-wrap` box**: it measures only the text's non-white-space characters.
+- **The "+N more" texts use correct plurals**: JUnit's "occurrences that need manual review", and the HTML report's "kept 1 occurrence" in en, de, es and fr.
+- **`resize-text-content-loss` reads the inline axis from the writing mode**: in vertical text an ellipsis or line clamp is `TEXT_TRUNCATED_AT_640`, `clipCss` names `nowrap`, the ellipsis or the clamp, and the half-a-line thresholds follow the axes.
+- **`aria-prohibited-children` looks through a roleless wrapper with no name and no focus**, as the accessibility tree does: a `role="button"` beside the tabs in `<div role="tablist"><div><div role="tab">…</div><div role="button">…</div></div></div>` now fails, as it does without the wrapper (ACT bc4a75), and so does a separator beside a radio in a roleless card. A wrapper with a `title` still contributes only the items it holds.
+- **`aria-prohibited-children` judges the elements a container owns through `aria-owns`**: `<div role="list" aria-owns="t"></div><div id="t" role="tab">` now fails (ACT bc4a75 Failed Example 5).
+- **`embed-text-alternative-present` leaves out an `<embed>` of an HTML page, a PDF, text or Flash**, read from `type` or the `src` extension, as `object-text-alternative-present` already did for `<object>`: such a resource renders no non-text content (ACT 8fc3b6).
+- **`scrollable-region-focusable` no longer asks about a box whose content it measured as fitting on both axes in a browser** (ACT 0ssw9k Inapplicable Examples 4 and 5); under jsdom, which measures nothing, it still asks.
+- **The fail lean on a `<marquee>` is no longer dropped because some inline script mentions `marquee`, `.start(` or `.stop(`**, or because the engine was injected with a script tag: only a script that calls `stop()` or `start()` on a marquee counts.
+- **`docs/ACT_RULE_MAPPING.md` said a role description on an element with no role fails**: it is asked about, as the rule reports.
 
 ## [1.17.0] - 2026-11-13
 

@@ -415,3 +415,83 @@ test('the generic, very short and templated summaries quote the title, and the g
   assert.strictEqual(de.i18n.summaryKey, 'pageTitlePatterns_summary_cantTell_templateLike');
   assert.strictEqual(de.i18n.params.word, 'Startseite');
 });
+
+// The default titles of the engine's five languages, and those a starter
+// template or a CMS gives an unnamed page, are generic whatever the page's
+// language (round 10, S10-8).
+test(`${RULE_ID}: a default title in any of the engine's languages is generic`, () => {
+  for (const title of [
+    'Untitled',
+    'Untitled document',
+    'Document',
+    'Sin título',
+    'Documento',
+    'Ohne Titel',
+    'Dokument',
+    'Sans titre',
+    '無題',
+    'New page',
+    'React App',
+    'My WordPress Website',
+    'Sample Page – Just another WordPress site'
+  ]) {
+    const rule = assertRule(
+      runa11yCoreOnHtml(withTitle(title), { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    );
+    const occ = rule.occurrences[0];
+    assert.strictEqual(occ.data.details.reasonCode, 'genericTitle', title);
+    assert.strictEqual(occ.lean, undefined, title);
+  }
+  // A real title that merely holds such a word is not.
+  for (const title of ['Annual report 2025: the document in full', 'Sans titre, a novel']) {
+    const occ = runa11yCoreOnHtml(withTitle(title), { runOnly: [RULE_ID] }).checksResults.find(
+      (r) => r.ruleId === RULE_ID
+    ).occurrences[0];
+    assert.strictEqual(occ.data.details.reasonCode, 'titleReview', title);
+  }
+});
+
+test(`${RULE_ID}: a placeholder left in the title is asked about, leaning fail`, () => {
+  for (const [title, token] of [
+    ['undefined', 'undefined'],
+    ['null | Acme Store', 'null'],
+    ['Acme – NaN', 'NaN'],
+    ['[object Object] - Acme', '[object Object]'],
+    ['{{ page.title }} | Acme', '{{ page.title }}'],
+    ['${title} | Acme', '${title}'],
+    ['%s - Acme Store', '%s'],
+    ['{title} – Acme', '{title}'],
+    ['<%= title %> | Acme', '<%= title %>']
+  ]) {
+    const rule = assertRule(
+      runa11yCoreOnHtml(withTitle(title.replace(/</g, '&lt;')), { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    );
+    const occ = rule.occurrences[0];
+    assert.strictEqual(occ.data.details.reasonCode, 'placeholderTitle', title);
+    assert.strictEqual(occ.data.details.placeholderToken, token, title);
+    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePatterns_summary_cantTell_placeholder');
+    assert.strictEqual(occ.i18n.params.token, token);
+    assert.strictEqual(occ.lean.toward, 'fail', title);
+    assert.strictEqual(occ.lean.i18n.whyKey, 'pageTitlePatterns_lean_why_placeholder');
+  }
+  // Words that only look like one, and a percentage, are not.
+  for (const title of ['Null Island travel guide', 'Save 50% on shoes – Acme']) {
+    const occ = runa11yCoreOnHtml(withTitle(title), { runOnly: [RULE_ID] }).checksResults.find(
+      (r) => r.ruleId === RULE_ID
+    ).occurrences[0];
+    assert.strictEqual(occ.data.details.reasonCode, 'titleReview', title);
+    assert.strictEqual(occ.lean, undefined, title);
+  }
+  // The summary quotes the placeholder in every locale.
+  const de = runa11yCoreOnHtml(withTitle('undefined | Acme'), {
+    runOnly: [RULE_ID],
+    engineOptions: { locale: 'de' }
+  }).checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+  assert.match(de.summary, /„undefined“/);
+});

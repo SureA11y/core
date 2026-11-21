@@ -627,3 +627,35 @@ test(`${RULE_ID}: an <a> without href is named as why it can't take focus`, () =
     'clickHandlerKeyboardOperable_hint_cantTell_notFocusableNoHref'
   );
 });
+
+// Drawn as a control though the cursor stays the default one: a short label
+// in a padded box with a background or a border of its own is asked about,
+// leaning fail; a large wrapper is not (round 10, C10-4).
+test(`${RULE_ID}: an unfocusable element drawn as a button is asked about without a pointer cursor`, () => {
+  for (const body of [
+    '<div onclick="addToCart()" style="background:#2a9d8f;color:#fff;padding:12px 24px">Add to cart</div>',
+    '<span onclick="more()" style="border:1px solid #333;padding:4px 8px">Show more</span>'
+  ]) {
+    const occ = assertRule(run(body), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    }).occurrences[0];
+    assert.equal(occ.data.details.reasonCode, 'CLICK_HANDLER_NOT_FOCUSABLE', body);
+    assert.equal(occ.data.details.styledAsControl, true, body);
+    assert.equal(occ.lean.toward, 'fail', body);
+    assert.equal(occ.lean.i18n.whyKey, 'clickHandlerKeyboardOperable_lean_why_styledControl');
+  }
+  for (const body of [
+    // no padding, no box of its own, or a background the same as behind it
+    '<div onclick="a()" style="background:#2a9d8f;color:#fff">Add to cart</div>',
+    '<div onclick="a()" style="padding:12px">Add to cart</div>',
+    '<div style="background:#fff"><div onclick="a()" style="background:#fff;padding:12px">Add to cart</div></div>',
+    // a large wrapper: long text, or block content
+    '<div onclick="track()" style="background:#eee;padding:16px">Our shop has sold hand-made ceramics from the same workshop since 1987.</div>',
+    '<div onclick="open()" style="background:#eee;padding:16px"><h3>News</h3><p>Monday</p></div>',
+    // no text, as an icon is: nothing to read as a control's label
+    '<div onclick="a()" style="background:#2a9d8f;padding:12px"></div>'
+  ]) {
+    assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});

@@ -26,7 +26,7 @@
   <h2>A. Baseline (eligible)</h2>
 
   <div class="case" id="case_01">
-    <div class="case-title">01 — FAIL: poster present, no name and no fallback</div>
+    <div class="case-title">01 — CANTTELL: poster present, no name and no fallback</div>
     <div class="row">
       <video id="video_case_01" poster="poster.png"></video>
       <span>Poster present; missing accessible name and fallback text.</span>
@@ -42,7 +42,7 @@
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — FAIL: poster present, only between-tag fallback text (not exposed to AT)</div>
+    <div class="case-title">03 — CANTTELL: poster present, only between-tag fallback text (not exposed to AT)</div>
     <div class="row">
       <video id="video_case_03" poster="poster.png">A short demo video.</video>
       <span>Fallback text inside &lt;video&gt; is only rendered by browsers without &lt;video&gt; support.</span>
@@ -60,7 +60,7 @@
   </div>
 
   <div class="case" id="case_05">
-    <div class="case-title">05 — FAIL: aria-hidden but tabbable (tabindex=0), poster present, unnamed</div>
+    <div class="case-title">05 — CANTTELL: aria-hidden but tabbable (tabindex=0), poster present, unnamed</div>
     <div class="row">
       <video id="video_case_05" poster="poster.png" aria-hidden="true" tabindex="0"></video>
       <span>Eligibility override: tabbable focus makes it applicable.</span>
@@ -78,7 +78,7 @@
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — FAIL: role=presentation but focusable (tabindex=0), poster present, unnamed</div>
+    <div class="case-title">07 — CANTTELL: role=presentation but focusable (tabindex=0), poster present, unnamed</div>
     <div class="row">
       <video id="video_case_07" poster="poster.png" role="presentation" tabindex="0"></video>
       <span>Focusable overrides role exclusion; still requires a text alternative.</span>
@@ -125,11 +125,11 @@
   <h2>F. IDREF reference exception</h2>
 
   <div class="case" id="case_12">
-    <div class="case-title">12 — FAIL: aria-hidden but IDREF-referenced, poster present, unnamed</div>
+    <div class="case-title">12 — CANTTELL: aria-hidden but IDREF-referenced, poster present, unnamed</div>
     <div class="row">
       <div aria-labelledby="video_case_12">This element references the video by IDREF.</div>
       <video id="video_case_12" poster="poster.png" aria-hidden="true"></video>
-      <span>Eligibility override: referenced by IDREF, so it remains applicable; missing name => fail.</span>
+      <span>Eligibility override: referenced by IDREF, so it remains applicable; missing name => asked about (cantTell, leaning fail).</span>
     </div>
   </div>
 

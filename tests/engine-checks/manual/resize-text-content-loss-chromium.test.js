@@ -149,6 +149,55 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   );
 
+  // Preserved spaces at the end of a line hang past the box and show
+  // nothing (round 10, S10-3).
+  await t.test('white space alone past the edge cuts nothing; a word past it does', async () => {
+    const hanging = await scan(
+      page(
+        '.box{width:200px;overflow:hidden;white-space:pre-wrap}',
+        `<div class="box">Hello world${' '.repeat(50)}</div><div class="box" style="max-width:300px;width:auto">Thanks!   \nSee you tomorrow.${' '.repeat(56)}</div>`
+      )
+    );
+    assert.equal(hanging.outcome, 'pass');
+    const word = await scan(
+      page(
+        '.box{width:200px;overflow:hidden;white-space:pre}',
+        `<div class="box" id="w">Hello world, and a longer line past the edge${' '.repeat(20)}</div>`
+      )
+    );
+    assert.deepEqual(findings(word), [['w', 'cantTell', 'TEXT_CLIPPED_AT_640', 'fail']]);
+  });
+
+  // In a vertical writing mode the inline axis is y (round 10, S10-6).
+  await t.test(
+    'in vertical text, the ellipsis and nowrap are read on y, the clamp on x',
+    async () => {
+      const TATE = '縦書きの長い見出しテキストがここにあります';
+      const check = await scan(
+        page(
+          '.v{writing-mode:vertical-rl;overflow:hidden;margin:4px}',
+          `<div class="v" id="ell" style="height:100px;text-overflow:ellipsis;white-space:nowrap">${TATE}</div>` +
+            `<div class="v" id="clamp" style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;height:120px">${TATE.repeat(4)}</div>` +
+            `<div class="v" id="cut" style="height:100px;white-space:nowrap">${TATE}</div>`
+        )
+      );
+      assert.deepEqual(findings(check), [
+        ['ell', 'cantTell', 'TEXT_TRUNCATED_AT_640', 'fail'],
+        ['clamp', 'cantTell', 'TEXT_TRUNCATED_AT_640', 'fail'],
+        ['cut', 'cantTell', 'TEXT_CLIPPED_AT_640', 'fail']
+      ]);
+      const [ell, clamp, cut] = check.occurrences;
+      assert.equal(
+        ell.data.details.clipCss,
+        'white-space: nowrap; overflow: hidden; text-overflow: ellipsis'
+      );
+      assert.equal(ell.data.details.metrics.axis, 'y');
+      assert.equal(ell.data.details.metrics.thresholdPx, 8);
+      assert.equal(clamp.data.details.clipCss, '-webkit-line-clamp: 2; overflow: hidden');
+      assert.equal(cut.data.details.clipCss, 'white-space: nowrap; overflow: hidden');
+    }
+  );
+
   await t.test('a box that scrolls keeps its text reachable, on its axis only', async () => {
     const scrolls = await scan(
       page(

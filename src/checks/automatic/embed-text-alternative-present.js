@@ -13,6 +13,16 @@
  *   Elements otherwise hidden from the accessibility tree remain applicable
  *   if they are tabbable or referenced by IDREF relationships (per engine eligibility checks).
  *   role="presentation"/role="none" are excluded only when not focusable.
+ *   An embed whose `type` attribute, or failing that its `src` URL's file
+ *   extension, names a resource that is not an image, audio or video (an
+ *   HTML page, a PDF, plain text) is excluded too: it renders no non-text
+ *   content, so 1.1.1 asks nothing of it (ACT 8fc3b6's applicability, as
+ *   object-text-alternative-present applies it to <object>). A Flash embed
+ *   (`type="application/x-shockwave-flash"`, or with no type a `src` URL
+ *   ending in `.swf`) is excluded for the same reason: no current browser
+ *   runs Flash (support ended in 2021), so it draws nothing. An embed whose
+ *   type cannot be told from markup stays in scope. The classification is
+ *   the shared `helpers.embedsNonMedia`, the object rule's.
  * @expectation
  *   Each applicable <embed> provides a text alternative via:
  *   - an accessible name (aria-labelledby/aria-label), OR
@@ -197,6 +207,13 @@ function runInPage(ctx) {
         helpers.isPresentationalRoleIgnored(el);
       if (!focusable && !keptByGlobal) continue;
     }
+
+    // A page, a document or Flash renders no non-text content (header).
+    if (
+      typeof helpers.embedsNonMedia === 'function' &&
+      helpers.embedsNonMedia(dom.getAttribute(el, 'type'), dom.getAttribute(el, 'src'))
+    )
+      continue;
 
     applicableCount += 1;
 

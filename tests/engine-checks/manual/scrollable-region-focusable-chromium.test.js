@@ -3,8 +3,11 @@
 /**
  * scrollable-region-focusable in a real browser: where the page is laid out,
  * whether a scroll box's content overflows points one way. A box whose
- * content overflows leans fail; one whose content fits leans pass. jsdom lays
- * nothing out, so there it has no lean.
+ * content overflows leans fail; one whose content fits on both axes has
+ * nothing to scroll and is not applicable (ACT 0ssw9k Inapplicable Examples 4
+ * and 5); one that fits on the axis that scrolls but overflows on one that
+ * does not (overflow: hidden) leans pass. jsdom lays nothing out, so there
+ * every such box is asked about, with no lean.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -46,6 +49,9 @@ const page = (box) =>
   `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${box}</main></body></html>`;
 const OVERFLOWS = `<div style="overflow:auto;height:60px">${'<p>Line of text.</p>'.repeat(20)}</div>`;
 const FITS = '<div style="overflow:auto;height:200px"><p>One line.</p></div>';
+const CODE_FITS = '<pre style="overflow:auto;width:300px"><code>npm install widgets</code></pre>';
+const HIDDEN_X =
+  '<div style="overflow-x:hidden;overflow-y:auto;width:100px;height:200px"><div style="width:400px">Wide line.</div></div>';
 
 test(`${RULE_ID} in Chromium: measured overflow leans`, { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
@@ -59,7 +65,7 @@ test(`${RULE_ID} in Chromium: measured overflow leans`, { skip }, async (t) => {
       return await p.evaluate(async (rule) => {
         const r = await window.a11ycore.runa11yCoreInPage(null, null, {}, [rule]);
         const c = r.checksResults.find((x) => x.ruleId === rule);
-        return c.occurrences[0] || null;
+        return c.occurrences[0] || { outcome: c.outcome };
       }, RULE_ID);
     } finally {
       await p.close();
@@ -73,11 +79,28 @@ test(`${RULE_ID} in Chromium: measured overflow leans`, { skip }, async (t) => {
     assert.ok(occ.lean.signals[0].value > 2);
   });
 
-  await t.test('content that fits leans pass', async () => {
-    const occ = await occurrence(page(FITS));
-    assert.equal(occ.lean.toward, 'pass');
-    assert.equal(occ.lean.i18n.whyKey, 'scrollableRegionFocusable_lean_why_fits');
+  await t.test('content that fits on both axes is not applicable (ACT 0ssw9k)', async () => {
+    for (const box of [FITS, CODE_FITS]) {
+      const occ = await occurrence(page(box));
+      assert.deepEqual(occ, { outcome: 'notApplicable' }, box);
+    }
   });
+
+  await t.test(
+    'content that fits where it scrolls, cut off where it does not, leans pass',
+    async () => {
+      const occ = await occurrence(page(HIDDEN_X));
+      assert.equal(occ.lean.toward, 'pass');
+      assert.equal(occ.lean.i18n.whyKey, 'scrollableRegionFocusable_lean_why_fits');
+    }
+  );
+});
+
+test(`${RULE_ID} in jsdom: a box that would fit is still asked about, as nothing is measured`, () => {
+  const box = FITS.replace('overflow:auto', 'overflow-y:auto');
+  const r = runa11yCoreOnHtml(page(box), { runOnly: [RULE_ID] }).checksResults[0];
+  assert.equal(r.outcome, 'cantTell');
+  assert.equal(r.occurrences[0].lean, undefined);
 });
 
 test(`${RULE_ID} in jsdom: no layout, no lean`, () => {

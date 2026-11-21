@@ -271,21 +271,26 @@ function renderPacksChip(result, ui) {
 
 // A scan its time budget cut short (engineOptions.timeBudgetMs): the rules
 // it did not start checked nothing, so the report says so before anything
-// it found, and no headline below reads as a pass of them.
-function renderIncomplete(result, ui) {
-  const notRun = notRunOf(result);
-  const ids = [...new Set(notRun.map((n) => n.ruleId))];
-  const profiles = (
-    result && result.engine && Array.isArray(result.engine.profilesNotRun)
-      ? result.engine.profilesNotRun
-      : []
-  )
-    .filter((p) => p && p.reason === 'timeBudget')
-    .map((p) => p.profile);
+// it found, and no headline below reads as a pass of them. `results` are
+// the results of the scan's frames: the budget is the whole scan's, so a
+// frame the scan reached with none left makes the page's scan incomplete
+// too (round 10, S10-5).
+function renderIncomplete(results, ui) {
+  const list = (Array.isArray(results) ? results : [results]).filter(Boolean);
+  const ids = [...new Set(list.flatMap((r) => notRunOf(r).map((n) => n.ruleId)))];
+  const profiles = [
+    ...new Set(
+      list.flatMap((r) =>
+        (r.engine && Array.isArray(r.engine.profilesNotRun) ? r.engine.profilesNotRun : [])
+          .filter((p) => p && p.reason === 'timeBudget')
+          .map((p) => p.profile)
+      )
+    )
+  ];
   if (!ids.length && !profiles.length) return '';
-  const budget = timeBudgetOf(result);
+  const budget = list.map(timeBudgetOf).find((b) => b !== null);
   const text = ui.tr('report_incomplete_timeBudget', {
-    budget: budget !== null ? ui.num(budget) : '?',
+    budget: budget !== undefined ? ui.num(budget) : '?',
     count: ui.num(ids.length + profiles.length),
     rules: ids.concat(profiles).join(', ')
   });
@@ -811,7 +816,8 @@ function renderFrames(frames, ui) {
   const sections = frames.map(({ frame, result, error }) => {
     const about = [frame.title, frame.url].filter(Boolean).map(esc).join(' — ');
     const body = result
-      ? renderCards(Array.isArray(result.checksResults) ? result.checksResults : [], ui)
+      ? renderIncomplete([result], ui) +
+        renderCards(Array.isArray(result.checksResults) ? result.checksResults : [], ui)
       : `<p class="note">${esc(ui.tr('report_frame_notScanned', { error }))}</p>`;
     return `<h3 class="frame-heading">${esc(ui.tr('report_frame_heading', { path: framePathText(frame.path) }))}</h3>
   ${about ? `<p class="note">${about}</p>` : ''}
@@ -957,7 +963,7 @@ function renderCards(checksResults, ui) {
     // The elements found: a passing occurrence of a failing rule is no finding.
     const found = occurrenceCounts.fail + occurrenceCounts.cantTell || occs.length;
     const omittedLine = omitted.total
-      ? `<p class="card-note">${esc(ui.tr('report_card_moreOmitted', { count: ui.num(omitted.total), kept: ui.num(r.occurrences.length) }))}</p>`
+      ? `<p class="card-note">${esc(ui.tr(r.occurrences.length === 1 ? 'report_card_moreOmitted_one' : 'report_card_moreOmitted', { count: ui.num(omitted.total), kept: ui.num(r.occurrences.length) }))}</p>`
       : '';
     const countLabel =
       found > 1
@@ -1310,7 +1316,10 @@ function renderHtmlReport(input, given) {
 </div>
 
 <main>
-  ${renderIncomplete(result, ui)}
+  ${renderIncomplete(
+    frames.map((f) => f.result),
+    ui
+  )}
   ${renderHeroBar(byOutcome, ui)}
 
   <h2>${esc(ui.tr('report_heading_worthReviewing'))}</h2>

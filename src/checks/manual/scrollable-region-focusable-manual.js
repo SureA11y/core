@@ -14,6 +14,11 @@
  *   ol, textarea) with computed `overflow-x`/`overflow-y` of `auto` or
  *   `scroll`, not every element on the page, to keep this deterministic
  *   and performant (same style of scope-down as `region`).
+ *   Where the page is laid out (a browser) and the content measurably fits
+ *   the box on both axes (it overflows by 2px or less horizontally and
+ *   vertically), the box has nothing to scroll and is not applicable
+ *   either (ACT 0ssw9k Inapplicable Examples 4 and 5). In jsdom, which
+ *   measures no box, every such box stays applicable and is asked about.
  *   Finding nothing to ask about, it reports notApplicable, not pass: it
  *   applies only to what its check flags, and finding nothing there
  *   doesn't show that all is well.
@@ -35,7 +40,9 @@
  *     does not); whether its content really overflows is for a person to
  *     check.
  *     Where the page is laid out, it leans fail when the content overflows
- *     the box by more than 2px and pass when it fits; in jsdom, no lean.
+ *     the box by more than 2px on an axis the CSS lets scroll, and pass
+ *     when it fits there but overflows on an axis that does not scroll
+ *     (`overflow: hidden`); in jsdom, no lean.
  *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled);
  *     ACT 0ssw9k.
  * @implementation-notes
@@ -47,7 +54,9 @@
  *   `fail`. For that reason this is authored as `type: 'manual'`
  *   (cantTell-capped, never fail) rather than `automatic`, the same class
  *   of layout-dependent gap as `iframe-focusable-content`'s
- *   `contentDocument` limitation.
+ *   `contentDocument` limitation. That reason holds only where layout is
+ *   missing: in a browser, a box whose content fits on both axes is
+ *   measured as having nothing to scroll, so it is not asked about.
  * - "Has a focusable descendant" counts only descendants in the
  *   sequential tab order (ACT 0ssw9k): a link, button, form control,
  *   `[tabindex]`, `iframe`, `<summary>`, media with `controls` or editable
@@ -213,6 +222,19 @@ function runInPage(ctx) {
     }
   }
 
+  // Whether the content measurably fits the box on both axes, whatever the
+  // CSS lets scroll: false where it can't be measured (jsdom).
+  function measuredToFit(el) {
+    if (!geometry) return false;
+    try {
+      const dx = Number(dom.get(el, 'scrollWidth')) - Number(dom.get(el, 'clientWidth'));
+      const dy = Number(dom.get(el, 'scrollHeight')) - Number(dom.get(el, 'clientHeight'));
+      return Number.isFinite(dx) && Number.isFinite(dy) && dx <= 2 && dy <= 2;
+    } catch {
+      return false;
+    }
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -225,6 +247,8 @@ function runInPage(ctx) {
     try {
       if (dom.matches(el, 'textarea:disabled')) continue;
     } catch {}
+    // Measured to have nothing to scroll (header; ACT 0ssw9k).
+    if (measuredToFit(el)) continue;
 
     applicableCount += 1;
 
@@ -271,6 +295,8 @@ function runInPage(ctx) {
               }
             }
           : {
+              // It fits on the axes that scroll, and overflows only on one
+              // that does not (overflow: hidden), else it is not applicable.
               toward: 'pass',
               why: 'Its content fits the box, so there is nothing to scroll.',
               signals: [{ signal: 'overflow-px', value: Math.round(overflow) }],

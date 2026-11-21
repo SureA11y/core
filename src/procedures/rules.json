@@ -630,6 +630,17 @@
       ]
     }
   },
+  "form-group-name-present": {
+    "prefix": "formGroupNamePresent",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "form-group-name-evidence"
+      ]
+    }
+  },
   "heading-order": {
     "prefix": "headingOrder",
     "criteria": [],
@@ -1402,6 +1413,17 @@
     "facets": {
       "1.1.1": [
         "text-alternative-quality"
+      ]
+    }
+  },
+  "symbol-graphic-contrast": {
+    "prefix": "symbolGraphicContrast",
+    "criteria": [
+      "1.4.11"
+    ],
+    "facets": {
+      "1.4.11": [
+        "symbol-graphic-contrast-evidence"
       ]
     }
   },

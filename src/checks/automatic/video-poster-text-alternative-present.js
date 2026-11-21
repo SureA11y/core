@@ -5,7 +5,7 @@
 /**
  * @check video-poster-text-alternative-present
  * @atomic true
- * @summary Accessible <video> elements with a poster must provide a text alternative
+ * @summary Accessible <video> elements with a poster should be identified by a text alternative
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @applicability
@@ -16,8 +16,14 @@
  *   if they are tabbable or referenced by IDREF relationships (per eligibility checks).
  *   Videos with role="presentation" or role="none" are excluded only when they are not focusable.
  * @expectation
- *   Each applicable <video> element provides a text alternative for the poster image, via:
+ *   Each applicable <video> element is identified by a text alternative, via:
  *   - an accessible name (aria-label / aria-labelledby / title).
+ *   A <video> is time-based media, whose text alternative only has to give
+ *   descriptive identification under WCAG 1.1.1's exception, and its poster
+ *   is a frame of that media, not a separate image. So a poster video with
+ *   no name is asked about (cantTell), leaning fail, not failed: whether
+ *   something else identifies it is for a person to judge. A video without
+ *   a poster is not judged here.
  *   Between-tag fallback content inside <video> is NOT accepted: it is only
  *   rendered by browsers that don't support <video>, so it is not reliably
  *   exposed to assistive technologies in practice. <video> is also not a
@@ -29,13 +35,15 @@
  *   video no name), but it may describe the poster, and only a person can
  *   tell.
  * @reports
- *   - `reasonCode`: `VIDEO_POSTER_FIGCAPTION_REVIEW` on the cantTell
- *     finding, with `figcaption`, the caption's text up to 100 characters;
- *     `TEXT_ALTERNATIVE_MISSING` on a failure.
+ *   - `reasonCode`: `VIDEO_POSTER_FIGCAPTION_REVIEW`, with `figcaption`,
+ *     the caption's text up to 100 characters, or
+ *     `TEXT_ALTERNATIVE_MISSING`; both are asked about.
  * @reason-codes
- *   - `TEXT_ALTERNATIVE_MISSING` (fail): a <video> with a poster image has
- *     no name from aria-label, aria-labelledby or title.
- *     Basis: WCAG 1.1.1; HTML video poster; accname 1.2.
+ *   - `TEXT_ALTERNATIVE_MISSING` (cantTell): a <video> with a poster image
+ *     has no name from aria-label, aria-labelledby or title; whether
+ *     something else identifies it is for a person to judge. It leans fail:
+ *     a screen reader announces it with nothing that identifies it.
+ *     Basis: WCAG 1.1.1 (exception: time-based media); HTML video poster; accname 1.2.
  *   - `VIDEO_POSTER_FIGCAPTION_REVIEW` (cantTell): a <video> with a poster
  *     has no name but is the only content of a figure with a caption, and a
  *     person checks that the caption describes the poster.
@@ -283,22 +291,38 @@ function runInPage(ctx) {
       const alt = raw.length > 40 ? `${raw.slice(0, 39)}…` : raw;
       return {
         hint: `Its alt="${alt}" does nothing: a <video> has no alt attribute. Use aria-label="${alt}" instead.`,
-        hintKey: 'videoPoster_textAltPresent_hint_fail_alt',
+        hintKey: 'videoPoster_textAltPresent_hint_cantTell_alt',
         params: { alt },
         detail: { cause: 'altOnVideo', alt }
       };
     })();
     const cause =
       (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || videoCause;
+    // A video is time-based media: its text alternative only has to
+    // identify it (WCAG 1.1.1's exception), and the poster is a frame of
+    // it. With no name, whether something else identifies it is asked,
+    // leaning fail (round 10, C10-7).
     const baseOccurrence = {
-      summary: 'This <video> poster image has no text alternative.',
+      summary: 'This <video> has a poster image but no name that identifies it.',
       hint: cause
         ? cause.hint
-        : 'Name the video with aria-label or aria-labelledby, saying what the poster shows. A title attribute also works, but less reliably.',
+        : "A video's text alternative only has to identify it. Check that something tied to the video says what it is; if nothing does, name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.",
       i18n: {
-        summaryKey: 'videoPoster_textAltPresent_summary_fail',
-        hintKey: cause ? cause.hintKey : 'videoPoster_textAltPresent_hint_fail',
+        summaryKey: 'videoPoster_textAltPresent_summary_cantTell',
+        hintKey: cause ? cause.hintKey : 'videoPoster_textAltPresent_hint_cantTell',
         params: { element: 'video', ...(cause ? cause.params : {}) }
+      },
+      lean: {
+        toward: 'fail',
+        why: 'The video has a poster but no accessible name, so a screen reader announces it with nothing that identifies it.',
+        signals: [{ signal: 'accessible-name', value: false }],
+        i18n: { whyKey: 'videoPoster_textAltPresent_lean_why_noName' }
+      },
+      uncertainty: {
+        code: 'equivalence-unknown',
+        needed:
+          'Whether something tied to the video identifies it, as WCAG 1.1.1 asks of time-based media.',
+        evidence: { poster: true, name: false }
       },
       data: {
         details: {
@@ -312,9 +336,9 @@ function runInPage(ctx) {
     };
 
     if (reportOccurrence) {
-      occurrences.push(reportOccurrence(el, baseOccurrence));
+      cantTellOccurrences.push(reportOccurrence(el, baseOccurrence));
     } else {
-      occurrences.push({ selector: '', html: '', ...baseOccurrence });
+      cantTellOccurrences.push({ selector: '', html: '', ...baseOccurrence });
     }
   }
 

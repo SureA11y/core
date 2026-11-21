@@ -89,6 +89,7 @@ module.exports = [
       'form-control-programmatic-label-present',
       'p-as-heading',
       'table-fake-caption',
+      'form-group-name-present',
       'td-has-header',
       'aria-roles-valid',
       'aria-owns-valid'
@@ -475,7 +476,7 @@ module.exports = [
 
   {
     id: 'wcag-1.4.11-non-text-contrast',
-    checksIds: ['css-focus-indicator-suppressed'],
+    checksIds: ['css-focus-indicator-suppressed', 'symbol-graphic-contrast'],
     meta: {
       titleKey: 'catalog.rules.wcag_1411_non_text_contrast.title',
       descriptionKey: 'catalog.rules.wcag_1411_non_text_contrast.description',

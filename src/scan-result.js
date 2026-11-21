@@ -625,6 +625,20 @@ function isWcagCriterionEntry(m) {
 // out the best-practice rules, whose stated facts lean fail without condition
 // (docs/LEANS.md).
 function leaningOccurrencesOf(frameResult, options = {}) {
+  const out = [];
+  for (const check of leanGatingChecksOf(frameResult, options)) {
+    for (const occurrence of check.occurrences) {
+      if (!occurrence || occurrenceOutcome(check, occurrence) !== 'cantTell') continue;
+      if (!occurrence.lean || occurrence.lean.toward !== 'fail') continue;
+      out.push({ check, occurrence });
+    }
+  }
+  return out;
+}
+
+// The check results of one frame's result whose findings that lean fail
+// gate under leanFailAs, scoped as leaningOccurrencesOf says.
+function leanGatingChecksOf(frameResult, options = {}) {
   const inScope = wcagScopeOf(frameResult);
   const out = [];
   for (const check of (frameResult && frameResult.checksResults) || []) {
@@ -635,11 +649,20 @@ function leaningOccurrencesOf(frameResult, options = {}) {
     const inTarget = criteria.filter(inScope);
     if (criteria.length && !inTarget.length) continue;
     if (options.wcagOnly && !inTarget.length) continue;
-    for (const occurrence of check.occurrences) {
-      if (!occurrence || occurrenceOutcome(check, occurrence) !== 'cantTell') continue;
-      if (!occurrence.lean || occurrence.lean.toward !== 'fail') continue;
-      out.push({ check, occurrence });
-    }
+    out.push(check);
+  }
+  return out;
+}
+
+// The undecided occurrences that lean fail output.maxOccurrencesPerRule left
+// out of one frame's result, of the checks whose leans gate under
+// leanFailAs (leanGatingChecksOf): [{ check, omitted }], omitted above 0.
+// They gate as those kept do: no baseline can be matched against them.
+function leaningOmittedOf(frameResult, options = {}) {
+  const out = [];
+  for (const check of leanGatingChecksOf(frameResult, options)) {
+    const omitted = omittedOf(check).leanFail;
+    if (omitted) out.push({ check, omitted });
   }
   return out;
 }
@@ -682,7 +705,8 @@ function timeBudgetOf(result) {
 }
 
 // The occurrences of a check result that output.maxOccurrencesPerRule left
-// out: { total, fail, cantTell }, zeros for a check that lost none.
+// out: { total, fail, cantTell, leanFail }, zeros for a check that lost none;
+// leanFail counts those of cantTell that lean fail.
 function omittedOf(check) {
   const total =
     check && Number.isInteger(check.occurrencesOmitted) && check.occurrencesOmitted > 0
@@ -690,7 +714,14 @@ function omittedOf(check) {
       : 0;
   const by = (check && check.occurrencesOmittedByOutcome) || {};
   const count = (n) => (total && Number.isInteger(n) && n > 0 ? n : 0);
-  return { total, fail: count(by.fail), cantTell: count(by.cantTell) };
+  const cantTell = count(by.cantTell);
+  const leaning = count(check && check.occurrencesOmittedLeaningFail);
+  return {
+    total,
+    fail: count(by.fail),
+    cantTell,
+    leanFail: Math.min(leaning, cantTell)
+  };
 }
 
 // The packs a result's scan ran with (engine.packs, each name@version), as
@@ -755,6 +786,7 @@ module.exports = {
   reviewGroupOf,
   reasonCodeOf,
   leaningOccurrencesOf,
+  leaningOmittedOf,
   leaningFailures,
   notRunOf,
   timeBudgetOf,
