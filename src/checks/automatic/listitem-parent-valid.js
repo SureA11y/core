@@ -12,9 +12,12 @@
  *   Applies to <li> elements that have a parent element.
  * @expectation
  *   The parent is <ul>/<ol>/<menu> with no role override (all three have
- *   the implicit role list), or an element with an
- *   explicit role of "list", "directory" (deprecated, but a required parent
- *   of listitem in WAI-ARIA 1.2), "presentation", or "none". An <li> used
+ *   the implicit role list) or with role "presentation" or "none" (the
+ *   list's presentation passes to its <li> children), or an element with
+ *   an explicit role of "list" or "directory" (deprecated, but a required
+ *   parent of listitem in WAI-ARIA 1.2). role "presentation" or "none" on
+ *   any other element (<div role="none">) only removes that element's own
+ *   role: the <li> is still in no list. An <li> used
  *   outside a real list container (e.g. as a generic flex/grid item under
  *   a <div>) is not exposed as a list item to assistive technologies.
  *   It FAILS where the page still draws the <li> as a list item (display
@@ -75,9 +78,9 @@
  *   explicit role overrides the element's native role" ARIA principle
  *   applied elsewhere in this engine), so an <li> inside it is invalid
  *   despite the <ul> tag (e.g. `<ul role="menu"><li>...`). Conversely
- *   role="presentation"/"none" on the parent is still a valid
- *   (list-semantics-suppressing) parent, the accepted parent roles are
- *   presentation, none, and list.
+ *   role="presentation"/"none" on a <ul>, <ol> or <menu> parent is still
+ *   a valid (list-semantics-suppressing) parent; on another element it is
+ *   not.
  * - The SAME "explicit role wins" principle applies to the <li> ELEMENT
  *   ITSELF: an <li role="tab">/role="menuitem">/role="presentation"> etc.
  *   is exposed to AT with that role, never "listitem". The whole point
@@ -233,16 +236,19 @@ function runInPage(ctx) {
     const explicitRole = resolvedRole(parent);
 
     let valid;
-    if (explicitRole) {
+    if (explicitRole === 'presentation' || explicitRole === 'none') {
+      // role none or presentation is a valid parent only on a <ul>, <ol> or
+      // <menu>: the list's presentation passes to its <li> children
+      // (WAI-ARIA 1.2, required owned elements), which are no list items
+      // then. On any other element (<div role="none">) it only removes that
+      // element's own role, and the <li> is still in no list.
+      valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu';
+    } else if (explicitRole) {
       // An explicit role always wins over the tag's native role, in either
       // direction, see the header comment.
       // role="directory" is a required parent of listitem in WAI-ARIA 1.2,
       // deprecated but valid (aria-deprecated-role flags it).
-      valid =
-        explicitRole === 'list' ||
-        explicitRole === 'directory' ||
-        explicitRole === 'presentation' ||
-        explicitRole === 'none';
+      valid = explicitRole === 'list' || explicitRole === 'directory';
     } else {
       valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu';
     }
