@@ -29,7 +29,9 @@
  *     - text-decoration: underline, OR
  *     - a different font-weight or font-style than the surrounding text, OR
  *     - another visible mark on the link itself: a border, box-shadow or
- *       outline, a background color different from the surrounding one, a
+ *       outline (a shadow in a transparent color, or with no offset, blur
+ *       or spread, draws nothing), a background color different from the
+ *       surrounding one, a
  *       background image, an image or svg inside it, or a ::before/::after
  *       that draws something (content of its own, or an empty box painting
  *       a background, border, outline or shadow, as an underline drawn
@@ -595,11 +597,46 @@ function runInPage(ctx) {
     return tokens.some((t) => LINE_STYLES.test(t)) && !tokens.some((t) => isZeroWidth(t));
   }
 
+  // Splits on a separator outside parentheses: the shadows of a list, or
+  // the parts of one shadow ("rgba(0, 0, 0, 0) 0px 1px").
+  function splitOutsideParens(v, sep) {
+    const parts = [];
+    let depth = 0;
+    let current = '';
+    for (const ch of v) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && sep.test(ch)) {
+        if (current.trim()) parts.push(current.trim());
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    if (current.trim()) parts.push(current.trim());
+    return parts;
+  }
+
+  // A shadow draws nothing in a fully transparent color, or with no offset,
+  // blur or spread: `box-shadow: 0 1px 0 transparent` is no cue.
+  function shadowDraws(shadow) {
+    const lengths = [];
+    let color = '';
+    for (const token of splitOutsideParens(shadow, /\s/)) {
+      if (token === 'inset') continue;
+      if (/^-?(\d*\.)?\d+([a-z]+)?$/.test(token)) lengths.push(parseFloat(token));
+      else color = token;
+    }
+    if (color && isTransparentColor(color)) return false;
+    return !(lengths.length && lengths.every((n) => n === 0));
+  }
+
   function hasBoxShadow(cs) {
     const v = String(cs.boxShadow || '')
       .trim()
       .toLowerCase();
-    return !!v && v !== 'none';
+    if (!v || v === 'none') return false;
+    return splitOutsideParens(v, /,/).some(shadowDraws);
   }
 
   // Whether a background-image layer draws something seen behind el's text:

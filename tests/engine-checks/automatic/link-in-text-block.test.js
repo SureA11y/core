@@ -105,6 +105,33 @@ test(`${RULE_ID}: a zero-width border or an empty ::after is not a cue`, () => {
   }
 });
 
+test(`${RULE_ID}: a box-shadow that draws nothing is not a cue (round 8, LY-8)`, () => {
+  const base = `body { background: #ffffff; } p { color: #222222; } .nodeco { text-decoration: none; color: #2a2a2a; }`;
+  for (const css of [
+    '.m { box-shadow: 0 1px 0 transparent; }',
+    '.m { box-shadow: 0 1px 0 rgba(0, 0, 0, 0); }',
+    '.m { box-shadow: 0 0 0 #222222; }',
+    '.m { box-shadow: 0 1px 0 transparent, 0 0 0 0 #222222; }'
+  ]) {
+    const html = `<!doctype html><html><head><style>${base} ${css}</style></head><body><p>Lire <a href="/x" class="nodeco m">la suite</a> ici.</p></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.strictEqual(
+      rule.occurrences[0].data.details.reasonCode,
+      'COLOR_ONLY_DIFFERENTIATION',
+      css
+    );
+  }
+  // One shadow of the list that draws is a cue.
+  const html = `<!doctype html><html><head><style>${base} .m { box-shadow: 0 1px 0 transparent, 0 1px 0 #2a2a2a; }</style></head><body><p>Lire <a href="/x" class="nodeco m">la suite</a> ici.</p></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
+
 test(`${RULE_ID}: an empty ::after that paints a line, and a chip or <sup> inside the link, are cues (#107)`, () => {
   const base = `body { background: #ffffff; } p { color: #222222; } .nodeco { text-decoration: none; color: #2a2a2a; position: relative; }`;
   for (const [css, inner] of [
