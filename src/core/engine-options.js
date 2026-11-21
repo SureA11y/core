@@ -24,6 +24,14 @@ function engineOptionSpec() {
     boolean: { test: (v) => switchOf(v) !== null, expected: 'true or false' },
     string: { test: (v) => typeof v === 'string', expected: 'a string' },
     list: { test: list, expected: 'a string or an array of strings' },
+    // A profile, or a list of them. An empty slot, a blank name and a value
+    // that is no name are each refused: each was dropped without a word.
+    profiles: {
+      test: (v) =>
+        typeof v === 'string' ||
+        (Array.isArray(v) && [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
+      expected: 'a profile name or an array of them, none blank'
+    },
     number: {
       test: (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0,
       expected: 'a number of milliseconds, 0 or more'
@@ -70,7 +78,7 @@ function engineOptionSpec() {
       expected: '"A", "AA" or "AAA", in any case'
     },
     // One profile, or a list of them: a scan of several at once.
-    profile: T.list,
+    profile: T.profiles,
     mappings: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,

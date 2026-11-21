@@ -215,3 +215,28 @@ test('standard data that holds itself or nests too deep is a problem, not a Rang
   }
   assert.match(checkStandardData(cyclic)[0], /holds itself/);
 });
+
+test('an empty slot or a blank name in a profile list is said, and refused under strict (PK-11)', () => {
+  // An empty slot, as [a, , b] writes it.
+  const hole = ['wcag22-aa', 'x', 'wcag21-aa'];
+  delete hole[1];
+  for (const profile of [hole, ['wcag22-aa', '', 'wcag21-aa'], ['wcag22-aa', '  ']]) {
+    const warnings = [];
+    const warn = console.warn;
+    console.warn = (m) => warnings.push(String(m));
+    try {
+      runa11yCoreOnHtml(HTML, { engineOptions: { profile } });
+    } finally {
+      console.warn = warn;
+    }
+    assert.ok(
+      warnings.some((w) => /engineOptions\.profile: ignoring 1 item/.test(w)),
+      JSON.stringify(profile) + ': ' + warnings.join(' | ')
+    );
+    assert.throws(
+      () => runa11yCoreOnHtml(HTML, { engineOptions: { profile, strictOptions: true } }),
+      { code: 'INVALID_ENGINE_OPTIONS' },
+      JSON.stringify(profile)
+    );
+  }
+});

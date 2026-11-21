@@ -59,13 +59,19 @@ function runProfiles(engineOptions, run) {
     // Names are matched without case, as a single profile's are: one asked
     // twice in two cases runs once.
     const unique = profileNamesOf(asked);
-    const ignored = asked.filter((p) => typeof p !== 'string');
-    if (ignored.length) {
+    // By index: filter() skips an empty slot ([, 'wcag22-aa']), which was
+    // then dropped without a word, as a blank name was.
+    let ignored = 0;
+    for (let i = 0; i < asked.length; i++) {
+      const p = asked[i];
+      if (typeof p !== 'string' || !p.trim()) ignored++;
+    }
+    if (ignored) {
       try {
         console.warn(
           '[surea11y] engineOptions.profile: ignoring ' +
-            ignored.length +
-            ' item(s) that are not a profile name (a string).'
+            ignored +
+            ' item(s) that are not a profile name (a string that is not blank).'
         );
       } catch {
         // no console
