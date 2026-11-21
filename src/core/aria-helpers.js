@@ -1443,8 +1443,9 @@ function createAriaHelpers(opts, shared) {
   // Effective role for ownership/context matching only (aria-required-
   // children / aria-required-parent): explicit role wins when present;
   // otherwise falls back to the small NATIVE_CONTAINMENT_ROLE_BY_ELEMENT
-  // map above. Not a general-purpose implicit-role resolver; kept
-  // narrow on purpose, see the table's header comment.
+  // map above, whose conditional roles hold only in their native structure.
+  // An element outside that map gives its own implicit role when it has one
+  // (getOwnNativeRole): a heading or an article is not transparent.
   //
   // The explicit role must be a real, valid concrete ARIA role to count:
   // an invalid/unrecognized role="" token (e.g. a library's own
@@ -1473,13 +1474,43 @@ function createAriaHelpers(opts, shared) {
         : '';
     }
 
-    if (!Object.prototype.hasOwnProperty.call(NATIVE_CONTAINMENT_ROLE_BY_ELEMENT, tag)) return '';
+    if (!Object.prototype.hasOwnProperty.call(NATIVE_CONTAINMENT_ROLE_BY_ELEMENT, tag)) {
+      return getOwnNativeRole(el, tag);
+    }
 
     // A conditional role only holds inside the structure HTML-AAM names.
     const context = NATIVE_CONTAINMENT_CONTEXT[tag];
     if (context && !hasNativeContext(el, context)) return '';
 
     return NATIVE_CONTAINMENT_ROLE_BY_ELEMENT[tag];
+  }
+
+  // A native element with a role of its own (an <h3>, an <article>, a
+  // <nav>) is no transparent wrapper between a role and its required context:
+  // <div role="tablist"><h3><button role="tab"> puts a heading between them,
+  // as <div role="heading"> would. Its implicit role (as aria-allowed-role
+  // reads it), unless that is generic or presentational. <aside> and
+  // <form> carry theirs only as HTML-AAM conditions them: an <aside> inside
+  // sectioning content, or a <form>, only when named.
+  function getOwnNativeRole(el, tag) {
+    // A link or a button is left out: it takes focus by itself, which the
+    // containment rules weigh on their own (aria-prohibited-children names
+    // its role as a focusable child).
+    if (tag === 'a' || tag === 'area' || tag === 'button') return '';
+    // A named <section> is a region, and a <footer> outside sectioning
+    // content and <main> a contentinfo, as getLandmarkRole has them; the
+    // aria-allowed-role table lists neither as a role to restate.
+    if (tag === 'section') return hasAccessibleNameHint(el) ? 'region' : '';
+    if (tag === 'footer') {
+      return hasLandmarkScopingAncestor(el, { includeMain: true }) ? '' : 'contentinfo';
+    }
+    const role = getNativeRoleForElement(el);
+    if (!role || role === 'generic' || role === 'none' || role === 'presentation') return '';
+    if (tag === 'form' && !hasAccessibleNameHint(el)) return '';
+    // An <img alt=""> is presentational.
+    if (tag === 'img' && getAttr(el, 'alt') === '' && !hasAccessibleNameHint(el)) return '';
+    if (tag === 'aside' && !hasAccessibleNameHint(el) && hasLandmarkScopingAncestor(el)) return '';
+    return role;
   }
 
   // WAI-ARIA's global states and properties. Any of them on an element with

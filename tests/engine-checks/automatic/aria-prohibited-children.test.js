@@ -584,7 +584,7 @@ test(`${RULE_ID}: a plain <li> in a menu is named as an <li> whose implicit role
   assert.strictEqual(occ.i18n.hintKey, 'ariaProhibitedChildren_hint_fail_implicit');
   assert.strictEqual(
     occ.summary,
-    'This <li> is a listitem by default, which isn\'t allowed directly inside a role="menu" container.'
+    'This <li> has the implicit role listitem, which isn\'t allowed directly inside a role="menu" container.'
   );
   assert.strictEqual(
     occ.hint,
