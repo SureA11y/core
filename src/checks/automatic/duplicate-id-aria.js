@@ -129,16 +129,16 @@ function runInPage(ctx) {
   // rule's time on a page of many ids (round 8 leftover). Past a few
   // hundred such ids, one query of every id is shorter than the selector.
   const reportedIds = [];
-  for (const id of referencedIds) if ((idMap.get(id) || []).length > 1) reportedIds.push(id);
-  const attrValue = (id) =>
-    id
+  for (const key of referencedIds) if ((idMap.get(key) || []).length > 1) reportedIds.push(key);
+  const attrValue = (key) =>
+    key
       .replace(/[\\"]/g, '\\$&')
       .replace(/\n/g, '\\a ')
       .replace(/\r/g, '\\d ')
       .replace(/\f/g, '\\c ');
   const scopeSelector =
     reportedIds.length <= 300
-      ? reportedIds.map((id) => `[id="${attrValue(id)}"]`).join(',')
+      ? reportedIds.map((key) => `[id="${attrValue(key)}"]`).join(',')
       : '[id]';
   let inScope = null;
   if (reportedIds.length && helpers && typeof helpers.queryAllSmart === 'function') {
