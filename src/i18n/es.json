@@ -1768,6 +1768,7 @@
   "report_card_ruleError": "La regla no se completó: {{error}}",
   "report_card_representative": "El selector y el resumen anteriores corresponden a una aparición representativa; {{count}} en total en esta regla.",
   "report_card_moreOmitted": "+{{count}} más, sin listar: el análisis conservó {{kept}} apariciones de esta regla (output.maxOccurrencesPerRule). Se cuentan arriba.",
+  "report_card_moreOmitted_one": "+{{count}} más, sin listar: el análisis conservó {{kept}} aparición de esta regla (output.maxOccurrencesPerRule). Se cuentan arriba.",
   "report_card_help": "Cómo corregir {{rule}}",
   "report_card_understanding": "Comprender {{sc}} {{title}}",
   "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",

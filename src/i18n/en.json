@@ -1768,6 +1768,7 @@
   "report_card_ruleError": "The rule did not complete: {{error}}",
   "report_card_representative": "Selector/summary above are from one representative occurrence; {{count}} total on this rule.",
   "report_card_moreOmitted": "+{{count}} more not listed: the scan kept {{kept}} occurrences of this rule (output.maxOccurrencesPerRule). They are counted above.",
+  "report_card_moreOmitted_one": "+{{count}} more not listed: the scan kept {{kept}} occurrence of this rule (output.maxOccurrencesPerRule). They are counted above.",
   "report_card_help": "How to fix {{rule}}",
   "report_card_understanding": "Understanding {{sc}} {{title}}",
   "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",

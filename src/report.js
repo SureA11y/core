@@ -957,7 +957,7 @@ function renderCards(checksResults, ui) {
     // The elements found: a passing occurrence of a failing rule is no finding.
     const found = occurrenceCounts.fail + occurrenceCounts.cantTell || occs.length;
     const omittedLine = omitted.total
-      ? `<p class="card-note">${esc(ui.tr('report_card_moreOmitted', { count: ui.num(omitted.total), kept: ui.num(r.occurrences.length) }))}</p>`
+      ? `<p class="card-note">${esc(ui.tr(r.occurrences.length === 1 ? 'report_card_moreOmitted_one' : 'report_card_moreOmitted', { count: ui.num(omitted.total), kept: ui.num(r.occurrences.length) }))}</p>`
       : '';
     const countLabel =
       found > 1

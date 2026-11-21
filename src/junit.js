@@ -193,13 +193,15 @@ function classify(check, baseline, gating, leaningOmittedBy, options) {
 function omittedLines(entry, tier) {
   const n = entry.omitted ? entry.omitted[tier] : 0;
   if (!n) return [];
-  if (tier === 'leanFail') {
-    return [
-      `+${n} more: ${plural(n, 'occurrence')} that likely ${n === 1 ? 'fails' : 'fail'} not listed (output.maxOccurrencesPerRule)`
-    ];
-  }
-  const what = tier === 'fail' ? 'failing occurrence' : 'occurrence that needs manual review';
-  return [`+${n} more: ${plural(n, what)} not listed (output.maxOccurrencesPerRule)`];
+  // The noun takes the plural, and the verb of a clause after it agrees.
+  const verb = (one, other) => (n === 1 ? one : other);
+  const what =
+    tier === 'fail'
+      ? plural(n, 'failing occurrence')
+      : tier === 'leanFail'
+        ? `${plural(n, 'occurrence')} that likely ${verb('fails', 'fail')}`
+        : `${plural(n, 'occurrence')} that ${verb('needs', 'need')} manual review`;
+  return [`+${n} more: ${what} not listed (output.maxOccurrencesPerRule)`];
 }
 
 function describeOccurrence(occurrence) {

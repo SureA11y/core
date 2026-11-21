@@ -1768,6 +1768,7 @@
   "report_card_ruleError": "Die Regel wurde nicht abgeschlossen: {{error}}",
   "report_card_representative": "Selektor und Zusammenfassung oben stammen von einer repräsentativen Fundstelle; insgesamt {{count}} bei dieser Regel.",
   "report_card_moreOmitted": "+{{count}} weitere, nicht aufgeführt: Der Scan hat {{kept}} Fundstellen dieser Regel behalten (output.maxOccurrencesPerRule). Sie sind oben mitgezählt.",
+  "report_card_moreOmitted_one": "+{{count}} weitere, nicht aufgeführt: Der Scan hat {{kept}} Fundstelle dieser Regel behalten (output.maxOccurrencesPerRule). Sie sind oben mitgezählt.",
   "report_card_help": "So beheben Sie {{rule}}",
   "report_card_understanding": "{{sc}} {{title}} verstehen",
   "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",

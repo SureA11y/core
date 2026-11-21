@@ -190,6 +190,35 @@ test('HTML report: the total counts what was left out, and the card says "+N mor
   assert.match(es, /\+3 más, sin listar/);
 });
 
+// The "+N more" texts agree with their counts (round 10, S10-4).
+test('the "+N more" texts of the HTML report and JUnit take the plural their count asks for', () => {
+  const capOne = scan({ output: { maxOccurrencesPerRule: 1 } });
+  const html = renderHtmlReport(capOne, { manualChecks: false });
+  assert.match(html, /\+4 more not listed: the scan kept 1 occurrence of this rule \(/);
+  for (const [locale, text] of [
+    ['de', /Der Scan hat 1 Fundstelle dieser Regel behalten/],
+    ['es', /el análisis conservó 1 aparición de esta regla/],
+    ['fr', /l’analyse a gardé 1 occurrence de cette règle/]
+  ]) {
+    const localized = renderHtmlReport(scan({ locale, output: { maxOccurrencesPerRule: 1 } }), {
+      manualChecks: false
+    });
+    assert.match(localized, text);
+  }
+  // Two tables without headers, kept one, for an undecided rule.
+  const tables = quietly(() =>
+    runa11yCoreOnHtml(
+      '<!doctype html><html lang="en"><head><title>p</title></head><body><main><h1>h</h1>' +
+        '<table><tr><td>a</td><td>1</td></tr><tr><td>b</td><td>2</td></tr></table>'.repeat(3) +
+        '</main></body></html>',
+      { engineOptions: { output: { maxOccurrencesPerRule: 1 } } }
+    )
+  ).value;
+  const xml = renderJunitReport(tables);
+  assert.match(xml, /\+2 more: 2 occurrences that need manual review not listed/);
+  assert.doesNotMatch(xml, /reviews not listed/);
+});
+
 test('SARIF: a note per capped rule, and the failures it keeps still gate', () => {
   const sarif = JSON.parse(renderSarifReport(capped));
   const run = sarif.runs[0];
