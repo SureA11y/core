@@ -671,6 +671,23 @@ function runInPage(ctx) {
         detail: { excludedBy, hiddenBy: role, alt }
       };
     }
+    // A canvas's fallback content stays in the accessibility tree: what is
+    // skipped is the drawing, not the text in it.
+    const fallbackRaw =
+      excludedBy === 'unnamed-canvas'
+        ? String(dom.textContent(el) || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+        : '';
+    if (fallbackRaw) {
+      const fallback = fallbackRaw.length > 80 ? `${fallbackRaw.slice(0, 79)}…` : fallbackRaw;
+      return {
+        summary: `This <${tag}> has no role and no name of its own, so screen readers skip the drawing and read only its fallback content, "${fallback}". Check whether the drawing is purely decorative.`,
+        summaryKey: 'img_altDecorative_summary_unnamedCanvasFallback',
+        params: { fallback },
+        detail: { excludedBy }
+      };
+    }
     if (excludedBy === 'unnamed-svg' || excludedBy === 'unnamed-canvas') {
       return {
         summary: `This <${tag}> has no name and no role, so screen readers skip it. Check whether it is purely decorative.`,

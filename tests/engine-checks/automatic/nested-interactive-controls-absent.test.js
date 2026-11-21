@@ -314,7 +314,7 @@ test(`${RULE_ID}: a control in a tab is named, with its role and what makes it f
   assert.strictEqual(occ.i18n.hintKey, 'nestedInteractiveControlsAbsent_hint_fail');
   assert.strictEqual(
     occ.summary,
-    'This <div> is a tab, whose content is presentational, and it contains <button> "×": the nested control loses its role but still takes focus.'
+    'This <div> has role tab, which makes its content presentational, and it contains <button> "×": the nested control loses its role but still takes focus.'
   );
   assert.strictEqual(
     occ.hint,
@@ -361,4 +361,14 @@ test(`${RULE_ID}: a tabindex="-1" control inside a tab, button or option is not 
     maxOccurrences: 1
   });
   assert.deepStrictEqual(rule.occurrences[0].data.details.nestedElements, ['a']);
+});
+
+// The role is named as a role, not after an article that only fits some of
+// them ("is a option").
+test(`${RULE_ID}: the summary names an option's role without a wrong article (round 8, NA-11)`, () => {
+  const occ = messageOccurrence(
+    '<div role="listbox" aria-label="l"><div role="option" aria-selected="false" tabindex="0">A <a href="#">info</a></div></div>',
+    'role="option"'
+  );
+  assert.match(occ.summary, /^This <div> has role option, which makes its content presentational/);
 });

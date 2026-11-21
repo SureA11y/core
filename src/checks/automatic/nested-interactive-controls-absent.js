@@ -456,7 +456,7 @@ function runInPage(ctx) {
         summary: !roleNamed
           ? 'This interactive control contains one or more other interactive controls.'
           : fails
-            ? `This <${tag}> is a ${outerRole}, whose content is presentational, and it contains ${nestedList}: the nested control loses its role but still takes focus.`
+            ? `This <${tag}> has role ${outerRole}, which makes its content presentational, and it contains ${nestedList}: the nested control loses its role but still takes focus.`
             : `This <${tag}> (${outerRole}) contains ${nestedList}. Both keep their roles, but a control inside another is hard to reach and operate, and its name may be swallowed by the outer one.`,
         hint: "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another.",
         i18n: {
