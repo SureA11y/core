@@ -301,3 +301,57 @@ test(
     assert.deepEqual(await reacting('active', '.b{color:#777}'), ['fail', undefined]);
   }
 );
+
+// The browser's own placeholder, and a drop-down select in the browser's
+// own background, are measured as with forced colors off (round 8, LY-10).
+// The placeholder's browser colors are read from a blank frame, which forced
+// colors repainted, so the browser's #757575 looked like the page's choice
+// and failed contrast-enhanced; and a select's ButtonFace and Field take the
+// forced palette's values, so it was measured on white alone, not on
+// #efefef and white.
+test(
+  'under forced colors the browser’s own placeholder and select colors are those with forced colors off, in Chromium',
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+
+    const scan = async (html, forcedColors) => {
+      const page = await browser.newPage();
+      t.after(() => page.close());
+      await page.emulateMedia({ forcedColors });
+      await page.setContent(html);
+      await addBundle(page);
+      return page.evaluate(() =>
+        window.a11ycore
+          .runa11yCoreInPage(null, null, {}, ['contrast-minimum', 'contrast-enhanced'])
+          .checksResults.map((c) => ({
+            ruleId: c.ruleId,
+            outcome: c.outcome,
+            occurrences: c.occurrences.map((o) => o.data && o.data.details)
+          }))
+      );
+    };
+
+    for (const [description, html] of [
+      [
+        'a placeholder in the browser’s colors',
+        '<!doctype html><html lang="en"><head><title>t</title></head><body><main><input aria-label="Search" placeholder="Search here"></main></body></html>'
+      ],
+      [
+        'a select in the browser’s background',
+        '<!doctype html><html lang="en"><head><title>t</title></head><body><main><select aria-label="Choice" style="color:#999"><option>Choose</option></select></main></body></html>'
+      ],
+      [
+        'a select in the browser’s background, in a dark color scheme',
+        '<!doctype html><html lang="en" style="color-scheme:dark"><head><title>t</title></head><body style="background:#000"><main><select aria-label="Choice" style="color:#555"><option>Choose</option></select></main></body></html>'
+      ]
+    ]) {
+      await t.test(description, async () => {
+        const off = await scan(html, 'none');
+        const on = await scan(html, 'active');
+        assert.deepEqual(on, off);
+      });
+    }
+  }
+);

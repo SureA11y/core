@@ -118,7 +118,8 @@
  *     ratio; whether each reaches it is theirs to say.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_IMAGE_OR_GRADIENT` (cantTell): a background image or gradient
- *     lies behind the text, so the color it sits on could not be worked out.
+ *     lies behind the text, or an inset box-shadow paints under part of it,
+ *     so the color it sits on could not be worked out.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_OVERLAP` (cantTell): another element paints under the text,
  *     so the background it sits on could not be worked out.
@@ -139,7 +140,8 @@
  *   - `FOREGROUND_UNPARSABLE` (cantTell): the text color does not parse.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_FILTER_OR_BACKDROP_FILTER` (cantTell): a filter or backdrop-
- *     filter changes the colors drawn, so the declared colors are not what is
+ *     filter changes the colors drawn, or a mask fades the text and its
+ *     background by amounts that vary, so the declared colors are not what is
  *     on screen.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `MIX_BLEND_MODE` (cantTell): a mix-blend-mode blends the text or its
@@ -438,7 +440,12 @@ function runInPage(ctx) {
             ? String(extraDetails.backgroundFillType || '')
             : '';
 
-        if (t === 'image') summaryKey = 'contrastComputable_cantTell_bgImage';
+        const bp =
+          extraDetails && typeof extraDetails === 'object'
+            ? String(extraDetails.blockerProperty || '')
+            : '';
+        if (bp === 'box-shadow') summaryKey = 'contrastComputable_cantTell_insetShadow';
+        else if (t === 'image') summaryKey = 'contrastComputable_cantTell_bgImage';
         else if (t === 'gradient') summaryKey = 'contrastComputable_cantTell_bgGradient';
         else if (t === 'imageAndGradient')
           summaryKey = 'contrastComputable_cantTell_bgImageAndGradient';
@@ -450,6 +457,7 @@ function runInPage(ctx) {
             ? String(extraDetails.blockerProperty || '')
             : '';
         if (bp === 'filter') summaryKey = 'contrastComputable_cantTell_filter';
+        else if (bp === 'mask-image') summaryKey = 'contrastComputable_cantTell_mask';
         else if (bp === 'backdrop-filter')
           summaryKey = 'contrastComputable_cantTell_backdropFilter';
         else summaryKey = 'contrastComputable_cantTell_filterOrBackdropFilter';
