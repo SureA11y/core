@@ -126,7 +126,10 @@ const PROCEDURES = {
       'video-poster-text-alt-present': {
         coveredBy: 'text-alternative-mechanism',
         variants: {
-          'video-poster-text-alternative-present': ['VIDEO_POSTER_FIGCAPTION_REVIEW']
+          'video-poster-text-alternative-present': [
+            'TEXT_ALTERNATIVE_MISSING',
+            'VIDEO_POSTER_FIGCAPTION_REVIEW'
+          ]
         }
       },
       'alt-suspicious-patterns': {

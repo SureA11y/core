@@ -2629,11 +2629,12 @@ A `kind="captions"` track with a real `src` is present, which says captions exis
 ```
 `aria-label` names the video element that carries the poster image.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
-<video poster="poster.png"></video>
+<h2>Product tour</h2>
+<video poster="poster.png" src="tour.mp4" controls></video>
 ```
-No accessible name and no fallback; a poster attribute alone isn't a text alternative.
+The video has a poster but no accessible name. A video is time-based media, whose text alternative only has to identify it (WCAG 1.1.1), so a person checks that something tied to it does; it leans fail, since a screen reader announces it with nothing that identifies it.
 
 ## widget-keyboard-focusable
 
