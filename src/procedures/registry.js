@@ -449,6 +449,12 @@ const PROCEDURES = {
       },
       'graphics-contrast': {
         tools: ['devtools']
+      },
+      'symbol-graphic-contrast-evidence': {
+        coveredBy: 'graphics-contrast',
+        variants: {
+          'symbol-graphic-contrast': ['SYMBOLS_BELOW_GRAPHIC_THRESHOLD']
+        }
       }
     },
     '1.4.10': {

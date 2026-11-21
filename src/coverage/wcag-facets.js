@@ -641,6 +641,11 @@ const FACETS = {
                 "id": "graphics-contrast",
                 "label": "The parts of a graphic needed to understand it have a contrast of at least 3:1",
                 "automation": "manual"
+            },
+            {
+                "id": "symbol-graphic-contrast-evidence",
+                "label": "Symbols drawn as text with no letter or digit, used as a graphic, under 3:1 (evidence only)",
+                "automation": "manual"
             }
         ]
     },

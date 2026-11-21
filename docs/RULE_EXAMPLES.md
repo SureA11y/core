@@ -2387,6 +2387,20 @@ A `<title>` is present — worth confirming "Growth chart" describes what the ch
 ```
 No `<title>`/`<desc>` text, aria-label, or resolved aria-labelledby exists to review; that's `svg-text-alternative-present`'s failure instead.
 
+## symbol-graphic-contrast
+
+**Passed**
+```html
+<p>Customer rating <span style="color:#7a5c00">★★★★☆</span></p>
+```
+The rating stars, symbols with no letter or digit, reach 3:1 against the white page.
+
+**Flagged (cantTell)**
+```html
+<p>Customer rating <span style="color:#f5d76e">★★★★☆</span></p>
+```
+Gold stars on white are at 1.42:1, under the 3:1 WCAG 1.4.11 asks of a graphic needed to understand the content. A person checks whether they carry information no text beside them gives; it leans fail.
+
 ## tab-name-present
 
 **Passed**
