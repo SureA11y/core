@@ -898,6 +898,20 @@ function createContrastHelpers(opts, shared) {
         // moved wholly off the page (text-indent: -9999px) is drawn nowhere.
         if (!marquee && Number.parseFloat(cs.textIndent) < 0 && textOffPage(el, r, cs, sx))
           return true;
+        // Text shrunk by a transform to less than a pixel (scale(0.001)) is
+        // drawn as nothing a reader can see.
+        const shrunk = __uniformTransformScale(el);
+        if (shrunk < 1 && Number.parseFloat(cs.fontSize) * shrunk < 1) return true;
+        // A box clipping its own overflow to a pixel or less (a visually
+        // hidden 1px box with no clip) shows nothing of the text in it.
+        if (!marquee) {
+          const own = clipBoxOf(el);
+          if (
+            own.rect &&
+            ((own.clipsX && own.rect.width <= 1) || (own.clipsY && own.rect.height <= 1))
+          )
+            return true;
+        }
         let left = r.left;
         let top = r.top;
         let right = r.right;
@@ -917,7 +931,8 @@ function createContrastHelpers(opts, shared) {
               top = Math.max(top, a.top);
               bottom = Math.min(bottom, a.bottom);
             }
-            if (right - left < 1 || bottom - top < 1) return true;
+            // A pixel or less: the 1px box of visually hidden text.
+            if (right - left <= 1 || bottom - top <= 1) return true;
           }
           if (stops) break;
           cur = composedParent(cur);

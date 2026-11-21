@@ -28,8 +28,10 @@
  *   the pseudo-element's color and font, on its element; jsdom computes no
  *   pseudo-element styles, so there it is left out. Text counts
  *   only when its element is DOM-visible under the run's visibility mode, is
- *   not clipped out of sight by the sr-only technique (clip or clip-path),
- *   and belongs neither to a disabled control nor to the label of one,
+ *   not clipped out of sight by the sr-only technique (clip or clip-path,
+ *   a clip-path polygon of no area among them), is drawn at all in a
+ *   browser (not in a box clipping its overflow to a pixel or less, nor
+ *   shrunk by a transform below a pixel), and belongs neither to a disabled control nor to the label of one,
  *   WCAG's inactive-user-interface-component exception. Subtrees excluded
  *   via engineOptions.excludeSelectors are skipped, and open shadow roots
  *   are walked as roots in their own right.
