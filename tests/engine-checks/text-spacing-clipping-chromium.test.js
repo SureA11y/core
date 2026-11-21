@@ -117,6 +117,28 @@ const CASES = [
     'light text slotted into a box that grows with it',
     shadow('Subscribe to our weekly news', '<div style="width:220px"><slot></slot></div>'),
     'pass'
+  ],
+  // A clip-path: inset() or clip: rect() clips as overflow: hidden does
+  // (round 8, LY-15); a shape that isn't a rectangle is not measured.
+  [
+    'a fixed-size box with clip-path: inset(0)',
+    '<div style="width:220px;height:20px;clip-path:inset(0);font-size:16px">Subscribe to our weekly news</div>',
+    'fail'
+  ],
+  [
+    'an absolutely positioned box with clip: rect()',
+    '<div style="position:relative;height:60px"><div style="position:absolute;width:220px;height:20px;clip:rect(0, 220px, 20px, 0);font-size:16px">Subscribe to our weekly news</div></div>',
+    'fail'
+  ],
+  [
+    'a box with clip-path: inset(0) that grows with its text',
+    '<div style="width:220px;clip-path:inset(0);font-size:16px">Subscribe to our weekly news</div>',
+    'pass'
+  ],
+  [
+    'a fixed-size box with clip-path: circle()',
+    '<div style="width:220px;height:20px;clip-path:circle(50%);font-size:16px">Subscribe to our weekly news</div>',
+    'pass'
   ]
 ];
 

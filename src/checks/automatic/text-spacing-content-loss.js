@@ -20,7 +20,8 @@
  *     reports), and each line of text is measured before and after against
  *     the boxes that clip it: those on its containing block chain with
  *     `overflow: hidden` or `clip`, or `contain: paint` (which
- *     `content-visibility: auto` gives), and the viewport
+ *     `content-visibility: auto` gives), or cut by a `clip-path: inset()`
+ *     or a `clip: rect()` (other shapes are not measured), and the viewport
  *     on an axis the page keeps from scrolling, or for text in a fixed box,
  *     which doesn't scroll with the page. A
  *     line that was inside and ends at least half outside (half its
@@ -801,6 +802,67 @@ function runInPage(ctx) {
       const hides = (v) => v === 'hidden' || v === 'clip';
       return !(x && hides(cs.overflowX)) && !(y && hides(cs.overflowY));
     }
+    // How far a clip-path: inset() or a clip: rect() cuts into el's border
+    // box on each side, in layout px: { top, right, bottom, left }, or null
+    // where there is none, or the shape can't be measured as a rectangle (a
+    // circle, a polygon, a path, a reference box other than the border box).
+    // An inset's rounded corners are left out.
+    function clipShapeOf(el, cs) {
+      const w = Number(dom.get(el, 'offsetWidth')) || 0;
+      const h = Number(dom.get(el, 'offsetHeight')) || 0;
+      const len = (v, size) => {
+        const m = /^(-?\d*\.?\d+)(px|%)$/.exec(v) || (/^0$/.test(v) ? ['0', '0', 'px'] : null);
+        if (!m) return null;
+        return m[2] === '%' ? (parseFloat(m[1]) * size) / 100 : parseFloat(m[1]);
+      };
+      let shape = null;
+      const cp = String(cs.clipPath || '')
+        .trim()
+        .toLowerCase();
+      const inset = /^inset\((.*)\)(\s+border-box)?$/.exec(cp);
+      if (inset) {
+        const args = inset[1]
+          .split(/\s+round\s+/)[0]
+          .trim()
+          .split(/\s+/);
+        if (args.length >= 1 && args.length <= 4) {
+          const [t, r = t, b = t, l = r] = args;
+          const v = [len(t, h), len(r, w), len(b, h), len(l, w)];
+          if (v.every((n) => n !== null)) {
+            shape = { top: v[0], right: v[1], bottom: v[2], left: v[3] };
+          }
+        }
+      }
+      // clip applies to an absolutely positioned box only; auto is the
+      // border box's own edge.
+      const clip = /^rect\((.*)\)$/.exec(
+        String(cs.clip || '')
+          .trim()
+          .toLowerCase()
+      );
+      if (clip && (cs.position === 'absolute' || cs.position === 'fixed')) {
+        const args = clip[1].split(/[\s,]+/).filter(Boolean);
+        const at = (v, size, auto) => (v === 'auto' ? auto : len(v, size));
+        if (args.length === 4) {
+          const t = at(args[0], h, 0);
+          const r = at(args[1], w, w);
+          const b = at(args[2], h, h);
+          const l = at(args[3], w, 0);
+          if ([t, r, b, l].every((n) => n !== null)) {
+            const fromClip = { top: t, right: w - r, bottom: h - b, left: l };
+            shape = shape
+              ? {
+                  top: Math.max(shape.top, fromClip.top),
+                  right: Math.max(shape.right, fromClip.right),
+                  bottom: Math.max(shape.bottom, fromClip.bottom),
+                  left: Math.max(shape.left, fromClip.left)
+                }
+              : fromClip;
+          }
+        }
+      }
+      return shape;
+    }
     function clippersOf(el) {
       if (clipCache.has(el)) return clipCache.get(el);
       const path = [];
@@ -830,6 +892,19 @@ function runInPage(ctx) {
           const y =
             !(scrolls & 2) && (paint || cs.overflowY === 'hidden' || cs.overflowY === 'clip');
           if (x || y) own = { el: a, x, y, contentVisibility: byContentVisibility(a, cs, x, y) };
+          // A clip-path: inset() or clip: rect() cuts off what is painted
+          // past it on both axes, as overflow: hidden does at the padding box.
+          const shape = clipShapeOf(a, cs);
+          if (shape && (!(scrolls & 1) || !(scrolls & 2))) {
+            own = {
+              el: a,
+              x: !(scrolls & 1),
+              y: !(scrolls & 2),
+              contentVisibility: false,
+              overflowClip: own ? { x: own.x, y: own.y } : null,
+              shape
+            };
+          }
           if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') after |= 1;
           if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') after |= 2;
         }
@@ -980,13 +1055,46 @@ function runInPage(ctx) {
       };
     }
 
+    // The box a clipper keeps what it paints in: its padding box, or for a
+    // clip-path or clip, the shape's rectangle, within the padding box on an
+    // axis its overflow clips too.
+    function clipBoxOf(c) {
+      if (!c.shape) return boxOf(c.el);
+      const r = dom.getBoundingClientRect(c.el);
+      const ow = Number(dom.get(c.el, 'offsetWidth')) || 0;
+      const oh = Number(dom.get(c.el, 'offsetHeight')) || 0;
+      const kx = ow > 0 && r.width > 0 ? r.width / ow : 1;
+      const ky = oh > 0 && r.height > 0 ? r.height / oh : 1;
+      const ox = sx();
+      const oy = sy();
+      const box = {
+        left: r.left + ox + c.shape.left * kx,
+        top: r.top + oy + c.shape.top * ky,
+        right: r.right + ox - c.shape.right * kx,
+        bottom: r.bottom + oy - c.shape.bottom * ky
+      };
+      const o = c.overflowClip;
+      if (o && (o.x || o.y)) {
+        const inner = boxOf(c.el);
+        if (o.x) {
+          box.left = Math.max(box.left, inner.left);
+          box.right = Math.min(box.right, inner.right);
+        }
+        if (o.y) {
+          box.top = Math.max(box.top, inner.top);
+          box.bottom = Math.min(box.bottom, inner.bottom);
+        }
+      }
+      return box;
+    }
+
     function measure() {
       const lines = new Map();
       const boxes = new Map();
       for (const n of nodes) {
         lines.set(n, linesOf(n));
         for (const c of clippersOf(textEl(n))) {
-          if (!boxes.has(keyOf(c))) boxes.set(keyOf(c), c.viewport ? viewportBox() : boxOf(c.el));
+          if (!boxes.has(keyOf(c))) boxes.set(keyOf(c), c.viewport ? viewportBox() : clipBoxOf(c));
         }
         for (const c of paintClippersOf(textEl(n))) {
           if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
@@ -1235,6 +1343,9 @@ function runInPage(ctx) {
         if (own && own !== 'visible')
           parts.push(ox === oy ? `overflow: ${own}` : `overflow-${axis}: ${own}`);
         else if (cs.contain && cs.contain !== 'none') parts.push(`contain: ${cs.contain}`);
+        else if (c.shape && cs.clipPath && cs.clipPath !== 'none')
+          parts.push(`clip-path: ${cs.clipPath}`);
+        else if (c.shape && cs.clip && cs.clip !== 'auto') parts.push(`clip: ${cs.clip}`);
         else return '';
         if (axis === 'x' && cs.textOverflow === 'ellipsis') parts.push('text-overflow: ellipsis');
         return parts.join('; ');
