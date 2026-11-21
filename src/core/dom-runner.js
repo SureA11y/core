@@ -50,7 +50,7 @@ const { readLiveRegionHook } = require('./live-region-hook');
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
    criteriaNamingRule, optInTagsOf, ruleIdMatches,
    criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES, COMPLETE_APPLICABILITY_SCS,
-   COMPLETE_CHECK_SCS */
+   COMPLETE_CHECK_SCS, WCAG_LEVELS_BY_SC */
 
 // A WCAG conformance level as the engine names it ('aa' is 'AA'), or null.
 function normalizeWcagLevel(v) {
@@ -2583,15 +2583,52 @@ function runCoreSettled(
     return appliedProfile && keeps.includes(appliedProfile) ? null : 'errata';
   }
 
+  // The WCAG criteria a rule names: its wcagSc, and the requirements of its
+  // WCAG normativeMappings.
+  function wcagCriteriaOfDef(def) {
+    const out = [];
+    if (!def || typeof def !== 'object') return out;
+    const add = (sc) => {
+      const text = typeof sc === 'string' ? sc.trim() : '';
+      if (text && !out.includes(text)) out.push(text);
+    };
+    if (Array.isArray(def.wcagSc)) def.wcagSc.forEach(add);
+    const maps = Array.isArray(def.normativeMappings)
+      ? def.normativeMappings
+      : def.meta && Array.isArray(def.meta.normativeMappings)
+        ? def.meta.normativeMappings
+        : [];
+    for (const m of maps) {
+      if (m && typeof m === 'object' && String(m.standard).trim().toUpperCase() === 'WCAG')
+        add(m.requirement);
+    }
+    return out;
+  }
+
+  // A criterion an earlier WCAG version has and 2.2 removed (4.1.1 Parsing).
+  function isRemovedWcagSc(sc) {
+    const levels = Object.prototype.hasOwnProperty.call(WCAG_LEVELS_BY_SC, sc)
+      ? WCAG_LEVELS_BY_SC[sc]
+      : null;
+    return !!levels && levels[2] === null && (levels[0] !== null || levels[1] !== null);
+  }
+
   function scopeOutcomeToWcagVersion(def, result) {
     const why = removesParsing();
     if (!why) return result;
     if (!result || typeof result !== 'object' || result.outcome !== 'fail') return result;
 
     const defTags = def && Array.isArray(def.tags) ? def.tags : [];
-    if (!defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG)) return result;
+    // A rule is scoped by its tag, or by the criteria it names: a custom or
+    // pack rule mapped only to 4.1.1 rarely carries the tag, and without it
+    // its fail gated a 2.2 run on a criterion 2.2 does not contain.
+    const criteria = wcagCriteriaOfDef(def);
+    const tagged = defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG);
+    const onlyRemoved = criteria.length > 0 && criteria.every(isRemovedWcagSc);
+    if (!tagged && !onlyRemoved) return result;
 
-    const removedSc = def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [];
+    const removedSc =
+      def && Array.isArray(def.wcagSc) && def.wcagSc.length ? def.wcagSc.slice() : criteria;
 
     // Every occurrence becomes cantTell-tier here, so each one states why: the
     // finding stands, the criterion it was made against does not.
