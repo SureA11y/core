@@ -51,11 +51,12 @@ const CASES = [
     'cantTell',
     'notApplicable'
   ],
+  // A first letter falling short fails the text (round 9, V9-8).
   [
     '.d{color:#000} .d::first-letter{color:#ccc;font-size:3em}',
     '<p class="d">Once upon a time</p>',
-    'cantTell',
-    'notApplicable'
+    'pass',
+    'fail'
   ],
   // Found inside @media and in a nested rule as well as at the top.
   [
@@ -123,13 +124,14 @@ const BOTH_COLOURS = [
     'fail',
     'fail'
   ],
-  // Both reach 4.5:1, only one 7:1: decided for AA, asked about for AAA.
+  // Both reach 4.5:1, only one 7:1: the first line's falls short of 7:1,
+  // and there is a first line, so it fails for AAA (round 9, V9-8).
   [
     '.f{color:#000} .f::first-line{color:#666}',
     '<p class="f">Short line</p>',
-    'cantTell',
     'pass',
-    'notApplicable'
+    'pass',
+    'fail'
   ],
   // A large drop cap at 4.54:1 meets even the enhanced ratio for its size.
   [
@@ -275,22 +277,100 @@ const BLOCK_FIRST_LINE = [
 ];
 
 // The message names what paints the text in a color of its own (round 9,
-// V9-9): it said "painted by  in a color of its own".
+// V9-9): it said "painted by  in a color of its own". Of a ::first-letter it
+// no longer says which text depends on how the lines break (round 9, V9-8).
 test('the message names the pseudo-element, in Chromium', { skip }, async () => {
   const browser = await chromium.launch({ executablePath });
   try {
-    const page = await browser.newPage();
-    await page.setContent(
-      '<!doctype html><html lang="en"><head><title>t</title><style>body{background:#fff} .d{color:#000} .d::first-letter{color:#ccc}</style></head><body><main><p class="d">Once upon a time</p></main></body></html>'
+    const summaryOf = async (css, body) => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html lang="en"><head><title>t</title><style>body{background:#fff} ${css}</style></head><body><main>${body}</main></body></html>`
+        );
+        await addBundle(page);
+        return await page.evaluate(
+          () =>
+            window.a11ycore
+              .runa11yCoreInPage(null, null, {}, ['contrast-computable'])
+              .checksResults.find((c) => c.ruleId === 'contrast-computable').occurrences[0].summary
+        );
+      } finally {
+        await page.close();
+      }
+    };
+    assert.match(
+      await summaryOf('.f{color:#bbb} .f::first-line{color:#000}', '<p class="f">Short line</p>'),
+      /painted by p::first-line in a color of its own .*depends on how the lines break/
     );
-    await addBundle(page);
-    const summary = await page.evaluate(
-      () =>
-        window.a11ycore
-          .runa11yCoreInPage(null, null, {}, ['contrast-computable'])
-          .checksResults.find((c) => c.ruleId === 'contrast-computable').occurrences[0].summary
+    // The first letter is in the <b>, not in the paragraph's own text.
+    const letter = await summaryOf(
+      '.d{color:#000} .d::first-letter{color:#ccc}',
+      '<p class="d"><b>Once</b> upon a time</p>'
     );
-    assert.match(summary, /painted by p::first-letter in a color of its own/);
+    assert.match(letter, /p::first-letter paints the first letter in a color of its own/);
+    assert.doesNotMatch(letter, /lines break/);
+  } finally {
+    await browser.close();
+  }
+});
+
+// A ::first-letter or ::first-line in a color that falls short fails the
+// text, measured in its own color and font size (a drop cap may be large
+// text), in contrast-minimum and contrast-enhanced (round 9, V9-8).
+test('a failing ::first-letter or ::first-line color fails, in Chromium', { skip }, async () => {
+  const browser = await chromium.launch({ executablePath });
+  try {
+    const run = async (css) => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html lang="en"><head><title>t</title><style>body{background:#fff} p{color:#000;font:16px Arial} ${css}</style></head><body><main><p id="t">Once upon a time there was text.</p></main></body></html>`
+        );
+        await addBundle(page);
+        return await page.evaluate(() =>
+          Object.fromEntries(
+            window.a11ycore
+              .runa11yCoreInPage(null, null, {}, [
+                'contrast-computable',
+                'contrast-minimum',
+                'contrast-enhanced'
+              ])
+              .checksResults.map((c) => [
+                c.ruleId,
+                {
+                  outcome: c.outcome,
+                  ratio: c.occurrences.map(
+                    (o) => o.data.details.metrics && o.data.details.metrics.ratio
+                  ),
+                  pseudo: c.occurrences.map((o) => o.data.details.pseudoElementColor || null),
+                  size: c.occurrences.map(
+                    (o) => o.data.details.typography && o.data.details.typography.fontSizePx
+                  )
+                }
+              ])
+          )
+        );
+      } finally {
+        await page.close();
+      }
+    };
+    // A 48px drop cap at 3.54:1 is large text: it meets 3:1, not 4.5:1.
+    const cap = await run('p::first-letter{color:#888;font-size:48px;float:left}');
+    assert.equal(cap['contrast-computable'].outcome, 'pass');
+    assert.equal(cap['contrast-minimum'].outcome, 'pass');
+    assert.equal(cap['contrast-enhanced'].outcome, 'fail');
+    assert.deepEqual(cap['contrast-enhanced'].pseudo, ['::first-letter']);
+    // A first letter of the text's size at 1.36:1 fails both.
+    const letter = await run('p::first-letter{color:#ddd}');
+    assert.equal(letter['contrast-computable'].outcome, 'pass');
+    assert.equal(letter['contrast-minimum'].outcome, 'fail');
+    assert.equal(letter['contrast-enhanced'].outcome, 'fail');
+    // A first line at 1.36:1: there is a first line, whichever words it holds.
+    const line = await run('p::first-line{color:#ddd}');
+    assert.equal(line['contrast-computable'].outcome, 'pass');
+    assert.equal(line['contrast-minimum'].outcome, 'fail');
+    assert.deepEqual(line['contrast-minimum'].pseudo, ['::first-line']);
   } finally {
     await browser.close();
   }
@@ -391,8 +471,9 @@ const VARIANT_COLOURS = [
   ['.f{color:#757575} .f::first-line{color:#6c6c6c}', 'pass', 'cantTell', ['PSEUDO_ELEMENT_COLOR']],
   // 5.25:1 and 5.41:1: both reach 5:1.
   ['.f{color:#6c6c6c} .f::first-line{color:#6a6a6a}', 'pass', 'pass', ['ALL_ABOVE_THRESHOLD']],
-  // 21:1 and 2.85:1: they disagree at WCAG's ratios, so it is asked there.
-  ['.f{color:#000} .f::first-line{color:#999}', 'cantTell', 'notApplicable', []]
+  // 21:1 and 2.85:1: the first line's falls short, and there is a first
+  // line, so it fails at every ratio (round 9, V9-8).
+  ['.f{color:#000} .f::first-line{color:#999}', 'pass', 'fail', ['BELOW_THRESHOLD']]
 ];
 
 test("::first-line colors at a variant's own ratio, in Chromium", { skip }, async (t) => {

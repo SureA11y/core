@@ -418,8 +418,36 @@ test(`${RULE_ID}: names what hides the image and quotes the alt that is never re
   assert.match(c.summary, /aria-hidden="true" on its ancestor <div id="root">\./);
 
   const d = byId('d');
-  assert.strictEqual(d.i18n.summaryKey, 'img_altDecorative_summary_unnamed');
+  assert.strictEqual(d.i18n.summaryKey, 'img_altDecorative_summary_unnamedSvg');
   assert.strictEqual(d.data.details.excludedBy, 'unnamed-svg');
+});
+
+// An <svg> has a role, its implicit graphics-document, whether or not
+// role="graphics-document" restates it: the message says only the name is
+// missing, and svg-text-alternative-present leaves both out.
+test(`${RULE_ID}: an unnamed <svg role="graphics-document"> is judged as a plain <svg>, not said to have no role (round 9, N9-18)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+    <svg id="gd" role="graphics-document" width="20" height="20"><rect width="5" height="5"></rect></svg>
+    <svg id="plain" width="20" height="20"><rect width="5" height="5"></rect></svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: [RULE_ID, 'svg-text-alternative-present']
+  });
+  assertRule(result, 'svg-text-alternative-present', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  for (const id of ['gd', 'plain']) {
+    const occ = rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+    assert.ok(occ, id);
+    assert.strictEqual(occ.data.details.excludedBy, 'unnamed-svg');
+    assert.strictEqual(occ.i18n.summaryKey, 'img_altDecorative_summary_unnamedSvg');
+    assert.strictEqual(
+      occ.summary,
+      'This <svg> has no name, so screen readers skip it. Check whether it is purely decorative.'
+    );
+  }
 });
 
 // A canvas's fallback content stays exposed: the message says the drawing is

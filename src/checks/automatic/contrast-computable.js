@@ -49,8 +49,10 @@
  *   this engine has no glyph-rendering model to account for), a
  *   -webkit-text-stroke
  *   outline (drawn in its own color, often most of the glyph), a
- *   ::first-line or ::first-letter in a color of its own (which text it
- *   paints depends on line breaks), opacity on an ancestor, or
+ *   ::first-line or ::first-letter in a color of its own (where the
+ *   color that falls short may paint none of the text: which words a
+ *   first line holds depends on line breaks, and a first letter may be
+ *   in another element), opacity on an ancestor, or
  *   on the text's own element over a background of its own, that can't be
  *   resolved against what lies behind it, a root
  *   background that never becomes opaque where the page's canvas can't be
@@ -126,7 +128,13 @@
  *     so the color it sits on could not be worked out.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_OVERLAP` (cantTell): another element paints under the text,
- *     so the background it sits on could not be worked out.
+ *     so the background it sits on could not be worked out; or the text is
+ *     in a box that stays in place as the page scrolls (position: fixed
+ *     against the viewport, or sticky, which sticks while the page scrolls),
+ *     with no opaque background between the text and that box, inclusive,
+ *     so what lies under it changes with the scroll position
+ *     (`blockerProperty` `position`). It is asked about whatever the scroll
+ *     position is when the page is scanned.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_NOT_COMPUTABLE` (cantTell): the background behind the text
  *     could not be worked out.
@@ -171,11 +179,15 @@
  *     color of its own, so the ratio is for a person to measure.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `PSEUDO_ELEMENT_COLOR` (cantTell): a ::first-line or ::first-letter has a
- *     color of its own, and which text it paints depends on line breaks.
- *     Where nothing else is in the way and the text's own colors and the
- *     pseudo-element's agree, both reaching or both missing the AA ratio and
- *     the AAA ratio, contrast-minimum and contrast-enhanced decide it and it is
- *     not asked about here.
+ *     color of its own, and the color that falls short of the ratio may paint
+ *     none of the text: which words a ::first-line holds depends on line
+ *     breaks, and a ::first-letter's letter may be in another element, or be
+ *     all the text there is. Where nothing else is in the way and the text's
+ *     own colors and the pseudo-element's agree, both reaching or both
+ *     missing the AA ratio and the AAA ratio, or the color that falls short
+ *     certainly paints some of the text (the pseudo-element's where the
+ *     element's text starts with text of its own), contrast-minimum and
+ *     contrast-enhanced decide it and it is not asked about here.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `SELECT_OPTION_COLOR` (cantTell): an option of a drop-down select, other
  *     than the shown one, has colors of its own and is drawn only in the list
@@ -470,7 +482,13 @@ function runInPage(ctx) {
       else if (rc === 'TEXT_SHADOW') summaryKey = 'contrastComputable_cantTell_textShadow';
       else if (rc === 'TEXT_STROKE') summaryKey = 'contrastComputable_cantTell_textStroke';
       else if (rc === 'PSEUDO_ELEMENT_COLOR')
-        summaryKey = 'contrastComputable_cantTell_pseudoElementColor';
+        // A first letter doesn't move with the line breaks: what is unknown
+        // is whether this text holds it, or anything past it.
+        summaryKey = /::first-letter$/.test(
+          String((extraDetails && extraDetails.blockerSelector) || '')
+        )
+          ? 'contrastComputable_cantTell_firstLetterColor'
+          : 'contrastComputable_cantTell_pseudoElementColor';
       else if (rc === 'SELECT_OPTION_COLOR')
         summaryKey = 'contrastComputable_cantTell_selectOption';
       else if (rc === 'COLOR_SCHEME_NOT_RENDERED')
@@ -480,7 +498,12 @@ function runInPage(ctx) {
         summaryKey = 'contrastComputable_cantTell_ancestorOpacity';
       else if (rc === 'ELEMENT_OPACITY') summaryKey = 'contrastComputable_cantTell_elementOpacity';
       else if (rc === 'BACKGROUND_OVERLAP')
-        summaryKey = 'contrastComputable_cantTell_backgroundOverlap';
+        // Text in a fixed or sticky box with no opaque background: what is
+        // under it changes as the page scrolls.
+        summaryKey =
+          extraDetails && extraDetails.blockerProperty === 'position'
+            ? 'contrastComputable_cantTell_fixedBox'
+            : 'contrastComputable_cantTell_backgroundOverlap';
       else if (rc === 'BACKGROUND_UNPARSABLE')
         summaryKey = 'contrastComputable_cantTell_backgroundUnparsable';
       else if (rc === 'FOREGROUND_UNPARSABLE')
@@ -793,8 +816,10 @@ function runInPage(ctx) {
   // of its own (PSEUDO_ELEMENT_COLOR) is decided by contrast-minimum and
   // contrast-enhanced where its own colors and the pseudo-element's agree,
   // at the AA ratio and at the AAA ratio, both reaching it or both falling
-  // short (helpers.contrast.measurePseudoElementText). It is asked about
-  // here only where they disagree at one of them.
+  // short (helpers.contrast.measurePseudoElementText), and where the color
+  // that falls short certainly paints some of the text (paintsText): the
+  // text fails in it. It is asked about here only where they disagree at
+  // one of them and the color that falls short may paint none of it.
   function pseudoColorsAgree(el, blocker) {
     try {
       if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
@@ -805,11 +830,12 @@ function runInPage(ctx) {
         collectStack: false
       });
       if (!m) return false;
-      return ['AA', 'AAA'].every(
-        (level) =>
-          m.own.ratio >= C.requiredRatio(level, m.own.isLargeText) ===
-          m.pseudo.ratio >= C.requiredRatio(level, m.pseudo.isLargeText)
-      );
+      return ['AA', 'AAA'].every((level) => {
+        const own = m.own.ratio >= C.requiredRatio(level, m.own.isLargeText);
+        const pseudo = m.pseudo.ratio >= C.requiredRatio(level, m.pseudo.isLargeText);
+        if (own === pseudo) return true;
+        return own ? !!m.pseudo.paintsText : !!m.own.paintsText;
+      });
     } catch {
       return false;
     }

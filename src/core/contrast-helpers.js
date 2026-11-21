@@ -6313,11 +6313,15 @@ function createContrastHelpers(opts, shared) {
   // El's text measured in its own colors and in those of the
   // ::first-line or ::first-letter its blocker carries (pseudoColors):
   // { own, pseudo }, each { fg, bg, ratio, fontSizePx, fontWeightNum,
-  // isLargeText }, with `pseudo.pseudo` naming the pseudo-element, and the
-  // background's assumptions. Null when the blocker carries no colors or
-  // the background can't be worked out. Which text the pseudo-element
-  // paints depends on line breaks, but where both colors meet a ratio, or
-  // both fall short of it, every reading of the text does too.
+  // isLargeText, paintsText }, with `pseudo.pseudo` naming the
+  // pseudo-element, and the background's assumptions. Null when the
+  // blocker carries no colors or the background can't be worked out.
+  // paintsText: whether that color certainly paints some of el's own text
+  // (the pseudo-element's where el's text starts with its own text; el's
+  // own past a ::first-letter, with a second letter). Which words a
+  // ::first-line holds depends on line breaks, but where both colors meet
+  // a ratio, or both fall short of it, every reading of the text does too,
+  // and a color that certainly paints text and falls short fails it.
   function measurePseudoElementText(el, bgOpts) {
     try {
       const blocker = getComputabilityBlocker(el);
@@ -6343,8 +6347,34 @@ function createContrastHelpers(opts, shared) {
       const pAlpha = clamp01(pc.color.a * fade);
       const pFg = { ...compositeRgba({ ...pc.color, a: pAlpha }, pBack), a: 1 };
       const pPx = Number.isFinite(pc.fontSizePx) ? pc.fontSizePx * scale : ownPx;
+      // Whether each color certainly paints some of el's own text. Where
+      // el's first child is text with a letter or digit in it, the
+      // pseudo-element paints the start of that text: the first letter, or
+      // the first line, whichever words it holds. The rest of the text is
+      // in el's own colors for certain only past a ::first-letter, where
+      // there is a second letter or digit; past a ::first-line it may all
+      // fit on the first line.
+      const ALNUM = /[\p{L}\p{N}]/u;
+      let first = dom.firstChild(el);
+      while (
+        first &&
+        (dom.nodeType(first) === 8 ||
+          (dom.nodeType(first) === 3 && !/\S/.test(dom.nodeValue(first) || '')))
+      )
+        first = dom.nextSibling(first);
+      const pseudoPaints =
+        !!first && dom.nodeType(first) === 3 && ALNUM.test(dom.nodeValue(first) || '');
+      let letters = 0;
+      if (pseudoPaints && pc.pseudo === '::first-letter') {
+        for (let n = dom.firstChild(el); n && letters < 2; n = dom.nextSibling(n)) {
+          if (dom.nodeType(n) !== 3) continue;
+          const m = String(dom.nodeValue(n) || '').match(/[\p{L}\p{N}]/gu);
+          letters += m ? m.length : 0;
+        }
+      }
       return {
         own: {
+          paintsText: letters >= 2,
           fg: ownFg,
           bg: back,
           ratio: contrastRatio(ownFg, back),
@@ -6354,6 +6384,7 @@ function createContrastHelpers(opts, shared) {
         },
         pseudo: {
           pseudo: pc.pseudo,
+          paintsText: pseudoPaints,
           fg: pFg,
           bg: pBack,
           ratio: contrastRatio(pFg, pBack),
@@ -6879,6 +6910,34 @@ function createContrastHelpers(opts, shared) {
         paintOccluded = true;
         occluder = cur;
       }
+
+      // A box that stays in place as the page scrolls (position: fixed,
+      // against the viewport) or sticks while it scrolls (sticky), with no
+      // opaque background between the text and it, inclusive: what lies
+      // under it changes as the page scrolls past, so no one background
+      // stands behind the text, whatever the scroll position is now. A box
+      // in the top layer (a modal dialog) is measured over its ::backdrop
+      // as above.
+      if (!paintOccluded && !top && cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
+        if (cs.position === 'sticky' || __fixedToViewport(cur)) {
+          const out = {
+            ok: false,
+            reasonCode: 'BACKGROUND_OVERLAP',
+            blockerSelector: __getSimpleSelectorCached(
+              cur,
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
+            ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
+            blockerProperty: 'position',
+            blockerValue: cs.position
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch {}
+          return out;
+        }
+      }
     }
 
     const overlap = __findPaintUnderText(el, chain);
@@ -7042,6 +7101,32 @@ function createContrastHelpers(opts, shared) {
     }
     __topLayerCache.set(node, out);
     return out;
+  }
+  // Whether a position: fixed box is placed against the viewport: no
+  // ancestor holds fixed boxes (a transform, a filter, perspective, contain
+  // paint or layout, or a will-change of those), which would make it
+  // scroll with that ancestor.
+  function __fixedToViewport(node) {
+    const set = (v) => !!v && String(v) !== 'none';
+    let guard = 0;
+    for (let cur = composedParent(node); cur && guard++ < 200; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      const cs = __contrastComputedStyle(cur);
+      if (!cs) continue;
+      if (
+        set(cs.transform) ||
+        set(cs.translate) ||
+        set(cs.rotate) ||
+        set(cs.scale) ||
+        set(cs.perspective) ||
+        set(cs.filter) ||
+        set(cs.backdropFilter) ||
+        /\b(paint|layout|strict|content)\b/.test(String(cs.contain || '')) ||
+        /\b(transform|perspective|filter)\b/.test(String(cs.willChange || ''))
+      )
+        return false;
+    }
+    return true;
   }
   function __isPinned(node) {
     const path = [];

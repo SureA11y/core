@@ -57,6 +57,18 @@
  *   each other between separators alone, as in "Edit | Delete", or a target
  *   inside an SVG, canvas or image map that may be essential), the result is
  *   cantTell rather than a guess.
+ *   Targets are spaced only against the targets that move with them as the
+ *   page scrolls, so the verdict is the same at any scroll position: those
+ *   in a position: fixed box placed against the viewport against each other
+ *   (all such boxes are one layer, still against each other), those in one
+ *   position: sticky box against each other, and the page's against the
+ *   page's. An undersized fixed or sticky target clear of its own layer's
+ *   targets is asked about where the page's undersized targets can pass
+ *   within its reach as the page scrolls (its circle reaching one's region,
+ *   or their centres under 24px apart): for a fixed one, any the page's
+ *   scroll range can bring there, for a sticky one, any in the box that
+ *   holds it, which it moves through. On a page whose root doesn't scroll,
+ *   nothing moves, and every target is the page's.
  *   Settings, for a variant: `minSizePx`, the size needed (24), and
  *   `spacingException`, `'none'` to drop the spacing exception, so that
  *   every target under the size that no other exception covers fails
@@ -113,6 +125,12 @@
  *     words, as in "Edit | Delete"; whether the inline exception covers it
  *     is for a person to judge.
  *     Basis: WCAG 2.5.8 (exception: inline).
+ *   - `undersized-pinned-over-page` (cantTell): an undersized target in a
+ *     fixed or sticky box, clear of the targets that move with it, over a
+ *     page whose undersized targets pass within its reach as the page
+ *     scrolls; whether one comes too close where both are shown depends on
+ *     the scroll position, and is for a person to check.
+ *     Basis: WCAG 2.5.8 (exception: spacing).
  *   - `undersized-plausibly-essential` (cantTell): an undersized target too
  *     close to another (or, under `spacingException: 'none'`, any
  *     undersized target) sits inside an SVG, a canvas or an image map,
@@ -1607,8 +1625,89 @@ function runInPage(ctx) {
   }
   const gap = (p, q) =>
     Math.hypot(Math.max(0, p.l - q.r, q.l - p.r), Math.max(0, p.t - q.b, q.t - p.b));
+  // The box layer a target moves with as the page scrolls: the viewport
+  // for one in a position: fixed box placed against it (PINNED_VIEWPORT),
+  // the sticky box for one in a position: sticky box, null for the page.
+  // Targets are spaced only against those of their own layer: where a
+  // pinned target lies against the page's targets depends on the scroll
+  // position, and the verdict must not. Where the page doesn't scroll,
+  // nothing moves, and every target is the page's.
+  const PINNED_VIEWPORT = { viewport: true };
+  const pageScroll = (() => {
+    try {
+      const se = dom.get(document, 'scrollingElement') || dom.documentElement(document);
+      const win = dom.defaultView(document);
+      const size = (name) => Number(dom.get(se, name)) || 0;
+      const maxX = Math.max(0, size('scrollWidth') - size('clientWidth'));
+      const maxY = Math.max(0, size('scrollHeight') - size('clientHeight'));
+      const rootCs = getStyle(dom.documentElement(document));
+      const rtl = !!rootCs && rootCs.direction === 'rtl';
+      return {
+        sx: (win && Number(win.scrollX)) || 0,
+        sy: (win && Number(win.scrollY)) || 0,
+        x0: rtl ? -maxX : 0,
+        x1: rtl ? 0 : maxX,
+        y0: 0,
+        y1: maxY,
+        scrolls: maxX > 0 || maxY > 0
+      };
+    } catch {
+      return { sx: 0, sy: 0, x0: 0, x1: 0, y0: 0, y1: 0, scrolls: false };
+    }
+  })();
+  const __layer = new WeakMap();
+  function layerOf(el) {
+    if (!pageScroll.scrolls || !el) return null;
+    if (__layer.has(el)) return __layer.get(el);
+    let out = null;
+    for (let a = el, i = 0; a && i < 10000; a = helpers.flatParentElement(a), i++) {
+      const cs = getStyle(a);
+      if (!cs) continue;
+      if (cs.position === 'fixed' && !containingBlockOf(a)) {
+        out = PINNED_VIEWPORT;
+        break;
+      }
+      if (cs.position === 'sticky') {
+        out = a;
+        break;
+      }
+    }
+    __layer.set(el, out);
+    return out;
+  }
+  const sameLayer = (a, b) => layerOf(a) === layerOf(b);
+  // Where a pinned target's centre can be against the page as it scrolls,
+  // as a box of viewport positions at the scroll position now: a fixed
+  // one's centre stays where it is while the page moves under it by any
+  // scroll offset the page allows; a sticky one's ranges over the box that
+  // holds it (its parent), which scrolls with the page. Each is turned into
+  // { l, t, r, b } offsets for the page's targets, or the sticky's span.
+  function pinnedPath(e) {
+    const layer = layerOf(e.el);
+    const c = { x: (e.extent.l + e.extent.r) / 2, y: (e.extent.t + e.extent.b) / 2 };
+    if (layer === PINNED_VIEWPORT) {
+      // The page's targets move by the scroll offset: now - any other.
+      const ox0 = pageScroll.sx - pageScroll.x1;
+      const ox1 = pageScroll.sx - pageScroll.x0;
+      const oy0 = pageScroll.sy - pageScroll.y1;
+      const oy1 = pageScroll.sy - pageScroll.y0;
+      return { l: c.x - ox1, r: c.x - ox0, t: c.y - oy1, b: c.y - oy0 };
+    }
+    const holder = layer && helpers.flatParentElement(layer);
+    const box = holder ? dom.getBoundingClientRect(holder) : null;
+    if (!box) return { l: c.x, r: c.x, t: c.y, b: c.y };
+    const hw = (e.extent.r - e.extent.l) / 2;
+    const hh = (e.extent.b - e.extent.t) / 2;
+    return {
+      l: Math.min(c.x, box.left + hw),
+      r: Math.max(c.x, box.right - hw),
+      t: Math.min(c.y, box.top + hh),
+      b: Math.max(c.y, box.bottom - hh)
+    };
+  }
   const spaced = entries.filter((e) => !e.exempt);
   const extentCells = gridOf(spaced, (e) => e.extent);
+  const pageSpaced = spaced.filter((e) => !layerOf(e.el));
   for (const e of spaced) {
     // With no spacing exception, every target's size decides it.
     if (!SPACING_APPLIES) {
@@ -1616,10 +1715,23 @@ function runInPage(ctx) {
       continue;
     }
     for (const f of around(extentCells, e.extent, SPACING)) {
-      if (f === e || isRelated(e.el, f.el) || gap(e.extent, f.extent) >= SPACING) continue;
+      if (f === e || isRelated(e.el, f.el) || !sameLayer(e.el, f.el)) continue;
+      if (gap(e.extent, f.extent) >= SPACING) continue;
       e.near = true;
       break;
     }
+    // A pinned target in scope, with the page's targets its scroll path
+    // can bring within reach: those are its neighbours at some scroll
+    // position, so it is measured, and they are, to be asked about.
+    if (!e.inScope || !layerOf(e.el)) continue;
+    // The area its extent sweeps over the page.
+    const path = pinnedPath(e);
+    const hw = (e.extent.r - e.extent.l) / 2;
+    const hh = (e.extent.b - e.extent.t) / 2;
+    const sweep = { l: path.l - hw, r: path.r + hw, t: path.t - hh, b: path.b + hh };
+    e.pagePath = path;
+    e.pageNear = pageSpaced.filter((f) => !isRelated(e.el, f.el) && gap(sweep, f.extent) < SPACING);
+    if (e.pageNear.length) e.near = true;
   }
   for (const e of entries) if (e.near) e.item = measure(e.el);
 
@@ -1748,6 +1860,7 @@ function runInPage(ctx) {
     const c = { x: target.center.cx, y: target.center.cy };
     for (const other of nearbyItems(target.center)) {
       if (!other || !other.el || isRelated(target.el, other.el)) continue;
+      if (!sameLayer(target.el, other.el)) continue;
       if (!seenTogether(target.el, other.el)) continue;
 
       // Ignore inline-text exception targets when evaluating spacing conflicts.
@@ -2028,6 +2141,33 @@ function runInPage(ctx) {
       : `Another target comes within ${s.distancePx} px of its centre, and a 24 px circle centred on it needs ${s.minDistancePx} px clear. Make the target at least 24×24 CSS px, or move it at least ${s.shortfallPx} px further from that target.`;
   }
 
+  // An undersized page target that a pinned target's circle can reach at
+  // some scroll position, the target's own centre path being worked out
+  // from its extent's (pinnedPath): the region within 12px, or the centre
+  // within 24px. The first found, or null.
+  const entryOf = new Map(entries.map((e) => [e.el, e]));
+  function pageTargetInPath(it) {
+    const e = entryOf.get(it.el);
+    if (!e || !e.pageNear || !e.pageNear.length) return null;
+    const dx = it.center.cx - (e.extent.l + e.extent.r) / 2;
+    const dy = it.center.cy - (e.extent.t + e.extent.b) / 2;
+    const path = {
+      l: e.pagePath.l + dx,
+      r: e.pagePath.r + dx,
+      t: e.pagePath.t + dy,
+      b: e.pagePath.b + dy
+    };
+    for (const f of e.pageNear) {
+      if (f.item === undefined) f.item = measure(f.el);
+      const o = f.item;
+      if (!o || !isUndersized(o)) continue;
+      const region = { l: o.rect.left, t: o.rect.top, r: o.rect.right, b: o.rect.bottom };
+      const centre = { l: o.center.cx, r: o.center.cx, t: o.center.cy, b: o.center.cy };
+      if (gap(path, region) < RADIUS - EPS || gap(path, centre) < SPACING - EPS) return o.el;
+    }
+    return null;
+  }
+
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
     if (isInlineTextExceptionTarget(it.el)) {
@@ -2045,6 +2185,50 @@ function runInPage(ctx) {
     const info = hasSpacingConflict(it);
     const size = sizeParams(it);
     const sized = sizeText(it, size);
+
+    // A pinned target clear of its own layer's targets, over a page whose
+    // undersized targets pass within its reach as the page scrolls: whether
+    // it is too close depends on the scroll position, so it is asked about,
+    // the same at any.
+    if (SPACING_APPLIES && !info.conflict) {
+      const crossed = pageTargetInPath(it);
+      if (crossed) {
+        const pageNeighbour = neighbourOf(crossed);
+        const clipped = clipParams(it);
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(it.el, {
+            occurrenceOutcome: 'cantTell',
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than ${MIN}×${MIN}, in a box that stays in place as the page scrolls, and the page's targets under ${MIN}×${MIN}${pageNeighbour ? `, such as ${pageNeighbour},` : ''} pass within its reach as it scrolls.${clipText(clipped)}`,
+            hint: `Scroll the page and check whether another target comes so close that a ${SPACING} px circle centred on this one reaches it, or its own circle. If one does, make the target at least ${MIN}×${MIN} CSS px or keep it clear of the page's targets.`,
+            i18n: {
+              summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_pinnedOverPage'),
+              hintKey: 'targetSizeMinimum_hint_cantTell_pinnedOverPage',
+              params: {
+                ...size,
+                ...(pageNeighbour ? { neighbour: pageNeighbour } : {}),
+                ...clipped
+              }
+            },
+            uncertainty: {
+              code: 'judgement-required',
+              needed:
+                'Whether a target of the page comes too close to this one at a scroll position where both are shown.',
+              evidence: { measured: measuredOf(it) }
+            },
+            data: {
+              details: {
+                measured: measuredOf(it),
+                reasonCode: 'undersized-pinned-over-page',
+                conflictWith: buildSelector(crossed),
+                ...clipped,
+                ...measurements(it, info)
+              }
+            }
+          })
+        );
+        continue;
+      }
+    }
     // Without the spacing exception the size alone decides, and the distance
     // to a neighbour is reported only where it is why the target is asked
     // about (the inline link run below).

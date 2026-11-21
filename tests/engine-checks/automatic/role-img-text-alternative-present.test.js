@@ -330,8 +330,8 @@ test(`${RULE_ID}: role="graphics-object" (not one of the three named roles) is n
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: an unlabeled <svg> with role img or graphics-document is left to svg-text-alternative-present, so it is reported once`, () => {
-  for (const role of ['img', 'graphics-document', 'graphics-symbol']) {
+test(`${RULE_ID}: an unlabeled <svg> with role img or graphics-symbol is left to svg-text-alternative-present, so it is reported once`, () => {
+  for (const role of ['img', 'graphics-symbol']) {
     const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
       <svg id="s1" xmlns="http://www.w3.org/2000/svg" role="${role}" width="10" height="10">
         <circle cx="5" cy="5" r="4"></circle>

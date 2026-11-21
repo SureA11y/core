@@ -796,7 +796,11 @@ const PROCEDURES = {
       'target-size-minimum-pointer': {
         tools: ['devtools'],
         variants: {
-          'target-size-minimum': ['undersized-inline-link-run', 'undersized-plausibly-essential']
+          'target-size-minimum': [
+            'undersized-inline-link-run',
+            'undersized-pinned-over-page',
+            'undersized-plausibly-essential'
+          ]
         }
       }
     },

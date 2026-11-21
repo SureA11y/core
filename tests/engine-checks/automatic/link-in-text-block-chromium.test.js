@@ -218,9 +218,17 @@ test(
       ),
       'pass'
     );
+    // A band of color is a cue by its color alone: #eee is 1.16:1 from the
+    // white behind it, too faint to count (round 9, V9-7); #888 counts.
     assert.equal(
       await outcome(
         `<a ${A.slice(0, -1)};background:linear-gradient(#eee,#eee) 0 50%/100% 40% no-repeat">guide</a>`
+      ),
+      'cantTell'
+    );
+    assert.equal(
+      await outcome(
+        `<a ${A.slice(0, -1)};background:linear-gradient(#888,#888) 0 50%/100% 40% no-repeat">guide</a>`
       ),
       'pass'
     );
@@ -285,8 +293,11 @@ test(
         'guide',
         'fail'
       ],
-      ['a code chip inside the link', '', '<code style="background:#ddd">fetch()</code>', 'pass'],
-      ['a <mark> inside the link', '', '<mark>guide</mark>', 'pass'],
+      ['a code chip inside the link', '', '<code style="background:#888">fetch()</code>', 'pass'],
+      // A highlight counts by 3:1 from the background around it: <mark>'s
+      // default yellow is 1.07:1 from white (round 9, V9-7).
+      ['a <mark> inside the link', '', '<mark>guide</mark>', 'fail'],
+      ['a dark <mark> inside the link', '', '<mark style="background:#444">guide</mark>', 'pass'],
       ['a footnote <sup> inside the link', '', '<sup>1</sup>', 'pass'],
       [
         'a background inside the link like the page',
