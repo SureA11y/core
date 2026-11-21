@@ -1435,7 +1435,8 @@ function createContrastHelpers(opts, shared) {
   // page itself: an SVG text element by its viewBox and transforms (the
   // scale of its screen CTM, which includes any CSS zoom), any other element
   // by CSS zoom (currentCSSZoom, the product over its ancestors, not the
-  // user's browser zoom); and either by font-size-adjust, which draws the
+  // user's browser zoom) and a uniform transform scale on it or its
+  // ancestors (__uniformTransformScale); and either by font-size-adjust, which draws the
   // font at another size than its font-size. WCAG's large-scale size is the
   // size as delivered, so 12px text under zoom: 2 is 24px. 1 where none
   // applies or can be read, such as in jsdom.
@@ -1444,7 +1445,8 @@ function createContrastHelpers(opts, shared) {
   }
 
   // The same, with what scaled it: { scale, by }, `by` listing 'zoom',
-  // 'svg' and 'font-size-adjust' for each that changed the size. `style` is
+  // 'transform', 'svg' and 'font-size-adjust' for each that changed the
+  // size. `style` is
   // the text's style where it isn't the element's own (a placeholder's).
   function renderedTextSize(el, style) {
     const by = [];
@@ -1465,6 +1467,11 @@ function createContrastHelpers(opts, shared) {
           scale *= z;
           by.push('zoom');
         }
+        const t = __uniformTransformScale(el);
+        if (t !== 1) {
+          scale *= t;
+          by.push('transform');
+        }
       }
       const adjust = fontSizeAdjustScale(el, style);
       if (adjust !== null && adjust !== 1) {
@@ -1473,6 +1480,57 @@ function createContrastHelpers(opts, shared) {
       }
     } catch {}
     return { scale, by };
+  }
+
+  // How much a uniform scale on el or its ancestors (transform: scale(2),
+  // or the scale property) draws its text larger or smaller: 12px text
+  // under scale(2) is drawn at 24px, as under zoom: 2. The product over
+  // the boxes a transform applies to (not inline boxes, not display:
+  // contents). 1 where none applies, and where any of them rotates, skews,
+  // scales unevenly or transforms in 3D: the drawn size is then no one
+  // number, and the text keeps its font-size. In a browser, which gives
+  // a computed transform as a matrix; jsdom keeps it as written and is
+  // left at 1, as it is for zoom.
+  const __ownTransformScale = new WeakMap();
+  function __ownTransformScaleOf(node) {
+    if (__ownTransformScale.has(node)) return __ownTransformScale.get(node);
+    let out = 1;
+    const cs = __contrastComputedStyle(node);
+    const display = trim(cs && cs.display);
+    if (cs && display !== 'inline' && display !== 'contents' && display !== 'none') {
+      const t = trim(cs.transform);
+      if (t && t !== 'none') {
+        const m = /^matrix\(([^)]*)\)$/.exec(t);
+        const n = m ? m[1].split(',').map(Number) : [];
+        out =
+          n.length === 6 && n.every(Number.isFinite) && n[1] === 0 && n[2] === 0 && n[0] === n[3]
+            ? n[0]
+            : null;
+      }
+      const sc = trim(cs.scale);
+      if (out !== null && sc && sc !== 'none') {
+        const v = sc.split(/\s+/).map(Number);
+        const x = v[0];
+        const y = v.length > 1 ? v[1] : x;
+        out = v.every(Number.isFinite) && x === y ? out * x : null;
+      }
+      const rot = trim(cs.rotate);
+      if (out !== null && rot && rot !== 'none' && !/^0(?:deg)?$/.test(rot)) out = null;
+      if (out !== null && !(out > 0)) out = null;
+    }
+    __ownTransformScale.set(node, out);
+    return out;
+  }
+  function __uniformTransformScale(el) {
+    let scale = 1;
+    let guard = 0;
+    for (let cur = el; cur && guard++ < 1000; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      const own = __ownTransformScaleOf(cur);
+      if (own === null) return 1;
+      scale *= own;
+    }
+    return Number.isFinite(scale) && scale > 0 ? scale : 1;
   }
 
   // `boldLargeMinPx` overrides the size from which bold text is large. It
