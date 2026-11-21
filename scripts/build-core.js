@@ -501,17 +501,36 @@ function ownString(dict, key) {
   return (typeof dict[key] === 'string' && dict[key]) ? dict[key] : null;
 }
 
+// The locales a string is looked for in, most specific first: the code
+// asked for, then its base language when it carries a subtag. English comes
+// after these, in t().
+function localeChain(requested) {
+  const primary = requested.split('-')[0];
+  return primary.toLowerCase() === requested.toLowerCase() ? [requested] : [requested, primary];
+}
+
+// One locale's string: the caller's dictionary for it first, then the
+// built-in one, each matched without regard to case.
+function messageIn(locale, key, engineOptions) {
+  return (
+    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), locale), key) ||
+    ownString(dictIgnoringCase(I18N, locale), key)
+  );
+}
+
 // A caller-supplied dictionary layers over the built-in one for the same
 // locale rather than replacing it, so overriding one string does not cost the
-// caller every other string in that language.
+// caller every other string in that language. A regional code then falls back
+// to its base language, string by string: messages: { 'de-AT': { one key } }
+// keeps the rest of the German, the caller's de and then the built-in de,
+// before English (round 9, A9-4). An exact hit returns before any allocation.
 function localeMessage(key, engineOptions) {
-  const matched = matchLocale(normalizeLocale(engineOptions && engineOptions.locale), engineOptions);
-  if (!matched) return null;
+  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const direct = messageIn(requested, key, engineOptions);
+  if (direct) return direct;
 
-  return (
-    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), matched), key) ||
-    ownString(dictIgnoringCase(I18N, matched), key)
-  );
+  const chain = localeChain(requested);
+  return chain.length > 1 ? messageIn(chain[1], key, engineOptions) : null;
 }
 
 function isKnownLocale(locale) {
@@ -542,18 +561,26 @@ function resolveLocale(engineOptions) {
   if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
 
   if (dict !== en) {
-    const supplied = dictIgnoringCase(getSuppliedMessages(engineOptions), matched);
-    const builtIn = dictIgnoringCase(I18N, matched);
-
-    const builtInKey = ownDict(I18N, matched) ? matched : matchIgnoringCase(I18N, matched);
-    const leftOut =
-      (builtInKey && Object.prototype.hasOwnProperty.call(I18N_LEFT_OUT, builtInKey)
-        ? I18N_LEFT_OUT[builtInKey]
-        : null) || {};
+    // Every locale a string can come from before English, as localeMessage
+    // looks: a regional dictionary missing a key the base language has is
+    // not partial, since that string shows in the language asked for.
+    const chain = localeChain(requested);
+    const leftOut = {};
+    for (const locale of chain) {
+      const builtInKey = ownDict(I18N, locale) ? locale : matchIgnoringCase(I18N, locale);
+      const own =
+        builtInKey && Object.prototype.hasOwnProperty.call(I18N_LEFT_OUT, builtInKey)
+          ? I18N_LEFT_OUT[builtInKey]
+          : null;
+      if (own) Object.assign(leftOut, own);
+    }
 
     for (const key in en) {
       if (leftOut[key] === true) continue;
-      if (!ownString(supplied, key) && !ownString(builtIn, key)) {
+      const found = chain.some(function (locale) {
+        return messageIn(locale, key, engineOptions);
+      });
+      if (!found) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
     }

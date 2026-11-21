@@ -46,6 +46,8 @@ function makeResolveLocale(i18n, knownLocales, leftOut) {
     'findLocaleKey',
     'ownString',
     'matchLocale',
+    'localeChain',
+    'messageIn',
     'isKnownLocale',
     'resolveLocale'
   ]
