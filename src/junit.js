@@ -61,7 +61,8 @@ const {
   leaningOccurrencesOf,
   reporterOptions,
   notRunOf,
-  timeBudgetOf
+  timeBudgetOf,
+  omittedOf
 } = require('./scan-result.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -149,11 +150,20 @@ function classify(check, baseline, gating, options) {
     }
   }
 
+  // Occurrences output.maxOccurrencesPerRule left out of the result: counted
+  // as they are, and a failure among them, which no baseline can be matched
+  // against, gates as one.
+  const omitted =
+    check.outcome === 'fail' || check.outcome === 'cantTell'
+      ? omittedOf(check)
+      : { total: 0, fail: 0, cantTell: 0 };
+
   let status;
   if (ruleErrorOf(check)) status = 'error';
-  else if (failing.length) status = 'failure';
+  else if (failing.length || omitted.fail) status = 'failure';
   else if (leaning.length) status = 'failure';
-  else if (undecided.length) status = options.cantTellAs === 'failure' ? 'failure' : 'skipped';
+  else if (undecided.length || omitted.cantTell)
+    status = options.cantTellAs === 'failure' ? 'failure' : 'skipped';
   else if (baselined) status = 'skipped';
   else if (check.outcome === 'notApplicable') status = 'notApplicable';
   else if (check.outcome === 'cantTell')
@@ -168,8 +178,18 @@ function classify(check, baseline, gating, options) {
     leaning,
     baselined,
     leanBaselined,
+    omitted,
     cantTellAs: options.cantTellAs
   };
+}
+
+// The line a test case adds for occurrences output.maxOccurrencesPerRule
+// left out of the result.
+function omittedLines(entry, tier) {
+  const n = entry.omitted ? entry.omitted[tier] : 0;
+  if (!n) return [];
+  const what = tier === 'fail' ? 'failing occurrence' : 'occurrence that needs manual review';
+  return [`+${n} more: ${plural(n, what)} not listed (output.maxOccurrencesPerRule)`];
 }
 
 function describeOccurrence(occurrence) {
@@ -227,10 +247,14 @@ function renderTestcase(entry, classname, indent) {
     inner.push(
       `${indent}  <error type="ruleError" message="${xmlText(`The rule did not complete: ${error}`)}">${xmlText(error)}</error>`
     );
-  } else if (status === 'failure' && failing.length) {
-    const message = `${plural(failing.length, 'failing occurrence')}: ${failing[0].summary || check.ruleId}`;
+  } else if (status === 'failure' && (failing.length || (entry.omitted && entry.omitted.fail))) {
+    const omittedFail = entry.omitted ? entry.omitted.fail : 0;
+    const lead = failing.length
+      ? failing[0].summary || check.ruleId
+      : 'left out of the result by output.maxOccurrencesPerRule, so no baseline can be matched against them';
+    const message = `${plural(failing.length + omittedFail, 'failing occurrence')}: ${lead}`;
     inner.push(
-      `${indent}  <failure type="fail" message="${xmlText(message)}">${xmlText([...failing.map(describeOccurrence), ...helpLine(check)].join('\n'))}</failure>`
+      `${indent}  <failure type="fail" message="${xmlText(message)}">${xmlText([...failing.map(describeOccurrence), ...omittedLines(entry, 'fail'), ...helpLine(check)].join('\n'))}</failure>`
     );
   } else if (status === 'failure' && leaning.length && entry.cantTellAs !== 'failure') {
     const message = `${plural(leaning.length, 'occurrence')} likely ${leaning.length === 1 ? 'fails' : 'fail'}: ${leaning[0].summary || check.ruleId}`;
@@ -238,9 +262,10 @@ function renderTestcase(entry, classname, indent) {
       `${indent}  <failure type="leanFail" message="${xmlText(message)}">${xmlText([...leaning.map(describeLeaning), ...helpLine(check)].join('\n'))}</failure>`
     );
   } else if (status === 'failure') {
-    const message = undecided.length ? needReview(undecided.length) : 'Needs manual review';
+    const review = undecided.length + (entry.omitted ? entry.omitted.cantTell : 0);
+    const message = review ? needReview(review) : 'Needs manual review';
     inner.push(
-      `${indent}  <failure type="cantTell" message="${xmlText(message)}">${xmlText([...undecided.map(describeOccurrence), ...helpLine(check)].join('\n'))}</failure>`
+      `${indent}  <failure type="cantTell" message="${xmlText(message)}">${xmlText([...undecided.map(describeOccurrence), ...omittedLines(entry, 'cantTell'), ...helpLine(check)].join('\n'))}</failure>`
     );
   } else if (status === 'skipped') {
     const parts = [];
@@ -249,9 +274,11 @@ function renderTestcase(entry, classname, indent) {
       parts.push(
         `Not counted: ${entry.outside.join(', ')} ${verb} outside the scan's target, ${entry.target}`
       );
-      if (failing.length) parts.push(plural(failing.length, 'failing occurrence'));
+      const fails = failing.length + (entry.omitted ? entry.omitted.fail : 0);
+      if (fails) parts.push(plural(fails, 'failing occurrence'));
     }
-    if (undecided.length) parts.push(needReview(undecided.length));
+    const review = undecided.length + (entry.omitted ? entry.omitted.cantTell : 0);
+    if (review) parts.push(needReview(review));
     else if (check.outcome === 'cantTell' && !baselined) parts.push('Needs manual review');
     if (baselined) parts.push(`${plural(baselined, 'known failure')} recorded in the baseline`);
     if (entry.leanBaselined) {
@@ -266,11 +293,25 @@ function renderTestcase(entry, classname, indent) {
   // are still worth reading, and so are the failures of a rule outside the
   // scan's target; they go where dashboards show test output.
   const out = [];
-  if (status === 'skipped' && entry.outside && failing.length) {
-    out.push('Failing:', ...failing.map(describeOccurrence), ...helpLine(check));
+  const omittedFail = entry.omitted ? entry.omitted.fail : 0;
+  const omittedReview = entry.omitted ? entry.omitted.cantTell : 0;
+  if (status === 'skipped' && entry.outside && (failing.length || omittedFail)) {
+    out.push(
+      'Failing:',
+      ...failing.map(describeOccurrence),
+      ...omittedLines(entry, 'fail'),
+      ...helpLine(check)
+    );
   }
-  if (undecided.length && !(status === 'failure' && !failing.length)) {
-    out.push('Needs manual review:', ...undecided.map(describeOccurrence));
+  if (
+    (undecided.length || omittedReview) &&
+    !(status === 'failure' && !failing.length && !omittedFail)
+  ) {
+    out.push(
+      'Needs manual review:',
+      ...undecided.map(describeOccurrence),
+      ...omittedLines(entry, 'cantTell')
+    );
   }
   if (out.length) inner.push(`${indent}  <system-out>${xmlText(out.join('\n'))}</system-out>`);
 

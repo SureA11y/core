@@ -2,7 +2,8 @@
 
 /**
  * The types of the scan options that cut a result short or keep it small
- * (timeBudgetMs), and of the result fields that say so.
+ * (timeBudgetMs, output.maxOccurrencesPerRule), and of the result fields
+ * that say so.
  * Skipped when TypeScript is not installed.
  */
 
@@ -65,6 +66,30 @@ test(
     const unchecked: string[] | undefined = matchBaseline(result, []).incomplete?.notRun;
     const missing = result.rulesResults[0].data.details.contributors[0].notRun;
     void [wrong, budget, count, ids, reason, unchecked, missing];
+  `);
+    assert.deepEqual(errors, []);
+  }
+);
+
+test(
+  'output.maxOccurrencesPerRule is a number, and a capped result counts what it left out',
+  { skip: !ts && 'typescript not installed' },
+  () => {
+    const errors = compile(`
+    import { runDomRulesInPage } from ${at('index')};
+    import type { ScanResult, CheckResult, StrictEngineOptions } from ${at('index')};
+    import { matchBaseline } from ${at('baseline')};
+    const options: StrictEngineOptions = { strictOptions: true, output: { detail: 'full', maxOccurrencesPerRule: 20 } };
+    // @ts-expect-error a cap is a number
+    const wrong: StrictEngineOptions = { strictOptions: true, output: { maxOccurrencesPerRule: 'all' } };
+    const result: ScanResult = runDomRulesInPage('u', null, options, null);
+    const check: CheckResult = result.checksResults[0];
+    const left: number = check.occurrencesOmitted ?? 0;
+    const failing: number = check.occurrencesOmittedByOutcome?.fail ?? 0;
+    const cap = result.engine.occurrenceCap;
+    const total: number = cap ? cap.occurrencesOmitted + cap.maxOccurrencesPerRule + cap.rulesCapped : 0;
+    const unmatched: number | undefined = matchBaseline(result, []).incomplete?.occurrencesOmitted;
+    void [wrong, left, failing, total, unmatched];
   `);
     assert.deepEqual(errors, []);
   }

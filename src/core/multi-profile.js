@@ -51,6 +51,124 @@ function lowerAscii(value) {
 }
 
 function runProfiles(engineOptions, run) {
+  // output.maxOccurrencesPerRule applies to the result as a whole, once its
+  // outcomes, rollups and profiles' verdicts are decided.
+  const capped = (r) =>
+    r && typeof r.then === 'function'
+      ? r.then((x) => capOccurrences(x, engineOptions))
+      : capOccurrences(r, engineOptions);
+  return capped(runProfilesUncapped(engineOptions, run));
+}
+
+/**
+ * output.maxOccurrencesPerRule: at most that many occurrences of each check
+ * result, the rest counted, not listed. Applied after everything is decided
+ * (outcomes, rollups, a scan of several profiles' verdicts), so no outcome,
+ * rollup or count changes. The occurrences kept are the failing ones first,
+ * then the undecided that lean fail, then the other undecided, then the
+ * rest, each in the order the rule gave them, and they stay in that order.
+ * A capped result says what it left out: occurrencesOmitted (how many) and
+ * occurrencesOmittedByOutcome (by tier) on each check result that lost any,
+ * and engine.occurrenceCap for the scan. Any value but a whole number of 1
+ * or more leaves the result as it is (enforceEngineOptions says so).
+ */
+function capOccurrences(result, engineOptions) {
+  const output =
+    engineOptions && typeof engineOptions === 'object' ? engineOptions.output : undefined;
+  const max = output && typeof output === 'object' ? output.maxOccurrencesPerRule : undefined;
+  if (typeof max !== 'number' || !Number.isInteger(max) || max < 1) return result;
+  if (!result || typeof result !== 'object' || !Array.isArray(result.checksResults)) return result;
+  const tierOf = (check, o) => {
+    const own = o && typeof o === 'object' ? o.occurrenceOutcome || o.outcome : undefined;
+    if (own === 'fail' || own === 'cantTell' || own === 'pass') return own;
+    return check.outcome === 'fail' || check.outcome === 'cantTell' || check.outcome === 'pass'
+      ? check.outcome
+      : 'notApplicable';
+  };
+  const rankOf = (check, o) => {
+    const tier = tierOf(check, o);
+    if (tier === 'fail') return 0;
+    if (tier === 'cantTell') return o && o.lean && o.lean.toward === 'fail' ? 1 : 2;
+    return 3;
+  };
+  const keptByRule = new Map();
+  let omittedTotal = 0;
+  const checksResults = result.checksResults.map((check) => {
+    const list = check && Array.isArray(check.occurrences) ? check.occurrences : null;
+    if (!list || list.length <= max) return check;
+    const kept = list
+      .map((o, i) => i)
+      .sort((a, b) => rankOf(check, list[a]) - rankOf(check, list[b]) || a - b)
+      .slice(0, max)
+      .sort((a, b) => a - b);
+    const byOutcome = {};
+    const keep = new Set(kept);
+    list.forEach((o, i) => {
+      if (keep.has(i)) return;
+      const tier = tierOf(check, o);
+      byOutcome[tier] = (byOutcome[tier] || 0) + 1;
+    });
+    const omitted = list.length - kept.length;
+    omittedTotal += omitted;
+    keptByRule.set(check.ruleId, { kept, total: list.length });
+    return Object.assign({}, check, {
+      occurrences: kept.map((i) => list[i]),
+      occurrencesOmitted: omitted,
+      occurrencesOmittedByOutcome: byOutcome
+    });
+  });
+  if (!omittedTotal) return result;
+  // A rollup's record of what it made of each finding follows the findings
+  // kept, as it is in the order of the check's occurrences.
+  const rulesResults = Array.isArray(result.rulesResults)
+    ? result.rulesResults.map((rollup) => {
+        const details = rollup && rollup.data && rollup.data.details;
+        const contributors = details && Array.isArray(details.contributors) && details.contributors;
+        if (!contributors) return rollup;
+        let touched = false;
+        const next = contributors.map((c) => {
+          const cap = c && keptByRule.get(c.testId);
+          if (!cap || !Array.isArray(c.findingOutcomes) || c.findingOutcomes.length !== cap.total)
+            return c;
+          touched = true;
+          return Object.assign({}, c, {
+            findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i])
+          });
+        });
+        if (!touched) return rollup;
+        return Object.assign({}, rollup, {
+          data: Object.assign({}, rollup.data, {
+            details: Object.assign({}, details, { contributors: next })
+          })
+        });
+      })
+    : result.rulesResults;
+  const out = Object.assign({}, result, {
+    engine: Object.assign({}, result.engine, {
+      occurrenceCap: {
+        maxOccurrencesPerRule: max,
+        occurrencesOmitted: omittedTotal,
+        rulesCapped: keptByRule.size
+      }
+    }),
+    checksResults,
+    rulesResults
+  });
+  // A mark the merge of several profiles reads stays with the result.
+  if (result.__profileNotApplied) {
+    try {
+      Object.defineProperty(out, '__profileNotApplied', {
+        value: result.__profileNotApplied,
+        configurable: true
+      });
+    } catch {
+      // nothing to keep
+    }
+  }
+  return out;
+}
+
+function runProfilesUncapped(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
   const allowFail = policyAllowsFail(engineOptions);
   const asked =
@@ -690,6 +808,8 @@ module.exports = {
   profileOptionsOf,
   mayBeSkippedPackProfile,
   runProfiles,
+  runProfilesUncapped,
+  capOccurrences,
   withOwnVerdicts,
   lowerAscii,
   policyAllowsFail,

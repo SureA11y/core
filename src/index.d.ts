@@ -179,7 +179,18 @@ export interface EngineOptionFields {
    * `detail: 'findings'` keeps whole only the results that report something;
    * a pass or notApplicable with no occurrences is a CompactCheckResult.
    */
-  output?: { includeSelector?: boolean; includeHtml?: boolean; detail?: 'full' | 'findings' };
+  output?: {
+    includeSelector?: boolean;
+    includeHtml?: boolean;
+    detail?: 'full' | 'findings';
+    /**
+     * A whole number, 1 or more: at most this many occurrences of each rule
+     * in the result, the failing ones first; the rest are counted in the
+     * check result's occurrencesOmitted. Outcomes, rollups and gates are as
+     * without it.
+     */
+    maxOccurrencesPerRule?: number;
+  };
   /** `include`/`exclude` select rules; any other key is that rule's `ctx.config`. */
   rules?: { include?: StringList; exclude?: StringList; [ruleId: string]: unknown };
   tags?: { include?: StringList; exclude?: StringList };
@@ -609,6 +620,15 @@ export interface EngineInfo {
   outputDetail?: 'findings';
   /** The packs the scan ran with, as name@version (engineOptions.packs). */
   packs?: string[];
+  /**
+   * Present only when output.maxOccurrencesPerRule left occurrences out of
+   * the result: the cap, how many it left out, and of how many rules.
+   */
+  occurrenceCap?: {
+    maxOccurrencesPerRule: number;
+    occurrencesOmitted: number;
+    rulesCapped: number;
+  };
 }
 
 /** Why a scan is incomplete (engine.incomplete). */
@@ -840,6 +860,18 @@ export interface CheckResult {
   confidence: Confidence;
   type: RuleType;
   occurrences: Occurrence[];
+  /**
+   * Present only when output.maxOccurrencesPerRule left occurrences of this
+   * rule out of the result: how many, and how many of them are of each
+   * tier. The outcome and the rollups count them.
+   */
+  occurrencesOmitted?: number;
+  occurrencesOmittedByOutcome?: {
+    fail?: number;
+    cantTell?: number;
+    pass?: number;
+    notApplicable?: number;
+  };
   title: string;
   description: string;
   /** variantOfTitleKey: a variant's only, its base rule's titleKey. */

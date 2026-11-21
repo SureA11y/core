@@ -159,11 +159,17 @@ function engineOptionSpec() {
     policy: { test: isObject, expected: 'an object', keys: policyFields },
     output: {
       test: isObject,
-      expected: '{ includeSelector, includeHtml, detail }',
+      expected: '{ includeSelector, includeHtml, detail, maxOccurrencesPerRule }',
       keys: {
         includeSelector: T.boolean,
         includeHtml: T.boolean,
-        detail: T.oneOf(['full', 'findings'])
+        detail: T.oneOf(['full', 'findings']),
+        // At most this many occurrences of each rule in the result, the
+        // rest counted (occurrencesOmitted); outcomes and rollups unchanged.
+        maxOccurrencesPerRule: {
+          test: (v) => typeof v === 'number' && Number.isInteger(v) && v >= 1,
+          expected: 'a whole number, 1 or more'
+        }
       }
     },
     // Besides include and exclude, a key of rules is a rule's id and its

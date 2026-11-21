@@ -46,7 +46,8 @@ const {
   reporterOptions,
   notRunOf,
   timeBudgetOf,
-  packsOf
+  packsOf,
+  omittedOf
 } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
@@ -466,6 +467,7 @@ function renderSarifReport(result, given) {
             }
           : null;
 
+      let failsShown = 0;
       for (const occurrence of check.occurrences) {
         if (!occurrence) continue;
 
@@ -473,6 +475,7 @@ function renderSarifReport(result, given) {
         if (outcome === 'fail') {
           // Already known via the baseline: omitted, not re-gated.
           if (known.has(occurrence)) continue;
+          failsShown += 1;
           failResults.push(
             buildResult(
               check,
@@ -495,6 +498,37 @@ function renderSarifReport(result, given) {
             )
           );
         }
+      }
+
+      // Occurrences output.maxOccurrencesPerRule left out of the result: a
+      // note says how many. Failures among them that no result above stands
+      // for (the baseline knew every one kept) can't be matched against the
+      // baseline, so they are a result of their own, which gates.
+      const omitted = omittedOf(check);
+      if (omitted.total) {
+        notices.push({
+          level: 'note',
+          message: {
+            text: `+${omitted.total} more occurrence${omitted.total === 1 ? '' : 's'} of the rule ${check.ruleId} not listed: output.maxOccurrencesPerRule kept ${check.occurrences.length}${omitted.fail ? ` (${omitted.fail} of those left out fail)` : ''}`
+          },
+          associatedRule: { id: check.ruleId }
+        });
+      }
+      if (omitted.fail && check.outcome === 'fail' && !failsShown) {
+        failResults.push(
+          buildResult(
+            check,
+            {
+              summary: `${omitted.fail} failing occurrence${omitted.fail === 1 ? ' was' : 's were'} left out of the result by output.maxOccurrencesPerRule, so the baseline can't be matched against ${omitted.fail === 1 ? 'it' : 'them'}.`,
+              html: '',
+              data: { details: { reasonCode: 'OCCURRENCES_OMITTED' } }
+            },
+            outside ? 'note' : 'error',
+            artifactUri,
+            framePath,
+            outside
+          )
+        );
       }
     }
   }

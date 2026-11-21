@@ -135,6 +135,17 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
             summary: o.summary || ''
           });
         }
+        // What output.maxOccurrencesPerRule left out of the result.
+        if (c.occurrencesOmitted > 0) {
+          rows.push({
+            outcome: c.outcome,
+            lean: '',
+            severity: c.severity || '',
+            rule: c.ruleId,
+            element: '',
+            summary: '+' + c.occurrencesOmitted + ' more not listed (output.maxOccurrencesPerRule)'
+          });
+        }
         if (!occurrences.length) {
           rows.push({
             outcome: c.outcome,

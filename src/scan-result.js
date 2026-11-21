@@ -681,6 +681,18 @@ function timeBudgetOf(result) {
   return incomplete && typeof incomplete.timeBudgetMs === 'number' ? incomplete.timeBudgetMs : null;
 }
 
+// The occurrences of a check result that output.maxOccurrencesPerRule left
+// out: { total, fail, cantTell }, zeros for a check that lost none.
+function omittedOf(check) {
+  const total =
+    check && Number.isInteger(check.occurrencesOmitted) && check.occurrencesOmitted > 0
+      ? check.occurrencesOmitted
+      : 0;
+  const by = (check && check.occurrencesOmittedByOutcome) || {};
+  const count = (n) => (total && Number.isInteger(n) && n > 0 ? n : 0);
+  return { total, fail: count(by.fail), cantTell: count(by.cantTell) };
+}
+
 // The packs a result's scan ran with (engine.packs, each name@version), as
 // { name, version }, sorted by name; a scoped name keeps its own "@". An
 // entry with no version gets version null. Empty for a scan without packs.
@@ -746,5 +758,6 @@ module.exports = {
   leaningFailures,
   notRunOf,
   timeBudgetOf,
-  packsOf
+  packsOf,
+  omittedOf
 };

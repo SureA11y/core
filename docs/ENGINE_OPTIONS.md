@@ -358,7 +358,8 @@ const engineOptions = {
   output: {
     includeSelector: true,         // set false to suppress auto-filled selectors (narrow effect — see note)
     includeHtml: true,
-    detail: 'full'                 // 'findings': pass/notApplicable results keep only rule, outcome, type (and margin or error)
+    detail: 'full',                // 'findings': pass/notApplicable results keep only rule, outcome, type (and margin or error)
+    maxOccurrencesPerRule: undefined  // optional — keep at most this many occurrences per rule, the rest counted (see below)
   },
 
   rules: {
@@ -406,6 +407,7 @@ const engineOptions = {
 | `policyContract` / `policy` | See [`POLICY.md`](./POLICY.md) — controls which outcomes/confidence values are allowed and whether manual rules' would-be `fail`s get coerced to `cantTell`. |
 | `output.includeSelector` / `.includeHtml` | Suppresses the engine's automatic `selector`/`html` fill-in. Since every rule was migrated to report its element rather than build occurrences by hand (1.5.0), that fill-in is the path almost all of them take: setting `includeSelector: false` strips selectors from nearly every rule, and `includeHtml: false` HTML snippets. The remainder still assemble those fields themselves inside `runInPage` and are unaffected — among them `contrast-minimum`/`contrast-enhanced` (whose findings are text runs, not elements), `page-title-present` and `identical-links-same-purpose`. So this narrows output substantially but is still not a guarantee of *no* selectors or HTML anywhere in the result. |
 | `output.detail` | `'full'` (default) or `'findings'`: a smaller result, keeping whole only the check results that report something (`fail`, `cantTell`, and any listing occurrences); every other `pass` and `notApplicable` keeps its `ruleId`, `outcome` and `type`, and its `margin` or `error` if it has one. Rollups and verdicts are unchanged, and the reporters read it as a full result. A rule core's catalog couldn't fill back in stays whole: every rule of a scan with `packs`, a custom rule, and one the scan's `messages` reword. See `engine.outputDetail` in [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md); in TypeScript, such a result is a `CompactScanResult`, which a scan given `output: { detail: 'findings' }` is typed to return and the reporters, the baseline functions, `addHowToCheck`, `leaningFailures` and `getMargins` take. |
+| `output.maxOccurrencesPerRule` | Optional: a whole number, 1 or more. Each check result keeps at most that many occurrences, the failing first, and counts the rest in `occurrencesOmitted`; outcomes, rollups and gates are as without it. See ["A cap on occurrences"](#a-cap-on-occurrences-outputmaxoccurrencesperrule) below. |
 | `rules[ruleId]` | Passed through to that rule as `ctx.config`, and — for `excludeSelectors` specifically — read by the engine itself before the rule ever runs. See "Rule-scoped `excludeSelectors`" below. Any other key is passthrough only: **no shipped rule takes anything else from it.** A rule's declared settings, such as `contrast-minimum`'s thresholds, are its standard's, so a caller's value for one is dropped: a result naming WCAG 1.4.3 is always decided at 4.5:1. A standard with other thresholds has its own rule, a variant ([`RULE_AUTHORING.md`](./RULE_AUTHORING.md#rule-variants)). |
 | `packs` | Optional packs from `@surea11y/core/pack`: rules, variants of core's rules, a standard and messages from outside core, which join the scan. A list: the pack objects for `runDomRulesInPage` and the catalog functions in Node, and for `runa11yCoreInPage` the `name@version` of packs a `packScript` registered in the page. Anything else (a single pack, a string, an object) runs no pack, with a warning, and throws under `strictOptions`. Reported back as `engine.packs`. See ["Packs"](#packs--rules-and-standards-from-outside-core) below. |
 | `probes` | An optional, JSON-safe evidence object your host application supplies, for what a scan of one page cannot see, such as the site's other pages. The engine caps it before rules read it (`ctx.inputs.probes`): six levels deep, 200 items per array, 50 keys per object, 2,000 characters per string. `crawl.pageTitles` (`{ pages: [{ url, title }] }`) is read by `page-title-patterns`, to look for generic and templated titles across a site. A profile's rules may read probes of their own, which its documentation describes. |
@@ -431,6 +433,23 @@ A scan cut short never reads as a pass:
 - In a scan of several profiles, the budget is the whole scan's: each profile after the first gets what is left of it, and a profile that would start with none left is not run, listed in `engine.profilesNotRun` with reason `timeBudget` (which `allowProfilesNotRun` does not accept). Each entry of `notRun` names its `profile`.
 
 Off by default, and the results of a scan within its budget are as without it. Which rules run before the budget runs out depends on the machine and its load, so a scan with a budget is not deterministic: use it to keep a scan of a heavy page within a CI time limit, not for results you diff. Anything but a number above 0 is ignored with a `console.warn`, and throws `INVALID_ENGINE_OPTIONS` under `strictOptions`. It works in the same way in Node, in jsdom and in the browser bundle.
+
+### A cap on occurrences (`output.maxOccurrencesPerRule`)
+
+A page with a defect repeated in every row of a long table gives a rule hundreds of occurrences, and a result tens of megabytes. `output.maxOccurrencesPerRule` keeps at most that many of each rule's occurrences in the result, and counts the others:
+
+```js
+runDomRulesInPage(url, null, { output: { maxOccurrencesPerRule: 20 } }, null);
+// checksResults[i]: occurrences (20 at most), occurrencesOmitted: 412,
+//   occurrencesOmittedByOutcome: { fail: 412 }
+```
+
+- **Nothing is decided from what is kept.** The cap applies after the scan has decided everything: each rule's `outcome` and `severity`, the rollups and their counts, and in a scan of several profiles each profile's verdicts, are those of every occurrence the rule found. `engine.occurrenceCap` says the scan was capped: `{ maxOccurrencesPerRule, occurrencesOmitted, rulesCapped }`.
+- **The failures are kept first**, then the undecided findings that lean fail, then the other undecided ones, then the rest, each in the order the rule gave them, so a failing rule always shows at least one failure.
+- **The reporters count what is left out.** The HTML report counts it in the total and on the rule's card ("+412 more not listed"), SARIF adds a note per capped rule, JUnit counts it in the failure's message and says "+412 more" in its body, and the browser bundle's `table()` gives a "+412 more" row.
+- **Gates stay exact.** A capped failing rule still fails. Against a baseline, a failure left out can't be matched, so it counts as new: `matchBaseline` adds it to `totalFail` and `newCount` (and says so in `incomplete.occurrencesOmitted`), JUnit fails the rule, and SARIF gives the rule an `error` result for them when the baseline knew every failure kept. A capped result can't write a complete baseline: `buildBaselineEntries` warns ([`BASELINE.md`](./BASELINE.md#an-incomplete-scan)).
+
+Unset, every occurrence is kept. Anything but a whole number of 1 or more is ignored with a `console.warn`, and throws `INVALID_ENGINE_OPTIONS` under `strictOptions`.
 
 ### Catching mistakes in the options (`strictOptions`)
 
