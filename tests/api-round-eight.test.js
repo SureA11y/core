@@ -131,3 +131,58 @@ test("the caller's messages.en is the English fallback (PK-4)", () => {
   assert.equal(r.engine.locale.resolved, 'en');
   assert.equal(r.checksResults[0].title, 'Own title');
 });
+
+test('the catalog functions refuse under strictOptions what the scan refuses (PK-5)', () => {
+  const S = (o) => ({ strictOptions: true, ...o });
+  const refused = [
+    S({ mappings: ['nope'] }),
+    S({ optInRules: ['nope'] }),
+    S({ policyContract: 'nope' }),
+    S({ rules: { 'no-such-rule': { x: 1 } } }),
+    S({ contrast: { rootCanvasFallback: 'inherit' } }),
+    S({ contrast: { rootCanvasFallback: 'transparent' } }),
+    S({ profile: 'nope' })
+  ];
+  const fns = {
+    getChecksCatalog: (eo) => core.getChecksCatalog(eo),
+    getRulesCatalog: (eo) => core.getRulesCatalog(eo),
+    getCheckDefById: (eo) => core.getCheckDefById('img-alt-present', eo),
+    getCompositeRuleById: (eo) => core.getCompositeRuleById('wcag-1.1.1', eo),
+    getChecksForRunOnly: (eo) => core.getChecksForRunOnly(null, eo),
+    getRulesForRunOnly: (eo) => core.getRulesForRunOnly(null, eo),
+    getTestsForRunOnly: (eo) => core.getTestsForRunOnly(null, eo)
+  };
+  for (const eo of refused) {
+    for (const [name, fn] of Object.entries(fns)) {
+      assert.throws(
+        () => fn(eo),
+        { code: 'INVALID_ENGINE_OPTIONS' },
+        name + ' ' + JSON.stringify(eo)
+      );
+    }
+  }
+  // Valid values still pass.
+  for (const eo of [
+    S({ mappings: ['en301549'], optInRules: ['all'], policyContract: 'generic' }),
+    S({ rules: { 'IMG-ALT-PRESENT': { excludeSelectors: ['main'] } } }),
+    S({ contrast: { rootCanvasFallback: 'black' } }),
+    S({ contrast: { rootCanvasFallback: '#000' } })
+  ]) {
+    for (const fn of Object.values(fns)) fn(eo);
+  }
+  // Selectors are tested against the page's document, where there is one.
+  withPage(HTML, () => {
+    for (const eo of [
+      S({ excludeSelectors: ['main['] }),
+      S({ rules: { 'img-alt-present': { excludeSelectors: ['[[['] } } })
+    ]) {
+      for (const [name, fn] of Object.entries(fns)) {
+        assert.throws(
+          () => fn(eo),
+          { code: 'INVALID_ENGINE_OPTIONS' },
+          name + ' ' + JSON.stringify(eo)
+        );
+      }
+    }
+  });
+});

@@ -65,7 +65,15 @@ const {
   targetWcagVersionOf,
   targetWcagLevelOf,
   warnIgnoredWcagTarget,
-  readRenderingEnvironment
+  readRenderingEnvironment,
+  unknownOptInRulesMessage,
+  unknownMappingsMessage,
+  readRuleSettings,
+  unknownRuleSettingsMessage,
+  invalidExcludeSelectors,
+  invalidExcludeSelectorsMessage,
+  rootCanvasFallbackIsOpaque,
+  rootCanvasFallbackMessage
 } = require('../src/core/dom-runner');
 const {
   profileNamesOf,
@@ -2482,6 +2490,14 @@ ${inlineConstFunction('warnIgnoredWcagTarget', warnIgnoredWcagTarget)}
 ${inlineConstFunction('rollupMembers', rollupMembers)}
 ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
 ${inlineConstFunction('noteEmptySelection', noteEmptySelection)}
+${inlineConstFunction('unknownOptInRulesMessage', unknownOptInRulesMessage)}
+${inlineConstFunction('unknownMappingsMessage', unknownMappingsMessage)}
+${inlineConstFunction('readRuleSettings', readRuleSettings)}
+${inlineConstFunction('unknownRuleSettingsMessage', unknownRuleSettingsMessage)}
+${inlineConstFunction('invalidExcludeSelectors', invalidExcludeSelectors)}
+${inlineConstFunction('invalidExcludeSelectorsMessage', invalidExcludeSelectorsMessage)}
+${inlineConstFunction('rootCanvasFallbackIsOpaque', rootCanvasFallbackIsOpaque)}
+${inlineConstFunction('rootCanvasFallbackMessage', rootCanvasFallbackMessage)}
 
 ${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
 
@@ -2926,9 +2942,85 @@ function catalogCheckDefs(engineOptions) {
 function checkCatalogOptions(engineOptions, runOnly) {
   enforceEngineOptions(engineOptions);
   const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  if (strictOf(eo)) refuseCatalogOptions(eo, runOnly);
   warnIgnoredWcagTarget(eo, () =>
     targetWcagVersionOf(eo, resolveEffectiveRunOnly(engineOptions, runOnly))
   );
+}
+
+// Under strictOptions, what a scan with these options refuses before it
+// runs, in its words (the shared helpers of src/core/dom-runner.js): a
+// profile, opt-in tag or standard that names none, settings for a rule that
+// isn't there, a policyContract or contrast.rootCanvasFallback the scan
+// can't read, and an excludeSelectors that isn't CSS. A catalog function
+// listed rules for options its scan would throw on (round 8, PK-5).
+// Selectors are tested against the page's document where there is one (a
+// jsdom window set as global); without one, the scan tests them.
+function refuseCatalogOptions(eo, runOnly) {
+  const fail = (message) => {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    throw err;
+  };
+  const runs = catalogProfileRuns(eo, runOnly);
+  resolvePolicy(POLICY_CONTRACTS, eo, true);
+  for (const run of runs) {
+    const optIn = unknownOptInRulesMessage(run.selection);
+    if (optIn) fail(optIn);
+    const profile = run.selection && typeof run.selection.profile === 'string' ? run.selection.profile : null;
+    const mappings = unknownMappingsMessage(resolveMappingSelection(run.eo, profile));
+    if (mappings) fail(mappings);
+  }
+  const knownIds = catalogCheckDefs(eo)
+    .defs.map((d) => d.ruleId)
+    .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
+  const rules = unknownRuleSettingsMessage(readRuleSettings(eo.rules, knownIds, ENGINE_TAG));
+  if (rules) fail(rules);
+  const dom = createSafeDom();
+  let probe = null;
+  try {
+    probe = typeof document !== 'undefined' && document ? dom.get(document, 'documentElement') : null;
+  } catch {
+    probe = null;
+  }
+  const contrast = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : null;
+  const canvas = contrast && typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+  // A color the parser can't read (a named one) is read as the page's
+  // browser computes it where there is a page, as the scan does.
+  const computeColor = probe
+    ? (text) => {
+        const span = dom.createElement(document, 'span');
+        span.style.color = text;
+        // A value the platform rejects leaves the property unset, and the
+        // span would report the color it inherits.
+        if (!span.style.color) return '';
+        dom.appendChild(probe, span);
+        const computed = dom.defaultView(document).getComputedStyle(span).color;
+        dom.removeChild(probe, span);
+        return computed;
+      }
+    : null;
+  const view = probe ? dom.defaultView(document) : null;
+  if (canvas && !rootCanvasFallbackIsOpaque(canvas, catalogColorParser(view), computeColor)) {
+    fail(rootCanvasFallbackMessage(canvas));
+  }
+  if (probe) {
+    const selectors = invalidExcludeSelectorsMessage(
+      invalidExcludeSelectors(eo, (sel) => dom.matches(probe, sel))
+    );
+    if (selectors) fail(selectors);
+  }
+}
+
+// The contrast helpers' color parser, which reads a named color through
+// the page's window where there is one, or null where they can't be made.
+function catalogColorParser(view) {
+  try {
+    const helpers = createContrastHelpers({ window: view || null }, { trim: (v) => String(v == null ? '' : v).trim() });
+    return helpers && typeof helpers.parseCssColorToRgba === 'function' ? helpers.parseCssColorToRgba : null;
+  } catch {
+    return null;
+  }
 }
 
 function getCheckDefById(ruleId, engineOptions) {

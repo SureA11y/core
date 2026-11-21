@@ -262,6 +262,225 @@ function noteEmptySelection(runOnly, engineOptions) {
   } catch {}
 }
 
+// =========================
+// Option values a strict scan refuses
+// =========================
+// Each is worded once here and read by the scan (runCoreSettled) and by the
+// catalog functions (checkCatalogOptions in scripts/build-core.js), so a
+// catalog call under strictOptions refuses what the scan refuses, in the
+// same words.
+
+// engineOptions.optInRules: the tags it names that no opt-in rule has, as
+// the selection (normalizeRunOnly) found them, or null.
+function unknownOptInRulesMessage(selection) {
+  const unknown =
+    selection && Array.isArray(selection.optInTagsUnknown) ? selection.optInTagsUnknown : [];
+  if (!unknown.length) return null;
+  return (
+    'engineOptions.optInRules: ' +
+    unknown.map((s) => '"' + s + '"').join(', ') +
+    ', no such opt-in rule tag (' +
+    (OPT_IN_RULE_TAGS.length
+      ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
+      : 'this version has none') +
+    ')'
+  );
+}
+
+// engineOptions.mappings: the standards it names that the engine doesn't
+// have, from resolveMappingSelection, or null.
+function unknownMappingsMessage(mappingSelection) {
+  if (!mappingSelection || !mappingSelection.unknown.length) return null;
+  return (
+    'engineOptions.mappings: ' +
+    mappingSelection.unknown.map((s) => '"' + s + '"').join(', ') +
+    ', no such standard or version'
+  );
+}
+
+// engineOptions.rules: each rule's settings by the id they name, and the
+// keys that name no rule. An exact id wins over one that matches it in
+// another case or with the legacy engine prefix. `knownIds` are the rule and
+// rollup ids of the run.
+function readRuleSettings(rulesOption, knownIds, engineTag) {
+  const config = Object.create(null);
+  const unknown = [];
+  const byLower = new Map();
+  // ASCII case only, as the selection matches ids (asciiLowerChar).
+  const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
+  for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
+  if (!rulesOption || typeof rulesOption !== 'object' || Array.isArray(rulesOption)) {
+    return { config, unknown, byLower };
+  }
+  const legacy = String(engineTag || 'a11ycore').toLowerCase() + '-';
+  const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
+  for (const exact of [true, false]) {
+    for (const key of keys) {
+      const value = rulesOption[key];
+      if (!value || typeof value !== 'object') continue;
+      const lower = lowerAscii(key.trim());
+      let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
+      if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
+      if (exact) {
+        if (id) config[id] = value;
+      } else if (!id) {
+        unknown.push(key);
+      } else if (!(id in config)) {
+        config[id] = value;
+      }
+    }
+  }
+  return { config, unknown, byLower };
+}
+
+// The message for engineOptions.rules keys that name no rule, each with the
+// closest id by edit distance when it is close, or null.
+function unknownRuleSettingsMessage(read) {
+  if (!read || !read.unknown.length) return null;
+  const closestId = (key) => {
+    const a = key.toLowerCase();
+    let best = null;
+    let bestD = Infinity;
+    for (const id of read.byLower.keys()) {
+      if (Math.abs(id.length - a.length) > 3) continue;
+      const prev = [];
+      for (let j = 0; j <= id.length; j++) prev[j] = j;
+      for (let i = 1; i <= a.length; i++) {
+        let diag = prev[0];
+        prev[0] = i;
+        for (let j = 1; j <= id.length; j++) {
+          const up = prev[j];
+          prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === id[j - 1] ? 0 : 1));
+          diag = up;
+        }
+      }
+      if (prev[id.length] < bestD) {
+        bestD = prev[id.length];
+        best = read.byLower.get(id);
+      }
+    }
+    return bestD <= 3 ? best : null;
+  };
+  return (
+    'engineOptions.rules: ' +
+    read.unknown
+      .map((k) => {
+        const near = closestId(k);
+        return 'no rule named "' + k + '"' + (near ? ' (did you mean "' + near + '"?)' : '');
+      })
+      .join('; ')
+  );
+}
+
+// The excludeSelectors, global and per rule (engineOptions.rules[id]), that
+// aren't valid CSS, as "excludeSelectors: ..." parts of a message. `matches`
+// tests a selector against an element, and throws for one that isn't CSS.
+function invalidExcludeSelectors(engineOptions, matches) {
+  const invalid = (list) =>
+    normalizeSelectorList(list).filter((sel) => {
+      try {
+        matches(sel);
+        return false;
+      } catch {
+        return true;
+      }
+    });
+  const bad = invalid(engineOptions && engineOptions.excludeSelectors).map(
+    (sel) => 'excludeSelectors: "' + sel + '"'
+  );
+  const ruleSettings =
+    engineOptions &&
+    engineOptions.rules &&
+    typeof engineOptions.rules === 'object' &&
+    !Array.isArray(engineOptions.rules)
+      ? engineOptions.rules
+      : null;
+  if (ruleSettings) {
+    for (const id of Object.keys(ruleSettings)) {
+      const own = ruleSettings[id];
+      if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
+      for (const sel of invalid(own.excludeSelectors)) {
+        bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
+      }
+    }
+  }
+  return bad;
+}
+
+function invalidExcludeSelectorsMessage(bad) {
+  if (!bad.length) return null;
+  return (
+    'engineOptions.' +
+    bad.join('; engineOptions.') +
+    (bad.length > 1 ? ' are' : ' is') +
+    ' not valid CSS, and would exclude nothing'
+  );
+}
+
+// Whether contrast.rootCanvasFallback, as given, is an opaque color. The
+// color parser (`parse`, the contrast helpers') reads computed styles,
+// which the browser has already checked, so it is lenient: a keyword that
+// depends on the page (inherit, currentColor) or rgb() with a wrong number
+// of values would pass. A color the caller writes is checked as CSS would
+// check it: by the browser where it can say (CSS.supports), else by the
+// forms of rgb() and hsl(), and a valid color the parser can't read (none,
+// a relative color) is read as the browser computes it (`computeColor`,
+// where there is a page and the platform takes it; round 8, NW-13).
+// Without a page (`computeColor` null), a color the parser can't read is
+// left for the scan to judge.
+function rootCanvasFallbackIsOpaque(given, parse, computeColor) {
+  let rgba;
+  try {
+    rgba = typeof parse === 'function' ? parse(given) : { a: 1 };
+  } catch {
+    rgba = { a: 1 };
+  }
+  const text = String(given).trim();
+  const lower = text.toLowerCase();
+  const KEYWORDS = ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'];
+  let supported = null;
+  try {
+    const css = typeof window !== 'undefined' && window ? window.CSS : null;
+    if (css && typeof css.supports === 'function') supported = !!css.supports('color', text);
+  } catch {
+    supported = null;
+  }
+  const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
+  const formBad = () => {
+    if (!fn) return false;
+    const body = fn[2].trim();
+    if (/^from\s/.test(body)) return false;
+    if (body.includes(',')) {
+      // The legacy form: three or four values, commas only.
+      const parts = body.split(',').map((x) => x.trim());
+      return body.includes('/') || parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
+    }
+    // The modern form: three values, then "/ alpha" optionally.
+    const [main, alpha, extra] = body.split('/');
+    const values = main.trim().split(/\s+/).filter(Boolean);
+    return values.length !== 3 || extra !== undefined || (alpha !== undefined && !alpha.trim());
+  };
+  const badSyntax = KEYWORDS.includes(lower) || (supported === null ? formBad() : !supported);
+  if (badSyntax) rgba = null;
+  else if (!rgba && computeColor === null) return true;
+  else if (!rgba && supported !== false && typeof computeColor === 'function') {
+    // Valid, but not a form the parser reads: as the browser computes it.
+    try {
+      rgba = typeof parse === 'function' ? parse(computeColor(text)) : null;
+    } catch {
+      rgba = null;
+    }
+  }
+  return !!rgba && rgba.a >= 1;
+}
+
+function rootCanvasFallbackMessage(given) {
+  return (
+    'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
+    JSON.stringify(given)
+  );
+}
+
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
  *
@@ -2082,38 +2301,13 @@ function runCoreSettled(
   // about where it is used, and the other selectors still apply.
   if (strictOf(engineOptionsResolved)) {
     const probe = dom.get(document, 'documentElement');
-    const invalid = (list) =>
-      normalizeSelectorList(list).filter((sel) => {
-        try {
-          if (probe) dom.matches(probe, sel);
-          return false;
-        } catch {
-          return true;
-        }
-      });
-    const bad = invalid(excludeSelectors).map((sel) => 'excludeSelectors: "' + sel + '"');
-    const ruleSettings =
-      engineOptionsResolved.rules &&
-      typeof engineOptionsResolved.rules === 'object' &&
-      !Array.isArray(engineOptionsResolved.rules)
-        ? engineOptionsResolved.rules
-        : null;
-    if (ruleSettings) {
-      for (const id of Object.keys(ruleSettings)) {
-        const own = ruleSettings[id];
-        if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
-        for (const sel of invalid(own.excludeSelectors)) {
-          bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
-        }
-      }
-    }
-    if (bad.length) {
-      const err = new Error(
-        'engineOptions.' +
-          bad.join('; engineOptions.') +
-          (bad.length > 1 ? ' are' : ' is') +
-          ' not valid CSS, and would exclude nothing. (strictOptions)'
-      );
+    const message = invalidExcludeSelectorsMessage(
+      invalidExcludeSelectors(engineOptionsResolved, (sel) => {
+        if (probe) dom.matches(probe, sel);
+      })
+    );
+    if (message) {
+      const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
       throw err;
     }
@@ -2223,65 +2417,20 @@ function runCoreSettled(
   // the result echoes white; it is said, and thrown under strictOptions.
   {
     const given = engineOptionsResolved.contrast.rootCanvasFallback;
-    let rgba;
-    try {
-      const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
-      rgba = typeof parse === 'function' ? parse(given) : { a: 1 };
-    } catch {
-      rgba = { a: 1 };
-    }
-    // The color parser reads computed styles, which the browser has already
-    // checked, so it is lenient: a keyword that depends on the page
-    // (inherit, currentColor) or rgb() with a wrong number of values would
-    // pass. A color the caller writes is checked as CSS would check it: by
-    // the browser where it can say (CSS.supports), else by the forms of
-    // rgb() and hsl(), and a valid color the parser can't read (none, a
-    // relative color) is read as the browser computes it (round 8, NW-13).
-    const text = String(given).trim();
-    const lower = text.toLowerCase();
-    const KEYWORDS = ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'];
-    let supported = null;
-    try {
-      const css = window && window.CSS;
-      if (css && typeof css.supports === 'function') supported = !!css.supports('color', text);
-    } catch {
-      supported = null;
-    }
-    const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
-    const formBad = () => {
-      if (!fn) return false;
-      const body = fn[2].trim();
-      if (/^from\s/.test(body)) return false;
-      if (body.includes(',')) {
-        // The legacy form: three or four values, commas only.
-        const parts = body.split(',').map((x) => x.trim());
-        return body.includes('/') || parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
-      }
-      // The modern form: three values, then "/ alpha" optionally.
-      const [main, alpha, extra] = body.split('/');
-      const values = main.trim().split(/\s+/).filter(Boolean);
-      return values.length !== 3 || extra !== undefined || (alpha !== undefined && !alpha.trim());
+    const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
+    const computeColor = (text) => {
+      const probe = dom.createElement(document, 'span');
+      probe.style.color = text;
+      // A value the platform rejects leaves the property unset, and the
+      // probe would report the color it inherits.
+      if (!probe.style.color) return '';
+      dom.appendChild(dom.documentElement(document), probe);
+      const computed = dom.defaultView(document).getComputedStyle(probe).color;
+      dom.removeChild(dom.documentElement(document), probe);
+      return computed;
     };
-    const badSyntax = KEYWORDS.includes(lower) || (supported === null ? formBad() : !supported);
-    if (badSyntax) rgba = null;
-    else if (!rgba && supported) {
-      // Valid, but not a form the parser reads: as the browser computes it.
-      try {
-        const probe = dom.createElement(document, 'span');
-        probe.style.color = text;
-        dom.appendChild(dom.documentElement(document), probe);
-        const computed = dom.defaultView(document).getComputedStyle(probe).color;
-        dom.removeChild(dom.documentElement(document), probe);
-        const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
-        if (typeof parse === 'function') rgba = parse(computed);
-      } catch {
-        rgba = null;
-      }
-    }
-    if (!rgba || !(rgba.a >= 1)) {
-      const message =
-        'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
-        JSON.stringify(given);
+    if (!rootCanvasFallbackIsOpaque(given, parse, computeColor)) {
+      const message = rootCanvasFallbackMessage(given);
       if (strictOf(engineOptionsResolved)) {
         const err = new Error(message + '. (strictOptions)');
         err.code = 'INVALID_ENGINE_OPTIONS';
@@ -2533,15 +2682,9 @@ function runCoreSettled(
     runOnly && Array.isArray(runOnly.optInTags) ? runOnly.optInTags.slice() : [];
   const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
   const optInRulesRan = new Set();
-  if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
-    const message =
-      'engineOptions.optInRules: ' +
-      runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
-      ', no such opt-in rule tag (' +
-      (OPT_IN_RULE_TAGS.length
-        ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
-        : 'this version has none') +
-      ')';
+  const optInMessage = unknownOptInRulesMessage(runOnly);
+  if (optInMessage) {
+    const message = optInMessage;
     if (strictOf(engineOptionsResolved)) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
@@ -2556,19 +2699,15 @@ function runCoreSettled(
   // normativeMappings name. The catalog carries every one of them; a scan
   // result carries only those asked for, or implied by the applied profile.
   const mappingSelection = resolveMappingSelection(engineOptionsResolved, appliedProfile);
-  if (mappingSelection.unknown.length) {
-    const named = mappingSelection.unknown.map((s) => '"' + s + '"').join(', ');
+  const mappingsMessage = unknownMappingsMessage(mappingSelection);
+  if (mappingsMessage) {
     if (strictOf(engineOptionsResolved)) {
-      const err = new Error(
-        'engineOptions.mappings: ' + named + ', no such standard or version. (strictOptions)'
-      );
+      const err = new Error(mappingsMessage + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
       throw err;
     }
     try {
-      console.warn(
-        '[surea11y] engineOptions.mappings: ignoring ' + named + ', no such standard or version.'
-      );
+      console.warn('[surea11y] ' + mappingsMessage.replace(': ', ': ignoring ') + '.');
     } catch {}
   }
   warnDeprecatedStandards(mappingSelection.tokens);
@@ -2747,67 +2886,10 @@ function runCoreSettled(
     const knownIds = effectiveCheckDefs
       .map((d) => d.ruleId)
       .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
-    const byLower = new Map();
-    // ASCII case only, as the selection matches ids (asciiLowerChar).
-    const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
-    for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
-    const legacy = String(ENGINE_TAG || 'a11ycore').toLowerCase() + '-';
-    const unknownRuleKeys = [];
-    const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
-    for (const exact of [true, false]) {
-      for (const key of keys) {
-        const value = rulesOption[key];
-        if (!value || typeof value !== 'object') continue;
-        const lower = lowerAscii(key.trim());
-        let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
-        if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
-        if (exact) {
-          if (id) callerRuleConfig[id] = value;
-        } else if (!id) {
-          unknownRuleKeys.push(key);
-        } else if (!(id in callerRuleConfig)) {
-          callerRuleConfig[id] = value;
-        }
-      }
-    }
-    if (unknownRuleKeys.length) {
-      // The closest id by edit distance, when it is close.
-      const closestId = (key) => {
-        const a = key.toLowerCase();
-        let best = null;
-        let bestD = Infinity;
-        for (const id of byLower.keys()) {
-          if (Math.abs(id.length - a.length) > 3) continue;
-          const prev = [];
-          for (let j = 0; j <= id.length; j++) prev[j] = j;
-          for (let i = 1; i <= a.length; i++) {
-            let diag = prev[0];
-            prev[0] = i;
-            for (let j = 1; j <= id.length; j++) {
-              const up = prev[j];
-              prev[j] = Math.min(
-                prev[j] + 1,
-                prev[j - 1] + 1,
-                diag + (a[i - 1] === id[j - 1] ? 0 : 1)
-              );
-              diag = up;
-            }
-          }
-          if (prev[id.length] < bestD) {
-            bestD = prev[id.length];
-            best = byLower.get(id);
-          }
-        }
-        return bestD <= 3 ? best : null;
-      };
-      const message =
-        'engineOptions.rules: ' +
-        unknownRuleKeys
-          .map((k) => {
-            const near = closestId(k);
-            return 'no rule named "' + k + '"' + (near ? ' (did you mean "' + near + '"?)' : '');
-          })
-          .join('; ');
+    const read = readRuleSettings(rulesOption, knownIds, ENGINE_TAG);
+    for (const id of Object.keys(read.config)) callerRuleConfig[id] = read.config[id];
+    if (read.unknown.length) {
+      const message = unknownRuleSettingsMessage(read);
       if (strictOf(engineOptionsResolved)) {
         const err = new Error(message + '. (strictOptions)');
         err.code = 'INVALID_ENGINE_OPTIONS';
@@ -3746,5 +3828,13 @@ module.exports = {
   targetWcagVersionOf,
   targetWcagLevelOf,
   warnIgnoredWcagTarget,
-  readRenderingEnvironment
+  readRenderingEnvironment,
+  unknownOptInRulesMessage,
+  unknownMappingsMessage,
+  readRuleSettings,
+  unknownRuleSettingsMessage,
+  invalidExcludeSelectors,
+  invalidExcludeSelectorsMessage,
+  rootCanvasFallbackIsOpaque,
+  rootCanvasFallbackMessage
 };
