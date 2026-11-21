@@ -1384,8 +1384,50 @@ function settleAnimations(doc, includeShadowDom) {
       delay: ms(timing && timing.delay),
       duration: ms(timing && timing.duration),
       iterations: timing && Number.isFinite(timing.iterations) ? timing.iterations : null,
-      endTime: ms(timing && timing.endTime)
+      endTime: ms(timing && timing.endTime),
+      changes: keyframeChanges(effect)
     };
+  }
+  // The properties an animation's keyframes change, each with the values it
+  // takes (up to eight): {} for keyframes that change nothing (the same
+  // value throughout, or only custom properties, which show nothing by
+  // themselves), null where they can't be read. A property missing from
+  // the first or last keyframe, or one added to the value under it, changes.
+  function keyframeChanges(effect) {
+    try {
+      if (!effect || typeof effect.getKeyframes !== 'function') return null;
+      const frames = effect.getKeyframes();
+      const adds =
+        effect.composite === 'add' ||
+        effect.composite === 'accumulate' ||
+        effect.iterationComposite === 'accumulate';
+      const NOT_PROPERTIES = new Set(['offset', 'computedOffset', 'easing', 'composite']);
+      const seen = new Map();
+      for (const frame of frames) {
+        const offset = Number(frame.computedOffset);
+        const frameAdds = frame.composite === 'add' || frame.composite === 'accumulate';
+        for (const key of Object.keys(frame)) {
+          if (NOT_PROPERTIES.has(key) || key.startsWith('--')) continue;
+          let entry = seen.get(key);
+          if (!entry) {
+            entry = { values: new Set(), first: false, last: false, adds: false };
+            seen.set(key, entry);
+          }
+          entry.values.add(String(frame[key]));
+          if (offset === 0) entry.first = true;
+          if (offset === 1) entry.last = true;
+          if (frameAdds) entry.adds = true;
+        }
+      }
+      const out = {};
+      for (const [key, entry] of seen) {
+        if (entry.values.size > 1 || !entry.first || !entry.last || entry.adds || adds)
+          out[key] = [...entry.values].slice(0, 8);
+      }
+      return out;
+    } catch {
+      return null;
+    }
   }
 
   const dom = createSafeDom();

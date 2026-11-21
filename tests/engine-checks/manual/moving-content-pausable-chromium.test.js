@@ -87,6 +87,64 @@ test(`${RULE_ID} in Chromium`, { skip }, async () => {
   }
 });
 
+// Motion nothing shows is left out: keyframes that change nothing, or only
+// a custom property, and an element not drawn while it runs (clipped to
+// nothing, no size with its overflow clipped, wholly left of the page).
+// Where the animation can bring it into view (a marquee sliding through
+// its box, a fade from opacity 0, a slide from off the page) it is asked
+// about as before.
+const UNSEEN_PAGE = `<!doctype html><html lang="en"><head><title>t</title><style>
+  @property --x { syntax: "<number>"; inherits: false; initial-value: 0 }
+  @keyframes custom { to { --x: 1 } }
+  @keyframes same { from { transform: none } to { transform: none } }
+  @keyframes slide { from { transform: translateX(0) } to { transform: translateX(100px) } }
+  @keyframes marquee { from { transform: translateX(300px) } to { transform: translateX(-300px) } }
+  @keyframes enter { from { transform: translateX(0) } to { transform: translateX(10500px) } }
+  @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+  .loop { animation-duration: 2s; animation-iteration-count: infinite; }
+  #custom { animation-name: custom; }
+  #same { animation-name: same; }
+  #nosize { animation-name: slide; width: 0; height: 0; overflow: hidden; }
+  #offleft { animation-name: slide; position: absolute; left: -9999px; }
+  #sronly { animation-name: slide; position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  #flat { height: 0; overflow: hidden; }
+  #inflat { animation-name: slide; }
+  #box { width: 200px; overflow: hidden; }
+  #marquee { animation-name: marquee; white-space: nowrap; }
+  #fade { animation-name: fade; }
+  #enter { animation-name: enter; position: absolute; left: -10000px; top: 0; }
+</style></head><body>
+  <p class="loop" id="custom">Custom</p>
+  <p class="loop" id="same">Same</p>
+  <div class="loop" id="nosize">No size</div>
+  <p class="loop" id="offleft">Off the page</p>
+  <p class="loop" id="sronly">Screen reader only</p>
+  <div id="flat"><p class="loop" id="inflat">In a flat box</p></div>
+  <div id="box"><p class="loop" id="marquee">News ticker</p></div>
+  <p class="loop" id="fade">Fades in</p>
+  <p class="loop" id="enter">Slides in</p>
+</body></html>`;
+
+test(
+  `${RULE_ID}: leaves out motion nothing shows, in Chromium (round 9, V9-14)`,
+  { skip },
+  async () => {
+    const browser = await chromium.launch({ executablePath });
+    try {
+      const p = await browser.newPage();
+      await p.setContent(UNSEEN_PAGE);
+      await addBundle(p);
+      const selectors = await p.evaluate((id) => {
+        const res = window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null);
+        return res.checksResults.find((c) => c.ruleId === id).occurrences.map((o) => o.selector);
+      }, RULE_ID);
+      assert.deepEqual(selectors.sort(), ['#enter', '#fade', '#marquee']);
+    } finally {
+      await browser.close();
+    }
+  }
+);
+
 test(`${RULE_ID}: without animations it is notApplicable`, () => {
   const { runa11yCoreOnHtml } = require('../../../src/testing.js');
   const result = runa11yCoreOnHtml(
