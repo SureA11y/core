@@ -7,6 +7,7 @@ const { NORMATIVE_STANDARDS } = require('./coverage/standards.js');
 const { COMPLETE_APPLICABILITY, COMPLETE_CHECK } = require('./coverage/complete-applicability.js');
 const { POLICY_CONTRACTS } = require('./policy/contracts.js');
 const { tierOf, occurrenceOutcome, reviewGroupOf } = require('./occurrence-outcome.js');
+const { closestOptionKey } = require('./core/closest-option-key.js');
 
 /**
  * What the reporters (/report, /sarif, /junit, /earl, /baseline) accept as a
@@ -665,7 +666,31 @@ function leaningFailures(result, options) {
   return out;
 }
 
+// A reporter's options as it reads them: undefined, null or anything but an
+// object is no options, as {} is (round 9, A9-11). A key it doesn't read
+// that looks like a typo of one it does, or the start of one ("baseline"
+// for baselineEntries), is warned about and ignored, as a scan warns about
+// such a key of engineOptions.
+function reporterOptions(name, options, known) {
+  if (!options || typeof options !== 'object') return {};
+  for (const key of Object.keys(options)) {
+    if (known.includes(key)) continue;
+    const suggestion =
+      closestOptionKey(key, known) ||
+      (key.length >= 4 && known.find((k) => k.toLowerCase().startsWith(key.toLowerCase()))) ||
+      null;
+    if (!suggestion) continue;
+    try {
+      console.warn(
+        `[surea11y] ${name}: unknown option "${key}" (did you mean "${suggestion}"?); ignored.`
+      );
+    } catch {}
+  }
+  return options;
+}
+
 module.exports = {
+  reporterOptions,
   assertScanResult,
   isCrossFrameResult,
   flattenCrossFrameResult,

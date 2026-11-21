@@ -66,8 +66,10 @@
  *     Basis: WCAG 1.3.1 (not settled); H42; F2.
  *   - `HEADING_LIKE_NUMBER` (cantTell): bold, large text that is only a
  *     number, such as a year, may be a heading shown only by its style. A
- *     currency or percent sign doesn't stop it being a number ("$29.99",
- *     "45%"); text with no letter or digit at all (a star rating, a scene
+ *     currency or percent sign, a plus or minus sign, a footnote star, a
+ *     times sign, a tilde or a rating star doesn't stop it being a number
+ *     ("$29.99", "45%", "+45%", "−5%", "$29.99*", "3×", "~30", "4.5 ★"),
+ *     and digits of any script count ("٢٠٢٤", "２０２４"); text with no letter or digit at all (a star rating, a scene
  *     break, an emoji) is not asked about at any size.
  *     Basis: WCAG 1.3.1 (not settled); H42; F2.
  *   - `BOLD_SHORT_PARAGRAPH` (cantTell): a short p whose visible text is
@@ -554,12 +556,14 @@ function runInPage(ctx) {
     return link;
   }
 
-  // Digits with only spacing, punctuation, a currency sign or a percent
-  // sign around them: "2024", "12.", "1/3", "#4", "$29.99", "29,99 €", "45%".
+  // Digits with only spacing, punctuation, a sign, a currency sign or a
+  // percent sign around them: "2024", "12.", "1/3", "#4", "$29.99",
+  // "29,99 €", "45%", "+45%", "−5%", "+33 1 23 45 67 89", "$29.99*", "3×",
+  // "4.5 ★", "~30", "100+". Digits of any script count ("٢٠٢٤", "２０２４").
   // Two plain tests rather than one pattern with a digit in the middle,
   // which backtracks on long text.
-  const NUMBER_CHARS = /^[\s\d.,:;/#№°'’()\-–—%‰\p{Sc}]+$/u;
-  const isNumberOnly = (text) => NUMBER_CHARS.test(text) && /\d/.test(text);
+  const NUMBER_CHARS = /^[\s\p{Nd}.,:;/#№°'’()\-–—%‰+−×*~★\p{Sc}]+$/u;
+  const isNumberOnly = (text) => NUMBER_CHARS.test(text) && /\p{Nd}/u.test(text);
 
   function minFontSize(pieces) {
     let minPx = Infinity;

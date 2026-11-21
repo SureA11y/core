@@ -199,3 +199,18 @@ test(`${RULE_ID}: a header holding a named svg or role="img" is not empty`, () =
     minOccurrences: 1
   });
 });
+
+// A header holding a named control is named from its content: the message
+// quotes that name instead of calling the cell nameless.
+test(`${RULE_ID}: a header holding a named checkbox is not called nameless (round 8, NA-11)`, () => {
+  const html = `<!doctype html><html><body><table><thead><tr><th><input type="checkbox" aria-label="Select all rows"></th><th>Name</th></tr></thead><tbody><tr><td><input type="checkbox" aria-label="Select Ann"></td><td>Ann</td></tr></tbody></table></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'TABLE_HEADER_EMPTY');
+  assert.strictEqual(occ.i18n.summaryKey, 'emptyTableHeader_summary_cantTell_contentName');
+  assert.strictEqual(occ.i18n.params.name, 'Select all rows');
+  assert.doesNotMatch(occ.summary, /no accessible name/);
+});

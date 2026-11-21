@@ -28,8 +28,11 @@
  *       before it (nav, header, repeated blocks) in one step;
  *   (b) a working skip link, technique G1: an <a href="#id"> (or legacy
  *       <a name="id">) whose name reads as a skip link in one of the
- *       shipped languages (helpers.hasSkipLinkWording, as skip-link uses)
- *       and whose target resolves to a real element in the link's own tree
+ *       shipped languages (helpers.hasSkipLinkWording, as skip-link uses),
+ *       that stays on the page once its href is resolved against the
+ *       document's base URL (under <base href>, "#main" can lead to another
+ *       page; a full URL of the page with a fragment stays), and whose
+ *       target resolves to a real element in the link's own tree
  *       (light DOM or the same shadow root), outside any navigation or
  *       complementary landmark (<nav>, <aside>, or the role): a link to the
  *       menu or a sidebar skips to no main content. Not required to be
@@ -272,15 +275,9 @@ function runInPage(ctx) {
     }
     for (const a of links) {
       if (!a || !dom.get(a, 'getAttribute')) continue;
-      const href = String(dom.getAttribute(a, 'href') || '').trim();
-      if (href.length < 2 || href.charAt(0) !== '#') continue;
-      let fragment = href.slice(1);
-      try {
-        fragment = decodeURIComponent(fragment);
-      } catch {
-        // keep raw fragment if it isn't a valid percent-encoded string
-      }
-      fragment = fragment.trim();
+      // A link to a place in this document, its href resolved against the
+      // base URL: under <base href>, "#main" can lead to another page.
+      const fragment = helpers.getSamePageFragment(a);
       if (!fragment) continue;
 
       let root = document;
@@ -450,15 +447,9 @@ function runInPage(ctx) {
     // navigation and sidebars may be the way past them ("Jump to recipe").
     let otherSamePageLinks = 0;
     for (const a of queryAll('a[href]')) {
-      const href = String(dom.getAttribute(a, 'href') || '').trim();
-      if (href.length < 2 || href.charAt(0) !== '#') continue;
-      let fragment = href.slice(1);
-      try {
-        fragment = decodeURIComponent(fragment);
-      } catch {
-        // keep the raw fragment
-      }
-      const target = resolveInRoot(document, fragment.trim());
+      const fragment = helpers.getSamePageFragment(a);
+      if (!fragment) continue;
+      const target = resolveInRoot(document, fragment);
       if (target && !isInNavigationOrAside(target)) otherSamePageLinks += 1;
     }
     const signals = [

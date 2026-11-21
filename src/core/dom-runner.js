@@ -50,7 +50,7 @@ const { readLiveRegionHook } = require('./live-region-hook');
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
    criteriaNamingRule, optInTagsOf, ruleIdMatches,
    criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES, COMPLETE_APPLICABILITY_SCS,
-   COMPLETE_CHECK_SCS */
+   COMPLETE_CHECK_SCS, WCAG_LEVELS_BY_SC, isIsoDateTime */
 
 // A WCAG conformance level as the engine names it ('aa' is 'AA'), or null.
 function normalizeWcagLevel(v) {
@@ -260,6 +260,225 @@ function noteEmptySelection(runOnly, engineOptions) {
   try {
     console.warn('[surea11y] ' + message + '.');
   } catch {}
+}
+
+// =========================
+// Option values a strict scan refuses
+// =========================
+// Each is worded once here and read by the scan (runCoreSettled) and by the
+// catalog functions (checkCatalogOptions in scripts/build-core.js), so a
+// catalog call under strictOptions refuses what the scan refuses, in the
+// same words.
+
+// engineOptions.optInRules: the tags it names that no opt-in rule has, as
+// the selection (normalizeRunOnly) found them, or null.
+function unknownOptInRulesMessage(selection) {
+  const unknown =
+    selection && Array.isArray(selection.optInTagsUnknown) ? selection.optInTagsUnknown : [];
+  if (!unknown.length) return null;
+  return (
+    'engineOptions.optInRules: ' +
+    unknown.map((s) => '"' + s + '"').join(', ') +
+    ', no such opt-in rule tag (' +
+    (OPT_IN_RULE_TAGS.length
+      ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
+      : 'this version has none') +
+    ')'
+  );
+}
+
+// engineOptions.mappings: the standards it names that the engine doesn't
+// have, from resolveMappingSelection, or null.
+function unknownMappingsMessage(mappingSelection) {
+  if (!mappingSelection || !mappingSelection.unknown.length) return null;
+  return (
+    'engineOptions.mappings: ' +
+    mappingSelection.unknown.map((s) => '"' + s + '"').join(', ') +
+    ', no such standard or version'
+  );
+}
+
+// engineOptions.rules: each rule's settings by the id they name, and the
+// keys that name no rule. An exact id wins over one that matches it in
+// another case or with the legacy engine prefix. `knownIds` are the rule and
+// rollup ids of the run.
+function readRuleSettings(rulesOption, knownIds, engineTag) {
+  const config = Object.create(null);
+  const unknown = [];
+  const byLower = new Map();
+  // ASCII case only, as the selection matches ids (asciiLowerChar).
+  const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
+  for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
+  if (!rulesOption || typeof rulesOption !== 'object' || Array.isArray(rulesOption)) {
+    return { config, unknown, byLower };
+  }
+  const legacy = String(engineTag || 'a11ycore').toLowerCase() + '-';
+  const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
+  for (const exact of [true, false]) {
+    for (const key of keys) {
+      const value = rulesOption[key];
+      if (!value || typeof value !== 'object') continue;
+      const lower = lowerAscii(key.trim());
+      let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
+      if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
+      if (exact) {
+        if (id) config[id] = value;
+      } else if (!id) {
+        unknown.push(key);
+      } else if (!(id in config)) {
+        config[id] = value;
+      }
+    }
+  }
+  return { config, unknown, byLower };
+}
+
+// The message for engineOptions.rules keys that name no rule, each with the
+// closest id by edit distance when it is close, or null.
+function unknownRuleSettingsMessage(read) {
+  if (!read || !read.unknown.length) return null;
+  const closestId = (key) => {
+    const a = key.toLowerCase();
+    let best = null;
+    let bestD = Infinity;
+    for (const id of read.byLower.keys()) {
+      if (Math.abs(id.length - a.length) > 3) continue;
+      const prev = [];
+      for (let j = 0; j <= id.length; j++) prev[j] = j;
+      for (let i = 1; i <= a.length; i++) {
+        let diag = prev[0];
+        prev[0] = i;
+        for (let j = 1; j <= id.length; j++) {
+          const up = prev[j];
+          prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === id[j - 1] ? 0 : 1));
+          diag = up;
+        }
+      }
+      if (prev[id.length] < bestD) {
+        bestD = prev[id.length];
+        best = read.byLower.get(id);
+      }
+    }
+    return bestD <= 3 ? best : null;
+  };
+  return (
+    'engineOptions.rules: ' +
+    read.unknown
+      .map((k) => {
+        const near = closestId(k);
+        return 'no rule named "' + k + '"' + (near ? ' (did you mean "' + near + '"?)' : '');
+      })
+      .join('; ')
+  );
+}
+
+// The excludeSelectors, global and per rule (engineOptions.rules[id]), that
+// aren't valid CSS, as "excludeSelectors: ..." parts of a message. `matches`
+// tests a selector against an element, and throws for one that isn't CSS.
+function invalidExcludeSelectors(engineOptions, matches) {
+  const invalid = (list) =>
+    normalizeSelectorList(list).filter((sel) => {
+      try {
+        matches(sel);
+        return false;
+      } catch {
+        return true;
+      }
+    });
+  const bad = invalid(engineOptions && engineOptions.excludeSelectors).map(
+    (sel) => 'excludeSelectors: "' + sel + '"'
+  );
+  const ruleSettings =
+    engineOptions &&
+    engineOptions.rules &&
+    typeof engineOptions.rules === 'object' &&
+    !Array.isArray(engineOptions.rules)
+      ? engineOptions.rules
+      : null;
+  if (ruleSettings) {
+    for (const id of Object.keys(ruleSettings)) {
+      const own = ruleSettings[id];
+      if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
+      for (const sel of invalid(own.excludeSelectors)) {
+        bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
+      }
+    }
+  }
+  return bad;
+}
+
+function invalidExcludeSelectorsMessage(bad) {
+  if (!bad.length) return null;
+  return (
+    'engineOptions.' +
+    bad.join('; engineOptions.') +
+    (bad.length > 1 ? ' are' : ' is') +
+    ' not valid CSS, and would exclude nothing'
+  );
+}
+
+// Whether contrast.rootCanvasFallback, as given, is an opaque color. The
+// color parser (`parse`, the contrast helpers') reads computed styles,
+// which the browser has already checked, so it is lenient: a keyword that
+// depends on the page (inherit, currentColor) or rgb() with a wrong number
+// of values would pass. A color the caller writes is checked as CSS would
+// check it: by the browser where it can say (CSS.supports), else by the
+// forms of rgb() and hsl(), and a valid color the parser can't read (none,
+// a relative color) is read as the browser computes it (`computeColor`,
+// where there is a page and the platform takes it; round 8, NW-13).
+// Without a page (`computeColor` null), a color the parser can't read is
+// left for the scan to judge.
+function rootCanvasFallbackIsOpaque(given, parse, computeColor) {
+  let rgba;
+  try {
+    rgba = typeof parse === 'function' ? parse(given) : { a: 1 };
+  } catch {
+    rgba = { a: 1 };
+  }
+  const text = String(given).trim();
+  const lower = text.toLowerCase();
+  const KEYWORDS = ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'];
+  let supported = null;
+  try {
+    const css = typeof window !== 'undefined' && window ? window.CSS : null;
+    if (css && typeof css.supports === 'function') supported = !!css.supports('color', text);
+  } catch {
+    supported = null;
+  }
+  const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
+  const formBad = () => {
+    if (!fn) return false;
+    const body = fn[2].trim();
+    if (/^from\s/.test(body)) return false;
+    if (body.includes(',')) {
+      // The legacy form: three or four values, commas only.
+      const parts = body.split(',').map((x) => x.trim());
+      return body.includes('/') || parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
+    }
+    // The modern form: three values, then "/ alpha" optionally.
+    const [main, alpha, extra] = body.split('/');
+    const values = main.trim().split(/\s+/).filter(Boolean);
+    return values.length !== 3 || extra !== undefined || (alpha !== undefined && !alpha.trim());
+  };
+  const badSyntax = KEYWORDS.includes(lower) || (supported === null ? formBad() : !supported);
+  if (badSyntax) rgba = null;
+  else if (!rgba && computeColor === null) return true;
+  else if (!rgba && supported !== false && typeof computeColor === 'function') {
+    // Valid, but not a form the parser reads: as the browser computes it.
+    try {
+      rgba = typeof parse === 'function' ? parse(computeColor(text)) : null;
+    } catch {
+      rgba = null;
+    }
+  }
+  return !!rgba && rgba.a >= 1;
+}
+
+function rootCanvasFallbackMessage(given) {
+  return (
+    'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
+    JSON.stringify(given)
+  );
 }
 
 /**
@@ -1135,9 +1354,11 @@ function readRenderingEnvironment(win, doc) {
  * and play() are not used, since play() on a CSS animation would pin it as
  * playing over a later animation-play-state from the page. Animations on
  * another timeline (scroll-driven) are not time-based and are left alone.
- * Without getAnimations (jsdom) there is nothing to settle.
+ * Without getAnimations (jsdom) there is nothing to settle. Open shadow
+ * roots give their own animations, which the document's leave out; with
+ * includeShadowDom off they are left alone.
  */
-function settleAnimations(doc) {
+function settleAnimations(doc, includeShadowDom) {
   // One running animation as rules read it: its element, what it is, and its
   // timing in milliseconds; endTime is null for one that never ends.
   function describeAnimation(anim, timing) {
@@ -1174,6 +1395,41 @@ function settleAnimations(doc) {
       animations = dom.getAnimations(doc);
   } catch {
     animations = [];
+  }
+  // The document's getAnimations() leaves out the animations of elements in
+  // shadow trees: each open shadow root, nested ones included, gives its
+  // own. Without them a fade in a component was measured wherever it had
+  // got to, and its motion never reported. Left out with includeShadowDom
+  // off, as the rest of the scan leaves those elements out.
+  if (includeShadowDom !== false) {
+    try {
+      const docEl =
+        doc && typeof dom.get(doc, 'getAnimations') === 'function'
+          ? dom.documentElement(doc)
+          : null;
+      const tops = docEl ? [docEl] : [];
+      const seen = new Set(animations);
+      for (let i = 0; i < tops.length; i++) {
+        const walker = dom.createTreeWalker(doc, tops[i], 1);
+        for (let el = walker.currentNode; el; el = walker.nextNode()) {
+          const shadow = dom.nodeType(el) === 1 ? dom.shadowRoot(el) : null;
+          if (!shadow) continue;
+          tops.push(shadow);
+          let own = [];
+          try {
+            own =
+              typeof dom.get(shadow, 'getAnimations') === 'function'
+                ? dom.getAnimations(shadow)
+                : [];
+          } catch {}
+          for (const a of own) {
+            if (seen.has(a)) continue;
+            seen.add(a);
+            animations.push(a);
+          }
+        }
+      }
+    } catch {}
   }
   // Every animation is read before any is moved: setting currentTime makes
   // the next read update the page's style, so reading and moving one at a
@@ -1682,6 +1938,33 @@ function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG
       );
       continue;
     }
+    // A wcagSc entry that names no WCAG criterion ('9.9.9') would reach the
+    // result and SARIF as a criterion; definePack refuses the pack for it,
+    // and a custom rule is skipped for it, as for any other invalid meta.
+    const givenSc = c.meta && typeof c.meta === 'object' ? c.meta.wcagSc : undefined;
+    if (Array.isArray(givenSc)) {
+      const unknownSc = givenSc.filter(
+        (v) =>
+          !(
+            typeof v === 'string' &&
+            Object.prototype.hasOwnProperty.call(WCAG_LEVELS_BY_SC, v.trim())
+          )
+      );
+      if (unknownSc.length) {
+        let named = '';
+        for (const v of unknownSc) {
+          let text;
+          try {
+            text = JSON.stringify(v);
+          } catch {
+            text = undefined;
+          }
+          named += (named ? ', ' : '') + (text === undefined ? typeof v : text);
+        }
+        skip(ruleId, 'invalid meta: wcagSc names no WCAG criterion: ' + named);
+        continue;
+      }
+    }
     let normalizedMeta;
     try {
       normalizedMeta = normalizeRuleMeta(ruleId, ruleId, withWcagScMappings(c.meta), ENGINE_TAG);
@@ -1754,84 +2037,222 @@ function isThenable(value) {
 // iterators and the mapping function; assertArrayFromFor checks Array.from
 // for the rules of a pack or caller that use it.
 function assertPageBuiltins() {
-  // Recorded by index and joined by hand, as push or join may be what is
-  // broken.
-  const broken = [];
-  const check = (name, works) => {
-    let ok;
-    try {
-      ok = !!works();
-    } catch {
-      ok = false;
+  // The check itself runs on the built-ins it checks: one broken so badly
+  // that the check throws outside a probe (a throwing RegExp constructor,
+  // a getter on Object.prototype) stops the scan with the same code, not
+  // the page's own error.
+  let ours = null;
+  try {
+    // Recorded by index and joined by hand, as push or join may be what is
+    // broken.
+    const broken = [];
+    const check = (name, works) => {
+      let ok;
+      try {
+        ok = !!works();
+      } catch {
+        ok = false;
+      }
+      if (!ok) broken[broken.length] = name;
+    };
+    check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
+    check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
+    check('Array.prototype.push', () => {
+      const a = [];
+      a.push(1);
+      return a.length === 1 && a[0] === 1;
+    });
+    check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
+    check('Array iteration', () => {
+      let sum = 0;
+      for (const x of [1, 2]) sum += x;
+      return sum === 3;
+    });
+    check('Set iteration', () => [...new Set([1, 2])].length === 2);
+    check('Map iteration', () => {
+      const [entry] = [...new Map([['a', 1]])];
+      return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
+    });
+    // Built at run time: a bundle loaded without its charset would read the
+    // character in a literal as several.
+    check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
+    check('NodeList iteration', () => {
+      if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
+      // Read from Node.prototype: a named element could stand in for
+      // document.childNodes.
+      const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(
+        document
+      );
+      return [...nodes].length === nodes.length;
+    });
+    check('Map', () => {
+      const m = new Map();
+      m.set('a', 1);
+      return m.get('a') === 1 && m.has('a') && m.size === 1;
+    });
+    check('Set', () => {
+      const s = new Set();
+      s.add(1);
+      return s.has(1) && s.size === 1;
+    });
+    check('WeakMap', () => {
+      const k = {};
+      const m = new WeakMap();
+      m.set(k, 1);
+      return m.get(k) === 1;
+    });
+    check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
+    check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
+    check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
+    check('RegExp.prototype.exec', () => {
+      const m = /b(c)/.exec('abc');
+      return !!m && m.index === 1 && m[1] === 'c';
+    });
+    check('String.prototype.trim', () => '  a '.trim() === 'a');
+    check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+    check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
+    check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
+    // Each of these, replaced, changed what rules report without a word
+    // (round 8, PK-6 and RO-5): a probe of what each one does.
+    check('Array.isArray', () => Array.isArray([]) && !Array.isArray({ length: 0 }));
+    check('Array.prototype.slice', () => {
+      const a = [1, 2, 3].slice(1);
+      return a.length === 2 && a[0] === 2 && a[1] === 3;
+    });
+    check('Array.prototype.concat', () => {
+      const a = [1].concat([2], 3);
+      return a.length === 3 && a[1] === 2 && a[2] === 3;
+    });
+    check('Array.prototype.forEach', () => {
+      let sum = 0;
+      [1, 2].forEach((x) => {
+        sum += x;
+      });
+      return sum === 3;
+    });
+    check(
+      'Array.prototype.some',
+      () => [1, 2].some((x) => x === 2) && ![1, 2].some((x) => x === 3)
+    );
+    check('Array.prototype.every', () => [1, 2].every((x) => x > 0) && ![1, 2].every((x) => x > 1));
+    check('Array.prototype.find', () => [1, 2, 3].find((x) => x > 1) === 2);
+    check('Array.prototype.findIndex', () => [1, 2, 3].findIndex((x) => x > 1) === 1);
+    check('Array.prototype.reduce', () => [1, 2, 3].reduce((a, b) => a + b, 0) === 6);
+    check(
+      'Object.prototype.hasOwnProperty',
+      // eslint-disable-next-line no-prototype-builtins -- the check is of the method itself
+      () => ({ a: 1 }).hasOwnProperty('a') && !{}.hasOwnProperty('a')
+    );
+    check('String.prototype.split', () => {
+      const parts = 'a,b'.split(',');
+      return parts.length === 2 && parts[1] === 'b';
+    });
+    check(
+      'String.prototype.replace',
+      () => 'abc'.replace('b', 'x') === 'axc' && 'aba'.replace(/a/g, 'c') === 'cbc'
+    );
+    check('RegExp.prototype.test', () => /b/.test('abc') && !/d/.test('abc'));
+    check('RegExp', () => new RegExp('b+', 'g').exec('abbc')[0] === 'bb');
+    check('Math.round', () => Math.round(1.5) === 2 && Math.round(-0.4) === 0);
+    check('Math.abs', () => Math.abs(-2) === 2);
+    // With more than two arguments too: a replacement that reads only two
+    // gave the wrong extreme of a list (round 9, R9-10).
+    check('Math.max', () => Math.max(1, 3) === 3 && Math.max(1, 3, 5) === 5);
+    check('Math.min', () => Math.min(1, 3) === 1 && Math.min(5, 3, 1) === 1);
+    check('parseFloat', () => parseFloat('1.5px') === 1.5 && Number.parseFloat('2.5') === 2.5);
+    // Each of these, replaced, changed what rules report without a word
+    // (round 9, R9-10). A shift or pop that takes nothing out hung the scan
+    // in a loop that empties a list, so they are checked before it starts.
+    check(
+      'String.prototype.indexOf',
+      () => 'abcb'.indexOf('b') === 1 && 'abcb'.indexOf('b', 2) === 3 && 'abc'.indexOf('d') === -1
+    );
+    check('String.prototype.includes', () => 'abc'.includes('b') && !'abc'.includes('d'));
+    check('String.prototype.slice', () => 'abcd'.slice(1, 3) === 'bc' && 'abc'.slice(-1) === 'c');
+    check('String.prototype.charAt', () => 'abc'.charAt(1) === 'b');
+    check('String.prototype.match', () => {
+      const m = 'a1b2'.match(/\d/g);
+      return !!m && m.length === 2 && m[1] === '2' && 'abc'.match(/c/).index === 2;
+    });
+    check('RegExp.prototype[Symbol.match]', () => {
+      const m = /b/[Symbol.match]('abc');
+      return !!m && m[0] === 'b';
+    });
+    check('RegExp.prototype[Symbol.split]', () => {
+      const parts = /\d/[Symbol.split]('a1b2c');
+      return parts.length === 3 && parts[2] === 'c';
+    });
+    check('Array.prototype.join', () => [1, 2].join('-') === '1-2' && [1, 2].join() === '1,2');
+    check('Array.prototype.sort', () => {
+      const a = [3, 1, 2].sort();
+      const b = [1, 3, 2].sort((x, y) => y - x);
+      return a[0] === 1 && a[2] === 3 && b[0] === 3 && b[2] === 1;
+    });
+    check('Array.prototype.shift', () => {
+      const a = [1, 2];
+      return a.shift() === 1 && a.length === 1 && a[0] === 2;
+    });
+    check('Array.prototype.pop', () => {
+      const a = [1, 2];
+      return a.pop() === 2 && a.length === 1;
+    });
+    check('Set.prototype.delete', () => {
+      const s = new Set([1]);
+      return s.delete(1) === true && !s.has(1) && s.size === 0;
+    });
+    check('WeakMap.prototype.has', () => {
+      const k = {};
+      const m = new WeakMap();
+      m.set(k, 1);
+      return m.has(k) && !m.has({});
+    });
+    check('parseInt', () => parseInt('12px', 10) === 12 && Number.parseInt('7') === 7);
+    check('Math.floor', () => Math.floor(1.7) === 1 && Math.floor(-1.2) === -2);
+    check('Math.pow', () => Math.pow(2, 10) === 1024);
+    check('URL', () => new URL('b#c', 'https://a.test/x/').href === 'https://a.test/x/b#c');
+    check('NodeFilter', () => {
+      if (typeof NodeFilter === 'undefined') return true;
+      return (
+        NodeFilter.SHOW_ELEMENT === 1 &&
+        NodeFilter.SHOW_TEXT === 4 &&
+        NodeFilter.FILTER_ACCEPT === 1 &&
+        NodeFilter.FILTER_REJECT === 2 &&
+        NodeFilter.FILTER_SKIP === 3
+      );
+    });
+    // A getter a page puts on Object.prototype is read for every key a plain
+    // object lacks: one that throws, or answers, changes what the engine
+    // reads of its own objects (result.type, options.contrast). A method put
+    // there (then, as a library may) is not read as a value, and is allowed.
+    const protoNames = Object.getOwnPropertyNames(Object.prototype);
+    for (let i = 0; i < protoNames.length; i++) {
+      const name = protoNames[i];
+      if (name === '__proto__') continue;
+      const d = Object.getOwnPropertyDescriptor(Object.prototype, name);
+      if (!d || typeof d.get !== 'function') continue;
+      check('Object.prototype.' + name, () => d.get.call({}) === undefined);
     }
-    if (!ok) broken[broken.length] = name;
-  };
-  check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
-  check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
-  check('Array.prototype.push', () => {
-    const a = [];
-    a.push(1);
-    return a.length === 1 && a[0] === 1;
-  });
-  check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
-  check('Array iteration', () => {
-    let sum = 0;
-    for (const x of [1, 2]) sum += x;
-    return sum === 3;
-  });
-  check('Set iteration', () => [...new Set([1, 2])].length === 2);
-  check('Map iteration', () => {
-    const [entry] = [...new Map([['a', 1]])];
-    return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
-  });
-  // Built at run time: a bundle loaded without its charset would read the
-  // character in a literal as several.
-  check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
-  check('NodeList iteration', () => {
-    if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
-    // Read from Node.prototype: a named element could stand in for
-    // document.childNodes.
-    const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(document);
-    return [...nodes].length === nodes.length;
-  });
-  check('Map', () => {
-    const m = new Map();
-    m.set('a', 1);
-    return m.get('a') === 1 && m.has('a') && m.size === 1;
-  });
-  check('Set', () => {
-    const s = new Set();
-    s.add(1);
-    return s.has(1) && s.size === 1;
-  });
-  check('WeakMap', () => {
-    const k = {};
-    const m = new WeakMap();
-    m.set(k, 1);
-    return m.get(k) === 1;
-  });
-  check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
-  check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
-  check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
-  check('RegExp.prototype.exec', () => {
-    const m = /b(c)/.exec('abc');
-    return !!m && m.index === 1 && m[1] === 'c';
-  });
-  check('String.prototype.trim', () => '  a '.trim() === 'a');
-  check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
-  check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
-  check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
-  if (!broken.length) return;
-  let names = '';
-  for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
-  const err = new Error(
-    'The page has changed JavaScript built-ins the engine relies on (' +
-      names +
-      "), so a scan of it can't be trusted. Scan it before its scripts change them."
-  );
-  err.code = 'PAGE_BUILTINS_BROKEN';
-  err.broken = broken;
-  throw err;
+    if (!broken.length) return;
+    let names = '';
+    for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (' +
+        names +
+        "), so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = broken;
+    ours = err;
+    throw err;
+  } catch (e) {
+    if (e === ours) throw e;
+    const err = new Error(
+      "The page has changed JavaScript built-ins the engine relies on, so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = [];
+    throw err;
+  }
 }
 
 // Whether Array.from works as the language defines it, for the rules of a
@@ -1893,7 +2314,13 @@ function runCore(
     typeof document !== 'undefined' ? document : null
   );
   try {
-    const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // Shadow trees as the scan reads them: on unless includeShadowDom is off.
+    const shadowDom = !(
+      engineOptions &&
+      typeof engineOptions === 'object' &&
+      switchOf(engineOptions.includeShadowDom) === false
+    );
+    const settled = settleAnimations(typeof document !== 'undefined' ? document : null, shadowDom);
     // The animations as they were before settling, for helpers.animationsAtScanStart.
     settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.
@@ -2082,38 +2509,13 @@ function runCoreSettled(
   // about where it is used, and the other selectors still apply.
   if (strictOf(engineOptionsResolved)) {
     const probe = dom.get(document, 'documentElement');
-    const invalid = (list) =>
-      normalizeSelectorList(list).filter((sel) => {
-        try {
-          if (probe) dom.matches(probe, sel);
-          return false;
-        } catch {
-          return true;
-        }
-      });
-    const bad = invalid(excludeSelectors).map((sel) => 'excludeSelectors: "' + sel + '"');
-    const ruleSettings =
-      engineOptionsResolved.rules &&
-      typeof engineOptionsResolved.rules === 'object' &&
-      !Array.isArray(engineOptionsResolved.rules)
-        ? engineOptionsResolved.rules
-        : null;
-    if (ruleSettings) {
-      for (const id of Object.keys(ruleSettings)) {
-        const own = ruleSettings[id];
-        if (!own || typeof own !== 'object' || own.excludeSelectors == null) continue;
-        for (const sel of invalid(own.excludeSelectors)) {
-          bad.push('rules.' + id + '.excludeSelectors: "' + sel + '"');
-        }
-      }
-    }
-    if (bad.length) {
-      const err = new Error(
-        'engineOptions.' +
-          bad.join('; engineOptions.') +
-          (bad.length > 1 ? ' are' : ' is') +
-          ' not valid CSS, and would exclude nothing. (strictOptions)'
-      );
+    const message = invalidExcludeSelectorsMessage(
+      invalidExcludeSelectors(engineOptionsResolved, (sel) => {
+        if (probe) dom.matches(probe, sel);
+      })
+    );
+    if (message) {
+      const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
       throw err;
     }
@@ -2157,8 +2559,19 @@ function runCoreSettled(
       "The result's timestamp is null."
     );
   }
-  const timestamp =
+  // Text that isn't an ISO 8601 date and time ('yesterday') is dropped, and
+  // said so; strictOptions refused it already (engineOptionSpec).
+  const givenTimestamp =
     typeof rawTimestamp === 'string' && rawTimestamp.trim() ? rawTimestamp.trim() : null;
+  if (givenTimestamp && !isIsoDateTime(givenTimestamp)) {
+    warnIgnoredOption(
+      'engineOptions.timestamp',
+      rawTimestamp,
+      'pass an ISO 8601 date and time, such as new Date().toISOString()',
+      "The result's timestamp is null."
+    );
+  }
+  const timestamp = givenTimestamp && isIsoDateTime(givenTimestamp) ? givenTimestamp : null;
 
   // Read before any rule runs: some change the page while they measure it.
   const environment = readRenderingEnvironment(dom.defaultView(document) || window, document);
@@ -2223,35 +2636,20 @@ function runCoreSettled(
   // the result echoes white; it is said, and thrown under strictOptions.
   {
     const given = engineOptionsResolved.contrast.rootCanvasFallback;
-    let rgba;
-    try {
-      const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
-      rgba = typeof parse === 'function' ? parse(given) : { a: 1 };
-    } catch {
-      rgba = { a: 1 };
-    }
-    // The color parser reads computed styles, which the browser has already
-    // checked, so it is lenient: a keyword that depends on the page
-    // (inherit, currentColor) or rgb() with a wrong number of values would
-    // pass. A color the caller writes is checked as CSS would check it.
-    const text = String(given).trim();
-    const lower = text.toLowerCase();
-    const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
-    const badSyntax =
-      ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'].includes(lower) ||
-      (fn &&
-        (() => {
-          const body = fn[2].trim();
-          const parts = body.includes(',')
-            ? body.split(',').map((x) => x.trim())
-            : body.split('/').flatMap((x, i) => (i === 0 ? x.trim().split(/\s+/) : [x.trim()]));
-          return parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
-        })());
-    if (badSyntax) rgba = null;
-    if (!rgba || !(rgba.a >= 1)) {
-      const message =
-        'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
-        JSON.stringify(given);
+    const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
+    const computeColor = (text) => {
+      const probe = dom.createElement(document, 'span');
+      probe.style.color = text;
+      // A value the platform rejects leaves the property unset, and the
+      // probe would report the color it inherits.
+      if (!probe.style.color) return '';
+      dom.appendChild(dom.documentElement(document), probe);
+      const computed = dom.defaultView(document).getComputedStyle(probe).color;
+      dom.removeChild(dom.documentElement(document), probe);
+      return computed;
+    };
+    if (!rootCanvasFallbackIsOpaque(given, parse, computeColor)) {
+      const message = rootCanvasFallbackMessage(given);
       if (strictOf(engineOptionsResolved)) {
         const err = new Error(message + '. (strictOptions)');
         err.code = 'INVALID_ENGINE_OPTIONS';
@@ -2503,15 +2901,9 @@ function runCoreSettled(
     runOnly && Array.isArray(runOnly.optInTags) ? runOnly.optInTags.slice() : [];
   const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
   const optInRulesRan = new Set();
-  if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
-    const message =
-      'engineOptions.optInRules: ' +
-      runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
-      ', no such opt-in rule tag (' +
-      (OPT_IN_RULE_TAGS.length
-        ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
-        : 'this version has none') +
-      ')';
+  const optInMessage = unknownOptInRulesMessage(runOnly);
+  if (optInMessage) {
+    const message = optInMessage;
     if (strictOf(engineOptionsResolved)) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
@@ -2526,19 +2918,15 @@ function runCoreSettled(
   // normativeMappings name. The catalog carries every one of them; a scan
   // result carries only those asked for, or implied by the applied profile.
   const mappingSelection = resolveMappingSelection(engineOptionsResolved, appliedProfile);
-  if (mappingSelection.unknown.length) {
-    const named = mappingSelection.unknown.map((s) => '"' + s + '"').join(', ');
+  const mappingsMessage = unknownMappingsMessage(mappingSelection);
+  if (mappingsMessage) {
     if (strictOf(engineOptionsResolved)) {
-      const err = new Error(
-        'engineOptions.mappings: ' + named + ', no such standard or version. (strictOptions)'
-      );
+      const err = new Error(mappingsMessage + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
       throw err;
     }
     try {
-      console.warn(
-        '[surea11y] engineOptions.mappings: ignoring ' + named + ', no such standard or version.'
-      );
+      console.warn('[surea11y] ' + mappingsMessage.replace(': ', ': ignoring ') + '.');
     } catch {}
   }
   warnDeprecatedStandards(mappingSelection.tokens);
@@ -2553,15 +2941,52 @@ function runCoreSettled(
     return appliedProfile && keeps.includes(appliedProfile) ? null : 'errata';
   }
 
+  // The WCAG criteria a rule names: its wcagSc, and the requirements of its
+  // WCAG normativeMappings.
+  function wcagCriteriaOfDef(def) {
+    const out = [];
+    if (!def || typeof def !== 'object') return out;
+    const add = (sc) => {
+      const text = typeof sc === 'string' ? sc.trim() : '';
+      if (text && !out.includes(text)) out.push(text);
+    };
+    if (Array.isArray(def.wcagSc)) def.wcagSc.forEach(add);
+    const maps = Array.isArray(def.normativeMappings)
+      ? def.normativeMappings
+      : def.meta && Array.isArray(def.meta.normativeMappings)
+        ? def.meta.normativeMappings
+        : [];
+    for (const m of maps) {
+      if (m && typeof m === 'object' && String(m.standard).trim().toUpperCase() === 'WCAG')
+        add(m.requirement);
+    }
+    return out;
+  }
+
+  // A criterion an earlier WCAG version has and 2.2 removed (4.1.1 Parsing).
+  function isRemovedWcagSc(sc) {
+    const levels = Object.prototype.hasOwnProperty.call(WCAG_LEVELS_BY_SC, sc)
+      ? WCAG_LEVELS_BY_SC[sc]
+      : null;
+    return !!levels && levels[2] === null && (levels[0] !== null || levels[1] !== null);
+  }
+
   function scopeOutcomeToWcagVersion(def, result) {
     const why = removesParsing();
     if (!why) return result;
     if (!result || typeof result !== 'object' || result.outcome !== 'fail') return result;
 
     const defTags = def && Array.isArray(def.tags) ? def.tags : [];
-    if (!defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG)) return result;
+    // A rule is scoped by its tag, or by the criteria it names: a custom or
+    // pack rule mapped only to 4.1.1 rarely carries the tag, and without it
+    // its fail gated a 2.2 run on a criterion 2.2 does not contain.
+    const criteria = wcagCriteriaOfDef(def);
+    const tagged = defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG);
+    const onlyRemoved = criteria.length > 0 && criteria.every(isRemovedWcagSc);
+    if (!tagged && !onlyRemoved) return result;
 
-    const removedSc = def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [];
+    const removedSc =
+      def && Array.isArray(def.wcagSc) && def.wcagSc.length ? def.wcagSc.slice() : criteria;
 
     // Every occurrence becomes cantTell-tier here, so each one states why: the
     // finding stands, the criterion it was made against does not.
@@ -2680,67 +3105,10 @@ function runCoreSettled(
     const knownIds = effectiveCheckDefs
       .map((d) => d.ruleId)
       .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
-    const byLower = new Map();
-    // ASCII case only, as the selection matches ids (asciiLowerChar).
-    const lowerAscii = (v) => v.replace(/[A-Z]/g, (c) => c.toLowerCase());
-    for (const id of knownIds) if (typeof id === 'string') byLower.set(lowerAscii(id), id);
-    const legacy = String(ENGINE_TAG || 'a11ycore').toLowerCase() + '-';
-    const unknownRuleKeys = [];
-    const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
-    for (const exact of [true, false]) {
-      for (const key of keys) {
-        const value = rulesOption[key];
-        if (!value || typeof value !== 'object') continue;
-        const lower = lowerAscii(key.trim());
-        let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
-        if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
-        if (exact) {
-          if (id) callerRuleConfig[id] = value;
-        } else if (!id) {
-          unknownRuleKeys.push(key);
-        } else if (!(id in callerRuleConfig)) {
-          callerRuleConfig[id] = value;
-        }
-      }
-    }
-    if (unknownRuleKeys.length) {
-      // The closest id by edit distance, when it is close.
-      const closestId = (key) => {
-        const a = key.toLowerCase();
-        let best = null;
-        let bestD = Infinity;
-        for (const id of byLower.keys()) {
-          if (Math.abs(id.length - a.length) > 3) continue;
-          const prev = [];
-          for (let j = 0; j <= id.length; j++) prev[j] = j;
-          for (let i = 1; i <= a.length; i++) {
-            let diag = prev[0];
-            prev[0] = i;
-            for (let j = 1; j <= id.length; j++) {
-              const up = prev[j];
-              prev[j] = Math.min(
-                prev[j] + 1,
-                prev[j - 1] + 1,
-                diag + (a[i - 1] === id[j - 1] ? 0 : 1)
-              );
-              diag = up;
-            }
-          }
-          if (prev[id.length] < bestD) {
-            bestD = prev[id.length];
-            best = byLower.get(id);
-          }
-        }
-        return bestD <= 3 ? best : null;
-      };
-      const message =
-        'engineOptions.rules: ' +
-        unknownRuleKeys
-          .map((k) => {
-            const near = closestId(k);
-            return 'no rule named "' + k + '"' + (near ? ' (did you mean "' + near + '"?)' : '');
-          })
-          .join('; ');
+    const read = readRuleSettings(rulesOption, knownIds, ENGINE_TAG);
+    for (const id of Object.keys(read.config)) callerRuleConfig[id] = read.config[id];
+    if (read.unknown.length) {
+      const message = unknownRuleSettingsMessage(read);
       if (strictOf(engineOptionsResolved)) {
         const err = new Error(message + '. (strictOptions)');
         err.code = 'INVALID_ENGINE_OPTIONS';
@@ -3679,5 +4047,13 @@ module.exports = {
   targetWcagVersionOf,
   targetWcagLevelOf,
   warnIgnoredWcagTarget,
-  readRenderingEnvironment
+  readRenderingEnvironment,
+  unknownOptInRulesMessage,
+  unknownMappingsMessage,
+  readRuleSettings,
+  unknownRuleSettingsMessage,
+  invalidExcludeSelectors,
+  invalidExcludeSelectorsMessage,
+  rootCanvasFallbackIsOpaque,
+  rootCanvasFallbackMessage
 };

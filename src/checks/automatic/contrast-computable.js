@@ -28,8 +28,10 @@
  *   the pseudo-element's color and font, on its element; jsdom computes no
  *   pseudo-element styles, so there it is left out. Text counts
  *   only when its element is DOM-visible under the run's visibility mode, is
- *   not clipped out of sight by the sr-only technique (clip or clip-path),
- *   and belongs neither to a disabled control nor to the label of one,
+ *   not clipped out of sight by the sr-only technique (clip or clip-path,
+ *   a clip-path polygon of no area among them), is drawn at all in a
+ *   browser (not in a box clipping its overflow to a pixel or less, nor
+ *   shrunk by a transform below a pixel), and belongs neither to a disabled control nor to the label of one,
  *   WCAG's inactive-user-interface-component exception. Subtrees excluded
  *   via engineOptions.excludeSelectors are skipped, and open shadow roots
  *   are walked as roots in their own right.
@@ -39,7 +41,9 @@
  *   opaque color, and a parsable foreground color. Where either cannot be,
  *   a background image or gradient (a gradient of one color is that color,
  *   and a layer that paints nothing under the text, such as a 1px underline,
- *   is left out), mix-blend-mode, a filter
+ *   is left out; a box in the top layer, such as a modal dialog, lies over
+ *   its ::backdrop, whose image, gradient or filter counts as an
+ *   ancestor's would), mix-blend-mode, a filter
  *   (other than drop-shadow() alone over an opaque background under all of
  *   the text, which hides the shadow) or backdrop-filter, a text-shadow (which may add contrast
  *   this engine has no glyph-rendering model to account for), a
@@ -118,7 +122,8 @@
  *     ratio; whether each reaches it is theirs to say.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_IMAGE_OR_GRADIENT` (cantTell): a background image or gradient
- *     lies behind the text, so the color it sits on could not be worked out.
+ *     lies behind the text, or an inset box-shadow paints under part of it,
+ *     so the color it sits on could not be worked out.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_OVERLAP` (cantTell): another element paints under the text,
  *     so the background it sits on could not be worked out.
@@ -139,7 +144,8 @@
  *   - `FOREGROUND_UNPARSABLE` (cantTell): the text color does not parse.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_FILTER_OR_BACKDROP_FILTER` (cantTell): a filter or backdrop-
- *     filter changes the colors drawn, so the declared colors are not what is
+ *     filter changes the colors drawn, or a mask fades the text and its
+ *     background by amounts that vary, so the declared colors are not what is
  *     on screen.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `MIX_BLEND_MODE` (cantTell): a mix-blend-mode blends the text or its
@@ -438,7 +444,12 @@ function runInPage(ctx) {
             ? String(extraDetails.backgroundFillType || '')
             : '';
 
-        if (t === 'image') summaryKey = 'contrastComputable_cantTell_bgImage';
+        const bp =
+          extraDetails && typeof extraDetails === 'object'
+            ? String(extraDetails.blockerProperty || '')
+            : '';
+        if (bp === 'box-shadow') summaryKey = 'contrastComputable_cantTell_insetShadow';
+        else if (t === 'image') summaryKey = 'contrastComputable_cantTell_bgImage';
         else if (t === 'gradient') summaryKey = 'contrastComputable_cantTell_bgGradient';
         else if (t === 'imageAndGradient')
           summaryKey = 'contrastComputable_cantTell_bgImageAndGradient';
@@ -450,6 +461,7 @@ function runInPage(ctx) {
             ? String(extraDetails.blockerProperty || '')
             : '';
         if (bp === 'filter') summaryKey = 'contrastComputable_cantTell_filter';
+        else if (bp === 'mask-image') summaryKey = 'contrastComputable_cantTell_mask';
         else if (bp === 'backdrop-filter')
           summaryKey = 'contrastComputable_cantTell_backdropFilter';
         else summaryKey = 'contrastComputable_cantTell_filterOrBackdropFilter';
@@ -527,6 +539,9 @@ function runInPage(ctx) {
               ? {
                   blockerProperty: details.blockerProperty ? String(details.blockerProperty) : '',
                   blockerValue: details.blockerValue ? String(details.blockerValue) : '',
+                  // What paints part of the text in a color of its own
+                  // (PSEUDO_ELEMENT_COLOR), as p::first-letter.
+                  blockerSelector: details.blockerSelector ? String(details.blockerSelector) : '',
                   // The element that carries it, as <div class="hero">, and
                   // the same where it is an ancestor of the text.
                   blockerElement: details.blockerElement ? String(details.blockerElement) : '',

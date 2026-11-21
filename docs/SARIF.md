@@ -130,6 +130,8 @@ The finding's identity does not include the viewport, and does not need to: the 
 | `allowProfilesNotRun` | `false` | A scan of several profiles that ran fewer than it asked for (`engine.profilesNotRun`) counted less than it was asked to: each profile not run is an `error` notification, and the invocation is not `executionSuccessful`. `true` makes them warnings. A value other than `true` or `false` throws a `TypeError`. |
 | `packs` | none | The packs the scan ran (`engineOptions.packs`): in Node, a pack rule's undecided findings carry the steps of its own `meta.review` (`properties.howToCheck`). |
 
+`null` options are no options. A key the report doesn't read that looks like a misspelling of one it does (`categroy`, or `baseline` for `baselineEntries`) is ignored with a `console.warn` naming the option meant, as a scan warns about `engineOptions`.
+
 ## Combining with `--baseline`
 
 A generic SARIF consumer has no "known, don't gate on this" concept of its own — the only faithful way to honor a baseline in SARIF output is to omit already-known `fail` occurrences entirely, rather than downgrade them to `warning`:

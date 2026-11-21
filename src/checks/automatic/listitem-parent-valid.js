@@ -12,9 +12,12 @@
  *   Applies to <li> elements that have a parent element.
  * @expectation
  *   The parent is <ul>/<ol>/<menu> with no role override (all three have
- *   the implicit role list), or an element with an
- *   explicit role of "list", "directory" (deprecated, but a required parent
- *   of listitem in WAI-ARIA 1.2), "presentation", or "none". An <li> used
+ *   the implicit role list) or with role "presentation" or "none" (the
+ *   list's presentation passes to its <li> children), or an element with
+ *   an explicit role of "list" or "directory" (deprecated, but a required
+ *   parent of listitem in WAI-ARIA 1.2). role "presentation" or "none" on
+ *   any other element (<div role="none">) only removes that element's own
+ *   role: the <li> is still in no list. An <li> used
  *   outside a real list container (e.g. as a generic flex/grid item under
  *   a <div>) is not exposed as a list item to assistive technologies.
  *   It FAILS where the page still draws the <li> as a list item (display
@@ -27,10 +30,13 @@
  *   `list-style: none` set that way still reads as a marker.
  * @reports
  *   - `reasonCode`: `LIST_ROLE_OVERRIDDEN` when the parent is a <ul>, <ol>
- *     or <menu> whose explicit role replaces list (`<ul role="tablist">`),
- *     asked about, leaning fail where the <li> is drawn as a list item;
- *     `LISTITEM_INVALID_PARENT` otherwise, which fails where the <li> is
- *     drawn as a list item and is asked about where it is not.
+ *     or <menu> whose explicit role replaces list (`<ul role="tablist">`):
+ *     under a composite widget role it fails where the <li> is drawn as a
+ *     list item and is asked about where it is not; under another role
+ *     (navigation, group, region...) it is asked about, leaning fail where
+ *     the <li> is drawn as a list item. `LISTITEM_INVALID_PARENT`
+ *     otherwise, which fails where the <li> is drawn as a list item and is
+ *     asked about where it is not.
  *   - `parentElement`: the tag name of the `<li>`'s parent, the container
  *     it is in instead of a list.
  *   - `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
@@ -42,11 +48,15 @@
  *     item. It fails where the li is drawn as a list item.
  *     Basis: WCAG 1.3.1; H48; HTML li element contexts (MUST); WAI-ARIA 1.2
  *     listitem role (MUST).
- *   - `LIST_ROLE_OVERRIDDEN` (cantTell): the li's parent is a ul, ol or
- *     menu whose explicit role replaces list, so the li is not in a list.
- *     Whether losing the list loses information depends on the content (a
- *     few links in a <ul role="navigation"> read as well without it), so it
- *     is asked about, leaning fail where the li is drawn as a list item.
+ *   - `LIST_ROLE_OVERRIDDEN` (fail, cantTell): the li's parent is a ul, ol
+ *     or menu whose explicit role replaces list, so the li is not in a list.
+ *     Under a composite widget role (tablist, menu, menubar, listbox,
+ *     combobox, tree, treegrid, grid, radiogroup, toolbar) the li breaks the
+ *     widget: it fails where the li is drawn as a list item. Under another
+ *     role, whether losing the list loses information depends on the
+ *     content (a few links in a <ul role="navigation"> read as well without
+ *     it), so it is asked about, leaning fail where the li is drawn as a
+ *     list item.
  *     Basis: WCAG 1.3.1; WAI-ARIA 1.2 listitem role (MUST).
  * @implementation-notes
  * - The parent is the <li>'s parent in the flat tree, as the page renders
@@ -61,16 +71,18 @@
  *   token naming a known role wins, matched in any case, and a role
  *   attribute with no known token is no role at all (the tag's native
  *   role stays). So <div role="foo list"> and <div role="LIST"> are lists,
- *   and <ul role="foo"> is still a list.
+ *   and <ul role="foo"> is still a list. A custom element with no role
+ *   attribute takes the role its ElementInternals give it, so an <li> in
+ *   an <x-list> whose internals say list is in a list.
  * - An explicit role on the parent WINS over its tag name, in either
  *   direction: a <ul role="menu"> no longer exposes role "list" (its own
  *   native role is fully replaced by the explicit one, the same "any
  *   explicit role overrides the element's native role" ARIA principle
  *   applied elsewhere in this engine), so an <li> inside it is invalid
  *   despite the <ul> tag (e.g. `<ul role="menu"><li>...`). Conversely
- *   role="presentation"/"none" on the parent is still a valid
- *   (list-semantics-suppressing) parent, the accepted parent roles are
- *   presentation, none, and list.
+ *   role="presentation"/"none" on a <ul>, <ol> or <menu> parent is still
+ *   a valid (list-semantics-suppressing) parent; on another element it is
+ *   not.
  * - The SAME "explicit role wins" principle applies to the <li> ELEMENT
  *   ITSELF: an <li role="tab">/role="menuitem">/role="presentation"> etc.
  *   is exposed to AT with that role, never "listitem". The whole point
@@ -126,10 +138,12 @@ function runInPage(ctx) {
   // The resolved explicit role: the first token of the role fallback list
   // naming a known role, lower-cased, or '' when none does (the element then
   // keeps its native role).
+  // The role an author gave: by the role attribute or, failing that, by a
+  // custom element's ElementInternals (<x-list> whose internals say list).
   function resolvedRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -153,6 +167,22 @@ function runInPage(ctx) {
   const failOccurrences = [];
   const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // Composite widget roles (and toolbar), whose children must have the
+  // roles the widget expects: an <li> left in one is a broken widget, not a
+  // list whose loss may or may not matter.
+  const WIDGET_CONTAINER_ROLES = new Set([
+    'combobox',
+    'grid',
+    'listbox',
+    'menu',
+    'menubar',
+    'radiogroup',
+    'tablist',
+    'toolbar',
+    'tree',
+    'treegrid'
+  ]);
 
   // Whether the page draws the <li> as a list item: display list-item with a
   // marker. An item a reader sees that the markup puts in no list is a
@@ -210,16 +240,28 @@ function runInPage(ctx) {
     const explicitRole = resolvedRole(parent);
 
     let valid;
-    if (explicitRole) {
+    if (explicitRole === 'presentation' || explicitRole === 'none') {
+      // role none or presentation is a valid parent only on a <ul>, <ol> or
+      // <menu>: the list's presentation passes to its <li> children
+      // (WAI-ARIA 1.2, required owned elements), which are no list items
+      // then. On any other element (<div role="none">) it only removes that
+      // element's own role, and the <li> is still in no list. A role none
+      // wrapper inside a list (<ul><div role="none"><li>) is left as it was,
+      // passing here, pending a decision (round 9, N9-5 b); list-children-valid
+      // reports the wrapper.
+      const grand = flatParent(parent);
+      const grandTag = grand && dom.tagName(grand) ? dom.tagName(grand).toLowerCase() : '';
+      const grandRole = grand ? resolvedRole(grand) : '';
+      const inList =
+        grandRole === 'list' ||
+        (!grandRole && (grandTag === 'ul' || grandTag === 'ol' || grandTag === 'menu'));
+      valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu' || inList;
+    } else if (explicitRole) {
       // An explicit role always wins over the tag's native role, in either
       // direction, see the header comment.
       // role="directory" is a required parent of listitem in WAI-ARIA 1.2,
       // deprecated but valid (aria-deprecated-role flags it).
-      valid =
-        explicitRole === 'list' ||
-        explicitRole === 'directory' ||
-        explicitRole === 'presentation' ||
-        explicitRole === 'none';
+      valid = explicitRole === 'list' || explicitRole === 'directory';
     } else {
       valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu';
     }
@@ -235,6 +277,43 @@ function runInPage(ctx) {
     // few links in a navigation read as well without it), so it is asked
     // about, leaning fail where the item is drawn as one of a list.
     const { bucket, extra } = tierFor(el);
+    // Under a composite widget role (a <ul role="tablist">, a menu, a list
+    // box...) the stray item breaks a widget whose children must have the
+    // roles it expects: the <li> fails where it is drawn as a list item, and
+    // is asked about as any misplaced <li> is where it is not. Under a
+    // landmark or structure role (navigation, group, region...) the list is
+    // asked about as below.
+    if (
+      explicitRole &&
+      WIDGET_CONTAINER_ROLES.has(explicitRole) &&
+      (parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu')
+    ) {
+      const fails = extra.occurrenceOutcome === 'fail';
+      bucket.push(
+        helpers.reportOccurrence(el, {
+          ...extra,
+          summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
+          hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
+          i18n: {
+            summaryKey: fails
+              ? 'listitemParentValid_summary_fail_listRoleOverridden'
+              : 'listitemParentValid_summary_cantTell_listRoleOverridden',
+            hintKey: fails
+              ? 'listitemParentValid_hint_fail_listRoleOverridden'
+              : 'listitemParentValid_hint_cantTell_listRoleOverridden',
+            params: { parentElement: parentTag, parentRole: explicitRole }
+          },
+          data: {
+            details: {
+              reasonCode: 'LIST_ROLE_OVERRIDDEN',
+              parentElement: parentTag,
+              parentRole: explicitRole
+            }
+          }
+        })
+      );
+      continue;
+    }
     if (explicitRole && (parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu')) {
       const drawn = extra.occurrenceOutcome === 'fail';
       cantTellOccurrences.push(

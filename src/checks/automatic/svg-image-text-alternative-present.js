@@ -14,6 +14,13 @@
  *   if they are tabbable or referenced by IDREF relationships (per engine eligibility checks).
  *   SVG <image> elements whose role attribute resolves to presentation or none (the first known
  *   role token, in any case) are excluded only when they are not focusable.
+ *   An <image> inside an element whose children are presentational (role
+ *   img, button, checkbox, tab..., by its role attribute, its
+ *   ElementInternals or, for <button>, <meter>, <option> and <progress>,
+ *   natively) or inside an <svg> with no role that is already named (a
+ *   <title> child, aria-label, aria-labelledby) is out of scope: it is
+ *   part of that image or control, whose name speaks for it, and no image
+ *   of its own in the accessibility tree (Chromium leaves it out).
  * @expectation
  *   Each applicable SVG <image> element has a text alternative via:
  *   - a non-empty direct <title> child, OR
@@ -116,6 +123,74 @@ function runInPage(ctx) {
     return svgChildText(el, 'title');
   }
 
+  // WAI-ARIA roles with "Children Presentational: True" (and the module
+  // roles that inherit it), and the native elements that have one of them
+  // and can hold an <svg>. Inside such an element, or inside an <svg> that
+  // is already named, an <image> is part of a single image or control
+  // whose own name speaks for it: it is no image of its own in the
+  // accessibility tree (Chromium leaves it out).
+  const PRESENTATIONAL_CHILDREN_ROLES = new Set([
+    'button',
+    'checkbox',
+    'doc-pagebreak',
+    'graphics-symbol',
+    'image',
+    'img',
+    'math',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'scrollbar',
+    'separator',
+    'slider',
+    'switch',
+    'tab'
+  ]);
+  const NATIVE_PRESENTATIONAL_CHILDREN = new Set(['button', 'meter', 'option', 'progress']);
+  const composedParent =
+    typeof helpers.composedParent === 'function'
+      ? helpers.composedParent
+      : (n) => (n && dom.parentElement(n) ? dom.parentElement(n) : null);
+
+  // Whether a named <svg> or an element whose children are presentational
+  // holds `el`, so its name or role covers the <image>.
+  function insideWholeImageOrControl(el) {
+    let guard = 0;
+    for (let a = composedParent(el); a && guard++ < 500; a = composedParent(a)) {
+      if (dom.nodeType(a) !== 1) continue;
+      const author = (() => {
+        try {
+          return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+            ? helpers.aria.getAuthorRole(a)
+            : '';
+        } catch {
+          return '';
+        }
+      })();
+      if (author) {
+        if (PRESENTATIONAL_CHILDREN_ROLES.has(author)) return true;
+        if (author !== 'none' && author !== 'presentation') continue;
+      }
+      const local = String(dom.localName(a) || '').toLowerCase();
+      const ns = dom.namespaceURI(a);
+      if (ns === 'http://www.w3.org/1999/xhtml' && NATIVE_PRESENTATIONAL_CHILDREN.has(local))
+        return true;
+      if (ns === 'http://www.w3.org/2000/svg' && local === 'svg' && !author) {
+        if (titleText(a)) return true;
+        try {
+          const n = getAccessibleNameInfo ? getAccessibleNameInfo(a, ctx) : null;
+          if (n && n.present && trim(n.value)) return true;
+        } catch {
+          // no name read: not covered
+        }
+      }
+    }
+    return false;
+  }
+
   const rawImages = (() => {
     try {
       return [...((queryAllSmart ? queryAllSmart('image') : queryAll('image')) || [])];
@@ -190,6 +265,8 @@ function runInPage(ctx) {
         helpers.isPresentationalRoleIgnored(el);
       if (!focusable && !keptByGlobal) continue;
     }
+
+    if (insideWholeImageOrControl(el)) continue;
 
     applicableCount += 1;
 

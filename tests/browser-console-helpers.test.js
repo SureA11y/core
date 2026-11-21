@@ -438,3 +438,22 @@ test('run() refuses engine options wrapped in engineOptions, and says which keys
   assert.match(warnings[0], /run: "foo" is not an engine option/);
   dom.window.close();
 });
+
+test('run() leaves a near typo of an option to the scan, which names the option meant, and takes report (round 8, NW-14)', async () => {
+  const dom = await load();
+  const { a11ycore } = dom.window;
+  const warnings = [];
+  const warn = dom.window.console.warn;
+  dom.window.console.warn = (m) => warnings.push(String(m));
+  try {
+    await a11ycore.run({ lcoale: 'fr', runOnly: ['img-alt-present'] });
+    assert.equal(warnings.length, 1, JSON.stringify(warnings));
+    assert.match(warnings[0], /"lcoale".*did you mean "locale"/);
+    warnings.length = 0;
+    await a11ycore.run({ report: { title: 'T' }, runOnly: ['img-alt-present'] });
+    assert.deepEqual(warnings, []);
+  } finally {
+    dom.window.console.warn = warn;
+  }
+  dom.window.close();
+});

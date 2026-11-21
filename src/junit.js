@@ -58,7 +58,8 @@ const {
   standardOfEntryIn,
   wcagScopeOf,
   occurrenceOutcome,
-  leaningOccurrencesOf
+  leaningOccurrencesOf,
+  reporterOptions
 } = require('./scan-result.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -459,7 +460,19 @@ function frameSuites(result, frame, baseline, opts, totals) {
   });
 }
 
-function renderJunitReport(result, options = {}) {
+const JUNIT_OPTIONS = [
+  'cantTellAs',
+  'leanFailAs',
+  'leanFailWcagOnly',
+  'allowProfilesNotRun',
+  'includeNotApplicable',
+  'baselineEntries',
+  'packs',
+  'name'
+];
+
+function renderJunitReport(result, given) {
+  const options = reporterOptions('renderJunitReport', given, JUNIT_OPTIONS);
   let frames = framesOf(result, 'renderJunitReport');
   // cantTellAs is 'skipped' (the default) or 'failure', in any case. Another
   // value is a mistake that would quietly not gate, so it throws.
@@ -492,6 +505,15 @@ function renderJunitReport(result, options = {}) {
       `renderJunitReport: leanFailWcagOnly must be true or false, not ${JSON.stringify(leanFailWcagOnly)}`
     );
   }
+  // includeNotApplicable: true adds the notApplicable rules as skipped
+  // tests. Checked as the other switches are: 'true' or 1 read as off
+  // without a word.
+  const includeNotApplicable = options.includeNotApplicable;
+  if (includeNotApplicable != null && typeof includeNotApplicable !== 'boolean') {
+    throw new TypeError(
+      `renderJunitReport: includeNotApplicable must be true or false, not ${JSON.stringify(includeNotApplicable)}`
+    );
+  }
   // allowProfilesNotRun: true accepts a scan of several profiles that ran
   // fewer than it asked for; by default each profile not run is an error.
   const allowProfilesNotRun = options.allowProfilesNotRun;
@@ -504,7 +526,7 @@ function renderJunitReport(result, options = {}) {
     cantTellAs,
     leanFailAs,
     leanFailWcagOnly: leanFailWcagOnly === true,
-    includeNotApplicable: options.includeNotApplicable === true
+    includeNotApplicable: includeNotApplicable === true
   };
   // A finding that gates as a likely failure says how to confirm it: a
   // result that comes without the steps (a binding's) gains them, in Node.

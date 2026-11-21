@@ -12,9 +12,15 @@
  *   Applies, in a browser, to the elements in the tab order that are drawn
  *   and scroll with the page, and to the boxes the page keeps in place over
  *   it: `position: fixed` or `sticky` boxes that draw something (a
- *   background, an image or a picture), such as a sticky header or footer, a
- *   cookie banner or a chat widget. Without a layout (jsdom) nothing can be
- *   measured, and the rule is notApplicable.
+ *   background, an image or a picture, an inset box-shadow filling them, or
+ *   a ::before or ::after positioned over them), such as a sticky header or
+ *   footer, a cookie banner or a chat widget. A fixed box inside an
+ *   ancestor that is its containing block (a transform, translate, rotate,
+ *   scale, perspective, filter or backdrop-filter, transform-style:
+ *   preserve-3d, layout or paint containment, a container type, or
+ *   will-change of one of those) is placed against that ancestor and
+ *   scrolls with it, so it is not kept in place. Without a layout (jsdom) nothing can be measured,
+ *   and the rule is notApplicable.
  * @expectation
  *   No element in the tab order can take focus entirely hidden behind such a
  *   box. A browser scrolls a focused element into view only when it is not
@@ -69,6 +75,10 @@
  *     with `aria-controls`: content the user opened, which may cover the
  *     focused element if it closes without moving focus.
  *   - `examples`: up to 5 of the elements it can hide, each `{ tag, text }`.
+ *   - `notScrolled`: `true` where the page did not scroll when the rule
+ *     scrolled an element under the box (a `scrollTo` the page replaced
+ *     with one that does nothing, say), so nothing was hit-tested. The box
+ *     is asked about without a lean, and `confirmedBy` is `null`.
  *   - `confirmedBy`: the element the rule scrolled under the box to check
  *     that the box is drawn on top of it, as `{ tag, text }`.
  * @reason-codes
@@ -78,7 +88,9 @@
  *     hidden behind it. It leans fail: the box covers them whatever the user
  *     does, unless the user opened it and can close it without moving focus.
  *     A box a control marks as opened (`openedByUser`) gets no lean: whether
- *     it closes without moving focus is for a person to try.
+ *     it closes without moving focus is for a person to try. Nor does a box
+ *     the rule could not check because the page did not scroll
+ *     (`notScrolled`).
  *     Basis: WCAG 2.4.11; F110; C43.
  *   - `FOCUS_OBSCURED_PARTLY` (cantTell): with `obscured: 'partly'`
  *     (focus-not-obscured-enhanced), elements in the tab order can take focus
@@ -102,11 +114,22 @@
  * - A box draws something when it, or the part of it hit, has a background
  *   color that isn't transparent or a background image, or is an image, a
  *   picture, a video, a canvas or a frame, and nothing between it and the
- *   page is at opacity 0. A transparent box over the element hides nothing.
+ *   page is at opacity 0. An inset box-shadow whose spread closes its hole
+ *   (blur included) draws over all of the box, and a ::before or ::after
+ *   with a background, positioned absolutely against its element or fixed,
+ *   draws over the area its offsets give it (a header colored by a
+ *   `::before` at `inset: 0`); one placed any other way isn't counted. A
+ *   transparent box over the element hides nothing.
  * - The hit test (elementFromPoint) skips boxes with pointer-events: none,
  *   so such a box isn't confirmed and isn't reported.
- * - Scrolling is instant and undone before the rule returns. The page's
- *   scroll listeners still see it, after the rule has measured.
+ * - Scrolling is instant and undone before the rule returns. Where the
+ *   page is not where it was scrolled to afterwards, the element is not
+ *   measured there: a box none of whose elements could be checked is
+ *   reported with `notScrolled`, not passed. The `scroll`
+ *   and `scrollend` the browser fires for it afterwards are kept from the
+ *   page's listeners by a capturing listener on the window, which goes once
+ *   they have passed (or after half a second). A capturing listener the page
+ *   put on the window itself before the scan still sees them.
  * - What appears later, such as a chat bubble after a delay, is only seen if
  *   it is there when the scan runs, at the scan's window size.
  */
@@ -166,28 +189,83 @@ function runInPage(ctx) {
     const m = /^(-?\d*\.?\d+)px$/.exec(lower(v));
     return m ? Number.parseFloat(m[1]) : 0;
   };
-  // A length a browser may keep as written: px, a percentage of `ref`, or a
-  // calc() adding the two ("calc(10% + 2px)"). Anything else reads as 0.
+  // A length a browser may keep as written: px, a percentage of `ref`, and
+  // calc(), min(), max() and clamp() of those ("calc(10% + 2px)", "max(10%,
+  // 60px)"): Chromium keeps scroll-padding in that form while a percentage is
+  // in it. Anything else, or anything it can't read, reads as 0.
   const lengthOf = (v, ref) => {
     const raw = lower(v);
     if (!raw || raw === 'auto') return 0;
-    const pct = /^(-?\d*\.?\d+)%$/.exec(raw);
-    if (pct) return (Number.parseFloat(pct[1]) * ref) / 100;
-    const calc = /^calc\((.*)\)$/.exec(raw);
-    if (calc) {
-      let total = 0;
-      let rest = calc[1].replace(/\s+/g, '');
-      const term = /^([+-]?)(\d*\.?\d+)(px|%)/;
-      while (rest) {
-        const m = term.exec(rest);
-        if (!m) return 0;
-        const n = Number.parseFloat(m[2]) * (m[1] === '-' ? -1 : 1);
-        total += m[3] === '%' ? (n * ref) / 100 : n;
-        rest = rest.slice(m[0].length);
+    const tokens = raw.match(/\d*\.?\d+(?:px|%)?|[a-z-]+\(|[()+\-*/,]|\S/g) || [];
+    let i = 0;
+    const peek = () => tokens[i];
+    const expect = (t) => {
+      if (tokens[i++] !== t) throw new Error('unreadable');
+    };
+    // Each value is { n, len }: a number, and whether it is a length (px).
+    let sum = null;
+    const primary = () => {
+      const t = tokens[i++];
+      if (t === '(' || t === 'calc(') {
+        const value = sum();
+        expect(')');
+        return value;
       }
-      return total;
+      if (t === 'min(' || t === 'max(' || t === 'clamp(') {
+        const args = [sum()];
+        while (peek() === ',') {
+          i += 1;
+          args.push(sum());
+        }
+        expect(')');
+        if (!args.every((a) => a.len || a.n === 0)) throw new Error('unreadable');
+        const n = args.map((a) => a.n);
+        if (t === 'min(') return { n: Math.min(...n), len: true };
+        if (t === 'max(') return { n: Math.max(...n), len: true };
+        if (n.length !== 3) throw new Error('unreadable');
+        return { n: Math.max(n[0], Math.min(n[1], n[2])), len: true };
+      }
+      if (t === '-' || t === '+') {
+        const value = primary();
+        return { n: t === '-' ? -value.n : value.n, len: value.len };
+      }
+      const m = /^(\d*\.?\d+)(px|%)?$/.exec(t || '');
+      if (!m) throw new Error('unreadable');
+      const n = Number.parseFloat(m[1]);
+      if (!m[2]) return { n, len: false };
+      return { n: m[2] === '%' ? (n * ref) / 100 : n, len: true };
+    };
+    const product = () => {
+      let value = primary();
+      while (peek() === '*' || peek() === '/') {
+        const op = tokens[i++];
+        const other = primary();
+        if (op === '*') {
+          if (value.len && other.len) throw new Error('unreadable');
+          value = { n: value.n * other.n, len: value.len || other.len };
+        } else {
+          if (other.len || other.n === 0) throw new Error('unreadable');
+          value = { n: value.n / other.n, len: value.len };
+        }
+      }
+      return value;
+    };
+    sum = () => {
+      let value = product();
+      while (peek() === '+' || peek() === '-') {
+        const op = tokens[i++];
+        const other = product();
+        value = { n: op === '+' ? value.n + other.n : value.n - other.n, len: true };
+      }
+      return value;
+    };
+    try {
+      const value = sum();
+      if (i !== tokens.length || (!value.len && value.n !== 0)) return 0;
+      return Number.isFinite(value.n) ? value.n : 0;
+    } catch {
+      return 0;
     }
-    return px(raw);
   };
   const styleOf = (el) => {
     try {
@@ -218,7 +296,48 @@ function runInPage(ctx) {
 
   // ---- The elements in the tab order that scroll with the page ----
   const positionOf = (cs) => lower(cs && cs.position);
-  // The nearest fixed or sticky box an element is in (itself included).
+  // Whether a box is the containing block of the fixed boxes inside it
+  // (CSS Transforms, Filter Effects, Containment, Will Change): a fixed box
+  // there is placed against it and scrolls with it, not with the window.
+  const NONE = (v) => !lower(v) || lower(v) === 'none';
+  function holdsFixed(cs) {
+    if (!cs) return false;
+    if (
+      !NONE(cs.transform) ||
+      !NONE(cs.translate) ||
+      !NONE(cs.rotate) ||
+      !NONE(cs.scale) ||
+      !NONE(cs.perspective) ||
+      !NONE(cs.filter) ||
+      !NONE(cs.backdropFilter) ||
+      !NONE(cs.webkitBackdropFilter)
+    )
+      return true;
+    if (lower(cs.transformStyle) === 'preserve-3d') return true;
+    if (/\b(paint|layout|strict|content)\b/.test(lower(cs.contain))) return true;
+    if (/size/.test(lower(cs.containerType))) return true;
+    return /\b(transform|translate|rotate|scale|perspective|filter|backdrop-filter|contain)\b/.test(
+      lower(cs.willChange)
+    );
+  }
+  // Whether a fixed box is fixed to the window: no box it is in, up to the
+  // page, is its containing block. Up the composed tree, as the browser
+  // places it.
+  function fixedToWindow(el) {
+    for (
+      let n = typeof helpers.composedParent === 'function' ? helpers.composedParent(el) : null,
+        i = 0;
+      n && dom.nodeType(n) === 1 && n !== html && i < 10000;
+      n = helpers.composedParent(n), i++
+    ) {
+      if (holdsFixed(styleOf(n))) return false;
+    }
+    return true;
+  }
+  // The nearest fixed or sticky box an element is in (itself included). A
+  // fixed box inside its containing block (a transformed or filtered
+  // ancestor) scrolls with the page, as anything else in that block does,
+  // so it counts as neither.
   const pinnedCache = new Map();
   function pinnedAncestor(el) {
     const chain = [];
@@ -230,7 +349,7 @@ function runInPage(ctx) {
       }
       chain.push(n);
       const pos = positionOf(styleOf(n));
-      if (pos === 'fixed' || pos === 'sticky') {
+      if (pos === 'sticky' || (pos === 'fixed' && fixedToWindow(n))) {
         found = n;
         break;
       }
@@ -367,6 +486,122 @@ function runInPage(ctx) {
     const alpha = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
     return Number.isFinite(alpha) && alpha >= 0.99;
   }
+  // A color's alpha as the browser serializes it (rgb() or rgba()), null
+  // for one in another form.
+  function alphaOf(v) {
+    const m = /^rgba?\(([^)]*)\)$/.exec(lower(v));
+    if (!m) return null;
+    const parts = m[1].split(/[\s,/]+/).filter(Boolean);
+    const a = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
+    return Number.isFinite(a) ? a : null;
+  }
+  // An inset box-shadow is painted over the element's background, inside
+  // its padding box: one whose spread closes the hole in the middle, blur
+  // included, paints all of it (a header colored with `inset 0 0 0 100px`).
+  // 'opaque', 'paints' or null.
+  function insetShadowFill(el, cs) {
+    const raw = trim(cs && cs.boxShadow);
+    if (!raw || lower(raw) === 'none' || !/\binset\b/i.test(raw)) return null;
+    let r;
+    try {
+      r = dom.getBoundingClientRect(el);
+    } catch {
+      r = null;
+    }
+    if (!r) return null;
+    const w = r.width - px(cs.borderLeftWidth) - px(cs.borderRightWidth);
+    const h = r.height - px(cs.borderTopWidth) - px(cs.borderBottomWidth);
+    let best = null;
+    for (const layer of raw.split(/,(?![^(]*\))/)) {
+      if (!/\binset\b/i.test(layer)) continue;
+      const color = /(?:rgba?|hsla?|color|lab|lch|oklab|oklch|hwb)\([^)]*\)|#[0-9a-f]+/i.exec(
+        layer
+      );
+      const a = color ? alphaOf(color[0]) : null;
+      if (a === null || a <= 0.05) continue;
+      const lengths = (layer.replace(color ? color[0] : '', '').match(/-?\d*\.?\d+px/g) || []).map(
+        (v) => Number.parseFloat(v)
+      );
+      const blur = Math.max(0, lengths[2] || 0);
+      const spread = lengths[3] || 0;
+      if (Math.min(w, h) - 2 * spread + blur > 0) continue;
+      if (a >= 0.99) return 'opaque';
+      best = 'paints';
+    }
+    return best;
+  }
+  // The ::before and ::after that paint a color or an image over an area of
+  // their own: an absolutely positioned one against its positioned element,
+  // or a fixed one against the window, as a header's colored ::before
+  // spread over it (inset: 0) is. Each with that area, where it is now, and
+  // whether it is opaque. One placed any other way can't be told where it
+  // paints, and doesn't count.
+  function pseudoPaint(el, cs) {
+    const out = [];
+    if (!cs || lower(cs.display) === 'none') return out;
+    const hostPositioned = !!positionOf(cs) && positionOf(cs) !== 'static';
+    for (const which of ['::before', '::after']) {
+      let pcs;
+      try {
+        pcs = view.getComputedStyle(el, which);
+      } catch {
+        pcs = null;
+      }
+      if (!pcs) continue;
+      const content = trim(pcs.content);
+      if (!content || content === 'none' || content === 'normal') continue;
+      if (lower(pcs.display) === 'none' || lower(pcs.visibility) !== 'visible') continue;
+      const op = Number.parseFloat(pcs.opacity);
+      if (Number.isFinite(op) && op <= 0.01) continue;
+      const image = !!trim(pcs.backgroundImage) && lower(pcs.backgroundImage) !== 'none';
+      const a = alphaOf(pcs.backgroundColor);
+      if (!image && !(a !== null && a > 0.05)) continue;
+      const pos = positionOf(pcs);
+      let box = null;
+      if (pos === 'fixed') {
+        box = {
+          left: px(pcs.left),
+          top: px(pcs.top),
+          right: (Number(dom.get(html, 'clientWidth')) || 0) - px(pcs.right),
+          bottom: vh - px(pcs.bottom)
+        };
+      } else if (pos === 'absolute' && hostPositioned) {
+        const r = dom.getBoundingClientRect(el);
+        if (!r) continue;
+        box = {
+          left: r.left + px(cs.borderLeftWidth) + px(pcs.left),
+          top: r.top + px(cs.borderTopWidth) + px(pcs.top),
+          right: r.right - px(cs.borderRightWidth) - px(pcs.right),
+          bottom: r.bottom - px(cs.borderBottomWidth) - px(pcs.bottom)
+        };
+      }
+      if (!box || box.right - box.left <= 0 || box.bottom - box.top <= 0) continue;
+      out.push({
+        box,
+        opaque: (image || a >= 0.99) && !(Number.isFinite(op) && op < 0.99)
+      });
+    }
+    return out;
+  }
+  // Whether an element draws, at a point of the window, what hides an
+  // element under it: anything for 2.4.12, something opaque for 2.4.11.
+  // Its own background, or an inset shadow filling it, cover its box; a
+  // ::before or ::after its own area.
+  function drawnAt(el, cs, x, y, anything) {
+    if (anything ? paints(el, cs) : opaque(el, cs)) return true;
+    if (faded(el)) return false;
+    const fill = insetShadowFill(el, cs);
+    if (fill === 'opaque' || (anything && fill)) return true;
+    return pseudoPaint(el, cs).some(
+      (p) =>
+        (anything || p.opaque) &&
+        x >= p.box.left &&
+        x <= p.box.right &&
+        y >= p.box.top &&
+        y <= p.box.bottom
+    );
+  }
+
   // Whether an element, and everything up to the page, is drawn at all.
   function shown(el) {
     for (let n = el, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
@@ -393,6 +628,16 @@ function runInPage(ctx) {
     if (r && r.width > 0 && r.height > 0 && shown(m)) modals.push(m);
   }
   const inModal = (el) => modals.some((m) => dom.contains(m, el));
+  // The parent in the composed tree, through a shadow root to its host, and
+  // whether a node is inside another there.
+  const composedUp = (n) =>
+    typeof helpers.composedParent === 'function' ? helpers.composedParent(n) : dom.parentElement(n);
+  const inComposed = (node, container) => {
+    for (let cur = node, i = 0; cur && i < 100000; cur = composedUp(cur), i++) {
+      if (cur === container) return true;
+    }
+    return false;
+  };
 
   // A sticky box stays inside its containing block, the nearest ancestor
   // that is no inline box, no display: contents and no table row, row group
@@ -433,8 +678,36 @@ function runInPage(ctx) {
     if (!cs || lower(cs.display) === 'none') return null;
     const root = pinnedAncestor(el);
     if (!root) return null;
-    if (!paints(el, cs)) return null;
-    const r = dom.getBoundingClientRect(el);
+    // What it draws: its background, or an inset shadow filling it, over
+    // its box; or else a ::before or ::after, over its own area.
+    let r = null;
+    let isOpaque = false;
+    if (paints(el, cs)) {
+      r = dom.getBoundingClientRect(el);
+      isOpaque = opaque(el, cs);
+    }
+    if (!isOpaque) {
+      const fill = insetShadowFill(el, cs);
+      if (fill) {
+        r = r || dom.getBoundingClientRect(el);
+        isOpaque = fill === 'opaque' && !faded(el);
+      }
+    }
+    if (!r || !isOpaque) {
+      const pseudos = pseudoPaint(el, cs);
+      const p = pseudos.find((x) => x.opaque) || (r ? null : pseudos[0]);
+      if (p) {
+        r = {
+          left: p.box.left,
+          right: p.box.right,
+          top: p.box.top,
+          bottom: p.box.bottom,
+          width: p.box.right - p.box.left,
+          height: p.box.bottom - p.box.top
+        };
+        isOpaque = p.opaque && !faded(el);
+      }
+    }
     if (!r || r.width <= 0 || r.height <= 0) return null;
     if (!shown(el)) return null;
     const rootCs = el === root ? cs : styleOf(root);
@@ -461,7 +734,7 @@ function runInPage(ctx) {
       el,
       root,
       position,
-      opaque: opaque(el, cs),
+      opaque: isOpaque,
       top,
       bottom: top + r.height,
       left: r.left,
@@ -581,7 +854,53 @@ function runInPage(ctx) {
     opened.some((t) => t === root || dom.contains(root, t) || dom.contains(t, root));
 
   // ---- Confirm with the browser: scroll a few there and hit-test ----
+  // Scrolling the window makes the browser fire `scroll` and `scrollend` at
+  // the page once the scan is over, though the page is put back where it
+  // was: a page that loads a widget on its first scroll would change under
+  // the next scan. A capturing listener on the window keeps those two
+  // events, for the window's own scrolling only, from the page's listeners,
+  // and goes once the scrollend has passed (where the browser has none, the
+  // scroll), or a moment later where no event comes. Shared with the
+  // variant run in the same scan (focus-not-obscured-enhanced).
+  const guards = memoOf('scrollGuard');
+  function guardScrollEvents() {
+    const current = guards.get(view);
+    if (current && current.active) return;
+    const guard = { active: true };
+    guards.set(view, guard);
+    const withScrollEnd = 'onscrollend' in view;
+    const remove = () => {
+      if (!guard.active) return;
+      guard.active = false;
+      try {
+        dom.removeEventListener(view, 'scroll', stop, true);
+        dom.removeEventListener(view, 'scrollend', stop, true);
+      } catch {}
+    };
+    function stop(e) {
+      if (!guard.active || (e.target !== document && e.target !== view)) return;
+      e.stopImmediatePropagation();
+      if (e.type === 'scrollend' || !withScrollEnd) remove();
+    }
+    try {
+      dom.addEventListener(view, 'scroll', stop, true);
+      dom.addEventListener(view, 'scrollend', stop, true);
+      if (typeof view.setTimeout === 'function') view.setTimeout(remove, 500);
+    } catch {
+      remove();
+    }
+  }
+  let moved = false;
+  // Whether the page moved, where it had to: a page that replaced scrollTo
+  // with one that does nothing leaves it where it was, and the hit test
+  // there would measure another place.
+  const currentScrollY = () => Number(dom.get(view, 'scrollY')) || 0;
   const scrollTo = (y) => {
+    const from = currentScrollY();
+    if (y !== scrollY && !moved) {
+      moved = true;
+      guardScrollEvents();
+    }
     try {
       dom.call(view, 'scrollTo', { left: scrollX, top: y, behavior: 'instant' });
     } catch {
@@ -589,11 +908,13 @@ function runInPage(ctx) {
         dom.call(view, 'scrollTo', scrollX, y);
       } catch {}
     }
+    return Math.abs(y - from) < 1 || Math.abs(currentScrollY() - from) >= 1;
   };
   const FRACTIONS = [0.15, 0.5, 0.85];
   function hiddenShare(hit) {
     const { c, at, cover } = hit;
-    scrollTo(Math.max(0, Math.min(maxScroll, c.docTop - at)));
+    // Not scrolled there: nothing to measure (null).
+    if (!scrollTo(Math.max(0, Math.min(maxScroll, c.docTop - at)))) return null;
     const r = dom.getBoundingClientRect(c.el);
     let covered = 0;
     let total = 0;
@@ -616,15 +937,17 @@ function runInPage(ctx) {
         } catch {
           top = null;
         }
-        if (!top || top === c.el || dom.contains(c.el, top) || dom.contains(top, c.el)) continue;
-        if (!dom.contains(cover.root, top)) continue;
+        // The hit is read in the composed tree: it may be inside a
+        // component the cover or the focused element holds, where contains()
+        // stops at the shadow boundary (round 8, NW-2).
+        if (!top || top === c.el || inComposed(top, c.el) || inComposed(c.el, top)) continue;
+        if (!inComposed(top, cover.root)) continue;
         // Drawn there: the part hit, or a box around it within the root,
         // and for 2.4.11 drawn opaque, as what shows through hides nothing
         // entirely.
         let drawn = false;
-        for (let n = top, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
-          const ncs = styleOf(n);
-          if (partlyToo ? paints(n, ncs) : opaque(n, ncs)) {
+        for (let n = top, i = 0; n && i < 10000; n = composedUp(n), i++) {
+          if (drawnAt(n, styleOf(n), x, y, partlyToo)) {
             drawn = true;
             break;
           }
@@ -659,15 +982,23 @@ function runInPage(ctx) {
       const partly = hits.filter((h) => h.kind === 'partly');
       const ordered = [...entirely, ...partly];
       let confirmed = null;
+      // An element the page would not scroll under the box: the box can't
+      // be confirmed or cleared, so it is asked about, without a lean
+      // (round 9, R9-4).
+      let notScrolled = null;
       for (const h of ordered.slice(0, SAMPLES)) {
         checks += 1;
         const share = hiddenShare(h);
+        if (share == null) {
+          notScrolled = notScrolled || h;
+          continue;
+        }
         if (h.kind === 'entirely' ? share >= 1 : share > 0) {
           confirmed = h;
           break;
         }
       }
-      if (!confirmed) continue;
+      if (!confirmed && !notScrolled) continue;
 
       const rootCs = styleOf(entry.root);
       const position = positionOf(rootCs);
@@ -697,6 +1028,7 @@ function runInPage(ctx) {
       let hint;
       let keys;
       let lean;
+      let summaryKeys;
       const userOpenedCaution =
         'If the user opened this content and can close it without moving focus, such as with Escape, it passes.';
       if (code === 'FOCUS_OBSCURED_BEHIND_MODAL') {
@@ -749,12 +1081,18 @@ function runInPage(ctx) {
             };
       }
 
+      if (!confirmed) {
+        summary = `${count} focusable elements, such as ${firstTag}, may take focus hidden behind this ${position} ${container}, which covers ${Math.round(coverPx)}px of the window that the page still counts as in view; the page did not scroll when asked, so whether the box is drawn over them could not be checked.`;
+        summaryKeys = 'notScrolled';
+        lean = null;
+      }
+
       const baseOccurrence = {
         ...(lean ? { lean } : {}),
         summary,
         hint,
         i18n: {
-          summaryKey: `focusNotObscuredMinimum_summary_cantTell_${keys}`,
+          summaryKey: `focusNotObscuredMinimum_summary_cantTell_${summaryKeys || keys}`,
           hintKey:
             keys === 'behindModal'
               ? 'focusNotObscuredMinimum_hint_cantTell_behindModal'
@@ -785,7 +1123,8 @@ function runInPage(ctx) {
             },
             openedByUser,
             examples: ordered.slice(0, 5).map((h) => example(h.c.el)),
-            confirmedBy: example(confirmed.c.el)
+            confirmedBy: confirmed ? example(confirmed.c.el) : null,
+            ...(confirmed ? {} : { notScrolled: true })
           },
           visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
         }
@@ -797,7 +1136,7 @@ function runInPage(ctx) {
       );
     }
   } finally {
-    scrollTo(scrollY);
+    if (moved) scrollTo(scrollY);
   }
 
   // Only where boxes were left unchecked: how many boxes could hide an

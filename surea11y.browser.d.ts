@@ -3,6 +3,12 @@
 // window.a11ycore).
 
 import type {
+  EngineOptions,
+  StrictEngineOptions,
+  ScanResult,
+  CompactScanResult,
+  ScanResultFor,
+  CheckedEngineOptions,
   runa11yCoreInPage as RunInPage,
   waitForPageReady as WaitForPageReady,
   preloadStyleSheets as PreloadStyleSheets,
@@ -35,9 +41,12 @@ declare namespace a11ycore {
    * runa11yCoreInPage, after fetching the style sheets the page can't read
    * (preloadStyleSheets) and adding them to engineOptions.styleSheetTexts.
    */
-  function runa11yCoreInPageAsync(
-    ...args: Parameters<typeof RunInPage>
-  ): Promise<ReturnType<typeof RunInPage>>;
+  function runa11yCoreInPageAsync<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
+    pageUrl?: Parameters<typeof RunInPage>[0],
+    contextSelector?: Parameters<typeof RunInPage>[1],
+    engineOptions?: CheckedEngineOptions<T> | null,
+    runOnly?: Parameters<typeof RunInPage>[3]
+  ): Promise<ScanResultFor<T>>;
 
   /** The engine's version, as published. */
   const version: string;
@@ -66,7 +75,7 @@ declare namespace a11ycore {
    * Rejects options that aren't an object, or that put the selection
    * outside runOnly.
    */
-  function run(options?: RunOptions): Promise<ReturnType<typeof RunInPage>>;
+  function run<T extends RunOptions = RunOptions>(options?: T): Promise<ScanResultFor<T>>;
 
   /** One row of table(): an occurrence, or with { all: true } a rule. */
   interface TableRow {
@@ -81,14 +90,14 @@ declare namespace a11ycore {
    * worst first, and returns the rows. { all: true } adds a row for each
    * rule that passed or did not apply.
    */
-  function table(result: ReturnType<typeof RunInPage>, options?: { all?: boolean }): TableRow[];
+  function table(result: ScanResult | CompactScanResult, options?: { all?: boolean }): TableRow[];
 
   /**
    * Draws a box over each element a fail (red) or cantTell (amber, dashed)
    * occurrence names, in a layer of its own that leaves the page's elements
    * unchanged. Returns how many elements it marked.
    */
-  function highlight(result: ReturnType<typeof RunInPage>): number;
+  function highlight(result: ScanResult | CompactScanResult): number;
   /** What inspect() lists and draws. */
   type InspectKind = 'headings' | 'landmarks' | 'names' | 'focus-order';
   /** One row of inspect(); which fields it has depends on the kind. */
@@ -126,7 +135,7 @@ declare namespace a11ycore {
    * and resolves to the report's address.
    */
   function openReport(
-    result: ReturnType<typeof RunInPage>,
+    result: ScanResult | CompactScanResult,
     options?: {
       reportScript?: string;
       report?: { title?: string };

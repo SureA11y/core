@@ -13,7 +13,12 @@
  *   autocomplete attribute. Disabled controls (the disabled attribute,
  *   including a control disabled by a disabled fieldset ancestor, or
  *   aria-disabled="true") and input types with a fixed value are exempt,
- *   as in ACT 73f2c2.
+ *   as in ACT 73f2c2. So, as there, is a field that is neither visible nor
+ *   in the accessibility tree, such as a honeypot field a form hides from
+ *   people to catch bots: out of the accessibility tree (aria-hidden, and
+ *   not in the tab order) and not visible (not rendered; transparent,
+ *   clipped away or screen-reader-only, itself or by an ancestor; or
+ *   positioned far off the page).
  * @expectation
  *   The value is "on"/"off" alone, or a well-formed autofill detail
  *   token list: an optional "section-*" token, then an optional
@@ -276,6 +281,44 @@ function runInPage(ctx) {
     return false;
   }
 
+  // ACT 73f2c2 leaves out a field that is neither visible nor in the
+  // accessibility tree: no one meets it, as a honeypot field a form hides
+  // from people to catch bots (aria-hidden, tabindex="-1", moved far off
+  // the page). Out of the tree is read as every rule reads it
+  // (helpers.isAccTreeEligible, which keeps an aria-hidden field that
+  // takes a tab stop in it). Not visible is not rendered, or drawn where
+  // nothing of it can be seen, on it or an ancestor: transparent, clipped
+  // away, a screen-reader-only box (helpers.isVisuallyHidden), or
+  // positioned far off the page (the offscreen hint), or, with layout, a
+  // box wholly left of or above the page.
+  const composedParent =
+    typeof helpers.composedParent === 'function'
+      ? helpers.composedParent
+      : (n) => (n && dom.parentElement(n) ? dom.parentElement(n) : null);
+  function seenByNoOne(el) {
+    try {
+      const tree = helpers.isAccTreeEligible(el, ctx);
+      if (typeof tree === 'boolean' ? tree : tree && tree.eligible) return false;
+      if (helpers.getFocusableInfo(el).tabbable) return false;
+      if (!helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible) return true;
+      let guard = 0;
+      for (let a = el; a && dom.nodeType(a) === 1 && guard++ < 500; a = composedParent(a)) {
+        if (helpers.isVisuallyHidden(a)) return true;
+        const hints = (helpers.getVisibilityHintsInfo(a) || {}).hints || [];
+        if (hints.indexOf('offscreen') !== -1) return true;
+      }
+      const docEl = dom.documentElement(dom.ownerDocument(el));
+      const page = docEl ? dom.getBoundingClientRect(docEl) : null;
+      if (page && (page.width > 0 || page.height > 0)) {
+        const r = dom.getBoundingClientRect(el);
+        if (r.right <= page.left || r.bottom <= page.top) return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const raw = String(dom.getAttribute(el, 'autocomplete') || '');
@@ -285,6 +328,7 @@ function runInPage(ctx) {
 
     if (tokens.length === 1 && (tokens[0] === 'on' || tokens[0] === 'off')) continue;
     if (isExempt(el)) continue;
+    if (seenByNoOne(el)) continue;
 
     applicableCount += 1;
 
@@ -292,7 +336,13 @@ function runInPage(ctx) {
 
     const tag = dom.tagName(el).toLowerCase();
 
-    const why = diagnose(raw);
+    // Page text quoted cut to 120 characters (helpers.quoteText): a 200 KB
+    // value was copied whole into the hint, its parameters and the details.
+    const why = { ...diagnose(raw) };
+    for (const k of ['token', 'field']) {
+      if (typeof why[k] === 'string') why[k] = helpers.quoteText(why[k]);
+    }
+    const shownValue = helpers.quoteText(value);
     const hint = {
       unknownToken_suggestion: `"${why.token}" is not an autofill token. Did you mean "${why.suggestion}"?`,
       unknownToken: `"${why.token}" is not an autofill token. Use a field name such as "email", "tel" or "postal-code", after "shipping" or "billing" where it applies.`,
@@ -310,7 +360,7 @@ function runInPage(ctx) {
           hintKey: `autocompleteValid_hint_fail_${why.kind}`,
           params: {
             element: tag,
-            value,
+            value: shownValue,
             token: why.token || '',
             suggestion: why.suggestion || '',
             field: why.field || ''
@@ -320,7 +370,7 @@ function runInPage(ctx) {
           details: {
             reasonCode: 'AUTOCOMPLETE_VALUE_INVALID',
             element: tag,
-            value,
+            value: shownValue,
             problem: why
           }
         }

@@ -105,6 +105,112 @@ test(`${RULE_ID}: a zero-width border or an empty ::after is not a cue`, () => {
   }
 });
 
+test(`${RULE_ID}: a mark in a clear color or in the background's is not a cue (round 9, V9-7)`, () => {
+  const base = `body { background: #ffffff; } p { color: #222222; } .nodeco { text-decoration: none; color: #2a2a2a; }`;
+  for (const css of [
+    '.m { outline: 2px solid transparent; }',
+    '.m { outline: 2px solid #ffffff; }',
+    '.m { border-bottom: 1px solid #ffffff; }',
+    '.m { text-decoration: underline; text-decoration-color: #ffffff; }',
+    '.m::before { content: " "; }'
+  ]) {
+    const html = `<!doctype html><html><head><style>${base} ${css}</style></head><body><p>Lire <a href="/x" class="nodeco m">la suite</a> ici.</p></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+  }
+});
+
+test(`${RULE_ID}: a weight difference is a cue only across 600 (round 8, LY-9)`, () => {
+  const page = (pWeight, aWeight) =>
+    `<!doctype html><html><head><style>body { background: #ffffff; }</style></head><body><p style="color:#333333;font-weight:${pWeight}">Read the <a href="#" style="color:#444444;text-decoration:none;font-weight:${aWeight}">terms</a> before you sign up.</p></body></html>`;
+  for (const [pWeight, aWeight] of [
+    [400, 500],
+    [500, 400],
+    [300, 400],
+    [600, 700],
+    [700, 900]
+  ]) {
+    const rule = assertRule(
+      runa11yCoreOnHtml(page(pWeight, aWeight), { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'fail',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    );
+    assert.strictEqual(
+      rule.occurrences[0].data.details.reasonCode,
+      'COLOR_ONLY_DIFFERENTIATION',
+      `${pWeight} / ${aWeight}`
+    );
+  }
+  for (const [pWeight, aWeight] of [
+    [400, 600],
+    [500, 700],
+    [700, 400]
+  ]) {
+    assertRule(runa11yCoreOnHtml(page(pWeight, aWeight), { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+});
+
+test(`${RULE_ID}: an underline the surrounding text also has is not a cue (round 8, LY-7)`, () => {
+  for (const html of [
+    '<p style="color:#333333;text-decoration:underline">Read the <a href="#" style="color:#444444">terms</a> before you sign up.</p>',
+    '<div style="text-decoration:underline"><p style="color:#333333">Read the <a href="#" style="color:#444444">terms</a> before you sign up.</p></div>',
+    '<p style="color:#333333;text-decoration:underline">Read the <a href="#" style="color:#444444"><u>terms</u></a> before you sign up.</p>'
+  ]) {
+    const result = runa11yCoreOnHtml(
+      `<!doctype html><html><head><style>body { background: #ffffff; }</style></head><body>${html}</body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(
+      rule.occurrences[0].data.details.reasonCode,
+      'COLOR_ONLY_DIFFERENTIATION',
+      html
+    );
+  }
+  // Another cue still sets it apart.
+  const html =
+    '<p style="color:#333333;text-decoration:underline">Read the <a href="#" style="color:#444444;font-weight:700">terms</a> before you sign up.</p>';
+  assertRule(
+    runa11yCoreOnHtml(`<!doctype html><html><body>${html}</body></html>`, { runOnly: [RULE_ID] }),
+    RULE_ID,
+    'pass',
+    { minOccurrences: 0, maxOccurrences: 0 }
+  );
+});
+
+test(`${RULE_ID}: a box-shadow that draws nothing is not a cue (round 8, LY-8)`, () => {
+  const base = `body { background: #ffffff; } p { color: #222222; } .nodeco { text-decoration: none; color: #2a2a2a; }`;
+  for (const css of [
+    '.m { box-shadow: 0 1px 0 transparent; }',
+    '.m { box-shadow: 0 1px 0 rgba(0, 0, 0, 0); }',
+    '.m { box-shadow: 0 0 0 #222222; }',
+    '.m { box-shadow: 0 1px 0 transparent, 0 0 0 0 #222222; }'
+  ]) {
+    const html = `<!doctype html><html><head><style>${base} ${css}</style></head><body><p>Lire <a href="/x" class="nodeco m">la suite</a> ici.</p></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.strictEqual(
+      rule.occurrences[0].data.details.reasonCode,
+      'COLOR_ONLY_DIFFERENTIATION',
+      css
+    );
+  }
+  // One shadow of the list that draws is a cue.
+  const html = `<!doctype html><html><head><style>${base} .m { box-shadow: 0 1px 0 transparent, 0 1px 0 #2a2a2a; }</style></head><body><p>Lire <a href="/x" class="nodeco m">la suite</a> ici.</p></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
+
 test(`${RULE_ID}: an empty ::after that paints a line, and a chip or <sup> inside the link, are cues (#107)`, () => {
   const base = `body { background: #ffffff; } p { color: #222222; } .nodeco { text-decoration: none; color: #2a2a2a; position: relative; }`;
   for (const [css, inner] of [

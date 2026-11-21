@@ -272,3 +272,22 @@ test(`${RULE_ID}: says what makes an existing target unreachable, and where it c
   );
   assert.strictEqual(s4.i18n.summaryKey, 'skipLink_summary_unusableTarget_hiddenOwn');
 });
+
+// HTML resolves "#top", in any ASCII case, to the top of the document when
+// no element has that id or name: a "Jump to top" link has a target.
+test(`${RULE_ID}: "#top" with no such element is the top of the document (round 9, N9-13)`, () => {
+  for (const href of ['#top', '#TOP', '#Top']) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><header><a href="/">Home</a></header><main><p>Long</p><a href="${href}">Jump to top</a></main></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+  // An element named top is the target, and is checked as any target is.
+  const hidden = `<!doctype html><html lang="en"><head><title>t</title></head><body><div id="top" hidden></div><main><p>Long</p><a href="#top">Jump to top</a></main></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(hidden, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'SKIP_LINK_TARGET_UNUSABLE');
+});

@@ -119,6 +119,18 @@ function globalAttrs() {
   return [...new Set([...Object.keys(roletype.props || {}), ...SUPPLEMENTAL_GLOBALS])].sort();
 }
 
+// Role-specific properties added since ARIA 1.2, which aria-query tracks,
+// by the roles that support them, inherited ones included. WAI-ARIA 1.3
+// gives aria-colindextext and aria-rowindextext to cell and row, and so to
+// columnheader, gridcell and rowheader, which inherit from cell.
+const SUPPLEMENTAL_ROLE_ATTRS = {
+  cell: ['aria-colindextext', 'aria-rowindextext'],
+  columnheader: ['aria-colindextext', 'aria-rowindextext'],
+  gridcell: ['aria-colindextext', 'aria-rowindextext'],
+  row: ['aria-colindextext', 'aria-rowindextext'],
+  rowheader: ['aria-colindextext', 'aria-rowindextext']
+};
+
 function roleAttrs(globals) {
   const globalSet = new Set(globals);
   const out = {};
@@ -126,7 +138,8 @@ function roleAttrs(globals) {
     if (def.abstract) continue;
     const supported = new Set([
       ...Object.keys(def.props || {}),
-      ...Object.keys(def.requiredProps || {})
+      ...Object.keys(def.requiredProps || {}),
+      ...(SUPPLEMENTAL_ROLE_ATTRS[name] || [])
     ]);
     const specific = [...supported].filter((a) => !globalSet.has(a)).sort();
     out[name] = specific;
@@ -321,7 +334,12 @@ function nameRequiredRoles(list = NAME_REQUIRED_ROLES) {
 //      content or groups of menuitems", and the WAI-ARIA Authoring Practices
 //      menu and menubar patterns use separators throughout. separator has no
 //      Required Context Role at all (it may appear anywhere), so source 1
-//      cannot express this and it is listed by hand.
+//      cannot express this and it is listed by hand. `menu` in a menu or
+//      menubar: the W3C Authoring Practices navigation menubar and editor
+//      menubar patterns put a submenu's role="menu" beside the menuitem that
+//      opens it, inside the <li role="none"> the menubar or menu owns. menu
+//      has no Required Context Role, so it too is listed by hand (group is
+//      already among a menu's and a menubar's required owned elements).
 //
 // Deliberately NOT added:
 //   treegrid: caption   aria-query gives caption's context as figure/grid/
@@ -340,8 +358,8 @@ function nameRequiredRoles(list = NAME_REQUIRED_ROLES) {
 //                       no spec text extends the menuitem carve-out to lists.
 const ALLOWED_EXTRA_OWNED_ROLES = {
   grid: ['caption'],
-  menu: ['separator'],
-  menubar: ['separator'],
+  menu: ['menu', 'separator'],
+  menubar: ['menu', 'separator'],
   table: ['caption']
 };
 

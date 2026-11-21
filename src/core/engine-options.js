@@ -2,9 +2,42 @@
 
 'use strict';
 
+const { closestOptionKey } = require('./closest-option-key.js');
+
 // What engineOptions may hold, and a check of a given object against it.
 // Each function is self-contained but for the others in this file: they are
 // inlined together into the generated core.js and the in-page runner.
+
+/**
+ * Whether a timestamp is an ISO 8601 date and time, as new
+ * Date().toISOString() writes one: a date, "T", hours and minutes, seconds
+ * and their fraction optionally, and a zone (Z or an offset) optionally,
+ * each in range. A date alone, or text such as "yesterday", is not one: the
+ * reporters write it as the scan's time (JUnit's timestamp attribute), and
+ * the HTML report used the time of rendering for it without a word.
+ */
+function isIsoDateTime(value) {
+  if (typeof value !== 'string') return false;
+  const m =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](\d{2}):?(\d{2}))?$/i.exec(
+      value.trim()
+    );
+  if (!m) return false;
+  const [year, month, day, hour, minute, second, zoneHour, zoneMinute] = m
+    .slice(1)
+    .map((x) => (x === undefined ? 0 : Number(x)));
+  const daysInMonth =
+    month >= 1 && month <= 12 ? new Date(Date.UTC(year, month, 0)).getUTCDate() : 0;
+  return (
+    day >= 1 &&
+    day <= daysInMonth &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    zoneHour <= 23 &&
+    zoneMinute <= 59
+  );
+}
 
 /**
  * The table of every engine option: for each key, `test` (does a value fit),
@@ -24,6 +57,14 @@ function engineOptionSpec() {
     boolean: { test: (v) => switchOf(v) !== null, expected: 'true or false' },
     string: { test: (v) => typeof v === 'string', expected: 'a string' },
     list: { test: list, expected: 'a string or an array of strings' },
+    // A profile, or a list of them. An empty slot, a blank name and a value
+    // that is no name are each refused: each was dropped without a word.
+    profiles: {
+      test: (v) =>
+        typeof v === 'string' ||
+        (Array.isArray(v) && [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
+      expected: 'a profile name or an array of them, none blank'
+    },
     number: {
       test: (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0,
       expected: 'a number of milliseconds, 0 or more'
@@ -70,7 +111,7 @@ function engineOptionSpec() {
       expected: '"A", "AA" or "AAA", in any case'
     },
     // One profile, or a list of them: a scan of several at once.
-    profile: T.list,
+    profile: T.profiles,
     mappings: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
@@ -92,7 +133,11 @@ function engineOptionSpec() {
         ),
       expected: '[{ href, text }]'
     },
-    timestamp: T.string,
+    // Blank is a timestamp not given.
+    timestamp: {
+      test: (v) => typeof v === 'string' && (!v.trim() || isIsoDateTime(v)),
+      expected: 'an ISO 8601 date and time, such as new Date().toISOString()'
+    },
     contrast: {
       test: isObject,
       expected: '{ mode, rootCanvasFallback }',
@@ -142,6 +187,9 @@ function engineOptionSpec() {
   return SPEC;
 }
 
+// closestOptionKey: src/core/closest-option-key.js, which the reporters
+// load without the rest of this module.
+
 /**
  * Returns the problems checkEngineOptions finds, in the order of the keys:
  * { path, kind, message, suggestion }. `kind` is 'unknown' for a key the
@@ -154,40 +202,7 @@ function checkEngineOptions(engineOptions) {
   const SPEC = engineOptionSpec();
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
-  // Optimal string alignment distance, case ignored: "lcoale" is one from
-  // "locale", "includeShadowDOM" none from "includeShadowDom".
-  function distance(a, b) {
-    const s = a.toLowerCase();
-    const t = b.toLowerCase();
-    const d = [];
-    for (let i = 0; i <= s.length; i++) d.push([i]);
-    for (let j = 1; j <= t.length; j++) d[0][j] = j;
-    for (let i = 1; i <= s.length; i++) {
-      for (let j = 1; j <= t.length; j++) {
-        const cost = s[i - 1] === t[j - 1] ? 0 : 1;
-        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
-        if (i > 1 && j > 1 && s[i - 1] === t[j - 2] && s[i - 2] === t[j - 1]) {
-          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
-        }
-      }
-    }
-    return d[s.length][t.length];
-  }
-  // The known key a typo most likely meant: two edits away at most, one for
-  // a key of four letters or fewer, so short unrelated keys aren't matched.
-  function closest(key, known) {
-    let best = null;
-    let bestD = Infinity;
-    for (const k of known) {
-      const dk = distance(key, k);
-      if (dk < bestD) {
-        best = k;
-        bestD = dk;
-      }
-    }
-    const limit = Math.min(key.length, best ? best.length : 0) <= 4 ? 1 : 2;
-    return best !== null && bestD <= limit ? best : null;
-  }
+  const closest = closestOptionKey;
   function describe(v) {
     if (v === null) return 'null';
     if (Array.isArray(v)) {
@@ -346,4 +361,12 @@ function strictOf(engineOptions) {
   return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
 }
 
-module.exports = { engineOptionSpec, checkEngineOptions, enforceEngineOptions, strictOf, switchOf };
+module.exports = {
+  isIsoDateTime,
+  closestOptionKey,
+  engineOptionSpec,
+  checkEngineOptions,
+  enforceEngineOptions,
+  strictOf,
+  switchOf
+};

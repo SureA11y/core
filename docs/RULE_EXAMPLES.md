@@ -2295,11 +2295,11 @@ A `<title>` inside the SVG `<image>` provides the alternative.
 
 **Failed**
 ```html
-<svg width="40" height="24" aria-label="container">
+<svg width="40" height="24">
   <image href="logo.png"></image>
 </svg>
 ```
-The `<image>` itself has no `<title>` or ARIA name (the outer `<svg>`'s label doesn't transfer to it, and a `<desc>` would describe it, not name it).
+The `<image>` has no `<title>` or ARIA name (a `<desc>` would describe it, not name it). Inside an `<svg>` that is named, or has a role whose children are presentational, the `<image>` is part of that one image and out of scope.
 
 ## svg-text-alternative-present
 

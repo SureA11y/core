@@ -41,6 +41,8 @@ const {
   createDomHelpers
 } = require('../src/core/dom-helpers');
 const {
+  isIsoDateTime,
+  closestOptionKey,
   engineOptionSpec,
   checkEngineOptions,
   enforceEngineOptions,
@@ -65,7 +67,15 @@ const {
   targetWcagVersionOf,
   targetWcagLevelOf,
   warnIgnoredWcagTarget,
-  readRenderingEnvironment
+  readRenderingEnvironment,
+  unknownOptInRulesMessage,
+  unknownMappingsMessage,
+  readRuleSettings,
+  unknownRuleSettingsMessage,
+  invalidExcludeSelectors,
+  invalidExcludeSelectorsMessage,
+  rootCanvasFallbackIsOpaque,
+  rootCanvasFallbackMessage
 } = require('../src/core/dom-runner');
 const {
   profileNamesOf,
@@ -73,6 +83,9 @@ const {
   mayBeSkippedPackProfile,
   runProfiles,
   withOwnVerdicts,
+  lowerAscii,
+  policyAllowsFail,
+  capToPolicy,
   mergeProfileResults,
   noteProfileNotApplied
 } = require('../src/core/multi-profile');
@@ -444,6 +457,14 @@ function matchIgnoringCase(table, locale) {
   return null;
 }
 
+// A table's dictionary for a locale its key may write in another case: the
+// caller's messages and the built-in tables are matched each on its own, so
+// messages: { DE: ... } layers over the built-in de, and locale 'DE' with
+// messages: { De: ... } keeps the built-in German under it (round 9, A9-3).
+function dictIgnoringCase(table, locale) {
+  return ownDict(table, locale) || ownDict(table, matchIgnoringCase(table, locale));
+}
+
 function findLocaleKey(locale, engineOptions) {
   if (lookupDict(locale, engineOptions)) return locale;
 
@@ -470,7 +491,9 @@ function getLocaleDict(engineOptions) {
   const requested = normalizeLocale(engineOptions && engineOptions.locale);
   const matched = matchLocale(requested, engineOptions);
 
-  return matched ? lookupDict(matched, engineOptions) : (I18N && I18N.en ? I18N.en : {});
+  return matched
+    ? dictIgnoringCase(getSuppliedMessages(engineOptions), matched) || dictIgnoringCase(I18N, matched)
+    : (I18N && I18N.en ? I18N.en : {});
 }
 
 function ownString(dict, key) {
@@ -486,8 +509,8 @@ function localeMessage(key, engineOptions) {
   if (!matched) return null;
 
   return (
-    ownString(ownDict(getSuppliedMessages(engineOptions), matched), key) ||
-    ownString(ownDict(I18N, matched), key)
+    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), matched), key) ||
+    ownString(dictIgnoringCase(I18N, matched), key)
   );
 }
 
@@ -519,10 +542,14 @@ function resolveLocale(engineOptions) {
   if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
 
   if (dict !== en) {
-    const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
-    const builtIn = ownDict(I18N, matched);
+    const supplied = dictIgnoringCase(getSuppliedMessages(engineOptions), matched);
+    const builtIn = dictIgnoringCase(I18N, matched);
 
-    const leftOut = I18N_LEFT_OUT[matched] || {};
+    const builtInKey = ownDict(I18N, matched) ? matched : matchIgnoringCase(I18N, matched);
+    const leftOut =
+      (builtInKey && Object.prototype.hasOwnProperty.call(I18N_LEFT_OUT, builtInKey)
+        ? I18N_LEFT_OUT[builtInKey]
+        : null) || {};
 
     for (const key in en) {
       if (leftOut[key] === true) continue;
@@ -641,8 +668,13 @@ function t(key, fallback, params, engineOptions) {
 
   const v = localeMessage(key, engineOptions);
 
-  // fallback to English if missing in requested locale
-  const vEn = ownString(I18N && I18N.en, key);
+  // fallback to English if missing in requested locale: the caller's own
+  // English (engineOptions.messages.en) first, as for any locale, then the
+  // built-in one. Without it, a custom rule's keys given only in English
+  // showed empty under another locale.
+  const vEn =
+    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), 'en'), key) ||
+    ownString(I18N && I18N.en, key);
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
@@ -684,6 +716,11 @@ function asciiLowerChar(c) {
 
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
+  // A Set of names is read as the list it holds (by its type tag, so a
+  // page's Set read by the bundle in another realm counts too).
+  if (typeof value === 'object' && Object.prototype.toString.call(value) === '[object Set]') {
+    value = [...value];
+  }
   if (Array.isArray(value)) {
     const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
     const norm = lower ? arr.map((s) => s.replace(/[A-Z]/g, asciiLowerChar)) : arr.slice();
@@ -1549,8 +1586,14 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     const rest = { ...runOnly };
     delete rest.type;
     delete rest.values;
-    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: runOnly.values };
-    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: runOnly.values };
+    // A Set of names is read as the list it holds; passed on as it is, the
+    // checks below took it for no list and ran every rule.
+    const values =
+      runOnly.values && typeof runOnly.values === 'object' && Object.prototype.toString.call(runOnly.values) === '[object Set]'
+        ? [...runOnly.values]
+        : runOnly.values;
+    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
+    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
@@ -1934,6 +1977,44 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.variantOf = variant.of;
     if (out.i18n && variant.messages && typeof variant.messages.from === 'string') {
       out.i18n = { ...out.i18n, variantOfTitleKey: variant.messages.from + '_title' };
+    }
+  }
+
+  // An occurrence's tier is fail, cantTell or pass, read in any case
+  // ('FAIL' is fail). Any other value is dropped, so the occurrence takes
+  // the rule's outcome, and said in error: a custom rule's 'bogus' reached
+  // every reporter as it was.
+  if (Array.isArray(out.occurrences)) {
+    const TIERS = { fail: 'fail', canttell: 'cantTell', pass: 'pass' };
+    const unread = [];
+    out.occurrences = out.occurrences.map((o) => {
+      if (!o || typeof o !== 'object' || o.occurrenceOutcome === undefined || o.occurrenceOutcome === null) return o;
+      const given = o.occurrenceOutcome;
+      const key = typeof given === 'string' ? given.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
+      const tier = Object.prototype.hasOwnProperty.call(TIERS, key) ? TIERS[key] : null;
+      if (tier === given) return o;
+      const next = { ...o };
+      if (tier) next.occurrenceOutcome = tier;
+      else {
+        delete next.occurrenceOutcome;
+        unread.push(given);
+      }
+      return next;
+    });
+    if (unread.length) {
+      let named = '';
+      for (const v of unread.filter((v, i) => unread.indexOf(v) === i)) {
+        let text;
+        try {
+          text = JSON.stringify(v);
+        } catch {
+          text = undefined;
+        }
+        named += (named ? ', ' : '') + (text === undefined ? typeof v : text);
+      }
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule returned occurrenceOutcome ' + named + ', which is not one of fail, cantTell, pass; those occurrences take the outcome of the rule.';
     }
   }
 
@@ -2422,6 +2503,8 @@ ${inlineConstFunction('readLiveRegionHook', readLiveRegionHook)}
 // Inlined from src/core/dom-helpers.js
 ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}
 ${inlineConstFunction('describeOptionValue', describeOptionValue)}
+${inlineConstFunction('isIsoDateTime', isIsoDateTime)}
+${inlineConstFunction('closestOptionKey', closestOptionKey)}
 ${inlineConstFunction('engineOptionSpec', engineOptionSpec)}
 ${inlineConstFunction('checkEngineOptions', checkEngineOptions)}
 ${inlineConstFunction('enforceEngineOptions', enforceEngineOptions)}
@@ -2463,6 +2546,14 @@ ${inlineConstFunction('warnIgnoredWcagTarget', warnIgnoredWcagTarget)}
 ${inlineConstFunction('rollupMembers', rollupMembers)}
 ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
 ${inlineConstFunction('noteEmptySelection', noteEmptySelection)}
+${inlineConstFunction('unknownOptInRulesMessage', unknownOptInRulesMessage)}
+${inlineConstFunction('unknownMappingsMessage', unknownMappingsMessage)}
+${inlineConstFunction('readRuleSettings', readRuleSettings)}
+${inlineConstFunction('unknownRuleSettingsMessage', unknownRuleSettingsMessage)}
+${inlineConstFunction('invalidExcludeSelectors', invalidExcludeSelectors)}
+${inlineConstFunction('invalidExcludeSelectorsMessage', invalidExcludeSelectorsMessage)}
+${inlineConstFunction('rootCanvasFallbackIsOpaque', rootCanvasFallbackIsOpaque)}
+${inlineConstFunction('rootCanvasFallbackMessage', rootCanvasFallbackMessage)}
 
 ${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
 
@@ -2494,6 +2585,9 @@ ${inlineConstFunction('profileOptionsOf', profileOptionsOf)}
 ${inlineConstFunction('mayBeSkippedPackProfile', mayBeSkippedPackProfile)}
 ${inlineConstFunction('runProfiles', runProfiles)}
 ${inlineConstFunction('withOwnVerdicts', withOwnVerdicts)}
+${inlineConstFunction('lowerAscii', lowerAscii)}
+${inlineConstFunction('policyAllowsFail', policyAllowsFail)}
+${inlineConstFunction('capToPolicy', capToPolicy)}
 ${inlineConstFunction('mergeProfileResults', mergeProfileResults)}
 ${inlineConstFunction('noteProfileNotApplied', noteProfileNotApplied)}
 `.trim();
@@ -2904,9 +2998,85 @@ function catalogCheckDefs(engineOptions) {
 function checkCatalogOptions(engineOptions, runOnly) {
   enforceEngineOptions(engineOptions);
   const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  if (strictOf(eo)) refuseCatalogOptions(eo, runOnly);
   warnIgnoredWcagTarget(eo, () =>
     targetWcagVersionOf(eo, resolveEffectiveRunOnly(engineOptions, runOnly))
   );
+}
+
+// Under strictOptions, what a scan with these options refuses before it
+// runs, in its words (the shared helpers of src/core/dom-runner.js): a
+// profile, opt-in tag or standard that names none, settings for a rule that
+// isn't there, a policyContract or contrast.rootCanvasFallback the scan
+// can't read, and an excludeSelectors that isn't CSS. A catalog function
+// listed rules for options its scan would throw on (round 8, PK-5).
+// Selectors are tested against the page's document where there is one (a
+// jsdom window set as global); without one, the scan tests them.
+function refuseCatalogOptions(eo, runOnly) {
+  const fail = (message) => {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    throw err;
+  };
+  const runs = catalogProfileRuns(eo, runOnly);
+  resolvePolicy(POLICY_CONTRACTS, eo, true);
+  for (const run of runs) {
+    const optIn = unknownOptInRulesMessage(run.selection);
+    if (optIn) fail(optIn);
+    const profile = run.selection && typeof run.selection.profile === 'string' ? run.selection.profile : null;
+    const mappings = unknownMappingsMessage(resolveMappingSelection(run.eo, profile));
+    if (mappings) fail(mappings);
+  }
+  const knownIds = catalogCheckDefs(eo)
+    .defs.map((d) => d.ruleId)
+    .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
+  const rules = unknownRuleSettingsMessage(readRuleSettings(eo.rules, knownIds, ENGINE_TAG));
+  if (rules) fail(rules);
+  const dom = createSafeDom();
+  let probe = null;
+  try {
+    probe = typeof document !== 'undefined' && document ? dom.get(document, 'documentElement') : null;
+  } catch {
+    probe = null;
+  }
+  const contrast = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : null;
+  const canvas = contrast && typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+  // A color the parser can't read (a named one) is read as the page's
+  // browser computes it where there is a page, as the scan does.
+  const computeColor = probe
+    ? (text) => {
+        const span = dom.createElement(document, 'span');
+        span.style.color = text;
+        // A value the platform rejects leaves the property unset, and the
+        // span would report the color it inherits.
+        if (!span.style.color) return '';
+        dom.appendChild(probe, span);
+        const computed = dom.defaultView(document).getComputedStyle(span).color;
+        dom.removeChild(probe, span);
+        return computed;
+      }
+    : null;
+  const view = probe ? dom.defaultView(document) : null;
+  if (canvas && !rootCanvasFallbackIsOpaque(canvas, catalogColorParser(view), computeColor)) {
+    fail(rootCanvasFallbackMessage(canvas));
+  }
+  if (probe) {
+    const selectors = invalidExcludeSelectorsMessage(
+      invalidExcludeSelectors(eo, (sel) => dom.matches(probe, sel))
+    );
+    if (selectors) fail(selectors);
+  }
+}
+
+// The contrast helpers' color parser, which reads a named color through
+// the page's window where there is one, or null where they can't be made.
+function catalogColorParser(view) {
+  try {
+    const helpers = createContrastHelpers({ window: view || null }, { trim: (v) => String(v == null ? '' : v).trim() });
+    return helpers && typeof helpers.parseCssColorToRgba === 'function' ? helpers.parseCssColorToRgba : null;
+  } catch {
+    return null;
+  }
 }
 
 function getCheckDefById(ruleId, engineOptions) {
@@ -2924,11 +3094,23 @@ function getChecksCatalog(engineOptions) {
 }
 
 // A composite's catalog entry, with the other-standard entries of its rules
-// filtered the same way as a rule's.
-function toCompositeCatalogEntry(x, tokens, customDefs) {
+// filtered the same way as a rule's. Its title and description are in the
+// options' locale, at the top as a rule's are, and in its meta (round 9,
+// A9-7); i18n names their keys, as in the scan's rulesResults.
+function toCompositeCatalogEntry(x, tokens, customDefs, engineOptions) {
+  const keyOf = (name) =>
+    x.meta && typeof x.meta[name] === 'string' && x.meta[name].trim() ? x.meta[name].trim() : '';
+  const titleKey = keyOf('titleKey');
+  const descriptionKey = keyOf('descriptionKey');
+  const textOf = (key, given) =>
+    key ? t(key, typeof given === 'string' ? given : '', null, engineOptions) : given;
+  const title = x.meta ? textOf(titleKey, x.meta.title) : undefined;
+  const description = x.meta ? textOf(descriptionKey, x.meta.description) : undefined;
   const meta = x.meta && typeof x.meta === 'object'
     ? {
         ...x.meta,
+        ...(titleKey ? { title } : {}),
+        ...(descriptionKey ? { description } : {}),
         standardMappings: Array.isArray(x.meta.standardMappings)
           ? filterNormativeMappings(x.meta.standardMappings, tokens).map((o) => ({ ...o }))
           : []
@@ -2941,6 +3123,9 @@ function toCompositeCatalogEntry(x, tokens, customDefs) {
       : rollupMembers(x.checksIds, x.meta && x.meta.wcagSc, customDefs);
   return {
     ...x,
+    title: typeof title === 'string' ? title : '',
+    description: typeof description === 'string' ? description : '',
+    i18n: titleKey || descriptionKey ? { titleKey, descriptionKey } : null,
     checksIds: members ? members.ids : Array.isArray(x.checksIds) ? x.checksIds.slice() : [],
     ...(members && members.customIds.length ? { customChecksIds: members.customIds } : {}),
     meta
@@ -2984,14 +3169,13 @@ function isCompositeListed(x, selection) {
 }
 
 function getRulesCatalog(engineOptions) {
-  // Data-only catalog. No i18n resolution yet (we can add later if needed).
   checkCatalogOptions(engineOptions, null);
   const tokens = catalogMappingTokens(engineOptions, null);
   const selections = catalogProfileRuns(engineOptions, null).map((r) => r.selection);
   const customDefs = catalogCustomDefs(engineOptions);
   return Array.isArray(COMPOSITE_RULES)
     ? COMPOSITE_RULES.filter((x) => selections.some((selection) => isCompositeListed(x, selection))).map((x) =>
-        toCompositeCatalogEntry(x, tokens, customDefs)
+        toCompositeCatalogEntry(x, tokens, customDefs, engineOptions)
       )
     : [];
 }
@@ -3004,7 +3188,8 @@ function getCompositeRuleById(ruleId, engineOptions) {
   return toCompositeCatalogEntry(
     found,
     catalogMappingTokens(engineOptions, null),
-    catalogCustomDefs(engineOptions)
+    catalogCustomDefs(engineOptions),
+    engineOptions
   );
 }
 
@@ -3045,7 +3230,7 @@ function getRulesForRunOnly(runOnly, engineOptions) {
   }
   if (empty === runs.length && defs.length) noteEmptySelection(runs[0].selection, engineOptions);
   return COMPOSITE_RULES.filter((x) => x && ids.has(x.id)).map((x) =>
-    toCompositeCatalogEntry(x, tokens, customDefs)
+    toCompositeCatalogEntry(x, tokens, customDefs, engineOptions)
   );
 }
 

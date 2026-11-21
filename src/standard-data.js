@@ -27,6 +27,7 @@
 
 const { ruleMappedStandard } = require('./profile-kit.js');
 const { WCAG_VERSIONS } = require('./coverage/wcag-criteria.js');
+const { wcagCriterion } = require('./wcag.js');
 const { standardLawProblems } = require('./laws.js');
 
 const FORMAT = 'surea11y-standard/1';
@@ -95,7 +96,33 @@ const EXTRAS_FROM_DATA = [
 const OUTCOMES = ['cantTell', 'fail'];
 // When a version was published: a year, a month or a day ('2026', '2026-02',
 // '2026-02-14').
-const DATE = /^\d{4}(-\d{2}(-\d{2})?)?$/;
+const DATE = /^\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?)?$/;
+// A date of that form that is one: no 30 February (round 9, A9-16).
+function isDate(text) {
+  if (typeof text !== 'string' || !DATE.test(text)) return false;
+  const [y, m, d] = text.split('-').map(Number);
+  if (d === undefined) return true;
+  const day = new Date(Date.UTC(y, m - 1, d));
+  return day.getUTCMonth() === m - 1 && day.getUTCDate() === d;
+}
+
+// The ids of core's rules, and the words they start with, read once.
+let coreRuleIds;
+let coreRuleWords;
+function isCoreRule(id) {
+  if (!coreRuleIds) {
+    coreRuleIds = new Set(require('./core.js').CHECK_DEFS.map((d) => d.ruleId));
+    coreRuleWords = new Set([...coreRuleIds].map((r) => r.split('-')[0]));
+  }
+  return coreRuleIds.has(id);
+}
+
+// Whether an id starts with the word one of core's rule ids starts with
+// ("img-", "no-"), so reads as one of core's rules.
+function startsAsCoreRule(id) {
+  isCoreRule(id);
+  return coreRuleWords.has(String(id).split('-')[0]);
+}
 const SCOPES = ['page', 'site'];
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -106,16 +133,35 @@ const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const isUnsafeKey = (k) => k === '__proto__' || k === 'constructor' || k === 'prototype';
 const isText = (v) => typeof v === 'string' && v.trim() !== '';
 
+// How deep a standard's data may nest: far deeper than any standard needs,
+// and shallow enough that checking it can't exhaust the stack.
+const MAX_DATA_DEPTH = 100;
+
 // Where a value holds something JSON can't: a function, a symbol, undefined
 // in a list, a number that isn't finite. Data must survive JSON.
-function notJson(value, at, out) {
+// `ancestors` are the objects and lists `value` sits in: data that holds
+// itself, or nests past MAX_DATA_DEPTH, is a problem, where it threw a
+// RangeError (round 8, PK-9).
+function notJson(value, at, out, ancestors = new Set(), depth = 0) {
   if (value === null || typeof value === 'string' || typeof value === 'boolean') return out;
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) out.push(`${at}: ${value} is not a JSON number`);
     return out;
   }
+  if (Array.isArray(value) || isObject(value)) {
+    if (ancestors.has(value)) {
+      out.push(`${at}: holds itself, which JSON can't`);
+      return out;
+    }
+    if (depth >= MAX_DATA_DEPTH) {
+      out.push(`${at}: nests deeper than ${MAX_DATA_DEPTH} levels`);
+      return out;
+    }
+  }
   if (Array.isArray(value)) {
-    value.forEach((v, i) => notJson(v, `${at}[${i}]`, out));
+    ancestors.add(value);
+    value.forEach((v, i) => notJson(v, `${at}[${i}]`, out, ancestors, depth + 1));
+    ancestors.delete(value);
     return out;
   }
   if (isObject(value)) {
@@ -126,10 +172,12 @@ function notJson(value, at, out) {
       out.push(`${at}: must be a plain object`);
       return out;
     }
+    ancestors.add(value);
     for (const [k, v] of Object.entries(value)) {
       if (isUnsafeKey(k)) out.push(`${at}: a key named "${k}" is not allowed`);
-      else notJson(v, `${at}.${k}`, out);
+      else notJson(v, `${at}.${k}`, out, ancestors, depth + 1);
     }
+    ancestors.delete(value);
     return out;
   }
   out.push(`${at}: a ${typeof value} is not data`);
@@ -400,14 +448,51 @@ function textsProblems(d, lang, at, out) {
   }
 }
 
+// A criterion of a requirement's or a test's wcagSc that the WCAG version
+// the standard's version is built on doesn't have, as the entry's validate
+// finds it when the pack is defined.
+function criteriaProblems(list, wcagVersion, at, out) {
+  if (!wcagVersion) return;
+  for (const sc of list) {
+    if (!wcagCriterion(sc, wcagVersion)) {
+      out.push(`${at}: WCAG ${wcagVersion} has no criterion ${sc}`);
+    }
+  }
+}
+
 /**
  * The problems with a standard's data: its shape, as the schema gives it, and
  * what the schema can't say (a version's data for a version not listed, a
- * group naming a requirement the version lacks, a test naming one). What
- * needs the rules (a rule the rule map names, a criterion WCAG lacks) is
- * checked when the pack is defined, by the entry's validate. [] when sound.
+ * group naming a requirement the version lacks, a test naming one, a date
+ * that is none, a criterion the version's WCAG lacks), as checkPack reports
+ * them (round 9, A9-16). Of the rules the rule map names, it reports one
+ * that is no core rule though its id starts as core's do (img-alt-presnt,
+ * no-such-rule): another id may be a rule of the pack, or of a pack it uses,
+ * which definePack checks. [] when sound.
  */
 function checkStandardData(data) {
+  const out = dataProblems(data);
+  if (!isObject(data) || !Array.isArray(data.versions) || !isObject(data.data)) return out;
+  const own = `${String(data.key).split('-')[0]}-`;
+  for (const v of data.versions) {
+    const version = isObject(v) ? v.version : undefined;
+    if (typeof version !== 'string' || !Object.prototype.hasOwnProperty.call(data.data, version)) {
+      continue;
+    }
+    const ruleMap = isObject(data.data[version]) ? data.data[version].ruleMap : null;
+    for (const id of Object.keys(isObject(ruleMap) ? ruleMap : {})) {
+      if (!isCoreRule(id) && !id.startsWith(own) && startsAsCoreRule(id)) {
+        out.push(`data.${version}.ruleMap.${id}: core has no rule ${id}`);
+      }
+    }
+  }
+  return out;
+}
+
+// checkStandardData's problems but the rules the rule map names, which
+// standardFromData leaves to definePack: it knows the rules of the packs a
+// pack uses.
+function dataProblems(data) {
   const out = [];
   if (!isObject(data)) return ["a standard's data must be an object"];
   notJson(data, 'data', out);
@@ -452,7 +537,7 @@ function checkStandardData(data) {
       out.push(
         `${at}.wcagVersion must be the WCAG version it is built on, one of ${WCAG_VERSIONS.join(', ')}`
       );
-    if (v.published !== undefined && !(typeof v.published === 'string' && DATE.test(v.published)))
+    if (v.published !== undefined && !isDate(v.published))
       out.push(`${at}.published must be a date: a year, a month or a day ('2026-02')`);
     basedOnProblems(v.basedOn, at, out, { entry: false });
   });
@@ -464,6 +549,11 @@ function checkStandardData(data) {
     if (!listed.includes(version)) out.push(`data.${version}: versions does not list ${version}`);
   }
   let withTests = 0;
+  // The WCAG version each version is built on, where it is one.
+  const wcagOf = (version) => {
+    const v = versions.find((x) => isObject(x) && x.version === version);
+    return v && WCAG_VERSIONS.includes(v.wcagVersion) ? v.wcagVersion : null;
+  };
   for (const version of listed) {
     const at = `data.${version}`;
     const d = data.data[version];
@@ -486,7 +576,9 @@ function checkStandardData(data) {
       }
       unknownKeys(req, REQUIREMENT_KEYS, rAt, out);
       if (!isText(req.title)) out.push(`${rAt}.title must be a non-empty string`);
-      if (req.wcagSc !== undefined) stringList(req.wcagSc, `${rAt}.wcagSc`, out);
+      if (req.wcagSc !== undefined && stringList(req.wcagSc, `${rAt}.wcagSc`, out)) {
+        criteriaProblems(req.wcagSc, wcagOf(version), `${rAt}.wcagSc`, out);
+      }
       if (req.tests !== undefined) stringList(req.tests, `${rAt}.tests`, out);
       if (req.partial !== undefined && typeof req.partial !== 'boolean') {
         out.push(`${rAt}.partial must be true or false`);
@@ -528,7 +620,9 @@ function checkStandardData(data) {
           }
         }
       }
-      if (t.wcagSc !== undefined) stringList(t.wcagSc, `${tAt}.wcagSc`, out);
+      if (t.wcagSc !== undefined && stringList(t.wcagSc, `${tAt}.wcagSc`, out)) {
+        criteriaProblems(t.wcagSc, wcagOf(version), `${tAt}.wcagSc`, out);
+      }
       if (t.scope !== undefined && !SCOPES.includes(t.scope)) {
         out.push(`${tAt}.scope must be ${SCOPES.map((s) => `"${s}"`).join(' or ')}`);
       }
@@ -802,7 +896,7 @@ function deepFreeze(value) {
  * each problem of the data.
  */
 function standardFromData(data, extras = {}) {
-  const problems = checkStandardData(data);
+  const problems = dataProblems(data);
   if (problems.length) {
     throw new TypeError(
       `${(isObject(data) && data.key) || 'standard data'}: ${problems.join('; ')}`

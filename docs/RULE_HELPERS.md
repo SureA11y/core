@@ -953,6 +953,16 @@ One list for every rule that looks for a skip link, core's `skip-link` and any a
 profile brings, so they recognise the same links; add a phrasing here, not in a
 rule.
 
+### `getSamePageFragment(el)` → `string | null`
+
+The fragment a link goes to in its own document, decoded and trimmed (`''` for
+`href="#"`), or `null` for a link that leads to another document or has no
+fragment. The href is resolved against the document's base URL, as the browser
+follows it: under `<base href="/">`, `href="#main"` on `/products/42` leads to
+`/#main`, another page, so it gives `null`; a full URL of the page with a fragment
+gives the fragment. Use it rather than testing for a leading `#`, for any rule that
+looks for a link within the page, as `skip-link` and `bypass-blocks-present` do.
+
 ### `getLinkKind(el)` → `'text' | 'image' | 'composite' | 'svg'`
 
 What a link is made of, for a standard that judges text links, image links and SVG links
@@ -1034,8 +1044,7 @@ array), plus small numeric/formatting utilities
 rules work out (`comparePaintOrder`, `isPinned`): `comparePaintOrder(a, b)` is negative
 when `a`'s box is painted before `b`'s, positive when after, `NaN` when it can't be told (another tree), and
 `isPinned(el)` says whether `el` is in a fixed or sticky box, which covers the page at
-one scroll position only; `target-size-minimum` uses both to find the boxes over a
-target (#105). Three read what a text field or a scaled element shows (`textStyleOf`,
+one scroll position only. Three read what a text field or a scaled element shows (`textStyleOf`,
 `isPlaceholderText`, `renderedTextScale`):
 `textStyleOf(el)` is the computed style that sets the color and font of `el`'s text,
 the `::placeholder` style while a text field shows its placeholder (its value is empty)

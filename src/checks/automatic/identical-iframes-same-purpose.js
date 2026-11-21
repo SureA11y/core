@@ -11,7 +11,8 @@
  * @applicability
  *   Applies to each set of two or more <iframe>/<frame> elements that are
  *   included in the accessibility tree and share the same non-empty
- *   accessible name, compared with whitespace collapsed. A frame named
+ *   accessible name, compared with whitespace collapsed and case folded,
+ *   as identical-links-same-purpose compares link names. A frame named
  *   only by a mechanism that names nothing, or hidden from the
  *   accessibility tree, is not part of a set; a set needs two surviving
  *   members to exist at all.
@@ -20,7 +21,8 @@
  *   describes one resource, so two frames answering to it must embed the
  *   same one.
  * @reports
- *   - `name`: the accessible name the frames share.
+ *   - `name`: the accessible name the frames share, as the set's first
+ *     frame gives it.
  *   - `resource`: the address this frame embeds, as an absolute URL without
  *     its fragment. Empty (`null`) when its `src` could not be resolved
  *     (`IFRAME_RESOURCE_UNRESOLVED`).
@@ -312,13 +314,17 @@ function runInPage(ctx) {
     const name = normalizedName(el);
     if (!name) continue;
 
-    const list = groups.get(name);
-    if (list) list.push(el);
-    else groups.set(name, [el]);
+    // Names that differ only in case are the same name, as speech and
+    // identical-links-same-purpose read them ("Map" and "MAP"). The set
+    // goes by the name its first frame gives.
+    const key = name.toLowerCase();
+    const group = groups.get(key);
+    if (group) group.els.push(el);
+    else groups.set(key, { name, els: [el] });
   }
 
   const sets = [];
-  for (const [name, els] of groups) {
+  for (const { name, els } of groups.values()) {
     if (els.length >= 2) sets.push([name, els]);
   }
 

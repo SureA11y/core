@@ -247,3 +247,47 @@ test("one rule's own excludeSelectors don't hide an element from the others", ()
     ['#a', '#b']
   );
 });
+
+// The list rules read a role from ElementInternals as the other rules do:
+// an <li> in a custom element whose internals say list is in a list, and a
+// custom element whose internals say listitem belongs in a <ul>. These
+// elements have no shadow root, so their children render.
+test('listitem-parent-valid and list-children-valid read a role from ElementInternals (round 9, N9-6)', () => {
+  const define = (w) =>
+    w.customElements.define(
+      'x-light',
+      class extends w.HTMLElement {
+        constructor() {
+          super();
+          this._internals = this.attachInternals();
+          this._internals.role = this.getAttribute('data-role');
+        }
+      }
+    );
+  const outcome = (body, ruleId) => scan(body, ruleId, define).outcome;
+  assert.equal(
+    outcome(
+      '<x-light data-role="list"><li>One</li><li>Two</li></x-light>',
+      'listitem-parent-valid'
+    ),
+    'pass'
+  );
+  assert.equal(
+    outcome('<x-light data-role="group"><li>One</li></x-light>', 'listitem-parent-valid'),
+    'fail'
+  );
+  assert.equal(
+    outcome(
+      '<ul><x-light data-role="listitem">One</x-light><li>Two</li></ul>',
+      'list-children-valid'
+    ),
+    'pass'
+  );
+  assert.notEqual(
+    outcome(
+      '<ul><x-light data-role="button">One</x-light><li>Two</li></ul>',
+      'list-children-valid'
+    ),
+    'pass'
+  );
+});

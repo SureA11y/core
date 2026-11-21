@@ -16,6 +16,14 @@
  *   element is included in the accessibility tree. role="presentation"/"none" takes
  *   an element out of scope unless a global ARIA attribute or focusability
  *   restores its role, per presentational roles conflict resolution.
+ *   A native button whose role attribute names another role whose name a
+ *   rule of its own checks (link, tab, checkbox, radio, switch, menuitem,
+ *   menuitemcheckbox, menuitemradio, option, combobox, listbox, searchbox,
+ *   textbox, slider, spinbutton, treeitem, meter, progressbar, grid,
+ *   radiogroup, tree, dialog, alertdialog, tooltip, form, region, heading,
+ *   img, graphics-document, graphics-symbol) is left to that rule, as ACT
+ *   97a4e1 applies to role button only. One given a role no rule names
+ *   (gridcell, separator...) stays here, and its message names that role.
  *   A custom element whose ElementInternals give it the button role
  *   (this.attachInternals().role), with no role attribute naming another,
  *   counts as a native element with that role does.
@@ -158,6 +166,49 @@ function runInPage(ctx) {
     }
   }
 
+  // The roles another rule checks the name of: link-name-present,
+  // tab-name-present, binary-control-name-present (checkbox, radio, switch),
+  // menuitem-name-present, option-name-present, combobox-name-present,
+  // listbox-name-present, searchbox-name-present, textbox-name-present,
+  // slider-name-present, spinbutton-name-present, treeitem-name-present,
+  // meter-name-present, progressbar-name-present, aria-role-name-present
+  // (grid, radiogroup, tree), dialog-name-present, tooltip-name-present,
+  // landmark-role-name-present (form, region), empty-heading and
+  // role-img-text-alternative-present (img, graphics-document,
+  // graphics-symbol).
+  const ROLES_NAMED_BY_OTHER_RULES = new Set([
+    'alertdialog',
+    'checkbox',
+    'combobox',
+    'dialog',
+    'form',
+    'graphics-document',
+    'graphics-symbol',
+    'grid',
+    'heading',
+    'img',
+    'link',
+    'listbox',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'region',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'textbox',
+    'tooltip',
+    'tree',
+    'treeitem'
+  ]);
+
   // The role attribute is a fallback list, so role="foo button" and
   // role="BUTTON" are buttons; role="link button" is a link. Select by token,
   // case-insensitively, then keep role-only candidates that resolve to button.
@@ -193,6 +244,11 @@ function runInPage(ctx) {
     const tag = (dom.tagName(el) || '').toLowerCase();
     const role = getExplicitRole(el);
     const roleNorm = role;
+
+    // A native button given another role is that role, not a button (ACT
+    // 97a4e1 applies to role button only): the rule that checks that role's
+    // name reports it, not this one as well.
+    if (ROLES_NAMED_BY_OTHER_RULES.has(roleNorm)) continue;
     // The role the name is computed for: the explicit one, unless the
     // presentational-role conflict below restores the implicit role.
     let nameRole = roleNorm;
@@ -388,16 +444,27 @@ function runInPage(ctx) {
       // Why it has none, where the page shows a cause the reader would not
       // see from the element alone (helpers.nameCause): the hint says so.
       const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
+      // A native button given a role no other rule names (gridcell,
+      // separator...) is reported here, under the role it has.
+      const otherRole = nameRole && nameRole !== 'button' ? nameRole : '';
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: 'This button has no accessible name.',
+          summary: otherRole
+            ? `This <${tag}> has role ${otherRole} and no accessible name.`
+            : 'This button has no accessible name.',
           hint: cause
             ? cause.hint
             : 'Give the button visible text, or name it with aria-label, so screen reader users know what it does.',
           i18n: {
-            summaryKey: 'buttonNamePresent_summary_fail',
+            summaryKey: otherRole
+              ? 'buttonNamePresent_summary_fail_otherRole'
+              : 'buttonNamePresent_summary_fail',
             hintKey: cause ? cause.hintKey : 'buttonNamePresent_hint_fail',
-            params: { element: tag, ...(cause ? cause.params : {}) }
+            params: {
+              element: tag,
+              ...(otherRole ? { role: otherRole } : {}),
+              ...(cause ? cause.params : {})
+            }
           },
           data: {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

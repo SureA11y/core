@@ -759,3 +759,23 @@ test('an input whose list names no datalist is a textbox, one with a datalist a 
   );
   assert.equal(live.outcome, 'pass');
 });
+
+// WAI-ARIA 1.3 gives aria-colindextext and aria-rowindextext to cell and
+// row, and so to gridcell, columnheader and rowheader, which inherit from
+// cell. aria-query, which tracks ARIA 1.2, lacks them.
+test(`${RULE_ID}: aria-colindextext and aria-rowindextext are allowed on cells and rows (round 9, N9-16)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main>
+    <div role="table" aria-label="t"><div role="row" aria-rowindextext="Row 1"><div role="columnheader" aria-colindextext="Column A">A</div><div role="columnheader">B</div></div>
+    <div role="row"><div role="rowheader" aria-rowindextext="Row 2">x</div><div role="cell" aria-colindextext="Column B" aria-rowindextext="Row 2">1</div></div></div>
+    <div role="grid" aria-label="g"><div role="row"><div role="gridcell" aria-colindextext="C" tabindex="0">1</div></div></div>
+  </main></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  const onButton = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><button aria-colindextext="A">Go</button></main></body></html>`;
+  const rule = runa11yCoreOnHtml(onButton, { runOnly: [RULE_ID] }).checksResults.find(
+    (r) => r.ruleId === RULE_ID
+  );
+  assert.strictEqual(rule.occurrences.length, 1);
+});

@@ -37,7 +37,10 @@
  * - Context-role matching uses ariaHelpers.getContainmentRole, which
  *   combines explicit role="" attributes with a small, curated native-HTML-
  *   tag mapping, so a native ancestor (e.g. <table>/<tr>/<select>) without
- *   an explicit role still satisfies the requirement.
+ *   an explicit role still satisfies the requirement. A native element with
+ *   a role of its own (an <h3>, an <article>, a <nav>) between the element
+ *   and its context is not transparent: it is the element's parent, as a
+ *   <div role="heading"> would be.
  * - Ancestor search walks the flat/composed tree (helpers.composedParent:
  *   assignedSlot, then parentNode, then shadow host), not raw parentElement,
  *   so a slotted element's real rendered ancestor context (e.g. a shadow-
@@ -405,7 +408,7 @@ function runInPage(ctx) {
     } else if (above) {
       const blocker = tagOf(note.blocker);
       const parentElement = tagOf(above.el);
-      summary = `role="${role}" must sit directly inside one of these roles: ${requiredRoles}. A ${above.role} (<${parentElement}>) is above it, but the <${blocker}> between them is a ${note.blockerRole}, so the ${above.role} is not its parent.`;
+      summary = `role="${role}" must sit directly inside one of these roles: ${requiredRoles}. A ${above.role} (<${parentElement}>) is above it, but the <${blocker}> between them has role ${note.blockerRole}, so the ${above.role} is not its parent.`;
       hint = `Give the <${blocker}> role="none" so the ${role} belongs to the ${above.role}, or move the ${role} directly inside the ${above.role}.`;
       summaryKey = 'ariaRequiredParent_summary_fail_blocked';
       hintKey = 'ariaRequiredParent_hint_fail_blocked';

@@ -330,6 +330,38 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
     assert.ok(res.restored);
   });
 
+  // Round 8, RO-2: the scroll the scan makes and takes back fires no scroll
+  // or scrollend at the page's listeners; the reader's next scroll does.
+  await t.test("the scan's scrolling doesn't reach the page's scroll listeners", async () => {
+    const p = await browser.newPage({ viewport: { width: 1024, height: 700 } });
+    try {
+      await p.setContent(
+        doc(
+          LINKS(30) +
+            FOOTER() +
+            `<script>window.seen = []; for (const t of ['scroll', 'scrollend']) { window.addEventListener(t, () => seen.push('window ' + t)); document.addEventListener(t, () => seen.push('document ' + t)); }</script>`
+        )
+      );
+      await addBundle(p);
+      const outcome = await p.evaluate(
+        (id) =>
+          window.a11ycore
+            .runa11yCoreInPage(null, null, { rules: { include: [id] } }, null)
+            .checksResults.find((c) => c.ruleId === id).outcome,
+        RULE_ID
+      );
+      assert.equal(outcome, 'cantTell');
+      await p.waitForTimeout(700);
+      assert.deepEqual(await p.evaluate(() => window.seen), []);
+      await p.evaluate(() => window.scrollTo({ top: 300, behavior: 'instant' }));
+      await p.waitForTimeout(300);
+      const after = await p.evaluate(() => window.seen);
+      assert.ok(after.includes('window scroll'), JSON.stringify(after));
+    } finally {
+      await p.close();
+    }
+  });
+
   // Seventh stress test (VL-3, VL-4, VL-5 on audit/register).
   await t.test('a scroll-padding in percent or calc() clears the box, as px does', async () => {
     const header =
@@ -338,6 +370,26 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
       const res = await scan(doc(header + LINKS(40), `html{scroll-padding-top:${pad}}`));
       assert.equal(res[RULE_ID].outcome, 'pass', pad);
     }
+  });
+
+  // Round 8, NW-9: Chromium keeps min(), max() and clamp() in the computed
+  // value while a percentage is in them.
+  await t.test('a scroll-padding in min(), max() or clamp() is worked out', async () => {
+    const header =
+      '<header style="position:sticky;top:0;height:60px;background:#fff">Site</header>';
+    for (const pad of [
+      'max(10%, 60px)',
+      'min(20%, 70px)',
+      'clamp(60px, 10%, 100px)',
+      'calc(min(5%, 30px) + 40px)'
+    ]) {
+      const res = await scan(doc(header + LINKS(40), `html{scroll-padding-top:${pad}}`));
+      assert.equal(res[RULE_ID].outcome, 'pass', pad);
+    }
+    // One that works out under the header's height still leaves it over focus.
+    const res = await scan(doc(header + LINKS(40), 'html{scroll-padding-top:max(5%, 20px)}'));
+    assert.equal(res[RULE_ID].outcome, 'cantTell');
+    assert.equal(res[RULE_ID].findings[0].metrics.scrollPaddingPx, 35);
   });
 
   await t.test('without a doctype, the window is the viewport, not the document', async () => {
@@ -357,5 +409,92 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
       )
     );
     assert.equal(res[RULE_ID].outcome, 'cantTell');
+  });
+  // A transform, filter, perspective, containment or will-change on an
+  // ancestor makes it the containing block of the fixed boxes inside it,
+  // which then scroll with it: the header isn't kept in place, whatever
+  // the scroll position (round 9, V9-4).
+  await t.test('a fixed box inside its containing block scrolls with the page', async () => {
+    const header =
+      '<header style="position:fixed;top:0;left:0;right:0;height:60px;background:#036">Site</header>';
+    for (const wrap of [
+      'transform:translateZ(0)',
+      'translate:0 0',
+      'filter:blur(0)',
+      'backdrop-filter:blur(1px)',
+      'perspective:100px',
+      'will-change:transform',
+      'contain:layout',
+      'container-type:inline-size'
+    ]) {
+      for (const scrollY of [0, 900]) {
+        const res = await scan(doc(`<div style="${wrap}">${header}</div>` + LINKS(40)), {
+          scrollY
+        });
+        assert.equal(res[RULE_ID].outcome, 'pass', `${wrap} at ${scrollY}`);
+        assert.equal(res[ENHANCED].outcome, 'pass', `${wrap} at ${scrollY}`);
+      }
+    }
+    // A wrapper that holds none keeps it fixed.
+    const res = await scan(doc(`<div style="opacity:.99">${header}</div>` + LINKS(40)));
+    assert.equal(res[RULE_ID].outcome, 'cantTell');
+  });
+  // A header can be drawn by a ::before spread over it, or by an inset
+  // shadow filling it, with no background of its own (round 9, V9-5).
+  await t.test('a fixed box drawn by a ::before or an inset shadow is asked about', async () => {
+    const header = (css) =>
+      `<header class="h" style="position:fixed;top:0;left:0;right:0;height:60px;${css}">Site</header>`;
+    for (const [name, css, style, want] of [
+      [
+        'a ::before over it',
+        '.h::before{content:"";position:absolute;inset:0;background:#036}',
+        '',
+        'cantTell'
+      ],
+      ['an inset shadow filling it', '', 'box-shadow:inset 0 0 0 100px #036', 'cantTell'],
+      [
+        'a translucent ::before',
+        '.h::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.5)}',
+        '',
+        'pass'
+      ],
+      [
+        'a 4px ::after along its bottom',
+        '.h::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:#036}',
+        '',
+        'pass'
+      ],
+      ['a 1px inset highlight', '', 'box-shadow:inset 0 -1px 0 #036', 'pass']
+    ]) {
+      const res = await scan(doc(header(style) + LINKS(40), css));
+      assert.equal(res[RULE_ID].outcome, want, name);
+      if (want === 'cantTell')
+        assert.equal(res[RULE_ID].findings[0].code, 'FOCUS_OBSCURED_ENTIRELY', name);
+    }
+    // 2.4.12 asks about what shows through, and only where it is drawn.
+    const translucent = await scan(
+      doc(
+        header('') + LINKS(40),
+        '.h::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.5)}'
+      )
+    );
+    assert.equal(translucent[ENHANCED].outcome, 'cantTell');
+    const highlight = await scan(doc(header('box-shadow:inset 0 -1px 0 #036') + LINKS(40)));
+    assert.equal(highlight[ENHANCED].outcome, 'pass');
+  });
+  // Round 8, NW-2: the hit test drills into shadow roots, and a point that
+  // landed in a component the header holds wasn't counted as the header's.
+  await t.test('an opaque sticky header holding a component is asked about', async () => {
+    const links = Array.from(
+      { length: 80 },
+      (_, i) => `<p><a href="#" id="l${i}">Link ${i}</a></p>`
+    ).join('');
+    const res = await scan(
+      '<!doctype html><html lang="en"><head><title>t</title><style>body{margin:0}</style></head><body>' +
+        `<script>customElements.define('x-bar', class extends HTMLElement { constructor() { super(); this.attachShadow({ mode: 'open' }).innerHTML = '<div style="height:60px;background:#fff">Site</div>'; } });</script>` +
+        `<header style="position:sticky;top:0;height:60px;background:#fff"><x-bar></x-bar></header>${links}</body></html>`
+    );
+    assert.equal(res[RULE_ID].outcome, 'cantTell', JSON.stringify(res[RULE_ID]));
+    assert.ok(res[RULE_ID].findings.some((f) => f.code === 'FOCUS_OBSCURED_ENTIRELY'));
   });
 });

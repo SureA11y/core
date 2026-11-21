@@ -194,5 +194,28 @@ test(`${RULE_ID}: many repeated cards with the same ids stay fast (SP-1)`, () =>
   const ms = Date.now() - start;
   const rule = result.checksResults.find((c) => c.ruleId === RULE_ID);
   assert.ok(rule.occurrences.length > 0);
-  assert.ok(ms < 5000, `${ms} ms`);
+  // 140 s before the fix; about 3 s now alone, more on a busy machine, so the
+  // bound only catches the old growth, not a slow runner (round 8, NW-15).
+  assert.ok(ms < 30000, `${ms} ms`);
+});
+
+test(`${RULE_ID}: nested repeated cards: each referrer's nearest copy found without comparing every pair (round 8, NW-5)`, () => {
+  // Cards nested 10 deep: a referrer reaches its own card's copy, the
+  // first card's copy is reached, and the findings are as before.
+  const open = '<div>'.repeat(10);
+  const close = '</div>'.repeat(10);
+  let cards = '';
+  for (let i = 0; i < 60; i++) {
+    cards += `<div class="card">${open}<h3 id="title">Card ${i}</h3><a href="/p${i}" aria-labelledby="title">Open</a>${close}</div>`;
+  }
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>x</h1>${cards}</main></body></html>`;
+  const rule = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults.find(
+    (c) => c.ruleId === RULE_ID
+  );
+  assert.equal(rule.outcome, 'cantTell');
+  assert.equal(rule.occurrences.length, 60);
+  const nearer = rule.occurrences.filter(
+    (o) => o.i18n.summaryKey === 'duplicateIdAria_summary_cantTell_nearerCopy'
+  );
+  assert.equal(nearer.length, 59);
 });

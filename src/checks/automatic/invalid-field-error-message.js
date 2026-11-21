@@ -525,7 +525,8 @@ function runInPage(ctx) {
       data: {
         details: {
           reasonCode,
-          ariaInvalid,
+          // Cut to 120 characters: a 200 KB value was copied whole.
+          ariaInvalid: helpers.quoteText(ariaInvalid),
           errorMessageIds,
           ...(hiddenBy ? { hiddenBy } : {}),
           ...(hideCause

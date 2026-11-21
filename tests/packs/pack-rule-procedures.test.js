@@ -154,21 +154,24 @@ test('a variant of a core rule lists only the steps it gives; an override is cor
     variants: [
       {
         id: 'acme-name',
-        from: 'link-name-present',
+        // A rule with settings, so the pack can be made (definePack).
+        from: 'link-name-quality',
         meta: {
           title: 'Link names',
           i18n: { titleKey: 'acmeName_title', descriptionKey: 'acmeName_description' },
           wcagSc: ['2.4.4'],
-          coverage: { facetsBySc: { '2.4.4': ['link-name-present'] } },
+          coverage: { facetsBySc: { '2.4.4': ['link-text-descriptive-evidence'] } },
           review: { OWN_CODE: steps('name') }
         }
       }
     ]
   });
-  const facet = facetOf(proceduresFor('2.4.4', { packs: [p] }), 'link-name-present');
+  const facet = facetOf(proceduresFor('2.4.4', { packs: [p] }), 'link-text-descriptive-evidence');
   assert.ok(facet.rules.includes('acme-name'));
   assert.deepEqual(
-    packVariants(facet).map((v) => [v.ruleId, v.reasonCode]),
+    packVariants(facet)
+      .filter((v) => v.ruleId === 'acme-name')
+      .map((v) => [v.ruleId, v.reasonCode]),
     [['acme-name', 'OWN_CODE']]
   );
 

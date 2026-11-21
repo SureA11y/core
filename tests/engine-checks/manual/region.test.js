@@ -222,3 +222,54 @@ test(`${RULE_ID}: content matched by excludeSelectors is left out, globally and 
     assert.strictEqual(rule.outcome, 'pass');
   }
 });
+
+// Text directly in <body> has no element of its own, but it is content
+// outside every landmark all the same: reported on <body>, quoted.
+test(`${RULE_ID}: text directly in <body> is outside every landmark (round 8, NA-10)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>LM</title></head><body>This is an important notice about your account.<main><h1>T</h1></main></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'CONTENT_OUTSIDE_LANDMARK');
+  assert.strictEqual(occ.data.details.element, 'body');
+  assert.strictEqual(occ.i18n.summaryKey, 'region_summary_cantTell_bodyText');
+  assert.strictEqual(occ.i18n.params.text, 'This is an important notice about your account.');
+
+  const blank = `<!doctype html><html lang="en"><head><title>LM</title></head><body>
+    <main><h1>T</h1></main>
+  </body></html>`;
+  assertRule(runa11yCoreOnHtml(blank, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    maxOccurrences: 0
+  });
+});
+
+// A decorative image nothing overrides is left out of the accessibility
+// tree (Chromium ignores it): a tracking pixel outside the landmarks is no
+// content that needs one. One a global ARIA attribute or focusability keeps
+// in the tree is still asked about.
+test(`${RULE_ID}: a decorative <img> outside the landmarks is not asked about (round 9, N9-10)`, () => {
+  const page = (extra) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><header>h</header><main>x</main><footer>f</footer>${extra}</body></html>`;
+  for (const extra of [
+    '<img src="https://px.example/p.gif" width="1" height="1" alt="" border="0">',
+    '<img src="bg.png" role="presentation">',
+    '<div><img src="bg.png" role="none" alt="Background"></div>'
+  ]) {
+    assertRule(runa11yCoreOnHtml(page(extra), { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+  for (const extra of [
+    '<img src="p.gif" alt="" aria-label="Logo">',
+    '<img src="p.gif" role="none" tabindex="0">',
+    '<img src="p.gif" alt="Logo">'
+  ]) {
+    assertRule(runa11yCoreOnHtml(page(extra), { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+  }
+});

@@ -28,7 +28,10 @@
  *   a <br> starts a new word, and text in a box nobody can see (clipped away,
  *   1x1 px or fully transparent, as screen-reader-only text is) is left
  *   out, as are the options of a <select> and the text of a <textarea>,
- *   which are a field's value, not label text. aria-hidden is not
+ *   which are a field's value, not label text, and a ruby annotation
+ *   (<rt>, <rp>), which the name from content leaves out too. A drop-down <select> that is
+ *   itself an aria-labelledby target shows only its selected option, which
+ *   is the text read from it. aria-hidden is not
  *   excluded: it changes nothing about what is rendered on screen, which is
  *   what this SC is about. An aria-label that is empty once trimmed, or an
  *   aria-labelledby whose ids point at nothing or only at elements with no
@@ -49,7 +52,11 @@
  *   becomes a separator, so punctuation and spacing differences never
  *   decide the outcome. Invisible formatting characters (a soft hyphen, a
  *   zero-width space) and an apostrophe inside a word are removed instead,
- *   so "Down&shy;load" is "Download" and "Don’t" is "Dont". Accents are not folded: "Déposer" stays one word,
+ *   so "Down&shy;load" is "Download" and "Don’t" is "Dont". Text in a
+ *   script written without spaces between words (Han, Hiragana, Katakana,
+ *   Thai, Lao, Khmer, Myanmar) is compared by characters instead: each of
+ *   its characters is a word, so "検索" is contained in "商品を検索", as a
+ *   substring is. Accents are not folded: "Déposer" stays one word,
  *   and a name that drops an accent ("Deposer") does not contain it. Four
  *   shapes markup cannot
  *   settle are reported as cantTell instead of fail: a word hyphenated
@@ -67,8 +74,9 @@
  *     texts as compared: parenthesised text dropped, case folded, Unicode
  *     normalised.
  *   - `tokenized.visibleLabel`, `tokenized.accessibleName`: the words each
- *     text was split into, one word per item. The name must hold the
- *     label's words next to each other and in order.
+ *     text was split into, one word per item, and one character per item
+ *     in a script written without spaces. The name must hold the label's
+ *     words next to each other and in order.
  *   - Each text is cut at 2,000 characters, with "…" after it, as an
  *     occurrence's `html` is, and each word list at its first 200 words.
  *   - `labelSource`: where the visible label came from: `label` (an
@@ -242,6 +250,12 @@ function runInPage(ctx) {
     return v.replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
+  // The scripts written without spaces between words (see tokenize).
+  const NO_SPACE_CHARS =
+    '\\p{scx=Han}\\p{scx=Hira}\\p{scx=Kana}\\p{scx=Thai}\\p{scx=Laoo}\\p{scx=Khmr}\\p{scx=Mymr}';
+  const NO_SPACE_RUN = new RegExp(`[${NO_SPACE_CHARS}][${NO_SPACE_CHARS}\\p{M}]*`, 'gu');
+  const NO_SPACE_CHAR = new RegExp(`^[${NO_SPACE_CHARS}]`, 'u');
+
   // WCAG 2.5.3's label-in-name comparison is over words, not characters: drop
   // parenthesised text, case-fold and NFKC-normalise, then reduce every
   // character that is not a letter, digit or combining mark to a space.
@@ -263,10 +277,39 @@ function runInPage(ctx) {
     // ("Don’t") is part of its spelling: remove them rather than split on
     // them, so "Down\u00adload" is "download" and "Don’t" is "dont".
     v = v.replace(/\p{Cf}/gu, '').replace(/([\p{L}\p{N}])['’ʼ](?=[\p{L}\p{N}])/gu, '$1');
+    // Han, Hiragana, Katakana, Thai, Lao, Khmer and Myanmar are written
+    // without spaces between words, so a run of them is one "word" however
+    // many words it holds: "検索" inside "商品を検索" is no word of it. Each of
+    // their characters is a word of its own instead, which compares such
+    // text by characters: the label's characters must be in the name,
+    // together and in order, as a substring is.
     return v
       .replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ')
+      .replace(NO_SPACE_RUN, ' $& ')
       .split(' ')
-      .filter(Boolean);
+      .filter(Boolean)
+      .flatMap((w) => (NO_SPACE_CHAR.test(w) ? [...w] : [w]));
+  }
+
+  // Words as a message shows them: the characters of a run written without
+  // spaces, which tokenize splits, joined again ("検", "索" is "検索").
+  function wordsOf(tokens) {
+    const out = [];
+    let run = false;
+    for (const t of tokens) {
+      const inRun = NO_SPACE_CHAR.test(t);
+      if (inRun && run) out[out.length - 1] += t;
+      else out.push(t);
+      run = inRun;
+    }
+    return out;
+  }
+
+  // Whether text split by tokenize shows `word`: as a word, or, for a run
+  // written without spaces, inside one.
+  function showsWord(tokens, word) {
+    const runWord = NO_SPACE_CHAR.test(word);
+    return wordsOf(tokens).some((w) => w === word || (runWord && w.indexOf(word) !== -1));
   }
 
   // The label's words must appear adjacent and in order inside the name, so a
@@ -328,10 +371,12 @@ function runInPage(ctx) {
   }
 
   // The label's words the name does not have, each once, in label order.
+  // A run written without spaces is missing when the name holds it
+  // nowhere, inside a longer run included.
   function missingWordsOf(labelTokens, nameTokens) {
-    const have = new Set(nameTokens);
     const out = [];
-    for (const w of labelTokens) if (!have.has(w) && out.indexOf(w) === -1) out.push(w);
+    for (const w of wordsOf(labelTokens))
+      if (!showsWord(nameTokens, w) && out.indexOf(w) === -1) out.push(w);
     return out;
   }
 
@@ -359,7 +404,7 @@ function runInPage(ctx) {
         const k = kids[i];
         const type = dom.nodeType(k);
         if (type === 1) stack.push(k);
-        else if (type === 3 && tokenize(dom.textContent(k), false).indexOf(word) !== -1) {
+        else if (type === 3 && showsWord(tokenize(dom.textContent(k), false), word)) {
           const parent = dom.parentElement(k);
           return parent && parent !== control ? parent : null;
         }
@@ -403,7 +448,7 @@ function runInPage(ctx) {
             missingAtWithin = describeEl(src);
             break;
           }
-          if (tokenize(dom.textContent(src), false).indexOf(missing[0]) !== -1) {
+          if (showsWord(tokenize(dom.textContent(src), false), missing[0])) {
             missingAt = describeEl(src);
             break;
           }
@@ -501,6 +546,11 @@ function runInPage(ctx) {
   function readVisibleTextUnder(container) {
     if (!isDomVisible(container)) return { text: '', asShown: '' };
 
+    // A drop-down <select> (an aria-labelledby target, say) shows only its
+    // selected option while closed, not the list of options it holds.
+    const dropDown = dropDownSelectedText(container);
+    if (dropDown !== null) return { text: dropDown, asShown: '' };
+
     const boundaryOf = (n) =>
       typeof helpers.getTextBoundaryKind === 'function' ? helpers.getTextBoundaryKind(n) : 'inline';
     const hidden = (n) =>
@@ -531,9 +581,18 @@ function runInPage(ctx) {
           }
           if (type !== 1 || isNonRenderedTag(n) || hidden(n)) continue;
           // What a <select> or <textarea> shows is its value (its options,
-          // its text), not label text.
+          // its text), not label text. A ruby annotation (<rt>, and the <rp>
+          // parentheses around it) is a reading aid for the base text, left
+          // out as the name from content leaves it out: "漢<rt>kan</rt>"
+          // reads "漢".
           const childTag = String(dom.tagName(n) || '').toLowerCase();
-          if (childTag === 'select' || childTag === 'textarea') continue;
+          if (
+            childTag === 'select' ||
+            childTag === 'textarea' ||
+            childTag === 'rt' ||
+            childTag === 'rp'
+          )
+            continue;
           const apart = boundaryOf(n) === 'block';
           if (apart) parts.push(BOX_BREAK);
           walk(n);
@@ -580,6 +639,29 @@ function runInPage(ctx) {
   }
 
   const BOX_BREAK = {};
+
+  // The text a closed drop-down <select> shows: its selected option's label
+  // or text. null for anything else, a list box (multiple, or a size above
+  // one) included, which shows its options.
+  function dropDownSelectedText(node) {
+    if (String(dom.localName(node) || '').toLowerCase() !== 'select') return null;
+    if (dom.hasAttribute(node, 'multiple')) return null;
+    const size = Number.parseInt(String(dom.getAttribute(node, 'size') || ''), 10);
+    if (size > 1) return null;
+    for (const opt of [...dom.querySelectorAll(node, 'option')]) {
+      let selected;
+      try {
+        selected = !!dom.get(opt, 'selected');
+      } catch {
+        selected = dom.hasAttribute(opt, 'selected');
+      }
+      if (!selected) continue;
+      return String(dom.getAttribute(opt, 'label') || dom.textContent(opt) || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    return '';
+  }
 
   // Whether the page is laid out (a browser), not jsdom's zero-size boxes.
   let layoutKnown = null;

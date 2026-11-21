@@ -5,7 +5,7 @@
 /**
  * @check aria-hidden-body
  * @atomic true
- * @summary The document <body> must not have aria-hidden="true"
+ * @summary The document <body> and <html> must not have aria-hidden="true"
  * @standard WCAG 2.2
  * @sc 1.3.1, 4.1.2
  * @applicability
@@ -14,7 +14,10 @@
  *   document concern, matching page-title-present's pattern of
  *   evaluating document.body directly rather than the scoped root.
  * @expectation
- *   <body> does not have aria-hidden="true". Hiding the document body
+ *   Neither <body> nor the <html> element has aria-hidden="true". On
+ *   either, it asks for the whole page to be hidden (Chromium ignores it
+ *   there; other browsers and assistive technologies may not). Hiding the
+ *   document body
  *   removes the entire page's content and structure from the
  *   accessibility tree at once, both 1.3.1 (Info and Relationships: the
  *   page's structure becomes entirely non-determinable) and 4.1.2 (Name,
@@ -23,6 +26,10 @@
  * @reason-codes
  *   - `ARIA_HIDDEN_BODY` (fail): the <body> has aria-hidden="true", which
  *     removes the whole page from the accessibility tree.
+ *     Basis: WCAG 1.3.1; WCAG 4.1.2; WAI-ARIA 1.2 aria-hidden.
+ *   - `ARIA_HIDDEN_HTML` (fail): the <html> element has aria-hidden="true",
+ *     which asks for the whole page to be removed from the accessibility
+ *     tree.
  *     Basis: WCAG 1.3.1; WCAG 4.1.2; WAI-ARIA 1.2 aria-hidden.
  */
 
@@ -83,29 +90,54 @@ function runInPage(ctx) {
   if (!body) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
+  const root = dom.documentElement(document);
 
-  const raw = dom.get(body, 'getAttribute') ? dom.getAttribute(body, 'aria-hidden') : null;
-  const isHidden = raw != null && String(raw).trim().toLowerCase() === 'true';
+  const hiddenTrue = (el) => {
+    const raw = el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'aria-hidden') : null;
+    return raw != null && String(raw).trim().toLowerCase() === 'true';
+  };
 
-  if (!isHidden) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const occurrences = [];
+  // aria-hidden on the <html> element is the same request for the whole
+  // page as on <body>, one level up.
+  if (root && root !== body && hiddenTrue(root)) {
+    occurrences.push(
+      helpers.reportOccurrence(root, {
+        summary:
+          'The <html> element has aria-hidden="true", which hides the entire page from assistive technologies.',
+        hint: 'Remove aria-hidden from <html>. Hide specific elements instead, if that was the intent.',
+        i18n: {
+          summaryKey: 'ariaHiddenBody_summary_failHtml',
+          hintKey: 'ariaHiddenBody_hint_failHtml',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'ARIA_HIDDEN_HTML' }
+        }
+      })
+    );
+  }
+  if (hiddenTrue(body)) {
+    occurrences.push(
+      helpers.reportOccurrence(body, {
+        summary:
+          'The document body has aria-hidden="true", which hides the entire page from assistive technologies.',
+        hint: 'Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.',
+        i18n: {
+          summaryKey: 'ariaHiddenBody_summary_fail',
+          hintKey: 'ariaHiddenBody_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'ARIA_HIDDEN_BODY' }
+        }
+      })
+    );
   }
 
-  const occurrences = [
-    helpers.reportOccurrence(body, {
-      summary:
-        'The document body has aria-hidden="true", which hides the entire page from assistive technologies.',
-      hint: 'Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.',
-      i18n: {
-        summaryKey: 'ariaHiddenBody_summary_fail',
-        hintKey: 'ariaHiddenBody_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'ARIA_HIDDEN_BODY' }
-      }
-    })
-  ];
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
 
   return {
     ruleId: rule.ruleId,

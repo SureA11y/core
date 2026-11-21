@@ -245,6 +245,7 @@
     "src/core/evidence-state.js",
     "src/hook-reason-codes.js",
     "src/core/engine-options.js",
+    "src/core/closest-option-key.js",
     "src/pack-docs.js",
     "src/pack-docs.d.ts",
     "src/rule-docs.js",

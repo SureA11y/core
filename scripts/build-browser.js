@@ -43,7 +43,7 @@ const { preloadStyleSheets } = require('../src/core/stylesheet-preload');
 const { getMargins } = require('../src/core/margin');
 const { readLiveRegionHook, selectAnnouncements } = require('../src/core/live-region-hook');
 const { consoleHelpers } = require('../src/core/console-helpers');
-const { engineOptionSpec } = require('../src/core/engine-options');
+const { engineOptionSpec, closestOptionKey } = require('../src/core/engine-options');
 const { evidenceState } = require('../src/core/evidence-state');
 const { version: PACKAGE_VERSION } = require('../package.json');
 
@@ -132,13 +132,36 @@ ${inPageRunnerSource}
   // reach it as data on engineOptions -- this wrapper is what passes it.
   const registered = Object.create(null);
 
+  // The caller's messages for a locale layer over the side file's for it,
+  // key by key, as they layer over a built-in dictionary: one string given
+  // for 'de' no longer drops the rest of the loaded German (round 9, A9-5).
+  // The locale's case doesn't matter, as it doesn't to the engine.
   function withRegisteredMessages(engineOptions) {
     const options = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
-    if (Object.keys(registered).length === 0) return options;
+    const loaded = Object.keys(registered);
+    if (loaded.length === 0) return options;
 
-    return Object.assign({}, options, {
-      messages: Object.assign({}, registered, options.messages)
-    });
+    const given = options.messages;
+    if (given !== undefined && given !== null && (typeof given !== 'object' || Array.isArray(given))) {
+      // Not a table of locales: the engine says so, as without a side file.
+      return options;
+    }
+    const messages = {};
+    for (const locale of loaded) messages[locale] = registered[locale];
+    for (const locale of Object.keys(given || {})) {
+      const own = given[locale];
+      const lower = locale.toLowerCase();
+      const side = loaded.filter(function (key) {
+        return key.toLowerCase() === lower;
+      })[0];
+      if (side !== undefined && own && typeof own === 'object' && !Array.isArray(own)) {
+        delete messages[side];
+        messages[locale] = Object.assign({}, registered[side], own);
+      } else {
+        messages[locale] = own;
+      }
+    }
+    return Object.assign({}, options, { messages: messages });
   }
 
   const api = {
@@ -192,7 +215,7 @@ ${inPageRunnerSource}
 
   // run(), table(), highlight(), inspect(), clearHighlights() and openReport(), for a
   // scan run by hand from the browser's console (src/core/console-helpers.js).
-  Object.assign(api, (${consoleHelpers.toString()})(global, api, scriptSrc, ${JSON.stringify(Object.keys(engineOptionSpec()))}));
+  Object.assign(api, (${consoleHelpers.toString()})(global, api, scriptSrc, ${JSON.stringify(Object.keys(engineOptionSpec()))}, ${closestOptionKey.toString()}));
 
   // The global is what a <script> tag gets, and what the locale side files
   // register with. A bundler, or Node's require, reads the module's export

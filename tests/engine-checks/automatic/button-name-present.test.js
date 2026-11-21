@@ -274,7 +274,9 @@ test(`${RULE_ID}: fail when an icon-only button has no wrapping <label> and no o
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: fail when role overrides <button> to a value-role and only content is present (Spotify "sort by" control: role="combobox" content is the selected VALUE, not a name)`, () => {
+// A <button role="combobox"> is a combobox: combobox-name-present reports
+// it (round 8, NA-8), and its content is the selected VALUE, not a name.
+test(`${RULE_ID}: a <button role="combobox"> with only content is left to combobox-name-present (Spotify "sort by" control: role="combobox" content is the selected VALUE, not a name)`, () => {
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
     return;
@@ -286,18 +288,20 @@ test(`${RULE_ID}: fail when role overrides <button> to a value-role and only con
       <svg aria-hidden="true"></svg>
     </button>
   </body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID, 'combobox-name-present'] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, 'combobox-name-present', 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: pass when role overrides <button> to a value-role but aria-label is present`, () => {
+test(`${RULE_ID}: a <button role="combobox"> named by aria-label passes combobox-name-present`, () => {
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
     return;
   }
   const html = `<!doctype html><html><body><button role="combobox" aria-label="Sort order">List</button></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID, 'combobox-name-present'] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, 'combobox-name-present', 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scenarios.html)`, () => {
@@ -315,7 +319,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 13, maxOccurrences: 13 });
 
   const expectedFailIds = [
     'btn_case_01',
@@ -328,8 +332,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
     'btn_case_17',
     'btn_case_23',
     'btn_case_26',
-    'btn_case_28',
-    'btn_case_30',
     'btn_case_32',
     'btn_case_33',
     'btn_case_35'
@@ -354,7 +356,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
     'btn_case_18f',
     'btn_case_18g',
     'btn_case_27',
+    'btn_case_28',
     'btn_case_29',
+    'btn_case_30',
     'btn_case_31',
     'btn_case_34',
     'btn_case_36'
@@ -565,4 +569,65 @@ test('button-name-present: a fail says when aria-labelledby points nowhere, or t
   assert.equal(occ('alt').i18n.hintKey, 'nameCause_hint_imageEmptyAlt');
   assert.equal(occ('noalt').i18n.hintKey, 'nameCause_hint_imageNoAlt');
   assert.equal(occ('svg').i18n.hintKey, 'nameCause_hint_svgNoName');
+});
+
+// A native button given another role is that role (ACT 97a4e1 applies to
+// role button only): the rule naming that role reports it, once. A role no
+// other rule names stays here, and the message names it.
+test(`${RULE_ID}: a <button> with another named role is left to that role's rule (round 8, NA-8)`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  const cases = [
+    [
+      '<div role="tablist" aria-label="t"><button role="tab" aria-selected="true"><svg aria-hidden="true"></svg></button></div>',
+      'tab-name-present'
+    ],
+    [
+      '<button role="switch" aria-checked="false"><span></span></button>',
+      'binary-control-name-present'
+    ],
+    [
+      '<div role="menu" aria-label="m"><button role="menuitem"><svg aria-hidden="true"></svg></button></div>',
+      'menuitem-name-present'
+    ],
+    ['<button role="link"><svg aria-hidden="true"></svg></button>', 'link-name-present'],
+    [
+      '<div role="listbox" aria-label="l"><button role="option" aria-selected="false"></button></div>',
+      'option-name-present'
+    ],
+    ['<button role="checkbox" aria-checked="false"></button>', 'binary-control-name-present'],
+    ['<button role="radio" aria-checked="false"></button>', 'binary-control-name-present'],
+    [
+      '<div role="tree" aria-label="t"><button role="treeitem"></button></div>',
+      'treeitem-name-present'
+    ],
+    ['<button role="slider" aria-valuenow="1"></button>', 'slider-name-present']
+  ];
+  for (const [body, other] of cases) {
+    const result = runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID, other] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+    assertRule(result, other, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+
+  const gridcell = runa11yCoreOnHtml(
+    page(
+      '<div role="grid" aria-label="g"><div role="row"><button role="gridcell"></button></div></div>'
+    ),
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(gridcell, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].i18n.summaryKey, 'buttonNamePresent_summary_fail_otherRole');
+  assert.equal(
+    rule.occurrences[0].summary,
+    'This <button> has role gridcell and no accessible name.'
+  );
+
+  const presentational = runa11yCoreOnHtml(page('<button role="presentation"></button>'), {
+    runOnly: [RULE_ID]
+  });
+  const pres = assertRule(presentational, RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.equal(pres.occurrences[0].summary, 'This button has no accessible name.');
 });

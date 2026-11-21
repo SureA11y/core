@@ -88,3 +88,62 @@ test('a stored result read back keeps the failure', () => {
   assert.equal(check(read).outcome, 'fail');
   assert.equal(rollup(read).outcome, 'fail');
 });
+
+// Round 8, NW-4: a standard's verdict comes after the policy step, and made a
+// check fail that the scan's policy doesn't allow to fail.
+test("a standard's certain failure keeps to the scan's policy", () => {
+  const policy = { allowedOutcomes: ['pass', 'cantTell', 'notApplicable'] };
+  for (const profile of ['names-1.0', ['names-1.0', 'wcag22-aa']]) {
+    const result = scan(UNNAMED_GRID, { packs: [pack], profile, policy });
+    const c = check(result);
+    assert.equal(c.outcome, 'cantTell', JSON.stringify(profile));
+    assert.equal(c.policyOutcome, 'fail', JSON.stringify(profile));
+    assert.ok(
+      c.occurrences.every((o) => o.occurrenceOutcome !== 'fail'),
+      JSON.stringify(profile)
+    );
+  }
+});
+
+// Round 8, PK-1: in a scan of several profiles, a profile that counts none of
+// a check's findings gave it pass, where a scan of that profile alone keeps
+// the rule's own outcome.
+test('a profile that counts none of the findings keeps the outcome its scan alone gives', () => {
+  const ignoring = ruleMappedStandard({
+    standard: 'Quiet Standard',
+    tag: 'quiet',
+    versions: [{ version: '1.0', wcagVersion: '2.2' }],
+    requirements: { '1.0': { Q1: { title: 'Images', wcagSc: ['1.1.1'] } } },
+    ruleMap: {
+      '1.0': {
+        'img-alt-present': {
+          requirements: ['Q1'],
+          reasonCodes: { TEXT_ALTERNATIVE_MISSING: { requirements: [] } }
+        }
+      }
+    }
+  });
+  const quiet = definePack({
+    name: 'quiet-pack',
+    version: '1.0.0',
+    namespace: 'quiet',
+    core: '*',
+    standard: {
+      key: 'quiet',
+      standard: 'Quiet Standard',
+      versions: ['1.0'],
+      profiles: { 'quiet-1.0': { version: '1.0', tags: ['quiet'], mappedRules: true } },
+      ruleTag: 'quiet',
+      ruleMapped: true,
+      mappingsFor: ignoring.mappingsFor,
+      composites: ignoring.composites,
+      validate: ignoring.validate
+    }
+  });
+  const page = '<img src="a.png">';
+  const img = (result) => result.checksResults.find((c) => c.ruleId === 'img-alt-present');
+  const alone = img(scan(page, { packs: [quiet], profile: 'quiet-1.0' }));
+  const both = img(scan(page, { packs: [quiet, pack], profile: ['quiet-1.0', 'names-1.0'] }));
+  assert.equal(alone.outcome, 'fail');
+  assert.equal(both.outcome, alone.outcome);
+});

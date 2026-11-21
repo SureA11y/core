@@ -421,3 +421,18 @@ test(`${RULE_ID}: names what hides the image and quotes the alt that is never re
   assert.strictEqual(d.i18n.summaryKey, 'img_altDecorative_summary_unnamed');
   assert.strictEqual(d.data.details.excludedBy, 'unnamed-svg');
 });
+
+// A canvas's fallback content stays exposed: the message says the drawing is
+// skipped and quotes the fallback, not that the canvas has no name and role.
+test(`${RULE_ID}: a canvas with fallback text is not said to be skipped whole (round 8, NA-11)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><canvas width="10" height="10">Chart of sales</canvas></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.excludedBy, 'unnamed-canvas');
+  assert.strictEqual(occ.i18n.summaryKey, 'img_altDecorative_summary_unnamedCanvasFallback');
+  assert.strictEqual(occ.i18n.params.fallback, 'Chart of sales');
+  assert.doesNotMatch(occ.summary, /no name and no role/);
+});

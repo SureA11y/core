@@ -46,7 +46,7 @@ Total rules: **151**. With fixture: **146**. Without fixture: **5**.
 | autocomplete-valid | automatic | `tests/fixtures/autocomplete-valid-all-scenarios.html` | 11 | 7 | 2 | 0 | 2 |
 | avoid-inline-spacing | automatic | `tests/fixtures/avoid-inline-spacing-all-scenarios.html` | 13 | 3 | 3 | 4 | 3 |
 | binary-control-name-present | automatic | `tests/fixtures/binary-control-name-present-all-scenarios.html` | 25 | 11 | 4 | 0 | 10 |
-| button-name-present | automatic | `tests/fixtures/button-name-present-all-scenarios.html` | 30 | 12 | 12 | 0 | 6 |
+| button-name-present | automatic | `tests/fixtures/button-name-present-all-scenarios.html` | 30 | 11 | 10 | 0 | 9 |
 | bypass-blocks-present | manual | `tests/fixtures/bypass-blocks-present-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | canvas-text-alternative-present | automatic | `tests/fixtures/canvas-text-alternative-present-all-scenarios.html` | 30 | 12 | 9 | 0 | 9 |
 | canvas-text-alternative-quality | manual | `tests/fixtures/canvas-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |

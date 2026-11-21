@@ -45,7 +45,8 @@
  *   - `DUPLICATE_LABEL_TEXT` (cantTell): the field's visible label is the same
  *     as another field's, with no visible legend, heading or row text telling
  *     them apart, nor, for radio buttons and checkboxes, the question their
- *     group answers.
+ *     group answers. A label of punctuation alone ("*", ":") has no words
+ *     to share, and is never another field's.
  *     It leans pass when each field is in a form of its own with the same
  *     name, type and action (copies of one widget), and fail when they are
  *     fields of one form with different names (not radio buttons or
@@ -1018,7 +1019,10 @@ function runInPage(ctx) {
       primaryLangOf(field.el)
     );
     const shared = byKey.get(field.key) || [];
-    const isDuplicate = shared.length > 1;
+    // A label of punctuation alone ("*", ":") has no words to share: the
+    // trailing marks normalize drops leave it empty, so "*" and ":" read as
+    // one label. Whatever it lacks, it is not another field's label.
+    const isDuplicate = shared.length > 1 && /[\p{L}\p{N}]/u.test(field.normalized);
     const isPartiallyHidden = field.hiddenParts > 0;
 
     if (!isPlaceholder && !isDuplicate && !isPartiallyHidden) continue;

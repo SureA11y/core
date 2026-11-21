@@ -345,7 +345,14 @@ function translatedStandardReview(source, ruleId, code, entry, locales) {
 function standardReviewsOf(packs) {
   const out = new Map();
   for (const pack of Array.isArray(packs) ? packs : []) {
-    const st = isObject(pack) && isObject(pack.standard) ? pack.standard : null;
+    // A pack that throws while read was skipped by the scan; its steps are
+    // left out too, not thrown (round 8, NW-6).
+    let st;
+    try {
+      st = isObject(pack) && isObject(pack.standard) ? pack.standard : null;
+    } catch {
+      continue;
+    }
     if (!st || !isObject(st.profiles)) continue;
     if (!isObject(st.review) && !isObject(st.reviewByVersion)) continue;
     // Shared by its profiles: read once per pack.

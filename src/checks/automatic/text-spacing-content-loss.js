@@ -20,7 +20,8 @@
  *     reports), and each line of text is measured before and after against
  *     the boxes that clip it: those on its containing block chain with
  *     `overflow: hidden` or `clip`, or `contain: paint` (which
- *     `content-visibility: auto` gives), and the viewport
+ *     `content-visibility: auto` gives), or cut by a `clip-path: inset()`
+ *     or a `clip: rect()` (other shapes are not measured), and the viewport
  *     on an axis the page keeps from scrolling, or for text in a fixed box,
  *     which doesn't scroll with the page. A
  *     line that was inside and ends at least half outside (half its
@@ -28,7 +29,8 @@
  *     (TEXT_CLIPPED). A line pushed out by less is asked about
  *     (TEXT_CLIPPED_PARTLY), and so is text that comes to overlap other
  *     text it did not overlap before (TEXT_OVERLAPS). Text moved by an
- *     animation that repeats for ever (a ticker) is asked about however far
+ *     animation that repeats for ever (a ticker), in the document or in an
+ *     open shadow root, is asked about however far
  *     it goes (TEXT_CLIPPED_MOVING): it passes through the edge anyway, and
  *     one frame can't tell whether any of it is lost. Where the page is
  *     scroll-locked, both of the viewport's axes hidden while content already
@@ -42,7 +44,10 @@
  *     cut off before the spacing (a fixed-height excerpt) is asked about
  *     when the spacing cuts off lines it showed in full (TEXT_CLIPPED_FURTHER):
  *     the excerpt was cut on purpose, but shows less. A box that grows with
- *     its lines, as line-clamp does, shows as many and is left alone.
+ *     its lines, as line-clamp does, shows as many and is left alone,
+ *     whether it showed all of its text before or not; lines are counted
+ *     by rows, so the text a clamp hides after its ellipsis, laid out
+ *     beside the last row it shows, isn't counted as shown.
  *   - In any environment, a style sheet rule that sets line-height,
  *     letter-spacing or word-spacing below those values with `!important`
  *     is asked about (STYLESHEET_IMPORTANT): a tool that adds its own style
@@ -97,7 +102,9 @@
  *   - `clipCss` (cut-off text, where it can be read): the CSS that cuts it
  *     off there, as declarations: what fixes the box's size on that axis
  *     (`white-space: nowrap`, `width`, `max-height`...) and its overflow,
- *     as `height: 48px; overflow: hidden`. Not for the viewport.
+ *     as `height: 48px; overflow: hidden`; for a clamped box that grew with
+ *     the spacing, its clamp (`-webkit-line-clamp: 2; overflow: hidden`).
+ *     Not for the viewport.
  *   - `clippedBy` (cut-off text): `content-visibility` when the box clips
  *     only for its `content-visibility: auto`, which clips what overflows
  *     it, on screen as well as off it, as `contain: paint` does, though its
@@ -163,7 +170,8 @@
  * - The spacing sheet is one cascade layer declared before every other
  *   style: layered `!important` declarations beat unlayered ones and later
  *   layers, as a user style sheet would. It is removed afterwards, and the
- *   scroll position put back.
+ *   scroll position put back at once, not animated where the page sets
+ *   `scroll-behavior: smooth`.
  * - Text that was already outside its clipping box before (a carousel
  *   slide, text hidden off screen) is not counted, nor is text inside a
  *   <marquee>: browsers move it outside the Web Animations API, so the
@@ -187,7 +195,12 @@
  *   Only text wholly inside the viewport before the spacing is judged
  *   against it.
  * - Lines are read with Range.getClientRects() on each text node, up to
- *   3,000 text nodes per page.
+ *   3,000 text nodes per page: the body's, then those of each open shadow
+ *   root (none with `includeShadowDom: false`). The boxes that clip a text
+ *   are found along the flat tree, so a box in a shadow root clips the
+ *   light text slotted into it. The spacing sheet is the document's: text
+ *   in a shadow root takes the spacing by inheritance, except where the
+ *   shadow tree's own styles set it.
  * - The thresholds are the ones avoid-inline-spacing uses: line-height 1.5,
  *   letter-spacing 0.12, word-spacing 0.16, as multiples of the font size.
  */
@@ -601,27 +614,90 @@ function runInPage(ctx) {
       return found;
     }
 
+    // The next element up in the flat tree, as the page lays it out: a
+    // slotted node's slot, a shadow root's host.
+    function upOf(a) {
+      let p = a;
+      for (let i = 0; p && i < 100; i++) {
+        p =
+          typeof helpers.composedParent === 'function'
+            ? helpers.composedParent(p)
+            : dom.parentElement(p);
+        if (p && dom.nodeType(p) === 1) return p;
+        if (!p || dom.nodeType(p) !== 11) return null;
+      }
+      return null;
+    }
+    // The element a text lays out in: its parent, the host for text straight
+    // under a shadow root, and for text slotted into a shadow root the box
+    // its slot sits in, since a <slot> has no box of its own (display:
+    // contents). The clipping and painting walks go up from it, so a box in
+    // a shadow root clips the light text slotted into it.
+    function boxParentOf(n) {
+      let p = upOf(n);
+      for (let i = 0; p && i < 100 && String(dom.localName(p)) === 'slot'; i++) {
+        const cs = styleOf(p);
+        if (cs && cs.display !== 'contents') break;
+        p = upOf(p);
+      }
+      return p;
+    }
+
+    // Where text is walked: the body and each open shadow root in it, unless
+    // the scan leaves shadow DOM out (engineOptions.includeShadowDom: false).
+    const textRoots = [];
+    {
+      const deep = (ctx.engineOptions || {}).includeShadowDom !== false;
+      const queue = [dom.body(document)];
+      while (queue.length) {
+        const root = queue.shift();
+        if (!root) continue;
+        textRoots.push(root);
+        if (!deep) continue;
+        try {
+          for (const el of dom.querySelectorAll(root, '*') || []) {
+            const shadow = dom.shadowRoot(el);
+            if (shadow) queue.push(shadow);
+          }
+        } catch {
+          // the roots found so far are walked
+        }
+      }
+    }
+
     const nodes = [];
     const judged = new Set();
-    const walker = dom.createTreeWalker(document, dom.body(document), 4);
-    for (let n = walker.nextNode(); n && nodes.length < MAX_TEXT_NODES; n = walker.nextNode()) {
-      if (!/\S/.test(dom.nodeValue(n) || '')) continue;
-      const parent = dom.parentElement(n);
-      if (!parent || SKIP.has(String(dom.localName(parent)))) continue;
-      if (isBehindModal(parent) || inMarquee(parent)) continue;
-      // Text the page does not render (display:none, a closed <details>,
-      // content-visibility:hidden) is never judged, so it does not take a
-      // place in the budget either.
-      try {
-        if (
-          typeof dom.get(parent, 'checkVisibility') === 'function' &&
-          !dom.checkVisibility(parent)
-        )
-          continue;
-      } catch {}
-      nodes.push(n);
-      if (inScope(parent) && !isExcluded(parent)) judged.add(n);
+    // Per text: the element it lays out in (boxParentOf), and the element
+    // holding it in its own tree, whose text a finding quotes.
+    const boxOfText = new Map();
+    const holderOfText = new Map();
+    for (const root of textRoots) {
+      if (nodes.length >= MAX_TEXT_NODES) break;
+      const walker = dom.createTreeWalker(document, root, 4);
+      for (let n = walker.nextNode(); n && nodes.length < MAX_TEXT_NODES; n = walker.nextNode()) {
+        if (!/\S/.test(dom.nodeValue(n) || '')) continue;
+        const parent = boxParentOf(n);
+        const holder = dom.parentElement(n) || parent;
+        if (!parent || SKIP.has(String(dom.localName(holder)))) continue;
+        if (isBehindModal(parent) || inMarquee(parent)) continue;
+        // Text the page does not render (display:none, a closed <details>,
+        // content-visibility:hidden) is never judged, so it does not take a
+        // place in the budget either.
+        try {
+          if (
+            typeof dom.get(parent, 'checkVisibility') === 'function' &&
+            !dom.checkVisibility(parent)
+          )
+            continue;
+        } catch {}
+        nodes.push(n);
+        boxOfText.set(n, parent);
+        holderOfText.set(n, holder);
+        if (inScope(holder) && !isExcluded(holder)) judged.add(n);
+      }
     }
+    const textEl = (n) => boxOfText.get(n);
+    const holderOf = (n) => holderOfText.get(n);
 
     // The three walks below go up from a text's element, and the texts
     // inside one box share the walk above it: each keeps its answer per
@@ -733,6 +809,67 @@ function runInPage(ctx) {
       const hides = (v) => v === 'hidden' || v === 'clip';
       return !(x && hides(cs.overflowX)) && !(y && hides(cs.overflowY));
     }
+    // How far a clip-path: inset() or a clip: rect() cuts into el's border
+    // box on each side, in layout px: { top, right, bottom, left }, or null
+    // where there is none, or the shape can't be measured as a rectangle (a
+    // circle, a polygon, a path, a reference box other than the border box).
+    // An inset's rounded corners are left out.
+    function clipShapeOf(el, cs) {
+      const w = Number(dom.get(el, 'offsetWidth')) || 0;
+      const h = Number(dom.get(el, 'offsetHeight')) || 0;
+      const len = (v, size) => {
+        const m = /^(-?\d*\.?\d+)(px|%)$/.exec(v) || (/^0$/.test(v) ? ['0', '0', 'px'] : null);
+        if (!m) return null;
+        return m[2] === '%' ? (parseFloat(m[1]) * size) / 100 : parseFloat(m[1]);
+      };
+      let shape = null;
+      const cp = String(cs.clipPath || '')
+        .trim()
+        .toLowerCase();
+      const inset = /^inset\((.*)\)(\s+border-box)?$/.exec(cp);
+      if (inset) {
+        const args = inset[1]
+          .split(/\s+round\s+/)[0]
+          .trim()
+          .split(/\s+/);
+        if (args.length >= 1 && args.length <= 4) {
+          const [t, r = t, b = t, l = r] = args;
+          const v = [len(t, h), len(r, w), len(b, h), len(l, w)];
+          if (v.every((n) => n !== null)) {
+            shape = { top: v[0], right: v[1], bottom: v[2], left: v[3] };
+          }
+        }
+      }
+      // clip applies to an absolutely positioned box only; auto is the
+      // border box's own edge.
+      const clip = /^rect\((.*)\)$/.exec(
+        String(cs.clip || '')
+          .trim()
+          .toLowerCase()
+      );
+      if (clip && (cs.position === 'absolute' || cs.position === 'fixed')) {
+        const args = clip[1].split(/[\s,]+/).filter(Boolean);
+        const at = (v, size, auto) => (v === 'auto' ? auto : len(v, size));
+        if (args.length === 4) {
+          const t = at(args[0], h, 0);
+          const r = at(args[1], w, w);
+          const b = at(args[2], h, h);
+          const l = at(args[3], w, 0);
+          if ([t, r, b, l].every((n) => n !== null)) {
+            const fromClip = { top: t, right: w - r, bottom: h - b, left: l };
+            shape = shape
+              ? {
+                  top: Math.max(shape.top, fromClip.top),
+                  right: Math.max(shape.right, fromClip.right),
+                  bottom: Math.max(shape.bottom, fromClip.bottom),
+                  left: Math.max(shape.left, fromClip.left)
+                }
+              : fromClip;
+          }
+        }
+      }
+      return shape;
+    }
     function clippersOf(el) {
       if (clipCache.has(el)) return clipCache.get(el);
       const path = [];
@@ -762,6 +899,19 @@ function runInPage(ctx) {
           const y =
             !(scrolls & 2) && (paint || cs.overflowY === 'hidden' || cs.overflowY === 'clip');
           if (x || y) own = { el: a, x, y, contentVisibility: byContentVisibility(a, cs, x, y) };
+          // A clip-path: inset() or clip: rect() cuts off what is painted
+          // past it on both axes, as overflow: hidden does at the padding box.
+          const shape = clipShapeOf(a, cs);
+          if (shape && (!(scrolls & 1) || !(scrolls & 2))) {
+            own = {
+              el: a,
+              x: !(scrolls & 1),
+              y: !(scrolls & 2),
+              contentVisibility: false,
+              overflowClip: own ? { x: own.x, y: own.y } : null,
+              shape
+            };
+          }
           if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') after |= 1;
           if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') after |= 2;
         }
@@ -835,11 +985,7 @@ function runInPage(ctx) {
       if (pinnedCache.has(el)) return pinnedCache.get(el);
       const path = [];
       let found = false;
-      for (
-        let a = el, i = 0;
-        a && dom.nodeType(a) === 1 && i < 100000;
-        a = dom.parentElement(a), i++
-      ) {
+      for (let a = el, i = 0; a && dom.nodeType(a) === 1 && i < 100000; a = upOf(a), i++) {
         if (pinnedCache.has(a)) {
           found = pinnedCache.get(a);
           break;
@@ -916,15 +1062,48 @@ function runInPage(ctx) {
       };
     }
 
+    // The box a clipper keeps what it paints in: its padding box, or for a
+    // clip-path or clip, the shape's rectangle, within the padding box on an
+    // axis its overflow clips too.
+    function clipBoxOf(c) {
+      if (!c.shape) return boxOf(c.el);
+      const r = dom.getBoundingClientRect(c.el);
+      const ow = Number(dom.get(c.el, 'offsetWidth')) || 0;
+      const oh = Number(dom.get(c.el, 'offsetHeight')) || 0;
+      const kx = ow > 0 && r.width > 0 ? r.width / ow : 1;
+      const ky = oh > 0 && r.height > 0 ? r.height / oh : 1;
+      const ox = sx();
+      const oy = sy();
+      const box = {
+        left: r.left + ox + c.shape.left * kx,
+        top: r.top + oy + c.shape.top * ky,
+        right: r.right + ox - c.shape.right * kx,
+        bottom: r.bottom + oy - c.shape.bottom * ky
+      };
+      const o = c.overflowClip;
+      if (o && (o.x || o.y)) {
+        const inner = boxOf(c.el);
+        if (o.x) {
+          box.left = Math.max(box.left, inner.left);
+          box.right = Math.min(box.right, inner.right);
+        }
+        if (o.y) {
+          box.top = Math.max(box.top, inner.top);
+          box.bottom = Math.min(box.bottom, inner.bottom);
+        }
+      }
+      return box;
+    }
+
     function measure() {
       const lines = new Map();
       const boxes = new Map();
       for (const n of nodes) {
         lines.set(n, linesOf(n));
-        for (const c of clippersOf(dom.parentElement(n))) {
-          if (!boxes.has(keyOf(c))) boxes.set(keyOf(c), c.viewport ? viewportBox() : boxOf(c.el));
+        for (const c of clippersOf(textEl(n))) {
+          if (!boxes.has(keyOf(c))) boxes.set(keyOf(c), c.viewport ? viewportBox() : clipBoxOf(c));
         }
-        for (const c of paintClippersOf(dom.parentElement(n))) {
+        for (const c of paintClippersOf(textEl(n))) {
           if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
         }
       }
@@ -977,7 +1156,7 @@ function runInPage(ctx) {
     }
     const fontSizes = new Map();
     for (const n of nodes) {
-      const cs = styleOf(dom.parentElement(n));
+      const cs = styleOf(textEl(n));
       fontSizes.set(n, px(cs && cs.fontSize) || 16);
     }
 
@@ -988,8 +1167,8 @@ function runInPage(ctx) {
     const visibleBefore = new Set();
     for (const n of nodes) {
       const lines = before.lines.get(n) || [];
-      if (!lines.length || !shown(dom.parentElement(n))) continue;
-      const inside = clippersOf(dom.parentElement(n)).every((c) => {
+      if (!lines.length || !shown(textEl(n))) continue;
+      const inside = clippersOf(textEl(n)).every((c) => {
         if (c.viewport) return true;
         const b0 = before.boxes.get(keyOf(c));
         return (
@@ -1066,9 +1245,16 @@ function runInPage(ctx) {
       if (spacingApplied) after = measure();
     } finally {
       removeSpacing(adopted);
+      // Instantly: a page with `scroll-behavior: smooth` would animate a
+      // plain scrollTo(x, y), and the scan would return with the page
+      // still on its way back.
       try {
-        view.scrollTo(scroll[0], scroll[1]);
-      } catch {}
+        dom.call(view, 'scrollTo', { left: scroll[0], top: scroll[1], behavior: 'instant' });
+      } catch {
+        try {
+          dom.call(view, 'scrollTo', scroll[0], scroll[1]);
+        } catch {}
+      }
     }
     spacingNotApplied = !spacingApplied;
 
@@ -1082,19 +1268,36 @@ function runInPage(ctx) {
     // own `offset`, `easing` and `composite` are not properties.
     const MOVING_PROPS =
       /^(transform|translate|rotate|scale|left|right|top|bottom|inset|margin|offsetPath|offsetDistance|offsetAnchor|offsetPosition)/;
-    // The elements such an animation targets, read once from the document's
-    // animations: asking each ancestor of each text for its own costs an
-    // animation lookup per element.
+    // The elements such an animation targets, read once from the animations
+    // running when the scan started: asking each ancestor of each text for
+    // its own costs an animation lookup per element. Those the engine
+    // gathered (helpers.animationsAtScanStart) include the ones in open
+    // shadow roots, which the document's getAnimations() leaves out; only
+    // the elements running one that never ends are asked for theirs.
     let movedForEver = null;
     function movedForEverTargets() {
       if (movedForEver) return movedForEver;
       movedForEver = new Set();
-      let animations;
+      let animations = [];
       try {
-        animations =
-          typeof dom.get(document, 'getAnimations') === 'function'
-            ? dom.getAnimations(document)
-            : [];
+        const started =
+          typeof helpers.animationsAtScanStart === 'function'
+            ? helpers.animationsAtScanStart()
+            : null;
+        if (started) {
+          const looping = new Set();
+          for (const a of started) {
+            if (a && a.target && a.endTime === null) looping.add(a.target);
+          }
+          for (const el of looping) {
+            if (typeof dom.get(el, 'getAnimations') !== 'function') continue;
+            for (const a of dom.getAnimations(el, { subtree: true })) {
+              if (a && a.effect && a.effect.target === el) animations.push(a);
+            }
+          }
+        } else if (typeof dom.get(document, 'getAnimations') === 'function') {
+          animations = dom.getAnimations(document);
+        }
       } catch {
         animations = [];
       }
@@ -1114,7 +1317,7 @@ function runInPage(ctx) {
       const targets = movedForEverTargets();
       if (!targets.size) return false;
       // Bounded as a safety net only: a walk up a real tree always ends.
-      for (let el = from, i = 0; el && el !== stop && i < 100000; el = dom.parentElement(el), i++) {
+      for (let el = from, i = 0; el && el !== stop && i < 100000; el = upOf(el), i++) {
         if (targets.has(el)) return true;
       }
       return false;
@@ -1143,14 +1346,21 @@ function runInPage(ctx) {
     // max-width or width, max-height or height), then its overflow, as
     // declarations: "height: 48px; overflow: hidden". '' where it can't
     // be read.
-    function clipCssOf(c, textEl, axis) {
+    function clipCssOf(c, textEl, axis, grew) {
       try {
         const cs = styleOf(c.el);
         if (!cs) return '';
         const parts = [];
-        if (axis === 'x') {
+        // A clamped box that grew with the spacing has no height of its
+        // own: its clamp is what cuts the text, not the height it computes.
+        const clamp =
+          axis === 'y' && grew && (!cs.maxHeight || cs.maxHeight === 'none')
+            ? lineClampOf(c.el)
+            : null;
+        if (clamp) parts.push(clamp.css);
+        else if (axis === 'x') {
           let ws = '';
-          for (let cur = textEl, i = 0; cur && i < 100; cur = dom.parentElement(cur), i++) {
+          for (let cur = textEl, i = 0; cur && i < 100; cur = upOf(cur), i++) {
             const st = styleOf(cur);
             const v = st ? String(st.whiteSpace || st.textWrapMode || '') : '';
             if (/^(nowrap|pre)$/.test(v) || (st && st.textWrapMode === 'nowrap')) {
@@ -1171,6 +1381,9 @@ function runInPage(ctx) {
         if (own && own !== 'visible')
           parts.push(ox === oy ? `overflow: ${own}` : `overflow-${axis}: ${own}`);
         else if (cs.contain && cs.contain !== 'none') parts.push(`contain: ${cs.contain}`);
+        else if (c.shape && cs.clipPath && cs.clipPath !== 'none')
+          parts.push(`clip-path: ${cs.clipPath}`);
+        else if (c.shape && cs.clip && cs.clip !== 'auto') parts.push(`clip: ${cs.clip}`);
         else return '';
         if (axis === 'x' && cs.textOverflow === 'ellipsis') parts.push('text-overflow: ellipsis');
         return parts.join('; ');
@@ -1178,6 +1391,43 @@ function runInPage(ctx) {
         return '';
       }
     }
+    // The line count a box is clamped to (`-webkit-line-clamp` on a
+    // -webkit-box laid out vertically, which Chromium computes as
+    // flow-root, or `line-clamp`), as { lines, css }, or null. Such a box
+    // grows with its lines and shows that many, the rest after an ellipsis.
+    function lineClampOf(el) {
+      const cs = styleOf(el);
+      if (!cs) return null;
+      for (const [prop, read] of [
+        ['-webkit-line-clamp', cs.webkitLineClamp],
+        ['line-clamp', cs.getPropertyValue ? cs.getPropertyValue('line-clamp') : '']
+      ]) {
+        const v = String(read || '').trim();
+        const n = Number.parseInt(v, 10);
+        if (!v || v === 'none' || !(n > 0)) continue;
+        if (
+          prop === '-webkit-line-clamp' &&
+          !/-webkit-(inline-)?box/.test(String(cs.display || '')) &&
+          String(cs.webkitBoxOrient || '') !== 'vertical'
+        )
+          continue;
+        return { lines: n, css: `${prop}: ${n}` };
+      }
+      return null;
+    }
+    // How many rows of lines a box shows in full: lines on one row (the
+    // text a clamp hides after its ellipsis is laid out beside the last
+    // row shown) count once.
+    function rowsShown(lines, box, c) {
+      const tops = [];
+      for (const l of lines) {
+        const o = outside(l, box, c);
+        if (o.dx > 1 || o.dy > 1) continue;
+        if (!tops.some((t) => Math.abs(t - l.top) < 1)) tops.push(l.top);
+      }
+      return tops.length;
+    }
+
     function insideBefore(n, c) {
       const b0 = before.boxes.get(keyOf(c));
       const lines = before.lines.get(n) || [];
@@ -1253,13 +1503,20 @@ function runInPage(ctx) {
       if (!linesAfter.length || !visibleBefore.has(n) || !judged.has(n)) continue;
       textCount += 1;
       const fontSize = fontSizes.get(n);
-      for (const c of clippersOf(dom.parentElement(n))) {
+      for (const c of clippersOf(textEl(n))) {
         if (reportedClip.has(c.el)) continue;
         const b1 = after.boxes.get(keyOf(c));
         if (!b1) continue;
         // Only text the viewport showed in full before can be lost from it.
         if (c.viewport && !insideBefore(n, c)) continue;
         measuredPairs += 1;
+        // A clamped box shows as many rows of lines as before: what goes
+        // past them it hides after an ellipsis, as it did (an excerpt).
+        if (!c.viewport && lineClampOf(c.el)) {
+          const b0 = before.boxes.get(keyOf(c));
+          const linesBefore = before.lines.get(n) || [];
+          if (b0 && rowsShown(linesAfter, b1, c) >= rowsShown(linesBefore, b0, c)) continue;
+        }
         // The line furthest out, measured on the axis that decided it: the
         // first one past the threshold, or else the one that went furthest.
         let worst = null;
@@ -1281,7 +1538,7 @@ function runInPage(ctx) {
               worst = { lost, ...m, edge: edgeOf(l, b1, m.axis) };
           }
         }
-        const moved = isMovedForEver(dom.parentElement(n), c.el);
+        const moved = isMovedForEver(textEl(n), c.el);
         if (worst) {
           reportedClip.add(c.el);
           const sizing =
@@ -1305,8 +1562,16 @@ function runInPage(ctx) {
             clipCss:
               c.viewport || c.contentVisibility
                 ? ''
-                : clipCssOf(c, dom.parentElement(n), worst.axis),
-            text: textOf(dom.parentElement(n)),
+                : clipCssOf(
+                    c,
+                    textEl(n),
+                    worst.axis,
+                    (() => {
+                      const b0 = before.boxes.get(keyOf(c));
+                      return !!b0 && b1.bottom - b1.top - (b0.bottom - b0.top) > 0.5;
+                    })()
+                  ),
+            text: textOf(holderOf(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
               thresholdPx: round1(worst.thresholdPx),
@@ -1323,19 +1588,13 @@ function runInPage(ctx) {
         // Text a repeating animation moves is left out: where it stands
         // depends on the point the animation was held at, not on the layout.
         if (moved || c.locked) continue;
-        const approach = closestApproach(
-          linesAfter,
-          b1,
-          c,
-          dom.parentElement(n),
-          before.boxes.get(keyOf(c))
-        );
+        const approach = closestApproach(linesAfter, b1, c, textEl(n), before.boxes.get(keyOf(c)));
         if (approach) {
           marginCandidates.push({
             el: c.el,
             value: approach.value,
             threshold: approach.threshold,
-            context: { axis: approach.axis, text: textOf(dom.parentElement(n)) }
+            context: { axis: approach.axis, text: textOf(holderOf(n)) }
           });
         }
       }
@@ -1351,8 +1610,8 @@ function runInPage(ctx) {
       if (visibleBefore.has(n) || !judged.has(n)) continue;
       const linesBefore = before.lines.get(n) || [];
       const linesAfter = (after && after.lines.get(n)) || [];
-      if (!linesBefore.length || !linesAfter.length || !shown(dom.parentElement(n))) continue;
-      const clippers = clippersOf(dom.parentElement(n)).filter((c) => !c.viewport);
+      if (!linesBefore.length || !linesAfter.length || !shown(textEl(n))) continue;
+      const clippers = clippersOf(textEl(n)).filter((c) => !c.viewport);
       // A line is shown in full when every box that clips it keeps it:
       // visually hidden text, cut by a 1px box of its own, shows none.
       const keeps = (l, boxes, c) => {
@@ -1361,8 +1620,16 @@ function runInPage(ctx) {
         const o = outside(l, box, c);
         return o.dx <= 1 && o.dy <= 1;
       };
-      const shownIn = (lines, boxes) =>
-        lines.filter((l) => clippers.every((c) => keeps(l, boxes, c))).length;
+      // Counted by rows: under a clamp, the text after the ellipsis is laid
+      // out beside the last row shown, and isn't shown.
+      const shownIn = (lines, boxes) => {
+        const tops = [];
+        for (const l of lines) {
+          if (!clippers.every((c) => keeps(l, boxes, c))) continue;
+          if (!tops.some((t) => Math.abs(t - l.top) < 1)) tops.push(l.top);
+        }
+        return tops.length;
+      };
       const shownBefore = shownIn(linesBefore, before.boxes);
       if (!shownBefore || shownIn(linesAfter, after.boxes) >= shownBefore) continue;
       // The box that cuts off a line it kept before.
@@ -1370,14 +1637,14 @@ function runInPage(ctx) {
         (c) =>
           !reportedClip.has(c.el) &&
           linesAfter.some((l) => !keeps(l, after.boxes, c)) &&
-          !isMovedForEver(dom.parentElement(n), c.el)
+          !isMovedForEver(textEl(n), c.el)
       );
       if (!cutter) continue;
       const b1 = after.boxes.get(cutter.el);
       reportedClip.add(cutter.el);
       clippedFurther.push({
         el: cutter.el,
-        text: textOf(dom.parentElement(n)),
+        text: textOf(holderOf(n)),
         lines: { shownBefore, shownAfter: shownIn(linesAfter, after.boxes) },
         container: {
           widthPx: round1(b1.right - b1.left),
@@ -1392,12 +1659,12 @@ function runInPage(ctx) {
       const buckets = new Map();
       const entries = [];
       for (const n of nodes) {
-        if (!visibleBefore.has(n) || pinned(dom.parentElement(n))) continue;
+        if (!visibleBefore.has(n) || pinned(textEl(n))) continue;
         for (const whole of after.lines.get(n) || []) {
           // Only the part of the line its clipping ancestors still show is
           // painted; what they cut off is the clipping check's.
           const l = { ...whole };
-          for (const c of paintClippersOf(dom.parentElement(n))) {
+          for (const c of paintClippersOf(textEl(n))) {
             const b = after.boxes.get(c.el);
             if (!b) continue;
             if (c.x) {
@@ -1455,8 +1722,8 @@ function runInPage(ctx) {
           // be anywhere on the page.
           const [a, b] = judged.has(list[i].n) ? [list[i], list[j]] : [list[j], list[i]];
           if (!judged.has(a.n)) continue;
-          const pa = dom.parentElement(a.n);
-          const pb = dom.parentElement(b.n);
+          const pa = holderOf(a.n);
+          const pb = holderOf(b.n);
           if (pa === pb || dom.contains(pa, pb) || dom.contains(pb, pa)) continue;
           if (reported.has(pa) || reported.has(pb)) continue;
           if (!intersects(a.l, b.l) || overlappedBefore(a.n, b.n)) continue;

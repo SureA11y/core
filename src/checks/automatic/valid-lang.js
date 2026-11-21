@@ -254,24 +254,28 @@ function runInPage(ctx) {
     // An almost-right value (en_US, jp, eng): the hint gives the tag it was
     // meant to be (helpers.langTagFix).
     const fix = typeof helpers.langTagFix === 'function' ? helpers.langTagFix(raw) : null;
+    // Page text quoted cut to 120 characters (helpers.quoteText): a 200 KB
+    // value was copied whole into the summary, its parameters and details.
+    const shownValue = helpers.quoteText(raw);
+    const shownSubtag = helpers.quoteText(subtag);
     const fixHints = {
       underscore: `Language tags use a hyphen, not an underscore: lang="${fix && fix.suggestion}".`,
-      country: `"${subtag}" is a country code, not a language code: for the language, use lang="${fix && fix.suggestion}".`,
-      alpha3: `"${subtag}" is a three-letter ISO 639-2 code; a lang attribute uses the two-letter code for that language: lang="${fix && fix.suggestion}".`
+      country: `"${shownSubtag}" is a country code, not a language code: for the language, use lang="${fix && fix.suggestion}".`,
+      alpha3: `"${shownSubtag}" is a three-letter ISO 639-2 code; a lang attribute uses the two-letter code for that language: lang="${fix && fix.suggestion}".`
     };
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: wellFormed
-          ? `This lang attribute value ("${raw}") is well formed, but "${subtag}" names no known language (it is not in the IANA Language Subtag Registry).`
-          : `This lang value ("${raw}") is not a valid language tag.`,
+          ? `This lang attribute value ("${shownValue}") is well formed, but "${shownSubtag}" names no known language (it is not in the IANA Language Subtag Registry).`
+          : `This lang value ("${shownValue}") is not a valid language tag.`,
         hint: fix ? fixHints[fix.kind] : 'Use a valid language tag, such as "fr" or "es-MX".',
         i18n: {
           summaryKey: wellFormed ? 'validLang_summary_unknown' : 'validLang_summary_fail',
           hintKey: fix ? `validLang_hint_fail_${fix.kind}` : 'validLang_hint_fail',
           params: {
             element: tag,
-            value: raw,
-            subtag,
+            value: shownValue,
+            subtag: shownSubtag,
             ...(fix ? { suggestion: fix.suggestion } : {})
           }
         },
@@ -279,7 +283,7 @@ function runInPage(ctx) {
           details: {
             reasonCode: setsDefault ? 'DEFAULT_LANG_INVALID' : 'ELEMENT_LANG_INVALID',
             element: tag,
-            value: raw,
+            value: shownValue,
             ...(fix ? { suggestion: fix.suggestion, fixKind: fix.kind } : {})
           }
         }

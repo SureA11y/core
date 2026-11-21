@@ -191,7 +191,8 @@
       "EXPANDED_TRUE_CONTROLLED_HIDDEN"
     ],
     "aria-hidden-body": [
-      "ARIA_HIDDEN_BODY"
+      "ARIA_HIDDEN_BODY",
+      "ARIA_HIDDEN_HTML"
     ],
     "aria-hidden-focus": [
       "ariaHiddenContainsFocusable",

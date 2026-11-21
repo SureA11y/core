@@ -93,14 +93,20 @@ function stampPacks(result, engine, given = []) {
   const skippedNames = new Set(engine.skipped.map((s) => s && s.name).filter(Boolean));
   const skippedProfiles = new Set();
   for (const pack of Array.isArray(given) ? given : []) {
-    const named = pack && typeof pack === 'object' && pack.name;
-    const id = named && pack.version ? `${pack.name}@${pack.version}` : named;
-    if (!named || (!skippedNames.has(named) && !skippedNames.has(id))) continue;
-    // A standard's profiles, or a checklist pack's own (its top-level
-    // profiles, which its standard is made from).
-    const profiles = pack.standard ? pack.standard.profiles : pack.profiles;
-    for (const name of Object.keys(profiles && typeof profiles === 'object' ? profiles : {})) {
-      skippedProfiles.add(name.toLowerCase());
+    // A pack that throws while read was skipped with its reason; reading it
+    // again here must not throw out of the scan (round 8, NW-6).
+    try {
+      const named = pack && typeof pack === 'object' && pack.name;
+      const id = named && pack.version ? `${pack.name}@${pack.version}` : named;
+      if (!named || (!skippedNames.has(named) && !skippedNames.has(id))) continue;
+      // A standard's profiles, or a checklist pack's own (its top-level
+      // profiles, which its standard is made from).
+      const profiles = pack.standard ? pack.standard.profiles : pack.profiles;
+      for (const name of Object.keys(profiles && typeof profiles === 'object' ? profiles : {})) {
+        skippedProfiles.add(String(name).replace(/[A-Z]/g, (c) => c.toLowerCase()));
+      }
+    } catch {
+      continue;
     }
   }
   const notRun = (e) =>
@@ -109,7 +115,7 @@ function stampPacks(result, engine, given = []) {
           profilesNotRun: e.profilesNotRun.map((n) =>
             n &&
             n.reason === 'unknown-profile' &&
-            skippedProfiles.has(String(n.profile).toLowerCase())
+            skippedProfiles.has(String(n.profile).replace(/[A-Z]/g, (c) => c.toLowerCase()))
               ? { ...n, reason: 'pack-skipped' }
               : n
           )
@@ -336,8 +342,50 @@ function getTestsForRunOnly(runOnly, engineOptions) {
     : core.getTestsForRunOnly(runOnly, engineOptions);
 }
 
+// Every name is listed, each as a plain identifier: Node's ESM loader finds
+// a CommonJS module's named exports by reading this object literal, and a
+// spread (...core) or a member (core.ENGINE_TAG) hides the names from it, so
+// `import { CHECK_DEFS } from '@surea11y/core'` failed (round 9, A9-1).
+const {
+  ENGINE_TAG,
+  SCHEMA_VERSION,
+  DEFAULT_POLICY,
+  POLICY_CONTRACTS,
+  resolvePolicy,
+  CHECK_DEFS,
+  TEST_DEFS,
+  COMPOSITE_RULES,
+  getLocaleCoverage,
+  getProfileWcagTarget,
+  runa11yCoreInPage,
+  runa11yCoreAcrossFrames,
+  a11yCoreEnableFrameResponder,
+  waitForPageReady,
+  preloadStyleSheets,
+  getMargins,
+  getAnnouncements,
+  __internal
+} = core;
+
 module.exports = {
-  ...core,
+  ENGINE_TAG,
+  SCHEMA_VERSION,
+  DEFAULT_POLICY,
+  POLICY_CONTRACTS,
+  resolvePolicy,
+  CHECK_DEFS,
+  TEST_DEFS,
+  COMPOSITE_RULES,
+  getLocaleCoverage,
+  getProfileWcagTarget,
+  runa11yCoreInPage,
+  runa11yCoreAcrossFrames,
+  a11yCoreEnableFrameResponder,
+  waitForPageReady,
+  preloadStyleSheets,
+  getMargins,
+  getAnnouncements,
+  __internal,
   getCheckDefById,
   getChecksCatalog,
   getRulesCatalog,

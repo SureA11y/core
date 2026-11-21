@@ -99,6 +99,10 @@
  *   the abstract `composite` role) rather than imported wholesale, since
  *   much of the wider ARIA-1.1 `aria-expanded` allowance list is legacy/
  *   AT-compat carryover, not current-spec fact.
+ *   aria-colindextext and aria-rowindextext, which WAI-ARIA 1.3 adds to
+ *   cell and row (and so to gridcell, columnheader and rowheader), are
+ *   added to the table by scripts/generate-aria-tables.js, as aria-query
+ *   does not carry them yet.
  *   `meter`'s valuenow/valuemax/valuemin/valuetext is also separately
  *   *required* (see `aria-required-attr`), but the two tables aren't
  *   unioned automatically, so it's listed in both places.
@@ -238,7 +242,7 @@ function runInPage(ctx) {
     'input[type=image]': 'button'
   };
   const NON_GLOBAL_ARIA_ATTR_SELECTOR =
-    '[aria-activedescendant], [aria-autocomplete], [aria-checked], [aria-colcount], [aria-colindex], [aria-colspan], [aria-disabled], [aria-errormessage], [aria-expanded], [aria-haspopup], [aria-invalid], [aria-level], [aria-modal], [aria-multiline], [aria-multiselectable], [aria-orientation], [aria-placeholder], [aria-posinset], [aria-pressed], [aria-readonly], [aria-required], [aria-rowcount], [aria-rowindex], [aria-rowspan], [aria-selected], [aria-setsize], [aria-sort], [aria-valuemax], [aria-valuemin], [aria-valuenow], [aria-valuetext]';
+    '[aria-activedescendant], [aria-autocomplete], [aria-checked], [aria-colcount], [aria-colindex], [aria-colindextext], [aria-colspan], [aria-disabled], [aria-errormessage], [aria-expanded], [aria-haspopup], [aria-invalid], [aria-level], [aria-modal], [aria-multiline], [aria-multiselectable], [aria-orientation], [aria-placeholder], [aria-posinset], [aria-pressed], [aria-readonly], [aria-required], [aria-rowcount], [aria-rowindex], [aria-rowindextext], [aria-rowspan], [aria-selected], [aria-setsize], [aria-sort], [aria-valuemax], [aria-valuemin], [aria-valuenow], [aria-valuetext]';
   // </generated:aria-implicit-roles>
 
   // <generated:aria-roleless-elements>
@@ -262,7 +266,14 @@ function runInPage(ctx) {
     blockquote: [],
     button: ['aria-disabled', 'aria-expanded', 'aria-haspopup', 'aria-pressed'],
     caption: [],
-    cell: ['aria-colindex', 'aria-colspan', 'aria-rowindex', 'aria-rowspan'],
+    cell: [
+      'aria-colindex',
+      'aria-colindextext',
+      'aria-colspan',
+      'aria-rowindex',
+      'aria-rowindextext',
+      'aria-rowspan'
+    ],
     checkbox: [
       'aria-checked',
       'aria-disabled',
@@ -275,6 +286,7 @@ function runInPage(ctx) {
     code: [],
     columnheader: [
       'aria-colindex',
+      'aria-colindextext',
       'aria-colspan',
       'aria-disabled',
       'aria-errormessage',
@@ -284,6 +296,7 @@ function runInPage(ctx) {
       'aria-readonly',
       'aria-required',
       'aria-rowindex',
+      'aria-rowindextext',
       'aria-rowspan',
       'aria-selected',
       'aria-sort'
@@ -623,6 +636,7 @@ function runInPage(ctx) {
     ],
     gridcell: [
       'aria-colindex',
+      'aria-colindextext',
       'aria-colspan',
       'aria-disabled',
       'aria-errormessage',
@@ -632,6 +646,7 @@ function runInPage(ctx) {
       'aria-readonly',
       'aria-required',
       'aria-rowindex',
+      'aria-rowindextext',
       'aria-rowspan',
       'aria-selected'
     ],
@@ -707,17 +722,20 @@ function runInPage(ctx) {
     row: [
       'aria-activedescendant',
       'aria-colindex',
+      'aria-colindextext',
       'aria-disabled',
       'aria-expanded',
       'aria-level',
       'aria-posinset',
       'aria-rowindex',
+      'aria-rowindextext',
       'aria-selected',
       'aria-setsize'
     ],
     rowgroup: [],
     rowheader: [
       'aria-colindex',
+      'aria-colindextext',
       'aria-colspan',
       'aria-disabled',
       'aria-errormessage',
@@ -727,6 +745,7 @@ function runInPage(ctx) {
       'aria-readonly',
       'aria-required',
       'aria-rowindex',
+      'aria-rowindextext',
       'aria-rowspan',
       'aria-selected',
       'aria-sort'
