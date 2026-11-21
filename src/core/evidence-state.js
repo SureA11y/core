@@ -115,9 +115,15 @@ function evidenceState(request) {
         doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter((s) => s !== adopted);
       } catch {}
     }
+    // Instantly, as the rule does: `scroll-behavior: smooth` would animate
+    // a plain scrollTo(x, y).
     try {
-      win.scrollTo(scroll[0], scroll[1]);
-    } catch {}
+      win.scrollTo({ left: scroll[0], top: scroll[1], behavior: 'instant' });
+    } catch {
+      try {
+        win.scrollTo(scroll[0], scroll[1]);
+      } catch {}
+    }
     return { released: true };
   }
 
