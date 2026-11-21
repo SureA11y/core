@@ -213,3 +213,25 @@ test(`${RULE_ID}: a banner or contentinfo in a shadow root or from ElementIntern
   const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// A block with a composite widget role is that widget: a role="menu" named
+// "menu" by its class is not asked to become a navigation.
+test(`${RULE_ID}: a block with a composite widget role is not asked about (round 9, N9-9)`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><header>Site</header><main>${body}</main><footer>f</footer></body></html>`;
+  for (const role of ['menu', 'menubar', 'listbox', 'tablist', 'tree', 'grid', 'toolbar']) {
+    const html = page(
+      `<div class="menu" role="${role}" aria-label="Actions"><a href="/a">A</a><a href="/b">B</a></div>`
+    );
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+  const plain = page('<div class="menu"><a href="/a">A</a><a href="/b">B</a></div>');
+  const rule = assertRule(runa11yCoreOnHtml(plain, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'NAVIGATION_NOT_EXPOSED');
+});
