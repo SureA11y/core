@@ -300,6 +300,41 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   );
 
+  // A shadow root shows a slotted skip link on focus with ::slotted(), and
+  // an element scaled to nothing is hidden as a container so scaled is
+  // (round 9, V9-13).
+  await t.test('a skip link revealed by ::slotted(:focus) is not asked about', async () => {
+    const shadow = (css) =>
+      doc(
+        '',
+        `<div id="host"><a id="skip" href="#main">Skip</a></div><main id="main"><p>Text</p></main><script>document.getElementById('host').attachShadow({ mode: 'open' }).innerHTML = '<style>${css}</style><slot></slot>';</script>`
+      );
+    const p = await open(
+      shadow('::slotted(a){position:absolute;left:-9999px} ::slotted(a:focus){left:0}')
+    );
+    const q = await open(shadow('slot::slotted(a){position:absolute;left:-9999px}'));
+    try {
+      assert.deepEqual((await scan(p, { rules: { include: RULE_ID } })).findings, []);
+      assert.deepEqual((await scan(q, { rules: { include: RULE_ID } })).findings, ['#skip']);
+    } finally {
+      await p.close();
+      await q.close();
+    }
+  });
+
+  await t.test('a link scaled to nothing is asked about, unless focus shows it', async () => {
+    const link = '<a id="t" href="/a">Account</a><main><p>Text</p></main>';
+    const p = await open(doc('#t{display:inline-block;transform:scale(0)}', link));
+    const q = await open(doc('#t{display:inline-block;scale:0} #t:focus{scale:1}', link));
+    try {
+      assert.deepEqual(await hintsOf(p), { '#t': 'clipped' });
+      assert.deepEqual(await hintsOf(q), {});
+    } finally {
+      await p.close();
+      await q.close();
+    }
+  });
+
   await t.test('a GOV.UK-style skip link revealed on focus is not asked about', async () => {
     const p = await open(page('.skip:not(:active):not(:focus):not(.\\:focus)'));
     try {
