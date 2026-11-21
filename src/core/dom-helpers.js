@@ -4393,6 +4393,7 @@ function createDomHelpers(opts) {
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
   let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document|ShadowRoot, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
+  let __firstLabelableByLabel = null; // WeakMap<Element, Element|null> (a <label>'s first labelable descendant, see firstLabelableIn)
   // Map<string, WeakMap<Element, Info>>. Only names computed at
   // __nameComputationDepth 0 are stored: a name computed deeper is the value
   // that traversal saw, not the element's own. Resolving an aria-labelledby
@@ -4524,6 +4525,15 @@ function createDomHelpers(opts) {
   }
 
   try {
+    __firstLabelableByLabel =
+      __domSharedCache.firstLabelableByLabel instanceof WeakMap
+        ? __domSharedCache.firstLabelableByLabel
+        : (__domSharedCache.firstLabelableByLabel = new WeakMap());
+  } catch {
+    __firstLabelableByLabel = null;
+  }
+
+  try {
     __accessibleNameCacheByKey =
       __domSharedCache.accessibleNameCacheByKey instanceof Map
         ? __domSharedCache.accessibleNameCacheByKey
@@ -4629,8 +4639,19 @@ function createDomHelpers(opts) {
       return false;
     }
   }
-  // A label's first labelable descendant, in tree order.
+  // A label's first labelable descendant, in tree order. Found once per
+  // label and scan: the contrast scan asks for each text node in a label
+  // (whether its label's control is disabled), and a walk of the label each
+  // time made a label holding many text nodes cost their number squared
+  // (round 9, R9-7).
   function firstLabelableIn(label) {
+    if (__firstLabelableByLabel && __firstLabelableByLabel.has(label))
+      return __firstLabelableByLabel.get(label);
+    const found = findFirstLabelableIn(label);
+    if (__firstLabelableByLabel) __firstLabelableByLabel.set(label, found);
+    return found;
+  }
+  function findFirstLabelableIn(label) {
     try {
       const plain = dom.querySelector(label, LABELABLE_SELECTOR);
       // A custom element may come before it: look for one only if the label
@@ -9994,6 +10015,41 @@ function createDomHelpers(opts) {
     return SKIP_LINK_WORDING.some((re) => re.test(s));
   }
 
+  // The fragment a link goes to in its own document, decoded and trimmed
+  // ('' for "#"), or null for a link that leads to another document, or
+  // has no fragment. The href is resolved against the document's base URL,
+  // as the browser follows it: under <base href="/">, "#main" on
+  // /products/42 leads to /#main, another page. A link stays on the page
+  // when its URL without the fragment is the document's own URL without
+  // its fragment, so a full URL of the page with a fragment counts too.
+  // Where a URL can't be read, an href that starts with "#" counts, as it
+  // did before.
+  const withoutFragment = (url) => {
+    const at = url.indexOf('#');
+    return at < 0 ? url : url.slice(0, at);
+  };
+  function getSamePageFragment(a) {
+    const href = trim(getAttr(a, 'href'));
+    if (href.indexOf('#') < 0) return null;
+    let fragment;
+    try {
+      const doc = dom.ownerDocument(a) || document;
+      const docUrl = String(dom.get(doc, 'URL') || '');
+      const resolved = new URL(href, dom.baseURI(doc) || docUrl).href;
+      if (withoutFragment(resolved) !== withoutFragment(docUrl)) return null;
+      fragment = resolved.slice(resolved.indexOf('#') + 1);
+    } catch {
+      if (href.charAt(0) !== '#') return null;
+      fragment = href.slice(1);
+    }
+    try {
+      fragment = decodeURIComponent(fragment);
+    } catch {
+      // keep the raw fragment if it isn't valid percent-encoding
+    }
+    return fragment.trim();
+  }
+
   // What a link is made of, for a standard that judges text links, image
   // links and SVG links apart:
   // - 'svg': an <a> in SVG (an SVG link), whatever it holds;
@@ -10082,6 +10138,7 @@ function createDomHelpers(opts) {
     isModalInert,
     getDocumentRoots: documentRoots,
     hasSkipLinkWording,
+    getSamePageFragment,
     getLinkKind,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors

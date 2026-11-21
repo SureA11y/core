@@ -75,6 +75,12 @@
  *   <map>: it counts as focusable when such an image is rendered and not inert.
  * - Elements hidden via CSS in ways that still allow keyboard focus (e.g., opacity:0, off-screen, clip)
  *   remain in-scope and will be flagged when focusable.
+ * - The focus probe (`runtimeProbe`) puts back what focusing moves: focus,
+ *   followed into open shadow roots and same-origin frames, the selection
+ *   of each document on the way (direction included, and no selection
+ *   where there was none) and the selection or caret in a focused text
+ *   field. Focus inside a closed shadow root is seen only as its host and
+ *   can't be put back there.
  */
 
 const id = 'aria-hidden-focus';
@@ -275,6 +281,41 @@ function runInPage(ctx) {
     return cur;
   }
 
+  // The element that has focus, followed into open shadow roots and into
+  // same-origin frames, and the documents on the way: what the probe puts
+  // back. A frame whose own document has nothing focused (its body) is the
+  // frame element itself. A closed shadow root stops the walk at its host.
+  function getFocusPath() {
+    const docs = document ? [document] : [];
+    let cur = getDeepActiveElement();
+    let guard = 0;
+    while (cur && guard++ < 20) {
+      const tag = lower(dom.localName(cur) || '');
+      if (tag !== 'iframe' && tag !== 'frame') break;
+      let inner;
+      let innerDoc = null;
+      try {
+        innerDoc = dom.contentDocument(cur);
+        inner = innerDoc ? dom.activeElement(innerDoc) : null;
+      } catch {
+        inner = null;
+      }
+      if (!inner || inner === dom.body(innerDoc) || inner === dom.documentElement(innerDoc)) break;
+      docs.push(innerDoc);
+      cur = inner;
+      let shadowGuard = 0;
+      while (
+        cur &&
+        dom.shadowRoot(cur) &&
+        dom.activeElement(dom.shadowRoot(cur)) &&
+        shadowGuard++ < 20
+      ) {
+        cur = dom.activeElement(dom.shadowRoot(cur));
+      }
+    }
+    return { el: cur, docs };
+  }
+
   function focusElementSafe(el) {
     if (!el || typeof dom.get(el, 'focus') !== 'function') return false;
     try {
@@ -287,6 +328,93 @@ function runInPage(ctx) {
       } catch {
         return false;
       }
+    }
+  }
+
+  // The page's selection, and the selection inside a focused text field.
+  // Focusing an element moves the caret and replaces the selection (a
+  // contenteditable puts the caret at its start), and putting focus back
+  // does not bring either back, so the probe saves them first.
+  function selectionOf(doc) {
+    try {
+      const sel = doc ? dom.getSelection(doc) : null;
+      return sel && typeof sel.rangeCount === 'number' ? sel : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function readSelection(sel) {
+    return {
+      count: sel.rangeCount,
+      anchorNode: sel.anchorNode,
+      anchorOffset: sel.anchorOffset,
+      focusNode: sel.focusNode,
+      focusOffset: sel.focusOffset
+    };
+  }
+
+  function saveSelections(focusPath) {
+    const saved = { docs: [], field: null };
+    const focused = focusPath.el;
+    for (let i = 0; i < focusPath.docs.length; i++) {
+      const sel = selectionOf(focusPath.docs[i]);
+      if (sel) saved.docs.push({ sel, state: readSelection(sel) });
+    }
+    try {
+      if (focused && typeof focused.selectionStart === 'number') {
+        saved.field = {
+          el: focused,
+          start: focused.selectionStart,
+          end: focused.selectionEnd,
+          direction: focused.selectionDirection
+        };
+      }
+    } catch {
+      // An input type without a text selection.
+    }
+    return saved;
+  }
+
+  function sameSelection(a, b) {
+    return (
+      a.count === b.count &&
+      (a.count === 0 ||
+        (a.anchorNode === b.anchorNode &&
+          a.anchorOffset === b.anchorOffset &&
+          a.focusNode === b.focusNode &&
+          a.focusOffset === b.focusOffset))
+    );
+  }
+
+  function restoreSelections(saved) {
+    if (!saved) return;
+    const field = saved.field;
+    if (field) {
+      try {
+        if (
+          field.el.selectionStart !== field.start ||
+          field.el.selectionEnd !== field.end ||
+          field.el.selectionDirection !== field.direction
+        ) {
+          field.el.setSelectionRange(field.start, field.end, field.direction || undefined);
+        }
+      } catch {}
+    }
+    for (let i = 0; i < saved.docs.length; i++) {
+      const { sel, state } = saved.docs[i];
+      try {
+        if (sameSelection(readSelection(sel), state)) continue;
+        sel.removeAllRanges();
+        if (state.count > 0 && state.anchorNode && state.focusNode) {
+          sel.setBaseAndExtent(
+            state.anchorNode,
+            state.anchorOffset,
+            state.focusNode,
+            state.focusOffset
+          );
+        }
+      } catch {}
     }
   }
 
@@ -405,7 +533,16 @@ function runInPage(ctx) {
       return null;
     const candidate = entry.probeCandidates[0];
     if (!candidate) return null;
+    const focusPath = getFocusPath();
+    const saved = saveSelections(focusPath);
+    try {
+      return probeFocus(entry, candidate, focusPath.el);
+    } finally {
+      restoreSelections(saved);
+    }
+  }
 
+  function probeFocus(entry, candidate, restoreTo) {
     let focusedByEvent = false;
     const onFocusCapture = () => {
       focusedByEvent = true;
@@ -454,16 +591,19 @@ function runInPage(ctx) {
     const afterRef = buildNodeRef(after, entry.rootEl);
     if (afterRef) focusTrace.push(afterRef);
 
-    // Put focus back where it was. With nothing focused before (the body
-    // or the root), focusing that does nothing, so the element that took
-    // focus is blurred instead: focus is not left inside the hidden subtree.
-    if (before !== after) {
+    // Put focus back where it was, inside a same-origin frame too. With
+    // nothing focused before (the body or the root), focusing that does
+    // nothing, so the element that took focus is blurred instead: focus is
+    // not left inside the hidden subtree.
+    if (restoreTo !== getFocusPath().el) {
       const wasPage =
-        !before || before === dom.body(document) || before === dom.documentElement(document);
-      if (wasPage || !focusElementSafe(before) || getDeepActiveElement() !== before) {
+        !restoreTo ||
+        restoreTo === dom.body(document) ||
+        restoreTo === dom.documentElement(document);
+      if (wasPage || !focusElementSafe(restoreTo) || getFocusPath().el !== restoreTo) {
         try {
           const now = getDeepActiveElement();
-          if (now && now !== before) dom.blur(now);
+          if (now && now !== restoreTo) dom.blur(now);
         } catch {}
       }
     }

@@ -2155,9 +2155,61 @@ function assertPageBuiltins() {
     check('RegExp', () => new RegExp('b+', 'g').exec('abbc')[0] === 'bb');
     check('Math.round', () => Math.round(1.5) === 2 && Math.round(-0.4) === 0);
     check('Math.abs', () => Math.abs(-2) === 2);
-    check('Math.max', () => Math.max(1, 3) === 3);
-    check('Math.min', () => Math.min(1, 3) === 1);
+    // With more than two arguments too: a replacement that reads only two
+    // gave the wrong extreme of a list (round 9, R9-10).
+    check('Math.max', () => Math.max(1, 3) === 3 && Math.max(1, 3, 5) === 5);
+    check('Math.min', () => Math.min(1, 3) === 1 && Math.min(5, 3, 1) === 1);
     check('parseFloat', () => parseFloat('1.5px') === 1.5 && Number.parseFloat('2.5') === 2.5);
+    // Each of these, replaced, changed what rules report without a word
+    // (round 9, R9-10). A shift or pop that takes nothing out hung the scan
+    // in a loop that empties a list, so they are checked before it starts.
+    check(
+      'String.prototype.indexOf',
+      () => 'abcb'.indexOf('b') === 1 && 'abcb'.indexOf('b', 2) === 3 && 'abc'.indexOf('d') === -1
+    );
+    check('String.prototype.includes', () => 'abc'.includes('b') && !'abc'.includes('d'));
+    check('String.prototype.slice', () => 'abcd'.slice(1, 3) === 'bc' && 'abc'.slice(-1) === 'c');
+    check('String.prototype.charAt', () => 'abc'.charAt(1) === 'b');
+    check('String.prototype.match', () => {
+      const m = 'a1b2'.match(/\d/g);
+      return !!m && m.length === 2 && m[1] === '2' && 'abc'.match(/c/).index === 2;
+    });
+    check('RegExp.prototype[Symbol.match]', () => {
+      const m = /b/[Symbol.match]('abc');
+      return !!m && m[0] === 'b';
+    });
+    check('RegExp.prototype[Symbol.split]', () => {
+      const parts = /\d/[Symbol.split]('a1b2c');
+      return parts.length === 3 && parts[2] === 'c';
+    });
+    check('Array.prototype.join', () => [1, 2].join('-') === '1-2' && [1, 2].join() === '1,2');
+    check('Array.prototype.sort', () => {
+      const a = [3, 1, 2].sort();
+      const b = [1, 3, 2].sort((x, y) => y - x);
+      return a[0] === 1 && a[2] === 3 && b[0] === 3 && b[2] === 1;
+    });
+    check('Array.prototype.shift', () => {
+      const a = [1, 2];
+      return a.shift() === 1 && a.length === 1 && a[0] === 2;
+    });
+    check('Array.prototype.pop', () => {
+      const a = [1, 2];
+      return a.pop() === 2 && a.length === 1;
+    });
+    check('Set.prototype.delete', () => {
+      const s = new Set([1]);
+      return s.delete(1) === true && !s.has(1) && s.size === 0;
+    });
+    check('WeakMap.prototype.has', () => {
+      const k = {};
+      const m = new WeakMap();
+      m.set(k, 1);
+      return m.has(k) && !m.has({});
+    });
+    check('parseInt', () => parseInt('12px', 10) === 12 && Number.parseInt('7') === 7);
+    check('Math.floor', () => Math.floor(1.7) === 1 && Math.floor(-1.2) === -2);
+    check('Math.pow', () => Math.pow(2, 10) === 1024);
+    check('URL', () => new URL('b#c', 'https://a.test/x/').href === 'https://a.test/x/b#c');
     check('NodeFilter', () => {
       if (typeof NodeFilter === 'undefined') return true;
       return (

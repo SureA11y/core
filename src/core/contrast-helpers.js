@@ -332,6 +332,58 @@ function createContrastHelpers(opts, shared) {
     return false;
   }
 
+  // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
+  // accessible name of a disabled widget has no contrast requirement
+  // either, even when the disabled control itself is a SIBLING of the
+  // text rather than an ancestor -- e.g. <label>My name<input disabled/>
+  // </label> (implicit/explicit native label association), or a
+  // <label id="x">...</label> referenced via aria-labelledby="x" from a
+  // separate aria-disabled widget. Worked out once per label and scan: the
+  // text scan asks for every text node in the label, and each answer walked
+  // the label, or queried the whole document for its id, again, so a label
+  // holding many text nodes cost their number squared (round 9, R9-7).
+  const __localLabelNamesDisabledCache = new WeakMap();
+  const __labelNamesDisabledCache =
+    __getSharedWeakMapCache('__labelNamesDisabledCache') || __localLabelNamesDisabledCache;
+  function labelNamesDisabled(labelAncestor) {
+    if (__labelNamesDisabledCache.has(labelAncestor))
+      return __labelNamesDisabledCache.get(labelAncestor);
+    const disabled = findLabelNamesDisabled(labelAncestor);
+    __labelNamesDisabledCache.set(labelAncestor, disabled);
+    return disabled;
+  }
+  function findLabelNamesDisabled(labelAncestor) {
+    try {
+      // Not the native `.control`, which walks the whole document on
+      // every call in jsdom.
+      const control = shared.getLabelControl
+        ? shared.getLabelControl(labelAncestor)
+        : labelAncestor.control || null;
+      if (control && isDisabledWidget(control)) return true;
+    } catch {}
+
+    try {
+      // Only an element in the label's own tree (its shadow root, or the
+      // document) can reference it by id.
+      const root = dom.getRootNode(labelAncestor);
+      const tree =
+        root && typeof dom.get(root, 'getElementById') === 'function'
+          ? root
+          : dom.ownerDocument(labelAncestor);
+      const labelId = dom.get(labelAncestor, 'id');
+      if (tree && labelId) {
+        const referrers = dom.querySelectorAll(
+          tree,
+          '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
+        );
+        for (const ref of referrers) {
+          if (isDisabledWidget(ref)) return true;
+        }
+      }
+    } catch {}
+    return false;
+  }
+
   function isInactiveUiComponent(el) {
     let node = el;
     let depth = 0;
@@ -344,45 +396,11 @@ function createContrastHelpers(opts, shared) {
       node = dom.parentElement(node);
     }
 
-    // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
-    // accessible name of a disabled widget has no contrast requirement
-    // either, even when the disabled control itself is a SIBLING of the
-    // text rather than an ancestor -- e.g. <label>My name<input disabled/>
-    // </label> (implicit/explicit native label association), or a
-    // <label id="x">...</label> referenced via aria-labelledby="x" from a
-    // separate aria-disabled widget. Only attempted when an enclosing
-    // <label> was actually found above, to avoid a document-wide query for
-    // the common case of plain text with no label ancestor at all.
-    if (labelAncestor) {
-      try {
-        // Not the native `.control`, which walks the whole document on
-        // every call in jsdom.
-        const control = shared.getLabelControl
-          ? shared.getLabelControl(labelAncestor)
-          : labelAncestor.control || null;
-        if (control && isDisabledWidget(control)) return true;
-      } catch {}
-
-      try {
-        // Only an element in the label's own tree (its shadow root, or the
-        // document) can reference it by id.
-        const root = dom.getRootNode(labelAncestor);
-        const tree =
-          root && typeof dom.get(root, 'getElementById') === 'function'
-            ? root
-            : dom.ownerDocument(labelAncestor);
-        const labelId = dom.get(labelAncestor, 'id');
-        if (tree && labelId) {
-          const referrers = dom.querySelectorAll(
-            tree,
-            '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
-          );
-          for (const ref of referrers) {
-            if (isDisabledWidget(ref)) return true;
-          }
-        }
-      } catch {}
-    }
+    // WCAG 1.4.3/1.4.6 "disabled label" exception: see labelNamesDisabled.
+    // Only attempted when an enclosing <label> was actually found above, to
+    // avoid a document-wide query for the common case of plain text with no
+    // label ancestor at all.
+    if (labelAncestor && labelNamesDisabled(labelAncestor)) return true;
 
     return false;
   }

@@ -112,6 +112,7 @@ const SAFE_DOM_METHODS = [
   'getElementsByTagName',
   'getRootNode',
   'getScreenCTM',
+  'getSelection',
   'hasAttribute',
   'hasChildNodes',
   'insertBefore',
@@ -129,6 +130,7 @@ const SAFE_DOM_METHODS = [
 // that every name the source passes to dom.get or dom.call is listed here or
 // above, since the page check below relies on it.
 const SAFE_DOM_OTHER_NAMES = [
+  'URL',
   'customElements',
   'adoptedStyleSheets',
   'ariaActiveDescendantElement',
@@ -676,6 +678,10 @@ function createSafeDom() {
       protect && guard(o)
         ? protectedCall(o, 'getScreenCTM', a, b, c, d)
         : o.getScreenCTM(a, b, c, d),
+    getSelection: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getSelection', a, b, c, d)
+        : o.getSelection(a, b, c, d),
     hasAttribute: (o, a, b, c, d) =>
       protect && guard(o)
         ? protectedCall(o, 'hasAttribute', a, b, c, d)

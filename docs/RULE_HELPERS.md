@@ -953,6 +953,16 @@ One list for every rule that looks for a skip link, core's `skip-link` and any a
 profile brings, so they recognise the same links; add a phrasing here, not in a
 rule.
 
+### `getSamePageFragment(el)` → `string | null`
+
+The fragment a link goes to in its own document, decoded and trimmed (`''` for
+`href="#"`), or `null` for a link that leads to another document or has no
+fragment. The href is resolved against the document's base URL, as the browser
+follows it: under `<base href="/">`, `href="#main"` on `/products/42` leads to
+`/#main`, another page, so it gives `null`; a full URL of the page with a fragment
+gives the fragment. Use it rather than testing for a leading `#`, for any rule that
+looks for a link within the page, as `skip-link` and `bypass-blocks-present` do.
+
 ### `getLinkKind(el)` → `'text' | 'image' | 'composite' | 'svg'`
 
 What a link is made of, for a standard that judges text links, image links and SVG links

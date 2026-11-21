@@ -157,3 +157,68 @@ test('a getter on Object.prototype that throws stops the scan with PAGE_BUILTINS
     delete Object.prototype.type;
   }
 });
+
+test('the built-ins the round 9 fuzz found changing results without a word are checked too (round 9, R9-10)', () => {
+  const symbolMethod = (key, value) => [RegExp.prototype, key, value];
+  const join = Array.prototype.join;
+  const cases = [
+    [String.prototype, 'indexOf', () => -1, 'String.prototype.indexOf'],
+    [String.prototype, 'includes', () => false, 'String.prototype.includes'],
+    [String.prototype, 'slice', () => '', 'String.prototype.slice'],
+    [String.prototype, 'charAt', () => '', 'String.prototype.charAt'],
+    [String.prototype, 'match', () => null, 'String.prototype.match'],
+    [
+      ...symbolMethod(Symbol.split, function (s) {
+        return [String(s)];
+      }),
+      'RegExp.prototype[Symbol.split]'
+    ],
+    [...symbolMethod(Symbol.match, () => null), 'RegExp.prototype[Symbol.match]'],
+    [
+      Array.prototype,
+      'join',
+      function () {
+        // The separator ignored.
+        return join.call(this);
+      },
+      'Array.prototype.join'
+    ],
+    [
+      Array.prototype,
+      'sort',
+      function () {
+        return this;
+      },
+      'Array.prototype.sort'
+    ],
+    [Set.prototype, 'delete', () => true, 'Set.prototype.delete'],
+    [WeakMap.prototype, 'has', () => false, 'WeakMap.prototype.has'],
+    [globalThis, 'parseInt', () => NaN, 'parseInt'],
+    [Math, 'floor', (x) => x, 'Math.floor'],
+    [Math, 'pow', () => 0, 'Math.pow'],
+    [Math, 'max', (a, b) => (a > b ? a : b), 'Math.max'],
+    [Math, 'min', (a, b) => (a < b ? a : b), 'Math.min'],
+    [
+      globalThis,
+      'URL',
+      function () {
+        throw new Error('url');
+      },
+      'URL'
+    ],
+    // Last: before the fix, a shift or pop that takes nothing out never
+    // let the scan end.
+    [Array.prototype, 'pop', () => undefined, 'Array.prototype.pop'],
+    [Array.prototype, 'shift', () => undefined, 'Array.prototype.shift']
+  ];
+  const [, inPage] = scanBoth();
+  for (const [target, key, value, name] of cases) {
+    withPatched(target, key, value, () => {
+      assert.throws(inPage, (err) => {
+        assert.equal(err.code, 'PAGE_BUILTINS_BROKEN', name);
+        assert.ok(err.broken.includes(name), `${name}: ${err.broken}`);
+        return true;
+      });
+    });
+  }
+});

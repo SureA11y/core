@@ -170,7 +170,8 @@
  * - The spacing sheet is one cascade layer declared before every other
  *   style: layered `!important` declarations beat unlayered ones and later
  *   layers, as a user style sheet would. It is removed afterwards, and the
- *   scroll position put back.
+ *   scroll position put back at once, not animated where the page sets
+ *   `scroll-behavior: smooth`.
  * - Text that was already outside its clipping box before (a carousel
  *   slide, text hidden off screen) is not counted, nor is text inside a
  *   <marquee>: browsers move it outside the Web Animations API, so the
@@ -1244,9 +1245,16 @@ function runInPage(ctx) {
       if (spacingApplied) after = measure();
     } finally {
       removeSpacing(adopted);
+      // Instantly: a page with `scroll-behavior: smooth` would animate a
+      // plain scrollTo(x, y), and the scan would return with the page
+      // still on its way back.
       try {
-        view.scrollTo(scroll[0], scroll[1]);
-      } catch {}
+        dom.call(view, 'scrollTo', { left: scroll[0], top: scroll[1], behavior: 'instant' });
+      } catch {
+        try {
+          dom.call(view, 'scrollTo', scroll[0], scroll[1]);
+        } catch {}
+      }
     }
     spacingNotApplied = !spacingApplied;
 

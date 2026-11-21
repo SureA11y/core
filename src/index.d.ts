@@ -462,6 +462,7 @@ export interface RuleHelpers {
   getImagesUsingMap: RuleHelper;
   parseHtmlInteger: RuleHelper;
   hasSkipLinkWording: RuleHelper;
+  getSamePageFragment: RuleHelper;
   getLinkKind: RuleHelper;
   reportOccurrence: RuleHelper;
   quoteText: RuleHelper;
