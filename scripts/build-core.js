@@ -457,6 +457,14 @@ function matchIgnoringCase(table, locale) {
   return null;
 }
 
+// A table's dictionary for a locale its key may write in another case: the
+// caller's messages and the built-in tables are matched each on its own, so
+// messages: { DE: ... } layers over the built-in de, and locale 'DE' with
+// messages: { De: ... } keeps the built-in German under it (round 9, A9-3).
+function dictIgnoringCase(table, locale) {
+  return ownDict(table, locale) || ownDict(table, matchIgnoringCase(table, locale));
+}
+
 function findLocaleKey(locale, engineOptions) {
   if (lookupDict(locale, engineOptions)) return locale;
 
@@ -483,7 +491,9 @@ function getLocaleDict(engineOptions) {
   const requested = normalizeLocale(engineOptions && engineOptions.locale);
   const matched = matchLocale(requested, engineOptions);
 
-  return matched ? lookupDict(matched, engineOptions) : (I18N && I18N.en ? I18N.en : {});
+  return matched
+    ? dictIgnoringCase(getSuppliedMessages(engineOptions), matched) || dictIgnoringCase(I18N, matched)
+    : (I18N && I18N.en ? I18N.en : {});
 }
 
 function ownString(dict, key) {
@@ -499,8 +509,8 @@ function localeMessage(key, engineOptions) {
   if (!matched) return null;
 
   return (
-    ownString(ownDict(getSuppliedMessages(engineOptions), matched), key) ||
-    ownString(ownDict(I18N, matched), key)
+    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), matched), key) ||
+    ownString(dictIgnoringCase(I18N, matched), key)
   );
 }
 
@@ -532,10 +542,14 @@ function resolveLocale(engineOptions) {
   if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
 
   if (dict !== en) {
-    const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
-    const builtIn = ownDict(I18N, matched);
+    const supplied = dictIgnoringCase(getSuppliedMessages(engineOptions), matched);
+    const builtIn = dictIgnoringCase(I18N, matched);
 
-    const leftOut = I18N_LEFT_OUT[matched] || {};
+    const builtInKey = ownDict(I18N, matched) ? matched : matchIgnoringCase(I18N, matched);
+    const leftOut =
+      (builtInKey && Object.prototype.hasOwnProperty.call(I18N_LEFT_OUT, builtInKey)
+        ? I18N_LEFT_OUT[builtInKey]
+        : null) || {};
 
     for (const key in en) {
       if (leftOut[key] === true) continue;
@@ -659,7 +673,7 @@ function t(key, fallback, params, engineOptions) {
   // built-in one. Without it, a custom rule's keys given only in English
   // showed empty under another locale.
   const vEn =
-    ownString(ownDict(getSuppliedMessages(engineOptions), 'en'), key) ||
+    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), 'en'), key) ||
     ownString(I18N && I18N.en, key);
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
