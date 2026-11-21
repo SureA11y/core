@@ -25,10 +25,7 @@ Every finding of rounds 1 to 8 is fixed, decided or closed (§3, §4). Of round 
 
 ### Still open
 
-| # | Finding | Sev. | Details |
-|---|---|---|---|
-| R8 (leftover) | `aria-valid-attr` copies a whole very long `aria-*` attribute name into its finding, where round 7 and 8 cut other quoted values (`quoteText`) | Low | [round 8 §3](./2026-11-stress-test-8.md#3-what-is-left) |
-| R8 (leftover) | Under jsdom, `getComputedStyle` dominates `duplicate-id-aria`'s time on big pages, now that the rule's own walk is linear (NW-5, RO-1) | Low | [round 8 §3](./2026-11-stress-test-8.md#3-what-is-left) |
+Nothing. The two Low leftovers of round 8 (`aria-valid-attr` quoting a very long attribute name whole and taking seconds on it; jsdom's `getComputedStyle` cost in `duplicate-id-aria` on big pages) are fixed in [#419](https://github.com/SureA11y/core/pull/419), merged 2026-11-21.
 
 ### Decided on 2026-11-21 (round 9, done in [#418](https://github.com/SureA11y/core/pull/418))
 

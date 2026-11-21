@@ -2,7 +2,7 @@
 
 Where the work on the audit's findings stands, written so that another person or session can pick it up without the history of this one. The findings themselves, open and fixed, are in [`FINDINGS.md`](./FINDINGS.md); this page says what is in flight, what is decided, and how the work is done.
 
-Last updated 2026-11-21, on `main` at `48cb9157` (1.17.0 plus the unreleased 1.18.0 work).
+Last updated 2026-11-21, on `main` at `04966f92` (1.17.0 plus the unreleased 1.18.0 work).
 
 ## 1. Open now
 
@@ -21,7 +21,7 @@ Last updated 2026-11-21, on `main` at `48cb9157` (1.17.0 plus the unreleased 1.1
 - **The contrast text scan's speed**, the safe part: done in #415, merged 2026-11-20.
 - **label-in-name's speed**: examined 2026-11-20 and closed without a change (`FINDINGS.md` §4): no waste in the rule itself.
 
-What is left (`FINDINGS.md` §1): two Low leftovers of round 8 (`aria-valid-attr` quoting a very long attribute name whole; jsdom's `getComputedStyle` cost in `duplicate-id-aria` on big pages); The features of `FINDINGS.md` §2 remain, the sixth round's three among them (R6:CE-4 to CE-6).
+What is left (`FINDINGS.md` §1): nothing open; round 8's two Low leftovers are fixed in #419, merged 2026-11-21 as `04966f92`. The features of `FINDINGS.md` §2 remain, the sixth round's three among them (R6:CE-4 to CE-6).
 
 **Next step:** decide which of the remaining features of `FINDINGS.md` §2 to take: those left change what a scan does (a 1.4.4 clipping check, a first-heading best practice, a time budget, the paint-order part of contrast-computable's speed, reporter changes, a shared event-path helper, profiles without forking core). Before the next round, merge `main` into this branch (README, "Before running an audit").
 
