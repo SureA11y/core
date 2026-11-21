@@ -67,3 +67,12 @@ test('page values quoted in findings are cut, not copied whole (NW-7)', () => {
     assert.ok(found.length < 1000, `${id}: ${found.length} characters at ${found.at}`);
   }
 });
+
+test('a long role token is not measured against every role', () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><div role="${'Z'.repeat(40000)}">r</div></main></body></html>`;
+  const t0 = Date.now();
+  const r = runa11yCoreOnHtml(html, { runOnly: ['aria-roles-valid'] });
+  const ms = Date.now() - t0;
+  assert.equal(r.checksResults[0].outcome, 'cantTell');
+  assert.ok(ms < 5000, `took ${ms} ms`);
+});

@@ -2993,6 +2993,10 @@ function createDomHelpers(opts) {
     let bestDistance = Infinity;
     let tie = false;
     for (const r of aria.concreteRoles()) {
+      // Lengths further apart than the limit are further apart in edits,
+      // so a long token is never measured against every role: a 40 KB one
+      // took seconds.
+      if (Math.abs(t.length - r.length) > limit) continue;
       const d = editDistance(t, r);
       if (d < bestDistance) {
         best = r;
@@ -3010,16 +3014,19 @@ function createDomHelpers(opts) {
     const n = lower(name);
     if (n.slice(0, 5) !== 'aria-' || aria.isValidAriaAttrName(n)) return '';
     const suffix = n.slice(5);
+    const limit = suffix.length <= 5 ? 1 : 2;
     let best = '';
     let bestDistance = Infinity;
     for (const a of aria.ariaAttrNames()) {
+      // As for a role: a length further off than the limit can't be near.
+      if (Math.abs(suffix.length - (a.length - 5)) > limit) continue;
       const d = editDistance(suffix, a.slice(5));
       if (d < bestDistance) {
         best = a;
         bestDistance = d;
       }
     }
-    return bestDistance <= (suffix.length <= 5 ? 1 : 2) ? best : '';
+    return bestDistance <= limit ? best : '';
   }
 
   // Words authors write as a role that ARIA calls by another name, each
