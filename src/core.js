@@ -110721,7 +110721,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!hit) continue;
       answered = true;
       try {
-        if (hit === other.el || dom.contains(other.el, hit)) return false;
+        // The hit test drills into shadow roots, so what it finds may be
+        // inside a component that `other` holds: contains() stops at the
+        // shadow boundary, and `other` would read as covered.
+        if (hit === other.el || isComposedInside(hit, other.el)) return false;
       } catch {
         return false;
       }
@@ -110738,7 +110741,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hit = elementFromPoint(target.center.cx, target.center.cy);
     if (hit) {
       try {
-        out = !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
+        out = !(
+          hit === target.el ||
+          isComposedInside(hit, target.el) ||
+          isComposedInside(target.el, hit)
+        );
       } catch {
         out = false;
       }
@@ -112643,7 +112650,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!hit) continue;
       answered = true;
       try {
-        if (hit === other.el || dom.contains(other.el, hit)) return false;
+        // The hit test drills into shadow roots, so what it finds may be
+        // inside a component that `other` holds: contains() stops at the
+        // shadow boundary, and `other` would read as covered.
+        if (hit === other.el || isComposedInside(hit, other.el)) return false;
       } catch {
         return false;
       }
@@ -112660,7 +112670,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hit = elementFromPoint(target.center.cx, target.center.cy);
     if (hit) {
       try {
-        out = !(hit === target.el || dom.contains(target.el, hit) || dom.contains(hit, target.el));
+        out = !(
+          hit === target.el ||
+          isComposedInside(hit, target.el) ||
+          isComposedInside(target.el, hit)
+        );
       } catch {
         out = false;
       }

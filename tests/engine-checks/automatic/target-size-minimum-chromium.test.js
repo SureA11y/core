@@ -379,4 +379,18 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.close();
     }
   });
+  // Round 8, NW-1: the hit test drills into shadow roots, and a neighbour
+  // whose face is drawn in a component's shadow root was read as covered.
+  await t.test('a plain target beside one drawn in a component still fails', async () => {
+    const icon =
+      '<svg viewBox="0 0 16 16" width="16" height="16" style="display:block"><rect width="16" height="16"/></svg>';
+    const button = (label, face) =>
+      `<button aria-label="${label}" style="all:unset;display:inline-block;width:16px;height:16px">${face}</button>`;
+    const [outcome, findings] = await scan(
+      `<script>customElements.define('x-icon', class extends HTMLElement { constructor() { super(); this.attachShadow({ mode: 'open' }).innerHTML = '${icon}'; } });</script>` +
+        `<div style="display:flex;gap:2px;margin:20px">${button('a', icon)}${button('b', '<x-icon></x-icon>')}${button('c', icon)}</div>`
+    );
+    assert.equal(outcome, 'fail');
+    assert.equal(findings.length, 3, JSON.stringify(findings));
+  });
 });
