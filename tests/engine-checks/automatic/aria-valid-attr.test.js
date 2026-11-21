@@ -152,3 +152,20 @@ test(`${RULE_ID}: aria-role points to the role attribute`, () => {
     'ARIA has no aria-role attribute. Use the role attribute instead: role="button".'
   );
 });
+
+// A very long invalid aria-* name is quoted at 120 characters, as other
+// rules quote page values, not copied whole into the finding; and its lean
+// measures it against no attribute of another length, so it costs no
+// quadratic work (round 8 leftovers).
+test('aria-valid-attr: a very long attribute name is quoted at 120 characters, and quickly', () => {
+  const name = 'aria-' + 'x'.repeat(200000);
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><div ${name}="1">x</div></main></body></html>`;
+  const started = Date.now();
+  const rule = runa11yCoreOnHtml(html, { runOnly: ['aria-valid-attr'] }).checksResults[0];
+  const ms = Date.now() - started;
+  const occ = rule.occurrences[0];
+  assert.ok(occ.data.details.attr.length <= 120, 'details.attr');
+  assert.ok(JSON.stringify(occ).length < 20000, 'the finding stays small');
+  // It took over 7 s; now well under one. The bound leaves room for slow CI.
+  assert.ok(ms < 4000, `took ${ms} ms`);
+});
