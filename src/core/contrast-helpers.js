@@ -2486,6 +2486,133 @@ function createContrastHelpers(opts, shared) {
     return { colors };
   }
 
+  // -------- Inset box shadows painted as a background --------
+  //
+  // An inset box-shadow is painted inside the padding box, over the
+  // element's background and under its content: `inset 0 0 0 100vmax
+  // rgba(0,0,0,.6)` darkens a card under its title, and a spread as wide as
+  // the box fills it with the shadow's color. What el's inset shadows paint
+  // under textEl's text: null when they paint nothing there (none, outer
+  // shadows only, transparent ones, or a hole clear of the text), { colors }
+  // with the colors of those that fill the whole padding box, topmost first,
+  // or { blocked, value } when one paints under part of the text, or where
+  // it reaches can't be worked out (no layout, a length it can't read, a
+  // scaled or rotated box).
+  const __insetShadowCache = new WeakMap();
+  function __insetShadowUnder(el, cs, textEl) {
+    const raw = trim(cs && cs.boxShadow);
+    if (!raw || raw === 'none' || !/\binset\b/i.test(raw)) return null;
+    let byText = __insetShadowCache.get(el);
+    if (byText && byText.has(textEl)) return byText.get(textEl);
+    const out = __insetShadowUnderUncached(el, cs, textEl, raw);
+    if (!byText) {
+      byText = new Map();
+      __insetShadowCache.set(el, byText);
+    }
+    byText.set(textEl, out);
+    return out;
+  }
+
+  function __insetShadowUnderUncached(el, cs, textEl, raw) {
+    const blocked = { blocked: true, value: truncateCssValue(raw, 80) };
+    const shadows = [];
+    for (const item of __splitTopLevel(raw)) {
+      const toks = __splitTopLevelSpace(item);
+      if (!toks.some((t) => /^inset$/i.test(t))) continue;
+      let color = null;
+      const lengths = [];
+      for (const t of toks) {
+        if (/^inset$/i.test(t)) continue;
+        if (/^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?[a-z%]*$/i.test(t) || /^calc\(/i.test(t)) {
+          // A computed style gives px; a declared one (jsdom) may not.
+          const m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(px)?$/i.exec(t);
+          lengths.push(m && (m[2] || Number(m[1]) === 0) ? Number(m[1]) : Number.NaN);
+        } else {
+          color = /^currentcolor$/i.test(t) ? null : parseCssColorToRgba(t);
+          if (!color) return blocked;
+        }
+      }
+      // A shadow with no color is drawn in the element's own color.
+      if (!color) color = parseCssColorToRgba(cs.color);
+      if (!color) return blocked;
+      if (clamp01(color.a) === 0) continue;
+      const [x = 0, y = 0, blur = 0, spread = 0] = lengths;
+      shadows.push({ color, x, y, fade: Math.max(0, blur), spread });
+    }
+    if (!shadows.length) return null;
+    if (shadows.some((s) => ![s.x, s.y, s.fade, s.spread].every(Number.isFinite))) return blocked;
+    if (__scaledOrRotated(el)) return blocked;
+    let box;
+    try {
+      box = dom.getBoundingClientRect(el);
+    } catch {
+      box = null;
+    }
+    const rects = __ownTextRects(textEl);
+    if (!box || !rects.length) return blocked;
+    const side = (prop) => {
+      const v = Number.parseFloat(cs[prop]);
+      return Number.isFinite(v) ? v : 0;
+    };
+    const left = box.left + side('borderLeftWidth');
+    const top = box.top + side('borderTopWidth');
+    const right = box.right - side('borderRightWidth');
+    const bottom = box.bottom - side('borderBottomWidth');
+    let radius = 0;
+    for (const k of [
+      'borderTopLeftRadius',
+      'borderTopRightRadius',
+      'borderBottomLeftRadius',
+      'borderBottomRightRadius'
+    ]) {
+      for (const t of __splitTopLevelSpace(cs[k] || '0px')) {
+        const v = /^[\d.]+px$/.test(t) ? Number.parseFloat(t) : t === '0' ? 0 : Number.NaN;
+        if (!Number.isFinite(v)) return blocked;
+        radius = Math.max(radius, v);
+      }
+    }
+    const colors = [];
+    for (const s of shadows) {
+      // The shadow fills the padding box outside a hole, the padding box
+      // shrunk by the spread and moved by the offset; the blur fades its
+      // edge over the blur radius on either side.
+      const hole = {
+        left: left + s.spread + s.x,
+        top: top + s.spread + s.y,
+        right: right - s.spread + s.x,
+        bottom: bottom - s.spread + s.y
+      };
+      const fullyPainted =
+        hole.right - hole.left + 2 * s.fade <= 0 || hole.bottom - hole.top + 2 * s.fade <= 0;
+      if (fullyPainted) {
+        colors.push(s.color);
+        // What lies under an opaque shadow is hidden by it.
+        if (clamp01(s.color.a) >= 1) break;
+        continue;
+      }
+      // Clear of the text when every line box lies inside the hole, past
+      // the blur and its rounded corners.
+      const l = hole.left + s.fade;
+      const t = hole.top + s.fade;
+      const r = hole.right - s.fade;
+      const b = hole.bottom - s.fade;
+      const inCorner = (q) =>
+        radius > 0 &&
+        (q.left < l + radius || q.right > r - radius) &&
+        (q.top < t + radius || q.bottom > b - radius);
+      const clear = rects.every(
+        (q) =>
+          q.left >= l - 0.5 &&
+          q.right <= r + 0.5 &&
+          q.top >= t - 0.5 &&
+          q.bottom <= b + 0.5 &&
+          !inCorner(q)
+      );
+      if (!clear) return blocked;
+    }
+    return colors.length ? { colors } : null;
+  }
+
   function __hasBlendModeEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
@@ -4418,6 +4545,24 @@ function createContrastHelpers(opts, shared) {
         break;
       }
 
+      // Inset shadows filling its padding box, over its background.
+      const shadows = __insetShadowUnder(cur, cs, el);
+      if (shadows && shadows.colors) {
+        for (const c of shadows.colors) {
+          if (collectStack) {
+            stack.push({
+              selector: __getSimpleSelectorCached(
+                cur,
+                (dom.tagName(cur) || '').toLowerCase() || 'html'
+              ),
+              bg: { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) },
+              opacity: op
+            });
+          }
+          acc = compositeRgba(acc, { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) });
+        }
+      }
+
       // Solid colors its background images paint, over its background color.
       const images = __hasBackgroundImageOrGradientEl(cur, cs)
         ? __bgLayersUnder(cur, cs, el)
@@ -6160,10 +6305,36 @@ function createContrastHelpers(opts, shared) {
         }
       }
 
+      // An inset box-shadow is painted over cur's background: one that
+      // fills the whole padding box is a color like the background's, one
+      // that paints under part of the text stops the measurement as an
+      // image would (see __insetShadowUnder).
+      const shadowUnder = paintOccluded ? null : __insetShadowUnder(cur, cs, el);
+      if (shadowUnder && shadowUnder.blocked) {
+        const out = {
+          ok: false,
+          reasonCode: 'BACKGROUND_IMAGE_OR_GRADIENT',
+          blockerSelector: __getSimpleSelectorCached(
+            cur,
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
+          ),
+          blockerElement: describeElement(cur),
+          blockerIsAncestor: cur !== el,
+          blockerProperty: 'box-shadow',
+          blockerValue: shadowUnder.value
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch {}
+        return out;
+      }
+      // An opaque shadow over the whole box hides cur's own background.
+      const shadowOpaque = !!shadowUnder && shadowUnder.colors.some((c) => clamp01(c.a) >= 1);
+
       // Layers that paint nothing under the text (an underline) or one
       // solid color don't stop the measurement (see __bgLayerKinds).
       const layersUnder =
-        !paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)
+        !paintOccluded && !shadowOpaque && __hasBackgroundImageOrGradientEl(cur, cs)
           ? __bgLayersUnder(cur, cs, el)
           : null;
       if (layersUnder && layersUnder.blocked) {
@@ -6282,6 +6453,7 @@ function createContrastHelpers(opts, shared) {
         chain.push(cur);
         const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
         if (
+          shadowOpaque ||
           (ownBg && clamp01(ownBg.a) >= 1) ||
           (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
         ) {

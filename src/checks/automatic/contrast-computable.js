@@ -118,7 +118,8 @@
  *     ratio; whether each reaches it is theirs to say.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_IMAGE_OR_GRADIENT` (cantTell): a background image or gradient
- *     lies behind the text, so the color it sits on could not be worked out.
+ *     lies behind the text, or an inset box-shadow paints under part of it,
+ *     so the color it sits on could not be worked out.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_OVERLAP` (cantTell): another element paints under the text,
  *     so the background it sits on could not be worked out.
@@ -438,7 +439,12 @@ function runInPage(ctx) {
             ? String(extraDetails.backgroundFillType || '')
             : '';
 
-        if (t === 'image') summaryKey = 'contrastComputable_cantTell_bgImage';
+        const bp =
+          extraDetails && typeof extraDetails === 'object'
+            ? String(extraDetails.blockerProperty || '')
+            : '';
+        if (bp === 'box-shadow') summaryKey = 'contrastComputable_cantTell_insetShadow';
+        else if (t === 'image') summaryKey = 'contrastComputable_cantTell_bgImage';
         else if (t === 'gradient') summaryKey = 'contrastComputable_cantTell_bgGradient';
         else if (t === 'imageAndGradient')
           summaryKey = 'contrastComputable_cantTell_bgImageAndGradient';

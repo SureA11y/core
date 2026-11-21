@@ -265,6 +265,7 @@
   "contrastComputable_cantTell_bgImageAndGradient": "背景に画像とグラデーションが使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
   "contrastComputable_cantTell_mixBlendMode": "mix-blend-mode が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
   "contrastComputable_cantTell_filter": "filter が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
+  "contrastComputable_cantTell_insetShadow": "内側の box-shadow (inset) がテキストの一部の下に描画されているか、その範囲を特定できないため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
   "contrastComputable_cantTell_rootNotOpaque": "ルートで実際の背景が完全に不透明ではないため、コントラストを計算できません (alpha={{backgroundAlpha}})。",
   "contrastComputable_cantTell_engineFailure": "エンジン内部のエラーにより、コントラストを計算できるかどうかを判定できませんでした ({{reasonCode}})。",
   "contrastComputable_cantTell_backdropFilter": "backdrop-filter が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}}{{#blockerAncestor}}、祖先要素 {{blockerAncestor}} に指定{{/blockerAncestor}})。",
