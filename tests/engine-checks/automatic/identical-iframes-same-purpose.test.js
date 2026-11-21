@@ -229,3 +229,15 @@ test(`${RULE_ID}: the summary names the other frame's address, and the hint the 
   );
   assert.strictEqual(occ('b').i18n.params.other, 'https://www.youtube.com/embed/aaa');
 });
+
+// Names that differ only in case are one name, as identical-links-same-purpose
+// compares link names.
+test(`${RULE_ID}: names are compared case-insensitively (round 9, N9-7)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><iframe id="a" title="Store map" src="/map-a.html"></iframe><iframe id="b" title="STORE MAP" src="/map-b.html"></iframe></main></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'IFRAME_RESOURCE_DIFFERS');
+  assert.strictEqual(rule.occurrences[0].data.details.name, 'Store map');
+});
