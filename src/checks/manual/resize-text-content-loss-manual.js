@@ -47,6 +47,11 @@
  *     fail where the text is certainly cut: a line at least half outside
  *     (half its height, or half an em across). A line cut by less gets no
  *     lean: it may still be read.
+ *   - In a vertical writing mode (`writing-mode: vertical-rl` and the
+ *     like), lines run down the page: the ellipsis and `nowrap` are read
+ *     on the box's inline axis (y), the line clamp on its block axis (x),
+ *     and a line is half outside by half an em down or half its width
+ *     across.
  *   - Text that every box clipping it shows in full passes.
  *   Each box is reported once, for the first text it cuts most. Whether the
  *   full text is offered another way (a control that opens the box, the
@@ -64,8 +69,8 @@
  *   - `text`: the start of the text, up to 60 characters.
  *   - `metrics.overflowPx`: how far, in CSS pixels, the line went past the
  *     edge of the box that clips it; `metrics.thresholdPx`, how far it may
- *     go before the text counts as cut (half an em across, or half the
- *     line's height down); `metrics.axis`, `x` or `y`.
+ *     go before the text counts as cut (half an em along the line, or half
+ *     the line's thickness across it); `metrics.axis`, `x` or `y`.
  *   - `edge`: the edge of the box the line went furthest past: `top`,
  *     `right`, `bottom` or `left`.
  *   - `clipCss` (where it can be read): the CSS that cuts the text off, as
@@ -413,6 +418,13 @@ function runInPage(ctx) {
     return shape;
   }
 
+  // Whether a box's writing mode is vertical: its lines run down the page,
+  // so its inline axis is y, and its block axis x.
+  function verticalOf(el) {
+    const cs = styleOf(el);
+    return !!cs && /^(vertical|sideways|tb)/.test(String(cs.writingMode || ''));
+  }
+
   // The line count a box is clamped to, as { lines, css }, or null.
   function lineClampOf(el) {
     const cs = styleOf(el);
@@ -562,7 +574,7 @@ function runInPage(ctx) {
   // nothing, so they cut no content. Past MAX_RUNS runs, one range from the
   // first such character to the last. The runs of one line are joined into
   // one rect, as linesOf gives it. Null where it can't be measured.
-  function glyphLinesOf(node) {
+  function glyphLinesOf(node, vertical) {
     const MAX_RUNS = 400;
     const data = String(dom.nodeValue(node) || '');
     const runs = [];
@@ -583,9 +595,14 @@ function runInPage(ctx) {
         for (const r of dom.getClientRects(range)) {
           if (r.width < 1 || r.height < 1) continue;
           const last = out[out.length - 1];
-          if (last && Math.abs(last.top - r.top) < 0.5 && Math.abs(last.bottom - r.bottom) < 0.5) {
-            last.left = Math.min(last.left, r.left);
-            last.right = Math.max(last.right, r.right);
+          const [a, b] = vertical ? ['left', 'right'] : ['top', 'bottom'];
+          if (last && Math.abs(last[a] - r[a]) < 0.5 && Math.abs(last[b] - r[b]) < 0.5) {
+            for (const side of vertical ? ['top', 'bottom'] : ['left', 'right']) {
+              last[side] =
+                side === 'top' || side === 'left'
+                  ? Math.min(last[side], r[side])
+                  : Math.max(last[side], r[side]);
+            }
             continue;
           }
           out.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
@@ -630,8 +647,18 @@ function runInPage(ctx) {
       const cs = styleOf(c.el);
       if (!cs) return '';
       const parts = [];
+      // The inline axis follows the box's writing mode.
+      const vertical = verticalOf(c.el);
+      const inline = axis === (vertical ? 'y' : 'x');
+      const [maxSize, size] = axis === 'x' ? ['maxWidth', 'width'] : ['maxHeight', 'height'];
+      const cssName = {
+        maxWidth: 'max-width',
+        width: 'width',
+        maxHeight: 'max-height',
+        height: 'height'
+      };
       if (clamp) parts.push(clamp.css);
-      else if (axis === 'x') {
+      else if (inline) {
         let ws = '';
         for (let cur = textEl, i = 0; cur && i < 100; cur = upOf(cur), i++) {
           const st = styleOf(cur);
@@ -643,10 +670,12 @@ function runInPage(ctx) {
           if (cur === c.el) break;
         }
         if (ws) parts.push(ws);
-        else if (cs.maxWidth && cs.maxWidth !== 'none') parts.push(`max-width: ${cs.maxWidth}`);
-        else if (cs.width && cs.width !== 'auto') parts.push(`width: ${cs.width}`);
-      } else if (cs.maxHeight && cs.maxHeight !== 'none') parts.push(`max-height: ${cs.maxHeight}`);
-      else if (cs.height && cs.height !== 'auto') parts.push(`height: ${cs.height}`);
+        else if (cs[maxSize] && cs[maxSize] !== 'none')
+          parts.push(`${cssName[maxSize]}: ${cs[maxSize]}`);
+        else if (cs[size] && cs[size] !== 'auto') parts.push(`${cssName[size]}: ${cs[size]}`);
+      } else if (cs[maxSize] && cs[maxSize] !== 'none')
+        parts.push(`${cssName[maxSize]}: ${cs[maxSize]}`);
+      else if (cs[size] && cs[size] !== 'auto') parts.push(`${cssName[size]}: ${cs[size]}`);
       const ox = String(cs.overflowX || '');
       const oy = String(cs.overflowY || '');
       const own = axis === 'x' ? ox : oy;
@@ -657,7 +686,7 @@ function runInPage(ctx) {
         parts.push(`clip-path: ${cs.clipPath}`);
       else if (c.shape && cs.clip && cs.clip !== 'auto') parts.push(`clip: ${cs.clip}`);
       else return '';
-      if (axis === 'x' && cs.textOverflow === 'ellipsis') parts.push('text-overflow: ellipsis');
+      if (inline && cs.textOverflow === 'ellipsis') parts.push('text-overflow: ellipsis');
       return parts.join('; ');
     } catch {
       return '';
@@ -687,7 +716,7 @@ function runInPage(ctx) {
         });
       })
     ) {
-      lines = glyphLinesOf(n) || lines;
+      lines = glyphLinesOf(n, verticalOf(textEl)) || lines;
     }
     // Visible text: some of it shows in every box that clips it. A box a
     // pixel wide or high is visually hidden text, not a cut.
@@ -702,6 +731,9 @@ function runInPage(ctx) {
     if (!visible) continue;
     measured += 1;
     const fontSize = px(styleOf(textEl) && styleOf(textEl).fontSize) || 16;
+    // Half an em along the line, and half the line's thickness across it:
+    // in a vertical writing mode, the line runs down (y).
+    const textVertical = verticalOf(textEl);
     for (const c of clippers) {
       if (isExcluded(c.el)) continue;
       const known = byBox.get(c.el);
@@ -710,8 +742,16 @@ function runInPage(ctx) {
       let worst = null;
       for (const l of lines) {
         const o = outside(l, b, c);
-        const x = { axis: 'x', overflowPx: o.dx, thresholdPx: fontSize / 2 };
-        const y = { axis: 'y', overflowPx: o.dy, thresholdPx: (l.bottom - l.top) / 2 };
+        const x = {
+          axis: 'x',
+          overflowPx: o.dx,
+          thresholdPx: textVertical ? (l.right - l.left) / 2 : fontSize / 2
+        };
+        const y = {
+          axis: 'y',
+          overflowPx: o.dy,
+          thresholdPx: textVertical ? fontSize / 2 : (l.bottom - l.top) / 2
+        };
         const lost = o.dx >= x.thresholdPx || o.dy >= y.thresholdPx;
         if (lost) {
           const m = o.dx >= x.thresholdPx ? x : y;
@@ -726,8 +766,11 @@ function runInPage(ctx) {
       }
       if (!worst) continue;
       const cs = styleOf(c.el);
-      const clamp = worst.axis === 'y' ? lineClampOf(c.el) : null;
-      const ellipsis = worst.axis === 'x' && !!cs && cs.textOverflow === 'ellipsis';
+      // The ellipsis shortens a line on the box's inline axis, and the clamp
+      // its lines on its block axis.
+      const inlineAxis = verticalOf(c.el) ? 'y' : 'x';
+      const clamp = worst.axis !== inlineAxis ? lineClampOf(c.el) : null;
+      const ellipsis = worst.axis === inlineAxis && !!cs && cs.textOverflow === 'ellipsis';
       const truncated = !!clamp || ellipsis;
       if (known && !worst.lost && !truncated) continue;
       const text = String(dom.nodeValue(n) || '')
