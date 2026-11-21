@@ -245,8 +245,17 @@ function runInPage(ctx) {
       // <menu>: the list's presentation passes to its <li> children
       // (WAI-ARIA 1.2, required owned elements), which are no list items
       // then. On any other element (<div role="none">) it only removes that
-      // element's own role, and the <li> is still in no list.
-      valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu';
+      // element's own role, and the <li> is still in no list. A role none
+      // wrapper inside a list (<ul><div role="none"><li>) is left as it was,
+      // passing here, pending a decision (round 9, N9-5 b); list-children-valid
+      // reports the wrapper.
+      const grand = flatParent(parent);
+      const grandTag = grand && dom.tagName(grand) ? dom.tagName(grand).toLowerCase() : '';
+      const grandRole = grand ? resolvedRole(grand) : '';
+      const inList =
+        grandRole === 'list' ||
+        (!grandRole && (grandTag === 'ul' || grandTag === 'ol' || grandTag === 'menu'));
+      valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu' || inList;
     } else if (explicitRole) {
       // An explicit role always wins over the tag's native role, in either
       // direction, see the header comment.

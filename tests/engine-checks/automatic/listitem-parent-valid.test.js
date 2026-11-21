@@ -387,7 +387,10 @@ test(`${RULE_ID}: role none or presentation is a valid parent only on a list ele
   for (const body of [
     '<ul role="none"><li>Item</li></ul>',
     '<ol role="presentation"><li>Item</li></ol>',
-    '<menu role="none"><li>Item</li></menu>'
+    '<menu role="none"><li>Item</li></menu>',
+    // A role none wrapper inside a list stays as it was, pending a decision
+    // (N9-5 b): list-children-valid reports the wrapper.
+    '<ul><div role="none"><li>Item</li></div></ul>'
   ]) {
     assertRule(runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
       minOccurrences: 0,
