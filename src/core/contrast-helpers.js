@@ -1565,16 +1565,33 @@ function createContrastHelpers(opts, shared) {
     __ownTransformScale.set(node, out);
     return out;
   }
+  // Remembered for every element on the way up, so the texts of a deep page
+  // don't walk the same ancestors again: the product from each element to
+  // the root, or null where a transform on the way gives up.
+  const __transformScaleUp = new WeakMap();
   function __uniformTransformScale(el) {
-    let scale = 1;
+    // Without a layout (jsdom) a transform is kept as written: nothing to
+    // read, and no walk up a deep page for it.
+    const doc = dom.ownerDocument(el);
+    if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+    if (!__layoutByDoc.get(doc)) return 1;
+    const chain = [];
+    let known = 1;
     let guard = 0;
     for (let cur = el; cur && guard++ < 1000; cur = composedParent(cur)) {
       if (dom.nodeType(cur) !== 1) continue;
-      const own = __ownTransformScaleOf(cur);
-      if (own === null) return 1;
-      scale *= own;
+      if (__transformScaleUp.has(cur)) {
+        known = __transformScaleUp.get(cur);
+        break;
+      }
+      chain.push(cur);
     }
-    return Number.isFinite(scale) && scale > 0 ? scale : 1;
+    for (let i = chain.length - 1; i >= 0; i--) {
+      const own = known === null ? null : __ownTransformScaleOf(chain[i]);
+      known = own === null ? null : own * known;
+      __transformScaleUp.set(chain[i], known);
+    }
+    return known !== null && Number.isFinite(known) && known > 0 ? known : 1;
   }
 
   // `boldLargeMinPx` overrides the size from which bold text is large. It
