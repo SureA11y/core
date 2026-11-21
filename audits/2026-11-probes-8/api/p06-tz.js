@@ -1,0 +1,21 @@
+const { runa11yCoreOnHtml } = require('/home/user/core-r8/src/testing.js');
+const { renderSarifReport } = require('/home/user/core-r8/src/sarif.js');
+const { renderJunitReport } = require('/home/user/core-r8/src/junit.js');
+const { renderEarlReport } = require('/home/user/core-r8/src/earl.js');
+const { renderHtmlReport } = require('/home/user/core-r8/src/report.js');
+const B = require('/home/user/core-r8/src/baseline.js');
+const crypto = require('crypto');
+const html = '<html lang="en"><head><title>t</title></head><body><main><img src="a"><img src="b"><a href="x"></a><button></button><input></main></body></html>';
+(async () => {
+  console.warn = () => {};
+  const r = await runa11yCoreOnHtml(html, { engineOptions: { timestamp: '2026-01-01T23:30:00-05:00', locale: process.argv[2] || 'en' } });
+  r.timestamp = '2026-01-01T23:30:00-05:00';
+  const h = (s) => crypto.createHash('md5').update(s).digest('hex').slice(0, 8);
+  const strip = (s) => s.replace(/"durationMs?":\s*[\d.]+|time="[\d.]+"|perfStats[^]*?\}/g, '');
+  const outs = { sarif: renderSarifReport(r), junit: renderJunitReport(r), earl: JSON.stringify(renderEarlReport(r)), html: renderHtmlReport(r), base: JSON.stringify(B.buildBaselineEntries(r)) };
+  const fs = require('fs');
+  for (const [k, v] of Object.entries(outs)) fs.writeFileSync(`out-p06-${(process.env.TZ||"").replace(/\//g,"_")}-${process.env.LANG}.${k}`, v);
+  console.log(process.env.TZ, process.env.LANG, Object.entries(outs).map(([k, v]) => k + ':' + h(strip(v))).join(' '));
+  const m = outs.html.match(/2026[^<"]{0,40}|Jan[^<"]{0,30}|1\/[12]\/2026[^<"]{0,30}/g); console.log(' html dates:', m && [...new Set(m)].slice(0, 5));
+  const j = outs.junit.match(/timestamp="[^"]*"/g); console.log(' junit ts', j);
+})();

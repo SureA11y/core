@@ -1,0 +1,14 @@
+const { runa11yCoreOnHtml } = require('@surea11y/core/testing');
+const { renderSarifReport } = require('@surea11y/core/sarif');
+const { renderJunitReport } = require('@surea11y/core/junit');
+const html = `<html><head><title>Home</title></head><body><img src="x.png"><a href="#">click here</a><button></button><h1>T</h1><h3>S</h3><input type="text"><p style="color:#777;background:#fff">low</p></body></html>`;
+const r = runa11yCoreOnHtml(html, { engineOptions: { locale: 'de' }, entryPointParity:false });
+const s = JSON.parse(renderSarifReport(r));
+const strings = new Set();
+const walk = (o, path) => { if (typeof o === 'string') { if (/[a-z]{3,} [a-z]{2,} [a-z]{2,}/i.test(o)) strings.add(path.replace(/\[\d+\]/g,'[]')+' :: '+o.slice(0,110)); } else if (o && typeof o === 'object') for (const [k,v] of Object.entries(o)) walk(v, path+'.'+k); };
+walk(s, '');
+const enRe = /\b(the|this|that|is|are|has|have|with|should|must|not|page|element)\b/;
+console.log([...strings].filter(x=>enRe.test(x.split(' :: ')[1])).slice(0,25).join('\n'));
+const j = renderJunitReport(r);
+const jl = j.split('\n').filter(l=>enRe.test(l.replace(/<[^>]+>/g,' ')) ).slice(0,15);
+console.log('--- junit'); console.log(jl.map(l=>l.trim().slice(0,200)).join('\n'));

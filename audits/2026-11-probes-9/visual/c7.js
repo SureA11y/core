@@ -1,0 +1,20 @@
+const P = (s, t='Readable sample text here') => `<p id=t style="margin:0;padding:8px;font:16px/20px Arial;${s}">${t}</p>`;
+module.exports = [
+ ['ancestor mix-blend multiply', `<div style="background:#000;padding:10px"><div style="mix-blend-mode:screen;background:#fff">${P('color:#777')}</div></div>`],
+ ['ancestor mix-blend difference', `<div style="background:#fff;padding:10px"><div style="mix-blend-mode:difference">${P('color:#eee')}</div></div>`],
+ ['bg-blend-mode color+color', P('color:#fff;background-color:#888;background-blend-mode:multiply')],
+ ['backdrop-filter invert on container', `<div style="background:#fff;padding:10px"><div style="backdrop-filter:invert(1)">${P('color:#222')}</div></div>`],
+ ['backdrop-filter blur translucent bg', `<div style="background:#000;padding:10px"><div style="backdrop-filter:blur(4px);background:rgba(255,255,255,.5)">${P('color:#555')}</div></div>`],
+ ['text-fill-color', P('color:#000;-webkit-text-fill-color:#ccc;background:#fff')],
+ ['currentcolor bg', P('color:#333;background:color-mix(in srgb, currentcolor 90%, white)')],
+ ['bg light-dark in light', P('color:#555;background:light-dark(#fff,#000)')],
+ ['var() chain', P('--a:#ddd;--b:var(--a);color:var(--b);background:#fff')],
+ ['@property registered color', P('color:var(--c);background:#fff').replace('<p', '<style>@property --c{syntax:"<color>";inherits:true;initial-value:#ccc}</style><p')],
+ ['color(srgb-linear)', P('color:color(srgb-linear 0.2 0.2 0.2);background:#fff')],
+ ['color(xyz)', P('color:color(xyz 0.2 0.2 0.2);background:#fff')],
+ ['hwb', P('color:hwb(0 60% 30%);background:#fff')],
+ ['lab bg', P('color:#000;background:lab(30% 0 0)')],
+ ['rec2020 bg', P('color:#fff;background:color(rec2020 0.9 0.9 0.9)')],
+ ['none keyword in oklch', P('color:oklch(0.7 none none);background:#fff')],
+ ['relative oklch from var', P('--base:#333;color:oklch(from var(--base) calc(l + 0.4) c h);background:#fff')],
+];

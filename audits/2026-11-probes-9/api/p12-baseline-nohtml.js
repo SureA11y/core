@@ -1,0 +1,13 @@
+const { runa11yCoreOnHtml } = require('@surea11y/core/testing');
+const { buildBaselineEntries, matchBaseline } = require('@surea11y/core/baseline');
+const { renderSarifReport } = require('@surea11y/core/sarif');
+const page1 = '<html lang="en"><title>t</title><body><main><h1>x</h1><img src="old.png"></main></body></html>';
+const page2 = '<html lang="en"><title>t</title><body><main><h1>x</h1><img src="brand-new.png"></main></body></html>';
+const eo = { output: { includeHtml: false } };
+const r1 = runa11yCoreOnHtml(page1, { engineOptions: eo, entryPointParity:false });
+const entries = buildBaselineEntries(r1);
+console.log(JSON.stringify(entries));
+const r2 = runa11yCoreOnHtml(page2, { engineOptions: eo, entryPointParity:false });
+console.log('fixed old, added new ->', JSON.stringify(matchBaseline(r2, entries)));
+const s = JSON.parse(renderSarifReport(r2, { baselineEntries: entries }));
+console.log('sarif baselineState', s.runs[0].results.map(x=>x.ruleId+':'+x.baselineState+':'+x.level));

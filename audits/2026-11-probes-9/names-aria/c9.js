@@ -1,0 +1,22 @@
+const L=['list-children-valid','listitem-parent-valid','definition-list-children-valid','dlitem-parent-valid'];
+module.exports=[
+{name:'ul-template-script', rules:L, html:'<ul id=u><template></template><li>a</li><script></script><!-- c --></ul>', ax:['#u']},
+{name:'ul-hidden-div', rules:L, html:'<ul id=u><li>a</li><div hidden>x</div><div style="display:none">y</div></ul>', ax:['#u']},
+{name:'ul-text', rules:L, html:'<ul id=u>Loose text<li>a</li></ul>', ax:['#u']},
+{name:'ul-role-listitem-div', rules:L, html:'<ul id=u><div role=listitem>a</div></ul>', ax:['#u']},
+{name:'ul-aria-hidden-div', rules:L, html:'<ul id=u><li>a</li><div aria-hidden=true>x</div></ul>', ax:['#u']},
+{name:'ul-role-none-div', rules:L, html:'<ul id=u><div role=none><li id=l>a</li></div></ul>', ax:['#u','#l']},
+{name:'menu-li', rules:L, html:'<menu id=u><li id=l>a</li></menu>', ax:['#u','#l']},
+{name:'li-slotted', rules:L, html:'<ul id=u><x-item id=x><li id=l>a</li></x-item></ul>', ax:['#u','#l']},
+{name:'li-in-shadow-of-ul', rules:L, html:'<x-list id=h><li id=l>a</li></x-list>', setup:()=>{const h=document.getElementById('h');const s=h.attachShadow({mode:'open'});s.innerHTML='<ul><slot></slot></ul>';}, ax:['#l']},
+{name:'dl-div', rules:L, html:'<dl id=d><div><dt>a</dt><dd>b</dd></div><template></template><script></script></dl>', ax:['#d']},
+{name:'dl-div-nested-div', rules:L, html:'<dl id=d><div><div><dt>a</dt><dd>b</dd></div></div></dl>', ax:['#d']},
+{name:'dl-dd-only', rules:L, html:'<dl id=d><dd>b</dd></dl><dl id=e><dt>t</dt></dl>', ax:['#d','#e']},
+{name:'dl-role-presentation', rules:L, html:'<dl id=d role=presentation><dt>a</dt><dd>b</dd></dl>', ax:['#d']},
+{name:'dl-role-list', rules:L, html:'<dl id=d role=list><div role=listitem><dt>a</dt><dd>b</dd></div></dl>', ax:['#d']},
+{name:'dt-orphan', rules:L, html:'<div><dt id=t>a</dt><dd>b</dd></div>', ax:['#t']},
+{name:'ol-role-list-li-p', rules:L, html:'<ol id=u role=list><li>a</li><p>x</p></ol>', ax:['#u']},
+{name:'ul-li-role-none', rules:L, html:'<ul id=u><li role=none>a</li></ul><ul id=v role=none><li id=l>a</li></ul>', ax:['#u','#v','#l']},
+{name:'ul-div-display-contents', rules:L, html:'<ul id=u><div style="display:contents"><li>a</li></div></ul>', ax:['#u']},
+{name:'ul-hr-separator', rules:L, html:'<ul id=u><li>a</li><hr><li>b</li></ul><ul id=v><li>a</li><li role=separator></li></ul>', ax:['#u','#v']},
+];

@@ -1,0 +1,21 @@
+const P = (css, body = '<div id=t class=a>Moving</div>') => [`<!doctype html><html lang=en><head><title>t</title><style>@keyframes mv{from{transform:translateX(0)}to{transform:translateX(100px)}} ${css}</style></head><body><main><p>Text</p>${body}</main></body></html>`];
+module.exports = [
+ ['infinite baseline', P('.a{animation:mv 2s infinite}')],
+ ['paused', P('.a{animation:mv 2s infinite paused}')],
+ ['duration 0 infinite', P('.a{animation:mv 0s infinite}')],
+ ['custom prop only', P('@property --x{syntax:"<number>";inherits:false;initial-value:0} @keyframes cp{to{--x:1}} .a{animation:cp 2s infinite}')],
+ ['opacity 0 element', P('.a{animation:mv 2s infinite;opacity:0}')],
+ ['zero size', P('.a{animation:mv 2s infinite;width:0;height:0;overflow:hidden}')],
+ ['inside visibility hidden', P('.a{animation:mv 2s infinite;visibility:hidden}')],
+ ['keyframes that do not change anything', P('@keyframes nop{from{transform:none}to{transform:none}} .a{animation:nop 2s infinite}')],
+ ['reduced motion honoured (emulated)', P('.a{animation:mv 2s infinite} @media (prefers-reduced-motion: reduce){.a{animation:none}}'), { before: p => p.emulateMedia({ reducedMotion: 'reduce' }) }],
+ ['offscreen left -9999', P('.a{animation:mv 2s infinite;position:absolute;left:-9999px}')],
+ ['clipped sr-only', P('.a{animation:mv 2s infinite;position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}')],
+ ['iteration 2 x 2s', P('.a{animation:mv 2s 2}')],
+ ['delay 4s + 2s once', P('.a{animation:mv 2s 4s 1}')],
+ ['steps 1 jump-none color blink', P('@keyframes bl{50%{color:#fff}} .a{animation:bl 1s steps(1) infinite}')],
+ ['inside closed details', P('.a{animation:mv 2s infinite}', '<details><summary>s</summary><div id=t class=a>Moving</div></details>')],
+ ['shadow dom', P('', '<div id=host></div><script>document.getElementById("host").attachShadow({mode:"open"}).innerHTML="<style>@keyframes mv{to{transform:translateX(50px)}} .a{animation:mv 2s infinite}</style><div class=a>Moving</div>"</script>')],
+ ['svg smil animate', P('', '<svg width=100 height=20><circle r=5 cy=10 cx=10><animate attributeName="cx" from="10" to="90" dur="2s" repeatCount="indefinite"/></circle></svg>')],
+ ['animated gif-like img (not measurable)', P('', '<img alt="spinner" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">')],
+];

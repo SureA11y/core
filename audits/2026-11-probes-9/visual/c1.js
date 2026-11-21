@@ -1,0 +1,22 @@
+const P = (s, t='Readable sample text here') => `<p id=t style="margin:0;padding:8px;font:16px/20px Arial;${s}">${t}</p>`;
+module.exports = [
+ ['color-mix text', P('color:color-mix(in srgb, #000 40%, white);background:#fff')],
+ ['color-mix oklch', P('color:color-mix(in oklch, black 50%, white);background:#fff')],
+ ['relative rgb alpha', P('color:rgb(from #000 r g b / 45%);background:#fff')],
+ ['oklch text', P('color:oklch(0.62 0 0);background:#fff')],
+ ['display-p3 text', P('color:color(display-p3 0.5 0.5 0.5);background:#fff')],
+ ['light-dark on dark scheme', `<div style="color-scheme:dark;background:#000;padding:4px">${P('color:light-dark(#000,#555)')}</div>`],
+ ['parent opacity .5', `<div style="opacity:.5">${P('color:#333;background:#fff')}</div>`],
+ ['self opacity .4', P('color:#000;background:#fff;opacity:.4')],
+ ['nested opacity stack', `<div style="opacity:.6;background:#fff"><div style="opacity:.6">${P('color:#000')}</div></div>`],
+ ['filter invert parent', `<div style="filter:invert(1);background:#fff">${P('color:#888')}</div>`],
+ ['filter brightness self', P('color:#000;background:#fff;filter:brightness(4)')],
+ ['filter opacity()', P('color:#000;background:#fff;filter:opacity(.3)')],
+ ['mix-blend difference', `<div style="background:#fff">${P('color:#eee;mix-blend-mode:difference')}</div>`],
+ ['bg-clip text', P('color:transparent;background:linear-gradient(#ddd,#eee);-webkit-background-clip:text;background-clip:text')],
+ ['first-letter', P('color:#000;background:#fff', 'Readable').replace('<p','<style>#t::first-letter{color:#eee}</style><p')],
+ ['svg text', `<svg width=300 height=40 style="background:#fff"><text id=t x=5 y=25 fill="#bbb" font-size=16>SVG text sample</text></svg>`],
+ ['svg text fill-opacity', `<svg width=300 height=40 style="background:#fff"><text id=t x=5 y=25 fill="#000" fill-opacity=".2" font-size=16>SVG text sample</text></svg>`],
+ ['svg g opacity', `<svg width=300 height=40 style="background:#fff"><g opacity=".2"><text id=t x=5 y=25 fill="#000" font-size=16>SVG text sample</text></g></svg>`],
+ ['svg text over rect', `<svg width=300 height=40><rect width=300 height=40 fill="#000"/><text id=t x=5 y=25 fill="#333" font-size=16>SVG text sample</text></svg>`],
+];

@@ -1,0 +1,10 @@
+const R=['input-image-alt-present','input-image-alt-decorative','object-text-alternative-present','embed-text-alternative-present','canvas-text-alternative-present','video-poster-text-alternative-present','server-side-image-map-absent','image-of-text'];
+module.exports=[
+{name:'input-image-cases', rules:R, html:'<input id=a type=image src=x.png alt=""><input id=b type=image src=x.png value="Go"><input id=c type=image src=x.png aria-labelledby=l><span id=l>Search</span><input id=d type=image src=x.png alt=" ">', ax:['#a','#b','#c','#d']},
+{name:'object-cases', rules:R, html:'<object id=a data="x.pdf" type="application/pdf"></object><object id=b data="x.pdf" type="application/pdf">Download the report</object><object id=c data="x.png" type="image/png" title="Chart"></object><object id=d data="x.svg" type="image/svg+xml" role=presentation></object><object id=e data="x.png" type="image/png"><img src=x.png alt="Fallback chart"></object>', ax:['#a','#b','#c','#d','#e']},
+{name:'embed-cases', rules:R, html:'<embed id=a src="x.svg" type="image/svg+xml"><embed id=b src="x.svg" type="image/svg+xml" title="Logo"><embed id=c src="x.mp4" type="video/mp4"><embed id=d src="x.pdf" type="application/pdf">', ax:['#a','#b','#c','#d']},
+{name:'canvas-cases', rules:R, html:'<canvas id=a width=10 height=10></canvas><canvas id=b width=10 height=10>Sales rose 10%</canvas><canvas id=c width=10 height=10 aria-hidden=true></canvas><canvas id=d width=10 height=10><button>Fallback btn</button></canvas>', ax:['#a','#b','#d']},
+{name:'video-poster', rules:R, html:'<video id=a poster="p.png"></video><video id=b poster="p.png" controls aria-label="Intro video"></video><video id=c poster="p.png" src="v.mp4"></video>', ax:['#a','#b','#c']},
+{name:'ismap', rules:R, html:'<a href="/map"><img src=m.png alt="Map" ismap></a><img src=m.png alt="Map2" ismap>'},
+{name:'svg-data-url-text', rules:R, html:'<img id=a alt="Sale" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22%3E%3Ctext%3E50%25 off%3C/text%3E%3C/svg%3E">'},
+];

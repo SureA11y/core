@@ -1,0 +1,23 @@
+const P = (css, link='<a id=t href="#x">this link</a>') => [`<!doctype html><html lang=en><head><title>t</title><style>body{font:16px Arial;color:#333}${css}</style></head><body><main><p id=para>Some text before ${link} and some text after it.</p></main></body></html>`];
+module.exports = [
+ ['baseline color only close', P('a{color:#444;text-decoration:none}')],
+ ['underline transparent color', P('a{color:#444;text-decoration:underline;text-decoration-color:transparent}')],
+ ['underline color = bg', P('a{color:#444;text-decoration:underline;text-decoration-color:#fff}')],
+ ['underline rgba 0 alpha', P('a{color:#444;text-decoration:underline rgba(0,0,0,0)}')],
+ ['border-bottom transparent', P('a{color:#444;text-decoration:none;border-bottom:1px solid transparent}')],
+ ['border-bottom bg color', P('a{color:#444;text-decoration:none;border-bottom:1px solid #fff}')],
+ ['border-bottom 0 width', P('a{color:#444;text-decoration:none;border-bottom:0 solid red}')],
+ ['outline style none color', P('a{color:#444;text-decoration:none;outline:2px none red}')],
+ ['outline transparent', P('a{color:#444;text-decoration:none;outline:2px solid transparent}')],
+ ['bg = surrounding via different notation', P('p{background:#fff} a{color:#444;text-decoration:none;background:rgb(255 255 255)}')],
+ ['bg rgba tiny alpha', P('a{color:#444;text-decoration:none;background:rgba(0,0,0,.01)}')],
+ ['font-style oblique 0deg', P('a{color:#444;text-decoration:none;font-style:oblique 0deg}')],
+ ['italic but surrounding italic', P('p{font-style:italic} a{color:#444;text-decoration:none;font-style:italic}')],
+ ['underline offset far', P('a{color:#444;text-decoration:underline;text-underline-offset:200px}')],
+ ['ancestor overline only', P('p{text-decoration:overline} a{color:#444;text-decoration:underline}')],
+ ['line-through link', P('a{color:#444;text-decoration:line-through}')],
+ ['before empty content no paint', P('a{color:#444;text-decoration:none} a::before{content:""}')],
+ ['before content space', P('a{color:#444;text-decoration:none} a::before{content:" "}')],
+ ['img inside 1px transparent', P('a{color:#444;text-decoration:none}', '<a id=t href="#x">this link<img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width=1 height=1 style="opacity:0"></a>')],
+ ['svg inside hidden', P('a{color:#444;text-decoration:none}', '<a id=t href="#x">this link<svg width=0 height=0></svg></a>')],
+];

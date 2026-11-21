@@ -1,0 +1,23 @@
+const P = (css, body='<a id=t class=skip href="#main">Skip to content</a>') => [`<!doctype html><html lang=en><head><title>t</title><style>${css}</style></head><body>${body}<main id=main><p>Intro text</p></main></body></html>`];
+module.exports = [
+ ['translateY -100% + focus none', P('.skip{position:absolute;top:0;left:0;transform:translateY(-100%)} .skip:focus{transform:none}')],
+ ['translateY -100% + focus-visible', P('.skip{position:absolute;top:0;left:0;transform:translateY(-100%)} .skip:focus-visible{transform:translateY(0)}')],
+ ['translate prop', P('.skip{position:absolute;top:0;left:0;translate:0 -100%} .skip:focus{translate:none}')],
+ ['translateY -100% no reveal', P('.skip{position:absolute;top:0;left:0;transform:translateY(-100%)}')],
+ ['top -40px no reveal', P('.skip{position:absolute;top:-40px;left:0}')],
+ ['top -40 reveal in @layer', P('@layer a{ .skip{position:absolute;top:-40px;left:0} .skip:focus{top:0} }')],
+ ['reveal by :focus-within on parent', P('.w .skip{position:absolute;left:-9999px} .w:focus-within .skip{left:0}', '<div class=w><a id=t class=skip href="#main">Skip</a></div>')],
+ ['reveal via :is(:focus,:active)', P('.skip{position:absolute;left:-9999px} .skip:is(:focus,:active){left:0}')],
+ ['reveal via :not(:focus) hide', P('.skip:not(:focus){position:absolute;left:-9999px}')],
+ ['reveal in shadow ::slotted', P('', '<div id=host><a id=t href="#main">Skip</a></div><script>document.getElementById("host").attachShadow({mode:"open"}).innerHTML="<style>::slotted(a){position:absolute;left:-9999px} ::slotted(a:focus){left:0}</style><slot></slot>"</script>')],
+ ['reveal via container query?', P('.skip{position:absolute;left:-9999px} .skip:focus{left:0 !important}')],
+ ['hidden !important, focus not important', P('.skip{position:absolute;left:-9999px !important} .skip:focus{left:0}')],
+ ['clip with :focus clip auto', P('.skip{position:absolute;clip:rect(0 0 0 0);width:1px;height:1px;overflow:hidden} .skip:focus{clip:auto;width:auto;height:auto}')],
+ ['clip-path inset50 + :focus clip-path none', P('.skip{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden} .skip:focus{clip-path:none;width:auto;height:auto}')],
+ ['opacity 0 + focus opacity 1', P('.skip{position:absolute;opacity:0} .skip:focus{opacity:1}')],
+ ['opacity 0 + focus revert', P('.skip{position:absolute;opacity:0} .skip:focus{opacity:revert}')],
+ ['opacity 0 + focus unset', P('.skip{position:absolute;opacity:0} .skip:focus{opacity:unset}')],
+ ['left -9999 + focus left:auto', P('.skip{position:absolute;left:-9999px} .skip:focus{left:auto}')],
+ ['left -9999 + focus position static', P('.skip{position:absolute;left:-9999px} .skip:focus{position:static}')],
+ ['left -9999 + focus left:initial', P('.skip{position:absolute;left:-9999px} .skip:focus{left:initial}')],
+];

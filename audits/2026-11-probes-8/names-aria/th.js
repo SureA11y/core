@@ -1,0 +1,3 @@
+const { runAll } = require('./harness');
+runAll([{ id:'empty-th-checkbox-col', html:`<table><thead><tr><th data-t="t1"><input type="checkbox" aria-label="Select all"></th><th data-t="t2">Name</th><th data-t="t3"></th></tr></thead><tbody><tr><td><input type="checkbox" aria-label="Select Ann"></td><td>Ann</td><td><button>Edit</button></td></tr></tbody></table>
+<table><tr><th data-t="t4"><button>Sort</button></th><th data-t="t5"><img src="x.png" alt="Price"></th><th data-t="t6"><svg role="img" aria-label="Rating"></svg></th></tr><tr><td>1</td><td>2</td><td>3</td></tr></table>` }], ['empty-table-header'], {}, true);

@@ -7,21 +7,66 @@
 
 | | |
 |---|---|
-| **Verified against** | `main` at `78354cc4`, 2026-11-20, for #413's features; `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the leftovers fixed in #412; `ec664338`, 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
-| **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)), [second](./2026-10-stress-test-2.md) (`cfefc02`), [third](./2026-10-stress-test-3.md) (`eaa5d3f1`, with its [outcomes log](./2026-10-stress-test-3-outcomes.md)), [fourth](./2026-10-stress-test-4.md) (`3af2008`) [fifth](./2026-10-stress-test-5.md) (`c528af08`), [sixth](./2026-11-stress-test-6.md) (`23e0a387`) and [seventh](./2026-11-stress-test-7.md) (`ec664338`) |
+| **Verified against** | `main` at `ad47fe3e`, 2026-11-21, for the ninth round (found at `805f33ff`, the round 8 branch) and its fixes (#417); `a021f714`, 2026-11-21, for the eighth round (found at `254b644f`) and its fixes (#416); `78354cc4`, 2026-11-20, for #413's features; `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the leftovers fixed in #412; `ec664338`, 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
+| **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)), [second](./2026-10-stress-test-2.md) (`cfefc02`), [third](./2026-10-stress-test-3.md) (`eaa5d3f1`, with its [outcomes log](./2026-10-stress-test-3-outcomes.md)), [fourth](./2026-10-stress-test-4.md) (`3af2008`) [fifth](./2026-10-stress-test-5.md) (`c528af08`), [sixth](./2026-11-stress-test-6.md) (`23e0a387`), [seventh](./2026-11-stress-test-7.md) (`ec664338`), [eighth](./2026-11-stress-test-8.md) (`254b644f`) and [ninth](./2026-11-stress-test-9.md) (`805f33ff`) |
 | **How it is kept** | See [`README.md`](./README.md): before each audit, merge `main`; after it, re-run every open item, move fixed ones to §3, and add new ones |
 
 **How it was built.** Every first-round item was re-run on `cfefc02`, including those the outcomes log marks as fixed, by the re-check probes in [`2026-10-probes-2/recheck-round-1/`](./2026-10-probes-2/recheck-round-1/). Every second-round item was re-run independently while writing that round's report, except those marked *(not re-run)*. Where two audits found the same problem, the entry keeps the **oldest id** and lists the others.
 
 Rounds 3 to 5 were kept on branches of their own until 2026-10-27, when they were gathered here. The third round's follow-up is recorded item by item in its outcomes log; the fourth round's findings were re-run on `c528af08` by the fifth round ([`RECHECK.md`](./2026-10-probes-5/robust/RECHECK.md)); every fifth-round finding, and every round-4 lead still open, was re-run on `92e54df6` with the round's own probes, in Chromium 153 and jsdom.
 
-**Reading an entry.** The id says where it came from: `C-`, `S-`, `O-` and `R-` are first-round ids (custom rules, options, outputs, rules); `NM-`, `VS-`, `ST-`, `OP-`, `RP-` and `RB-` are second-round ids (names, visual, structure, options, reporters, robustness). From the third round on, an id is written with its round (`R3:`, `R4:`, `R5:`, `R6:`, `R7:`), since those rounds reused prefixes of the second (`RB-`, `OP-`, `RP-`); the round's report and probes use the short id. The sixth round's prefixes are `RF-` (reflow), `CG-` (changed rules, the exclusion filter, reporters), `EX-` (experimental APIs, pack tooling), `CE-` (other engines) and `PF-` (speed and memory); the seventh round's are `RW-` (reflow and `p-as-heading`), `VL-` (target size, focus not obscured), `AN-` (names, ARIA, landmarks), `IF-` (the integrator's API) and `SP-` (robustness, speed, memory). Ids never change and are never reused. Verdicts and severities are defined in the [README](./README.md#running-an-audit). The **Details** link leads to the full evidence: repro, spec quotes, browser evidence, cause.
+**Reading an entry.** The id says where it came from: `C-`, `S-`, `O-` and `R-` are first-round ids (custom rules, options, outputs, rules); `NM-`, `VS-`, `ST-`, `OP-`, `RP-` and `RB-` are second-round ids (names, visual, structure, options, reporters, robustness). From the third round on, an id is written with its round (`R3:`, `R4:`, `R5:`, `R6:`, `R7:`), since those rounds reused prefixes of the second (`RB-`, `OP-`, `RP-`); the round's report and probes use the short id. The sixth round's prefixes are `RF-` (reflow), `CG-` (changed rules, the exclusion filter, reporters), `EX-` (experimental APIs, pack tooling), `CE-` (other engines) and `PF-` (speed and memory); the seventh round's are `RW-` (reflow and `p-as-heading`), `VL-` (target size, focus not obscured), `AN-` (names, ARIA, landmarks), `IF-` (the integrator's API) and `SP-` (robustness, speed, memory); the eighth round's are `NW-` (regressions and new-work checks), `NA-` (names, ARIA), `LY-` (layout, visual), `PK-` (packs, API) and `RO-` (robustness). The ninth round's ids carry their round already (`A9-`, `V9-`, `N9-`, `R9-`: API, visual, names, robustness) and are written as they are. Ids never change and are never reused. Verdicts and severities are defined in the [README](./README.md#running-an-audit). The **Details** link leads to the full evidence: repro, spec quotes, browser evidence, cause.
 
 ---
 
 ## 1. Open — to fix
 
-Nothing. Every finding of rounds 1 to 7 is fixed, decided or closed (§3, §4): the last open ones, Low parts of rounds 4 and 5, were fixed in [#412](https://github.com/SureA11y/core/pull/412), merged 2026-11-20, and the four questions that waited on a decision were decided the same day (below). Each fix has a regression test that fails on `main` before it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
+Every finding of rounds 1 to 8 is fixed, decided or closed (§3, §4). Of round 9's 61, the 48 evident ones are fixed in [#417](https://github.com/SureA11y/core/pull/417), merged 2026-11-21; the rest were decided the same day and are being made on the branch `round-9-decisions`, not merged yet (below). Each fix has a regression test that fails on `main` before it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
+
+### Still open
+
+| # | Finding | Sev. | Details |
+|---|---|---|---|
+| R8 (leftover) | `aria-valid-attr` copies a whole very long `aria-*` attribute name into its finding, where round 7 and 8 cut other quoted values (`quoteText`) | Low | [round 8 §3](./2026-11-stress-test-8.md#3-what-is-left) |
+| R8 (leftover) | Under jsdom, `getComputedStyle` dominates `duplicate-id-aria`'s time on big pages, now that the rule's own walk is linear (NW-5, RO-1) | Low | [round 8 §3](./2026-11-stress-test-8.md#3-what-is-left) |
+| R9 (lead) | `html-xml-lang-mismatch` fails an unknown `xml:lang` tag as a mismatch; needs a decision | Low | [round 9 §3](./2026-11-stress-test-9.md#3-what-is-left) |
+
+### Decided on 2026-11-21, pending (branch `round-9-decisions`)
+
+| # | Question | Decision |
+|---|---|---|
+| A9-4 | Messages overriding a regional locale (`de-AT`) | Fall back `de-AT` → `de` → `en` |
+| A9-10 | Baseline keys with `output.includeHtml: false` | Fall back to the selector when there is no HTML |
+| A9-13 | Types rejecting the string and number forms of booleans the docs accept | Types stay strict; the docs say those forms are runtime-only |
+| A9-14 | `engineOptions` rule filters dropped under `runOnly` | Warn; under `strictOptions`, throw |
+| A9-15 | `runa11yCoreOnHtml` given engine options at the top level | Warn |
+| V9-3 | Text in a fixed box with no background of its own | Asked about at any scroll |
+| V9-7 (rest) | A link set apart by colour alone | Needs 3:1 against the text around it |
+| V9-8 | A failing `::first-letter` or `::first-line` colour | Fails |
+| V9-14 | Motion nothing shows; SMIL | Invisible motion skipped; SMIL documented |
+| N9-5 (b) | A `role=none` or `display: contents` wrapper inside a list | Passes both list rules |
+| N9-18 | `<svg role=graphics-document>` | Treated as a plain `<svg>` |
+| N9-19 | `aria-required-children` and a child's shadow root | Looks into the child's open shadow root |
+| R9-2 (rest) | Focus inside a closed shadow root when `aria-hidden-focus` probes | The probe is skipped |
+| R9-8 | A fixed target's verdict depending on the scroll | Fixed and sticky targets judged apart from page targets; possible overlap asked about |
+| R9-9 | Page code running in the contrast probe frames | One helper frame reused per scan, and documented |
+
+N9-3 (rest), R9-6 and R9-10 (rest) were decided without a change to verdicts (§4).
+
+### Decided on 2026-11-21 (round 8, done in #416)
+
+| # | Question | Decision |
+|---|---|---|
+| R8:NW-3 | An `<li>` in a list whose role replaces list, after #412 asked about all of them | A composite widget role (tablist, menu, listbox…) fails it again where drawn as a list item; a landmark or structure role still asks, leaning fail |
+| R8:NA-1 | A submenu's `menu` or `group` inside a `menubar` or `menu` | Allowed, as the APG does |
+| R8:LY-6 | Which elements target size measures | Every interactive widget role, from a role attribute or `ElementInternals` |
+| R8:NA-8 | An unnamed `<button role=X>` | Reported only by role X's own name rule; `none`/`presentation` stays in `button-name-present` |
+| R8:LY-10 | Verdicts under forced colors | The same as without |
+| R8:LY-13 | A uniform transform scale | Counts toward the drawn size, and large text, both ways |
+| R8:NA-6, LY-9 | An SVG `<text>` naming a link or button; a weight as a link's cue | As Chromium: no name; one side at 600 or more and the other under 600 |
+| R8:PK-10 | A plain-object pack changed after a scan | Frozen on its first use |
+
+R8:RO-6 was decided as documentation only (§4).
 
 ### Decided on 2026-11-20
 
@@ -61,6 +106,30 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 ---
 
 ## 3. Fixed — history
+
+### Ninth round's findings (in `main`)
+
+Pull request [#417](https://github.com/SureA11y/core/pull/417), merged 2026-11-21 as the single commit `ad47fe3e`; unreleased, for 1.18.0. The 48 evident findings of the [ninth round](./2026-11-stress-test-9.md) (at `805f33ff`), each reproduced again while it was fixed, with a regression test that fails without its fix. None is a regression of rounds 7 or 8: all are on v1.17.0 too (report, "Regressions? None").
+
+| # | Finding | Fixed in |
+|---|---|---|
+| A9-1 to A9-3, A9-5 to A9-9, A9-11, A9-12, A9-16, A9-17 | Named ESM exports; the compact result's type; messages and locale case; the browser bundle's side files; the report's Understanding link and the rollups' catalog in the locale; `StrictEngineOptions`; packs the scan can't prepare refused; `null` and misspelt reporter options; the procedures' filters and numeric version; `checkStandardData`; baseline class names | #417 |
+| V9-1, V9-2, V9-4 to V9-6, V9-7 (part), V9-9 to V9-13 | Animations in shadow roots; `::backdrop`; fixed boxes in a transformed ancestor, drawn by `::before` or an inset shadow; focus replacements and link cues that draw nothing; the pseudo-element message; rotation by `var()`; line clamp; text drawn in nothing; `::slotted(:focus)` and `scale(0)` | #417 |
+| N9-1 to N9-17 (N9-3, N9-5 in part), N9-20 | CJK and ruby in `label-in-name`; `aria-hidden` on `<html>` reported; `<image>` in a whole image; list rules and `role=none`, `ElementInternals`; frame names' case; landmarks in shadow roots and internals, composite widgets; decorative images in `region`; honeypot fields; `xml:lang` on XHTML; `#top`; punctuation labels; implicit roles in messages; `aria-*indextext`; `aria-owns` cycles; `aria-labelledby` to `<script>` | #417 |
+| R9-1 to R9-5 (R9-2 in part), R9-7, R9-10 (part) | The page's selection, focus in a frame and the scroll position put back; a no-op `scrollTo` asked about; `<base href>` in skip links; `contrast-computable` linear in a label's text; more built-ins probed | #417 |
+
+### Eighth round's findings (in `main`)
+
+Pull request [#416](https://github.com/SureA11y/core/pull/416), merged 2026-11-21 as the single commit `a021f714`; unreleased, for 1.18.0. Every finding of the [eighth round](./2026-11-stress-test-8.md) (at `254b644f`), each reproduced again while it was fixed, with a regression test that fails without its fix; #416 also adds a test that drawing in a component changes no verdict around it.
+
+| # | Finding | Fixed in |
+|---|---|---|
+| R8:NW-1, NW-2, NW-4 | Regressions of round 7: shadow-root hits read as covers in target size and focus-not-obscured; a pack's own verdict undoing the policy | #416 |
+| R8:NW-3, NW-5 to NW-15 | `<li>` in a widget list (decided); `duplicate-id-aria`'s square; throwing pack getters; eight rules quoting values whole; end-aligned pseudo text; `min()`/`max()`/`clamp()` scroll padding; signed and starred numbers in `p-as-heading`; profile lists' case; `<!-->` in `packScript`; `rootCanvasFallback`; the console's typo warning; a speed test's bound | #416 |
+| R8:NA-1 to NA-11 | APG submenus (decided); `tabindex=-1` in presentational children; implicit roles between a role and its context; textbox values in names; a select's options as label; SVG `<text>` (decided); DPUB roles; buttons with another role (decided); scrolling boxes in the tab order; text in `<body>`; three messages | #416 |
+| R8:LY-1 to LY-15 | Inset `box-shadow` and `mask-image` under text; focus replacements that draw nothing; text spacing in shadow roots and under `clip-path`; `display: contents` text; widget roles as targets (decided); underline, shadow and weight cues (weight decided); forced colors (decided); docs; `:is(:focus)`; transform scale (decided); internals-disabled components | #416 |
+| R8:PK-1 to PK-13 | A profile keeping its own outcome in a scan of several; a `Set` in `runOnly`; 4.1.1 scoping; English fallback; strict catalog; built-ins; invalid `wcagSc`; boolean report options; cyclic standard data; packs frozen (decided); profile list holes; timestamps; three small slips | #416 |
+| R8:RO-1 to RO-5 | `duplicate-id-aria`'s square; the scan's scrolling reaching the page's listeners; jsdom `text-shadow` order; `<marquee>` contrast timing; more built-ins | #416 |
 
 ### Contrast scan speed (in `main`)
 
@@ -852,6 +921,10 @@ Checked and decided. Don't reopen without new evidence.
 
 | # | Finding | Decision | Reason |
 |---|---|---|---|
+| N9-3 (rest) | `aria-hidden` on `<html>` or `<body>` skips the whole page, though Chromium ignores it there | No change (decided 2026-11-21) | The page stays hidden, as the author marked it; `aria-hidden-body` reports it, on `<html>` too since #417 |
+| R9-6 | `text-spacing-content-loss` quadratic with many broken or `src`-less images in Chromium | Documented only (decided 2026-11-21; doc on `round-9-decisions`) | The time is Chromium's own style recalculation |
+| R9-10 (rest) | Replaced built-ins beyond those probed (`getComputedStyle`…) can change verdicts | Stops at the language's built-ins, documented (decided 2026-11-21; doc on `round-9-decisions`) | #416 and #417 probe the built-ins found changing results; the DOM's own are out of scope |
+| R8:RO-6 | Custom elements overriding DOM members are read as they answer | Documented (#416, decided 2026-11-21) | The docs say such elements are read as they answer; working round every override is not attempted |
 | R3 (label-in-name speed) | label-in-name 276 to 448 ms over round 3's saved pages | Examined 2026-11-20, no change | About 5 ms a page over the 157 scenario pages and five large synthetic ones, mostly the scan's fixed cost; on a page of 2,000 product cards (8,000 named controls) 340 ms, linear, about 40 µs a control. Profiled in Chromium: the time is reading each control's visible text, accessible name, visibility and accessibility-tree eligibility, through shared helpers that already keep their answers per element; nothing is worked out and thrown away. Caching the rule's two visibility checks on top of them changed nothing measurable, and was dropped. A real gain would mean the shared name and visibility helpers, which every rule uses |
 | R6:CE-6 | A lean for a 2 by 2 table with no `<th>`, which IBM fails | No lean for plain text (decided 2026-11-20) | `td-has-header` already leans fail where a small table shows signs of data (numbers, a caption, a head, a first row or column drawn as headers); a table of plain short text looks the same as data and as layout (a navigation or contact block), so it is asked about with no lean |
 | C-21 | `profile:new` accepts the key `section508` | Not a bug | A scaffold's profile is `section508-1.0`; the built-in profile is unaffected. Re-checked. (Using `section508` both as a profile name and a `mappings` name can confuse; a note in the scaffold docs would help.) |

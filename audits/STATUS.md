@@ -2,26 +2,28 @@
 
 Where the work on the audit's findings stands, written so that another person or session can pick it up without the history of this one. The findings themselves, open and fixed, are in [`FINDINGS.md`](./FINDINGS.md); this page says what is in flight, what is decided, and how the work is done.
 
-Last updated 2026-11-20, on `main` at `78354cc4` (1.17.0 plus the unreleased 1.18.0 work).
+Last updated 2026-11-21, on `main` at `ad47fe3e` (1.17.0 plus the unreleased 1.18.0 work).
 
 ## 1. Open now
 
-Nothing is in flight: no pull request from the audit work is open. Seven rounds have run; their findings are fixed or decided, as recorded in [`FINDINGS.md`](./FINDINGS.md) §3:
+**In flight: the round 9 decisions**, on the branch `round-9-decisions` (not merged yet): the 18 questions round 9 left for a decision, decided on 2026-11-21 and listed in [`FINDINGS.md`](./FINDINGS.md) §1. Nine rounds have run; their findings are fixed or decided, as recorded in [`FINDINGS.md`](./FINDINGS.md) §3:
 - **Rounds 1 and 2:** fixed in #77 to #186 (the sections of §3 below the third round).
 - **Round 3:** fixed in #191 to #194, merged 2026-10-10.
 - **Round 4:** fixed in #212 to #241, merged 2026-10-15; re-checked by round 5.
 - **Round 5:** fixed in #289 to #295 and #299, merged 2026-10-23 to 2026-10-24, released in 1.14.0; re-checked on `92e54df6` on 2026-10-27.
 - **Round 6** (the unreleased 1.18.0 work, at `23e0a387`): fixed in #406 and #407, merged 2026-11-20, unreleased; every open item of the register re-checked on `c1bb82de` the same day. RF-16's last part fixed by #408.
 - **Round 7** (at `ec664338`): 38 findings, all fixed in #411, merged 2026-11-20, with R4:OP-P1.
+- **Round 8** (at `254b644f`): 60 findings, three of them regressions of round 7's fixes, all fixed in #416, merged 2026-11-21 as `a021f714`; its ten decisions acted on there.
+- **Round 9** (at `805f33ff`, the round 8 branch): 61 findings, none a regression of rounds 7 or 8; the 48 evident ones fixed in #417, merged 2026-11-21 as `ad47fe3e`; the rest decided, on `round-9-decisions`.
 - **The leftovers of rounds 4 and 5**, and the four questions that waited on a decision: fixed and decided in #412, merged 2026-11-20.
 - **The safe features of `FINDINGS.md` §2** (R5:AP-7's `checkPack` report, invariants over every rule, pixel checks of native controls): done in #413, merged 2026-11-20, with a shadow-root selector fix the invariants found.
 - **target-size-minimum's speed** on long pages: done in #414, merged 2026-11-20.
 - **The contrast text scan's speed**, the safe part: done in #415, merged 2026-11-20.
 - **label-in-name's speed**: examined 2026-11-20 and closed without a change (`FINDINGS.md` §4): no waste in the rule itself.
 
-What is left: no finding to fix and no question to decide (`FINDINGS.md` §1). The features of `FINDINGS.md` §2 remain, the sixth round's three among them (R6:CE-4 to CE-6).
+What is left (`FINDINGS.md` §1): the round 9 decisions until their branch is merged; two Low leftovers of round 8 (`aria-valid-attr` quoting a very long attribute name whole; jsdom's `getComputedStyle` cost in `duplicate-id-aria` on big pages); one round 9 lead waiting on a decision (`html-xml-lang-mismatch` and an unknown `xml:lang`). The features of `FINDINGS.md` §2 remain, the sixth round's three among them (R6:CE-4 to CE-6).
 
-**Next step:** decide which of the remaining features of `FINDINGS.md` §2 to take: those left change what a scan does (a 1.4.4 clipping check, a first-heading best practice, a time budget, the paint-order part of contrast-computable's speed, reporter changes, a shared event-path helper, profiles without forking core). Before the next round, merge `main` into this branch (README, "Before running an audit").
+**Next step:** merge `round-9-decisions`, record it in the register, and decide the `xml:lang` lead. Then decide which of the remaining features of `FINDINGS.md` §2 to take: those left change what a scan does (a 1.4.4 clipping check, a first-heading best practice, a time budget, the paint-order part of contrast-computable's speed, reporter changes, a shared event-path helper, profiles without forking core). Before the next round, merge `main` into this branch (README, "Before running an audit").
 
 **Before 1.18.0 is used by the packs:** `pack-rgaa`, `pack-raweb` and `pack-en301549` declare `~1.17.0`, so each needs a release to accept it; `pack-rgaa`'s test of the experimental APIs it uses ("the profile serves article 47…") needs updating then, as it uses none any more. With #411, two more package tests need a one-line update: `pack-wai-aria`'s "an unnamed grid: a question for WCAG, a failure of WAI-ARIA" (the check now fails under the WAI-ARIA profile alone, R7:IF-7) and `pack-rgaa`'s "RGAA 9.3 and WCAG 1.3.1 both ask about `<li>` items in a role="list"" (WCAG 1.3.1 is now `passedInPart`, R7:AN-6). With #412, one more: `pack-rgaa`'s "9.3 asks about a plain `<li>` in a list with a widget role" expects `listitem-parent-valid` to fail, where it now asks (R5 list lead, decided); RGAA 9.3's outcome is unchanged.
 
@@ -37,8 +39,10 @@ What is left: no finding to fix and no question to decide (`FINDINGS.md` §1). T
 - Round 6, all on 2026-11-19: excluded areas are context for rules that judge the whole page (no findings in them, their content still read); every experimental API due at 1.18.0 made stable after its fixes, `skip-link`'s `details.lean` and the `standard.review` keys included, as `pack-rgaa` uses both; requirement-level laws kept experimental until 1.20.0 and honoured by the scan; invalid `aria-level` values follow WAI-ARIA's default where Chromium exposes 1.
 - Round 7, all on 2026-11-20: `reflow-horizontal-scroll` becomes a manual rule that asks and never fails, a region filling the viewport is the page, and `opacity: 0` is hidden; `p-as-heading` drops `BOLD_SHORT_DIV` and `BOLD_LEAD_LINE`, keeping `BOLD_SHORT_PARAGRAPH`; a pack's profile scanned alone keeps the pack's verdict; an invalid `aria-checked` on a native checkbox or radio is asked about.
 - After round 7, on 2026-11-20: `strictOptions` refuses unknown `mappings` and `optInRules` tags and invalid `excludeSelectors` CSS; an `<li>` in a list whose role replaces list is asked about, leaning fail; an input whose `list` names no datalist is a textbox, as Chromium exposes it; `focus-not-removed-by-script` keeps its criteria, without 3.2.1; ids, tags and profile names match case in ASCII only.
+- Round 8, all on 2026-11-21 ([report §2](./2026-11-stress-test-8.md#2-decisions-taken)): an `<li>` in a list with a composite widget role fails again, one under a landmark or structure role is still asked about, leaning fail; a submenu's `menu` inside a `menubar` or `menu` is allowed; target size measures every interactive widget role; an unnamed `<button role=X>` is left to role X's name rule; forced colors keep the same verdicts; a uniform transform scale counts toward large text both ways; SVG `<text>` and link weight cues follow Chromium; custom elements overriding DOM members are documented only; a plain-object pack is frozen on first use.
+- Round 9, all on 2026-11-21 ([report §2](./2026-11-stress-test-9.md#2-decisions-taken)), being made on `round-9-decisions`: as listed in `FINDINGS.md` §1 and §4.
 - R6:CE-6: no lean for a small table of plain text with no `<th>` (2026-11-20).
-- Nothing is waiting on a decision.
+- Waiting on a decision: the `xml:lang` lead of round 9.
 
 ## 3. How the work is done
 
@@ -51,7 +55,8 @@ These are the conventions this work has followed; keep them.
 - **Code.** Rules read the DOM through `ctx.helpers.dom`, and a name read with `dom.get` is listed in `src/core/safe-dom.js`. Match the surrounding style. Prettier applies to code and tests (`npm run format:check`), not to docs. Never edit or rewrite `main`.
 - **Tests.** A Chromium test, `tests/engine-checks/*-chromium.test.js`, where the change touches rendering or the browser, and jsdom tests; each new test fails before its fix. Chromium tests find the browser through `CHROMIUM_EXECUTABLE_PATH`.
 - **Pull requests.** Mirror `.github/PULL_REQUEST_TEMPLATE.md` and the style of #146 and #161, with a "Fixes #N" line per issue at the end. Base `main`; they are merged by rebase.
-- **Rounds 6 and 7 did not follow two of these.** Their findings were fixed in a few pull requests (#406, #407; #411 for round 7 and #412 for the leftovers, each in one at the owner's request) with no issue per item and no separate "Record …" changelog commits: the changelog entries went in with each fix. The other conventions held.
+- **Since round 8, a lighter guard against regressions.** Round 8 found three regressions of round 7's fixes (R8:NW-1, NW-2: the shadow-root hit tests; NW-4). The agreed measures: a regression test per fix, as before; a shadow-wrapping invariant test (the same page with its content in the light DOM or in open shadow roots gives the same verdicts; added in #416); and one before/after diff of the scenario fixtures per branch.
+- **Rounds 6 to 9 did not follow two of these.** Their findings were fixed in a few pull requests (#406, #407; #411 for round 7 and #412 for the leftovers, each in one at the owner's request; #416 and #417 for rounds 8 and 9, each landing on `main` as one commit) with no issue per item and no separate "Record …" changelog commits: the changelog entries went in with each fix. The other conventions held.
 
 ## 4. Verifying a commit
 

@@ -1,0 +1,12 @@
+const { runa11yCoreOnHtml } = require('@surea11y/core/testing');
+const html = '<html lang="en"><title>t</title><body><div><img src="a.png"></div></body></html>';
+const w = console.warn; let warns=[]; console.warn=(...a)=>warns.push(a.join(' '));
+const t = (label, eo, ro) => { warns=[]; try { const r = runa11yCoreOnHtml(html, { engineOptions: eo, runOnly: ro, entryPointParity:false }); const ids = r.checksResults.map(c=>c.ruleId); console.log(label.padEnd(44), 'n', ids.length, 'img', ids.includes('img-alt-present'), 'region', ids.includes('region'), warns.length?'WARN '+warns.join('|').slice(0,220):''); } catch(e) { console.log(label, 'THROWS', e.message.slice(0,200)); } };
+t('eo exclude region only', { rules: { exclude: 'region' } }, null);
+t('eo exclude region + runOnly wcag', { rules: { exclude: 'region' } }, { wcag: { version: '2.2', level: 'AA' }, bestPractices: true });
+t('eo exclude img + runOnly bestPractices', { rules: { exclude: 'img-alt-present' } }, { bestPractices: true });
+t('eo include img + runOnly tags', { rules: { include: 'img-alt-present' } }, { tags: ['best-practice'] });
+t('eo exclude img + profile', { rules: { exclude: 'img-alt-present' }, profile: 'wcag22-aa' }, null);
+t('eo tags exclude + runOnly excludeRuleIds', { tags: { exclude: 'wcag111' } }, { excludeRuleIds: ['region'] });
+t('eo exclude img + runOnly {bestPractices:false}', { rules: { exclude: 'img-alt-present' } }, { bestPractices: false });
+console.warn=w;

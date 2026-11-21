@@ -1,0 +1,32 @@
+const { runAll } = require('./harness');
+const R = ['form-control-programmatic-label-present','form-control-single-label','label-for-valid','autocomplete-valid','invalid-field-error-message','label-in-name','form-control-label-quality','form-control-programmatic-label-quality','label-title-only','control-name-title-only','textbox-name-present','searchbox-name-present','combobox-name-present','password-paste-enabled'];
+const cases = [
+ { id:'bs-floating', html:`<div class="form-floating"><input type="email" class="form-control" id="fe" placeholder="name@example.com" data-t="i"><label for="fe">Email address</label></div>` },
+ { id:'mui-textfield', html:`<div class="MuiFormControl-root"><label class="MuiInputLabel-root" data-shrink="false" for="tf" id="tf-label">Name</label><div class="MuiInputBase-root"><input aria-invalid="false" id="tf" type="text" class="MuiInputBase-input" value="" data-t="i"><fieldset aria-hidden="true"><legend><span>Name</span></legend></fieldset></div></div>` },
+ { id:'mui-error', html:`<label for="e" id="el">Email</label><input id="e" aria-invalid="true" aria-describedby="e-helper" value="bad" data-t="i"><p id="e-helper" class="Mui-error">Incorrect entry.</p>` },
+ { id:'invalid-no-msg', html:`<label for="e">Email</label><input id="e" aria-invalid="true" value="bad" data-t="i">` },
+ { id:'invalid-errormessage', html:`<label for="e">Email</label><input id="e" aria-invalid="true" aria-errormessage="em" value="bad" data-t="i"><span id="em">Enter a valid email</span>` },
+ { id:'invalid-errormessage-hidden', html:`<label for="e">Email</label><input id="e" aria-invalid="true" aria-errormessage="em" value="bad" data-t="i"><span id="em" hidden>Enter a valid email</span>` },
+ { id:'invalid-describedby-live-region', html:`<label for="e">Email</label><input id="e" aria-invalid="true" value="bad" data-t="i"><div role="alert">Email is invalid</div>` },
+ { id:'invalid-false-values', html:`<label for="e">Email</label><input id="e" aria-invalid="false" data-t="i"><label for="f">F</label><input id="f" aria-invalid="" data-t="j"><label for="g">G</label><input id="g" aria-invalid="spelling" data-t="k">` },
+ { id:'two-labels', html:`<label for="x">First</label><label for="x">Second</label><input id="x" data-t="i">` },
+ { id:'label-wraps-and-for', html:`<label for="y">Name <input id="y" data-t="i"></label>` },
+ { id:'label-for-other-wraps', html:`<label for="z">Wrap <input id="w" data-t="i"></label><input id="z" data-t="j">` },
+ { id:'label-for-missing', html:`<label for="nope">Name</label><input id="n" aria-label="Name" data-t="i">` },
+ { id:'label-for-non-labelable', html:`<label for="d">Div</label><div id="d" role="textbox" contenteditable data-t="i"></div>` },
+ { id:'autocomplete', html:`<label>Email<input autocomplete="email" data-t="a"></label><label>Name<input autocomplete="nope" data-t="b"></label><label>X<input autocomplete="section-blue shipping street-address" data-t="c"></label><label>Off<input autocomplete="off" data-t="d"></label><label>W<input autocomplete="webauthn username" data-t="e"></label><label>OTP<input autocomplete="one-time-code" data-t="f"></label><label>H<input autocomplete="home email" data-t="g"></label><label>B<input autocomplete="billing cc-number" data-t="h"></label><label>T<input type="checkbox" autocomplete="email" data-t="k"></label>` },
+ { id:'contenteditable-textbox', html:`<div contenteditable="true" data-t="ce"></div><div contenteditable="true" role="textbox" data-t="ce2"></div><div contenteditable aria-label="Comment" data-t="ce3"></div>` },
+ { id:'label-in-name-btn', html:`<button aria-label="Submit the form" data-t="b">Send</button><a href="#" aria-label="Read more about pricing" data-t="a">Read more</a><button aria-label="Close" data-t="x">×</button>` },
+ { id:'label-in-name-punct', html:`<button aria-label="Next: page 2" data-t="b">Next page 2</button><a href="#" aria-label="Contact us, opens new window" data-t="a">Contact us</a><button aria-label="ok" data-t="c">OK!</button>` },
+ { id:'label-in-name-icon-text', html:`<button aria-label="Add to cart" data-t="b"><svg aria-hidden="true"></svg> Add</button>` },
+ { id:'label-in-name-field', html:`<label for="q">Search</label><input id="q" aria-label="Find products" data-t="i">` },
+ { id:'label-in-name-hyphen', html:`<button aria-label="Sign in" data-t="b">Sign-in</button><button aria-label="E mail" data-t="c">E-mail</button>` },
+ { id:'label-in-name-sup', html:`<a href="#" data-t="a" aria-label="Footnote 1">1</a><button aria-label="Step 2 of 5: shipping" data-t="b">Shipping</button>` },
+ { id:'title-and-placeholder', html:`<input title="Search" placeholder="Search" data-t="i"><input placeholder="Email" data-t="j">` },
+ { id:'aria-describedby-label', html:`<span id="h">Hint</span><input aria-describedby="h" data-t="i">` },
+ { id:'select-in-label-text-after', html:`<label>Sort by <select data-t="s"><option>Price</option></select></label>` },
+ { id:'fieldset-legend-only', html:`<fieldset><legend>Date of birth</legend><input aria-label="Day" data-t="d"><input data-t="m"></fieldset>` },
+ { id:'internals-fa-label', setup:`customElements.define('x-in', class extends HTMLElement{static formAssociated=true; constructor(){super(); this.i=this.attachInternals(); this.i.role='textbox'; this.tabIndex=0;}});`, html:`<label for="xi">Custom</label><x-in id="xi" data-t="xi"></x-in><x-in data-t="xj"></x-in>` },
+ { id:'password-paste', html:`<label>Pw<input type="password" onpaste="return false" data-t="p"></label>` },
+];
+runAll(cases, R);

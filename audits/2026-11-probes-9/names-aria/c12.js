@@ -1,0 +1,21 @@
+const R=['aria-required-children','aria-required-parent','aria-prohibited-children'];
+module.exports=[
+{name:'tablist-wrapped', rules:R, html:'<div id=t role=tablist><div><button role=tab id=a aria-selected=true>A</button></div></div>', ax:['#t','#a']},
+{name:'grid-rowgroup', rules:R, html:'<div id=g role=grid><div role=rowgroup><div role=row><div role=gridcell>1</div></div></div></div>', ax:['#g']},
+{name:'menu-group', rules:R, html:'<div id=m role=menu><div role=group><div role=menuitem tabindex=-1>A</div></div></div>', ax:['#m']},
+{name:'listbox-empty', rules:R, html:'<div id=l role=listbox aria-label=x tabindex=0></div><ul id=u role=list></ul>', ax:['#l']},
+{name:'listbox-busy', rules:R, html:'<div id=l role=listbox aria-label=x aria-busy=true tabindex=0><div>Loading</div></div>', ax:['#l']},
+{name:'tree-group', rules:R, html:'<ul id=t role=tree aria-label=x><li role=treeitem aria-expanded=true>A<ul role=group><li role=treeitem>B</li></ul></li></ul>', ax:['#t']},
+{name:'feed', rules:R, html:'<div id=f role=feed><article>a</article><div role=article>b</div></div>', ax:['#f']},
+{name:'native-table-grid', rules:R, html:'<table id=t role=grid><tr><td>1</td></tr></table><table id=u role=treegrid><tbody><tr><td role=gridcell>1</td></tr></tbody></table>', ax:['#t','#u']},
+{name:'row-owns', rules:R, html:'<div role=grid id=g><div role=row id=r aria-owns="c1"></div></div><div id=c1 role=gridcell>1</div>', ax:['#g','#r','#c1']},
+{name:'option-in-group-listbox', rules:R, html:'<div role=listbox aria-label=x><div role=group aria-label=g><div role=option id=o aria-selected=false>A</div></div></div>', ax:['#o']},
+{name:'menuitem-in-group-menubar', rules:R, html:'<div role=menubar><div role=group><div role=menuitem id=o tabindex=0>A</div></div></div>', ax:['#o']},
+{name:'tab-no-tablist', rules:R, html:'<div><button role=tab id=o>A</button></div>', ax:['#o']},
+{name:'listitem-in-group', rules:R, html:'<div role=list><div role=group><div role=listitem id=o>A</div></div></div>', ax:['#o']},
+{name:'cell-in-row-shadow', rules:R, html:'<div role=table id=t><x-row id=h></x-row></div>', setup:()=>{const s=document.getElementById('h').attachShadow({mode:'open'});s.innerHTML='<div role=row><div role=cell>1</div></div>';}, ax:['#t']},
+{name:'radiogroup-text', rules:R, html:'<div id=r role=radiogroup aria-label=x>Pick one<div role=radio aria-checked=false tabindex=0>A</div></div>', ax:['#r']},
+{name:'menu-with-separator-hr', rules:R, html:'<div id=m role=menu><div role=menuitem tabindex=-1>A</div><hr><div role=menuitem tabindex=-1>B</div></div>', ax:['#m']},
+{name:'list-with-li-and-heading', rules:R, html:'<div id=m role=list><h3>Title</h3><div role=listitem>A</div></div>', ax:['#m']},
+{name:'tablist-with-a', rules:R, html:'<div id=m role=tablist><a href="#x" role=tab>A</a><a href="#y">B</a></div>', ax:['#m']},
+];
