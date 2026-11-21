@@ -531,3 +531,13 @@ test(`${RULE_ID}: a fail names an aria-labelledby whose text is hidden, or that 
   );
   assert.deepEqual(occ('mix').data.details.nameCause.missing, ['nope']);
 });
+
+// A <script> or <style> is never rendered: aria-labelledby gives nothing
+// from it, as from a <template>, so the link is unnamed, as in Chromium.
+test(`${RULE_ID}: aria-labelledby pointing at a <script> or <style> names nothing (round 9, N9-20)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><a id="a" href="/" aria-labelledby="s"></a><script id="s" type="text/plain">Script text</script><a id="b" href="/" aria-labelledby="st"></a><style id="st">.x{}</style></main></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+});

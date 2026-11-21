@@ -1702,3 +1702,15 @@ test('name from content: a ruby annotation (<rt>, <rp>) is left out, as Chromium
   assert.equal(name('r2'), '漢字');
   assert.equal(helpers.getAccessibleNameInfo(byId(document, 'r4')).value, 'Tokyo tour');
 });
+
+test('aria-labelledby: a <script> or <style> gives no text, as a <template> gives none (round 9, N9-20)', () => {
+  const { helpers, document } = helpersFor(
+    '<a href="/" id="a1" aria-labelledby="s"></a><script id="s" type="text/plain">Script text</script>' +
+      '<a href="/" id="a2" aria-labelledby="st"></a><style id="st">.x{}</style>' +
+      '<a href="/" id="a3" aria-labelledby="s l"></a><span id="l">Home</span>'
+  );
+  const name = (id) => helpers.getAccessibleNameInfo(byId(document, id)).value;
+  assert.equal(name('a1'), '');
+  assert.equal(name('a2'), '');
+  assert.equal(name('a3'), 'Home');
+});
