@@ -861,6 +861,8 @@
   "ariaHiddenBody_description": "<body> に aria-hidden=\"true\" が指定されていないかを確認します。指定されているとページ全体がアクセシビリティツリーから取り除かれます。",
   "ariaHiddenBody_summary_fail": "文書の body に aria-hidden=\"true\" が指定されているため、ページ全体が支援技術から隠されています。",
   "ariaHiddenBody_hint_fail": "<body> から aria-hidden を削除してください。特定の要素を隠す意図だった場合は、その要素に指定してください。",
+  "ariaHiddenBody_summary_failHtml": "<html> 要素に aria-hidden=\"true\" が指定されているため、ページ全体が支援技術から隠されています。",
+  "ariaHiddenBody_hint_failHtml": "<html> から aria-hidden を削除してください。特定の要素を隠す意図だった場合は、その要素に指定してください。",
   "listChildrenValid_title": "リストの直接の子はリスト項目のみであること",
   "listChildrenValid_description": "<ul>/<ol> 要素の直接の子が <li>、<script>、<template> のみであるかを確認します。",
   "listChildrenValid_summary_fail": "この <{{element}}> には、リスト項目でない直接の子があります: {{invalidChildren}}。",

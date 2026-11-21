@@ -861,6 +861,8 @@
   "ariaHiddenBody_description": "Comprueba que <body> no tenga aria-hidden=\"true\", lo que eliminaría toda la página del árbol de accesibilidad.",
   "ariaHiddenBody_summary_fail": "El body del documento tiene aria-hidden=\"true\", lo que oculta toda la página a las tecnologías de apoyo.",
   "ariaHiddenBody_hint_fail": "Eliminar aria-hidden de <body>. Ocultar elementos específicos en su lugar, si esa era la intención.",
+  "ariaHiddenBody_summary_failHtml": "El elemento <html> tiene aria-hidden=\"true\", lo que oculta toda la página a las tecnologías de apoyo.",
+  "ariaHiddenBody_hint_failHtml": "Eliminar aria-hidden de <html>. Ocultar elementos específicos en su lugar, si esa era la intención.",
   "listChildrenValid_title": "Las listas solo deben contener directamente elementos de lista",
   "listChildrenValid_description": "Comprueba que los elementos <ul>/<ol> solo tengan como hijos directos <li>, <script> o <template>.",
   "listChildrenValid_summary_fail": "Este <{{element}}> contiene un hijo directo que no es un elemento de lista: {{invalidChildren}}.",

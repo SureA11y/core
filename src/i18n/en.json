@@ -861,6 +861,8 @@
   "ariaHiddenBody_description": "Checks that <body> does not have aria-hidden=\"true\", which would remove the entire page from the accessibility tree.",
   "ariaHiddenBody_summary_fail": "The document body has aria-hidden=\"true\", which hides the entire page from assistive technologies.",
   "ariaHiddenBody_hint_fail": "Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.",
+  "ariaHiddenBody_summary_failHtml": "The <html> element has aria-hidden=\"true\", which hides the entire page from assistive technologies.",
+  "ariaHiddenBody_hint_failHtml": "Remove aria-hidden from <html>. Hide specific elements instead, if that was the intent.",
   "listChildrenValid_title": "Lists must only directly contain list items",
   "listChildrenValid_description": "Checks that <ul>/<ol> elements only have <li>, <script>, or <template> as direct children.",
   "listChildrenValid_summary_fail": "This <{{element}}> contains a direct child that is not a list item: {{invalidChildren}}.",
