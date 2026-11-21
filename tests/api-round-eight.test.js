@@ -284,3 +284,40 @@ test('a timestamp that is not an ISO 8601 date and time is refused under strict,
     assert.equal(r.timestamp, timestamp);
   }
 });
+
+test('docs and types match: review dictionaries, baseline exports, occurrence tiers (PK-13)', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = path.join(__dirname, '..');
+  const keys = Object.keys(require('../src/i18n/review/en.json')).length;
+  const doc = fs.readFileSync(path.join(root, 'docs', 'I18N.md'), 'utf8');
+  assert.match(doc, new RegExp('`src/i18n/review/<locale>.json`, ' + keys + ' keys in each'));
+
+  const dts = fs.readFileSync(path.join(root, 'src', 'baseline.d.ts'), 'utf8');
+  for (const name of Object.keys(require('../src/baseline.js'))) {
+    assert.match(dts, new RegExp('export function ' + name + '\\b'), name);
+  }
+
+  const page = '<html lang="en"><head><title>t</title></head><body><p id="a">x</p></body></html>';
+  const tierScan = (tier) =>
+    runa11yCoreOnHtml(page, {
+      engineOptions: {
+        customRules: [
+          {
+            id: 'org-tier',
+            meta: { title: 'T', description: 'd', tags: ['wcag2a', 'wcag111'], wcagSc: ['1.1.1'] },
+            runInPage: `function(ctx){ return { outcome: 'cantTell', occurrences: [{ selector: '#a', summary: 's', occurrenceOutcome: ${JSON.stringify(tier)} }] }; }`
+          }
+        ]
+      },
+      runOnly: ['org-tier']
+    }).checksResults[0];
+  const upper = tierScan('FAIL');
+  assert.equal(upper.occurrences[0].occurrenceOutcome, 'fail');
+  assert.equal(upper.outcome, 'fail');
+  assert.equal(tierScan('CANTTELL').occurrences[0].occurrenceOutcome, 'cantTell');
+  const bogus = tierScan('bogus');
+  assert.equal(bogus.occurrences[0].occurrenceOutcome, undefined);
+  assert.equal(bogus.outcome, 'cantTell');
+  assert.match(bogus.error, /occurrenceOutcome "bogus"/);
+});

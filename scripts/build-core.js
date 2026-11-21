@@ -1965,6 +1965,44 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     }
   }
 
+  // An occurrence's tier is fail, cantTell or pass, read in any case
+  // ('FAIL' is fail). Any other value is dropped, so the occurrence takes
+  // the rule's outcome, and said in error: a custom rule's 'bogus' reached
+  // every reporter as it was.
+  if (Array.isArray(out.occurrences)) {
+    const TIERS = { fail: 'fail', canttell: 'cantTell', pass: 'pass' };
+    const unread = [];
+    out.occurrences = out.occurrences.map((o) => {
+      if (!o || typeof o !== 'object' || o.occurrenceOutcome === undefined || o.occurrenceOutcome === null) return o;
+      const given = o.occurrenceOutcome;
+      const key = typeof given === 'string' ? given.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
+      const tier = Object.prototype.hasOwnProperty.call(TIERS, key) ? TIERS[key] : null;
+      if (tier === given) return o;
+      const next = { ...o };
+      if (tier) next.occurrenceOutcome = tier;
+      else {
+        delete next.occurrenceOutcome;
+        unread.push(given);
+      }
+      return next;
+    });
+    if (unread.length) {
+      let named = '';
+      for (const v of unread.filter((v, i) => unread.indexOf(v) === i)) {
+        let text;
+        try {
+          text = JSON.stringify(v);
+        } catch {
+          text = undefined;
+        }
+        named += (named ? ', ' : '') + (text === undefined ? typeof v : text);
+      }
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule returned occurrenceOutcome ' + named + ', which is not one of fail, cantTell, pass; those occurrences take the outcome of the rule.';
+    }
+  }
+
   if (!pol.allowedOutcomes.includes(out.outcome)) {
     if (['fail', 'pass', 'cantTell', 'notApplicable'].includes(out.outcome)) {
       // An outcome the policy doesn't allow: the rule completed, and a person
