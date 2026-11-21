@@ -1901,6 +1901,33 @@ function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG
       );
       continue;
     }
+    // A wcagSc entry that names no WCAG criterion ('9.9.9') would reach the
+    // result and SARIF as a criterion; definePack refuses the pack for it,
+    // and a custom rule is skipped for it, as for any other invalid meta.
+    const givenSc = c.meta && typeof c.meta === 'object' ? c.meta.wcagSc : undefined;
+    if (Array.isArray(givenSc)) {
+      const unknownSc = givenSc.filter(
+        (v) =>
+          !(
+            typeof v === 'string' &&
+            Object.prototype.hasOwnProperty.call(WCAG_LEVELS_BY_SC, v.trim())
+          )
+      );
+      if (unknownSc.length) {
+        let named = '';
+        for (const v of unknownSc) {
+          let text;
+          try {
+            text = JSON.stringify(v);
+          } catch {
+            text = undefined;
+          }
+          named += (named ? ', ' : '') + (text === undefined ? typeof v : text);
+        }
+        skip(ruleId, 'invalid meta: wcagSc names no WCAG criterion: ' + named);
+        continue;
+      }
+    }
     let normalizedMeta;
     try {
       normalizedMeta = normalizeRuleMeta(ruleId, ruleId, withWcagScMappings(c.meta), ENGINE_TAG);

@@ -321,3 +321,28 @@ test('docs and types match: review dictionaries, baseline exports, occurrence ti
   assert.equal(bogus.outcome, 'cantTell');
   assert.match(bogus.error, /occurrenceOutcome "bogus"/);
 });
+
+test('a custom rule whose wcagSc names no criterion is skipped, as definePack refuses it (PK-7)', () => {
+  const page = '<html lang="en"><head><title>t</title></head><body><p>x</p></body></html>';
+  const run = () => ({ outcome: 'fail', occurrences: [{ selector: 'p' }] });
+  const meta = {
+    title: 'T',
+    description: 'd',
+    tags: ['wcag2a', 'wcag111'],
+    wcagSc: ['9.9.9', '1.1.1']
+  };
+  const warn = console.warn;
+  console.warn = () => {};
+  let r;
+  try {
+    r = runa11yCoreOnHtml(page, {
+      engineOptions: { customRules: [{ id: 'org-r', meta, runInPage: run }] }
+    });
+  } finally {
+    console.warn = warn;
+  }
+  const skipped = (r.skippedCustomRules || []).find((s) => s.id === 'org-r');
+  assert.ok(skipped, JSON.stringify(r.skippedCustomRules));
+  assert.match(skipped.reason, /wcagSc names no WCAG criterion: "9\.9\.9"/);
+  assert.ok(!r.checksResults.some((c) => c.ruleId === 'org-r'));
+});
