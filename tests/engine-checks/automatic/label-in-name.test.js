@@ -785,3 +785,19 @@ test('label-in-name: a word a <label> shows and the name lacks is named where it
   assert.match(inLabel.hint, /lacks "orders" from the visible label, shown in <label>\. Add/);
   assert.doesNotMatch(inLabel.hint, /inside the control/);
 });
+
+// A closed drop-down <select> shows only its selected option: as an
+// aria-labelledby target, that option is the visible label, not every
+// option it holds. A list box shows its options.
+test(`${RULE_ID}: a drop-down <select> target shows only its selected option (round 8, NA-5)`, async () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  for (const body of [
+    '<select id="s" aria-label="Sort"><option>Price</option><option>Rating</option></select><button id="b" aria-labelledby="s"></button>',
+    '<select id="s" aria-label="Sort"><option>Price</option><option selected>Rating</option></select><button id="b" aria-labelledby="s">Rating</button>'
+  ]) {
+    const result = await runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] });
+    const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+    assert.strictEqual(rule.outcome, 'pass', body);
+  }
+});
