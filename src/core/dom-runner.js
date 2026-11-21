@@ -2233,21 +2233,51 @@ function runCoreSettled(
     // The color parser reads computed styles, which the browser has already
     // checked, so it is lenient: a keyword that depends on the page
     // (inherit, currentColor) or rgb() with a wrong number of values would
-    // pass. A color the caller writes is checked as CSS would check it.
+    // pass. A color the caller writes is checked as CSS would check it: by
+    // the browser where it can say (CSS.supports), else by the forms of
+    // rgb() and hsl(), and a valid color the parser can't read (none, a
+    // relative color) is read as the browser computes it (round 8, NW-13).
     const text = String(given).trim();
     const lower = text.toLowerCase();
+    const KEYWORDS = ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'];
+    let supported = null;
+    try {
+      const css = window && window.CSS;
+      if (css && typeof css.supports === 'function') supported = !!css.supports('color', text);
+    } catch {
+      supported = null;
+    }
     const fn = /^(rgba?|hsla?)\((.*)\)$/.exec(lower);
-    const badSyntax =
-      ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'currentcolor'].includes(lower) ||
-      (fn &&
-        (() => {
-          const body = fn[2].trim();
-          const parts = body.includes(',')
-            ? body.split(',').map((x) => x.trim())
-            : body.split('/').flatMap((x, i) => (i === 0 ? x.trim().split(/\s+/) : [x.trim()]));
-          return parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
-        })());
+    const formBad = () => {
+      if (!fn) return false;
+      const body = fn[2].trim();
+      if (/^from\s/.test(body)) return false;
+      if (body.includes(',')) {
+        // The legacy form: three or four values, commas only.
+        const parts = body.split(',').map((x) => x.trim());
+        return body.includes('/') || parts.length < 3 || parts.length > 4 || parts.some((x) => !x);
+      }
+      // The modern form: three values, then "/ alpha" optionally.
+      const [main, alpha, extra] = body.split('/');
+      const values = main.trim().split(/\s+/).filter(Boolean);
+      return values.length !== 3 || extra !== undefined || (alpha !== undefined && !alpha.trim());
+    };
+    const badSyntax = KEYWORDS.includes(lower) || (supported === null ? formBad() : !supported);
     if (badSyntax) rgba = null;
+    else if (!rgba && supported) {
+      // Valid, but not a form the parser reads: as the browser computes it.
+      try {
+        const probe = dom.createElement(document, 'span');
+        probe.style.color = text;
+        dom.appendChild(dom.documentElement(document), probe);
+        const computed = dom.defaultView(document).getComputedStyle(probe).color;
+        dom.removeChild(dom.documentElement(document), probe);
+        const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
+        if (typeof parse === 'function') rgba = parse(computed);
+      } catch {
+        rgba = null;
+      }
+    }
     if (!rgba || !(rgba.a >= 1)) {
       const message =
         'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +

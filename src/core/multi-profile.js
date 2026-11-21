@@ -20,7 +20,7 @@
 function profileNamesOf(asked) {
   const names = (Array.isArray(asked) ? asked : [])
     .filter((p) => typeof p === 'string' && p.trim())
-    .map((p) => p.trim().toLowerCase());
+    .map((p) => lowerAscii(p.trim()));
   return names.filter((p, i) => names.indexOf(p) === i);
 }
 
@@ -43,6 +43,13 @@ function profileOptionsOf(engineOptions) {
  * one after another, and merges the results (mergeProfileResults). Any other
  * profile option is a single scan: a list of one is its one name.
  */
+// Profile names match case in ASCII only, as the selection matches rule ids,
+// tags and profiles (asciiLowerChar in scripts/build-core.js): a full Unicode
+// fold reads the Kelvin sign (U+212A) as "k" (round 8, NW-11).
+function lowerAscii(value) {
+  return String(value).replace(/[A-Z]/g, (c) => c.toLowerCase());
+}
+
 function runProfiles(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
   const allowFail = policyAllowsFail(engineOptions);
@@ -178,13 +185,13 @@ function withOwnVerdicts(result, allowFail = true) {
  * "pack"), since every profile of a pack starts with its namespace and "-".
  */
 function mayBeSkippedPackProfile(profile, packNames, declared) {
-  const name = typeof profile === 'string' ? profile.trim().toLowerCase() : '';
+  const name = typeof profile === 'string' ? lowerAscii(profile.trim()) : '';
   if (!name) return false;
   if (Array.isArray(declared) && declared.includes(name)) return true;
   const starts = (prefix) => !!prefix && (name === prefix || name.indexOf(prefix + '-') === 0);
   for (const packName of Array.isArray(packNames) ? packNames : []) {
     if (typeof packName !== 'string') continue;
-    let id = packName.trim().toLowerCase();
+    let id = lowerAscii(packName.trim());
     const at = id.lastIndexOf('@');
     if (at > 0) id = id.slice(0, at);
     const slash = id.indexOf('/');
@@ -299,7 +306,7 @@ function mergeProfileResults(runs, asked, allowFail = true) {
   for (const r of runs) {
     const applied = r.result && r.result.engine ? r.result.engine.profile : undefined;
     const same =
-      typeof applied === 'string' && applied.toLowerCase() === String(r.profile).toLowerCase();
+      typeof applied === 'string' && lowerAscii(applied) === lowerAscii(String(r.profile));
     if (r.result && typeof r.result === 'object' && same) ran.push(r);
     else {
       // A name no profile has is unknown-profile, unless the scan marked it
@@ -613,6 +620,7 @@ module.exports = {
   mayBeSkippedPackProfile,
   runProfiles,
   withOwnVerdicts,
+  lowerAscii,
   policyAllowsFail,
   capToPolicy,
   mergeProfileResults,

@@ -73,6 +73,7 @@ const {
   mayBeSkippedPackProfile,
   runProfiles,
   withOwnVerdicts,
+  lowerAscii,
   policyAllowsFail,
   capToPolicy,
   mergeProfileResults,
@@ -2496,6 +2497,7 @@ ${inlineConstFunction('profileOptionsOf', profileOptionsOf)}
 ${inlineConstFunction('mayBeSkippedPackProfile', mayBeSkippedPackProfile)}
 ${inlineConstFunction('runProfiles', runProfiles)}
 ${inlineConstFunction('withOwnVerdicts', withOwnVerdicts)}
+${inlineConstFunction('lowerAscii', lowerAscii)}
 ${inlineConstFunction('policyAllowsFail', policyAllowsFail)}
 ${inlineConstFunction('capToPolicy', capToPolicy)}
 ${inlineConstFunction('mergeProfileResults', mergeProfileResults)}
