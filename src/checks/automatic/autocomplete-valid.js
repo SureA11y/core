@@ -292,7 +292,13 @@ function runInPage(ctx) {
 
     const tag = dom.tagName(el).toLowerCase();
 
-    const why = diagnose(raw);
+    // Page text quoted cut to 120 characters (helpers.quoteText): a 200 KB
+    // value was copied whole into the hint, its parameters and the details.
+    const why = { ...diagnose(raw) };
+    for (const k of ['token', 'field']) {
+      if (typeof why[k] === 'string') why[k] = helpers.quoteText(why[k]);
+    }
+    const shownValue = helpers.quoteText(value);
     const hint = {
       unknownToken_suggestion: `"${why.token}" is not an autofill token. Did you mean "${why.suggestion}"?`,
       unknownToken: `"${why.token}" is not an autofill token. Use a field name such as "email", "tel" or "postal-code", after "shipping" or "billing" where it applies.`,
@@ -310,7 +316,7 @@ function runInPage(ctx) {
           hintKey: `autocompleteValid_hint_fail_${why.kind}`,
           params: {
             element: tag,
-            value,
+            value: shownValue,
             token: why.token || '',
             suggestion: why.suggestion || '',
             field: why.field || ''
@@ -320,7 +326,7 @@ function runInPage(ctx) {
           details: {
             reasonCode: 'AUTOCOMPLETE_VALUE_INVALID',
             element: tag,
-            value,
+            value: shownValue,
             problem: why
           }
         }

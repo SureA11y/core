@@ -2348,6 +2348,9 @@ function createDomHelpers(opts) {
         const pos = labelIndex().pos;
         return [...set].filter((l) => pos.has(l)).sort((a, b) => pos.get(a) - pos.get(b));
       };
+      // The ids a detail lists: the first ten, each cut to 60 characters, as
+      // the hint quotes them; a 200 KB id was copied whole into the details.
+      const shownIds = (list) => list.slice(0, 10).map((id) => quoteText(id, 60));
       const labelledby = attr(el, 'aria-labelledby');
       if (labelledby) {
         const ids = labelledby.split(/\s+/);
@@ -2358,7 +2361,7 @@ function createDomHelpers(opts) {
             hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyMissing',
             params: { ids: list },
-            detail: { cause: 'labelledbyMissing', ids: ids.slice(0, 10) }
+            detail: { cause: 'labelledbyMissing', ids: shownIds(ids) }
           };
         }
         // Every target is there, and none has text or a name of its own.
@@ -2376,7 +2379,7 @@ function createDomHelpers(opts) {
             hint: `Its aria-labelledby points only to elements with no text (${list}), so it gives no name. Put the text in the element it points to, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyEmpty',
             params: { targets: list },
-            detail: { cause: 'labelledbyEmpty', ids: ids.slice(0, 10) }
+            detail: { cause: 'labelledbyEmpty', ids: shownIds(ids) }
           };
         }
         // The element names nothing, so a target with text has it hidden
@@ -2403,7 +2406,7 @@ function createDomHelpers(opts) {
               params: { target, text, hiddenElement, hiddenBy },
               detail: {
                 cause: 'labelledbyHiddenText',
-                ids: ids.slice(0, 10),
+                ids: shownIds(ids),
                 text,
                 hiddenBy: reason
               }
@@ -2418,8 +2421,8 @@ function createDomHelpers(opts) {
               params: { ids: missingIds, targets: list },
               detail: {
                 cause: 'labelledbyMixed',
-                ids: ids.slice(0, 10),
-                missing: missing.slice(0, 10)
+                ids: shownIds(ids),
+                missing: shownIds(missing)
               }
             };
           }

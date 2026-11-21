@@ -354,7 +354,7 @@ function runInPage(ctx) {
             : 'identicalLinksSamePurpose_summary_cantTell_others',
           hintKey: 'identicalLinksSamePurpose_hint_cantTell',
           params: {
-            name,
+            name: helpers.quoteText(name),
             destinationCount: String(distinctHrefs.size),
             shownName,
             href: shown,
@@ -365,7 +365,7 @@ function runInPage(ctx) {
         data: {
           details: {
             reasonCode: 'SAME_NAME_DIFFERENT_DESTINATION',
-            name,
+            name: helpers.quoteText(name),
             href: helpers.quoteText(href),
             distinctDestinationCount: distinctHrefs.size,
             otherDestinations: others,

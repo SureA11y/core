@@ -198,19 +198,22 @@ function runInPage(ctx) {
             })()
           : null;
 
+        // The id as quoted, cut to 120 characters: a page's 200 KB id was
+        // copied whole into the summary, its parameters and the details.
+        const shownId = helpers.quoteText(value);
         occurrences.push(
           helpers.reportOccurrence(el, {
-            summary: `The id "${value}" is used on ${els.length} elements in the same tree.`,
+            summary: `The id "${shownId}" is used on ${els.length} elements in the same tree.`,
             hint: 'Give each element its own id. A duplicate breaks <label for>, fragment links, getElementById and every ID-reference attribute, all of which resolve to the first match only.',
             i18n: {
               summaryKey: 'duplicateId_summary_fail',
               hintKey: 'duplicateId_hint_fail',
-              params: { id: value, count: String(els.length) }
+              params: { id: shownId, count: String(els.length) }
             },
             data: {
               details: {
                 reasonCode: inShadowTree ? 'DUPLICATE_ID_IN_SHADOW_TREE' : 'DUPLICATE_ID',
-                id: value,
+                id: shownId,
                 count: els.length
               },
               visibilityFilter: eligInfo || { targetSet: 'dom', accEligible: null, reasons: [] }
