@@ -12,13 +12,14 @@
  *   Applies, in a browser, to the elements in the tab order that are drawn
  *   and scroll with the page, and to the boxes the page keeps in place over
  *   it: `position: fixed` or `sticky` boxes that draw something (a
- *   background, an image or a picture), such as a sticky header or footer, a
- *   cookie banner or a chat widget. A fixed box inside an ancestor that is
- *   its containing block (a transform, translate, rotate, scale,
- *   perspective, filter or backdrop-filter, transform-style: preserve-3d,
- *   layout or paint containment, a container type, or will-change of one of
- *   those) is placed against that ancestor and scrolls with it, so it is
- *   not kept in place. Without a layout (jsdom) nothing can be measured,
+ *   background, an image or a picture, an inset box-shadow filling them, or
+ *   a ::before or ::after positioned over them), such as a sticky header or
+ *   footer, a cookie banner or a chat widget. A fixed box inside an
+ *   ancestor that is its containing block (a transform, translate, rotate,
+ *   scale, perspective, filter or backdrop-filter, transform-style:
+ *   preserve-3d, layout or paint containment, a container type, or
+ *   will-change of one of those) is placed against that ancestor and
+ *   scrolls with it, so it is not kept in place. Without a layout (jsdom) nothing can be measured,
  *   and the rule is notApplicable.
  * @expectation
  *   No element in the tab order can take focus entirely hidden behind such a
@@ -107,7 +108,12 @@
  * - A box draws something when it, or the part of it hit, has a background
  *   color that isn't transparent or a background image, or is an image, a
  *   picture, a video, a canvas or a frame, and nothing between it and the
- *   page is at opacity 0. A transparent box over the element hides nothing.
+ *   page is at opacity 0. An inset box-shadow whose spread closes its hole
+ *   (blur included) draws over all of the box, and a ::before or ::after
+ *   with a background, positioned absolutely against its element or fixed,
+ *   draws over the area its offsets give it (a header colored by a
+ *   `::before` at `inset: 0`); one placed any other way isn't counted. A
+ *   transparent box over the element hides nothing.
  * - The hit test (elementFromPoint) skips boxes with pointer-events: none,
  *   so such a box isn't confirmed and isn't reported.
  * - Scrolling is instant and undone before the rule returns. The `scroll`
@@ -471,6 +477,122 @@ function runInPage(ctx) {
     const alpha = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
     return Number.isFinite(alpha) && alpha >= 0.99;
   }
+  // A color's alpha as the browser serializes it (rgb() or rgba()), null
+  // for one in another form.
+  function alphaOf(v) {
+    const m = /^rgba?\(([^)]*)\)$/.exec(lower(v));
+    if (!m) return null;
+    const parts = m[1].split(/[\s,/]+/).filter(Boolean);
+    const a = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
+    return Number.isFinite(a) ? a : null;
+  }
+  // An inset box-shadow is painted over the element's background, inside
+  // its padding box: one whose spread closes the hole in the middle, blur
+  // included, paints all of it (a header colored with `inset 0 0 0 100px`).
+  // 'opaque', 'paints' or null.
+  function insetShadowFill(el, cs) {
+    const raw = trim(cs && cs.boxShadow);
+    if (!raw || lower(raw) === 'none' || !/\binset\b/i.test(raw)) return null;
+    let r;
+    try {
+      r = dom.getBoundingClientRect(el);
+    } catch {
+      r = null;
+    }
+    if (!r) return null;
+    const w = r.width - px(cs.borderLeftWidth) - px(cs.borderRightWidth);
+    const h = r.height - px(cs.borderTopWidth) - px(cs.borderBottomWidth);
+    let best = null;
+    for (const layer of raw.split(/,(?![^(]*\))/)) {
+      if (!/\binset\b/i.test(layer)) continue;
+      const color = /(?:rgba?|hsla?|color|lab|lch|oklab|oklch|hwb)\([^)]*\)|#[0-9a-f]+/i.exec(
+        layer
+      );
+      const a = color ? alphaOf(color[0]) : null;
+      if (a === null || a <= 0.05) continue;
+      const lengths = (layer.replace(color ? color[0] : '', '').match(/-?\d*\.?\d+px/g) || []).map(
+        (v) => Number.parseFloat(v)
+      );
+      const blur = Math.max(0, lengths[2] || 0);
+      const spread = lengths[3] || 0;
+      if (Math.min(w, h) - 2 * spread + blur > 0) continue;
+      if (a >= 0.99) return 'opaque';
+      best = 'paints';
+    }
+    return best;
+  }
+  // The ::before and ::after that paint a color or an image over an area of
+  // their own: an absolutely positioned one against its positioned element,
+  // or a fixed one against the window, as a header's colored ::before
+  // spread over it (inset: 0) is. Each with that area, where it is now, and
+  // whether it is opaque. One placed any other way can't be told where it
+  // paints, and doesn't count.
+  function pseudoPaint(el, cs) {
+    const out = [];
+    if (!cs || lower(cs.display) === 'none') return out;
+    const hostPositioned = !!positionOf(cs) && positionOf(cs) !== 'static';
+    for (const which of ['::before', '::after']) {
+      let pcs;
+      try {
+        pcs = view.getComputedStyle(el, which);
+      } catch {
+        pcs = null;
+      }
+      if (!pcs) continue;
+      const content = trim(pcs.content);
+      if (!content || content === 'none' || content === 'normal') continue;
+      if (lower(pcs.display) === 'none' || lower(pcs.visibility) !== 'visible') continue;
+      const op = Number.parseFloat(pcs.opacity);
+      if (Number.isFinite(op) && op <= 0.01) continue;
+      const image = !!trim(pcs.backgroundImage) && lower(pcs.backgroundImage) !== 'none';
+      const a = alphaOf(pcs.backgroundColor);
+      if (!image && !(a !== null && a > 0.05)) continue;
+      const pos = positionOf(pcs);
+      let box = null;
+      if (pos === 'fixed') {
+        box = {
+          left: px(pcs.left),
+          top: px(pcs.top),
+          right: (Number(dom.get(html, 'clientWidth')) || 0) - px(pcs.right),
+          bottom: vh - px(pcs.bottom)
+        };
+      } else if (pos === 'absolute' && hostPositioned) {
+        const r = dom.getBoundingClientRect(el);
+        if (!r) continue;
+        box = {
+          left: r.left + px(cs.borderLeftWidth) + px(pcs.left),
+          top: r.top + px(cs.borderTopWidth) + px(pcs.top),
+          right: r.right - px(cs.borderRightWidth) - px(pcs.right),
+          bottom: r.bottom - px(cs.borderBottomWidth) - px(pcs.bottom)
+        };
+      }
+      if (!box || box.right - box.left <= 0 || box.bottom - box.top <= 0) continue;
+      out.push({
+        box,
+        opaque: (image || a >= 0.99) && !(Number.isFinite(op) && op < 0.99)
+      });
+    }
+    return out;
+  }
+  // Whether an element draws, at a point of the window, what hides an
+  // element under it: anything for 2.4.12, something opaque for 2.4.11.
+  // Its own background, or an inset shadow filling it, cover its box; a
+  // ::before or ::after its own area.
+  function drawnAt(el, cs, x, y, anything) {
+    if (anything ? paints(el, cs) : opaque(el, cs)) return true;
+    if (faded(el)) return false;
+    const fill = insetShadowFill(el, cs);
+    if (fill === 'opaque' || (anything && fill)) return true;
+    return pseudoPaint(el, cs).some(
+      (p) =>
+        (anything || p.opaque) &&
+        x >= p.box.left &&
+        x <= p.box.right &&
+        y >= p.box.top &&
+        y <= p.box.bottom
+    );
+  }
+
   // Whether an element, and everything up to the page, is drawn at all.
   function shown(el) {
     for (let n = el, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
@@ -547,8 +669,36 @@ function runInPage(ctx) {
     if (!cs || lower(cs.display) === 'none') return null;
     const root = pinnedAncestor(el);
     if (!root) return null;
-    if (!paints(el, cs)) return null;
-    const r = dom.getBoundingClientRect(el);
+    // What it draws: its background, or an inset shadow filling it, over
+    // its box; or else a ::before or ::after, over its own area.
+    let r = null;
+    let isOpaque = false;
+    if (paints(el, cs)) {
+      r = dom.getBoundingClientRect(el);
+      isOpaque = opaque(el, cs);
+    }
+    if (!isOpaque) {
+      const fill = insetShadowFill(el, cs);
+      if (fill) {
+        r = r || dom.getBoundingClientRect(el);
+        isOpaque = fill === 'opaque' && !faded(el);
+      }
+    }
+    if (!r || !isOpaque) {
+      const pseudos = pseudoPaint(el, cs);
+      const p = pseudos.find((x) => x.opaque) || (r ? null : pseudos[0]);
+      if (p) {
+        r = {
+          left: p.box.left,
+          right: p.box.right,
+          top: p.box.top,
+          bottom: p.box.bottom,
+          width: p.box.right - p.box.left,
+          height: p.box.bottom - p.box.top
+        };
+        isOpaque = p.opaque && !faded(el);
+      }
+    }
     if (!r || r.width <= 0 || r.height <= 0) return null;
     if (!shown(el)) return null;
     const rootCs = el === root ? cs : styleOf(root);
@@ -575,7 +725,7 @@ function runInPage(ctx) {
       el,
       root,
       position,
-      opaque: opaque(el, cs),
+      opaque: isOpaque,
       top,
       bottom: top + r.height,
       left: r.left,
@@ -781,8 +931,7 @@ function runInPage(ctx) {
         // entirely.
         let drawn = false;
         for (let n = top, i = 0; n && i < 10000; n = composedUp(n), i++) {
-          const ncs = styleOf(n);
-          if (partlyToo ? paints(n, ncs) : opaque(n, ncs)) {
+          if (drawnAt(n, styleOf(n), x, y, partlyToo)) {
             drawn = true;
             break;
           }

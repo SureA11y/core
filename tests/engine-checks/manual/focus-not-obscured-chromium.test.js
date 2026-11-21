@@ -439,6 +439,49 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
     const res = await scan(doc(`<div style="opacity:.99">${header}</div>` + LINKS(40)));
     assert.equal(res[RULE_ID].outcome, 'cantTell');
   });
+  // A header can be drawn by a ::before spread over it, or by an inset
+  // shadow filling it, with no background of its own (round 9, V9-5).
+  await t.test('a fixed box drawn by a ::before or an inset shadow is asked about', async () => {
+    const header = (css) =>
+      `<header class="h" style="position:fixed;top:0;left:0;right:0;height:60px;${css}">Site</header>`;
+    for (const [name, css, style, want] of [
+      [
+        'a ::before over it',
+        '.h::before{content:"";position:absolute;inset:0;background:#036}',
+        '',
+        'cantTell'
+      ],
+      ['an inset shadow filling it', '', 'box-shadow:inset 0 0 0 100px #036', 'cantTell'],
+      [
+        'a translucent ::before',
+        '.h::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.5)}',
+        '',
+        'pass'
+      ],
+      [
+        'a 4px ::after along its bottom',
+        '.h::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:#036}',
+        '',
+        'pass'
+      ],
+      ['a 1px inset highlight', '', 'box-shadow:inset 0 -1px 0 #036', 'pass']
+    ]) {
+      const res = await scan(doc(header(style) + LINKS(40), css));
+      assert.equal(res[RULE_ID].outcome, want, name);
+      if (want === 'cantTell')
+        assert.equal(res[RULE_ID].findings[0].code, 'FOCUS_OBSCURED_ENTIRELY', name);
+    }
+    // 2.4.12 asks about what shows through, and only where it is drawn.
+    const translucent = await scan(
+      doc(
+        header('') + LINKS(40),
+        '.h::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.5)}'
+      )
+    );
+    assert.equal(translucent[ENHANCED].outcome, 'cantTell');
+    const highlight = await scan(doc(header('box-shadow:inset 0 -1px 0 #036') + LINKS(40)));
+    assert.equal(highlight[ENHANCED].outcome, 'pass');
+  });
   // Round 8, NW-2: the hit test drills into shadow roots, and a point that
   // landed in a component the header holds wasn't counted as the header's.
   await t.test('an opaque sticky header holding a component is asked about', async () => {
