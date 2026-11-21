@@ -871,6 +871,8 @@
   "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
   "listitemParentValid_summary_cantTell_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
   "listitemParentValid_hint_cantTell_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+  "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
+  "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
   "listitemParentValid_lean_why_listRoleOverridden": "この項目は行頭記号や番号付きで、マークアップがもう公開していないリストの項目として描画されています。",
   "listitemParentValid_lean_caution_listRoleOverridden": "ナビゲーションバーのリンクなど、数個のリンクやコントロールはリストがなくても同じように読める場合があります。",
   "listitemParentValid_summary_fail_wrapped": "この <li> は <{{listElement}}> の中にありますが、間にある {{wrapper}} がリストを途切れさせています。リストの項目はリストの子要素である必要があります。",

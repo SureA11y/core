@@ -871,6 +871,8 @@
   "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
   "listitemParentValid_summary_cantTell_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
   "listitemParentValid_hint_cantTell_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+  "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
+  "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
   "listitemParentValid_lean_why_listRoleOverridden": "L’élément est dessiné avec une puce ou un numéro, comme élément d’une liste que le balisage n’expose plus.",
   "listitemParentValid_lean_caution_listRoleOverridden": "Quelques liens ou commandes, comme ceux d’une barre de navigation, peuvent se lire aussi bien sans la liste.",
   "listitemParentValid_summary_fail_wrapped": "Cet élément <li> est dans un <{{listElement}}>, mais l’élément {{wrapper}} entre les deux rompt la liste : les éléments d’une liste doivent être ses enfants.",
