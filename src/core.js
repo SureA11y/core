@@ -71882,12 +71882,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let nearestDistance = Infinity;
     let related = false;
     for (const a of ARIA_ATTRS) {
+      if (suffix && (a.includes(suffix) || suffix.includes(a))) related = true;
+      // Only a distance of 2 or less is used, and the distance is at least
+      // the difference in length: a name of another length is not measured,
+      // so a very long one costs no quadratic work (round 8 leftover).
+      if (Math.abs(suffix.length - a.length) > 2) continue;
       const d = editDistance(suffix, a);
       if (d < nearestDistance) {
         nearest = a;
         nearestDistance = d;
       }
-      if (suffix && (a.includes(suffix) || suffix.includes(a))) related = true;
     }
     const limit = suffix.length <= 5 ? 1 : 2;
     if (nearestDistance <= limit) {
@@ -71963,7 +71967,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const lean = leanFor(el, name);
       // What the author likely meant, said in the hint: the role attribute
       // for aria-role, else the attribute the name misspells.
-      const roleValue = name === 'aria-role' ? String(dom.getAttribute(el, name) || '').trim() : '';
+      const roleValue =
+        name === 'aria-role'
+          ? helpers.quoteText(String(dom.getAttribute(el, name) || '').trim())
+          : '';
+      // As quoted, cut to 120 characters (helpers.quoteText), as other
+      // rules quote page values: a 200 KB attribute name would otherwise be
+      // copied whole into the summary, parameters and details.
+      const attrShown = helpers.quoteText(name);
       const suggestion =
         !roleValue && typeof helpers.nearestAriaAttr === 'function'
           ? helpers.nearestAriaAttr(name)
@@ -71984,7 +71995,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                 ? 'ariaValidAttr_hint_fail_near'
                 : 'ariaValidAttr_hint_fail',
             params: {
-              attr: name,
+              attr: attrShown,
               ...(roleValue ? { value: roleValue } : {}),
               ...(suggestion ? { suggestion } : {})
             }
@@ -71993,13 +72004,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             code: 'spec-only',
             needed:
               'Whether the misspelling cost the element a name or state it has no other source for.',
-            evidence: { attribute: name, definedInAria: false, exposedEffect: 'none' }
+            evidence: { attribute: attrShown, definedInAria: false, exposedEffect: 'none' }
           },
           ...(lean ? { lean } : {}),
           data: {
             details: {
               reasonCode: 'ARIA_ATTR_INVALID',
-              attr: name,
+              attr: attrShown,
               ...(suggestion ? { suggestion } : {})
             }
           }
@@ -83684,10 +83695,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Detection is document-wide; occurrences are limited to the scanned scope.
   // An inert duplicate still takes the reference, so it stays in scope.
+  // Only the copies of a duplicated id that something refers to are
+  // reported, so only they are queried: the scope's hidden-content filter
+  // works out each element's style, which under jsdom cost most of the
+  // rule's time on a page of many ids (round 8 leftover). Past a few
+  // hundred such ids, one query of every id is shorter than the selector.
+  const reportedIds = [];
+  for (const id of referencedIds) if ((idMap.get(id) || []).length > 1) reportedIds.push(id);
+  const attrValue = (id) =>
+    id
+      .replace(/[\\"]/g, '\\$&')
+      .replace(/\n/g, '\\a ')
+      .replace(/\r/g, '\\d ')
+      .replace(/\f/g, '\\c ');
+  const scopeSelector =
+    reportedIds.length <= 300 ? reportedIds.map((id) => `[id="${attrValue(id)}"]`).join(',') : '[id]';
   let inScope = null;
-  if (helpers && typeof helpers.queryAllSmart === 'function') {
+  if (reportedIds.length && helpers && typeof helpers.queryAllSmart === 'function') {
     try {
-      const scoped = helpers.queryAllSmart('[id]', { inert: true });
+      const scoped = helpers.queryAllSmart(scopeSelector, { inert: true });
       inScope = new Set(Array.isArray(scoped) ? scoped : [...(scoped || [])]);
     } catch {
       inScope = null;
