@@ -20,6 +20,13 @@
  *   the option meant, so run() leaves them to it.
  */
 function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
+  // The built-ins run() and highlight() use before any scan checks the
+  // page's (assertPageBuiltins), as they were when the bundle loaded: a
+  // script that replaces Map or Object.assign later can't change what they
+  // do (round 8, PK-6).
+  var NativeMap = Map;
+  var NativeSet = Set;
+  var assign = Object.assign;
   // Reads DOM properties through the prototypes, so a page's named form
   // controls and images can't redirect them (#90): the same lookup as
   // src/core/safe-dom.js, repeated because this function travels alone.
@@ -273,7 +280,7 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
     var doc = documentOf();
     if (!doc || !dom.documentElement(doc)) return 0;
 
-    var byElement = new Map();
+    var byElement = new NativeMap();
     var checks = checksOf(result);
     for (var i = 0; i < checks.length; i++) {
       var c = checks[i];
@@ -376,9 +383,9 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
         // when the host has a negative tabindex; one stop per radio group,
         // the checked radio, else the first Tab meets.
         function tabOrder(entries) {
-          var byEl = new Map();
-          var scopes = new Map();
-          var placed = new Set();
+          var byEl = new NativeMap();
+          var scopes = new NativeMap();
+          var placed = new NativeSet();
           function place(node) {
             if (placed.has(node)) return;
             placed.add(node);
@@ -412,7 +419,7 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
             }
           }
           if (scopes.has(null)) visit(null);
-          var groups = new Map();
+          var groups = new NativeMap();
           function groupOf(el) {
             if (dom.localName(el) !== 'input') return null;
             if (String(dom.getAttribute(el, 'type') || '').toLowerCase() !== 'radio') return null;
@@ -420,7 +427,7 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
             if (!name) return null;
             var owner = dom.get(el, 'form') || dom.getRootNode(el);
             var byName = groups.get(owner);
-            if (!byName) groups.set(owner, (byName = new Map()));
+            if (!byName) groups.set(owner, (byName = new NativeMap()));
             var group = byName.get(name);
             if (!group) byName.set(name, (group = { checked: null, stop: null }));
             return group;
@@ -825,7 +832,7 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
         );
       }
     }
-    var engineOptions = Object.assign({}, options || {});
+    var engineOptions = assign({}, options || {});
     var context = engineOptions.context != null ? engineOptions.context : null;
     var runOnly = engineOptions.runOnly != null ? engineOptions.runOnly : null;
     delete engineOptions.context;

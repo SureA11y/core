@@ -2000,84 +2000,170 @@ function isThenable(value) {
 // iterators and the mapping function; assertArrayFromFor checks Array.from
 // for the rules of a pack or caller that use it.
 function assertPageBuiltins() {
-  // Recorded by index and joined by hand, as push or join may be what is
-  // broken.
-  const broken = [];
-  const check = (name, works) => {
-    let ok;
-    try {
-      ok = !!works();
-    } catch {
-      ok = false;
+  // The check itself runs on the built-ins it checks: one broken so badly
+  // that the check throws outside a probe (a throwing RegExp constructor,
+  // a getter on Object.prototype) stops the scan with the same code, not
+  // the page's own error.
+  let ours = null;
+  try {
+    // Recorded by index and joined by hand, as push or join may be what is
+    // broken.
+    const broken = [];
+    const check = (name, works) => {
+      let ok;
+      try {
+        ok = !!works();
+      } catch {
+        ok = false;
+      }
+      if (!ok) broken[broken.length] = name;
+    };
+    check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
+    check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
+    check('Array.prototype.push', () => {
+      const a = [];
+      a.push(1);
+      return a.length === 1 && a[0] === 1;
+    });
+    check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
+    check('Array iteration', () => {
+      let sum = 0;
+      for (const x of [1, 2]) sum += x;
+      return sum === 3;
+    });
+    check('Set iteration', () => [...new Set([1, 2])].length === 2);
+    check('Map iteration', () => {
+      const [entry] = [...new Map([['a', 1]])];
+      return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
+    });
+    // Built at run time: a bundle loaded without its charset would read the
+    // character in a literal as several.
+    check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
+    check('NodeList iteration', () => {
+      if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
+      // Read from Node.prototype: a named element could stand in for
+      // document.childNodes.
+      const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(
+        document
+      );
+      return [...nodes].length === nodes.length;
+    });
+    check('Map', () => {
+      const m = new Map();
+      m.set('a', 1);
+      return m.get('a') === 1 && m.has('a') && m.size === 1;
+    });
+    check('Set', () => {
+      const s = new Set();
+      s.add(1);
+      return s.has(1) && s.size === 1;
+    });
+    check('WeakMap', () => {
+      const k = {};
+      const m = new WeakMap();
+      m.set(k, 1);
+      return m.get(k) === 1;
+    });
+    check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
+    check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
+    check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
+    check('RegExp.prototype.exec', () => {
+      const m = /b(c)/.exec('abc');
+      return !!m && m.index === 1 && m[1] === 'c';
+    });
+    check('String.prototype.trim', () => '  a '.trim() === 'a');
+    check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+    check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
+    check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
+    // Each of these, replaced, changed what rules report without a word
+    // (round 8, PK-6 and RO-5): a probe of what each one does.
+    check('Array.isArray', () => Array.isArray([]) && !Array.isArray({ length: 0 }));
+    check('Array.prototype.slice', () => {
+      const a = [1, 2, 3].slice(1);
+      return a.length === 2 && a[0] === 2 && a[1] === 3;
+    });
+    check('Array.prototype.concat', () => {
+      const a = [1].concat([2], 3);
+      return a.length === 3 && a[1] === 2 && a[2] === 3;
+    });
+    check('Array.prototype.forEach', () => {
+      let sum = 0;
+      [1, 2].forEach((x) => {
+        sum += x;
+      });
+      return sum === 3;
+    });
+    check(
+      'Array.prototype.some',
+      () => [1, 2].some((x) => x === 2) && ![1, 2].some((x) => x === 3)
+    );
+    check('Array.prototype.every', () => [1, 2].every((x) => x > 0) && ![1, 2].every((x) => x > 1));
+    check('Array.prototype.find', () => [1, 2, 3].find((x) => x > 1) === 2);
+    check('Array.prototype.findIndex', () => [1, 2, 3].findIndex((x) => x > 1) === 1);
+    check('Array.prototype.reduce', () => [1, 2, 3].reduce((a, b) => a + b, 0) === 6);
+    check(
+      'Object.prototype.hasOwnProperty',
+      // eslint-disable-next-line no-prototype-builtins -- the check is of the method itself
+      () => ({ a: 1 }).hasOwnProperty('a') && !{}.hasOwnProperty('a')
+    );
+    check('String.prototype.split', () => {
+      const parts = 'a,b'.split(',');
+      return parts.length === 2 && parts[1] === 'b';
+    });
+    check(
+      'String.prototype.replace',
+      () => 'abc'.replace('b', 'x') === 'axc' && 'aba'.replace(/a/g, 'c') === 'cbc'
+    );
+    check('RegExp.prototype.test', () => /b/.test('abc') && !/d/.test('abc'));
+    check('RegExp', () => new RegExp('b+', 'g').exec('abbc')[0] === 'bb');
+    check('Math.round', () => Math.round(1.5) === 2 && Math.round(-0.4) === 0);
+    check('Math.abs', () => Math.abs(-2) === 2);
+    check('Math.max', () => Math.max(1, 3) === 3);
+    check('Math.min', () => Math.min(1, 3) === 1);
+    check('parseFloat', () => parseFloat('1.5px') === 1.5 && Number.parseFloat('2.5') === 2.5);
+    check('NodeFilter', () => {
+      if (typeof NodeFilter === 'undefined') return true;
+      return (
+        NodeFilter.SHOW_ELEMENT === 1 &&
+        NodeFilter.SHOW_TEXT === 4 &&
+        NodeFilter.FILTER_ACCEPT === 1 &&
+        NodeFilter.FILTER_REJECT === 2 &&
+        NodeFilter.FILTER_SKIP === 3
+      );
+    });
+    // A getter a page puts on Object.prototype is read for every key a plain
+    // object lacks: one that throws, or answers, changes what the engine
+    // reads of its own objects (result.type, options.contrast). A method put
+    // there (then, as a library may) is not read as a value, and is allowed.
+    const protoNames = Object.getOwnPropertyNames(Object.prototype);
+    for (let i = 0; i < protoNames.length; i++) {
+      const name = protoNames[i];
+      if (name === '__proto__') continue;
+      const d = Object.getOwnPropertyDescriptor(Object.prototype, name);
+      if (!d || typeof d.get !== 'function') continue;
+      check('Object.prototype.' + name, () => d.get.call({}) === undefined);
     }
-    if (!ok) broken[broken.length] = name;
-  };
-  check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
-  check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
-  check('Array.prototype.push', () => {
-    const a = [];
-    a.push(1);
-    return a.length === 1 && a[0] === 1;
-  });
-  check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
-  check('Array iteration', () => {
-    let sum = 0;
-    for (const x of [1, 2]) sum += x;
-    return sum === 3;
-  });
-  check('Set iteration', () => [...new Set([1, 2])].length === 2);
-  check('Map iteration', () => {
-    const [entry] = [...new Map([['a', 1]])];
-    return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
-  });
-  // Built at run time: a bundle loaded without its charset would read the
-  // character in a literal as several.
-  check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
-  check('NodeList iteration', () => {
-    if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
-    // Read from Node.prototype: a named element could stand in for
-    // document.childNodes.
-    const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(document);
-    return [...nodes].length === nodes.length;
-  });
-  check('Map', () => {
-    const m = new Map();
-    m.set('a', 1);
-    return m.get('a') === 1 && m.has('a') && m.size === 1;
-  });
-  check('Set', () => {
-    const s = new Set();
-    s.add(1);
-    return s.has(1) && s.size === 1;
-  });
-  check('WeakMap', () => {
-    const k = {};
-    const m = new WeakMap();
-    m.set(k, 1);
-    return m.get(k) === 1;
-  });
-  check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
-  check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
-  check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
-  check('RegExp.prototype.exec', () => {
-    const m = /b(c)/.exec('abc');
-    return !!m && m.index === 1 && m[1] === 'c';
-  });
-  check('String.prototype.trim', () => '  a '.trim() === 'a');
-  check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
-  check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
-  check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
-  if (!broken.length) return;
-  let names = '';
-  for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
-  const err = new Error(
-    'The page has changed JavaScript built-ins the engine relies on (' +
-      names +
-      "), so a scan of it can't be trusted. Scan it before its scripts change them."
-  );
-  err.code = 'PAGE_BUILTINS_BROKEN';
-  err.broken = broken;
-  throw err;
+    if (!broken.length) return;
+    let names = '';
+    for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (' +
+        names +
+        "), so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = broken;
+    ours = err;
+    throw err;
+  } catch (e) {
+    if (e === ours) throw e;
+    const err = new Error(
+      "The page has changed JavaScript built-ins the engine relies on, so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = [];
+    throw err;
+  }
 }
 
 // Whether Array.from works as the language defines it, for the rules of a

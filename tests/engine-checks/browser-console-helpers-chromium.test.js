@@ -308,4 +308,26 @@ test('console helpers in Chromium', { skip }, async (t) => {
     assert.equal(got.marked, 2, 'the unnamed button in the page and the one in the shadow root');
     await other.close();
   });
+
+  await t.test(
+    'highlight() uses the Map the bundle loaded with, not one the page replaced later (round 8, PK-6)',
+    async () => {
+      const other = await context.newPage();
+      await other.goto(ORIGIN);
+      const got = await other.evaluate(async () => {
+        const result = await window.a11ycore.run({ runOnly: ['button-name-present'] });
+        const NativeMap = window.Map;
+        window.Map = function () {
+          return { get() {}, set() {}, has: () => false, values: () => [][Symbol.iterator]() };
+        };
+        try {
+          return window.a11ycore.highlight(result);
+        } finally {
+          window.Map = NativeMap;
+        }
+      });
+      assert.equal(got, 1);
+      await other.close();
+    }
+  );
 });
