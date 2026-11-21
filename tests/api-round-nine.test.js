@@ -290,3 +290,24 @@ test('checkStandardData reports what checkPack reports of the same data, and dat
     assert.deepEqual(checkStandardData(sound), [], published);
   }
 });
+
+test('baseline keys split class names at ASCII whitespace only, and order a cut start tag as far as it goes (A9-17)', () => {
+  const { computeBaselineKey } = require('../src/baseline.js');
+  const key = (html) => computeBaselineKey('r', 'C', html);
+  // A no-break space or an ideographic space is part of a class name.
+  assert.notEqual(key('<img class="a b">'), key('<img class="a b">'));
+  assert.notEqual(key('<img class="a　b">'), key('<img class="b a">'));
+  assert.equal(key('<img class="b\ta\n c">'), key('<img class="a b c">'));
+  // A start tag cut at the snippet's length limit.
+  const data = 'data:image/png;base64,' + 'A'.repeat(2100);
+  const cut = (html) => html.slice(0, 2000) + '…';
+  assert.equal(
+    key(cut(`<img class="b a" id="x" src="${data}">`)),
+    key(cut(`<img id="x" class="a b" src="${data}">`))
+  );
+  assert.notEqual(
+    key(cut(`<img class="a b" id="x" src="${data}">`)),
+    key(cut(`<img class="a b" id="y" src="${data}">`))
+  );
+  assert.equal(key('<img id="x" class="b a" al'), key('<img class="a b" id="x" al'));
+});
