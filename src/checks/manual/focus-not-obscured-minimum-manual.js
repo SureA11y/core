@@ -69,6 +69,10 @@
  *     with `aria-controls`: content the user opened, which may cover the
  *     focused element if it closes without moving focus.
  *   - `examples`: up to 5 of the elements it can hide, each `{ tag, text }`.
+ *   - `notScrolled`: `true` where the page did not scroll when the rule
+ *     scrolled an element under the box (a `scrollTo` the page replaced
+ *     with one that does nothing, say), so nothing was hit-tested. The box
+ *     is asked about without a lean, and `confirmedBy` is `null`.
  *   - `confirmedBy`: the element the rule scrolled under the box to check
  *     that the box is drawn on top of it, as `{ tag, text }`.
  * @reason-codes
@@ -78,7 +82,9 @@
  *     hidden behind it. It leans fail: the box covers them whatever the user
  *     does, unless the user opened it and can close it without moving focus.
  *     A box a control marks as opened (`openedByUser`) gets no lean: whether
- *     it closes without moving focus is for a person to try.
+ *     it closes without moving focus is for a person to try. Nor does a box
+ *     the rule could not check because the page did not scroll
+ *     (`notScrolled`).
  *     Basis: WCAG 2.4.11; F110; C43.
  *   - `FOCUS_OBSCURED_PARTLY` (cantTell): with `obscured: 'partly'`
  *     (focus-not-obscured-enhanced), elements in the tab order can take focus
@@ -105,7 +111,10 @@
  *   page is at opacity 0. A transparent box over the element hides nothing.
  * - The hit test (elementFromPoint) skips boxes with pointer-events: none,
  *   so such a box isn't confirmed and isn't reported.
- * - Scrolling is instant and undone before the rule returns. The `scroll`
+ * - Scrolling is instant and undone before the rule returns. Where the
+ *   page is not where it was scrolled to afterwards, the element is not
+ *   measured there: a box none of whose elements could be checked is
+ *   reported with `notScrolled`, not passed. The `scroll`
  *   and `scrollend` the browser fires for it afterwards are kept from the
  *   page's listeners by a capturing listener on the window, which goes once
  *   they have passed (or after half a second). A capturing listener the page
@@ -686,7 +695,12 @@ function runInPage(ctx) {
     }
   }
   let moved = false;
+  // Whether the page moved, where it had to: a page that replaced scrollTo
+  // with one that does nothing leaves it where it was, and the hit test
+  // there would measure another place.
+  const currentScrollY = () => Number(dom.get(view, 'scrollY')) || 0;
   const scrollTo = (y) => {
+    const from = currentScrollY();
     if (y !== scrollY && !moved) {
       moved = true;
       guardScrollEvents();
@@ -698,11 +712,13 @@ function runInPage(ctx) {
         dom.call(view, 'scrollTo', scrollX, y);
       } catch {}
     }
+    return Math.abs(y - from) < 1 || Math.abs(currentScrollY() - from) >= 1;
   };
   const FRACTIONS = [0.15, 0.5, 0.85];
   function hiddenShare(hit) {
     const { c, at, cover } = hit;
-    scrollTo(Math.max(0, Math.min(maxScroll, c.docTop - at)));
+    // Not scrolled there: nothing to measure (null).
+    if (!scrollTo(Math.max(0, Math.min(maxScroll, c.docTop - at)))) return null;
     const r = dom.getBoundingClientRect(c.el);
     let covered = 0;
     let total = 0;
@@ -771,15 +787,23 @@ function runInPage(ctx) {
       const partly = hits.filter((h) => h.kind === 'partly');
       const ordered = [...entirely, ...partly];
       let confirmed = null;
+      // An element the page would not scroll under the box: the box can't
+      // be confirmed or cleared, so it is asked about, without a lean
+      // (round 9, R9-4).
+      let notScrolled = null;
       for (const h of ordered.slice(0, SAMPLES)) {
         checks += 1;
         const share = hiddenShare(h);
+        if (share == null) {
+          notScrolled = notScrolled || h;
+          continue;
+        }
         if (h.kind === 'entirely' ? share >= 1 : share > 0) {
           confirmed = h;
           break;
         }
       }
-      if (!confirmed) continue;
+      if (!confirmed && !notScrolled) continue;
 
       const rootCs = styleOf(entry.root);
       const position = positionOf(rootCs);
@@ -809,6 +833,7 @@ function runInPage(ctx) {
       let hint;
       let keys;
       let lean;
+      let summaryKeys;
       const userOpenedCaution =
         'If the user opened this content and can close it without moving focus, such as with Escape, it passes.';
       if (code === 'FOCUS_OBSCURED_BEHIND_MODAL') {
@@ -861,12 +886,18 @@ function runInPage(ctx) {
             };
       }
 
+      if (!confirmed) {
+        summary = `${count} focusable elements, such as ${firstTag}, may take focus hidden behind this ${position} ${container}, which covers ${Math.round(coverPx)}px of the window that the page still counts as in view; the page did not scroll when asked, so whether the box is drawn over them could not be checked.`;
+        summaryKeys = 'notScrolled';
+        lean = null;
+      }
+
       const baseOccurrence = {
         ...(lean ? { lean } : {}),
         summary,
         hint,
         i18n: {
-          summaryKey: `focusNotObscuredMinimum_summary_cantTell_${keys}`,
+          summaryKey: `focusNotObscuredMinimum_summary_cantTell_${summaryKeys || keys}`,
           hintKey:
             keys === 'behindModal'
               ? 'focusNotObscuredMinimum_hint_cantTell_behindModal'
@@ -897,7 +928,8 @@ function runInPage(ctx) {
             },
             openedByUser,
             examples: ordered.slice(0, 5).map((h) => example(h.c.el)),
-            confirmedBy: example(confirmed.c.el)
+            confirmedBy: confirmed ? example(confirmed.c.el) : null,
+            ...(confirmed ? {} : { notScrolled: true })
           },
           visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
         }
