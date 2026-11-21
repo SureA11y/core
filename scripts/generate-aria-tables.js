@@ -321,7 +321,12 @@ function nameRequiredRoles(list = NAME_REQUIRED_ROLES) {
 //      content or groups of menuitems", and the WAI-ARIA Authoring Practices
 //      menu and menubar patterns use separators throughout. separator has no
 //      Required Context Role at all (it may appear anywhere), so source 1
-//      cannot express this and it is listed by hand.
+//      cannot express this and it is listed by hand. `menu` in a menu or
+//      menubar: the W3C Authoring Practices navigation menubar and editor
+//      menubar patterns put a submenu's role="menu" beside the menuitem that
+//      opens it, inside the <li role="none"> the menubar or menu owns. menu
+//      has no Required Context Role, so it too is listed by hand (group is
+//      already among a menu's and a menubar's required owned elements).
 //
 // Deliberately NOT added:
 //   treegrid: caption   aria-query gives caption's context as figure/grid/
@@ -340,8 +345,8 @@ function nameRequiredRoles(list = NAME_REQUIRED_ROLES) {
 //                       no spec text extends the menuitem carve-out to lists.
 const ALLOWED_EXTRA_OWNED_ROLES = {
   grid: ['caption'],
-  menu: ['separator'],
-  menubar: ['separator'],
+  menu: ['menu', 'separator'],
+  menubar: ['menu', 'separator'],
   table: ['caption']
 };
 

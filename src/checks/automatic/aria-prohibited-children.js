@@ -21,7 +21,8 @@
  *   from that same required-owned set. Nothing else is a structurally
  *   valid direct child of a composite/container role, where "allowed" is
  *   the container's required-owned roles plus a small set of roles it
- *   may own without being required to (a separator between menu items, a caption on a grid). A
+ *   may own without being required to (a separator between menu items, a
+ *   submenu's role="menu" in a menu or menubar, a caption on a grid). A
  *   roleless wrapper
  *   is descended into to reach the items a component library buries
  *   inside it, but once one is found there the rest of that wrapper's
@@ -59,7 +60,8 @@
  *   of what it MAY contain. The extra table is kept small, and each entry
  *   needs a source: ARIA giving the child a Required Context Role that
  *   names this container (caption in table/grid), or the child role's own
- *   definition placing it there (separator in menu/menubar). Recorded and
+ *   definition or the W3C Authoring Practices pattern placing it there
+ *   (separator, and a submenu's menu, in menu/menubar). Recorded and
  *   validated in scripts/generate-aria-tables.js. The two sets are
  *   used for different questions: only a REQUIRED role makes a roleless
  *   wrapper an item wrapper, while the allowed set decides the verdict.
@@ -245,8 +247,8 @@ function runInPage(ctx) {
   // <generated:aria-allowed-extra-owned-roles>
   const ALLOWED_EXTRA_OWNED_ROLES = {
     grid: ['caption'],
-    menu: ['separator'],
-    menubar: ['separator'],
+    menu: ['menu', 'separator'],
+    menubar: ['menu', 'separator'],
     table: ['caption']
   };
   // </generated:aria-allowed-extra-owned-roles>
