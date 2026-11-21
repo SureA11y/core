@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**151 rules total: 87 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 64 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 121 carry at least one formal WCAG Success Criterion mapping.**
+**152 rules total: 87 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 65 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 122 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -104,7 +104,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (64), never `fail`
+## Manual rules (65), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -163,6 +163,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`presentation-role-conflict`](#presentation-role-conflict) | Presentational role must not conflict with a global ARIA attribute or focusability | — | — | medium | minor |
 | [`reflow-horizontal-scroll`](#reflow-horizontal-scroll) | Content reflows at 320 CSS pixels wide without scrolling sideways | 1.4.10 | AA | medium | serious |
 | [`region`](#region) | Page content should be inside a landmark region | — | — | medium | minor |
+| [`resize-text-content-loss`](#resize-text-content-loss) | Text is not cut off at 640 CSS pixels wide (200% zoom) | 1.4.4 | AA | medium | serious |
 | [`scope-attr-valid`](#scope-attr-valid) | scope attribute must have a valid value | — | — | medium | minor |
 | [`scrollable-region-focusable`](#scrollable-region-focusable) | Scrollable regions with no focusable content should be keyboard-focusable | 2.1.1, 2.1.3 | A, AAA | low | moderate |
 | [`skip-link`](#skip-link) | Skip link must have a resolvable, usable target | — | — | medium | minor |
@@ -191,7 +192,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.4.12-text-spacing` | Text Spacing | Rollup of checks ensuring text spacing can be increased without losing content. | 1.4.12 | AA | 2 |
 | `wcag-1.4.2-audio-control` | Audio Control | Rollup of checks for a pause/stop or volume-control mechanism on autoplaying audio. | 1.4.2 | A | 1 |
 | `wcag-1.4.3-contrast-minimum` | Contrast: minimum | Rollup of checks for minimum text contrast. | 1.4.3 | AA | 2 |
-| `wcag-1.4.4-resize-text` | Resize Text | Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%. | 1.4.4 | AA | 1 |
+| `wcag-1.4.4-resize-text` | Resize Text | Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%, and asking about text cut off at 640 CSS pixels wide. | 1.4.4 | AA | 2 |
 | `wcag-1.4.5-images-of-text` | Images of Text | Rollup of checks asking whether images that markup shows likely to hold text could use real text instead. | 1.4.5 | AA | 1 |
 | `wcag-1.4.6-contrast-enhanced` | Contrast: enhanced | Rollup of checks for enhanced text contrast. | 1.4.6 | AAA | 2 |
 | `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 8 |
@@ -3375,6 +3376,45 @@ Checks that content under &lt;body&gt; is contained within a landmark region.
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `CONTENT_OUTSIDE_LANDMARK` | cantTell | Content on the page, or an iframe whose content can't be seen from the page, is outside every landmark region. It leans fail, except for an iframe or frame. | WAI-ARIA 1.2 landmark role (best practice); ARIA11 |
+
+### `resize-text-content-loss`
+
+**Text is not cut off at 640 CSS pixels wide (200% zoom)**
+
+manual · WCAG 1.4.4 (AA) · confidence medium · default severity serious
+
+At a viewport 640 CSS pixels wide or less, as a 1280 pixel window shows a page at 200% zoom, measures each text in a box that hides its overflow, and asks about text the box cuts off or shortens with an ellipsis or a line clamp, for manual review of whether content is lost.
+
+**Applies to.** Applies to a page laid out at a viewport 640 CSS pixels wide or less, that is the page itself: the top document, or a framed one the host names as the page (`engineOptions.topLevelDocument`). A host scans the page at that width to check resize text, as a 1280 pixel window shows it at 200% zoom (ACT 59br37). The width is the layout viewport's (the root's clientWidth), as reflow-horizontal-scroll reads it. Within such a page, it applies to visible text (rendered, not hidden by opacity or visibility, and with part of it showing in every box that clips it) in a box that hides what overflows it: `overflow: hidden` or `clip` on an axis, paint containment (`contain: paint`, `content` or `strict`, `content-visibility: auto`), a `clip-path: inset()` or a `clip: rect()`, a `-webkit-line-clamp` or `line-clamp`, or `text-overflow: ellipsis`, found along the text's containing block chain in the flat tree. A box that scrolls on an axis (`overflow: auto` or `scroll`) keeps what is in it reachable, so boxes past it don't clip on that axis; a box fixed to the viewport ends the walk. Left out: text a box hides entirely (off canvas, a closed panel), visually hidden text (a box a pixel wide or high), text inside a &lt;marquee&gt; or moved by an animation that repeats for ever, and the viewport's own overflow. At a wider viewport, in a document shown in a frame, and without a layout (jsdom), the rule is notApplicable, with `data.reason` `viewportWider`, `noLayout` or `frameset`; with no text in a box that can clip it, notApplicable.
+
+**Expectation.**
+
+WCAG 1.4.4: text can be resized to 200% without loss of content. The rule measures the layout at one width and asks; it never fails. Each line of the text is measured (Range.getClientRects) against the box that clips it: its padding box, or the rectangle of its clip-path or clip.
+
+- Text that a box cuts short with an ellipsis (`text-overflow: ellipsis`) or a line clamp is asked about, leaning fail (TEXT_TRUNCATED_AT_640): part of it is not shown.
+- Text with a line that reaches more than 2 pixels past the edge of a box that clips it is asked about (TEXT_CLIPPED_AT_640). It leans fail where the text is certainly cut: a line at least half outside (half its height, or half an em across). A line cut by less gets no lean: it may still be read.
+- Text that every box clipping it shows in full passes.
+
+Each box is reported once, for the first text it cuts most. Whether the full text is offered another way (a control that opens the box, the same text elsewhere) is for a person to confirm. At most 50 boxes are listed per reason code; the result's `data.omitted` says how many more each had.
+
+- Only text inside the scan's scope (contextSelector) and not excluded (excludeSelectors) is judged, at most 3,000 text nodes: the body's, then those of each open shadow root (none with `includeShadowDom: false`). While a modal dialog is open, the page behind it is left out.
+- The rule reads the page as it is and changes nothing: no style, no scroll position, no focus.
+
+**What a finding reports.**
+
+- `text`: the start of the text, up to 60 characters.
+- `metrics.overflowPx`: how far, in CSS pixels, the line went past the edge of the box that clips it; `metrics.thresholdPx`, how far it may go before the text counts as cut (half an em across, or half the line's height down); `metrics.axis`, `x` or `y`.
+- `edge`: the edge of the box the line went furthest past: `top`, `right`, `bottom` or `left`.
+- `clipCss` (where it can be read): the CSS that cuts the text off, as declarations: what fixes the box's size on that axis (`white-space: nowrap`, `width`, `height`, `max-height`, a clamp) and what hides the overflow, as `height: 48px; overflow: hidden`.
+- `container.widthPx`, `container.heightPx`: the size of the clipping box.
+- `viewport.width`, `viewport.height`: the viewport the page was laid out in, in CSS pixels.
+
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `TEXT_CLIPPED_AT_640` | cantTell | At 640 CSS pixels wide or less, a box that hides its overflow cuts off part of this text. It leans fail when a line is at least half outside the box; a line cut by less gets no lean. | WCAG 1.4.4 (not settled); ACT 59br37; F69 (not settled) |
+| `TEXT_TRUNCATED_AT_640` | cantTell | At 640 CSS pixels wide or less, a box shortens this text with an ellipsis or a line clamp. It leans fail: part of the text is not shown, unless the full text is offered another way. | WCAG 1.4.4 (not settled); ACT 59br37 |
 
 ### `role-img-text-alternative-present`
 

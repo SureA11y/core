@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>resize-text-content-loss — scenario fixture</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.4;
+        margin: 8px;
+        color: #000;
+        background: #fff;
+      }
+      .case {
+        border: 1px solid #ddd;
+        padding: 8px;
+        margin: 8px 0;
+      }
+      .case-title {
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      .t {
+        font:
+          16px/20px Arial,
+          sans-serif;
+        width: 200px;
+        margin: 0;
+      }
+      .tall {
+        height: 80px;
+        overflow: hidden;
+      }
+      .short {
+        height: 40px;
+        overflow: hidden;
+      }
+      .nowrap {
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .inset {
+        clip-path: inset(0 0 40px 0);
+      }
+      .partly {
+        height: 34px;
+        overflow: hidden;
+      }
+      .ellipsis {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .clamp {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+      }
+      .scrolls {
+        height: 40px;
+        overflow: auto;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      .offcanvas {
+        position: relative;
+        height: 40px;
+        overflow: hidden;
+      }
+      .offcanvas > p {
+        position: absolute;
+        top: 0;
+        left: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Scenario fixture: <code>resize-text-content-loss</code> (WCAG 1.4.4)</h1>
+    <p class="note">
+      Each target has a stable id of the form <code>rtcl_case_NN</code>: the box that clips the
+      text, which a finding names. The rule applies only to a page laid out at a viewport 640 CSS
+      pixels wide or less, as a 1280 pixel window shows it at 200% zoom, so load this page at that
+      width (the browser test does). It needs a layout, so in jsdom it reports nothing: each case's
+      <code>data-outcome-resize-text-content-loss</code> attribute gives that jsdom verdict, and the
+      browser test checks the one in the title. A page with no text in a box that can clip it
+      (notApplicable) and a page at a wider viewport need pages of their own, and are covered by the
+      browser test.
+    </p>
+
+    <h2>A. Text that fits its box</h2>
+    <div
+      class="case"
+      id="case_01"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">01 — PASS: a box 80 pixels high with overflow hidden, two lines</div>
+      <div class="t tall" id="rtcl_case_01">Opening hours today, nine to five.</div>
+    </div>
+    <div
+      class="case"
+      id="case_02"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">02 — PASS: a short label on one line that doesn't wrap</div>
+      <div class="t nowrap" id="rtcl_case_02">Opening hours</div>
+    </div>
+
+    <h2>B. Text the box cuts off (asked, leaning fail where it is certainly cut)</h2>
+    <div
+      class="case"
+      id="case_03"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">
+        03 — CANTTELL: a box 40 pixels high with overflow hidden hides lines (leans fail)
+      </div>
+      <div class="t short" id="rtcl_case_03">
+        Opening hours today, and the rest of the week from nine in the morning to five in the
+        afternoon, except on public holidays.
+      </div>
+    </div>
+    <div
+      class="case"
+      id="case_04"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">
+        04 — CANTTELL: a line that doesn't wrap, cut at the right edge (leans fail)
+      </div>
+      <div class="t nowrap" id="rtcl_case_04">
+        Opening hours today, and the rest of the week from nine to five.
+      </div>
+    </div>
+    <div
+      class="case"
+      id="case_05"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">
+        05 — CANTTELL: a clip-path: inset() hides the lower lines (leans fail)
+      </div>
+      <div class="t inset" id="rtcl_case_05">
+        Opening hours today, and the rest of the week from nine in the morning to five in the
+        afternoon.
+      </div>
+    </div>
+    <div
+      class="case"
+      id="case_06"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">
+        06 — CANTTELL: the second line is cut by a few pixels only (no lean)
+      </div>
+      <div class="t partly" id="rtcl_case_06">
+        Opening hours today, nine in the morning to five.
+      </div>
+    </div>
+
+    <h2>C. Text the box shortens (asked, leaning fail)</h2>
+    <div
+      class="case"
+      id="case_07"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">07 — CANTTELL: text-overflow: ellipsis (leans fail)</div>
+      <div class="t ellipsis" id="rtcl_case_07">
+        Opening hours today, and the rest of the week from nine to five.
+      </div>
+    </div>
+    <div
+      class="case"
+      id="case_08"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">08 — CANTTELL: -webkit-line-clamp: 2 (leans fail)</div>
+      <div class="t clamp" id="rtcl_case_08">
+        Opening hours today, and the rest of the week from nine in the morning to five in the
+        afternoon, except on public holidays.
+      </div>
+    </div>
+
+    <h2>D. Text no box cuts off (not judged)</h2>
+    <div
+      class="case"
+      id="case_09"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">09 — NEUTRAL: a box 40 pixels high that scrolls (overflow: auto)</div>
+      <div class="t scrolls" id="rtcl_case_09">
+        Opening hours today, and the rest of the week from nine in the morning to five in the
+        afternoon, except on public holidays.
+      </div>
+    </div>
+    <div
+      class="case"
+      id="case_10"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">10 — NEUTRAL: visually hidden text (a 1 pixel box, clipped)</div>
+      <span class="sr-only" id="rtcl_case_10">Opening hours for screen reader users</span>
+    </div>
+    <div
+      class="case"
+      id="case_11"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">
+        11 — NEUTRAL: a panel waiting wholly outside its box (off canvas)
+      </div>
+      <div class="t offcanvas" id="rtcl_case_11"><p>Opening hours panel</p></div>
+    </div>
+    <div
+      class="case"
+      id="case_12"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">12 — NEUTRAL: a paragraph in no box that clips</div>
+      <p class="t" id="rtcl_case_12">
+        Opening hours today, and the rest of the week from nine in the morning to five.
+      </p>
+    </div>
+  </body>
+</html>

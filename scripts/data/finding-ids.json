@@ -123,6 +123,7 @@
     "progressbar-name-present",
     "reflow-horizontal-scroll",
     "region",
+    "resize-text-content-loss",
     "role-img-text-alternative-present",
     "scope-attr-valid",
     "scrollable-region-focusable",
@@ -698,6 +699,10 @@
     ],
     "region": [
       "CONTENT_OUTSIDE_LANDMARK"
+    ],
+    "resize-text-content-loss": [
+      "TEXT_CLIPPED_AT_640",
+      "TEXT_TRUNCATED_AT_640"
     ],
     "role-img-text-alternative-present": [
       "emptyAriaLabel",

@@ -1266,6 +1266,17 @@
     "criteria": [],
     "facets": {}
   },
+  "resize-text-content-loss": {
+    "prefix": "resizeTextContentLoss",
+    "criteria": [
+      "1.4.4"
+    ],
+    "facets": {
+      "1.4.4": [
+        "text-not-clipped-640"
+      ]
+    }
+  },
   "role-img-text-alternative-present": {
     "prefix": "roleImg_textAlternativePresent",
     "criteria": [

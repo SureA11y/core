@@ -2690,6 +2690,24 @@
       "ja": "ba9ea334834e46c7",
       "fr-CA": "793b752154de772c",
       "pt": "d7186697dbaa390c"
+    },
+    "resize-text-content-loss TEXT_CLIPPED_AT_640": {
+      "en": "4bd98a4e740e4368",
+      "de": "dfef3d8b8790a79a",
+      "es": "2228a79249028945",
+      "fr": "3aa71eb84c074eb9",
+      "ja": "6fdd496ae80a432a",
+      "fr-CA": "3aa71eb84c074eb9",
+      "pt": "4bd98a4e740e4368"
+    },
+    "resize-text-content-loss TEXT_TRUNCATED_AT_640": {
+      "en": "408680dc2fd79a63",
+      "de": "74642ca32e3a1efc",
+      "es": "cf44d92a86e1be84",
+      "fr": "caadc5b7e602e235",
+      "ja": "2a8e3d29a18d16b7",
+      "fr-CA": "caadc5b7e602e235",
+      "pt": "408680dc2fd79a63"
     }
   },
   "reviews": {
@@ -2843,13 +2861,14 @@
     "table-duplicate-name": "ea445b7eb857a12e",
     "table-fake-caption": "5023f49818f67ed2",
     "video-caption": "61b92a403c21d4a5",
-    "widget-keyboard-focusable": "c8cefbbd4fadee80"
+    "widget-keyboard-focusable": "c8cefbbd4fadee80",
+    "resize-text-content-loss": "fda9b9100ba545a0"
   },
   "dictionaries": {
-    "de": "03e3130c088543c8371374fe377fbbab300eefc08b016454762ea14510005cc9",
-    "en": "e2f6749454322f05c808a31c66486e949bdd706ea80a8ce0785dfd02a50f7953",
-    "es": "60ea45633c462df1fbc45fba63cb1051a1b134f697bfd5d4036d479363794caa",
-    "fr": "a1c03e4a0a3c742775dc0471731a005fcfa44b033adeac07e2b840b8fb24f42b",
-    "ja": "de418d205d011866c0a9d4ce201ad01b9a069ef8989fcf23a6bd95346fa48307"
+    "de": "d095cc7b120e8e2eff5d4dab5e445c68c948fd5e376b47dff24fa3835b8036b7",
+    "en": "0ecb19a6bc45d6e203586f435d45dc6f076fe95ad4a69a45c43f158fd034eda6",
+    "es": "d92c21a0a4094bcf1fb390a5a83114e6cc09d9d1a13334f30152c739ac42335e",
+    "fr": "b7a46e84ac1e9fe264e32b5aabff1e26f683e11f591e797bea4a7a30d3512887",
+    "ja": "3cd6e6cf79063db25737f8d7b5b7347c82a52b2323c53d0d64b851d63c16c407"
   }
 }

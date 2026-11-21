@@ -38654,6 +38654,81 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "resize-text-content-loss",
+    "title": "Text is not cut off at 640 CSS pixels wide (200% zoom)",
+    "description": "At a viewport 640 CSS pixels wide or less, as a 1280 pixel window shows a page at 200% zoom, measures each text in a box that hides its overflow, and asks about text the box cuts off or shortens with an ellipsis or a line clamp, for manual review of whether content is lost.",
+    "i18n": {
+      "titleKey": "resizeTextContentLoss_title",
+      "descriptionKey": "resizeTextContentLoss_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag144",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.4.4"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.4",
+        "title": "Resize Text",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#resize-text",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.4",
+        "title": "Resize text",
+        "wcagSc": [
+          "1.4.4"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.4",
+        "title": "Resize text",
+        "wcagSc": [
+          "1.4.4"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "1.4.4": [
+          "text-not-clipped-640"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "role-img-text-alternative-present",
     "title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
     "description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.",
@@ -42036,13 +42111,14 @@ const RUNTIME_CATALOG = {
   {
     "id": "wcag-1.4.4-resize-text",
     "checksIds": [
-      "meta-viewport-zoom-enabled"
+      "meta-viewport-zoom-enabled",
+      "resize-text-content-loss"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_144_resize_text.title",
       "descriptionKey": "catalog.rules.wcag_144_resize_text.description",
       "title": "Resize Text",
-      "description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.",
+      "description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%, and asking about text cut off at 640 CSS pixels wide.",
       "wcagSc": [
         "1.4.4"
       ],
@@ -42402,6 +42478,7 @@ const RUNTIME_CATALOG = {
   "progressbar-name-present": { run: require("./checks/automatic/progressbar-name-present.js").runInPage, applicability: require("./checks/automatic/progressbar-name-present.js").applicability || null },
   "reflow-horizontal-scroll": { run: require("./checks/manual/reflow-horizontal-scroll-manual.js").runInPage, applicability: require("./checks/manual/reflow-horizontal-scroll-manual.js").applicability || null },
   "region": { run: require("./checks/manual/region-manual.js").runInPage, applicability: require("./checks/manual/region-manual.js").applicability || null },
+  "resize-text-content-loss": { run: require("./checks/manual/resize-text-content-loss-manual.js").runInPage, applicability: require("./checks/manual/resize-text-content-loss-manual.js").applicability || null },
   "role-img-text-alternative-present": { run: require("./checks/automatic/role-img-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/role-img-text-alternative-present.js").applicability || null },
   "scope-attr-valid": { run: require("./checks/manual/scope-attr-valid-manual.js").runInPage, applicability: require("./checks/manual/scope-attr-valid-manual.js").applicability || null },
   "scrollable-region-focusable": { run: require("./checks/manual/scrollable-region-focusable-manual.js").runInPage, applicability: require("./checks/manual/scrollable-region-focusable-manual.js").applicability || null },
@@ -43023,7 +43100,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_412_aria_validity.title": "Name, Rolle, Wert: ARIA-Gültigkeit",
       "catalog.rules.wcag_412_aria_validity.description": "Zusammenfassung von Prüfungen, dass die Verwendung von ARIA-Rollen und -Attributen der WAI-ARIA-Spezifikation entspricht (gültige Rollen, gültige Attribute, gültige Werte, erforderliche Attribute, eindeutige von ARIA referenzierte IDs).",
       "catalog.rules.wcag_144_resize_text.title": "Textgröße ändern",
-      "catalog.rules.wcag_144_resize_text.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das viewport-Meta-Tag Benutzer nicht daran hindert, Text auf bis zu 200 % zu vergrößern.",
+      "catalog.rules.wcag_144_resize_text.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das viewport-Meta-Tag Benutzer nicht daran hindert, Text auf bis zu 200 % zu vergrößern, und die nach Text fragen, der bei 640 CSS-Pixeln Breite abgeschnitten wird.",
       "catalog.rules.wcag_145_images_of_text.title": "Bilder eines Textes",
       "catalog.rules.wcag_145_images_of_text.description": "Zusammenfassung von Prüfungen, die bei Bildern, die laut Markup wahrscheinlich Text enthalten, fragen, ob stattdessen echter Text verwendet werden könnte.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Zeiteinteilung anpassbar",
@@ -44094,6 +44171,16 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_why_scrolls": "Die Seite scrollt bei dieser Breite seitlich: Inhalte müssen in die Breite passen, damit sie mit Scrollen in nur einer Richtung gelesen werden.",
       "reflowHorizontalScroll_lean_caution_scrolls": "Prüfen Sie, ob seitliches Scrollen Inhalte zeigt und ob es keine Inhalte sind, die zwei Dimensionen brauchen, etwa eine Datentabelle, eine Karte oder ein Diagramm.",
       "reflowHorizontalScroll_lean_caution_unattributed": "Es ließ sich kein Element benennen: Der Überlauf kann von einem Rand, generierten Inhalten oder einem geschlossenen Shadow Root stammen. Prüfen Sie, ob seitliches Scrollen Inhalte zeigt.",
+      "resizeTextContentLoss_title": "Text wird bei 640 CSS-Pixeln Breite (200 % Zoom) nicht abgeschnitten",
+      "resizeTextContentLoss_description": "Misst bei einem Viewport von höchstens 640 CSS-Pixeln Breite, wie ein 1280 Pixel breites Fenster eine Seite bei 200 % Zoom zeigt, jeden Text in einem Kasten, der seinen Überlauf verbirgt, und fragt nach Text, den der Kasten abschneidet oder mit Auslassungspunkten oder einer Zeilenbegrenzung kürzt, zur manuellen Prüfung, ob Inhalte verloren gehen.",
+      "resizeTextContentLoss_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite, wie ein 1280 Pixel breites Fenster die Seite bei 200 % Zoom zeigt, schneidet dieses Element den Text „{{text}}“ ab ({{overflowPx}} Pixel über seinen {{#edgeTop}}oberen {{/edgeTop}}{{#edgeRight}}rechten {{/edgeRight}}{{#edgeBottom}}unteren {{/edgeBottom}}{{#edgeLeft}}linken {{/edgeLeft}}Rand hinaus).{{#clipCss}} Das CSS, das ihn abschneidet: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_clipped": "Lassen Sie den Kasten mit seinem Text wachsen, wenn die Seite vergrößert wird: {{#clipCss}}Ändern Sie {{clipCss}}{{/clipCss}}{{^clipCss}}Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text{{/clipCss}}, oder lassen Sie ihn scrollen.",
+      "resizeTextContentLoss_summary_truncated": "Bei {{viewportWidth}} Pixeln Breite, wie ein 1280 Pixel breites Fenster die Seite bei 200 % Zoom zeigt, kürzt dieses Element den Text „{{text}}“ mit Auslassungspunkten oder einer Zeilenbegrenzung, sodass ein Teil davon nicht angezeigt wird.{{#clipCss}} Das CSS, das ihn kürzt: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_truncated": "Lassen Sie den Text umbrechen und den Kasten ihn ganz zeigen, wenn die Seite vergrößert wird, oder bieten Sie den vollständigen Text auf einem anderen Weg an, der mit der Tastatur funktioniert, etwa über einen Link „Weiterlesen“.",
+      "resizeTextContentLoss_lean_why_clipped": "Mindestens eine halbe Zeile des Textes liegt jenseits des Rands des Kastens, der sie verbirgt und nicht scrollt.",
+      "resizeTextContentLoss_lean_caution_clipped": "Der vollständige Text kann auf andere Weise angezeigt werden, etwa über ein Bedienelement, das den Kasten öffnet.",
+      "resizeTextContentLoss_lean_why_truncated": "Der Kasten kürzt den Text mit Auslassungspunkten oder einer Zeilenbegrenzung, sodass ein Teil davon nicht angezeigt wird.",
+      "resizeTextContentLoss_lean_caution_truncated": "Der vollständige Text kann auf einem anderen Weg angeboten werden, der mit der Tastatur funktioniert, etwa über einen Link „Weiterlesen“.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -44836,7 +44923,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_412_aria_validity.title": "Name, role, value: ARIA validity",
       "catalog.rules.wcag_412_aria_validity.description": "Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids).",
       "catalog.rules.wcag_144_resize_text.title": "Resize Text",
-      "catalog.rules.wcag_144_resize_text.description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.",
+      "catalog.rules.wcag_144_resize_text.description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%, and asking about text cut off at 640 CSS pixels wide.",
       "catalog.rules.wcag_145_images_of_text.title": "Images of Text",
       "catalog.rules.wcag_145_images_of_text.description": "Rollup of checks asking whether images that markup shows likely to hold text could use real text instead.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Timing Adjustable",
@@ -45907,6 +45994,16 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_why_scrolls": "The page scrolls sideways at this width: content has to fit the width, so that it is read by scrolling in one direction only.",
       "reflowHorizontalScroll_lean_caution_scrolls": "Check that scrolling sideways shows content, and that it is not content that needs two dimensions, such as a data table, a map or a diagram.",
       "reflowHorizontalScroll_lean_caution_unattributed": "No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.",
+      "resizeTextContentLoss_title": "Text is not cut off at 640 CSS pixels wide (200% zoom)",
+      "resizeTextContentLoss_description": "At a viewport 640 CSS pixels wide or less, as a 1280 pixel window shows a page at 200% zoom, measures each text in a box that hides its overflow, and asks about text the box cuts off or shortens with an ellipsis or a line clamp, for manual review of whether content is lost.",
+      "resizeTextContentLoss_summary_clipped": "At {{viewportWidth}} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element cuts off the text \"{{text}}\" ({{overflowPx}} pixels past its {{#edgeTop}}top {{/edgeTop}}{{#edgeRight}}right {{/edgeRight}}{{#edgeBottom}}bottom {{/edgeBottom}}{{#edgeLeft}}left {{/edgeLeft}}edge).{{#clipCss}} The CSS that cuts it off: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_clipped": "Let the box grow with its text when the page is zoomed: {{#clipCss}}change {{clipCss}}{{/clipCss}}{{^clipCss}}avoid fixed heights and widths with overflow: hidden on text{{/clipCss}}, or let it scroll.",
+      "resizeTextContentLoss_summary_truncated": "At {{viewportWidth}} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element shortens the text \"{{text}}\" with an ellipsis or a line clamp, so part of it is not shown.{{#clipCss}} The CSS that shortens it: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_truncated": "Let the text wrap and the box show all of it when the page is zoomed, or offer the full text another way that works with the keyboard, such as a \"read more\" link.",
+      "resizeTextContentLoss_lean_why_clipped": "At least half a line of the text lies past the edge of the box, which hides it and does not scroll.",
+      "resizeTextContentLoss_lean_caution_clipped": "The full text may be shown another way, such as a control that opens the box.",
+      "resizeTextContentLoss_lean_why_truncated": "The box shortens the text with an ellipsis or a line clamp, so part of it is not shown.",
+      "resizeTextContentLoss_lean_caution_truncated": "The full text may be offered another way that works with the keyboard, such as a \"read more\" link.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -46649,7 +46746,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_412_aria_validity.title": "Nombre, rol, valor: validez de ARIA",
       "catalog.rules.wcag_412_aria_validity.description": "Agrupación de comprobaciones de que el uso de roles y atributos ARIA se ajusta a la especificación WAI-ARIA (roles válidos, atributos válidos, valores válidos, atributos obligatorios, id referenciados por ARIA únicos).",
       "catalog.rules.wcag_144_resize_text.title": "Cambio de tamaño del texto",
-      "catalog.rules.wcag_144_resize_text.description": "Agrupación de comprobaciones que garantizan que la etiqueta meta viewport no impida al usuario ampliar el texto hasta el 200 %.",
+      "catalog.rules.wcag_144_resize_text.description": "Agrupación de comprobaciones que garantizan que la etiqueta meta viewport no impida al usuario ampliar el texto hasta el 200 %, y que preguntan por el texto recortado a 640 píxeles CSS de ancho.",
       "catalog.rules.wcag_145_images_of_text.title": "Imágenes de texto",
       "catalog.rules.wcag_145_images_of_text.description": "Agrupación de comprobaciones que preguntan si las imágenes que, según el marcado, probablemente contienen texto podrían usar texto real en su lugar.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Tiempo ajustable",
@@ -47720,6 +47817,16 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_why_scrolls": "La página se desplaza hacia los lados con este ancho: el contenido tiene que caber en el ancho para leerse desplazándose en una sola dirección.",
       "reflowHorizontalScroll_lean_caution_scrolls": "Comprobar que el desplazamiento lateral muestra contenido y que no es contenido que necesita dos dimensiones, como una tabla de datos, un mapa o un diagrama.",
       "reflowHorizontalScroll_lean_caution_unattributed": "No se pudo nombrar ningún elemento: el desbordamiento puede venir de un margen, de contenido generado o de un shadow root cerrado. Comprobar que el desplazamiento lateral muestra contenido.",
+      "resizeTextContentLoss_title": "El texto no se recorta a 640 píxeles CSS de ancho (zoom al 200 %)",
+      "resizeTextContentLoss_description": "En una ventana de 640 píxeles CSS de ancho o menos, como una ventana de 1280 píxeles muestra una página con zoom al 200 %, mide cada texto dentro de una caja que oculta su desbordamiento y pregunta por el texto que la caja recorta o acorta con puntos suspensivos o un límite de líneas, para revisar manualmente si se pierde contenido.",
+      "resizeTextContentLoss_summary_clipped": "A {{viewportWidth}} píxeles de ancho, como una ventana de 1280 píxeles muestra la página con zoom al 200 %, este elemento recorta el texto «{{text}}» ({{overflowPx}} píxeles más allá de su borde{{#edgeTop}} superior{{/edgeTop}}{{#edgeRight}} derecho{{/edgeRight}}{{#edgeBottom}} inferior{{/edgeBottom}}{{#edgeLeft}} izquierdo{{/edgeLeft}}).{{#clipCss}} El CSS que lo recorta: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_clipped": "Dejar que la caja crezca con su texto al ampliar la página: {{#clipCss}}cambiar {{clipCss}}{{/clipCss}}{{^clipCss}}evitar alturas y anchuras fijas con overflow: hidden en texto{{/clipCss}}, o permitir que se desplace.",
+      "resizeTextContentLoss_summary_truncated": "A {{viewportWidth}} píxeles de ancho, como una ventana de 1280 píxeles muestra la página con zoom al 200 %, este elemento acorta el texto «{{text}}» con puntos suspensivos o un límite de líneas, así que parte de él no se muestra.{{#clipCss}} El CSS que lo acorta: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_truncated": "Dejar que el texto se ajuste y que la caja lo muestre entero al ampliar la página, u ofrecer el texto completo de otra forma que funcione con el teclado, como un enlace «leer más».",
+      "resizeTextContentLoss_lean_why_clipped": "Al menos media línea del texto queda más allá del borde de la caja, que la oculta y no se desplaza.",
+      "resizeTextContentLoss_lean_caution_clipped": "El texto completo puede mostrarse de otra forma, como un control que abre la caja.",
+      "resizeTextContentLoss_lean_why_truncated": "La caja acorta el texto con puntos suspensivos o un límite de líneas, así que parte de él no se muestra.",
+      "resizeTextContentLoss_lean_caution_truncated": "El texto completo puede ofrecerse de otra forma que funcione con el teclado, como un enlace «leer más».",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -48462,7 +48569,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_412_aria_validity.title": "Nom, rôle et valeur : validité ARIA",
       "catalog.rules.wcag_412_aria_validity.description": "Regroupe les contrôles vérifiant que l’usage des rôles et attributs ARIA est conforme à la spécification WAI-ARIA (rôles valides, attributs valides, valeurs valides, attributs obligatoires, id référencés par ARIA uniques).",
       "catalog.rules.wcag_144_resize_text.title": "Redimensionnement du texte",
-      "catalog.rules.wcag_144_resize_text.description": "Regroupe les contrôles garantissant que la balise meta viewport n’empêche pas l’utilisateur d’agrandir le texte jusqu’à 200 %.",
+      "catalog.rules.wcag_144_resize_text.description": "Regroupe les contrôles garantissant que la balise meta viewport n’empêche pas l’utilisateur d’agrandir le texte jusqu’à 200 %, et posant la question du texte rogné à 640 pixels CSS de large.",
       "catalog.rules.wcag_145_images_of_text.title": "Texte sous forme d’image",
       "catalog.rules.wcag_145_images_of_text.description": "Regroupe les contrôles demandant si les images dont le balisage montre qu’elles contiennent probablement du texte pourraient utiliser du vrai texte à la place.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Réglage du délai",
@@ -49533,6 +49640,16 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_why_scrolls": "La page défile horizontalement à cette largeur : le contenu doit tenir dans la largeur, pour se lire en défilant dans une seule direction.",
       "reflowHorizontalScroll_lean_caution_scrolls": "Vérifiez que le défilement horizontal montre du contenu, et que ce n’est pas un contenu qui a besoin de deux dimensions, comme un tableau de données, une carte ou un diagramme.",
       "reflowHorizontalScroll_lean_caution_unattributed": "Aucun élément n’a pu être nommé : le débordement peut venir d’une marge, d’un contenu généré ou d’un shadow root fermé. Vérifiez que le défilement horizontal montre du contenu.",
+      "resizeTextContentLoss_title": "Le texte n’est pas rogné à 640 pixels CSS de large (zoom à 200 %)",
+      "resizeTextContentLoss_description": "Dans une zone d’affichage de 640 pixels CSS de large ou moins, comme une fenêtre de 1280 pixels affiche une page zoomée à 200 %, mesure chaque texte placé dans une boîte qui masque son débordement, et pose la question pour le texte que la boîte rogne ou raccourcit par des points de suspension ou une limite de lignes, pour une vérification manuelle de la perte de contenu.",
+      "resizeTextContentLoss_summary_clipped": "À {{viewportWidth}} pixels de large, comme une fenêtre de 1280 pixels affiche la page zoomée à 200 %, cet élément rogne le texte « {{text}} » ({{overflowPx}} pixels au-delà de son bord{{#edgeTop}} supérieur{{/edgeTop}}{{#edgeRight}} droit{{/edgeRight}}{{#edgeBottom}} inférieur{{/edgeBottom}}{{#edgeLeft}} gauche{{/edgeLeft}}).{{#clipCss}} Le CSS qui le rogne : {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_clipped": "Laissez la boîte s’agrandir avec son texte quand la page est zoomée : {{#clipCss}}modifiez {{clipCss}}{{/clipCss}}{{^clipCss}}évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte{{/clipCss}}, ou laissez-la défiler.",
+      "resizeTextContentLoss_summary_truncated": "À {{viewportWidth}} pixels de large, comme une fenêtre de 1280 pixels affiche la page zoomée à 200 %, cet élément raccourcit le texte « {{text}} » par des points de suspension ou une limite de lignes, si bien qu’une partie n’est pas affichée.{{#clipCss}} Le CSS qui le raccourcit : {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_truncated": "Laissez le texte passer à la ligne et la boîte l’afficher en entier quand la page est zoomée, ou proposez le texte complet d’une autre façon utilisable au clavier, comme un lien « lire la suite ».",
+      "resizeTextContentLoss_lean_why_clipped": "Au moins une demi-ligne du texte se trouve au-delà du bord de la boîte, qui la masque et ne défile pas.",
+      "resizeTextContentLoss_lean_caution_clipped": "Le texte complet peut être affiché autrement, par exemple par une commande qui ouvre la boîte.",
+      "resizeTextContentLoss_lean_why_truncated": "La boîte raccourcit le texte par des points de suspension ou une limite de lignes, si bien qu’une partie n’est pas affichée.",
+      "resizeTextContentLoss_lean_caution_truncated": "Le texte complet peut être proposé d’une autre façon utilisable au clavier, comme un lien « lire la suite ».",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -50275,7 +50392,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_412_aria_validity.title": "名前 (name)・役割 (role)・値 (value): ARIA の妥当性",
       "catalog.rules.wcag_412_aria_validity.description": "ARIA のロールと属性の使い方が WAI-ARIA 仕様に適合しているか (有効なロール、有効な属性、有効な値、必須の属性、ARIA から参照される id の一意性) を確認するチェックの集約です。",
       "catalog.rules.wcag_144_resize_text.title": "テキストのサイズ変更",
-      "catalog.rules.wcag_144_resize_text.description": "viewport の meta タグが、利用者によるテキストの 200% までの拡大を妨げていないかを確認するチェックの集約です。",
+      "catalog.rules.wcag_144_resize_text.description": "viewport の meta タグが、利用者によるテキストの 200% までの拡大を妨げていないかを確認し、幅 640 CSS ピクセルで切り取られるテキストについて確認を求めるチェックの集約です。",
       "catalog.rules.wcag_145_images_of_text.title": "文字画像",
       "catalog.rules.wcag_145_images_of_text.description": "マークアップからテキストを含む可能性が高い画像について、代わりに実際のテキストを使えないかを確認するチェックのまとめです。",
       "catalog.rules.wcag_221_timing_adjustable.title": "期限調節可能",
@@ -51346,6 +51463,16 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_why_scrolls": "この幅でページが横にスクロールします。コンテンツは 1 方向のスクロールだけで読めるよう、幅に収まる必要があります。",
       "reflowHorizontalScroll_lean_caution_scrolls": "横スクロールでコンテンツが表示されるか、またそれがデータ テーブル、地図、図のように 2 次元を必要とするコンテンツでないかを確認してください。",
       "reflowHorizontalScroll_lean_caution_unattributed": "要素を特定できませんでした。はみ出しはマージン、生成コンテンツ、または閉じたシャドウ ルートによる可能性があります。横スクロールでコンテンツが表示されるかを確認してください。",
+      "resizeTextContentLoss_title": "幅 640 CSS ピクセル（200% ズーム）でテキストが切り取られない",
+      "resizeTextContentLoss_description": "幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ、幅 640 CSS ピクセル以下のビューポートで、はみ出しを隠すボックス内の各テキストを測定し、ボックスが切り取るテキストや、省略記号または行数制限で短くするテキストについて、コンテンツが失われていないかを手動で確認するよう求めます。",
+      "resizeTextContentLoss_summary_clipped": "幅 {{viewportWidth}} ピクセル（幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ）で、この要素はテキスト「{{text}}」を切り取ります（{{#edgeTop}}上{{/edgeTop}}{{#edgeRight}}右{{/edgeRight}}{{#edgeBottom}}下{{/edgeBottom}}{{#edgeLeft}}左{{/edgeLeft}}端から {{overflowPx}} ピクセルはみ出します）。{{#clipCss}}切り取っている CSS: {{clipCss}}。{{/clipCss}}",
+      "resizeTextContentLoss_hint_clipped": "ページをズームしたときにボックスがテキストに合わせて広がるようにしてください。{{#clipCss}}{{clipCss}} を変更するか{{/clipCss}}{{^clipCss}}テキストに overflow: hidden と固定の高さや幅を組み合わせないか{{/clipCss}}、スクロールできるようにしてください。",
+      "resizeTextContentLoss_summary_truncated": "幅 {{viewportWidth}} ピクセル（幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ）で、この要素はテキスト「{{text}}」を省略記号または行数制限で短くするため、一部が表示されません。{{#clipCss}}短くしている CSS: {{clipCss}}。{{/clipCss}}",
+      "resizeTextContentLoss_hint_truncated": "ページをズームしたときにテキストが折り返され、ボックスが全体を表示するようにするか、「続きを読む」リンクなど、キーボードで使える別の方法で全文を提供してください。",
+      "resizeTextContentLoss_lean_why_clipped": "テキストの少なくとも半行分がボックスの端の外側にあり、ボックスはそれを隠してスクロールしません。",
+      "resizeTextContentLoss_lean_caution_clipped": "ボックスを開くコントロールなど、別の方法で全文が表示される場合があります。",
+      "resizeTextContentLoss_lean_why_truncated": "ボックスが省略記号または行数制限でテキストを短くするため、一部が表示されません。",
+      "resizeTextContentLoss_lean_caution_truncated": "「続きを読む」リンクなど、キーボードで使える別の方法で全文が提供されている場合があります。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",
@@ -51756,6 +51883,7 @@ const RULE_MODULES = [
   "./checks/automatic/progressbar-name-present.js",
   "./checks/manual/reflow-horizontal-scroll-manual.js",
   "./checks/manual/region-manual.js",
+  "./checks/manual/resize-text-content-loss-manual.js",
   "./checks/automatic/role-img-text-alternative-present.js",
   "./checks/manual/scope-attr-valid-manual.js",
   "./checks/manual/scrollable-region-focusable-manual.js",
@@ -60909,6 +61037,81 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": null
   },
   {
+    "ruleId": "resize-text-content-loss",
+    "title": "Text is not cut off at 640 CSS pixels wide (200% zoom)",
+    "description": "At a viewport 640 CSS pixels wide or less, as a 1280 pixel window shows a page at 200% zoom, measures each text in a box that hides its overflow, and asks about text the box cuts off or shortens with an ellipsis or a line clamp, for manual review of whether content is lost.",
+    "i18n": {
+      "titleKey": "resizeTextContentLoss_title",
+      "descriptionKey": "resizeTextContentLoss_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag144",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.4.4"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.4",
+        "title": "Resize Text",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#resize-text",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.4",
+        "title": "Resize text",
+        "wcagSc": [
+          "1.4.4"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.4",
+        "title": "Resize text",
+        "wcagSc": [
+          "1.4.4"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "1.4.4": [
+          "text-not-clipped-640"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "role-img-text-alternative-present",
     "title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
     "description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.",
@@ -64291,13 +64494,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-1.4.4-resize-text",
     "checksIds": [
-      "meta-viewport-zoom-enabled"
+      "meta-viewport-zoom-enabled",
+      "resize-text-content-loss"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_144_resize_text.title",
       "descriptionKey": "catalog.rules.wcag_144_resize_text.description",
       "title": "Resize Text",
-      "description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.",
+      "description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%, and asking about text cut off at 640 CSS pixels wide.",
       "wcagSc": [
         "1.4.4"
       ],
@@ -109350,6 +109554,674 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
+    "resize-text-content-loss": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { document, helpers, rule } = ctx;
+  const view = dom.defaultView(document) || null;
+  const ZOOM_WIDTH = 640;
+  const MAX_TEXT_NODES = 3000;
+  const MAX_PER_CODE = 50;
+  // A line more than this far outside its box is cut off at all.
+  const PARTLY_PX = 2;
+
+  const notApplicable = (reason) => ({
+    ruleId: rule.ruleId,
+    outcome: 'notApplicable',
+    severity: 'minor',
+    occurrences: [],
+    ...(reason ? { data: { reason } } : {})
+  });
+
+  const html = dom.documentElement(document);
+  const body = dom.body(document);
+  if (!view || !html || !body) return notApplicable('noLayout');
+  // A layout: the root has boxes (jsdom gives none).
+  try {
+    const rects = dom.getClientRects(html);
+    if (!rects || !rects.length) return notApplicable('noLayout');
+  } catch {
+    return notApplicable('noLayout');
+  }
+  if (typeof dom.get(document, 'createRange') !== 'function') return notApplicable('noLayout');
+  // A frameset shows other documents, each judged as its own page.
+  if (String(dom.tagName(body) || '').toLowerCase() === 'frameset') {
+    return notApplicable('frameset');
+  }
+
+  // The layout viewport's width, as reflow-horizontal-scroll reads it: the
+  // root's clientWidth, which a phone browser's zooming out doesn't widen.
+  const innerWidth = Number(dom.get(view, 'innerWidth')) || 0;
+  const layoutWidth = Number(dom.get(html, 'clientWidth')) || 0;
+  const width = layoutWidth ? Math.min(layoutWidth, innerWidth || layoutWidth) : innerWidth;
+  if (!width || width > ZOOM_WIDTH) return notApplicable('viewportWider');
+
+  const styleMemo = new Map();
+  function styleOf(el) {
+    if (styleMemo.has(el)) return styleMemo.get(el);
+    let value;
+    try {
+      value = view.getComputedStyle(el);
+    } catch {
+      value = null;
+    }
+    styleMemo.set(el, value);
+    return value;
+  }
+  function px(v) {
+    const n = parseFloat(String(v || ''));
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  // ---- The text this scan judges ----
+
+  const roots = (Array.isArray(ctx.root) ? ctx.root : [ctx.root]).filter(Boolean);
+  const wholeDocument = !roots.length || roots.some((r) => r === document || r === html);
+  function inScope(el) {
+    if (wholeDocument) return true;
+    return roots.some((r) => {
+      try {
+        return r === el || (typeof dom.get(r, 'contains') === 'function' && dom.contains(r, el));
+      } catch {
+        return false;
+      }
+    });
+  }
+  function isExcluded(el) {
+    try {
+      return typeof helpers.isExcluded === 'function' && !!helpers.isExcluded(el);
+    } catch {
+      return false;
+    }
+  }
+  let modalOpen = false;
+  try {
+    modalOpen = typeof helpers.isModalDialogOpen === 'function' && !!helpers.isModalDialogOpen();
+  } catch {
+    modalOpen = false;
+  }
+  function isBehindModal(el) {
+    if (!modalOpen || typeof helpers.isAccTreeEligible !== 'function') return false;
+    try {
+      const r = helpers.isAccTreeEligible(el);
+      return !!(
+        r &&
+        r.eligible === false &&
+        Array.isArray(r.reasons) &&
+        r.reasons.includes('modalInert')
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  // The next element up in the flat tree: a slotted node's slot, a shadow
+  // root's host.
+  function upOf(a) {
+    let p = a;
+    for (let i = 0; p && i < 100; i++) {
+      p =
+        typeof helpers.composedParent === 'function'
+          ? helpers.composedParent(p)
+          : dom.parentElement(p);
+      if (p && dom.nodeType(p) === 1) return p;
+      if (!p || dom.nodeType(p) !== 11) return null;
+    }
+    return null;
+  }
+  // The element a text lays out in; a <slot> has no box of its own.
+  function boxParentOf(n) {
+    let p = upOf(n);
+    for (let i = 0; p && i < 100 && String(dom.localName(p)) === 'slot'; i++) {
+      const cs = styleOf(p);
+      if (cs && cs.display !== 'contents') break;
+      p = upOf(p);
+    }
+    return p;
+  }
+
+  // Elements a <marquee> holds, or an animation that repeats for ever moves
+  // (a ticker): their text passes through the edge of its box on purpose,
+  // and where it stands depends on when the scan ran.
+  const MOVING_PROPS =
+    /^(transform|translate|rotate|scale|left|right|top|bottom|inset|margin|offset)/i;
+  const movedForEver = new Set();
+  try {
+    const started =
+      typeof helpers.animationsAtScanStart === 'function' ? helpers.animationsAtScanStart() : [];
+    for (const a of started || []) {
+      if (!a || !a.target || a.endTime !== null) continue;
+      const changes = a.changes;
+      if (changes === null || Object.keys(changes || {}).some((k) => MOVING_PROPS.test(k))) {
+        movedForEver.add(a.target);
+      }
+    }
+  } catch {}
+  const movingCache = new Map();
+  function isMoving(el) {
+    const path = [];
+    let found = false;
+    for (let a = el, i = 0; a && dom.nodeType(a) === 1 && i < 100000; a = upOf(a), i++) {
+      if (movingCache.has(a)) {
+        found = movingCache.get(a);
+        break;
+      }
+      path.push(a);
+      if (dom.localName(a) === 'marquee' || movedForEver.has(a)) {
+        found = true;
+        break;
+      }
+    }
+    for (const a of path) movingCache.set(a, found);
+    return found;
+  }
+
+  const textRoots = [];
+  {
+    const deep = (ctx.engineOptions || {}).includeShadowDom !== false;
+    const queue = [body];
+    while (queue.length) {
+      const root = queue.shift();
+      if (!root) continue;
+      textRoots.push(root);
+      if (!deep) continue;
+      try {
+        for (const el of dom.querySelectorAll(root, '*') || []) {
+          const shadow = dom.shadowRoot(el);
+          if (shadow) queue.push(shadow);
+        }
+      } catch {}
+    }
+  }
+
+  const SKIP = new Set(['script', 'style', 'noscript', 'template', 'textarea', 'select']);
+  function shown(el) {
+    try {
+      return typeof dom.get(el, 'checkVisibility') === 'function'
+        ? dom.checkVisibility(el, { opacityProperty: true, visibilityProperty: true })
+        : true;
+    } catch {
+      return true;
+    }
+  }
+  const texts = [];
+  for (const root of textRoots) {
+    if (texts.length >= MAX_TEXT_NODES) break;
+    const walker = dom.createTreeWalker(document, root, 4);
+    for (let n = walker.nextNode(); n && texts.length < MAX_TEXT_NODES; n = walker.nextNode()) {
+      if (!/\S/.test(dom.nodeValue(n) || '')) continue;
+      const box = boxParentOf(n);
+      const holder = dom.parentElement(n) || box;
+      if (!box || !holder || SKIP.has(String(dom.localName(holder)))) continue;
+      if (!inScope(holder) || isExcluded(holder) || isBehindModal(box)) continue;
+      if (!shown(box) || isMoving(box)) continue;
+      texts.push({ n, box, holder });
+    }
+  }
+
+  // ---- The boxes that clip a text ----
+
+  const bodyIsViewport = (() => {
+    const rs = styleOf(html);
+    const bs = styleOf(body);
+    if (!rs || !bs || dom.localName(body) !== 'body') return false;
+    if (rs.overflowX !== 'visible' || rs.overflowY !== 'visible') return false;
+    const contained = (cs) =>
+      (!!cs.contain && cs.contain !== 'none') ||
+      (!!cs.contentVisibility && cs.contentVisibility !== 'visible');
+    return !contained(rs) && !contained(bs);
+  })();
+  const cvClips =
+    typeof helpers.paintContainedByContentVisibility === 'function'
+      ? helpers.paintContainedByContentVisibility
+      : () => false;
+
+  // How far a clip-path: inset() or a clip: rect() cuts into el's border box
+  // on each side, in layout px, or null (no such clip, or another shape).
+  function clipShapeOf(el, cs) {
+    const w = Number(dom.get(el, 'offsetWidth')) || 0;
+    const h = Number(dom.get(el, 'offsetHeight')) || 0;
+    const len = (v, size) => {
+      const m = /^(-?\d*\.?\d+)(px|%)$/.exec(v) || (/^0$/.test(v) ? ['0', '0', 'px'] : null);
+      if (!m) return null;
+      return m[2] === '%' ? (parseFloat(m[1]) * size) / 100 : parseFloat(m[1]);
+    };
+    let shape = null;
+    const cp = String(cs.clipPath || '')
+      .trim()
+      .toLowerCase();
+    const inset = /^inset\((.*)\)(\s+border-box)?$/.exec(cp);
+    if (inset) {
+      const args = inset[1]
+        .split(/\s+round\s+/)[0]
+        .trim()
+        .split(/\s+/);
+      if (args.length >= 1 && args.length <= 4) {
+        const [t, r = t, b = t, l = r] = args;
+        const v = [len(t, h), len(r, w), len(b, h), len(l, w)];
+        if (v.every((n) => n !== null))
+          shape = { top: v[0], right: v[1], bottom: v[2], left: v[3] };
+      }
+    }
+    const clip = /^rect\((.*)\)$/.exec(
+      String(cs.clip || '')
+        .trim()
+        .toLowerCase()
+    );
+    if (clip && (cs.position === 'absolute' || cs.position === 'fixed')) {
+      const args = clip[1].split(/[\s,]+/).filter(Boolean);
+      const at = (v, size, auto) => (v === 'auto' ? auto : len(v, size));
+      if (args.length === 4) {
+        const t = at(args[0], h, 0);
+        const r = at(args[1], w, w);
+        const b = at(args[2], h, h);
+        const l = at(args[3], w, 0);
+        if ([t, r, b, l].every((n) => n !== null)) {
+          const fromClip = { top: t, right: w - r, bottom: h - b, left: l };
+          shape = shape
+            ? {
+                top: Math.max(shape.top, fromClip.top),
+                right: Math.max(shape.right, fromClip.right),
+                bottom: Math.max(shape.bottom, fromClip.bottom),
+                left: Math.max(shape.left, fromClip.left)
+              }
+            : fromClip;
+        }
+      }
+    }
+    return shape;
+  }
+
+  // The line count a box is clamped to, as { lines, css }, or null.
+  function lineClampOf(el) {
+    const cs = styleOf(el);
+    if (!cs) return null;
+    for (const [prop, read] of [
+      ['-webkit-line-clamp', cs.webkitLineClamp],
+      ['line-clamp', cs.getPropertyValue ? cs.getPropertyValue('line-clamp') : '']
+    ]) {
+      const v = String(read || '').trim();
+      const n = Number.parseInt(v, 10);
+      if (!v || v === 'none' || !(n > 0)) continue;
+      if (
+        prop === '-webkit-line-clamp' &&
+        !/-webkit-(inline-)?box/.test(String(cs.display || '')) &&
+        String(cs.webkitBoxOrient || '') !== 'vertical'
+      )
+        continue;
+      return { lines: n, css: `${prop}: ${n}` };
+    }
+    return null;
+  }
+
+  // Ancestors that clip on an axis, up the containing block chain: past one
+  // that scrolls on an axis, outer ones no longer clip on it, and a box fixed
+  // to the viewport ends the walk (the viewport's own overflow is left out).
+  // The next box up the containing block chain. From the top of a shadow
+  // tree the chain goes on from its host: the host, or for an absolutely
+  // positioned box the first positioned element from the host up.
+  function containerOf(a) {
+    const cb = helpers.containingBlockOf(a);
+    if (cb) return cb;
+    const parent = dom.parentNode(a);
+    if (!parent || dom.nodeType(parent) !== 11) return null;
+    const position = String((styleOf(a) || {}).position || 'static');
+    if (position === 'fixed') return null;
+    for (let h = upOf(a), i = 0; h && i < 100000; h = upOf(h), i++) {
+      const cs = styleOf(h) || {};
+      if (cs.display === 'contents') continue;
+      if (position === 'absolute' && (cs.position || 'static') === 'static') continue;
+      return h;
+    }
+    return null;
+  }
+
+  const clipCache = new Map();
+  function clippersOf(el) {
+    if (clipCache.has(el)) return clipCache.get(el);
+    const out = [];
+    let scrolls = 0; // 1: x scrolls below, 2: y does
+    for (
+      let a = el, i = 0;
+      a && dom.nodeType(a) === 1 && a !== html && i < 100000;
+      a = containerOf(a), i++
+    ) {
+      const cs = a === body && bodyIsViewport ? null : styleOf(a);
+      if (!cs) continue;
+      const paint = /\b(paint|strict|content)\b/.test(String(cs.contain || '')) || cvClips(a);
+      const x = !(scrolls & 1) && (paint || cs.overflowX === 'hidden' || cs.overflowX === 'clip');
+      const y = !(scrolls & 2) && (paint || cs.overflowY === 'hidden' || cs.overflowY === 'clip');
+      let own = x || y ? { el: a, x, y, shape: null, overflowClip: { x, y } } : null;
+      const shape = clipShapeOf(a, cs);
+      if (shape && (!(scrolls & 1) || !(scrolls & 2))) {
+        own = {
+          el: a,
+          x: !(scrolls & 1),
+          y: !(scrolls & 2),
+          shape,
+          overflowClip: own ? { x: own.x, y: own.y } : null
+        };
+      }
+      if (own) out.push(own);
+      if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') scrolls |= 1;
+      if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') scrolls |= 2;
+      if (scrolls === 3) break;
+      if (cs.position === 'fixed' && !containerOf(a)) break;
+    }
+    clipCache.set(el, out);
+    return out;
+  }
+
+  // The box a clipper keeps what it paints in, in viewport coordinates: its
+  // padding box, or the rectangle of its clip-path or clip (within the
+  // padding box on an axis its overflow clips too). Borders and client sizes
+  // are layout sizes, scaled by how much larger el is drawn than laid out.
+  const boxCache = new Map();
+  function clipBoxOf(c) {
+    if (boxCache.has(c)) return boxCache.get(c);
+    const el = c.el;
+    const r = dom.getBoundingClientRect(el);
+    const cs = styleOf(el);
+    const ow = Number(dom.get(el, 'offsetWidth')) || 0;
+    const oh = Number(dom.get(el, 'offsetHeight')) || 0;
+    const kx = ow > 0 && r.width > 0 ? r.width / ow : 1;
+    const ky = oh > 0 && r.height > 0 ? r.height / oh : 1;
+    const bl = px(cs && cs.borderLeftWidth) * kx;
+    const bt = px(cs && cs.borderTopWidth) * ky;
+    const padding = {
+      left: r.left + bl,
+      top: r.top + bt,
+      right: r.left + bl + (Number(dom.get(el, 'clientWidth')) || 0) * kx,
+      bottom: r.top + bt + (Number(dom.get(el, 'clientHeight')) || 0) * ky
+    };
+    let box = padding;
+    if (c.shape) {
+      box = {
+        left: r.left + c.shape.left * kx,
+        top: r.top + c.shape.top * ky,
+        right: r.right - c.shape.right * kx,
+        bottom: r.bottom - c.shape.bottom * ky
+      };
+      const o = c.overflowClip;
+      if (o && o.x) {
+        box.left = Math.max(box.left, padding.left);
+        box.right = Math.min(box.right, padding.right);
+      }
+      if (o && o.y) {
+        box.top = Math.max(box.top, padding.top);
+        box.bottom = Math.min(box.bottom, padding.bottom);
+      }
+    }
+    boxCache.set(c, box);
+    return box;
+  }
+
+  function linesOf(node) {
+    const range = dom.createRange(document);
+    try {
+      range.selectNodeContents(node);
+      const out = [];
+      for (const r of dom.getClientRects(range)) {
+        if (r.width < 1 || r.height < 1) continue;
+        out.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+      }
+      return out;
+    } catch {
+      return [];
+    } finally {
+      try {
+        range.detach();
+      } catch {}
+    }
+  }
+
+  // How far a line sits outside a box, along the axes the box clips.
+  function outside(line, box, c) {
+    const dy = c.y ? Math.max(0, box.top - line.top, line.bottom - box.bottom) : 0;
+    const dx = c.x ? Math.max(0, box.left - line.left, line.right - box.right) : 0;
+    return { dx, dy };
+  }
+  // Whether any of the line shows inside the box.
+  function showsIn(line, box, c) {
+    const overX = !c.x || (line.right > box.left + 0.5 && line.left < box.right - 0.5);
+    const overY = !c.y || (line.bottom > box.top + 0.5 && line.top < box.bottom - 0.5);
+    return overX && overY;
+  }
+  function edgeOf(line, box, axis) {
+    return axis === 'x'
+      ? line.right - box.right >= box.left - line.left
+        ? 'right'
+        : 'left'
+      : line.bottom - box.bottom >= box.top - line.top
+        ? 'bottom'
+        : 'top';
+  }
+
+  // The CSS that cuts text off on an axis at box c, as declarations; '' where
+  // it can't be read.
+  function clipCssOf(c, textEl, axis, clamp) {
+    try {
+      const cs = styleOf(c.el);
+      if (!cs) return '';
+      const parts = [];
+      if (clamp) parts.push(clamp.css);
+      else if (axis === 'x') {
+        let ws = '';
+        for (let cur = textEl, i = 0; cur && i < 100; cur = upOf(cur), i++) {
+          const st = styleOf(cur);
+          const v = st ? String(st.whiteSpace || '') : '';
+          if (/^(nowrap|pre)$/.test(v) || (st && st.textWrapMode === 'nowrap')) {
+            ws = `white-space: ${v === 'pre' ? 'pre' : 'nowrap'}`;
+            break;
+          }
+          if (cur === c.el) break;
+        }
+        if (ws) parts.push(ws);
+        else if (cs.maxWidth && cs.maxWidth !== 'none') parts.push(`max-width: ${cs.maxWidth}`);
+        else if (cs.width && cs.width !== 'auto') parts.push(`width: ${cs.width}`);
+      } else if (cs.maxHeight && cs.maxHeight !== 'none') parts.push(`max-height: ${cs.maxHeight}`);
+      else if (cs.height && cs.height !== 'auto') parts.push(`height: ${cs.height}`);
+      const ox = String(cs.overflowX || '');
+      const oy = String(cs.overflowY || '');
+      const own = axis === 'x' ? ox : oy;
+      if (own && own !== 'visible')
+        parts.push(ox === oy ? `overflow: ${own}` : `overflow-${axis}: ${own}`);
+      else if (cs.contain && cs.contain !== 'none') parts.push(`contain: ${cs.contain}`);
+      else if (c.shape && cs.clipPath && cs.clipPath !== 'none')
+        parts.push(`clip-path: ${cs.clipPath}`);
+      else if (c.shape && cs.clip && cs.clip !== 'auto') parts.push(`clip: ${cs.clip}`);
+      else return '';
+      if (axis === 'x' && cs.textOverflow === 'ellipsis') parts.push('text-overflow: ellipsis');
+      return parts.join('; ');
+    } catch {
+      return '';
+    }
+  }
+
+  // ---- Measure ----
+
+  // Per clipping box, the finding it gives: the first text it cuts, or a
+  // text it cuts for certain over one it cuts by less.
+  const byBox = new Map();
+  let measured = 0;
+  for (const { n, box: textEl, holder } of texts) {
+    const clippers = clippersOf(textEl);
+    if (!clippers.length) continue;
+    const lines = linesOf(n);
+    if (!lines.length) continue;
+    // Visible text: some of it shows in every box that clips it. A box a
+    // pixel wide or high is visually hidden text, not a cut.
+    let visible = true;
+    for (const c of clippers) {
+      const b = clipBoxOf(c);
+      if (b.right - b.left <= 1 || b.bottom - b.top <= 1 || !lines.some((l) => showsIn(l, b, c))) {
+        visible = false;
+        break;
+      }
+    }
+    if (!visible) continue;
+    measured += 1;
+    const fontSize = px(styleOf(textEl) && styleOf(textEl).fontSize) || 16;
+    for (const c of clippers) {
+      if (isExcluded(c.el)) continue;
+      const known = byBox.get(c.el);
+      if (known && known.lost) continue;
+      const b = clipBoxOf(c);
+      let worst = null;
+      for (const l of lines) {
+        const o = outside(l, b, c);
+        const x = { axis: 'x', overflowPx: o.dx, thresholdPx: fontSize / 2 };
+        const y = { axis: 'y', overflowPx: o.dy, thresholdPx: (l.bottom - l.top) / 2 };
+        const lost = o.dx >= x.thresholdPx || o.dy >= y.thresholdPx;
+        if (lost) {
+          const m = o.dx >= x.thresholdPx ? x : y;
+          worst = { lost, ...m, edge: edgeOf(l, b, m.axis) };
+          break;
+        }
+        if (o.dx > PARTLY_PX || o.dy > PARTLY_PX) {
+          const m = o.dx >= o.dy ? x : y;
+          if (!worst || m.overflowPx > worst.overflowPx)
+            worst = { lost, ...m, edge: edgeOf(l, b, m.axis) };
+        }
+      }
+      if (!worst) continue;
+      const cs = styleOf(c.el);
+      const clamp = worst.axis === 'y' ? lineClampOf(c.el) : null;
+      const ellipsis = worst.axis === 'x' && !!cs && cs.textOverflow === 'ellipsis';
+      const truncated = !!clamp || ellipsis;
+      if (known && !worst.lost && !truncated) continue;
+      const text = String(dom.nodeValue(n) || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60);
+      byBox.set(c.el, {
+        el: c.el,
+        holder,
+        code: truncated ? 'TEXT_TRUNCATED_AT_640' : 'TEXT_CLIPPED_AT_640',
+        lost: worst.lost || truncated,
+        text,
+        metrics: {
+          axis: worst.axis,
+          overflowPx: Math.round(worst.overflowPx * 10) / 10,
+          thresholdPx: Math.round(worst.thresholdPx * 10) / 10
+        },
+        edge: worst.edge,
+        clipCss: clipCssOf(c, textEl, worst.axis, clamp),
+        container: {
+          widthPx: Math.round((b.right - b.left) * 10) / 10,
+          heightPx: Math.round((b.bottom - b.top) * 10) / 10
+        }
+      });
+    }
+  }
+
+  // ---- Report ----
+
+  const viewport = {
+    width: Math.round(width),
+    height: Math.round(Number(dom.get(view, 'innerHeight')) || 0)
+  };
+  const LEANS = {
+    clipped: {
+      toward: 'fail',
+      why: 'At least half a line of the text lies past the edge of the box, which hides it and does not scroll.',
+      signals: [{ signal: 'text-cut-by-box', value: true }],
+      caution: 'The full text may be shown another way, such as a control that opens the box.',
+      i18n: {
+        whyKey: 'resizeTextContentLoss_lean_why_clipped',
+        cautionKey: 'resizeTextContentLoss_lean_caution_clipped'
+      }
+    },
+    truncated: {
+      toward: 'fail',
+      why: 'The box shortens the text with an ellipsis or a line clamp, so part of it is not shown.',
+      signals: [{ signal: 'text-truncated', value: true }],
+      caution:
+        'The full text may be offered another way that works with the keyboard, such as a "read more" link.',
+      i18n: {
+        whyKey: 'resizeTextContentLoss_lean_why_truncated',
+        cautionKey: 'resizeTextContentLoss_lean_caution_truncated'
+      }
+    }
+  };
+  const EDGE_WORDS = { top: 'top ', right: 'right ', bottom: 'bottom ', left: 'left ' };
+  const MESSAGES = {
+    TEXT_CLIPPED_AT_640: {
+      key: 'clipped',
+      summary: (p, edge) =>
+        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element cuts off the text "${p.text}" (${p.overflowPx} pixels past its ${EDGE_WORDS[edge] || ''}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
+      hint: (p) =>
+        p.clipCss
+          ? `Let the box grow with its text when the page is zoomed: change ${p.clipCss}, or let it scroll.`
+          : 'Let the box grow with its text when the page is zoomed: avoid fixed heights and widths with overflow: hidden on text, or let it scroll.'
+    },
+    TEXT_TRUNCATED_AT_640: {
+      key: 'truncated',
+      summary: (p) =>
+        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element shortens the text "${p.text}" with an ellipsis or a line clamp, so part of it is not shown.${p.clipCss ? ` The CSS that shortens it: ${p.clipCss}.` : ''}`,
+      hint: () =>
+        'Let the text wrap and the box show all of it when the page is zoomed, or offer the full text another way that works with the keyboard, such as a "read more" link.'
+    }
+  };
+
+  const questions = [];
+  const perCode = {};
+  for (const f of byBox.values()) {
+    perCode[f.code] = (perCode[f.code] || 0) + 1;
+    if (perCode[f.code] > MAX_PER_CODE) continue;
+    const msg = MESSAGES[f.code];
+    const edgeKey = f.edge ? `edge${f.edge[0].toUpperCase()}${f.edge.slice(1)}` : '';
+    const params = {
+      text: f.text,
+      overflowPx: String(Math.round(f.metrics.overflowPx)),
+      viewportWidth: String(viewport.width),
+      ...(edgeKey ? { [edgeKey]: true } : {}),
+      ...(f.clipCss ? { clipCss: f.clipCss } : {})
+    };
+    const lean =
+      f.code === 'TEXT_TRUNCATED_AT_640' ? LEANS.truncated : f.lost ? LEANS.clipped : null;
+    questions.push(
+      helpers.reportOccurrence(f.el, {
+        ...(lean ? { lean } : {}),
+        summary: msg.summary(params, f.edge),
+        hint: msg.hint(params),
+        i18n: {
+          summaryKey: `resizeTextContentLoss_summary_${msg.key}`,
+          hintKey: `resizeTextContentLoss_hint_${msg.key}`,
+          params
+        },
+        occurrenceOutcome: 'cantTell',
+        data: {
+          details: {
+            reasonCode: f.code,
+            text: f.text,
+            metrics: f.metrics,
+            edge: f.edge,
+            ...(f.clipCss ? { clipCss: f.clipCss } : {}),
+            container: f.container,
+            viewport
+          }
+        }
+      })
+    );
+  }
+
+  const omitted = {};
+  for (const [code, count] of Object.entries(perCode)) {
+    if (count > MAX_PER_CODE) omitted[code] = count - MAX_PER_CODE;
+  }
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome([], questions, rule.defaultSeverity || 'serious'),
+      ...(Object.keys(omitted).length ? { data: { omitted } } : {})
+    };
+  }
+  if (measured) return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return notApplicable(null);
+}), applicability: (function applicability(ctx) {
+  const { helpers } = ctx;
+  return !(helpers.isTopLevelDocument && !helpers.isTopLevelDocument());
+}) },
     "role-img-text-alternative-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { root, helpers, rule } = ctx;
@@ -122600,7 +123472,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_412_aria_validity.title": "Name, Rolle, Wert: ARIA-Gültigkeit",
       "catalog.rules.wcag_412_aria_validity.description": "Zusammenfassung von Prüfungen, dass die Verwendung von ARIA-Rollen und -Attributen der WAI-ARIA-Spezifikation entspricht (gültige Rollen, gültige Attribute, gültige Werte, erforderliche Attribute, eindeutige von ARIA referenzierte IDs).",
       "catalog.rules.wcag_144_resize_text.title": "Textgröße ändern",
-      "catalog.rules.wcag_144_resize_text.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das viewport-Meta-Tag Benutzer nicht daran hindert, Text auf bis zu 200 % zu vergrößern.",
+      "catalog.rules.wcag_144_resize_text.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das viewport-Meta-Tag Benutzer nicht daran hindert, Text auf bis zu 200 % zu vergrößern, und die nach Text fragen, der bei 640 CSS-Pixeln Breite abgeschnitten wird.",
       "catalog.rules.wcag_145_images_of_text.title": "Bilder eines Textes",
       "catalog.rules.wcag_145_images_of_text.description": "Zusammenfassung von Prüfungen, die bei Bildern, die laut Markup wahrscheinlich Text enthalten, fragen, ob stattdessen echter Text verwendet werden könnte.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Zeiteinteilung anpassbar",
@@ -123671,6 +124543,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_why_scrolls": "Die Seite scrollt bei dieser Breite seitlich: Inhalte müssen in die Breite passen, damit sie mit Scrollen in nur einer Richtung gelesen werden.",
       "reflowHorizontalScroll_lean_caution_scrolls": "Prüfen Sie, ob seitliches Scrollen Inhalte zeigt und ob es keine Inhalte sind, die zwei Dimensionen brauchen, etwa eine Datentabelle, eine Karte oder ein Diagramm.",
       "reflowHorizontalScroll_lean_caution_unattributed": "Es ließ sich kein Element benennen: Der Überlauf kann von einem Rand, generierten Inhalten oder einem geschlossenen Shadow Root stammen. Prüfen Sie, ob seitliches Scrollen Inhalte zeigt.",
+      "resizeTextContentLoss_title": "Text wird bei 640 CSS-Pixeln Breite (200 % Zoom) nicht abgeschnitten",
+      "resizeTextContentLoss_description": "Misst bei einem Viewport von höchstens 640 CSS-Pixeln Breite, wie ein 1280 Pixel breites Fenster eine Seite bei 200 % Zoom zeigt, jeden Text in einem Kasten, der seinen Überlauf verbirgt, und fragt nach Text, den der Kasten abschneidet oder mit Auslassungspunkten oder einer Zeilenbegrenzung kürzt, zur manuellen Prüfung, ob Inhalte verloren gehen.",
+      "resizeTextContentLoss_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite, wie ein 1280 Pixel breites Fenster die Seite bei 200 % Zoom zeigt, schneidet dieses Element den Text „{{text}}“ ab ({{overflowPx}} Pixel über seinen {{#edgeTop}}oberen {{/edgeTop}}{{#edgeRight}}rechten {{/edgeRight}}{{#edgeBottom}}unteren {{/edgeBottom}}{{#edgeLeft}}linken {{/edgeLeft}}Rand hinaus).{{#clipCss}} Das CSS, das ihn abschneidet: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_clipped": "Lassen Sie den Kasten mit seinem Text wachsen, wenn die Seite vergrößert wird: {{#clipCss}}Ändern Sie {{clipCss}}{{/clipCss}}{{^clipCss}}Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text{{/clipCss}}, oder lassen Sie ihn scrollen.",
+      "resizeTextContentLoss_summary_truncated": "Bei {{viewportWidth}} Pixeln Breite, wie ein 1280 Pixel breites Fenster die Seite bei 200 % Zoom zeigt, kürzt dieses Element den Text „{{text}}“ mit Auslassungspunkten oder einer Zeilenbegrenzung, sodass ein Teil davon nicht angezeigt wird.{{#clipCss}} Das CSS, das ihn kürzt: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_truncated": "Lassen Sie den Text umbrechen und den Kasten ihn ganz zeigen, wenn die Seite vergrößert wird, oder bieten Sie den vollständigen Text auf einem anderen Weg an, der mit der Tastatur funktioniert, etwa über einen Link „Weiterlesen“.",
+      "resizeTextContentLoss_lean_why_clipped": "Mindestens eine halbe Zeile des Textes liegt jenseits des Rands des Kastens, der sie verbirgt und nicht scrollt.",
+      "resizeTextContentLoss_lean_caution_clipped": "Der vollständige Text kann auf andere Weise angezeigt werden, etwa über ein Bedienelement, das den Kasten öffnet.",
+      "resizeTextContentLoss_lean_why_truncated": "Der Kasten kürzt den Text mit Auslassungspunkten oder einer Zeilenbegrenzung, sodass ein Teil davon nicht angezeigt wird.",
+      "resizeTextContentLoss_lean_caution_truncated": "Der vollständige Text kann auf einem anderen Weg angeboten werden, der mit der Tastatur funktioniert, etwa über einen Link „Weiterlesen“.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -124413,7 +125295,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_412_aria_validity.title": "Name, role, value: ARIA validity",
       "catalog.rules.wcag_412_aria_validity.description": "Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids).",
       "catalog.rules.wcag_144_resize_text.title": "Resize Text",
-      "catalog.rules.wcag_144_resize_text.description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.",
+      "catalog.rules.wcag_144_resize_text.description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%, and asking about text cut off at 640 CSS pixels wide.",
       "catalog.rules.wcag_145_images_of_text.title": "Images of Text",
       "catalog.rules.wcag_145_images_of_text.description": "Rollup of checks asking whether images that markup shows likely to hold text could use real text instead.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Timing Adjustable",
@@ -125484,6 +126366,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_why_scrolls": "The page scrolls sideways at this width: content has to fit the width, so that it is read by scrolling in one direction only.",
       "reflowHorizontalScroll_lean_caution_scrolls": "Check that scrolling sideways shows content, and that it is not content that needs two dimensions, such as a data table, a map or a diagram.",
       "reflowHorizontalScroll_lean_caution_unattributed": "No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.",
+      "resizeTextContentLoss_title": "Text is not cut off at 640 CSS pixels wide (200% zoom)",
+      "resizeTextContentLoss_description": "At a viewport 640 CSS pixels wide or less, as a 1280 pixel window shows a page at 200% zoom, measures each text in a box that hides its overflow, and asks about text the box cuts off or shortens with an ellipsis or a line clamp, for manual review of whether content is lost.",
+      "resizeTextContentLoss_summary_clipped": "At {{viewportWidth}} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element cuts off the text \"{{text}}\" ({{overflowPx}} pixels past its {{#edgeTop}}top {{/edgeTop}}{{#edgeRight}}right {{/edgeRight}}{{#edgeBottom}}bottom {{/edgeBottom}}{{#edgeLeft}}left {{/edgeLeft}}edge).{{#clipCss}} The CSS that cuts it off: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_clipped": "Let the box grow with its text when the page is zoomed: {{#clipCss}}change {{clipCss}}{{/clipCss}}{{^clipCss}}avoid fixed heights and widths with overflow: hidden on text{{/clipCss}}, or let it scroll.",
+      "resizeTextContentLoss_summary_truncated": "At {{viewportWidth}} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element shortens the text \"{{text}}\" with an ellipsis or a line clamp, so part of it is not shown.{{#clipCss}} The CSS that shortens it: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_truncated": "Let the text wrap and the box show all of it when the page is zoomed, or offer the full text another way that works with the keyboard, such as a \"read more\" link.",
+      "resizeTextContentLoss_lean_why_clipped": "At least half a line of the text lies past the edge of the box, which hides it and does not scroll.",
+      "resizeTextContentLoss_lean_caution_clipped": "The full text may be shown another way, such as a control that opens the box.",
+      "resizeTextContentLoss_lean_why_truncated": "The box shortens the text with an ellipsis or a line clamp, so part of it is not shown.",
+      "resizeTextContentLoss_lean_caution_truncated": "The full text may be offered another way that works with the keyboard, such as a \"read more\" link.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -126226,7 +127118,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_412_aria_validity.title": "Nombre, rol, valor: validez de ARIA",
       "catalog.rules.wcag_412_aria_validity.description": "Agrupación de comprobaciones de que el uso de roles y atributos ARIA se ajusta a la especificación WAI-ARIA (roles válidos, atributos válidos, valores válidos, atributos obligatorios, id referenciados por ARIA únicos).",
       "catalog.rules.wcag_144_resize_text.title": "Cambio de tamaño del texto",
-      "catalog.rules.wcag_144_resize_text.description": "Agrupación de comprobaciones que garantizan que la etiqueta meta viewport no impida al usuario ampliar el texto hasta el 200 %.",
+      "catalog.rules.wcag_144_resize_text.description": "Agrupación de comprobaciones que garantizan que la etiqueta meta viewport no impida al usuario ampliar el texto hasta el 200 %, y que preguntan por el texto recortado a 640 píxeles CSS de ancho.",
       "catalog.rules.wcag_145_images_of_text.title": "Imágenes de texto",
       "catalog.rules.wcag_145_images_of_text.description": "Agrupación de comprobaciones que preguntan si las imágenes que, según el marcado, probablemente contienen texto podrían usar texto real en su lugar.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Tiempo ajustable",
@@ -127297,6 +128189,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_why_scrolls": "La página se desplaza hacia los lados con este ancho: el contenido tiene que caber en el ancho para leerse desplazándose en una sola dirección.",
       "reflowHorizontalScroll_lean_caution_scrolls": "Comprobar que el desplazamiento lateral muestra contenido y que no es contenido que necesita dos dimensiones, como una tabla de datos, un mapa o un diagrama.",
       "reflowHorizontalScroll_lean_caution_unattributed": "No se pudo nombrar ningún elemento: el desbordamiento puede venir de un margen, de contenido generado o de un shadow root cerrado. Comprobar que el desplazamiento lateral muestra contenido.",
+      "resizeTextContentLoss_title": "El texto no se recorta a 640 píxeles CSS de ancho (zoom al 200 %)",
+      "resizeTextContentLoss_description": "En una ventana de 640 píxeles CSS de ancho o menos, como una ventana de 1280 píxeles muestra una página con zoom al 200 %, mide cada texto dentro de una caja que oculta su desbordamiento y pregunta por el texto que la caja recorta o acorta con puntos suspensivos o un límite de líneas, para revisar manualmente si se pierde contenido.",
+      "resizeTextContentLoss_summary_clipped": "A {{viewportWidth}} píxeles de ancho, como una ventana de 1280 píxeles muestra la página con zoom al 200 %, este elemento recorta el texto «{{text}}» ({{overflowPx}} píxeles más allá de su borde{{#edgeTop}} superior{{/edgeTop}}{{#edgeRight}} derecho{{/edgeRight}}{{#edgeBottom}} inferior{{/edgeBottom}}{{#edgeLeft}} izquierdo{{/edgeLeft}}).{{#clipCss}} El CSS que lo recorta: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_clipped": "Dejar que la caja crezca con su texto al ampliar la página: {{#clipCss}}cambiar {{clipCss}}{{/clipCss}}{{^clipCss}}evitar alturas y anchuras fijas con overflow: hidden en texto{{/clipCss}}, o permitir que se desplace.",
+      "resizeTextContentLoss_summary_truncated": "A {{viewportWidth}} píxeles de ancho, como una ventana de 1280 píxeles muestra la página con zoom al 200 %, este elemento acorta el texto «{{text}}» con puntos suspensivos o un límite de líneas, así que parte de él no se muestra.{{#clipCss}} El CSS que lo acorta: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_truncated": "Dejar que el texto se ajuste y que la caja lo muestre entero al ampliar la página, u ofrecer el texto completo de otra forma que funcione con el teclado, como un enlace «leer más».",
+      "resizeTextContentLoss_lean_why_clipped": "Al menos media línea del texto queda más allá del borde de la caja, que la oculta y no se desplaza.",
+      "resizeTextContentLoss_lean_caution_clipped": "El texto completo puede mostrarse de otra forma, como un control que abre la caja.",
+      "resizeTextContentLoss_lean_why_truncated": "La caja acorta el texto con puntos suspensivos o un límite de líneas, así que parte de él no se muestra.",
+      "resizeTextContentLoss_lean_caution_truncated": "El texto completo puede ofrecerse de otra forma que funcione con el teclado, como un enlace «leer más».",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -128039,7 +128941,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_412_aria_validity.title": "Nom, rôle et valeur : validité ARIA",
       "catalog.rules.wcag_412_aria_validity.description": "Regroupe les contrôles vérifiant que l’usage des rôles et attributs ARIA est conforme à la spécification WAI-ARIA (rôles valides, attributs valides, valeurs valides, attributs obligatoires, id référencés par ARIA uniques).",
       "catalog.rules.wcag_144_resize_text.title": "Redimensionnement du texte",
-      "catalog.rules.wcag_144_resize_text.description": "Regroupe les contrôles garantissant que la balise meta viewport n’empêche pas l’utilisateur d’agrandir le texte jusqu’à 200 %.",
+      "catalog.rules.wcag_144_resize_text.description": "Regroupe les contrôles garantissant que la balise meta viewport n’empêche pas l’utilisateur d’agrandir le texte jusqu’à 200 %, et posant la question du texte rogné à 640 pixels CSS de large.",
       "catalog.rules.wcag_145_images_of_text.title": "Texte sous forme d’image",
       "catalog.rules.wcag_145_images_of_text.description": "Regroupe les contrôles demandant si les images dont le balisage montre qu’elles contiennent probablement du texte pourraient utiliser du vrai texte à la place.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Réglage du délai",
@@ -129110,6 +130012,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_why_scrolls": "La page défile horizontalement à cette largeur : le contenu doit tenir dans la largeur, pour se lire en défilant dans une seule direction.",
       "reflowHorizontalScroll_lean_caution_scrolls": "Vérifiez que le défilement horizontal montre du contenu, et que ce n’est pas un contenu qui a besoin de deux dimensions, comme un tableau de données, une carte ou un diagramme.",
       "reflowHorizontalScroll_lean_caution_unattributed": "Aucun élément n’a pu être nommé : le débordement peut venir d’une marge, d’un contenu généré ou d’un shadow root fermé. Vérifiez que le défilement horizontal montre du contenu.",
+      "resizeTextContentLoss_title": "Le texte n’est pas rogné à 640 pixels CSS de large (zoom à 200 %)",
+      "resizeTextContentLoss_description": "Dans une zone d’affichage de 640 pixels CSS de large ou moins, comme une fenêtre de 1280 pixels affiche une page zoomée à 200 %, mesure chaque texte placé dans une boîte qui masque son débordement, et pose la question pour le texte que la boîte rogne ou raccourcit par des points de suspension ou une limite de lignes, pour une vérification manuelle de la perte de contenu.",
+      "resizeTextContentLoss_summary_clipped": "À {{viewportWidth}} pixels de large, comme une fenêtre de 1280 pixels affiche la page zoomée à 200 %, cet élément rogne le texte « {{text}} » ({{overflowPx}} pixels au-delà de son bord{{#edgeTop}} supérieur{{/edgeTop}}{{#edgeRight}} droit{{/edgeRight}}{{#edgeBottom}} inférieur{{/edgeBottom}}{{#edgeLeft}} gauche{{/edgeLeft}}).{{#clipCss}} Le CSS qui le rogne : {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_clipped": "Laissez la boîte s’agrandir avec son texte quand la page est zoomée : {{#clipCss}}modifiez {{clipCss}}{{/clipCss}}{{^clipCss}}évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte{{/clipCss}}, ou laissez-la défiler.",
+      "resizeTextContentLoss_summary_truncated": "À {{viewportWidth}} pixels de large, comme une fenêtre de 1280 pixels affiche la page zoomée à 200 %, cet élément raccourcit le texte « {{text}} » par des points de suspension ou une limite de lignes, si bien qu’une partie n’est pas affichée.{{#clipCss}} Le CSS qui le raccourcit : {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_hint_truncated": "Laissez le texte passer à la ligne et la boîte l’afficher en entier quand la page est zoomée, ou proposez le texte complet d’une autre façon utilisable au clavier, comme un lien « lire la suite ».",
+      "resizeTextContentLoss_lean_why_clipped": "Au moins une demi-ligne du texte se trouve au-delà du bord de la boîte, qui la masque et ne défile pas.",
+      "resizeTextContentLoss_lean_caution_clipped": "Le texte complet peut être affiché autrement, par exemple par une commande qui ouvre la boîte.",
+      "resizeTextContentLoss_lean_why_truncated": "La boîte raccourcit le texte par des points de suspension ou une limite de lignes, si bien qu’une partie n’est pas affichée.",
+      "resizeTextContentLoss_lean_caution_truncated": "Le texte complet peut être proposé d’une autre façon utilisable au clavier, comme un lien « lire la suite ».",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -129852,7 +130764,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_412_aria_validity.title": "名前 (name)・役割 (role)・値 (value): ARIA の妥当性",
       "catalog.rules.wcag_412_aria_validity.description": "ARIA のロールと属性の使い方が WAI-ARIA 仕様に適合しているか (有効なロール、有効な属性、有効な値、必須の属性、ARIA から参照される id の一意性) を確認するチェックの集約です。",
       "catalog.rules.wcag_144_resize_text.title": "テキストのサイズ変更",
-      "catalog.rules.wcag_144_resize_text.description": "viewport の meta タグが、利用者によるテキストの 200% までの拡大を妨げていないかを確認するチェックの集約です。",
+      "catalog.rules.wcag_144_resize_text.description": "viewport の meta タグが、利用者によるテキストの 200% までの拡大を妨げていないかを確認し、幅 640 CSS ピクセルで切り取られるテキストについて確認を求めるチェックの集約です。",
       "catalog.rules.wcag_145_images_of_text.title": "文字画像",
       "catalog.rules.wcag_145_images_of_text.description": "マークアップからテキストを含む可能性が高い画像について、代わりに実際のテキストを使えないかを確認するチェックのまとめです。",
       "catalog.rules.wcag_221_timing_adjustable.title": "期限調節可能",
@@ -130923,6 +131835,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_why_scrolls": "この幅でページが横にスクロールします。コンテンツは 1 方向のスクロールだけで読めるよう、幅に収まる必要があります。",
       "reflowHorizontalScroll_lean_caution_scrolls": "横スクロールでコンテンツが表示されるか、またそれがデータ テーブル、地図、図のように 2 次元を必要とするコンテンツでないかを確認してください。",
       "reflowHorizontalScroll_lean_caution_unattributed": "要素を特定できませんでした。はみ出しはマージン、生成コンテンツ、または閉じたシャドウ ルートによる可能性があります。横スクロールでコンテンツが表示されるかを確認してください。",
+      "resizeTextContentLoss_title": "幅 640 CSS ピクセル（200% ズーム）でテキストが切り取られない",
+      "resizeTextContentLoss_description": "幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ、幅 640 CSS ピクセル以下のビューポートで、はみ出しを隠すボックス内の各テキストを測定し、ボックスが切り取るテキストや、省略記号または行数制限で短くするテキストについて、コンテンツが失われていないかを手動で確認するよう求めます。",
+      "resizeTextContentLoss_summary_clipped": "幅 {{viewportWidth}} ピクセル（幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ）で、この要素はテキスト「{{text}}」を切り取ります（{{#edgeTop}}上{{/edgeTop}}{{#edgeRight}}右{{/edgeRight}}{{#edgeBottom}}下{{/edgeBottom}}{{#edgeLeft}}左{{/edgeLeft}}端から {{overflowPx}} ピクセルはみ出します）。{{#clipCss}}切り取っている CSS: {{clipCss}}。{{/clipCss}}",
+      "resizeTextContentLoss_hint_clipped": "ページをズームしたときにボックスがテキストに合わせて広がるようにしてください。{{#clipCss}}{{clipCss}} を変更するか{{/clipCss}}{{^clipCss}}テキストに overflow: hidden と固定の高さや幅を組み合わせないか{{/clipCss}}、スクロールできるようにしてください。",
+      "resizeTextContentLoss_summary_truncated": "幅 {{viewportWidth}} ピクセル（幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ）で、この要素はテキスト「{{text}}」を省略記号または行数制限で短くするため、一部が表示されません。{{#clipCss}}短くしている CSS: {{clipCss}}。{{/clipCss}}",
+      "resizeTextContentLoss_hint_truncated": "ページをズームしたときにテキストが折り返され、ボックスが全体を表示するようにするか、「続きを読む」リンクなど、キーボードで使える別の方法で全文を提供してください。",
+      "resizeTextContentLoss_lean_why_clipped": "テキストの少なくとも半行分がボックスの端の外側にあり、ボックスはそれを隠してスクロールしません。",
+      "resizeTextContentLoss_lean_caution_clipped": "ボックスを開くコントロールなど、別の方法で全文が表示される場合があります。",
+      "resizeTextContentLoss_lean_why_truncated": "ボックスが省略記号または行数制限でテキストを短くするため、一部が表示されません。",
+      "resizeTextContentLoss_lean_caution_truncated": "「続きを読む」リンクなど、キーボードで使える別の方法で全文が提供されている場合があります。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",

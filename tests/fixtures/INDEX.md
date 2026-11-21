@@ -4,7 +4,7 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **151**. With fixture: **146**. Without fixture: **5**.
+Total rules: **152**. With fixture: **147**. Without fixture: **5**.
 
 ## Rules WITHOUT a fixture (5)
 
@@ -16,7 +16,7 @@ Total rules: **151**. With fixture: **146**. Without fixture: **5**.
 | moving-content-pausable | manual | Content that moves by itself should be possible to pause, stop or hide | src/checks/manual/moving-content-pausable-manual.js | tests/engine-checks/manual/moving-content-pausable-chromium.test.js |
 | target-size-enhanced | automatic | Pointer targets must be at least 44x44px large | src/checks/automatic/target-size-enhanced.js | tests/engine-checks/automatic/target-size-enhanced.test.js |
 
-## Rules WITH a fixture (146)
+## Rules WITH a fixture (147)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -138,6 +138,7 @@ Total rules: **151**. With fixture: **146**. Without fixture: **5**.
 | progressbar-name-present | automatic | `tests/fixtures/progressbar-name-present-all-scenarios.html` | 10 | 4 | 5 | 0 | 1 |
 | reflow-horizontal-scroll | manual | `tests/fixtures/reflow-horizontal-scroll-all-scenarios.html` | 8 | 3 | 2 | 3 | 0 |
 | region | manual | `tests/fixtures/region-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
+| resize-text-content-loss | manual | `tests/fixtures/resize-text-content-loss-all-scenarios.html` | 12 | 2 | 0 | 6 | 4 |
 | role-img-text-alternative-present | automatic | `tests/fixtures/role-img-text-alternative-present-all-scenarios.html` | 28 | 6 | 11 | 0 | 11 |
 | scope-attr-valid | manual | `tests/fixtures/scope-attr-valid-all-scenarios.html` | 2 | 1 | 0 | 1 | 0 |
 | scrollable-region-focusable | manual | `tests/fixtures/scrollable-region-focusable-all-scenarios.html` | 8 | 0 | 0 | 5 | 3 |
