@@ -34552,7 +34552,6 @@ const RUNTIME_CATALOG = {
       "wcag2a",
       "wcag131",
       "forms",
-      "structure",
       "atomic",
       "manual",
       "a11ycore"
@@ -40038,6 +40037,7 @@ const RUNTIME_CATALOG = {
     "tags": [
       "wcag21aa",
       "wcag1411",
+      "nontext",
       "contrast",
       "color",
       "atomic",
@@ -57208,7 +57208,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcag2a",
       "wcag131",
       "forms",
-      "structure",
       "atomic",
       "manual",
       "a11ycore"
@@ -62694,6 +62693,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "tags": [
       "wcag21aa",
       "wcag1411",
+      "nontext",
       "contrast",
       "color",
       "atomic",
@@ -165022,8 +165022,9 @@ function scanAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly, star
           engineOptions: frameRunOptions(el),
           runOnly: runOnly,
           // When the scan started, so the frame's scan gets only what is
-          // left of the time budget.
-          scanStartedAt: scanStartedAt
+          // left of the time budget; sent only with a budget, so the
+          // command is otherwise as it was.
+          ...(scanStartedAt === null ? {} : { scanStartedAt: scanStartedAt })
         },
         frameWaitTime
       )

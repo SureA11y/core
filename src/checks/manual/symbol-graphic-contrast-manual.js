@@ -64,7 +64,7 @@ const meta = {
     descriptionKey: 'symbolGraphicContrast_description'
   },
   helpUrl: null,
-  tags: ['wcag21aa', 'wcag1411', 'contrast', 'color', 'atomic', 'manual'],
+  tags: ['wcag21aa', 'wcag1411', 'nontext', 'contrast', 'color', 'atomic', 'manual'],
   wcagSc: ['1.4.11'],
   normativeMappings: [
     {

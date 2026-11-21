@@ -5363,7 +5363,6 @@
         "wcag2a",
         "wcag131",
         "forms",
-        "structure",
         "atomic",
         "manual"
       ],
@@ -7073,6 +7072,7 @@
       "tags": [
         "wcag21aa",
         "wcag1411",
+        "nontext",
         "contrast",
         "color",
         "atomic",

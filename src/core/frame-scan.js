@@ -466,8 +466,9 @@ function scanAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly, star
           engineOptions: frameRunOptions(el),
           runOnly: runOnly,
           // When the scan started, so the frame's scan gets only what is
-          // left of the time budget.
-          scanStartedAt: scanStartedAt
+          // left of the time budget; sent only with a budget, so the
+          // command is otherwise as it was.
+          ...(scanStartedAt === null ? {} : { scanStartedAt: scanStartedAt })
         },
         frameWaitTime
       )

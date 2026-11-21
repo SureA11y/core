@@ -58,7 +58,7 @@ const meta = {
     descriptionKey: 'formGroupNamePresent_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag131', 'forms', 'structure', 'atomic', 'manual'],
+  tags: ['wcag2a', 'wcag131', 'forms', 'atomic', 'manual'],
   wcagSc: ['1.3.1'],
   normativeMappings: [
     {
