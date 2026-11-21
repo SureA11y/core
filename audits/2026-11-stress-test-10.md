@@ -108,4 +108,4 @@ The general round found four bugs in features merged the same day (#420). Agreed
 ## 4. Downstream
 
 - The four packs' draft pull requests for core 1.18 were updated: `pack-rgaa` maps `resize-text-content-loss` to RGAA 10.4.1 and `symbol-graphic-contrast` to 3.3.2, and `form-group-name-present` to no test.
-- The CMS repository gave the new rules editor titles ([SureA11y/cms#36](https://github.com/SureA11y/cms/issues/36)).
+- The CMS repository gave the new rules editor titles ([SureA11y/cms#36](https://github.com/SureA11y/cms/pull/36)).
