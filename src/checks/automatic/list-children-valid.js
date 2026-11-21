@@ -23,7 +23,8 @@
  *   over the tag entirely: a child is valid iff that role is "listitem"
  *   (so `<li role="presentation">`/`<li role="menuitem">` are invalid
  *   despite the <li> tag, and conversely a non-<li> element explicitly
- *   given `role="listitem"` or `role="foo LISTITEM"` is valid). A role
+ *   given `role="listitem"` or `role="foo LISTITEM"` is valid, as is a
+ *   custom element whose ElementInternals give it the listitem role). A role
  *   attribute naming no known role leaves the tag to decide. A wrapper
  *   <div> used for styling (no role at all) still breaks list semantics
  *   the same as before. Non-whitespace text directly inside the list is an
@@ -184,9 +185,11 @@ function runInPage(ctx) {
   }
 
   // The first role token that names a known, non-abstract ARIA role, in
-  // any case, or '' when none does (the element keeps its native role).
+  // any case, or, with no role attribute, the role a custom element's
+  // ElementInternals give it; '' when there is neither (the element keeps
+  // its native role).
   function resolvedExplicitRole(el) {
-    return helpers.aria.getExplicitRole(el);
+    return helpers.aria.getAuthorRole(el);
   }
 
   // Children in the flat tree, as the page renders them: a <slot> stands

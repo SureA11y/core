@@ -71,7 +71,9 @@
  *   token naming a known role wins, matched in any case, and a role
  *   attribute with no known token is no role at all (the tag's native
  *   role stays). So <div role="foo list"> and <div role="LIST"> are lists,
- *   and <ul role="foo"> is still a list.
+ *   and <ul role="foo"> is still a list. A custom element with no role
+ *   attribute takes the role its ElementInternals give it, so an <li> in
+ *   an <x-list> whose internals say list is in a list.
  * - An explicit role on the parent WINS over its tag name, in either
  *   direction: a <ul role="menu"> no longer exposes role "list" (its own
  *   native role is fully replaced by the explicit one, the same "any
@@ -136,10 +138,12 @@ function runInPage(ctx) {
   // The resolved explicit role: the first token of the role fallback list
   // naming a known role, lower-cased, or '' when none does (the element then
   // keeps its native role).
+  // The role an author gave: by the role attribute or, failing that, by a
+  // custom element's ElementInternals (<x-list> whose internals say list).
   function resolvedRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
