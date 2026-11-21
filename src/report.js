@@ -67,7 +67,7 @@ const { withHowToCheck } = require('./how-to-check-lazy.js');
 
 // What the scan leaves to a person: the standard's procedures for what no
 // rule decides in full, read in Node only, as the steps are.
-const { leftToAPerson } = require('./manual-checks-lazy.js');
+const { leftToAPerson, criterionTitles } = require('./manual-checks-lazy.js');
 
 // The page speaks the locale the scan resolved to when the engine carries
 // it. A dictionary the caller supplied at scan time is not in the result, so
@@ -133,7 +133,22 @@ function createUi(engine) {
   // string from one that fell back to English.
   const english = (key, params) => (key ? core.translate(key, '', params || null, 'en') : null);
 
-  return { tr, trStrong, num, pct, outcomeInfo, severity, uiLocale, contentLocale, english };
+  // A WCAG criterion's title in the report's language, where core's
+  // procedures dictionaries give it (Node), and its language.
+  const criterionTitle = criterionTitles(String(uiLocale).toLowerCase());
+
+  return {
+    tr,
+    trStrong,
+    num,
+    pct,
+    outcomeInfo,
+    severity,
+    uiLocale,
+    contentLocale,
+    english,
+    criterionTitle
+  };
 }
 
 // A rollup's rules as a list, whatever a stored result holds there.
@@ -766,14 +781,24 @@ function renderFrames(frames, ui) {
 
 // Where to read more: the rule's own help, or the Understanding document of
 // the criterion it checks, each said for what it is.
+// The criterion is named in the report's language (round 9, A9-6), and a
+// title left in English in a report in another language is marked so.
 function helpLink(r, ui) {
   const link = helpLinkOf(r);
   if (!link) return '';
-  const text =
-    link.kind === 'rule'
-      ? ui.tr('report_card_help', { rule: r.ruleId })
-      : ui.tr('report_card_understanding', { sc: link.sc, title: link.title });
-  return `<p class="card-help"><a href="${esc(link.url)}">${esc(text.trim())}</a></p>`;
+  if (link.kind === 'rule') {
+    const text = ui.tr('report_card_help', { rule: r.ruleId });
+    return `<p class="card-help"><a href="${esc(link.url)}">${esc(text.trim())}</a></p>`;
+  }
+  const { title, lang } = ui.criterionTitle(link.sc, link.title);
+  const named =
+    title && lang && lang.toLowerCase() !== String(ui.uiLocale).toLowerCase()
+      ? `<span lang="${esc(lang)}">${esc(title)}</span>`
+      : esc(title);
+  const text = esc(ui.tr('report_card_understanding', { sc: link.sc, title: '\uE000' }))
+    .replace('\uE000', () => named)
+    .trim();
+  return `<p class="card-help"><a href="${esc(link.url)}">${text}</a></p>`;
 }
 
 // One card per rule (not per occurrence) -- a rule with many occurrences of

@@ -49,3 +49,31 @@ test('a messages key differing in case from the locale is used, over the built-i
   });
   assert.equal(titleOf(result, 'acme-x'), 'Acme');
 });
+
+test("the HTML report's Understanding link names the criterion in the report's language (A9-6)", () => {
+  const { renderHtmlReport } = require('../src/report.js');
+  const links = (locale, engineOptions = {}) =>
+    renderHtmlReport(
+      runa11yCoreOnHtml(PAGE, {
+        engineOptions: { locale, ...engineOptions },
+        entryPointParity: false
+      })
+    ).match(/<p class="card-help">.*?<\/p>/g) || [];
+  const of = (list, sc) => list.find((l) => l.includes(`>${sc} `) || l.includes(` ${sc} `));
+  assert.match(of(links('de'), '1.1.1'), />1\.1\.1 Nicht-Text-Inhalt verstehen</);
+  assert.match(of(links('fr'), '1.1.1'), />Comprendre 1\.1\.1 Contenu non textuel</);
+  assert.match(of(links('en'), '1.1.1'), />Understanding 1\.1\.1 Non-text Content</);
+  // A title the dictionaries don't translate (WCAG 2.1's "Parsing") stays
+  // English, marked as such.
+  const parsing = links('de', {
+    wcagVersion: '2.1',
+    customRules: [
+      {
+        id: 'acme-parse',
+        meta: { title: 't', wcagSc: ['4.1.1'] },
+        runInPage: "() => ({ outcome: 'fail', occurrences: [{ selector: 'img' }] })"
+      }
+    ]
+  });
+  assert.match(of(parsing, '4.1.1'), />4\.1\.1 <span lang="en">Parsing<\/span> verstehen</);
+});
