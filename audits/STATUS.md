@@ -2,7 +2,7 @@
 
 Where the work on the audit's findings stands, written so that another person or session can pick it up without the history of this one. The findings themselves, open and fixed, are in [`FINDINGS.md`](./FINDINGS.md); this page says what is in flight, what is decided, and how the work is done.
 
-Last updated 2026-11-21, on `main` at `04966f92` (1.17.0 plus the unreleased 1.18.0 work).
+Last updated 2026-11-21, on `main` at `6e2b905c` (1.17.0 plus the unreleased 1.18.0 work).
 
 ## 1. Open now
 
