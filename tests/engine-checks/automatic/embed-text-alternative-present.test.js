@@ -24,7 +24,7 @@ test(`${RULE_ID}: notApplicable when no <embed>`, () => {
 
 test(`${RULE_ID}: pass when aria-label provides a name`, () => {
   const html = `<!doctype html><html><body>
-    <embed id="ok" src="x.pdf" aria-label="Report">
+    <embed id="ok" src="x.svg" aria-label="Report">
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -32,7 +32,7 @@ test(`${RULE_ID}: pass when aria-label provides a name`, () => {
 
 test(`${RULE_ID}: fail when applicable <embed> has no accessible name`, () => {
   const html = `<!doctype html><html><body>
-    <embed id="bad" src="x.pdf">
+    <embed id="bad" src="x.svg">
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -41,7 +41,7 @@ test(`${RULE_ID}: fail when applicable <embed> has no accessible name`, () => {
 
 test(`${RULE_ID}: notApplicable when only ineligible embeds exist (aria-hidden and not tabbable)`, () => {
   const html = `<!doctype html><html><body>
-    <embed id="ah" src="x.pdf" aria-hidden="true">
+    <embed id="ah" src="x.svg" aria-hidden="true">
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
@@ -49,7 +49,7 @@ test(`${RULE_ID}: notApplicable when only ineligible embeds exist (aria-hidden a
 
 test(`${RULE_ID}: aria-hidden but tabbable (tabindex=0) is applicable and fails if unnamed`, () => {
   const html = `<!doctype html><html><body>
-    <embed id="focus_ah" src="x.pdf" aria-hidden="true" tabindex="0">
+    <embed id="focus_ah" src="x.svg" aria-hidden="true" tabindex="0">
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
@@ -59,7 +59,7 @@ test(`${RULE_ID}: aria-hidden but tabbable (tabindex=0) is applicable and fails 
 test(`${RULE_ID}: inert subtree is ineligible and does not cause pass (=> notApplicable when only inert embeds)`, () => {
   const html = `<!doctype html><html><body>
     <div inert>
-      <embed id="inert_embed" src="x.pdf">
+      <embed id="inert_embed" src="x.svg">
     </div>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -68,7 +68,7 @@ test(`${RULE_ID}: inert subtree is ineligible and does not cause pass (=> notApp
 
 test(`${RULE_ID}: role=presentation not focusable is excluded and does not cause pass (=> notApplicable when only those)`, () => {
   const html = `<!doctype html><html><body>
-    <embed id="pres_nf" src="x.pdf" role="presentation">
+    <embed id="pres_nf" src="x.svg" role="presentation">
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
@@ -106,7 +106,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/embed-text-alternative-presen
     'embed_case_11',
     'embed_case_12',
     'embed_case_13',
-    'embed_case_14'
+    'embed_case_14',
+    'embed_case_16',
+    'embed_case_17',
+    'embed_case_18'
   ];
 
   for (const id of expectedFailIds) {
@@ -126,7 +129,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/embed-text-alternative-presen
 });
 
 test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
-  const html = `<!doctype html><html><body><embed src="x.pdf"></body></html>`;
+  const html = `<!doctype html><html><body><embed src="x.svg"></body></html>`;
 
   const result = runa11yCoreOnHtml(html, {
     runOnly: [RULE_ID],
@@ -150,7 +153,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
-  const html = `<!doctype html><html><body><embed src="x.pdf"></body></html>`;
+  const html = `<!doctype html><html><body><embed src="x.svg"></body></html>`;
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
@@ -170,7 +173,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
-  const html = `<!doctype html><html><body><embed src="x.pdf"></body></html>`;
+  const html = `<!doctype html><html><body><embed src="x.svg"></body></html>`;
 
   const result = runa11yCoreOnHtml(html, {
     runOnly: [RULE_ID],
@@ -188,7 +191,7 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
 
 test(`${RULE_ID}: the role attribute is a fallback list: role="foo presentation" is excluded when not focusable (#91)`, () => {
   const result = runa11yCoreOnHtml(
-    `<!doctype html><html><body><embed src="x.pdf" role="foo presentation"></body></html>`,
+    `<!doctype html><html><body><embed src="x.svg" role="foo presentation"></body></html>`,
     { runOnly: [RULE_ID] }
   );
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
@@ -196,7 +199,7 @@ test(`${RULE_ID}: the role attribute is a fallback list: role="foo presentation"
 
 test(`${RULE_ID}: an upper-case role resolves too: role="NONE" is excluded when not focusable (#91)`, () => {
   const result = runa11yCoreOnHtml(
-    `<!doctype html><html><body><embed src="x.pdf" role="NONE"></body></html>`,
+    `<!doctype html><html><body><embed src="x.svg" role="NONE"></body></html>`,
     { runOnly: [RULE_ID] }
   );
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
@@ -215,4 +218,36 @@ test(`${RULE_ID}: a fail says an alt on the <embed> is not read`, () => {
     'Its alt="Sales chart 2024" is not read: an <embed> has no alt attribute. Move the text to aria-label.'
   );
   assert.strictEqual(occ.data.details.nameCause.cause, 'altOnEmbed');
+});
+
+// ACT 8fc3b6's applicability, applied to <embed> as to <object>: a resource
+// that is not an image, audio or video (a page, a PDF, text), or Flash, which
+// no current browser runs, renders no non-text content of its own.
+test(`${RULE_ID}: notApplicable for an embedded PDF, HTML page or Flash file, as for the same <object>`, () => {
+  for (const embed of [
+    '<embed src="doc.pdf" type="application/pdf">',
+    '<embed src="page.html" type="text/html">',
+    '<embed src="page.html">',
+    '<embed src="old.swf">',
+    '<embed src="old.swf?v=2" type="application/x-shockwave-flash">'
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${embed}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: still fails an embed whose type names an image or video, or that markup does not classify`, () => {
+  for (const embed of [
+    '<embed id="e" src="chart.svg" type="image/svg+xml">',
+    '<embed id="e" src="clip.mp4">',
+    '<embed id="e" src="doc.pdf" type="video/mp4">',
+    '<embed id="e" src="/media/stream">'
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${embed}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  }
 });
