@@ -105,6 +105,23 @@ test(`${RULE_ID}: a zero-width border or an empty ::after is not a cue`, () => {
   }
 });
 
+test(`${RULE_ID}: a mark in a clear color or in the background's is not a cue (round 9, V9-7)`, () => {
+  const base = `body { background: #ffffff; } p { color: #222222; } .nodeco { text-decoration: none; color: #2a2a2a; }`;
+  for (const css of [
+    '.m { outline: 2px solid transparent; }',
+    '.m { outline: 2px solid #ffffff; }',
+    '.m { border-bottom: 1px solid #ffffff; }',
+    '.m { text-decoration: underline; text-decoration-color: #ffffff; }',
+    '.m::before { content: " "; }'
+  ]) {
+    const html = `<!doctype html><html><head><style>${base} ${css}</style></head><body><p>Lire <a href="/x" class="nodeco m">la suite</a> ici.</p></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+  }
+});
+
 test(`${RULE_ID}: a weight difference is a cue only across 600 (round 8, LY-9)`, () => {
   const page = (pWeight, aWeight) =>
     `<!doctype html><html><head><style>body { background: #ffffff; }</style></head><body><p style="color:#333333;font-weight:${pWeight}">Read the <a href="#" style="color:#444444;text-decoration:none;font-weight:${aWeight}">terms</a> before you sign up.</p></body></html>`;

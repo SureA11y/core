@@ -1,6 +1,11 @@
 // Types for @surea11y/core/report (docs/REPORT.md).
 
-import type { ScanResult, CrossFrameResult, BindingFramesResult } from './index';
+import type {
+  ScanResult,
+  CompactScanResult,
+  CrossFrameResult,
+  BindingFramesResult
+} from './index';
 
 export interface HtmlReportOptions {
   /** The page's title; a localized default otherwise. */
@@ -21,6 +26,6 @@ export interface HtmlReportOptions {
 
 /** A self-contained HTML page, as text. A cross-frame result covers every frame. Throws a TypeError for anything else. */
 export function renderHtmlReport(
-  result: ScanResult | CrossFrameResult | BindingFramesResult,
+  result: ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult,
   options?: HtmlReportOptions
 ): string;

@@ -173,3 +173,58 @@ test('a scan settles animations and restores them', { skip }, async (t) => {
     }
   });
 });
+
+// The document's getAnimations() leaves out the animations of elements in
+// shadow trees: a fade in a component was measured wherever it had got to
+// and its motion never reported (round 9, V9-1).
+const SHADOW_PAGE = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><p>Shadow:</p><div id="host"></div></main><script>
+  const inner = document.getElementById('host').attachShadow({ mode: 'open' });
+  inner.innerHTML = '<div id="nest"></div><style>@keyframes fade{from{opacity:.1}to{opacity:1}} @keyframes mv{to{transform:translateX(50px)}} .a{animation:fade 60s linear forwards;color:#595959;background:#fff;font:16px sans-serif} .m{display:inline-block;animation:mv 2s infinite}</style><p class="a">Fading text in a component</p>';
+  inner.getElementById('nest').attachShadow({ mode: 'open' }).innerHTML =
+    '<style>@keyframes mv{to{transform:translateX(50px)}} .m{display:inline-block;animation:mv 2s infinite}</style><span class="m">Moving</span>';
+</script></body></html>`;
+
+test('animations in open shadow roots are settled and reported', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const scan = async (options) => {
+    const p = await browser.newPage();
+    try {
+      await p.setContent(SHADOW_PAGE);
+      await addBundle(p);
+      return await p.evaluate((options) => {
+        const fade = document.getElementById('host').shadowRoot.getAnimations()[0];
+        fade.currentTime = 500;
+        const r = window.a11ycore.runa11yCoreInPage(null, null, options, [
+          'contrast-minimum',
+          'moving-content-pausable'
+        ]);
+        const of = (id) => r.checksResults.find((c) => c.ruleId === id);
+        return {
+          contrast: of('contrast-minimum').outcome,
+          moving: (of('moving-content-pausable').occurrences || []).map(
+            (o) => o.data.details.reasonCode
+          ),
+          settled: r.engine.environment.animationsSettled,
+          after: fade.currentTime
+        };
+      }, options);
+    } finally {
+      await p.close();
+    }
+  };
+  await t.test('a fade in a component is judged at its end, and put back', async () => {
+    const r = await scan({});
+    assert.equal(r.contrast, 'pass');
+    assert.equal(r.settled, 2, 'the fade and the nested marquee');
+    assert.equal(r.after, 500);
+  });
+  await t.test('motion in a component, and in one nested in it, is reported', async () => {
+    assert.deepEqual((await scan({})).moving, ['MOVING_CONTENT_OVER_5S', 'MOVING_CONTENT_LOOPS']);
+  });
+  await t.test('with includeShadowDom off they are left alone', async () => {
+    const r = await scan({ includeShadowDom: false });
+    assert.equal(r.settled, 0);
+    assert.deepEqual(r.moving, []);
+  });
+});

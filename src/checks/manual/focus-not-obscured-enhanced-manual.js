@@ -38,7 +38,8 @@
  *     part of the window it counts as in view. It leans fail: the box covers
  *     them whatever the user does, unless the user opened it and can close it
  *     without moving focus. A box a control marks as opened (`openedByUser`)
- *     gets no lean.
+ *     gets no lean, nor does one the rule could not check because the page
+ *     did not scroll (`notScrolled`).
  *     Basis: WCAG 2.4.12; F110; C43.
  *   - `FOCUS_OBSCURED_PARTLY` (cantTell): elements in the tab order can take
  *     focus partly hidden behind such a box, none entirely; a box that shows

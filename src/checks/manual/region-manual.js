@@ -14,7 +14,10 @@
  *   <audio>, <canvas>, <object> or <embed>, or an <input> other than
  *   type="hidden"; or a landmark with anything in it. Live regions,
  *   dialogs, buttons, <svg>, <iframe>/<frame> and resolvable skip links are
- *   not content that needs a landmark.
+ *   not content that needs a landmark, nor is a decorative <img> (alt="",
+ *   or role none or presentation) that no global ARIA attribute or
+ *   focusability overrides, which browsers leave out of the accessibility
+ *   tree.
  *   Not while a modal dialog is open: the rest of the page is inert then,
  *   so the scan sees the dialog, not the page.
  *   Content matched by excludeSelectors (global or for this rule) is left
@@ -216,6 +219,27 @@ function runInPage(ctx) {
 
   const VISUAL_CONTENT_TAGS = new Set(['img', 'video', 'audio', 'canvas', 'object', 'embed']);
 
+  // An <img> that is decorative, by alt="" or role none or presentation,
+  // with nothing that overrides it (a global ARIA attribute, being
+  // focusable): browsers leave it out of the accessibility tree (Chromium
+  // ignores it), so it is no content that needs a landmark, as a tracking
+  // pixel is not.
+  function isDecorativeImage(el) {
+    if (lower(dom.localName(el)) !== 'img') return false;
+    const role = getExplicitRoleToken(el);
+    if (role) {
+      if (role !== 'none' && role !== 'presentation') return false;
+    } else if (dom.getAttribute(el, 'alt') !== '') {
+      return false;
+    }
+    try {
+      if (helpers.aria.hasGlobalAriaAttr(el, { exceptDeprecated: true })) return false;
+      return !helpers.getFocusableInfo(el).focusable;
+    } catch {
+      return false;
+    }
+  }
+
   // Non-recursive "does THIS element, on its own, carry content" check.
   // Mirrors only the direct-content half of getContentNameInfo on purpose,
   // not a full name-from-content recursion: the whole point is to keep
@@ -285,6 +309,11 @@ function runInPage(ctx) {
     // rule) is not judged, and, as content out of the accessibility tree,
     // keeps a reported gap from taking it in.
     if (helpers.isExcluded && helpers.isExcluded(el)) {
+      markFlaggedUpToBody(el);
+      return;
+    }
+
+    if (isDecorativeImage(el)) {
       markFlaggedUpToBody(el);
       return;
     }

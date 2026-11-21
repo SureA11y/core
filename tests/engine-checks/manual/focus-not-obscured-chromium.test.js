@@ -410,6 +410,78 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
     );
     assert.equal(res[RULE_ID].outcome, 'cantTell');
   });
+  // A transform, filter, perspective, containment or will-change on an
+  // ancestor makes it the containing block of the fixed boxes inside it,
+  // which then scroll with it: the header isn't kept in place, whatever
+  // the scroll position (round 9, V9-4).
+  await t.test('a fixed box inside its containing block scrolls with the page', async () => {
+    const header =
+      '<header style="position:fixed;top:0;left:0;right:0;height:60px;background:#036">Site</header>';
+    for (const wrap of [
+      'transform:translateZ(0)',
+      'translate:0 0',
+      'filter:blur(0)',
+      'backdrop-filter:blur(1px)',
+      'perspective:100px',
+      'will-change:transform',
+      'contain:layout',
+      'container-type:inline-size'
+    ]) {
+      for (const scrollY of [0, 900]) {
+        const res = await scan(doc(`<div style="${wrap}">${header}</div>` + LINKS(40)), {
+          scrollY
+        });
+        assert.equal(res[RULE_ID].outcome, 'pass', `${wrap} at ${scrollY}`);
+        assert.equal(res[ENHANCED].outcome, 'pass', `${wrap} at ${scrollY}`);
+      }
+    }
+    // A wrapper that holds none keeps it fixed.
+    const res = await scan(doc(`<div style="opacity:.99">${header}</div>` + LINKS(40)));
+    assert.equal(res[RULE_ID].outcome, 'cantTell');
+  });
+  // A header can be drawn by a ::before spread over it, or by an inset
+  // shadow filling it, with no background of its own (round 9, V9-5).
+  await t.test('a fixed box drawn by a ::before or an inset shadow is asked about', async () => {
+    const header = (css) =>
+      `<header class="h" style="position:fixed;top:0;left:0;right:0;height:60px;${css}">Site</header>`;
+    for (const [name, css, style, want] of [
+      [
+        'a ::before over it',
+        '.h::before{content:"";position:absolute;inset:0;background:#036}',
+        '',
+        'cantTell'
+      ],
+      ['an inset shadow filling it', '', 'box-shadow:inset 0 0 0 100px #036', 'cantTell'],
+      [
+        'a translucent ::before',
+        '.h::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.5)}',
+        '',
+        'pass'
+      ],
+      [
+        'a 4px ::after along its bottom',
+        '.h::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:#036}',
+        '',
+        'pass'
+      ],
+      ['a 1px inset highlight', '', 'box-shadow:inset 0 -1px 0 #036', 'pass']
+    ]) {
+      const res = await scan(doc(header(style) + LINKS(40), css));
+      assert.equal(res[RULE_ID].outcome, want, name);
+      if (want === 'cantTell')
+        assert.equal(res[RULE_ID].findings[0].code, 'FOCUS_OBSCURED_ENTIRELY', name);
+    }
+    // 2.4.12 asks about what shows through, and only where it is drawn.
+    const translucent = await scan(
+      doc(
+        header('') + LINKS(40),
+        '.h::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.5)}'
+      )
+    );
+    assert.equal(translucent[ENHANCED].outcome, 'cantTell');
+    const highlight = await scan(doc(header('box-shadow:inset 0 -1px 0 #036') + LINKS(40)));
+    assert.equal(highlight[ENHANCED].outcome, 'pass');
+  });
   // Round 8, NW-2: the hit test drills into shadow roots, and a point that
   // landed in a component the header holds wasn't counted as the header's.
   await t.test('an opaque sticky header holding a component is asked about', async () => {

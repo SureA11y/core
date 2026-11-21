@@ -97,6 +97,8 @@ Output is deterministic: subjects sort by source, assertions by rule id, and the
 | `assertor` | `{ name, version }`. Defaults the name to `surea11y`, and the version, given as the assertor's `release`, to the `engine.version` the results carry when they all carry the same one; results from different releases get no release unless you give one. Pass `null` to omit `assertedBy` entirely. |
 | `mode` | An EARL test mode such as `'earl:automatic'`. Omitted when not supplied. |
 
+`null` options are no options. A key the report doesn't read that looks like a misspelling of one it does (`asserter`) is ignored with a `console.warn` naming the option meant, as a scan warns about `engineOptions`.
+
 ## A scan of several profiles
 
 In a result of several profiles (`engineOptions.profile` as a list, [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#several-profiles)), a check's `outcome` is the worst its profiles give it, which can be a standard's failure of a finding WCAG only asks about. Each assertion takes the rule's own outcome, `checkOutcome`, instead: an attribute a role doesn't support, which WAI-ARIA fails and WCAG 4.1.2 asks about, is asserted `earl:cantTell` against `WCAG2:name-role-value`.

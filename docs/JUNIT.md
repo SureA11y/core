@@ -98,6 +98,8 @@ The `selector:` line of an element inside a shadow tree names the shadow hosts f
 | `packs` | none | The packs the scan ran (`engineOptions.packs`): with `leanFailAs: 'failure'`, a pack rule's likely failures give the steps of its own `meta.review`, as in the HTML report. |
 | `name` | `'surea11y'` | The `name` of the root `<testsuites>`, for telling several pages' reports apart in one dashboard. |
 
+`null` options are no options. A key the report doesn't read that looks like a misspelling of one it does (`cantTelAs`, or `baseline` for `baselineEntries`) is ignored with a `console.warn` naming the option meant, as a scan warns about `engineOptions`.
+
 ## Determinism
 
 The engine has no clock, and this report does not invent one: every `time` is `"0"`, and a `timestamp` attribute appears on each suite only when the result carries one (`engineOptions.timestamp`). The same scan always renders byte-identical XML, so a report can be committed or diffed.

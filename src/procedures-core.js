@@ -560,7 +560,7 @@ function proceduresFrom(dictionaries, requirement, options) {
     const found = id === 'best-practice' ? bestPractices(read) : wcagCriterion(id, read, packRules);
     if (found || standard) return inLocale(found, read.locale);
   }
-  const version = typeof opts.version === 'string' && opts.version ? opts.version : null;
+  const version = versionAsked(opts.version);
   const reading = readingFor(dictionaries, opts.packs, opts.locale);
   // The reading of the standard the requirement is found in: the last asked.
   let readIn = read.locale;
@@ -592,6 +592,16 @@ const listOf = (v) =>
   (Array.isArray(v) ? v : v === undefined || v === null ? [] : [v]).filter(
     (x) => typeof x === 'string' && x
   );
+
+// The version asked for, as text: a number is read as the version it
+// writes, 2.1 as '2.1' and 2 as '2.0' (round 9, A9-12). null where none is.
+function versionAsked(v) {
+  if (typeof v === 'string' && v) return v;
+  if (typeof v === 'number' && Number.isFinite(v) && v >= 0) {
+    return Number.isInteger(v) ? v.toFixed(1) : String(v);
+  }
+  return null;
+}
 
 // The packs' standards that give procedures: [{ pack, st }], those whose key
 // or name is `standard` when it is given.
@@ -683,12 +693,26 @@ function packGroups(groups, ids, tr, read, titleLang, version) {
 }
 
 // The filters a list or checklist takes: tools, automation and rules, each
-// one value or a list of them, null where not given.
+// one value or a list of them, null where not given. A tool or an
+// automation level there is none of throws, as an unknown level does: it
+// would list nothing (round 9, A9-12).
+const AUTOMATION_LEVELS = ['full', 'partial', 'manual'];
 function filtersOf(opts) {
   const f = {};
   for (const key of ['tools', 'automation', 'rules']) {
     const values = listOf(opts[key]);
     f[key] = opts[key] === undefined ? null : values;
+  }
+  for (const [key, known, what] of [
+    ['tools', TOOLS, 'tool'],
+    ['automation', AUTOMATION_LEVELS, 'automation level']
+  ]) {
+    const given = opts[key] === undefined || opts[key] === null ? [] : [].concat(opts[key]);
+    const bad = given.filter((v) => !known.includes(v));
+    if (bad.length) {
+      const named = bad.map((v) => (typeof v === 'string' ? v : JSON.stringify(v) || String(v)));
+      throw new Error(`unknown ${what} ${named.join(', ')}; one of ${known.join(', ')}`);
+    }
   }
   return f;
 }
@@ -734,7 +758,7 @@ function listing(dictionaries, options, wrap = same) {
   const byProfile = typeof opts.profile === 'string' && opts.profile;
   const standard =
     typeof opts.standard === 'string' && opts.standard ? opts.standard : byProfile ? null : 'wcag';
-  const asked = typeof opts.version === 'string' && opts.version ? opts.version : null;
+  const asked = versionAsked(opts.version);
   const f = filtersOf(opts);
   // Each as proceduresFrom gives it, with the locale it was read in.
   const keep = (list, locale = read.locale) =>
@@ -1123,7 +1147,7 @@ function relatedRequirements(requirement, options) {
   const id = requirement.trim();
   const opts = isObject(options) ? options : {};
   const standard = typeof opts.standard === 'string' && opts.standard ? opts.standard : null;
-  const asked = typeof opts.version === 'string' && opts.version ? opts.version : null;
+  const asked = versionAsked(opts.version);
   const relationOf = (entry, sc) =>
     entry.wcag === sc ? 'restates' : listOf(entry.relatesTo).includes(sc) ? 'relatesTo' : null;
 

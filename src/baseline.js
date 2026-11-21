@@ -31,10 +31,14 @@ const getReasonCode = reasonCodeOf;
 // <img class="a b" src="x"> is the same element as <img src="x" class="b a">.
 // The snippet is serialized HTML (outerHTML), so every attribute reads
 // name="value" with any quote in the value escaped. A tag cut off by the
-// snippet's length limit is left as it is. A single forward scan, not a
-// regular expression: the snippet is page content, and a backtracking
-// pattern could be made to take polynomial time.
+// snippet's length limit is put in order as far as it goes: its whole
+// attributes, then what is left of the one it was cut in (round 9, A9-17).
+// Class names are split at HTML's ASCII whitespace only: a no-break space
+// is part of a class name. A single forward scan, not a regular expression:
+// the snippet is page content, and a backtracking pattern could be made to
+// take polynomial time.
 const isSpace = (ch) => ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r' || ch === '\f';
+const ASCII_WHITESPACE = /[ \t\n\f\r]+/;
 const isNameEnd = (ch) => isSpace(ch) || ch === '=' || ch === '/' || ch === '>' || ch === '<';
 
 // Reads the start tag at html[start] (a '<'): { end, text } when there is
@@ -46,9 +50,21 @@ function readStartTag(html, start) {
   while (i < html.length && !isNameEnd(html[i])) i++;
   const tag = html.slice(start + 1, i);
   const attrs = [];
+  const ordered = () =>
+    attrs
+      .slice()
+      .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+      .map((a) => ` ${a.text}`)
+      .join('');
+  // The snippet ends inside the tag: its whole attributes in order, then
+  // the rest as it is.
+  const cut = (from) => ({
+    end: html.length,
+    text: `<${tag}${ordered()}${from < html.length ? ` ${html.slice(from)}` : ''}`
+  });
   for (;;) {
     while (i < html.length && isSpace(html[i])) i++;
-    if (i >= html.length) return { end: i };
+    if (i >= html.length) return cut(i);
     if (html[i] === '>') {
       i += 1;
       break;
@@ -61,23 +77,25 @@ function readStartTag(html, start) {
     const nameStart = i;
     while (i < html.length && !isNameEnd(html[i])) i++;
     if (i === nameStart) return { end: i };
+    // A name the snippet ends in is cut too.
+    if (i >= html.length) return cut(nameStart);
     const name = html.slice(nameStart, i);
     let value;
     if (html[i] === '=') {
+      if (i + 1 >= html.length) return cut(nameStart);
       if (html[i + 1] !== '"') return { end: i };
       const close = html.indexOf('"', i + 2);
-      if (close === -1) return { end: html.length };
+      if (close === -1) return cut(nameStart);
       value = html.slice(i + 2, close);
       i = close + 1;
     }
     if (name.toLowerCase() === 'class' && value !== undefined) {
-      value = value.split(/\s+/).filter(Boolean).sort().join(' ');
+      value = value.split(ASCII_WHITESPACE).filter(Boolean).sort().join(' ');
     }
     attrs.push({ name, text: value === undefined ? name : `${name}="${value}"` });
   }
   if (!attrs.length) return { end: i, text: html.slice(start, i) };
-  attrs.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
-  return { end: i, text: `<${tag} ${attrs.map((a) => a.text).join(' ')}>` };
+  return { end: i, text: `<${tag}${ordered()}>` };
 }
 
 function normalizeIdentityHtml(html) {

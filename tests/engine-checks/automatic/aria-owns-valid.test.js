@@ -129,3 +129,41 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-owns-valid-all-scenarios
     aov_case_05: 'ARIA_OWNS_ANCESTOR'
   });
 });
+
+// An ownership that closes a cycle through aria-owns, directly (two
+// elements owning each other) or not (A owns C, which holds D, which owns
+// A), makes the owner a descendant of what it owns: it is reported as
+// owning an ancestor is.
+test(`${RULE_ID}: ownership cycles are reported (round 9, N9-17)`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  const run = (body) =>
+    assertRule(runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 2,
+      maxOccurrences: 2
+    });
+  const direct = run(
+    '<div role="group" aria-label="Q" id="q" aria-owns="r">Q</div><div role="group" aria-label="R" id="r" aria-owns="q">R</div>'
+  );
+  for (const o of direct.occurrences) {
+    assert.strictEqual(o.data.details.reasonCode, 'ARIA_OWNS_ANCESTOR');
+    assert.strictEqual(o.data.details.cycle, true);
+    assert.strictEqual(o.i18n.summaryKey, 'ariaOwnsValid_summary_cantTell_cycle');
+  }
+  assert.match(direct.occurrences[0].summary, /names r, which through aria-owns comes back/);
+  run(
+    '<div role="group" aria-label="A" id="a" aria-owns="c">A</div><div role="group" aria-label="C" id="c"><div role="group" aria-label="D" id="d" aria-owns="a">D</div></div>'
+  );
+  // A chain that does not come back is no cycle.
+  assertRule(
+    runa11yCoreOnHtml(
+      page(
+        '<div role="group" aria-label="A" id="a" aria-owns="b">A</div><div role="group" aria-label="B" id="b" aria-owns="c">B</div><div role="group" aria-label="C" id="c">C</div>'
+      ),
+      { runOnly: [RULE_ID] }
+    ),
+    RULE_ID,
+    'pass',
+    { minOccurrences: 0, maxOccurrences: 0 }
+  );
+});

@@ -18,7 +18,10 @@
  *     (`ARIA_OWNS_DUPLICATE`), reported on the element owned. The browser
  *     gives it to one owner, by order, so the structure the other owners
  *     state is lost.
- *   - An `aria-owns` naming the element itself or one of its ancestors:
+ *   - An `aria-owns` naming the element itself or one of its ancestors, or
+ *     one that closes a cycle (the element named, what it contains and
+ *     what they own in turn come back, through aria-owns, to own the owner,
+ *     directly or not, which makes the owner a descendant of it):
  *     cantTell (`ARIA_OWNS_ANCESTOR`), reported on the owner. The
  *     ownership is impossible (it would make a cycle) and is ignored, so the
  *     structure the document itself states still stands: the WAI-ARIA
@@ -29,19 +32,24 @@
  *   - `ownerCount`: for `ARIA_OWNS_DUPLICATE`, how many elements name the
  *     owned element in `aria-owns`.
  *   - `ownedId`: the id named.
+ *   - `cycle`: for `ARIA_OWNS_ANCESTOR`, `true` when the ownership closes a
+ *     cycle through aria-owns rather than naming a document ancestor.
  * @reason-codes
  *   - `ARIA_OWNS_DUPLICATE` (fail): an element named in the aria-owns of two or
  *     more elements, so the browser gives it to one owner and the structure the
  *     others state is lost.
  *     Basis: WCAG 1.3.1; WAI-ARIA 1.2 aria-owns (MUST).
  *   - `ARIA_OWNS_ANCESTOR` (cantTell): an aria-owns that names the element
- *     itself or one of its ancestors, an ownership that is ignored, leaving
+ *     itself or one of its ancestors, in the document or through a cycle of
+ *     aria-owns, an ownership that is ignored, leaving
  *     the document's own structure. A WAI-ARIA violation; whether it also
  *     fails SC 1.3.1 depends on the relationship the page shows.
  *     Basis: WAI-ARIA 1.2 aria-owns (MUST); WCAG 1.3.1 (not settled).
  * @implementation-notes
  * - Chromium, checked: an element named by two owners is a child of one of
- *   them only, and an owner naming its ancestor gets no such child.
+ *   them only, and an owner naming its ancestor gets no such child. Of two
+ *   elements owning each other, it keeps the first ownership; both are
+ *   reported, as which one a page means is for a person to say.
  * - Each `aria-owns` is resolved once (`resolveIdRefs`, cached per tree);
  *   the conflicts are then found in one pass over the owners.
  */
@@ -99,6 +107,10 @@ function runInPage(ctx) {
   let applicableCount = 0;
   // Each owned element, with the owners that name it, in document order.
   const ownersOf = new Map();
+  // Each ownership that is not of the owner itself or an ancestor, and each
+  // owner with the elements it owns.
+  const edges = [];
+  const ownedBy = new Map();
 
   for (const owner of helpers.queryAllSmart('[aria-owns]')) {
     if (!owner) continue;
@@ -155,7 +167,68 @@ function runInPage(ctx) {
       const list = ownersOf.get(ref);
       if (list) list.push(owner);
       else ownersOf.set(ref, [owner]);
+      edges.push([owner, ref]);
+      const owned = ownedBy.get(owner);
+      if (owned) owned.push(ref);
+      else ownedBy.set(owner, [ref]);
     }
+  }
+
+  // An ownership that closes a cycle: the element owned, what it contains,
+  // and what they own in turn, followed through aria-owns, come back to
+  // the owner. The owner is then, through aria-owns, a descendant of the
+  // element it names, which it cannot own, as it cannot own an ancestor in
+  // the document (Chromium keeps one ownership of a cycle and ignores the
+  // other). Followed with a budget, as each step may test every owner.
+  const owners = [...ownedBy.keys()];
+  function comesBackTo(owner, start) {
+    const seen = new Set([start]);
+    const queue = [start];
+    let budget = 20000;
+    while (queue.length && budget > 0) {
+      const root = queue.shift();
+      if (dom.contains(root, owner)) return true;
+      for (const o of owners) {
+        if (budget-- <= 0) break;
+        if (o === owner || !dom.contains(root, o)) continue;
+        for (const next of ownedBy.get(o)) {
+          if (!seen.has(next)) {
+            seen.add(next);
+            queue.push(next);
+          }
+        }
+      }
+    }
+    return false;
+  }
+  for (const [owner, ref] of edges) {
+    if (!comesBackTo(owner, ref)) continue;
+    const ownedId = trim(dom.get(ref, 'id'));
+    questions.push(
+      helpers.reportOccurrence(owner, {
+        summary: `This element’s aria-owns names ${ownedId}, which through aria-owns comes back to own this element: a cycle.`,
+        hint: 'Remove one of the ids that make the cycle from aria-owns: an element cannot own one of its owners, and the browser ignores one of them.',
+        i18n: {
+          summaryKey: 'ariaOwnsValid_summary_cantTell_cycle',
+          hintKey: 'ariaOwnsValid_hint_cantTell_cycle',
+          params: { id: ownedId }
+        },
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether the page shows a relationship between the two elements that their place in the document does not already state.',
+          evidence: { ownedId, relation: 'cycle' }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_OWNS_ANCESTOR', ownedId, cycle: true },
+          visibilityFilter: visibility(owner) || {
+            targetSet: 'acc',
+            accEligible: null,
+            reasons: []
+          }
+        }
+      })
+    );
   }
 
   for (const [owned, owners] of ownersOf) {

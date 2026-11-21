@@ -112,6 +112,7 @@ test('the checker and the schema refuse the same mistakes of shape', () => {
     'lang that is no language tag': (d) => (d.lang = 'English'),
     'a WCAG version that does not exist': (d) => (d.versions[0].wcagVersion = '7.0'),
     'published that is no date': (d) => (d.versions[0].published = 'yesterday'),
+    'published in a month there is none of': (d) => (d.versions[0].published = '2026-13'),
     "a version's basedOn without the base's version": (d) =>
       (d.versions[0].basedOn = [{ standard: 'other' }]),
     "a version's basedOn naming an id": (d) =>

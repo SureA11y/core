@@ -198,4 +198,41 @@ function leftFor(scope, { packs, locale }) {
   };
 }
 
-module.exports = { leftToAPerson };
+// A WCAG criterion's title in `locale`, read from core's procedures
+// dictionaries, for the report's link to the criterion's Understanding
+// document: (criterion, title) gives { title, lang }, lang the language the
+// title is in. Only WCAG 2.2's title is translated, as the dictionaries hold
+// it: an earlier version's own ("Parsing" for 4.1.1) stays English, as in
+// the procedures. In a browser there are no dictionaries, and every title
+// stays as given, in English.
+function criterionTitles(locale) {
+  let read = null;
+  let facets = null;
+  try {
+    // Paths in variables, as above, so a bundler doesn't follow them.
+    const textId = './procedures-text.js';
+    const facetsId = './coverage/wcag-facets.js';
+    const dir = './i18n/procedures/';
+    const { reader } = module.require(textId);
+    facets = module.require(facetsId).FACETS;
+    read = reader((l) => {
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(l)) return null;
+      try {
+        return module.require(dir + l + '.json');
+      } catch {
+        return null;
+      }
+    }, locale);
+  } catch {
+    read = null;
+  }
+  return (criterion, title) => {
+    const key = `wcag_${criterion}_title`;
+    const info =
+      facets && Object.prototype.hasOwnProperty.call(facets, criterion) ? facets[criterion] : null;
+    const text = read && info && title === info.title ? read.text(key) : null;
+    return text ? { title: text, lang: read.localeOf(key) || 'en' } : { title, lang: 'en' };
+  };
+}
+
+module.exports = { leftToAPerson, criterionTitles };

@@ -323,6 +323,32 @@ test('engineOptions.messages still wins over a registered side file', async () =
   dom.window.close();
 });
 
+// The caller's messages for a locale layer over its side file, key by key,
+// whatever the case of the locale (round 9, A9-5).
+test("engineOptions.messages for a loaded locale keeps the side file's other strings", async () => {
+  const dom = await loadBundleViaScriptTag(LOCALE_PAGE, 'https://example.test/', ['de']);
+  const run = (engineOptions) => {
+    const result = dom.window.a11ycore.runa11yCoreInPage(
+      'https://example.test/',
+      null,
+      engineOptions,
+      null
+    );
+    return result.checksResults.find((r) => r.ruleId === 'aria-deprecated-role');
+  };
+  for (const key of ['de', 'DE']) {
+    const check = run({
+      locale: 'de',
+      messages: { [key]: { ariaDeprecatedRole_guidance_generic: 'Eigene Übersetzung.' } }
+    });
+    assert.equal(check.occurrences[0].hint, 'Eigene Übersetzung.', key);
+    assert.equal(check.title, run({ locale: 'de' }).title, key);
+    assert.notEqual(check.title, run({ locale: 'en' }).title, key);
+  }
+
+  dom.window.close();
+});
+
 // A side file reaches the runner as engineOptions.messages, and every result
 // echoes engineOptions. The dictionary is dropped from that echo once the
 // results are translated: repeated on every result, it made a scan with a

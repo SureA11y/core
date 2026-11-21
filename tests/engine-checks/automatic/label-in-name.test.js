@@ -801,3 +801,52 @@ test(`${RULE_ID}: a drop-down <select> target shows only its selected option (ro
     assert.strictEqual(rule.outcome, 'pass', body);
   }
 });
+
+// Chinese, Japanese, Thai and the other scripts written without spaces have
+// no word breaks to compare by: their text is compared by characters, so a
+// label inside a longer name, as "検索" is in "商品を検索", is contained.
+test(`${RULE_ID}: text written without spaces is compared by characters (round 9, N9-1)`, async () => {
+  const page = (body) =>
+    `<!doctype html><html lang="ja"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  for (const body of [
+    '<button aria-label="商品を検索">検索</button>',
+    '<a lang="zh" href="/cart" aria-label="查看购物车">购物车</a>',
+    '<button aria-label="カートに追加する">カートに追加</button>',
+    '<button lang="th" aria-label="ค้นหาสินค้า">ค้นหา</button>',
+    '<button aria-label="iPhoneを購入する">iPhoneを購入</button>'
+  ]) {
+    const result = await runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] });
+    const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+    assert.strictEqual(rule.outcome, 'pass', body);
+  }
+  for (const body of [
+    '<button aria-label="送信">検索</button>',
+    '<button aria-label="検の索">検索</button>',
+    '<button aria-label="購入する iPhone">iPhoneを購入</button>'
+  ]) {
+    const result = await runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] });
+    const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+    assert.strictEqual(rule.outcome, 'fail', body);
+  }
+  const result = await runa11yCoreOnHtml(page('<button aria-label="送信">検索</button>'), {
+    runOnly: [RULE_ID]
+  });
+  const occ = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+  assert.strictEqual(occ.i18n.params.missingWords, '"検索"');
+});
+
+// A ruby annotation is a reading aid over the base text: the visible label
+// leaves it out, as the name from content does ("漢<rt>kan</rt>" reads "漢").
+test(`${RULE_ID}: a ruby annotation is no part of the visible label (round 9, N9-2)`, async () => {
+  const page = (body) =>
+    `<!doctype html><html lang="ja"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  for (const body of [
+    '<a href="/tokyo" aria-label="東京"><ruby>東京<rt>とうきょう</rt></ruby></a>',
+    '<button aria-label="漢字を読む"><ruby>漢<rp>(</rp><rt>kan</rt><rp>)</rp></ruby>字</button>',
+    '<button lang="en" aria-label="Tokyo tour"><ruby>Tokyo<rt>capital</rt></ruby> tour</button>'
+  ]) {
+    const result = await runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] });
+    const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+    assert.strictEqual(rule.outcome, 'pass', body);
+  }
+});

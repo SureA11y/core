@@ -65,9 +65,21 @@
  *   replacement: it offsets an outline that is no longer drawn. Nor is a
  *   value that draws nothing (`box-shadow: none`, `background:
  *   transparent`, `border: 0`, `color: inherit` or another CSS-wide
- *   keyword), or one the element already shows unfocused (`text-decoration:
- *   none` on a link with no underline, the same color, weight or
- *   opacity): the focused element looks the same.
+ *   keyword, a box-shadow or text-shadow in a clear color or with no
+ *   offset, blur or spread), or one the element already shows unfocused
+ *   (`text-decoration: none` on a link with no underline,
+ *   `text-decoration: underline` on an underlined one, the same color,
+ *   weight or opacity): the focused element looks the same.
+ * - An outline is drawn with a style, a width and a color, and a
+ *   replacement outline counts only where it gives back each of those the
+ *   removing rules took: after `outline: none` or `outline-style: none`,
+ *   `outline-color` or `outline-width` alone draws nothing, while after
+ *   `outline-color: transparent` an `outline-color` does. A `border-color`
+ *   or `border-width` on the element counts only where it has a border,
+ *   or the rule gives it a style. A value with var() is read with the
+ *   custom property the element has (or the fallback written there): a
+ *   `--ring` of `none` draws nothing. One that can't be read counts.
+ *   These are read off the element unfocused, as the rest are.
  * - A stylesheet from another origin is read from its text when the scan
  *   is given it (`engineOptions.styleSheetTexts`, which
  *   `preloadStyleSheets()` fills in a browser; helpers.cssRulesOf), as
@@ -232,8 +244,43 @@ function runInPage(ctx) {
     return false;
   }
 
+  // An outline is drawn with a style, a width and a color: what a rule
+  // takes away of the three, and what one gives back. A rule setting only
+  // `outline-color` or `outline-width` draws nothing where the outline's
+  // style is still none: after `outline: none`, `a:focus { outline-color:
+  // red }` leaves the link without an outline. A shorthand sets all three,
+  // and resets the style it leaves out to none. Values as CSSOM gives them:
+  // a browser expands a shorthand into its longhands ("initial" for what it
+  // leaves out), jsdom keeps only the shorthand.
+  const OUTLINE_STYLES = /^(auto|solid|dotted|dashed|double|groove|ridge|inset|outset)$/;
+  const OUTLINE_STYLE_GONE = /^(none|hidden|initial|unset)$/;
+  function outlineParts(style) {
+    const outline = getProp(style, 'outline');
+    const tokens = outline && !CSS_WIDE.test(outline) ? valueTokens(outline) : [];
+    const styleOf = getProp(style, 'outline-style');
+    const width = getProp(style, 'outline-width');
+    const color = getProp(style, 'outline-color');
+    const kills = new Set();
+    const gives = new Set();
+    if (
+      styleOf
+        ? OUTLINE_STYLE_GONE.test(styleOf)
+        : outline && !tokens.some((t) => OUTLINE_STYLES.test(t))
+    )
+      kills.add('style');
+    if (styleOf ? OUTLINE_STYLES.test(styleOf) : tokens.some((t) => OUTLINE_STYLES.test(t)))
+      gives.add('style');
+    if (width ? isZeroLength(width) : tokens.some(isZeroLength)) kills.add('width');
+    else if (width || tokens.length) gives.add('width');
+    if (color ? isClearColor(color) : tokens.some(isClearColor)) kills.add('color');
+    else if (color || tokens.length) gives.add('color');
+    return { kills, gives };
+  }
+
   // A positive outline counts as a replacement: `*:focus { outline: none }`
   // followed by `a:focus { outline: 2px solid }` leaves links indicated.
+  // Whether it is drawn on a given element depends on what removed that
+  // element's outline (outlineParts): see drawingDecls.
   function drawsOutline(style) {
     if (suppressesOutline(style)) return false;
     return !!(
@@ -283,6 +330,24 @@ function runInPage(ctx) {
     return tokens;
   }
 
+  // A box-shadow or text-shadow layer draws something when its color isn't
+  // clear and it reaches past the box or the glyphs: an offset, a blur or
+  // a positive spread. `0 0 0 0 red` and `0 0 0 3px transparent` draw
+  // nothing. A layer with var() in it is read where the element is known
+  // (drawingDecls).
+  function shadowLayerDraws(layer) {
+    const tokens = valueTokens(trim(layer));
+    if (!tokens.length) return false;
+    if (tokens.some((t) => /^var\(/.test(t))) return true;
+    if (tokens.some((t) => isClearColor(t))) return false;
+    const lengths = tokens
+      .filter((t) => /^-?(\d*\.?\d+)([a-z%]*)$/.test(t))
+      .map((t) => Number.parseFloat(t));
+    if (lengths.length < 2) return true;
+    const [x, y, blur = 0, spread = 0] = lengths;
+    return x !== 0 || y !== 0 || blur > 0 || spread > 0;
+  }
+
   // Whether a declared value can draw anything at all, whatever the element
   // looked like before: `box-shadow: none`, `background: transparent` and
   // `border: 0` are written as focus styles but paint nothing, so they are
@@ -294,6 +359,7 @@ function runInPage(ctx) {
     switch (prop) {
       case 'box-shadow':
       case 'text-shadow':
+        return value !== 'none' && splitArgs(value).some(shadowLayerDraws);
       case 'filter':
       case 'transform':
       case 'background-image':
@@ -329,7 +395,13 @@ function runInPage(ctx) {
   // draw something. A positive outline is one of them.
   function replacementDecls(style) {
     const decls = [];
-    if (drawsOutline(style)) decls.push({ prop: 'outline', value: getProp(style, 'outline') });
+    if (drawsOutline(style)) {
+      decls.push({
+        prop: 'outline',
+        value: getProp(style, 'outline'),
+        gives: outlineParts(style).gives
+      });
+    }
     // A border needs a width, a style and a colour: when the rule clears any
     // one of them, its other border longhands draw nothing either.
     const borderGone = ['border', 'border-color', 'border-style', 'border-width'].some((prop) => {
@@ -566,21 +638,22 @@ function runInPage(ctx) {
     const decls = replacementDecls(style);
     const provides = decls.length ? decls : null;
     if (!suppresses && !provides) return;
+    const kills = suppresses ? outlineParts(style).kills : null;
 
     for (const part of splitSelectorList(selectorText)) {
       // The polyfill's form is read as native :not(:focus-visible) for the
       // outline it removes; what the same rule draws is read as written.
       const asNative = suppresses ? polyfillAsNative(part) : part;
       if (asNative !== part) {
-        collectFromPart(asNative, true, false);
-        collectFromPart(part, false, provides);
+        collectFromPart(asNative, true, false, kills);
+        collectFromPart(part, false, provides, kills);
       } else {
-        collectFromPart(part, suppresses, provides);
+        collectFromPart(part, suppresses, provides, kills);
       }
     }
   }
 
-  function collectFromPart(part, suppresses, provides) {
+  function collectFromPart(part, suppresses, provides, kills) {
     // `:not(:focus-visible)` leaves the outline on keyboard focus: what such
     // a rule removes is only the mouse's focus ring, so it is never a
     // suppressor.
@@ -597,7 +670,7 @@ function runInPage(ctx) {
       // outline. Other states (:hover, :active) never match the static
       // element, so el.matches() leaves them out below.
       if (suppresses && !hasPseudoElement(part)) {
-        suppressors.push({ selector: trim(part), base: trim(part), sheet: currentSheet });
+        suppressors.push({ selector: trim(part), base: trim(part), sheet: currentSheet, kills });
       }
       return;
     }
@@ -619,7 +692,8 @@ function runInPage(ctx) {
       suppressors.push({
         selector: trim(part),
         base: stripFocusPseudo(part),
-        sheet: currentSheet
+        sheet: currentSheet,
+        kills
       });
     }
 
@@ -812,10 +886,22 @@ function runInPage(ctx) {
     if (prop === 'text-decoration' || prop === 'text-decoration-line') {
       // Some environments only fill in the shorthand, so both are read.
       const line = now('text-decoration-line');
+      const LINES = ['underline', 'overline', 'line-through'];
+      const shown = LINES.filter((l) =>
+        new RegExp(l).test(line && line !== 'none' ? line : now('text-decoration'))
+      );
+      if (value === 'none') return !shown.length;
+      // The lines it already shows, in its own color and solid: `a:focus {
+      // text-decoration: underline }` on an underlined link.
+      const tokens = valueTokens(value);
+      if (!tokens.every((t) => LINES.includes(t))) return false;
+      const style = now('text-decoration-style');
+      const color = now('text-decoration-color');
       return (
-        value === 'none' &&
-        (!line || line === 'none') &&
-        !/underline|overline|line-through/.test(now('text-decoration'))
+        tokens.length === shown.length &&
+        tokens.every((t) => shown.includes(t)) &&
+        (!style || style === 'solid') &&
+        (!color || color === 'currentcolor' || color === now('color'))
       );
     }
     if (prop === 'font-weight') {
@@ -838,6 +924,60 @@ function runInPage(ctx) {
       );
     }
     return false;
+  }
+
+  // A value with var() in it, with each custom property as the element
+  // reads it (or the fallback written there); the value as written where
+  // one can't be read, since it may still draw.
+  function resolveVars(cs, value) {
+    if (!cs || !/var\(/.test(value)) return value;
+    let out = value;
+    for (let i = 0; i < 20 && /var\(/.test(out); i++) {
+      const m = /var\(\s*(--[\w-]+)\s*(?:,([^()]*(?:\([^()]*\)[^()]*)*))?\)/.exec(out);
+      if (!m) return value;
+      const own = getProp(cs, m[1]);
+      const fallback = m[2] != null ? trim(m[2]) : '';
+      const used = own || fallback;
+      if (!used) return value;
+      out = out.slice(0, m.index) + used + out.slice(m.index + m[0].length);
+    }
+    return /var\(/.test(out) ? value : lower(out);
+  }
+
+  const BORDER_COLORS = /^border(-(top|right|bottom|left))?-color$|^border-width$/;
+  // The declarations of a focus rule that draw something on this element:
+  // a var() read as the element reads it; an outline only where it gives
+  // back all the element's outline lost (its style, after `outline: none`);
+  // on the element itself, a border color or width only where the element
+  // has a border, or the rule gives it one.
+  function drawingDecls(el, p, killed) {
+    let cs = null;
+    try {
+      cs = typeof helpers.computedStyle === 'function' ? helpers.computedStyle(el) : null;
+    } catch {
+      cs = null;
+    }
+    const givesBorderStyle = p.decls.some(
+      (d) => d.prop === 'border-style' || /^border(-(top|right|bottom|left))?$/.test(d.prop)
+    );
+    const hasBorder =
+      !cs ||
+      ['top', 'right', 'bottom', 'left'].some((side) => {
+        const style = getProp(cs, `border-${side}-style`);
+        return style && style !== 'none' && style !== 'hidden';
+      });
+    const out = [];
+    for (const d of p.decls) {
+      if (d.prop === 'outline') {
+        if ([...killed].every((k) => d.gives.has(k))) out.push(d);
+        continue;
+      }
+      const value = resolveVars(cs, d.value);
+      if (value !== d.value && !valueCanDraw(d.prop, value)) continue;
+      if (p.own && BORDER_COLORS.test(d.prop) && !hasBorder && !givesBorderStyle) continue;
+      out.push(value === d.value ? d : { prop: d.prop, value });
+    }
+    return out;
   }
 
   const activeElement = (() => {
@@ -880,11 +1020,16 @@ function runInPage(ctx) {
     const suppressing = suppressors.filter((s) => matchesSafe(el, s.base));
     if (!suppressing.length) continue;
 
-    const indicated = providers.some((p) =>
-      p.subject
-        ? matchesSafe(el, p.base) && (!p.own || changesElement(el, p.decls))
-        : matchesSafe(el, p.base) || closestSafe(el, p.base)
-    );
+    const killed = new Set();
+    for (const s of suppressing) for (const k of s.kills || ['style']) killed.add(k);
+    const indicated = providers.some((p) => {
+      if (
+        !(p.subject ? matchesSafe(el, p.base) : matchesSafe(el, p.base) || closestSafe(el, p.base))
+      )
+        return false;
+      const decls = drawingDecls(el, p, killed);
+      return decls.length > 0 && (!p.own || changesElement(el, decls));
+    });
     if (indicated) continue;
 
     const selectors = [...new Set(suppressing.map((s) => s.selector))];

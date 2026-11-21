@@ -8,7 +8,8 @@ const {
   flattenCrossFrameResult,
   expandCompactResult,
   coercedResult,
-  wcagScopeOf
+  wcagScopeOf,
+  reporterOptions
 } = require('./scan-result.js');
 const { WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 
@@ -176,7 +177,8 @@ function frameSourcesOf(entries) {
  * @param {string} [options.mode] an EARL test mode, e.g. `'earl:automatic'`
  * @returns {object} the JSON-LD document
  */
-function renderEarlReport(results, options = {}) {
+function renderEarlReport(results, given) {
+  const options = reporterOptions('renderEarlReport', given, ['assertor', 'mode']);
   // One result, an array of them, or a cross-frame result, whose every
   // frame is a subject of its own.
   const list = [];

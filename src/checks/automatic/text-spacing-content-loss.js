@@ -29,7 +29,8 @@
  *     (TEXT_CLIPPED). A line pushed out by less is asked about
  *     (TEXT_CLIPPED_PARTLY), and so is text that comes to overlap other
  *     text it did not overlap before (TEXT_OVERLAPS). Text moved by an
- *     animation that repeats for ever (a ticker) is asked about however far
+ *     animation that repeats for ever (a ticker), in the document or in an
+ *     open shadow root, is asked about however far
  *     it goes (TEXT_CLIPPED_MOVING): it passes through the edge anyway, and
  *     one frame can't tell whether any of it is lost. Where the page is
  *     scroll-locked, both of the viewport's axes hidden while content already
@@ -43,7 +44,10 @@
  *     cut off before the spacing (a fixed-height excerpt) is asked about
  *     when the spacing cuts off lines it showed in full (TEXT_CLIPPED_FURTHER):
  *     the excerpt was cut on purpose, but shows less. A box that grows with
- *     its lines, as line-clamp does, shows as many and is left alone.
+ *     its lines, as line-clamp does, shows as many and is left alone,
+ *     whether it showed all of its text before or not; lines are counted
+ *     by rows, so the text a clamp hides after its ellipsis, laid out
+ *     beside the last row it shows, isn't counted as shown.
  *   - In any environment, a style sheet rule that sets line-height,
  *     letter-spacing or word-spacing below those values with `!important`
  *     is asked about (STYLESHEET_IMPORTANT): a tool that adds its own style
@@ -98,7 +102,9 @@
  *   - `clipCss` (cut-off text, where it can be read): the CSS that cuts it
  *     off there, as declarations: what fixes the box's size on that axis
  *     (`white-space: nowrap`, `width`, `max-height`...) and its overflow,
- *     as `height: 48px; overflow: hidden`. Not for the viewport.
+ *     as `height: 48px; overflow: hidden`; for a clamped box that grew with
+ *     the spacing, its clamp (`-webkit-line-clamp: 2; overflow: hidden`).
+ *     Not for the viewport.
  *   - `clippedBy` (cut-off text): `content-visibility` when the box clips
  *     only for its `content-visibility: auto`, which clips what overflows
  *     it, on screen as well as off it, as `contain: paint` does, though its
@@ -164,7 +170,8 @@
  * - The spacing sheet is one cascade layer declared before every other
  *   style: layered `!important` declarations beat unlayered ones and later
  *   layers, as a user style sheet would. It is removed afterwards, and the
- *   scroll position put back.
+ *   scroll position put back at once, not animated where the page sets
+ *   `scroll-behavior: smooth`.
  * - Text that was already outside its clipping box before (a carousel
  *   slide, text hidden off screen) is not counted, nor is text inside a
  *   <marquee>: browsers move it outside the Web Animations API, so the
@@ -1238,9 +1245,16 @@ function runInPage(ctx) {
       if (spacingApplied) after = measure();
     } finally {
       removeSpacing(adopted);
+      // Instantly: a page with `scroll-behavior: smooth` would animate a
+      // plain scrollTo(x, y), and the scan would return with the page
+      // still on its way back.
       try {
-        view.scrollTo(scroll[0], scroll[1]);
-      } catch {}
+        dom.call(view, 'scrollTo', { left: scroll[0], top: scroll[1], behavior: 'instant' });
+      } catch {
+        try {
+          dom.call(view, 'scrollTo', scroll[0], scroll[1]);
+        } catch {}
+      }
     }
     spacingNotApplied = !spacingApplied;
 
@@ -1254,19 +1268,36 @@ function runInPage(ctx) {
     // own `offset`, `easing` and `composite` are not properties.
     const MOVING_PROPS =
       /^(transform|translate|rotate|scale|left|right|top|bottom|inset|margin|offsetPath|offsetDistance|offsetAnchor|offsetPosition)/;
-    // The elements such an animation targets, read once from the document's
-    // animations: asking each ancestor of each text for its own costs an
-    // animation lookup per element.
+    // The elements such an animation targets, read once from the animations
+    // running when the scan started: asking each ancestor of each text for
+    // its own costs an animation lookup per element. Those the engine
+    // gathered (helpers.animationsAtScanStart) include the ones in open
+    // shadow roots, which the document's getAnimations() leaves out; only
+    // the elements running one that never ends are asked for theirs.
     let movedForEver = null;
     function movedForEverTargets() {
       if (movedForEver) return movedForEver;
       movedForEver = new Set();
-      let animations;
+      let animations = [];
       try {
-        animations =
-          typeof dom.get(document, 'getAnimations') === 'function'
-            ? dom.getAnimations(document)
-            : [];
+        const started =
+          typeof helpers.animationsAtScanStart === 'function'
+            ? helpers.animationsAtScanStart()
+            : null;
+        if (started) {
+          const looping = new Set();
+          for (const a of started) {
+            if (a && a.target && a.endTime === null) looping.add(a.target);
+          }
+          for (const el of looping) {
+            if (typeof dom.get(el, 'getAnimations') !== 'function') continue;
+            for (const a of dom.getAnimations(el, { subtree: true })) {
+              if (a && a.effect && a.effect.target === el) animations.push(a);
+            }
+          }
+        } else if (typeof dom.get(document, 'getAnimations') === 'function') {
+          animations = dom.getAnimations(document);
+        }
       } catch {
         animations = [];
       }
@@ -1315,12 +1346,19 @@ function runInPage(ctx) {
     // max-width or width, max-height or height), then its overflow, as
     // declarations: "height: 48px; overflow: hidden". '' where it can't
     // be read.
-    function clipCssOf(c, textEl, axis) {
+    function clipCssOf(c, textEl, axis, grew) {
       try {
         const cs = styleOf(c.el);
         if (!cs) return '';
         const parts = [];
-        if (axis === 'x') {
+        // A clamped box that grew with the spacing has no height of its
+        // own: its clamp is what cuts the text, not the height it computes.
+        const clamp =
+          axis === 'y' && grew && (!cs.maxHeight || cs.maxHeight === 'none')
+            ? lineClampOf(c.el)
+            : null;
+        if (clamp) parts.push(clamp.css);
+        else if (axis === 'x') {
           let ws = '';
           for (let cur = textEl, i = 0; cur && i < 100; cur = upOf(cur), i++) {
             const st = styleOf(cur);
@@ -1353,6 +1391,43 @@ function runInPage(ctx) {
         return '';
       }
     }
+    // The line count a box is clamped to (`-webkit-line-clamp` on a
+    // -webkit-box laid out vertically, which Chromium computes as
+    // flow-root, or `line-clamp`), as { lines, css }, or null. Such a box
+    // grows with its lines and shows that many, the rest after an ellipsis.
+    function lineClampOf(el) {
+      const cs = styleOf(el);
+      if (!cs) return null;
+      for (const [prop, read] of [
+        ['-webkit-line-clamp', cs.webkitLineClamp],
+        ['line-clamp', cs.getPropertyValue ? cs.getPropertyValue('line-clamp') : '']
+      ]) {
+        const v = String(read || '').trim();
+        const n = Number.parseInt(v, 10);
+        if (!v || v === 'none' || !(n > 0)) continue;
+        if (
+          prop === '-webkit-line-clamp' &&
+          !/-webkit-(inline-)?box/.test(String(cs.display || '')) &&
+          String(cs.webkitBoxOrient || '') !== 'vertical'
+        )
+          continue;
+        return { lines: n, css: `${prop}: ${n}` };
+      }
+      return null;
+    }
+    // How many rows of lines a box shows in full: lines on one row (the
+    // text a clamp hides after its ellipsis is laid out beside the last
+    // row shown) count once.
+    function rowsShown(lines, box, c) {
+      const tops = [];
+      for (const l of lines) {
+        const o = outside(l, box, c);
+        if (o.dx > 1 || o.dy > 1) continue;
+        if (!tops.some((t) => Math.abs(t - l.top) < 1)) tops.push(l.top);
+      }
+      return tops.length;
+    }
+
     function insideBefore(n, c) {
       const b0 = before.boxes.get(keyOf(c));
       const lines = before.lines.get(n) || [];
@@ -1435,6 +1510,13 @@ function runInPage(ctx) {
         // Only text the viewport showed in full before can be lost from it.
         if (c.viewport && !insideBefore(n, c)) continue;
         measuredPairs += 1;
+        // A clamped box shows as many rows of lines as before: what goes
+        // past them it hides after an ellipsis, as it did (an excerpt).
+        if (!c.viewport && lineClampOf(c.el)) {
+          const b0 = before.boxes.get(keyOf(c));
+          const linesBefore = before.lines.get(n) || [];
+          if (b0 && rowsShown(linesAfter, b1, c) >= rowsShown(linesBefore, b0, c)) continue;
+        }
         // The line furthest out, measured on the axis that decided it: the
         // first one past the threshold, or else the one that went furthest.
         let worst = null;
@@ -1477,7 +1559,18 @@ function runInPage(ctx) {
             // The edge the text crosses, and the CSS that keeps the box from
             // growing past it and clips it there.
             edge: worst.edge,
-            clipCss: c.viewport || c.contentVisibility ? '' : clipCssOf(c, textEl(n), worst.axis),
+            clipCss:
+              c.viewport || c.contentVisibility
+                ? ''
+                : clipCssOf(
+                    c,
+                    textEl(n),
+                    worst.axis,
+                    (() => {
+                      const b0 = before.boxes.get(keyOf(c));
+                      return !!b0 && b1.bottom - b1.top - (b0.bottom - b0.top) > 0.5;
+                    })()
+                  ),
             text: textOf(holderOf(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
@@ -1527,8 +1620,16 @@ function runInPage(ctx) {
         const o = outside(l, box, c);
         return o.dx <= 1 && o.dy <= 1;
       };
-      const shownIn = (lines, boxes) =>
-        lines.filter((l) => clippers.every((c) => keeps(l, boxes, c))).length;
+      // Counted by rows: under a clamp, the text after the ellipsis is laid
+      // out beside the last row shown, and isn't shown.
+      const shownIn = (lines, boxes) => {
+        const tops = [];
+        for (const l of lines) {
+          if (!clippers.every((c) => keeps(l, boxes, c))) continue;
+          if (!tops.some((t) => Math.abs(t - l.top) < 1)) tops.push(l.top);
+        }
+        return tops.length;
+      };
       const shownBefore = shownIn(linesBefore, before.boxes);
       if (!shownBefore || shownIn(linesAfter, after.boxes) >= shownBefore) continue;
       // The box that cuts off a line it kept before.

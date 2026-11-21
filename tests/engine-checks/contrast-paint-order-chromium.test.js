@@ -298,6 +298,36 @@ const CASES = [
     `<svg width="300" height="200"><rect width="300" height="200" fill="#000"/><rect x="10" y="10" width="270" height="180" rx="10%" fill="none" stroke="#fff" stroke-width="20"/><text id="t" x="100" y="100" fill="#888" font-size="14">Growth</text></svg>`,
     '#000000',
     { pixels: true }
+  ],
+  // A box in the top layer is painted over its ::backdrop, and the backdrop
+  // over the rest of the page (round 9, V9-2).
+  [
+    "a modal dialog's text over its ::backdrop",
+    `<style>#d::backdrop{background:rgba(0,0,0,.85)}</style><dialog id="d" style="background:transparent; border:0"><p id="t" style="color:#999; margin:0">Caption text</p></dialog><script>document.getElementById('d').showModal()</script>`,
+    '#262626',
+    { pixels: true }
+  ],
+  [
+    "a modal dialog's text over the browser's own ::backdrop",
+    `<dialog id="d" style="background:transparent; border:0"><p id="t" style="color:#999; margin:0">Caption text</p></dialog><script>document.getElementById('d').showModal()</script>`,
+    // rgba(0,0,0,.1) over white, 229.5 each: the browser paints #e5e5e5.
+    '#e6e6e6'
+  ],
+  [
+    'a box the ::backdrop covers, whatever its z-index',
+    `<style>#d::backdrop{background:rgba(0,0,0,.85)}</style><div style="position:relative; z-index:5; background:#fff; height:100vh"></div><dialog id="d" style="background:transparent; border:0"><p id="t" style="color:#999; margin:0">Caption text</p></dialog><script>document.getElementById('d').showModal()</script>`,
+    '#262626',
+    { pixels: true }
+  ],
+  [
+    'a ::backdrop with a gradient is not computable',
+    `<style>#d::backdrop{background:linear-gradient(#000, #fff)}</style><dialog id="d" style="background:transparent; border:0"><p id="t" style="color:#999; margin:0">Caption text</p></dialog><script>document.getElementById('d').showModal()</script>`,
+    'BACKGROUND_IMAGE_OR_GRADIENT'
+  ],
+  [
+    "a modal dialog's own background hides its ::backdrop",
+    `<style>#d::backdrop{background:linear-gradient(#000, #fff)}</style><dialog id="d" style="background:#fff; border:0"><p id="t" style="color:#999; margin:0">Caption text</p></dialog><script>document.getElementById('d').showModal()</script>`,
+    '#ffffff'
   ]
 ];
 

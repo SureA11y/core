@@ -42,6 +42,7 @@ function makeResolveLocale(i18n, knownLocales, leftOut) {
     'ownDict',
     'lookupDict',
     'matchIgnoringCase',
+    'dictIgnoringCase',
     'findLocaleKey',
     'ownString',
     'matchLocale',

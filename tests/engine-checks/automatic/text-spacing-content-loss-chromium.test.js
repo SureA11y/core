@@ -282,6 +282,36 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.deepEqual(findings(blinking), [['box', 'fail', 'TEXT_CLIPPED']]);
   });
 
+  // A clamped box grows with its lines and shows as many after the
+  // spacing: what goes past them it hides after its ellipsis, as it did.
+  // The text it hid before was counted as a line shown, and its computed
+  // height named as the CSS that cuts (round 9, V9-11).
+  await t.test('a line-clamped box that shows as many lines is left alone', async () => {
+    const CLAMP =
+      '.c{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;width:200px}';
+    const words = 'One two three four five six seven eight nine ten';
+    for (const text of [words, `${words} eleven twelve thirteen fourteen`]) {
+      const result = await scan(page(CLAMP, `<div class="c" id="box">${text}</div>`));
+      assert.deepEqual(findings(result), [], text);
+    }
+  });
+
+  // The document's getAnimations() leaves out a component's animations, so
+  // a marquee in an open shadow root was neither held still nor known to
+  // move (round 9, V9-1).
+  await t.test('a marquee in a component is asked about', async () => {
+    const css =
+      '@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}' +
+      '#box{white-space:nowrap;overflow:hidden;width:150px} #run{display:inline-block;animation:slide 20s linear infinite}';
+    const result = await scan(
+      page(
+        '',
+        `<div id="host"></div><script>document.getElementById('host').attachShadow({mode:'open'}).innerHTML = '<style>${css}</style><div id="box"><span id="run">${TEXT}</span></div>';</script>`
+      )
+    );
+    assert.deepEqual(findings(result), [['box', 'cantTell', 'TEXT_CLIPPED_MOVING']]);
+  });
+
   // A <marquee> moves its text outside the Web Animations API, so the engine
   // can't hold it still: judged, this one's text failed while it bounced
   // near an edge and passed once it had moved away, depending only on when

@@ -143,6 +143,51 @@ const CASES = [
     `<select style="position:absolute; left:-9999px"><option id="t" style="${FAINT}">Spain</option></select>`,
     {},
     false
+  ],
+  // Not drawn either (round 9, V9-12): a 1px box clipping its overflow
+  // with no clip, a clip-path polygon of no area, a scale to almost
+  // nothing. A 2px box, a polygon with an area and scale(0.5) still are.
+  [
+    'text in a 1px box with overflow: hidden and no clip is not checked',
+    `<div style="background:#fff"><span id="t" style="position:absolute; width:1px; height:1px; overflow:hidden; white-space:nowrap; ${FAINT}">Skip to content</span></div>`,
+    {},
+    false
+  ],
+  [
+    'text inside a 1px box with overflow: hidden is not checked',
+    `<div style="position:absolute; width:1px; height:1px; overflow:hidden; white-space:nowrap"><span id="t" style="${FAINT}">Skip to content</span></div>`,
+    {},
+    false
+  ],
+  [
+    'text in a 20px box with overflow: hidden is checked',
+    `<span id="t" style="position:absolute; width:20px; height:20px; overflow:hidden; white-space:nowrap; ${FAINT}">Skip to content</span>`,
+    {},
+    true
+  ],
+  [
+    'text under a clip-path polygon of no area is not checked',
+    `<span id="t" style="display:inline-block; clip-path:polygon(0 0, 0 0, 0 0); ${FAINT}">Hidden text</span>`,
+    {},
+    false
+  ],
+  [
+    'text under a clip-path triangle is checked',
+    `<span id="t" style="display:inline-block; clip-path:polygon(0 0, 100% 0, 0 100%); ${FAINT}">Shown text</span>`,
+    {},
+    true
+  ],
+  [
+    'text scaled to almost nothing is not checked',
+    `<span id="t" style="display:inline-block; transform:scale(0.001); ${FAINT}">Hidden text</span>`,
+    {},
+    false
+  ],
+  [
+    'text scaled to half is checked',
+    `<span id="t" style="display:inline-block; transform:scale(0.5); ${FAINT}">Shown text</span>`,
+    {},
+    true
   ]
 ];
 

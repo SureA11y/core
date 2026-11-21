@@ -8,8 +8,11 @@
  * @summary A "skip" link must resolve to a real, usable target
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to <a href="#fragment"> elements that are skip links by one of
- *   two signs:
+ *   Applies to links to a place in their own document that are skip links
+ *   by one of two signs. Such a link is an <a href="#fragment">, or a full
+ *   URL of the page with a fragment, that stays on the page once its href
+ *   is resolved against the document's base URL: under <base href>, a
+ *   "#main" that leads to another page is not one. The signs:
  *   - the accessible name follows a common skip-link wording in one of the
  *     shipped locales: "skip" or "jump to" (English); "aller au contenu",
  *     "passer au contenu", "accéder au contenu", "accès direct", "évitement"
@@ -27,9 +30,11 @@
  *   the main a link's position is measured against.
  * @expectation
  *   The link's fragment resolves to a real element in the document
- *   (via a matching id, or a legacy <a name="...">), and that target is
- *   currently usable (not hidden from the accessibility tree; and, when
- *   browser geometry is available, rendered with an area that no ancestor
+ *   (via a matching id, or a legacy <a name="...">), or, with neither, is
+ *   "top" in any ASCII case, which HTML resolves to the top of the
+ *   document. A target element is currently usable (not hidden from the
+ *   accessibility tree; and, when browser geometry is available, rendered
+ *   with an area that no ancestor
  *   cuts to nothing: one with `overflow: hidden` collapsed to no size, or
  *   `overflow: clip` keeping it outside). A skip link whose target is
  *   missing or effectively unusable does not provide a reliable bypass
@@ -66,7 +71,8 @@
  *     target hidden at one width can be usable at another.
  * @reason-codes
  *   - `SKIP_LINK_TARGET_MISSING` (cantTell): a skip link's fragment matches
- *     no element id or legacy anchor name in the document.
+ *     no element id or legacy anchor name in the document, and is not
+ *     "top".
  *     It leans fail when the link reads as a skip link, its fragment is not
  *     a route, and an early listener hook saw no click listener on it, its
  *     ancestors, the document or the window.
@@ -445,18 +451,18 @@ function runInPage(ctx) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const href = String(dom.getAttribute(el, 'href') || '').trim();
-    if (href.length < 2 || href.charAt(0) !== '#') continue;
+    // A link to a place in this document, its href resolved against the
+    // base URL: under <base href>, "#main" can lead to another page
+    // (round 9, R9-5).
+    const samePage = helpers.getSamePageFragment(el);
+    if (samePage == null || !/#./.test(href)) continue;
 
     const name = getAccessibleNameText(el);
     if (el !== positionalSkipLink && !hasSkipWording(name)) continue;
 
     applicableCount += 1;
 
-    let fragment = href.slice(1);
-    try {
-      fragment = decodeURIComponent(fragment);
-    } catch {}
-    fragment = fragment.trim();
+    const fragment = samePage;
 
     let target = null;
     if (fragment) {
@@ -479,6 +485,11 @@ function runInPage(ctx) {
         }
       }
     }
+
+    // With no element of that id or name, "#top" (in any ASCII case) is the
+    // top of the document (HTML, "find a potential indicated element"):
+    // the link scrolls there, as "Back to top" links mean it to.
+    if (!target && /^top$/i.test(fragment)) continue;
 
     if (target) {
       const accEligibility = toEligibility(

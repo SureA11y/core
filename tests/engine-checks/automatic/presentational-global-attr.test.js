@@ -13,7 +13,7 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const CASES = [
   [
     'svg-image-text-alternative-present',
-    (a) => `<svg role="img"><image ${a} href="x.png" width="10" height="10"></image></svg>`
+    (a) => `<svg><image ${a} href="x.png" width="10" height="10"></image></svg>`
   ],
   [
     'svg-text-alternative-present',
