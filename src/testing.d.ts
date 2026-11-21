@@ -5,6 +5,7 @@ import type {
   StrictEngineOptions,
   ScanResult,
   ScanResultFor,
+  CheckedEngineOptions,
   CompactScanResult,
   CheckResult,
   CompactCheckResult,
@@ -18,7 +19,7 @@ export interface ScanOptions<T = EngineOptions | StrictEngineOptions> {
   /** How jsdom parses the markup: 'text/html' (default), 'image/svg+xml' or 'application/xhtml+xml', say. */
   contentType?: string;
   contextSelector?: string | string[] | null;
-  engineOptions?: T;
+  engineOptions?: CheckedEngineOptions<T>;
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null;
   /** Also run runDomRulesInPage and assert both entry points agree (default true). */
   entryPointParity?: boolean;

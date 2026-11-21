@@ -97,3 +97,55 @@ test(
     assert.deepEqual(errors, []);
   }
 );
+
+test(
+  'a misspelt option under strictOptions: true does not compile in the call (round 9, A9-8)',
+  { skip: !ts && 'typescript not installed' },
+  () => {
+    const errors = compile(`
+    import { runDomRulesInPage, runa11yCoreInPage, runa11yCoreAcrossFrames, getChecksCatalog, getRulesCatalog, getCheckDefById, getCompositeRuleById, getChecksForRunOnly, getRulesForRunOnly } from ${at('index')};
+    import type { EngineOptions, StrictEngineOptions, ScanResult } from ${at('index')};
+    import { runa11yCoreOnHtml } from ${at('testing')};
+    import browser = require(${BROWSER});
+    // @ts-expect-error a misspelt option
+    runDomRulesInPage('u', null, { strictOptions: true, lcoale: 'de' }, null);
+    // @ts-expect-error a misspelt option
+    runa11yCoreInPage('u', null, { strictOptions: true, lcoale: 'de' }, null);
+    // @ts-expect-error a misspelt option
+    void runa11yCoreAcrossFrames(null, null, { strictOptions: true, lcoale: 'de' });
+    // @ts-expect-error a misspelt option
+    getChecksCatalog({ strictOptions: true, lcoale: 'de' });
+    // @ts-expect-error a misspelt option
+    getRulesCatalog({ strictOptions: true, lcoale: 'de' });
+    // @ts-expect-error a misspelt option
+    getCheckDefById('img-alt-present', { strictOptions: true, lcoale: 'de' });
+    // @ts-expect-error a misspelt option
+    getCompositeRuleById('wcag-1.1.1', { strictOptions: true, lcoale: 'de' });
+    // @ts-expect-error a misspelt option
+    getChecksForRunOnly(null, { strictOptions: true, lcoale: 'de' });
+    // @ts-expect-error a misspelt option
+    getRulesForRunOnly(null, { strictOptions: true, lcoale: 'de' });
+    // @ts-expect-error a misspelt option
+    runa11yCoreOnHtml('<p>', { engineOptions: { strictOptions: true, lcoale: 'de' } });
+    // @ts-expect-error a misspelt option
+    void browser.runa11yCoreInPageAsync(null, null, { strictOptions: true, lcoale: 'de' });
+
+    // The engine's own options compile, under strictOptions or not, and so
+    // does any key without it, and options built beforehand.
+    const a: ScanResult = runDomRulesInPage('u', null, { strictOptions: true, locale: 'de', rules: { 'region': { excludeSelectors: ['.ad'] } } }, null);
+    runDomRulesInPage('u', null, { lcoale: 'de', acmeSetting: 1 }, null);
+    runDomRulesInPage('u', null, { strictOptions: false, acmeSetting: 1 }, null);
+    declare const lenient: EngineOptions;
+    declare const strict: StrictEngineOptions;
+    declare const flag: boolean;
+    const b: ScanResult = runDomRulesInPage('u', null, lenient);
+    const c: ScanResult = runDomRulesInPage('u', null, strict);
+    runDomRulesInPage('u', null, { strictOptions: flag, locale: 'de' });
+    getChecksCatalog({ strictOptions: true, optInRules: 'all' });
+    getChecksCatalog(lenient);
+    runa11yCoreOnHtml('<p>', { engineOptions: { strictOptions: true, locale: 'de' } });
+    void [a, b, c];
+  `);
+    assert.deepEqual(errors, []);
+  }
+);

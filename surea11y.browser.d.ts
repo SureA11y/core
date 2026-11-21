@@ -8,6 +8,7 @@ import type {
   ScanResult,
   CompactScanResult,
   ScanResultFor,
+  CheckedEngineOptions,
   runa11yCoreInPage as RunInPage,
   waitForPageReady as WaitForPageReady,
   preloadStyleSheets as PreloadStyleSheets,
@@ -43,7 +44,7 @@ declare namespace a11ycore {
   function runa11yCoreInPageAsync<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
     pageUrl?: Parameters<typeof RunInPage>[0],
     contextSelector?: Parameters<typeof RunInPage>[1],
-    engineOptions?: T | null,
+    engineOptions?: CheckedEngineOptions<T> | null,
     runOnly?: Parameters<typeof RunInPage>[3]
   ): Promise<ScanResultFor<T>>;
 
