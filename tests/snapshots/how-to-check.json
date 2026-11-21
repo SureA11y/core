@@ -2313,6 +2313,15 @@
       "fr-CA": "2716b84caa6abf08",
       "pt": "c884a810a4cc9671"
     },
+    "page-title-patterns placeholderTitle": {
+      "en": "272fcafffa1f0df6",
+      "de": "610cca063752fe27",
+      "es": "7e120a42ec3aba96",
+      "fr": "efd9c3fd0be17a9c",
+      "ja": "226423afb1e0d9f4",
+      "fr-CA": "efd9c3fd0be17a9c",
+      "pt": "272fcafffa1f0df6"
+    },
     "page-title-patterns templateLikeTitle": {
       "en": "cb2b7f9a52ca9691",
       "de": "69ed2e00fbc4bfe2",
@@ -2583,6 +2592,24 @@
       "fr-CA": "c7e712b778891a6b",
       "pt": "798925fedd34b7b7"
     },
+    "form-group-name-present CHECKBOX_GROUP_NO_NAME": {
+      "en": "e2e534c824d4c560",
+      "de": "b6f11fb91146dc86",
+      "es": "af5bb4d049c71c7f",
+      "fr": "f0ca998a135c7976",
+      "ja": "ee0c30521114c8cb",
+      "fr-CA": "f0ca998a135c7976",
+      "pt": "e2e534c824d4c560"
+    },
+    "form-group-name-present RADIO_GROUP_NO_NAME": {
+      "en": "8aa9b2bd6b73a93b",
+      "de": "db1434624732bde4",
+      "es": "5bd2ca070e66ac9c",
+      "fr": "8cb42e4fe4c201b2",
+      "ja": "f3f6da8bc932f973",
+      "fr-CA": "8cb42e4fe4c201b2",
+      "pt": "8aa9b2bd6b73a93b"
+    },
     "link-name-quality-link-only GENERIC_LINK_TEXT_IN_CONTEXT": {
       "en": "8bcf93d1cb984018",
       "de": "ca02a7f49060d264",
@@ -2708,6 +2735,24 @@
       "ja": "2a8e3d29a18d16b7",
       "fr-CA": "caadc5b7e602e235",
       "pt": "408680dc2fd79a63"
+    },
+    "symbol-graphic-contrast SYMBOLS_BELOW_GRAPHIC_THRESHOLD": {
+      "en": "d3535891ea96b3fe",
+      "de": "f162cae5833a72f4",
+      "es": "0e7011abdf3566f2",
+      "fr": "9fdc24ee8079d8b9",
+      "ja": "17201c41143426df",
+      "fr-CA": "9fdc24ee8079d8b9",
+      "pt": "d3535891ea96b3fe"
+    },
+    "video-poster-text-alternative-present TEXT_ALTERNATIVE_MISSING": {
+      "en": "83fb2275072780ac",
+      "de": "3e86adb93a1a39be",
+      "es": "e5e8bc931e878c49",
+      "fr": "6f3d255540092a04",
+      "ja": "90b624a54f61706a",
+      "fr-CA": "6f3d255540092a04",
+      "pt": "83fb2275072780ac"
     }
   },
   "reviews": {
@@ -2798,7 +2843,7 @@
     "tooltip-name-present": "83ed45ea55dd9003",
     "treeitem-name-present": "de8113e234f128aa",
     "valid-lang": null,
-    "video-poster-text-alternative-present": "c8cdf0260fb2cdae",
+    "video-poster-text-alternative-present": "46277a965896292c",
     "manual-review": "97fe931ec838d80b",
     "accesskeys": "9642ce6830fb0d04",
     "area-alt-quality": "19a361c4f6cb529c",
@@ -2817,6 +2862,7 @@
     "focus-order-semantics": "8ccfa31ee2e20ffd",
     "form-control-label-quality": "194f1852031a9ebf",
     "form-control-programmatic-label-quality": "bd6b61fce0a27ad9",
+    "form-group-name-present": "eb72ed3a96865030",
     "heading-order": "9187b3869645d2da",
     "heading-quality": "6f3c7c9e71929bbe",
     "identical-links-same-purpose": "95233350be32dadd",
@@ -2848,7 +2894,7 @@
     "object-text-alternative-quality": "ede91b5577079c1d",
     "p-as-heading": "d8a8897687c8dd18",
     "page-has-heading-one": "5318650367e11f6c",
-    "page-title-patterns": "0256ddeb116247aa",
+    "page-title-patterns": "29102186920a4ccd",
     "page-zones-landmark": "903bfbf62b44c7b4",
     "password-paste-enabled": "5f3a72b14071d7f5",
     "presentation-role-conflict": "e565499a522bc1ff",
@@ -2862,13 +2908,14 @@
     "table-fake-caption": "5023f49818f67ed2",
     "video-caption": "61b92a403c21d4a5",
     "widget-keyboard-focusable": "c8cefbbd4fadee80",
-    "resize-text-content-loss": "fda9b9100ba545a0"
+    "resize-text-content-loss": "fda9b9100ba545a0",
+    "symbol-graphic-contrast": "cc944d054342fe60"
   },
   "dictionaries": {
-    "de": "d095cc7b120e8e2eff5d4dab5e445c68c948fd5e376b47dff24fa3835b8036b7",
-    "en": "0ecb19a6bc45d6e203586f435d45dc6f076fe95ad4a69a45c43f158fd034eda6",
-    "es": "d92c21a0a4094bcf1fb390a5a83114e6cc09d9d1a13334f30152c739ac42335e",
-    "fr": "b7a46e84ac1e9fe264e32b5aabff1e26f683e11f591e797bea4a7a30d3512887",
-    "ja": "3cd6e6cf79063db25737f8d7b5b7347c82a52b2323c53d0d64b851d63c16c407"
+    "de": "166442d15461b069244e0ee1efa5bffb9ba3096ffdf8df13ce8815db90a794de",
+    "en": "a43d4e6a0deb0b463307d8eb1665d987ef5fd8a7e5a6e67955aad4ccb36bd3df",
+    "es": "e7a0c03afff4e6b282a704c4be96b3b4b5b98b71b8c70f7be869ee7000063574",
+    "fr": "6e9d5f188df4709b2827585e8173a73d761dd75f73a1d227f248618023a4438a",
+    "ja": "855c7effe3dde85e0fcb8b6071e755a18e7b83376e90e47cac3257d313bcdf3d"
   }
 }

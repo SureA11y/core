@@ -14057,9 +14057,11 @@ const engineOptionSpec = (function engineOptionSpec() {
     perfStats: T.boolean,
     profileRules: T.boolean,
     // Once a scan has spent this long, it starts no more rules; those it
-    // didn't start are listed in its result (notRun). Off when not given.
+    // didn't start are listed in its result (notRun). Off when not given,
+    // and Infinity, the natural value for no limit, is off too (round 10,
+    // S10-9).
     timeBudgetMs: {
-      test: (v) => typeof v === 'number' && Number.isFinite(v) && v > 0,
+      test: (v) => typeof v === 'number' && v > 0,
       expected: 'a number of milliseconds, more than 0'
     },
     pingWaitTime: T.number,
@@ -26684,7 +26686,9 @@ const runCoreSettled = (function runCoreSettled(
       : null;
   // A scan of several profiles whose budget ran out before this profile's
   // scan started asks it to start no rule, so it lists its selection in
-  // notRun (runProfilesUncapped). Set by the engine only, not enumerable.
+  // notRun (runProfilesUncapped), as a cross-frame scan does of a frame it
+  // reached with none left (frame-scan.js). Set by the engine only, not
+  // enumerable.
   const budgetSpent = !!(
     engineOptions &&
     typeof engineOptions === 'object' &&
@@ -28099,7 +28103,9 @@ const runCoreSettled = (function runCoreSettled(
         '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
           timeBudgetMs +
           (budgetSpent
-            ? ' ms before profile "' + String(engineOptions.profile) + '" started, so it'
+            ? typeof engineOptions.profile === 'string'
+              ? ' ms before profile "' + engineOptions.profile + '" started, so it'
+              : " ms before this frame's scan started, so it"
             : ' ms and') +
           ' did not run ' +
           notRunRules.length +
@@ -28994,6 +29000,21 @@ const runProfiles = (function runProfiles(engineOptions, run) {
 });
 const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
+  // A frame's scan that starts with no time budget left (frame-scan.js) is
+  // asked to start no rule (__budgetSpent, set by the engine only, not
+  // enumerable): each profile's scan is asked the same, so it lists its
+  // selection in notRun.
+  const carryBudgetSpent = (from, to) => {
+    if (
+      from &&
+      typeof from === 'object' &&
+      !Object.prototype.propertyIsEnumerable.call(from, '__budgetSpent') &&
+      from.__budgetSpent === true
+    ) {
+      Object.defineProperty(to, '__budgetSpent', { value: true });
+    }
+    return to;
+  };
   const allowFail = policyAllowsFail(engineOptions);
   const asked =
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
@@ -29021,7 +29042,12 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
     }
     if (unique.length <= 1) {
       return withOwnVerdicts(
-        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })),
+        run(
+          carryBudgetSpent(
+            engineOptions,
+            Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+          )
+        ),
         allowFail
       );
     }
@@ -29082,11 +29108,14 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         return thenable(dry) ? dry.then(skippedOf) : skippedOf(dry);
       }
       const result = run(
-        Object.assign(
-          {},
+        carryBudgetSpent(
           engineOptions,
-          { profile: unique[i] },
-          left !== null && i > 0 ? { timeBudgetMs: left } : {}
+          Object.assign(
+            {},
+            engineOptions,
+            { profile: unique[i] },
+            left !== null && i > 0 ? { timeBudgetMs: left } : {}
+          )
         )
       );
       if (thenable(result)) {
@@ -34474,6 +34503,82 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "form-group-name-present",
+    "title": "Radio buttons and checkboxes that share a name should be in a named group",
+    "description": "Asks about radio buttons, or checkboxes, that share a name but sit in no <fieldset> with a <legend> and no group or radiogroup with an accessible name, so the question they answer may be tied to none of them.",
+    "i18n": {
+      "titleKey": "formGroupNamePresent_title",
+      "descriptionKey": "formGroupNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag131",
+      "forms",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.3.1"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.3.1",
+        "title": "Info and Relationships",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "1.3.1": [
+          "form-group-name-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "heading-order",
     "title": "Heading levels must not skip a level",
     "description": "Checks that heading levels increase by at most one at a time in document order.",
@@ -39885,6 +39990,82 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "symbol-graphic-contrast",
+    "title": "Symbols used as a graphic should have a contrast of at least 3:1",
+    "description": "Asks about symbols drawn as text with no letter or digit, such as rating stars, dots, arrows or check marks, whose contrast against their background is under the 3:1 a graphic needed to understand the content must reach.",
+    "i18n": {
+      "titleKey": "symbolGraphicContrast_title",
+      "descriptionKey": "symbolGraphicContrast_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag21aa",
+      "wcag1411",
+      "contrast",
+      "color",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.4.11"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.11",
+        "title": "Non-text Contrast",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#non-text-contrast",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.11",
+        "title": "Non-text contrast",
+        "wcagSc": [
+          "1.4.11"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.11",
+        "title": "Non-text contrast",
+        "wcagSc": [
+          "1.4.11"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "1.4.11": [
+          "symbol-graphic-contrast-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "tab-name-present",
     "title": "Tabs have an accessible name",
     "description": "Checks that elements with role=\"tab\" expose a non-empty accessible name.",
@@ -41317,6 +41498,7 @@ const RUNTIME_CATALOG = {
       "form-control-programmatic-label-present",
       "p-as-heading",
       "table-fake-caption",
+      "form-group-name-present",
       "td-has-header",
       "aria-roles-valid",
       "aria-owns-valid"
@@ -42150,7 +42332,8 @@ const RUNTIME_CATALOG = {
   {
     "id": "wcag-1.4.11-non-text-contrast",
     "checksIds": [
-      "css-focus-indicator-suppressed"
+      "css-focus-indicator-suppressed",
+      "symbol-graphic-contrast"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_1411_non_text_contrast.title",
@@ -42696,6 +42879,7 @@ const RUNTIME_CATALOG = {
   "form-control-programmatic-label-present": { run: require("./checks/automatic/form-control-programmatic-label-present.js").runInPage, applicability: require("./checks/automatic/form-control-programmatic-label-present.js").applicability || null },
   "form-control-programmatic-label-quality": { run: require("./checks/manual/form-control-programmatic-label-quality-manual.js").runInPage, applicability: require("./checks/manual/form-control-programmatic-label-quality-manual.js").applicability || null },
   "form-control-single-label": { run: require("./checks/automatic/form-control-single-label.js").runInPage, applicability: require("./checks/automatic/form-control-single-label.js").applicability || null },
+  "form-group-name-present": { run: require("./checks/manual/form-group-name-present-manual.js").runInPage, applicability: require("./checks/manual/form-group-name-present-manual.js").applicability || null },
   "heading-order": { run: require("./checks/manual/heading-order-manual.js").runInPage, applicability: require("./checks/manual/heading-order-manual.js").applicability || null },
   "heading-quality": { run: require("./checks/manual/heading-quality-manual.js").runInPage, applicability: require("./checks/manual/heading-quality-manual.js").applicability || null },
   "html-lang-attr-present": { run: require("./checks/automatic/language-page-present.js").runInPage, applicability: require("./checks/automatic/language-page-present.js").applicability || null },
@@ -42774,6 +42958,7 @@ const RUNTIME_CATALOG = {
   "svg-image-text-alternative-present": { run: require("./checks/automatic/svg-image-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/svg-image-text-alternative-present.js").applicability || null },
   "svg-text-alternative-present": { run: require("./checks/automatic/svg-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/svg-text-alternative-present.js").applicability || null },
   "svg-text-alternative-quality": { run: require("./checks/manual/svg-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/svg-text-alternative-quality-manual.js").applicability || null },
+  "symbol-graphic-contrast": { run: require("./checks/manual/symbol-graphic-contrast-manual.js").runInPage, applicability: require("./checks/manual/symbol-graphic-contrast-manual.js").applicability || null },
   "tab-name-present": { run: require("./checks/automatic/tab-name-present.js").runInPage, applicability: require("./checks/automatic/tab-name-present.js").applicability || null },
   "tabindex": { run: require("./checks/manual/tabindex-manual.js").runInPage, applicability: require("./checks/manual/tabindex-manual.js").applicability || null },
   "table-duplicate-name": { run: require("./checks/manual/table-duplicate-name-manual.js").runInPage, applicability: require("./checks/manual/table-duplicate-name-manual.js").applicability || null },
@@ -42952,9 +43137,10 @@ const RUNTIME_CATALOG = {
       "embed_textAltQuality_lean_caution": "Der Dateiname eines Dokuments kann sein tatsächlicher Titel sein.",
       "videoPoster_textAltPresent_title": "Das Vorschaubild (poster) von <video> muss eine Textalternative haben",
       "videoPoster_textAltPresent_description": "Prüft, ob <video>-Elemente mit einem Vorschaubild (poster) eine Textalternative (zugänglicher Name) bereitstellen.",
-      "videoPoster_textAltPresent_summary_fail": "Das Posterbild dieses <video> hat keine Textalternative.",
-      "videoPoster_textAltPresent_hint_fail": "Benennen Sie das Video mit aria-label oder aria-labelledby und sagen Sie, was das Posterbild zeigt. Ein title-Attribut funktioniert auch, aber weniger zuverlässig.",
-      "videoPoster_textAltPresent_hint_fail_alt": "Sein alt=\"{{alt}}\" bewirkt nichts: Ein <video> hat kein alt-Attribut. Verwenden Sie stattdessen aria-label=\"{{alt}}\".",
+      "videoPoster_textAltPresent_summary_cantTell": "Dieses <video> hat ein Posterbild, aber keinen Namen, der es kennzeichnet.",
+      "videoPoster_textAltPresent_hint_cantTell": "Die Textalternative eines Videos muss es nur kennzeichnen. Prüfen Sie, ob etwas, das mit dem Video verknüpft ist, sagt, was es ist; wenn nicht, benennen Sie es mit aria-label oder aria-labelledby. Ein title-Attribut funktioniert auch, aber weniger zuverlässig.",
+      "videoPoster_textAltPresent_hint_cantTell_alt": "Sein alt=\"{{alt}}\" bewirkt nichts: Ein <video> hat kein alt-Attribut. Verwenden Sie stattdessen aria-label=\"{{alt}}\".",
+      "videoPoster_textAltPresent_lean_why_noName": "Das Video hat ein Posterbild, aber keinen zugänglichen Namen, sodass ein Screenreader es ohne etwas ansagt, das es kennzeichnet.",
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "Dieses <video> hat keinen Namen, aber seine Abbildung hat eine Bildunterschrift, die das Vorschaubild beschreiben könnte.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Prüfen Sie, ob die Bildunterschrift beschreibt, was das Vorschaubild zeigt. Falls nicht, geben Sie dem Video einen zugänglichen Namen (aria-label oder aria-labelledby).",
       "svgImage_textAltPresent_title": "SVG <image> muss eine Textalternative haben",
@@ -43032,6 +43218,8 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_veryShort": "Der Seitentitel „{{titleText}}“ ist sehr kurz und sagt möglicherweise nicht, worum es auf der Seite geht.",
       "pageTitlePatterns_summary_cantTell_templateLike": "Der Seitentitel „{{titleText}}“ verbindet einen Website-Namen mit dem allgemeinen Wort „{{word}}“ und sagt möglicherweise nicht, worum es auf der Seite geht.",
       "pageTitlePatterns_summary_cantTell_review": "Prüfen Sie, ob der Seitentitel „{{titleText}}“ sagt, worum es auf der Seite geht.",
+      "pageTitlePatterns_summary_cantTell_placeholder": "Der Seitentitel „{{titleText}}“ enthält „{{token}}“, einen Platzhalter oder einen Wert, den ein Skript nicht gesetzt hat, und sagt möglicherweise nicht, worum es auf der Seite geht.",
+      "pageTitlePatterns_lean_why_placeholder": "Der Titel enthält einen Platzhalter einer Vorlage oder einen Wert, den ein Skript nicht gesetzt hat, statt Worten über die Seite.",
       "pageTitlePatterns_hint_cantTell": "Prüfen Sie, ob der Titel sagt, worum es auf der Seite geht oder wozu sie dient, und sie von den anderen Seiten der Website unterscheidet.",
       "pageZonesLandmark_title": "Kopfbereich, Navigation, Suche und Fußbereich der Seite sind Landmarken",
       "pageZonesLandmark_description": "Fragt nach Blöcken, die sich als Kopfbereich der Seite, als Navigation oder als Fußbereich bezeichnen, und nach Suchformularen, die nicht als Landmarke ihrer Art bereitgestellt sind, sowie nach einem Kopf- oder Fußbereich, der so verschachtelt ist, dass er seine Landmarke verliert.",
@@ -44293,6 +44481,19 @@ const RUNTIME_CATALOG = {
       "pAsHeading_lean_caution_style": "Auch ein einleitender Satz oder ein hervorgehobenes Zitat kann vor dem Fließtext stehen, und ein Designsystem kann Überschriftenstile für anderen Text wiederverwenden.",
       "pAsHeading_lean_why_cardTitle": "Auf den Link folgt in seinem Container eine Beschreibung, und benachbarte Container gleicher Form wiederholen Titel und Beschreibung ohne echte Überschrift, wie ein Raster aus Karten.",
       "pAsHeading_lean_caution_cardTitle": "Ein fetter Link ist oft eine Handlungsaufforderung; ob jede Karte ein eigener Abschnitt ist, entscheidet ein Mensch.",
+      "formGroupNamePresent_title": "Optionsfelder und Kontrollkästchen mit gleichem Namen sollten in einer benannten Gruppe stehen",
+      "formGroupNamePresent_description": "Fragt nach Optionsfeldern oder Kontrollkästchen, die einen Namen teilen, aber in keinem <fieldset> mit <legend> und keiner group oder radiogroup mit zugänglichem Namen stehen, sodass die Frage, die sie beantworten, mit keinem von ihnen verknüpft sein kann.",
+      "formGroupNamePresent_summary_cantTell_radio": "Diese {{count}} Optionsfelder mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"radiogroup\" oder role=\"group\" und zugänglichem Namen.",
+      "formGroupNamePresent_summary_cantTell_checkbox": "Diese {{count}} Kontrollkästchen mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"group\" und zugänglichem Namen.",
+      "formGroupNamePresent_hint_cantTell": "Wenn die Optionen eine Frage beantworten, setzen Sie sie in ein <fieldset>, dessen <legend> sie nennt, oder in ein Element mit role=\"radiogroup\" (role=\"group\" für Kontrollkästchen), das mit aria-labelledby auf die Frage benannt ist.",
+      "formGroupNamePresent_lean_why_radio": "Optionsfelder mit gleichem Namen sind eine einzige Auswahl, und nichts gibt dieser Auswahl einen Namen.",
+      "formGroupNamePresent_lean_caution_radio": "Die Beschriftung jeder Option kann die ganze Frage schon selbst sagen.",
+      "symbolGraphicContrast_title": "Als Grafik verwendete Symbole sollten einen Kontrast von mindestens 3:1 haben",
+      "symbolGraphicContrast_description": "Fragt nach Symbolen, die als Text ohne Buchstaben oder Ziffern gezeichnet sind, etwa Bewertungssterne, Punkte, Pfeile oder Häkchen, deren Kontrast zu ihrem Hintergrund unter den 3:1 liegt, die eine zum Verständnis des Inhalts nötige Grafik erreichen muss.",
+      "symbolGraphicContrast_summary_cantTell": "Diese Symbole, „{{symbols}}“, haben einen Kontrast von {{ratio}}:1 zu ihrem Hintergrund, unter den 3:1, die eine zum Verständnis des Inhalts nötige Grafik erreichen muss.",
+      "symbolGraphicContrast_hint_cantTell": "Wenn die Symbole Informationen zeigen, etwa eine Bewertung oder einen Status, geben Sie ihnen eine Farbe, die 3:1 zu ihrem Hintergrund erreicht. Wenn sie nur schmücken oder ein Text daneben dasselbe sagt, ist das nicht nötig.",
+      "symbolGraphicContrast_lean_why": "Symbole wie Bewertungssterne oder Statuszeichen tragen meist Informationen, und diese liegen unter 3:1 zu ihrem Hintergrund.",
+      "symbolGraphicContrast_lean_caution": "Die Symbole können nur schmücken, oder ein Text daneben kann dasselbe sagen.",
       "tableFakeCaption_title": "Die erste Zeile einer Tabelle sollte nicht eine echte <caption> ersetzen",
       "tableFakeCaption_description": "Markiert Tabellen ohne <caption>, deren erste Zeile eine einzelne nicht leere Zelle hat, während andere Zeilen mehrere Zellen haben, zur manuellen Überprüfung, ob diese Zelle als unechte Beschriftung fungiert.",
       "tableFakeCaption_summary_cantTell": "Diese Tabelle hat keine <caption>, aber ihre erste Zeile besteht aus einer einzelnen Zelle oberhalb von Zeilen mit mehreren Zellen — sie könnte als unechte Beschriftung fungieren.",
@@ -44384,6 +44585,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Ein vor den Skripten der Seite installierter Hook hat weder am Element noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten- oder Fokus-Listener gesehen; Eingabe und Leertaste bewirken daher wahrscheinlich nichts.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Ein Vorfahre behält den Fokus für seine Elemente (aria-activedescendant oder ein fokussierbares zusammengesetztes Widget); so bedient ein solches Widget ein Element, ohne es zu fokussieren.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "Das Element zeigt einen Zeiger-Cursor und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "Das Element ist wie eine Schaltfläche gestaltet, ein kurzer Text in einem Kasten mit eigenem Hintergrund oder Rahmen, und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "Dieselbe Aktion kann ein anderes Bedienelement der Seite anbieten, etwa ein Link neben einer anklickbaren Zeile.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert (Eingabe und Leertaste sowie die Pfeiltasten seines Widgets), dasselbe bewirken wie ein Klick.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
@@ -44781,9 +44983,10 @@ const RUNTIME_CATALOG = {
       "embed_textAltQuality_lean_caution": "A document's file name can be its real title.",
       "videoPoster_textAltPresent_title": "<video> poster must have a text alternative",
       "videoPoster_textAltPresent_description": "Checks that <video> elements with a poster image provide a text alternative (accessible name).",
-      "videoPoster_textAltPresent_summary_fail": "This <video> poster image has no text alternative.",
-      "videoPoster_textAltPresent_hint_fail": "Name the video with aria-label or aria-labelledby, saying what the poster shows. A title attribute also works, but less reliably.",
-      "videoPoster_textAltPresent_hint_fail_alt": "Its alt=\"{{alt}}\" does nothing: a <video> has no alt attribute. Use aria-label=\"{{alt}}\" instead.",
+      "videoPoster_textAltPresent_summary_cantTell": "This <video> has a poster image but no name that identifies it.",
+      "videoPoster_textAltPresent_hint_cantTell": "A video's text alternative only has to identify it. Check that something tied to the video says what it is; if nothing does, name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.",
+      "videoPoster_textAltPresent_hint_cantTell_alt": "Its alt=\"{{alt}}\" does nothing: a <video> has no alt attribute. Use aria-label=\"{{alt}}\" instead.",
+      "videoPoster_textAltPresent_lean_why_noName": "The video has a poster but no accessible name, so a screen reader announces it with nothing that identifies it.",
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "This <video> has no name, but its figure has a caption that may describe its poster.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Check that the caption describes what the poster image shows. If it does not, give the video an accessible name (aria-label or aria-labelledby).",
       "svgImage_textAltPresent_title": "SVG <image> must have a text alternative",
@@ -44861,6 +45064,8 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_veryShort": "The page title “{{titleText}}” is very short and may not say what the page is about.",
       "pageTitlePatterns_summary_cantTell_templateLike": "The page title “{{titleText}}” pairs a site name with the generic word “{{word}}”, and may not say what the page is about.",
       "pageTitlePatterns_summary_cantTell_review": "Check that the page title, “{{titleText}}”, says what the page is about.",
+      "pageTitlePatterns_summary_cantTell_placeholder": "The page title “{{titleText}}” holds “{{token}}”, a placeholder or a value a script left unset, and may not say what the page is about.",
+      "pageTitlePatterns_lean_why_placeholder": "The title holds a template placeholder or a value a script left unset, not words about the page.",
       "pageTitlePatterns_hint_cantTell": "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages.",
       "pageZonesLandmark_title": "The page's header, navigation, search and footer are landmarks",
       "pageZonesLandmark_description": "Asks about blocks that name themselves the page's header, a navigation or its footer, and search forms, that are not exposed as the landmark of their nature, and about a page header or footer nested where it loses its landmark.",
@@ -46122,6 +46327,19 @@ const RUNTIME_CATALOG = {
       "pAsHeading_lean_caution_style": "A lead-in sentence or a pull quote can also come before body text, and a design system may reuse heading styles for other text.",
       "pAsHeading_lean_why_cardTitle": "The link is followed by a description in its container, and sibling containers of the same shape repeat that title and description with no real heading, as a grid of cards does.",
       "pAsHeading_lean_caution_cardTitle": "A bold link is often a call to action; whether each card is a section of its own is for a person to decide.",
+      "formGroupNamePresent_title": "Radio buttons and checkboxes that share a name should be in a named group",
+      "formGroupNamePresent_description": "Asks about radio buttons, or checkboxes, that share a name but sit in no <fieldset> with a <legend> and no group or radiogroup with an accessible name, so the question they answer may be tied to none of them.",
+      "formGroupNamePresent_summary_cantTell_radio": "These {{count}} radio buttons named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"radiogroup\" or role=\"group\" and an accessible name.",
+      "formGroupNamePresent_summary_cantTell_checkbox": "These {{count}} checkboxes named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"group\" and an accessible name.",
+      "formGroupNamePresent_hint_cantTell": "If the options answer one question, put them in a <fieldset> whose <legend> says it, or in an element with role=\"radiogroup\" (role=\"group\" for checkboxes) named with aria-labelledby pointing to the question.",
+      "formGroupNamePresent_lean_why_radio": "Radio buttons that share a name are one choice a person makes, and nothing gives that choice a name.",
+      "formGroupNamePresent_lean_caution_radio": "Each option’s own label may say the whole question.",
+      "symbolGraphicContrast_title": "Symbols used as a graphic should have a contrast of at least 3:1",
+      "symbolGraphicContrast_description": "Asks about symbols drawn as text with no letter or digit, such as rating stars, dots, arrows or check marks, whose contrast against their background is under the 3:1 a graphic needed to understand the content must reach.",
+      "symbolGraphicContrast_summary_cantTell": "These symbols, “{{symbols}}”, have a contrast of {{ratio}}:1 against their background, under the 3:1 a graphic needed to understand the content must reach.",
+      "symbolGraphicContrast_hint_cantTell": "If the symbols show information, such as a rating or a status, give them a colour that reaches 3:1 against their background. If they only decorate, or a text beside them says the same, they need not.",
+      "symbolGraphicContrast_lean_why": "Symbols such as rating stars or status marks usually carry information, and these are under 3:1 against their background.",
+      "symbolGraphicContrast_lean_caution": "The symbols may only decorate, or a text beside them may say the same.",
       "tableFakeCaption_title": "A table's first row should not stand in for a real <caption>",
       "tableFakeCaption_description": "Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.",
       "tableFakeCaption_summary_cantTell": "This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.",
@@ -46213,6 +46431,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "A hook installed before the page’s scripts saw no key or focus listener on the element, its ancestors, the document or the window, so Enter and Space probably do nothing.",
       "clickHandlerKeyboardOperable_lean_why_managed": "An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "The element is drawn as a button, a short label in a box with a background or a border of its own, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "The same action may be offered by another control of the page, such as a link next to a clickable row.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Handle keydown so that the keys a {{role}} answers to (Enter and Space, and the arrow keys of its widget) do what a click does.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
@@ -46610,9 +46829,10 @@ const RUNTIME_CATALOG = {
       "embed_textAltQuality_lean_caution": "El nombre de archivo de un documento puede ser su verdadero título.",
       "videoPoster_textAltPresent_title": "La imagen de portada (poster) de <video> debe tener una alternativa textual",
       "videoPoster_textAltPresent_description": "Comprueba que los elementos <video> con una imagen de portada (atributo poster) proporcionen una alternativa textual (nombre accesible).",
-      "videoPoster_textAltPresent_summary_fail": "La imagen de portada de este <video> no tiene alternativa textual.",
-      "videoPoster_textAltPresent_hint_fail": "Darle nombre al vídeo con aria-label o aria-labelledby, diciendo lo que muestra la imagen de portada. Un atributo title también sirve, pero es menos fiable.",
-      "videoPoster_textAltPresent_hint_fail_alt": "Su alt=\"{{alt}}\" no hace nada: un <video> no tiene atributo alt. Usar aria-label=\"{{alt}}\" en su lugar.",
+      "videoPoster_textAltPresent_summary_cantTell": "Este <video> tiene imagen de portada pero ningún nombre que lo identifique.",
+      "videoPoster_textAltPresent_hint_cantTell": "La alternativa textual de un vídeo solo tiene que identificarlo. Comprobar que algo ligado al vídeo dice qué es; si nada lo dice, darle nombre con aria-label o aria-labelledby. Un atributo title también sirve, pero es menos fiable.",
+      "videoPoster_textAltPresent_hint_cantTell_alt": "Su alt=\"{{alt}}\" no hace nada: un <video> no tiene atributo alt. Usar aria-label=\"{{alt}}\" en su lugar.",
+      "videoPoster_textAltPresent_lean_why_noName": "El vídeo tiene imagen de portada pero ningún nombre accesible, así que un lector de pantalla lo anuncia sin nada que lo identifique.",
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "Este <video> no tiene nombre, pero su figura tiene un pie que puede describir su imagen de portada.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Comprobar que el pie describe lo que muestra la imagen de portada. Si no, dar al vídeo un nombre accesible (aria-label o aria-labelledby).",
       "svgImage_textAltPresent_title": "El elemento <image> de SVG debe tener una alternativa textual",
@@ -46690,6 +46910,8 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_veryShort": "El título de la página, «{{titleText}}», es muy corto y puede que no diga de qué trata.",
       "pageTitlePatterns_summary_cantTell_templateLike": "El título de la página, «{{titleText}}», une el nombre de un sitio con la palabra genérica «{{word}}», y puede que no diga de qué trata.",
       "pageTitlePatterns_summary_cantTell_review": "Comprobar que el título de la página, «{{titleText}}», dice de qué trata la página.",
+      "pageTitlePatterns_summary_cantTell_placeholder": "El título de la página, «{{titleText}}», contiene «{{token}}», un marcador de posición o un valor que un script no rellenó, y puede que no diga de qué trata.",
+      "pageTitlePatterns_lean_why_placeholder": "El título contiene un marcador de posición de una plantilla o un valor que un script no rellenó, no palabras sobre la página.",
       "pageTitlePatterns_hint_cantTell": "Comprobar que el título dice de qué trata la página o para qué sirve, y la distingue de las demás páginas del sitio.",
       "pageZonesLandmark_title": "La cabecera, la navegación, la búsqueda y el pie de la página son regiones de referencia",
       "pageZonesLandmark_description": "Pregunta por los bloques que se nombran cabecera de la página, navegación o pie, y por los formularios de búsqueda, que no se exponen como la región de referencia de su naturaleza, y por una cabecera o un pie anidados donde pierden su región de referencia.",
@@ -47951,6 +48173,19 @@ const RUNTIME_CATALOG = {
       "pAsHeading_lean_caution_style": "Una frase introductoria o una cita destacada también pueden ir antes del texto normal, y un sistema de diseño puede reutilizar los estilos de encabezado para otros textos.",
       "pAsHeading_lean_why_cardTitle": "El enlace va seguido de una descripción en su contenedor, y contenedores hermanos de la misma forma repiten ese título y esa descripción sin encabezado real, como una cuadrícula de tarjetas.",
       "pAsHeading_lean_caution_cardTitle": "Un enlace en negrita suele ser una llamada a la acción; si cada tarjeta es una sección propia lo decide una persona.",
+      "formGroupNamePresent_title": "Los botones de opción y las casillas que comparten nombre deberían estar en un grupo con nombre",
+      "formGroupNamePresent_description": "Pregunta por botones de opción, o casillas de verificación, que comparten nombre pero no están en ningún <fieldset> con <legend> ni en ningún grupo o radiogroup con nombre accesible, así que la pregunta a la que responden puede no estar ligada a ninguno.",
+      "formGroupNamePresent_summary_cantTell_radio": "Estos {{count}} botones de opción con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"radiogroup\" o role=\"group\" y nombre accesible.",
+      "formGroupNamePresent_summary_cantTell_checkbox": "Estas {{count}} casillas de verificación con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"group\" y nombre accesible.",
+      "formGroupNamePresent_hint_cantTell": "Si las opciones responden a una sola pregunta, ponerlas en un <fieldset> cuyo <legend> la diga, o en un elemento con role=\"radiogroup\" (role=\"group\" para casillas) nombrado con aria-labelledby apuntando a la pregunta.",
+      "formGroupNamePresent_lean_why_radio": "Los botones de opción que comparten nombre son una sola elección, y nada le da nombre a esa elección.",
+      "formGroupNamePresent_lean_caution_radio": "La etiqueta de cada opción puede decir por sí sola la pregunta entera.",
+      "symbolGraphicContrast_title": "Los símbolos usados como gráfico deberían tener un contraste de al menos 3:1",
+      "symbolGraphicContrast_description": "Pregunta por símbolos dibujados como texto sin ninguna letra ni cifra, como estrellas de valoración, puntos, flechas o marcas de verificación, cuyo contraste con su fondo está por debajo del 3:1 que debe alcanzar un gráfico necesario para entender el contenido.",
+      "symbolGraphicContrast_summary_cantTell": "Estos símbolos, «{{symbols}}», tienen un contraste de {{ratio}}:1 con su fondo, por debajo del 3:1 que debe alcanzar un gráfico necesario para entender el contenido.",
+      "symbolGraphicContrast_hint_cantTell": "Si los símbolos muestran información, como una valoración o un estado, darles un color que alcance 3:1 con su fondo. Si solo decoran, o un texto a su lado dice lo mismo, no hace falta.",
+      "symbolGraphicContrast_lean_why": "Los símbolos como las estrellas de valoración o las marcas de estado suelen transmitir información, y estos están por debajo de 3:1 con su fondo.",
+      "symbolGraphicContrast_lean_caution": "Puede que los símbolos solo decoren, o que un texto a su lado diga lo mismo.",
       "tableFakeCaption_title": "La primera fila de una tabla no debería sustituir a un <caption> real",
       "tableFakeCaption_description": "Señala tablas sin <caption> cuya primera fila tiene una única celda no vacía mientras que las demás filas tienen varias celdas, para su revisión manual sobre si esa celda actúa como un título de tabla falso.",
       "tableFakeCaption_summary_cantTell": "Esta tabla no tiene <caption>, pero su primera fila es una única celda situada sobre filas con varias celdas; puede estar actuando como un título de tabla falso.",
@@ -48042,6 +48277,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook instalado antes de los scripts de la página no vio ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio probablemente no hacen nada.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "El elemento se dibuja como un botón, un texto corto en una caja con fondo o borde propios, y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gestionar keydown para que las teclas a las que responde un {{role}} (Intro y Espacio, y las flechas de su widget) hagan lo mismo que un clic.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
@@ -48439,9 +48675,10 @@ const RUNTIME_CATALOG = {
       "embed_textAltQuality_lean_caution": "Le nom de fichier d’un document peut être son vrai titre.",
       "videoPoster_textAltPresent_title": "L’image poster de <video> doit avoir un équivalent textuel",
       "videoPoster_textAltPresent_description": "Vérifie que les éléments <video> avec une image poster fournissent un équivalent textuel (nom accessible).",
-      "videoPoster_textAltPresent_summary_fail": "L’image poster de cette <video> n’a pas d’équivalent textuel.",
-      "videoPoster_textAltPresent_hint_fail": "Nommez la vidéo avec aria-label ou aria-labelledby, en disant ce que montre l’affiche. Un attribut title fonctionne aussi, mais de façon moins fiable.",
-      "videoPoster_textAltPresent_hint_fail_alt": "Son alt=\"{{alt}}\" ne fait rien : une <video> n’a pas d’attribut alt. Utilisez plutôt aria-label=\"{{alt}}\".",
+      "videoPoster_textAltPresent_summary_cantTell": "Cette <video> a une image d’affiche mais aucun nom qui l’identifie.",
+      "videoPoster_textAltPresent_hint_cantTell": "L’équivalent textuel d’une vidéo n’a qu’à l’identifier. Vérifiez que quelque chose de lié à la vidéo dit ce qu’elle est ; sinon, nommez-la avec aria-label ou aria-labelledby. Un attribut title fonctionne aussi, mais de façon moins fiable.",
+      "videoPoster_textAltPresent_hint_cantTell_alt": "Son alt=\"{{alt}}\" ne fait rien : une <video> n’a pas d’attribut alt. Utilisez plutôt aria-label=\"{{alt}}\".",
+      "videoPoster_textAltPresent_lean_why_noName": "La vidéo a une affiche mais aucun nom accessible, si bien qu’un lecteur d’écran l’annonce sans rien qui l’identifie.",
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "Cette <video> n’a pas de nom, mais sa figure a une légende qui peut décrire son image d’affiche.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Vérifiez que la légende décrit ce que montre l’image d’affiche. Sinon, donnez à la vidéo un nom accessible (aria-label ou aria-labelledby).",
       "svgImage_textAltPresent_title": "<image> dans un SVG doit avoir un équivalent textuel",
@@ -48519,6 +48756,8 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_veryShort": "Le titre de la page, « {{titleText}} », est très court et ne dit peut-être pas de quoi elle parle.",
       "pageTitlePatterns_summary_cantTell_templateLike": "Le titre de la page, « {{titleText}} », associe un nom de site au mot générique « {{word}} », et ne dit peut-être pas de quoi elle parle.",
       "pageTitlePatterns_summary_cantTell_review": "Vérifiez que le titre de la page, « {{titleText}} », indique de quoi parle la page.",
+      "pageTitlePatterns_summary_cantTell_placeholder": "Le titre de la page, « {{titleText}} », contient « {{token}} », un espace réservé ou une valeur qu’un script n’a pas renseignée, et ne dit peut-être pas de quoi elle parle.",
+      "pageTitlePatterns_lean_why_placeholder": "Le titre contient un espace réservé d’un modèle ou une valeur qu’un script n’a pas renseignée, et non des mots sur la page.",
       "pageTitlePatterns_hint_cantTell": "Vérifiez que le titre dit de quoi parle la page ou à quoi elle sert, et la distingue des autres pages du site.",
       "pageZonesLandmark_title": "L’en-tête, la navigation, la recherche et le pied de page sont des points de repère",
       "pageZonesLandmark_description": "Signale les blocs qui se nomment en-tête de la page, navigation ou pied de page, et les formulaires de recherche, qui ne sont pas exposés comme le point de repère de leur nature, ainsi qu’un en-tête ou un pied de page imbriqué là où il perd son point de repère.",
@@ -49780,6 +50019,19 @@ const RUNTIME_CATALOG = {
       "pAsHeading_lean_caution_style": "Une phrase d’introduction ou une citation mise en exergue peut aussi précéder le texte courant, et un système de design peut réutiliser les styles de titre pour d’autres textes.",
       "pAsHeading_lean_why_cardTitle": "Le lien est suivi d’une description dans son conteneur, et des conteneurs voisins de même forme répètent ce titre et cette description sans vrai titre, comme une grille de cartes.",
       "pAsHeading_lean_caution_cardTitle": "Un lien en gras est souvent un appel à l’action ; c’est à une personne de décider si chaque carte est une section à part entière.",
+      "formGroupNamePresent_title": "Les boutons radio et les cases à cocher qui partagent un nom devraient être dans un groupe nommé",
+      "formGroupNamePresent_description": "Signale les boutons radio, ou les cases à cocher, qui partagent un nom mais ne sont dans aucun <fieldset> avec <legend> ni dans aucun group ou radiogroup avec un nom accessible, si bien que la question à laquelle ils répondent peut n’être liée à aucun d’eux.",
+      "formGroupNamePresent_summary_cantTell_radio": "Ces {{count}} boutons radio nommés « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"radiogroup\" ou role=\"group\" et un nom accessible.",
+      "formGroupNamePresent_summary_cantTell_checkbox": "Ces {{count}} cases à cocher nommées « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"group\" et un nom accessible.",
+      "formGroupNamePresent_hint_cantTell": "Si les options répondent à une seule question, placez-les dans un <fieldset> dont la <legend> la formule, ou dans un élément avec role=\"radiogroup\" (role=\"group\" pour des cases à cocher) nommé par aria-labelledby pointant vers la question.",
+      "formGroupNamePresent_lean_why_radio": "Des boutons radio qui partagent un nom sont un seul choix, et rien ne donne de nom à ce choix.",
+      "formGroupNamePresent_lean_caution_radio": "L’étiquette de chaque option peut formuler à elle seule toute la question.",
+      "symbolGraphicContrast_title": "Les symboles utilisés comme graphique devraient avoir un contraste d’au moins 3:1",
+      "symbolGraphicContrast_description": "Signale les symboles dessinés comme du texte sans lettre ni chiffre, comme des étoiles de notation, des points, des flèches ou des coches, dont le contraste avec leur arrière-plan est inférieur au 3:1 que doit atteindre un graphique nécessaire pour comprendre le contenu.",
+      "symbolGraphicContrast_summary_cantTell": "Ces symboles, « {{symbols}} », ont un contraste de {{ratio}}:1 avec leur arrière-plan, inférieur au 3:1 que doit atteindre un graphique nécessaire pour comprendre le contenu.",
+      "symbolGraphicContrast_hint_cantTell": "Si les symboles donnent une information, comme une note ou un état, donnez-leur une couleur qui atteint 3:1 avec leur arrière-plan. S’ils ne font que décorer, ou si un texte à côté dit la même chose, ce n’est pas nécessaire.",
+      "symbolGraphicContrast_lean_why": "Des symboles comme des étoiles de notation ou des marques d’état portent généralement une information, et ceux-ci sont sous 3:1 avec leur arrière-plan.",
+      "symbolGraphicContrast_lean_caution": "Les symboles peuvent n’être que décoratifs, ou un texte à côté peut dire la même chose.",
       "tableFakeCaption_title": "La première ligne d’un tableau ne devrait pas tenir lieu de véritable <caption>",
       "tableFakeCaption_description": "Signale les tableaux sans <caption> dont la première ligne a une seule cellule non vide alors que les autres lignes ont plusieurs cellules, pour une vérification manuelle visant à déterminer si cette cellule fait office de légende factice.",
       "tableFakeCaption_summary_cantTell": "Ce tableau n’a pas de <caption>, mais sa première ligne est une cellule unique placée au-dessus de lignes à plusieurs cellules — elle fait peut-être office de légende factice.",
@@ -49871,6 +50123,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook installé avant les scripts de la page n’a vu aucun écouteur de touches ni de focus sur l’élément, ses ancêtres, le document ni la fenêtre : Entrée et Espace ne font sans doute rien.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Un ancêtre garde le focus pour ses éléments (aria-activedescendant, ou un composant composite focalisable) : c’est ainsi qu’un tel composant actionne un élément sans lui donner le focus.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "L’élément affiche un curseur en forme de main et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "L’élément est dessiné comme un bouton, un texte court dans une boîte avec un fond ou une bordure à elle, et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La même action peut être offerte par une autre commande de la page, comme un lien à côté d’une ligne cliquable.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gérez keydown pour que les touches auxquelles répond un {{role}} (Entrée et Espace, et les flèches de son composant) fassent ce que fait un clic.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
@@ -50268,9 +50521,10 @@ const RUNTIME_CATALOG = {
       "embed_textAltQuality_lean_caution": "文書のファイル名が、その文書の実際のタイトルである場合もあります。",
       "videoPoster_textAltPresent_title": "<video> のポスター画像にはテキストによる代替が必要",
       "videoPoster_textAltPresent_description": "ポスター画像を持つ <video> 要素に、テキストによる代替 (アクセシブルな名前) があるかを確認します。",
-      "videoPoster_textAltPresent_summary_fail": "この <video> のポスター画像にはテキストによる代替がありません。",
-      "videoPoster_textAltPresent_hint_fail": "ポスターの内容を伝える名前を、aria-label または aria-labelledby で動画に付けてください。title 属性でも名前は付きますが、確実さに欠けます。",
-      "videoPoster_textAltPresent_hint_fail_alt": "alt=\"{{alt}}\" は何の効果もありません。<video> には alt 属性がありません。代わりに aria-label=\"{{alt}}\" を使ってください。",
+      "videoPoster_textAltPresent_summary_cantTell": "この <video> にはポスター画像がありますが、動画を識別する名前がありません。",
+      "videoPoster_textAltPresent_hint_cantTell": "動画のテキストによる代替は、その動画を識別できれば十分です。動画に関連付けられたものが何の動画かを伝えているか確認し、何もなければ aria-label または aria-labelledby で名前を付けてください。title 属性でも名前は付きますが、確実さに欠けます。",
+      "videoPoster_textAltPresent_hint_cantTell_alt": "alt=\"{{alt}}\" は何の効果もありません。<video> には alt 属性がありません。代わりに aria-label=\"{{alt}}\" を使ってください。",
+      "videoPoster_textAltPresent_lean_why_noName": "動画にはポスターがありますが、アクセシブルな名前がないため、スクリーンリーダーは動画を識別する情報なしで読み上げます。",
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "この <video> には名前がありませんが、図のキャプションがポスター画像を説明している可能性があります。",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "キャプションがポスター画像の内容を説明しているか確認してください。説明していない場合は、動画にアクセシブルな名前（aria-label または aria-labelledby）を付けてください。",
       "svgImage_textAltPresent_title": "SVG の <image> にはテキストによる代替が必要",
@@ -50348,6 +50602,8 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_veryShort": "ページタイトル「{{titleText}}」はとても短く、ページの内容を伝えていない可能性があります。",
       "pageTitlePatterns_summary_cantTell_templateLike": "ページタイトル「{{titleText}}」はサイト名と汎用的な語「{{word}}」を組み合わせたもので、ページの内容を伝えていない可能性があります。",
       "pageTitlePatterns_summary_cantTell_review": "ページタイトル「{{titleText}}」が、ページの内容を表しているか確認してください。",
+      "pageTitlePatterns_summary_cantTell_placeholder": "ページタイトル「{{titleText}}」には「{{token}}」が含まれています。これはプレースホルダーか、スクリプトが設定しなかった値で、ページの内容を伝えていない可能性があります。",
+      "pageTitlePatterns_lean_why_placeholder": "タイトルには、ページについての言葉ではなく、テンプレートのプレースホルダーかスクリプトが設定しなかった値が含まれています。",
       "pageTitlePatterns_hint_cantTell": "タイトルがページの内容や目的を伝え、サイト内の他のページと区別できるものになっているか確認してください。",
       "pageZonesLandmark_title": "ページのヘッダー、ナビゲーション、検索、フッターがランドマークになっている",
       "pageZonesLandmark_description": "ページのヘッダー、ナビゲーション、フッターと名付けられたブロックや検索フォームが、その種類のランドマークとして公開されていない場合と、ヘッダーやフッターがランドマークを失う位置に入れ子になっている場合について確認を求めます。",
@@ -51609,6 +51865,19 @@ const RUNTIME_CATALOG = {
       "pAsHeading_lean_caution_style": "導入文や引用の強調表示が本文の前に来ることもあり、デザインシステムが見出しのスタイルを別のテキストに使い回すこともあります。",
       "pAsHeading_lean_why_cardTitle": "このリンクの後にはコンテナ内で説明が続き、同じ形の隣接するコンテナが本来の見出しなしにタイトルと説明を繰り返しています。カードのグリッドと同じです。",
       "pAsHeading_lean_caution_cardTitle": "太字のリンクは行動を促すボタンであることが多く、各カードが独立したセクションかどうかは人が判断します。",
+      "formGroupNamePresent_title": "同じ name を持つラジオボタンやチェックボックスは、名前のあるグループに入れるべきです",
+      "formGroupNamePresent_description": "同じ name を持つのに、<legend> のある <fieldset> にも、アクセシブルな名前のある group や radiogroup にも入っていないラジオボタンやチェックボックスについて確認を求めます。それらが答える質問が、どれにも関連付けられていない可能性があります。",
+      "formGroupNamePresent_summary_cantTell_radio": "name が「{{name}}」の {{count}} 個のラジオボタンは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"radiogroup\" や role=\"group\" の要素もありません。",
+      "formGroupNamePresent_summary_cantTell_checkbox": "name が「{{name}}」の {{count}} 個のチェックボックスは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"group\" の要素もありません。",
+      "formGroupNamePresent_hint_cantTell": "選択肢が一つの質問に答えるものなら、その質問を <legend> に書いた <fieldset> に入れるか、質問を指す aria-labelledby で名前を付けた role=\"radiogroup\" (チェックボックスなら role=\"group\") の要素に入れてください。",
+      "formGroupNamePresent_lean_why_radio": "同じ name を持つラジオボタンは一つの選択であり、その選択に名前を付けているものがありません。",
+      "formGroupNamePresent_lean_caution_radio": "各選択肢のラベルだけで質問全体を伝えている場合もあります。",
+      "symbolGraphicContrast_title": "グラフィックとして使われる記号は、少なくとも 3:1 のコントラストを持つべきです",
+      "symbolGraphicContrast_description": "評価の星、点、矢印、チェックマークなど、文字も数字も含まないテキストとして描かれた記号で、背景とのコントラストが、内容の理解に必要なグラフィックが満たすべき 3:1 を下回るものについて確認を求めます。",
+      "symbolGraphicContrast_summary_cantTell": "これらの記号「{{symbols}}」の背景とのコントラストは {{ratio}}:1 で、内容の理解に必要なグラフィックが満たすべき 3:1 を下回っています。",
+      "symbolGraphicContrast_hint_cantTell": "記号が評価や状態などの情報を示しているなら、背景に対して 3:1 に達する色にしてください。装飾にすぎない場合や、横のテキストが同じことを伝えている場合は不要です。",
+      "symbolGraphicContrast_lean_why": "評価の星や状態を示す記号などはふつう情報を伝えるもので、これらは背景に対して 3:1 を下回っています。",
+      "symbolGraphicContrast_lean_caution": "記号は装飾にすぎないか、横のテキストが同じことを伝えている可能性があります。",
       "tableFakeCaption_title": "表の 1 行目を本来の <caption> の代わりにしないことが望ましい",
       "tableFakeCaption_description": "<caption> がなく、1 行目が空でない単一のセルで、ほかの行が複数のセルを持つ表を検出し、そのセルが見せかけのキャプションとして使われていないかを人が確認できるようにします。",
       "tableFakeCaption_summary_cantTell": "この表には <caption> がありませんが、1 行目が複数セルの行の上にある単一のセルになっているため、見せかけのキャプションとして使われている可能性があります。",
@@ -51700,6 +51969,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーを見つけませんでした。Enter や Space ではおそらく何も起きません。",
       "clickHandlerKeyboardOperable_lean_why_managed": "祖先が項目のためにフォーカスを保持しています(aria-activedescendant、またはフォーカス可能な複合ウィジェット)。このようなウィジェットは、項目にフォーカスを移さずに操作します。",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "この要素はポインター カーソルを表示してクリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "この要素は、独自の背景または枠線を持つボックスに短いラベルを置いたボタンのような見た目で、クリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "同じ操作をページ内の別のコントロール(クリックできる行の横のリンクなど)が提供している場合があります。",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "keydown を処理して、{{role}} が応答するキー (Enter と Space、そのウィジェットの矢印キー) でクリックと同じことが起きるようにしてください。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
@@ -52131,6 +52401,7 @@ const RULE_MODULES = [
   "./checks/automatic/form-control-programmatic-label-present.js",
   "./checks/manual/form-control-programmatic-label-quality-manual.js",
   "./checks/automatic/form-control-single-label.js",
+  "./checks/manual/form-group-name-present-manual.js",
   "./checks/manual/heading-order-manual.js",
   "./checks/manual/heading-quality-manual.js",
   "./checks/automatic/language-page-present.js",
@@ -52209,6 +52480,7 @@ const RULE_MODULES = [
   "./checks/automatic/svg-image-text-alternative-present.js",
   "./checks/automatic/svg-text-alternative-present.js",
   "./checks/manual/svg-text-alternative-quality-manual.js",
+  "./checks/manual/symbol-graphic-contrast-manual.js",
   "./checks/automatic/tab-name-present.js",
   "./checks/manual/tabindex-manual.js",
   "./checks/manual/table-duplicate-name-manual.js",
@@ -56887,6 +57159,82 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": null
   },
   {
+    "ruleId": "form-group-name-present",
+    "title": "Radio buttons and checkboxes that share a name should be in a named group",
+    "description": "Asks about radio buttons, or checkboxes, that share a name but sit in no <fieldset> with a <legend> and no group or radiogroup with an accessible name, so the question they answer may be tied to none of them.",
+    "i18n": {
+      "titleKey": "formGroupNamePresent_title",
+      "descriptionKey": "formGroupNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag131",
+      "forms",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.3.1"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.3.1",
+        "title": "Info and Relationships",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "1.3.1": [
+          "form-group-name-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "heading-order",
     "title": "Heading levels must not skip a level",
     "description": "Checks that heading levels increase by at most one at a time in document order.",
@@ -62298,6 +62646,82 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": null
   },
   {
+    "ruleId": "symbol-graphic-contrast",
+    "title": "Symbols used as a graphic should have a contrast of at least 3:1",
+    "description": "Asks about symbols drawn as text with no letter or digit, such as rating stars, dots, arrows or check marks, whose contrast against their background is under the 3:1 a graphic needed to understand the content must reach.",
+    "i18n": {
+      "titleKey": "symbolGraphicContrast_title",
+      "descriptionKey": "symbolGraphicContrast_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag21aa",
+      "wcag1411",
+      "contrast",
+      "color",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.4.11"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.11",
+        "title": "Non-text Contrast",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#non-text-contrast",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.11",
+        "title": "Non-text contrast",
+        "wcagSc": [
+          "1.4.11"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.11",
+        "title": "Non-text contrast",
+        "wcagSc": [
+          "1.4.11"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "1.4.11": [
+          "symbol-graphic-contrast-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "tab-name-present",
     "title": "Tabs have an accessible name",
     "description": "Checks that elements with role=\"tab\" expose a non-empty accessible name.",
@@ -63730,6 +64154,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "form-control-programmatic-label-present",
       "p-as-heading",
       "table-fake-caption",
+      "form-group-name-present",
       "td-has-header",
       "aria-roles-valid",
       "aria-owns-valid"
@@ -64563,7 +64988,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-1.4.11-non-text-contrast",
     "checksIds": [
-      "css-focus-indicator-suppressed"
+      "css-focus-indicator-suppressed",
+      "symbol-graphic-contrast"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_1411_non_text_contrast.title",
@@ -75937,6 +76363,57 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Styled like a control though the cursor stays the default one: a short
+  // visible label ("Add to cart") in a box set apart by a background of its
+  // own or a border, with padding around the text, as a button is drawn.
+  // The visual styling and the action's wording are what tell a sighted
+  // user it is clickable (round 10, C10-4). A large wrapper, with long text
+  // or block content, is not one: its handler is more often delegated or a
+  // click tracker.
+  const BLOCK_CONTENT =
+    'address,article,aside,blockquote,div,dl,fieldset,figure,footer,form,h1,h2,h3,h4,h5,h6,header,hr,li,main,nav,ol,p,pre,section,table,ul';
+  function looksLikeControl(el) {
+    try {
+      const c = helpers.contrast;
+      const cs = helpers.computedStyle(el);
+      if (!c || !cs) return false;
+      const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
+      if (!text || text.length > 40 || text.split(' ').length > 6) return false;
+      if (!/[\p{L}\p{N}]/u.test(text)) return false;
+      if (dom.querySelectorAll(el, BLOCK_CONTENT).length) return false;
+      const px = (v) => {
+        const n = c.parsePx(v);
+        return typeof n === 'number' && Number.isFinite(n) ? n : 0;
+      };
+      const padded = ['top', 'right', 'bottom', 'left'].some(
+        (side) => px(cs.getPropertyValue('padding-' + side)) > 0
+      );
+      if (!padded) return false;
+      const bordered = ['top', 'right', 'bottom', 'left'].some((side) => {
+        const style = trim(cs.getPropertyValue('border-' + side + '-style')).toLowerCase();
+        const color = c.parseCssColorToRgba(cs.getPropertyValue('border-' + side + '-color'));
+        return (
+          style &&
+          style !== 'none' &&
+          style !== 'hidden' &&
+          px(cs.getPropertyValue('border-' + side + '-width')) > 0 &&
+          !!color &&
+          color.a > 0
+        );
+      });
+      if (bordered) return true;
+      const bg = c.parseCssColorToRgba(cs.getPropertyValue('background-color'));
+      if (!bg || !(bg.a > 0.05)) return false;
+      // A background the same as what is behind it sets nothing apart.
+      const parent = helpers.flatParentElement(el);
+      const under = parent ? c.computeEffectiveBackground(parent) : null;
+      if (!under || !under.ok || !under.rgba) return true;
+      return c.contrastRatio(c.compositeRgba(bg, under.rgba), under.rgba) >= 1.1;
+    } catch {
+      return false;
+    }
+  }
+
   // The item roles each composite widget handles the keys of, for a lean:
   // a key listener on the widget that owns the element is where such a
   // widget usually handles its items' keys.
@@ -76294,7 +76771,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     const isWidget = WIDGET_ROLES.has(role);
-    if (!isWidget && !hasPointerCursor(el)) continue;
+    const pointer = !isWidget && hasPointerCursor(el);
+    const styledControl = !isWidget && !pointer && looksLikeControl(el);
+    if (!isWidget && !pointer && !styledControl) continue;
     applicableCount += 1;
 
     // A focusable composite widget may operate its items from the keyboard
@@ -76351,10 +76830,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       };
     } else if (
       !managedFromAbove &&
-      !isWidget &&
-      hasPointerCursor(el) &&
+      styledControl &&
       !ancestorList.some((a) => focusOf(a).focusable)
     ) {
+      notFocusableLean = {
+        toward: 'fail',
+        why: 'The element is drawn as a button, a short label in a box with a background or a border of its own, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.',
+        signals: [
+          { signal: 'managed-from-above', value: false },
+          { signal: 'pointer-cursor', value: false },
+          { signal: 'styled-as-control', value: true },
+          { signal: 'widget-role', value: false },
+          { signal: 'focusable-ancestor', value: false }
+        ],
+        caution:
+          'The same action may be offered by another control of the page, such as a link next to a clickable row.',
+        i18n: {
+          whyKey: 'clickHandlerKeyboardOperable_lean_why_styledControl',
+          cautionKey: 'clickHandlerKeyboardOperable_lean_caution_elsewhere'
+        }
+      };
+    } else if (!managedFromAbove && pointer && !ancestorList.some((a) => focusOf(a).focusable)) {
       notFocusableLean = {
         toward: 'fail',
         why: 'The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.',
@@ -76397,6 +76893,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             reasonCode: 'CLICK_HANDLER_NOT_FOCUSABLE',
             role,
             focusable: false,
+            ...(styledControl ? { styledAsControl: true } : {}),
             ...(noHref ? { noHref: true } : {})
           }
         }
@@ -89832,6 +90329,172 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         : { outcome: 'pass', severity: 'minor', occurrences: [] };
   return { ruleId: rule.ruleId, ...resolved };
+}), applicability: null },
+    "form-group-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+  function tagOf(el) {
+    return String(dom.localName(el) || '').toLowerCase();
+  }
+
+  function isEligible(node) {
+    if (typeof helpers.isAccTreeEligible !== 'function') return true;
+    try {
+      const r = helpers.isAccTreeEligible(node, ctx);
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  // The document or shadow root el is in.
+  function rootOf(el) {
+    let n = el;
+    for (let i = 0; n && i < 10000; i++) {
+      const p = dom.parentNode(n);
+      if (!p) return n;
+      n = p;
+    }
+    return n;
+  }
+
+  // An element that groups options and gives the group a name: a fieldset
+  // (its role left as group) or an element with role group or radiogroup,
+  // named by its legend, aria-label, aria-labelledby or title.
+  function isNamedGroup(el) {
+    const role = helpers.aria && helpers.aria.getExplicitRole(el);
+    const tag = tagOf(el);
+    const groupRole = role === 'group' || role === 'radiogroup';
+    if (!groupRole && !(tag === 'fieldset' && !role)) return false;
+    try {
+      if (typeof helpers.getAccessibleNameInfo === 'function') {
+        const info = helpers.getAccessibleNameInfo(el, ctx, { maxRefs: 8 });
+        if (info && info.present && trim(info.value)) return true;
+      }
+    } catch {}
+    if (trim(dom.getAttribute(el, 'aria-label')) || trim(dom.getAttribute(el, 'title'))) {
+      return true;
+    }
+    if (tag === 'fieldset') {
+      for (let c = dom.firstElementChild(el); c; c = dom.nextElementSibling(c)) {
+        if (tagOf(c) === 'legend') return !!trim(dom.textContent(c));
+      }
+    }
+    return false;
+  }
+
+  // Whether an element that contains every option is a named group.
+  function inNamedGroup(members) {
+    const first = members[0];
+    for (
+      let a = helpers.flatParentElement(first), i = 0;
+      a && i < 200;
+      a = helpers.flatParentElement(a), i++
+    ) {
+      if (!members.every((m) => dom.contains(a, m))) continue;
+      if (isNamedGroup(a)) return true;
+    }
+    return false;
+  }
+
+  const inputs = helpers.queryAllSmart
+    ? helpers.queryAllSmart('input[type="radio" i], input[type="checkbox" i]')
+    : helpers.queryAll('input[type="radio" i], input[type="checkbox" i]');
+
+  // Options grouped by type, form owner and name, in document order.
+  const groups = new Map();
+  for (const el of inputs) {
+    if (!el) continue;
+    const type = trim(dom.getAttribute(el, 'type')).toLowerCase();
+    const name = dom.getAttribute(el, 'name');
+    if (!name || !trim(name)) continue;
+    if (!isEligible(el)) continue;
+    const owner = dom.get(el, 'form') || rootOf(el);
+    let byOwner = groups.get(owner);
+    if (!byOwner) {
+      byOwner = new Map();
+      groups.set(owner, byOwner);
+    }
+    const key = type + '\u0000' + name;
+    if (!byOwner.has(key)) byOwner.set(key, { type, name, members: [] });
+    byOwner.get(key).members.push(el);
+  }
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const byOwner of groups.values()) {
+    for (const group of byOwner.values()) {
+      if (group.members.length < 2) continue;
+      applicableCount += 1;
+      if (inNamedGroup(group.members)) continue;
+
+      const radio = group.type === 'radio';
+      const count = group.members.length;
+      const shownName = group.name.length > 60 ? `${group.name.slice(0, 59)}…` : group.name;
+      const occ = {
+        summary: radio
+          ? `These ${count} radio buttons named “${shownName}” are in no group with a name: no <fieldset> with a <legend>, and no element with role="radiogroup" or role="group" and an accessible name.`
+          : `These ${count} checkboxes named “${shownName}” are in no group with a name: no <fieldset> with a <legend>, and no element with role="group" and an accessible name.`,
+        hint: 'If the options answer one question, put them in a <fieldset> whose <legend> says it, or in an element with role="radiogroup" (role="group" for checkboxes) named with aria-labelledby pointing to the question.',
+        i18n: {
+          summaryKey: radio
+            ? 'formGroupNamePresent_summary_cantTell_radio'
+            : 'formGroupNamePresent_summary_cantTell_checkbox',
+          hintKey: 'formGroupNamePresent_hint_cantTell',
+          params: { name: shownName, count }
+        },
+        ...(radio
+          ? {
+              lean: {
+                toward: 'fail',
+                why: 'Radio buttons that share a name are one choice a person makes, and nothing gives that choice a name.',
+                signals: [
+                  { signal: 'shared-name', value: true },
+                  { signal: 'named-group', value: false },
+                  { signal: 'options', value: count }
+                ],
+                caution: 'Each option’s own label may say the whole question.',
+                i18n: {
+                  whyKey: 'formGroupNamePresent_lean_why_radio',
+                  cautionKey: 'formGroupNamePresent_lean_caution_radio'
+                }
+              }
+            }
+          : {}),
+        data: {
+          details: {
+            reasonCode: radio ? 'RADIO_GROUP_NO_NAME' : 'CHECKBOX_GROUP_NO_NAME',
+            name: shownName,
+            count,
+            inputType: group.type
+          }
+        }
+      };
+      occurrences.push(
+        typeof helpers.reportOccurrence === 'function'
+          ? helpers.reportOccurrence(group.members[0], occ)
+          : occ
+      );
+    }
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "heading-order": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -105969,8 +106632,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Sentence punctuation at the end reads as a sentence, not a title: past
   // closing quotes and brackets ("Stay home."), and in other scripts (Arabic
-  // and Urdu, Devanagari, Armenian, Ethiopic, CJK full-width).
-  const SENTENCE_END = /[.!?:;…。！？：؟۔।॥։።．｡]$/u;
+  // and Urdu, Devanagari, Armenian, Ethiopic, CJK full-width). A colon is no
+  // sentence end: a bold "Ingredients:" or "Step 1:" over a list or steps is
+  // a title made by bolding a line, as often as one with no final
+  // punctuation (round 10, S10-7); a semicolon still ends one.
+  const SENTENCE_END = /[.!?;…。！？؟۔।॥։።．｡]$/u;
   const CLOSERS = /[\s"'’”»›」』)\]）】〕〉》]+$/u;
   const endsAsSentenceOf = (text) => SENTENCE_END.test(String(text).replace(CLOSERS, ''));
 
@@ -106659,12 +107325,100 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return n;
   }
 
+  // The default titles an editor, a starter template or a CMS gives a page
+  // that nobody named, in the five languages the engine ships, read as
+  // generic whatever the page's language: a German "Ohne Titel" on a page
+  // marked lang="en" is still a default (round 10, S10-8).
+  const DEFAULT_TITLES = new Set([
+    // en
+    'untitled',
+    'untitled document',
+    'untitled page',
+    'document',
+    'new page',
+    'new document',
+    'page title',
+    'site title',
+    'your title here',
+    'react app',
+    'vite app',
+    'vite + react',
+    'vite + react + ts',
+    'vite + vue',
+    'vite + vue + ts',
+    'my wordpress website',
+    'my wordpress blog',
+    'just another wordpress site',
+    // es
+    'sin título',
+    'sin titulo',
+    'documento sin título',
+    'página sin título',
+    'documento',
+    'nueva página',
+    'nuevo documento',
+    'otro sitio realizado con wordpress',
+    // de
+    'ohne titel',
+    'unbenannt',
+    'unbenanntes dokument',
+    'unbenannte seite',
+    'dokument',
+    'neue seite',
+    'neues dokument',
+    'eine weitere wordpress-website',
+    // fr
+    'sans titre',
+    'document sans titre',
+    'page sans titre',
+    'nouvelle page',
+    'nouveau document',
+    'un site utilisant wordpress',
+    // ja
+    '無題',
+    '無題のドキュメント',
+    '無題のページ',
+    'タイトルなし',
+    'ドキュメント',
+    '新しいページ',
+    '新規ページ'
+  ]);
+  // A CMS's default site name or tagline is generic as one part of a title
+  // too: "Sample Page – Just another WordPress site".
+  const DEFAULT_TITLE_PARTS = new Set([
+    'my wordpress website',
+    'my wordpress blog',
+    'just another wordpress site',
+    'otro sitio realizado con wordpress',
+    'eine weitere wordpress-website',
+    'un site utilisant wordpress'
+  ]);
+  const TITLE_SEPARATOR = /\s+[|\-—–·:]\s+|\s*[|—–·]\s*/;
+  const titleParts = titleNorm.split(TITLE_SEPARATOR).filter(Boolean);
+
+  // A placeholder a template or a script left in the title instead of the
+  // page's name: a value never set ("undefined", "null", "NaN", "[object
+  // Object]") as the whole title or one part of it, or a template token
+  // ("{{title}}", "${title}", "%s", "{title}", "<%= title %>"). It names
+  // nothing, so it leans fail.
+  const placeholderToken = (() => {
+    const m =
+      /\{\{[^{}]*\}\}|\$\{[^{}]*\}|<%=?[^%]*%>|\[object [A-Za-z]+\]|\{[A-Za-z_][\w.-]*\}|(?:^|[^%\w])(%[sd])(?![\w])/.exec(
+        titleText
+      );
+    if (m) return m[1] || m[0];
+    const raw = titleText.split(TITLE_SEPARATOR).filter(Boolean);
+    return raw.find((part) => part === 'undefined' || part === 'null' || part === 'NaN') || '';
+  })();
+
   // Conservative signals:
   // - very short title (likely non-descriptive)
   // - title is one of a small set of generic titles
   const isVeryShort = titleText.length > 0 && effectiveLength(titleText) < 8;
   const isGeneric =
     GENERIC_TITLES.en.has(titleNorm) ||
+    DEFAULT_TITLES.has(titleNorm) ||
+    titleParts.some((part) => DEFAULT_TITLE_PARTS.has(part)) ||
     !!(
       pageLang &&
       Object.prototype.hasOwnProperty.call(GENERIC_TITLES, pageLang) &&
@@ -106694,22 +107448,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // with none of the signals is asked about too, so that the title's
   // presence (page-title-present) is all that is claimed of it.
   {
-    const reasonCode = isGeneric
-      ? 'genericTitle'
-      : isVeryShort
-        ? 'veryShortTitle'
-        : templateLike
-          ? 'templateLikeTitle'
-          : 'titleReview';
+    const reasonCode = placeholderToken
+      ? 'placeholderTitle'
+      : isGeneric
+        ? 'genericTitle'
+        : isVeryShort
+          ? 'veryShortTitle'
+          : templateLike
+            ? 'templateLikeTitle'
+            : 'titleReview';
 
     const summaryKey =
-      reasonCode === 'genericTitle'
-        ? 'pageTitlePatterns_summary_cantTell_generic'
-        : reasonCode === 'veryShortTitle'
-          ? 'pageTitlePatterns_summary_cantTell_veryShort'
-          : reasonCode === 'templateLikeTitle'
-            ? 'pageTitlePatterns_summary_cantTell_templateLike'
-            : 'pageTitlePatterns_summary_cantTell_review';
+      reasonCode === 'placeholderTitle'
+        ? 'pageTitlePatterns_summary_cantTell_placeholder'
+        : reasonCode === 'genericTitle'
+          ? 'pageTitlePatterns_summary_cantTell_generic'
+          : reasonCode === 'veryShortTitle'
+            ? 'pageTitlePatterns_summary_cantTell_veryShort'
+            : reasonCode === 'templateLikeTitle'
+              ? 'pageTitlePatterns_summary_cantTell_templateLike'
+              : 'pageTitlePatterns_summary_cantTell_review';
     const review = reasonCode === 'titleReview';
     const shownTitle = titleText.length > 80 ? `${titleText.slice(0, 79)}…` : titleText;
     // The generic word of a templated title, as written: "Home" in "Acme | Home".
@@ -106737,13 +107495,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       selector: titleSelector,
       html: '',
       summary:
-        reasonCode === 'genericTitle'
-          ? `The page title “${shownTitle}” is generic and may not say what the page is about.`
-          : reasonCode === 'veryShortTitle'
-            ? `The page title “${shownTitle}” is very short and may not say what the page is about.`
-            : reasonCode === 'templateLikeTitle' && templateWord
-              ? `The page title “${shownTitle}” pairs a site name with the generic word “${templateWord}”, and may not say what the page is about.`
-              : `Check that the page title, “${shownTitle}”, says what the page is about.`,
+        reasonCode === 'placeholderTitle'
+          ? `The page title “${shownTitle}” holds “${placeholderToken}”, a placeholder or a value a script left unset, and may not say what the page is about.`
+          : reasonCode === 'genericTitle'
+            ? `The page title “${shownTitle}” is generic and may not say what the page is about.`
+            : reasonCode === 'veryShortTitle'
+              ? `The page title “${shownTitle}” is very short and may not say what the page is about.`
+              : reasonCode === 'templateLikeTitle' && templateWord
+                ? `The page title “${shownTitle}” pairs a site name with the generic word “${templateWord}”, and may not say what the page is about.`
+                : `Check that the page title, “${shownTitle}”, says what the page is about.`,
       hint: "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages.",
       i18n: {
         summaryKey:
@@ -106753,13 +107513,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hintKey: 'pageTitlePatterns_hint_cantTell',
         params: {
           titleText: shownTitle,
-          ...(templateWord ? { word: templateWord } : {})
+          ...(templateWord ? { word: templateWord } : {}),
+          ...(placeholderToken ? { token: placeholderToken } : {})
         }
       },
+      ...(placeholderToken
+        ? {
+            lean: {
+              toward: 'fail',
+              why: 'The title holds a template placeholder or a value a script left unset, not words about the page.',
+              signals: [{ signal: 'placeholder-token', value: placeholderToken }],
+              i18n: { whyKey: 'pageTitlePatterns_lean_why_placeholder' }
+            }
+          }
+        : {}),
       data: {
         details: {
           reasonCode,
-          titleText
+          titleText,
+          ...(placeholderToken ? { placeholderToken } : {})
         },
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
       }
@@ -113675,6 +114447,164 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
+}), applicability: null },
+    "symbol-graphic-contrast": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+  const c = helpers.contrast;
+
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+
+  const notApplicable = {
+    ruleId: rule.ruleId,
+    outcome: 'notApplicable',
+    severity: 'minor',
+    occurrences: []
+  };
+  if (
+    !c ||
+    typeof c.computeEffectiveForeground !== 'function' ||
+    typeof c.computeEffectiveBackground !== 'function'
+  ) {
+    return notApplicable;
+  }
+
+  const SKIP =
+    'script,style,noscript,template,title,select,option,optgroup,datalist,textarea,svg,math';
+  const SYMBOL = /\p{S}/u;
+  const LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
+  // Emoji drawn in their own colours: the text colour doesn't paint them.
+  const EMOJI = /\p{Emoji_Presentation}|️/u;
+  // Characters that separate or decorate, as a breadcrumb's "|" does.
+  const SEPARATORS = /[\s|¦‖∣~∼·•/\\\-‐‑‒–—―]/gu;
+  const RENDER_OPTS = { visibilityMode: 'styleOnly', disableGeometry: true, ignoreOpacity: true };
+
+  function shown(el) {
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        const vis = helpers.isDomVisibleEligible(el, null, RENDER_OPTS);
+        if (vis && vis.eligible === false) return false;
+      }
+      if (
+        typeof helpers.isVisuallyHidden === 'function' &&
+        helpers.isVisuallyHidden(el, { ignoreOpacity: true })
+      ) {
+        return false;
+      }
+    } catch {}
+    return true;
+  }
+
+  // The element's own symbol text: a direct text child with a symbol, and
+  // the whole of its text free of letters and digits.
+  function symbolTextOf(el) {
+    let own = false;
+    for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
+      if (dom.nodeType(n) === 3 && SYMBOL.test(String(dom.nodeValue(n) || ''))) {
+        own = true;
+        break;
+      }
+    }
+    if (!own) return '';
+    const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
+    if (!text || [...text].length > 40) return '';
+    if (LETTER_OR_DIGIT.test(text) || EMOJI.test(text)) return '';
+    if (!SYMBOL.test(text.replace(SEPARATORS, ''))) return '';
+    return text;
+  }
+
+  const round2 = (n) => Math.round(n * 100) / 100;
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('body *') : helpers.queryAll('*');
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const el of nodes) {
+    if (!el || dom.nodeType(el) !== 1) continue;
+    const text = symbolTextOf(el);
+    if (!text) continue;
+    try {
+      if (dom.matches(el, SKIP) || dom.closest(el, SKIP)) continue;
+    } catch {
+      continue;
+    }
+    if (!shown(el)) continue;
+
+    let ratio;
+    let fgHex;
+    let bgHex;
+    try {
+      const blocker =
+        typeof c.getComputabilityBlocker === 'function' ? c.getComputabilityBlocker(el) : null;
+      if (blocker && blocker.ok === false) continue;
+      const fg = c.computeEffectiveForeground(el);
+      const bg = c.computeEffectiveBackground(el, {
+        contrast: { mode: 'strictConformance' },
+        collectStack: false
+      });
+      if (!fg || !fg.rgba || !bg || !bg.ok || !bg.rgba) continue;
+      const under = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+      const drawn = c.compositeRgba(fg.rgba, under);
+      ratio = c.contrastRatio(drawn, under);
+      fgHex = c.rgbToHex(drawn);
+      bgHex = c.rgbToHex(under);
+    } catch {
+      continue;
+    }
+    if (typeof ratio !== 'number' || !Number.isFinite(ratio)) continue;
+    applicableCount += 1;
+    if (ratio >= 3) continue;
+
+    const symbols = [...text].length > 20 ? `${[...text].slice(0, 19).join('')}…` : text;
+    const shownRatio = round2(ratio);
+    const occ = {
+      summary: `These symbols, “${symbols}”, have a contrast of ${shownRatio}:1 against their background, under the 3:1 a graphic needed to understand the content must reach.`,
+      hint: 'If the symbols show information, such as a rating or a status, give them a colour that reaches 3:1 against their background. If they only decorate, or a text beside them says the same, they need not.',
+      i18n: {
+        summaryKey: 'symbolGraphicContrast_summary_cantTell',
+        hintKey: 'symbolGraphicContrast_hint_cantTell',
+        params: { symbols, ratio: shownRatio, foreground: fgHex, background: bgHex }
+      },
+      lean: {
+        toward: 'fail',
+        why: 'Symbols such as rating stars or status marks usually carry information, and these are under 3:1 against their background.',
+        signals: [
+          { signal: 'symbol-only-text', value: true },
+          { signal: 'contrast-ratio', value: shownRatio }
+        ],
+        caution: 'The symbols may only decorate, or a text beside them may say the same.',
+        i18n: {
+          whyKey: 'symbolGraphicContrast_lean_why',
+          cautionKey: 'symbolGraphicContrast_lean_caution'
+        }
+      },
+      data: {
+        details: {
+          reasonCode: 'SYMBOLS_BELOW_GRAPHIC_THRESHOLD',
+          symbols,
+          ratio: shownRatio,
+          foreground: fgHex,
+          background: bgHex,
+          threshold: 3
+        }
+      }
+    };
+    occurrences.push(
+      typeof helpers.reportOccurrence === 'function' ? helpers.reportOccurrence(el, occ) : occ
+    );
+  }
+
+  if (applicableCount === 0) return notApplicable;
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "tab-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -122817,22 +123747,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const alt = raw.length > 40 ? `${raw.slice(0, 39)}…` : raw;
       return {
         hint: `Its alt="${alt}" does nothing: a <video> has no alt attribute. Use aria-label="${alt}" instead.`,
-        hintKey: 'videoPoster_textAltPresent_hint_fail_alt',
+        hintKey: 'videoPoster_textAltPresent_hint_cantTell_alt',
         params: { alt },
         detail: { cause: 'altOnVideo', alt }
       };
     })();
     const cause =
       (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || videoCause;
+    // A video is time-based media: its text alternative only has to
+    // identify it (WCAG 1.1.1's exception), and the poster is a frame of
+    // it. With no name, whether something else identifies it is asked,
+    // leaning fail (round 10, C10-7).
     const baseOccurrence = {
-      summary: 'This <video> poster image has no text alternative.',
+      summary: 'This <video> has a poster image but no name that identifies it.',
       hint: cause
         ? cause.hint
-        : 'Name the video with aria-label or aria-labelledby, saying what the poster shows. A title attribute also works, but less reliably.',
+        : "A video's text alternative only has to identify it. Check that something tied to the video says what it is; if nothing does, name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.",
       i18n: {
-        summaryKey: 'videoPoster_textAltPresent_summary_fail',
-        hintKey: cause ? cause.hintKey : 'videoPoster_textAltPresent_hint_fail',
+        summaryKey: 'videoPoster_textAltPresent_summary_cantTell',
+        hintKey: cause ? cause.hintKey : 'videoPoster_textAltPresent_hint_cantTell',
         params: { element: 'video', ...(cause ? cause.params : {}) }
+      },
+      lean: {
+        toward: 'fail',
+        why: 'The video has a poster but no accessible name, so a screen reader announces it with nothing that identifies it.',
+        signals: [{ signal: 'accessible-name', value: false }],
+        i18n: { whyKey: 'videoPoster_textAltPresent_lean_why_noName' }
+      },
+      uncertainty: {
+        code: 'equivalence-unknown',
+        needed:
+          'Whether something tied to the video identifies it, as WCAG 1.1.1 asks of time-based media.',
+        evidence: { poster: true, name: false }
       },
       data: {
         details: {
@@ -122846,9 +123792,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
 
     if (reportOccurrence) {
-      occurrences.push(reportOccurrence(el, baseOccurrence));
+      cantTellOccurrences.push(reportOccurrence(el, baseOccurrence));
     } else {
-      occurrences.push({ selector: '', html: '', ...baseOccurrence });
+      cantTellOccurrences.push({ selector: '', html: '', ...baseOccurrence });
     }
   }
 
@@ -123451,9 +124397,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "embed_textAltQuality_lean_caution": "Der Dateiname eines Dokuments kann sein tatsächlicher Titel sein.",
       "videoPoster_textAltPresent_title": "Das Vorschaubild (poster) von <video> muss eine Textalternative haben",
       "videoPoster_textAltPresent_description": "Prüft, ob <video>-Elemente mit einem Vorschaubild (poster) eine Textalternative (zugänglicher Name) bereitstellen.",
-      "videoPoster_textAltPresent_summary_fail": "Das Posterbild dieses <video> hat keine Textalternative.",
-      "videoPoster_textAltPresent_hint_fail": "Benennen Sie das Video mit aria-label oder aria-labelledby und sagen Sie, was das Posterbild zeigt. Ein title-Attribut funktioniert auch, aber weniger zuverlässig.",
-      "videoPoster_textAltPresent_hint_fail_alt": "Sein alt=\"{{alt}}\" bewirkt nichts: Ein <video> hat kein alt-Attribut. Verwenden Sie stattdessen aria-label=\"{{alt}}\".",
+      "videoPoster_textAltPresent_summary_cantTell": "Dieses <video> hat ein Posterbild, aber keinen Namen, der es kennzeichnet.",
+      "videoPoster_textAltPresent_hint_cantTell": "Die Textalternative eines Videos muss es nur kennzeichnen. Prüfen Sie, ob etwas, das mit dem Video verknüpft ist, sagt, was es ist; wenn nicht, benennen Sie es mit aria-label oder aria-labelledby. Ein title-Attribut funktioniert auch, aber weniger zuverlässig.",
+      "videoPoster_textAltPresent_hint_cantTell_alt": "Sein alt=\"{{alt}}\" bewirkt nichts: Ein <video> hat kein alt-Attribut. Verwenden Sie stattdessen aria-label=\"{{alt}}\".",
+      "videoPoster_textAltPresent_lean_why_noName": "Das Video hat ein Posterbild, aber keinen zugänglichen Namen, sodass ein Screenreader es ohne etwas ansagt, das es kennzeichnet.",
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "Dieses <video> hat keinen Namen, aber seine Abbildung hat eine Bildunterschrift, die das Vorschaubild beschreiben könnte.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Prüfen Sie, ob die Bildunterschrift beschreibt, was das Vorschaubild zeigt. Falls nicht, geben Sie dem Video einen zugänglichen Namen (aria-label oder aria-labelledby).",
       "svgImage_textAltPresent_title": "SVG <image> muss eine Textalternative haben",
@@ -123531,6 +124478,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_veryShort": "Der Seitentitel „{{titleText}}“ ist sehr kurz und sagt möglicherweise nicht, worum es auf der Seite geht.",
       "pageTitlePatterns_summary_cantTell_templateLike": "Der Seitentitel „{{titleText}}“ verbindet einen Website-Namen mit dem allgemeinen Wort „{{word}}“ und sagt möglicherweise nicht, worum es auf der Seite geht.",
       "pageTitlePatterns_summary_cantTell_review": "Prüfen Sie, ob der Seitentitel „{{titleText}}“ sagt, worum es auf der Seite geht.",
+      "pageTitlePatterns_summary_cantTell_placeholder": "Der Seitentitel „{{titleText}}“ enthält „{{token}}“, einen Platzhalter oder einen Wert, den ein Skript nicht gesetzt hat, und sagt möglicherweise nicht, worum es auf der Seite geht.",
+      "pageTitlePatterns_lean_why_placeholder": "Der Titel enthält einen Platzhalter einer Vorlage oder einen Wert, den ein Skript nicht gesetzt hat, statt Worten über die Seite.",
       "pageTitlePatterns_hint_cantTell": "Prüfen Sie, ob der Titel sagt, worum es auf der Seite geht oder wozu sie dient, und sie von den anderen Seiten der Website unterscheidet.",
       "pageZonesLandmark_title": "Kopfbereich, Navigation, Suche und Fußbereich der Seite sind Landmarken",
       "pageZonesLandmark_description": "Fragt nach Blöcken, die sich als Kopfbereich der Seite, als Navigation oder als Fußbereich bezeichnen, und nach Suchformularen, die nicht als Landmarke ihrer Art bereitgestellt sind, sowie nach einem Kopf- oder Fußbereich, der so verschachtelt ist, dass er seine Landmarke verliert.",
@@ -124792,6 +125741,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pAsHeading_lean_caution_style": "Auch ein einleitender Satz oder ein hervorgehobenes Zitat kann vor dem Fließtext stehen, und ein Designsystem kann Überschriftenstile für anderen Text wiederverwenden.",
       "pAsHeading_lean_why_cardTitle": "Auf den Link folgt in seinem Container eine Beschreibung, und benachbarte Container gleicher Form wiederholen Titel und Beschreibung ohne echte Überschrift, wie ein Raster aus Karten.",
       "pAsHeading_lean_caution_cardTitle": "Ein fetter Link ist oft eine Handlungsaufforderung; ob jede Karte ein eigener Abschnitt ist, entscheidet ein Mensch.",
+      "formGroupNamePresent_title": "Optionsfelder und Kontrollkästchen mit gleichem Namen sollten in einer benannten Gruppe stehen",
+      "formGroupNamePresent_description": "Fragt nach Optionsfeldern oder Kontrollkästchen, die einen Namen teilen, aber in keinem <fieldset> mit <legend> und keiner group oder radiogroup mit zugänglichem Namen stehen, sodass die Frage, die sie beantworten, mit keinem von ihnen verknüpft sein kann.",
+      "formGroupNamePresent_summary_cantTell_radio": "Diese {{count}} Optionsfelder mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"radiogroup\" oder role=\"group\" und zugänglichem Namen.",
+      "formGroupNamePresent_summary_cantTell_checkbox": "Diese {{count}} Kontrollkästchen mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"group\" und zugänglichem Namen.",
+      "formGroupNamePresent_hint_cantTell": "Wenn die Optionen eine Frage beantworten, setzen Sie sie in ein <fieldset>, dessen <legend> sie nennt, oder in ein Element mit role=\"radiogroup\" (role=\"group\" für Kontrollkästchen), das mit aria-labelledby auf die Frage benannt ist.",
+      "formGroupNamePresent_lean_why_radio": "Optionsfelder mit gleichem Namen sind eine einzige Auswahl, und nichts gibt dieser Auswahl einen Namen.",
+      "formGroupNamePresent_lean_caution_radio": "Die Beschriftung jeder Option kann die ganze Frage schon selbst sagen.",
+      "symbolGraphicContrast_title": "Als Grafik verwendete Symbole sollten einen Kontrast von mindestens 3:1 haben",
+      "symbolGraphicContrast_description": "Fragt nach Symbolen, die als Text ohne Buchstaben oder Ziffern gezeichnet sind, etwa Bewertungssterne, Punkte, Pfeile oder Häkchen, deren Kontrast zu ihrem Hintergrund unter den 3:1 liegt, die eine zum Verständnis des Inhalts nötige Grafik erreichen muss.",
+      "symbolGraphicContrast_summary_cantTell": "Diese Symbole, „{{symbols}}“, haben einen Kontrast von {{ratio}}:1 zu ihrem Hintergrund, unter den 3:1, die eine zum Verständnis des Inhalts nötige Grafik erreichen muss.",
+      "symbolGraphicContrast_hint_cantTell": "Wenn die Symbole Informationen zeigen, etwa eine Bewertung oder einen Status, geben Sie ihnen eine Farbe, die 3:1 zu ihrem Hintergrund erreicht. Wenn sie nur schmücken oder ein Text daneben dasselbe sagt, ist das nicht nötig.",
+      "symbolGraphicContrast_lean_why": "Symbole wie Bewertungssterne oder Statuszeichen tragen meist Informationen, und diese liegen unter 3:1 zu ihrem Hintergrund.",
+      "symbolGraphicContrast_lean_caution": "Die Symbole können nur schmücken, oder ein Text daneben kann dasselbe sagen.",
       "tableFakeCaption_title": "Die erste Zeile einer Tabelle sollte nicht eine echte <caption> ersetzen",
       "tableFakeCaption_description": "Markiert Tabellen ohne <caption>, deren erste Zeile eine einzelne nicht leere Zelle hat, während andere Zeilen mehrere Zellen haben, zur manuellen Überprüfung, ob diese Zelle als unechte Beschriftung fungiert.",
       "tableFakeCaption_summary_cantTell": "Diese Tabelle hat keine <caption>, aber ihre erste Zeile besteht aus einer einzelnen Zelle oberhalb von Zeilen mit mehreren Zellen — sie könnte als unechte Beschriftung fungieren.",
@@ -124883,6 +125845,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Ein vor den Skripten der Seite installierter Hook hat weder am Element noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten- oder Fokus-Listener gesehen; Eingabe und Leertaste bewirken daher wahrscheinlich nichts.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Ein Vorfahre behält den Fokus für seine Elemente (aria-activedescendant oder ein fokussierbares zusammengesetztes Widget); so bedient ein solches Widget ein Element, ohne es zu fokussieren.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "Das Element zeigt einen Zeiger-Cursor und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "Das Element ist wie eine Schaltfläche gestaltet, ein kurzer Text in einem Kasten mit eigenem Hintergrund oder Rahmen, und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "Dieselbe Aktion kann ein anderes Bedienelement der Seite anbieten, etwa ein Link neben einer anklickbaren Zeile.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert (Eingabe und Leertaste sowie die Pfeiltasten seines Widgets), dasselbe bewirken wie ein Klick.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
@@ -125280,9 +126243,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "embed_textAltQuality_lean_caution": "A document's file name can be its real title.",
       "videoPoster_textAltPresent_title": "<video> poster must have a text alternative",
       "videoPoster_textAltPresent_description": "Checks that <video> elements with a poster image provide a text alternative (accessible name).",
-      "videoPoster_textAltPresent_summary_fail": "This <video> poster image has no text alternative.",
-      "videoPoster_textAltPresent_hint_fail": "Name the video with aria-label or aria-labelledby, saying what the poster shows. A title attribute also works, but less reliably.",
-      "videoPoster_textAltPresent_hint_fail_alt": "Its alt=\"{{alt}}\" does nothing: a <video> has no alt attribute. Use aria-label=\"{{alt}}\" instead.",
+      "videoPoster_textAltPresent_summary_cantTell": "This <video> has a poster image but no name that identifies it.",
+      "videoPoster_textAltPresent_hint_cantTell": "A video's text alternative only has to identify it. Check that something tied to the video says what it is; if nothing does, name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.",
+      "videoPoster_textAltPresent_hint_cantTell_alt": "Its alt=\"{{alt}}\" does nothing: a <video> has no alt attribute. Use aria-label=\"{{alt}}\" instead.",
+      "videoPoster_textAltPresent_lean_why_noName": "The video has a poster but no accessible name, so a screen reader announces it with nothing that identifies it.",
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "This <video> has no name, but its figure has a caption that may describe its poster.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Check that the caption describes what the poster image shows. If it does not, give the video an accessible name (aria-label or aria-labelledby).",
       "svgImage_textAltPresent_title": "SVG <image> must have a text alternative",
@@ -125360,6 +126324,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_veryShort": "The page title “{{titleText}}” is very short and may not say what the page is about.",
       "pageTitlePatterns_summary_cantTell_templateLike": "The page title “{{titleText}}” pairs a site name with the generic word “{{word}}”, and may not say what the page is about.",
       "pageTitlePatterns_summary_cantTell_review": "Check that the page title, “{{titleText}}”, says what the page is about.",
+      "pageTitlePatterns_summary_cantTell_placeholder": "The page title “{{titleText}}” holds “{{token}}”, a placeholder or a value a script left unset, and may not say what the page is about.",
+      "pageTitlePatterns_lean_why_placeholder": "The title holds a template placeholder or a value a script left unset, not words about the page.",
       "pageTitlePatterns_hint_cantTell": "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages.",
       "pageZonesLandmark_title": "The page's header, navigation, search and footer are landmarks",
       "pageZonesLandmark_description": "Asks about blocks that name themselves the page's header, a navigation or its footer, and search forms, that are not exposed as the landmark of their nature, and about a page header or footer nested where it loses its landmark.",
@@ -126621,6 +127587,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pAsHeading_lean_caution_style": "A lead-in sentence or a pull quote can also come before body text, and a design system may reuse heading styles for other text.",
       "pAsHeading_lean_why_cardTitle": "The link is followed by a description in its container, and sibling containers of the same shape repeat that title and description with no real heading, as a grid of cards does.",
       "pAsHeading_lean_caution_cardTitle": "A bold link is often a call to action; whether each card is a section of its own is for a person to decide.",
+      "formGroupNamePresent_title": "Radio buttons and checkboxes that share a name should be in a named group",
+      "formGroupNamePresent_description": "Asks about radio buttons, or checkboxes, that share a name but sit in no <fieldset> with a <legend> and no group or radiogroup with an accessible name, so the question they answer may be tied to none of them.",
+      "formGroupNamePresent_summary_cantTell_radio": "These {{count}} radio buttons named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"radiogroup\" or role=\"group\" and an accessible name.",
+      "formGroupNamePresent_summary_cantTell_checkbox": "These {{count}} checkboxes named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"group\" and an accessible name.",
+      "formGroupNamePresent_hint_cantTell": "If the options answer one question, put them in a <fieldset> whose <legend> says it, or in an element with role=\"radiogroup\" (role=\"group\" for checkboxes) named with aria-labelledby pointing to the question.",
+      "formGroupNamePresent_lean_why_radio": "Radio buttons that share a name are one choice a person makes, and nothing gives that choice a name.",
+      "formGroupNamePresent_lean_caution_radio": "Each option’s own label may say the whole question.",
+      "symbolGraphicContrast_title": "Symbols used as a graphic should have a contrast of at least 3:1",
+      "symbolGraphicContrast_description": "Asks about symbols drawn as text with no letter or digit, such as rating stars, dots, arrows or check marks, whose contrast against their background is under the 3:1 a graphic needed to understand the content must reach.",
+      "symbolGraphicContrast_summary_cantTell": "These symbols, “{{symbols}}”, have a contrast of {{ratio}}:1 against their background, under the 3:1 a graphic needed to understand the content must reach.",
+      "symbolGraphicContrast_hint_cantTell": "If the symbols show information, such as a rating or a status, give them a colour that reaches 3:1 against their background. If they only decorate, or a text beside them says the same, they need not.",
+      "symbolGraphicContrast_lean_why": "Symbols such as rating stars or status marks usually carry information, and these are under 3:1 against their background.",
+      "symbolGraphicContrast_lean_caution": "The symbols may only decorate, or a text beside them may say the same.",
       "tableFakeCaption_title": "A table's first row should not stand in for a real <caption>",
       "tableFakeCaption_description": "Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.",
       "tableFakeCaption_summary_cantTell": "This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.",
@@ -126712,6 +127691,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "A hook installed before the page’s scripts saw no key or focus listener on the element, its ancestors, the document or the window, so Enter and Space probably do nothing.",
       "clickHandlerKeyboardOperable_lean_why_managed": "An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "The element is drawn as a button, a short label in a box with a background or a border of its own, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "The same action may be offered by another control of the page, such as a link next to a clickable row.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Handle keydown so that the keys a {{role}} answers to (Enter and Space, and the arrow keys of its widget) do what a click does.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
@@ -127109,9 +128089,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "embed_textAltQuality_lean_caution": "El nombre de archivo de un documento puede ser su verdadero título.",
       "videoPoster_textAltPresent_title": "La imagen de portada (poster) de <video> debe tener una alternativa textual",
       "videoPoster_textAltPresent_description": "Comprueba que los elementos <video> con una imagen de portada (atributo poster) proporcionen una alternativa textual (nombre accesible).",
-      "videoPoster_textAltPresent_summary_fail": "La imagen de portada de este <video> no tiene alternativa textual.",
-      "videoPoster_textAltPresent_hint_fail": "Darle nombre al vídeo con aria-label o aria-labelledby, diciendo lo que muestra la imagen de portada. Un atributo title también sirve, pero es menos fiable.",
-      "videoPoster_textAltPresent_hint_fail_alt": "Su alt=\"{{alt}}\" no hace nada: un <video> no tiene atributo alt. Usar aria-label=\"{{alt}}\" en su lugar.",
+      "videoPoster_textAltPresent_summary_cantTell": "Este <video> tiene imagen de portada pero ningún nombre que lo identifique.",
+      "videoPoster_textAltPresent_hint_cantTell": "La alternativa textual de un vídeo solo tiene que identificarlo. Comprobar que algo ligado al vídeo dice qué es; si nada lo dice, darle nombre con aria-label o aria-labelledby. Un atributo title también sirve, pero es menos fiable.",
+      "videoPoster_textAltPresent_hint_cantTell_alt": "Su alt=\"{{alt}}\" no hace nada: un <video> no tiene atributo alt. Usar aria-label=\"{{alt}}\" en su lugar.",
+      "videoPoster_textAltPresent_lean_why_noName": "El vídeo tiene imagen de portada pero ningún nombre accesible, así que un lector de pantalla lo anuncia sin nada que lo identifique.",
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "Este <video> no tiene nombre, pero su figura tiene un pie que puede describir su imagen de portada.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Comprobar que el pie describe lo que muestra la imagen de portada. Si no, dar al vídeo un nombre accesible (aria-label o aria-labelledby).",
       "svgImage_textAltPresent_title": "El elemento <image> de SVG debe tener una alternativa textual",
@@ -127189,6 +128170,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_veryShort": "El título de la página, «{{titleText}}», es muy corto y puede que no diga de qué trata.",
       "pageTitlePatterns_summary_cantTell_templateLike": "El título de la página, «{{titleText}}», une el nombre de un sitio con la palabra genérica «{{word}}», y puede que no diga de qué trata.",
       "pageTitlePatterns_summary_cantTell_review": "Comprobar que el título de la página, «{{titleText}}», dice de qué trata la página.",
+      "pageTitlePatterns_summary_cantTell_placeholder": "El título de la página, «{{titleText}}», contiene «{{token}}», un marcador de posición o un valor que un script no rellenó, y puede que no diga de qué trata.",
+      "pageTitlePatterns_lean_why_placeholder": "El título contiene un marcador de posición de una plantilla o un valor que un script no rellenó, no palabras sobre la página.",
       "pageTitlePatterns_hint_cantTell": "Comprobar que el título dice de qué trata la página o para qué sirve, y la distingue de las demás páginas del sitio.",
       "pageZonesLandmark_title": "La cabecera, la navegación, la búsqueda y el pie de la página son regiones de referencia",
       "pageZonesLandmark_description": "Pregunta por los bloques que se nombran cabecera de la página, navegación o pie, y por los formularios de búsqueda, que no se exponen como la región de referencia de su naturaleza, y por una cabecera o un pie anidados donde pierden su región de referencia.",
@@ -128450,6 +129433,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pAsHeading_lean_caution_style": "Una frase introductoria o una cita destacada también pueden ir antes del texto normal, y un sistema de diseño puede reutilizar los estilos de encabezado para otros textos.",
       "pAsHeading_lean_why_cardTitle": "El enlace va seguido de una descripción en su contenedor, y contenedores hermanos de la misma forma repiten ese título y esa descripción sin encabezado real, como una cuadrícula de tarjetas.",
       "pAsHeading_lean_caution_cardTitle": "Un enlace en negrita suele ser una llamada a la acción; si cada tarjeta es una sección propia lo decide una persona.",
+      "formGroupNamePresent_title": "Los botones de opción y las casillas que comparten nombre deberían estar en un grupo con nombre",
+      "formGroupNamePresent_description": "Pregunta por botones de opción, o casillas de verificación, que comparten nombre pero no están en ningún <fieldset> con <legend> ni en ningún grupo o radiogroup con nombre accesible, así que la pregunta a la que responden puede no estar ligada a ninguno.",
+      "formGroupNamePresent_summary_cantTell_radio": "Estos {{count}} botones de opción con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"radiogroup\" o role=\"group\" y nombre accesible.",
+      "formGroupNamePresent_summary_cantTell_checkbox": "Estas {{count}} casillas de verificación con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"group\" y nombre accesible.",
+      "formGroupNamePresent_hint_cantTell": "Si las opciones responden a una sola pregunta, ponerlas en un <fieldset> cuyo <legend> la diga, o en un elemento con role=\"radiogroup\" (role=\"group\" para casillas) nombrado con aria-labelledby apuntando a la pregunta.",
+      "formGroupNamePresent_lean_why_radio": "Los botones de opción que comparten nombre son una sola elección, y nada le da nombre a esa elección.",
+      "formGroupNamePresent_lean_caution_radio": "La etiqueta de cada opción puede decir por sí sola la pregunta entera.",
+      "symbolGraphicContrast_title": "Los símbolos usados como gráfico deberían tener un contraste de al menos 3:1",
+      "symbolGraphicContrast_description": "Pregunta por símbolos dibujados como texto sin ninguna letra ni cifra, como estrellas de valoración, puntos, flechas o marcas de verificación, cuyo contraste con su fondo está por debajo del 3:1 que debe alcanzar un gráfico necesario para entender el contenido.",
+      "symbolGraphicContrast_summary_cantTell": "Estos símbolos, «{{symbols}}», tienen un contraste de {{ratio}}:1 con su fondo, por debajo del 3:1 que debe alcanzar un gráfico necesario para entender el contenido.",
+      "symbolGraphicContrast_hint_cantTell": "Si los símbolos muestran información, como una valoración o un estado, darles un color que alcance 3:1 con su fondo. Si solo decoran, o un texto a su lado dice lo mismo, no hace falta.",
+      "symbolGraphicContrast_lean_why": "Los símbolos como las estrellas de valoración o las marcas de estado suelen transmitir información, y estos están por debajo de 3:1 con su fondo.",
+      "symbolGraphicContrast_lean_caution": "Puede que los símbolos solo decoren, o que un texto a su lado diga lo mismo.",
       "tableFakeCaption_title": "La primera fila de una tabla no debería sustituir a un <caption> real",
       "tableFakeCaption_description": "Señala tablas sin <caption> cuya primera fila tiene una única celda no vacía mientras que las demás filas tienen varias celdas, para su revisión manual sobre si esa celda actúa como un título de tabla falso.",
       "tableFakeCaption_summary_cantTell": "Esta tabla no tiene <caption>, pero su primera fila es una única celda situada sobre filas con varias celdas; puede estar actuando como un título de tabla falso.",
@@ -128541,6 +129537,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook instalado antes de los scripts de la página no vio ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio probablemente no hacen nada.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "El elemento se dibuja como un botón, un texto corto en una caja con fondo o borde propios, y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gestionar keydown para que las teclas a las que responde un {{role}} (Intro y Espacio, y las flechas de su widget) hagan lo mismo que un clic.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
@@ -128938,9 +129935,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "embed_textAltQuality_lean_caution": "Le nom de fichier d’un document peut être son vrai titre.",
       "videoPoster_textAltPresent_title": "L’image poster de <video> doit avoir un équivalent textuel",
       "videoPoster_textAltPresent_description": "Vérifie que les éléments <video> avec une image poster fournissent un équivalent textuel (nom accessible).",
-      "videoPoster_textAltPresent_summary_fail": "L’image poster de cette <video> n’a pas d’équivalent textuel.",
-      "videoPoster_textAltPresent_hint_fail": "Nommez la vidéo avec aria-label ou aria-labelledby, en disant ce que montre l’affiche. Un attribut title fonctionne aussi, mais de façon moins fiable.",
-      "videoPoster_textAltPresent_hint_fail_alt": "Son alt=\"{{alt}}\" ne fait rien : une <video> n’a pas d’attribut alt. Utilisez plutôt aria-label=\"{{alt}}\".",
+      "videoPoster_textAltPresent_summary_cantTell": "Cette <video> a une image d’affiche mais aucun nom qui l’identifie.",
+      "videoPoster_textAltPresent_hint_cantTell": "L’équivalent textuel d’une vidéo n’a qu’à l’identifier. Vérifiez que quelque chose de lié à la vidéo dit ce qu’elle est ; sinon, nommez-la avec aria-label ou aria-labelledby. Un attribut title fonctionne aussi, mais de façon moins fiable.",
+      "videoPoster_textAltPresent_hint_cantTell_alt": "Son alt=\"{{alt}}\" ne fait rien : une <video> n’a pas d’attribut alt. Utilisez plutôt aria-label=\"{{alt}}\".",
+      "videoPoster_textAltPresent_lean_why_noName": "La vidéo a une affiche mais aucun nom accessible, si bien qu’un lecteur d’écran l’annonce sans rien qui l’identifie.",
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "Cette <video> n’a pas de nom, mais sa figure a une légende qui peut décrire son image d’affiche.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Vérifiez que la légende décrit ce que montre l’image d’affiche. Sinon, donnez à la vidéo un nom accessible (aria-label ou aria-labelledby).",
       "svgImage_textAltPresent_title": "<image> dans un SVG doit avoir un équivalent textuel",
@@ -129018,6 +130016,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_veryShort": "Le titre de la page, « {{titleText}} », est très court et ne dit peut-être pas de quoi elle parle.",
       "pageTitlePatterns_summary_cantTell_templateLike": "Le titre de la page, « {{titleText}} », associe un nom de site au mot générique « {{word}} », et ne dit peut-être pas de quoi elle parle.",
       "pageTitlePatterns_summary_cantTell_review": "Vérifiez que le titre de la page, « {{titleText}} », indique de quoi parle la page.",
+      "pageTitlePatterns_summary_cantTell_placeholder": "Le titre de la page, « {{titleText}} », contient « {{token}} », un espace réservé ou une valeur qu’un script n’a pas renseignée, et ne dit peut-être pas de quoi elle parle.",
+      "pageTitlePatterns_lean_why_placeholder": "Le titre contient un espace réservé d’un modèle ou une valeur qu’un script n’a pas renseignée, et non des mots sur la page.",
       "pageTitlePatterns_hint_cantTell": "Vérifiez que le titre dit de quoi parle la page ou à quoi elle sert, et la distingue des autres pages du site.",
       "pageZonesLandmark_title": "L’en-tête, la navigation, la recherche et le pied de page sont des points de repère",
       "pageZonesLandmark_description": "Signale les blocs qui se nomment en-tête de la page, navigation ou pied de page, et les formulaires de recherche, qui ne sont pas exposés comme le point de repère de leur nature, ainsi qu’un en-tête ou un pied de page imbriqué là où il perd son point de repère.",
@@ -130279,6 +131279,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pAsHeading_lean_caution_style": "Une phrase d’introduction ou une citation mise en exergue peut aussi précéder le texte courant, et un système de design peut réutiliser les styles de titre pour d’autres textes.",
       "pAsHeading_lean_why_cardTitle": "Le lien est suivi d’une description dans son conteneur, et des conteneurs voisins de même forme répètent ce titre et cette description sans vrai titre, comme une grille de cartes.",
       "pAsHeading_lean_caution_cardTitle": "Un lien en gras est souvent un appel à l’action ; c’est à une personne de décider si chaque carte est une section à part entière.",
+      "formGroupNamePresent_title": "Les boutons radio et les cases à cocher qui partagent un nom devraient être dans un groupe nommé",
+      "formGroupNamePresent_description": "Signale les boutons radio, ou les cases à cocher, qui partagent un nom mais ne sont dans aucun <fieldset> avec <legend> ni dans aucun group ou radiogroup avec un nom accessible, si bien que la question à laquelle ils répondent peut n’être liée à aucun d’eux.",
+      "formGroupNamePresent_summary_cantTell_radio": "Ces {{count}} boutons radio nommés « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"radiogroup\" ou role=\"group\" et un nom accessible.",
+      "formGroupNamePresent_summary_cantTell_checkbox": "Ces {{count}} cases à cocher nommées « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"group\" et un nom accessible.",
+      "formGroupNamePresent_hint_cantTell": "Si les options répondent à une seule question, placez-les dans un <fieldset> dont la <legend> la formule, ou dans un élément avec role=\"radiogroup\" (role=\"group\" pour des cases à cocher) nommé par aria-labelledby pointant vers la question.",
+      "formGroupNamePresent_lean_why_radio": "Des boutons radio qui partagent un nom sont un seul choix, et rien ne donne de nom à ce choix.",
+      "formGroupNamePresent_lean_caution_radio": "L’étiquette de chaque option peut formuler à elle seule toute la question.",
+      "symbolGraphicContrast_title": "Les symboles utilisés comme graphique devraient avoir un contraste d’au moins 3:1",
+      "symbolGraphicContrast_description": "Signale les symboles dessinés comme du texte sans lettre ni chiffre, comme des étoiles de notation, des points, des flèches ou des coches, dont le contraste avec leur arrière-plan est inférieur au 3:1 que doit atteindre un graphique nécessaire pour comprendre le contenu.",
+      "symbolGraphicContrast_summary_cantTell": "Ces symboles, « {{symbols}} », ont un contraste de {{ratio}}:1 avec leur arrière-plan, inférieur au 3:1 que doit atteindre un graphique nécessaire pour comprendre le contenu.",
+      "symbolGraphicContrast_hint_cantTell": "Si les symboles donnent une information, comme une note ou un état, donnez-leur une couleur qui atteint 3:1 avec leur arrière-plan. S’ils ne font que décorer, ou si un texte à côté dit la même chose, ce n’est pas nécessaire.",
+      "symbolGraphicContrast_lean_why": "Des symboles comme des étoiles de notation ou des marques d’état portent généralement une information, et ceux-ci sont sous 3:1 avec leur arrière-plan.",
+      "symbolGraphicContrast_lean_caution": "Les symboles peuvent n’être que décoratifs, ou un texte à côté peut dire la même chose.",
       "tableFakeCaption_title": "La première ligne d’un tableau ne devrait pas tenir lieu de véritable <caption>",
       "tableFakeCaption_description": "Signale les tableaux sans <caption> dont la première ligne a une seule cellule non vide alors que les autres lignes ont plusieurs cellules, pour une vérification manuelle visant à déterminer si cette cellule fait office de légende factice.",
       "tableFakeCaption_summary_cantTell": "Ce tableau n’a pas de <caption>, mais sa première ligne est une cellule unique placée au-dessus de lignes à plusieurs cellules — elle fait peut-être office de légende factice.",
@@ -130370,6 +131383,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook installé avant les scripts de la page n’a vu aucun écouteur de touches ni de focus sur l’élément, ses ancêtres, le document ni la fenêtre : Entrée et Espace ne font sans doute rien.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Un ancêtre garde le focus pour ses éléments (aria-activedescendant, ou un composant composite focalisable) : c’est ainsi qu’un tel composant actionne un élément sans lui donner le focus.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "L’élément affiche un curseur en forme de main et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "L’élément est dessiné comme un bouton, un texte court dans une boîte avec un fond ou une bordure à elle, et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La même action peut être offerte par une autre commande de la page, comme un lien à côté d’une ligne cliquable.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gérez keydown pour que les touches auxquelles répond un {{role}} (Entrée et Espace, et les flèches de son composant) fassent ce que fait un clic.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
@@ -130767,9 +131781,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "embed_textAltQuality_lean_caution": "文書のファイル名が、その文書の実際のタイトルである場合もあります。",
       "videoPoster_textAltPresent_title": "<video> のポスター画像にはテキストによる代替が必要",
       "videoPoster_textAltPresent_description": "ポスター画像を持つ <video> 要素に、テキストによる代替 (アクセシブルな名前) があるかを確認します。",
-      "videoPoster_textAltPresent_summary_fail": "この <video> のポスター画像にはテキストによる代替がありません。",
-      "videoPoster_textAltPresent_hint_fail": "ポスターの内容を伝える名前を、aria-label または aria-labelledby で動画に付けてください。title 属性でも名前は付きますが、確実さに欠けます。",
-      "videoPoster_textAltPresent_hint_fail_alt": "alt=\"{{alt}}\" は何の効果もありません。<video> には alt 属性がありません。代わりに aria-label=\"{{alt}}\" を使ってください。",
+      "videoPoster_textAltPresent_summary_cantTell": "この <video> にはポスター画像がありますが、動画を識別する名前がありません。",
+      "videoPoster_textAltPresent_hint_cantTell": "動画のテキストによる代替は、その動画を識別できれば十分です。動画に関連付けられたものが何の動画かを伝えているか確認し、何もなければ aria-label または aria-labelledby で名前を付けてください。title 属性でも名前は付きますが、確実さに欠けます。",
+      "videoPoster_textAltPresent_hint_cantTell_alt": "alt=\"{{alt}}\" は何の効果もありません。<video> には alt 属性がありません。代わりに aria-label=\"{{alt}}\" を使ってください。",
+      "videoPoster_textAltPresent_lean_why_noName": "動画にはポスターがありますが、アクセシブルな名前がないため、スクリーンリーダーは動画を識別する情報なしで読み上げます。",
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "この <video> には名前がありませんが、図のキャプションがポスター画像を説明している可能性があります。",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "キャプションがポスター画像の内容を説明しているか確認してください。説明していない場合は、動画にアクセシブルな名前（aria-label または aria-labelledby）を付けてください。",
       "svgImage_textAltPresent_title": "SVG の <image> にはテキストによる代替が必要",
@@ -130847,6 +131862,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_veryShort": "ページタイトル「{{titleText}}」はとても短く、ページの内容を伝えていない可能性があります。",
       "pageTitlePatterns_summary_cantTell_templateLike": "ページタイトル「{{titleText}}」はサイト名と汎用的な語「{{word}}」を組み合わせたもので、ページの内容を伝えていない可能性があります。",
       "pageTitlePatterns_summary_cantTell_review": "ページタイトル「{{titleText}}」が、ページの内容を表しているか確認してください。",
+      "pageTitlePatterns_summary_cantTell_placeholder": "ページタイトル「{{titleText}}」には「{{token}}」が含まれています。これはプレースホルダーか、スクリプトが設定しなかった値で、ページの内容を伝えていない可能性があります。",
+      "pageTitlePatterns_lean_why_placeholder": "タイトルには、ページについての言葉ではなく、テンプレートのプレースホルダーかスクリプトが設定しなかった値が含まれています。",
       "pageTitlePatterns_hint_cantTell": "タイトルがページの内容や目的を伝え、サイト内の他のページと区別できるものになっているか確認してください。",
       "pageZonesLandmark_title": "ページのヘッダー、ナビゲーション、検索、フッターがランドマークになっている",
       "pageZonesLandmark_description": "ページのヘッダー、ナビゲーション、フッターと名付けられたブロックや検索フォームが、その種類のランドマークとして公開されていない場合と、ヘッダーやフッターがランドマークを失う位置に入れ子になっている場合について確認を求めます。",
@@ -132108,6 +133125,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pAsHeading_lean_caution_style": "導入文や引用の強調表示が本文の前に来ることもあり、デザインシステムが見出しのスタイルを別のテキストに使い回すこともあります。",
       "pAsHeading_lean_why_cardTitle": "このリンクの後にはコンテナ内で説明が続き、同じ形の隣接するコンテナが本来の見出しなしにタイトルと説明を繰り返しています。カードのグリッドと同じです。",
       "pAsHeading_lean_caution_cardTitle": "太字のリンクは行動を促すボタンであることが多く、各カードが独立したセクションかどうかは人が判断します。",
+      "formGroupNamePresent_title": "同じ name を持つラジオボタンやチェックボックスは、名前のあるグループに入れるべきです",
+      "formGroupNamePresent_description": "同じ name を持つのに、<legend> のある <fieldset> にも、アクセシブルな名前のある group や radiogroup にも入っていないラジオボタンやチェックボックスについて確認を求めます。それらが答える質問が、どれにも関連付けられていない可能性があります。",
+      "formGroupNamePresent_summary_cantTell_radio": "name が「{{name}}」の {{count}} 個のラジオボタンは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"radiogroup\" や role=\"group\" の要素もありません。",
+      "formGroupNamePresent_summary_cantTell_checkbox": "name が「{{name}}」の {{count}} 個のチェックボックスは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"group\" の要素もありません。",
+      "formGroupNamePresent_hint_cantTell": "選択肢が一つの質問に答えるものなら、その質問を <legend> に書いた <fieldset> に入れるか、質問を指す aria-labelledby で名前を付けた role=\"radiogroup\" (チェックボックスなら role=\"group\") の要素に入れてください。",
+      "formGroupNamePresent_lean_why_radio": "同じ name を持つラジオボタンは一つの選択であり、その選択に名前を付けているものがありません。",
+      "formGroupNamePresent_lean_caution_radio": "各選択肢のラベルだけで質問全体を伝えている場合もあります。",
+      "symbolGraphicContrast_title": "グラフィックとして使われる記号は、少なくとも 3:1 のコントラストを持つべきです",
+      "symbolGraphicContrast_description": "評価の星、点、矢印、チェックマークなど、文字も数字も含まないテキストとして描かれた記号で、背景とのコントラストが、内容の理解に必要なグラフィックが満たすべき 3:1 を下回るものについて確認を求めます。",
+      "symbolGraphicContrast_summary_cantTell": "これらの記号「{{symbols}}」の背景とのコントラストは {{ratio}}:1 で、内容の理解に必要なグラフィックが満たすべき 3:1 を下回っています。",
+      "symbolGraphicContrast_hint_cantTell": "記号が評価や状態などの情報を示しているなら、背景に対して 3:1 に達する色にしてください。装飾にすぎない場合や、横のテキストが同じことを伝えている場合は不要です。",
+      "symbolGraphicContrast_lean_why": "評価の星や状態を示す記号などはふつう情報を伝えるもので、これらは背景に対して 3:1 を下回っています。",
+      "symbolGraphicContrast_lean_caution": "記号は装飾にすぎないか、横のテキストが同じことを伝えている可能性があります。",
       "tableFakeCaption_title": "表の 1 行目を本来の <caption> の代わりにしないことが望ましい",
       "tableFakeCaption_description": "<caption> がなく、1 行目が空でない単一のセルで、ほかの行が複数のセルを持つ表を検出し、そのセルが見せかけのキャプションとして使われていないかを人が確認できるようにします。",
       "tableFakeCaption_summary_cantTell": "この表には <caption> がありませんが、1 行目が複数セルの行の上にある単一のセルになっているため、見せかけのキャプションとして使われている可能性があります。",
@@ -132199,6 +133229,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーを見つけませんでした。Enter や Space ではおそらく何も起きません。",
       "clickHandlerKeyboardOperable_lean_why_managed": "祖先が項目のためにフォーカスを保持しています(aria-activedescendant、またはフォーカス可能な複合ウィジェット)。このようなウィジェットは、項目にフォーカスを移さずに操作します。",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "この要素はポインター カーソルを表示してクリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "この要素は、独自の背景または枠線を持つボックスに短いラベルを置いたボタンのような見た目で、クリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "同じ操作をページ内の別のコントロール(クリックできる行の横のリンクなど)が提供している場合があります。",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "keydown を処理して、{{role}} が応答するキー (Enter と Space、そのウィジェットの矢印キー) でクリックと同じことが起きるようにしてください。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
@@ -146711,9 +147742,11 @@ const engineOptionSpec = (function engineOptionSpec() {
     perfStats: T.boolean,
     profileRules: T.boolean,
     // Once a scan has spent this long, it starts no more rules; those it
-    // didn't start are listed in its result (notRun). Off when not given.
+    // didn't start are listed in its result (notRun). Off when not given,
+    // and Infinity, the natural value for no limit, is off too (round 10,
+    // S10-9).
     timeBudgetMs: {
-      test: (v) => typeof v === 'number' && Number.isFinite(v) && v > 0,
+      test: (v) => typeof v === 'number' && v > 0,
       expected: 'a number of milliseconds, more than 0'
     },
     pingWaitTime: T.number,
@@ -159338,7 +160371,9 @@ const runCoreSettled = (function runCoreSettled(
       : null;
   // A scan of several profiles whose budget ran out before this profile's
   // scan started asks it to start no rule, so it lists its selection in
-  // notRun (runProfilesUncapped). Set by the engine only, not enumerable.
+  // notRun (runProfilesUncapped), as a cross-frame scan does of a frame it
+  // reached with none left (frame-scan.js). Set by the engine only, not
+  // enumerable.
   const budgetSpent = !!(
     engineOptions &&
     typeof engineOptions === 'object' &&
@@ -160753,7 +161788,9 @@ const runCoreSettled = (function runCoreSettled(
         '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
           timeBudgetMs +
           (budgetSpent
-            ? ' ms before profile "' + String(engineOptions.profile) + '" started, so it'
+            ? typeof engineOptions.profile === 'string'
+              ? ' ms before profile "' + engineOptions.profile + '" started, so it'
+              : " ms before this frame's scan started, so it"
             : ' ms and') +
           ' did not run ' +
           notRunRules.length +
@@ -161648,6 +162685,21 @@ const runProfiles = (function runProfiles(engineOptions, run) {
 });
 const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
+  // A frame's scan that starts with no time budget left (frame-scan.js) is
+  // asked to start no rule (__budgetSpent, set by the engine only, not
+  // enumerable): each profile's scan is asked the same, so it lists its
+  // selection in notRun.
+  const carryBudgetSpent = (from, to) => {
+    if (
+      from &&
+      typeof from === 'object' &&
+      !Object.prototype.propertyIsEnumerable.call(from, '__budgetSpent') &&
+      from.__budgetSpent === true
+    ) {
+      Object.defineProperty(to, '__budgetSpent', { value: true });
+    }
+    return to;
+  };
   const allowFail = policyAllowsFail(engineOptions);
   const asked =
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
@@ -161675,7 +162727,12 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
     }
     if (unique.length <= 1) {
       return withOwnVerdicts(
-        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })),
+        run(
+          carryBudgetSpent(
+            engineOptions,
+            Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+          )
+        ),
         allowFail
       );
     }
@@ -161736,11 +162793,14 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         return thenable(dry) ? dry.then(skippedOf) : skippedOf(dry);
       }
       const result = run(
-        Object.assign(
-          {},
+        carryBudgetSpent(
           engineOptions,
-          { profile: unique[i] },
-          left !== null && i > 0 ? { timeBudgetMs: left } : {}
+          Object.assign(
+            {},
+            engineOptions,
+            { profile: unique[i] },
+            left !== null && i > 0 ? { timeBudgetMs: left } : {}
+          )
         )
       );
       if (thenable(result)) {
@@ -163735,18 +164795,64 @@ function getFrameElementUrl(el) {
   return dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'src') || null : null;
 }
 
-function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly) {
+function frameTimeBudgetOf(eo) {
+  return typeof eo.timeBudgetMs === 'number' &&
+    Number.isFinite(eo.timeBudgetMs) &&
+    eo.timeBudgetMs > 0
+    ? eo.timeBudgetMs
+    : null;
+}
+
+function budgetedOptions(engineOptions, eo, budget, scanStartedAt) {
+  if (budget === null || scanStartedAt === null) return engineOptions;
+  const left = budget - (Date.now() - scanStartedAt);
+  if (left >= budget) return engineOptions;
+  if (left > 0) return Object.assign({}, eo, { timeBudgetMs: left });
+  const spent = Object.assign({}, eo);
+  Object.defineProperty(spent, '__budgetSpent', { value: true });
+  return spent;
+}
+
+function withScanBudget(result, budget) {
+  const fix = (r) => {
+    if (budget !== null && r && r.engine && r.engine.incomplete) {
+      r.engine.incomplete.timeBudgetMs = budget;
+    }
+    return r;
+  };
+  return result && typeof result.then === 'function' ? result.then(fix) : fix(result);
+}
+
+function scanAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly, startedAt) {
   const dom = createSafeDom();
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  // The time budget is the whole scan's, frames included: the top document
+  // starts the clock, and each frame gets what is left of it when its own
+  // scan starts.
+  const budget = frameTimeBudgetOf(eo);
+  const scanStartedAt =
+    budget === null
+      ? null
+      : typeof startedAt === 'number' && Number.isFinite(startedAt)
+        ? startedAt
+        : Date.now();
   // An invalid contextSelector (or runOnly) throws in the local scan; reject
   // with it, as any other failure of this promise-returning call would.
   let topFrame;
   try {
-    topFrame = runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly);
+    topFrame = withScanBudget(
+      runa11yCoreInPage(
+        pageUrl,
+        contextSelector,
+        budgetedOptions(engineOptions, eo, budget, startedAt === null ? null : scanStartedAt),
+        runOnly
+      ),
+      budget
+    );
   } catch (err) {
     return Promise.reject(err);
   }
 
-  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
   const pingWaitTime = typeof eo.pingWaitTime === 'number' ? eo.pingWaitTime : undefined;
   const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
 
@@ -163800,7 +164906,10 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
           // looks counts. A frame is no page of its own whatever this
           // document is (topLevelDocument).
           engineOptions: frameRunOptions(el),
-          runOnly: runOnly
+          runOnly: runOnly,
+          // When the scan started, so the frame's scan gets only what is
+          // left of the time budget.
+          scanStartedAt: scanStartedAt
         },
         frameWaitTime
       )
@@ -163826,13 +164935,18 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
   });
 }
 
+function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly) {
+  return scanAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly, null);
+}
+
 function a11yCoreEnableFrameResponder() {
   return enableFrameRpcResponder(window, function (payload) {
-    return runa11yCoreAcrossFrames(
+    return scanAcrossFrames(
       payload ? payload.pageUrl : null,
       payload ? payload.contextSelector : null,
       payload ? payload.engineOptions : {},
-      payload ? payload.runOnly : null
+      payload ? payload.runOnly : null,
+      payload && typeof payload.scanStartedAt === 'number' ? payload.scanStartedAt : null
     );
   });
 }

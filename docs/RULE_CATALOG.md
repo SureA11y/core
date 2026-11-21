@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**152 rules total: 87 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 65 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 122 carry at least one formal WCAG Success Criterion mapping.**
+**154 rules total: 87 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 67 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 124 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -104,7 +104,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (65), never `fail`
+## Manual rules (67), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -125,6 +125,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`focus-order-semantics`](#focus-order-semantics) | Elements added to the tab order should have interactive semantics | — | — | medium | minor |
 | [`form-control-label-quality`](#form-control-label-quality) | Form field labels should be descriptive and distinguishable | 2.4.6 | AA | medium | minor |
 | [`form-control-programmatic-label-quality`](#form-control-programmatic-label-quality) | Form controls should have a label shown on screen | 3.3.2 | A | medium | moderate |
+| [`form-group-name-present`](#form-group-name-present) | Radio buttons and checkboxes that share a name should be in a named group | 1.3.1 | A | medium | moderate |
 | [`heading-order`](#heading-order) | Heading levels must not skip a level | — | — | medium | minor |
 | [`heading-quality`](#heading-quality) | Heading text should be descriptive, not a placeholder | 2.4.6 | AA | medium | minor |
 | [`identical-links-same-purpose`](#identical-links-same-purpose) | Links with the same accessible name should lead to the same destination | 2.4.9 | AAA | low | minor |
@@ -168,6 +169,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`scrollable-region-focusable`](#scrollable-region-focusable) | Scrollable regions with no focusable content should be keyboard-focusable | 2.1.1, 2.1.3 | A, AAA | low | moderate |
 | [`skip-link`](#skip-link) | Skip link must have a resolvable, usable target | — | — | medium | minor |
 | [`svg-text-alternative-quality`](#svg-text-alternative-quality) | &lt;svg&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
+| [`symbol-graphic-contrast`](#symbol-graphic-contrast) | Symbols used as a graphic should have a contrast of at least 3:1 | 1.4.11 | AA | medium | moderate |
 | [`tabindex`](#tabindex) | tabindex should not be greater than 0 | — | — | medium | minor |
 | [`table-duplicate-name`](#table-duplicate-name) | Table caption must not duplicate its summary attribute | — | — | medium | minor |
 | [`table-fake-caption`](#table-fake-caption) | A table's first row should not stand in for a real &lt;caption&gt; | 1.3.1 | A | low | minor |
@@ -183,12 +185,12 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.1.1-non-text-content` | Non-text content: text alternatives | Rollup of checks ensuring non-text content has an appropriate text alternative. | 1.1.1 | A | 21 |
 | `wcag-1.2.1-audio-only-video-only-prerecorded` | Audio-only and video-only (prerecorded): transcript | Rollup of checks for transcript availability for prerecorded audio-only/video-only media. | 1.2.1 | A | 1 |
 | `wcag-1.2.2-captions-prerecorded` | Captions (Prerecorded) | Rollup of checks for captions-track evidence on prerecorded video. | 1.2.2 | A | 1 |
-| `wcag-1.3.1-info-and-relationships` | Info and Relationships | Rollup of checks ensuring information, structure, and relationships conveyed through presentation are programmatically determinable. | 1.3.1 | A | 16 |
+| `wcag-1.3.1-info-and-relationships` | Info and Relationships | Rollup of checks ensuring information, structure, and relationships conveyed through presentation are programmatically determinable. | 1.3.1 | A | 17 |
 | `wcag-1.3.4-orientation` | Orientation | Rollup of checks ensuring content does not restrict its view to a single display orientation. | 1.3.4 | AA | 1 |
 | `wcag-1.3.5-identify-input-purpose` | Identify Input Purpose | Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose. | 1.3.5 | AA | 1 |
 | `wcag-1.4.1-use-of-color` | Use of Color | Rollup of checks ensuring color is not used as the only visual means of conveying information. | 1.4.1 | A | 1 |
 | `wcag-1.4.10-reflow` | Reflow | Rollup of checks ensuring content can be shown at 320 CSS pixels wide without scrolling in two directions. | 1.4.10 | AA | 1 |
-| `wcag-1.4.11-non-text-contrast` | Non-text Contrast | Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1. | 1.4.11 | AA | 1 |
+| `wcag-1.4.11-non-text-contrast` | Non-text Contrast | Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1. | 1.4.11 | AA | 2 |
 | `wcag-1.4.12-text-spacing` | Text Spacing | Rollup of checks ensuring text spacing can be increased without losing content. | 1.4.12 | AA | 2 |
 | `wcag-1.4.2-audio-control` | Audio Control | Rollup of checks for a pause/stop or volume-control mechanism on autoplaying audio. | 1.4.2 | A | 1 |
 | `wcag-1.4.3-contrast-minimum` | Contrast: minimum | Rollup of checks for minimum text contrast. | 1.4.3 | AA | 2 |
@@ -1018,7 +1020,7 @@ Elements the page renders with a non-empty inline `onclick` attribute, or, where
 - an element with `aria-disabled="true"`, on itself or an ancestor: a disabled control offers no function to operate;
 - native controls, whose own keyboard behaviour reaches the user: a link or area with `href`, `button`, `input` other than hidden, `select`, `textarea`, `option`, `summary`, `label` (it activates its control, which takes focus itself), `iframe`, `embed`, `audio` or `video` with `controls`, and an editing host (`contenteditable`);
 - an element containing, in the flat tree (its shadow root and slotted content included), a control whose keyboard activation fires `click` (a link or area with `href`, `button`, `summary`, or an input of type button, submit, reset, image, checkbox or radio) that is in the tab order: the control's click bubbles to the handler, so this is event delegation and the keyboard already runs it;
-- an element that cannot take focus, has no descendant that can, has no widget role and no `cursor: pointer`: nothing tells the user it is clickable, and such a handler often only tracks clicks or stops their propagation.
+- an element that cannot take focus, has no descendant that can, has no widget role, no `cursor: pointer` and is not drawn as a control (see below): nothing tells the user it is clickable, and such a handler often only tracks clicks or stops their propagation.
 
 **Expectation.**
 
@@ -1030,12 +1032,13 @@ A keyboard user can run what the click runs. Chromium fires `click` on Enter or 
 - With the listener hook, a key listener added from script on the element or a descendant counts as an inline key handler does. One only on an ancestor, a shadow root the element is in, the document or the window may handle the element's keys or only others': cantTell (`CLICK_HANDLER_KEY_LISTENER_ABOVE`).
 - The element is in the tab order, its role is button, link, checkbox, switch, tab, menuitem, menuitemcheckbox or menuitemradio, and a hook installed before the page's scripts saw no key listener on it, a descendant, an ancestor, a shadow root it is in, the document or the window, nor is an inline key handler there: fail (`CLICK_HANDLER_NO_KEY_LISTENER`). No key event reaches a handler, so Enter and Space do nothing. Unless a focus or focusin listener is on it, an ancestor, a shadow root it is in, the document or the window: it may add the key listener once the element has focus, or, for a tab, show its panel on focus, so cantTell (`CLICK_HANDLER_FOCUS_LISTENER`).
 - Neither it nor a descendant can take focus, and its role is button, link, checkbox or switch: fail (`CLICK_HANDLER_CONTROL_NOT_FOCUSABLE`). The element says it is a control, and Tab never reaches it, as in WCAG failure F42 for scripted links. Unless an ancestor carries `aria-activedescendant` or an inline key handler, or is a focusable composite widget (grid, treegrid, listbox, menu, menubar, tree, tablist, toolbar, radiogroup, combobox), which may operate it without moving focus to it: then cantTell.
-- Neither it nor a descendant can take focus, with another widget role or `cursor: pointer`: cantTell (`CLICK_HANDLER_NOT_FOCUSABLE`). An option of a combobox's list or a cell of a grid is often operated from the element that keeps focus, and the action may be offered by another control of the page.
+- Neither it nor a descendant can take focus, with another widget role, `cursor: pointer`, or drawn as a control without either: short visible text (40 characters and six words at most, no block content) with padding, in a box set apart by a border or a background of its own, as "Add to cart" on a coloured `<div onclick>`: cantTell (`CLICK_HANDLER_NOT_FOCUSABLE`). An option of a combobox's list or a cell of a grid is often operated from the element that keeps focus, and the action may be offered by another control of the page.
 
 **What a finding reports.**
 
 - `role`: the element's ARIA role, or `''` for none.
 - `focusable`: whether the element itself can take focus.
+- `styledAsControl` (`CLICK_HANDLER_NOT_FOCUSABLE`): `true` when the element is asked about only because it is drawn as a control.
 
 **Reason codes.**
 
@@ -1047,7 +1050,7 @@ A keyboard user can run what the click runs. Chromium fires `click` on Enter or 
 | `CLICK_HANDLER_NOT_IN_TAB_ORDER` | cantTell | An element with a click handler takes focus only from script (tabindex="-1"), so Tab never reaches it. It leans fail when, as above, an early hook saw no key or focus listener anywhere its key events go; it leans pass when another item of the same role in the composite widget around it is in the tab order (a roving tabindex) and the hook did not show that no key listener exists. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
 | `CLICK_HANDLER_KEY_LISTENER_ABOVE` | cantTell | An element with a click handler is in the tab order, and the only key listener is above it, which may or may not handle its keys. It leans pass when the nearest ancestor with a key listener is a composite widget the element is an item of (a tab in its tablist). | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
 | `CLICK_HANDLER_FOCUS_LISTENER` | cantTell | A control (button, link, checkbox, switch, tab or menu item) with a click handler is in the tab order with no key listener, but a focus listener may add one once it has focus, or, for a tab, show its panel on focus. It leans fail when the only focus listeners are on the document or the window, none on the element, an ancestor or a shadow root it is in. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
-| `CLICK_HANDLER_NOT_FOCUSABLE` | cantTell | An element with a click handler that cannot take focus, with a widget role or a pointer cursor; whether the action is offered by keyboard elsewhere is for a person to check. It leans pass when an ancestor keeps focus for it (aria-activedescendant, or a focusable composite widget), and fail when it has no widget role, shows a pointer cursor, and nothing above it takes focus or handles keys. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
+| `CLICK_HANDLER_NOT_FOCUSABLE` | cantTell | An element with a click handler that cannot take focus, with a widget role, a pointer cursor or a control's look (a short label in a padded box with a border or a background of its own); whether the action is offered by keyboard elsewhere is for a person to check. It leans pass when an ancestor keeps focus for it (aria-activedescendant, or a focusable composite widget), and fail when it has no widget role, shows a pointer cursor or is drawn as a control, and nothing above it takes focus or handles keys. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
 
 ### `combobox-name-present`
 
@@ -1795,6 +1798,31 @@ All-empty associations with no override are a missing-name case (the sibling rul
 |---|---|---|---|
 | `FORM_FIELD_MULTIPLE_LABELS` | cantTell | Two or more labels with text name the field, and no aria-label or aria-labelledby overrides them; browsers join them into one name, which a person judges. It leans pass when the labels repeat each other (one's words appear in another) or the extra ones only mark the field as required. | HTML-AAM 4.1.1; WCAG 3.3.2 (not settled); WCAG 4.1.2 |
 | `FORM_FIELD_EXTRA_EMPTY_LABEL` | cantTell | One label with text and one or more empty label associations, with no override. It leans pass: browsers join the labels' text, so the empty one adds nothing. | HTML-AAM 4.1.1; WCAG 3.3.2 (not settled) |
+
+### `form-group-name-present`
+
+**Radio buttons and checkboxes that share a name should be in a named group**
+
+manual · WCAG 1.3.1 (A) · confidence medium · default severity moderate
+
+Asks about radio buttons, or checkboxes, that share a name but sit in no &lt;fieldset&gt; with a &lt;legend&gt; and no group or radiogroup with an accessible name, so the question they answer may be tied to none of them.
+
+**Applies to.** Groups of two or more radio buttons, or of two or more checkboxes, that share a non-empty `name` (compared as written) in the same form owner (the same `<form>`, or none, in the same document or shadow root), each in the accessibility tree. A single checkbox, or one radio button alone with its name, is no group.
+
+**Expectation.** The options are in a group whose name says what they are for: an element that contains them all and is a `<fieldset>` named by its `<legend>` (or by aria-label, aria-labelledby or title), or an element with `role="radiogroup"` or `role="group"` and an accessible name. Then pass. Otherwise the question they answer may be shown only as text above them, tied to none of them, and is asked about (cantTell): each option's own label may still say all a person needs, which only a person can tell. Radio buttons sharing a name are one control a person picks from, so they lean fail; checkboxes sharing a name may be fields a script names alike, so they have no lean.
+
+**What a finding reports.**
+
+- `name`: the `name` the options share, up to 60 characters.
+- `count`: how many options share it.
+- `inputType`: `radio` or `checkbox`.
+
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `RADIO_GROUP_NO_NAME` | cantTell | Radio buttons that share a name sit in no fieldset with a legend and no group or radiogroup with a name. It leans fail: a set of radio buttons is one choice, and nothing names what it is a choice of. | WCAG 1.3.1 (not settled); H71; ARIA17 |
+| `CHECKBOX_GROUP_NO_NAME` | cantTell | Checkboxes that share a name sit in no fieldset with a legend and no group with a name; whether they answer one question that needs a name is for a person to judge. | WCAG 1.3.1 (not settled); H71; ARIA17 |
 
 ### `heading-order`
 
@@ -3102,7 +3130,7 @@ manual · WCAG 1.3.1 (A) · confidence low · default severity minor
 
 Flags short &lt;p&gt; and &lt;div&gt; elements whose text is all bold and rendered at &gt;=18px, and short all-bold &lt;p&gt; elements at body size that read as a title before plain text, for manual review of whether a real heading element should be used instead.
 
-**Applies to.** `<p>` elements, and `<div>` elements that hold only text and inline markup, whose visible text is short (&lt;=120 char) and non-empty, and in which every visible piece of text is bold (computed `font-weight` &gt;= 700, however it got there: on the element itself, a `<strong>`/`<b>` or a styled `<span>`), or semibold (600) and heavier than the text around it, as design systems set titles, and rendered at &gt;=18px. Visible text is the text that is rendered (not display:none, [hidden] or visibility:hidden) and not screen-reader-only. Text that is all inside controls (a widget's or a &lt;label&gt;'s own text) is left out. A `<p>` whose visible text is all bold, or all heavier than the text around it (the paragraph's own, or its parent's where the paragraph itself is set heavier), at body size (smaller than 18px) applies too, when the text doesn't end as a sentence (past closing quotes and brackets, and in any script's punctuation), the next element shown holds text lighter than it, and the element before it is no bold line too: a title made by bolding a line of body text, the way authors usually make one in a content editor, and not a line of a bold run, such as an address. Heavier counts because a theme may draw body text at weight 300, which makes `<strong>` 400. Under jsdom, a size relative to the parent's (em, %, larger, smaller) or the root's (rem) is read against it, as a browser computes it.
+**Applies to.** `<p>` elements, and `<div>` elements that hold only text and inline markup, whose visible text is short (&lt;=120 char) and non-empty, and in which every visible piece of text is bold (computed `font-weight` &gt;= 700, however it got there: on the element itself, a `<strong>`/`<b>` or a styled `<span>`), or semibold (600) and heavier than the text around it, as design systems set titles, and rendered at &gt;=18px. Visible text is the text that is rendered (not display:none, [hidden] or visibility:hidden) and not screen-reader-only. Text that is all inside controls (a widget's or a &lt;label&gt;'s own text) is left out. A `<p>` whose visible text is all bold, or all heavier than the text around it (the paragraph's own, or its parent's where the paragraph itself is set heavier), at body size (smaller than 18px) applies too, when the text doesn't end as a sentence (past closing quotes and brackets, and in any script's punctuation; a final colon, as in "Ingredients:" or "Step 1:", ends none, so such a label is asked about as a line with no final punctuation is), the next element shown holds text lighter than it, and the element before it is no bold line too: a title made by bolding a line of body text, the way authors usually make one in a content editor, and not a line of a bold run, such as an address. Heavier counts because a theme may draw body text at weight 300, which makes `<strong>` 400. Under jsdom, a size relative to the parent's (em, %, larger, smaller) or the root's (rem) is read against it, as a browser computes it.
 
 **Expectation.** Text styled to visually read as a heading (bold, larger-than-body size, short) should be marked up with a real heading element (`<h1>`-`<h6>` or `role="heading"`) so its structural role is programmatically determinable, the same 1.3.1 concern as any other "structure conveyed through presentation only" issue.
 
@@ -3149,11 +3177,12 @@ Identifies page title patterns that may indicate low descriptiveness, such as ge
 
 **Applies to.** Applies to a run over a whole document whose &lt;title&gt; resolves to non-empty text, and that is a page of its own: a document shown in a frame is not applicable, as its frame is named by its &lt;iframe&gt;. The title element is the first HTML &lt;title&gt; anywhere in the document, as for document.title, so one the parser left in &lt;body&gt; counts; a missing or empty title is page-title-present's failure, not a pattern to review. A run narrowed by contextSelector or by engineOptions.fragment is notApplicable.
 
-**Expectation.** The title carries none of the conservative low-descriptiveness signals: one of the generic titles home, homepage, welcome, untitled, page or document; fewer than eight characters; or a template shape pairing a generic token with a brand, such as "Home | Brand". When the crawl.pageTitles probe supplies at least ten pages, cross-page signals are used instead: one title repeated across distinct URLs, or a prefix or suffix of twelve characters or more shared across the set. Every signal is reported as cantTell: whether a title describes its page is a judgment, so the rule never fails on a pattern alone. A title with none of the signals is asked about too (`titleReview`): its presence, which page-title-present checks, says nothing of whether it describes the page, so the 2.4.2 rollup claims no more than that.
+**Expectation.** The title carries none of the conservative low-descriptiveness signals: one of the generic titles home, homepage, welcome, untitled, page or document (and their equivalents in the page's language); a default title an editor, a starter template or a CMS gives an unnamed page in any of the engine's languages ("Untitled", "Sin título", "Ohne Titel", "Sans titre", "無題", "Document", "New page", "React App", "My WordPress Website", or "Just another WordPress site" as one part of the title); a placeholder left in it ("undefined", "null", "NaN", "[object Object]" as the title or one part of it, or a template token such as "{{title}}", "${title}", "%s", "{title}" or "&lt;%= title %&gt;", which leans fail); fewer than eight characters; or a template shape pairing a generic token with a brand, such as "Home | Brand". When the crawl.pageTitles probe supplies at least ten pages, cross-page signals are used instead: one title repeated across distinct URLs, or a prefix or suffix of twelve characters or more shared across the set. Every signal is reported as cantTell: whether a title describes its page is a judgment, so the rule never fails on a pattern alone. A title with none of the signals is asked about too (`titleReview`): its presence, which page-title-present checks, says nothing of whether it describes the page, so the 2.4.2 rollup claims no more than that.
 
 **What a finding reports.**
 
-- `titleText` (a single-page signal: `genericTitle`, `veryShortTitle`, `templateLikeTitle`, or `titleReview` for a title with none): the page title, with spacing collapsed.
+- `titleText` (a single-page signal: `placeholderTitle`, `genericTitle`, `veryShortTitle`, `templateLikeTitle`, or `titleReview` for a title with none): the page title, with spacing collapsed.
+- `placeholderToken` (`placeholderTitle`): the placeholder found, as written.
 - `metrics.pagesAnalyzed` (a cross-page signal): how many pages with a URL and a title were compared.
 - `metrics.duplicateGroups` (a cross-page signal): how many titles are used by two or more URLs, compared without regard to case.
 - `metrics.largestDuplicateGroupSize` (a cross-page signal): how many URLs share the most-repeated title. 0 when no title repeats.
@@ -3164,7 +3193,8 @@ Identifies page title patterns that may indicate low descriptiveness, such as ge
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `genericTitle` | cantTell | The page title is a generic word such as home, welcome or untitled; whether it describes the page is for a person to judge. | WCAG 2.4.2 (not settled); F25 (not settled) |
+| `placeholderTitle` | cantTell | The page title holds a placeholder a template or a script left unfilled ("undefined", "{{title}}"). It leans fail: such a title names nothing about the page. | WCAG 2.4.2 (not settled); F25 (not settled) |
+| `genericTitle` | cantTell | The page title is a generic word such as home, welcome or untitled, or the default title an editor, a starter template or a CMS gives an unnamed page, in any of the engine's languages; whether it describes the page is for a person to judge. | WCAG 2.4.2 (not settled); F25 (not settled) |
 | `veryShortTitle` | cantTell | The page title is under eight characters; whether so short a title describes the page is for a person to judge. | WCAG 2.4.2 (not settled) |
 | `templateLikeTitle` | cantTell | The page title pairs a site name with a generic word such as home or welcome, so it may be a template's. | WCAG 2.4.2 (not settled); F25 (not settled) |
 | `duplicateTitlesAcrossPages` | cantTell | Several pages of the scan share the same title, which may not tell them apart. | WCAG 2.4.2 (not settled); F25 (not settled) |
@@ -3710,6 +3740,37 @@ Flags applicable &lt;svg&gt; graphics with a detected text alternative for human
 | `TEXT_ALTERNATIVE_REVIEW` | cantTell | An &lt;svg&gt; has a text alternative, and a person checks that it conveys what the graphic shows. It leans fail when its name (aria-label, aria-labelledby, else &lt;title&gt;) is a leftover of the drawing tool or the export ("Layer 1", "Group 3", "Created with Sketch.", "icon-search"), a file name or a placeholder word. | WCAG 1.1.1 (not settled); ACT qt1vmo; SVG-AAM |
 | `IMAGE_ONLY_CONTROL_CONTENT` | cantTell | The &lt;svg&gt; is the only content of a link or button, so its text alternative is the control's name and should say what the control does. It leans fail on the same names as TEXT_ALTERNATIVE_REVIEW. | WCAG 1.1.1 (not settled); ACT qt1vmo; accname 1.2 |
 
+### `symbol-graphic-contrast`
+
+**Symbols used as a graphic should have a contrast of at least 3:1**
+
+manual · WCAG 1.4.11 (AA) · confidence medium · default severity moderate
+
+Asks about symbols drawn as text with no letter or digit, such as rating stars, dots, arrows or check marks, whose contrast against their background is under the 3:1 a graphic needed to understand the content must reach.
+
+**Applies to.**
+
+Elements whose whole visible text is made of symbols, with no letter or digit at all, such as rating stars (★★★★☆), dots (●○○), arrows (→) or check marks (✓): text with at least one character of a Unicode symbol category (Sm, Sc, Sk, So), 40 characters at most, that is a direct text child of the element, which is rendered and not screen-reader-only. Left out:
+
+- text with a letter or a digit anywhere in the element ("4.5 ★", "Next →"): the text-contrast rules judge it as text, at its own ratio; letter-free text is the only text they leave out (ACT afw4f7), so the two never judge the same text;
+- emoji drawn in their own colours, and text that is only separators (`|`, `¦`, `~`, `·`, `•`, `/`, dashes), which decorate;
+- text in `<svg>`, `<math>`, form controls (`<select>`, `<option>`, `<textarea>`) and elements that are not drawn (`<script>`, `<style>`, `<template>`, `<title>`), and text whose colours can't be measured (a background image, a gradient, a filter or blending: the reasons the text-contrast rules give).
+
+**Expectation.** A symbol drawn as text in place of a picture is a graphic under WCAG 1.4.11 when a person needs it to understand the content, as rating stars or status marks are: its colour against its background reaches 3:1. Below 3:1 it is asked about (cantTell), leaning fail: whether the symbols carry information, rather than decorate or repeat a text beside them, is for a person to judge. At 3:1 or more, pass.
+
+**What a finding reports.**
+
+- `symbols`: the symbols, with spacing collapsed, up to 20 characters.
+- `ratio`: their contrast against their background, to two decimals.
+- `foreground`, `background`: the colours measured, as hex.
+- `threshold`: 3.
+
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `SYMBOLS_BELOW_GRAPHIC_THRESHOLD` | cantTell | Symbols drawn as text, with no letter or digit, are under 3:1 against their background; whether they carry information a person needs is for a person to judge. It leans fail: symbols such as rating stars or status marks usually do. | WCAG 1.4.11 (not settled); G207 |
+
 ### `tab-name-present`
 
 **Tabs have an accessible name**
@@ -4119,21 +4180,21 @@ Checks that &lt;video&gt; elements with a poster image provide a text alternativ
 
 **Expectation.**
 
-Each applicable &lt;video&gt; element provides a text alternative for the poster image, via:
+Each applicable &lt;video&gt; element is identified by a text alternative, via:
 
 - an accessible name (aria-label / aria-labelledby / title).
 
-Between-tag fallback content inside &lt;video&gt; is NOT accepted: it is only rendered by browsers that don't support &lt;video&gt;, so it is not reliably exposed to assistive technologies in practice. &lt;video&gt; is also not a labelable element, so native &lt;label for="..."&gt; associations are not accepted either. A &lt;video&gt; with no name that is the only content of a &lt;figure&gt; with a non-empty &lt;figcaption&gt; is asked about (cantTell) rather than failed: the caption names the figure, not the video (HTML-AAM; Chromium gives the video no name), but it may describe the poster, and only a person can tell.
+A &lt;video&gt; is time-based media, whose text alternative only has to give descriptive identification under WCAG 1.1.1's exception, and its poster is a frame of that media, not a separate image. So a poster video with no name is asked about (cantTell), leaning fail, not failed: whether something else identifies it is for a person to judge. A video without a poster is not judged here. Between-tag fallback content inside &lt;video&gt; is NOT accepted: it is only rendered by browsers that don't support &lt;video&gt;, so it is not reliably exposed to assistive technologies in practice. &lt;video&gt; is also not a labelable element, so native &lt;label for="..."&gt; associations are not accepted either. A &lt;video&gt; with no name that is the only content of a &lt;figure&gt; with a non-empty &lt;figcaption&gt; is asked about (cantTell) rather than failed: the caption names the figure, not the video (HTML-AAM; Chromium gives the video no name), but it may describe the poster, and only a person can tell.
 
 **What a finding reports.**
 
-- `reasonCode`: `VIDEO_POSTER_FIGCAPTION_REVIEW` on the cantTell finding, with `figcaption`, the caption's text up to 100 characters; `TEXT_ALTERNATIVE_MISSING` on a failure.
+- `reasonCode`: `VIDEO_POSTER_FIGCAPTION_REVIEW`, with `figcaption`, the caption's text up to 100 characters, or `TEXT_ALTERNATIVE_MISSING`; both are asked about.
 
 **Reason codes.**
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TEXT_ALTERNATIVE_MISSING` | fail | A &lt;video&gt; with a poster image has no name from aria-label, aria-labelledby or title. | WCAG 1.1.1; HTML video poster; accname 1.2 |
+| `TEXT_ALTERNATIVE_MISSING` | cantTell | A &lt;video&gt; with a poster image has no name from aria-label, aria-labelledby or title; whether something else identifies it is for a person to judge. It leans fail: a screen reader announces it with nothing that identifies it. | WCAG 1.1.1 (exception: time-based media); HTML video poster; accname 1.2 |
 | `VIDEO_POSTER_FIGCAPTION_REVIEW` | cantTell | A &lt;video&gt; with a poster has no name but is the only content of a figure with a caption, and a person checks that the caption describes the poster. | WCAG 1.1.1 (not settled); HTML-AAM figcaption |
 
 ### `widget-keyboard-focusable`

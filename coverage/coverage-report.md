@@ -5,20 +5,20 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **152**
+Total rules (loaded without error): **154**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 122 | 36 | 18 |
+| Any WCAG version | 124 | 37 | 18 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 110 | 25 | 15 |
-| WCAG 2.1 | 9 | 8 | 1 |
+| WCAG 2.0 | 111 | 25 | 15 |
+| WCAG 2.1 | 10 | 9 | 1 |
 | WCAG 2.2 | 6 | 6 | 3 |
 
 ### Raw WCAG tag counts (non-cumulative)
@@ -26,11 +26,11 @@ Total rules (loaded without error): **152**
 | Tag | Rules |
 |---|---:|
 | wcag21a | 1 |
-| wcag21aa | 7 |
+| wcag21aa | 8 |
 | wcag21aaa | 1 |
 | wcag22aa | 3 |
 | wcag22aaa | 3 |
-| wcag2a | 96 |
+| wcag2a | 97 |
 | wcag2aa | 12 |
 | wcag2aaa | 15 |
 
@@ -121,8 +121,8 @@ Uncovered facets: captions-complete
 
 ### 1.3.1
 
-Facet coverage: **16/23** facets covered.
-Automation mix: **full 13, partial 6, manual 4**.
+Facet coverage: **17/24** facets covered.
+Automation mix: **full 13, partial 6, manual 5**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -140,6 +140,7 @@ Automation mix: **full 13, partial 6, manual 4**.
 | aria-role-required-context-parent | full | aria-required-parent |
 | p-as-heading-evidence | manual | p-as-heading |
 | table-fake-caption-evidence | manual | table-fake-caption |
+| form-group-name-evidence | manual | form-group-name-present |
 | td-has-header | full | td-has-header |
 | aria-role-valid | full | aria-roles-valid |
 | aria-owns-valid | full | aria-owns-valid |
@@ -168,6 +169,7 @@ Uncovered facets: form-control-label-quality-review, headings-marked-up, lists-m
 | table-headers-attr-valid | automatic | Table cell "headers" attribute must reference valid header cells | src/checks/automatic/table-headers-attr-valid.js | table-headers-attr-valid |  |
 | table-th-has-data-cells | automatic | &lt;th&gt; elements must describe at least one data cell | src/checks/automatic/table-th-has-data-cells.js | table-th-has-data-cells |  |
 | td-has-header | automatic | Data cells in tables must have an associated header | src/checks/automatic/td-has-header.js | td-has-header |  |
+| form-group-name-present | manual | Radio buttons and checkboxes that share a name should be in a named group | src/checks/manual/form-group-name-present-manual.js | form-group-name-evidence |  |
 | p-as-heading | manual | Text styled to look like a heading should probably be a real heading | src/checks/manual/p-as-heading-manual.js | p-as-heading-evidence |  |
 | table-fake-caption | manual | A table's first row should not stand in for a real &lt;caption&gt; | src/checks/manual/table-fake-caption-manual.js | table-fake-caption-evidence |  |
 
@@ -311,20 +313,22 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 ### 1.4.11
 
-Facet coverage: **1/3** facets covered.
-Automation mix: **full 0, partial 0, manual 3**.
+Facet coverage: **2/4** facets covered.
+Automation mix: **full 0, partial 0, manual 4**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | focus-indicator-not-suppressed | manual | css-focus-indicator-suppressed |
 | ui-component-contrast | manual | — |
 | graphics-contrast | manual | — |
+| symbol-graphic-contrast-evidence | manual | symbol-graphic-contrast |
 
 Uncovered facets: ui-component-contrast, graphics-contrast
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
+| symbol-graphic-contrast | manual | Symbols used as a graphic should have a contrast of at least 3:1 | src/checks/manual/symbol-graphic-contrast-manual.js | symbol-graphic-contrast-evidence |  |
 
 ### 1.4.12
 
@@ -1011,8 +1015,8 @@ Uncovered facets: captions-complete
 
 ### 1.3.1
 
-Facet coverage: **16/23** facets covered.
-Automation mix: **full 13, partial 6, manual 4**.
+Facet coverage: **17/24** facets covered.
+Automation mix: **full 13, partial 6, manual 5**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1030,6 +1034,7 @@ Automation mix: **full 13, partial 6, manual 4**.
 | aria-role-required-context-parent | full | aria-required-parent |
 | p-as-heading-evidence | manual | p-as-heading |
 | table-fake-caption-evidence | manual | table-fake-caption |
+| form-group-name-evidence | manual | form-group-name-present |
 | td-has-header | full | td-has-header |
 | aria-role-valid | full | aria-roles-valid |
 | aria-owns-valid | full | aria-owns-valid |
@@ -1058,6 +1063,7 @@ Uncovered facets: form-control-label-quality-review, headings-marked-up, lists-m
 | table-headers-attr-valid | automatic | Table cell "headers" attribute must reference valid header cells | src/checks/automatic/table-headers-attr-valid.js | table-headers-attr-valid |  |
 | table-th-has-data-cells | automatic | &lt;th&gt; elements must describe at least one data cell | src/checks/automatic/table-th-has-data-cells.js | table-th-has-data-cells |  |
 | td-has-header | automatic | Data cells in tables must have an associated header | src/checks/automatic/td-has-header.js | td-has-header |  |
+| form-group-name-present | manual | Radio buttons and checkboxes that share a name should be in a named group | src/checks/manual/form-group-name-present-manual.js | form-group-name-evidence |  |
 | p-as-heading | manual | Text styled to look like a heading should probably be a real heading | src/checks/manual/p-as-heading-manual.js | p-as-heading-evidence |  |
 | table-fake-caption | manual | A table's first row should not stand in for a real &lt;caption&gt; | src/checks/manual/table-fake-caption-manual.js | table-fake-caption-evidence |  |
 
@@ -1201,20 +1207,22 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 ### 1.4.11
 
-Facet coverage: **1/3** facets covered.
-Automation mix: **full 0, partial 0, manual 3**.
+Facet coverage: **2/4** facets covered.
+Automation mix: **full 0, partial 0, manual 4**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | focus-indicator-not-suppressed | manual | css-focus-indicator-suppressed |
 | ui-component-contrast | manual | — |
 | graphics-contrast | manual | — |
+| symbol-graphic-contrast-evidence | manual | symbol-graphic-contrast |
 
 Uncovered facets: ui-component-contrast, graphics-contrast
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
+| symbol-graphic-contrast | manual | Symbols used as a graphic should have a contrast of at least 3:1 | src/checks/manual/symbol-graphic-contrast-manual.js | symbol-graphic-contrast-evidence |  |
 
 ### 1.4.12
 

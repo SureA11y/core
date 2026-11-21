@@ -4,7 +4,7 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **152**. With fixture: **147**. Without fixture: **5**.
+Total rules: **154**. With fixture: **149**. Without fixture: **5**.
 
 ## Rules WITHOUT a fixture (5)
 
@@ -16,7 +16,7 @@ Total rules: **152**. With fixture: **147**. Without fixture: **5**.
 | moving-content-pausable | manual | Content that moves by itself should be possible to pause, stop or hide | src/checks/manual/moving-content-pausable-manual.js | tests/engine-checks/manual/moving-content-pausable-chromium.test.js |
 | target-size-enhanced | automatic | Pointer targets must be at least 44x44px large | src/checks/automatic/target-size-enhanced.js | tests/engine-checks/automatic/target-size-enhanced.test.js |
 
-## Rules WITH a fixture (147)
+## Rules WITH a fixture (149)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -76,6 +76,7 @@ Total rules: **152**. With fixture: **147**. Without fixture: **5**.
 | form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 43 | 13 | 12 | 0 | 18 |
 | form-control-programmatic-label-quality | manual | `tests/fixtures/form-control-programmatic-label-quality-manual-all-scenarios.html` | 18 | 0 | 0 | 0 | 18 |
 | form-control-single-label | automatic | `tests/fixtures/form-control-single-label-all-scenarios.html` | 9 | 5 | 0 | 3 | 1 |
+| form-group-name-present | manual | `tests/fixtures/form-group-name-present-all-scenarios.html` | 10 | 3 | 0 | 4 | 3 |
 | heading-order | manual | `tests/fixtures/heading-order-all-scenarios.html` | 4 | 0 | 0 | 3 | 1 |
 | heading-quality | manual | `tests/fixtures/heading-quality-all-scenarios.html` | 12 | 4 | 0 | 6 | 2 |
 | html-lang-attr-present | automatic | `tests/fixtures/language-page-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
@@ -151,6 +152,7 @@ Total rules: **152**. With fixture: **147**. Without fixture: **5**.
 | svg-image-text-alternative-present | automatic | `tests/fixtures/svg-image-text-alternative-present-all-scenarios.html` | 20 | 5 | 9 | 0 | 6 |
 | svg-text-alternative-present | automatic | `tests/fixtures/svg-text-alternative-present-all-scenarios.html` | 27 | 6 | 13 | 0 | 8 |
 | svg-text-alternative-quality | manual | `tests/fixtures/svg-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
+| symbol-graphic-contrast | manual | `tests/fixtures/symbol-graphic-contrast-all-scenarios.html` | 9 | 2 | 0 | 3 | 4 |
 | tab-name-present | automatic | `tests/fixtures/tab-name-present-all-scenarios.html` | 17 | 4 | 5 | 0 | 8 |
 | tabindex | manual | `tests/fixtures/tabindex-all-scenarios.html` | 3 | 2 | 0 | 1 | 0 |
 | table-duplicate-name | manual | `tests/fixtures/table-duplicate-name-all-scenarios.html` | 2 | 0 | 0 | 1 | 1 |
@@ -165,6 +167,6 @@ Total rules: **152**. With fixture: **147**. Without fixture: **5**.
 | treeitem-name-present | automatic | `tests/fixtures/treeitem-name-present-all-scenarios.html` | 17 | 4 | 5 | 0 | 8 |
 | valid-lang | automatic | `tests/fixtures/valid-lang-all-scenarios.html` | 5 | 2 | 2 | 0 | 1 |
 | video-caption | manual | `tests/fixtures/video-caption-all-scenarios.html` | 5 | 0 | 0 | 5 | 0 |
-| video-poster-text-alternative-present | automatic | `tests/fixtures/video-poster-text-alternative-present-all-scenarios.html` | 12 | 3 | 5 | 0 | 4 |
+| video-poster-text-alternative-present | automatic | `tests/fixtures/video-poster-text-alternative-present-all-scenarios.html` | 12 | 3 | 0 | 5 | 4 |
 | widget-keyboard-focusable | manual | `tests/fixtures/widget-keyboard-focusable-all-scenarios.html` | 24 | 8 | 0 | 9 | 7 |
 
