@@ -116,7 +116,13 @@ export function knownOccurrences(
   frames: unknown[],
   baselineEntries: unknown,
   caller?: string
-): { known: Set<unknown>; knownLeaning: Set<unknown> };
+): { known: KnownSet; knownLeaning: KnownSet };
+
+/** A `Set` of occurrences, typed without the ES2015 library so projects on any `lib` compile. */
+interface KnownSet {
+  has(value: unknown): boolean;
+  readonly size: number;
+}
 
 /** Internal: the entries of a baseline, given as the list or as the saved file. Not covered by semver. */
 export function entriesOf(baseline: unknown): BaselineEntry[];
