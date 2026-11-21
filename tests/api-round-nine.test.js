@@ -224,3 +224,69 @@ test('checkPack and definePack report what a scan could not prepare (A9-9)', () 
   assert.doesNotThrow(() => definePack(odd));
   assert.deepEqual(checkPack(base()), []);
 });
+
+test('checkStandardData reports what checkPack reports of the same data, and dates there are none of (A9-16)', () => {
+  const { checkStandardData, standardFromData, checkPack } = require('../src/pack.js');
+  const data = () => ({
+    format: 'surea11y-standard/1',
+    key: 'zz',
+    standard: 'ZZ Standard',
+    versions: [{ version: '1', wcagVersion: '2.2' }],
+    data: {
+      1: {
+        requirements: {
+          R1: { title: 'Images', wcagSc: ['1.1.1'] },
+          R2: { title: 'Page title', wcagSc: ['2.4.2'] }
+        },
+        ruleMap: {
+          'img-alt-present': { requirements: ['R1'] },
+          'page-title-present': { requirements: ['R2'] },
+          'zz-own-rule': { requirements: ['R2'] }
+        }
+      }
+    }
+  });
+  const sound = data();
+  assert.deepEqual(checkStandardData(sound), []);
+
+  const wrong = data();
+  wrong.data[1].requirements.R1.wcagSc = ['9.9.9'];
+  wrong.data[1].ruleMap['no-such-rule'] = { requirements: ['R2'] };
+  assert.deepEqual(checkStandardData(wrong), [
+    'data.1.requirements.R1.wcagSc: WCAG 2.2 has no criterion 9.9.9',
+    'data.1.ruleMap.no-such-rule: core has no rule no-such-rule'
+  ]);
+  // A rule of a pack it uses is left to definePack, which knows its rules.
+  const used = data();
+  used.data[1].ruleMap['base-main-present'] = { requirements: ['R2'] };
+  assert.deepEqual(checkStandardData(used), []);
+  // standardFromData refuses the criterion, as definePack did; the rule is
+  // left to checkPack and definePack, which know the pack's rules.
+  assert.throws(() => standardFromData(wrong), /WCAG 2\.2 has no criterion 9\.9\.9/);
+  const withRule = data();
+  withRule.data[1].ruleMap['no-such-rule'] = { requirements: ['R2'] };
+  const pack = {
+    name: 'zz-pack',
+    version: '1.0.0',
+    namespace: 'zz',
+    core: '*',
+    rules: [
+      {
+        id: 'zz-own-rule',
+        meta: { title: 'Own', tags: ['zz'] },
+        runInPage: () => ({ outcome: 'pass' })
+      }
+    ],
+    standard: standardFromData(withRule)
+  };
+  assert.deepEqual(checkPack(pack), ['standard: 1 no-such-rule: no such rule']);
+
+  for (const published of ['2026-13', '2026-02-30', '2025-02-29', '2026-00']) {
+    sound.versions[0].published = published;
+    assert.match(checkStandardData(sound).join(), /published must be a date/, published);
+  }
+  for (const published of ['2026', '2026-02', '2024-02-29', '2026-12-31']) {
+    sound.versions[0].published = published;
+    assert.deepEqual(checkStandardData(sound), [], published);
+  }
+});
