@@ -28,7 +28,9 @@
  *   surrounding text by at least one non-color means:
  *     - text-decoration: underline, where the surrounding text is not
  *       underlined too (by its own style or an ancestor's), OR
- *     - a different font-weight or font-style than the surrounding text, OR
+ *     - a different font-weight or font-style than the surrounding text (a
+ *       weight counts as different when one is 600 or more and the other
+ *       under 600: most fonts draw 500 as they draw 400), OR
  *     - another visible mark on the link itself: a border, box-shadow or
  *       outline (a shadow in a transparent color, or with no offset, blur
  *       or spread, draws nothing), a background color different from the
@@ -345,6 +347,13 @@ function runInPage(ctx) {
   // for every <a> whatever the author CSS says, and the longhand as "none"
   // unless the author used the longhand. Either one taken alone is wrong in
   // one direction, so disagreement is the signal to stop trusting both.
+  // Whether two font weights look different: one bold (600 or more) and the
+  // other not. Most fonts draw 500 as they draw 400, and Chromium
+  // synthesises bold from 600 for a font with no bold face.
+  function weightsDiffer(a, b) {
+    return a >= 600 !== b >= 600;
+  }
+
   function decorationInfo(cs) {
     if (!cs) return { underlined: false, trustworthy: false };
 
@@ -1202,7 +1211,10 @@ function runInPage(ctx) {
           color,
           selector: base + '::first-line',
           otherCue:
-            c.normalizeFontWeight(ps.fontWeight) !== c.normalizeFontWeight(blockCs.fontWeight) ||
+            weightsDiffer(
+              c.normalizeFontWeight(ps.fontWeight),
+              c.normalizeFontWeight(blockCs.fontWeight)
+            ) ||
             String(ps.fontStyle || '') !== String(blockCs.fontStyle || '') ||
             String(ps.textDecorationLine || '') !== String(blockCs.textDecorationLine || '') ||
             String(ps.textShadow || '') !== String(blockCs.textShadow || '')
@@ -1726,7 +1738,7 @@ function runInPage(ctx) {
     if (
       c &&
       outerCs &&
-      c.normalizeFontWeight(cs.fontWeight) !== c.normalizeFontWeight(outerCs.fontWeight)
+      weightsDiffer(c.normalizeFontWeight(cs.fontWeight), c.normalizeFontWeight(outerCs.fontWeight))
     ) {
       return true;
     }
@@ -1821,7 +1833,7 @@ function runInPage(ctx) {
     const hasCue = (node) => {
       const cs = safeComputedStyle(node);
       if (!cs) return false;
-      if (c && c.normalizeFontWeight(cs.fontWeight) !== parentWeight) return true;
+      if (c && weightsDiffer(c.normalizeFontWeight(cs.fontWeight), parentWeight)) return true;
       if ((cs.fontStyle || 'normal') !== parentStyle) return true;
       if (hasBorder(cs)) return true;
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
@@ -1968,7 +1980,7 @@ function runInPage(ctx) {
     // carrying one is decided even where decoration is unreadable.
     const linkWeight = c && linkCs ? c.normalizeFontWeight(linkCs.fontWeight) : 400;
     const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
-    if (linkWeight !== parentWeight) {
+    if (weightsDiffer(linkWeight, parentWeight)) {
       decidedCount += 1;
       return;
     }
