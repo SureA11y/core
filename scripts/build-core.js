@@ -1565,6 +1565,47 @@ function enforceKnownProfile(selection, eo) {
   throw err;
 }
 
+// engineOptions.rules, .tags and .tests as a filter: { include, exclude },
+// or a bare list or string as the include list, as runOnly takes one. Null
+// when the option is not a filter.
+function includeExcludeOf(v) {
+  return Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
+    ? { include: typeof v === 'string' ? [v] : [...v] }
+    : (v && typeof v === 'object' ? v : null);
+}
+
+// runOnly with a filter wins over engineOptions' rules, tags and tests
+// filters, which are then not read: said so, as other options left unread
+// are, and an error under strictOptions (round 9, A9-14). A rules entry for
+// one rule's settings is no filter, and is still read.
+function warnFiltersBesideRunOnly(eo) {
+  const given = ['rules', 'tags', 'tests'].filter((name) => {
+    const filter = includeExcludeOf(eo[name]);
+    return !!filter && (
+      parseCommaList(filter.include, { lower: false }).length > 0 ||
+      parseCommaList(filter.exclude, { lower: false }).length > 0
+    );
+  });
+  if (!given.length) return;
+  const message =
+    given.map((name) => 'engineOptions.' + name).join(', ') +
+    ': runOnly has a filter, which wins over ' + (given.length > 1 ? 'them' : 'it');
+  if (strictOf(eo)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    err.problems = given.map((name) => ({
+      path: name,
+      kind: 'invalid',
+      suggestion: null,
+      message: 'engineOptions.' + name + ': runOnly has a filter, which wins over it'
+    }));
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '; ignored.');
+  } catch {}
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   // A number or a boolean, and an object none of whose keys the engine
@@ -1650,6 +1691,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const requestedProfile = normalizeProfileName(eo.profile);
 
   if (hasAnyRunOnlyKeys(runOnly)) {
+    warnFiltersBesideRunOnly(eo);
     const selection = normalizeRunOnly(runOnly);
     canonicalizeRuleIds(selection, eo);
     checkSelectionNames(
@@ -1678,10 +1720,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
 
   // { include, exclude }; a bare list or string is the include list, as
   // runOnly takes one. As an object with neither key it ran every rule.
-  const includeExclude = (v) =>
-    Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-      ? { include: typeof v === 'string' ? [v] : [...v] }
-      : (v && typeof v === 'object' ? v : null);
+  const includeExclude = includeExcludeOf;
   const rules = includeExclude(eo.rules);
   const tags = includeExclude(eo.tags);
   const tests = includeExclude(eo.tests);

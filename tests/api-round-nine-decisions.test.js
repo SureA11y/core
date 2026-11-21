@@ -101,3 +101,49 @@ test('a baseline key without markup names the finding by its selector (A9-10)', 
     fingerprint(scan(page('<img src="new.png">'), true))
   );
 });
+
+test("engineOptions' rule filters beside a runOnly filter are warned about, and throw under strictOptions (A9-14)", () => {
+  const saved = console.warn;
+  const warnings = [];
+  console.warn = (...a) => warnings.push(a.map(String).join(' '));
+  try {
+    const result = runa11yCoreOnHtml(PAGE, {
+      runOnly: { includeRuleIds: ['img-alt-present'] },
+      engineOptions: { tags: { include: ['wcag2a'] }, rules: ['button-name-present'] }
+    });
+    // runOnly still wins.
+    assert.deepEqual(
+      result.checksResults.map((c) => c.ruleId),
+      ['img-alt-present']
+    );
+    assert.ok(
+      warnings.includes(
+        '[surea11y] engineOptions.rules, engineOptions.tags: runOnly has a filter, which wins over them; ignored.'
+      ),
+      warnings.join('\n')
+    );
+    // A rules entry for one rule's settings is no filter; neither is runOnly
+    // without one.
+    warnings.length = 0;
+    runa11yCoreOnHtml(PAGE, {
+      runOnly: { includeRuleIds: ['img-alt-present'] },
+      engineOptions: { rules: { 'img-alt-present': {} } }
+    });
+    runa11yCoreOnHtml(PAGE, { engineOptions: { tests: ['img-alt-present'] } });
+    assert.deepEqual(warnings, []);
+  } finally {
+    console.warn = saved;
+  }
+  assert.throws(
+    () =>
+      runa11yCoreOnHtml(PAGE, {
+        runOnly: { tags: ['wcag2a'] },
+        engineOptions: { strictOptions: true, tests: { exclude: ['img-alt-present'] } }
+      }),
+    (err) =>
+      err.code === 'INVALID_ENGINE_OPTIONS' &&
+      err.problems.length === 1 &&
+      err.problems[0].path === 'tests' &&
+      /engineOptions\.tests: runOnly has a filter/.test(err.message)
+  );
+});
