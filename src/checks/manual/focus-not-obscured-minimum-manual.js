@@ -105,8 +105,11 @@
  *   page is at opacity 0. A transparent box over the element hides nothing.
  * - The hit test (elementFromPoint) skips boxes with pointer-events: none,
  *   so such a box isn't confirmed and isn't reported.
- * - Scrolling is instant and undone before the rule returns. The page's
- *   scroll listeners still see it, after the rule has measured.
+ * - Scrolling is instant and undone before the rule returns. The `scroll`
+ *   and `scrollend` the browser fires for it afterwards are kept from the
+ *   page's listeners by a capturing listener on the window, which goes once
+ *   they have passed (or after half a second). A capturing listener the page
+ *   put on the window itself before the scan still sees them.
  * - What appears later, such as a chat bubble after a delay, is only seen if
  *   it is there when the scan runs, at the scan's window size.
  */
@@ -646,7 +649,48 @@ function runInPage(ctx) {
     opened.some((t) => t === root || dom.contains(root, t) || dom.contains(t, root));
 
   // ---- Confirm with the browser: scroll a few there and hit-test ----
+  // Scrolling the window makes the browser fire `scroll` and `scrollend` at
+  // the page once the scan is over, though the page is put back where it
+  // was: a page that loads a widget on its first scroll would change under
+  // the next scan. A capturing listener on the window keeps those two
+  // events, for the window's own scrolling only, from the page's listeners,
+  // and goes once the scrollend has passed (where the browser has none, the
+  // scroll), or a moment later where no event comes. Shared with the
+  // variant run in the same scan (focus-not-obscured-enhanced).
+  const guards = memoOf('scrollGuard');
+  function guardScrollEvents() {
+    const current = guards.get(view);
+    if (current && current.active) return;
+    const guard = { active: true };
+    guards.set(view, guard);
+    const withScrollEnd = 'onscrollend' in view;
+    const remove = () => {
+      if (!guard.active) return;
+      guard.active = false;
+      try {
+        dom.removeEventListener(view, 'scroll', stop, true);
+        dom.removeEventListener(view, 'scrollend', stop, true);
+      } catch {}
+    };
+    function stop(e) {
+      if (!guard.active || (e.target !== document && e.target !== view)) return;
+      e.stopImmediatePropagation();
+      if (e.type === 'scrollend' || !withScrollEnd) remove();
+    }
+    try {
+      dom.addEventListener(view, 'scroll', stop, true);
+      dom.addEventListener(view, 'scrollend', stop, true);
+      if (typeof view.setTimeout === 'function') view.setTimeout(remove, 500);
+    } catch {
+      remove();
+    }
+  }
+  let moved = false;
   const scrollTo = (y) => {
+    if (y !== scrollY && !moved) {
+      moved = true;
+      guardScrollEvents();
+    }
     try {
       dom.call(view, 'scrollTo', { left: scrollX, top: y, behavior: 'instant' });
     } catch {
@@ -865,7 +909,7 @@ function runInPage(ctx) {
       );
     }
   } finally {
-    scrollTo(scrollY);
+    if (moved) scrollTo(scrollY);
   }
 
   // Only where boxes were left unchecked: how many boxes could hide an
