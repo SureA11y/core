@@ -5261,8 +5261,18 @@ function createContrastHelpers(opts, shared) {
         const indent = Number.parseFloat(ps.textIndent) || 0;
         const display = String(ps.display || '');
         const position = String(ps.position || '');
+        // Text aligned to the line's end is drawn from the other side, where
+        // the indent doesn't take it (round 8, NW-8): right or end in
+        // left-to-right text, left or start in right-to-left.
+        const align = String(ps.textAlign || 'start');
+        const rtl = String(ps.direction || '') === 'rtl';
+        const fromEnd = rtl
+          ? align === 'left' || align === 'start' || align === '-webkit-left'
+          : align === 'right' || align === 'end' || align === '-webkit-right';
         if (
           indent < 0 &&
+          !fromEnd &&
+          !rtl &&
           display &&
           display !== 'inline' &&
           display !== 'contents' &&

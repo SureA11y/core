@@ -8125,8 +8125,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const indent = Number.parseFloat(ps.textIndent) || 0;
         const display = String(ps.display || '');
         const position = String(ps.position || '');
+        // Text aligned to the line's end is drawn from the other side, where
+        // the indent doesn't take it (round 8, NW-8): right or end in
+        // left-to-right text, left or start in right-to-left.
+        const align = String(ps.textAlign || 'start');
+        const rtl = String(ps.direction || '') === 'rtl';
+        const fromEnd = rtl
+          ? align === 'left' || align === 'start' || align === '-webkit-left'
+          : align === 'right' || align === 'end' || align === '-webkit-right';
         if (
           indent < 0 &&
+          !fromEnd &&
+          !rtl &&
           display &&
           display !== 'inline' &&
           display !== 'contents' &&
@@ -80812,28 +80822,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .replace(/\s+/g, ' ')
       .trim();
 
-  // How deep the deepest ancestor two elements share is.
-  // An element's ancestors with their distance from it, once per element.
-  const chains = new Map();
-  function chainOf(a) {
-    let chain = chains.get(a);
-    if (!chain) {
-      chain = new Map();
-      let depth = 0;
-      for (let n = a; n; n = dom.parentNode(n)) chain.set(n, depth++);
-      chain.total = depth;
-      chains.set(a, chain);
-    }
-    return chain;
-  }
-  function sharedDepth(a, b) {
-    const chain = chainOf(a);
-    for (let n = b; n; n = dom.parentNode(n)) {
-      if (chain.has(n)) return chain.total - chain.get(n);
-    }
-    return 0;
-  }
-
   // Each referring element's nearest copy of the id (the one it shares the
   // deepest ancestor with, alone), worked out once per id: { r, nearest }
   // for each referrer with a nearest copy. Asked once per copy, it cost
@@ -80842,19 +80830,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function nearestCopies(refId, els) {
     if (nearestMemo.has(refId)) return nearestMemo.get(refId);
     const out = [];
-    for (const r of referrers.get(refId) || []) {
-      let best = -1;
-      let nearest = null;
-      let tie = false;
-      for (const e of els) {
-        const d = sharedDepth(r.el, e);
-        if (d > best) {
-          best = d;
-          nearest = e;
-          tie = false;
-        } else if (d === best) tie = true;
+    // Each ancestor of a copy, with how many copies lie under it and which
+    // (the last met). A referrer's nearest copy is under its deepest
+    // ancestor that has any: the only one there, or a tie between several.
+    // Walked once per copy and once per referrer, where comparing each
+    // referrer with each copy grew with their product (round 8, NW-5).
+    const under = new Map();
+    for (const e of els) {
+      for (let n = e, i = 0; n && i < 100000; n = dom.parentNode(n), i++) {
+        const rec = under.get(n);
+        if (rec) {
+          rec.count += 1;
+          rec.copy = e;
+        } else under.set(n, { count: 1, copy: e });
       }
-      if (nearest && !tie) out.push({ r, nearest });
+    }
+    for (const r of referrers.get(refId) || []) {
+      let found = null;
+      for (let n = r.el, i = 0; n && i < 100000; n = dom.parentNode(n), i++) {
+        found = under.get(n);
+        if (found) break;
+      }
+      // With no shared ancestor, a lone copy is still the nearest.
+      if (found ? found.count === 1 : els.length === 1) {
+        out.push({ r, nearest: found ? found.copy : els[0] });
+      }
     }
     nearestMemo.set(refId, out);
     return out;
@@ -134319,8 +134319,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const indent = Number.parseFloat(ps.textIndent) || 0;
         const display = String(ps.display || '');
         const position = String(ps.position || '');
+        // Text aligned to the line's end is drawn from the other side, where
+        // the indent doesn't take it (round 8, NW-8): right or end in
+        // left-to-right text, left or start in right-to-left.
+        const align = String(ps.textAlign || 'start');
+        const rtl = String(ps.direction || '') === 'rtl';
+        const fromEnd = rtl
+          ? align === 'left' || align === 'start' || align === '-webkit-left'
+          : align === 'right' || align === 'end' || align === '-webkit-right';
         if (
           indent < 0 &&
+          !fromEnd &&
+          !rtl &&
           display &&
           display !== 'inline' &&
           display !== 'contents' &&
