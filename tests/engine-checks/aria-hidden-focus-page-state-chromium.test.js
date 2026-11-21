@@ -117,3 +117,44 @@ test(
     }
   }
 );
+
+// Focus inside a same-origin frame is followed into the frame and put back
+// there, with the selection in the frame's field (round 9, R9-2). Focus in
+// a closed shadow root can't be followed: see LIMITATIONS.md.
+test('aria-hidden-focus puts focus back inside a same-origin frame', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const p = await browser.newPage();
+  await p.setContent(
+    page(
+      '<iframe id="fr" title="f" srcdoc="<input id=i aria-label=x value=frametext>"></iframe>',
+      ''
+    )
+  );
+  await p.waitForFunction(() => {
+    const d = document.getElementById('fr').contentDocument;
+    return d && d.getElementById('i');
+  });
+  await addBundle(p);
+  const frameState = () => {
+    const fr = document.getElementById('fr');
+    const a = fr.contentDocument.activeElement;
+    return {
+      top: document.activeElement.id || document.activeElement.localName,
+      inner: a.id || a.localName,
+      field: a.id === 'i' ? [a.selectionStart, a.selectionEnd] : null,
+      topRanges: getSelection().rangeCount
+    };
+  };
+  await p.evaluate(() => {
+    const i = document.getElementById('fr').contentDocument.getElementById('i');
+    i.focus();
+    i.setSelectionRange(2, 5);
+  });
+  const before = await p.evaluate(frameState);
+  assert.deepEqual(before, { top: 'fr', inner: 'i', field: [2, 5], topRanges: 0 });
+  await p.evaluate(() =>
+    window.a11ycore.runa11yCoreInPage(null, null, null, ['aria-hidden-focus'])
+  );
+  assert.deepEqual(await p.evaluate(frameState), before);
+});
