@@ -308,13 +308,13 @@ test(`${RULE_ID}: notApplicable (not pass) when the container has the hidden att
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-// --- Roleless wrappers hold ITEMS, and an item's own content is not the
-// container's child. A component library routinely buries the real item
-// several roleless levels down, so the walk descends to find it; these guard
-// that the descent doesn't also drag the item's sibling content up into the
-// container's owned set.
+// --- A roleless wrapper with no name and no focus is a generic element the
+// accessibility tree leaves out, so what it holds is the container's child
+// (ACT bc4a75; Chromium's tree has the container > item, sibling with the
+// wrapper ignored). A wrapper with a title is a named node of its own: there
+// the descent collects only the items it finds, not their siblings.
 
-test(`${RULE_ID}: pass for the Angular Material card-radio shape: a roleless card wrapper holds the radio, and a role="separator" in the same card body is the card's content, not an owned child of the radiogroup`, () => {
+test(`${RULE_ID}: fail for the Angular Material card-radio shape: the roleless card wrappers are left out of the accessibility tree, so the role="separator" beside the radio (not inside it) is an owned child of the radiogroup`, () => {
   const html = `<!doctype html><html><body>
     <mat-radio-group role="radiogroup" aria-label="Select broker exposure card">
       <div class="mdc-layout-grid"><div class="mdc-layout-grid__inner">
@@ -340,10 +340,11 @@ test(`${RULE_ID}: pass for the Angular Material card-radio shape: a roleless car
     </mat-radio-group>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: pass when a roleless wrapper holds tabs alongside a role="button"; the button is the wrapper's content, not an owned child of the tablist`, () => {
+test(`${RULE_ID}: fail when a roleless wrapper holds tabs alongside a role="button": the wrapper is left out of the accessibility tree, so the button is the tablist's child, as without the wrapper (ACT bc4a75)`, () => {
   const html = `<!doctype html><html><body>
     <div role="tablist" aria-label="Sections">
       <div class="tab-strip">
@@ -353,10 +354,11 @@ test(`${RULE_ID}: pass when a roleless wrapper holds tabs alongside a role="butt
     </div>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: pass when a roleless row wrapper holds an option alongside a role="img" icon`, () => {
+test(`${RULE_ID}: fail when a roleless row wrapper holds an option alongside a role="img" icon: the image is the listbox's child`, () => {
   const html = `<!doctype html><html><body>
     <div role="listbox" aria-label="Country">
       <div class="row">
@@ -366,7 +368,8 @@ test(`${RULE_ID}: pass when a roleless row wrapper holds an option alongside a r
     </div>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
 test(`${RULE_ID}: fail when a roleless wrapper holds NO allowed item: it is interposed content, not an item wrapper, so what it does hold is still reported`, () => {
@@ -395,10 +398,10 @@ test(`${RULE_ID}: fail when a role="presentation" wrapper holds an item alongsid
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: an item wrapper suppresses only its OWN subtree; a stray direct child of the same container is still reported`, () => {
+test(`${RULE_ID}: a wrapper with a title is a named node of its own: when it holds an item, only the item is collected, and a stray direct child of the same container is still reported`, () => {
   const html = `<!doctype html><html><body>
     <div role="radiogroup" aria-label="Plan">
-      <div class="card">
+      <div class="card" title="Basic plan">
         <input type="radio" name="p" value="1">
         <div role="separator"></div>
       </div>
@@ -408,6 +411,18 @@ test(`${RULE_ID}: an item wrapper suppresses only its OWN subtree; a stray direc
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: fail when a roleless wrapper holds a tab beside a role="button", as the same tablist without the wrapper does (ACT bc4a75)`, () => {
+  for (const inner of [
+    '<div class="strip"><div role="tab" tabindex="0">Overview</div><div id="a" role="button" tabindex="0">Scroll right</div></div>',
+    '<div role="tab" tabindex="0">Overview</div><div id="a" role="button" tabindex="0">Scroll right</div>'
+  ]) {
+    const html = `<!doctype html><html><body><div role="tablist" aria-label="Tabs">${inner}</div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'a'));
+  }
 });
 
 // --- "Required owned elements" is what a container MUST contain, not the
@@ -523,7 +538,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
 
   for (const id of [
     'apc_case_06_child',
@@ -532,6 +547,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-
     'apc_case_10_child',
     'apc_case_11_child',
     'apc_case_12_child',
+    'apc_case_16_child',
+    'apc_case_17_child',
     'apc_case_18_child',
     'apc_case_21_child'
   ]) {
@@ -547,9 +564,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-
     'apc_case_13',
     'apc_case_15',
     'apc_case_16',
-    'apc_case_16_child',
     'apc_case_17',
-    'apc_case_17_child',
     'apc_case_19',
     'apc_case_19_child',
     'apc_case_20',
@@ -630,4 +645,38 @@ test(`${RULE_ID}: a submenu's menu inside a menubar or menu is allowed (round 8,
     minOccurrences: 1,
     maxOccurrences: 1
   });
+});
+
+// --- aria-owns adds children to the container (WAI-ARIA 1.2 aria-owns): the
+// elements it references are judged like its DOM children.
+
+test(`${RULE_ID}: fail when a list owns a tab through aria-owns (ACT bc4a75 Failed Example 5)`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="list" aria-owns="id2"></div>
+    <div id="id2" role="tab">Tab 1</div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'id2'));
+  assert.equal(rule.occurrences[0].data.details.containerRole, 'list');
+});
+
+test(`${RULE_ID}: fail when a list with a real listitem also owns a tab; pass when what it owns is a listitem`, () => {
+  const fail = runa11yCoreOnHtml(
+    `<!doctype html><html><body>
+      <div role="list" aria-owns="x"><div role="listitem">One</div></div>
+      <div id="x" role="tab">Tab</div>
+    </body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(fail, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'x'));
+  const pass = runa11yCoreOnHtml(
+    `<!doctype html><html><body>
+      <div role="list" aria-owns="x"><div role="listitem">One</div></div>
+      <div id="x" role="listitem">Two</div>
+    </body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(pass, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });

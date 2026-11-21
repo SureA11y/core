@@ -794,15 +794,21 @@ The id `lbl` is unique, so the reference resolves unambiguously.
 
 **Passed**
 ```html
-<embed src="report.pdf" type="application/pdf" aria-label="Quarterly report PDF">
+<embed src="sales-chart.svg" type="image/svg+xml" aria-label="Quarterly sales chart">
 ```
 `aria-label` gives the embed an accessible name.
 
 **Failed**
 ```html
-<embed src="report.pdf" type="application/pdf">
+<embed src="sales-chart.svg" type="image/svg+xml">
 ```
 No accessible name and no fallback content.
+
+**Not applicable**
+```html
+<embed src="report.pdf" type="application/pdf">
+```
+A PDF, like an HTML page or a Flash file, renders no non-text content of its own, so 1.1.1 asks nothing of the embed (ACT 8fc3b6), as for an `<object>` of the same resource.
 
 ## embed-text-alternative-quality
 
@@ -2201,8 +2207,8 @@ Text content is not a valid name source for an element with an explicit role="im
 
 **Flagged (cantTell)**
 ```html
-<style>.scrollY { overflow-y: auto; height: 100px; }</style>
-<div class="scrollY">Plain long text content with no interactive children at all.</div>
+<style>.scrollY { overflow-y: auto; height: 3em; }</style>
+<div class="scrollY"><p>Plain long text content</p><p>with no interactive children</p><p>at all.</p></div>
 ```
 The region can scroll, but it has no `tabindex` of its own and contains no focusable descendant, so a keyboard user can never reach it to scroll it.
 

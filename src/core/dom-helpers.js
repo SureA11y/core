@@ -3046,6 +3046,42 @@ function createDomHelpers(opts) {
     anchor: 'link'
   };
 
+  // Whether an <object> or <embed> loads a resource that is not an image,
+  // audio or video (an HTML page, a PDF, text), or Flash, which no current
+  // browser runs (support ended in 2021): such a resource renders no
+  // non-text content of its own, so 1.1.1 asks nothing of the element (ACT
+  // 8fc3b6's applicability). Read from the `type` attribute, or failing that
+  // the resource URL's file extension (`data` on an object, `src` on an
+  // embed). Only types markup makes known count: an unknown or missing
+  // extension returns false, since the resource may well be an image.
+  const NON_MEDIA_EXTENSIONS = new Set([
+    'htm',
+    'html',
+    'xhtml',
+    'xht',
+    'shtml',
+    'php',
+    'asp',
+    'aspx',
+    'jsp',
+    'txt',
+    'xml',
+    'json',
+    'pdf',
+    'csv',
+    'swf'
+  ]);
+  function embedsNonMedia(type, url) {
+    const t = String(type || '')
+      .trim()
+      .toLowerCase()
+      .split(';')[0]
+      .trim();
+    if (t) return !/^(image|audio|video)\//.test(t);
+    const m = /\.([a-z0-9]+)$/i.exec(String(url || '').split(/[?#]/)[0]);
+    return !!(m && NON_MEDIA_EXTENSIONS.has(m[1].toLowerCase()));
+  }
+
   // A role attribute that gives an element no role because none of its
   // tokens is an ARIA role (role="buton", role="menu-item"): the attribute
   // as written, and the role its first near token misspells ('' when none
@@ -10173,6 +10209,7 @@ function createDomHelpers(opts) {
     nearestRole,
     nearestAriaAttr,
     roleTypo,
+    embedsNonMedia,
     describeElement,
     describeMarkup,
     getTextFromIdRefsIdrefEligible,

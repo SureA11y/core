@@ -75,42 +75,6 @@
     </ul>
   </div>
 
-  <div class="case" id="case_16">
-    <div class="case-title">16 — PASS: a roleless card wrapper holds the radio, so the role="separator" in the same card body is the card's own content, not an owned child of the radiogroup (the Angular Material card-radio shape: the walk must descend several roleless levels to reach the input, and must not drag the card's other content up with it)</div>
-    <mat-radio-group role="radiogroup" aria-label="Select broker exposure card" id="apc_case_16">
-      <div class="mdc-layout-grid__inner">
-        <avq-card class="avq-card">
-          <div class="avq-card-body">
-            <avq-card-header>
-              <mat-radio-button>
-                <div class="mdc-form-field"><div class="mdc-radio">
-                  <input type="radio" name="broker" value="1" tabindex="0">
-                </div></div>
-              </mat-radio-button>
-            </avq-card-header>
-            <avq-card-content>
-              <div class="avq-display-flex">
-                <div class="col">Exposure warning delta</div>
-                <mat-divider id="apc_case_16_child" role="separator" aria-orientation="vertical"></mat-divider>
-                <div class="col">Trade stop delta</div>
-              </div>
-            </avq-card-content>
-          </div>
-        </avq-card>
-      </div>
-    </mat-radio-group>
-  </div>
-
-  <div class="case" id="case_17">
-    <div class="case-title">17 — PASS: a roleless tab-strip wrapper holds the tabs, so the role="button" beside them is the wrapper's content, not an owned child of the tablist</div>
-    <div role="tablist" aria-label="Sections" id="apc_case_17">
-      <div class="tab-strip">
-        <div role="tab">Overview</div>
-        <div id="apc_case_17_child" role="button" tabindex="0">Scroll right</div>
-      </div>
-    </div>
-  </div>
-
   <div class="case" id="case_19">
     <div class="case-title">19 — PASS: a role="separator" between menuitems is an allowed-but-not-required owned child ("Required Owned Elements" says what a menu must contain, not all it may contain; ARIA defines separator as a divider between "groups of menuitems")</div>
     <div role="menu" aria-label="Edit" id="apc_case_19">
@@ -182,10 +146,46 @@
 
 
   <div class="case" id="case_18">
-    <div class="case-title">18 — FAIL: a roleless wrapper that holds NO allowed item is interposed content, not an item wrapper, so the disallowed role inside it is still an owned child of the list</div>
+    <div class="case-title">18 — FAIL: a roleless wrapper with no name and no focus is left out of the accessibility tree, so the disallowed role inside it is an owned child of the list</div>
     <div role="list" id="apc_case_18">
       <span role="listitem">Item</span>
       <div class="toolbar"><div id="apc_case_18_child" role="button" tabindex="0">Add</div></div>
+    </div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — FAIL: the Angular Material card-radio shape. The roleless card wrappers have no name and take no focus, so the accessibility tree leaves them out (Chromium marks them ignored), and the role="separator" beside the radio, not inside it, is a child of the radiogroup (ACT bc4a75). The walk still descends several roleless levels to reach the input</div>
+    <mat-radio-group role="radiogroup" aria-label="Select broker exposure card" id="apc_case_16">
+      <div class="mdc-layout-grid__inner">
+        <avq-card class="avq-card">
+          <div class="avq-card-body">
+            <avq-card-header>
+              <mat-radio-button>
+                <div class="mdc-form-field"><div class="mdc-radio">
+                  <input type="radio" name="broker" value="1" tabindex="0">
+                </div></div>
+              </mat-radio-button>
+            </avq-card-header>
+            <avq-card-content>
+              <div class="avq-display-flex">
+                <div class="col">Exposure warning delta</div>
+                <mat-divider id="apc_case_16_child" role="separator" aria-orientation="vertical"></mat-divider>
+                <div class="col">Trade stop delta</div>
+              </div>
+            </avq-card-content>
+          </div>
+        </avq-card>
+      </div>
+    </mat-radio-group>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — FAIL: a roleless tab-strip wrapper with no name and no focus is left out of the accessibility tree, so the role="button" beside the tab is a child of the tablist, exactly as without the wrapper (ACT bc4a75; Chromium's tree is the same for both)</div>
+    <div role="tablist" aria-label="Sections" id="apc_case_17">
+      <div class="tab-strip">
+        <div role="tab">Overview</div>
+        <div id="apc_case_17_child" role="button" tabindex="0">Scroll right</div>
+      </div>
     </div>
   </div>
 

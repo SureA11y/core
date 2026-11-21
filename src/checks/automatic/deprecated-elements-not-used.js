@@ -85,7 +85,14 @@ function runInPage(ctx) {
     /\b(?:pause|stop|hide|freeze|arr[eê]ter|arr[eê]t|masquer|cacher|pausieren|anhalten|stopp|ausblenden|verbergen|pausa|pausar|detener|parar|ocultar)\b|一時停止|停止|止める|非表示/i;
   const CONTROL_SELECTOR =
     'button, input[type="button" i], input[type="submit" i], input[type="image" i], a[href], [role~="button" i], [role~="switch" i], [role~="link" i]';
-  const SCRIPT_STOP = /\.\s*stop\s*\(|\.\s*start\s*\(|marquee/i;
+  // A call to stop() or start(), and the ways a script reaches a marquee
+  // (header): by tag here, by id in reachesMarquee.
+  const STOP_CALL = /\.\s*(?:stop|start)\s*\(/;
+  const MARQUEE_BY_TAG =
+    /getElementsByTagName\s*\(\s*['"`]marquee['"`]|querySelector(?:All)?\s*\(\s*['"`][^'"`]*\bmarquee\b/i;
+  // The engine's own script, injected inline by the page (a script tag holding
+  // the bundle): what it says about marquees is the engine's, not the page's.
+  const isEngineScript = (text) => text.includes('runa11yCoreInPage') && text.includes('a11ycore');
   const HANDLER_ATTRS = ['onclick', 'onkeydown', 'onkeyup', 'onkeypress', 'onchange', 'onfocus'];
 
   const withLean = (lean) => (lean ? { lean } : {});
@@ -111,10 +118,34 @@ function runInPage(ctx) {
         break;
       }
     }
+    // The ids of the marquees in scope, as a script may name them.
+    const ids = [];
+    for (const m of nodes) {
+      const mid = String(dom.getAttribute(m, 'id') || '').trim();
+      if (mid) ids.push(mid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    }
+    const byId = ids.length
+      ? new RegExp(
+          '[\'"`#](?:' +
+            ids.join('|') +
+            ')[\'"`]|(?:^|[^\\w$.-])(?:' +
+            ids.join('|') +
+            ')\\s*\\.\\s*(?:stop|start)\\s*\\('
+        )
+      : null;
+    const reachesMarquee = (text) => MARQUEE_BY_TAG.test(text) || !!(byId && byId.test(text));
     let stopCall = false;
     const handlerSelector = HANDLER_ATTRS.map((a) => '[' + a + ']').join(', ');
     for (const h of helpers.queryAll(handlerSelector) || []) {
-      if (HANDLER_ATTRS.some((a) => SCRIPT_STOP.test(String(dom.getAttribute(h, a) || '')))) {
+      const onMarquee = String(dom.localName(h) || '').toLowerCase() === 'marquee';
+      const calls = HANDLER_ATTRS.some((a) => {
+        const text = String(dom.getAttribute(h, a) || '');
+        if (!STOP_CALL.test(text)) return false;
+        return (
+          reachesMarquee(text) || (onMarquee && /\bthis\s*\.\s*(?:stop|start)\s*\(/.test(text))
+        );
+      });
+      if (calls) {
         stopCall = true;
         break;
       }
@@ -122,7 +153,9 @@ function runInPage(ctx) {
     if (!stopCall) {
       const doc = dom.ownerDocument(nodes[0]) || ctx.document;
       for (const sc of dom.querySelectorAll(doc, 'script:not([src])') || []) {
-        if (SCRIPT_STOP.test(String(dom.textContent(sc) || ''))) {
+        const text = String(dom.textContent(sc) || '');
+        if (isEngineScript(text)) continue;
+        if (STOP_CALL.test(text) && reachesMarquee(text)) {
           stopCall = true;
           break;
         }
