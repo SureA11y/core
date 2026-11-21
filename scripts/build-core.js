@@ -73,6 +73,8 @@ const {
   mayBeSkippedPackProfile,
   runProfiles,
   withOwnVerdicts,
+  policyAllowsFail,
+  capToPolicy,
   mergeProfileResults,
   noteProfileNotApplied
 } = require('../src/core/multi-profile');
@@ -2494,6 +2496,8 @@ ${inlineConstFunction('profileOptionsOf', profileOptionsOf)}
 ${inlineConstFunction('mayBeSkippedPackProfile', mayBeSkippedPackProfile)}
 ${inlineConstFunction('runProfiles', runProfiles)}
 ${inlineConstFunction('withOwnVerdicts', withOwnVerdicts)}
+${inlineConstFunction('policyAllowsFail', policyAllowsFail)}
+${inlineConstFunction('capToPolicy', capToPolicy)}
 ${inlineConstFunction('mergeProfileResults', mergeProfileResults)}
 ${inlineConstFunction('noteProfileNotApplied', noteProfileNotApplied)}
 `.trim();

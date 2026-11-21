@@ -45,6 +45,7 @@ function profileOptionsOf(engineOptions) {
  */
 function runProfiles(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
+  const allowFail = policyAllowsFail(engineOptions);
   const asked =
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
   if (Array.isArray(asked)) {
@@ -65,12 +66,13 @@ function runProfiles(engineOptions, run) {
     }
     if (unique.length <= 1) {
       return withOwnVerdicts(
-        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined }))
+        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })),
+        allowFail
       );
     }
     const runs = [];
     const step = (i) => {
-      if (i >= unique.length) return mergeProfileResults(runs, unique);
+      if (i >= unique.length) return mergeProfileResults(runs, unique, allowFail);
       const result = run(Object.assign({}, engineOptions, { profile: unique[i] }));
       if (thenable(result)) {
         return result.then((r) => {
@@ -83,7 +85,45 @@ function runProfiles(engineOptions, run) {
     };
     return step(0);
   }
-  return withOwnVerdicts(run(engineOptions));
+  return withOwnVerdicts(run(engineOptions), allowFail);
+}
+
+/**
+ * Whether the scan's policy lets a check fail: a caller's policy or policy
+ * contract whose allowedOutcomes leave out 'fail' makes every fail
+ * cantTell (policyOutcome keeps it), and a standard's verdict, which comes
+ * after that step, must not undo it. Core's own contracts all allow it.
+ */
+function policyAllowsFail(engineOptions) {
+  try {
+    const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+    for (const source of [eo.policy, eo.policyContract]) {
+      if (source && typeof source === 'object' && Array.isArray(source.allowedOutcomes)) {
+        return source.allowedOutcomes.includes('fail');
+      }
+    }
+  } catch {
+    // unreadable options: the scan's own reading decides
+  }
+  return true;
+}
+
+// A check made to fail by a standard's verdict, held to a policy that
+// doesn't allow fail: cantTell, as the policy step makes a rule's own fail,
+// with policyOutcome saying what was found.
+function capToPolicy(check, allowFail) {
+  if (allowFail || !check || check.outcome !== 'fail') return check;
+  check.policyOutcome = 'fail';
+  check.outcome = 'cantTell';
+  check.outcomeNormalized = 'cantTell';
+  if (Array.isArray(check.occurrences)) {
+    check.occurrences = check.occurrences.map((o) =>
+      o && typeof o === 'object' && o.occurrenceOutcome === 'fail'
+        ? Object.assign({}, o, { occurrenceOutcome: 'cantTell' })
+        : o
+    );
+  }
+  return check;
 }
 
 /**
@@ -94,11 +134,11 @@ function runProfiles(engineOptions, run) {
  * its check, so SARIF, JUnit and baselines gate on it. A check no rollup
  * judges that way keeps its outcome. A promise gets the same once it settles.
  */
-function withOwnVerdicts(result) {
+function withOwnVerdicts(result, allowFail = true) {
   // A result first: a page may add then to Object.prototype, which makes
   // any object look like a promise.
   if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
-    return result.then(withOwnVerdicts);
+    return result.then((r) => withOwnVerdicts(r, allowFail));
   }
   if (!result || !Array.isArray(result.checksResults)) return result;
   const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
@@ -124,6 +164,7 @@ function withOwnVerdicts(result) {
     );
     check.outcome = 'fail';
     check.outcomeNormalized = 'fail';
+    capToPolicy(check, allowFail);
   }
   return result;
 }
@@ -201,7 +242,7 @@ function noteProfileNotApplied(result, reason) {
  * - engine.profile is the first profile that ran, so code that reads one
  *   name keeps working; engine.profiles lists them all.
  */
-function mergeProfileResults(runs, asked) {
+function mergeProfileResults(runs, asked, allowFail = true) {
   const RANK = { fail: 4, cantTell: 3, pass: 2, notApplicable: 1 };
   const rank = (o) => RANK[o] || 0;
   const SEVERITY_ORDER = ['minor', 'moderate', 'serious', 'critical'];
@@ -396,11 +437,13 @@ function mergeProfileResults(runs, asked) {
           });
         }
       }
-      // A check whose findings the profile counts nowhere found nothing it
-      // is about: a pass there, as its rollups read it.
+      // A check whose findings the profile counts nowhere keeps the outcome
+      // its scan of that profile gave, as a scan of the profile alone
+      // reports it (round 8, PK-1: it read as a pass, and SARIF, JUnit and
+      // baselines dropped a failure the profile alone reports).
       merged.verdicts[r.profile] =
         isTier(check.outcome) && occurrences.length
-          ? worst(verdicts.filter((v) => v !== 'notApplicable')) || 'pass'
+          ? worst(verdicts.filter((v) => v !== 'notApplicable')) || check.outcome
           : check.outcome;
     }
   }
@@ -439,7 +482,10 @@ function mergeProfileResults(runs, asked) {
       if (isTier(tier) && (m.occurrenceOutcome || tier !== outcome)) m.occurrenceOutcome = tier;
     }
     checksResults.push(
-      Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) })
+      capToPolicy(
+        Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) }),
+        allowFail
+      )
     );
   }
 
@@ -567,6 +613,8 @@ module.exports = {
   mayBeSkippedPackProfile,
   runProfiles,
   withOwnVerdicts,
+  policyAllowsFail,
+  capToPolicy,
   mergeProfileResults,
   noteProfileNotApplied
 };

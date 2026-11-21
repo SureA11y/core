@@ -27288,6 +27288,7 @@ const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packN
 });
 const runProfiles = (function runProfiles(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
+  const allowFail = policyAllowsFail(engineOptions);
   const asked =
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
   if (Array.isArray(asked)) {
@@ -27308,12 +27309,13 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     }
     if (unique.length <= 1) {
       return withOwnVerdicts(
-        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined }))
+        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })),
+        allowFail
       );
     }
     const runs = [];
     const step = (i) => {
-      if (i >= unique.length) return mergeProfileResults(runs, unique);
+      if (i >= unique.length) return mergeProfileResults(runs, unique, allowFail);
       const result = run(Object.assign({}, engineOptions, { profile: unique[i] }));
       if (thenable(result)) {
         return result.then((r) => {
@@ -27326,13 +27328,13 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     };
     return step(0);
   }
-  return withOwnVerdicts(run(engineOptions));
+  return withOwnVerdicts(run(engineOptions), allowFail);
 });
-const withOwnVerdicts = (function withOwnVerdicts(result) {
+const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
   // A result first: a page may add then to Object.prototype, which makes
   // any object look like a promise.
   if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
-    return result.then(withOwnVerdicts);
+    return result.then((r) => withOwnVerdicts(r, allowFail));
   }
   if (!result || !Array.isArray(result.checksResults)) return result;
   const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
@@ -27358,10 +27360,38 @@ const withOwnVerdicts = (function withOwnVerdicts(result) {
     );
     check.outcome = 'fail';
     check.outcomeNormalized = 'fail';
+    capToPolicy(check, allowFail);
   }
   return result;
 });
-const mergeProfileResults = (function mergeProfileResults(runs, asked) {
+const policyAllowsFail = (function policyAllowsFail(engineOptions) {
+  try {
+    const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+    for (const source of [eo.policy, eo.policyContract]) {
+      if (source && typeof source === 'object' && Array.isArray(source.allowedOutcomes)) {
+        return source.allowedOutcomes.includes('fail');
+      }
+    }
+  } catch {
+    // unreadable options: the scan's own reading decides
+  }
+  return true;
+});
+const capToPolicy = (function capToPolicy(check, allowFail) {
+  if (allowFail || !check || check.outcome !== 'fail') return check;
+  check.policyOutcome = 'fail';
+  check.outcome = 'cantTell';
+  check.outcomeNormalized = 'cantTell';
+  if (Array.isArray(check.occurrences)) {
+    check.occurrences = check.occurrences.map((o) =>
+      o && typeof o === 'object' && o.occurrenceOutcome === 'fail'
+        ? Object.assign({}, o, { occurrenceOutcome: 'cantTell' })
+        : o
+    );
+  }
+  return check;
+});
+const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail = true) {
   const RANK = { fail: 4, cantTell: 3, pass: 2, notApplicable: 1 };
   const rank = (o) => RANK[o] || 0;
   const SEVERITY_ORDER = ['minor', 'moderate', 'serious', 'critical'];
@@ -27556,11 +27586,13 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
           });
         }
       }
-      // A check whose findings the profile counts nowhere found nothing it
-      // is about: a pass there, as its rollups read it.
+      // A check whose findings the profile counts nowhere keeps the outcome
+      // its scan of that profile gave, as a scan of the profile alone
+      // reports it (round 8, PK-1: it read as a pass, and SARIF, JUnit and
+      // baselines dropped a failure the profile alone reports).
       merged.verdicts[r.profile] =
         isTier(check.outcome) && occurrences.length
-          ? worst(verdicts.filter((v) => v !== 'notApplicable')) || 'pass'
+          ? worst(verdicts.filter((v) => v !== 'notApplicable')) || check.outcome
           : check.outcome;
     }
   }
@@ -27599,7 +27631,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
       if (isTier(tier) && (m.occurrenceOutcome || tier !== outcome)) m.occurrenceOutcome = tier;
     }
     checksResults.push(
-      Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) })
+      capToPolicy(
+        Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) }),
+        allowFail
+      )
     );
   }
 
@@ -153414,6 +153449,7 @@ const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packN
 });
 const runProfiles = (function runProfiles(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
+  const allowFail = policyAllowsFail(engineOptions);
   const asked =
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
   if (Array.isArray(asked)) {
@@ -153434,12 +153470,13 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     }
     if (unique.length <= 1) {
       return withOwnVerdicts(
-        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined }))
+        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })),
+        allowFail
       );
     }
     const runs = [];
     const step = (i) => {
-      if (i >= unique.length) return mergeProfileResults(runs, unique);
+      if (i >= unique.length) return mergeProfileResults(runs, unique, allowFail);
       const result = run(Object.assign({}, engineOptions, { profile: unique[i] }));
       if (thenable(result)) {
         return result.then((r) => {
@@ -153452,13 +153489,13 @@ const runProfiles = (function runProfiles(engineOptions, run) {
     };
     return step(0);
   }
-  return withOwnVerdicts(run(engineOptions));
+  return withOwnVerdicts(run(engineOptions), allowFail);
 });
-const withOwnVerdicts = (function withOwnVerdicts(result) {
+const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
   // A result first: a page may add then to Object.prototype, which makes
   // any object look like a promise.
   if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
-    return result.then(withOwnVerdicts);
+    return result.then((r) => withOwnVerdicts(r, allowFail));
   }
   if (!result || !Array.isArray(result.checksResults)) return result;
   const rollups = Array.isArray(result.rulesResults) ? result.rulesResults : [];
@@ -153484,10 +153521,38 @@ const withOwnVerdicts = (function withOwnVerdicts(result) {
     );
     check.outcome = 'fail';
     check.outcomeNormalized = 'fail';
+    capToPolicy(check, allowFail);
   }
   return result;
 });
-const mergeProfileResults = (function mergeProfileResults(runs, asked) {
+const policyAllowsFail = (function policyAllowsFail(engineOptions) {
+  try {
+    const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+    for (const source of [eo.policy, eo.policyContract]) {
+      if (source && typeof source === 'object' && Array.isArray(source.allowedOutcomes)) {
+        return source.allowedOutcomes.includes('fail');
+      }
+    }
+  } catch {
+    // unreadable options: the scan's own reading decides
+  }
+  return true;
+});
+const capToPolicy = (function capToPolicy(check, allowFail) {
+  if (allowFail || !check || check.outcome !== 'fail') return check;
+  check.policyOutcome = 'fail';
+  check.outcome = 'cantTell';
+  check.outcomeNormalized = 'cantTell';
+  if (Array.isArray(check.occurrences)) {
+    check.occurrences = check.occurrences.map((o) =>
+      o && typeof o === 'object' && o.occurrenceOutcome === 'fail'
+        ? Object.assign({}, o, { occurrenceOutcome: 'cantTell' })
+        : o
+    );
+  }
+  return check;
+});
+const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail = true) {
   const RANK = { fail: 4, cantTell: 3, pass: 2, notApplicable: 1 };
   const rank = (o) => RANK[o] || 0;
   const SEVERITY_ORDER = ['minor', 'moderate', 'serious', 'critical'];
@@ -153682,11 +153747,13 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
           });
         }
       }
-      // A check whose findings the profile counts nowhere found nothing it
-      // is about: a pass there, as its rollups read it.
+      // A check whose findings the profile counts nowhere keeps the outcome
+      // its scan of that profile gave, as a scan of the profile alone
+      // reports it (round 8, PK-1: it read as a pass, and SARIF, JUnit and
+      // baselines dropped a failure the profile alone reports).
       merged.verdicts[r.profile] =
         isTier(check.outcome) && occurrences.length
-          ? worst(verdicts.filter((v) => v !== 'notApplicable')) || 'pass'
+          ? worst(verdicts.filter((v) => v !== 'notApplicable')) || check.outcome
           : check.outcome;
     }
   }
@@ -153725,7 +153792,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
       if (isTier(tier) && (m.occurrenceOutcome || tier !== outcome)) m.occurrenceOutcome = tier;
     }
     checksResults.push(
-      Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) })
+      capToPolicy(
+        Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) }),
+        allowFail
+      )
     );
   }
 
