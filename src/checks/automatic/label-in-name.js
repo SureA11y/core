@@ -28,7 +28,9 @@
  *   a <br> starts a new word, and text in a box nobody can see (clipped away,
  *   1x1 px or fully transparent, as screen-reader-only text is) is left
  *   out, as are the options of a <select> and the text of a <textarea>,
- *   which are a field's value, not label text. aria-hidden is not
+ *   which are a field's value, not label text. A drop-down <select> that is
+ *   itself an aria-labelledby target shows only its selected option, which
+ *   is the text read from it. aria-hidden is not
  *   excluded: it changes nothing about what is rendered on screen, which is
  *   what this SC is about. An aria-label that is empty once trimmed, or an
  *   aria-labelledby whose ids point at nothing or only at elements with no
@@ -501,6 +503,11 @@ function runInPage(ctx) {
   function readVisibleTextUnder(container) {
     if (!isDomVisible(container)) return { text: '', asShown: '' };
 
+    // A drop-down <select> (an aria-labelledby target, say) shows only its
+    // selected option while closed, not the list of options it holds.
+    const dropDown = dropDownSelectedText(container);
+    if (dropDown !== null) return { text: dropDown, asShown: '' };
+
     const boundaryOf = (n) =>
       typeof helpers.getTextBoundaryKind === 'function' ? helpers.getTextBoundaryKind(n) : 'inline';
     const hidden = (n) =>
@@ -580,6 +587,29 @@ function runInPage(ctx) {
   }
 
   const BOX_BREAK = {};
+
+  // The text a closed drop-down <select> shows: its selected option's label
+  // or text. null for anything else, a list box (multiple, or a size above
+  // one) included, which shows its options.
+  function dropDownSelectedText(node) {
+    if (String(dom.localName(node) || '').toLowerCase() !== 'select') return null;
+    if (dom.hasAttribute(node, 'multiple')) return null;
+    const size = Number.parseInt(String(dom.getAttribute(node, 'size') || ''), 10);
+    if (size > 1) return null;
+    for (const opt of [...dom.querySelectorAll(node, 'option')]) {
+      let selected;
+      try {
+        selected = !!dom.get(opt, 'selected');
+      } catch {
+        selected = dom.hasAttribute(opt, 'selected');
+      }
+      if (!selected) continue;
+      return String(dom.getAttribute(opt, 'label') || dom.textContent(opt) || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    return '';
+  }
 
   // Whether the page is laid out (a browser), not jsdom's zero-size boxes.
   let layoutKnown = null;

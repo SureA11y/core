@@ -36,10 +36,12 @@ test('list-children-valid: every finding names its list in element', () => {
 });
 
 test("listitem-parent-valid: every finding names the <li>'s parent in parentElement", () => {
-  // A list whose role replaces list is asked about (decided 2026-11-20).
+  // A list whose role replaces list fails under a composite widget role
+  // where the <li> is drawn as a list item, and is asked about under a
+  // landmark or structure role (round 8, NW-3).
   const cases = [
     ['<div><li>a</li></div>', 'LISTITEM_INVALID_PARENT', 'div', 'fail'],
-    ['<ul role="tablist"><li>a</li></ul>', 'LIST_ROLE_OVERRIDDEN', 'ul', 'cantTell'],
+    ['<ul role="tablist"><li>a</li></ul>', 'LIST_ROLE_OVERRIDDEN', 'ul', 'fail'],
     ['<ol role="group"><li>a</li></ol>', 'LIST_ROLE_OVERRIDDEN', 'ol', 'cantTell']
   ];
   for (const [body, code, parent, outcome] of cases) {

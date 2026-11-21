@@ -21,7 +21,8 @@
  *   from that same required-owned set. Nothing else is a structurally
  *   valid direct child of a composite/container role, where "allowed" is
  *   the container's required-owned roles plus a small set of roles it
- *   may own without being required to (a separator between menu items, a caption on a grid). A
+ *   may own without being required to (a separator between menu items, a
+ *   submenu's role="menu" in a menu or menubar, a caption on a grid). A
  *   roleless wrapper
  *   is descended into to reach the items a component library buries
  *   inside it, but once one is found there the rest of that wrapper's
@@ -59,7 +60,8 @@
  *   of what it MAY contain. The extra table is kept small, and each entry
  *   needs a source: ARIA giving the child a Required Context Role that
  *   names this container (caption in table/grid), or the child role's own
- *   definition placing it there (separator in menu/menubar). Recorded and
+ *   definition or the W3C Authoring Practices pattern placing it there
+ *   (separator, and a submenu's menu, in menu/menubar). Recorded and
  *   validated in scripts/generate-aria-tables.js. The two sets are
  *   used for different questions: only a REQUIRED role makes a roleless
  *   wrapper an item wrapper, while the allowed set decides the verdict.
@@ -245,8 +247,8 @@ function runInPage(ctx) {
   // <generated:aria-allowed-extra-owned-roles>
   const ALLOWED_EXTRA_OWNED_ROLES = {
     grid: ['caption'],
-    menu: ['separator'],
-    menubar: ['separator'],
+    menu: ['menu', 'separator'],
+    menubar: ['menu', 'separator'],
     table: ['caption']
   };
   // </generated:aria-allowed-extra-owned-roles>
@@ -266,9 +268,10 @@ function runInPage(ctx) {
   // focusable.
   // kidRole comes from getContainmentRole, not getExplicitRole: "roleless"
   // here means neither an explicit role="" NOR one of the native
-  // containment tags (li, tr, td, ...), so a bare <li>/<tr>/... is a real
-  // listitem/row boundary, not a transparent wrapper the walk should pass
-  // through.
+  // containment tags (li, tr, td, ...) NOR a native element with a role of
+  // its own (h1-h6, article, nav...), so a bare <li>/<tr>/<h3> is a real
+  // listitem/row/heading boundary, not a transparent wrapper the walk should
+  // pass through.
   // An element's child elements by sibling links, not el.children: in jsdom
   // that collection stays live once read, and each later change under a
   // large parent (a list of thousands of items) rebuilds it.
@@ -444,7 +447,7 @@ function runInPage(ctx) {
           ? 'ariaProhibitedChildren_hint_fail_typoNear'
           : 'ariaProhibitedChildren_hint_fail_implicit';
       } else if (implicit) {
-        summary = `This <${childElement}> is a ${entry.role} by default, which isn't allowed directly inside a role="${role}" container.`;
+        summary = `This <${childElement}> has the implicit role ${entry.role}, which isn't allowed directly inside a role="${role}" container.`;
         hint = `Give the <${childElement}> one of the roles the container allows (${allowedRoles.join(', ')}), or role="none" so what it holds belongs to the ${role}.`;
         summaryKey = 'ariaProhibitedChildren_summary_fail_implicit';
         hintKey = 'ariaProhibitedChildren_hint_fail_implicit';

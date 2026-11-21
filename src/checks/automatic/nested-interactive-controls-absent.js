@@ -32,8 +32,11 @@
  *   It FAILS where the outer control's role has presentational children
  *   (WAI-ARIA 1.2: button, checkbox, img, menuitemcheckbox, menuitemradio,
  *   meter, option, progressbar, radio, scrollbar, separator, slider, switch,
- *   tab): the nested control's role is removed there, so a control that still
- *   takes focus has no role to determine (SC 4.1.2, as ACT 307n5z has it).
+ *   tab): the nested control's role is removed there, so a control that is
+ *   still in sequential focus navigation has no role to determine (SC 4.1.2,
+ *   as ACT 307n5z has it). A nested control there with tabindex="-1" takes
+ *   no tab stop and is not counted, as presentational-children-focusable-
+ *   absent leaves it.
  *   Elsewhere (a link, textbox, combobox, listbox, menuitem, searchbox,
  *   spinbutton or treeitem holding a control) both keep their roles; HTML's
  *   content model forbids the nesting, but whether a name, role or value is
@@ -46,7 +49,8 @@
  *     contains another control that can take focus, such as a button inside a
  *     link. It fails where the outer control's role has presentational
  *     children (a button, tab, checkbox, option...), which removes the nested
- *     control's role, and is asked about otherwise (a control inside a link,
+ *     control's role, when the nested control is in the tab order (one with
+ *     tabindex="-1" is not counted there), and is asked about otherwise (a control inside a link,
  *     textbox or tree item), where both keep their roles.
  *     Basis: WCAG 4.1.2; ACT 307n5z; HTML interactive content (MUST);
  *     WAI-ARIA 1.2 presentational children.
@@ -369,6 +373,17 @@ function runInPage(ctx) {
     'switch',
     'tab'
   ]);
+  // In sequential focus navigation (getFocusableInfo's `tabbable`). Without
+  // a focus model every counted control is kept.
+  function isTabbable(node) {
+    if (!getFocusableInfo) return true;
+    try {
+      const info = getFocusableInfo(node, ctx);
+      return !!(info && info.tabbable);
+    } catch {
+      return true;
+    }
+  }
   function effectiveRole(node) {
     const explicit = getExplicitRole(node);
     if (explicit) return explicit;
@@ -387,7 +402,14 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const nested = collectNestedOperable(el);
+    const outerRole = effectiveRole(el);
+    const fails = PRESENTATIONAL_CHILDREN_ROLES.has(outerRole);
+
+    // Inside presentational children only content in sequential focus
+    // navigation counts, as ACT 307n5z and presentational-children-focusable-
+    // absent have it: a tabindex="-1" close button inside a tab takes no tab
+    // stop, so it adds no focus stop whose role is lost.
+    const nested = collectNestedOperable(el).filter((n) => !fails || isTabbable(n));
     if (!nested.length) continue;
 
     const nestedTags = nested.map((n) =>
@@ -401,8 +423,6 @@ function runInPage(ctx) {
     // role: a FAIL. Anywhere else (a control inside a link, say) both keep
     // their roles; HTML's content model forbids the nesting, but whether a
     // name, role or value is lost depends on the page: asked about.
-    const outerRole = effectiveRole(el);
-    const fails = PRESENTATIONAL_CHILDREN_ROLES.has(outerRole);
 
     // Each nested control as the reader finds it in the markup, with what
     // makes it focusable (helpers.describeMarkup): <span role="button"
@@ -436,7 +456,7 @@ function runInPage(ctx) {
         summary: !roleNamed
           ? 'This interactive control contains one or more other interactive controls.'
           : fails
-            ? `This <${tag}> is a ${outerRole}, whose content is presentational, and it contains ${nestedList}: the nested control loses its role but still takes focus.`
+            ? `This <${tag}> has role ${outerRole}, which makes its content presentational, and it contains ${nestedList}: the nested control loses its role but still takes focus.`
             : `This <${tag}> (${outerRole}) contains ${nestedList}. Both keep their roles, but a control inside another is hard to reach and operate, and its name may be swallowed by the outer one.`,
         hint: "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another.",
         i18n: {

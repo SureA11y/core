@@ -5981,8 +5981,9 @@ function createDomHelpers(opts) {
   // element (a <label>, an aria-labelledby target, or content a name is
   // computed from), a control speaks with its value, not its name: a
   // textbox its value, a combobox or listbox its chosen options, a range
-  // its aria-valuetext, aria-valuenow or value. Returns null for a node
-  // that is not such a control. A password field gives one bullet per
+  // its aria-valuetext, aria-valuenow or value; an ARIA textbox, or a
+  // combobox that is neither a <select> nor an <input>, its content.
+  // Returns null for a node that is not such a control. A password field gives one bullet per
   // character, as Chromium does, never the value itself.
   const __TEXTBOX_INPUT_TYPES = new Set(['', 'text', 'search', 'email', 'tel', 'url']);
   const __RANGE_ROLES = new Set(['slider', 'spinbutton', 'scrollbar', 'progressbar', 'meter']);
@@ -6014,12 +6015,17 @@ function createDomHelpers(opts) {
     };
     const optionText = (opt) =>
       trim(getAttr(opt, 'label') || dom.textContent(opt) || '').replace(/\s+/g, ' ');
+    const contentValueOf = (el) => {
+      const info = getContentNameInfo(el, null);
+      return info && info.present ? trim(info.value) : '';
+    };
 
     if (role === 'textbox' || role === 'searchbox') {
       if (tag === 'textarea' || (tag === 'input' && nativeRole)) {
         return type === 'password' ? '\u2022'.repeat(valueOf().length) : trim(valueOf());
       }
-      return null; // an ARIA textbox's value is its content
+      // An ARIA textbox's value is its content, as Chromium reads it.
+      return contentValueOf(node);
     }
     if (role === 'combobox' || role === 'listbox') {
       if (isSelect) {
@@ -6043,7 +6049,8 @@ function createDomHelpers(opts) {
           .filter(Boolean)
           .join(' ');
       }
-      return null;
+      // A combobox drawn with a <div> shows its value as its content.
+      return contentValueOf(node);
     }
     if (__RANGE_ROLES.has(role)) {
       const valuetext = trim(getAttr(node, 'aria-valuetext'));
@@ -7506,6 +7513,14 @@ function createDomHelpers(opts) {
           dom.namespaceURI(node) === 'http://www.w3.org/2000/svg'
         )
           return;
+        // Nor is an <svg>'s drawn <text> the content of an element outside
+        // that <svg>: Chromium names <a href="#"><svg><text>Go</text></svg>
+        // </a> "" (the <svg> speaks only with its own name). A link drawn
+        // inside the <svg> is still named from its <text>.
+        if (local === 'text' && dom.namespaceURI(node) === 'http://www.w3.org/2000/svg') {
+          const svgRoot = dom.closest(node, 'svg');
+          if (svgRoot && svgRoot !== el && dom.contains(el, svgRoot)) return;
+        }
       }
 
       // opts.skipNode: the control a <label> is being read for. Its own name

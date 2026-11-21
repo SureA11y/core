@@ -586,6 +586,33 @@ test(`${RULE_ID}: any other element lists the roles it allows`, () => {
   assert.strictEqual(occ.summary, 'role="button" is not permitted on <h2>.');
   assert.strictEqual(
     occ.hint,
-    'Use a role this element allows (tab, presentation, none), or use a different element.'
+    'Use a role this element allows (tab, presentation, none, doc-subtitle), or use a different element.'
   );
+});
+
+// ARIA in HTML permits these DPUB roles on these elements.
+test(`${RULE_ID}: the DPUB roles ARIA in HTML permits pass (round 8, NA-7)`, () => {
+  const cases = [
+    '<section role="doc-chapter" aria-label="x">t</section>',
+    '<section role="doc-abstract">t</section>',
+    '<section role="doc-appendix">t</section>',
+    '<section role="doc-introduction">t</section>',
+    '<section role="doc-endnotes">t</section>',
+    '<section role="doc-bibliography">t</section>',
+    '<section role="doc-toc">t</section>',
+    '<aside role="doc-footnote">t</aside>',
+    '<aside role="doc-tip">t</aside>',
+    '<aside role="doc-pullquote">t</aside>',
+    '<aside role="doc-example">t</aside>',
+    '<hr role="doc-pagebreak" aria-label="12">',
+    '<h2 role="doc-subtitle">t</h2>',
+    '<img alt="Cover" src="c.png" role="doc-cover">'
+  ];
+  for (const c of cases) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${c}</main></body></html>`;
+    const rule = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults.find(
+      (r) => r.ruleId === RULE_ID
+    );
+    assert.strictEqual(rule.outcome, 'pass', c);
+  }
 });

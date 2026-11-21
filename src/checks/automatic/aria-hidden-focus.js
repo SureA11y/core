@@ -59,6 +59,11 @@
  *     Basis: WCAG 4.1.2 (not settled); ACT 6cfa84; WAI-ARIA 1.2 aria-hidden.
  * @implementation-notes
  * - Focusability is computed via ctx.helpers.getFocusableInfo (native + tabindex + contenteditable).
+ * - Where the page is laid out, a scroll container whose content overflows
+ *   and that holds nothing in the tab order counts as focusable too:
+ *   Chromium (130 and later) and Firefox make it a tab stop so keyboard
+ *   users can scroll it. jsdom measures no overflow, so there it does not
+ *   count.
  * - Elements that are not rendered (e.g., display:none, visibility:hidden, [hidden]) are excluded.
  * - visibility:hidden is inherited, not absolute: an element set to
  *   visibility:visible inside a visibility:hidden aria-hidden root is drawn
@@ -705,12 +710,53 @@ function runInPage(ctx) {
 
     // Use helper focusable if it says true; otherwise use fallback focusable.
     // This specifically prevents aria-hidden from suppressing "self focusable".
-    const focusable = (helperInfo && helperInfo.focusable === true) || fallbackFocusable;
+    const focusable =
+      (helperInfo && helperInfo.focusable === true) || fallbackFocusable || isKeyboardScroller(el);
     if (!focusable) return false;
 
     // 2) exclude non-rendered / non-visible-by-style blockers
     // IMPORTANT: Do NOT exclude opacity-based invisibility; opacity:0 remains in-scope.
     return isRenderedForFocus(el);
+  }
+
+  // A scroll container whose content overflows and that holds nothing in
+  // the tab order is a tab stop of its own in Chromium (130 and later) and
+  // Firefox, so keyboard users can scroll it. Only where the page is laid
+  // out: jsdom measures no overflow.
+  const SCROLL_TAB_STOP_SELECTOR =
+    'a[href], button, input, select, textarea, [tabindex], iframe, summary, audio[controls], video[controls], [contenteditable]:not([contenteditable="false"])';
+  let layoutKnown = null;
+  function hasLayout() {
+    if (layoutKnown === null) {
+      try {
+        const probe = dom.documentElement(document);
+        const r = probe && dom.getBoundingClientRect(probe);
+        layoutKnown = !!r && (r.width > 0 || r.height > 0);
+      } catch {
+        layoutKnown = false;
+      }
+    }
+    return layoutKnown;
+  }
+  function isKeyboardScroller(el) {
+    if (!hasLayout() || dom.nodeType(el) !== 1) return false;
+    try {
+      const cs = helpers.computedStyle(el);
+      if (!cs) return false;
+      const sx = /^(auto|scroll)$/.test(String(cs.overflowX || ''));
+      const sy = /^(auto|scroll)$/.test(String(cs.overflowY || ''));
+      if (!sx && !sy) return false;
+      const dx = sx ? Number(dom.get(el, 'scrollWidth')) - Number(dom.get(el, 'clientWidth')) : 0;
+      const dy = sy ? Number(dom.get(el, 'scrollHeight')) - Number(dom.get(el, 'clientHeight')) : 0;
+      if (!(dx > 0 || dy > 0)) return false;
+      for (const d of dom.querySelectorAll(el, SCROLL_TAB_STOP_SELECTOR)) {
+        const info = getFocusableInfo ? getFocusableInfo(d, ctx) : null;
+        if (info && info.tabbable) return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   function hasInertAncestor(el) {
@@ -792,9 +838,26 @@ function runInPage(ctx) {
   // 2) Find focusable candidates once (performance) and bucket those inside aria-hidden.
   // Keep selector fairly small to avoid huge candidate sets while still covering the reference-engine cases.
   // a[*|href]: an SVG <a> may carry its link as xlink:href.
+  // A copy: the list a query returns may be shared with other rules.
   const focusableCandidates = qAll(
     'a[*|href],area[href],button,input,select,textarea,summary,iframe,audio[controls],video[controls],[tabindex],[contenteditable]'
-  );
+  ).slice();
+  // A scroll container inside an aria-hidden root (or the root itself) can
+  // be a tab stop too (isKeyboardScroller), though nothing in its markup
+  // says so: looked for in those subtrees only, where the page is laid out.
+  if (hasLayout()) {
+    const seen = new Set(focusableCandidates);
+    let budget = 5000;
+    for (const hiddenRoot of ariaHiddenRoots.concat(sourceRoots)) {
+      const els = [hiddenRoot].concat([...dom.querySelectorAll(hiddenRoot, '*')]);
+      for (const el of els) {
+        if (budget-- <= 0) break;
+        if (seen.has(el)) continue;
+        seen.add(el);
+        if (isKeyboardScroller(el)) focusableCandidates.push(el);
+      }
+    }
+  }
 
   const bucket = new Map(); // ariaHiddenRoot -> { rootEl, count, offenders: [], hints:Set, rootIsFocusable, probeCandidates: [] }
   const maxOffendersPerRoot = 5;

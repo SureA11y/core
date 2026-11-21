@@ -105,3 +105,59 @@ test(
     }
   }
 );
+
+// Chromium makes a scroll container whose content overflows, and that holds
+// nothing in the tab order, a tab stop of its own: inside aria-hidden it is
+// a focus stop screen readers don't announce (round 8, NA-9). One whose
+// content fits, or that holds a button, is not one.
+test(
+  'aria-hidden-focus: a scrolling box Chromium puts in the tab order counts as focusable (round 8, NA-9)',
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    const run = async (inner) => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html lang="en"><head><title>T</title></head><body><main><button id="before">before</button><div aria-hidden="true">${inner}</div><button>after</button></main></body></html>`
+        );
+        await page.focus('#before');
+        await page.keyboard.press('Tab');
+        const tabbedTo = await page.evaluate(() => document.activeElement.id);
+        await page.evaluate(BUNDLE);
+        const res = await page.evaluate(async () => {
+          const r = await window.a11ycore.runa11yCoreInPage(null, null, {}, [
+            'aria-hidden-focus',
+            'scrollable-region-focusable'
+          ]);
+          return r.checksResults.map((x) => ({
+            ruleId: x.ruleId,
+            outcome: x.outcome,
+            codes: (x.occurrences || []).map((o) => o.data.details.reasonCode),
+            summaries: (x.occurrences || []).map((o) => o.summary)
+          }));
+        });
+        return { tabbedTo, res: Object.fromEntries(res.map((x) => [x.ruleId, x])) };
+      } finally {
+        await page.close();
+      }
+    };
+
+    const scroller = await run(
+      '<div id="sc" style="overflow:auto;height:30px"><p style="height:200px">long text</p></div>'
+    );
+    assert.equal(scroller.tabbedTo, 'sc', 'Chromium tabs to the scrolling box');
+    assert.equal(scroller.res['aria-hidden-focus'].outcome, 'fail');
+    assert.deepEqual(scroller.res['aria-hidden-focus'].codes, ['ariaHiddenContainsFocusable']);
+    assert.ok(
+      scroller.res['scrollable-region-focusable'].summaries.every(
+        (s) => !/neither it nor anything inside it can take keyboard focus/.test(s)
+      )
+    );
+
+    const fits = await run('<div id="sc" style="overflow:auto;height:300px"><p>short</p></div>');
+    assert.notEqual(fits.tabbedTo, 'sc');
+    assert.equal(fits.res['aria-hidden-focus'].outcome, 'pass');
+  }
+);
