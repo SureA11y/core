@@ -1590,6 +1590,7 @@
   "clickHandlerKeyboardOperable_lean_why_noKeyListener": "ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーを見つけませんでした。Enter や Space ではおそらく何も起きません。",
   "clickHandlerKeyboardOperable_lean_why_managed": "祖先が項目のためにフォーカスを保持しています(aria-activedescendant、またはフォーカス可能な複合ウィジェット)。このようなウィジェットは、項目にフォーカスを移さずに操作します。",
   "clickHandlerKeyboardOperable_lean_why_pointerOnly": "この要素はポインター カーソルを表示してクリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
+  "clickHandlerKeyboardOperable_lean_why_styledControl": "この要素は、独自の背景または枠線を持つボックスに短いラベルを置いたボタンのような見た目で、クリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
   "clickHandlerKeyboardOperable_lean_caution_elsewhere": "同じ操作をページ内の別のコントロール(クリックできる行の横のリンクなど)が提供している場合があります。",
   "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "keydown を処理して、{{role}} が応答するキー (Enter と Space、そのウィジェットの矢印キー) でクリックと同じことが起きるようにしてください。",
   "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",

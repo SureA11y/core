@@ -1590,6 +1590,7 @@
   "clickHandlerKeyboardOperable_lean_why_noKeyListener": "A hook installed before the page’s scripts saw no key or focus listener on the element, its ancestors, the document or the window, so Enter and Space probably do nothing.",
   "clickHandlerKeyboardOperable_lean_why_managed": "An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.",
   "clickHandlerKeyboardOperable_lean_why_pointerOnly": "The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
+  "clickHandlerKeyboardOperable_lean_why_styledControl": "The element is drawn as a button, a short label in a box with a background or a border of its own, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
   "clickHandlerKeyboardOperable_lean_caution_elsewhere": "The same action may be offered by another control of the page, such as a link next to a clickable row.",
   "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Handle keydown so that the keys a {{role}} answers to (Enter and Space, and the arrow keys of its widget) do what a click does.",
   "headingQuality_title": "Heading text should be descriptive, not a placeholder",
