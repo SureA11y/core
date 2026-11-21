@@ -91,14 +91,11 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 | # | Feature | From |
 |---|---|---|
-| C-20 | Profiles without forking core (`profile-kit` export or a runtime option), paused; the README contradiction is fixed (§3). Includes, from C-13: custom composites (rollups a caller defines, such as one per requirement of a standard core doesn't ship) and custom rules counting toward a standard's own rollups, which only a standard registered from outside core needs; profiles inside core already define their own rollups | Round 1 |
-| R3 (speed) | contrast-computable slower than 1.10.0, mostly the paint-order check (#101): an early "nothing near this text" exit would reorder how it works out scrolled boxes, which risks verdicts; its clip-hint waste is gone (#415, §3). target-size-minimum's largest cost is gone (#414, §3). label-in-name was examined and closed without a change (§4) ([outcomes §3](./2026-10-stress-test-3-outcomes.md#3-what-is-left)) | Round 3 |
-| R3 (time budget) | `timeBudgetMs`, off by default: stop starting rules once spent and list the rest as not run (a time limit outside the engine is documented in INTEGRATION.md) | Round 3 |
-| R3 (suggestions) | Reporters naming packs and their versions; a cap on occurrences per rule; a smaller pack script | Round 3 |
-| R5:RB5-8 (rest) | Scans with thousands of running animations: the engine's loop is linear since `31c2aa8a`, but Chromium's own `getAnimations()` still costs about 6.6 s at 10,000; calling it less often or more narrowly is the only further cut | Round 5 |
-| R6:CE-4 | A cheap 1.4.4 check for text clipped at 640px wide, as ACT rule 59br37 and Alfa's dr83 do ([round 6](./2026-11-stress-test-6.md#other-engines)) | Round 6 |
-| R6:CE-5 | "The page starts with an `<h1>`" as a best practice, as Alfa's r61 does | Round 6 |
-| R5 (§3) | What is left of the fifth round's other suggestions: a shared event-path helper for the listener rules (a change to how they read listeners, not taken as safe on 2026-11-20). The fuzz invariants for tables indexed by page values and for shadow-root selectors, and the pixel checks of native controls, are done (#413, §3) ([§3](./2026-10-stress-test-5.md#3-improvements-and-features)) | Round 5 |
+| R3 (speed) | contrast-computable slower than 1.10.0, mostly the paint-order check (#101): an early "nothing near this text" exit would reorder how it works out scrolled boxes, which risks verdicts; its clip-hint waste is gone (#415, §3). target-size-minimum's largest cost is gone (#414, §3). label-in-name was examined and closed without a change (§4) ([outcomes §3](./2026-10-stress-test-3-outcomes.md#3-what-is-left)) | Round 3; not now (2026-11-21) |
+| R3 (time budget) | `timeBudgetMs`, off by default: stop starting rules once spent and list the rest as not run (a time limit outside the engine is documented in INTEGRATION.md) | Round 3; **taken 2026-11-21**, being built |
+| R3 (suggestions) | Reporters naming packs and their versions; a cap on occurrences per rule; a smaller pack script | Round 3; pack names and versions in reports, and an opt-in cap per rule **taken 2026-11-21**, being built; the smaller pack script not now |
+| R6:CE-4 | A cheap 1.4.4 check for text clipped at 640px wide, as ACT rule 59br37 and Alfa's dr83 do ([round 6](./2026-11-stress-test-6.md#other-engines)) | Round 6; **taken 2026-11-21** as a rule that asks, being built |
+| R5 (§3) | What is left of the fifth round's other suggestions: a shared event-path helper for the listener rules (a change to how they read listeners, not taken as safe on 2026-11-20). The fuzz invariants for tables indexed by page values and for shadow-root selectors, and the pixel checks of native controls, are done (#413, §3) ([§3](./2026-10-stress-test-5.md#3-improvements-and-features)) | Round 5; not now (2026-11-21) |
 
 ---
 
@@ -918,6 +915,9 @@ Checked and decided. Don't reopen without new evidence.
 
 | # | Finding | Decision | Reason |
 |---|---|---|---|
+| C-20 | Profiles without forking core | Closed (decided 2026-11-21) | Packs (`definePack`, `deriveStandard`) cover it; reopen if a user asks |
+| R6:CE-5 | "The page starts with an `<h1>`" as a best practice | Closed (decided 2026-11-21) | Not a WCAG requirement and often noise; `page-has-heading-one` checks an `<h1>` exists |
+| R5:RB5-8 (rest) | Thousands of running animations: Chromium's `getAnimations()` cost | Closed (decided 2026-11-21) | Rare pages, and the cost is Chromium's; calling it less risks missing animations |
 | N9-3 (rest) | `aria-hidden` on `<html>` or `<body>` skips the whole page, though Chromium ignores it there | No change (decided 2026-11-21) | The page stays hidden, as the author marked it; `aria-hidden-body` reports it, on `<html>` too since #417 |
 | R9-6 | `text-spacing-content-loss` quadratic with many broken or `src`-less images in Chromium | Documented only (decided 2026-11-21; documented in #418) | The time is Chromium's own style recalculation |
 | R9-10 (rest) | Replaced built-ins beyond those probed (`getComputedStyle`…) can change verdicts | Stops at the language's built-ins, documented (decided 2026-11-21; documented in #418) | #416 and #417 probe the built-ins found changing results; the DOM's own are out of scope |
