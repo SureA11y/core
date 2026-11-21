@@ -42,7 +42,8 @@ const {
   standardOfEntryIn,
   wcagScopeOf,
   occurrenceOutcome,
-  leaningOccurrencesOf
+  leaningOccurrencesOf,
+  reporterOptions
 } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
@@ -311,7 +312,19 @@ function profilesNotRunOf(frames) {
   return out;
 }
 
-function renderSarifReport(result, options = {}) {
+const SARIF_OPTIONS = [
+  'toolVersion',
+  'informationUri',
+  'baselineEntries',
+  'category',
+  'leanFailAs',
+  'leanFailWcagOnly',
+  'allowProfilesNotRun',
+  'packs'
+];
+
+function renderSarifReport(result, given) {
+  const options = reporterOptions('renderSarifReport', given, SARIF_OPTIONS);
   // A result that comes without the steps for its undecided findings (a
   // binding's, from runa11yCoreInPage) gains them here, in Node, as the
   // HTML report adds them; options.packs adds a pack rule's own. Before the

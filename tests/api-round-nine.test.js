@@ -103,3 +103,43 @@ test('a rollup catalog entry has its title and description in the locale, as a r
     assert.ok(entry.title, entry.id);
   }
 });
+
+test('the reporters read null options as none, and warn about a misspelt one (A9-11)', () => {
+  const { renderSarifReport } = require('../src/sarif.js');
+  const { renderJunitReport } = require('../src/junit.js');
+  const { renderEarlReport } = require('../src/earl.js');
+  const { renderHtmlReport } = require('../src/report.js');
+  const { buildBaselineEntries } = require('../src/baseline.js');
+  const result = runa11yCoreOnHtml(PAGE, { entryPointParity: false });
+  const saved = console.warn;
+  const warnings = [];
+  console.warn = (...a) => warnings.push(a.map(String).join(' '));
+  try {
+    assert.equal(renderSarifReport(result, null), renderSarifReport(result));
+    assert.equal(renderJunitReport(result, null), renderJunitReport(result));
+    assert.deepEqual(renderEarlReport(result, null), renderEarlReport(result));
+    assert.equal(
+      renderHtmlReport({ ...result, timestamp: '2026-01-01T00:00:00Z' }, null),
+      renderHtmlReport({ ...result, timestamp: '2026-01-01T00:00:00Z' })
+    );
+    assert.deepEqual(warnings, []);
+
+    const entries = buildBaselineEntries(result);
+    renderSarifReport(result, { baseline: entries });
+    renderJunitReport(result, { cantTelAs: 'failure' });
+    renderEarlReport(result, { mod: 'earl:automatic' });
+    renderHtmlReport(result, { titel: 'Scan' });
+    assert.deepEqual(warnings, [
+      '[surea11y] renderSarifReport: unknown option "baseline" (did you mean "baselineEntries"?); ignored.',
+      '[surea11y] renderJunitReport: unknown option "cantTelAs" (did you mean "cantTellAs"?); ignored.',
+      '[surea11y] renderEarlReport: unknown option "mod" (did you mean "mode"?); ignored.',
+      '[surea11y] renderHtmlReport: unknown option "titel" (did you mean "title"?); ignored.'
+    ]);
+    // An option of another reporter is not taken for a misspelling.
+    warnings.length = 0;
+    renderSarifReport(result, { cantTellAs: 'failure', name: 'x', toolVersion: '1.0.0' });
+    assert.deepEqual(warnings, []);
+  } finally {
+    console.warn = saved;
+  }
+});

@@ -21,7 +21,8 @@ const {
   standardOfEntryIn,
   textOf,
   occurrenceOutcome,
-  reviewGroupOf
+  reviewGroupOf,
+  reporterOptions
 } = require('./scan-result.js');
 const { esc, jsonForScript } = require('./html-text.js');
 
@@ -1022,7 +1023,8 @@ function readableResult(result) {
   return read;
 }
 
-function renderHtmlReport(input, options = {}) {
+function renderHtmlReport(input, given) {
+  const options = reporterOptions('renderHtmlReport', given, ['title', 'packs', 'manualChecks']);
   // A cross-frame result: the page is the top frame's report, and its child
   // frames follow in a section of their own.
   const frames = framesOf(input, 'renderHtmlReport').map((f) =>
