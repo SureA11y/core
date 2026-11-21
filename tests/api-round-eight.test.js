@@ -98,3 +98,36 @@ test('a custom or pack rule mapped only to 4.1.1 does not fail a WCAG 2.2 scan (
   });
   assert.equal(r.checksResults[0].outcome, 'fail');
 });
+
+test("the caller's messages.en is the English fallback (PK-4)", () => {
+  const page = '<html lang="en"><head><title>t</title></head><body><p id="a">x</p></body></html>';
+  const rule = {
+    id: 'org-i',
+    meta: {
+      title: 'Org title',
+      description: 'd',
+      tags: ['wcag2a', 'wcag111'],
+      wcagSc: ['1.1.1'],
+      i18n: { titleKey: 'org_i_title' }
+    },
+    runInPage:
+      "function(ctx){ return { outcome: 'fail', occurrences: [{ selector: '#a', i18n: { summaryKey: 'org_i_summary', params: { n: 3 } } }] }; }"
+  };
+  const messages = { en: { org_i_summary: 'English summary {{n}}', org_i_title: 'English title' } };
+  for (const locale of ['en', 'de', 'fr-CA', 'ko']) {
+    const r = runa11yCoreOnHtml(page, {
+      engineOptions: { customRules: [rule], messages, locale },
+      runOnly: ['org-i']
+    });
+    assert.equal(r.checksResults[0].title, 'English title', locale);
+    assert.equal(r.checksResults[0].occurrences[0].summary, 'English summary 3', locale);
+  }
+  // A built-in string overridden in English applies under a locale that
+  // fell back to English.
+  const r = runa11yCoreOnHtml(HTML, {
+    engineOptions: { locale: 'ko', messages: { en: { img_altPresent_title: 'Own title' } } },
+    runOnly: ['img-alt-present']
+  });
+  assert.equal(r.engine.locale.resolved, 'en');
+  assert.equal(r.checksResults[0].title, 'Own title');
+});

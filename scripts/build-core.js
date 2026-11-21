@@ -644,8 +644,13 @@ function t(key, fallback, params, engineOptions) {
 
   const v = localeMessage(key, engineOptions);
 
-  // fallback to English if missing in requested locale
-  const vEn = ownString(I18N && I18N.en, key);
+  // fallback to English if missing in requested locale: the caller's own
+  // English (engineOptions.messages.en) first, as for any locale, then the
+  // built-in one. Without it, a custom rule's keys given only in English
+  // showed empty under another locale.
+  const vEn =
+    ownString(ownDict(getSuppliedMessages(engineOptions), 'en'), key) ||
+    ownString(I18N && I18N.en, key);
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
