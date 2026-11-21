@@ -4,12 +4,12 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 151,
+    "totalRules": 152,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 109,
-          "AA": 24,
+          "A": 110,
+          "AA": 25,
           "AAA": 15
         },
         "2.1": {
@@ -24,15 +24,15 @@
         }
       },
       "anyVersion": {
-        "A": 121,
-        "AA": 35,
+        "A": 122,
+        "AA": 36,
         "AAA": 18
       },
       "rawTagCounts": {
         "wcag2a": 96,
         "wcag21aa": 7,
         "wcag2aaa": 15,
-        "wcag2aa": 11,
+        "wcag2aa": 12,
         "wcag22aaa": 3,
         "wcag21a": 1,
         "wcag21aaa": 1,
@@ -6793,6 +6793,57 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/manual/resize-text-content-loss-manual.js",
+      "ruleId": "resize-text-content-loss",
+      "wcagScNormative": [
+        "1.4.4"
+      ],
+      "wcagScAll": [
+        "1.4.4"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Text is not cut off at 640 CSS pixels wide (200% zoom)",
+      "tags": [
+        "wcag2aa",
+        "wcag144",
+        "structure",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2aa",
+            "version": "2.0",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.4.4": [
+            "text-not-clipped-640"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/manual/scope-attr-valid-manual.js",
       "ruleId": "scope-attr-valid",
       "wcagScNormative": [],
@@ -7804,13 +7855,14 @@
       {
         "sc": "1.4.4",
         "title": "Resize Text",
-        "totalFacets": 2,
-        "coveredFacets": 1,
+        "totalFacets": 3,
+        "coveredFacets": 2,
         "uncoveredFacets": [
           "text-resizes-200"
         ],
         "automationCounts": {
           "full": 1,
+          "manual": 1,
           "partial": 1
         },
         "missingFacetRules": [],
@@ -7822,6 +7874,14 @@
             "automation": "full",
             "coveredBy": [
               "meta-viewport-zoom-enabled"
+            ]
+          },
+          {
+            "id": "text-not-clipped-640",
+            "label": "At 640 CSS pixels wide (200% zoom), text in a box that hides its overflow is not cut off (asked about: whether the full text is offered another way is for a person)",
+            "automation": "manual",
+            "coveredBy": [
+              "resize-text-content-loss"
             ]
           },
           {
@@ -9884,13 +9944,14 @@
       {
         "sc": "1.4.4",
         "title": "Resize Text",
-        "totalFacets": 2,
-        "coveredFacets": 1,
+        "totalFacets": 3,
+        "coveredFacets": 2,
         "uncoveredFacets": [
           "text-resizes-200"
         ],
         "automationCounts": {
           "full": 1,
+          "manual": 1,
           "partial": 1
         },
         "missingFacetRules": [],
@@ -9902,6 +9963,14 @@
             "automation": "full",
             "coveredBy": [
               "meta-viewport-zoom-enabled"
+            ]
+          },
+          {
+            "id": "text-not-clipped-640",
+            "label": "At 640 CSS pixels wide (200% zoom), text in a box that hides its overflow is not cut off (asked about: whether the full text is offered another way is for a person)",
+            "automation": "manual",
+            "coveredBy": [
+              "resize-text-content-loss"
             ]
           },
           {
