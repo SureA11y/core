@@ -1147,6 +1147,7 @@
   "region_title": "El contenido de la página debería estar dentro de una región de referencia",
   "region_description": "Comprueba que el contenido bajo <body> esté contenido dentro de una región de referencia.",
   "region_summary_cantTell": "Este contenido está fuera de cualquier región de punto de referencia.",
+  "region_summary_cantTell_bodyText": "El texto colocado directamente en <body>, «{{text}}», está fuera de cualquier región de punto de referencia.",
   "region_hint_cantTell": "Moverlo a un punto de referencia, como <main>, <nav>, <aside> o un <section> con nombre.",
   "region_lean_why": "El contenido está fuera de toda región de punto de referencia.",
   "skipLink_title": "El enlace de salto debe tener un destino resoluble y utilizable",

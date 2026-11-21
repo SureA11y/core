@@ -222,3 +222,25 @@ test(`${RULE_ID}: content matched by excludeSelectors is left out, globally and 
     assert.strictEqual(rule.outcome, 'pass');
   }
 });
+
+// Text directly in <body> has no element of its own, but it is content
+// outside every landmark all the same: reported on <body>, quoted.
+test(`${RULE_ID}: text directly in <body> is outside every landmark (round 8, NA-10)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>LM</title></head><body>This is an important notice about your account.<main><h1>T</h1></main></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'CONTENT_OUTSIDE_LANDMARK');
+  assert.strictEqual(occ.data.details.element, 'body');
+  assert.strictEqual(occ.i18n.summaryKey, 'region_summary_cantTell_bodyText');
+  assert.strictEqual(occ.i18n.params.text, 'This is an important notice about your account.');
+
+  const blank = `<!doctype html><html lang="en"><head><title>LM</title></head><body>
+    <main><h1>T</h1></main>
+  </body></html>`;
+  assertRule(runa11yCoreOnHtml(blank, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    maxOccurrences: 0
+  });
+});

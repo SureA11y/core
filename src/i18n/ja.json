@@ -1147,6 +1147,7 @@
   "region_title": "ページのコンテンツはランドマーク領域内にあることが望ましい",
   "region_description": "<body> 以下のコンテンツが、ランドマーク領域に含まれているかを確認します。",
   "region_summary_cantTell": "この内容は、どのランドマーク領域にも含まれていません。",
+  "region_summary_cantTell_bodyText": "<body> の直下に置かれたテキスト「{{text}}」は、どのランドマーク領域にも含まれていません。",
   "region_hint_cantTell": "<main>、<nav>、<aside>、名前付きの <section> などのランドマークの中に移してください。",
   "region_lean_why": "このコンテンツはどのランドマーク領域にも含まれていません。",
   "skipLink_title": "スキップリンクには解決可能で利用できるリンク先が必要",

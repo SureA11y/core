@@ -1147,6 +1147,7 @@
   "region_title": "Page content should be inside a landmark region",
   "region_description": "Checks that content under <body> is contained within a landmark region.",
   "region_summary_cantTell": "This content is outside every landmark region.",
+  "region_summary_cantTell_bodyText": "Text placed directly in <body>, \"{{text}}\", is outside every landmark region.",
   "region_hint_cantTell": "Move it into a landmark, such as <main>, <nav>, <aside>, or a <section> with a name.",
   "region_lean_why": "The content is outside every landmark region.",
   "skipLink_title": "Skip link must have a resolvable, usable target",

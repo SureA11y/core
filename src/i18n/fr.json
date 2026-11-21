@@ -1147,6 +1147,7 @@
   "region_title": "Le contenu de la page devrait se trouver à l’intérieur d’un point de repère",
   "region_description": "Vérifie que le contenu sous <body> est contenu dans un point de repère.",
   "region_summary_cantTell": "Ce contenu se trouve hors de toute région de repère.",
+  "region_summary_cantTell_bodyText": "Le texte placé directement dans <body>, « {{text}} », se trouve hors de toute région de repère.",
   "region_hint_cantTell": "Placez-le dans un repère, comme <main>, <nav>, <aside> ou une <section> nommée.",
   "region_lean_why": "Le contenu se trouve en dehors de toute région de repère.",
   "skipLink_title": "Un lien d’évitement doit avoir une cible qui se résout et qui est utilisable",
