@@ -321,6 +321,13 @@ function createContrastHelpers(opts, shared) {
             .toLowerCase()
         : '';
       if (ad === 'true') return true;
+      // A custom element disabled through its ElementInternals
+      // (internals.ariaDisabled = 'true'), where it has no aria-disabled
+      // attribute of its own, is disabled as the attribute would make it.
+      if (!ad && typeof shared.getInternalsStateInfo === 'function') {
+        const info = shared.getInternalsStateInfo(node, 'aria-disabled');
+        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') return true;
+      }
     } catch {}
     return false;
   }

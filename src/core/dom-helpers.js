@@ -9794,6 +9794,7 @@ function createDomHelpers(opts) {
     ancestorsIncludingSelf,
     closestCached,
     getLabelControl,
+    getInternalsStateInfo,
     cssRulesOf,
     selectorIndex,
     __contrastSharedCache
