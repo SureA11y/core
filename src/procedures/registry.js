@@ -250,6 +250,12 @@ const PROCEDURES = {
           'table-fake-caption': ['SINGLE_CELL_FIRST_ROW_NO_CAPTION']
         }
       },
+      'form-group-name-evidence': {
+        coveredBy: 'form-labels-associated',
+        variants: {
+          'form-group-name-present': ['CHECKBOX_GROUP_NO_NAME', 'RADIO_GROUP_NO_NAME']
+        }
+      },
       'td-has-header': {
         coveredBy: 'tables-marked-up',
         variants: {

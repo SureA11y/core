@@ -89,6 +89,7 @@ module.exports = [
       'form-control-programmatic-label-present',
       'p-as-heading',
       'table-fake-caption',
+      'form-group-name-present',
       'td-has-header',
       'aria-roles-valid',
       'aria-owns-valid'

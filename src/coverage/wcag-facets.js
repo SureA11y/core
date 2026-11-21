@@ -356,6 +356,11 @@ const FACETS = {
                 "automation": "manual"
             },
             {
+                "id": "form-group-name-evidence",
+                "label": "Radio buttons or checkboxes sharing a name that are in no group with a name (evidence only)",
+                "automation": "manual"
+            },
+            {
                 "id": "td-has-header",
                 "label": "Data cells in large, simple tables have an associated header",
                 "automation": "full"

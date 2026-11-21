@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>form-group-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>form-group-name-present</code></h1>
+
+  <p class="note">
+    Each group's first option has a stable <code>id</code> of the form <code>fgn_case_NN</code>;
+    every group has a <code>name</code> of its own, so the cases don't join.
+  </p>
+
+  <form action="#">
+    <h2>A. CANTTELL — options sharing a name, in no group with a name</h2>
+
+    <div class="case" id="case_01">
+      <div class="case-title">01 — CANTTELL: radio buttons under a plain paragraph (leans fail)</div>
+      <p>Shipping method</p>
+      <label><input type="radio" name="ship" id="fgn_case_01" /> Standard</label>
+      <label><input type="radio" name="ship" /> Express</label>
+    </div>
+
+    <div class="case" id="case_02">
+      <div class="case-title">02 — CANTTELL: checkboxes under a plain paragraph (no lean)</div>
+      <p>Interests</p>
+      <label><input type="checkbox" name="interests" id="fgn_case_02" /> Music</label>
+      <label><input type="checkbox" name="interests" /> Sport</label>
+      <label><input type="checkbox" name="interests" /> Travel</label>
+    </div>
+
+    <div class="case" id="case_03">
+      <div class="case-title">03 — CANTTELL: radio buttons in a fieldset with no legend</div>
+      <fieldset>
+        <label><input type="radio" name="size" id="fgn_case_03" /> Small</label>
+        <label><input type="radio" name="size" /> Large</label>
+      </fieldset>
+    </div>
+
+    <div class="case" id="case_04">
+      <div class="case-title">04 — CANTTELL: role="radiogroup" with no accessible name</div>
+      <div role="radiogroup">
+        <label><input type="radio" name="colour" id="fgn_case_04" /> Red</label>
+        <label><input type="radio" name="colour" /> Blue</label>
+      </div>
+    </div>
+
+    <h2>B. PASS — in a group with a name</h2>
+
+    <div class="case" id="case_05">
+      <div class="case-title">05 — PASS: radio buttons in a fieldset with a legend</div>
+      <fieldset>
+        <legend>Payment</legend>
+        <label><input type="radio" name="pay" id="fgn_case_05" /> Card</label>
+        <label><input type="radio" name="pay" /> Transfer</label>
+      </fieldset>
+    </div>
+
+    <div class="case" id="case_06">
+      <div class="case-title">06 — PASS: role="radiogroup" named by aria-labelledby</div>
+      <p id="fgn_q6">Delivery day</p>
+      <div role="radiogroup" aria-labelledby="fgn_q6">
+        <label><input type="radio" name="day" id="fgn_case_06" /> Monday</label>
+        <label><input type="radio" name="day" /> Friday</label>
+      </div>
+    </div>
+
+    <div class="case" id="case_07">
+      <div class="case-title">07 — PASS: checkboxes in role="group" with aria-label</div>
+      <div role="group" aria-label="Newsletters">
+        <label><input type="checkbox" name="news" id="fgn_case_07" /> Weekly</label>
+        <label><input type="checkbox" name="news" /> Monthly</label>
+      </div>
+    </div>
+
+    <h2>C. NEUTRAL — no group</h2>
+
+    <div class="case" id="case_08">
+      <div class="case-title">08 — NEUTRAL: a single checkbox is no group</div>
+      <label><input type="checkbox" name="terms" id="fgn_case_08" /> I accept the terms</label>
+    </div>
+
+    <div class="case" id="case_09">
+      <div class="case-title">09 — NEUTRAL: radio buttons with different names, one each</div>
+      <label><input type="radio" name="a1" id="fgn_case_09" /> One</label>
+      <label><input type="radio" name="a2" /> Two</label>
+    </div>
+
+    <div class="case" id="case_10">
+      <div class="case-title">10 — NEUTRAL: the second option is hidden (display:none), so one is left</div>
+      <label><input type="radio" name="gift" id="fgn_case_10" /> Gift wrap</label>
+      <label style="display:none"><input type="radio" name="gift" /> No wrap</label>
+    </div>
+  </form>
+</body>
+</html>

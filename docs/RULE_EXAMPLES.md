@@ -981,6 +981,30 @@ A single wrapping label; only one labelling mechanism applies.
 ```
 Two separate `label[for]` elements both target the same control. Browsers join them into one name, "Address Mailing address", and only a person can tell whether it still reads well.
 
+## form-group-name-present
+
+**Passed**
+```html
+<form>
+  <fieldset>
+    <legend>Shipping method</legend>
+    <label><input type="radio" name="ship"> Standard</label>
+    <label><input type="radio" name="ship"> Express</label>
+  </fieldset>
+</form>
+```
+The radio buttons share a name and sit in a fieldset whose legend says what is being chosen.
+
+**Flagged (cantTell)**
+```html
+<form>
+  <p>Shipping method</p>
+  <label><input type="radio" name="ship"> Standard</label>
+  <label><input type="radio" name="ship"> Express</label>
+</form>
+```
+The question is only a paragraph above the radio buttons, tied to none of them. A person checks whether each option's label says what is being chosen on its own; it leans fail.
+
 ## heading-order
 
 **Passed**
