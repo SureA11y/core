@@ -666,6 +666,21 @@ function leaningFailures(result, options) {
   return out;
 }
 
+// The rules a scan selected and did not start, since its time budget
+// (engineOptions.timeBudgetMs) ran out first: [{ ruleId, reason, profile? }],
+// `profile` in a scan of several profiles. Empty for a complete scan, and
+// for a stored result that predates the field.
+function notRunOf(result) {
+  const list = result && Array.isArray(result.notRun) ? result.notRun : [];
+  return list.filter((n) => n && typeof n.ruleId === 'string' && n.ruleId);
+}
+
+// The time budget a scan was cut short by, in ms, or null.
+function timeBudgetOf(result) {
+  const incomplete = result && result.engine && result.engine.incomplete;
+  return incomplete && typeof incomplete.timeBudgetMs === 'number' ? incomplete.timeBudgetMs : null;
+}
+
 // A reporter's options as it reads them: undefined, null or anything but an
 // object is no options, as {} is (round 9, A9-11). A key it doesn't read
 // that looks like a typo of one it does, or the start of one ("baseline"
@@ -711,5 +726,7 @@ module.exports = {
   reviewGroupOf,
   reasonCodeOf,
   leaningOccurrencesOf,
-  leaningFailures
+  leaningFailures,
+  notRunOf,
+  timeBudgetOf
 };

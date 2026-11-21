@@ -35,6 +35,8 @@ A `notApplicable` check is not always empty: a pack's or custom rule may attach 
 
 A rule that did not complete (it threw: `cantTell` with no occurrences and an `error`, see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)) judged nothing, so it is no result either. It is an `error`-level notification in the same list, `"The rule <id> did not complete: <error>"`, naming the rule in `associatedRule.id`, so the gap in coverage doesn't read as a pass.
 
+A rule the scan's time budget left unstarted (`notRun`, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#a-time-budget-timebudgetms)) checked nothing either: it is an `error`-level notification, `"The rule <id> was not run: the scan reached its time budget of <n> ms first, so it checked nothing"`, naming the rule in `associatedRule.id`, and the invocation is not `executionSuccessful`. A profile of a scan of several that the budget left unstarted (`engine.profilesNotRun`, reason `timeBudget`) is an `error` too, whatever `allowProfilesNotRun` says.
+
 That keeps a SARIF-only pipeline from reading silence as a clean bill of health. Core's contrast rules need no notice for it: text whose contrast could not be computed is a `contrast-computable` result. The block is emitted only when there is something to say, so a run with nothing to report has no `invocations` key at all.
 
 | Engine outcome | SARIF `level` | Meaning |

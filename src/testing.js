@@ -228,7 +228,10 @@ function runBothEntryPoints(
     };
     try {
       const nodeResult = runDomRulesInPage(url, contextSelector, engineOptions, runOnly);
-      assertEntryPointParity(inPageResult, nodeResult);
+      // A scan its time budget cut short runs what time allowed, which two
+      // runs need not share.
+      const cut = (r) => !!(r && r.engine && r.engine.incomplete);
+      if (!cut(inPageResult) && !cut(nodeResult)) assertEntryPointParity(inPageResult, nodeResult);
     } finally {
       console.warn = realWarn;
       if (done) done();

@@ -341,6 +341,7 @@ const engineOptions = {
   timestamp: '2026-07-20T12:00:00Z',  // optional — engine has no built-in clock, see OUTPUT_SCHEMA.md
   perfStats: false,                // default false — internal timing counters, debug-only shape
   profileRules: false,             // default false — per-rule timings; needs perfStats, and makes output non-deterministic
+  timeBudgetMs: undefined,         // optional — once the scan has spent this many ms, it starts no more rules (see below)
 
   contrast: {
     mode: 'strictConformance',     // 'strictConformance' (default) | 'auditorAssist'
@@ -409,7 +410,27 @@ const engineOptions = {
 | `packs` | Optional packs from `@surea11y/core/pack`: rules, variants of core's rules, a standard and messages from outside core, which join the scan. A list: the pack objects for `runDomRulesInPage` and the catalog functions in Node, and for `runa11yCoreInPage` the `name@version` of packs a `packScript` registered in the page. Anything else (a single pack, a string, an object) runs no pack, with a warning, and throws under `strictOptions`. Reported back as `engine.packs`. See ["Packs"](#packs--rules-and-standards-from-outside-core) below. |
 | `probes` | An optional, JSON-safe evidence object your host application supplies, for what a scan of one page cannot see, such as the site's other pages. The engine caps it before rules read it (`ctx.inputs.probes`): six levels deep, 200 items per array, 50 keys per object, 2,000 characters per string. `crawl.pageTitles` (`{ pages: [{ url, title }] }`) is read by `page-title-patterns`, to look for generic and templated titles across a site. A profile's rules may read probes of their own, which its documentation describes. |
 | `perfStats` / `profileRules` | Debug-only. `perfStats: true` returns internal counters on the result's `perfStats` field; `profileRules: true` **additionally** adds a per-rule timing breakdown there. `profileRules` on its own does nothing — `perfStats` is what creates the object the breakdown lives in. Shape is not part of the stable output contract — don't build on it. Note also that `profileRules` is the one option that makes output non-deterministic: counters are stable across identical runs, wall-clock timings are not. Leave it off if you diff results between runs. With `profileRules`, the shared caches (computed styles and accessibility-tree eligibility for every element in scope) are filled before the first rule and timed apart as `perfStats.warmUpMs`, so their cost isn't charged to whichever rule walks the page first. |
+| `timeBudgetMs` | Off by default. A number of milliseconds above 0: once the scan has spent that long, it starts no more rules. See ["A time budget"](#a-time-budget-timebudgetms) below. |
 | `pingWaitTime` / `frameWaitTime` | Only read by `runa11yCoreAcrossFrames` (see [`INTEGRATION.md`](./INTEGRATION.md#cross-frame-scanning-including-cross-origin)) — how long to wait for a child frame to answer a ping (default `500`ms) and a full run request (default `60000`ms) before treating it as unreachable. Ignored by `runDomRulesInPage`/`runa11yCoreInPage`. |
+
+### A time budget (`timeBudgetMs`)
+
+`timeBudgetMs` caps how long a scan goes on starting rules. Once it has spent that many milliseconds, counted from the start of the scan, it starts no more: a rule that has started finishes, and each rule the selection selected that had not started is left out of `checksResults` and listed in the result's `notRun`, `[{ ruleId, reason: 'timeBudget' }]`. `engine.incomplete` then says the scan was cut short, `{ reason: 'timeBudget', timeBudgetMs, rulesNotRun }`, and a `console.warn` says how many rules did not run.
+
+```js
+const result = runDomRulesInPage(url, null, { timeBudgetMs: 2000 }, null);
+if (result.engine.incomplete) {
+  // result.notRun: the rules that checked nothing
+}
+```
+
+A scan cut short never reads as a pass:
+
+- A rollup with a rule that did not run is `cantTell` (`composite.rollup.cantTell.missingChild`), its contributor marked `notRun: 'timeBudget'`, as for any rule of it that did not run.
+- The HTML report says the scan is incomplete, and names the rules, before anything it found; SARIF gives an `error` notification per rule and `executionSuccessful: false`; JUnit gives an `error` test case per rule, in a suite "Rules not run"; EARL asserts each one `earl:untested`; the browser bundle's `table()` lists each as `notRun` and warns; `matchBaseline` adds `incomplete: { notRun }`, so a gate that reads `newCount` alone has to look at it too.
+- In a scan of several profiles, the budget is the whole scan's: each profile after the first gets what is left of it, and a profile that would start with none left is not run, listed in `engine.profilesNotRun` with reason `timeBudget` (which `allowProfilesNotRun` does not accept). Each entry of `notRun` names its `profile`.
+
+Off by default, and the results of a scan within its budget are as without it. Which rules run before the budget runs out depends on the machine and its load, so a scan with a budget is not deterministic: use it to keep a scan of a heavy page within a CI time limit, not for results you diff. Anything but a number above 0 is ignored with a `console.warn`, and throws `INVALID_ENGINE_OPTIONS` under `strictOptions`. It works in the same way in Node, in jsdom and in the browser bundle.
 
 ### Catching mistakes in the options (`strictOptions`)
 

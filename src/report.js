@@ -22,7 +22,9 @@ const {
   textOf,
   occurrenceOutcome,
   reviewGroupOf,
-  reporterOptions
+  reporterOptions,
+  notRunOf,
+  timeBudgetOf
 } = require('./scan-result.js');
 const { esc, jsonForScript } = require('./html-text.js');
 
@@ -243,12 +245,40 @@ function renderTargetChips(engine, ui, profileResults) {
     chips.push(
       `<div><b>${esc(notRun.join(', '))}</b>${esc(ui.tr('report_meta_profileNotRun'))}</div>`
     );
+  // Rules the scan's time budget left unstarted (result.notRun).
+  if (engine.incomplete && Number.isFinite(engine.incomplete.rulesNotRun))
+    chips.push(
+      `<div><b>${esc(ui.num(engine.incomplete.rulesNotRun))}</b>${esc(ui.tr('report_meta_rulesNotRun'))}</div>`
+    );
   // Rules beyond the targeted standard ran (engineOptions.optInRules).
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     chips.push(
       `<div><b>${esc(engine.optInRules.join(', '))}</b>${esc(ui.tr('report_meta_optInRules'))}</div>`
     );
   return chips.join('\n  ');
+}
+
+// A scan its time budget cut short (engineOptions.timeBudgetMs): the rules
+// it did not start checked nothing, so the report says so before anything
+// it found, and no headline below reads as a pass of them.
+function renderIncomplete(result, ui) {
+  const notRun = notRunOf(result);
+  const ids = [...new Set(notRun.map((n) => n.ruleId))];
+  const profiles = (
+    result && result.engine && Array.isArray(result.engine.profilesNotRun)
+      ? result.engine.profilesNotRun
+      : []
+  )
+    .filter((p) => p && p.reason === 'timeBudget')
+    .map((p) => p.profile);
+  if (!ids.length && !profiles.length) return '';
+  const budget = timeBudgetOf(result);
+  const text = ui.tr('report_incomplete_timeBudget', {
+    budget: budget !== null ? ui.num(budget) : '?',
+    count: ui.num(ids.length + profiles.length),
+    rules: ids.concat(profiles).join(', ')
+  });
+  return `<p class="incomplete" role="note">${esc(text)}</p>`;
 }
 
 // The conditions the page was rendered under. A layout-dependent finding
@@ -1231,6 +1261,8 @@ function renderHtmlReport(input, given) {
   .pager button { padding: 5px 12px; border: 1px solid #ccc; background: #fff; border-radius: 5px; cursor: pointer; }
   .pager button:disabled { opacity: 0.4; cursor: default; }
   .note { font-size: 12.5px; opacity: 0.75; margin-top: 6px; }
+  .incomplete { border: 2px solid #a30000; border-radius: 8px; padding: 10px 14px; margin: 0 0 16px; font-weight: 600; line-height: 1.5; }
+  @media (prefers-color-scheme: dark) { .incomplete { border-color: #ff8a80 !important; } }
 </style>
 </head>
 <body>
@@ -1251,6 +1283,7 @@ function renderHtmlReport(input, given) {
 </div>
 
 <main>
+  ${renderIncomplete(result, ui)}
   ${renderHeroBar(byOutcome, ui)}
 
   <h2>${esc(ui.tr('report_heading_worthReviewing'))}</h2>

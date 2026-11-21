@@ -43,7 +43,9 @@ const {
   wcagScopeOf,
   occurrenceOutcome,
   leaningOccurrencesOf,
-  reporterOptions
+  reporterOptions,
+  notRunOf,
+  timeBudgetOf
 } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
@@ -493,14 +495,36 @@ function renderSarifReport(result, given) {
     }
   }
 
+  // A rule the scan's time budget left unstarted checked nothing: an error,
+  // so the run never reads as a pass of it.
+  let cutShort = false;
+  for (const { frame, result: frameResult } of frames) {
+    if (!frameResult) continue;
+    const budget = timeBudgetOf(frameResult);
+    const where = frame.path.length ? ` in the frame ${framePathText(frame.path)}` : '';
+    for (const n of notRunOf(frameResult)) {
+      cutShort = true;
+      notices.push({
+        level: 'error',
+        message: {
+          text: `The rule ${n.ruleId} was not run${where}${n.profile ? ` for the profile ${n.profile}` : ''}: the scan reached its time budget${budget !== null ? ` of ${budget} ms` : ''} first, so it checked nothing`
+        },
+        associatedRule: { id: n.ruleId }
+      });
+    }
+  }
   const notRun = profilesNotRunOf(frames);
   for (const p of notRun) {
+    // A profile the time budget left unstarted is a scan cut short, which
+    // allowProfilesNotRun does not accept.
+    const budget = String(p.reason).split(', ').includes('timeBudget');
+    if (budget) cutShort = true;
     notices.push({
-      level: allowProfilesNotRun === true ? 'warning' : 'error',
+      level: allowProfilesNotRun === true && !budget ? 'warning' : 'error',
       message: { text: `The profile ${p.profile} was asked for and not run: ${p.reason}` }
     });
   }
-  const executionSuccessful = !(notRun.length && allowProfilesNotRun !== true);
+  const executionSuccessful = !(notRun.length && allowProfilesNotRun !== true) && !cutShort;
 
   const sarifLog = {
     $schema: SARIF_SCHEMA_URI,

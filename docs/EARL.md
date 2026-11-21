@@ -72,7 +72,7 @@ A compact result (`engineOptions.output.detail: 'findings'`, see [`OUTPUT_SCHEMA
 | `cantTell` | `earl:cantTell` |
 | `notApplicable` | `earl:inapplicable` |
 
-`earl:untested` has no counterpart: a rule that did not run produces no result to assert on, so it contributes no assertion rather than an untested one.
+`earl:untested` is for a rule the scan selected and did not start, since its time budget ran out first (`notRun`, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#a-time-budget-timebudgetms)), unless another result for the same page ran it. Any other rule that did not run produces no result to assert on, so it contributes no assertion rather than an untested one.
 
 **`cantTell` does not cost conformance credit.** ACT's own consistency rules allow an automated implementation to report "cannot tell" on some — though not all — examples and still count as consistent. What a partially consistent implementation may *not* do is produce a false positive: failing an example the rule says should pass, or that is inapplicable. That is the gate worth watching, and it is a property of the rules rather than of this reporter. As of the last full run the engine produces **zero false positives** across the 957 examples W3C publishes for its 60 matched rules — see [`ACT_RULE_MAPPING.md`](./ACT_RULE_MAPPING.md), and re-run `scripts/act-testcase-check.js` for the live figure rather than trusting this one indefinitely.
 

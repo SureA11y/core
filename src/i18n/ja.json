@@ -1670,6 +1670,8 @@
   "report_meta_law": "法令",
   "report_meta_profileNotRun": "未実行",
   "report_meta_optInRules": "オプトインルール",
+  "report_meta_rulesNotRun": "未実行のルール",
+  "report_incomplete_timeBudget": "不完全なスキャン: 選択されたすべてのルールが実行される前に、{{budget}} ms の時間予算を使い切りました。実行されなかったもの ({{count}}): {{rules}}。これらは何も検査していないため、このレポートのどの結果もこれらの合格を意味しません。",
   "report_meta_viewport": "ビューポート",
   "report_meta_colorScheme": "カラースキーム",
   "report_meta_fonts": "Web フォント",

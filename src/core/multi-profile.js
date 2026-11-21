@@ -84,9 +84,52 @@ function runProfiles(engineOptions, run) {
       );
     }
     const runs = [];
+    // engineOptions.timeBudgetMs is the whole scan's: each profile after the
+    // first gets what is left of it, and one that would start with none left
+    // is not run (engine.profilesNotRun, reason timeBudget).
+    const budget =
+      engineOptions &&
+      typeof engineOptions.timeBudgetMs === 'number' &&
+      Number.isFinite(engineOptions.timeBudgetMs) &&
+      engineOptions.timeBudgetMs > 0
+        ? engineOptions.timeBudgetMs
+        : null;
+    const clock = () => {
+      try {
+        if (typeof performance !== 'undefined' && performance && performance.now) {
+          return performance.now();
+        }
+      } catch {
+        // no performance clock
+      }
+      return Date.now();
+    };
+    const started = budget === null ? 0 : clock();
     const step = (i) => {
-      if (i >= unique.length) return mergeProfileResults(runs, unique, allowFail);
-      const result = run(Object.assign({}, engineOptions, { profile: unique[i] }));
+      if (i >= unique.length) {
+        const merged = mergeProfileResults(runs, unique, allowFail);
+        // The budget the scan was given, not what was left of it for the
+        // profile that ran out.
+        if (merged && merged.engine && merged.engine.incomplete) {
+          merged.engine.incomplete.timeBudgetMs = budget;
+        }
+        return merged;
+      }
+      const left = budget === null ? null : budget - (clock() - started);
+      if (left !== null && i > 0 && left <= 0) {
+        const skipped = {};
+        Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
+        runs.push({ profile: unique[i], result: skipped });
+        return step(i + 1);
+      }
+      const result = run(
+        Object.assign(
+          {},
+          engineOptions,
+          { profile: unique[i] },
+          left !== null && i > 0 ? { timeBudgetMs: left } : {}
+        )
+      );
       if (thenable(result)) {
         return result.then((r) => {
           runs.push({ profile: unique[i], result: r });
@@ -326,7 +369,9 @@ function mergeProfileResults(runs, asked, allowFail = true) {
             ? 'overridden-by-selection'
             : why === 'pack-skipped'
               ? 'pack-skipped'
-              : 'unknown-profile'
+              : why === 'timeBudget'
+                ? 'timeBudget'
+                : 'unknown-profile'
       });
     }
   }
@@ -595,6 +640,24 @@ function mergeProfileResults(runs, asked, allowFail = true) {
     ...(packs.length ? { packs } : {})
   });
   if (!oneLaw) delete engine.law;
+  // The rules a profile's scan did not start, and the profiles not started,
+  // for the time budget: the merged scan is incomplete.
+  const rulesNotRun = [];
+  for (const r of ran) {
+    for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
+      if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+    }
+  }
+  const budgetProfiles = notRun.filter((n) => n.reason === 'timeBudget');
+  const incomplete = engines.find((e) => e.incomplete);
+  if (incomplete || budgetProfiles.length) {
+    engine.incomplete = Object.assign(
+      { reason: 'timeBudget' },
+      incomplete ? incomplete.incomplete : {},
+      { rulesNotRun: rulesNotRun.length },
+      budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {}
+    );
+  } else delete engine.incomplete;
   void asked;
   const out = Object.assign({}, first, {
     engine,
@@ -606,6 +669,8 @@ function mergeProfileResults(runs, asked, allowFail = true) {
   if (overridden.length || Array.isArray(first.overriddenBuiltinIds))
     out.overriddenBuiltinIds = overridden;
   if (skippedPacks.length) out.skippedPacks = skippedPacks;
+  if (rulesNotRun.length) out.notRun = rulesNotRun;
+  else delete out.notRun;
   // A custom rule skipped is one no profile ran: one profile's selection
   // can leave out a rule another runs.
   const skippedLists = ran.map((r) =>

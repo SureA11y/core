@@ -80,6 +80,7 @@ A result from `runa11yCoreAcrossFrames` (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEM
 | `pass` | a bare `<testcase>` | |
 | `notApplicable` | left out | A page has hundreds; none says anything. `includeNotApplicable: true` adds them as `<skipped message="Not applicable">`. |
 | a rule that did not complete (`cantTell` with no occurrences and an `error`: it threw) | `<error type="ruleError">` with the error, counted in `errors` | JUnit's element for a test that could not run. The page was not checked against the rule, which is neither a pass nor something to review. |
+| a rule the scan's time budget left unstarted (`notRun`, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#a-time-budget-timebudgetms)) | `<error type="timeBudget">`, counted in `errors`, in a suite `Rules not run` (with a `timeBudgetMs` property), and each suite gets an `incomplete` property | The rule checked nothing, so the build never reads it as passed. A profile the budget left unstarted is an `<error>` in the `Profiles` suite, whatever `allowProfilesNotRun` says. |
 
 A `fail` rule that also has `cantTell` occurrences reports the failures in `<failure>` and the undecided ones in `<system-out>`, where dashboards show test output. A skipped `cantTell` rule does the same.
 

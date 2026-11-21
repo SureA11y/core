@@ -9,7 +9,8 @@ const {
   expandCompactResult,
   coercedResult,
   wcagScopeOf,
-  reporterOptions
+  reporterOptions,
+  notRunOf
 } = require('./scan-result.js');
 const { WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 
@@ -33,8 +34,9 @@ const { WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 
 const EARL_CONTEXT = 'https://www.w3.org/WAI/content-assets/wcag-act-rules/earl-context.json';
 
-// The engine's four outcomes onto EARL's vocabulary. `earl:untested` has no
-// counterpart here: a rule that did not run produces no result to assert on.
+// The engine's four outcomes onto EARL's vocabulary. A rule the scan
+// selected and did not start, since its time budget ran out first
+// (result.notRun), is asserted `earl:untested`.
 const OUTCOME_TO_EARL = {
   pass: 'earl:passed',
   fail: 'earl:failed',
@@ -228,6 +230,19 @@ function renderEarlReport(results, given) {
       if (!check || typeof check.ruleId !== 'string') continue;
       const assertion = assertionFor(check, assertor, mode, inScope);
       if (assertion) assertions.set(check.ruleId, worseOf(assertions.get(check.ruleId), assertion));
+    }
+    // A rule not run checked nothing: untested, unless another result for
+    // the same page (or another profile of it) ran it.
+    for (const n of notRunOf(result)) {
+      if (assertions.has(n.ruleId)) continue;
+      const assertion = {
+        '@type': 'Assertion',
+        test: { title: n.ruleId },
+        result: { outcome: 'earl:untested' }
+      };
+      if (assertor) assertion.assertedBy = assertor;
+      if (mode) assertion.mode = mode;
+      assertions.set(n.ruleId, assertion);
     }
   }
 

@@ -77,7 +77,10 @@ declare namespace a11ycore {
    */
   function run<T extends RunOptions = RunOptions>(options?: T): Promise<ScanResultFor<T>>;
 
-  /** One row of table(): an occurrence, or with { all: true } a rule. */
+  /**
+   * One row of table(): an occurrence, a rule the scan's time budget left
+   * unstarted (outcome 'notRun'), or with { all: true } a rule.
+   */
   interface TableRow {
     outcome: string;
     severity: string;
@@ -87,8 +90,9 @@ declare namespace a11ycore {
   }
   /**
    * Prints the scan's fail and cantTell occurrences with console.table,
-   * worst first, and returns the rows. { all: true } adds a row for each
-   * rule that passed or did not apply.
+   * worst first, and returns the rows, with a row for each rule the scan's
+   * time budget left unstarted (result.notRun). { all: true } adds a row for
+   * each rule that passed or did not apply.
    */
   function table(result: ScanResult | CompactScanResult, options?: { all?: boolean }): TableRow[];
 

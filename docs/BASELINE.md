@@ -128,6 +128,10 @@ A single baseline written from every width still gates correctly, since a findin
 
 `matchBaseline`, and the `baselineEntries` option of the SARIF and JUnit reporters, take the file as saved (`JSON.parse` of it) or its `entries` list. `null` or no baseline has no entries, so every failure is new. Anything else throws a `TypeError` with `code: 'INVALID_BASELINE'` and a message naming what is wrong: a string or an object with no `entries` list (`matchBaseline: the baseline must be a list of entries or a baseline file ({ entries: [...] }), not the string "…"`), an entry that isn't an object (`baseline entry 0 is null, …`) or has no `ruleId`, or a `reasonCode`, `selector` or `html` that is neither a string nor `null`, or a `frame` that isn't a list of strings. `migrateBaselineEntries` checks it the same way. Before, such a value was read as an empty baseline, which made every failure new without a word.
 
+## An incomplete scan
+
+A scan that did not check everything it selected can't say it found nothing new. When its time budget (`engineOptions.timeBudgetMs`, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#a-time-budget-timebudgetms)) ran out before every rule ran, `matchBaseline` adds `incomplete: { notRun }`, the ids of the rules that did not run, to what it returns: a gate that reads `newCount` has to fail on `incomplete` too, as the SARIF and JUnit reporters do (an error per rule not run). Don't write a baseline from such a scan: it records none of the failures of the rules that did not run.
+
 `--baseline <path>` rejects a file that isn't `{ version: 1, entries: [...] }` with a clear exit-2 error rather than guessing at an older/different format.
 
 ## Combining with `--json`

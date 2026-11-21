@@ -1670,6 +1670,8 @@
   "report_meta_law": "loi",
   "report_meta_profileNotRun": "non exécuté",
   "report_meta_optInRules": "règles activées explicitement",
+  "report_meta_rulesNotRun": "règles non exécutées",
+  "report_incomplete_timeBudget": "Analyse incomplète : son budget de temps de {{budget}} ms a été épuisé avant que toutes les règles sélectionnées ne s’exécutent. Non exécutées ({{count}}) : {{rules}}. Elles n’ont rien vérifié : rien dans ce rapport ne les donne comme réussies.",
   "report_meta_viewport": "zone d’affichage",
   "report_meta_colorScheme": "schéma de couleurs",
   "report_meta_fonts": "polices web",

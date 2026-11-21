@@ -181,6 +181,12 @@ function engineOptionSpec() {
     probes: T.any,
     perfStats: T.boolean,
     profileRules: T.boolean,
+    // Once a scan has spent this long, it starts no more rules; those it
+    // didn't start are listed in its result (notRun). Off when not given.
+    timeBudgetMs: {
+      test: (v) => typeof v === 'number' && Number.isFinite(v) && v > 0,
+      expected: 'a number of milliseconds, more than 0'
+    },
     pingWaitTime: T.number,
     frameWaitTime: T.number
   };

@@ -7,7 +7,8 @@ const {
   locationText,
   occurrenceOutcome,
   reasonCodeOf,
-  leaningOccurrencesOf
+  leaningOccurrencesOf,
+  notRunOf
 } = require('./scan-result.js');
 const BASELINE_MOVES = require('./baseline-moves.json');
 
@@ -417,6 +418,16 @@ function compare(findings, remaining) {
   };
 }
 
+// What a result (each frame of it) left unchecked, or null: the rules its
+// time budget left unstarted (engineOptions.timeBudgetMs), each once.
+function incompletenessOf(frames) {
+  const notRun = [];
+  for (const { result } of frames) {
+    for (const n of notRunOf(result)) if (!notRun.includes(n.ruleId)) notRun.push(n.ruleId);
+  }
+  return notRun.length ? { notRun } : null;
+}
+
 // Which failures the baseline knows. Its entries for findings that lean
 // fail are left out, unless `leanFail: true` asks for those findings to be
 // compared with them too, in `leanFail`.
@@ -434,6 +445,10 @@ function matchBaseline(result, baselineEntries, options) {
   if (options && options.leanFail === true) {
     match.leanFail = compare(leanFindingsOf(frames), entryCounts(baselineEntries, true));
   }
+  // A scan that did not check everything it selected can't say it found
+  // nothing new: what it left out may hold new failures.
+  const incomplete = incompletenessOf(frames);
+  if (incomplete) match.incomplete = incomplete;
   return match;
 }
 

@@ -59,7 +59,9 @@ const {
   wcagScopeOf,
   occurrenceOutcome,
   leaningOccurrencesOf,
-  reporterOptions
+  reporterOptions,
+  notRunOf,
+  timeBudgetOf
 } = require('./scan-result.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -404,6 +406,8 @@ function frameSuites(result, frame, baseline, opts, totals) {
     // A scan of several profiles names them all; profile is the first.
     ['profiles', Array.isArray(engine.profiles) ? engine.profiles.join(',') : null],
     ['optInRules', Array.isArray(engine.optInRules) ? engine.optInRules.join(',') : null],
+    // A scan cut short by its time budget (engine.incomplete).
+    ['incomplete', engine.incomplete ? String(engine.incomplete.reason || 'true') : null],
     ...environmentProperties(engine.environment),
     ['locale', engine.locale && engine.locale.resolved],
     ['url', result && result.url],
@@ -412,7 +416,7 @@ function frameSuites(result, frame, baseline, opts, totals) {
   // A child frame's suites say whose they are.
   const prefix = frame.path.length ? `Frame ${framePathText(frame.path)}: ` : '';
 
-  return keys.map((key) => {
+  const xml = keys.map((key) => {
     const suite = suites.get(key);
     const entries = suite.entries
       .slice()
@@ -458,6 +462,38 @@ function frameSuites(result, frame, baseline, opts, totals) {
       '  </testsuite>'
     ].join('\n');
   });
+
+  // The rules the scan's time budget left unstarted checked nothing: one
+  // error each, in a suite of their own, so the build never reads them as
+  // passed.
+  const notRun = notRunOf(result);
+  if (notRun.length) {
+    const budget = timeBudgetOf(result);
+    const why = `the scan reached its time budget${budget !== null ? ` of ${budget} ms` : ''} first`;
+    totals.tests += notRun.length;
+    totals.errors += notRun.length;
+    const classname = (frame.path.length ? `frame ${framePathText(frame.path)} ` : '') + 'not-run';
+    xml.push(
+      [
+        `  <testsuite name="${xmlText(`${prefix}Rules not run`)}" tests="${notRun.length}" failures="0" errors="${notRun.length}" skipped="0" time="0">`,
+        '    <properties>',
+        ...runProperties.map(
+          ([k, v]) => `      <property name="${xmlText(k)}" value="${xmlText(v)}"/>`
+        ),
+        ...(budget !== null
+          ? [`      <property name="timeBudgetMs" value="${xmlText(budget)}"/>`]
+          : []),
+        '    </properties>',
+        ...notRun.flatMap((n) => [
+          `    <testcase classname="${xmlText(classname)}" name="${xmlText(n.profile ? `${n.ruleId} (${n.profile})` : n.ruleId)}" time="0">`,
+          `      <error type="timeBudget" message="${xmlText(`Not run: ${why}, so the rule checked nothing`)}"/>`,
+          '    </testcase>'
+        ]),
+        '  </testsuite>'
+      ].join('\n')
+    );
+  }
+  return xml;
 }
 
 const JUNIT_OPTIONS = [
@@ -589,16 +625,20 @@ function renderJunitReport(result, given) {
     }
   }
   if (notRun.length) {
-    const allowed = allowProfilesNotRun === true;
+    // A profile the time budget left unstarted is a scan cut short, which
+    // allowProfilesNotRun does not accept.
+    const allowedOf = (p) =>
+      allowProfilesNotRun === true && !String(p.reason).split(', ').includes('timeBudget');
+    const allowedCount = notRun.filter(allowedOf).length;
     totals.tests += notRun.length;
-    if (allowed) totals.skipped += notRun.length;
-    else totals.errors += notRun.length;
+    totals.skipped += allowedCount;
+    totals.errors += notRun.length - allowedCount;
     suiteXml.push(
       [
-        `  <testsuite name="Profiles" tests="${notRun.length}" failures="0" errors="${allowed ? 0 : notRun.length}" skipped="${allowed ? notRun.length : 0}" time="0">`,
+        `  <testsuite name="Profiles" tests="${notRun.length}" failures="0" errors="${notRun.length - allowedCount}" skipped="${allowedCount}" time="0">`,
         ...notRun.flatMap((p) => [
           `    <testcase classname="profile" name="${xmlText(p.profile)}" time="0">`,
-          allowed
+          allowedOf(p)
             ? `      <skipped message="${xmlText(`Not run: ${p.reason}`)}"/>`
             : `      <error message="${xmlText(`Asked for and not run: ${p.reason}`)}"/>`,
           '    </testcase>'
