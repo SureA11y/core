@@ -84,6 +84,14 @@ function matchIgnoringCase(table, locale) {
   return null;
 }
 
+// A table's dictionary for a locale its key may write in another case: the
+// caller's messages and the built-in tables are matched each on its own, so
+// messages: { DE: ... } layers over the built-in de, and locale 'DE' with
+// messages: { De: ... } keeps the built-in German under it (round 9, A9-3).
+function dictIgnoringCase(table, locale) {
+  return ownDict(table, locale) || ownDict(table, matchIgnoringCase(table, locale));
+}
+
 function findLocaleKey(locale, engineOptions) {
   if (lookupDict(locale, engineOptions)) return locale;
 
@@ -110,7 +118,9 @@ function getLocaleDict(engineOptions) {
   const requested = normalizeLocale(engineOptions && engineOptions.locale);
   const matched = matchLocale(requested, engineOptions);
 
-  return matched ? lookupDict(matched, engineOptions) : (I18N && I18N.en ? I18N.en : {});
+  return matched
+    ? dictIgnoringCase(getSuppliedMessages(engineOptions), matched) || dictIgnoringCase(I18N, matched)
+    : (I18N && I18N.en ? I18N.en : {});
 }
 
 function ownString(dict, key) {
@@ -126,8 +136,8 @@ function localeMessage(key, engineOptions) {
   if (!matched) return null;
 
   return (
-    ownString(ownDict(getSuppliedMessages(engineOptions), matched), key) ||
-    ownString(ownDict(I18N, matched), key)
+    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), matched), key) ||
+    ownString(dictIgnoringCase(I18N, matched), key)
   );
 }
 
@@ -159,10 +169,14 @@ function resolveLocale(engineOptions) {
   if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
 
   if (dict !== en) {
-    const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
-    const builtIn = ownDict(I18N, matched);
+    const supplied = dictIgnoringCase(getSuppliedMessages(engineOptions), matched);
+    const builtIn = dictIgnoringCase(I18N, matched);
 
-    const leftOut = I18N_LEFT_OUT[matched] || {};
+    const builtInKey = ownDict(I18N, matched) ? matched : matchIgnoringCase(I18N, matched);
+    const leftOut =
+      (builtInKey && Object.prototype.hasOwnProperty.call(I18N_LEFT_OUT, builtInKey)
+        ? I18N_LEFT_OUT[builtInKey]
+        : null) || {};
 
     for (const key in en) {
       if (leftOut[key] === true) continue;
@@ -286,7 +300,7 @@ function t(key, fallback, params, engineOptions) {
   // built-in one. Without it, a custom rule's keys given only in English
   // showed empty under another locale.
   const vEn =
-    ownString(ownDict(getSuppliedMessages(engineOptions), 'en'), key) ||
+    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), 'en'), key) ||
     ownString(I18N && I18N.en, key);
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
@@ -2317,6 +2331,7 @@ const SAFE_DOM_METHODS = [
   "getElementsByTagName",
   "getRootNode",
   "getScreenCTM",
+  "getSelection",
   "hasAttribute",
   "hasChildNodes",
   "insertBefore",
@@ -2329,6 +2344,7 @@ const SAFE_DOM_METHODS = [
   "setAttribute"
 ];
 const SAFE_DOM_OTHER_NAMES = [
+  "URL",
   "customElements",
   "adoptedStyleSheets",
   "ariaActiveDescendantElement",
@@ -2346,6 +2362,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "clientTop",
   "clientWidth",
   "compatMode",
+  "contentType",
   "currentCSSZoom",
   "currentSrc",
   "delegatesFocus",
@@ -2874,6 +2891,10 @@ const createSafeDom = (function createSafeDom() {
       protect && guard(o)
         ? protectedCall(o, 'getScreenCTM', a, b, c, d)
         : o.getScreenCTM(a, b, c, d),
+    getSelection: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getSelection', a, b, c, d)
+        : o.getSelection(a, b, c, d),
     hasAttribute: (o, a, b, c, d) =>
       protect && guard(o)
         ? protectedCall(o, 'hasAttribute', a, b, c, d)
@@ -3250,6 +3271,58 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return false;
   }
 
+  // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
+  // accessible name of a disabled widget has no contrast requirement
+  // either, even when the disabled control itself is a SIBLING of the
+  // text rather than an ancestor -- e.g. <label>My name<input disabled/>
+  // </label> (implicit/explicit native label association), or a
+  // <label id="x">...</label> referenced via aria-labelledby="x" from a
+  // separate aria-disabled widget. Worked out once per label and scan: the
+  // text scan asks for every text node in the label, and each answer walked
+  // the label, or queried the whole document for its id, again, so a label
+  // holding many text nodes cost their number squared (round 9, R9-7).
+  const __localLabelNamesDisabledCache = new WeakMap();
+  const __labelNamesDisabledCache =
+    __getSharedWeakMapCache('__labelNamesDisabledCache') || __localLabelNamesDisabledCache;
+  function labelNamesDisabled(labelAncestor) {
+    if (__labelNamesDisabledCache.has(labelAncestor))
+      return __labelNamesDisabledCache.get(labelAncestor);
+    const disabled = findLabelNamesDisabled(labelAncestor);
+    __labelNamesDisabledCache.set(labelAncestor, disabled);
+    return disabled;
+  }
+  function findLabelNamesDisabled(labelAncestor) {
+    try {
+      // Not the native `.control`, which walks the whole document on
+      // every call in jsdom.
+      const control = shared.getLabelControl
+        ? shared.getLabelControl(labelAncestor)
+        : labelAncestor.control || null;
+      if (control && isDisabledWidget(control)) return true;
+    } catch {}
+
+    try {
+      // Only an element in the label's own tree (its shadow root, or the
+      // document) can reference it by id.
+      const root = dom.getRootNode(labelAncestor);
+      const tree =
+        root && typeof dom.get(root, 'getElementById') === 'function'
+          ? root
+          : dom.ownerDocument(labelAncestor);
+      const labelId = dom.get(labelAncestor, 'id');
+      if (tree && labelId) {
+        const referrers = dom.querySelectorAll(
+          tree,
+          '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
+        );
+        for (const ref of referrers) {
+          if (isDisabledWidget(ref)) return true;
+        }
+      }
+    } catch {}
+    return false;
+  }
+
   function isInactiveUiComponent(el) {
     let node = el;
     let depth = 0;
@@ -3262,45 +3335,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       node = dom.parentElement(node);
     }
 
-    // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
-    // accessible name of a disabled widget has no contrast requirement
-    // either, even when the disabled control itself is a SIBLING of the
-    // text rather than an ancestor -- e.g. <label>My name<input disabled/>
-    // </label> (implicit/explicit native label association), or a
-    // <label id="x">...</label> referenced via aria-labelledby="x" from a
-    // separate aria-disabled widget. Only attempted when an enclosing
-    // <label> was actually found above, to avoid a document-wide query for
-    // the common case of plain text with no label ancestor at all.
-    if (labelAncestor) {
-      try {
-        // Not the native `.control`, which walks the whole document on
-        // every call in jsdom.
-        const control = shared.getLabelControl
-          ? shared.getLabelControl(labelAncestor)
-          : labelAncestor.control || null;
-        if (control && isDisabledWidget(control)) return true;
-      } catch {}
-
-      try {
-        // Only an element in the label's own tree (its shadow root, or the
-        // document) can reference it by id.
-        const root = dom.getRootNode(labelAncestor);
-        const tree =
-          root && typeof dom.get(root, 'getElementById') === 'function'
-            ? root
-            : dom.ownerDocument(labelAncestor);
-        const labelId = dom.get(labelAncestor, 'id');
-        if (tree && labelId) {
-          const referrers = dom.querySelectorAll(
-            tree,
-            '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
-          );
-          for (const ref of referrers) {
-            if (isDisabledWidget(ref)) return true;
-          }
-        }
-      } catch {}
-    }
+    // WCAG 1.4.3/1.4.6 "disabled label" exception: see labelNamesDisabled.
+    // Only attempted when an enclosing <label> was actually found above, to
+    // avoid a document-wide query for the common case of plain text with no
+    // label ancestor at all.
+    if (labelAncestor && labelNamesDisabled(labelAncestor)) return true;
 
     return false;
   }
@@ -3816,6 +3855,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         // moved wholly off the page (text-indent: -9999px) is drawn nowhere.
         if (!marquee && Number.parseFloat(cs.textIndent) < 0 && textOffPage(el, r, cs, sx))
           return true;
+        // Text shrunk by a transform to less than a pixel (scale(0.001)) is
+        // drawn as nothing a reader can see.
+        const shrunk = __uniformTransformScale(el);
+        if (shrunk < 1 && Number.parseFloat(cs.fontSize) * shrunk < 1) return true;
+        // A box clipping its own overflow to a pixel or less (a visually
+        // hidden 1px box with no clip) shows nothing of the text in it.
+        if (!marquee) {
+          const own = clipBoxOf(el);
+          if (
+            own.rect &&
+            ((own.clipsX && own.rect.width <= 1) || (own.clipsY && own.rect.height <= 1))
+          )
+            return true;
+        }
         let left = r.left;
         let top = r.top;
         let right = r.right;
@@ -3835,7 +3888,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               top = Math.max(top, a.top);
               bottom = Math.min(bottom, a.bottom);
             }
-            if (right - left < 1 || bottom - top < 1) return true;
+            // A pixel or less: the 1px box of visually hidden text.
+            if (right - left <= 1 || bottom - top <= 1) return true;
           }
           if (stops) break;
           cur = composedParent(cur);
@@ -7716,6 +7770,22 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (op < 1) {
         acc = { r: acc.r, g: acc.g, b: acc.b, a: clamp01(acc.a * op) };
       }
+
+      // A box in the top layer is painted over its ::backdrop, which is
+      // painted over the rest of the page (a lightbox's dimmed page).
+      const top = acc.a < 1 ? __topLayerOf(cur) : null;
+      if (top && top.color) {
+        if (collectStack) {
+          stack.push({
+            selector:
+              __getSimpleSelectorCached(cur, (dom.tagName(cur) || '').toLowerCase() || 'html') +
+              '::backdrop',
+            bg: { r: top.color.r, g: top.color.g, b: top.color.b, a: top.color.a },
+            opacity: 1
+          });
+        }
+        acc = compositeRgba(acc, top.color);
+      }
     }
 
     let out;
@@ -9665,6 +9735,38 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           occluder = cur;
         }
       }
+
+      // The ::backdrop under a box in the top layer: an image, a gradient
+      // or a filter there stops the measurement as one on an ancestor
+      // would, and an opaque one hides the rest of the page.
+      const top = paintOccluded ? null : __topLayerOf(cur);
+      if (top && top.blocker) {
+        const out = {
+          ok: false,
+          reasonCode:
+            top.blocker.property === 'background-image'
+              ? 'BACKGROUND_IMAGE_OR_GRADIENT'
+              : 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+          blockerSelector:
+            __getSimpleSelectorCached(cur, (dom.tagName(cur) || '').toLowerCase() || 'html') +
+            '::backdrop',
+          blockerElement: describeElement(cur) + '::backdrop',
+          blockerIsAncestor: true,
+          blockerProperty: top.blocker.property,
+          blockerValue: truncateCssValue(top.blocker.value, 80),
+          ...(top.blocker.property === 'background-image'
+            ? { backgroundFillType: classifyBackgroundImageValue(top.blocker.value) }
+            : {})
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch {}
+        return out;
+      }
+      if (top && top.color && top.color.a >= 1) {
+        paintOccluded = true;
+        occluder = cur;
+      }
     }
 
     const overlap = __findPaintUnderText(el, chain);
@@ -9769,6 +9871,66 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // than paint behind it, and where they stand depends on the scroll
   // position the scan was taken at.
   const __pinnedCache = new WeakMap();
+  // A box in the top layer (a modal dialog, an open popover, a fullscreen
+  // element) is painted over the whole document, and its ::backdrop
+  // between the two: under the box, over everything else. null for any
+  // other box; for one in the top layer, its backdrop's color (null when
+  // it paints none) and what, if anything, stops measuring through it (a
+  // background image or gradient, a filter or backdrop-filter). The top
+  // layer computes its boxes to position absolute or fixed, which most
+  // boxes aren't, so only those are asked.
+  const __topLayerCache = new WeakMap();
+  const __TOP_LAYER_STATES = [':modal', ':popover-open', ':fullscreen'];
+  function __topLayerOf(node) {
+    if (!node || dom.nodeType(node) !== 1) return null;
+    if (__topLayerCache.has(node)) return __topLayerCache.get(node);
+    let out = null;
+    try {
+      const cs = __contrastComputedStyle(node);
+      const placed = !!cs && (cs.position === 'fixed' || cs.position === 'absolute');
+      const inTop =
+        placed &&
+        __TOP_LAYER_STATES.some((sel) => {
+          try {
+            return !!dom.matches(node, sel);
+          } catch {
+            return false;
+          }
+        });
+      if (inTop) {
+        out = { el: node, color: null, blocker: null };
+        let bcs = null;
+        try {
+          bcs =
+            window && typeof window.getComputedStyle === 'function'
+              ? window.getComputedStyle(node, '::backdrop')
+              : null;
+        } catch {
+          bcs = null;
+        }
+        if (bcs && bcs.display !== 'none') {
+          const filter = trim(bcs.filter);
+          const backdropFilter = trim(bcs.backdropFilter);
+          const op = opacityOf(bcs);
+          if (backdropFilter && backdropFilter !== 'none') {
+            out.blocker = { property: 'backdrop-filter', value: backdropFilter };
+          } else if (filter && filter !== 'none') {
+            out.blocker = { property: 'filter', value: filter };
+          } else if (op > 0 && hasBackgroundImageOrGradient(bcs)) {
+            out.blocker = { property: 'background-image', value: trim(bcs.backgroundImage) };
+          }
+          const bg = parseCssColorToRgba(bcs.backgroundColor);
+          if (bg && bg.a > 0 && op > 0)
+            out.color = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a * op) };
+          out.value = trim(bcs.backgroundColor);
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __topLayerCache.set(node, out);
+    return out;
+  }
   function __isPinned(node) {
     const path = [];
     let cur = node;
@@ -11035,6 +11197,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       chain.push(cur);
     }
     const inChain = new Set(chain);
+    // The innermost box of the chain in the top layer: everything outside
+    // it is painted under it and its ::backdrop, whatever its z-index.
+    let topLayer = null;
+    for (const a of chain) {
+      topLayer = __topLayerOf(a);
+      if (topLayer) break;
+    }
+    const underTop = (node) =>
+      !!topLayer && node !== topLayer.el && !__isComposedInside(node, topLayer.el);
     const outerSvg = (node) => {
       let found = null;
       for (let cur = node, guard = 0; cur && guard < 1000; cur = composedParent(cur), guard++) {
@@ -11267,6 +11438,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (inChain.has(orderEl)) continue;
       const key = __paintKey(orderEl, p.paint.property === 'element' ? 'content' : 'bg');
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
+      if (underTop(orderEl)) {
+        if (!key) return FALLBACK;
+        behind.push({ p, key, svg: orderEl !== p.el, rect: pr, underTop: true });
+        continue;
+      }
       if (Number.isNaN(c)) return FALLBACK;
       if (c > 0) {
         if (inside || __isPinned(p.el)) continue;
@@ -11281,6 +11457,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     for (const x of pseudos) {
       if (!rects.some((tr) => __paintsOnLine(x.p, x.rect, tr))) continue;
       const key = __pseudoPaintKey(x.p);
+      if (key && underTop(x.p.el)) {
+        behind.push({ p: x.p, key, svg: false, rect: x.rect, pseudo: x, underTop: true });
+        continue;
+      }
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
       if (Number.isNaN(c)) return FALLBACK;
       if (c > 0) {
@@ -11355,8 +11535,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // background, which then covers it.
       const order = __cmpPaintKeys(key, textKey);
       if (Number.isNaN(order)) return FALLBACK;
-      if (order > 0) return blocked(own);
-      layers.push({ el: a, key, color, foreign: null, partial });
+      if (order > 0 && !underTop(a)) return blocked(own);
+      layers.push({ el: a, key, color, foreign: null, partial, underTop: underTop(a) });
     }
     for (const b of behind) {
       const cs = __contrastComputedStyle(b.p.el);
@@ -11417,11 +11597,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           t.bottom <= r.bottom - radius + 0.5;
         if (!rects.every(inside)) color = null;
       }
-      layers.push({ el: b.p.el, key: b.key, color, foreign: b.p });
+      layers.push({ el: b.p.el, key: b.key, color, foreign: b.p, underTop: !!b.underTop });
     }
 
     let unordered = false;
     layers.sort((x, y) => {
+      // What the top layer holds is over the rest of the page.
+      if (!!x.underTop !== !!y.underTop) return x.underTop ? 1 : -1;
       const c = __cmpPaintKeys(y.key, x.key);
       if (Number.isNaN(c)) {
         unordered = true;
@@ -11430,6 +11612,22 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return c;
     });
     if (unordered) return FALLBACK;
+    // The top layer box's ::backdrop, between the two.
+    if (topLayer && (topLayer.color || topLayer.blocker)) {
+      const at = layers.findIndex((l) => l.underTop);
+      const backdrop = {
+        el: topLayer.el,
+        pseudo: '::backdrop',
+        paint: topLayer.blocker || { property: 'background-color', value: topLayer.value }
+      };
+      layers.splice(at < 0 ? layers.length : at, 0, {
+        el: topLayer.el,
+        key: null,
+        color: topLayer.blocker ? null : topLayer.color,
+        foreign: backdrop,
+        underTop: false
+      });
+    }
 
     // Topmost first, down to the first opaque layer.
     let acc = { r: 0, g: 0, b: 0, a: 0 };
@@ -18068,6 +18266,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
   let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document|ShadowRoot, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
+  let __firstLabelableByLabel = null; // WeakMap<Element, Element|null> (a <label>'s first labelable descendant, see firstLabelableIn)
   // Map<string, WeakMap<Element, Info>>. Only names computed at
   // __nameComputationDepth 0 are stored: a name computed deeper is the value
   // that traversal saw, not the element's own. Resolving an aria-labelledby
@@ -18199,6 +18398,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   try {
+    __firstLabelableByLabel =
+      __domSharedCache.firstLabelableByLabel instanceof WeakMap
+        ? __domSharedCache.firstLabelableByLabel
+        : (__domSharedCache.firstLabelableByLabel = new WeakMap());
+  } catch {
+    __firstLabelableByLabel = null;
+  }
+
+  try {
     __accessibleNameCacheByKey =
       __domSharedCache.accessibleNameCacheByKey instanceof Map
         ? __domSharedCache.accessibleNameCacheByKey
@@ -18304,8 +18512,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return false;
     }
   }
-  // A label's first labelable descendant, in tree order.
+  // A label's first labelable descendant, in tree order. Found once per
+  // label and scan: the contrast scan asks for each text node in a label
+  // (whether its label's control is disabled), and a walk of the label each
+  // time made a label holding many text nodes cost their number squared
+  // (round 9, R9-7).
   function firstLabelableIn(label) {
+    if (__firstLabelableByLabel && __firstLabelableByLabel.has(label))
+      return __firstLabelableByLabel.get(label);
+    const found = findFirstLabelableIn(label);
+    if (__firstLabelableByLabel) __firstLabelableByLabel.set(label, found);
+    return found;
+  }
+  function findFirstLabelableIn(label) {
     try {
       const plain = dom.querySelector(label, LABELABLE_SELECTOR);
       // A custom element may come before it: look for one only if the label
@@ -19914,6 +20133,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // whole label, bounded only by the blunt depth counter.
     effOpts = Object.assign({}, effOpts, { __idrefVisited: visited, __inIdRefTraversal: true });
 
+    // A <script> or <style> is never rendered, so it gives no text, as a
+    // <template> gives none: Chromium names <a href="/" aria-labelledby="s">
+    // </a><script id="s">…</script> "".
+    {
+      const tag = lower(dom.localName(el) || '');
+      if (
+        (tag === 'script' || tag === 'style') &&
+        dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml'
+      )
+        return '';
+    }
+
     __nameComputationDepth += 1;
     try {
       // A referenced node's own aria-labelledby is not followed: accname 1.2
@@ -21242,6 +21473,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
           const svgRoot = dom.closest(node, 'svg');
           if (svgRoot && svgRoot !== el && dom.contains(el, svgRoot)) return;
         }
+        // Nor is a ruby annotation (<rt>) or its fallback parenthesis
+        // (<rp>): Chromium names <button><ruby>漢<rt>kan</rt></ruby></button>
+        // "漢", from the base text alone.
+        if (
+          (local === 'rt' || local === 'rp') &&
+          dom.namespaceURI(node) === 'http://www.w3.org/1999/xhtml'
+        )
+          return;
       }
 
       // opts.skipNode: the control a <label> is being read for. Its own name
@@ -21678,6 +21917,35 @@ const createDomHelpers = (function createDomHelpers(opts) {
       .toLowerCase();
     if (/^circle\(\s*0(px|%)?(\s|\)|$)/.test(v)) return true;
     if (/^ellipse\(\s*0(px|%)?\s+0(px|%)?(\s|\)|$)/.test(v)) return true;
+    // A polygon of no area: its points all on one line, or all one point,
+    // such as polygon(0 0, 0 0, 0 0). Decided where its coordinates are in
+    // one unit (or zero), or are all the same point.
+    const poly = /^polygon\(\s*(?:(?:nonzero|evenodd)\s*,\s*)?([^)]*)\)/.exec(v);
+    if (poly) {
+      const points = poly[1].split(',').map((pt) => pt.trim().split(/\s+/));
+      if (points.length < 3 || points.some((pt) => pt.length !== 2)) return points.length < 3;
+      if (points.every((pt) => pt.join(' ') === points[0].join(' '))) return true;
+      const units = new Set();
+      const nums = [];
+      for (const pt of points) {
+        const xy = [];
+        for (const c of pt) {
+          const n = /^(-?\d*\.?\d+)(%|[a-z]*)$/.exec(c);
+          if (!n) return false;
+          if (parseFloat(n[1]) !== 0) units.add(n[2] || 'px');
+          xy.push(parseFloat(n[1]));
+        }
+        nums.push(xy);
+      }
+      if (units.size > 1) return false;
+      let area = 0;
+      for (let i = 0; i < nums.length; i++) {
+        const [x1, y1] = nums[i];
+        const [x2, y2] = nums[(i + 1) % nums.length];
+        area += x1 * y2 - x2 * y1;
+      }
+      return Math.abs(area) < 1e-9;
+    }
     const m = /^inset\(([^)]*)\)/.exec(v);
     if (!m) return false;
     const parts = m[1]
@@ -23620,6 +23888,41 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return SKIP_LINK_WORDING.some((re) => re.test(s));
   }
 
+  // The fragment a link goes to in its own document, decoded and trimmed
+  // ('' for "#"), or null for a link that leads to another document, or
+  // has no fragment. The href is resolved against the document's base URL,
+  // as the browser follows it: under <base href="/">, "#main" on
+  // /products/42 leads to /#main, another page. A link stays on the page
+  // when its URL without the fragment is the document's own URL without
+  // its fragment, so a full URL of the page with a fragment counts too.
+  // Where a URL can't be read, an href that starts with "#" counts, as it
+  // did before.
+  const withoutFragment = (url) => {
+    const at = url.indexOf('#');
+    return at < 0 ? url : url.slice(0, at);
+  };
+  function getSamePageFragment(a) {
+    const href = trim(getAttr(a, 'href'));
+    if (href.indexOf('#') < 0) return null;
+    let fragment;
+    try {
+      const doc = dom.ownerDocument(a) || document;
+      const docUrl = String(dom.get(doc, 'URL') || '');
+      const resolved = new URL(href, dom.baseURI(doc) || docUrl).href;
+      if (withoutFragment(resolved) !== withoutFragment(docUrl)) return null;
+      fragment = resolved.slice(resolved.indexOf('#') + 1);
+    } catch {
+      if (href.charAt(0) !== '#') return null;
+      fragment = href.slice(1);
+    }
+    try {
+      fragment = decodeURIComponent(fragment);
+    } catch {
+      // keep the raw fragment if it isn't valid percent-encoding
+    }
+    return fragment.trim();
+  }
+
   // What a link is made of, for a standard that judges text links, image
   // links and SVG links apart:
   // - 'svg': an <a> in SVG (an SVG link), whatever it holds;
@@ -23708,6 +24011,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isModalInert,
     getDocumentRoots: documentRoots,
     hasSkipLinkWording,
+    getSamePageFragment,
     getLinkKind,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
@@ -25510,7 +25814,7 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   return Object.assign(env, internalsHook);
 });
 
-const settleAnimations = (function settleAnimations(doc) {
+const settleAnimations = (function settleAnimations(doc, includeShadowDom) {
   // One running animation as rules read it: its element, what it is, and its
   // timing in milliseconds; endTime is null for one that never ends.
   function describeAnimation(anim, timing) {
@@ -25547,6 +25851,41 @@ const settleAnimations = (function settleAnimations(doc) {
       animations = dom.getAnimations(doc);
   } catch {
     animations = [];
+  }
+  // The document's getAnimations() leaves out the animations of elements in
+  // shadow trees: each open shadow root, nested ones included, gives its
+  // own. Without them a fade in a component was measured wherever it had
+  // got to, and its motion never reported. Left out with includeShadowDom
+  // off, as the rest of the scan leaves those elements out.
+  if (includeShadowDom !== false) {
+    try {
+      const docEl =
+        doc && typeof dom.get(doc, 'getAnimations') === 'function'
+          ? dom.documentElement(doc)
+          : null;
+      const tops = docEl ? [docEl] : [];
+      const seen = new Set(animations);
+      for (let i = 0; i < tops.length; i++) {
+        const walker = dom.createTreeWalker(doc, tops[i], 1);
+        for (let el = walker.currentNode; el; el = walker.nextNode()) {
+          const shadow = dom.nodeType(el) === 1 ? dom.shadowRoot(el) : null;
+          if (!shadow) continue;
+          tops.push(shadow);
+          let own = [];
+          try {
+            own =
+              typeof dom.get(shadow, 'getAnimations') === 'function'
+                ? dom.getAnimations(shadow)
+                : [];
+          } catch {}
+          for (const a of own) {
+            if (seen.has(a)) continue;
+            seen.add(a);
+            animations.push(a);
+          }
+        }
+      }
+    } catch {}
   }
   // Every animation is read before any is moved: setting currentTime makes
   // the next read update the page's style, so reading and moving one at a
@@ -27837,9 +28176,61 @@ const assertPageBuiltins = (function assertPageBuiltins() {
     check('RegExp', () => new RegExp('b+', 'g').exec('abbc')[0] === 'bb');
     check('Math.round', () => Math.round(1.5) === 2 && Math.round(-0.4) === 0);
     check('Math.abs', () => Math.abs(-2) === 2);
-    check('Math.max', () => Math.max(1, 3) === 3);
-    check('Math.min', () => Math.min(1, 3) === 1);
+    // With more than two arguments too: a replacement that reads only two
+    // gave the wrong extreme of a list (round 9, R9-10).
+    check('Math.max', () => Math.max(1, 3) === 3 && Math.max(1, 3, 5) === 5);
+    check('Math.min', () => Math.min(1, 3) === 1 && Math.min(5, 3, 1) === 1);
     check('parseFloat', () => parseFloat('1.5px') === 1.5 && Number.parseFloat('2.5') === 2.5);
+    // Each of these, replaced, changed what rules report without a word
+    // (round 9, R9-10). A shift or pop that takes nothing out hung the scan
+    // in a loop that empties a list, so they are checked before it starts.
+    check(
+      'String.prototype.indexOf',
+      () => 'abcb'.indexOf('b') === 1 && 'abcb'.indexOf('b', 2) === 3 && 'abc'.indexOf('d') === -1
+    );
+    check('String.prototype.includes', () => 'abc'.includes('b') && !'abc'.includes('d'));
+    check('String.prototype.slice', () => 'abcd'.slice(1, 3) === 'bc' && 'abc'.slice(-1) === 'c');
+    check('String.prototype.charAt', () => 'abc'.charAt(1) === 'b');
+    check('String.prototype.match', () => {
+      const m = 'a1b2'.match(/\d/g);
+      return !!m && m.length === 2 && m[1] === '2' && 'abc'.match(/c/).index === 2;
+    });
+    check('RegExp.prototype[Symbol.match]', () => {
+      const m = /b/[Symbol.match]('abc');
+      return !!m && m[0] === 'b';
+    });
+    check('RegExp.prototype[Symbol.split]', () => {
+      const parts = /\d/[Symbol.split]('a1b2c');
+      return parts.length === 3 && parts[2] === 'c';
+    });
+    check('Array.prototype.join', () => [1, 2].join('-') === '1-2' && [1, 2].join() === '1,2');
+    check('Array.prototype.sort', () => {
+      const a = [3, 1, 2].sort();
+      const b = [1, 3, 2].sort((x, y) => y - x);
+      return a[0] === 1 && a[2] === 3 && b[0] === 3 && b[2] === 1;
+    });
+    check('Array.prototype.shift', () => {
+      const a = [1, 2];
+      return a.shift() === 1 && a.length === 1 && a[0] === 2;
+    });
+    check('Array.prototype.pop', () => {
+      const a = [1, 2];
+      return a.pop() === 2 && a.length === 1;
+    });
+    check('Set.prototype.delete', () => {
+      const s = new Set([1]);
+      return s.delete(1) === true && !s.has(1) && s.size === 0;
+    });
+    check('WeakMap.prototype.has', () => {
+      const k = {};
+      const m = new WeakMap();
+      m.set(k, 1);
+      return m.has(k) && !m.has({});
+    });
+    check('parseInt', () => parseInt('12px', 10) === 12 && Number.parseInt('7') === 7);
+    check('Math.floor', () => Math.floor(1.7) === 1 && Math.floor(-1.2) === -2);
+    check('Math.pow', () => Math.pow(2, 10) === 1024);
+    check('URL', () => new URL('b#c', 'https://a.test/x/').href === 'https://a.test/x/b#c');
     check('NodeFilter', () => {
       if (typeof NodeFilter === 'undefined') return true;
       return (
@@ -27935,7 +28326,13 @@ const runCore = (function runCore(
     typeof document !== 'undefined' ? document : null
   );
   try {
-    const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // Shadow trees as the scan reads them: on unless includeShadowDom is off.
+    const shadowDom = !(
+      engineOptions &&
+      typeof engineOptions === 'object' &&
+      switchOf(engineOptions.includeShadowDom) === false
+    );
+    const settled = settleAnimations(typeof document !== 'undefined' ? document : null, shadowDom);
     // The animations as they were before settling, for helpers.animationsAtScanStart.
     settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.
@@ -28860,11 +29257,23 @@ function getChecksCatalog(engineOptions) {
 }
 
 // A composite's catalog entry, with the other-standard entries of its rules
-// filtered the same way as a rule's.
-function toCompositeCatalogEntry(x, tokens, customDefs) {
+// filtered the same way as a rule's. Its title and description are in the
+// options' locale, at the top as a rule's are, and in its meta (round 9,
+// A9-7); i18n names their keys, as in the scan's rulesResults.
+function toCompositeCatalogEntry(x, tokens, customDefs, engineOptions) {
+  const keyOf = (name) =>
+    x.meta && typeof x.meta[name] === 'string' && x.meta[name].trim() ? x.meta[name].trim() : '';
+  const titleKey = keyOf('titleKey');
+  const descriptionKey = keyOf('descriptionKey');
+  const textOf = (key, given) =>
+    key ? t(key, typeof given === 'string' ? given : '', null, engineOptions) : given;
+  const title = x.meta ? textOf(titleKey, x.meta.title) : undefined;
+  const description = x.meta ? textOf(descriptionKey, x.meta.description) : undefined;
   const meta = x.meta && typeof x.meta === 'object'
     ? {
         ...x.meta,
+        ...(titleKey ? { title } : {}),
+        ...(descriptionKey ? { description } : {}),
         standardMappings: Array.isArray(x.meta.standardMappings)
           ? filterNormativeMappings(x.meta.standardMappings, tokens).map((o) => ({ ...o }))
           : []
@@ -28877,6 +29286,9 @@ function toCompositeCatalogEntry(x, tokens, customDefs) {
       : rollupMembers(x.checksIds, x.meta && x.meta.wcagSc, customDefs);
   return {
     ...x,
+    title: typeof title === 'string' ? title : '',
+    description: typeof description === 'string' ? description : '',
+    i18n: titleKey || descriptionKey ? { titleKey, descriptionKey } : null,
     checksIds: members ? members.ids : Array.isArray(x.checksIds) ? x.checksIds.slice() : [],
     ...(members && members.customIds.length ? { customChecksIds: members.customIds } : {}),
     meta
@@ -28920,14 +29332,13 @@ function isCompositeListed(x, selection) {
 }
 
 function getRulesCatalog(engineOptions) {
-  // Data-only catalog. No i18n resolution yet (we can add later if needed).
   checkCatalogOptions(engineOptions, null);
   const tokens = catalogMappingTokens(engineOptions, null);
   const selections = catalogProfileRuns(engineOptions, null).map((r) => r.selection);
   const customDefs = catalogCustomDefs(engineOptions);
   return Array.isArray(COMPOSITE_RULES)
     ? COMPOSITE_RULES.filter((x) => selections.some((selection) => isCompositeListed(x, selection))).map((x) =>
-        toCompositeCatalogEntry(x, tokens, customDefs)
+        toCompositeCatalogEntry(x, tokens, customDefs, engineOptions)
       )
     : [];
 }
@@ -28940,7 +29351,8 @@ function getCompositeRuleById(ruleId, engineOptions) {
   return toCompositeCatalogEntry(
     found,
     catalogMappingTokens(engineOptions, null),
-    catalogCustomDefs(engineOptions)
+    catalogCustomDefs(engineOptions),
+    engineOptions
   );
 }
 
@@ -28981,7 +29393,7 @@ function getRulesForRunOnly(runOnly, engineOptions) {
   }
   if (empty === runs.length && defs.length) noteEmptySelection(runs[0].selection, engineOptions);
   return COMPOSITE_RULES.filter((x) => x && ids.has(x.id)).map((x) =>
-    toCompositeCatalogEntry(x, tokens, customDefs)
+    toCompositeCatalogEntry(x, tokens, customDefs, engineOptions)
   );
 }
 
@@ -42179,6 +42591,7 @@ const RUNTIME_CATALOG = {
       "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus ganz verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
       "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus teilweise verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
       "focusNotObscuredMinimum_summary_cantTell_behindModal": "Ein modaler Dialog ist geöffnet, doch {{count}} fokussierbare Elemente außerhalb davon, etwa {{example}}, erhalten weiter den Fokus, während {{container}} sie verdeckt.",
+      "focusNotObscuredMinimum_summary_cantTell_notScrolled": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus möglicherweise verdeckt hinter diesem {{position}} {{container}} erhalten, das {{coverPx}}px des Fensters abdeckt, die die Seite noch als sichtbar zählt; die Seite hat auf Anforderung nicht gescrollt, daher ließ sich nicht prüfen, ob das Element über ihnen gezeichnet wird.",
       "focusNotObscuredMinimum_hint_cantTell_edge": "Geben Sie der Seite ein scroll-padding-{{side}} von mindestens {{paddingPx}}px (am html-Element), damit der Fokus Elemente unter dem Element hervorscrollt; oder machen Sie das Element kleiner oder nicht {{position}}.",
       "focusNotObscuredMinimum_hint_cantTell_middle": "Lassen Sie das Element die Seite nicht verdecken, solange es nicht gebraucht wird, oder setzen Sie es an den oberen oder unteren Rand und geben Sie der Seite auf dieser Seite ein scroll-padding mindestens so groß wie das Element, damit der Fokus Elemente darunter hervorscrollt.",
       "focusNotObscuredMinimum_hint_cantTell_behindModal": "Halten Sie den Fokus im Dialog, solange er geöffnet ist: Machen Sie den Rest der Seite inert, oder öffnen Sie einen <dialog> mit showModal().",
@@ -42187,6 +42600,7 @@ const RUNTIME_CATALOG = {
       "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus ganz verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
       "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus teilweise verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
       "focusNotObscuredEnhanced_summary_cantTell_behindModal": "Ein modaler Dialog ist geöffnet, doch {{count}} fokussierbare Elemente außerhalb davon, etwa {{example}}, erhalten weiter den Fokus, während {{container}} sie verdeckt.",
+      "focusNotObscuredEnhanced_summary_cantTell_notScrolled": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus möglicherweise verdeckt hinter diesem {{position}} {{container}} erhalten, das {{coverPx}}px des Fensters abdeckt, die die Seite noch als sichtbar zählt; die Seite hat auf Anforderung nicht gescrollt, daher ließ sich nicht prüfen, ob das Element über ihnen gezeichnet wird.",
       "focusNotObscuredEnhanced_hint_cantTell_edge": "Geben Sie der Seite ein scroll-padding-{{side}} von mindestens {{paddingPx}}px (am html-Element), damit der Fokus Elemente unter dem Element hervorscrollt; oder machen Sie das Element kleiner oder nicht {{position}}.",
       "focusNotObscuredEnhanced_hint_cantTell_middle": "Lassen Sie das Element die Seite nicht verdecken, solange es nicht gebraucht wird, oder setzen Sie es an den oberen oder unteren Rand und geben Sie der Seite auf dieser Seite ein scroll-padding mindestens so groß wie das Element, damit der Fokus Elemente darunter hervorscrollt.",
       "focusNotObscuredEnhanced_hint_cantTell_behindModal": "Halten Sie den Fokus im Dialog, solange er geöffnet ist: Machen Sie den Rest der Seite inert, oder öffnen Sie einen <dialog> mit showModal().",
@@ -42477,6 +42891,7 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
       "ariaProhibitedAttr_description": "Prüft, ob aria-label/aria-labelledby nicht bei WAI-ARIA-Rollen vorhanden sind, deren Spezifikation die ARIA-Benennung ausdrücklich untersagt (z. B. generic, emphasis, strong, paragraph).",
       "ariaProhibitedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" untersagt.",
+      "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} ist bei einem <{{element}}> untersagt, dessen Rolle {{role}} keinen Namen erhalten kann.",
       "ariaProhibitedAttr_hint_fail": "Entfernen Sie dieses Attribut. Elemente mit dieser Rolle können keinen Namen haben, daher ignorieren assistive Technologien es möglicherweise.",
       "ariaProhibitedAttr_summary_fail_roleless": "Dieses <{{element}}> hat keine Rolle und keine andere Namensquelle, daher geben assistive Technologien sein {{attr}} möglicherweise nicht aus.",
       "ariaProhibitedAttr_hint_fail_roleless": "Geben Sie ihm eine Rolle, die einen Namen haben kann, etwa role=\"img\" oder role=\"button\", oder entfernen Sie das Attribut, wenn es ohne Rolle nichts bewirkt.",
@@ -42629,6 +43044,8 @@ const RUNTIME_CATALOG = {
       "ariaHiddenBody_description": "Prüft, ob <body> nicht aria-hidden=\"true\" hat, was die gesamte Seite aus dem Accessibility-Baum entfernen würde.",
       "ariaHiddenBody_summary_fail": "Der Dokumentkörper hat aria-hidden=\"true\", wodurch die gesamte Seite vor assistiven Technologien verborgen wird.",
       "ariaHiddenBody_hint_fail": "Entfernen Sie aria-hidden von <body>. Verbergen Sie stattdessen einzelne Elemente, falls das die Absicht war.",
+      "ariaHiddenBody_summary_failHtml": "Das <html>-Element hat aria-hidden=\"true\", wodurch die gesamte Seite vor assistiven Technologien verborgen wird.",
+      "ariaHiddenBody_hint_failHtml": "Entfernen Sie aria-hidden von <html>. Verbergen Sie stattdessen einzelne Elemente, falls das die Absicht war.",
       "listChildrenValid_title": "Listen dürfen direkt nur Listenelemente enthalten",
       "listChildrenValid_description": "Prüft, ob <ul>/<ol>-Elemente als direkte Kinder nur <li>, <script> oder <template> haben.",
       "listChildrenValid_summary_fail": "Dieses <{{element}}> enthält ein direktes Kind, das kein Listenelement ist: {{invalidChildren}}.",
@@ -43143,6 +43560,8 @@ const RUNTIME_CATALOG = {
       "ariaOwnsValid_hint_fail_ancestor": "Entfernen Sie diese ID aus aria-owns: Ein Element kann keinen seiner Vorfahren besitzen, und der Browser ignoriert es.",
       "ariaOwnsValid_summary_cantTell_self": "Das aria-owns dieses Elements nennt seine eigene ID, {{id}}.",
       "ariaOwnsValid_hint_cantTell_self": "Entfernen Sie seine eigene ID aus aria-owns: Ein Element kann sich nicht selbst besitzen, und der Browser ignoriert es.",
+      "ariaOwnsValid_summary_cantTell_cycle": "Das aria-owns dieses Elements nennt {{id}}, das über aria-owns wiederum dieses Element besitzt: ein Zyklus.",
+      "ariaOwnsValid_hint_cantTell_cycle": "Entfernen Sie eine der IDs, die den Zyklus bilden, aus aria-owns: Ein Element kann keinen seiner Besitzer besitzen, und der Browser ignoriert eine davon.",
       "widgetKeyboardFocusable_title": "Widgets sollten mit der Tastatur erreichbar sein",
       "widgetKeyboardFocusable_description": "Markiert zur manuellen Prüfung ein Element mit einer Widget-Rolle, das keinen Fokus erhalten kann oder nicht in der Tab-Reihenfolge ist, und ein zusammengesetztes Widget ohne Tab-Stopp.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Dieses Element hat die Rolle {{role}}, kann aber keinen Tastaturfokus erhalten.",
@@ -43976,6 +44395,7 @@ const RUNTIME_CATALOG = {
       "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} focusable elements, such as {{example}}, can take focus entirely hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
       "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} focusable elements, such as {{example}}, can take focus partly hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
       "focusNotObscuredMinimum_summary_cantTell_behindModal": "A modal dialog is open, but {{count}} focusable elements outside it, such as {{example}}, still take focus while {{container}} covers them.",
+      "focusNotObscuredMinimum_summary_cantTell_notScrolled": "{{count}} focusable elements, such as {{example}}, may take focus hidden behind this {{position}} {{container}}, which covers {{coverPx}}px of the window that the page still counts as in view; the page did not scroll when asked, so whether the box is drawn over them could not be checked.",
       "focusNotObscuredMinimum_hint_cantTell_edge": "Give the page a scroll-padding-{{side}} of at least {{paddingPx}}px (on the html element), so focus scrolls elements clear of the box; or make the box smaller, or not {{position}}.",
       "focusNotObscuredMinimum_hint_cantTell_middle": "Keep the box from covering the page while it is not in use, or move it to the top or bottom edge and give the page a scroll-padding on that side at least as large as the box, so focus scrolls elements clear of it.",
       "focusNotObscuredMinimum_hint_cantTell_behindModal": "While the dialog is open, keep focus inside it: make the rest of the page inert, or open a <dialog> with showModal().",
@@ -43984,6 +44404,7 @@ const RUNTIME_CATALOG = {
       "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} focusable elements, such as {{example}}, can take focus entirely hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
       "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} focusable elements, such as {{example}}, can take focus partly hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
       "focusNotObscuredEnhanced_summary_cantTell_behindModal": "A modal dialog is open, but {{count}} focusable elements outside it, such as {{example}}, still take focus while {{container}} covers them.",
+      "focusNotObscuredEnhanced_summary_cantTell_notScrolled": "{{count}} focusable elements, such as {{example}}, may take focus hidden behind this {{position}} {{container}}, which covers {{coverPx}}px of the window that the page still counts as in view; the page did not scroll when asked, so whether the box is drawn over them could not be checked.",
       "focusNotObscuredEnhanced_hint_cantTell_edge": "Give the page a scroll-padding-{{side}} of at least {{paddingPx}}px (on the html element), so focus scrolls elements clear of the box; or make the box smaller, or not {{position}}.",
       "focusNotObscuredEnhanced_hint_cantTell_middle": "Keep the box from covering the page while it is not in use, or move it to the top or bottom edge and give the page a scroll-padding on that side at least as large as the box, so focus scrolls elements clear of it.",
       "focusNotObscuredEnhanced_hint_cantTell_behindModal": "While the dialog is open, keep focus inside it: make the rest of the page inert, or open a <dialog> with showModal().",
@@ -44274,6 +44695,7 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
       "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
       "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
+      "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} is prohibited on a <{{element}}>, whose role, {{role}}, can't be named.",
       "ariaProhibitedAttr_hint_fail": "Remove this attribute. Elements with this role can't be named, so assistive technology may ignore it.",
       "ariaProhibitedAttr_summary_fail_roleless": "This <{{element}}> has no role and no other source of a name, so assistive technology may not announce its {{attr}}.",
       "ariaProhibitedAttr_hint_fail_roleless": "Give it a role that can be named, such as role=\"img\" or role=\"button\", or remove the attribute if it does nothing without one.",
@@ -44426,6 +44848,8 @@ const RUNTIME_CATALOG = {
       "ariaHiddenBody_description": "Checks that <body> does not have aria-hidden=\"true\", which would remove the entire page from the accessibility tree.",
       "ariaHiddenBody_summary_fail": "The document body has aria-hidden=\"true\", which hides the entire page from assistive technologies.",
       "ariaHiddenBody_hint_fail": "Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.",
+      "ariaHiddenBody_summary_failHtml": "The <html> element has aria-hidden=\"true\", which hides the entire page from assistive technologies.",
+      "ariaHiddenBody_hint_failHtml": "Remove aria-hidden from <html>. Hide specific elements instead, if that was the intent.",
       "listChildrenValid_title": "Lists must only directly contain list items",
       "listChildrenValid_description": "Checks that <ul>/<ol> elements only have <li>, <script>, or <template> as direct children.",
       "listChildrenValid_summary_fail": "This <{{element}}> contains a direct child that is not a list item: {{invalidChildren}}.",
@@ -44940,6 +45364,8 @@ const RUNTIME_CATALOG = {
       "ariaOwnsValid_hint_fail_ancestor": "Remove that id from aria-owns: an element cannot own one of its ancestors, and the browser ignores it.",
       "ariaOwnsValid_summary_cantTell_self": "This element’s aria-owns names its own id, {{id}}.",
       "ariaOwnsValid_hint_cantTell_self": "Remove its own id from aria-owns: an element cannot own itself, and the browser ignores it.",
+      "ariaOwnsValid_summary_cantTell_cycle": "This element’s aria-owns names {{id}}, which through aria-owns comes back to own this element: a cycle.",
+      "ariaOwnsValid_hint_cantTell_cycle": "Remove one of the ids that make the cycle from aria-owns: an element cannot own one of its owners, and the browser ignores one of them.",
       "widgetKeyboardFocusable_title": "Widgets should be reachable with the keyboard",
       "widgetKeyboardFocusable_description": "Flags an element with a widget role that cannot take focus or is out of the tab order, and a composite widget with no tab stop, for manual review.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "This element has the role {{role}} but cannot take keyboard focus.",
@@ -45773,6 +46199,7 @@ const RUNTIME_CATALOG = {
       "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco totalmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
       "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco parcialmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
       "focusNotObscuredMinimum_summary_cantTell_behindModal": "Hay un diálogo modal abierto, pero {{count}} elementos enfocables fuera de él, como {{example}}, siguen recibiendo el foco mientras {{container}} los cubre.",
+      "focusNotObscuredMinimum_summary_cantTell_notScrolled": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco ocultos tras este {{position}} {{container}}, que cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles; la página no se desplazó cuando se le pidió, así que no se pudo comprobar si el elemento se dibuja sobre ellos.",
       "focusNotObscuredMinimum_hint_cantTell_edge": "Dé a la página un scroll-padding-{{side}} de al menos {{paddingPx}}px (en el elemento html), para que el foco desplace los elementos fuera de debajo de la caja; o haga la caja más pequeña, o que no sea {{position}}.",
       "focusNotObscuredMinimum_hint_cantTell_middle": "Evite que la caja cubra la página mientras no se usa, o llévela al borde superior o inferior y dé a la página un scroll-padding en ese lado al menos tan grande como la caja, para que el foco desplace los elementos fuera de debajo.",
       "focusNotObscuredMinimum_hint_cantTell_behindModal": "Mientras el diálogo esté abierto, mantenga el foco dentro de él: haga inerte el resto de la página, o abra un <dialog> con showModal().",
@@ -45781,6 +46208,7 @@ const RUNTIME_CATALOG = {
       "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco totalmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
       "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco parcialmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
       "focusNotObscuredEnhanced_summary_cantTell_behindModal": "Hay un diálogo modal abierto, pero {{count}} elementos enfocables fuera de él, como {{example}}, siguen recibiendo el foco mientras {{container}} los cubre.",
+      "focusNotObscuredEnhanced_summary_cantTell_notScrolled": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco ocultos tras este {{position}} {{container}}, que cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles; la página no se desplazó cuando se le pidió, así que no se pudo comprobar si el elemento se dibuja sobre ellos.",
       "focusNotObscuredEnhanced_hint_cantTell_edge": "Dé a la página un scroll-padding-{{side}} de al menos {{paddingPx}}px (en el elemento html), para que el foco desplace los elementos fuera de debajo de la caja; o haga la caja más pequeña, o que no sea {{position}}.",
       "focusNotObscuredEnhanced_hint_cantTell_middle": "Evite que la caja cubra la página mientras no se usa, o llévela al borde superior o inferior y dé a la página un scroll-padding en ese lado al menos tan grande como la caja, para que el foco desplace los elementos fuera de debajo.",
       "focusNotObscuredEnhanced_hint_cantTell_behindModal": "Mientras el diálogo esté abierto, mantenga el foco dentro de él: haga inerte el resto de la página, o abra un <dialog> con showModal().",
@@ -46071,6 +46499,7 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
       "ariaProhibitedAttr_description": "Comprueba que aria-label/aria-labelledby no estén presentes en roles WAI-ARIA cuya especificación prohíbe explícitamente el nombrado ARIA (por ejemplo, generic, emphasis, strong, paragraph).",
       "ariaProhibitedAttr_summary_fail": "{{attr}} está prohibido en role=\"{{role}}\".",
+      "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} está prohibido en un <{{element}}>, cuyo rol, {{role}}, no puede tener nombre.",
       "ariaProhibitedAttr_hint_fail": "Quitar este atributo. Los elementos con este rol no pueden tener nombre, así que las tecnologías de apoyo pueden ignorarlo.",
       "ariaProhibitedAttr_summary_fail_roleless": "Este <{{element}}> no tiene rol ni otra fuente de nombre, así que puede que las tecnologías de apoyo no anuncien su {{attr}}.",
       "ariaProhibitedAttr_hint_fail_roleless": "Darle un rol que admita nombre, como role=\"img\" o role=\"button\", o quitar el atributo si sin rol no sirve de nada.",
@@ -46223,6 +46652,8 @@ const RUNTIME_CATALOG = {
       "ariaHiddenBody_description": "Comprueba que <body> no tenga aria-hidden=\"true\", lo que eliminaría toda la página del árbol de accesibilidad.",
       "ariaHiddenBody_summary_fail": "El body del documento tiene aria-hidden=\"true\", lo que oculta toda la página a las tecnologías de apoyo.",
       "ariaHiddenBody_hint_fail": "Eliminar aria-hidden de <body>. Ocultar elementos específicos en su lugar, si esa era la intención.",
+      "ariaHiddenBody_summary_failHtml": "El elemento <html> tiene aria-hidden=\"true\", lo que oculta toda la página a las tecnologías de apoyo.",
+      "ariaHiddenBody_hint_failHtml": "Eliminar aria-hidden de <html>. Ocultar elementos específicos en su lugar, si esa era la intención.",
       "listChildrenValid_title": "Las listas solo deben contener directamente elementos de lista",
       "listChildrenValid_description": "Comprueba que los elementos <ul>/<ol> solo tengan como hijos directos <li>, <script> o <template>.",
       "listChildrenValid_summary_fail": "Este <{{element}}> contiene un hijo directo que no es un elemento de lista: {{invalidChildren}}.",
@@ -46737,6 +47168,8 @@ const RUNTIME_CATALOG = {
       "ariaOwnsValid_hint_fail_ancestor": "Quitar ese id de aria-owns: un elemento no puede ser propietario de uno de sus antecesores, y el navegador lo ignora.",
       "ariaOwnsValid_summary_cantTell_self": "El aria-owns de este elemento nombra su propio id, {{id}}.",
       "ariaOwnsValid_hint_cantTell_self": "Quitar su propio id de aria-owns: un elemento no puede ser propietario de sí mismo, y el navegador lo ignora.",
+      "ariaOwnsValid_summary_cantTell_cycle": "El aria-owns de este elemento nombra {{id}}, que, a través de aria-owns, vuelve a ser propietario de este elemento: un ciclo.",
+      "ariaOwnsValid_hint_cantTell_cycle": "Quitar de aria-owns uno de los id que forman el ciclo: un elemento no puede ser propietario de uno de sus propietarios, y el navegador ignora uno de ellos.",
       "widgetKeyboardFocusable_title": "Los widgets deberían poder alcanzarse con el teclado",
       "widgetKeyboardFocusable_description": "Señala, para revisión manual, un elemento con un rol de widget que no puede recibir el foco o está fuera del orden de tabulación, y un widget compuesto sin parada de tabulación.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Este elemento tiene el rol {{role}}, pero no puede recibir el foco del teclado.",
@@ -47570,6 +48003,7 @@ const RUNTIME_CATALOG = {
       "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus entièrement cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
       "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus en partie cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
       "focusNotObscuredMinimum_summary_cantTell_behindModal": "Une boîte de dialogue modale est ouverte, mais {{count}} éléments focalisables en dehors, comme {{example}}, reçoivent encore le focus pendant que {{container}} les couvre.",
+      "focusNotObscuredMinimum_summary_cantTell_notScrolled": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus cachés derrière ce {{position}} {{container}}, qui couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles ; la page n’a pas défilé quand on le lui a demandé, donc on n’a pas pu vérifier si la boîte est dessinée par-dessus.",
       "focusNotObscuredMinimum_hint_cantTell_edge": "Donnez à la page un scroll-padding-{{side}} d’au moins {{paddingPx}}px (sur l’élément html), pour que le focus fasse défiler les éléments hors de dessous la boîte ; ou rendez la boîte plus petite, ou non {{position}}.",
       "focusNotObscuredMinimum_hint_cantTell_middle": "Évitez que la boîte couvre la page quand elle ne sert pas, ou placez-la au bord haut ou bas et donnez à la page un scroll-padding de ce côté au moins aussi grand que la boîte, pour que le focus fasse défiler les éléments hors de dessous.",
       "focusNotObscuredMinimum_hint_cantTell_behindModal": "Tant que la boîte de dialogue est ouverte, gardez le focus à l’intérieur : rendez le reste de la page inerte, ou ouvrez un <dialog> avec showModal().",
@@ -47578,6 +48012,7 @@ const RUNTIME_CATALOG = {
       "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus entièrement cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
       "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus en partie cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
       "focusNotObscuredEnhanced_summary_cantTell_behindModal": "Une boîte de dialogue modale est ouverte, mais {{count}} éléments focalisables en dehors, comme {{example}}, reçoivent encore le focus pendant que {{container}} les couvre.",
+      "focusNotObscuredEnhanced_summary_cantTell_notScrolled": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus cachés derrière ce {{position}} {{container}}, qui couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles ; la page n’a pas défilé quand on le lui a demandé, donc on n’a pas pu vérifier si la boîte est dessinée par-dessus.",
       "focusNotObscuredEnhanced_hint_cantTell_edge": "Donnez à la page un scroll-padding-{{side}} d’au moins {{paddingPx}}px (sur l’élément html), pour que le focus fasse défiler les éléments hors de dessous la boîte ; ou rendez la boîte plus petite, ou non {{position}}.",
       "focusNotObscuredEnhanced_hint_cantTell_middle": "Évitez que la boîte couvre la page quand elle ne sert pas, ou placez-la au bord haut ou bas et donnez à la page un scroll-padding de ce côté au moins aussi grand que la boîte, pour que le focus fasse défiler les éléments hors de dessous.",
       "focusNotObscuredEnhanced_hint_cantTell_behindModal": "Tant que la boîte de dialogue est ouverte, gardez le focus à l’intérieur : rendez le reste de la page inerte, ou ouvrez un <dialog> avec showModal().",
@@ -47868,6 +48303,7 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
       "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
       "ariaProhibitedAttr_summary_fail": "{{attr}} est interdit sur role=\"{{role}}\".",
+      "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} est interdit sur un élément <{{element}}>, dont le rôle, {{role}}, ne peut pas être nommé.",
       "ariaProhibitedAttr_hint_fail": "Retirez cet attribut. Les éléments ayant ce rôle ne peuvent pas être nommés : les technologies d’assistance peuvent donc l’ignorer.",
       "ariaProhibitedAttr_summary_fail_roleless": "Cet élément <{{element}}> n’a ni rôle ni autre source de nom : les technologies d’assistance risquent de ne pas annoncer son {{attr}}.",
       "ariaProhibitedAttr_hint_fail_roleless": "Donnez-lui un rôle qui peut être nommé, comme role=\"img\" ou role=\"button\", ou retirez l’attribut s’il ne sert à rien sans rôle.",
@@ -48020,6 +48456,8 @@ const RUNTIME_CATALOG = {
       "ariaHiddenBody_description": "Vérifie que <body> n’a pas aria-hidden=\"true\", ce qui retirerait toute la page de l’arbre d’accessibilité.",
       "ariaHiddenBody_summary_fail": "Le corps du document a aria-hidden=\"true\", ce qui masque toute la page aux technologies d’assistance.",
       "ariaHiddenBody_hint_fail": "Retirez aria-hidden de <body>. Masquez des éléments spécifiques à la place, si c’était l’intention.",
+      "ariaHiddenBody_summary_failHtml": "L’élément <html> a aria-hidden=\"true\", ce qui masque toute la page aux technologies d’assistance.",
+      "ariaHiddenBody_hint_failHtml": "Retirez aria-hidden de <html>. Masquez des éléments spécifiques à la place, si c’était l’intention.",
       "listChildrenValid_title": "Les listes ne doivent contenir directement que des éléments de liste",
       "listChildrenValid_description": "Vérifie que les éléments <ul>/<ol> n’ont comme enfants directs que <li>, <script> ou <template>.",
       "listChildrenValid_summary_fail": "Ce <{{element}}> contient un enfant direct qui n’est pas un élément de liste : {{invalidChildren}}.",
@@ -48534,6 +48972,8 @@ const RUNTIME_CATALOG = {
       "ariaOwnsValid_hint_fail_ancestor": "Retirez cet id d’aria-owns : un élément ne peut pas posséder l’un de ses ancêtres, et le navigateur l’ignore.",
       "ariaOwnsValid_summary_cantTell_self": "L’aria-owns de cet élément nomme son propre id, {{id}}.",
       "ariaOwnsValid_hint_cantTell_self": "Retirez son propre id d’aria-owns : un élément ne peut pas se posséder lui-même, et le navigateur l’ignore.",
+      "ariaOwnsValid_summary_cantTell_cycle": "L’aria-owns de cet élément nomme {{id}}, qui, par aria-owns, revient posséder cet élément : un cycle.",
+      "ariaOwnsValid_hint_cantTell_cycle": "Retirez d’aria-owns l’un des id qui forment le cycle : un élément ne peut pas posséder l’un de ses propriétaires, et le navigateur ignore l’un d’eux.",
       "widgetKeyboardFocusable_title": "Les widgets devraient être atteignables au clavier",
       "widgetKeyboardFocusable_description": "Signale, pour revue manuelle, un élément ayant un rôle de widget qui ne peut pas recevoir le focus ou est hors de l’ordre de tabulation, et un widget composite sans arrêt de tabulation.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Cet élément a le rôle {{role}}, mais ne peut pas recevoir le focus clavier.",
@@ -49367,6 +49807,7 @@ const RUNTIME_CATALOG = {
       "focusNotObscuredMinimum_summary_cantTell_entirely": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに完全に隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
       "focusNotObscuredMinimum_summary_cantTell_partly": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに一部隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
       "focusNotObscuredMinimum_summary_cantTell_behindModal": "モーダルダイアログが開いていますが、その外にある {{example}} など {{count}} 個のフォーカス可能な要素が、{{container}} に覆われたままフォーカスを受けます。",
+      "focusNotObscuredMinimum_summary_cantTell_notScrolled": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っています。ページが要求どおりにスクロールしなかったため、この要素がそれらの上に描画されるかどうかを確認できませんでした。",
       "focusNotObscuredMinimum_hint_cantTell_edge": "ページ（html 要素）に {{paddingPx}}px 以上の scroll-padding-{{side}} を指定して、フォーカス時に要素がボックスの下から出るようにスクロールさせてください。またはボックスを小さくするか、{{position}} にしないでください。",
       "focusNotObscuredMinimum_hint_cantTell_middle": "使っていない間はボックスがページを覆わないようにするか、上端または下端に移し、その側にボックス以上の大きさの scroll-padding をページに指定して、フォーカス時に要素がその下から出るようにスクロールさせてください。",
       "focusNotObscuredMinimum_hint_cantTell_behindModal": "ダイアログが開いている間はフォーカスをその中に留めてください。ページの残りを inert にするか、showModal() で <dialog> を開いてください。",
@@ -49375,6 +49816,7 @@ const RUNTIME_CATALOG = {
       "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに完全に隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
       "focusNotObscuredEnhanced_summary_cantTell_partly": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに一部隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
       "focusNotObscuredEnhanced_summary_cantTell_behindModal": "モーダルダイアログが開いていますが、その外にある {{example}} など {{count}} 個のフォーカス可能な要素が、{{container}} に覆われたままフォーカスを受けます。",
+      "focusNotObscuredEnhanced_summary_cantTell_notScrolled": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っています。ページが要求どおりにスクロールしなかったため、この要素がそれらの上に描画されるかどうかを確認できませんでした。",
       "focusNotObscuredEnhanced_hint_cantTell_edge": "ページ（html 要素）に {{paddingPx}}px 以上の scroll-padding-{{side}} を指定して、フォーカス時に要素がボックスの下から出るようにスクロールさせてください。またはボックスを小さくするか、{{position}} にしないでください。",
       "focusNotObscuredEnhanced_hint_cantTell_middle": "使っていない間はボックスがページを覆わないようにするか、上端または下端に移し、その側にボックス以上の大きさの scroll-padding をページに指定して、フォーカス時に要素がその下から出るようにスクロールさせてください。",
       "focusNotObscuredEnhanced_hint_cantTell_behindModal": "ダイアログが開いている間はフォーカスをその中に留めてください。ページの残りを inert にするか、showModal() で <dialog> を開いてください。",
@@ -49665,6 +50107,7 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_title": "名前付けを禁止しているロールに ARIA の名前付け属性を使用してはならない",
       "ariaProhibitedAttr_description": "仕様で ARIA による名前付けが明示的に禁止されている WAI-ARIA ロール (generic、emphasis、strong、paragraph など) に、aria-label/aria-labelledby が指定されていないかを確認します。",
       "ariaProhibitedAttr_summary_fail": "{{attr}} は role=\"{{role}}\" では禁止されています。",
+      "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} は <{{element}}> では禁止されています。そのロール {{role}} には名前を付けられません。",
       "ariaProhibitedAttr_hint_fail": "この属性を削除してください。このロールの要素には名前を付けられないため、支援技術はこの属性を無視することがあります。",
       "ariaProhibitedAttr_summary_fail_roleless": "この <{{element}}> にはロールもほかの名前の源もないため、支援技術が {{attr}} を読み上げない可能性があります。",
       "ariaProhibitedAttr_hint_fail_roleless": "role=\"img\" や role=\"button\" のように名前を付けられるロールを与えるか、ロールなしでは役に立たないなら属性を削除してください。",
@@ -49817,6 +50260,8 @@ const RUNTIME_CATALOG = {
       "ariaHiddenBody_description": "<body> に aria-hidden=\"true\" が指定されていないかを確認します。指定されているとページ全体がアクセシビリティツリーから取り除かれます。",
       "ariaHiddenBody_summary_fail": "文書の body に aria-hidden=\"true\" が指定されているため、ページ全体が支援技術から隠されています。",
       "ariaHiddenBody_hint_fail": "<body> から aria-hidden を削除してください。特定の要素を隠す意図だった場合は、その要素に指定してください。",
+      "ariaHiddenBody_summary_failHtml": "<html> 要素に aria-hidden=\"true\" が指定されているため、ページ全体が支援技術から隠されています。",
+      "ariaHiddenBody_hint_failHtml": "<html> から aria-hidden を削除してください。特定の要素を隠す意図だった場合は、その要素に指定してください。",
       "listChildrenValid_title": "リストの直接の子はリスト項目のみであること",
       "listChildrenValid_description": "<ul>/<ol> 要素の直接の子が <li>、<script>、<template> のみであるかを確認します。",
       "listChildrenValid_summary_fail": "この <{{element}}> には、リスト項目でない直接の子があります: {{invalidChildren}}。",
@@ -50331,6 +50776,8 @@ const RUNTIME_CATALOG = {
       "ariaOwnsValid_hint_fail_ancestor": "その id を aria-owns から外してください。要素は自身の祖先を所有できず、ブラウザーはそれを無視します。",
       "ariaOwnsValid_summary_cantTell_self": "この要素の aria-owns は、自身の id {{id}} を指しています。",
       "ariaOwnsValid_hint_cantTell_self": "自身の id を aria-owns から外してください。要素は自身を所有できず、ブラウザーはそれを無視します。",
+      "ariaOwnsValid_summary_cantTell_cycle": "この要素の aria-owns は {{id}} を指していますが、それが aria-owns を通じてこの要素を所有し返しており、循環になっています。",
+      "ariaOwnsValid_hint_cantTell_cycle": "循環を作っている id のいずれかを aria-owns から外してください。要素は自身の所有者を所有できず、ブラウザーはそのどちらかを無視します。",
       "widgetKeyboardFocusable_title": "ウィジェットはキーボードで到達できることが望ましい",
       "widgetKeyboardFocusable_description": "ウィジェットのロールを持つのにフォーカスを受け取れない、またはタブ順序に含まれない要素と、タブストップのない複合ウィジェットを、手動確認のために報告します。",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "この要素はロール {{role}} を持っていますが、キーボードフォーカスを受け取れません。",
@@ -51163,9 +51610,61 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     check('RegExp', () => new RegExp('b+', 'g').exec('abbc')[0] === 'bb');
     check('Math.round', () => Math.round(1.5) === 2 && Math.round(-0.4) === 0);
     check('Math.abs', () => Math.abs(-2) === 2);
-    check('Math.max', () => Math.max(1, 3) === 3);
-    check('Math.min', () => Math.min(1, 3) === 1);
+    // With more than two arguments too: a replacement that reads only two
+    // gave the wrong extreme of a list (round 9, R9-10).
+    check('Math.max', () => Math.max(1, 3) === 3 && Math.max(1, 3, 5) === 5);
+    check('Math.min', () => Math.min(1, 3) === 1 && Math.min(5, 3, 1) === 1);
     check('parseFloat', () => parseFloat('1.5px') === 1.5 && Number.parseFloat('2.5') === 2.5);
+    // Each of these, replaced, changed what rules report without a word
+    // (round 9, R9-10). A shift or pop that takes nothing out hung the scan
+    // in a loop that empties a list, so they are checked before it starts.
+    check(
+      'String.prototype.indexOf',
+      () => 'abcb'.indexOf('b') === 1 && 'abcb'.indexOf('b', 2) === 3 && 'abc'.indexOf('d') === -1
+    );
+    check('String.prototype.includes', () => 'abc'.includes('b') && !'abc'.includes('d'));
+    check('String.prototype.slice', () => 'abcd'.slice(1, 3) === 'bc' && 'abc'.slice(-1) === 'c');
+    check('String.prototype.charAt', () => 'abc'.charAt(1) === 'b');
+    check('String.prototype.match', () => {
+      const m = 'a1b2'.match(/\d/g);
+      return !!m && m.length === 2 && m[1] === '2' && 'abc'.match(/c/).index === 2;
+    });
+    check('RegExp.prototype[Symbol.match]', () => {
+      const m = /b/[Symbol.match]('abc');
+      return !!m && m[0] === 'b';
+    });
+    check('RegExp.prototype[Symbol.split]', () => {
+      const parts = /\d/[Symbol.split]('a1b2c');
+      return parts.length === 3 && parts[2] === 'c';
+    });
+    check('Array.prototype.join', () => [1, 2].join('-') === '1-2' && [1, 2].join() === '1,2');
+    check('Array.prototype.sort', () => {
+      const a = [3, 1, 2].sort();
+      const b = [1, 3, 2].sort((x, y) => y - x);
+      return a[0] === 1 && a[2] === 3 && b[0] === 3 && b[2] === 1;
+    });
+    check('Array.prototype.shift', () => {
+      const a = [1, 2];
+      return a.shift() === 1 && a.length === 1 && a[0] === 2;
+    });
+    check('Array.prototype.pop', () => {
+      const a = [1, 2];
+      return a.pop() === 2 && a.length === 1;
+    });
+    check('Set.prototype.delete', () => {
+      const s = new Set([1]);
+      return s.delete(1) === true && !s.has(1) && s.size === 0;
+    });
+    check('WeakMap.prototype.has', () => {
+      const k = {};
+      const m = new WeakMap();
+      m.set(k, 1);
+      return m.has(k) && !m.has({});
+    });
+    check('parseInt', () => parseInt('12px', 10) === 12 && Number.parseInt('7') === 7);
+    check('Math.floor', () => Math.floor(1.7) === 1 && Math.floor(-1.2) === -2);
+    check('Math.pow', () => Math.pow(2, 10) === 1024);
+    check('URL', () => new URL('b#c', 'https://a.test/x/').href === 'https://a.test/x/b#c');
     check('NodeFilter', () => {
       if (typeof NodeFilter === 'undefined') return true;
       return (
@@ -64478,7 +64977,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'input[type=image]': 'button'
   };
   const NON_GLOBAL_ARIA_ATTR_SELECTOR =
-    '[aria-activedescendant], [aria-autocomplete], [aria-checked], [aria-colcount], [aria-colindex], [aria-colspan], [aria-disabled], [aria-errormessage], [aria-expanded], [aria-haspopup], [aria-invalid], [aria-level], [aria-modal], [aria-multiline], [aria-multiselectable], [aria-orientation], [aria-placeholder], [aria-posinset], [aria-pressed], [aria-readonly], [aria-required], [aria-rowcount], [aria-rowindex], [aria-rowspan], [aria-selected], [aria-setsize], [aria-sort], [aria-valuemax], [aria-valuemin], [aria-valuenow], [aria-valuetext]';
+    '[aria-activedescendant], [aria-autocomplete], [aria-checked], [aria-colcount], [aria-colindex], [aria-colindextext], [aria-colspan], [aria-disabled], [aria-errormessage], [aria-expanded], [aria-haspopup], [aria-invalid], [aria-level], [aria-modal], [aria-multiline], [aria-multiselectable], [aria-orientation], [aria-placeholder], [aria-posinset], [aria-pressed], [aria-readonly], [aria-required], [aria-rowcount], [aria-rowindex], [aria-rowindextext], [aria-rowspan], [aria-selected], [aria-setsize], [aria-sort], [aria-valuemax], [aria-valuemin], [aria-valuenow], [aria-valuetext]';
   // </generated:aria-implicit-roles>
 
   // <generated:aria-roleless-elements>
@@ -64502,7 +65001,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     blockquote: [],
     button: ['aria-disabled', 'aria-expanded', 'aria-haspopup', 'aria-pressed'],
     caption: [],
-    cell: ['aria-colindex', 'aria-colspan', 'aria-rowindex', 'aria-rowspan'],
+    cell: [
+      'aria-colindex',
+      'aria-colindextext',
+      'aria-colspan',
+      'aria-rowindex',
+      'aria-rowindextext',
+      'aria-rowspan'
+    ],
     checkbox: [
       'aria-checked',
       'aria-disabled',
@@ -64515,6 +65021,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     code: [],
     columnheader: [
       'aria-colindex',
+      'aria-colindextext',
       'aria-colspan',
       'aria-disabled',
       'aria-errormessage',
@@ -64524,6 +65031,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       'aria-readonly',
       'aria-required',
       'aria-rowindex',
+      'aria-rowindextext',
       'aria-rowspan',
       'aria-selected',
       'aria-sort'
@@ -64863,6 +65371,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ],
     gridcell: [
       'aria-colindex',
+      'aria-colindextext',
       'aria-colspan',
       'aria-disabled',
       'aria-errormessage',
@@ -64872,6 +65381,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       'aria-readonly',
       'aria-required',
       'aria-rowindex',
+      'aria-rowindextext',
       'aria-rowspan',
       'aria-selected'
     ],
@@ -64947,17 +65457,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     row: [
       'aria-activedescendant',
       'aria-colindex',
+      'aria-colindextext',
       'aria-disabled',
       'aria-expanded',
       'aria-level',
       'aria-posinset',
       'aria-rowindex',
+      'aria-rowindextext',
       'aria-selected',
       'aria-setsize'
     ],
     rowgroup: [],
     rowheader: [
       'aria-colindex',
+      'aria-colindextext',
       'aria-colspan',
       'aria-disabled',
       'aria-errormessage',
@@ -64967,6 +65480,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       'aria-readonly',
       'aria-required',
       'aria-rowindex',
+      'aria-rowindextext',
       'aria-rowspan',
       'aria-selected',
       'aria-sort'
@@ -66707,29 +67221,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (!body) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
+  const root = dom.documentElement(document);
 
-  const raw = dom.get(body, 'getAttribute') ? dom.getAttribute(body, 'aria-hidden') : null;
-  const isHidden = raw != null && String(raw).trim().toLowerCase() === 'true';
+  const hiddenTrue = (el) => {
+    const raw = el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'aria-hidden') : null;
+    return raw != null && String(raw).trim().toLowerCase() === 'true';
+  };
 
-  if (!isHidden) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const occurrences = [];
+  // aria-hidden on the <html> element is the same request for the whole
+  // page as on <body>, one level up.
+  if (root && root !== body && hiddenTrue(root)) {
+    occurrences.push(
+      helpers.reportOccurrence(root, {
+        summary:
+          'The <html> element has aria-hidden="true", which hides the entire page from assistive technologies.',
+        hint: 'Remove aria-hidden from <html>. Hide specific elements instead, if that was the intent.',
+        i18n: {
+          summaryKey: 'ariaHiddenBody_summary_failHtml',
+          hintKey: 'ariaHiddenBody_hint_failHtml',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'ARIA_HIDDEN_HTML' }
+        }
+      })
+    );
+  }
+  if (hiddenTrue(body)) {
+    occurrences.push(
+      helpers.reportOccurrence(body, {
+        summary:
+          'The document body has aria-hidden="true", which hides the entire page from assistive technologies.',
+        hint: 'Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.',
+        i18n: {
+          summaryKey: 'ariaHiddenBody_summary_fail',
+          hintKey: 'ariaHiddenBody_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'ARIA_HIDDEN_BODY' }
+        }
+      })
+    );
   }
 
-  const occurrences = [
-    helpers.reportOccurrence(body, {
-      summary:
-        'The document body has aria-hidden="true", which hides the entire page from assistive technologies.',
-      hint: 'Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.',
-      i18n: {
-        summaryKey: 'ariaHiddenBody_summary_fail',
-        hintKey: 'ariaHiddenBody_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'ARIA_HIDDEN_BODY' }
-      }
-    })
-  ];
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
 
   return {
     ruleId: rule.ruleId,
@@ -66897,6 +67436,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return cur;
   }
 
+  // The element that has focus, followed into open shadow roots and into
+  // same-origin frames, and the documents on the way: what the probe puts
+  // back. A frame whose own document has nothing focused (its body) is the
+  // frame element itself. A closed shadow root stops the walk at its host.
+  function getFocusPath() {
+    const docs = document ? [document] : [];
+    let cur = getDeepActiveElement();
+    let guard = 0;
+    while (cur && guard++ < 20) {
+      const tag = lower(dom.localName(cur) || '');
+      if (tag !== 'iframe' && tag !== 'frame') break;
+      let inner;
+      let innerDoc = null;
+      try {
+        innerDoc = dom.contentDocument(cur);
+        inner = innerDoc ? dom.activeElement(innerDoc) : null;
+      } catch {
+        inner = null;
+      }
+      if (!inner || inner === dom.body(innerDoc) || inner === dom.documentElement(innerDoc)) break;
+      docs.push(innerDoc);
+      cur = inner;
+      let shadowGuard = 0;
+      while (
+        cur &&
+        dom.shadowRoot(cur) &&
+        dom.activeElement(dom.shadowRoot(cur)) &&
+        shadowGuard++ < 20
+      ) {
+        cur = dom.activeElement(dom.shadowRoot(cur));
+      }
+    }
+    return { el: cur, docs };
+  }
+
   function focusElementSafe(el) {
     if (!el || typeof dom.get(el, 'focus') !== 'function') return false;
     try {
@@ -66909,6 +67483,93 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       } catch {
         return false;
       }
+    }
+  }
+
+  // The page's selection, and the selection inside a focused text field.
+  // Focusing an element moves the caret and replaces the selection (a
+  // contenteditable puts the caret at its start), and putting focus back
+  // does not bring either back, so the probe saves them first.
+  function selectionOf(doc) {
+    try {
+      const sel = doc ? dom.getSelection(doc) : null;
+      return sel && typeof sel.rangeCount === 'number' ? sel : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function readSelection(sel) {
+    return {
+      count: sel.rangeCount,
+      anchorNode: sel.anchorNode,
+      anchorOffset: sel.anchorOffset,
+      focusNode: sel.focusNode,
+      focusOffset: sel.focusOffset
+    };
+  }
+
+  function saveSelections(focusPath) {
+    const saved = { docs: [], field: null };
+    const focused = focusPath.el;
+    for (let i = 0; i < focusPath.docs.length; i++) {
+      const sel = selectionOf(focusPath.docs[i]);
+      if (sel) saved.docs.push({ sel, state: readSelection(sel) });
+    }
+    try {
+      if (focused && typeof focused.selectionStart === 'number') {
+        saved.field = {
+          el: focused,
+          start: focused.selectionStart,
+          end: focused.selectionEnd,
+          direction: focused.selectionDirection
+        };
+      }
+    } catch {
+      // An input type without a text selection.
+    }
+    return saved;
+  }
+
+  function sameSelection(a, b) {
+    return (
+      a.count === b.count &&
+      (a.count === 0 ||
+        (a.anchorNode === b.anchorNode &&
+          a.anchorOffset === b.anchorOffset &&
+          a.focusNode === b.focusNode &&
+          a.focusOffset === b.focusOffset))
+    );
+  }
+
+  function restoreSelections(saved) {
+    if (!saved) return;
+    const field = saved.field;
+    if (field) {
+      try {
+        if (
+          field.el.selectionStart !== field.start ||
+          field.el.selectionEnd !== field.end ||
+          field.el.selectionDirection !== field.direction
+        ) {
+          field.el.setSelectionRange(field.start, field.end, field.direction || undefined);
+        }
+      } catch {}
+    }
+    for (let i = 0; i < saved.docs.length; i++) {
+      const { sel, state } = saved.docs[i];
+      try {
+        if (sameSelection(readSelection(sel), state)) continue;
+        sel.removeAllRanges();
+        if (state.count > 0 && state.anchorNode && state.focusNode) {
+          sel.setBaseAndExtent(
+            state.anchorNode,
+            state.anchorOffset,
+            state.focusNode,
+            state.focusOffset
+          );
+        }
+      } catch {}
     }
   }
 
@@ -67027,7 +67688,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return null;
     const candidate = entry.probeCandidates[0];
     if (!candidate) return null;
+    const focusPath = getFocusPath();
+    const saved = saveSelections(focusPath);
+    try {
+      return probeFocus(entry, candidate, focusPath.el);
+    } finally {
+      restoreSelections(saved);
+    }
+  }
 
+  function probeFocus(entry, candidate, restoreTo) {
     let focusedByEvent = false;
     const onFocusCapture = () => {
       focusedByEvent = true;
@@ -67076,16 +67746,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const afterRef = buildNodeRef(after, entry.rootEl);
     if (afterRef) focusTrace.push(afterRef);
 
-    // Put focus back where it was. With nothing focused before (the body
-    // or the root), focusing that does nothing, so the element that took
-    // focus is blurred instead: focus is not left inside the hidden subtree.
-    if (before !== after) {
+    // Put focus back where it was, inside a same-origin frame too. With
+    // nothing focused before (the body or the root), focusing that does
+    // nothing, so the element that took focus is blurred instead: focus is
+    // not left inside the hidden subtree.
+    if (restoreTo !== getFocusPath().el) {
       const wasPage =
-        !before || before === dom.body(document) || before === dom.documentElement(document);
-      if (wasPage || !focusElementSafe(before) || getDeepActiveElement() !== before) {
+        !restoreTo ||
+        restoreTo === dom.body(document) ||
+        restoreTo === dom.documentElement(document);
+      if (wasPage || !focusElementSafe(restoreTo) || getFocusPath().el !== restoreTo) {
         try {
           const now = getDeepActiveElement();
-          if (now && now !== before) dom.blur(now);
+          if (now && now !== restoreTo) dom.blur(now);
         } catch {}
       }
     }
@@ -67824,6 +68497,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
   // Each owned element, with the owners that name it, in document order.
   const ownersOf = new Map();
+  // Each ownership that is not of the owner itself or an ancestor, and each
+  // owner with the elements it owns.
+  const edges = [];
+  const ownedBy = new Map();
 
   for (const owner of helpers.queryAllSmart('[aria-owns]')) {
     if (!owner) continue;
@@ -67880,7 +68557,68 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const list = ownersOf.get(ref);
       if (list) list.push(owner);
       else ownersOf.set(ref, [owner]);
+      edges.push([owner, ref]);
+      const owned = ownedBy.get(owner);
+      if (owned) owned.push(ref);
+      else ownedBy.set(owner, [ref]);
     }
+  }
+
+  // An ownership that closes a cycle: the element owned, what it contains,
+  // and what they own in turn, followed through aria-owns, come back to
+  // the owner. The owner is then, through aria-owns, a descendant of the
+  // element it names, which it cannot own, as it cannot own an ancestor in
+  // the document (Chromium keeps one ownership of a cycle and ignores the
+  // other). Followed with a budget, as each step may test every owner.
+  const owners = [...ownedBy.keys()];
+  function comesBackTo(owner, start) {
+    const seen = new Set([start]);
+    const queue = [start];
+    let budget = 20000;
+    while (queue.length && budget > 0) {
+      const root = queue.shift();
+      if (dom.contains(root, owner)) return true;
+      for (const o of owners) {
+        if (budget-- <= 0) break;
+        if (o === owner || !dom.contains(root, o)) continue;
+        for (const next of ownedBy.get(o)) {
+          if (!seen.has(next)) {
+            seen.add(next);
+            queue.push(next);
+          }
+        }
+      }
+    }
+    return false;
+  }
+  for (const [owner, ref] of edges) {
+    if (!comesBackTo(owner, ref)) continue;
+    const ownedId = trim(dom.get(ref, 'id'));
+    questions.push(
+      helpers.reportOccurrence(owner, {
+        summary: `This element’s aria-owns names ${ownedId}, which through aria-owns comes back to own this element: a cycle.`,
+        hint: 'Remove one of the ids that make the cycle from aria-owns: an element cannot own one of its owners, and the browser ignores one of them.',
+        i18n: {
+          summaryKey: 'ariaOwnsValid_summary_cantTell_cycle',
+          hintKey: 'ariaOwnsValid_hint_cantTell_cycle',
+          params: { id: ownedId }
+        },
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether the page shows a relationship between the two elements that their place in the document does not already state.',
+          evidence: { ownedId, relation: 'cycle' }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_OWNS_ANCESTOR', ownedId, cycle: true },
+          visibilityFilter: visibility(owner) || {
+            targetSet: 'acc',
+            accEligible: null,
+            reasons: []
+          }
+        }
+      })
+    );
   }
 
   for (const [owned, owners] of ownersOf) {
@@ -67982,6 +68720,48 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const cantTellOccurrences = [];
   let applicableCount = 0;
 
+  // The findings for an element whose role, explicit or implicit, prohibits
+  // the attributes in `present`: a fail, or, where its own text already names
+  // it or the attribute is a role description, a question.
+  // `implicitTag` names the element when the role is its tag's (a <p> is a
+  // paragraph), which the message says, as no role attribute shows it.
+  function reportProhibited(el, role, present, hasOwnContent, implicitTag) {
+    for (const attr of present) {
+      const roleDescription = PROHIBITED_ROLE_DESCRIPTION_ATTRS.includes(attr);
+      const asked = roleDescription || hasOwnContent;
+      (asked ? cantTellOccurrences : failOccurrences).push(
+        helpers.reportOccurrence(el, {
+          occurrenceOutcome: asked ? 'cantTell' : 'fail',
+          summary: implicitTag
+            ? `${attr} is prohibited on a <${implicitTag}>, whose role, ${role}, can't be named.`
+            : 'This attribute is prohibited on this element’s role.',
+          hint: "Remove this attribute. Elements with this role can't be named, so assistive technology may ignore it.",
+          i18n: {
+            summaryKey: implicitTag
+              ? 'ariaProhibitedAttr_summary_fail_implicitRole'
+              : 'ariaProhibitedAttr_summary_fail',
+            hintKey: 'ariaProhibitedAttr_hint_fail',
+            params: implicitTag ? { attr, role, element: implicitTag } : { attr, role }
+          },
+          ...(asked
+            ? {
+                uncertainty: {
+                  code: 'spec-only',
+                  needed: roleDescription
+                    ? 'Nothing for a WCAG criterion: the role description refines no role a user operates. Remove it to conform to WAI-ARIA.'
+                    : 'Whether the label says something the element’s own text does not, which is lost where it is ignored.',
+                  evidence: { attribute: attr, role, hasOwnContent }
+                }
+              }
+            : {}),
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_PROHIBITED', attr, role }
+          }
+        })
+      );
+    }
+  }
+
   // --- Tier 1: explicit, valid role from the naming-prohibited set ---
 
   // A native <caption> has the caption role without saying so, and is judged
@@ -68029,36 +68809,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       String(tier1NameInfo.value || '').trim() !== ''
     );
 
-    for (const attr of present) {
-      const roleDescription = PROHIBITED_ROLE_DESCRIPTION_ATTRS.includes(attr);
-      const asked = roleDescription || tier1HasContent;
-      (asked ? cantTellOccurrences : failOccurrences).push(
-        helpers.reportOccurrence(el, {
-          occurrenceOutcome: asked ? 'cantTell' : 'fail',
-          summary: 'This attribute is prohibited on this element’s role.',
-          hint: "Remove this attribute. Elements with this role can't be named, so assistive technology may ignore it.",
-          i18n: {
-            summaryKey: 'ariaProhibitedAttr_summary_fail',
-            hintKey: 'ariaProhibitedAttr_hint_fail',
-            params: { attr, role }
-          },
-          ...(asked
-            ? {
-                uncertainty: {
-                  code: 'spec-only',
-                  needed: roleDescription
-                    ? 'Nothing for a WCAG criterion: the role description refines no role a user operates. Remove it to conform to WAI-ARIA.'
-                    : 'Whether the label says something the element’s own text does not, which is lost where it is ignored.',
-                  evidence: { attribute: attr, role, hasOwnContent: tier1HasContent }
-                }
-              }
-            : {}),
-          data: {
-            details: { reasonCode: 'ARIA_ATTR_PROHIBITED', attr, role }
-          }
-        })
-      );
-    }
+    reportProhibited(el, role, present, tier1HasContent);
   }
 
   // --- Tier 2: no role at all (see header comment for the full rationale
@@ -68069,21 +68820,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // conditionally roleless too, but already handled with more nuance
   // elsewhere in this engine (see header comment).
   const ROLELESS_NATIVE_TAGS = new Set([
-    'p',
     'b',
     'i',
-    'em',
-    'strong',
     'span',
     'div',
-    'code',
-    'mark',
-    'time',
-    'ins',
-    'del',
     'small',
-    'sub',
-    'sup',
     'abbr',
     'cite',
     'q',
@@ -68101,6 +68842,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'br',
     'legend'
   ]);
+
+  // Native tags whose implicit role (HTML-AAM) is one of the roles that
+  // prohibit a name: judged by that role, as Tier 1 judges role="paragraph",
+  // not as an element with no role.
+  const IMPLICIT_NAME_PROHIBITED_ROLES = {
+    code: 'code',
+    del: 'deletion',
+    em: 'emphasis',
+    ins: 'insertion',
+    mark: 'mark',
+    p: 'paragraph',
+    s: 'deletion',
+    strong: 'strong',
+    sub: 'subscript',
+    sup: 'superscript',
+    time: 'time'
+  };
 
   // WAI-ARIA roles typed as "widget" (the role set the roleless-branch
   // exemption below branches on, not the six-category WAI-ARIA taxonomy).
@@ -68211,9 +68969,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const tag = String(dom.tagName(el) || '').toLowerCase();
-    if (!ROLELESS_NATIVE_TAGS.has(tag) && !isRolelessCustomElementTag(tag)) continue;
+    const implicitRole = Object.prototype.hasOwnProperty.call(IMPLICIT_NAME_PROHIBITED_ROLES, tag)
+      ? IMPLICIT_NAME_PROHIBITED_ROLES[tag]
+      : '';
+    if (!implicitRole && !ROLELESS_NATIVE_TAGS.has(tag) && !isRolelessCustomElementTag(tag))
+      continue;
     const explicitRole = ariaHelpers.getExplicitRole(el);
     if (explicitRole && ariaHelpers.isValidConcreteRole(explicitRole)) continue; // has a real, recognized role: Tier 1's concern (if in ROLES_PROHIBITING_NAME) or a role this rule has no opinion on. An INVALID role token (e.g. a typo) is ignored per spec, same as no role attribute at all, and must still fall through to this branch.
+    if (implicitRole) {
+      // A <p>, <strong>, <code>... has its tag's role, which prohibits a
+      // name, as an explicit one does in Tier 1.
+      const named = prohibitedAttrsFor(implicitRole).filter((attr) => {
+        const v = dom.getAttribute(el, attr);
+        return v != null && String(v).trim() !== '';
+      });
+      if (!named.length) continue;
+      applicableCount += 1;
+      const ancestor = getNearestAncestorRole(el);
+      if (ancestor && WIDGET_TYPE_ROLES.has(ancestor)) continue;
+      const own = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
+      const hasOwn = !!(own && own.present && String(own.value || '').trim() !== '');
+      reportProhibited(el, implicitRole, named, hasOwn, tag);
+      continue;
+    }
     if (ariaHelpers.getNativeRoleForElement(el)) continue; // has a real implicit role after all, not this branch's concern
 
     const present = [];
@@ -71807,6 +72585,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
+  // ACT 73f2c2 leaves out a field that is neither visible nor in the
+  // accessibility tree: no one meets it, as a honeypot field a form hides
+  // from people to catch bots (aria-hidden, tabindex="-1", moved far off
+  // the page). Out of the tree is read as every rule reads it
+  // (helpers.isAccTreeEligible, which keeps an aria-hidden field that
+  // takes a tab stop in it). Not visible is not rendered, or drawn where
+  // nothing of it can be seen, on it or an ancestor: transparent, clipped
+  // away, a screen-reader-only box (helpers.isVisuallyHidden), or
+  // positioned far off the page (the offscreen hint), or, with layout, a
+  // box wholly left of or above the page.
+  const composedParent =
+    typeof helpers.composedParent === 'function'
+      ? helpers.composedParent
+      : (n) => (n && dom.parentElement(n) ? dom.parentElement(n) : null);
+  function seenByNoOne(el) {
+    try {
+      const tree = helpers.isAccTreeEligible(el, ctx);
+      if (typeof tree === 'boolean' ? tree : tree && tree.eligible) return false;
+      if (helpers.getFocusableInfo(el).tabbable) return false;
+      if (!helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible) return true;
+      let guard = 0;
+      for (let a = el; a && dom.nodeType(a) === 1 && guard++ < 500; a = composedParent(a)) {
+        if (helpers.isVisuallyHidden(a)) return true;
+        const hints = (helpers.getVisibilityHintsInfo(a) || {}).hints || [];
+        if (hints.indexOf('offscreen') !== -1) return true;
+      }
+      const docEl = dom.documentElement(dom.ownerDocument(el));
+      const page = docEl ? dom.getBoundingClientRect(docEl) : null;
+      if (page && (page.width > 0 || page.height > 0)) {
+        const r = dom.getBoundingClientRect(el);
+        if (r.right <= page.left || r.bottom <= page.top) return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const raw = String(dom.getAttribute(el, 'autocomplete') || '');
@@ -71816,6 +72632,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (tokens.length === 1 && (tokens[0] === 'on' || tokens[0] === 'off')) continue;
     if (isExempt(el)) continue;
+    if (seenByNoOne(el)) continue;
 
     applicableCount += 1;
 
@@ -73234,15 +74051,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     for (const a of links) {
       if (!a || !dom.get(a, 'getAttribute')) continue;
-      const href = String(dom.getAttribute(a, 'href') || '').trim();
-      if (href.length < 2 || href.charAt(0) !== '#') continue;
-      let fragment = href.slice(1);
-      try {
-        fragment = decodeURIComponent(fragment);
-      } catch {
-        // keep raw fragment if it isn't a valid percent-encoded string
-      }
-      fragment = fragment.trim();
+      // A link to a place in this document, its href resolved against the
+      // base URL: under <base href>, "#main" can lead to another page.
+      const fragment = helpers.getSamePageFragment(a);
       if (!fragment) continue;
 
       let root = document;
@@ -73412,15 +74223,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // navigation and sidebars may be the way past them ("Jump to recipe").
     let otherSamePageLinks = 0;
     for (const a of queryAll('a[href]')) {
-      const href = String(dom.getAttribute(a, 'href') || '').trim();
-      if (href.length < 2 || href.charAt(0) !== '#') continue;
-      let fragment = href.slice(1);
-      try {
-        fragment = decodeURIComponent(fragment);
-      } catch {
-        // keep the raw fragment
-      }
-      const target = resolveInRoot(document, fragment.trim());
+      const fragment = helpers.getSamePageFragment(a);
+      if (!fragment) continue;
+      const target = resolveInRoot(document, fragment);
       if (target && !isInNavigationOrAside(target)) otherSamePageLinks += 1;
     }
     const signals = [
@@ -75196,6 +76001,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               ? {
                   blockerProperty: details.blockerProperty ? String(details.blockerProperty) : '',
                   blockerValue: details.blockerValue ? String(details.blockerValue) : '',
+                  // What paints part of the text in a color of its own
+                  // (PSEUDO_ELEMENT_COLOR), as p::first-letter.
+                  blockerSelector: details.blockerSelector ? String(details.blockerSelector) : '',
                   // The element that carries it, as <div class="hero">, and
                   // the same where it is an ancestor of the text.
                   blockerElement: details.blockerElement ? String(details.blockerElement) : '',
@@ -78576,8 +79384,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
+  // An outline is drawn with a style, a width and a color: what a rule
+  // takes away of the three, and what one gives back. A rule setting only
+  // `outline-color` or `outline-width` draws nothing where the outline's
+  // style is still none: after `outline: none`, `a:focus { outline-color:
+  // red }` leaves the link without an outline. A shorthand sets all three,
+  // and resets the style it leaves out to none. Values as CSSOM gives them:
+  // a browser expands a shorthand into its longhands ("initial" for what it
+  // leaves out), jsdom keeps only the shorthand.
+  const OUTLINE_STYLES = /^(auto|solid|dotted|dashed|double|groove|ridge|inset|outset)$/;
+  const OUTLINE_STYLE_GONE = /^(none|hidden|initial|unset)$/;
+  function outlineParts(style) {
+    const outline = getProp(style, 'outline');
+    const tokens = outline && !CSS_WIDE.test(outline) ? valueTokens(outline) : [];
+    const styleOf = getProp(style, 'outline-style');
+    const width = getProp(style, 'outline-width');
+    const color = getProp(style, 'outline-color');
+    const kills = new Set();
+    const gives = new Set();
+    if (
+      styleOf
+        ? OUTLINE_STYLE_GONE.test(styleOf)
+        : outline && !tokens.some((t) => OUTLINE_STYLES.test(t))
+    )
+      kills.add('style');
+    if (styleOf ? OUTLINE_STYLES.test(styleOf) : tokens.some((t) => OUTLINE_STYLES.test(t)))
+      gives.add('style');
+    if (width ? isZeroLength(width) : tokens.some(isZeroLength)) kills.add('width');
+    else if (width || tokens.length) gives.add('width');
+    if (color ? isClearColor(color) : tokens.some(isClearColor)) kills.add('color');
+    else if (color || tokens.length) gives.add('color');
+    return { kills, gives };
+  }
+
   // A positive outline counts as a replacement: `*:focus { outline: none }`
   // followed by `a:focus { outline: 2px solid }` leaves links indicated.
+  // Whether it is drawn on a given element depends on what removed that
+  // element's outline (outlineParts): see drawingDecls.
   function drawsOutline(style) {
     if (suppressesOutline(style)) return false;
     return !!(
@@ -78627,6 +79470,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return tokens;
   }
 
+  // A box-shadow or text-shadow layer draws something when its color isn't
+  // clear and it reaches past the box or the glyphs: an offset, a blur or
+  // a positive spread. `0 0 0 0 red` and `0 0 0 3px transparent` draw
+  // nothing. A layer with var() in it is read where the element is known
+  // (drawingDecls).
+  function shadowLayerDraws(layer) {
+    const tokens = valueTokens(trim(layer));
+    if (!tokens.length) return false;
+    if (tokens.some((t) => /^var\(/.test(t))) return true;
+    if (tokens.some((t) => isClearColor(t))) return false;
+    const lengths = tokens
+      .filter((t) => /^-?(\d*\.?\d+)([a-z%]*)$/.test(t))
+      .map((t) => Number.parseFloat(t));
+    if (lengths.length < 2) return true;
+    const [x, y, blur = 0, spread = 0] = lengths;
+    return x !== 0 || y !== 0 || blur > 0 || spread > 0;
+  }
+
   // Whether a declared value can draw anything at all, whatever the element
   // looked like before: `box-shadow: none`, `background: transparent` and
   // `border: 0` are written as focus styles but paint nothing, so they are
@@ -78638,6 +79499,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     switch (prop) {
       case 'box-shadow':
       case 'text-shadow':
+        return value !== 'none' && splitArgs(value).some(shadowLayerDraws);
       case 'filter':
       case 'transform':
       case 'background-image':
@@ -78673,7 +79535,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // draw something. A positive outline is one of them.
   function replacementDecls(style) {
     const decls = [];
-    if (drawsOutline(style)) decls.push({ prop: 'outline', value: getProp(style, 'outline') });
+    if (drawsOutline(style)) {
+      decls.push({
+        prop: 'outline',
+        value: getProp(style, 'outline'),
+        gives: outlineParts(style).gives
+      });
+    }
     // A border needs a width, a style and a colour: when the rule clears any
     // one of them, its other border longhands draw nothing either.
     const borderGone = ['border', 'border-color', 'border-style', 'border-width'].some((prop) => {
@@ -78910,21 +79778,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const decls = replacementDecls(style);
     const provides = decls.length ? decls : null;
     if (!suppresses && !provides) return;
+    const kills = suppresses ? outlineParts(style).kills : null;
 
     for (const part of splitSelectorList(selectorText)) {
       // The polyfill's form is read as native :not(:focus-visible) for the
       // outline it removes; what the same rule draws is read as written.
       const asNative = suppresses ? polyfillAsNative(part) : part;
       if (asNative !== part) {
-        collectFromPart(asNative, true, false);
-        collectFromPart(part, false, provides);
+        collectFromPart(asNative, true, false, kills);
+        collectFromPart(part, false, provides, kills);
       } else {
-        collectFromPart(part, suppresses, provides);
+        collectFromPart(part, suppresses, provides, kills);
       }
     }
   }
 
-  function collectFromPart(part, suppresses, provides) {
+  function collectFromPart(part, suppresses, provides, kills) {
     // `:not(:focus-visible)` leaves the outline on keyboard focus: what such
     // a rule removes is only the mouse's focus ring, so it is never a
     // suppressor.
@@ -78941,7 +79810,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // outline. Other states (:hover, :active) never match the static
       // element, so el.matches() leaves them out below.
       if (suppresses && !hasPseudoElement(part)) {
-        suppressors.push({ selector: trim(part), base: trim(part), sheet: currentSheet });
+        suppressors.push({ selector: trim(part), base: trim(part), sheet: currentSheet, kills });
       }
       return;
     }
@@ -78963,7 +79832,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       suppressors.push({
         selector: trim(part),
         base: stripFocusPseudo(part),
-        sheet: currentSheet
+        sheet: currentSheet,
+        kills
       });
     }
 
@@ -79156,10 +80026,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (prop === 'text-decoration' || prop === 'text-decoration-line') {
       // Some environments only fill in the shorthand, so both are read.
       const line = now('text-decoration-line');
+      const LINES = ['underline', 'overline', 'line-through'];
+      const shown = LINES.filter((l) =>
+        new RegExp(l).test(line && line !== 'none' ? line : now('text-decoration'))
+      );
+      if (value === 'none') return !shown.length;
+      // The lines it already shows, in its own color and solid: `a:focus {
+      // text-decoration: underline }` on an underlined link.
+      const tokens = valueTokens(value);
+      if (!tokens.every((t) => LINES.includes(t))) return false;
+      const style = now('text-decoration-style');
+      const color = now('text-decoration-color');
       return (
-        value === 'none' &&
-        (!line || line === 'none') &&
-        !/underline|overline|line-through/.test(now('text-decoration'))
+        tokens.length === shown.length &&
+        tokens.every((t) => shown.includes(t)) &&
+        (!style || style === 'solid') &&
+        (!color || color === 'currentcolor' || color === now('color'))
       );
     }
     if (prop === 'font-weight') {
@@ -79182,6 +80064,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       );
     }
     return false;
+  }
+
+  // A value with var() in it, with each custom property as the element
+  // reads it (or the fallback written there); the value as written where
+  // one can't be read, since it may still draw.
+  function resolveVars(cs, value) {
+    if (!cs || !/var\(/.test(value)) return value;
+    let out = value;
+    for (let i = 0; i < 20 && /var\(/.test(out); i++) {
+      const m = /var\(\s*(--[\w-]+)\s*(?:,([^()]*(?:\([^()]*\)[^()]*)*))?\)/.exec(out);
+      if (!m) return value;
+      const own = getProp(cs, m[1]);
+      const fallback = m[2] != null ? trim(m[2]) : '';
+      const used = own || fallback;
+      if (!used) return value;
+      out = out.slice(0, m.index) + used + out.slice(m.index + m[0].length);
+    }
+    return /var\(/.test(out) ? value : lower(out);
+  }
+
+  const BORDER_COLORS = /^border(-(top|right|bottom|left))?-color$|^border-width$/;
+  // The declarations of a focus rule that draw something on this element:
+  // a var() read as the element reads it; an outline only where it gives
+  // back all the element's outline lost (its style, after `outline: none`);
+  // on the element itself, a border color or width only where the element
+  // has a border, or the rule gives it one.
+  function drawingDecls(el, p, killed) {
+    let cs = null;
+    try {
+      cs = typeof helpers.computedStyle === 'function' ? helpers.computedStyle(el) : null;
+    } catch {
+      cs = null;
+    }
+    const givesBorderStyle = p.decls.some(
+      (d) => d.prop === 'border-style' || /^border(-(top|right|bottom|left))?$/.test(d.prop)
+    );
+    const hasBorder =
+      !cs ||
+      ['top', 'right', 'bottom', 'left'].some((side) => {
+        const style = getProp(cs, `border-${side}-style`);
+        return style && style !== 'none' && style !== 'hidden';
+      });
+    const out = [];
+    for (const d of p.decls) {
+      if (d.prop === 'outline') {
+        if ([...killed].every((k) => d.gives.has(k))) out.push(d);
+        continue;
+      }
+      const value = resolveVars(cs, d.value);
+      if (value !== d.value && !valueCanDraw(d.prop, value)) continue;
+      if (p.own && BORDER_COLORS.test(d.prop) && !hasBorder && !givesBorderStyle) continue;
+      out.push(value === d.value ? d : { prop: d.prop, value });
+    }
+    return out;
   }
 
   const activeElement = (() => {
@@ -79224,11 +80160,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const suppressing = suppressors.filter((s) => matchesSafe(el, s.base));
     if (!suppressing.length) continue;
 
-    const indicated = providers.some((p) =>
-      p.subject
-        ? matchesSafe(el, p.base) && (!p.own || changesElement(el, p.decls))
-        : matchesSafe(el, p.base) || closestSafe(el, p.base)
-    );
+    const killed = new Set();
+    for (const s of suppressing) for (const k of s.kills || ['style']) killed.add(k);
+    const indicated = providers.some((p) => {
+      if (
+        !(p.subject ? matchesSafe(el, p.base) : matchesSafe(el, p.base) || closestSafe(el, p.base))
+      )
+        return false;
+      const decls = drawingDecls(el, p, killed);
+      return decls.length > 0 && (!p.own || changesElement(el, decls));
+    });
     if (indicated) continue;
 
     const selectors = [...new Set(suppressing.map((s) => s.selector))];
@@ -79402,6 +80343,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           ? helpers.isElementClipHidden(el, cs)
           : helpers.isClipHidden(cs);
       if (clipHidden) out.push('clipped');
+      // A transform or scale drawing the box with no area (scale(0)) hides
+      // it as a clip to nothing does, as it does a container.
+      else if (scaledToNothing(cs)) out.push('clipped');
     } catch {}
 
     // zero-size + overflow hidden/clip
@@ -79542,6 +80486,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'text-indent': 'textIndent',
     transform: 'transform',
     translate: 'translate',
+    scale: 'scale',
     // What says whether a fixed box lies outside the viewport.
     bottom: 'bottom',
     right: 'right',
@@ -79578,6 +80523,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'text-indent': '0px',
     transform: 'none',
     translate: 'none',
+    scale: 'none',
     bottom: 'auto',
     right: 'auto',
     'overflow-x': 'visible',
@@ -79663,7 +80609,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         // pseudo-class: GOV.UK Frontend styles a class called ":focus" as
         // `.\:focus`. Escaped colons are hidden from the focus patterns
         // and put back in the selector the element is matched against.
-        const part = raw.replace(/\\:/g, ESCAPED_COLON);
+        let part = raw.replace(/\\:/g, ESCAPED_COLON);
+        // A shadow root's `::slotted(a:focus)` styles the element slotted
+        // into its slot, a light DOM element: read as its argument, for
+        // elements assigned to a slot of that root the part before it
+        // matches (`slot`, or any slot where none is written).
+        let slot = null;
+        const slotted = /^([^]*?)::slotted\(([^]*)\)\s*$/.exec(part);
+        if (slotted) {
+          const before = slotted[1];
+          slot = !trim(before) ? '*' : /[\s>+~]$/.test(before) ? `${trim(before)} *` : trim(before);
+          part = slotted[2];
+        }
         if (hasPseudoElement(part)) continue;
         NOT_FOCUS_STATE.lastIndex = 0;
         if (NOT_FOCUS_STATE.test(part)) {
@@ -79676,6 +80633,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               style,
               props,
               root: sheetRoot,
+              slot,
               within: /:focus-within/.test(part)
             });
           continue;
@@ -79686,7 +80644,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             importantRules.push({
               selector: unescapeColons(part),
               props: important,
-              root: sheetRoot
+              root: sheetRoot,
+              slot
             });
           continue;
         }
@@ -79701,6 +80660,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             style,
             props,
             root: sheetRoot,
+            slot,
             within: true
           });
           continue;
@@ -79713,6 +80673,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             style,
             props,
             root: sheetRoot,
+            slot,
             within: /:focus-within/.test(part)
           });
       }
@@ -79780,6 +80741,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Whether a rule read from the sheets reaches the element: a shadow
   // root's rules reach only the elements in it.
   function ruleReaches(el, r, selector) {
+    // A ::slotted() rule reaches the elements assigned to a slot of its
+    // root, not the elements in it.
+    if (r.slot) {
+      try {
+        const assigned = dom.get(el, 'assignedSlot');
+        if (!assigned || dom.getRootNode(assigned) !== r.root) return false;
+        if (!matchesSafe(assigned, r.slot)) return false;
+      } catch {
+        return false;
+      }
+      return matchesSafe(el, selector);
+    }
     if (r.root && r.root !== document) {
       try {
         if (dom.getRootNode(el) !== r.root) return false;
@@ -80733,9 +81706,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !!display && display !== 'none';
   }
 
-  function judgeStyle(style, selectorText, mediaText, findings, hidings) {
+  // A rotation written with var() (`rotate(var(--r))`, or `rotate:
+  // var(--a)` with a registered angle) has no angle until it is computed:
+  // it is read off the elements the rule turns, where the media query
+  // matches now (see the rotations loop below).
+  function rotationViaVar(styleDecl) {
+    if (!styleDecl || typeof styleDecl.getPropertyValue !== 'function') return false;
+    return ['transform', '-webkit-transform', 'rotate'].some((p) =>
+      /var\(/i.test(trim(styleDecl.getPropertyValue(p)))
+    );
+  }
+
+  function judgeStyle(style, selectorText, mediaText, findings, hidings, mediaTexts) {
     if (!selectorText) return;
     if (isLockingRotation(style)) findings.push({ mediaText, selectorText });
+    else if (rotationViaVar(style))
+      findings.push({ mediaText, selectorText, viaVar: true, mediaTexts: mediaTexts || [] });
     if (hidesContent(style)) hidings.push({ mediaText, selectorText });
     else if (showsElement(style)) shown.push({ mediaText, selectorText });
   }
@@ -80772,7 +81758,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           ? resolveNested(r.selectorText, parentSelector)
           : trim(r.selectorText);
         const mediaText = mediaTexts.filter(isOrientationMedia).join(' and ');
-        if (mediaText) judgeStyle(r.style, selectorText, mediaText, findings, hidings);
+        if (mediaText) judgeStyle(r.style, selectorText, mediaText, findings, hidings, mediaTexts);
         if (nested && nested.length) {
           walkRules(nested, mediaTexts, selectorText, depth + 1, findings, hidings);
         }
@@ -80783,7 +81769,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // to that style rule's selector.
       if (parentSelector && r.style && !r.selectorText && !nested) {
         const mediaText = mediaTexts.filter(isOrientationMedia).join(' and ');
-        if (mediaText) judgeStyle(r.style, parentSelector, mediaText, findings, hidings);
+        if (mediaText)
+          judgeStyle(r.style, parentSelector, mediaText, findings, hidings, mediaTexts);
         continue;
       }
       let texts = mediaTexts;
@@ -81161,8 +82148,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const findings = [];
   const rotated = [];
   const seenRotated = new Set();
+  // Whether every media condition a rule sits under matches now.
+  function mediaMatchesNow(texts) {
+    try {
+      const view = dom.defaultView(document);
+      if (!view || typeof view.matchMedia !== 'function') return false;
+      return texts.every((t) => !!dom.get(view.matchMedia(t), 'matches'));
+    } catch {
+      return false;
+    }
+  }
+  function turnedNow(el) {
+    try {
+      const view = dom.defaultView(document);
+      return isLockingRotation(view.getComputedStyle(el));
+    } catch {
+      return false;
+    }
+  }
   for (const r of rotations) {
-    const visible = visibleMatches(r.selectorText, r.root);
+    let visible = visibleMatches(r.selectorText, r.root);
+    // A rotation through var(): the elements it turns a quarter turn now.
+    if (r.viaVar) visible = mediaMatchesNow(r.mediaTexts) ? visible.filter(turnedNow) : [];
     if (!visible.length) continue;
     if (visible.some(holdsPageContent)) {
       findings.push(r);
@@ -83548,7 +84555,48 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // ---- The elements in the tab order that scroll with the page ----
   const positionOf = (cs) => lower(cs && cs.position);
-  // The nearest fixed or sticky box an element is in (itself included).
+  // Whether a box is the containing block of the fixed boxes inside it
+  // (CSS Transforms, Filter Effects, Containment, Will Change): a fixed box
+  // there is placed against it and scrolls with it, not with the window.
+  const NONE = (v) => !lower(v) || lower(v) === 'none';
+  function holdsFixed(cs) {
+    if (!cs) return false;
+    if (
+      !NONE(cs.transform) ||
+      !NONE(cs.translate) ||
+      !NONE(cs.rotate) ||
+      !NONE(cs.scale) ||
+      !NONE(cs.perspective) ||
+      !NONE(cs.filter) ||
+      !NONE(cs.backdropFilter) ||
+      !NONE(cs.webkitBackdropFilter)
+    )
+      return true;
+    if (lower(cs.transformStyle) === 'preserve-3d') return true;
+    if (/\b(paint|layout|strict|content)\b/.test(lower(cs.contain))) return true;
+    if (/size/.test(lower(cs.containerType))) return true;
+    return /\b(transform|translate|rotate|scale|perspective|filter|backdrop-filter|contain)\b/.test(
+      lower(cs.willChange)
+    );
+  }
+  // Whether a fixed box is fixed to the window: no box it is in, up to the
+  // page, is its containing block. Up the composed tree, as the browser
+  // places it.
+  function fixedToWindow(el) {
+    for (
+      let n = typeof helpers.composedParent === 'function' ? helpers.composedParent(el) : null,
+        i = 0;
+      n && dom.nodeType(n) === 1 && n !== html && i < 10000;
+      n = helpers.composedParent(n), i++
+    ) {
+      if (holdsFixed(styleOf(n))) return false;
+    }
+    return true;
+  }
+  // The nearest fixed or sticky box an element is in (itself included). A
+  // fixed box inside its containing block (a transformed or filtered
+  // ancestor) scrolls with the page, as anything else in that block does,
+  // so it counts as neither.
   const pinnedCache = new Map();
   function pinnedAncestor(el) {
     const chain = [];
@@ -83560,7 +84608,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       chain.push(n);
       const pos = positionOf(styleOf(n));
-      if (pos === 'fixed' || pos === 'sticky') {
+      if (pos === 'sticky' || (pos === 'fixed' && fixedToWindow(n))) {
         found = n;
         break;
       }
@@ -83697,6 +84745,122 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const alpha = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
     return Number.isFinite(alpha) && alpha >= 0.99;
   }
+  // A color's alpha as the browser serializes it (rgb() or rgba()), null
+  // for one in another form.
+  function alphaOf(v) {
+    const m = /^rgba?\(([^)]*)\)$/.exec(lower(v));
+    if (!m) return null;
+    const parts = m[1].split(/[\s,/]+/).filter(Boolean);
+    const a = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
+    return Number.isFinite(a) ? a : null;
+  }
+  // An inset box-shadow is painted over the element's background, inside
+  // its padding box: one whose spread closes the hole in the middle, blur
+  // included, paints all of it (a header colored with `inset 0 0 0 100px`).
+  // 'opaque', 'paints' or null.
+  function insetShadowFill(el, cs) {
+    const raw = trim(cs && cs.boxShadow);
+    if (!raw || lower(raw) === 'none' || !/\binset\b/i.test(raw)) return null;
+    let r;
+    try {
+      r = dom.getBoundingClientRect(el);
+    } catch {
+      r = null;
+    }
+    if (!r) return null;
+    const w = r.width - px(cs.borderLeftWidth) - px(cs.borderRightWidth);
+    const h = r.height - px(cs.borderTopWidth) - px(cs.borderBottomWidth);
+    let best = null;
+    for (const layer of raw.split(/,(?![^(]*\))/)) {
+      if (!/\binset\b/i.test(layer)) continue;
+      const color = /(?:rgba?|hsla?|color|lab|lch|oklab|oklch|hwb)\([^)]*\)|#[0-9a-f]+/i.exec(
+        layer
+      );
+      const a = color ? alphaOf(color[0]) : null;
+      if (a === null || a <= 0.05) continue;
+      const lengths = (layer.replace(color ? color[0] : '', '').match(/-?\d*\.?\d+px/g) || []).map(
+        (v) => Number.parseFloat(v)
+      );
+      const blur = Math.max(0, lengths[2] || 0);
+      const spread = lengths[3] || 0;
+      if (Math.min(w, h) - 2 * spread + blur > 0) continue;
+      if (a >= 0.99) return 'opaque';
+      best = 'paints';
+    }
+    return best;
+  }
+  // The ::before and ::after that paint a color or an image over an area of
+  // their own: an absolutely positioned one against its positioned element,
+  // or a fixed one against the window, as a header's colored ::before
+  // spread over it (inset: 0) is. Each with that area, where it is now, and
+  // whether it is opaque. One placed any other way can't be told where it
+  // paints, and doesn't count.
+  function pseudoPaint(el, cs) {
+    const out = [];
+    if (!cs || lower(cs.display) === 'none') return out;
+    const hostPositioned = !!positionOf(cs) && positionOf(cs) !== 'static';
+    for (const which of ['::before', '::after']) {
+      let pcs;
+      try {
+        pcs = view.getComputedStyle(el, which);
+      } catch {
+        pcs = null;
+      }
+      if (!pcs) continue;
+      const content = trim(pcs.content);
+      if (!content || content === 'none' || content === 'normal') continue;
+      if (lower(pcs.display) === 'none' || lower(pcs.visibility) !== 'visible') continue;
+      const op = Number.parseFloat(pcs.opacity);
+      if (Number.isFinite(op) && op <= 0.01) continue;
+      const image = !!trim(pcs.backgroundImage) && lower(pcs.backgroundImage) !== 'none';
+      const a = alphaOf(pcs.backgroundColor);
+      if (!image && !(a !== null && a > 0.05)) continue;
+      const pos = positionOf(pcs);
+      let box = null;
+      if (pos === 'fixed') {
+        box = {
+          left: px(pcs.left),
+          top: px(pcs.top),
+          right: (Number(dom.get(html, 'clientWidth')) || 0) - px(pcs.right),
+          bottom: vh - px(pcs.bottom)
+        };
+      } else if (pos === 'absolute' && hostPositioned) {
+        const r = dom.getBoundingClientRect(el);
+        if (!r) continue;
+        box = {
+          left: r.left + px(cs.borderLeftWidth) + px(pcs.left),
+          top: r.top + px(cs.borderTopWidth) + px(pcs.top),
+          right: r.right - px(cs.borderRightWidth) - px(pcs.right),
+          bottom: r.bottom - px(cs.borderBottomWidth) - px(pcs.bottom)
+        };
+      }
+      if (!box || box.right - box.left <= 0 || box.bottom - box.top <= 0) continue;
+      out.push({
+        box,
+        opaque: (image || a >= 0.99) && !(Number.isFinite(op) && op < 0.99)
+      });
+    }
+    return out;
+  }
+  // Whether an element draws, at a point of the window, what hides an
+  // element under it: anything for 2.4.12, something opaque for 2.4.11.
+  // Its own background, or an inset shadow filling it, cover its box; a
+  // ::before or ::after its own area.
+  function drawnAt(el, cs, x, y, anything) {
+    if (anything ? paints(el, cs) : opaque(el, cs)) return true;
+    if (faded(el)) return false;
+    const fill = insetShadowFill(el, cs);
+    if (fill === 'opaque' || (anything && fill)) return true;
+    return pseudoPaint(el, cs).some(
+      (p) =>
+        (anything || p.opaque) &&
+        x >= p.box.left &&
+        x <= p.box.right &&
+        y >= p.box.top &&
+        y <= p.box.bottom
+    );
+  }
+
   // Whether an element, and everything up to the page, is drawn at all.
   function shown(el) {
     for (let n = el, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
@@ -83773,8 +84937,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!cs || lower(cs.display) === 'none') return null;
     const root = pinnedAncestor(el);
     if (!root) return null;
-    if (!paints(el, cs)) return null;
-    const r = dom.getBoundingClientRect(el);
+    // What it draws: its background, or an inset shadow filling it, over
+    // its box; or else a ::before or ::after, over its own area.
+    let r = null;
+    let isOpaque = false;
+    if (paints(el, cs)) {
+      r = dom.getBoundingClientRect(el);
+      isOpaque = opaque(el, cs);
+    }
+    if (!isOpaque) {
+      const fill = insetShadowFill(el, cs);
+      if (fill) {
+        r = r || dom.getBoundingClientRect(el);
+        isOpaque = fill === 'opaque' && !faded(el);
+      }
+    }
+    if (!r || !isOpaque) {
+      const pseudos = pseudoPaint(el, cs);
+      const p = pseudos.find((x) => x.opaque) || (r ? null : pseudos[0]);
+      if (p) {
+        r = {
+          left: p.box.left,
+          right: p.box.right,
+          top: p.box.top,
+          bottom: p.box.bottom,
+          width: p.box.right - p.box.left,
+          height: p.box.bottom - p.box.top
+        };
+        isOpaque = p.opaque && !faded(el);
+      }
+    }
     if (!r || r.width <= 0 || r.height <= 0) return null;
     if (!shown(el)) return null;
     const rootCs = el === root ? cs : styleOf(root);
@@ -83801,7 +84993,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       el,
       root,
       position,
-      opaque: opaque(el, cs),
+      opaque: isOpaque,
       top,
       bottom: top + r.height,
       left: r.left,
@@ -83958,7 +85150,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
   let moved = false;
+  // Whether the page moved, where it had to: a page that replaced scrollTo
+  // with one that does nothing leaves it where it was, and the hit test
+  // there would measure another place.
+  const currentScrollY = () => Number(dom.get(view, 'scrollY')) || 0;
   const scrollTo = (y) => {
+    const from = currentScrollY();
     if (y !== scrollY && !moved) {
       moved = true;
       guardScrollEvents();
@@ -83970,11 +85167,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         dom.call(view, 'scrollTo', scrollX, y);
       } catch {}
     }
+    return Math.abs(y - from) < 1 || Math.abs(currentScrollY() - from) >= 1;
   };
   const FRACTIONS = [0.15, 0.5, 0.85];
   function hiddenShare(hit) {
     const { c, at, cover } = hit;
-    scrollTo(Math.max(0, Math.min(maxScroll, c.docTop - at)));
+    // Not scrolled there: nothing to measure (null).
+    if (!scrollTo(Math.max(0, Math.min(maxScroll, c.docTop - at)))) return null;
     const r = dom.getBoundingClientRect(c.el);
     let covered = 0;
     let total = 0;
@@ -84007,8 +85206,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         // entirely.
         let drawn = false;
         for (let n = top, i = 0; n && i < 10000; n = composedUp(n), i++) {
-          const ncs = styleOf(n);
-          if (partlyToo ? paints(n, ncs) : opaque(n, ncs)) {
+          if (drawnAt(n, styleOf(n), x, y, partlyToo)) {
             drawn = true;
             break;
           }
@@ -84043,15 +85241,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const partly = hits.filter((h) => h.kind === 'partly');
       const ordered = [...entirely, ...partly];
       let confirmed = null;
+      // An element the page would not scroll under the box: the box can't
+      // be confirmed or cleared, so it is asked about, without a lean
+      // (round 9, R9-4).
+      let notScrolled = null;
       for (const h of ordered.slice(0, SAMPLES)) {
         checks += 1;
         const share = hiddenShare(h);
+        if (share == null) {
+          notScrolled = notScrolled || h;
+          continue;
+        }
         if (h.kind === 'entirely' ? share >= 1 : share > 0) {
           confirmed = h;
           break;
         }
       }
-      if (!confirmed) continue;
+      if (!confirmed && !notScrolled) continue;
 
       const rootCs = styleOf(entry.root);
       const position = positionOf(rootCs);
@@ -84081,6 +85287,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let hint;
       let keys;
       let lean;
+      let summaryKeys;
       const userOpenedCaution =
         'If the user opened this content and can close it without moving focus, such as with Escape, it passes.';
       if (code === 'FOCUS_OBSCURED_BEHIND_MODAL') {
@@ -84133,12 +85340,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             };
       }
 
+      if (!confirmed) {
+        summary = `${count} focusable elements, such as ${firstTag}, may take focus hidden behind this ${position} ${container}, which covers ${Math.round(coverPx)}px of the window that the page still counts as in view; the page did not scroll when asked, so whether the box is drawn over them could not be checked.`;
+        summaryKeys = 'notScrolled';
+        lean = null;
+      }
+
       const baseOccurrence = {
         ...(lean ? { lean } : {}),
         summary,
         hint,
         i18n: {
-          summaryKey: `focusNotObscuredMinimum_summary_cantTell_${keys}`,
+          summaryKey: `focusNotObscuredMinimum_summary_cantTell_${summaryKeys || keys}`,
           hintKey:
             keys === 'behindModal'
               ? 'focusNotObscuredMinimum_hint_cantTell_behindModal'
@@ -84169,7 +85382,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             },
             openedByUser,
             examples: ordered.slice(0, 5).map((h) => example(h.c.el)),
-            confirmedBy: example(confirmed.c.el)
+            confirmedBy: confirmed ? example(confirmed.c.el) : null,
+            ...(confirmed ? {} : { notScrolled: true })
           },
           visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
         }
@@ -84336,7 +85550,48 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // ---- The elements in the tab order that scroll with the page ----
   const positionOf = (cs) => lower(cs && cs.position);
-  // The nearest fixed or sticky box an element is in (itself included).
+  // Whether a box is the containing block of the fixed boxes inside it
+  // (CSS Transforms, Filter Effects, Containment, Will Change): a fixed box
+  // there is placed against it and scrolls with it, not with the window.
+  const NONE = (v) => !lower(v) || lower(v) === 'none';
+  function holdsFixed(cs) {
+    if (!cs) return false;
+    if (
+      !NONE(cs.transform) ||
+      !NONE(cs.translate) ||
+      !NONE(cs.rotate) ||
+      !NONE(cs.scale) ||
+      !NONE(cs.perspective) ||
+      !NONE(cs.filter) ||
+      !NONE(cs.backdropFilter) ||
+      !NONE(cs.webkitBackdropFilter)
+    )
+      return true;
+    if (lower(cs.transformStyle) === 'preserve-3d') return true;
+    if (/\b(paint|layout|strict|content)\b/.test(lower(cs.contain))) return true;
+    if (/size/.test(lower(cs.containerType))) return true;
+    return /\b(transform|translate|rotate|scale|perspective|filter|backdrop-filter|contain)\b/.test(
+      lower(cs.willChange)
+    );
+  }
+  // Whether a fixed box is fixed to the window: no box it is in, up to the
+  // page, is its containing block. Up the composed tree, as the browser
+  // places it.
+  function fixedToWindow(el) {
+    for (
+      let n = typeof helpers.composedParent === 'function' ? helpers.composedParent(el) : null,
+        i = 0;
+      n && dom.nodeType(n) === 1 && n !== html && i < 10000;
+      n = helpers.composedParent(n), i++
+    ) {
+      if (holdsFixed(styleOf(n))) return false;
+    }
+    return true;
+  }
+  // The nearest fixed or sticky box an element is in (itself included). A
+  // fixed box inside its containing block (a transformed or filtered
+  // ancestor) scrolls with the page, as anything else in that block does,
+  // so it counts as neither.
   const pinnedCache = new Map();
   function pinnedAncestor(el) {
     const chain = [];
@@ -84348,7 +85603,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       chain.push(n);
       const pos = positionOf(styleOf(n));
-      if (pos === 'fixed' || pos === 'sticky') {
+      if (pos === 'sticky' || (pos === 'fixed' && fixedToWindow(n))) {
         found = n;
         break;
       }
@@ -84485,6 +85740,122 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const alpha = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
     return Number.isFinite(alpha) && alpha >= 0.99;
   }
+  // A color's alpha as the browser serializes it (rgb() or rgba()), null
+  // for one in another form.
+  function alphaOf(v) {
+    const m = /^rgba?\(([^)]*)\)$/.exec(lower(v));
+    if (!m) return null;
+    const parts = m[1].split(/[\s,/]+/).filter(Boolean);
+    const a = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
+    return Number.isFinite(a) ? a : null;
+  }
+  // An inset box-shadow is painted over the element's background, inside
+  // its padding box: one whose spread closes the hole in the middle, blur
+  // included, paints all of it (a header colored with `inset 0 0 0 100px`).
+  // 'opaque', 'paints' or null.
+  function insetShadowFill(el, cs) {
+    const raw = trim(cs && cs.boxShadow);
+    if (!raw || lower(raw) === 'none' || !/\binset\b/i.test(raw)) return null;
+    let r;
+    try {
+      r = dom.getBoundingClientRect(el);
+    } catch {
+      r = null;
+    }
+    if (!r) return null;
+    const w = r.width - px(cs.borderLeftWidth) - px(cs.borderRightWidth);
+    const h = r.height - px(cs.borderTopWidth) - px(cs.borderBottomWidth);
+    let best = null;
+    for (const layer of raw.split(/,(?![^(]*\))/)) {
+      if (!/\binset\b/i.test(layer)) continue;
+      const color = /(?:rgba?|hsla?|color|lab|lch|oklab|oklch|hwb)\([^)]*\)|#[0-9a-f]+/i.exec(
+        layer
+      );
+      const a = color ? alphaOf(color[0]) : null;
+      if (a === null || a <= 0.05) continue;
+      const lengths = (layer.replace(color ? color[0] : '', '').match(/-?\d*\.?\d+px/g) || []).map(
+        (v) => Number.parseFloat(v)
+      );
+      const blur = Math.max(0, lengths[2] || 0);
+      const spread = lengths[3] || 0;
+      if (Math.min(w, h) - 2 * spread + blur > 0) continue;
+      if (a >= 0.99) return 'opaque';
+      best = 'paints';
+    }
+    return best;
+  }
+  // The ::before and ::after that paint a color or an image over an area of
+  // their own: an absolutely positioned one against its positioned element,
+  // or a fixed one against the window, as a header's colored ::before
+  // spread over it (inset: 0) is. Each with that area, where it is now, and
+  // whether it is opaque. One placed any other way can't be told where it
+  // paints, and doesn't count.
+  function pseudoPaint(el, cs) {
+    const out = [];
+    if (!cs || lower(cs.display) === 'none') return out;
+    const hostPositioned = !!positionOf(cs) && positionOf(cs) !== 'static';
+    for (const which of ['::before', '::after']) {
+      let pcs;
+      try {
+        pcs = view.getComputedStyle(el, which);
+      } catch {
+        pcs = null;
+      }
+      if (!pcs) continue;
+      const content = trim(pcs.content);
+      if (!content || content === 'none' || content === 'normal') continue;
+      if (lower(pcs.display) === 'none' || lower(pcs.visibility) !== 'visible') continue;
+      const op = Number.parseFloat(pcs.opacity);
+      if (Number.isFinite(op) && op <= 0.01) continue;
+      const image = !!trim(pcs.backgroundImage) && lower(pcs.backgroundImage) !== 'none';
+      const a = alphaOf(pcs.backgroundColor);
+      if (!image && !(a !== null && a > 0.05)) continue;
+      const pos = positionOf(pcs);
+      let box = null;
+      if (pos === 'fixed') {
+        box = {
+          left: px(pcs.left),
+          top: px(pcs.top),
+          right: (Number(dom.get(html, 'clientWidth')) || 0) - px(pcs.right),
+          bottom: vh - px(pcs.bottom)
+        };
+      } else if (pos === 'absolute' && hostPositioned) {
+        const r = dom.getBoundingClientRect(el);
+        if (!r) continue;
+        box = {
+          left: r.left + px(cs.borderLeftWidth) + px(pcs.left),
+          top: r.top + px(cs.borderTopWidth) + px(pcs.top),
+          right: r.right - px(cs.borderRightWidth) - px(pcs.right),
+          bottom: r.bottom - px(cs.borderBottomWidth) - px(pcs.bottom)
+        };
+      }
+      if (!box || box.right - box.left <= 0 || box.bottom - box.top <= 0) continue;
+      out.push({
+        box,
+        opaque: (image || a >= 0.99) && !(Number.isFinite(op) && op < 0.99)
+      });
+    }
+    return out;
+  }
+  // Whether an element draws, at a point of the window, what hides an
+  // element under it: anything for 2.4.12, something opaque for 2.4.11.
+  // Its own background, or an inset shadow filling it, cover its box; a
+  // ::before or ::after its own area.
+  function drawnAt(el, cs, x, y, anything) {
+    if (anything ? paints(el, cs) : opaque(el, cs)) return true;
+    if (faded(el)) return false;
+    const fill = insetShadowFill(el, cs);
+    if (fill === 'opaque' || (anything && fill)) return true;
+    return pseudoPaint(el, cs).some(
+      (p) =>
+        (anything || p.opaque) &&
+        x >= p.box.left &&
+        x <= p.box.right &&
+        y >= p.box.top &&
+        y <= p.box.bottom
+    );
+  }
+
   // Whether an element, and everything up to the page, is drawn at all.
   function shown(el) {
     for (let n = el, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
@@ -84561,8 +85932,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!cs || lower(cs.display) === 'none') return null;
     const root = pinnedAncestor(el);
     if (!root) return null;
-    if (!paints(el, cs)) return null;
-    const r = dom.getBoundingClientRect(el);
+    // What it draws: its background, or an inset shadow filling it, over
+    // its box; or else a ::before or ::after, over its own area.
+    let r = null;
+    let isOpaque = false;
+    if (paints(el, cs)) {
+      r = dom.getBoundingClientRect(el);
+      isOpaque = opaque(el, cs);
+    }
+    if (!isOpaque) {
+      const fill = insetShadowFill(el, cs);
+      if (fill) {
+        r = r || dom.getBoundingClientRect(el);
+        isOpaque = fill === 'opaque' && !faded(el);
+      }
+    }
+    if (!r || !isOpaque) {
+      const pseudos = pseudoPaint(el, cs);
+      const p = pseudos.find((x) => x.opaque) || (r ? null : pseudos[0]);
+      if (p) {
+        r = {
+          left: p.box.left,
+          right: p.box.right,
+          top: p.box.top,
+          bottom: p.box.bottom,
+          width: p.box.right - p.box.left,
+          height: p.box.bottom - p.box.top
+        };
+        isOpaque = p.opaque && !faded(el);
+      }
+    }
     if (!r || r.width <= 0 || r.height <= 0) return null;
     if (!shown(el)) return null;
     const rootCs = el === root ? cs : styleOf(root);
@@ -84589,7 +85988,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       el,
       root,
       position,
-      opaque: opaque(el, cs),
+      opaque: isOpaque,
       top,
       bottom: top + r.height,
       left: r.left,
@@ -84746,7 +86145,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
   let moved = false;
+  // Whether the page moved, where it had to: a page that replaced scrollTo
+  // with one that does nothing leaves it where it was, and the hit test
+  // there would measure another place.
+  const currentScrollY = () => Number(dom.get(view, 'scrollY')) || 0;
   const scrollTo = (y) => {
+    const from = currentScrollY();
     if (y !== scrollY && !moved) {
       moved = true;
       guardScrollEvents();
@@ -84758,11 +86162,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         dom.call(view, 'scrollTo', scrollX, y);
       } catch {}
     }
+    return Math.abs(y - from) < 1 || Math.abs(currentScrollY() - from) >= 1;
   };
   const FRACTIONS = [0.15, 0.5, 0.85];
   function hiddenShare(hit) {
     const { c, at, cover } = hit;
-    scrollTo(Math.max(0, Math.min(maxScroll, c.docTop - at)));
+    // Not scrolled there: nothing to measure (null).
+    if (!scrollTo(Math.max(0, Math.min(maxScroll, c.docTop - at)))) return null;
     const r = dom.getBoundingClientRect(c.el);
     let covered = 0;
     let total = 0;
@@ -84795,8 +86201,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         // entirely.
         let drawn = false;
         for (let n = top, i = 0; n && i < 10000; n = composedUp(n), i++) {
-          const ncs = styleOf(n);
-          if (partlyToo ? paints(n, ncs) : opaque(n, ncs)) {
+          if (drawnAt(n, styleOf(n), x, y, partlyToo)) {
             drawn = true;
             break;
           }
@@ -84831,15 +86236,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const partly = hits.filter((h) => h.kind === 'partly');
       const ordered = [...entirely, ...partly];
       let confirmed = null;
+      // An element the page would not scroll under the box: the box can't
+      // be confirmed or cleared, so it is asked about, without a lean
+      // (round 9, R9-4).
+      let notScrolled = null;
       for (const h of ordered.slice(0, SAMPLES)) {
         checks += 1;
         const share = hiddenShare(h);
+        if (share == null) {
+          notScrolled = notScrolled || h;
+          continue;
+        }
         if (h.kind === 'entirely' ? share >= 1 : share > 0) {
           confirmed = h;
           break;
         }
       }
-      if (!confirmed) continue;
+      if (!confirmed && !notScrolled) continue;
 
       const rootCs = styleOf(entry.root);
       const position = positionOf(rootCs);
@@ -84869,6 +86282,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let hint;
       let keys;
       let lean;
+      let summaryKeys;
       const userOpenedCaution =
         'If the user opened this content and can close it without moving focus, such as with Escape, it passes.';
       if (code === 'FOCUS_OBSCURED_BEHIND_MODAL') {
@@ -84921,12 +86335,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             };
       }
 
+      if (!confirmed) {
+        summary = `${count} focusable elements, such as ${firstTag}, may take focus hidden behind this ${position} ${container}, which covers ${Math.round(coverPx)}px of the window that the page still counts as in view; the page did not scroll when asked, so whether the box is drawn over them could not be checked.`;
+        summaryKeys = 'notScrolled';
+        lean = null;
+      }
+
       const baseOccurrence = {
         ...(lean ? { lean } : {}),
         summary,
         hint,
         i18n: {
-          summaryKey: `focusNotObscuredMinimum_summary_cantTell_${keys}`,
+          summaryKey: `focusNotObscuredMinimum_summary_cantTell_${summaryKeys || keys}`,
           hintKey:
             keys === 'behindModal'
               ? 'focusNotObscuredMinimum_hint_cantTell_behindModal'
@@ -84957,7 +86377,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             },
             openedByUser,
             examples: ordered.slice(0, 5).map((h) => example(h.c.el)),
-            confirmedBy: example(confirmed.c.el)
+            confirmedBy: confirmed ? example(confirmed.c.el) : null,
+            ...(confirmed ? {} : { notScrolled: true })
           },
           visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
         }
@@ -86434,7 +87855,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       primaryLangOf(field.el)
     );
     const shared = byKey.get(field.key) || [];
-    const isDuplicate = shared.length > 1;
+    // A label of punctuation alone ("*", ":") has no words to share: the
+    // trailing marks normalize drops leave it empty, so "*" and ":" read as
+    // one label. Whatever it lacks, it is not another field's label.
+    const isDuplicate = shared.length > 1 && /[\p{L}\p{N}]/u.test(field.normalized);
     const isPartiallyHidden = field.hiddenParts > 0;
 
     if (!isPlaceholder && !isDuplicate && !isPartiallyHidden) continue;
@@ -88225,7 +89649,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return [{ selector: '', html: '', ...baseOccurrence }];
   }
 
-  const rawLang = dom.getAttribute(html, 'lang'); // null if missing
+  // In an XML document (XHTML served as application/xhtml+xml), xml:lang
+  // declares the language as lang does in HTML, and wins over it (HTML,
+  // "The lang and xml:lang attributes"): with no lang, it is the page's.
+  // The HTML parser keeps it as a plain attribute that declares nothing.
+  const isXmlDocument = (() => {
+    try {
+      const type = String(dom.get(document, 'contentType') || '').toLowerCase();
+      return !!type && type !== 'text/html';
+    } catch {
+      return false;
+    }
+  })();
+  const ownLang = dom.getAttribute(html, 'lang'); // null if missing
+  const rawLang = ownLang === null && isXmlDocument ? dom.getAttribute(html, 'xml:lang') : ownLang;
   const lang = (rawLang || '').trim();
 
   if (rawLang === null) {
@@ -88602,13 +90039,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const name = normalizedName(el);
     if (!name) continue;
 
-    const list = groups.get(name);
-    if (list) list.push(el);
-    else groups.set(name, [el]);
+    // Names that differ only in case are the same name, as speech and
+    // identical-links-same-purpose read them ("Map" and "MAP"). The set
+    // goes by the name its first frame gives.
+    const key = name.toLowerCase();
+    const group = groups.get(key);
+    if (group) group.els.push(el);
+    else groups.set(key, { name, els: [el] });
   }
 
   const sets = [];
-  for (const [name, els] of groups) {
+  for (const { name, els } of groups.values()) {
     if (els.length >= 2) sets.push([name, els]);
   }
 
@@ -92489,6 +93930,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return v.replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
+  // The scripts written without spaces between words (see tokenize).
+  const NO_SPACE_CHARS =
+    '\\p{scx=Han}\\p{scx=Hira}\\p{scx=Kana}\\p{scx=Thai}\\p{scx=Laoo}\\p{scx=Khmr}\\p{scx=Mymr}';
+  const NO_SPACE_RUN = new RegExp(`[${NO_SPACE_CHARS}][${NO_SPACE_CHARS}\\p{M}]*`, 'gu');
+  const NO_SPACE_CHAR = new RegExp(`^[${NO_SPACE_CHARS}]`, 'u');
+
   // WCAG 2.5.3's label-in-name comparison is over words, not characters: drop
   // parenthesised text, case-fold and NFKC-normalise, then reduce every
   // character that is not a letter, digit or combining mark to a space.
@@ -92510,10 +93957,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // ("Don’t") is part of its spelling: remove them rather than split on
     // them, so "Down\u00adload" is "download" and "Don’t" is "dont".
     v = v.replace(/\p{Cf}/gu, '').replace(/([\p{L}\p{N}])['’ʼ](?=[\p{L}\p{N}])/gu, '$1');
+    // Han, Hiragana, Katakana, Thai, Lao, Khmer and Myanmar are written
+    // without spaces between words, so a run of them is one "word" however
+    // many words it holds: "検索" inside "商品を検索" is no word of it. Each of
+    // their characters is a word of its own instead, which compares such
+    // text by characters: the label's characters must be in the name,
+    // together and in order, as a substring is.
     return v
       .replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ')
+      .replace(NO_SPACE_RUN, ' $& ')
       .split(' ')
-      .filter(Boolean);
+      .filter(Boolean)
+      .flatMap((w) => (NO_SPACE_CHAR.test(w) ? [...w] : [w]));
+  }
+
+  // Words as a message shows them: the characters of a run written without
+  // spaces, which tokenize splits, joined again ("検", "索" is "検索").
+  function wordsOf(tokens) {
+    const out = [];
+    let run = false;
+    for (const t of tokens) {
+      const inRun = NO_SPACE_CHAR.test(t);
+      if (inRun && run) out[out.length - 1] += t;
+      else out.push(t);
+      run = inRun;
+    }
+    return out;
+  }
+
+  // Whether text split by tokenize shows `word`: as a word, or, for a run
+  // written without spaces, inside one.
+  function showsWord(tokens, word) {
+    const runWord = NO_SPACE_CHAR.test(word);
+    return wordsOf(tokens).some((w) => w === word || (runWord && w.indexOf(word) !== -1));
   }
 
   // The label's words must appear adjacent and in order inside the name, so a
@@ -92575,10 +94051,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // The label's words the name does not have, each once, in label order.
+  // A run written without spaces is missing when the name holds it
+  // nowhere, inside a longer run included.
   function missingWordsOf(labelTokens, nameTokens) {
-    const have = new Set(nameTokens);
     const out = [];
-    for (const w of labelTokens) if (!have.has(w) && out.indexOf(w) === -1) out.push(w);
+    for (const w of wordsOf(labelTokens))
+      if (!showsWord(nameTokens, w) && out.indexOf(w) === -1) out.push(w);
     return out;
   }
 
@@ -92606,7 +94084,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const k = kids[i];
         const type = dom.nodeType(k);
         if (type === 1) stack.push(k);
-        else if (type === 3 && tokenize(dom.textContent(k), false).indexOf(word) !== -1) {
+        else if (type === 3 && showsWord(tokenize(dom.textContent(k), false), word)) {
           const parent = dom.parentElement(k);
           return parent && parent !== control ? parent : null;
         }
@@ -92650,7 +94128,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             missingAtWithin = describeEl(src);
             break;
           }
-          if (tokenize(dom.textContent(src), false).indexOf(missing[0]) !== -1) {
+          if (showsWord(tokenize(dom.textContent(src), false), missing[0])) {
             missingAt = describeEl(src);
             break;
           }
@@ -92783,9 +94261,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
           if (type !== 1 || isNonRenderedTag(n) || hidden(n)) continue;
           // What a <select> or <textarea> shows is its value (its options,
-          // its text), not label text.
+          // its text), not label text. A ruby annotation (<rt>, and the <rp>
+          // parentheses around it) is a reading aid for the base text, left
+          // out as the name from content leaves it out: "漢<rt>kan</rt>"
+          // reads "漢".
           const childTag = String(dom.tagName(n) || '').toLowerCase();
-          if (childTag === 'select' || childTag === 'textarea') continue;
+          if (
+            childTag === 'select' ||
+            childTag === 'textarea' ||
+            childTag === 'rt' ||
+            childTag === 'rp'
+          )
+            continue;
           const apart = boundaryOf(n) === 'block';
           if (apart) parts.push(BOX_BREAK);
           walk(n);
@@ -94854,16 +96341,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return /^transparent$/i.test(raw);
   }
 
-  function hasBorder(cs) {
+  // A border drawn in the color behind el (sameAsBackground) shows nothing
+  // either.
+  function hasBorder(cs, el) {
     for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
       const style = String(cs['border' + side + 'Style'] || '')
         .trim()
         .toLowerCase();
       if (!style || style === 'none' || style === 'hidden') continue;
       if (isTransparentColor(cs['border' + side + 'Color'])) continue;
-      if (!isZeroWidth(cs['border' + side + 'Width'])) return true;
+      if (isZeroWidth(cs['border' + side + 'Width'])) continue;
+      if (el && sameAsBackground(el, cs['border' + side + 'Color'])) continue;
+      return true;
     }
     return false;
+  }
+
+  // Whether a line in this color shows on el: not transparent, and not the
+  // color behind el.
+  function unseen(el, color) {
+    return isTransparentColor(color) || (!!el && sameAsBackground(el, color));
   }
 
   // Some environments do not expand the `outline` shorthand into its
@@ -94879,6 +96376,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .split(/\s+/)
       .filter(Boolean);
     return tokens.some((t) => LINE_STYLES.test(t)) && !tokens.some((t) => isZeroWidth(t));
+  }
+
+  // The outline's color: its longhand where the style is in the longhands,
+  // else the color in the shorthand, or the text's (currentcolor).
+  function outlineColorOf(cs) {
+    const style = String(cs.outlineStyle || '')
+      .trim()
+      .toLowerCase();
+    if (style && style !== 'none' && style !== 'hidden') return cs.outlineColor;
+    const tokens = splitOutsideParens(
+      String((cs.getPropertyValue && cs.getPropertyValue('outline')) || '')
+        .trim()
+        .toLowerCase(),
+      /\s/
+    );
+    const color = tokens.find(
+      (t) =>
+        !LINE_STYLES.test(t) &&
+        !/^-?(\d*\.)?\d+([a-z%]+)?$/.test(t) &&
+        !/^(thin|medium|thick|none|hidden)$/.test(t)
+    );
+    return !color || color === 'currentcolor' ? cs.color : color;
   }
 
   // Splits on a separator outside parentheses: the shadows of a list, or
@@ -94963,6 +96482,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return false;
     }
     return imgs.some((img) => {
+      // With a layout, an image of no area (a 0x0 <svg>) shows nothing.
+      if (hasLayout()) {
+        try {
+          const r = dom.getBoundingClientRect(img);
+          if (!r || r.width <= 0 || r.height <= 0) return false;
+        } catch {}
+      }
       if (!helpers.isDomVisibleEligible) return true;
       try {
         const vis = helpers.isDomVisibleEligible(img, ctx, {
@@ -94977,7 +96503,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const NO_BOX = ['', 'none', 'normal'];
-  const EMPTY_STRING = ['""', "''"];
+  // Content that is an empty string, or one of white space only (`" "`),
+  // draws no text: only what its box paints can show.
+  const isBlankContent = (content) => /^(["'])\s*\1$/.test(String(content || '').trim());
   // Whether a declaration block paints a box: a background, a border, an
   // outline or a shadow. An empty-content ::before/::after drawing an
   // underline this way is a mark (#107).
@@ -95021,7 +96549,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         .trim()
         .toLowerCase();
       if (NO_BOX.indexOf(content) !== -1) return;
-      if (EMPTY_STRING.indexOf(content) !== -1 && !declaresPaint(style)) return;
+      if (isBlankContent(content) && !declaresPaint(style)) return;
       for (const part of splitSelectorList(cssRule.selectorText)) {
         if (!/::?(before|after)\s*$/i.test(part)) continue;
         if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
@@ -95096,7 +96624,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (NO_BOX.indexOf(content.toLowerCase()) !== -1) return false;
     if (cs.display === 'none' || cs.visibility === 'hidden') return false;
     if (Number.parseFloat(cs.opacity) === 0) return false;
-    if (EMPTY_STRING.indexOf(content) === -1) return true;
+    if (!isBlankContent(content)) return true;
     const size = (v) => {
       const n = Number.parseFloat(v);
       return Number.isFinite(n) && n > 0 ? n : 0;
@@ -95158,7 +96686,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function hasNonColorMark(el, cs) {
-    if (cs && (hasBorder(cs) || hasOutline(cs) || hasBoxShadow(cs) || hasBackgroundImage(cs, el))) {
+    if (
+      cs &&
+      (hasBorder(cs, el) ||
+        (hasOutline(cs) && !unseen(el, outlineColorOf(cs))) ||
+        hasBoxShadow(cs) ||
+        hasBackgroundImage(cs, el))
+    ) {
       return true;
     }
     return hasVisibleImageChild(el) || hasPseudoContent(el);
@@ -96017,9 +97551,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return true;
     }
     if (outerCs && (cs.fontStyle || 'normal') !== (outerCs.fontStyle || 'normal')) return true;
-    if (hasBorder(cs)) return true;
+    if (hasBorder(cs, wrapper)) return true;
     const deco = decorationInfo(cs);
-    return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
+    return deco.trustworthy && deco.underlined && !unseen(wrapper, cs.textDecorationColor);
   }
 
   // Whether the text around the link is underlined too: by its own element's
@@ -96112,7 +97646,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!cs) return false;
       if (c && weightsDiffer(c.normalizeFontWeight(cs.fontWeight), parentWeight)) return true;
       if ((cs.fontStyle || 'normal') !== parentStyle) return true;
-      if (hasBorder(cs)) return true;
+      if (hasBorder(cs, node)) return true;
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
       if (hasBackgroundImage(cs, node) || ownBackground(node, cs)) return true;
       const deco = decorationInfo(cs);
@@ -96280,7 +97814,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (
       shown.trustworthy &&
       shown.underlined &&
-      !isTransparentColor(linkCs && linkCs.textDecorationColor) &&
+      !unseen(el, linkCs && linkCs.textDecorationColor) &&
       !aroundUnderlined()
     ) {
       decidedCount += 1;
@@ -96307,12 +97841,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let underlined = null;
     const decoration = decorationInfo(linkCs);
     if (decoration.trustworthy) {
-      // An underline drawn in a transparent color shows nothing.
-      underlined =
-        decoration.underlined && !isTransparentColor(linkCs && linkCs.textDecorationColor);
+      // An underline drawn in a transparent color, or in the color behind
+      // the link, shows nothing.
+      underlined = decoration.underlined && !unseen(el, linkCs && linkCs.textDecorationColor);
     } else {
       const fromCssom = resolveUnderlineFromCssom(el);
-      if (fromCssom.resolved) underlined = fromCssom.underlined;
+      if (fromCssom.resolved)
+        underlined = fromCssom.underlined && !unseen(el, linkCs && linkCs.textDecorationColor);
     }
     // The surrounding text underlined too: the underline is no cue.
     if (underlined === true && aroundUnderlined()) underlined = false;
@@ -98543,9 +100078,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // The first role token that names a known, non-abstract ARIA role, in
-  // any case, or '' when none does (the element keeps its native role).
+  // any case, or, with no role attribute, the role a custom element's
+  // ElementInternals give it; '' when there is neither (the element keeps
+  // its native role).
   function resolvedExplicitRole(el) {
-    return helpers.aria.getExplicitRole(el);
+    return helpers.aria.getAuthorRole(el);
   }
 
   // Children in the flat tree, as the page renders them: a <slot> stands
@@ -98880,10 +100417,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The resolved explicit role: the first token of the role fallback list
   // naming a known role, lower-cased, or '' when none does (the element then
   // keeps its native role).
+  // The role an author gave: by the role attribute or, failing that, by a
+  // custom element's ElementInternals (<x-list> whose internals say list).
   function resolvedRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -98980,16 +100519,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const explicitRole = resolvedRole(parent);
 
     let valid;
-    if (explicitRole) {
+    if (explicitRole === 'presentation' || explicitRole === 'none') {
+      // role none or presentation is a valid parent only on a <ul>, <ol> or
+      // <menu>: the list's presentation passes to its <li> children
+      // (WAI-ARIA 1.2, required owned elements), which are no list items
+      // then. On any other element (<div role="none">) it only removes that
+      // element's own role, and the <li> is still in no list. A role none
+      // wrapper inside a list (<ul><div role="none"><li>) is left as it was,
+      // passing here, pending a decision (round 9, N9-5 b); list-children-valid
+      // reports the wrapper.
+      const grand = flatParent(parent);
+      const grandTag = grand && dom.tagName(grand) ? dom.tagName(grand).toLowerCase() : '';
+      const grandRole = grand ? resolvedRole(grand) : '';
+      const inList =
+        grandRole === 'list' ||
+        (!grandRole && (grandTag === 'ul' || grandTag === 'ol' || grandTag === 'menu'));
+      valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu' || inList;
+    } else if (explicitRole) {
       // An explicit role always wins over the tag's native role, in either
       // direction, see the header comment.
       // role="directory" is a required parent of listitem in WAI-ARIA 1.2,
       // deprecated but valid (aria-deprecated-role flags it).
-      valid =
-        explicitRole === 'list' ||
-        explicitRole === 'directory' ||
-        explicitRole === 'presentation' ||
-        explicitRole === 'none';
+      valid = explicitRole === 'list' || explicitRole === 'directory';
     } else {
       valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu';
     }
@@ -104286,7 +105837,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  const all = [...dom.querySelectorAll(document, helpers.landmarkCandidateSelector)];
+  // Every landmark of the page, as the landmark rules find them: in open
+  // shadow roots too (a <footer> a component renders), and custom elements
+  // whose ElementInternals give them a landmark role. An element
+  // excludeSelectors leaves out is still part of the page's structure.
+  const all = (() => {
+    try {
+      return [
+        ...helpers.queryAllSmart(helpers.landmarkCandidateSelector, {
+          internalsRoles: true,
+          excluded: true
+        })
+      ];
+    } catch {
+      return [...dom.querySelectorAll(document, helpers.landmarkCandidateSelector)];
+    }
+  })();
   const pageHas = (role) => all.some((el) => roleOf(el) === role && exposed(el));
 
   const SECTIONING = new Set(['article', 'aside', 'main', 'nav', 'section']);
@@ -104405,7 +105971,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const named = [...dom.querySelectorAll(document, 'body [id], body [class]')].filter(
     (el) => !['html', 'body'].includes(tagOf(el)) && zoneNamed(el) && usable(el)
   );
+  // A block given a composite widget role (a menu, a menubar, a tablist...)
+  // is that widget, whatever its class says: it is no landmark to become.
+  const WIDGET_ROLES = new Set([
+    'combobox',
+    'grid',
+    'listbox',
+    'menu',
+    'menubar',
+    'radiogroup',
+    'tablist',
+    'toolbar',
+    'tree',
+    'treegrid'
+  ]);
+  const isWidget = (el) => {
+    try {
+      return WIDGET_ROLES.has(helpers.aria.getAuthorRole(el));
+    } catch {
+      return false;
+    }
+  };
   for (const el of named) {
+    if (isWidget(el)) continue;
     const zone = zoneNamed(el);
     const tag = tagOf(el);
     if (zone === 'navigation') {
@@ -106846,6 +108434,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const VISUAL_CONTENT_TAGS = new Set(['img', 'video', 'audio', 'canvas', 'object', 'embed']);
 
+  // An <img> that is decorative, by alt="" or role none or presentation,
+  // with nothing that overrides it (a global ARIA attribute, being
+  // focusable): browsers leave it out of the accessibility tree (Chromium
+  // ignores it), so it is no content that needs a landmark, as a tracking
+  // pixel is not.
+  function isDecorativeImage(el) {
+    if (lower(dom.localName(el)) !== 'img') return false;
+    const role = getExplicitRoleToken(el);
+    if (role) {
+      if (role !== 'none' && role !== 'presentation') return false;
+    } else if (dom.getAttribute(el, 'alt') !== '') {
+      return false;
+    }
+    try {
+      if (helpers.aria.hasGlobalAriaAttr(el, { exceptDeprecated: true })) return false;
+      return !helpers.getFocusableInfo(el).focusable;
+    } catch {
+      return false;
+    }
+  }
+
   // Non-recursive "does THIS element, on its own, carry content" check.
   // Mirrors only the direct-content half of getContentNameInfo on purpose,
   // not a full name-from-content recursion: the whole point is to keep
@@ -106915,6 +108524,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // rule) is not judged, and, as content out of the accessibility tree,
     // keeps a reported gap from taking it in.
     if (helpers.isExcluded && helpers.isExcluded(el)) {
+      markFlaggedUpToBody(el);
+      return;
+    }
+
+    if (isDecorativeImage(el)) {
       markFlaggedUpToBody(el);
       return;
     }
@@ -108306,18 +109920,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const href = String(dom.getAttribute(el, 'href') || '').trim();
-    if (href.length < 2 || href.charAt(0) !== '#') continue;
+    // A link to a place in this document, its href resolved against the
+    // base URL: under <base href>, "#main" can lead to another page
+    // (round 9, R9-5).
+    const samePage = helpers.getSamePageFragment(el);
+    if (samePage == null || !/#./.test(href)) continue;
 
     const name = getAccessibleNameText(el);
     if (el !== positionalSkipLink && !hasSkipWording(name)) continue;
 
     applicableCount += 1;
 
-    let fragment = href.slice(1);
-    try {
-      fragment = decodeURIComponent(fragment);
-    } catch {}
-    fragment = fragment.trim();
+    const fragment = samePage;
 
     let target = null;
     if (fragment) {
@@ -108340,6 +109954,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       }
     }
+
+    // With no element of that id or name, "#top" (in any ASCII case) is the
+    // top of the document (HTML, "find a potential indicated element"):
+    // the link scrolls there, as "Back to top" links mean it to.
+    if (!target && /^top$/i.test(fragment)) continue;
 
     if (target) {
       const accEligibility = toEligibility(
@@ -109159,6 +110778,74 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return svgChildText(el, 'title');
   }
 
+  // WAI-ARIA roles with "Children Presentational: True" (and the module
+  // roles that inherit it), and the native elements that have one of them
+  // and can hold an <svg>. Inside such an element, or inside an <svg> that
+  // is already named, an <image> is part of a single image or control
+  // whose own name speaks for it: it is no image of its own in the
+  // accessibility tree (Chromium leaves it out).
+  const PRESENTATIONAL_CHILDREN_ROLES = new Set([
+    'button',
+    'checkbox',
+    'doc-pagebreak',
+    'graphics-symbol',
+    'image',
+    'img',
+    'math',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'scrollbar',
+    'separator',
+    'slider',
+    'switch',
+    'tab'
+  ]);
+  const NATIVE_PRESENTATIONAL_CHILDREN = new Set(['button', 'meter', 'option', 'progress']);
+  const composedParent =
+    typeof helpers.composedParent === 'function'
+      ? helpers.composedParent
+      : (n) => (n && dom.parentElement(n) ? dom.parentElement(n) : null);
+
+  // Whether a named <svg> or an element whose children are presentational
+  // holds `el`, so its name or role covers the <image>.
+  function insideWholeImageOrControl(el) {
+    let guard = 0;
+    for (let a = composedParent(el); a && guard++ < 500; a = composedParent(a)) {
+      if (dom.nodeType(a) !== 1) continue;
+      const author = (() => {
+        try {
+          return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+            ? helpers.aria.getAuthorRole(a)
+            : '';
+        } catch {
+          return '';
+        }
+      })();
+      if (author) {
+        if (PRESENTATIONAL_CHILDREN_ROLES.has(author)) return true;
+        if (author !== 'none' && author !== 'presentation') continue;
+      }
+      const local = String(dom.localName(a) || '').toLowerCase();
+      const ns = dom.namespaceURI(a);
+      if (ns === 'http://www.w3.org/1999/xhtml' && NATIVE_PRESENTATIONAL_CHILDREN.has(local))
+        return true;
+      if (ns === 'http://www.w3.org/2000/svg' && local === 'svg' && !author) {
+        if (titleText(a)) return true;
+        try {
+          const n = getAccessibleNameInfo ? getAccessibleNameInfo(a, ctx) : null;
+          if (n && n.present && trim(n.value)) return true;
+        } catch {
+          // no name read: not covered
+        }
+      }
+    }
+    return false;
+  }
+
   const rawImages = (() => {
     try {
       return [...((queryAllSmart ? queryAllSmart('image') : queryAll('image')) || [])];
@@ -109233,6 +110920,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         helpers.isPresentationalRoleIgnored(el);
       if (!focusable && !keptByGlobal) continue;
     }
+
+    if (insideWholeImageOrControl(el)) continue;
 
     applicableCount += 1;
 
@@ -116718,9 +118407,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (spacingApplied) after = measure();
     } finally {
       removeSpacing(adopted);
+      // Instantly: a page with `scroll-behavior: smooth` would animate a
+      // plain scrollTo(x, y), and the scan would return with the page
+      // still on its way back.
       try {
-        view.scrollTo(scroll[0], scroll[1]);
-      } catch {}
+        dom.call(view, 'scrollTo', { left: scroll[0], top: scroll[1], behavior: 'instant' });
+      } catch {
+        try {
+          dom.call(view, 'scrollTo', scroll[0], scroll[1]);
+        } catch {}
+      }
     }
     spacingNotApplied = !spacingApplied;
 
@@ -116734,19 +118430,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // own `offset`, `easing` and `composite` are not properties.
     const MOVING_PROPS =
       /^(transform|translate|rotate|scale|left|right|top|bottom|inset|margin|offsetPath|offsetDistance|offsetAnchor|offsetPosition)/;
-    // The elements such an animation targets, read once from the document's
-    // animations: asking each ancestor of each text for its own costs an
-    // animation lookup per element.
+    // The elements such an animation targets, read once from the animations
+    // running when the scan started: asking each ancestor of each text for
+    // its own costs an animation lookup per element. Those the engine
+    // gathered (helpers.animationsAtScanStart) include the ones in open
+    // shadow roots, which the document's getAnimations() leaves out; only
+    // the elements running one that never ends are asked for theirs.
     let movedForEver = null;
     function movedForEverTargets() {
       if (movedForEver) return movedForEver;
       movedForEver = new Set();
-      let animations;
+      let animations = [];
       try {
-        animations =
-          typeof dom.get(document, 'getAnimations') === 'function'
-            ? dom.getAnimations(document)
-            : [];
+        const started =
+          typeof helpers.animationsAtScanStart === 'function'
+            ? helpers.animationsAtScanStart()
+            : null;
+        if (started) {
+          const looping = new Set();
+          for (const a of started) {
+            if (a && a.target && a.endTime === null) looping.add(a.target);
+          }
+          for (const el of looping) {
+            if (typeof dom.get(el, 'getAnimations') !== 'function') continue;
+            for (const a of dom.getAnimations(el, { subtree: true })) {
+              if (a && a.effect && a.effect.target === el) animations.push(a);
+            }
+          }
+        } else if (typeof dom.get(document, 'getAnimations') === 'function') {
+          animations = dom.getAnimations(document);
+        }
       } catch {
         animations = [];
       }
@@ -116795,12 +118508,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // max-width or width, max-height or height), then its overflow, as
     // declarations: "height: 48px; overflow: hidden". '' where it can't
     // be read.
-    function clipCssOf(c, textEl, axis) {
+    function clipCssOf(c, textEl, axis, grew) {
       try {
         const cs = styleOf(c.el);
         if (!cs) return '';
         const parts = [];
-        if (axis === 'x') {
+        // A clamped box that grew with the spacing has no height of its
+        // own: its clamp is what cuts the text, not the height it computes.
+        const clamp =
+          axis === 'y' && grew && (!cs.maxHeight || cs.maxHeight === 'none')
+            ? lineClampOf(c.el)
+            : null;
+        if (clamp) parts.push(clamp.css);
+        else if (axis === 'x') {
           let ws = '';
           for (let cur = textEl, i = 0; cur && i < 100; cur = upOf(cur), i++) {
             const st = styleOf(cur);
@@ -116833,6 +118553,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         return '';
       }
     }
+    // The line count a box is clamped to (`-webkit-line-clamp` on a
+    // -webkit-box laid out vertically, which Chromium computes as
+    // flow-root, or `line-clamp`), as { lines, css }, or null. Such a box
+    // grows with its lines and shows that many, the rest after an ellipsis.
+    function lineClampOf(el) {
+      const cs = styleOf(el);
+      if (!cs) return null;
+      for (const [prop, read] of [
+        ['-webkit-line-clamp', cs.webkitLineClamp],
+        ['line-clamp', cs.getPropertyValue ? cs.getPropertyValue('line-clamp') : '']
+      ]) {
+        const v = String(read || '').trim();
+        const n = Number.parseInt(v, 10);
+        if (!v || v === 'none' || !(n > 0)) continue;
+        if (
+          prop === '-webkit-line-clamp' &&
+          !/-webkit-(inline-)?box/.test(String(cs.display || '')) &&
+          String(cs.webkitBoxOrient || '') !== 'vertical'
+        )
+          continue;
+        return { lines: n, css: `${prop}: ${n}` };
+      }
+      return null;
+    }
+    // How many rows of lines a box shows in full: lines on one row (the
+    // text a clamp hides after its ellipsis is laid out beside the last
+    // row shown) count once.
+    function rowsShown(lines, box, c) {
+      const tops = [];
+      for (const l of lines) {
+        const o = outside(l, box, c);
+        if (o.dx > 1 || o.dy > 1) continue;
+        if (!tops.some((t) => Math.abs(t - l.top) < 1)) tops.push(l.top);
+      }
+      return tops.length;
+    }
+
     function insideBefore(n, c) {
       const b0 = before.boxes.get(keyOf(c));
       const lines = before.lines.get(n) || [];
@@ -116915,6 +118672,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         // Only text the viewport showed in full before can be lost from it.
         if (c.viewport && !insideBefore(n, c)) continue;
         measuredPairs += 1;
+        // A clamped box shows as many rows of lines as before: what goes
+        // past them it hides after an ellipsis, as it did (an excerpt).
+        if (!c.viewport && lineClampOf(c.el)) {
+          const b0 = before.boxes.get(keyOf(c));
+          const linesBefore = before.lines.get(n) || [];
+          if (b0 && rowsShown(linesAfter, b1, c) >= rowsShown(linesBefore, b0, c)) continue;
+        }
         // The line furthest out, measured on the axis that decided it: the
         // first one past the threshold, or else the one that went furthest.
         let worst = null;
@@ -116957,7 +118721,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             // The edge the text crosses, and the CSS that keeps the box from
             // growing past it and clips it there.
             edge: worst.edge,
-            clipCss: c.viewport || c.contentVisibility ? '' : clipCssOf(c, textEl(n), worst.axis),
+            clipCss:
+              c.viewport || c.contentVisibility
+                ? ''
+                : clipCssOf(
+                    c,
+                    textEl(n),
+                    worst.axis,
+                    (() => {
+                      const b0 = before.boxes.get(keyOf(c));
+                      return !!b0 && b1.bottom - b1.top - (b0.bottom - b0.top) > 0.5;
+                    })()
+                  ),
             text: textOf(holderOf(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
@@ -117007,8 +118782,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const o = outside(l, box, c);
         return o.dx <= 1 && o.dy <= 1;
       };
-      const shownIn = (lines, boxes) =>
-        lines.filter((l) => clippers.every((c) => keeps(l, boxes, c))).length;
+      // Counted by rows: under a clamp, the text after the ellipsis is laid
+      // out beside the last row shown, and isn't shown.
+      const shownIn = (lines, boxes) => {
+        const tops = [];
+        for (const l of lines) {
+          if (!clippers.every((c) => keeps(l, boxes, c))) continue;
+          if (!tops.some((t) => Math.abs(t - l.top) < 1)) tops.push(l.top);
+        }
+        return tops.length;
+      };
       const shownBefore = shownIn(linesBefore, before.boxes);
       if (!shownBefore || shownIn(linesAfter, after.boxes) >= shownBefore) continue;
       // The box that cuts off a line it kept before.
@@ -119628,6 +121411,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus ganz verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
       "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus teilweise verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
       "focusNotObscuredMinimum_summary_cantTell_behindModal": "Ein modaler Dialog ist geöffnet, doch {{count}} fokussierbare Elemente außerhalb davon, etwa {{example}}, erhalten weiter den Fokus, während {{container}} sie verdeckt.",
+      "focusNotObscuredMinimum_summary_cantTell_notScrolled": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus möglicherweise verdeckt hinter diesem {{position}} {{container}} erhalten, das {{coverPx}}px des Fensters abdeckt, die die Seite noch als sichtbar zählt; die Seite hat auf Anforderung nicht gescrollt, daher ließ sich nicht prüfen, ob das Element über ihnen gezeichnet wird.",
       "focusNotObscuredMinimum_hint_cantTell_edge": "Geben Sie der Seite ein scroll-padding-{{side}} von mindestens {{paddingPx}}px (am html-Element), damit der Fokus Elemente unter dem Element hervorscrollt; oder machen Sie das Element kleiner oder nicht {{position}}.",
       "focusNotObscuredMinimum_hint_cantTell_middle": "Lassen Sie das Element die Seite nicht verdecken, solange es nicht gebraucht wird, oder setzen Sie es an den oberen oder unteren Rand und geben Sie der Seite auf dieser Seite ein scroll-padding mindestens so groß wie das Element, damit der Fokus Elemente darunter hervorscrollt.",
       "focusNotObscuredMinimum_hint_cantTell_behindModal": "Halten Sie den Fokus im Dialog, solange er geöffnet ist: Machen Sie den Rest der Seite inert, oder öffnen Sie einen <dialog> mit showModal().",
@@ -119636,6 +121420,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus ganz verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
       "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus teilweise verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
       "focusNotObscuredEnhanced_summary_cantTell_behindModal": "Ein modaler Dialog ist geöffnet, doch {{count}} fokussierbare Elemente außerhalb davon, etwa {{example}}, erhalten weiter den Fokus, während {{container}} sie verdeckt.",
+      "focusNotObscuredEnhanced_summary_cantTell_notScrolled": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus möglicherweise verdeckt hinter diesem {{position}} {{container}} erhalten, das {{coverPx}}px des Fensters abdeckt, die die Seite noch als sichtbar zählt; die Seite hat auf Anforderung nicht gescrollt, daher ließ sich nicht prüfen, ob das Element über ihnen gezeichnet wird.",
       "focusNotObscuredEnhanced_hint_cantTell_edge": "Geben Sie der Seite ein scroll-padding-{{side}} von mindestens {{paddingPx}}px (am html-Element), damit der Fokus Elemente unter dem Element hervorscrollt; oder machen Sie das Element kleiner oder nicht {{position}}.",
       "focusNotObscuredEnhanced_hint_cantTell_middle": "Lassen Sie das Element die Seite nicht verdecken, solange es nicht gebraucht wird, oder setzen Sie es an den oberen oder unteren Rand und geben Sie der Seite auf dieser Seite ein scroll-padding mindestens so groß wie das Element, damit der Fokus Elemente darunter hervorscrollt.",
       "focusNotObscuredEnhanced_hint_cantTell_behindModal": "Halten Sie den Fokus im Dialog, solange er geöffnet ist: Machen Sie den Rest der Seite inert, oder öffnen Sie einen <dialog> mit showModal().",
@@ -119926,6 +121711,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
       "ariaProhibitedAttr_description": "Prüft, ob aria-label/aria-labelledby nicht bei WAI-ARIA-Rollen vorhanden sind, deren Spezifikation die ARIA-Benennung ausdrücklich untersagt (z. B. generic, emphasis, strong, paragraph).",
       "ariaProhibitedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" untersagt.",
+      "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} ist bei einem <{{element}}> untersagt, dessen Rolle {{role}} keinen Namen erhalten kann.",
       "ariaProhibitedAttr_hint_fail": "Entfernen Sie dieses Attribut. Elemente mit dieser Rolle können keinen Namen haben, daher ignorieren assistive Technologien es möglicherweise.",
       "ariaProhibitedAttr_summary_fail_roleless": "Dieses <{{element}}> hat keine Rolle und keine andere Namensquelle, daher geben assistive Technologien sein {{attr}} möglicherweise nicht aus.",
       "ariaProhibitedAttr_hint_fail_roleless": "Geben Sie ihm eine Rolle, die einen Namen haben kann, etwa role=\"img\" oder role=\"button\", oder entfernen Sie das Attribut, wenn es ohne Rolle nichts bewirkt.",
@@ -120078,6 +121864,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaHiddenBody_description": "Prüft, ob <body> nicht aria-hidden=\"true\" hat, was die gesamte Seite aus dem Accessibility-Baum entfernen würde.",
       "ariaHiddenBody_summary_fail": "Der Dokumentkörper hat aria-hidden=\"true\", wodurch die gesamte Seite vor assistiven Technologien verborgen wird.",
       "ariaHiddenBody_hint_fail": "Entfernen Sie aria-hidden von <body>. Verbergen Sie stattdessen einzelne Elemente, falls das die Absicht war.",
+      "ariaHiddenBody_summary_failHtml": "Das <html>-Element hat aria-hidden=\"true\", wodurch die gesamte Seite vor assistiven Technologien verborgen wird.",
+      "ariaHiddenBody_hint_failHtml": "Entfernen Sie aria-hidden von <html>. Verbergen Sie stattdessen einzelne Elemente, falls das die Absicht war.",
       "listChildrenValid_title": "Listen dürfen direkt nur Listenelemente enthalten",
       "listChildrenValid_description": "Prüft, ob <ul>/<ol>-Elemente als direkte Kinder nur <li>, <script> oder <template> haben.",
       "listChildrenValid_summary_fail": "Dieses <{{element}}> enthält ein direktes Kind, das kein Listenelement ist: {{invalidChildren}}.",
@@ -120592,6 +122380,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaOwnsValid_hint_fail_ancestor": "Entfernen Sie diese ID aus aria-owns: Ein Element kann keinen seiner Vorfahren besitzen, und der Browser ignoriert es.",
       "ariaOwnsValid_summary_cantTell_self": "Das aria-owns dieses Elements nennt seine eigene ID, {{id}}.",
       "ariaOwnsValid_hint_cantTell_self": "Entfernen Sie seine eigene ID aus aria-owns: Ein Element kann sich nicht selbst besitzen, und der Browser ignoriert es.",
+      "ariaOwnsValid_summary_cantTell_cycle": "Das aria-owns dieses Elements nennt {{id}}, das über aria-owns wiederum dieses Element besitzt: ein Zyklus.",
+      "ariaOwnsValid_hint_cantTell_cycle": "Entfernen Sie eine der IDs, die den Zyklus bilden, aus aria-owns: Ein Element kann keinen seiner Besitzer besitzen, und der Browser ignoriert eine davon.",
       "widgetKeyboardFocusable_title": "Widgets sollten mit der Tastatur erreichbar sein",
       "widgetKeyboardFocusable_description": "Markiert zur manuellen Prüfung ein Element mit einer Widget-Rolle, das keinen Fokus erhalten kann oder nicht in der Tab-Reihenfolge ist, und ein zusammengesetztes Widget ohne Tab-Stopp.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Dieses Element hat die Rolle {{role}}, kann aber keinen Tastaturfokus erhalten.",
@@ -121425,6 +123215,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} focusable elements, such as {{example}}, can take focus entirely hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
       "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} focusable elements, such as {{example}}, can take focus partly hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
       "focusNotObscuredMinimum_summary_cantTell_behindModal": "A modal dialog is open, but {{count}} focusable elements outside it, such as {{example}}, still take focus while {{container}} covers them.",
+      "focusNotObscuredMinimum_summary_cantTell_notScrolled": "{{count}} focusable elements, such as {{example}}, may take focus hidden behind this {{position}} {{container}}, which covers {{coverPx}}px of the window that the page still counts as in view; the page did not scroll when asked, so whether the box is drawn over them could not be checked.",
       "focusNotObscuredMinimum_hint_cantTell_edge": "Give the page a scroll-padding-{{side}} of at least {{paddingPx}}px (on the html element), so focus scrolls elements clear of the box; or make the box smaller, or not {{position}}.",
       "focusNotObscuredMinimum_hint_cantTell_middle": "Keep the box from covering the page while it is not in use, or move it to the top or bottom edge and give the page a scroll-padding on that side at least as large as the box, so focus scrolls elements clear of it.",
       "focusNotObscuredMinimum_hint_cantTell_behindModal": "While the dialog is open, keep focus inside it: make the rest of the page inert, or open a <dialog> with showModal().",
@@ -121433,6 +123224,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} focusable elements, such as {{example}}, can take focus entirely hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
       "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} focusable elements, such as {{example}}, can take focus partly hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
       "focusNotObscuredEnhanced_summary_cantTell_behindModal": "A modal dialog is open, but {{count}} focusable elements outside it, such as {{example}}, still take focus while {{container}} covers them.",
+      "focusNotObscuredEnhanced_summary_cantTell_notScrolled": "{{count}} focusable elements, such as {{example}}, may take focus hidden behind this {{position}} {{container}}, which covers {{coverPx}}px of the window that the page still counts as in view; the page did not scroll when asked, so whether the box is drawn over them could not be checked.",
       "focusNotObscuredEnhanced_hint_cantTell_edge": "Give the page a scroll-padding-{{side}} of at least {{paddingPx}}px (on the html element), so focus scrolls elements clear of the box; or make the box smaller, or not {{position}}.",
       "focusNotObscuredEnhanced_hint_cantTell_middle": "Keep the box from covering the page while it is not in use, or move it to the top or bottom edge and give the page a scroll-padding on that side at least as large as the box, so focus scrolls elements clear of it.",
       "focusNotObscuredEnhanced_hint_cantTell_behindModal": "While the dialog is open, keep focus inside it: make the rest of the page inert, or open a <dialog> with showModal().",
@@ -121723,6 +123515,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
       "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
       "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
+      "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} is prohibited on a <{{element}}>, whose role, {{role}}, can't be named.",
       "ariaProhibitedAttr_hint_fail": "Remove this attribute. Elements with this role can't be named, so assistive technology may ignore it.",
       "ariaProhibitedAttr_summary_fail_roleless": "This <{{element}}> has no role and no other source of a name, so assistive technology may not announce its {{attr}}.",
       "ariaProhibitedAttr_hint_fail_roleless": "Give it a role that can be named, such as role=\"img\" or role=\"button\", or remove the attribute if it does nothing without one.",
@@ -121875,6 +123668,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaHiddenBody_description": "Checks that <body> does not have aria-hidden=\"true\", which would remove the entire page from the accessibility tree.",
       "ariaHiddenBody_summary_fail": "The document body has aria-hidden=\"true\", which hides the entire page from assistive technologies.",
       "ariaHiddenBody_hint_fail": "Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.",
+      "ariaHiddenBody_summary_failHtml": "The <html> element has aria-hidden=\"true\", which hides the entire page from assistive technologies.",
+      "ariaHiddenBody_hint_failHtml": "Remove aria-hidden from <html>. Hide specific elements instead, if that was the intent.",
       "listChildrenValid_title": "Lists must only directly contain list items",
       "listChildrenValid_description": "Checks that <ul>/<ol> elements only have <li>, <script>, or <template> as direct children.",
       "listChildrenValid_summary_fail": "This <{{element}}> contains a direct child that is not a list item: {{invalidChildren}}.",
@@ -122389,6 +124184,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaOwnsValid_hint_fail_ancestor": "Remove that id from aria-owns: an element cannot own one of its ancestors, and the browser ignores it.",
       "ariaOwnsValid_summary_cantTell_self": "This element’s aria-owns names its own id, {{id}}.",
       "ariaOwnsValid_hint_cantTell_self": "Remove its own id from aria-owns: an element cannot own itself, and the browser ignores it.",
+      "ariaOwnsValid_summary_cantTell_cycle": "This element’s aria-owns names {{id}}, which through aria-owns comes back to own this element: a cycle.",
+      "ariaOwnsValid_hint_cantTell_cycle": "Remove one of the ids that make the cycle from aria-owns: an element cannot own one of its owners, and the browser ignores one of them.",
       "widgetKeyboardFocusable_title": "Widgets should be reachable with the keyboard",
       "widgetKeyboardFocusable_description": "Flags an element with a widget role that cannot take focus or is out of the tab order, and a composite widget with no tab stop, for manual review.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "This element has the role {{role}} but cannot take keyboard focus.",
@@ -123222,6 +125019,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco totalmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
       "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco parcialmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
       "focusNotObscuredMinimum_summary_cantTell_behindModal": "Hay un diálogo modal abierto, pero {{count}} elementos enfocables fuera de él, como {{example}}, siguen recibiendo el foco mientras {{container}} los cubre.",
+      "focusNotObscuredMinimum_summary_cantTell_notScrolled": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco ocultos tras este {{position}} {{container}}, que cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles; la página no se desplazó cuando se le pidió, así que no se pudo comprobar si el elemento se dibuja sobre ellos.",
       "focusNotObscuredMinimum_hint_cantTell_edge": "Dé a la página un scroll-padding-{{side}} de al menos {{paddingPx}}px (en el elemento html), para que el foco desplace los elementos fuera de debajo de la caja; o haga la caja más pequeña, o que no sea {{position}}.",
       "focusNotObscuredMinimum_hint_cantTell_middle": "Evite que la caja cubra la página mientras no se usa, o llévela al borde superior o inferior y dé a la página un scroll-padding en ese lado al menos tan grande como la caja, para que el foco desplace los elementos fuera de debajo.",
       "focusNotObscuredMinimum_hint_cantTell_behindModal": "Mientras el diálogo esté abierto, mantenga el foco dentro de él: haga inerte el resto de la página, o abra un <dialog> con showModal().",
@@ -123230,6 +125028,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco totalmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
       "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco parcialmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
       "focusNotObscuredEnhanced_summary_cantTell_behindModal": "Hay un diálogo modal abierto, pero {{count}} elementos enfocables fuera de él, como {{example}}, siguen recibiendo el foco mientras {{container}} los cubre.",
+      "focusNotObscuredEnhanced_summary_cantTell_notScrolled": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco ocultos tras este {{position}} {{container}}, que cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles; la página no se desplazó cuando se le pidió, así que no se pudo comprobar si el elemento se dibuja sobre ellos.",
       "focusNotObscuredEnhanced_hint_cantTell_edge": "Dé a la página un scroll-padding-{{side}} de al menos {{paddingPx}}px (en el elemento html), para que el foco desplace los elementos fuera de debajo de la caja; o haga la caja más pequeña, o que no sea {{position}}.",
       "focusNotObscuredEnhanced_hint_cantTell_middle": "Evite que la caja cubra la página mientras no se usa, o llévela al borde superior o inferior y dé a la página un scroll-padding en ese lado al menos tan grande como la caja, para que el foco desplace los elementos fuera de debajo.",
       "focusNotObscuredEnhanced_hint_cantTell_behindModal": "Mientras el diálogo esté abierto, mantenga el foco dentro de él: haga inerte el resto de la página, o abra un <dialog> con showModal().",
@@ -123520,6 +125319,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
       "ariaProhibitedAttr_description": "Comprueba que aria-label/aria-labelledby no estén presentes en roles WAI-ARIA cuya especificación prohíbe explícitamente el nombrado ARIA (por ejemplo, generic, emphasis, strong, paragraph).",
       "ariaProhibitedAttr_summary_fail": "{{attr}} está prohibido en role=\"{{role}}\".",
+      "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} está prohibido en un <{{element}}>, cuyo rol, {{role}}, no puede tener nombre.",
       "ariaProhibitedAttr_hint_fail": "Quitar este atributo. Los elementos con este rol no pueden tener nombre, así que las tecnologías de apoyo pueden ignorarlo.",
       "ariaProhibitedAttr_summary_fail_roleless": "Este <{{element}}> no tiene rol ni otra fuente de nombre, así que puede que las tecnologías de apoyo no anuncien su {{attr}}.",
       "ariaProhibitedAttr_hint_fail_roleless": "Darle un rol que admita nombre, como role=\"img\" o role=\"button\", o quitar el atributo si sin rol no sirve de nada.",
@@ -123672,6 +125472,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaHiddenBody_description": "Comprueba que <body> no tenga aria-hidden=\"true\", lo que eliminaría toda la página del árbol de accesibilidad.",
       "ariaHiddenBody_summary_fail": "El body del documento tiene aria-hidden=\"true\", lo que oculta toda la página a las tecnologías de apoyo.",
       "ariaHiddenBody_hint_fail": "Eliminar aria-hidden de <body>. Ocultar elementos específicos en su lugar, si esa era la intención.",
+      "ariaHiddenBody_summary_failHtml": "El elemento <html> tiene aria-hidden=\"true\", lo que oculta toda la página a las tecnologías de apoyo.",
+      "ariaHiddenBody_hint_failHtml": "Eliminar aria-hidden de <html>. Ocultar elementos específicos en su lugar, si esa era la intención.",
       "listChildrenValid_title": "Las listas solo deben contener directamente elementos de lista",
       "listChildrenValid_description": "Comprueba que los elementos <ul>/<ol> solo tengan como hijos directos <li>, <script> o <template>.",
       "listChildrenValid_summary_fail": "Este <{{element}}> contiene un hijo directo que no es un elemento de lista: {{invalidChildren}}.",
@@ -124186,6 +125988,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaOwnsValid_hint_fail_ancestor": "Quitar ese id de aria-owns: un elemento no puede ser propietario de uno de sus antecesores, y el navegador lo ignora.",
       "ariaOwnsValid_summary_cantTell_self": "El aria-owns de este elemento nombra su propio id, {{id}}.",
       "ariaOwnsValid_hint_cantTell_self": "Quitar su propio id de aria-owns: un elemento no puede ser propietario de sí mismo, y el navegador lo ignora.",
+      "ariaOwnsValid_summary_cantTell_cycle": "El aria-owns de este elemento nombra {{id}}, que, a través de aria-owns, vuelve a ser propietario de este elemento: un ciclo.",
+      "ariaOwnsValid_hint_cantTell_cycle": "Quitar de aria-owns uno de los id que forman el ciclo: un elemento no puede ser propietario de uno de sus propietarios, y el navegador ignora uno de ellos.",
       "widgetKeyboardFocusable_title": "Los widgets deberían poder alcanzarse con el teclado",
       "widgetKeyboardFocusable_description": "Señala, para revisión manual, un elemento con un rol de widget que no puede recibir el foco o está fuera del orden de tabulación, y un widget compuesto sin parada de tabulación.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Este elemento tiene el rol {{role}}, pero no puede recibir el foco del teclado.",
@@ -125019,6 +126823,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus entièrement cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
       "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus en partie cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
       "focusNotObscuredMinimum_summary_cantTell_behindModal": "Une boîte de dialogue modale est ouverte, mais {{count}} éléments focalisables en dehors, comme {{example}}, reçoivent encore le focus pendant que {{container}} les couvre.",
+      "focusNotObscuredMinimum_summary_cantTell_notScrolled": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus cachés derrière ce {{position}} {{container}}, qui couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles ; la page n’a pas défilé quand on le lui a demandé, donc on n’a pas pu vérifier si la boîte est dessinée par-dessus.",
       "focusNotObscuredMinimum_hint_cantTell_edge": "Donnez à la page un scroll-padding-{{side}} d’au moins {{paddingPx}}px (sur l’élément html), pour que le focus fasse défiler les éléments hors de dessous la boîte ; ou rendez la boîte plus petite, ou non {{position}}.",
       "focusNotObscuredMinimum_hint_cantTell_middle": "Évitez que la boîte couvre la page quand elle ne sert pas, ou placez-la au bord haut ou bas et donnez à la page un scroll-padding de ce côté au moins aussi grand que la boîte, pour que le focus fasse défiler les éléments hors de dessous.",
       "focusNotObscuredMinimum_hint_cantTell_behindModal": "Tant que la boîte de dialogue est ouverte, gardez le focus à l’intérieur : rendez le reste de la page inerte, ou ouvrez un <dialog> avec showModal().",
@@ -125027,6 +126832,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus entièrement cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
       "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus en partie cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
       "focusNotObscuredEnhanced_summary_cantTell_behindModal": "Une boîte de dialogue modale est ouverte, mais {{count}} éléments focalisables en dehors, comme {{example}}, reçoivent encore le focus pendant que {{container}} les couvre.",
+      "focusNotObscuredEnhanced_summary_cantTell_notScrolled": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus cachés derrière ce {{position}} {{container}}, qui couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles ; la page n’a pas défilé quand on le lui a demandé, donc on n’a pas pu vérifier si la boîte est dessinée par-dessus.",
       "focusNotObscuredEnhanced_hint_cantTell_edge": "Donnez à la page un scroll-padding-{{side}} d’au moins {{paddingPx}}px (sur l’élément html), pour que le focus fasse défiler les éléments hors de dessous la boîte ; ou rendez la boîte plus petite, ou non {{position}}.",
       "focusNotObscuredEnhanced_hint_cantTell_middle": "Évitez que la boîte couvre la page quand elle ne sert pas, ou placez-la au bord haut ou bas et donnez à la page un scroll-padding de ce côté au moins aussi grand que la boîte, pour que le focus fasse défiler les éléments hors de dessous.",
       "focusNotObscuredEnhanced_hint_cantTell_behindModal": "Tant que la boîte de dialogue est ouverte, gardez le focus à l’intérieur : rendez le reste de la page inerte, ou ouvrez un <dialog> avec showModal().",
@@ -125317,6 +127123,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
       "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
       "ariaProhibitedAttr_summary_fail": "{{attr}} est interdit sur role=\"{{role}}\".",
+      "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} est interdit sur un élément <{{element}}>, dont le rôle, {{role}}, ne peut pas être nommé.",
       "ariaProhibitedAttr_hint_fail": "Retirez cet attribut. Les éléments ayant ce rôle ne peuvent pas être nommés : les technologies d’assistance peuvent donc l’ignorer.",
       "ariaProhibitedAttr_summary_fail_roleless": "Cet élément <{{element}}> n’a ni rôle ni autre source de nom : les technologies d’assistance risquent de ne pas annoncer son {{attr}}.",
       "ariaProhibitedAttr_hint_fail_roleless": "Donnez-lui un rôle qui peut être nommé, comme role=\"img\" ou role=\"button\", ou retirez l’attribut s’il ne sert à rien sans rôle.",
@@ -125469,6 +127276,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaHiddenBody_description": "Vérifie que <body> n’a pas aria-hidden=\"true\", ce qui retirerait toute la page de l’arbre d’accessibilité.",
       "ariaHiddenBody_summary_fail": "Le corps du document a aria-hidden=\"true\", ce qui masque toute la page aux technologies d’assistance.",
       "ariaHiddenBody_hint_fail": "Retirez aria-hidden de <body>. Masquez des éléments spécifiques à la place, si c’était l’intention.",
+      "ariaHiddenBody_summary_failHtml": "L’élément <html> a aria-hidden=\"true\", ce qui masque toute la page aux technologies d’assistance.",
+      "ariaHiddenBody_hint_failHtml": "Retirez aria-hidden de <html>. Masquez des éléments spécifiques à la place, si c’était l’intention.",
       "listChildrenValid_title": "Les listes ne doivent contenir directement que des éléments de liste",
       "listChildrenValid_description": "Vérifie que les éléments <ul>/<ol> n’ont comme enfants directs que <li>, <script> ou <template>.",
       "listChildrenValid_summary_fail": "Ce <{{element}}> contient un enfant direct qui n’est pas un élément de liste : {{invalidChildren}}.",
@@ -125983,6 +127792,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaOwnsValid_hint_fail_ancestor": "Retirez cet id d’aria-owns : un élément ne peut pas posséder l’un de ses ancêtres, et le navigateur l’ignore.",
       "ariaOwnsValid_summary_cantTell_self": "L’aria-owns de cet élément nomme son propre id, {{id}}.",
       "ariaOwnsValid_hint_cantTell_self": "Retirez son propre id d’aria-owns : un élément ne peut pas se posséder lui-même, et le navigateur l’ignore.",
+      "ariaOwnsValid_summary_cantTell_cycle": "L’aria-owns de cet élément nomme {{id}}, qui, par aria-owns, revient posséder cet élément : un cycle.",
+      "ariaOwnsValid_hint_cantTell_cycle": "Retirez d’aria-owns l’un des id qui forment le cycle : un élément ne peut pas posséder l’un de ses propriétaires, et le navigateur ignore l’un d’eux.",
       "widgetKeyboardFocusable_title": "Les widgets devraient être atteignables au clavier",
       "widgetKeyboardFocusable_description": "Signale, pour revue manuelle, un élément ayant un rôle de widget qui ne peut pas recevoir le focus ou est hors de l’ordre de tabulation, et un widget composite sans arrêt de tabulation.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Cet élément a le rôle {{role}}, mais ne peut pas recevoir le focus clavier.",
@@ -126816,6 +128627,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotObscuredMinimum_summary_cantTell_entirely": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに完全に隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
       "focusNotObscuredMinimum_summary_cantTell_partly": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに一部隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
       "focusNotObscuredMinimum_summary_cantTell_behindModal": "モーダルダイアログが開いていますが、その外にある {{example}} など {{count}} 個のフォーカス可能な要素が、{{container}} に覆われたままフォーカスを受けます。",
+      "focusNotObscuredMinimum_summary_cantTell_notScrolled": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っています。ページが要求どおりにスクロールしなかったため、この要素がそれらの上に描画されるかどうかを確認できませんでした。",
       "focusNotObscuredMinimum_hint_cantTell_edge": "ページ（html 要素）に {{paddingPx}}px 以上の scroll-padding-{{side}} を指定して、フォーカス時に要素がボックスの下から出るようにスクロールさせてください。またはボックスを小さくするか、{{position}} にしないでください。",
       "focusNotObscuredMinimum_hint_cantTell_middle": "使っていない間はボックスがページを覆わないようにするか、上端または下端に移し、その側にボックス以上の大きさの scroll-padding をページに指定して、フォーカス時に要素がその下から出るようにスクロールさせてください。",
       "focusNotObscuredMinimum_hint_cantTell_behindModal": "ダイアログが開いている間はフォーカスをその中に留めてください。ページの残りを inert にするか、showModal() で <dialog> を開いてください。",
@@ -126824,6 +128636,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに完全に隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
       "focusNotObscuredEnhanced_summary_cantTell_partly": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに一部隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
       "focusNotObscuredEnhanced_summary_cantTell_behindModal": "モーダルダイアログが開いていますが、その外にある {{example}} など {{count}} 個のフォーカス可能な要素が、{{container}} に覆われたままフォーカスを受けます。",
+      "focusNotObscuredEnhanced_summary_cantTell_notScrolled": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っています。ページが要求どおりにスクロールしなかったため、この要素がそれらの上に描画されるかどうかを確認できませんでした。",
       "focusNotObscuredEnhanced_hint_cantTell_edge": "ページ（html 要素）に {{paddingPx}}px 以上の scroll-padding-{{side}} を指定して、フォーカス時に要素がボックスの下から出るようにスクロールさせてください。またはボックスを小さくするか、{{position}} にしないでください。",
       "focusNotObscuredEnhanced_hint_cantTell_middle": "使っていない間はボックスがページを覆わないようにするか、上端または下端に移し、その側にボックス以上の大きさの scroll-padding をページに指定して、フォーカス時に要素がその下から出るようにスクロールさせてください。",
       "focusNotObscuredEnhanced_hint_cantTell_behindModal": "ダイアログが開いている間はフォーカスをその中に留めてください。ページの残りを inert にするか、showModal() で <dialog> を開いてください。",
@@ -127114,6 +128927,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_title": "名前付けを禁止しているロールに ARIA の名前付け属性を使用してはならない",
       "ariaProhibitedAttr_description": "仕様で ARIA による名前付けが明示的に禁止されている WAI-ARIA ロール (generic、emphasis、strong、paragraph など) に、aria-label/aria-labelledby が指定されていないかを確認します。",
       "ariaProhibitedAttr_summary_fail": "{{attr}} は role=\"{{role}}\" では禁止されています。",
+      "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} は <{{element}}> では禁止されています。そのロール {{role}} には名前を付けられません。",
       "ariaProhibitedAttr_hint_fail": "この属性を削除してください。このロールの要素には名前を付けられないため、支援技術はこの属性を無視することがあります。",
       "ariaProhibitedAttr_summary_fail_roleless": "この <{{element}}> にはロールもほかの名前の源もないため、支援技術が {{attr}} を読み上げない可能性があります。",
       "ariaProhibitedAttr_hint_fail_roleless": "role=\"img\" や role=\"button\" のように名前を付けられるロールを与えるか、ロールなしでは役に立たないなら属性を削除してください。",
@@ -127266,6 +129080,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaHiddenBody_description": "<body> に aria-hidden=\"true\" が指定されていないかを確認します。指定されているとページ全体がアクセシビリティツリーから取り除かれます。",
       "ariaHiddenBody_summary_fail": "文書の body に aria-hidden=\"true\" が指定されているため、ページ全体が支援技術から隠されています。",
       "ariaHiddenBody_hint_fail": "<body> から aria-hidden を削除してください。特定の要素を隠す意図だった場合は、その要素に指定してください。",
+      "ariaHiddenBody_summary_failHtml": "<html> 要素に aria-hidden=\"true\" が指定されているため、ページ全体が支援技術から隠されています。",
+      "ariaHiddenBody_hint_failHtml": "<html> から aria-hidden を削除してください。特定の要素を隠す意図だった場合は、その要素に指定してください。",
       "listChildrenValid_title": "リストの直接の子はリスト項目のみであること",
       "listChildrenValid_description": "<ul>/<ol> 要素の直接の子が <li>、<script>、<template> のみであるかを確認します。",
       "listChildrenValid_summary_fail": "この <{{element}}> には、リスト項目でない直接の子があります: {{invalidChildren}}。",
@@ -127780,6 +129596,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaOwnsValid_hint_fail_ancestor": "その id を aria-owns から外してください。要素は自身の祖先を所有できず、ブラウザーはそれを無視します。",
       "ariaOwnsValid_summary_cantTell_self": "この要素の aria-owns は、自身の id {{id}} を指しています。",
       "ariaOwnsValid_hint_cantTell_self": "自身の id を aria-owns から外してください。要素は自身を所有できず、ブラウザーはそれを無視します。",
+      "ariaOwnsValid_summary_cantTell_cycle": "この要素の aria-owns は {{id}} を指していますが、それが aria-owns を通じてこの要素を所有し返しており、循環になっています。",
+      "ariaOwnsValid_hint_cantTell_cycle": "循環を作っている id のいずれかを aria-owns から外してください。要素は自身の所有者を所有できず、ブラウザーはそのどちらかを無視します。",
       "widgetKeyboardFocusable_title": "ウィジェットはキーボードで到達できることが望ましい",
       "widgetKeyboardFocusable_description": "ウィジェットのロールを持つのにフォーカスを受け取れない、またはタブ順序に含まれない要素と、タブストップのない複合ウィジェットを、手動確認のために報告します。",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "この要素はロール {{role}} を持っていますが、キーボードフォーカスを受け取れません。",
@@ -128500,6 +130318,14 @@ function matchIgnoringCase(table, locale) {
   return null;
 }
 
+// A table's dictionary for a locale its key may write in another case: the
+// caller's messages and the built-in tables are matched each on its own, so
+// messages: { DE: ... } layers over the built-in de, and locale 'DE' with
+// messages: { De: ... } keeps the built-in German under it (round 9, A9-3).
+function dictIgnoringCase(table, locale) {
+  return ownDict(table, locale) || ownDict(table, matchIgnoringCase(table, locale));
+}
+
 function findLocaleKey(locale, engineOptions) {
   if (lookupDict(locale, engineOptions)) return locale;
 
@@ -128526,7 +130352,9 @@ function getLocaleDict(engineOptions) {
   const requested = normalizeLocale(engineOptions && engineOptions.locale);
   const matched = matchLocale(requested, engineOptions);
 
-  return matched ? lookupDict(matched, engineOptions) : (I18N && I18N.en ? I18N.en : {});
+  return matched
+    ? dictIgnoringCase(getSuppliedMessages(engineOptions), matched) || dictIgnoringCase(I18N, matched)
+    : (I18N && I18N.en ? I18N.en : {});
 }
 
 function ownString(dict, key) {
@@ -128542,8 +130370,8 @@ function localeMessage(key, engineOptions) {
   if (!matched) return null;
 
   return (
-    ownString(ownDict(getSuppliedMessages(engineOptions), matched), key) ||
-    ownString(ownDict(I18N, matched), key)
+    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), matched), key) ||
+    ownString(dictIgnoringCase(I18N, matched), key)
   );
 }
 
@@ -128575,10 +130403,14 @@ function resolveLocale(engineOptions) {
   if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
 
   if (dict !== en) {
-    const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
-    const builtIn = ownDict(I18N, matched);
+    const supplied = dictIgnoringCase(getSuppliedMessages(engineOptions), matched);
+    const builtIn = dictIgnoringCase(I18N, matched);
 
-    const leftOut = I18N_LEFT_OUT[matched] || {};
+    const builtInKey = ownDict(I18N, matched) ? matched : matchIgnoringCase(I18N, matched);
+    const leftOut =
+      (builtInKey && Object.prototype.hasOwnProperty.call(I18N_LEFT_OUT, builtInKey)
+        ? I18N_LEFT_OUT[builtInKey]
+        : null) || {};
 
     for (const key in en) {
       if (leftOut[key] === true) continue;
@@ -128702,7 +130534,7 @@ function t(key, fallback, params, engineOptions) {
   // built-in one. Without it, a custom rule's keys given only in English
   // showed empty under another locale.
   const vEn =
-    ownString(ownDict(getSuppliedMessages(engineOptions), 'en'), key) ||
+    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), 'en'), key) ||
     ownString(I18N && I18N.en, key);
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
@@ -130733,6 +132565,7 @@ const SAFE_DOM_METHODS = [
   "getElementsByTagName",
   "getRootNode",
   "getScreenCTM",
+  "getSelection",
   "hasAttribute",
   "hasChildNodes",
   "insertBefore",
@@ -130745,6 +132578,7 @@ const SAFE_DOM_METHODS = [
   "setAttribute"
 ];
 const SAFE_DOM_OTHER_NAMES = [
+  "URL",
   "customElements",
   "adoptedStyleSheets",
   "ariaActiveDescendantElement",
@@ -130762,6 +132596,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "clientTop",
   "clientWidth",
   "compatMode",
+  "contentType",
   "currentCSSZoom",
   "currentSrc",
   "delegatesFocus",
@@ -131290,6 +133125,10 @@ const createSafeDom = (function createSafeDom() {
       protect && guard(o)
         ? protectedCall(o, 'getScreenCTM', a, b, c, d)
         : o.getScreenCTM(a, b, c, d),
+    getSelection: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getSelection', a, b, c, d)
+        : o.getSelection(a, b, c, d),
     hasAttribute: (o, a, b, c, d) =>
       protect && guard(o)
         ? protectedCall(o, 'hasAttribute', a, b, c, d)
@@ -131666,6 +133505,58 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return false;
   }
 
+  // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
+  // accessible name of a disabled widget has no contrast requirement
+  // either, even when the disabled control itself is a SIBLING of the
+  // text rather than an ancestor -- e.g. <label>My name<input disabled/>
+  // </label> (implicit/explicit native label association), or a
+  // <label id="x">...</label> referenced via aria-labelledby="x" from a
+  // separate aria-disabled widget. Worked out once per label and scan: the
+  // text scan asks for every text node in the label, and each answer walked
+  // the label, or queried the whole document for its id, again, so a label
+  // holding many text nodes cost their number squared (round 9, R9-7).
+  const __localLabelNamesDisabledCache = new WeakMap();
+  const __labelNamesDisabledCache =
+    __getSharedWeakMapCache('__labelNamesDisabledCache') || __localLabelNamesDisabledCache;
+  function labelNamesDisabled(labelAncestor) {
+    if (__labelNamesDisabledCache.has(labelAncestor))
+      return __labelNamesDisabledCache.get(labelAncestor);
+    const disabled = findLabelNamesDisabled(labelAncestor);
+    __labelNamesDisabledCache.set(labelAncestor, disabled);
+    return disabled;
+  }
+  function findLabelNamesDisabled(labelAncestor) {
+    try {
+      // Not the native `.control`, which walks the whole document on
+      // every call in jsdom.
+      const control = shared.getLabelControl
+        ? shared.getLabelControl(labelAncestor)
+        : labelAncestor.control || null;
+      if (control && isDisabledWidget(control)) return true;
+    } catch {}
+
+    try {
+      // Only an element in the label's own tree (its shadow root, or the
+      // document) can reference it by id.
+      const root = dom.getRootNode(labelAncestor);
+      const tree =
+        root && typeof dom.get(root, 'getElementById') === 'function'
+          ? root
+          : dom.ownerDocument(labelAncestor);
+      const labelId = dom.get(labelAncestor, 'id');
+      if (tree && labelId) {
+        const referrers = dom.querySelectorAll(
+          tree,
+          '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
+        );
+        for (const ref of referrers) {
+          if (isDisabledWidget(ref)) return true;
+        }
+      }
+    } catch {}
+    return false;
+  }
+
   function isInactiveUiComponent(el) {
     let node = el;
     let depth = 0;
@@ -131678,45 +133569,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       node = dom.parentElement(node);
     }
 
-    // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
-    // accessible name of a disabled widget has no contrast requirement
-    // either, even when the disabled control itself is a SIBLING of the
-    // text rather than an ancestor -- e.g. <label>My name<input disabled/>
-    // </label> (implicit/explicit native label association), or a
-    // <label id="x">...</label> referenced via aria-labelledby="x" from a
-    // separate aria-disabled widget. Only attempted when an enclosing
-    // <label> was actually found above, to avoid a document-wide query for
-    // the common case of plain text with no label ancestor at all.
-    if (labelAncestor) {
-      try {
-        // Not the native `.control`, which walks the whole document on
-        // every call in jsdom.
-        const control = shared.getLabelControl
-          ? shared.getLabelControl(labelAncestor)
-          : labelAncestor.control || null;
-        if (control && isDisabledWidget(control)) return true;
-      } catch {}
-
-      try {
-        // Only an element in the label's own tree (its shadow root, or the
-        // document) can reference it by id.
-        const root = dom.getRootNode(labelAncestor);
-        const tree =
-          root && typeof dom.get(root, 'getElementById') === 'function'
-            ? root
-            : dom.ownerDocument(labelAncestor);
-        const labelId = dom.get(labelAncestor, 'id');
-        if (tree && labelId) {
-          const referrers = dom.querySelectorAll(
-            tree,
-            '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
-          );
-          for (const ref of referrers) {
-            if (isDisabledWidget(ref)) return true;
-          }
-        }
-      } catch {}
-    }
+    // WCAG 1.4.3/1.4.6 "disabled label" exception: see labelNamesDisabled.
+    // Only attempted when an enclosing <label> was actually found above, to
+    // avoid a document-wide query for the common case of plain text with no
+    // label ancestor at all.
+    if (labelAncestor && labelNamesDisabled(labelAncestor)) return true;
 
     return false;
   }
@@ -132232,6 +134089,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         // moved wholly off the page (text-indent: -9999px) is drawn nowhere.
         if (!marquee && Number.parseFloat(cs.textIndent) < 0 && textOffPage(el, r, cs, sx))
           return true;
+        // Text shrunk by a transform to less than a pixel (scale(0.001)) is
+        // drawn as nothing a reader can see.
+        const shrunk = __uniformTransformScale(el);
+        if (shrunk < 1 && Number.parseFloat(cs.fontSize) * shrunk < 1) return true;
+        // A box clipping its own overflow to a pixel or less (a visually
+        // hidden 1px box with no clip) shows nothing of the text in it.
+        if (!marquee) {
+          const own = clipBoxOf(el);
+          if (
+            own.rect &&
+            ((own.clipsX && own.rect.width <= 1) || (own.clipsY && own.rect.height <= 1))
+          )
+            return true;
+        }
         let left = r.left;
         let top = r.top;
         let right = r.right;
@@ -132251,7 +134122,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               top = Math.max(top, a.top);
               bottom = Math.min(bottom, a.bottom);
             }
-            if (right - left < 1 || bottom - top < 1) return true;
+            // A pixel or less: the 1px box of visually hidden text.
+            if (right - left <= 1 || bottom - top <= 1) return true;
           }
           if (stops) break;
           cur = composedParent(cur);
@@ -136132,6 +138004,22 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (op < 1) {
         acc = { r: acc.r, g: acc.g, b: acc.b, a: clamp01(acc.a * op) };
       }
+
+      // A box in the top layer is painted over its ::backdrop, which is
+      // painted over the rest of the page (a lightbox's dimmed page).
+      const top = acc.a < 1 ? __topLayerOf(cur) : null;
+      if (top && top.color) {
+        if (collectStack) {
+          stack.push({
+            selector:
+              __getSimpleSelectorCached(cur, (dom.tagName(cur) || '').toLowerCase() || 'html') +
+              '::backdrop',
+            bg: { r: top.color.r, g: top.color.g, b: top.color.b, a: top.color.a },
+            opacity: 1
+          });
+        }
+        acc = compositeRgba(acc, top.color);
+      }
     }
 
     let out;
@@ -138081,6 +139969,38 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           occluder = cur;
         }
       }
+
+      // The ::backdrop under a box in the top layer: an image, a gradient
+      // or a filter there stops the measurement as one on an ancestor
+      // would, and an opaque one hides the rest of the page.
+      const top = paintOccluded ? null : __topLayerOf(cur);
+      if (top && top.blocker) {
+        const out = {
+          ok: false,
+          reasonCode:
+            top.blocker.property === 'background-image'
+              ? 'BACKGROUND_IMAGE_OR_GRADIENT'
+              : 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+          blockerSelector:
+            __getSimpleSelectorCached(cur, (dom.tagName(cur) || '').toLowerCase() || 'html') +
+            '::backdrop',
+          blockerElement: describeElement(cur) + '::backdrop',
+          blockerIsAncestor: true,
+          blockerProperty: top.blocker.property,
+          blockerValue: truncateCssValue(top.blocker.value, 80),
+          ...(top.blocker.property === 'background-image'
+            ? { backgroundFillType: classifyBackgroundImageValue(top.blocker.value) }
+            : {})
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch {}
+        return out;
+      }
+      if (top && top.color && top.color.a >= 1) {
+        paintOccluded = true;
+        occluder = cur;
+      }
     }
 
     const overlap = __findPaintUnderText(el, chain);
@@ -138185,6 +140105,66 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // than paint behind it, and where they stand depends on the scroll
   // position the scan was taken at.
   const __pinnedCache = new WeakMap();
+  // A box in the top layer (a modal dialog, an open popover, a fullscreen
+  // element) is painted over the whole document, and its ::backdrop
+  // between the two: under the box, over everything else. null for any
+  // other box; for one in the top layer, its backdrop's color (null when
+  // it paints none) and what, if anything, stops measuring through it (a
+  // background image or gradient, a filter or backdrop-filter). The top
+  // layer computes its boxes to position absolute or fixed, which most
+  // boxes aren't, so only those are asked.
+  const __topLayerCache = new WeakMap();
+  const __TOP_LAYER_STATES = [':modal', ':popover-open', ':fullscreen'];
+  function __topLayerOf(node) {
+    if (!node || dom.nodeType(node) !== 1) return null;
+    if (__topLayerCache.has(node)) return __topLayerCache.get(node);
+    let out = null;
+    try {
+      const cs = __contrastComputedStyle(node);
+      const placed = !!cs && (cs.position === 'fixed' || cs.position === 'absolute');
+      const inTop =
+        placed &&
+        __TOP_LAYER_STATES.some((sel) => {
+          try {
+            return !!dom.matches(node, sel);
+          } catch {
+            return false;
+          }
+        });
+      if (inTop) {
+        out = { el: node, color: null, blocker: null };
+        let bcs = null;
+        try {
+          bcs =
+            window && typeof window.getComputedStyle === 'function'
+              ? window.getComputedStyle(node, '::backdrop')
+              : null;
+        } catch {
+          bcs = null;
+        }
+        if (bcs && bcs.display !== 'none') {
+          const filter = trim(bcs.filter);
+          const backdropFilter = trim(bcs.backdropFilter);
+          const op = opacityOf(bcs);
+          if (backdropFilter && backdropFilter !== 'none') {
+            out.blocker = { property: 'backdrop-filter', value: backdropFilter };
+          } else if (filter && filter !== 'none') {
+            out.blocker = { property: 'filter', value: filter };
+          } else if (op > 0 && hasBackgroundImageOrGradient(bcs)) {
+            out.blocker = { property: 'background-image', value: trim(bcs.backgroundImage) };
+          }
+          const bg = parseCssColorToRgba(bcs.backgroundColor);
+          if (bg && bg.a > 0 && op > 0)
+            out.color = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a * op) };
+          out.value = trim(bcs.backgroundColor);
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __topLayerCache.set(node, out);
+    return out;
+  }
   function __isPinned(node) {
     const path = [];
     let cur = node;
@@ -139451,6 +141431,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       chain.push(cur);
     }
     const inChain = new Set(chain);
+    // The innermost box of the chain in the top layer: everything outside
+    // it is painted under it and its ::backdrop, whatever its z-index.
+    let topLayer = null;
+    for (const a of chain) {
+      topLayer = __topLayerOf(a);
+      if (topLayer) break;
+    }
+    const underTop = (node) =>
+      !!topLayer && node !== topLayer.el && !__isComposedInside(node, topLayer.el);
     const outerSvg = (node) => {
       let found = null;
       for (let cur = node, guard = 0; cur && guard < 1000; cur = composedParent(cur), guard++) {
@@ -139683,6 +141672,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (inChain.has(orderEl)) continue;
       const key = __paintKey(orderEl, p.paint.property === 'element' ? 'content' : 'bg');
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
+      if (underTop(orderEl)) {
+        if (!key) return FALLBACK;
+        behind.push({ p, key, svg: orderEl !== p.el, rect: pr, underTop: true });
+        continue;
+      }
       if (Number.isNaN(c)) return FALLBACK;
       if (c > 0) {
         if (inside || __isPinned(p.el)) continue;
@@ -139697,6 +141691,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     for (const x of pseudos) {
       if (!rects.some((tr) => __paintsOnLine(x.p, x.rect, tr))) continue;
       const key = __pseudoPaintKey(x.p);
+      if (key && underTop(x.p.el)) {
+        behind.push({ p: x.p, key, svg: false, rect: x.rect, pseudo: x, underTop: true });
+        continue;
+      }
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
       if (Number.isNaN(c)) return FALLBACK;
       if (c > 0) {
@@ -139771,8 +141769,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // background, which then covers it.
       const order = __cmpPaintKeys(key, textKey);
       if (Number.isNaN(order)) return FALLBACK;
-      if (order > 0) return blocked(own);
-      layers.push({ el: a, key, color, foreign: null, partial });
+      if (order > 0 && !underTop(a)) return blocked(own);
+      layers.push({ el: a, key, color, foreign: null, partial, underTop: underTop(a) });
     }
     for (const b of behind) {
       const cs = __contrastComputedStyle(b.p.el);
@@ -139833,11 +141831,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           t.bottom <= r.bottom - radius + 0.5;
         if (!rects.every(inside)) color = null;
       }
-      layers.push({ el: b.p.el, key: b.key, color, foreign: b.p });
+      layers.push({ el: b.p.el, key: b.key, color, foreign: b.p, underTop: !!b.underTop });
     }
 
     let unordered = false;
     layers.sort((x, y) => {
+      // What the top layer holds is over the rest of the page.
+      if (!!x.underTop !== !!y.underTop) return x.underTop ? 1 : -1;
       const c = __cmpPaintKeys(y.key, x.key);
       if (Number.isNaN(c)) {
         unordered = true;
@@ -139846,6 +141846,22 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return c;
     });
     if (unordered) return FALLBACK;
+    // The top layer box's ::backdrop, between the two.
+    if (topLayer && (topLayer.color || topLayer.blocker)) {
+      const at = layers.findIndex((l) => l.underTop);
+      const backdrop = {
+        el: topLayer.el,
+        pseudo: '::backdrop',
+        paint: topLayer.blocker || { property: 'background-color', value: topLayer.value }
+      };
+      layers.splice(at < 0 ? layers.length : at, 0, {
+        el: topLayer.el,
+        key: null,
+        color: topLayer.blocker ? null : topLayer.color,
+        foreign: backdrop,
+        underTop: false
+      });
+    }
 
     // Topmost first, down to the first opaque layer.
     let acc = { r: 0, g: 0, b: 0, a: 0 };
@@ -146484,6 +148500,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
   let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document|ShadowRoot, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
+  let __firstLabelableByLabel = null; // WeakMap<Element, Element|null> (a <label>'s first labelable descendant, see firstLabelableIn)
   // Map<string, WeakMap<Element, Info>>. Only names computed at
   // __nameComputationDepth 0 are stored: a name computed deeper is the value
   // that traversal saw, not the element's own. Resolving an aria-labelledby
@@ -146615,6 +148632,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   try {
+    __firstLabelableByLabel =
+      __domSharedCache.firstLabelableByLabel instanceof WeakMap
+        ? __domSharedCache.firstLabelableByLabel
+        : (__domSharedCache.firstLabelableByLabel = new WeakMap());
+  } catch {
+    __firstLabelableByLabel = null;
+  }
+
+  try {
     __accessibleNameCacheByKey =
       __domSharedCache.accessibleNameCacheByKey instanceof Map
         ? __domSharedCache.accessibleNameCacheByKey
@@ -146720,8 +148746,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return false;
     }
   }
-  // A label's first labelable descendant, in tree order.
+  // A label's first labelable descendant, in tree order. Found once per
+  // label and scan: the contrast scan asks for each text node in a label
+  // (whether its label's control is disabled), and a walk of the label each
+  // time made a label holding many text nodes cost their number squared
+  // (round 9, R9-7).
   function firstLabelableIn(label) {
+    if (__firstLabelableByLabel && __firstLabelableByLabel.has(label))
+      return __firstLabelableByLabel.get(label);
+    const found = findFirstLabelableIn(label);
+    if (__firstLabelableByLabel) __firstLabelableByLabel.set(label, found);
+    return found;
+  }
+  function findFirstLabelableIn(label) {
     try {
       const plain = dom.querySelector(label, LABELABLE_SELECTOR);
       // A custom element may come before it: look for one only if the label
@@ -148330,6 +150367,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // whole label, bounded only by the blunt depth counter.
     effOpts = Object.assign({}, effOpts, { __idrefVisited: visited, __inIdRefTraversal: true });
 
+    // A <script> or <style> is never rendered, so it gives no text, as a
+    // <template> gives none: Chromium names <a href="/" aria-labelledby="s">
+    // </a><script id="s">…</script> "".
+    {
+      const tag = lower(dom.localName(el) || '');
+      if (
+        (tag === 'script' || tag === 'style') &&
+        dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml'
+      )
+        return '';
+    }
+
     __nameComputationDepth += 1;
     try {
       // A referenced node's own aria-labelledby is not followed: accname 1.2
@@ -149658,6 +151707,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
           const svgRoot = dom.closest(node, 'svg');
           if (svgRoot && svgRoot !== el && dom.contains(el, svgRoot)) return;
         }
+        // Nor is a ruby annotation (<rt>) or its fallback parenthesis
+        // (<rp>): Chromium names <button><ruby>漢<rt>kan</rt></ruby></button>
+        // "漢", from the base text alone.
+        if (
+          (local === 'rt' || local === 'rp') &&
+          dom.namespaceURI(node) === 'http://www.w3.org/1999/xhtml'
+        )
+          return;
       }
 
       // opts.skipNode: the control a <label> is being read for. Its own name
@@ -150094,6 +152151,35 @@ const createDomHelpers = (function createDomHelpers(opts) {
       .toLowerCase();
     if (/^circle\(\s*0(px|%)?(\s|\)|$)/.test(v)) return true;
     if (/^ellipse\(\s*0(px|%)?\s+0(px|%)?(\s|\)|$)/.test(v)) return true;
+    // A polygon of no area: its points all on one line, or all one point,
+    // such as polygon(0 0, 0 0, 0 0). Decided where its coordinates are in
+    // one unit (or zero), or are all the same point.
+    const poly = /^polygon\(\s*(?:(?:nonzero|evenodd)\s*,\s*)?([^)]*)\)/.exec(v);
+    if (poly) {
+      const points = poly[1].split(',').map((pt) => pt.trim().split(/\s+/));
+      if (points.length < 3 || points.some((pt) => pt.length !== 2)) return points.length < 3;
+      if (points.every((pt) => pt.join(' ') === points[0].join(' '))) return true;
+      const units = new Set();
+      const nums = [];
+      for (const pt of points) {
+        const xy = [];
+        for (const c of pt) {
+          const n = /^(-?\d*\.?\d+)(%|[a-z]*)$/.exec(c);
+          if (!n) return false;
+          if (parseFloat(n[1]) !== 0) units.add(n[2] || 'px');
+          xy.push(parseFloat(n[1]));
+        }
+        nums.push(xy);
+      }
+      if (units.size > 1) return false;
+      let area = 0;
+      for (let i = 0; i < nums.length; i++) {
+        const [x1, y1] = nums[i];
+        const [x2, y2] = nums[(i + 1) % nums.length];
+        area += x1 * y2 - x2 * y1;
+      }
+      return Math.abs(area) < 1e-9;
+    }
     const m = /^inset\(([^)]*)\)/.exec(v);
     if (!m) return false;
     const parts = m[1]
@@ -152036,6 +154122,41 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return SKIP_LINK_WORDING.some((re) => re.test(s));
   }
 
+  // The fragment a link goes to in its own document, decoded and trimmed
+  // ('' for "#"), or null for a link that leads to another document, or
+  // has no fragment. The href is resolved against the document's base URL,
+  // as the browser follows it: under <base href="/">, "#main" on
+  // /products/42 leads to /#main, another page. A link stays on the page
+  // when its URL without the fragment is the document's own URL without
+  // its fragment, so a full URL of the page with a fragment counts too.
+  // Where a URL can't be read, an href that starts with "#" counts, as it
+  // did before.
+  const withoutFragment = (url) => {
+    const at = url.indexOf('#');
+    return at < 0 ? url : url.slice(0, at);
+  };
+  function getSamePageFragment(a) {
+    const href = trim(getAttr(a, 'href'));
+    if (href.indexOf('#') < 0) return null;
+    let fragment;
+    try {
+      const doc = dom.ownerDocument(a) || document;
+      const docUrl = String(dom.get(doc, 'URL') || '');
+      const resolved = new URL(href, dom.baseURI(doc) || docUrl).href;
+      if (withoutFragment(resolved) !== withoutFragment(docUrl)) return null;
+      fragment = resolved.slice(resolved.indexOf('#') + 1);
+    } catch {
+      if (href.charAt(0) !== '#') return null;
+      fragment = href.slice(1);
+    }
+    try {
+      fragment = decodeURIComponent(fragment);
+    } catch {
+      // keep the raw fragment if it isn't valid percent-encoding
+    }
+    return fragment.trim();
+  }
+
   // What a link is made of, for a standard that judges text links, image
   // links and SVG links apart:
   // - 'svg': an <a> in SVG (an SVG link), whatever it holds;
@@ -152124,6 +154245,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isModalInert,
     getDocumentRoots: documentRoots,
     hasSkipLinkWording,
+    getSamePageFragment,
     getLinkKind,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
@@ -153926,7 +156048,7 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   return Object.assign(env, internalsHook);
 });
 
-const settleAnimations = (function settleAnimations(doc) {
+const settleAnimations = (function settleAnimations(doc, includeShadowDom) {
   // One running animation as rules read it: its element, what it is, and its
   // timing in milliseconds; endTime is null for one that never ends.
   function describeAnimation(anim, timing) {
@@ -153963,6 +156085,41 @@ const settleAnimations = (function settleAnimations(doc) {
       animations = dom.getAnimations(doc);
   } catch {
     animations = [];
+  }
+  // The document's getAnimations() leaves out the animations of elements in
+  // shadow trees: each open shadow root, nested ones included, gives its
+  // own. Without them a fade in a component was measured wherever it had
+  // got to, and its motion never reported. Left out with includeShadowDom
+  // off, as the rest of the scan leaves those elements out.
+  if (includeShadowDom !== false) {
+    try {
+      const docEl =
+        doc && typeof dom.get(doc, 'getAnimations') === 'function'
+          ? dom.documentElement(doc)
+          : null;
+      const tops = docEl ? [docEl] : [];
+      const seen = new Set(animations);
+      for (let i = 0; i < tops.length; i++) {
+        const walker = dom.createTreeWalker(doc, tops[i], 1);
+        for (let el = walker.currentNode; el; el = walker.nextNode()) {
+          const shadow = dom.nodeType(el) === 1 ? dom.shadowRoot(el) : null;
+          if (!shadow) continue;
+          tops.push(shadow);
+          let own = [];
+          try {
+            own =
+              typeof dom.get(shadow, 'getAnimations') === 'function'
+                ? dom.getAnimations(shadow)
+                : [];
+          } catch {}
+          for (const a of own) {
+            if (seen.has(a)) continue;
+            seen.add(a);
+            animations.push(a);
+          }
+        }
+      }
+    } catch {}
   }
   // Every animation is read before any is moved: setting currentTime makes
   // the next read update the page's style, so reading and moving one at a
@@ -156253,9 +158410,61 @@ const assertPageBuiltins = (function assertPageBuiltins() {
     check('RegExp', () => new RegExp('b+', 'g').exec('abbc')[0] === 'bb');
     check('Math.round', () => Math.round(1.5) === 2 && Math.round(-0.4) === 0);
     check('Math.abs', () => Math.abs(-2) === 2);
-    check('Math.max', () => Math.max(1, 3) === 3);
-    check('Math.min', () => Math.min(1, 3) === 1);
+    // With more than two arguments too: a replacement that reads only two
+    // gave the wrong extreme of a list (round 9, R9-10).
+    check('Math.max', () => Math.max(1, 3) === 3 && Math.max(1, 3, 5) === 5);
+    check('Math.min', () => Math.min(1, 3) === 1 && Math.min(5, 3, 1) === 1);
     check('parseFloat', () => parseFloat('1.5px') === 1.5 && Number.parseFloat('2.5') === 2.5);
+    // Each of these, replaced, changed what rules report without a word
+    // (round 9, R9-10). A shift or pop that takes nothing out hung the scan
+    // in a loop that empties a list, so they are checked before it starts.
+    check(
+      'String.prototype.indexOf',
+      () => 'abcb'.indexOf('b') === 1 && 'abcb'.indexOf('b', 2) === 3 && 'abc'.indexOf('d') === -1
+    );
+    check('String.prototype.includes', () => 'abc'.includes('b') && !'abc'.includes('d'));
+    check('String.prototype.slice', () => 'abcd'.slice(1, 3) === 'bc' && 'abc'.slice(-1) === 'c');
+    check('String.prototype.charAt', () => 'abc'.charAt(1) === 'b');
+    check('String.prototype.match', () => {
+      const m = 'a1b2'.match(/\d/g);
+      return !!m && m.length === 2 && m[1] === '2' && 'abc'.match(/c/).index === 2;
+    });
+    check('RegExp.prototype[Symbol.match]', () => {
+      const m = /b/[Symbol.match]('abc');
+      return !!m && m[0] === 'b';
+    });
+    check('RegExp.prototype[Symbol.split]', () => {
+      const parts = /\d/[Symbol.split]('a1b2c');
+      return parts.length === 3 && parts[2] === 'c';
+    });
+    check('Array.prototype.join', () => [1, 2].join('-') === '1-2' && [1, 2].join() === '1,2');
+    check('Array.prototype.sort', () => {
+      const a = [3, 1, 2].sort();
+      const b = [1, 3, 2].sort((x, y) => y - x);
+      return a[0] === 1 && a[2] === 3 && b[0] === 3 && b[2] === 1;
+    });
+    check('Array.prototype.shift', () => {
+      const a = [1, 2];
+      return a.shift() === 1 && a.length === 1 && a[0] === 2;
+    });
+    check('Array.prototype.pop', () => {
+      const a = [1, 2];
+      return a.pop() === 2 && a.length === 1;
+    });
+    check('Set.prototype.delete', () => {
+      const s = new Set([1]);
+      return s.delete(1) === true && !s.has(1) && s.size === 0;
+    });
+    check('WeakMap.prototype.has', () => {
+      const k = {};
+      const m = new WeakMap();
+      m.set(k, 1);
+      return m.has(k) && !m.has({});
+    });
+    check('parseInt', () => parseInt('12px', 10) === 12 && Number.parseInt('7') === 7);
+    check('Math.floor', () => Math.floor(1.7) === 1 && Math.floor(-1.2) === -2);
+    check('Math.pow', () => Math.pow(2, 10) === 1024);
+    check('URL', () => new URL('b#c', 'https://a.test/x/').href === 'https://a.test/x/b#c');
     check('NodeFilter', () => {
       if (typeof NodeFilter === 'undefined') return true;
       return (
@@ -156351,7 +158560,13 @@ const runCore = (function runCore(
     typeof document !== 'undefined' ? document : null
   );
   try {
-    const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // Shadow trees as the scan reads them: on unless includeShadowDom is off.
+    const shadowDom = !(
+      engineOptions &&
+      typeof engineOptions === 'object' &&
+      switchOf(engineOptions.includeShadowDom) === false
+    );
+    const settled = settleAnimations(typeof document !== 'undefined' ? document : null, shadowDom);
     // The animations as they were before settling, for helpers.animationsAtScanStart.
     settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.
@@ -157347,6 +159562,7 @@ const __a11yCoreCrossFrameApi = (function () {
   "getElementsByTagName",
   "getRootNode",
   "getScreenCTM",
+  "getSelection",
   "hasAttribute",
   "hasChildNodes",
   "insertBefore",
@@ -157359,6 +159575,7 @@ const __a11yCoreCrossFrameApi = (function () {
   "setAttribute"
 ];
 const SAFE_DOM_OTHER_NAMES = [
+  "URL",
   "customElements",
   "adoptedStyleSheets",
   "ariaActiveDescendantElement",
@@ -157376,6 +159593,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "clientTop",
   "clientWidth",
   "compatMode",
+  "contentType",
   "currentCSSZoom",
   "currentSrc",
   "delegatesFocus",
@@ -157904,6 +160122,10 @@ const createSafeDom = (function createSafeDom() {
       protect && guard(o)
         ? protectedCall(o, 'getScreenCTM', a, b, c, d)
         : o.getScreenCTM(a, b, c, d),
+    getSelection: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getSelection', a, b, c, d)
+        : o.getSelection(a, b, c, d),
     hasAttribute: (o, a, b, c, d) =>
       protect && guard(o)
         ? protectedCall(o, 'hasAttribute', a, b, c, d)
