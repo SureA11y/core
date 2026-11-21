@@ -82,7 +82,9 @@
  *   ordinary class, so the rule is asked about as before (with no lean, as
  *   it names focus-visible).
  * - Selector matching goes through `el.matches()` on the focus pseudo
- *   stripped out of the selector. A selector the engine cannot parse
+ *   stripped out of the selector. A focus pseudo inside `:is()`,
+ *   `:where()` or `:matches()` counts too: `a:is(:focus, :hover)` is met
+ *   by the focused link, so the whole `:is()` goes. A selector the engine cannot parse
  *   (vendor pseudo-elements, `:host`, unsupported `:is()` forms) throws
  *   there and is skipped rather than guessed at.
  */
@@ -393,8 +395,68 @@ function runInPage(ctx) {
     return compounds;
   }
 
+  // Splits on top-level commas, keeping empty items.
+  function splitArgs(text) {
+    const args = [];
+    let depth = 0;
+    let current = '';
+    for (const ch of text) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (ch === ',' && depth === 0) {
+        args.push(current);
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    args.push(current);
+    return args;
+  }
+
+  const MATCHES_ANY = /^:(is|where|matches|-webkit-any)\(/i;
+
+  // The selector with :focus and :focus-visible taken out, as it reads while
+  // the element has focus. Inside :is()/:where() (`a:is(:focus, :hover)`), an
+  // argument left empty is one the focused element meets, so the whole
+  // pseudo-class goes; a non-empty one stays as written.
+  function dropFocus(sel) {
+    let out = '';
+    let rest = '';
+    let i = 0;
+    while (i < sel.length) {
+      const m = sel[i] === ':' ? MATCHES_ANY.exec(sel.slice(i)) : null;
+      if (!m) {
+        rest += sel[i];
+        i += 1;
+        continue;
+      }
+      out += rest.replace(FOCUS_PSEUDO, '');
+      rest = '';
+      const start = i + m[0].length;
+      let depth = 1;
+      let j = start;
+      for (; j < sel.length && depth; j++) {
+        if (sel[j] === '(') depth += 1;
+        else if (sel[j] === ')') depth -= 1;
+      }
+      const inner = sel.slice(start, depth ? j : j - 1);
+      let met = false;
+      const args = splitArgs(inner).map((arg) => {
+        const raw = dropFocus(arg);
+        const kept = trim(raw);
+        if (trim(arg) && !kept) met = true;
+        // `:is(.menu :focus)` keeps its combinator: `.menu *`.
+        return kept && /[\s>+~]:focus(-visible)?$/i.test(trim(arg)) ? `${kept} *` : kept;
+      });
+      if (!met) out += `${m[0]}${args.filter(Boolean).join(', ')})`;
+      i = j;
+    }
+    return out + rest.replace(FOCUS_PSEUDO, '');
+  }
+
   function stripFocusPseudo(compound) {
-    const stripped = trim(String(compound).replace(FOCUS_PSEUDO, ''));
+    const stripped = trim(dropFocus(String(compound)));
     return stripped || '*';
   }
 

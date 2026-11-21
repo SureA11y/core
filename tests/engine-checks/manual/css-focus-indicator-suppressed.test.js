@@ -182,6 +182,39 @@ test(`${RULE_ID}: .focus-visible outside the polyfill's scope is judged as befor
   }
 });
 
+test(`${RULE_ID}: a focus pseudo inside :is() or :where() is a focus rule (round 8, LY-12)`, () => {
+  for (const css of [
+    'a:is(:focus){outline:none}',
+    'a:where(:focus){outline:none}',
+    'a:is(:focus,:hover){outline:none}',
+    'a:matches(:focus){outline:none}',
+    ':is(a, button):is(:focus){outline:none}',
+    'nav :is(.menu :focus){outline:none}'
+  ]) {
+    const result = runa11yCoreOnHtml(
+      page(css, '<nav class="menu"><a href="/x" id="a">x</a></nav>'),
+      {
+        runOnly: [RULE_ID]
+      }
+    );
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'a'), css);
+    assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, [
+      css.slice(0, css.indexOf('{'))
+    ]);
+  }
+  // Another argument the link does not meet, or a replacement written the same way.
+  for (const css of [
+    'a:is(:focus.other){outline:none}',
+    'a:focus{outline:none} a:is(:focus){box-shadow:0 0 0 2px navy}'
+  ]) {
+    const result = runa11yCoreOnHtml(page(css, '<nav class="menu"><a href="/x">x</a></nav>'), {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
 test(`${RULE_ID}: suppression nested in a grouping rule is found`, () => {
   const result = runa11yCoreOnHtml(
     page('@media screen{a:focus{outline:none}}', '<a href="/x" id="a">x</a>'),
