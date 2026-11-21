@@ -4393,6 +4393,7 @@ function createDomHelpers(opts) {
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
   let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document|ShadowRoot, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
+  let __firstLabelableByLabel = null; // WeakMap<Element, Element|null> (a <label>'s first labelable descendant, see firstLabelableIn)
   // Map<string, WeakMap<Element, Info>>. Only names computed at
   // __nameComputationDepth 0 are stored: a name computed deeper is the value
   // that traversal saw, not the element's own. Resolving an aria-labelledby
@@ -4524,6 +4525,15 @@ function createDomHelpers(opts) {
   }
 
   try {
+    __firstLabelableByLabel =
+      __domSharedCache.firstLabelableByLabel instanceof WeakMap
+        ? __domSharedCache.firstLabelableByLabel
+        : (__domSharedCache.firstLabelableByLabel = new WeakMap());
+  } catch {
+    __firstLabelableByLabel = null;
+  }
+
+  try {
     __accessibleNameCacheByKey =
       __domSharedCache.accessibleNameCacheByKey instanceof Map
         ? __domSharedCache.accessibleNameCacheByKey
@@ -4629,8 +4639,19 @@ function createDomHelpers(opts) {
       return false;
     }
   }
-  // A label's first labelable descendant, in tree order.
+  // A label's first labelable descendant, in tree order. Found once per
+  // label and scan: the contrast scan asks for each text node in a label
+  // (whether its label's control is disabled), and a walk of the label each
+  // time made a label holding many text nodes cost their number squared
+  // (round 9, R9-7).
   function firstLabelableIn(label) {
+    if (__firstLabelableByLabel && __firstLabelableByLabel.has(label))
+      return __firstLabelableByLabel.get(label);
+    const found = findFirstLabelableIn(label);
+    if (__firstLabelableByLabel) __firstLabelableByLabel.set(label, found);
+    return found;
+  }
+  function findFirstLabelableIn(label) {
     try {
       const plain = dom.querySelector(label, LABELABLE_SELECTOR);
       // A custom element may come before it: look for one only if the label
