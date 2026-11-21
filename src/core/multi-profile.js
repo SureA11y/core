@@ -185,6 +185,21 @@ function capOccurrences(result, engineOptions) {
 
 function runProfilesUncapped(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
+  // A frame's scan that starts with no time budget left (frame-scan.js) is
+  // asked to start no rule (__budgetSpent, set by the engine only, not
+  // enumerable): each profile's scan is asked the same, so it lists its
+  // selection in notRun.
+  const carryBudgetSpent = (from, to) => {
+    if (
+      from &&
+      typeof from === 'object' &&
+      !Object.prototype.propertyIsEnumerable.call(from, '__budgetSpent') &&
+      from.__budgetSpent === true
+    ) {
+      Object.defineProperty(to, '__budgetSpent', { value: true });
+    }
+    return to;
+  };
   const allowFail = policyAllowsFail(engineOptions);
   const asked =
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
@@ -212,7 +227,12 @@ function runProfilesUncapped(engineOptions, run) {
     }
     if (unique.length <= 1) {
       return withOwnVerdicts(
-        run(Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })),
+        run(
+          carryBudgetSpent(
+            engineOptions,
+            Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+          )
+        ),
         allowFail
       );
     }
@@ -273,11 +293,14 @@ function runProfilesUncapped(engineOptions, run) {
         return thenable(dry) ? dry.then(skippedOf) : skippedOf(dry);
       }
       const result = run(
-        Object.assign(
-          {},
+        carryBudgetSpent(
           engineOptions,
-          { profile: unique[i] },
-          left !== null && i > 0 ? { timeBudgetMs: left } : {}
+          Object.assign(
+            {},
+            engineOptions,
+            { profile: unique[i] },
+            left !== null && i > 0 ? { timeBudgetMs: left } : {}
+          )
         )
       );
       if (thenable(result)) {

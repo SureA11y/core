@@ -58,6 +58,7 @@
     "form-control-programmatic-label-present",
     "form-control-programmatic-label-quality",
     "form-control-single-label",
+    "form-group-name-present",
     "heading-order",
     "heading-quality",
     "html-lang-attr-present",
@@ -136,6 +137,7 @@
     "svg-image-text-alternative-present",
     "svg-text-alternative-present",
     "svg-text-alternative-quality",
+    "symbol-graphic-contrast",
     "tab-name-present",
     "tabindex",
     "table-duplicate-name",
@@ -426,6 +428,10 @@
       "FORM_FIELD_EXTRA_EMPTY_LABEL",
       "FORM_FIELD_MULTIPLE_LABELS"
     ],
+    "form-group-name-present": [
+      "CHECKBOX_GROUP_NO_NAME",
+      "RADIO_GROUP_NO_NAME"
+    ],
     "heading-order": [
       "HEADING_ORDER_SKIPPED_LEVEL"
     ],
@@ -656,6 +662,7 @@
     "page-title-patterns": [
       "duplicateTitlesAcrossPages",
       "genericTitle",
+      "placeholderTitle",
       "templateLikeTitle",
       "templatedTitlesAcrossPages",
       "titleReview",
@@ -750,6 +757,9 @@
     "svg-text-alternative-quality": [
       "IMAGE_ONLY_CONTROL_CONTENT",
       "TEXT_ALTERNATIVE_REVIEW"
+    ],
+    "symbol-graphic-contrast": [
+      "SYMBOLS_BELOW_GRAPHIC_THRESHOLD"
     ],
     "tab-name-present": [
       "name_closedContent",

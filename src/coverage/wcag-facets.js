@@ -356,6 +356,11 @@ const FACETS = {
                 "automation": "manual"
             },
             {
+                "id": "form-group-name-evidence",
+                "label": "Radio buttons or checkboxes sharing a name that are in no group with a name (evidence only)",
+                "automation": "manual"
+            },
+            {
                 "id": "td-has-header",
                 "label": "Data cells in large, simple tables have an associated header",
                 "automation": "full"
@@ -635,6 +640,11 @@ const FACETS = {
             {
                 "id": "graphics-contrast",
                 "label": "The parts of a graphic needed to understand it have a contrast of at least 3:1",
+                "automation": "manual"
+            },
+            {
+                "id": "symbol-graphic-contrast-evidence",
+                "label": "Symbols drawn as text with no letter or digit, used as a graphic, under 3:1 (evidence only)",
                 "automation": "manual"
             }
         ]

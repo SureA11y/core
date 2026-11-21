@@ -126,7 +126,10 @@ const PROCEDURES = {
       'video-poster-text-alt-present': {
         coveredBy: 'text-alternative-mechanism',
         variants: {
-          'video-poster-text-alternative-present': ['VIDEO_POSTER_FIGCAPTION_REVIEW']
+          'video-poster-text-alternative-present': [
+            'TEXT_ALTERNATIVE_MISSING',
+            'VIDEO_POSTER_FIGCAPTION_REVIEW'
+          ]
         }
       },
       'alt-suspicious-patterns': {
@@ -245,6 +248,12 @@ const PROCEDURES = {
         coveredBy: 'tables-marked-up',
         variants: {
           'table-fake-caption': ['SINGLE_CELL_FIRST_ROW_NO_CAPTION']
+        }
+      },
+      'form-group-name-evidence': {
+        coveredBy: 'form-labels-associated',
+        variants: {
+          'form-group-name-present': ['CHECKBOX_GROUP_NO_NAME', 'RADIO_GROUP_NO_NAME']
         }
       },
       'td-has-header': {
@@ -440,6 +449,12 @@ const PROCEDURES = {
       },
       'graphics-contrast': {
         tools: ['devtools']
+      },
+      'symbol-graphic-contrast-evidence': {
+        coveredBy: 'graphics-contrast',
+        variants: {
+          'symbol-graphic-contrast': ['SYMBOLS_BELOW_GRAPHIC_THRESHOLD']
+        }
       }
     },
     '1.4.10': {
@@ -638,6 +653,7 @@ const PROCEDURES = {
         coveredBy: 'page-title-descriptive',
         variants: {
           'page-title-patterns': [
+            'placeholderTitle',
             'genericTitle',
             'veryShortTitle',
             'templateLikeTitle',

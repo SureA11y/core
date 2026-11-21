@@ -188,9 +188,11 @@ function engineOptionSpec() {
     perfStats: T.boolean,
     profileRules: T.boolean,
     // Once a scan has spent this long, it starts no more rules; those it
-    // didn't start are listed in its result (notRun). Off when not given.
+    // didn't start are listed in its result (notRun). Off when not given,
+    // and Infinity, the natural value for no limit, is off too (round 10,
+    // S10-9).
     timeBudgetMs: {
-      test: (v) => typeof v === 'number' && Number.isFinite(v) && v > 0,
+      test: (v) => typeof v === 'number' && v > 0,
       expected: 'a number of milliseconds, more than 0'
     },
     pingWaitTime: T.number,

@@ -340,17 +340,77 @@ function getFrameElementUrl(el) {
  * @returns {Promise<{ topFrame: object, frames: Array<{url:string|null, topFrame?:object, frames?:Array, error?:string}> }>}
  */
 function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly) {
+  return scanAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly, null);
+}
+
+// engineOptions.timeBudgetMs, read as the scan reads it: a finite number
+// above 0, else null (no budget).
+function frameTimeBudgetOf(eo) {
+  return typeof eo.timeBudgetMs === 'number' &&
+    Number.isFinite(eo.timeBudgetMs) &&
+    eo.timeBudgetMs > 0
+    ? eo.timeBudgetMs
+    : null;
+}
+
+// The engineOptions this document's own scan runs with, under a time budget
+// that is the whole scan's (round 10, S10-5): what is left of it since the
+// scan started (scanStartedAt, a Date.now() time, which every frame's clock
+// shares), or, with none left, a scan that starts no rule and lists its
+// selection in notRun (__budgetSpent), as for a profile the budget left
+// unstarted.
+function budgetedOptions(engineOptions, eo, budget, scanStartedAt) {
+  if (budget === null || scanStartedAt === null) return engineOptions;
+  const left = budget - (Date.now() - scanStartedAt);
+  if (left >= budget) return engineOptions;
+  if (left > 0) return Object.assign({}, eo, { timeBudgetMs: left });
+  const spent = Object.assign({}, eo);
+  Object.defineProperty(spent, '__budgetSpent', { value: true });
+  return spent;
+}
+
+// The budget a frame's result says it was given is the scan's, not what was
+// left of it when the frame started, as for profiles.
+function withScanBudget(result, budget) {
+  const fix = (r) => {
+    if (budget !== null && r && r.engine && r.engine.incomplete) {
+      r.engine.incomplete.timeBudgetMs = budget;
+    }
+    return r;
+  };
+  return result && typeof result.then === 'function' ? result.then(fix) : fix(result);
+}
+
+function scanAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly, startedAt) {
   const dom = createSafeDom();
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  // The time budget is the whole scan's, frames included: the top document
+  // starts the clock, and each frame gets what is left of it when its own
+  // scan starts.
+  const budget = frameTimeBudgetOf(eo);
+  const scanStartedAt =
+    budget === null
+      ? null
+      : typeof startedAt === 'number' && Number.isFinite(startedAt)
+        ? startedAt
+        : Date.now();
   // An invalid contextSelector (or runOnly) throws in the local scan; reject
   // with it, as any other failure of this promise-returning call would.
   let topFrame;
   try {
-    topFrame = runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly);
+    topFrame = withScanBudget(
+      runa11yCoreInPage(
+        pageUrl,
+        contextSelector,
+        budgetedOptions(engineOptions, eo, budget, startedAt === null ? null : scanStartedAt),
+        runOnly
+      ),
+      budget
+    );
   } catch (err) {
     return Promise.reject(err);
   }
 
-  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
   const pingWaitTime = typeof eo.pingWaitTime === 'number' ? eo.pingWaitTime : undefined;
   const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
 
@@ -404,7 +464,10 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
           // looks counts. A frame is no page of its own whatever this
           // document is (topLevelDocument).
           engineOptions: frameRunOptions(el),
-          runOnly: runOnly
+          runOnly: runOnly,
+          // When the scan started, so the frame's scan gets only what is
+          // left of the time budget.
+          scanStartedAt: scanStartedAt
         },
         frameWaitTime
       )
@@ -454,11 +517,12 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
  */
 function a11yCoreEnableFrameResponder() {
   return enableFrameRpcResponder(window, function (payload) {
-    return runa11yCoreAcrossFrames(
+    return scanAcrossFrames(
       payload ? payload.pageUrl : null,
       payload ? payload.contextSelector : null,
       payload ? payload.engineOptions : {},
-      payload ? payload.runOnly : null
+      payload ? payload.runOnly : null,
+      payload && typeof payload.scanStartedAt === 'number' ? payload.scanStartedAt : null
     );
   });
 }
@@ -475,6 +539,10 @@ module.exports = {
   getFrameElementSelector,
   describeFrameElement,
   getFrameElementUrl,
+  frameTimeBudgetOf,
+  budgetedOptions,
+  withScanBudget,
+  scanAcrossFrames,
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder
 };

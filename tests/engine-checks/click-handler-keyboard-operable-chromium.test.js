@@ -102,6 +102,28 @@ const CASES = [
     false,
     'cantTell',
     'CLICK_HANDLER_NOT_IN_TAB_ORDER'
+  ],
+  // Drawn as a button without cursor:pointer (round 10, C10-4): Tab never
+  // reaches it, so it is asked about; a large wrapper is not.
+  [
+    'a <div onclick> drawn as a button, with the default cursor',
+    '<div id="host" style="background:#2a9d8f;color:#fff;padding:12px 24px" onclick="hits.push(1)">Add to cart</div>',
+    null,
+    false,
+    false,
+    false,
+    'cantTell',
+    'CLICK_HANDLER_NOT_FOCUSABLE'
+  ],
+  [
+    'a padded card with a background, a heading and a paragraph',
+    '<div id="host" style="background:#eee;padding:16px" onclick="hits.push(1)"><h3>Weekly newsletter</h3><p>The news of the week, every Monday.</p></div>',
+    null,
+    false,
+    false,
+    false,
+    'notApplicable',
+    null
   ]
 ];
 

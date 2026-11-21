@@ -413,7 +413,12 @@ test(`${RULE_ID}: a bold line at body size over plain text is asked about`, () =
   const asked = [
     '<p id="x"><strong>Opening hours</strong></p><p>Monday to Friday, from nine to five.</p>',
     '<p id="x" style="font-weight:bold">Next steps</p><ul><li>Read the guide</li></ul>',
-    '<p id="x"><b>Step 2 </b><strong>Prepare the dough</strong></p><p>Mix the flour and the water.</p>'
+    '<p id="x"><b>Step 2 </b><strong>Prepare the dough</strong></p><p>Mix the flour and the water.</p>',
+    // a final colon ends no sentence: a label over a list or steps
+    '<p id="x"><strong>Ingredients:</strong></p><ul><li>Flour</li><li>Water</li></ul>',
+    '<p id="x"><strong>Step 1:</strong></p><p>Mix the flour and the water.</p>',
+    '<p id="x"><strong>Note:</strong></p><p>Prices include tax.</p>',
+    '<p id="x"><strong>材料：</strong></p><p>小麦粉と水。</p>'
   ];
   for (const body of asked) {
     const rule = assertRule(
@@ -433,7 +438,7 @@ test(`${RULE_ID}: a bold line at body size over plain text is asked about`, () =
   const notAsked = [
     // ends as a sentence: emphasis
     '<p><strong>The office is closed today.</strong></p><p>We reopen tomorrow.</p>',
-    '<p><strong>Note:</strong></p><p>Prices include tax.</p>',
+    '<p><strong>Read this first;</strong></p><p>Prices include tax.</p>',
     // nothing after it, or only more bold text
     '<p><strong>Opening hours</strong></p>',
     '<p><b>Main office</b></p><p><b>12 High Street</b></p>',
