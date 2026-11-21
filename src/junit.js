@@ -406,6 +406,8 @@ function frameSuites(result, frame, baseline, opts, totals) {
     // A scan of several profiles names them all; profile is the first.
     ['profiles', Array.isArray(engine.profiles) ? engine.profiles.join(',') : null],
     ['optInRules', Array.isArray(engine.optInRules) ? engine.optInRules.join(',') : null],
+    // The packs the scan ran with, as name@version (engine.packs).
+    ['packs', Array.isArray(engine.packs) && engine.packs.length ? engine.packs.join(',') : null],
     // A scan cut short by its time budget (engine.incomplete).
     ['incomplete', engine.incomplete ? String(engine.incomplete.reason || 'true') : null],
     ...environmentProperties(engine.environment),

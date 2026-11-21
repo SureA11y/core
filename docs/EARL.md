@@ -94,7 +94,7 @@ Output is deterministic: subjects sort by source, assertions by rule id, and the
 
 | Option | Meaning |
 |---|---|
-| `assertor` | `{ name, version }`. Defaults the name to `surea11y`, and the version, given as the assertor's `release`, to the `engine.version` the results carry when they all carry the same one; results from different releases get no release unless you give one. Pass `null` to omit `assertedBy` entirely. |
+| `assertor` | `{ name, version }`. Defaults the name to `surea11y`, and the version, given as the assertor's `release`, to the `engine.version` the results carry when they all carry the same one; results from different releases get no release unless you give one. Pass `null` to omit `assertedBy` entirely. When every result ran the same packs (`engine.packs`), the assertor names each as a part of it, `"dct:hasPart": [{ "@type": "Software", "name": "@surea11y/pack-rgaa", "release": { "@type": "Version", "revision": "1.2.0" } }]`, whatever `assertor` you give. |
 | `mode` | An EARL test mode such as `'earl:automatic'`. Omitted when not supplied. |
 
 `null` options are no options. A key the report doesn't read that looks like a misspelling of one it does (`asserter`) is ignored with a `console.warn` naming the option meant, as a scan warns about `engineOptions`.

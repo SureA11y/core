@@ -10,7 +10,8 @@ const {
   coercedResult,
   wcagScopeOf,
   reporterOptions,
-  notRunOf
+  notRunOf,
+  packsOf
 } = require('./scan-result.js');
 const { WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 
@@ -138,6 +139,17 @@ function normalizeAssertor(options, results) {
   const engineVersion = versions.size === 1 ? [...versions][0] : '';
   const revision = supplied.version || supplied.revision || engineVersion;
   if (revision) assertor.release = { '@type': 'Version', revision: String(revision) };
+  // The packs the scan ran with (engine.packs) are part of the software that
+  // asserts: each by its name and release, when every result ran the same.
+  const packSets = new Set(results.map((r) => JSON.stringify(packsOf(r))));
+  const packs = packSets.size === 1 ? packsOf(results[0]) : [];
+  if (packs.length) {
+    assertor['dct:hasPart'] = packs.map((p) => ({
+      '@type': 'Software',
+      name: p.name,
+      ...(p.version ? { release: { '@type': 'Version', revision: p.version } } : {})
+    }));
+  }
   return assertor;
 }
 

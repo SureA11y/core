@@ -681,6 +681,23 @@ function timeBudgetOf(result) {
   return incomplete && typeof incomplete.timeBudgetMs === 'number' ? incomplete.timeBudgetMs : null;
 }
 
+// The packs a result's scan ran with (engine.packs, each name@version), as
+// { name, version }, sorted by name; a scoped name keeps its own "@". An
+// entry with no version gets version null. Empty for a scan without packs.
+function packsOf(result) {
+  const list = result && result.engine && result.engine.packs;
+  const out = [];
+  for (const entry of Array.isArray(list) ? list : []) {
+    if (typeof entry !== 'string' || !entry.trim()) continue;
+    const text = entry.trim();
+    const at = text.lastIndexOf('@');
+    const name = at > 0 ? text.slice(0, at) : text;
+    const version = at > 0 ? text.slice(at + 1) : null;
+    if (!out.some((p) => p.name === name && p.version === version)) out.push({ name, version });
+  }
+  return out.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+}
+
 // A reporter's options as it reads them: undefined, null or anything but an
 // object is no options, as {} is (round 9, A9-11). A key it doesn't read
 // that looks like a typo of one it does, or the start of one ("baseline"
@@ -728,5 +745,6 @@ module.exports = {
   leaningOccurrencesOf,
   leaningFailures,
   notRunOf,
-  timeBudgetOf
+  timeBudgetOf,
+  packsOf
 };

@@ -1665,6 +1665,7 @@
   "report_meta_totalOccurrences": "total occurrences",
   "report_meta_engine": "engine",
   "report_meta_schemaVersion": "schema version",
+  "report_meta_packs": "packs",
   "report_meta_target": "target",
   "report_meta_profile": "profile",
   "report_meta_law": "law",

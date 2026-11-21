@@ -1665,6 +1665,7 @@
   "report_meta_totalOccurrences": "apariciones en total",
   "report_meta_engine": "motor",
   "report_meta_schemaVersion": "versión del esquema",
+  "report_meta_packs": "paquetes",
   "report_meta_target": "objetivo",
   "report_meta_profile": "perfil",
   "report_meta_law": "ley",

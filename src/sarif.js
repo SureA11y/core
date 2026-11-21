@@ -45,7 +45,8 @@ const {
   leaningOccurrencesOf,
   reporterOptions,
   notRunOf,
-  timeBudgetOf
+  timeBudgetOf,
+  packsOf
 } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
@@ -276,6 +277,9 @@ function runProperties(result) {
     props.profiles = engine.profiles.slice();
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     props.optInRules = engine.optInRules.slice();
+  // The packs the scan ran with, as name@version (engine.packs); each is
+  // also one of the tool's extensions.
+  if (Array.isArray(engine.packs) && engine.packs.length) props.packs = engine.packs.slice();
   if (engine.environment && typeof engine.environment === 'object')
     props.environment = JSON.parse(JSON.stringify(engine.environment));
   return Object.keys(props).length ? props : null;
@@ -526,6 +530,17 @@ function renderSarifReport(result, given) {
   }
   const executionSuccessful = !(notRun.length && allowProfilesNotRun !== true) && !cutShort;
 
+  // The packs of every frame's scan, each once.
+  const extensions = [];
+  for (const { result: frameResult } of frames) {
+    for (const p of packsOf(frameResult)) {
+      if (extensions.some((x) => x.name === p.name && x.version === (p.version || undefined)))
+        continue;
+      extensions.push({ name: p.name, ...(p.version ? { version: p.version } : {}) });
+    }
+  }
+  extensions.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+
   const sarifLog = {
     $schema: SARIF_SCHEMA_URI,
     version: SARIF_VERSION,
@@ -542,7 +557,11 @@ function renderSarifReport(result, given) {
               (top.engine && typeof top.engine.version === 'string' && top.engine.version) ||
               '0.0.0',
             rules
-          }
+          },
+          // Each pack the scan ran with is a component of the tool: its
+          // rules are among the driver's, and its version is the one that
+          // judged them.
+          ...(extensions.length ? { extensions } : {})
         },
         // fail first: matches docs/REPORT.md's own "violations before advisory
         // findings" ordering.

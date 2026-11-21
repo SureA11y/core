@@ -24,7 +24,8 @@ const {
   reviewGroupOf,
   reporterOptions,
   notRunOf,
-  timeBudgetOf
+  timeBudgetOf,
+  packsOf
 } = require('./scan-result.js');
 const { esc, jsonForScript } = require('./html-text.js');
 
@@ -256,6 +257,15 @@ function renderTargetChips(engine, ui, profileResults) {
       `<div><b>${esc(engine.optInRules.join(', '))}</b>${esc(ui.tr('report_meta_optInRules'))}</div>`
     );
   return chips.join('\n  ');
+}
+
+// The packs the scan ran with (engine.packs), each by its name and version,
+// beside the engine that ran them.
+function renderPacksChip(result, ui) {
+  const packs = packsOf(result);
+  if (!packs.length) return '';
+  const named = packs.map((p) => (p.version ? `${p.name} ${p.version}` : p.name)).join(', ');
+  return `<div><b>${esc(named)}</b>${esc(ui.tr('report_meta_packs'))}</div>`;
 }
 
 // A scan its time budget cut short (engineOptions.timeBudgetMs): the rules
@@ -1277,6 +1287,7 @@ function renderHtmlReport(input, given) {
   <div><b>${ui.num(rows.length)}</b>${esc(ui.tr('report_meta_totalOccurrences'))}</div>
   <div><b>${esc((engine && engine.tag) || '?')}</b>${esc(ui.tr('report_meta_engine'))}</div>
   <div><b>${esc((engine && engine.schemaVersion) || '?')}</b>${esc(ui.tr('report_meta_schemaVersion'))}</div>
+  ${renderPacksChip(result, ui)}
   ${renderTargetChips(engine, ui, result && result.profiles)}
   ${renderEnvironmentChips(engine, ui)}
   ${renderLocaleChip(engine, ui)}
