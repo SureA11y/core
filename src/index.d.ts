@@ -2028,6 +2028,10 @@ export interface VariantSetting {
 /** One composite rule, as getRulesCatalog lists it. */
 export interface RuleCatalogEntry {
   id: string;
+  /** In the options' locale, as a rule's catalog entry and the scan's rulesResults give it. */
+  title: string;
+  description: string;
+  i18n: { titleKey: string; descriptionKey: string } | null;
   /** Its rules, with the custom rules of engineOptions.customRules mapped to its criteria. */
   checksIds: string[];
   /** The custom rules among checksIds; absent when there are none. */

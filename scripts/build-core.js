@@ -3094,11 +3094,23 @@ function getChecksCatalog(engineOptions) {
 }
 
 // A composite's catalog entry, with the other-standard entries of its rules
-// filtered the same way as a rule's.
-function toCompositeCatalogEntry(x, tokens, customDefs) {
+// filtered the same way as a rule's. Its title and description are in the
+// options' locale, at the top as a rule's are, and in its meta (round 9,
+// A9-7); i18n names their keys, as in the scan's rulesResults.
+function toCompositeCatalogEntry(x, tokens, customDefs, engineOptions) {
+  const keyOf = (name) =>
+    x.meta && typeof x.meta[name] === 'string' && x.meta[name].trim() ? x.meta[name].trim() : '';
+  const titleKey = keyOf('titleKey');
+  const descriptionKey = keyOf('descriptionKey');
+  const textOf = (key, given) =>
+    key ? t(key, typeof given === 'string' ? given : '', null, engineOptions) : given;
+  const title = x.meta ? textOf(titleKey, x.meta.title) : undefined;
+  const description = x.meta ? textOf(descriptionKey, x.meta.description) : undefined;
   const meta = x.meta && typeof x.meta === 'object'
     ? {
         ...x.meta,
+        ...(titleKey ? { title } : {}),
+        ...(descriptionKey ? { description } : {}),
         standardMappings: Array.isArray(x.meta.standardMappings)
           ? filterNormativeMappings(x.meta.standardMappings, tokens).map((o) => ({ ...o }))
           : []
@@ -3111,6 +3123,9 @@ function toCompositeCatalogEntry(x, tokens, customDefs) {
       : rollupMembers(x.checksIds, x.meta && x.meta.wcagSc, customDefs);
   return {
     ...x,
+    title: typeof title === 'string' ? title : '',
+    description: typeof description === 'string' ? description : '',
+    i18n: titleKey || descriptionKey ? { titleKey, descriptionKey } : null,
     checksIds: members ? members.ids : Array.isArray(x.checksIds) ? x.checksIds.slice() : [],
     ...(members && members.customIds.length ? { customChecksIds: members.customIds } : {}),
     meta
@@ -3154,14 +3169,13 @@ function isCompositeListed(x, selection) {
 }
 
 function getRulesCatalog(engineOptions) {
-  // Data-only catalog. No i18n resolution yet (we can add later if needed).
   checkCatalogOptions(engineOptions, null);
   const tokens = catalogMappingTokens(engineOptions, null);
   const selections = catalogProfileRuns(engineOptions, null).map((r) => r.selection);
   const customDefs = catalogCustomDefs(engineOptions);
   return Array.isArray(COMPOSITE_RULES)
     ? COMPOSITE_RULES.filter((x) => selections.some((selection) => isCompositeListed(x, selection))).map((x) =>
-        toCompositeCatalogEntry(x, tokens, customDefs)
+        toCompositeCatalogEntry(x, tokens, customDefs, engineOptions)
       )
     : [];
 }
@@ -3174,7 +3188,8 @@ function getCompositeRuleById(ruleId, engineOptions) {
   return toCompositeCatalogEntry(
     found,
     catalogMappingTokens(engineOptions, null),
-    catalogCustomDefs(engineOptions)
+    catalogCustomDefs(engineOptions),
+    engineOptions
   );
 }
 
@@ -3215,7 +3230,7 @@ function getRulesForRunOnly(runOnly, engineOptions) {
   }
   if (empty === runs.length && defs.length) noteEmptySelection(runs[0].selection, engineOptions);
   return COMPOSITE_RULES.filter((x) => x && ids.has(x.id)).map((x) =>
-    toCompositeCatalogEntry(x, tokens, customDefs)
+    toCompositeCatalogEntry(x, tokens, customDefs, engineOptions)
   );
 }
 

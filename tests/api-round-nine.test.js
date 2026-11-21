@@ -77,3 +77,29 @@ test("the HTML report's Understanding link names the criterion in the report's l
   });
   assert.match(of(parsing, '4.1.1'), />4\.1\.1 <span lang="en">Parsing<\/span> verstehen</);
 });
+
+test('a rollup catalog entry has its title and description in the locale, as a rule entry has (A9-7)', () => {
+  const core = require('../src/index.js');
+  const id = 'wcag-1.1.1-non-text-content';
+  const german = runa11yCoreOnHtml(PAGE, {
+    engineOptions: { locale: 'de' },
+    entryPointParity: false
+  }).rulesResults.find((r) => r.ruleId === id);
+  const entries = [
+    core.getRulesCatalog({ locale: 'de' }).find((e) => e.id === id),
+    core.getCompositeRuleById(id, { locale: 'de' }),
+    core.getRulesForRunOnly(['img-alt-present'], { locale: 'de' }).find((e) => e.id === id)
+  ];
+  for (const entry of entries) {
+    assert.equal(entry.title, german.title);
+    assert.equal(entry.description, german.description);
+    assert.equal(entry.meta.title, german.title);
+    assert.deepEqual(entry.i18n, german.i18n);
+  }
+  assert.notEqual(german.title, core.getCompositeRuleById(id).title);
+  assert.equal(core.getCompositeRuleById(id).title, core.getCompositeRuleById(id).meta.title);
+  for (const entry of core.getRulesCatalog({ optInRules: 'all' })) {
+    assert.equal(typeof entry.title, 'string', entry.id);
+    assert.ok(entry.title, entry.id);
+  }
+});
