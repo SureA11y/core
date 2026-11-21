@@ -56,3 +56,48 @@ test("a regional locale's missing strings come from its base language, then Engl
     checkOf(english, 'img-alt-present').occurrences[0].summary
   );
 });
+
+test('a baseline key without markup names the finding by its selector (A9-10)', () => {
+  const { buildBaselineEntries, matchBaseline, computeBaselineKey } = require('../src/baseline.js');
+  const { renderSarifReport } = require('../src/sarif.js');
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
+  const scan = (html, includeHtml) =>
+    runa11yCoreOnHtml(html, { engineOptions: { output: { includeHtml } } });
+  const before = page('<main><h1>x</h1><img src="old.png"></main><footer>f</footer>');
+  const after = page('<main><h1>x</h1></main><footer><img src="new.png"></footer>');
+
+  // Without markup, the image fixed in main and the one added in the footer
+  // are two findings: one new, one entry stale.
+  const entries = buildBaselineEntries(scan(before, false));
+  assert.deepEqual(
+    entries.filter((e) => e.ruleId === 'img-alt-present').map((e) => [e.selector, e.html]),
+    [['html > body > main > img', '']]
+  );
+  const match = matchBaseline(scan(after, false), entries);
+  assert.equal(match.newCount, 1);
+  assert.equal(match.staleCount, 1);
+  assert.equal(match.newOccurrences[0].selector, 'html > body > footer > img');
+  // The same scan again is all known.
+  assert.equal(matchBaseline(scan(before, false), entries).newCount, 0);
+
+  // SARIF reads the same key: it reports the new finding rather than
+  // leaving it out as known, with a fingerprint of its own.
+  const sarif = JSON.parse(renderSarifReport(scan(after, false), { baselineEntries: entries }));
+  assert.ok(sarif.runs[0].results.some((r) => r.ruleId === 'img-alt-present'));
+  const fingerprint = (result) =>
+    JSON.parse(renderSarifReport(result)).runs[0].results.find(
+      (r) => r.ruleId === 'img-alt-present'
+    ).partialFingerprints['surea11y/violation/v2'];
+  assert.notEqual(fingerprint(scan(after, false)), fingerprint(scan(before, false)));
+
+  // With markup, the selector is not read: the key is what it was.
+  assert.equal(
+    computeBaselineKey('r', 'C', '<img>', [], 'html > body > img'),
+    computeBaselineKey('r', 'C', '<img>')
+  );
+  assert.equal(
+    fingerprint(scan(after, true)),
+    fingerprint(scan(page('<img src="new.png">'), true))
+  );
+});
