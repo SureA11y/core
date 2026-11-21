@@ -23,7 +23,9 @@
  *   around it (the paragraph's own, or its parent's where the paragraph
  *   itself is set heavier), at body size (smaller than 18px) applies too,
  *   when the text doesn't end as a sentence (past closing quotes and
- *   brackets, and in any script's punctuation), the next element shown
+ *   brackets, and in any script's punctuation; a final colon, as in
+ *   "Ingredients:" or "Step 1:", ends none, so such a label is asked about
+ *   as a line with no final punctuation is), the next element shown
  *   holds text lighter than it, and the element before it is no bold line
  *   too: a title made by bolding a line of body text, the way authors
  *   usually make one in a content editor, and not a line of a bold run,
@@ -651,8 +653,11 @@ function runInPage(ctx) {
 
   // Sentence punctuation at the end reads as a sentence, not a title: past
   // closing quotes and brackets ("Stay home."), and in other scripts (Arabic
-  // and Urdu, Devanagari, Armenian, Ethiopic, CJK full-width).
-  const SENTENCE_END = /[.!?:;…。！？：؟۔।॥։።．｡]$/u;
+  // and Urdu, Devanagari, Armenian, Ethiopic, CJK full-width). A colon is no
+  // sentence end: a bold "Ingredients:" or "Step 1:" over a list or steps is
+  // a title made by bolding a line, as often as one with no final
+  // punctuation (round 10, S10-7); a semicolon still ends one.
+  const SENTENCE_END = /[.!?;…。！？؟۔।॥։።．｡]$/u;
   const CLOSERS = /[\s"'’”»›」』)\]）】〕〉》]+$/u;
   const endsAsSentenceOf = (text) => SENTENCE_END.test(String(text).replace(CLOSERS, ''));
 

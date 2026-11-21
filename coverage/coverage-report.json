@@ -4,17 +4,17 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 152,
+    "totalRules": 154,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 110,
+          "A": 111,
           "AA": 25,
           "AAA": 15
         },
         "2.1": {
-          "A": 9,
-          "AA": 8,
+          "A": 10,
+          "AA": 9,
           "AAA": 1
         },
         "2.2": {
@@ -24,13 +24,13 @@
         }
       },
       "anyVersion": {
-        "A": 122,
-        "AA": 36,
+        "A": 124,
+        "AA": 37,
         "AAA": 18
       },
       "rawTagCounts": {
-        "wcag2a": 96,
-        "wcag21aa": 7,
+        "wcag2a": 97,
+        "wcag21aa": 8,
         "wcag2aaa": 15,
         "wcag2aa": 12,
         "wcag22aaa": 3,
@@ -5348,6 +5348,55 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/manual/form-group-name-present-manual.js",
+      "ruleId": "form-group-name-present",
+      "wcagScNormative": [
+        "1.3.1"
+      ],
+      "wcagScAll": [
+        "1.3.1"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Radio buttons and checkboxes that share a name should be in a named group",
+      "tags": [
+        "wcag2a",
+        "wcag131",
+        "forms",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.3.1": [
+            "form-group-name-evidence"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/manual/heading-order-manual.js",
       "ruleId": "heading-order",
       "wcagScNormative": [],
@@ -7009,6 +7058,59 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/manual/symbol-graphic-contrast-manual.js",
+      "ruleId": "symbol-graphic-contrast",
+      "wcagScNormative": [
+        "1.4.11"
+      ],
+      "wcagScAll": [
+        "1.4.11"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Symbols used as a graphic should have a contrast of at least 3:1",
+      "tags": [
+        "wcag21aa",
+        "wcag1411",
+        "nontext",
+        "contrast",
+        "color",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag21aa",
+            "version": "2.1",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.1"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.1": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.4.11": [
+            "symbol-graphic-contrast-evidence"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/manual/tabindex-manual.js",
       "ruleId": "tabindex",
       "wcagScNormative": [],
@@ -7517,8 +7619,8 @@
       {
         "sc": "1.3.1",
         "title": "Info and Relationships",
-        "totalFacets": 23,
-        "coveredFacets": 16,
+        "totalFacets": 24,
+        "coveredFacets": 17,
         "uncoveredFacets": [
           "form-control-label-quality-review",
           "headings-marked-up",
@@ -7530,7 +7632,7 @@
         ],
         "automationCounts": {
           "full": 13,
-          "manual": 4,
+          "manual": 5,
           "partial": 6
         },
         "missingFacetRules": [],
@@ -7644,6 +7746,14 @@
             "automation": "manual",
             "coveredBy": [
               "table-fake-caption"
+            ]
+          },
+          {
+            "id": "form-group-name-evidence",
+            "label": "Radio buttons or checkboxes sharing a name that are in no group with a name (evidence only)",
+            "automation": "manual",
+            "coveredBy": [
+              "form-group-name-present"
             ]
           },
           {
@@ -7977,14 +8087,14 @@
       {
         "sc": "1.4.11",
         "title": "Non-text Contrast",
-        "totalFacets": 3,
-        "coveredFacets": 1,
+        "totalFacets": 4,
+        "coveredFacets": 2,
         "uncoveredFacets": [
           "ui-component-contrast",
           "graphics-contrast"
         ],
         "automationCounts": {
-          "manual": 3
+          "manual": 4
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8008,6 +8118,14 @@
             "label": "The parts of a graphic needed to understand it have a contrast of at least 3:1",
             "automation": "manual",
             "coveredBy": []
+          },
+          {
+            "id": "symbol-graphic-contrast-evidence",
+            "label": "Symbols drawn as text with no letter or digit, used as a graphic, under 3:1 (evidence only)",
+            "automation": "manual",
+            "coveredBy": [
+              "symbol-graphic-contrast"
+            ]
           }
         ]
       },
@@ -9606,8 +9724,8 @@
       {
         "sc": "1.3.1",
         "title": "Info and Relationships",
-        "totalFacets": 23,
-        "coveredFacets": 16,
+        "totalFacets": 24,
+        "coveredFacets": 17,
         "uncoveredFacets": [
           "form-control-label-quality-review",
           "headings-marked-up",
@@ -9619,7 +9737,7 @@
         ],
         "automationCounts": {
           "full": 13,
-          "manual": 4,
+          "manual": 5,
           "partial": 6
         },
         "missingFacetRules": [],
@@ -9733,6 +9851,14 @@
             "automation": "manual",
             "coveredBy": [
               "table-fake-caption"
+            ]
+          },
+          {
+            "id": "form-group-name-evidence",
+            "label": "Radio buttons or checkboxes sharing a name that are in no group with a name (evidence only)",
+            "automation": "manual",
+            "coveredBy": [
+              "form-group-name-present"
             ]
           },
           {
@@ -10066,14 +10192,14 @@
       {
         "sc": "1.4.11",
         "title": "Non-text Contrast",
-        "totalFacets": 3,
-        "coveredFacets": 1,
+        "totalFacets": 4,
+        "coveredFacets": 2,
         "uncoveredFacets": [
           "ui-component-contrast",
           "graphics-contrast"
         ],
         "automationCounts": {
-          "manual": 3
+          "manual": 4
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -10097,6 +10223,14 @@
             "label": "The parts of a graphic needed to understand it have a contrast of at least 3:1",
             "automation": "manual",
             "coveredBy": []
+          },
+          {
+            "id": "symbol-graphic-contrast-evidence",
+            "label": "Symbols drawn as text with no letter or digit, used as a graphic, under 3:1 (evidence only)",
+            "automation": "manual",
+            "coveredBy": [
+              "symbol-graphic-contrast"
+            ]
           }
         ]
       },

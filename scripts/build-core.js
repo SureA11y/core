@@ -161,6 +161,10 @@ const {
   getFrameElementSelector,
   describeFrameElement,
   getFrameElementUrl,
+  frameTimeBudgetOf,
+  budgetedOptions,
+  withScanBudget,
+  scanAcrossFrames,
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder
 } = require('../src/core/frame-scan');
@@ -2978,6 +2982,14 @@ ${getFrameElementSelector.toString()}
 ${describeFrameElement.toString()}
 
 ${getFrameElementUrl.toString()}
+
+${frameTimeBudgetOf.toString()}
+
+${budgetedOptions.toString()}
+
+${withScanBudget.toString()}
+
+${scanAcrossFrames.toString()}
 
 ${runa11yCoreAcrossFrames.toString()}
 

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>symbol-graphic-contrast — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; color: #111; background: #fff; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; margin: 8px 0 16px; }
+    .case { border: 1px solid #767676; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>symbol-graphic-contrast</code></h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>sgc_case_NN</code>.
+    The page is white; text with a letter or a digit is the text-contrast rules', not this rule's.
+  </p>
+
+  <h2>A. CANTTELL — symbols under 3:1</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: gold rating stars on white, 1.42:1</div>
+    <p>Customer rating <span id="sgc_case_01" style="color:#f5d76e">★★★★☆</span></p>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: light grey step dots on white</div>
+    <p>Progress <span id="sgc_case_02" style="color:#cccccc">●●○○</span></p>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: pale green check mark on white</div>
+    <p>In stock <span id="sgc_case_03" style="color:#a8e6a3">✓</span></p>
+  </div>
+
+  <h2>B. PASS — symbols at 3:1 or more</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: dark rating stars on white</div>
+    <p>Customer rating <span id="sgc_case_04" style="color:#7a5c00">★★★★☆</span></p>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: a black arrow on white</div>
+    <p>Next page <span id="sgc_case_05" style="color:#000">→</span></p>
+  </div>
+
+  <h2>C. NEUTRAL — not this rule's</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: stars with a digit in the same element are text</div>
+    <p id="sgc_case_06" style="color:#f5d76e">4.5 ★</p>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: a pale separator between links decorates</div>
+    <p><a href="#a">Shop</a> <span id="sgc_case_07" style="color:#dddddd">|</span> <a href="#b">Help</a></p>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: an emoji is drawn in its own colours</div>
+    <p>Mood <span id="sgc_case_08" style="color:#eeeeee">😀</span></p>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NEUTRAL: pale stars that are not drawn (display:none)</div>
+    <p>Rating <span id="sgc_case_09" style="color:#f5d76e;display:none">★★★☆☆</span></p>
+  </div>
+</body>
+</html>

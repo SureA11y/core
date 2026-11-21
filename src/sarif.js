@@ -43,6 +43,7 @@ const {
   wcagScopeOf,
   occurrenceOutcome,
   leaningOccurrencesOf,
+  leaningOmittedOf,
   reporterOptions,
   notRunOf,
   timeBudgetOf,
@@ -408,6 +409,15 @@ function renderSarifReport(result, given) {
             .filter((o) => !knownLeaning.has(o))
         : []
     );
+    // How many of them each check result lost to output.maxOccurrencesPerRule.
+    const raisedOmitted = new Map(
+      leanFailAs === 'error'
+        ? leaningOmittedOf(frameResult, { wcagOnly: leanFailWcagOnly === true }).map((l) => [
+            l.check,
+            l.omitted
+          ])
+        : []
+    );
     const standards = standardsOf(frameResult);
     const inScope = wcagScopeOf(frameResult);
     for (const check of (frameResult && frameResult.checksResults) || []) {
@@ -468,6 +478,7 @@ function renderSarifReport(result, given) {
           : null;
 
       let failsShown = 0;
+      let raisedShown = 0;
       for (const occurrence of check.occurrences) {
         if (!occurrence) continue;
 
@@ -487,6 +498,7 @@ function renderSarifReport(result, given) {
             )
           );
         } else if (outcome === 'cantTell') {
+          if (raised.has(occurrence)) raisedShown += 1;
           cantTellResults.push(
             buildResult(
               check,
@@ -520,6 +532,25 @@ function renderSarifReport(result, given) {
             check,
             {
               summary: `${omitted.fail} failing occurrence${omitted.fail === 1 ? ' was' : 's were'} left out of the result by output.maxOccurrencesPerRule, so the baseline can't be matched against ${omitted.fail === 1 ? 'it' : 'them'}.`,
+              html: '',
+              data: { details: { reasonCode: 'OCCURRENCES_OMITTED' } }
+            },
+            outside ? 'note' : 'error',
+            artifactUri,
+            framePath,
+            outside
+          )
+        );
+      }
+      // So are the undecided ones among them that lean fail, under
+      // leanFailAs: 'error', when no finding kept is raised for them.
+      const leaningOmitted = raisedOmitted.get(check) || 0;
+      if (leaningOmitted && !raisedShown) {
+        cantTellResults.push(
+          buildResult(
+            check,
+            {
+              summary: `${leaningOmitted} undecided occurrence${leaningOmitted === 1 ? ' that leans fail was' : 's that lean fail were'} left out of the result by output.maxOccurrencesPerRule, so the baseline can't be matched against ${leaningOmitted === 1 ? 'it' : 'them'}.`,
               html: '',
               data: { details: { reasonCode: 'OCCURRENCES_OMITTED' } }
             },

@@ -45,7 +45,7 @@ const RUN_ONLY = { includeRuleIds: ['page-title-present', 'html-lang-attr-presen
 test('timeBudgetMs takes a number of milliseconds above 0, and nothing else', () => {
   assert.deepEqual(checkEngineOptions({ timeBudgetMs: 250 }), []);
   assert.deepEqual(checkEngineOptions({ timeBudgetMs: 0.5 }), []);
-  for (const bad of [0, -1, '250', NaN, Infinity, null, true]) {
+  for (const bad of [0, -1, '250', NaN, -Infinity, null, true]) {
     const problems = checkEngineOptions({ timeBudgetMs: bad });
     assert.equal(problems.length, 1, String(bad));
     assert.equal(problems[0].kind, 'invalid');
@@ -63,6 +63,26 @@ test('under strictOptions an invalid timeBudgetMs throws; otherwise it is warned
   assert.equal(result.engine.incomplete, undefined);
   assert.equal(result.notRun, undefined);
   assert.equal(result.checksResults.length, 2);
+});
+
+test('timeBudgetMs: Infinity is no limit, accepted without a warning or a strict error', () => {
+  assert.deepEqual(checkEngineOptions({ timeBudgetMs: Infinity }), []);
+  const { value: result, said } = scan({ strictOptions: true, timeBudgetMs: Infinity }, RUN_ONLY);
+  assert.deepEqual(said, []);
+  assert.equal(result.engine.incomplete, undefined);
+  assert.equal('notRun' in result, false);
+  assert.equal(result.checksResults.length, 2);
+  // In a scan of several profiles, too.
+  const { value: both, said: saidBoth } = scan({
+    timeBudgetMs: Infinity,
+    profile: ['wcag21-aa', 'wcag22-aa']
+  });
+  assert.deepEqual(
+    saidBoth.filter((s) => /timeBudgetMs/.test(s)),
+    []
+  );
+  assert.equal(both.engine.incomplete, undefined);
+  assert.equal(both.engine.profilesNotRun, undefined);
 });
 
 test('a scan within its budget is as without one', () => {
@@ -109,12 +129,55 @@ test('in a scan of several profiles the budget is the whole scan’s', () => {
   assert.equal(result.engine.incomplete.profilesNotRun, 1);
   assert.equal(result.engine.incomplete.rulesNotRun, result.notRun.length);
   assert.ok(result.notRun.length > 0);
-  assert.ok(result.notRun.every((n) => n.profile === 'wcag22-aa' && n.reason === 'timeBudget'));
+  assert.ok(result.notRun.every((n) => n.reason === 'timeBudget'));
+  assert.ok(result.notRun.some((n) => n.profile === 'wcag22-aa'));
 
   const roomy = scan({ timeBudgetMs: 1e9, profile: ['wcag22-aa', 'wcag21-aa'] }).value;
   assert.equal(roomy.engine.incomplete, undefined);
   assert.equal(roomy.notRun, undefined);
   assert.deepEqual(roomy.engine.profiles, ['wcag22-aa', 'wcag21-aa']);
+});
+
+// A profile the budget leaves unstarted, after one that started every rule
+// it selected: the scan is incomplete in every reader, not only in SARIF and
+// JUnit (round 10, S10-1).
+test('a profile the budget left unstarted lists its rules in notRun, and every reader sees them', () => {
+  const slow = {
+    id: 'org-slow',
+    meta: { title: 'Slow', tags: ['wcag2a', 'wcag111'], wcagSc: ['1.1.1'] },
+    runInPage(ctx) {
+      const t = Date.now();
+      while (Date.now() - t < 60);
+      return { ruleId: ctx.rule.ruleId, outcome: 'pass', severity: 'moderate', occurrences: [] };
+    }
+  };
+  const { value: result, said } = scan(
+    { profile: ['wcag21-aa', 'wcag22-aa'], timeBudgetMs: 30, customRules: [slow] },
+    undefined
+  );
+  assert.deepEqual(result.engine.profilesNotRun, [{ profile: 'wcag22-aa', reason: 'timeBudget' }]);
+  const skipped = result.notRun.filter((n) => n.profile === 'wcag22-aa');
+  assert.ok(skipped.some((n) => n.ruleId === 'target-size-minimum'));
+  assert.ok(skipped.every((n) => n.reason === 'timeBudget'));
+  assert.equal(result.engine.incomplete.rulesNotRun, result.notRun.length);
+  assert.ok(said.some((s) => /before profile "wcag22-aa" started/.test(s)));
+
+  const match = matchBaseline(result, buildBaselineEntries(result));
+  assert.ok(match.incomplete.notRun.includes('target-size-minimum'));
+  const earl = renderEarlReport(result);
+  const target = earl['@graph'][0].assertions.find((a) => a.test.title === 'target-size-minimum');
+  assert.equal(target.result.outcome, 'earl:untested');
+  const html = renderHtmlReport(result, { manualChecks: false });
+  assert.match(html, new RegExp(`<div><b>${result.notRun.length}</b>rules not run</div>`));
+  const warned = [];
+  const helpers = consoleHelpers(
+    { console: { table: () => {}, warn: (m) => warned.push(m) } },
+    {},
+    null
+  );
+  const rows = helpers.table(result);
+  assert.ok(rows.some((r) => r.outcome === 'notRun' && r.rule === 'target-size-minimum'));
+  assert.ok(warned.some((s) => s.includes(`${result.notRun.length} rule(s) did not run`)));
 });
 
 function cutShort() {
@@ -174,6 +237,26 @@ test('HTML report: says the scan is incomplete, names the rules, and counts them
   // A complete scan says nothing of the kind.
   const complete = renderHtmlReport(scan({}, RUN_ONLY).value, { manualChecks: false });
   assert.doesNotMatch(complete, /class="incomplete"/);
+});
+
+test('HTML report: a frame its scan reached with no budget left makes the scan incomplete', () => {
+  const crossFrame = {
+    topFrame: scan({}, RUN_ONLY).value,
+    frames: [
+      { url: 'https://example.test/f.html', selector: 'iframe', topFrame: cutShort(), frames: [] }
+    ]
+  };
+  const html = renderHtmlReport(crossFrame, { manualChecks: false });
+  // Before anything found, and again in the frame's own section.
+  assert.equal(html.match(/<p class="incomplete" role="note">Incomplete scan/g).length, 2);
+  assert.ok(html.indexOf('class="incomplete"') < html.indexOf('class="frame-heading"'));
+  // SARIF, JUnit and matchBaseline read every frame.
+  assert.equal(
+    JSON.parse(renderSarifReport(crossFrame)).runs[0].invocations[0].executionSuccessful,
+    false
+  );
+  assert.match(renderJunitReport(crossFrame), /<error type="timeBudget"/);
+  assert.equal(matchBaseline(crossFrame, []).incomplete.notRun.length, 2);
 });
 
 test('EARL: a rule not run is asserted earl:untested', () => {

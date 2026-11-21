@@ -30,7 +30,7 @@
   <div class="case" id="case_01">
     <div class="case-title">01 — FAIL: visible &lt;embed&gt; with no accessible name</div>
     <div class="row">
-      <embed id="embed_case_01" src="x.pdf" type="application/pdf">
+      <embed id="embed_case_01" src="chart.svg" type="image/svg+xml">
       <span>Missing name.</span>
     </div>
   </div>
@@ -38,7 +38,7 @@
   <div class="case" id="case_02">
     <div class="case-title">02 — PASS: aria-label provides name</div>
     <div class="row">
-      <embed id="embed_case_02" src="x.pdf" type="application/pdf" aria-label="Quarterly report PDF">
+      <embed id="embed_case_02" src="chart.svg" type="image/svg+xml" aria-label="Quarterly sales chart">
       <span>ARIA name counts.</span>
     </div>
   </div>
@@ -46,8 +46,8 @@
   <div class="case" id="case_03">
     <div class="case-title">03 — PASS: aria-labelledby provides name</div>
     <div class="row">
-      <span id="embed_case_03_label">Company brochure</span>
-      <embed id="embed_case_03" src="x.pdf" type="application/pdf" aria-labelledby="embed_case_03_label">
+      <span id="embed_case_03_label">Sales by region</span>
+      <embed id="embed_case_03" src="chart.svg" type="image/svg+xml" aria-labelledby="embed_case_03_label">
       <span>ARIA idref name counts.</span>
     </div>
   </div>
@@ -55,7 +55,7 @@
   <div class="case" id="case_04">
     <div class="case-title">04 — PASS: title attribute (best-effort)</div>
     <div class="row">
-      <embed id="embed_case_04" src="x.pdf" type="application/pdf" title="Embedded report">
+      <embed id="embed_case_04" src="chart.svg" type="image/svg+xml" title="Sales chart">
       <span>Title is accepted as a last resort.</span>
     </div>
   </div>
@@ -65,7 +65,7 @@
   <div class="case" id="case_05">
     <div class="case-title">05 — INELIGIBLE: aria-hidden and not tabbable</div>
     <div class="row">
-      <embed id="embed_case_05" src="x.pdf" aria-hidden="true">
+      <embed id="embed_case_05" src="chart.svg" aria-hidden="true">
       <span>Ineligible per helper.</span>
     </div>
   </div>
@@ -73,7 +73,7 @@
   <div class="case" id="case_07">
     <div class="case-title">07 — INELIGIBLE: inert ancestor</div>
     <div class="row" inert>
-      <embed id="embed_case_07" src="x.pdf">
+      <embed id="embed_case_07" src="chart.svg">
       <span>Ineligible per helper.</span>
     </div>
   </div>
@@ -82,7 +82,7 @@
     <div class="case-title">11 — INELIGIBLE: inside &lt;template&gt;</div>
     <div class="row">
       <template>
-        <embed id="embed_case_11" src="x.pdf">
+        <embed id="embed_case_11" src="chart.svg">
       </template>
       <span>Non-composed template content is ineligible.</span>
     </div>
@@ -91,7 +91,7 @@
   <div class="case" id="case_12">
     <div class="case-title">12 — INELIGIBLE: display:none</div>
     <div class="row">
-      <embed id="embed_case_12" src="x.pdf" style="display:none">
+      <embed id="embed_case_12" src="chart.svg" style="display:none">
       <span>display:none makes it ineligible.</span>
     </div>
   </div>
@@ -99,7 +99,7 @@
   <div class="case" id="case_13">
     <div class="case-title">13 — INELIGIBLE: visibility:hidden</div>
     <div class="row hiddenvis">
-      <embed id="embed_case_13" src="x.pdf">
+      <embed id="embed_case_13" src="chart.svg">
       <span>visibility:hidden makes it ineligible.</span>
     </div>
   </div>
@@ -109,7 +109,7 @@
   <div class="case" id="case_06">
     <div class="case-title">06 — FAIL: aria-hidden but tabbable (tabindex=0) stays applicable and must have name</div>
     <div class="row">
-      <embed id="embed_case_06" src="x.pdf" aria-hidden="true" tabindex="0">
+      <embed id="embed_case_06" src="chart.svg" aria-hidden="true" tabindex="0">
       <span>Tabbable override => eligible; missing name => fail.</span>
     </div>
   </div>
@@ -119,7 +119,7 @@
   <div class="case" id="case_08">
     <div class="case-title">08 — FAIL: opacity:0 should remain eligible</div>
     <div class="row">
-      <embed id="embed_case_08" src="x.pdf" style="opacity:0">
+      <embed id="embed_case_08" src="chart.svg" style="opacity:0">
       <span>Opacity does not exclude; missing name => fail.</span>
     </div>
   </div>
@@ -127,7 +127,7 @@
   <div class="case" id="case_09">
     <div class="case-title">09 — FAIL: offscreen should remain eligible</div>
     <div class="row">
-      <embed id="embed_case_09" src="x.pdf" class="offscreen">
+      <embed id="embed_case_09" src="chart.svg" class="offscreen">
       <span>Offscreen does not exclude; missing name => fail.</span>
     </div>
   </div>
@@ -136,7 +136,7 @@
     <div class="case-title">10 — FAIL: zero-size container should remain eligible</div>
     <div class="row">
       <span class="zerosize">
-        <embed id="embed_case_10" src="x.pdf">
+        <embed id="embed_case_10" src="chart.svg">
       </span>
       <span>Zero-size does not exclude; missing name => fail.</span>
     </div>
@@ -147,7 +147,7 @@
   <div class="case" id="case_14">
     <div class="case-title">14 — EXCLUDED: role=presentation and not focusable</div>
     <div class="row">
-      <embed id="embed_case_14" src="x.pdf" role="presentation">
+      <embed id="embed_case_14" src="chart.svg" role="presentation">
       <span>Excluded by rule when not focusable.</span>
     </div>
   </div>
@@ -155,8 +155,31 @@
   <div class="case" id="case_15">
     <div class="case-title">15 — FAIL: role=none but focusable is applicable</div>
     <div class="row">
-      <embed id="embed_case_15" src="x.pdf" role="none" tabindex="0">
+      <embed id="embed_case_15" src="chart.svg" role="none" tabindex="0">
       <span>Focusable => not excluded; missing name => fail.</span>
+    </div>
+  </div>
+
+  <h2>F. Resources with no non-text content (ACT 8fc3b6 applicability)</h2>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — EXCLUDED: a PDF (type="application/pdf") renders no non-text content of its own, so 1.1.1 asks nothing of the embed, as for an &lt;object&gt; of the same resource</div>
+    <div class="row">
+      <embed id="embed_case_16" src="report.pdf" type="application/pdf">
+    </div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — EXCLUDED: an HTML page (no type, src ends in .html) is a document, not non-text content</div>
+    <div class="row">
+      <embed id="embed_case_17" src="page.html">
+    </div>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — EXCLUDED: Flash (src ends in .swf): no current browser runs it, so the embed draws nothing</div>
+    <div class="row">
+      <embed id="embed_case_18" src="old.swf">
     </div>
   </div>
 

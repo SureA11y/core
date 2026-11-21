@@ -211,7 +211,8 @@ export interface EngineOptionFields {
    * Off by default. Once the scan has spent this many milliseconds (a number
    * above 0), it starts no more rules: those it selected and didn't start are
    * listed in the result's `notRun`, and `engine.incomplete` says the scan
-   * was cut short. In a scan of several profiles, it is the whole scan's.
+   * was cut short. In a scan of several profiles, or across frames, it is
+   * the whole scan's. `Infinity` means no limit, as leaving it out does.
    */
   timeBudgetMs?: number;
   /** Read only by runa11yCoreAcrossFrames, in milliseconds. */
@@ -872,6 +873,11 @@ export interface CheckResult {
     pass?: number;
     notApplicable?: number;
   };
+  /**
+   * Of the undecided occurrences left out, those whose lean points to fail,
+   * which the lean-fail gates count; present only when there are some.
+   */
+  occurrencesOmittedLeaningFail?: number;
   title: string;
   description: string;
   /** variantOfTitleKey: a variant's only, its base rule's titleKey. */
@@ -1241,7 +1247,10 @@ export interface LeaningFailure {
  * criterion is outside the scan's target are left out, as JUnit and SARIF
  * leave them out. With `wcagOnly`, only those of rules mapped to a WCAG
  * criterion in the target, as `leanFailWcagOnly` does. A cross-frame result
- * covers every frame. Throws a TypeError for anything else.
+ * covers every frame. A capped result (output.maxOccurrencesPerRule) lists
+ * only the findings it kept: each check result's
+ * occurrencesOmittedLeaningFail counts those left out.
+ * Throws a TypeError for anything else.
  */
 export function leaningFailures(
   result: ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult,

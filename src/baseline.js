@@ -8,6 +8,7 @@ const {
   occurrenceOutcome,
   reasonCodeOf,
   leaningOccurrencesOf,
+  leaningOmittedOf,
   notRunOf,
   omittedOf
 } = require('./scan-result.js');
@@ -151,12 +152,18 @@ function buildBaselineEntries(result, options) {
   // A result that left failures out (output.maxOccurrencesPerRule) or rules
   // unrun (timeBudgetMs) writes a baseline that doesn't know them: every
   // later scan then finds them new.
-  const incomplete = incompletenessOf(frames);
+  const leanFail = !!(options && options.leanFail === true);
+  const incomplete = incompletenessOf(frames, leanFail);
   if (incomplete) {
     const said = [];
     if (incomplete.occurrencesOmitted) {
       said.push(
         `output.maxOccurrencesPerRule left ${incomplete.occurrencesOmitted} failing occurrence(s) out of it`
+      );
+    }
+    if (incomplete.occurrencesOmittedLeaningFail) {
+      said.push(
+        `output.maxOccurrencesPerRule left ${incomplete.occurrencesOmittedLeaningFail} occurrence(s) that lean fail out of it`
       );
     }
     if (incomplete.notRun) said.push(`${incomplete.notRun.length} rule(s) did not run`);
@@ -176,7 +183,7 @@ function buildBaselineEntries(result, options) {
     ...(f.framePath.length ? { frame: f.framePath.slice() } : {})
   });
   const entries = failFindingsOf(frames).map((f) => entryOf(f, {}));
-  if (options && options.leanFail === true) {
+  if (leanFail) {
     for (const f of leanFindingsOf(frames)) entries.push(entryOf(f, { lean: 'fail' }));
   }
   return entries;
@@ -439,20 +446,27 @@ function compare(findings, remaining) {
 
 // What a result (each frame of it) left unchecked, or null: the rules its
 // time budget left unstarted (engineOptions.timeBudgetMs), each once, and
-// the failing occurrences output.maxOccurrencesPerRule left out of it.
-function incompletenessOf(frames) {
+// the failing occurrences output.maxOccurrencesPerRule left out of it, and,
+// with `leanFail`, the undecided ones that lean fail and gate under
+// leanFailAs it left out.
+function incompletenessOf(frames, leanFail) {
   const notRun = [];
   let occurrencesOmitted = 0;
+  let occurrencesOmittedLeaningFail = 0;
   for (const { result } of frames) {
     for (const n of notRunOf(result)) if (!notRun.includes(n.ruleId)) notRun.push(n.ruleId);
     for (const check of (result && result.checksResults) || []) {
       if (check && check.outcome === 'fail') occurrencesOmitted += omittedOf(check).fail;
     }
+    if (leanFail && result) {
+      for (const { omitted } of leaningOmittedOf(result)) occurrencesOmittedLeaningFail += omitted;
+    }
   }
-  if (!notRun.length && !occurrencesOmitted) return null;
+  if (!notRun.length && !occurrencesOmitted && !occurrencesOmittedLeaningFail) return null;
   return {
     ...(notRun.length ? { notRun } : {}),
-    ...(occurrencesOmitted ? { occurrencesOmitted } : {})
+    ...(occurrencesOmitted ? { occurrencesOmitted } : {}),
+    ...(occurrencesOmittedLeaningFail ? { occurrencesOmittedLeaningFail } : {})
   };
 }
 
@@ -475,13 +489,18 @@ function matchBaseline(result, baselineEntries, options) {
   }
   // A scan that did not check everything it selected can't say it found
   // nothing new: what it left out may hold new failures.
-  const incomplete = incompletenessOf(frames);
+  const incomplete = incompletenessOf(frames, !!match.leanFail);
   if (incomplete) match.incomplete = incomplete;
   // Failing occurrences left out of the result can't be matched, so they
-  // count as new: a capped result never matches as clean.
+  // count as new: a capped result never matches as clean. So do those that
+  // lean fail, for leanFail.
   if (incomplete && incomplete.occurrencesOmitted) {
     match.totalFail += incomplete.occurrencesOmitted;
     match.newCount += incomplete.occurrencesOmitted;
+  }
+  if (incomplete && incomplete.occurrencesOmittedLeaningFail) {
+    match.leanFail.total += incomplete.occurrencesOmittedLeaningFail;
+    match.leanFail.newCount += incomplete.occurrencesOmittedLeaningFail;
   }
   return match;
 }

@@ -30,9 +30,9 @@
  *     order: the control's click bubbles to the handler, so this is event
  *     delegation and the keyboard already runs it;
  *   - an element that cannot take focus, has no descendant that can, has no
- *     widget role and no `cursor: pointer`: nothing tells the user it is
- *     clickable, and such a handler often only tracks clicks or stops their
- *     propagation.
+ *     widget role, no `cursor: pointer` and is not drawn as a control (see
+ *     below): nothing tells the user it is clickable, and such a handler
+ *     often only tracks clicks or stops their propagation.
  * @expectation
  *   A keyboard user can run what the click runs. Chromium fires `click` on
  *   Enter or Space for native controls only: a `<span role="button"
@@ -72,14 +72,20 @@
  *     composite widget (grid, treegrid, listbox, menu, menubar, tree,
  *     tablist, toolbar, radiogroup, combobox), which may operate it without
  *     moving focus to it: then cantTell.
- *   - Neither it nor a descendant can take focus, with another widget role
- *     or `cursor: pointer`: cantTell (`CLICK_HANDLER_NOT_FOCUSABLE`). An
+ *   - Neither it nor a descendant can take focus, with another widget role,
+ *     `cursor: pointer`, or drawn as a control without either: short visible
+ *     text (40 characters and six words at most, no block content) with
+ *     padding, in a box set apart by a border or a background of its own,
+ *     as "Add to cart" on a coloured `<div onclick>`: cantTell
+ *     (`CLICK_HANDLER_NOT_FOCUSABLE`). An
  *     option of a combobox's list or a cell of a grid is often operated from
  *     the element that keeps focus, and the action may be offered by another
  *     control of the page.
  * @reports
  *   - `role`: the element's ARIA role, or `''` for none.
  *   - `focusable`: whether the element itself can take focus.
+ *   - `styledAsControl` (`CLICK_HANDLER_NOT_FOCUSABLE`): `true` when the
+ *     element is asked about only because it is drawn as a control.
  * @reason-codes
  *   - `CLICK_HANDLER_NO_KEY_LISTENER` (fail): a button, link, checkbox,
  *     switch, tab or menu item with a click handler is in the tab order, but
@@ -120,13 +126,14 @@
  *     window, none on the element, an ancestor or a shadow root it is in.
  *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
  *   - `CLICK_HANDLER_NOT_FOCUSABLE` (cantTell): an element with a click
- *     handler that cannot take focus, with a widget role or a pointer
- *     cursor; whether the action is offered by keyboard elsewhere is for a
- *     person to check.
+ *     handler that cannot take focus, with a widget role, a pointer cursor
+ *     or a control's look (a short label in a padded box with a border or a
+ *     background of its own); whether the action is offered by keyboard
+ *     elsewhere is for a person to check.
  *     It leans pass when an ancestor keeps focus for it (aria-activedescendant,
  *     or a focusable composite widget), and fail when it has no widget role,
- *     shows a pointer cursor, and nothing above it takes focus or handles
- *     keys.
+ *     shows a pointer cursor or is drawn as a control, and nothing above it
+ *     takes focus or handles keys.
  *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
  * @implementation-notes
  * - No ACT rule tests click handlers. WCAG 2.1.1 asks that all
@@ -420,6 +427,57 @@ function runInPage(ctx) {
     try {
       const cs = helpers.computedStyle(el);
       return trim(cs && cs.cursor).toLowerCase() === 'pointer';
+    } catch {
+      return false;
+    }
+  }
+
+  // Styled like a control though the cursor stays the default one: a short
+  // visible label ("Add to cart") in a box set apart by a background of its
+  // own or a border, with padding around the text, as a button is drawn.
+  // The visual styling and the action's wording are what tell a sighted
+  // user it is clickable (round 10, C10-4). A large wrapper, with long text
+  // or block content, is not one: its handler is more often delegated or a
+  // click tracker.
+  const BLOCK_CONTENT =
+    'address,article,aside,blockquote,div,dl,fieldset,figure,footer,form,h1,h2,h3,h4,h5,h6,header,hr,li,main,nav,ol,p,pre,section,table,ul';
+  function looksLikeControl(el) {
+    try {
+      const c = helpers.contrast;
+      const cs = helpers.computedStyle(el);
+      if (!c || !cs) return false;
+      const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
+      if (!text || text.length > 40 || text.split(' ').length > 6) return false;
+      if (!/[\p{L}\p{N}]/u.test(text)) return false;
+      if (dom.querySelectorAll(el, BLOCK_CONTENT).length) return false;
+      const px = (v) => {
+        const n = c.parsePx(v);
+        return typeof n === 'number' && Number.isFinite(n) ? n : 0;
+      };
+      const padded = ['top', 'right', 'bottom', 'left'].some(
+        (side) => px(cs.getPropertyValue('padding-' + side)) > 0
+      );
+      if (!padded) return false;
+      const bordered = ['top', 'right', 'bottom', 'left'].some((side) => {
+        const style = trim(cs.getPropertyValue('border-' + side + '-style')).toLowerCase();
+        const color = c.parseCssColorToRgba(cs.getPropertyValue('border-' + side + '-color'));
+        return (
+          style &&
+          style !== 'none' &&
+          style !== 'hidden' &&
+          px(cs.getPropertyValue('border-' + side + '-width')) > 0 &&
+          !!color &&
+          color.a > 0
+        );
+      });
+      if (bordered) return true;
+      const bg = c.parseCssColorToRgba(cs.getPropertyValue('background-color'));
+      if (!bg || !(bg.a > 0.05)) return false;
+      // A background the same as what is behind it sets nothing apart.
+      const parent = helpers.flatParentElement(el);
+      const under = parent ? c.computeEffectiveBackground(parent) : null;
+      if (!under || !under.ok || !under.rgba) return true;
+      return c.contrastRatio(c.compositeRgba(bg, under.rgba), under.rgba) >= 1.1;
     } catch {
       return false;
     }
@@ -782,7 +840,9 @@ function runInPage(ctx) {
     }
 
     const isWidget = WIDGET_ROLES.has(role);
-    if (!isWidget && !hasPointerCursor(el)) continue;
+    const pointer = !isWidget && hasPointerCursor(el);
+    const styledControl = !isWidget && !pointer && looksLikeControl(el);
+    if (!isWidget && !pointer && !styledControl) continue;
     applicableCount += 1;
 
     // A focusable composite widget may operate its items from the keyboard
@@ -839,10 +899,27 @@ function runInPage(ctx) {
       };
     } else if (
       !managedFromAbove &&
-      !isWidget &&
-      hasPointerCursor(el) &&
+      styledControl &&
       !ancestorList.some((a) => focusOf(a).focusable)
     ) {
+      notFocusableLean = {
+        toward: 'fail',
+        why: 'The element is drawn as a button, a short label in a box with a background or a border of its own, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.',
+        signals: [
+          { signal: 'managed-from-above', value: false },
+          { signal: 'pointer-cursor', value: false },
+          { signal: 'styled-as-control', value: true },
+          { signal: 'widget-role', value: false },
+          { signal: 'focusable-ancestor', value: false }
+        ],
+        caution:
+          'The same action may be offered by another control of the page, such as a link next to a clickable row.',
+        i18n: {
+          whyKey: 'clickHandlerKeyboardOperable_lean_why_styledControl',
+          cautionKey: 'clickHandlerKeyboardOperable_lean_caution_elsewhere'
+        }
+      };
+    } else if (!managedFromAbove && pointer && !ancestorList.some((a) => focusOf(a).focusable)) {
       notFocusableLean = {
         toward: 'fail',
         why: 'The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.',
@@ -885,6 +962,7 @@ function runInPage(ctx) {
             reasonCode: 'CLICK_HANDLER_NOT_FOCUSABLE',
             role,
             focusable: false,
+            ...(styledControl ? { styledAsControl: true } : {}),
             ...(noHref ? { noHref: true } : {})
           }
         }

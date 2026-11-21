@@ -794,15 +794,21 @@ The id `lbl` is unique, so the reference resolves unambiguously.
 
 **Passed**
 ```html
-<embed src="report.pdf" type="application/pdf" aria-label="Quarterly report PDF">
+<embed src="sales-chart.svg" type="image/svg+xml" aria-label="Quarterly sales chart">
 ```
 `aria-label` gives the embed an accessible name.
 
 **Failed**
 ```html
-<embed src="report.pdf" type="application/pdf">
+<embed src="sales-chart.svg" type="image/svg+xml">
 ```
 No accessible name and no fallback content.
+
+**Not applicable**
+```html
+<embed src="report.pdf" type="application/pdf">
+```
+A PDF, like an HTML page or a Flash file, renders no non-text content of its own, so 1.1.1 asks nothing of the embed (ACT 8fc3b6), as for an `<object>` of the same resource.
 
 ## embed-text-alternative-quality
 
@@ -980,6 +986,30 @@ A single wrapping label; only one labelling mechanism applies.
 <input id="address" type="text">
 ```
 Two separate `label[for]` elements both target the same control. Browsers join them into one name, "Address Mailing address", and only a person can tell whether it still reads well.
+
+## form-group-name-present
+
+**Passed**
+```html
+<form>
+  <fieldset>
+    <legend>Shipping method</legend>
+    <label><input type="radio" name="ship"> Standard</label>
+    <label><input type="radio" name="ship"> Express</label>
+  </fieldset>
+</form>
+```
+The radio buttons share a name and sit in a fieldset whose legend says what is being chosen.
+
+**Flagged (cantTell)**
+```html
+<form>
+  <p>Shipping method</p>
+  <label><input type="radio" name="ship"> Standard</label>
+  <label><input type="radio" name="ship"> Express</label>
+</form>
+```
+The question is only a paragraph above the radio buttons, tied to none of them. A person checks whether each option's label says what is being chosen on its own; it leans fail.
 
 ## heading-order
 
@@ -2201,8 +2231,8 @@ Text content is not a valid name source for an element with an explicit role="im
 
 **Flagged (cantTell)**
 ```html
-<style>.scrollY { overflow-y: auto; height: 100px; }</style>
-<div class="scrollY">Plain long text content with no interactive children at all.</div>
+<style>.scrollY { overflow-y: auto; height: 3em; }</style>
+<div class="scrollY"><p>Plain long text content</p><p>with no interactive children</p><p>at all.</p></div>
 ```
 The region can scroll, but it has no `tabindex` of its own and contains no focusable descendant, so a keyboard user can never reach it to scroll it.
 
@@ -2362,6 +2392,20 @@ A `<title>` is present — worth confirming "Growth chart" describes what the ch
 <svg role="img" viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>
 ```
 No `<title>`/`<desc>` text, aria-label, or resolved aria-labelledby exists to review; that's `svg-text-alternative-present`'s failure instead.
+
+## symbol-graphic-contrast
+
+**Passed**
+```html
+<p>Customer rating <span style="color:#7a5c00">★★★★☆</span></p>
+```
+The rating stars, symbols with no letter or digit, reach 3:1 against the white page.
+
+**Flagged (cantTell)**
+```html
+<p>Customer rating <span style="color:#f5d76e">★★★★☆</span></p>
+```
+Gold stars on white are at 1.42:1, under the 3:1 WCAG 1.4.11 asks of a graphic needed to understand the content. A person checks whether they carry information no text beside them gives; it leans fail.
 
 ## tab-name-present
 
@@ -2629,11 +2673,12 @@ A `kind="captions"` track with a real `src` is present, which says captions exis
 ```
 `aria-label` names the video element that carries the poster image.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
-<video poster="poster.png"></video>
+<h2>Product tour</h2>
+<video poster="poster.png" src="tour.mp4" controls></video>
 ```
-No accessible name and no fallback; a poster attribute alone isn't a text alternative.
+The video has a poster but no accessible name. A video is time-based media, whose text alternative only has to identify it (WCAG 1.1.1), so a person checks that something tied to it does; it leans fail, since a screen reader announces it with nothing that identifies it.
 
 ## widget-keyboard-focusable
 

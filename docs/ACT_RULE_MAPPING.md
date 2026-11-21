@@ -70,7 +70,7 @@ Rule changes, each weighed against WCAG as well as against the example:
 - `summary-name-present` applies only to the summary button of a `<details>`, its first `<summary>` child. Any other `<summary>` is not a control (`2t702h` Inapplicable Example 1).
 - `aria-prohibited-children` reports a `group` a `list` owns. W3C's `bc4a75` makes it Failed Example 7 and WAI-ARIA 1.2 lists only `listitem` for `list`; the Community Group's older version passed it. This reverses a 2026-08-19 decision.
 - `label-in-name` counts text that only `aria-hidden` hides as part of the visible label, since it is painted (`2ee8b8` Failed Example 16), except where it is an icon. This closes the open `docs/DESIGN_CHALLENGES.md` entry that was waiting for such an example.
-- `aria-prohibited-attr` checks `aria-braillelabel` wherever it checks a name, and `aria-roledescription` and `aria-brailleroledescription` on an element with no role or the `generic` role, as WAI-ARIA 1.3 prohibits them there (`kb1m8s`). A role description on an element with no role describes nothing, whatever its content, so it fails.
+- `aria-prohibited-attr` checks `aria-braillelabel` wherever it checks a name, and `aria-roledescription` and `aria-brailleroledescription` on an element with no role or the `generic` role, as WAI-ARIA 1.3 prohibits them there (`kb1m8s`). A role description on an element with no role, or the `generic` role, refines no control: the rule reports it as `cantTell` whatever the element's content (`ARIA_ATTR_PROHIBITED_ROLELESS` with no role, `ARIA_ATTR_PROHIBITED` on `generic`), a WAI-ARIA violation that no WCAG criterion settles for certain.
 
 Mapping changes:
 

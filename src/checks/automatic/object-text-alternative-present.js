@@ -64,39 +64,6 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  // Types an object can embed that are not image, audio or video. Only types
-  // known from markup count: an unknown or missing extension leaves the object
-  // in scope, since it may well be an image.
-  const NON_MEDIA_EXTENSIONS = new Set([
-    'htm',
-    'html',
-    'xhtml',
-    'xht',
-    'shtml',
-    'php',
-    'asp',
-    'aspx',
-    'jsp',
-    'txt',
-    'xml',
-    'json',
-    'pdf',
-    'csv',
-    // Flash: no current browser runs it, so only the fallback shows.
-    'swf'
-  ]);
-
-  function embedsNonMedia(type, data) {
-    const t = String(type || '')
-      .trim()
-      .toLowerCase()
-      .split(';')[0]
-      .trim();
-    if (t) return !/^(image|audio|video)\//.test(t);
-    const m = /\.([a-z0-9]+)$/i.exec(String(data || '').split(/[?#]/)[0]);
-    return !!(m && NON_MEDIA_EXTENSIONS.has(m[1].toLowerCase()));
-  }
-
   const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -215,7 +182,11 @@ function runInPage(ctx) {
       if (elig && elig.eligible === false) continue;
     }
 
-    if (embedsNonMedia(dom.getAttribute(el, 'type'), dom.getAttribute(el, 'data'))) continue;
+    if (
+      typeof helpers.embedsNonMedia === 'function' &&
+      helpers.embedsNonMedia(dom.getAttribute(el, 'type'), dom.getAttribute(el, 'data'))
+    )
+      continue;
 
     // role presentation/none exclusion only when not focusable
     // The resolved role: the attribute's first known, non-abstract token,

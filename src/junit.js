@@ -59,6 +59,7 @@ const {
   wcagScopeOf,
   occurrenceOutcome,
   leaningOccurrencesOf,
+  leaningOmittedOf,
   reporterOptions,
   notRunOf,
   timeBudgetOf,
@@ -115,8 +116,9 @@ function mappingsOf(result) {
 // What one rule contributes, decided once for a rule that appears in two
 // suites. `baseline` holds what the baseline knows (knownOccurrences), and
 // `gating` the findings that lean fail and gate under leanFailAs
-// (leaningOccurrencesOf).
-function classify(check, baseline, gating, options) {
+// (leaningOccurrencesOf), and `leaningOmittedBy` how many of those each check
+// result lost to output.maxOccurrencesPerRule (leaningOmittedOf).
+function classify(check, baseline, gating, leaningOmittedBy, options) {
   const occurrences = Array.isArray(check.occurrences) ? check.occurrences.filter(Boolean) : [];
   const failing = [];
   const undecided = [];
@@ -156,12 +158,15 @@ function classify(check, baseline, gating, options) {
   const omitted =
     check.outcome === 'fail' || check.outcome === 'cantTell'
       ? omittedOf(check)
-      : { total: 0, fail: 0, cantTell: 0 };
+      : { total: 0, fail: 0, cantTell: 0, leanFail: 0 };
+  // Those of them that lean fail gate as the ones kept do under leanFailAs:
+  // no baseline can be matched against them either.
+  const leaningOmitted = options.leanFailAs === 'failure' ? leaningOmittedBy.get(check) || 0 : 0;
 
   let status;
   if (ruleErrorOf(check)) status = 'error';
   else if (failing.length || omitted.fail) status = 'failure';
-  else if (leaning.length) status = 'failure';
+  else if (leaning.length || leaningOmitted) status = 'failure';
   else if (undecided.length || omitted.cantTell)
     status = options.cantTellAs === 'failure' ? 'failure' : 'skipped';
   else if (baselined) status = 'skipped';
@@ -178,7 +183,7 @@ function classify(check, baseline, gating, options) {
     leaning,
     baselined,
     leanBaselined,
-    omitted,
+    omitted: { ...omitted, leanFail: leaningOmitted },
     cantTellAs: options.cantTellAs
   };
 }
@@ -188,8 +193,15 @@ function classify(check, baseline, gating, options) {
 function omittedLines(entry, tier) {
   const n = entry.omitted ? entry.omitted[tier] : 0;
   if (!n) return [];
-  const what = tier === 'fail' ? 'failing occurrence' : 'occurrence that needs manual review';
-  return [`+${n} more: ${plural(n, what)} not listed (output.maxOccurrencesPerRule)`];
+  // The noun takes the plural, and the verb of a clause after it agrees.
+  const verb = (one, other) => (n === 1 ? one : other);
+  const what =
+    tier === 'fail'
+      ? plural(n, 'failing occurrence')
+      : tier === 'leanFail'
+        ? `${plural(n, 'occurrence')} that likely ${verb('fails', 'fail')}`
+        : `${plural(n, 'occurrence')} that ${verb('needs', 'need')} manual review`;
+  return [`+${n} more: ${what} not listed (output.maxOccurrencesPerRule)`];
 }
 
 function describeOccurrence(occurrence) {
@@ -256,10 +268,18 @@ function renderTestcase(entry, classname, indent) {
     inner.push(
       `${indent}  <failure type="fail" message="${xmlText(message)}">${xmlText([...failing.map(describeOccurrence), ...omittedLines(entry, 'fail'), ...helpLine(check)].join('\n'))}</failure>`
     );
-  } else if (status === 'failure' && leaning.length && entry.cantTellAs !== 'failure') {
-    const message = `${plural(leaning.length, 'occurrence')} likely ${leaning.length === 1 ? 'fails' : 'fail'}: ${leaning[0].summary || check.ruleId}`;
+  } else if (
+    status === 'failure' &&
+    (leaning.length || (entry.omitted && entry.omitted.leanFail)) &&
+    entry.cantTellAs !== 'failure'
+  ) {
+    const count = leaning.length + (entry.omitted ? entry.omitted.leanFail : 0);
+    const lead = leaning.length
+      ? leaning[0].summary || check.ruleId
+      : 'left out of the result by output.maxOccurrencesPerRule, so no baseline can be matched against them';
+    const message = `${plural(count, 'occurrence')} likely ${count === 1 ? 'fails' : 'fail'}: ${lead}`;
     inner.push(
-      `${indent}  <failure type="leanFail" message="${xmlText(message)}">${xmlText([...leaning.map(describeLeaning), ...helpLine(check)].join('\n'))}</failure>`
+      `${indent}  <failure type="leanFail" message="${xmlText(message)}">${xmlText([...leaning.map(describeLeaning), ...omittedLines(entry, 'leanFail'), ...helpLine(check)].join('\n'))}</failure>`
     );
   } else if (status === 'failure') {
     const review = undecided.length + (entry.omitted ? entry.omitted.cantTell : 0);
@@ -393,8 +413,11 @@ function frameSuites(result, frame, baseline, opts, totals) {
   const gating = new Set(
     leaningOccurrencesOf(result, { wcagOnly: opts.leanFailWcagOnly }).map((l) => l.occurrence)
   );
+  const leaningOmittedBy = new Map(
+    leaningOmittedOf(result, { wcagOnly: opts.leanFailWcagOnly }).map((l) => [l.check, l.omitted])
+  );
   for (const check of checks) {
-    let entry = classify(check, baseline, gating, opts);
+    let entry = classify(check, baseline, gating, leaningOmittedBy, opts);
     if (entry.status === 'notApplicable' && !opts.includeNotApplicable) continue;
 
     const mappings = mappingsOf(check);

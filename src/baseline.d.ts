@@ -67,7 +67,9 @@ export interface BaselineMatch {
    * Present only when the result did not check everything it selected, so a
    * newCount of 0 is not a clean scan: `notRun`, the rules its time budget
    * left unstarted (engineOptions.timeBudgetMs), and `occurrencesOmitted`,
-   * the failures output.maxOccurrencesPerRule left out of it.
+   * the failures output.maxOccurrencesPerRule left out of it, and, with
+   * { leanFail: true }, `occurrencesOmittedLeaningFail`, the findings that
+   * lean fail it left out.
    */
   incomplete?: BaselineIncomplete;
 }
@@ -81,6 +83,12 @@ export interface BaselineIncomplete {
    * which can't be matched, so totalFail and newCount count them as new.
    */
   occurrencesOmitted?: number;
+  /**
+   * With { leanFail: true }: the undecided occurrences that lean fail and
+   * gate under leanFailAs that output.maxOccurrencesPerRule left out of it,
+   * which leanFail's total and newCount count as new.
+   */
+  occurrencesOmittedLeaningFail?: number;
 }
 
 /**
