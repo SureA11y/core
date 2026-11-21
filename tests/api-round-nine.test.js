@@ -162,3 +162,65 @@ test('the procedures refuse an unknown tool or automation level, and read a nume
   );
   assert.throws(() => listProceduresFrom({ en }, { tools: 'mouse' }), /unknown tool mouse/);
 });
+
+test('checkPack and definePack report what a scan could not prepare (A9-9)', () => {
+  const { checkPack, definePack } = require('../src/pack.js');
+  const base = () => ({
+    name: 'zz-pack',
+    version: '1.0.0',
+    namespace: 'zz',
+    core: '*',
+    title: 'ZZ',
+    profiles: { 'zz-p': { tags: [], rules: ['img-alt-present'] } },
+    rollups: [{ id: 'zz-r', title: 'R', checksIds: ['img-alt-present'] }]
+  });
+  const variant = (from) => ({
+    name: 'zz-pack',
+    version: '1.0.0',
+    namespace: 'zz',
+    core: '*',
+    variants: [{ id: 'zz-v', from, config: {}, meta: { title: 'V', wcagSc: ['1.4.3'] } }]
+  });
+  const refused = [
+    [variant('no-such-rule'), /from names no-such-rule, which is no rule/],
+    [variant('img-alt-present'), /img-alt-present declares no settings/],
+    [(p) => (p.profiles['zz-p'].rules = ['img-alt-presnt']), /rules names img-alt-presnt/],
+    [
+      (p) => (p.profiles['zz-p'].severity = { 'nope-rule': 'critical' }),
+      /severity names nope-rule/
+    ],
+    [
+      (p) => (p.profiles['zz-p'].severity = { 'img-alt-present': 'urgent' }),
+      /severity of img-alt-present must be one of/
+    ],
+    [
+      (p) => (p.profiles['zz-p'].exclude = { rules: ['nope-rule'] }),
+      /exclude.rules names nope-rule/
+    ],
+    [(p) => (p.rollups[0].checksIds = ['nope-rule']), /references unknown testId: nope-rule/]
+  ];
+  for (const [change, reason] of refused) {
+    let pack = base();
+    if (typeof change === 'function') change(pack);
+    else pack = change;
+    assert.match(checkPack(pack).join('\n'), reason);
+    assert.throws(() => definePack(pack), reason);
+    // As a scan finds it.
+    const result = runa11yCoreOnHtml(PAGE, {
+      engineOptions: { packs: [pack] },
+      entryPointParity: false
+    });
+    assert.match(result.skippedPacks[0].reason, reason);
+  }
+  // A profile key it has no field for, and a tag no rule carries, are
+  // reported; the pack still loads.
+  const odd = base();
+  odd.profiles['zz-p'].rule = ['region'];
+  odd.profiles['zz-p'].tags = ['wcag2zz', 'wcag22a'];
+  assert.deepEqual(checkPack(odd), [
+    'profiles.zz-p has no field "rule"; a profile takes tags, rules, exclude, severity, wcagVersion, keepsParsing',
+    'profiles.zz-p: no rule carries the tag wcag2zz, so it selects nothing'
+  ]);
+  assert.doesNotThrow(() => definePack(odd));
+  assert.deepEqual(checkPack(base()), []);
+});

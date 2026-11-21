@@ -608,22 +608,22 @@ test('a checklist is checked like a standard', () => {
 
 // A profile's rules list: core rules it runs by id besides its tags' selection,
 // or, with no tags, exactly those (and the checklist's own, by its tag).
-const shop = (profiles) =>
-  definePack({
-    name: '@shop/policy',
-    title: 'Shop policy',
-    version: '1.0.0',
-    namespace: 'shop',
-    core: '*',
-    rules: [
-      {
-        id: 'shop-always',
-        meta: { title: 'Always passes', tags: ['shop'] },
-        runInPage: () => ({ outcome: 'pass' })
-      }
-    ],
-    profiles
-  });
+const shopData = (profiles) => ({
+  name: '@shop/policy',
+  title: 'Shop policy',
+  version: '1.0.0',
+  namespace: 'shop',
+  core: '*',
+  rules: [
+    {
+      id: 'shop-always',
+      meta: { title: 'Always passes', tags: ['shop'] },
+      runInPage: () => ({ outcome: 'pass' })
+    }
+  ],
+  profiles
+});
+const shop = (profiles) => definePack(shopData(profiles));
 
 test("a profile's rules list adds rules by id, and with no tags runs exactly them", () => {
   const ran = (result) => result.checksResults.map((c) => c.ruleId).sort();
@@ -671,7 +671,11 @@ test("a profile's rules list must name rules, and can't exclude one it names", (
         /shop-1: excludes region, which its own rules list names/
       ]
     ]) {
-      const result = scanImg({ packs: [shop({ 'shop-1': profile })] });
+      // definePack and checkPack refuse it (round 9, A9-9); a scan given it
+      // as it is skips it.
+      assert.throws(() => shop({ 'shop-1': profile }), reason);
+      assert.match(checkPack(shopData({ 'shop-1': profile })).join('\n'), reason);
+      const result = scanImg({ packs: [shopData({ 'shop-1': profile })] });
       assert.match(result.skippedPacks[0].reason, reason);
     }
   } finally {

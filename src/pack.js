@@ -463,19 +463,89 @@ function keepsParsingProblems(keepsParsing, where) {
   return [`${where}.keepsParsing must be true or false, not ${JSON.stringify(keepsParsing)}`];
 }
 
-// What is wrong with a pack's shape, as messages; none for a pack that can be
+// What is wrong with a pack, as messages; none for a pack that can be
 // prepared. Whether its rules, standard and dictionaries hold together with
-// core's is found by preparing it (preparePacks). It also reports what
-// doesn't keep the pack from loading but reads wrong: a rule's steps that a
-// dictionary translates only in part (reviewPartialProblems).
+// core's is found by preparing it, as a scan does (preparationProblems). It
+// also reports what doesn't keep the pack from loading but reads wrong: a
+// rule's steps that a dictionary translates only in part
+// (reviewPartialProblems), a profile field no profile has, a tag that
+// selects nothing.
 function checkPack(pack) {
-  return packProblems(pack, true, true);
+  return packProblems(pack, true, true, true);
 }
 
 // What keeps a pack from being loaded: checkPack's problems without those it
-// only reports. A scan and describePacks go by it.
+// only reports. A scan and describePacks go by it; a scan then prepares the
+// pack itself (preparePacks).
 function loadProblems(pack) {
-  return packProblems(pack, true, false);
+  return packProblems(pack, true, false, false);
+}
+
+// The keys a profile has: a checklist's (pack.profiles), and a standard's,
+// which adds the version it targets, its mapped rules and its law.
+const CHECKLIST_PROFILE_KEYS = [
+  'tags',
+  'rules',
+  'exclude',
+  'severity',
+  'wcagVersion',
+  'keepsParsing'
+];
+const STANDARD_PROFILE_KEYS = CHECKLIST_PROFILE_KEYS.concat(['version', 'mappedRules', 'law']);
+
+// What preparing a pack for a scan finds, as a scan prepares it, with the
+// packs it uses: a variant whose from names no rule, or a rule without
+// settings; a profile's rules, severity or exclude.rules naming no rule, or
+// a severity no level; a rollup grouping no rule. A scan skips such a pack,
+// so definePack and checkPack refuse it (round 9, A9-9). With withReported,
+// it also reports what reads wrong: a profile key no profile has, and a tag
+// in a profile's tags that no rule or rollup carries, which selects nothing.
+function preparationProblems(pack, withReported) {
+  let catalog;
+  try {
+    catalog = prepareCatalog([...usedPacks(pack).reverse(), pack]);
+  } catch (e) {
+    const message = e && e.message ? e.message : String(e);
+    // "profiles:\n  a\n  b" is a list under its heading: a problem each.
+    const [head, ...lines] = message.split('\n  ');
+    if (!lines.length || !head.endsWith(':')) return [message];
+    return lines.map((line) => `${head} ${line}`);
+  }
+  if (!withReported) return [];
+  const problems = [];
+  // The WCAG tags wcagTags gives are known whether or not a rule carries
+  // one yet: a profile names a version and its levels by them.
+  const tags = new Set(['2.0', '2.1', '2.2'].flatMap((v) => wcagTags(v, ['A', 'AA', 'AAA'])));
+  for (const d of catalog.checkDefs.concat(catalog.composites)) {
+    const own = d && (Array.isArray(d.tags) ? d.tags : d.meta && d.meta.tags);
+    for (const t of Array.isArray(own) ? own : []) tags.add(t);
+  }
+  const groups = [
+    ['profiles', pack.profiles, CHECKLIST_PROFILE_KEYS],
+    [
+      'standard.profiles',
+      isObject(pack.standard) ? pack.standard.profiles : undefined,
+      STANDARD_PROFILE_KEYS
+    ]
+  ];
+  for (const [where, profiles, keys] of groups) {
+    for (const [name, profile] of Object.entries(isObject(profiles) ? profiles : {})) {
+      if (!isObject(profile)) continue;
+      for (const key of Object.keys(profile)) {
+        if (!keys.includes(key)) {
+          problems.push(
+            `${where}.${name} has no field "${key}"; a profile takes ${keys.join(', ')}`
+          );
+        }
+      }
+      for (const tag of Array.isArray(profile.tags) ? profile.tags : []) {
+        if (typeof tag === 'string' && tag !== pack.namespace && !tags.has(tag)) {
+          problems.push(`${where}.${name}: no rule carries the tag ${tag}, so it selects nothing`);
+        }
+      }
+    }
+  }
+  return problems;
 }
 
 // What is wrong with a rule's meta.review, the steps a person follows to
@@ -1169,9 +1239,16 @@ function safePackName(pack) {
 // a Proxy whose traps throw) is a problem, as PACKS.md promises checkPack
 // reports problems without throwing: the scan skips it and describePacks
 // lists it, rather than every one of them throwing.
-function packProblems(pack, withCoreVersion, withReported) {
+function packProblems(pack, withCoreVersion, withReported, withPreparation) {
   try {
-    return readPackProblems(pack, withCoreVersion, withReported);
+    const problems = readPackProblems(pack, withCoreVersion, withReported);
+    // Only a pack whose shape is sound can be prepared: one with no problem,
+    // or only with those that don't keep it from loading.
+    const sound =
+      !problems.length ||
+      ((withCoreVersion || withReported) && !readPackProblems(pack, false, false).length);
+    if (withPreparation && sound) problems.push(...preparationProblems(pack, withReported));
+    return problems;
   } catch (e) {
     const name = safePackName(pack);
     const why = e && e.message ? e.message : String(e);
@@ -1557,7 +1634,7 @@ function readPackProblems(pack, withCoreVersion, withReported) {
 
 // A pack, checked: returns it, or throws a TypeError listing what is wrong.
 function definePack(pack) {
-  const problems = packProblems(pack, false, false);
+  const problems = packProblems(pack, false, false, true);
   if (problems.length) {
     const name = isObject(pack) && typeof pack.name === 'string' ? pack.name : 'pack';
     throw new TypeError(`${name}: ${problems.join('; ')}`);
