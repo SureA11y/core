@@ -41,6 +41,7 @@ const {
   createDomHelpers
 } = require('../src/core/dom-helpers');
 const {
+  isIsoDateTime,
   engineOptionSpec,
   checkEngineOptions,
   enforceEngineOptions,
@@ -2449,6 +2450,7 @@ ${inlineConstFunction('readLiveRegionHook', readLiveRegionHook)}
 // Inlined from src/core/dom-helpers.js
 ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}
 ${inlineConstFunction('describeOptionValue', describeOptionValue)}
+${inlineConstFunction('isIsoDateTime', isIsoDateTime)}
 ${inlineConstFunction('engineOptionSpec', engineOptionSpec)}
 ${inlineConstFunction('checkEngineOptions', checkEngineOptions)}
 ${inlineConstFunction('enforceEngineOptions', enforceEngineOptions)}

@@ -50,7 +50,7 @@ const { readLiveRegionHook } = require('./live-region-hook');
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
    criteriaNamingRule, optInTagsOf, ruleIdMatches,
    criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES, COMPLETE_APPLICABILITY_SCS,
-   COMPLETE_CHECK_SCS, WCAG_LEVELS_BY_SC */
+   COMPLETE_CHECK_SCS, WCAG_LEVELS_BY_SC, isIsoDateTime */
 
 // A WCAG conformance level as the engine names it ('aa' is 'AA'), or null.
 function normalizeWcagLevel(v) {
@@ -2351,8 +2351,19 @@ function runCoreSettled(
       "The result's timestamp is null."
     );
   }
-  const timestamp =
+  // Text that isn't an ISO 8601 date and time ('yesterday') is dropped, and
+  // said so; strictOptions refused it already (engineOptionSpec).
+  const givenTimestamp =
     typeof rawTimestamp === 'string' && rawTimestamp.trim() ? rawTimestamp.trim() : null;
+  if (givenTimestamp && !isIsoDateTime(givenTimestamp)) {
+    warnIgnoredOption(
+      'engineOptions.timestamp',
+      rawTimestamp,
+      'pass an ISO 8601 date and time, such as new Date().toISOString()',
+      "The result's timestamp is null."
+    );
+  }
+  const timestamp = givenTimestamp && isIsoDateTime(givenTimestamp) ? givenTimestamp : null;
 
   // Read before any rule runs: some change the page while they measure it.
   const environment = readRenderingEnvironment(dom.defaultView(document) || window, document);

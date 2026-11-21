@@ -7,6 +7,37 @@
 // inlined together into the generated core.js and the in-page runner.
 
 /**
+ * Whether a timestamp is an ISO 8601 date and time, as new
+ * Date().toISOString() writes one: a date, "T", hours and minutes, seconds
+ * and their fraction optionally, and a zone (Z or an offset) optionally,
+ * each in range. A date alone, or text such as "yesterday", is not one: the
+ * reporters write it as the scan's time (JUnit's timestamp attribute), and
+ * the HTML report used the time of rendering for it without a word.
+ */
+function isIsoDateTime(value) {
+  if (typeof value !== 'string') return false;
+  const m =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](\d{2}):?(\d{2}))?$/i.exec(
+      value.trim()
+    );
+  if (!m) return false;
+  const [year, month, day, hour, minute, second, zoneHour, zoneMinute] = m
+    .slice(1)
+    .map((x) => (x === undefined ? 0 : Number(x)));
+  const daysInMonth =
+    month >= 1 && month <= 12 ? new Date(Date.UTC(year, month, 0)).getUTCDate() : 0;
+  return (
+    day >= 1 &&
+    day <= daysInMonth &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    zoneHour <= 23 &&
+    zoneMinute <= 59
+  );
+}
+
+/**
  * The table of every engine option: for each key, `test` (does a value fit),
  * `expected` (said when it doesn't) and, for an object, `keys`, its own
  * table. docs/ENGINE_OPTIONS.md and the TypeScript types are checked
@@ -100,7 +131,11 @@ function engineOptionSpec() {
         ),
       expected: '[{ href, text }]'
     },
-    timestamp: T.string,
+    // Blank is a timestamp not given.
+    timestamp: {
+      test: (v) => typeof v === 'string' && (!v.trim() || isIsoDateTime(v)),
+      expected: 'an ISO 8601 date and time, such as new Date().toISOString()'
+    },
     contrast: {
       test: isObject,
       expected: '{ mode, rootCanvasFallback }',
@@ -354,4 +389,11 @@ function strictOf(engineOptions) {
   return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
 }
 
-module.exports = { engineOptionSpec, checkEngineOptions, enforceEngineOptions, strictOf, switchOf };
+module.exports = {
+  isIsoDateTime,
+  engineOptionSpec,
+  checkEngineOptions,
+  enforceEngineOptions,
+  strictOf,
+  switchOf
+};

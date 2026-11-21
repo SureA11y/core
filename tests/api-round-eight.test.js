@@ -240,3 +240,47 @@ test('an empty slot or a blank name in a profile list is said, and refused under
     );
   }
 });
+
+test('a timestamp that is not an ISO 8601 date and time is refused under strict, dropped otherwise (PK-12)', () => {
+  for (const timestamp of [
+    'yesterday',
+    '2026-13-45T10:00:00Z',
+    '2026-02-30T10:00:00Z',
+    '2026-01-01'
+  ]) {
+    assert.throws(
+      () =>
+        runa11yCoreOnHtml(HTML, {
+          engineOptions: { timestamp, strictOptions: true },
+          runOnly: ['img-alt-present']
+        }),
+      { code: 'INVALID_ENGINE_OPTIONS' },
+      timestamp
+    );
+    const warnings = [];
+    const warn = console.warn;
+    console.warn = (m) => warnings.push(String(m));
+    let r;
+    try {
+      r = runa11yCoreOnHtml(HTML, { engineOptions: { timestamp }, runOnly: ['img-alt-present'] });
+    } finally {
+      console.warn = warn;
+    }
+    assert.equal(r.timestamp, null, timestamp);
+    assert.ok(
+      warnings.some((w) => /engineOptions\.timestamp/.test(w)),
+      timestamp
+    );
+  }
+  for (const timestamp of [
+    '2026-01-01T00:00:00+14:00',
+    new Date(0).toISOString(),
+    '2026-01-01T10:00Z'
+  ]) {
+    const r = runa11yCoreOnHtml(HTML, {
+      engineOptions: { timestamp, strictOptions: true },
+      runOnly: ['img-alt-present']
+    });
+    assert.equal(r.timestamp, timestamp);
+  }
+});

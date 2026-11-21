@@ -156,6 +156,7 @@ export interface EngineOptionFields {
    * in the page, or what a binding fetched from outside it.
    */
   styleSheetTexts?: Array<{ href: string; text: string }>;
+  /** An ISO 8601 date and time, such as `new Date().toISOString()`; other text is dropped with a warning. */
   timestamp?: string;
   contrast?: {
     mode?: 'strictConformance' | 'auditorAssist';
