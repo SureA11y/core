@@ -63,6 +63,24 @@ export interface BaselineMatch {
   staleCount: number;
   /** With { leanFail: true }: the findings that lean fail, against the entries marked lean: 'fail'. */
   leanFail?: BaselineLeanMatch;
+  /**
+   * Present only when the result did not check everything it selected, so a
+   * newCount of 0 is not a clean scan: `notRun`, the rules its time budget
+   * left unstarted (engineOptions.timeBudgetMs), and `occurrencesOmitted`,
+   * the failures output.maxOccurrencesPerRule left out of it.
+   */
+  incomplete?: BaselineIncomplete;
+}
+
+/** What a result left unchecked, as matchBaseline reports it. */
+export interface BaselineIncomplete {
+  /** The rules its time budget left unstarted (engineOptions.timeBudgetMs). */
+  notRun?: string[];
+  /**
+   * The failing occurrences output.maxOccurrencesPerRule left out of it,
+   * which can't be matched, so totalFail and newCount count them as new.
+   */
+  occurrencesOmitted?: number;
 }
 
 /**

@@ -22,7 +22,11 @@ const {
   textOf,
   occurrenceOutcome,
   reviewGroupOf,
-  reporterOptions
+  reporterOptions,
+  notRunOf,
+  timeBudgetOf,
+  packsOf,
+  omittedOf
 } = require('./scan-result.js');
 const { esc, jsonForScript } = require('./html-text.js');
 
@@ -243,12 +247,49 @@ function renderTargetChips(engine, ui, profileResults) {
     chips.push(
       `<div><b>${esc(notRun.join(', '))}</b>${esc(ui.tr('report_meta_profileNotRun'))}</div>`
     );
+  // Rules the scan's time budget left unstarted (result.notRun).
+  if (engine.incomplete && Number.isFinite(engine.incomplete.rulesNotRun))
+    chips.push(
+      `<div><b>${esc(ui.num(engine.incomplete.rulesNotRun))}</b>${esc(ui.tr('report_meta_rulesNotRun'))}</div>`
+    );
   // Rules beyond the targeted standard ran (engineOptions.optInRules).
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     chips.push(
       `<div><b>${esc(engine.optInRules.join(', '))}</b>${esc(ui.tr('report_meta_optInRules'))}</div>`
     );
   return chips.join('\n  ');
+}
+
+// The packs the scan ran with (engine.packs), each by its name and version,
+// beside the engine that ran them.
+function renderPacksChip(result, ui) {
+  const packs = packsOf(result);
+  if (!packs.length) return '';
+  const named = packs.map((p) => (p.version ? `${p.name} ${p.version}` : p.name)).join(', ');
+  return `<div><b>${esc(named)}</b>${esc(ui.tr('report_meta_packs'))}</div>`;
+}
+
+// A scan its time budget cut short (engineOptions.timeBudgetMs): the rules
+// it did not start checked nothing, so the report says so before anything
+// it found, and no headline below reads as a pass of them.
+function renderIncomplete(result, ui) {
+  const notRun = notRunOf(result);
+  const ids = [...new Set(notRun.map((n) => n.ruleId))];
+  const profiles = (
+    result && result.engine && Array.isArray(result.engine.profilesNotRun)
+      ? result.engine.profilesNotRun
+      : []
+  )
+    .filter((p) => p && p.reason === 'timeBudget')
+    .map((p) => p.profile);
+  if (!ids.length && !profiles.length) return '';
+  const budget = timeBudgetOf(result);
+  const text = ui.tr('report_incomplete_timeBudget', {
+    budget: budget !== null ? ui.num(budget) : '?',
+    count: ui.num(ids.length + profiles.length),
+    rules: ids.concat(profiles).join(', ')
+  });
+  return `<p class="incomplete" role="note">${esc(text)}</p>`;
 }
 
 // The conditions the page was rendered under. A layout-dependent finding
@@ -873,6 +914,7 @@ function renderCards(checksResults, ui) {
     return shown;
   };
 
+  const noteOmitted = new Set();
   const renderCard = ({ r, occs, outcome: cardOutcome, lean }) => {
     const info = OUTCOME_INFO[cardOutcome] || OUTCOME_INFO.notApplicable;
     const occurrenceCounts = { fail: 0, cantTell: 0 };
@@ -905,9 +947,18 @@ function renderCards(checksResults, ui) {
           })
           .join('')
       : '';
+    // What output.maxOccurrencesPerRule left out of the result is counted
+    // on the rule's first card, with a line saying it is not listed.
+    const omitted = noteOmitted.has(r.ruleId) ? { total: 0, fail: 0, cantTell: 0 } : omittedOf(r);
+    if (omitted.total) noteOmitted.add(r.ruleId);
+    occurrenceCounts.fail += omitted.fail;
+    occurrenceCounts.cantTell += omitted.cantTell;
     const hasMixedOutcomes = occurrenceCounts.fail > 0 && occurrenceCounts.cantTell > 0;
     // The elements found: a passing occurrence of a failing rule is no finding.
     const found = occurrenceCounts.fail + occurrenceCounts.cantTell || occs.length;
+    const omittedLine = omitted.total
+      ? `<p class="card-note">${esc(ui.tr('report_card_moreOmitted', { count: ui.num(omitted.total), kept: ui.num(r.occurrences.length) }))}</p>`
+      : '';
     const countLabel =
       found > 1
         ? ` <span class="card-count">× ${ui.num(found)}${hasMixedOutcomes ? ` ${esc(ui.tr('report_card_mixed', { fail: ui.num(occurrenceCounts.fail), review: ui.num(occurrenceCounts.cantTell) }))}` : ''}</span>`
@@ -935,6 +986,7 @@ function renderCards(checksResults, ui) {
         ${leanLine}
         ${howBlock}
         ${occs.length > 1 ? `<p class="card-note">${esc(ui.tr('report_card_representative', { count: ui.num(occs.length) }))}</p>` : ''}
+        ${omittedLine}
         ${helpLink(r, ui)}
       </div>
     </div>`;
@@ -1109,6 +1161,9 @@ function renderHtmlReport(input, given) {
 
   const defaultOnList = OUTCOME_ORDER.filter((c) => OUTCOME_INFO[c].defaultOn);
   const rows = flattenOccurrences(checksResults, ui);
+  // Occurrences output.maxOccurrencesPerRule left out of the result: counted
+  // in the total, though not listed.
+  const omittedTotal = checksResults.reduce((n, c) => n + omittedOf(c).total, 0);
   const pageLang = LANG_TAG.test(ui.uiLocale) ? ui.uiLocale : 'en';
   // Strings the in-page script needs; it cannot call the translator.
   const clientText = {
@@ -1231,6 +1286,8 @@ function renderHtmlReport(input, given) {
   .pager button { padding: 5px 12px; border: 1px solid #ccc; background: #fff; border-radius: 5px; cursor: pointer; }
   .pager button:disabled { opacity: 0.4; cursor: default; }
   .note { font-size: 12.5px; opacity: 0.75; margin-top: 6px; }
+  .incomplete { border: 2px solid #a30000; border-radius: 8px; padding: 10px 14px; margin: 0 0 16px; font-weight: 600; line-height: 1.5; }
+  @media (prefers-color-scheme: dark) { .incomplete { border-color: #ff8a80 !important; } }
 </style>
 </head>
 <body>
@@ -1242,15 +1299,18 @@ function renderHtmlReport(input, given) {
 
 <div class="meta-bar">
   <div><b>${ui.num(checksResults.length)}</b>${esc(ui.tr('report_meta_rulesRun'))}</div>
-  <div><b>${ui.num(rows.length)}</b>${esc(ui.tr('report_meta_totalOccurrences'))}</div>
+  <div><b>${ui.num(rows.length + omittedTotal)}</b>${esc(ui.tr('report_meta_totalOccurrences'))}</div>
+  ${omittedTotal ? `<div><b>${ui.num(omittedTotal)}</b>${esc(ui.tr('report_meta_occurrencesOmitted'))}</div>` : ''}
   <div><b>${esc((engine && engine.tag) || '?')}</b>${esc(ui.tr('report_meta_engine'))}</div>
   <div><b>${esc((engine && engine.schemaVersion) || '?')}</b>${esc(ui.tr('report_meta_schemaVersion'))}</div>
+  ${renderPacksChip(result, ui)}
   ${renderTargetChips(engine, ui, result && result.profiles)}
   ${renderEnvironmentChips(engine, ui)}
   ${renderLocaleChip(engine, ui)}
 </div>
 
 <main>
+  ${renderIncomplete(result, ui)}
   ${renderHeroBar(byOutcome, ui)}
 
   <h2>${esc(ui.tr('report_heading_worthReviewing'))}</h2>

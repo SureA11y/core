@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **151**
+Total rules (loaded without error): **152**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 121 | 35 | 18 |
+| Any WCAG version | 122 | 36 | 18 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 109 | 24 | 15 |
+| WCAG 2.0 | 110 | 25 | 15 |
 | WCAG 2.1 | 9 | 8 | 1 |
 | WCAG 2.2 | 6 | 6 | 3 |
 
@@ -31,7 +31,7 @@ Total rules (loaded without error): **151**
 | wcag22aa | 3 |
 | wcag22aaa | 3 |
 | wcag2a | 96 |
-| wcag2aa | 11 |
+| wcag2aa | 12 |
 | wcag2aaa | 15 |
 
 ## SC Coverage (A): Enforced requirements only (normativeMappings)
@@ -249,12 +249,13 @@ Automation mix: **full 0, partial 2, manual 0**.
 
 ### 1.4.4
 
-Facet coverage: **1/2** facets covered.
-Automation mix: **full 1, partial 1, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 1, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-viewport-zoom-enabled | full | meta-viewport-zoom-enabled |
+| text-not-clipped-640 | manual | resize-text-content-loss |
 | text-resizes-200 | partial | — |
 
 Uncovered facets: text-resizes-200
@@ -262,6 +263,7 @@ Uncovered facets: text-resizes-200
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | meta-viewport-zoom-enabled | automatic | Viewport meta tag must not disable zoom | src/checks/automatic/meta-viewport-zoom-enabled.js | meta-viewport-zoom-enabled |  |
+| resize-text-content-loss | manual | Text is not cut off at 640 CSS pixels wide (200% zoom) | src/checks/manual/resize-text-content-loss-manual.js | text-not-clipped-640 |  |
 
 ### 1.4.5
 
@@ -1137,12 +1139,13 @@ Automation mix: **full 0, partial 2, manual 0**.
 
 ### 1.4.4
 
-Facet coverage: **1/2** facets covered.
-Automation mix: **full 1, partial 1, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 1, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-viewport-zoom-enabled | full | meta-viewport-zoom-enabled |
+| text-not-clipped-640 | manual | resize-text-content-loss |
 | text-resizes-200 | partial | — |
 
 Uncovered facets: text-resizes-200
@@ -1150,6 +1153,7 @@ Uncovered facets: text-resizes-200
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | meta-viewport-zoom-enabled | automatic | Viewport meta tag must not disable zoom | src/checks/automatic/meta-viewport-zoom-enabled.js | meta-viewport-zoom-enabled |  |
+| resize-text-content-loss | manual | Text is not cut off at 640 CSS pixels wide (200% zoom) | src/checks/manual/resize-text-content-loss-manual.js | text-not-clipped-640 |  |
 
 ### 1.4.5
 

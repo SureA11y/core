@@ -139,6 +139,7 @@ A scan of profiles A and B counts as a scan of one profile C with the rules of b
 ### Open
 
 - Every profile's scan gets the same `engineOptions` and `runOnly` but for `profile`. A `runOnly` that includes rules selects instead of a profile, as for one profile, so it applies to every profile's scan and none of them applies its profile: each is then listed in `engine.profilesNotRun`, as `overridden-by-selection`. Options one profile should set and another not (a policy's `allowedOutcomes`) have no way to be given per profile yet.
+- `engineOptions.timeBudgetMs` is the whole scan's, not each profile's: each profile after the first gets what is left of it, and one that would start with none left is listed in `engine.profilesNotRun` as `timeBudget`, an error in SARIF and JUnit even with `allowProfilesNotRun`. The rules a profile's scan did not start are in `notRun`, each naming its `profile` ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#a-time-budget-timebudgetms)).
 - `getProfileWcagTarget` takes one profile, and `bestPractices` adds the best-practice rules to each profile's scan.
 - Running a rule the profiles share once, rather than once per profile.
 

@@ -613,13 +613,13 @@ module.exports = [
 
   {
     id: 'wcag-1.4.4-resize-text',
-    checksIds: ['meta-viewport-zoom-enabled'],
+    checksIds: ['meta-viewport-zoom-enabled', 'resize-text-content-loss'],
     meta: {
       titleKey: 'catalog.rules.wcag_144_resize_text.title',
       descriptionKey: 'catalog.rules.wcag_144_resize_text.description',
       title: 'Resize Text',
       description:
-        'Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.',
+        'Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%, and asking about text cut off at 640 CSS pixels wide.',
       wcagSc: ['1.4.4'],
       level: 'AA'
     }

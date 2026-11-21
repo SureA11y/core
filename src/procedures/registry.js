@@ -394,6 +394,12 @@ const PROCEDURES = {
           'meta-viewport-zoom-enabled': ['VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN']
         }
       },
+      'text-not-clipped-640': {
+        coveredBy: 'text-resizes-200',
+        variants: {
+          'resize-text-content-loss': ['TEXT_CLIPPED_AT_640', 'TEXT_TRUNCATED_AT_640']
+        }
+      },
       'text-resizes-200': {
         tools: ['zoom']
       }

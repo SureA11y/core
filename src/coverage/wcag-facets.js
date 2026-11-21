@@ -529,6 +529,11 @@ const FACETS = {
                 "automation": "full"
             },
             {
+                "id": "text-not-clipped-640",
+                "label": "At 640 CSS pixels wide (200% zoom), text in a box that hides its overflow is not cut off (asked about: whether the full text is offered another way is for a person)",
+                "automation": "manual"
+            },
+            {
                 "id": "text-resizes-200",
                 "label": "Text can be resized to 200% without losing content or function",
                 "automation": "partial",

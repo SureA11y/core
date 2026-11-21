@@ -2137,6 +2137,38 @@ All page content is contained within a landmark region.
 ```
 This paragraph sits directly under `<body>`, outside every landmark.
 
+## resize-text-content-loss
+
+**Passed (at 640 CSS pixels wide)**
+```html
+<div style="width:200px; height:80px; overflow:hidden">Opening hours today, nine to five.</div>
+```
+The box hides what overflows it, but its text fits: nothing is cut off at 640 pixels wide, as a 1280 pixel window shows the page at 200% zoom.
+
+**Flagged (cantTell) (at 640 CSS pixels wide)**
+```html
+<div style="width:200px; height:40px; overflow:hidden">Opening hours today, and the rest of the week from nine in the morning to five in the afternoon, except on public holidays.</div>
+```
+A box 40 pixels high hides the lines its text wraps to. The rule asks rather than fails, leaning fail: whether the full text is offered another way is for a person to confirm (WCAG 1.4.4).
+
+**Flagged (cantTell) (at 640 CSS pixels wide)**
+```html
+<div style="width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">Opening hours today, and the rest of the week from nine to five.</div>
+```
+The text is shortened with an ellipsis, so part of it isn't shown. It leans fail, unless the full text can be read another way that works with the keyboard.
+
+**Not applicable (at 640 CSS pixels wide)**
+```html
+<div style="width:200px; height:40px; overflow:auto">Opening hours today, and the rest of the week from nine in the morning to five in the afternoon.</div>
+```
+A box that scrolls keeps its text reachable, so nothing clips it.
+
+**Not applicable**
+```html
+<div style="width:200px; height:40px; overflow:hidden">Opening hours today, and the rest of the week from nine in the morning to five in the afternoon.</div>
+```
+At a usual width (these examples run at 1280 pixels unless they say otherwise), the rule doesn't apply: cut-off text is checked by laying the page out at 640 CSS pixels wide.
+
 ## role-img-text-alternative-present
 
 **Passed**

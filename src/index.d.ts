@@ -179,7 +179,18 @@ export interface EngineOptionFields {
    * `detail: 'findings'` keeps whole only the results that report something;
    * a pass or notApplicable with no occurrences is a CompactCheckResult.
    */
-  output?: { includeSelector?: boolean; includeHtml?: boolean; detail?: 'full' | 'findings' };
+  output?: {
+    includeSelector?: boolean;
+    includeHtml?: boolean;
+    detail?: 'full' | 'findings';
+    /**
+     * A whole number, 1 or more: at most this many occurrences of each rule
+     * in the result, the failing ones first; the rest are counted in the
+     * check result's occurrencesOmitted. Outcomes, rollups and gates are as
+     * without it.
+     */
+    maxOccurrencesPerRule?: number;
+  };
   /** `include`/`exclude` select rules; any other key is that rule's `ctx.config`. */
   rules?: { include?: StringList; exclude?: StringList; [ruleId: string]: unknown };
   tags?: { include?: StringList; exclude?: StringList };
@@ -196,6 +207,13 @@ export interface EngineOptionFields {
   probes?: unknown;
   perfStats?: boolean;
   profileRules?: boolean;
+  /**
+   * Off by default. Once the scan has spent this many milliseconds (a number
+   * above 0), it starts no more rules: those it selected and didn't start are
+   * listed in the result's `notRun`, and `engine.incomplete` says the scan
+   * was cut short. In a scan of several profiles, it is the whole scan's.
+   */
+  timeBudgetMs?: number;
   /** Read only by runa11yCoreAcrossFrames, in milliseconds. */
   pingWaitTime?: number;
   frameWaitTime?: number;
@@ -574,8 +592,14 @@ export interface EngineInfo {
   /** A scan of several profiles only: those asked for that didn't run, and why. */
   profilesNotRun?: {
     profile: string;
-    reason: 'unknown-profile' | 'pack-skipped' | 'overridden-by-selection' | string;
+    reason: 'unknown-profile' | 'pack-skipped' | 'overridden-by-selection' | 'timeBudget' | string;
   }[];
+  /**
+   * Present only when the scan did not run every rule it selected: its time
+   * budget (engineOptions.timeBudgetMs) ran out first. Such a result is never
+   * a clean one: the rules in `notRun` checked nothing.
+   */
+  incomplete?: ScanIncomplete;
   profileExcludes?: {
     rules: string[];
     criteria: string[];
@@ -596,6 +620,34 @@ export interface EngineInfo {
   outputDetail?: 'findings';
   /** The packs the scan ran with, as name@version (engineOptions.packs). */
   packs?: string[];
+  /**
+   * Present only when output.maxOccurrencesPerRule left occurrences out of
+   * the result: the cap, how many it left out, and of how many rules.
+   */
+  occurrenceCap?: {
+    maxOccurrencesPerRule: number;
+    occurrencesOmitted: number;
+    rulesCapped: number;
+  };
+}
+
+/** Why a scan is incomplete (engine.incomplete). */
+export interface ScanIncomplete {
+  reason: 'timeBudget' | string;
+  /** The time budget the scan was given, in milliseconds. */
+  timeBudgetMs: number;
+  /** How many entries result.notRun has. */
+  rulesNotRun: number;
+  /** A scan of several profiles only: profiles not started (engine.profilesNotRun). */
+  profilesNotRun?: number;
+}
+
+/** A rule the scan selected and did not start (result.notRun). */
+export interface RuleNotRun {
+  ruleId: string;
+  reason: 'timeBudget' | string;
+  /** A scan of several profiles only: the profile whose scan did not start it. */
+  profile?: string;
 }
 
 export interface NormativeMapping {
@@ -808,6 +860,18 @@ export interface CheckResult {
   confidence: Confidence;
   type: RuleType;
   occurrences: Occurrence[];
+  /**
+   * Present only when output.maxOccurrencesPerRule left occurrences of this
+   * rule out of the result: how many, and how many of them are of each
+   * tier. The outcome and the rollups count them.
+   */
+  occurrencesOmitted?: number;
+  occurrencesOmittedByOutcome?: {
+    fail?: number;
+    cantTell?: number;
+    pass?: number;
+    notApplicable?: number;
+  };
   title: string;
   description: string;
   /** variantOfTitleKey: a variant's only, its base rule's titleKey. */
@@ -925,6 +989,8 @@ export interface CompositeResult {
          * composite.rollup.cantTell.notSelectedChild).
          */
         notSelected?: true;
+        /** A rule that didn't run ('missing') because the scan's time budget ran out first. */
+        notRun?: 'timeBudget';
         /**
          * A rule a standard's rollup judged by its findings (the rollup's
          * meta.contributions): `outcome` is its outcome here, and
@@ -1004,6 +1070,12 @@ export interface ScanResult {
   skippedCustomRules: { id: string | null; reason: string; excluded?: true }[];
   /** engineOptions.packs that were not run, and why; absent when all ran. */
   skippedPacks?: { name: string | null; reason: string }[];
+  /**
+   * The rules the scan selected and did not start, since its time budget
+   * (engineOptions.timeBudgetMs) ran out first; absent when every rule ran.
+   * engine.incomplete is then set.
+   */
+  notRun?: RuleNotRun[];
   /**
    * A scan of several profiles only: per profile that ran, the WCAG version
    * it was judged by, the WCAG level it targets (absent for a profile that
