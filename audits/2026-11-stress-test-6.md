@@ -15,7 +15,7 @@ This round has no `FINDINGS.md` per area to match its report, as rounds 2 to 5 h
 | `reflow-horizontal-scroll` | [`reflow/`](./2026-11-probes-6/reflow/) | RF | Chromium at 320px, under phone emulation and in frames | 16 |
 | Changed rules, exclusion filter, reporters | [`changes/`](./2026-11-probes-6/changes/) | CG | jsdom, Chromium (AX tree for heading levels) | 15 |
 | Experimental APIs and pack tooling | [`experimental/`](./2026-11-probes-6/experimental/) | EX | Node, TypeScript | 14 |
-| Other engines | [`compare/`](./2026-11-probes-6/compare/) | CE | axe-core 4.14.1, IBM accessibility-checker-engine 4.0.35, Siteimprove Alfa 0.120, HTML_CodeSniffer 2.5.1, in Chromium; QualWeb, Lighthouse, pa11y and the ACT rules by their sources | 6 (all gaps or features) |
+| Other engines | not kept (the comparison's scripts named the engines; its results are summarised here, engines by letter) | CE | Engine A, engine B, engine C, engine D, in Chromium; engine E, a browser audit tool, a test runner and the ACT rules by their sources | 6 (all gaps or features) |
 | Speed and memory | [`perf/`](./2026-11-probes-6/perf/) | PF | Chromium, jsdom | 1 |
 
 That makes 52 confirmed findings. None is High; 16 are Medium, 33 Low, and 3 are features with no severity. No scan threw and nothing crashed.
@@ -29,11 +29,11 @@ That makes 52 confirmed findings. None is High; 16 are Medium, 33 Low, and 3 are
 
 ## What held up
 
-- **Reflow measures what Chromium lays out.** In 17 cases the rule's overflow matched Chromium's `scrollWidth` each time. It is the only engine of those compared that measures 1.4.10: axe, IBM, Alfa and QualWeb check only the meta viewport, and there is no ACT rule for it.
+- **Reflow measures what Chromium lays out.** In 17 cases the rule's overflow matched Chromium's `scrollWidth` each time. It is the only engine of those compared that measures 1.4.10: engine A, engine B, engine C and engine E check only the meta viewport, and there is no ACT rule for it.
 - **`link-name-quality-link-only`** is the only automated check for 2.4.9's generic link text of the engines compared, with the 2.4.4 / 2.4.9 split kept.
-- **Heading levels are read most correctly.** axe fails `h1` on `<h1 role=heading>`, HTML_CodeSniffer reads tags only, QualWeb lets the tag beat `aria-level`, and Alfa reads `aria-level="2.5"` literally.
-- **`p-as-heading` at body size** catches bold titles axe misses, with far fewer false positives than IBM or HTML_CodeSniffer.
-- **`td-has-header` from 2 by 2** matches F91 better than axe and Lighthouse (3 by 3 and up) or Alfa (tables with headers only), without IBM's false positive on a single-row table.
+- **Heading levels are read most correctly.** Engine A fails `h1` on `<h1 role=heading>`, engine D reads tags only, engine E lets the tag beat `aria-level`, and engine C reads `aria-level="2.5"` literally.
+- **`p-as-heading` at body size** catches bold titles engine A misses, with far fewer false positives than engine B or engine D.
+- **`td-has-header` from 2 by 2** matches F91 better than engine A and a browser audit tool (3 by 3 and up) or engine C (tables with headers only), without engine B's false positive on a single-row table.
 - **Counting excluded occurrences** (`excludedOccurrences`) is unique: every other engine drops them silently.
 - **The experimental APIs' round trips:** `standardDataOf(standardFromData(x))` deep-equals `x` and is deep-frozen; `__proto__` and `constructor` keys are refused in data; translations fall back as documented; `uses` cycles are refused; pack ranges are reported.
 - **Speed and memory in Chromium:** full scans are within the run's noise of 1.17.0 at desktop widths; the heap stays flat over 100 repeated scans.
@@ -72,8 +72,8 @@ Ordered by area, the most damaging first in each. The severity is the README's. 
 | CG-1 | **When the only failing occurrence is excluded, the result stays `fail` and points at an element that passed.** A rule failing `#pb` (excluded) and passing `#pm` gave `fail [#pm]`: a SARIF error, a JUnit failure, an EARL `failed` and a baseline entry, all on `#pm`. The outcome was not worked out again from the occurrences left (`normalizeRuleResult`, generated into `src/core.js`). | Bug | Medium | #406, `73b5ab71` |
 | CG-2 | **A `pass` whose occurrences are all excluded stays `pass`**, where the changelog and OUTPUT_SCHEMA say `notApplicable` with `coercedFrom`; `index.d.ts` didn't allow `coercedFrom: 'pass'`. A `cantTell` left with only passing occurrences stayed `cantTell`. *(not re-run)* | Bug | Medium | #406, `73b5ab71` |
 | CG-3 | **Occurrences that escape the filter:** one given by selector only, one whose node is a text node, and one in an excluded iframe's document, against OUTPUT_SCHEMA and ENGINE_OPTIONS. *(not re-run)* | Bug | Medium | #406, `73b5ab71` (`isOccurrenceExcluded`) |
-| CG-4 | **Excluding an area changes page-level verdicts** (older than 1.18.0; the engine-wide filter makes it more visible). With `<h1>`, an excluded `<div><h2>`, then `<h3>`, `heading-order` asks about a skip from 1 to 3 that readers never meet; excluding the header that holds the only `<h1>` makes `page-has-heading-one` ask about a missing `<h1>`. axe, pa11y and Alfa keep the excluded area as context, as `td-has-header` already does with an excluded `<thead>`. | Inconsistency | Medium | #406, `d8a5f4c1`: excluded areas are context, never reported in; decided 2026-11-19 |
-| CG-5 | **`p-as-heading` asks about the last line of a bold run** (an address), against the changelog's "a run of bold lines… left out": only the next element was compared. axe compares the previous one too. | Bug | Low | #406, `3558ca2a` |
+| CG-4 | **Excluding an area changes page-level verdicts** (older than 1.18.0; the engine-wide filter makes it more visible). With `<h1>`, an excluded `<div><h2>`, then `<h3>`, `heading-order` asks about a skip from 1 to 3 that readers never meet; excluding the header that holds the only `<h1>` makes `page-has-heading-one` ask about a missing `<h1>`. Engine A, a test runner and engine C keep the excluded area as context, as `td-has-header` already does with an excluded `<thead>`. | Inconsistency | Medium | #406, `d8a5f4c1`: excluded areas are context, never reported in; decided 2026-11-19 |
+| CG-5 | **`p-as-heading` asks about the last line of a bold run** (an address), against the changelog's "a run of bold lines… left out": only the next element was compared. Engine A compares the previous one too. | Bug | Low | #406, `3558ca2a` |
 | CG-6 | **`p-as-heading` false positives on bold sentences** ending in a closing quote, in Arabic `؟` or Devanagari `।`, and on bylines and dates. *(not re-run)* | Bug | Low | #406, `3558ca2a` (`SENTENCE_END` past `CLOSERS`) |
 | CG-7 | **A semibold `<p>` (600, set on the paragraph itself, as design systems set titles) is never asked about.** *(not re-run)* | Gap | Low | #406, `3558ca2a`: heavier than the text around it counts; large semibold titles get `BOLD_LARGE_PARAGRAPH` |
 | CG-8 | **`BOLD_SHORT_PARAGRAPH` is raised on text at 30px**, a code meant for body size. *(not re-run)* | Bug | Low | #406, `3558ca2a` |
@@ -108,12 +108,12 @@ Ordered by area, the most damaging first in each. The severity is the README's. 
 
 | # | Finding | Verdict | Sev. | Fixed |
 |---|---|---|---|---|
-| CE-1 | **A bold first line ended by `<br>` over text in the same paragraph** (`<p><strong>Title</strong><br>text</p>`), very common in CMS content, is a title IBM asks about and `p-as-heading` missed. | Gap | Low | [#407](https://github.com/SureA11y/core/pull/407), `81d8875b`: `BOLD_LEAD_LINE` |
-| CE-2 | **A bold `<div>` at body size over body text**, which IBM asks about, was left out at body size. | Gap | Low | #407, `81d8875b`: `BOLD_SHORT_DIV`, over a passage below it only |
-| CE-3 | **`p-as-heading` compared only the next element;** axe compares the previous one too. Same cause as CG-5. | Gap | Low | #406, `3558ca2a` |
-| CE-4 | **A cheap 1.4.4 check for text clipped at 640px wide**, as ACT rule 59br37 and Alfa's dr83 do (dr83 passed a case the engine rightly flags). | Feature | — | **Open** (§2 of the register) |
-| CE-5 | **"The page starts with an `<h1>`"** as a best practice, as Alfa's r61 does. | Feature | — | **Open** |
-| CE-6 | **A lean for a 2 by 2 table with no `<th>`**, which IBM fails. | Feature | — | **Open** |
+| CE-1 | **A bold first line ended by `<br>` over text in the same paragraph** (`<p><strong>Title</strong><br>text</p>`), very common in CMS content, is a title engine B asks about and `p-as-heading` missed. | Gap | Low | [#407](https://github.com/SureA11y/core/pull/407), `81d8875b`: `BOLD_LEAD_LINE` |
+| CE-2 | **A bold `<div>` at body size over body text**, which engine B asks about, was left out at body size. | Gap | Low | #407, `81d8875b`: `BOLD_SHORT_DIV`, over a passage below it only |
+| CE-3 | **`p-as-heading` compared only the next element;** Engine A compares the previous one too. Same cause as CG-5. | Gap | Low | #406, `3558ca2a` |
+| CE-4 | **A cheap 1.4.4 check for text clipped at 640px wide**, as ACT rule 59br37 and engine C's a rule of its own do (a rule of its own passed a case the engine rightly flags). | Feature | — | **Open** (§2 of the register) |
+| CE-5 | **"The page starts with an `<h1>`"** as a best practice, as engine C's rule does. | Feature | — | **Open** |
+| CE-6 | **A lean for a 2 by 2 table with no `<th>`**, which engine B fails. | Feature | — | **Open** |
 
 ### Speed and memory
 
