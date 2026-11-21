@@ -346,3 +346,34 @@ test('a custom rule whose wcagSc names no criterion is skipped, as definePack re
   assert.match(skipped.reason, /wcagSc names no WCAG criterion: "9\.9\.9"/);
   assert.ok(!r.checksResults.some((c) => c.ruleId === 'org-r'));
 });
+
+test('a pack passed as a plain object is frozen on its first use (PK-10)', () => {
+  const page = '<html lang="en"><head><title>t</title></head><body><p>x</p></body></html>';
+  const run = function () {
+    return { outcome: 'pass', occurrences: [] };
+  };
+  const pack = {
+    name: 'acme-pack',
+    version: '1.0.0',
+    namespace: 'acme',
+    core: '*',
+    rules: [
+      {
+        id: 'acme-r',
+        meta: { title: 'T', description: 'd', tags: ['wcag2a', 'wcag111'], wcagSc: ['1.1.1'] },
+        runInPage: run
+      }
+    ]
+  };
+  const r = runa11yCoreOnHtml(page, { engineOptions: { packs: [pack] }, runOnly: ['acme-r'] });
+  assert.equal(r.checksResults[0].outcome, 'pass');
+  assert.ok(
+    Object.isFrozen(pack) && Object.isFrozen(pack.rules) && Object.isFrozen(pack.rules[0].meta)
+  );
+  // Its functions are left as they are.
+  assert.ok(!Object.isFrozen(run));
+  assert.throws(() => {
+    pack.rules[0].runInPage = () => ({ outcome: 'fail' });
+  }, TypeError);
+  assert.throws(() => pack.rules.push({ id: 'acme-s' }), TypeError);
+});

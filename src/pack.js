@@ -1568,7 +1568,8 @@ function definePack(pack) {
 // A scan keeps the engine it prepared for the same pack objects, so a pack
 // must not change once made: definePack freezes it, with the lists and
 // objects it holds (its functions excepted), and a change then throws in
-// strict code instead of going unseen.
+// strict code instead of going unseen. A pack passed to a scan as a plain
+// object is frozen the same way on its first use (preparePacks).
 function deepFreeze(value, seen = new Set()) {
   if (!value || typeof value !== 'object' || seen.has(value)) return value;
   seen.add(value);
@@ -2115,6 +2116,21 @@ function preparePacks(list, { strict = false } = {}) {
     engines.delete(key);
     engines.set(key, cached);
     return cached;
+  }
+
+  // The engine is kept by the identity of these objects, so each is frozen
+  // on its first use, as definePack freezes a pack: a pack passed as a plain
+  // object and changed in place afterwards then throws in strict code, or
+  // the change is ignored, instead of a later scan silently running the
+  // version kept (round 8, PK-10).
+  for (const pack of list) {
+    if (!isObject(pack)) continue;
+    try {
+      deepFreeze(pack);
+    } catch {
+      // An object that can't be frozen (a Proxy that refuses) is checked
+      // below as it is.
+    }
   }
 
   const valid = [];
