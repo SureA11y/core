@@ -120,7 +120,7 @@ test(
 
 // Focus inside a same-origin frame is followed into the frame and put back
 // there, with the selection in the frame's field (round 9, R9-2). Focus in
-// a closed shadow root can't be followed: see LIMITATIONS.md.
+// a closed shadow root can't be followed: the probe is skipped then (below).
 test('aria-hidden-focus puts focus back inside a same-origin frame', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
@@ -158,3 +158,48 @@ test('aria-hidden-focus puts focus back inside a same-origin frame', { skip }, a
   );
   assert.deepEqual(await p.evaluate(frameState), before);
 });
+
+// Focus inside a closed shadow root is seen only as its host, and could not
+// be put back there: the rule leaves focus where it is and judges the hidden
+// element without its probe, so a focus-trap sentinel is reported, not
+// passed on for review (round 9, R9-2).
+test(
+  'aria-hidden-focus leaves focus inside a closed shadow root where it is',
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    const sentinel =
+      '<button id="out">out</button>' +
+      '<div aria-hidden="true"><span id="s" tabindex="0">sentinel</span></div>';
+    const setup =
+      "document.getElementById('s').addEventListener('focus', () => document.getElementById('out').focus());" +
+      "window.__root = document.getElementById('h').attachShadow({ mode: 'closed' });" +
+      "window.__root.innerHTML = '<input id=i aria-label=s value=closedtext>';" +
+      "window.__i = window.__root.getElementById('i'); window.__i.focus(); window.__i.setSelectionRange(1, 4);";
+    const state = () => ({
+      top: document.activeElement.id,
+      inner: window.__root.activeElement === window.__i,
+      field: [window.__i.selectionStart, window.__i.selectionEnd]
+    });
+    for (const host of ['<x-h id="h"></x-h>', '<div id="h"></div>']) {
+      await t.test(host, async () => {
+        const p = await browser.newPage();
+        await p.setContent(page(host + sentinel, setup));
+        await addBundle(p);
+        const before = await p.evaluate(state);
+        assert.deepEqual(before, { top: 'h', inner: true, field: [1, 4] });
+        const check = await p.evaluate(
+          () =>
+            window.a11ycore.runa11yCoreInPage(null, null, null, ['aria-hidden-focus'])
+              .checksResults[0]
+        );
+        assert.deepEqual(await p.evaluate(state), before);
+        const sentinelOccurrence = check.occurrences.find((o) => /sentinel/.test(o.html));
+        assert.equal(sentinelOccurrence.occurrenceOutcome, 'fail');
+        assert.equal(sentinelOccurrence.data.details.reasonCode, 'ariaHiddenContainsFocusable');
+        await p.close();
+      });
+    }
+  }
+);

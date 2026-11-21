@@ -34,9 +34,8 @@
  *       under 600: most fonts draw 500 as they draw 400), OR
  *     - another visible mark on the link itself: a border, box-shadow or
  *       outline (a shadow in a transparent color, or with no offset, blur
- *       or spread, draws nothing, nor does a border or outline in a
- *       transparent color or the one behind the link), a background color
- *       different from the surrounding one, a background image, an image
+ *       or spread, draws nothing), a background color different from the
+ *       surrounding one, a background image, an image
  *       or svg inside it (with a layout, one of some area: a 0x0 <svg> is
  *       none), or a ::before/::after that draws something (content of its
  *       own other than white space, or an empty or blank box painting a
@@ -45,6 +44,18 @@
  *     - a mark on all of its content: bold, italic, underlined, bordered,
  *       a background unlike the surrounding text's (a code chip, <mark>),
  *       or raised or lowered (a footnote's <sup>).
+ *   A mark that is a cue only by its color counts only where that color
+ *   reaches 3:1 against what is behind it, the contrast G183 asks of a
+ *   color cue: a border or outline against the background behind the
+ *   link, a solid background layer likewise, and a background color of
+ *   the link's own (or of an element holding all its content) against the
+ *   background around it. Below that (a border in the background's color,
+ *   a background of rgba(0, 0, 0, .01)) the link is judged as without it.
+ *   Where the background can't be computed, the mark counts as before.
+ *   Shape cues are not weighed by color: an underline where the
+ *   surrounding text has none (only one drawn in a transparent color or the
+ *   one behind the link shows nothing), a weight across 600, a style, an
+ *   image or icon, generated content, a box-shadow.
  *   A link with none of these is distinguished by color alone. When its
  *   color contrasts with the surrounding text by at least 3:1, technique
  *   G183 is met only if hover and focus also bring a non-color cue, which
@@ -583,8 +594,8 @@ function runInPage(ctx) {
     return /^transparent$/i.test(raw);
   }
 
-  // A border drawn in the color behind el (sameAsBackground) shows nothing
-  // either.
+  // A border is a cue by its color alone: drawn in a color less than 3:1
+  // from the one behind el (faintOn), it is no cue.
   function hasBorder(cs, el) {
     for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
       const style = String(cs['border' + side + 'Style'] || '')
@@ -593,7 +604,7 @@ function runInPage(ctx) {
       if (!style || style === 'none' || style === 'hidden') continue;
       if (isTransparentColor(cs['border' + side + 'Color'])) continue;
       if (isZeroWidth(cs['border' + side + 'Width'])) continue;
-      if (el && sameAsBackground(el, cs['border' + side + 'Color'])) continue;
+      if (el && faintOn(el, cs['border' + side + 'Color'])) continue;
       return true;
     }
     return false;
@@ -696,7 +707,7 @@ function runInPage(ctx) {
         kinds.some(
           (k) =>
             k.kind !== 'none' &&
-            !(k.color && el && sameAsBackground(el, contrast.rgbaToString({ ...k.color, a: 1 })))
+            !(k.color && el && faintOn(el, contrast.rgbaToString({ ...k.color, a: 1 })))
         )
       );
     }
@@ -915,6 +926,43 @@ function runInPage(ctx) {
     const hex = linkBackgrounds.get(el);
     return !!hex && hex === c.rgbToHex(parsed);
   }
+  // Whether a mark that is a cue by its color alone (a border, an outline,
+  // a solid background layer) is too faint to count: drawn over the
+  // background behind el, it contrasts with it by less than 3:1, the
+  // contrast WCAG 1.4.1 asks of a color cue (G183). A color that draws
+  // nothing is faint; where the background can't be computed it is not.
+  const linkBackdrops = new Map();
+  function backdropOf(el) {
+    if (!linkBackdrops.has(el)) {
+      let rgba = null;
+      try {
+        const bg = c.computeEffectiveBackground(el, {
+          contrast: { mode, rootCanvasFallback },
+          collectStack: false
+        });
+        if (bg && bg.ok && bg.rgba) rgba = { ...bg.rgba, a: 1 };
+      } catch {}
+      linkBackdrops.set(el, rgba);
+    }
+    return linkBackdrops.get(el);
+  }
+  function faintOn(el, color) {
+    if (!c || !c.parseCssColorToRgba || !c.contrastRatio || !c.compositeRgba) return false;
+    const parsed = c.parseCssColorToRgba(String(color || ''));
+    if (!parsed) return false;
+    if (parsed.a === 0) return true;
+    const back = backdropOf(el);
+    if (!back) return false;
+    const drawn = parsed.a < 1 ? { ...c.compositeRgba(parsed, back), a: 1 } : parsed;
+    return !(c.contrastRatio(drawn, back) >= 3);
+  }
+  // Whether a background of the link's own sets it apart from the one
+  // around it: by 3:1 or more, as any cue by color alone must.
+  function highlightStandsOut(own, around) {
+    if (!own || !around) return false;
+    const ratio = c.contrastRatio({ ...own, a: 1 }, { ...around, a: 1 });
+    return ratio >= 3;
+  }
 
   function hasPseudoContent(el) {
     if (hasLayout()) return pseudoPaints(el, '::before') || pseudoPaints(el, '::after');
@@ -931,7 +979,9 @@ function runInPage(ctx) {
     if (
       cs &&
       (hasBorder(cs, el) ||
-        (hasOutline(cs) && !unseen(el, outlineColorOf(cs))) ||
+        (hasOutline(cs) &&
+          !isTransparentColor(outlineColorOf(cs)) &&
+          !faintOn(el, outlineColorOf(cs))) ||
         hasBoxShadow(cs) ||
         hasBackgroundImage(cs, el))
     ) {
@@ -1394,8 +1444,7 @@ function runInPage(ctx) {
       const ownBg = c.parseCssColorToRgba(String(linkCs.backgroundColor || ''));
       if (ownBg && ownBg.a === 1) {
         const around = backgroundAround(el);
-        if (!around || (around.r === ownBg.r && around.g === ownBg.g && around.b === ownBg.b))
-          return null;
+        if (!around || !highlightStandsOut(ownBg, around)) return null;
         return {
           toward: 'pass',
           why: 'The link has an opaque background color of its own, unlike the one around it, which marks it without relying on its text color.',
@@ -1496,7 +1545,7 @@ function runInPage(ctx) {
       const canvas = c.parseCssColorToRgba(rootCanvasFallback);
       if (!canvas || canvas.a !== 1) return null;
       const surround = { ...c.compositeRgba(around, canvas), a: 1 };
-      return c.rgbToHex(highlight) !== c.rgbToHex(surround);
+      return highlightStandsOut(highlight, surround);
     } catch {
       return null;
     }
@@ -1543,7 +1592,7 @@ function runInPage(ctx) {
       const textFg = opaque(fgText, textBg);
       all.push({
         scheme,
-        differs: c.rgbToHex(own.rgba) !== c.rgbToHex(around.rgba),
+        differs: highlightStandsOut(own.rgba, around.rgba),
         ratio: c.contrastRatio(linkFg, textFg),
         fgLinkHex: c.rgbToHex(linkFg),
         fgParentHex: c.rgbToHex(textFg)
@@ -1862,24 +1911,24 @@ function runInPage(ctx) {
   // background of its own unlike the surrounding text's, as a code chip or
   // <mark> does, or is raised or lowered, as a footnote's <sup> is (#107).
   function cueOnContent(el, parent, parentCs, aroundUnderlined) {
-    let parentBgHex;
-    const backgroundHex = (node) => {
+    let parentBg;
+    const backgroundOf = (node) => {
       try {
         const bg = c.computeEffectiveBackground(node, {
           contrast: { mode, rootCanvasFallback },
           collectStack: false
         });
-        return bg && bg.ok && bg.rgba ? c.rgbToHex(bg.rgba) : null;
+        return bg && bg.ok && bg.rgba ? bg.rgba : null;
       } catch {
         return null;
       }
     };
+    // A background of its own, by 3:1 or more from the surrounding text's.
     const ownBackground = (node, cs) => {
-      if (!c || !c.rgbToHex || isTransparentColor(cs.backgroundColor || 'transparent'))
+      if (!c || !c.contrastRatio || isTransparentColor(cs.backgroundColor || 'transparent'))
         return false;
-      if (parentBgHex === undefined) parentBgHex = backgroundHex(parent);
-      const hex = backgroundHex(node);
-      return !!hex && !!parentBgHex && hex !== parentBgHex;
+      if (parentBg === undefined) parentBg = backgroundOf(parent);
+      return highlightStandsOut(backgroundOf(node), parentBg);
     };
     const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
     const parentStyle = (parentCs && parentCs.fontStyle) || 'normal';
@@ -2249,7 +2298,7 @@ function runInPage(ctx) {
               collectStack: false
             });
             if (parentBg && parentBg.ok && parentBg.rgba) {
-              backgroundDiffers = c.rgbToHex(parentBg.rgba) !== c.rgbToHex(bg.rgba);
+              backgroundDiffers = highlightStandsOut(bg.rgba, parentBg.rgba);
               // Around it is the page's canvas, in the scheme the page is
               // drawn in: in the other the page supports, it is measured
               // too, as the contrast rules measure text there.

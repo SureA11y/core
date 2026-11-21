@@ -364,8 +364,7 @@ test(`${RULE_ID}: an <li> two or three wrappers below its list names the list an
 });
 
 // role none or presentation passes from a <ul>, <ol> or <menu> to its <li>
-// children; on any other element it only removes that element's own role,
-// so an <li> under <div role="none"> is still in no list.
+// children; a <div role="none"> in no list leaves its <li> in no list.
 test(`${RULE_ID}: role none or presentation is a valid parent only on a list element (round 9, N9-5)`, () => {
   const page = (body) =>
     `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
@@ -387,14 +386,45 @@ test(`${RULE_ID}: role none or presentation is a valid parent only on a list ele
   for (const body of [
     '<ul role="none"><li>Item</li></ul>',
     '<ol role="presentation"><li>Item</li></ol>',
-    '<menu role="none"><li>Item</li></menu>',
-    // A role none wrapper inside a list stays as it was, pending a decision
-    // (N9-5 b): list-children-valid reports the wrapper.
-    '<ul><div role="none"><li>Item</li></div></ul>'
+    '<menu role="none"><li>Item</li></menu>'
   ]) {
     assertRule(runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
       minOccurrences: 0,
       maxOccurrences: 0
     });
+  }
+});
+
+// A wrapper the accessibility tree sees through, role none or presentation
+// or a generic element drawn with display: contents, puts the <li> in the
+// list above it, as Chromium exposes it; list-children-valid agrees.
+test(`${RULE_ID}: an <li> in a role none or display: contents wrapper inside a list is in the list (round 9, N9-5 b)`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  for (const body of [
+    '<ul><div role="none"><li>Item</li></div></ul>',
+    '<ol><span role="presentation"><li>Item</li></span></ol>',
+    '<menu><div role="none"><div role="none"><li>Item</li></div></div></menu>',
+    '<ul><div style="display: contents"><li>Item</li></div></ul>',
+    '<div role="list"><div style="display: contents"><li>Item</li></div></div>'
+  ]) {
+    const result = runa11yCoreOnHtml(page(body), {
+      runOnly: [RULE_ID, 'list-children-valid']
+    });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+    const lists = result.checksResults.find((r) => r.ruleId === 'list-children-valid');
+    assert.ok(['pass', 'notApplicable'].includes(lists.outcome), body);
+  }
+  // A wrapper kept by a global ARIA attribute, or a display: contents one
+  // with a role of its own, is not seen through.
+  for (const body of [
+    '<ul><div role="none" aria-label="x"><li>Item</li></div></ul>',
+    '<ul><section style="display: contents" aria-label="x"><li>Item</li></section></ul>'
+  ]) {
+    const result = runa11yCoreOnHtml(page(body), {
+      runOnly: [RULE_ID, 'list-children-valid']
+    });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+    assertRule(result, 'list-children-valid', 'fail', { minOccurrences: 1 });
   }
 });

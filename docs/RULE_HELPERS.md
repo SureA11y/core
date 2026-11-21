@@ -436,7 +436,7 @@ and shared with the engine's own reads (the style sheets, the open modal dialogs
 that must search the whole page, shadow trees included, runs its `querySelectorAll` on each.
 A closed shadow root is not in it.
 
-### `animationsAtScanStart()` → `Array<{ target, pseudoElement, kind, name, currentTime, delay, duration, iterations, endTime }>`
+### `animationsAtScanStart()` → `Array<{ target, pseudoElement, kind, name, currentTime, delay, duration, iterations, endTime, changes }>`
 
 The animations running on a time-based timeline when the scan started. The engine moves each to
 a fixed point while the rules run (a finite one to its end, so it no longer shows in
@@ -444,7 +444,10 @@ a fixed point while the rules run (a finite one to its end, so it no longer show
 `css-animation`, `css-transition` or `script`; `name` the animation name or transitioned
 property; times are in milliseconds, `iterations` and `endTime` `null` for one that never ends.
 `target` is the animated element (a pseudo-element's animation names its element and
-`pseudoElement`). Each call returns fresh copies. `[]` without `getAnimations` (jsdom). The
+`pseudoElement`). `changes` maps each property its keyframes change to the values it takes (up
+to eight), `{}` when they change nothing (the same value throughout, or only custom properties)
+and `null` when they can't be read; a property missing from the first or last keyframe, or
+added to the value under it, counts as changing. Each call returns fresh copies. `[]` without `getAnimations` (jsdom). The
 runner adds it to `helpers` for the scan (`src/core/dom-runner.js`), so it is not in
 `createDomHelpers()`'s object; `moving-content-pausable` reads it.
 
@@ -1078,8 +1081,11 @@ the one `::first-line` or `::first-letter` that differs from the element's, as
 nothing else blocks the measurement and that pseudo-element draws only colors (no
 image, shadow, outline or opacity); `measurePseudoElementText(el, opts)` then measures
 the text both ways (`{ own, pseudo }`, each `{ fg, bg, ratio, fontSizePx,
-fontWeightNum, isLargeText }`, or `null`), so a rule decides where both colors are on
-the same side of its ratio.
+fontWeightNum, isLargeText, paintsText }`, or `null`), so a rule decides where both
+colors are on the same side of its ratio, and where the color that falls short
+certainly paints some of the text (`paintsText`: the pseudo-element's where the
+element's first child is text with a letter or digit, the element's own past a
+`::first-letter` where a second letter or digit follows).
 `getTextScan`'s result lists, besides `elements`, `generated`: one `{ el, pseudo,
 textCount }` per `::before`, `::after` or `::marker` of `el` that draws text, read only
 in a browser; `measureGeneratedText(el, pseudo, opts)` measures it in the

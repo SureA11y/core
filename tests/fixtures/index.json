@@ -2471,9 +2471,9 @@
       "totalCases": 27,
       "caseCounts": {
         "PASS": 6,
-        "FAIL": 14,
+        "FAIL": 13,
         "CANTTELL": 0,
-        "OTHER": 7
+        "OTHER": 8
       }
     },
     {

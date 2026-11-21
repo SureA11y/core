@@ -105,12 +105,17 @@ export function migrateBaselineEntries(
   result?: ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult
 ): BaselineEntry[];
 
-/** The identity of a finding: ruleId, reasonCode and html, and the frame's path for a failure inside a frame. */
+/**
+ * The identity of a finding: ruleId, reasonCode and html, and the frame's path
+ * for a failure inside a frame. With no html (a scan with
+ * output.includeHtml: false), the selector takes its place.
+ */
 export function computeBaselineKey(
   ruleId: string,
   reasonCode: string,
   html: string,
-  framePath?: string[]
+  framePath?: string[],
+  selector?: string
 ): string;
 
 /** An occurrence's reason code, or 'DEFAULT'. */

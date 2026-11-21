@@ -128,17 +128,36 @@ function ownString(dict, key) {
   return (typeof dict[key] === 'string' && dict[key]) ? dict[key] : null;
 }
 
+// The locales a string is looked for in, most specific first: the code
+// asked for, then its base language when it carries a subtag. English comes
+// after these, in t().
+function localeChain(requested) {
+  const primary = requested.split('-')[0];
+  return primary.toLowerCase() === requested.toLowerCase() ? [requested] : [requested, primary];
+}
+
+// One locale's string: the caller's dictionary for it first, then the
+// built-in one, each matched without regard to case.
+function messageIn(locale, key, engineOptions) {
+  return (
+    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), locale), key) ||
+    ownString(dictIgnoringCase(I18N, locale), key)
+  );
+}
+
 // A caller-supplied dictionary layers over the built-in one for the same
 // locale rather than replacing it, so overriding one string does not cost the
-// caller every other string in that language.
+// caller every other string in that language. A regional code then falls back
+// to its base language, string by string: messages: { 'de-AT': { one key } }
+// keeps the rest of the German, the caller's de and then the built-in de,
+// before English (round 9, A9-4). An exact hit returns before any allocation.
 function localeMessage(key, engineOptions) {
-  const matched = matchLocale(normalizeLocale(engineOptions && engineOptions.locale), engineOptions);
-  if (!matched) return null;
+  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const direct = messageIn(requested, key, engineOptions);
+  if (direct) return direct;
 
-  return (
-    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), matched), key) ||
-    ownString(dictIgnoringCase(I18N, matched), key)
-  );
+  const chain = localeChain(requested);
+  return chain.length > 1 ? messageIn(chain[1], key, engineOptions) : null;
 }
 
 function isKnownLocale(locale) {
@@ -169,18 +188,26 @@ function resolveLocale(engineOptions) {
   if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
 
   if (dict !== en) {
-    const supplied = dictIgnoringCase(getSuppliedMessages(engineOptions), matched);
-    const builtIn = dictIgnoringCase(I18N, matched);
-
-    const builtInKey = ownDict(I18N, matched) ? matched : matchIgnoringCase(I18N, matched);
-    const leftOut =
-      (builtInKey && Object.prototype.hasOwnProperty.call(I18N_LEFT_OUT, builtInKey)
-        ? I18N_LEFT_OUT[builtInKey]
-        : null) || {};
+    // Every locale a string can come from before English, as localeMessage
+    // looks: a regional dictionary missing a key the base language has is
+    // not partial, since that string shows in the language asked for.
+    const chain = localeChain(requested);
+    const leftOut = {};
+    for (const locale of chain) {
+      const builtInKey = ownDict(I18N, locale) ? locale : matchIgnoringCase(I18N, locale);
+      const own =
+        builtInKey && Object.prototype.hasOwnProperty.call(I18N_LEFT_OUT, builtInKey)
+          ? I18N_LEFT_OUT[builtInKey]
+          : null;
+      if (own) Object.assign(leftOut, own);
+    }
 
     for (const key in en) {
       if (leftOut[key] === true) continue;
-      if (!ownString(supplied, key) && !ownString(builtIn, key)) {
+      const found = chain.some(function (locale) {
+        return messageIn(locale, key, engineOptions);
+      });
+      if (!found) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
     }
@@ -1326,6 +1353,47 @@ function enforceKnownProfile(selection, eo) {
   throw err;
 }
 
+// engineOptions.rules, .tags and .tests as a filter: { include, exclude },
+// or a bare list or string as the include list, as runOnly takes one. Null
+// when the option is not a filter.
+function includeExcludeOf(v) {
+  return Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
+    ? { include: typeof v === 'string' ? [v] : [...v] }
+    : (v && typeof v === 'object' ? v : null);
+}
+
+// runOnly with a filter wins over engineOptions' rules, tags and tests
+// filters, which are then not read: said so, as other options left unread
+// are, and an error under strictOptions (round 9, A9-14). A rules entry for
+// one rule's settings is no filter, and is still read.
+function warnFiltersBesideRunOnly(eo) {
+  const given = ['rules', 'tags', 'tests'].filter((name) => {
+    const filter = includeExcludeOf(eo[name]);
+    return !!filter && (
+      parseCommaList(filter.include, { lower: false }).length > 0 ||
+      parseCommaList(filter.exclude, { lower: false }).length > 0
+    );
+  });
+  if (!given.length) return;
+  const message =
+    given.map((name) => 'engineOptions.' + name).join(', ') +
+    ': runOnly has a filter, which wins over ' + (given.length > 1 ? 'them' : 'it');
+  if (strictOf(eo)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    err.problems = given.map((name) => ({
+      path: name,
+      kind: 'invalid',
+      suggestion: null,
+      message: 'engineOptions.' + name + ': runOnly has a filter, which wins over it'
+    }));
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '; ignored.');
+  } catch {}
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   // A number or a boolean, and an object none of whose keys the engine
@@ -1411,6 +1479,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const requestedProfile = normalizeProfileName(eo.profile);
 
   if (hasAnyRunOnlyKeys(runOnly)) {
+    warnFiltersBesideRunOnly(eo);
     const selection = normalizeRunOnly(runOnly);
     canonicalizeRuleIds(selection, eo);
     checkSelectionNames(
@@ -1439,10 +1508,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
 
   // { include, exclude }; a bare list or string is the include list, as
   // runOnly takes one. As an object with neither key it ran every rule.
-  const includeExclude = (v) =>
-    Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-      ? { include: typeof v === 'string' ? [v] : [...v] }
-      : (v && typeof v === 'object' ? v : null);
+  const includeExclude = includeExcludeOf;
   const rules = includeExclude(eo.rules);
   const tags = includeExclude(eo.tags);
   const tests = includeExclude(eo.tests);
@@ -8729,6 +8795,81 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return !!(field && field.placeholder);
   }
 
+  // The blank about:blank frame the browser's own colors are read in: one
+  // per document for the scan, reused, and taken out when the scan ends
+  // (dom-runner's runCore, through the run's shared cache); made and taken
+  // out at each use where there is no run, as for the catalog's color
+  // parser. It sits in a closed shadow root of an element hidden at the end
+  // of <html>, so its load event, which isn't composed, never reaches the
+  // page's listeners, and no rule finds it. A page's MutationObserver still
+  // sees that element added and removed (round 9, R9-9).
+  function __probeFrameEntries() {
+    const sc = shared && shared.__contrastSharedCache ? shared.__contrastSharedCache : null;
+    if (!sc) return null;
+    if (!Array.isArray(sc.probeFrames)) sc.probeFrames = [];
+    return sc.probeFrames;
+  }
+  function __removeProbeFrame(entry) {
+    try {
+      if (entry && entry.holder && dom.parentNode(entry.holder))
+        dom.removeChild(dom.parentNode(entry.holder), entry.holder);
+    } catch {}
+  }
+  // { frame, fdoc, fview, froot, release() } for doc, or null. release()
+  // empties the frame for its next use, or takes it out with no run.
+  function __openProbeFrame(doc) {
+    const entries = __probeFrameEntries();
+    let entry = null;
+    if (entries) {
+      for (const e of entries) {
+        if (e.doc === doc && e.holder && dom.isConnected(e.holder)) {
+          entry = e;
+          break;
+        }
+      }
+    }
+    if (!entry) {
+      const host = dom.createElement(doc, 'surea11y-probe');
+      host.style.display = 'none';
+      let root = null;
+      try {
+        root = host.attachShadow({ mode: 'closed' });
+      } catch {}
+      const frame = dom.createElement(doc, 'iframe');
+      dom.appendChild(root || host, frame);
+      dom.appendChild(dom.documentElement(doc), host);
+      entry = { doc, holder: host, frame };
+      if (entries) entries.push(entry);
+    }
+    const frame = entry.frame;
+    const fdoc = dom.get(frame, 'contentDocument');
+    const fview = dom.get(frame, 'contentWindow');
+    const froot = fdoc && dom.documentElement(fdoc);
+    const kept = entries && entries.indexOf(entry) !== -1;
+    return {
+      fdoc,
+      fview,
+      froot,
+      release() {
+        if (!kept) {
+          __removeProbeFrame(entry);
+          return;
+        }
+        try {
+          const body = fdoc && dom.body(fdoc);
+          if (body) body.textContent = '';
+          if (froot) {
+            froot.style.colorScheme = '';
+            froot.style.forcedColorAdjust = '';
+          }
+        } catch {
+          __removeProbeFrame(entry);
+          entries.splice(entries.indexOf(entry), 1);
+        }
+      }
+    };
+  }
+
   // Where a field's placeholder colors come from: 'browser' when its
   // color, opacity and background, and the field's own background, are all
   // the browser's (WCAG G148: colors left to the browser count as meeting
@@ -8736,26 +8877,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // can't be told (no layout, or no blank frame to compare with). The
   // browser's values are read from the same kind of field in a blank
   // about:blank frame with the field's color-scheme, which no page style
-  // reaches; the frame is removed straight away.
+  // reaches (__openProbeFrame).
   const __placeholderDefaults = new Map();
   function __readPlaceholderDefaults(doc, tag, type, scheme) {
     const key = tag + '|' + type + '|' + scheme;
     if (__placeholderDefaults.has(key)) return __placeholderDefaults.get(key);
     let out = null;
-    let frame = null;
+    let probe = null;
     try {
-      frame = dom.createElement(doc, 'iframe');
-      frame.style.position = 'absolute';
-      frame.style.left = '-9999px';
-      frame.style.top = '-9999px';
-      frame.style.width = '10px';
-      frame.style.height = '10px';
-      frame.style.border = '0';
-      const parent = dom.body(doc) || dom.documentElement(doc);
-      dom.appendChild(parent, frame);
-      const fdoc = dom.get(frame, 'contentDocument');
-      const fview = dom.get(frame, 'contentWindow');
-      const froot = fdoc && dom.documentElement(fdoc);
+      probe = __openProbeFrame(doc);
+      const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
         // Under forced colors the scan holds the page in its own colors
@@ -8781,9 +8912,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       out = null;
     }
-    try {
-      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
-    } catch {}
+    if (probe) probe.release();
     __placeholderDefaults.set(key, out);
     return out;
   }
@@ -8884,20 +9013,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function __readSelectFieldDefaults(doc, scheme) {
     if (__selectFieldDefaults.has(scheme)) return __selectFieldDefaults.get(scheme);
     let out = null;
-    let frame = null;
+    let probe = null;
     try {
-      frame = dom.createElement(doc, 'iframe');
-      frame.style.position = 'absolute';
-      frame.style.left = '-9999px';
-      frame.style.top = '-9999px';
-      frame.style.width = '10px';
-      frame.style.height = '10px';
-      frame.style.border = '0';
-      const parent = dom.body(doc) || dom.documentElement(doc);
-      dom.appendChild(parent, frame);
-      const fdoc = dom.get(frame, 'contentDocument');
-      const fview = dom.get(frame, 'contentWindow');
-      const froot = fdoc && dom.documentElement(fdoc);
+      probe = __openProbeFrame(doc);
+      const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
         froot.style.forcedColorAdjust = 'none';
@@ -8927,9 +9046,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       out = null;
     }
-    try {
-      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
-    } catch {}
+    if (probe) probe.release();
     __selectFieldDefaults.set(scheme, out);
     return out;
   }
@@ -9201,11 +9318,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // El's text measured in its own colors and in those of the
   // ::first-line or ::first-letter its blocker carries (pseudoColors):
   // { own, pseudo }, each { fg, bg, ratio, fontSizePx, fontWeightNum,
-  // isLargeText }, with `pseudo.pseudo` naming the pseudo-element, and the
-  // background's assumptions. Null when the blocker carries no colors or
-  // the background can't be worked out. Which text the pseudo-element
-  // paints depends on line breaks, but where both colors meet a ratio, or
-  // both fall short of it, every reading of the text does too.
+  // isLargeText, paintsText }, with `pseudo.pseudo` naming the
+  // pseudo-element, and the background's assumptions. Null when the
+  // blocker carries no colors or the background can't be worked out.
+  // paintsText: whether that color certainly paints some of el's own text
+  // (the pseudo-element's where el's text starts with its own text; el's
+  // own past a ::first-letter, with a second letter). Which words a
+  // ::first-line holds depends on line breaks, but where both colors meet
+  // a ratio, or both fall short of it, every reading of the text does too,
+  // and a color that certainly paints text and falls short fails it.
   function measurePseudoElementText(el, bgOpts) {
     try {
       const blocker = getComputabilityBlocker(el);
@@ -9231,8 +9352,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const pAlpha = clamp01(pc.color.a * fade);
       const pFg = { ...compositeRgba({ ...pc.color, a: pAlpha }, pBack), a: 1 };
       const pPx = Number.isFinite(pc.fontSizePx) ? pc.fontSizePx * scale : ownPx;
+      // Whether each color certainly paints some of el's own text. Where
+      // el's first child is text with a letter or digit in it, the
+      // pseudo-element paints the start of that text: the first letter, or
+      // the first line, whichever words it holds. The rest of the text is
+      // in el's own colors for certain only past a ::first-letter, where
+      // there is a second letter or digit; past a ::first-line it may all
+      // fit on the first line.
+      const ALNUM = /[\p{L}\p{N}]/u;
+      let first = dom.firstChild(el);
+      while (
+        first &&
+        (dom.nodeType(first) === 8 ||
+          (dom.nodeType(first) === 3 && !/\S/.test(dom.nodeValue(first) || '')))
+      )
+        first = dom.nextSibling(first);
+      const pseudoPaints =
+        !!first && dom.nodeType(first) === 3 && ALNUM.test(dom.nodeValue(first) || '');
+      let letters = 0;
+      if (pseudoPaints && pc.pseudo === '::first-letter') {
+        for (let n = dom.firstChild(el); n && letters < 2; n = dom.nextSibling(n)) {
+          if (dom.nodeType(n) !== 3) continue;
+          const m = String(dom.nodeValue(n) || '').match(/[\p{L}\p{N}]/gu);
+          letters += m ? m.length : 0;
+        }
+      }
       return {
         own: {
+          paintsText: letters >= 2,
           fg: ownFg,
           bg: back,
           ratio: contrastRatio(ownFg, back),
@@ -9242,6 +9389,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         },
         pseudo: {
           pseudo: pc.pseudo,
+          paintsText: pseudoPaints,
           fg: pFg,
           bg: pBack,
           ratio: contrastRatio(pFg, pBack),
@@ -9767,6 +9915,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         paintOccluded = true;
         occluder = cur;
       }
+
+      // A box that stays in place as the page scrolls (position: fixed,
+      // against the viewport) or sticks while it scrolls (sticky), with no
+      // opaque background between the text and it, inclusive: what lies
+      // under it changes as the page scrolls past, so no one background
+      // stands behind the text, whatever the scroll position is now. A box
+      // in the top layer (a modal dialog) is measured over its ::backdrop
+      // as above.
+      if (!paintOccluded && !top && cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
+        if (cs.position === 'sticky' || __fixedToViewport(cur)) {
+          const out = {
+            ok: false,
+            reasonCode: 'BACKGROUND_OVERLAP',
+            blockerSelector: __getSimpleSelectorCached(
+              cur,
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
+            ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
+            blockerProperty: 'position',
+            blockerValue: cs.position
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch {}
+          return out;
+        }
+      }
     }
 
     const overlap = __findPaintUnderText(el, chain);
@@ -9930,6 +10106,32 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
     __topLayerCache.set(node, out);
     return out;
+  }
+  // Whether a position: fixed box is placed against the viewport: no
+  // ancestor holds fixed boxes (a transform, a filter, perspective, contain
+  // paint or layout, or a will-change of those), which would make it
+  // scroll with that ancestor.
+  function __fixedToViewport(node) {
+    const set = (v) => !!v && String(v) !== 'none';
+    let guard = 0;
+    for (let cur = composedParent(node); cur && guard++ < 200; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      const cs = __contrastComputedStyle(cur);
+      if (!cs) continue;
+      if (
+        set(cs.transform) ||
+        set(cs.translate) ||
+        set(cs.rotate) ||
+        set(cs.scale) ||
+        set(cs.perspective) ||
+        set(cs.filter) ||
+        set(cs.backdropFilter) ||
+        /\b(paint|layout|strict|content)\b/.test(String(cs.contain || '')) ||
+        /\b(transform|perspective|filter)\b/.test(String(cs.willChange || ''))
+      )
+        return false;
+    }
+    return true;
   }
   function __isPinned(node) {
     const path = [];
@@ -25840,8 +26042,50 @@ const settleAnimations = (function settleAnimations(doc, includeShadowDom) {
       delay: ms(timing && timing.delay),
       duration: ms(timing && timing.duration),
       iterations: timing && Number.isFinite(timing.iterations) ? timing.iterations : null,
-      endTime: ms(timing && timing.endTime)
+      endTime: ms(timing && timing.endTime),
+      changes: keyframeChanges(effect)
     };
+  }
+  // The properties an animation's keyframes change, each with the values it
+  // takes (up to eight): {} for keyframes that change nothing (the same
+  // value throughout, or only custom properties, which show nothing by
+  // themselves), null where they can't be read. A property missing from
+  // the first or last keyframe, or one added to the value under it, changes.
+  function keyframeChanges(effect) {
+    try {
+      if (!effect || typeof effect.getKeyframes !== 'function') return null;
+      const frames = effect.getKeyframes();
+      const adds =
+        effect.composite === 'add' ||
+        effect.composite === 'accumulate' ||
+        effect.iterationComposite === 'accumulate';
+      const NOT_PROPERTIES = new Set(['offset', 'computedOffset', 'easing', 'composite']);
+      const seen = new Map();
+      for (const frame of frames) {
+        const offset = Number(frame.computedOffset);
+        const frameAdds = frame.composite === 'add' || frame.composite === 'accumulate';
+        for (const key of Object.keys(frame)) {
+          if (NOT_PROPERTIES.has(key) || key.startsWith('--')) continue;
+          let entry = seen.get(key);
+          if (!entry) {
+            entry = { values: new Set(), first: false, last: false, adds: false };
+            seen.set(key, entry);
+          }
+          entry.values.add(String(frame[key]));
+          if (offset === 0) entry.first = true;
+          if (offset === 1) entry.last = true;
+          if (frameAdds) entry.adds = true;
+        }
+      }
+      const out = {};
+      for (const [key, entry] of seen) {
+        if (entry.values.size > 1 || !entry.first || !entry.last || entry.adds || adds)
+          out[key] = [...entry.values].slice(0, 8);
+      }
+      return out;
+    } catch {
+      return null;
+    }
   }
 
   const dom = createSafeDom();
@@ -28382,6 +28626,18 @@ const runCore = (function runCore(
           : typeof document !== 'undefined' && document
             ? dom.defaultView(document)
             : null;
+      // The contrast helpers' blank frames, kept for the run
+      // (__openProbeFrame), go with it.
+      const shared = w && w.__a11ycoreSharedCache;
+      const frames = shared && shared.contrast && shared.contrast.probeFrames;
+      if (Array.isArray(frames)) {
+        for (const entry of frames) {
+          try {
+            const parent = entry && entry.holder ? dom.parentNode(entry.holder) : null;
+            if (parent) dom.removeChild(parent, entry.holder);
+          } catch {}
+        }
+      }
       if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
     } catch {}
   }
@@ -42265,6 +42521,7 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} verbirgt dieses <{{element}}> vor Screenreadern, sodass sein Alternativtext „{{alt}}“ nie vorgelesen wird. Prüfen Sie, ob es rein dekorativ ist.",
       "img_altDecorative_hint_ownHiddenAlt": "Wenn es nur schmückt, ist nichts zu ändern. Wenn es eine Information trägt, entfernen Sie {{hiddenBy}}, damit sein Alternativtext vorgelesen wird.",
       "img_altDecorative_summary_unnamed": "Dieses <{{element}}> hat weder einen Namen noch eine Rolle, daher überspringen Screenreader es. Prüfen Sie, ob es rein dekorativ ist.",
+      "img_altDecorative_summary_unnamedSvg": "Dieses <svg> hat keinen Namen, daher überspringen Screenreader es. Prüfen Sie, ob es rein dekorativ ist.",
       "img_altDecorative_summary_unnamedCanvasFallback": "Dieses <{{element}}> hat weder eine Rolle noch einen eigenen Namen, daher überspringen Screenreader die Zeichnung und lesen nur seinen Ersatzinhalt „{{fallback}}“ vor. Prüfen Sie, ob die Zeichnung rein dekorativ ist.",
       "img_altQuality_lean_why": "Ein Dateiname, eine Webadresse oder ein allgemeines Wort sagt nicht, was das Bild zeigt.",
       "img_altQuality_lean_why_overridden": "Der alt-Text „{{alt}}“, nicht der Name, ist ein Dateiname, eine Webadresse oder ein allgemeines Wort. aria-label oder aria-labelledby benennt das Bild stattdessen, aber Browser zeigen den alt-Text weiterhin an, wenn das Bild nicht lädt.",
@@ -42455,6 +42712,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textShadow": "Der Kontrast ist nicht berechenbar, weil ein text-shadow verwendet wird, der zusätzlichen Kontrast liefern könnte, den diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "Der Kontrast ist nicht berechenbar, weil der Text eine Kontur (-webkit-text-stroke) in eigener Farbe hat, die diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Der Kontrast ist nicht berechenbar, weil ein Teil des Textes von {{blockerSelector}} mit einem eigenen Wert für {{blockerProperty}} ({{blockerValue}}) gezeichnet wird. Welcher Text betroffen ist, hängt vom Zeilenumbruch ab.",
+      "contrastComputable_cantTell_firstLetterColor": "Der Kontrast ist nicht berechenbar, weil {{blockerSelector}} den ersten Buchstaben mit einem eigenen Wert für {{blockerProperty}} ({{blockerValue}}) zeichnet. Ob dieser Buchstabe oder Text danach zu diesem Text gehört, ließ sich nicht feststellen.",
       "contrastComputable_cantTell_selectOption": "Der Kontrast ist nicht berechenbar, weil diese Option einer Auswahlliste einen eigenen Wert für {{blockerProperty}} ({{blockerValue}}) hat und nur bei geöffneter Liste angezeigt wird, so wie die Plattform sie zeichnet: in diesen Farben oder in ihren eigenen.",
       "contrastComputable_cantTell_generatedText": "Der Kontrast ist für den Text, den {{pseudo}} dieses Elements erzeugt, nicht berechenbar ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Messen Sie den Kontrast manuell auf der gerenderten Seite, an der Stelle, an der der Hintergrund hinter dem Text den geringsten Kontrast ergibt. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
@@ -42513,6 +42771,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_ancestorOpacity": "Der Kontrast ist nicht berechenbar, weil das übergeordnete Element {{blockerElement}} opacity: {{blockerValue}} hat, was den Text zusammen mit dem dahinter Gezeichneten abschwächt; die Farben, die so auf dem Bildschirm entstehen, lassen sich nicht aus dem CSS ermitteln.",
       "contrastComputable_cantTell_elementOpacity": "Der Kontrast ist nicht berechenbar, weil dieses Element opacity: {{blockerValue}} und einen eigenen Hintergrund hat, die zusammen über dem dahinter Gezeichneten abgeschwächt werden; die Farben, die so auf dem Bildschirm entstehen, lassen sich nicht aus dem CSS ermitteln.",
       "contrastComputable_cantTell_backgroundOverlap": "Der Kontrast ist nicht berechenbar, weil {{blockerElement}}, das kein übergeordnetes Element des Textes ist, unter ihm gezeichnet wird ({{blockerProperty}}={{blockerValue}}), sodass der Text nicht nur vor dem Hintergrund seiner übergeordneten Elemente zu sehen ist.",
+      "contrastComputable_cantTell_fixedBox": "Der Kontrast ist nicht berechenbar, weil der Text in {{blockerElement}} steht, das position: {{blockerValue}} und keinen eigenen deckenden Hintergrund hat. Was darunter liegt, ändert sich beim Scrollen der Seite.",
       "contrastComputable_cantTell_backgroundUnparsable": "Der Kontrast ist nicht berechenbar, weil diese Prüfung die Hintergrundfarbe von {{#blockerAncestor}}dem übergeordneten Element {{/blockerAncestor}}{{blockerElement}} ({{blockerValue}}) nicht lesen kann.",
       "contrastComputable_cantTell_foregroundUnparsable": "Der Kontrast ist nicht berechenbar, weil diese Prüfung die Textfarbe{{#blockerValue}} ({{blockerValue}}){{/blockerValue}} nicht lesen kann.",
       "contrastComputable_cantTell_backgroundNotComputable": "Der Kontrast ist nicht berechenbar, weil sich der Hintergrund hinter diesem Text nicht aus dem CSS ermitteln lässt{{#blockerProperty}} ({{blockerProperty}}={{blockerValue}}){{/blockerProperty}}.",
@@ -42538,6 +42797,9 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt nah an einem anderen Inline-Link{{#neighbour}} ({{neighbour}}){{/neighbour}} im selben Textfluss, wo die Inline-Ausnahme gelten kann.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt nah an einem anderen Inline-Link{{#neighbour}} ({{neighbour}}){{/neighbour}} im selben Textfluss, wo die Inline-Ausnahme gelten kann.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links in einem Satz oder Absatz stehen, was ausgenommen ist. Wenn nicht, machen Sie das Ziel mindestens 24×24 CSS-Pixel groß oder geben Sie ihm mehr Abstand.",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, in einem Kasten, der beim Scrollen der Seite an seinem Platz bleibt, und Ziele der Seite unter 24×24{{#neighbour}}, etwa {{neighbour}},{{/neighbour}} ziehen beim Scrollen in seiner Reichweite vorbei.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, in einem Kasten, der beim Scrollen der Seite an seinem Platz bleibt, und Ziele der Seite unter 24×24{{#neighbour}}, etwa {{neighbour}},{{/neighbour}} ziehen beim Scrollen in seiner Reichweite vorbei.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
+      "targetSizeMinimum_hint_cantTell_pinnedOverPage": "Scrollen Sie die Seite und prüfen Sie, ob ein anderes Ziel so nah kommt, dass ein Kreis von 24 px um die Mitte dieses Ziels es oder seinen eigenen Kreis erreicht. Wenn ja, machen Sie das Ziel mindestens 24×24 CSS-Pixel groß oder halten Sie es von den Zielen der Seite fern.",
       "targetSizeEnhanced_title": "Zeigerziele müssen mindestens 44x44px groß sein",
       "targetSizeEnhanced_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 44 mal 44 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (Inline, vom Browser bestimmte Größe, wesentlich).",
       "targetSizeEnhanced_summary_fail": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 44×44.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
@@ -42551,6 +42813,9 @@ const RUNTIME_CATALOG = {
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 44×44, und steht neben einem anderen Inline-Link{{#neighbour}} ({{neighbour}}){{/neighbour}} im selben Textfluss, wo die Inline-Ausnahme gelten kann.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 44×44, und steht neben einem anderen Inline-Link{{#neighbour}} ({{neighbour}}){{/neighbour}} im selben Textfluss, wo die Inline-Ausnahme gelten kann.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
       "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links in einem Satz oder Absatz stehen, was ausgenommen ist. Wenn nicht, machen Sie das Ziel mindestens 44×44 CSS-Pixel groß.",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 44×44, in einem Kasten, der beim Scrollen der Seite an seinem Platz bleibt, und Ziele der Seite unter 44×44{{#neighbour}}, etwa {{neighbour}},{{/neighbour}} ziehen beim Scrollen in seiner Reichweite vorbei.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 44×44, in einem Kasten, der beim Scrollen der Seite an seinem Platz bleibt, und Ziele der Seite unter 44×44{{#neighbour}}, etwa {{neighbour}},{{/neighbour}} ziehen beim Scrollen in seiner Reichweite vorbei.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
+      "targetSizeEnhanced_hint_cantTell_pinnedOverPage": "Scrollen Sie die Seite und prüfen Sie, ob ein anderes Ziel so nah kommt, dass ein Kreis von 44 px um die Mitte dieses Ziels es oder seinen eigenen Kreis erreicht. Wenn ja, machen Sie das Ziel mindestens 44×44 CSS-Pixel groß oder halten Sie es von den Zielen der Seite fern.",
       "ariaHidden_focus_title": "ARIA-hidden-Elemente dürfen nicht fokussierbar sein",
       "ariaHidden_focus_description": "Prüft, ob Elemente mit aria-hidden=\"true\" nicht fokussierbar sind und keine fokussierbaren Nachfahren enthalten.",
       "ariaHidden_focus_summary_fail_desc": "Dieses <{{element}}> mit aria-hidden enthält {{focusableCount}} fokussierbare(s) Element(e): Tastaturnutzende erreichen sie, aber Screenreader geben sie nicht aus.",
@@ -44069,6 +44334,7 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} hides this <{{element}}> from screen readers, so its alt text \"{{alt}}\" is never read. Check whether it is purely decorative.",
       "img_altDecorative_hint_ownHiddenAlt": "If it only decorates, nothing needs to change. If it carries information, remove {{hiddenBy}} so its alt text is read.",
       "img_altDecorative_summary_unnamed": "This <{{element}}> has no name and no role, so screen readers skip it. Check whether it is purely decorative.",
+      "img_altDecorative_summary_unnamedSvg": "This <svg> has no name, so screen readers skip it. Check whether it is purely decorative.",
       "img_altDecorative_summary_unnamedCanvasFallback": "This <{{element}}> has no role and no name of its own, so screen readers skip the drawing and read only its fallback content, \"{{fallback}}\". Check whether the drawing is purely decorative.",
       "img_altQuality_lean_why": "A file name, a web address or a generic word does not say what the image shows.",
       "img_altQuality_lean_why_overridden": "The alt text \"{{alt}}\", not the name, is a file name, a web address or a generic word. aria-label or aria-labelledby names the image instead, but browsers still show the alt when the image does not load.",
@@ -44259,6 +44525,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "Contrast is not computable because the text has an outline (-webkit-text-stroke), drawn in its own color, which this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Contrast is not computable because part of the text is painted by {{blockerSelector}} in a {{blockerProperty}} of its own ({{blockerValue}}), and which text that is depends on how the lines break.",
+      "contrastComputable_cantTell_firstLetterColor": "Contrast is not computable because {{blockerSelector}} paints the first letter in a {{blockerProperty}} of its own ({{blockerValue}}), and whether that letter, or any text past it, is in this text could not be told.",
       "contrastComputable_cantTell_selectOption": "Contrast is not computable because this option of a drop-down list has a {{blockerProperty}} of its own ({{blockerValue}}), and it is shown only when the list opens, drawn as the platform draws it, in those colors or its own.",
       "contrastComputable_cantTell_generatedText": "Contrast is not computable for the text this element's {{pseudo}} generates ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Measure the contrast by hand on the rendered page, where the background behind the text gives the least contrast. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
@@ -44317,6 +44584,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_ancestorOpacity": "Contrast is not computable because its ancestor {{blockerElement}} has opacity: {{blockerValue}}, which fades the text together with what is drawn behind it, and the colors that leaves on screen can't be worked out from the CSS.",
       "contrastComputable_cantTell_elementOpacity": "Contrast is not computable because this element has opacity: {{blockerValue}} and a background of its own, which fade together over what is drawn behind it, and the colors that leaves on screen can't be worked out from the CSS.",
       "contrastComputable_cantTell_backgroundOverlap": "Contrast is not computable because {{blockerElement}}, which is not an ancestor of the text, is painted under it ({{blockerProperty}}={{blockerValue}}), so the text isn't seen against its ancestors' background alone.",
+      "contrastComputable_cantTell_fixedBox": "Contrast is not computable because the text is in {{blockerElement}}, which has position: {{blockerValue}} and no opaque background of its own, so what lies under it changes as the page scrolls.",
       "contrastComputable_cantTell_backgroundUnparsable": "Contrast is not computable because the background color of {{#blockerAncestor}}its ancestor {{/blockerAncestor}}{{blockerElement}} ({{blockerValue}}) is a value this scan can't read.",
       "contrastComputable_cantTell_foregroundUnparsable": "Contrast is not computable because the text color{{#blockerValue}} ({{blockerValue}}){{/blockerValue}} is a value this scan can't read.",
       "contrastComputable_cantTell_backgroundNotComputable": "Contrast is not computable because the background behind this text can't be worked out from the CSS{{#blockerProperty}} ({{blockerProperty}}={{blockerValue}}){{/blockerProperty}}.",
@@ -44342,6 +44610,9 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 24×24, and close to another inline link{{#neighbour}} ({{neighbour}}){{/neighbour}} in the same run of text, where the inline exception may apply.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, smaller than 24×24, and close to another inline link{{#neighbour}} ({{neighbour}}){{/neighbour}} in the same run of text, where the inline exception may apply.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least 24×24 CSS px or give it more space.",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 24×24, in a box that stays in place as the page scrolls, and the page's targets under 24×24{{#neighbour}}, such as {{neighbour}},{{/neighbour}} pass within its reach as it scrolls.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, smaller than 24×24, in a box that stays in place as the page scrolls, and the page's targets under 24×24{{#neighbour}}, such as {{neighbour}},{{/neighbour}} pass within its reach as it scrolls.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeMinimum_hint_cantTell_pinnedOverPage": "Scroll the page and check whether another target comes so close that a 24 px circle centred on this one reaches it, or its own circle. If one does, make the target at least 24×24 CSS px or keep it clear of the page's targets.",
       "targetSizeEnhanced_title": "Pointer targets must be at least 44x44px large",
       "targetSizeEnhanced_description": "Checks that pointer-operable targets have an effective hit region of at least 44 by 44 CSS pixels, or meet an allowed exception (inline, user-agent sizing, essential).",
       "targetSizeEnhanced_summary_fail": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 44×44.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
@@ -44355,6 +44626,9 @@ const RUNTIME_CATALOG = {
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 44×44, and beside another inline link{{#neighbour}} ({{neighbour}}){{/neighbour}} in the same run of text, where the inline exception may apply.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, smaller than 44×44, and beside another inline link{{#neighbour}} ({{neighbour}}){{/neighbour}} in the same run of text, where the inline exception may apply.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
       "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least 44×44 CSS px.",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 44×44, in a box that stays in place as the page scrolls, and the page's targets under 44×44{{#neighbour}}, such as {{neighbour}},{{/neighbour}} pass within its reach as it scrolls.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, smaller than 44×44, in a box that stays in place as the page scrolls, and the page's targets under 44×44{{#neighbour}}, such as {{neighbour}},{{/neighbour}} pass within its reach as it scrolls.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeEnhanced_hint_cantTell_pinnedOverPage": "Scroll the page and check whether another target comes so close that a 44 px circle centred on this one reaches it, or its own circle. If one does, make the target at least 44×44 CSS px or keep it clear of the page's targets.",
       "ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
       "ariaHidden_focus_description": "Checks that aria-hidden=\"true\" elements are not focusable and do not contain focusable descendants.",
       "ariaHidden_focus_summary_fail_desc": "This aria-hidden <{{element}}> contains {{focusableCount}} focusable element(s): keyboard users can reach them, but screen readers don't announce them.",
@@ -45873,6 +46147,7 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} oculta este <{{element}}> a los lectores de pantalla, así que su texto alternativo \"{{alt}}\" nunca se lee. Comprobar si es solo decorativo.",
       "img_altDecorative_hint_ownHiddenAlt": "Si solo decora, no hay que cambiar nada. Si transmite información, quitar {{hiddenBy}} para que se lea su texto alternativo.",
       "img_altDecorative_summary_unnamed": "Este <{{element}}> no tiene nombre ni rol, así que los lectores de pantalla lo omiten. Comprobar si es solo decorativo.",
+      "img_altDecorative_summary_unnamedSvg": "Este <svg> no tiene nombre, así que los lectores de pantalla lo omiten. Comprobar si es solo decorativo.",
       "img_altDecorative_summary_unnamedCanvasFallback": "Este <{{element}}> no tiene rol ni nombre propio, así que los lectores de pantalla omiten el dibujo y solo leen su contenido alternativo, «{{fallback}}». Comprobar si el dibujo es solo decorativo.",
       "img_altQuality_lean_why": "Un nombre de archivo, una dirección web o una palabra genérica no dice lo que muestra la imagen.",
       "img_altQuality_lean_why_overridden": "El texto alt \"{{alt}}\", no el nombre, es un nombre de archivo, una dirección web o una palabra genérica. aria-label o aria-labelledby da nombre a la imagen en su lugar, pero los navegadores siguen mostrando el alt cuando la imagen no carga.",
@@ -46063,6 +46338,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textShadow": "El contraste no es computable porque se usa text-shadow, que puede aportar contraste que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "El contraste no se puede calcular porque el texto tiene un contorno (-webkit-text-stroke) de su propio color, que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "El contraste no se puede calcular porque {{blockerSelector}} dibuja parte del texto con un valor propio de {{blockerProperty}} ({{blockerValue}}). El texto afectado depende de los saltos de línea.",
+      "contrastComputable_cantTell_firstLetterColor": "El contraste no se puede calcular porque {{blockerSelector}} dibuja la primera letra con un valor propio de {{blockerProperty}} ({{blockerValue}}). No se pudo saber si esa letra, o texto posterior a ella, forma parte de este texto.",
       "contrastComputable_cantTell_selectOption": "El contraste no se puede calcular porque esta opción de una lista desplegable tiene un valor propio de {{blockerProperty}} ({{blockerValue}}) y solo se muestra al abrirse la lista, dibujada como la dibuje la plataforma, con esos colores o con los suyos.",
       "contrastComputable_cantTell_generatedText": "El contraste no se puede calcular para el texto que genera el {{pseudo}} de este elemento ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
@@ -46121,6 +46397,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_ancestorOpacity": "El contraste no es computable porque su ancestro {{blockerElement}} tiene opacity: {{blockerValue}}, que atenúa el texto junto con lo que se dibuja detrás, y los colores que eso deja en pantalla no se pueden deducir del CSS.",
       "contrastComputable_cantTell_elementOpacity": "El contraste no es computable porque este elemento tiene opacity: {{blockerValue}} y un fondo propio, que se atenúan juntos sobre lo que se dibuja detrás, y los colores que eso deja en pantalla no se pueden deducir del CSS.",
       "contrastComputable_cantTell_backgroundOverlap": "El contraste no es computable porque {{blockerElement}}, que no es un ancestro del texto, se pinta debajo de él ({{blockerProperty}}={{blockerValue}}), así que el texto no se ve solo sobre el fondo de sus ancestros.",
+      "contrastComputable_cantTell_fixedBox": "El contraste no se puede calcular porque el texto está en {{blockerElement}}, que tiene position: {{blockerValue}} y ningún fondo opaco propio, así que lo que queda debajo cambia al desplazar la página.",
       "contrastComputable_cantTell_backgroundUnparsable": "El contraste no es computable porque este análisis no puede leer el color de fondo de {{#blockerAncestor}}su ancestro {{/blockerAncestor}}{{blockerElement}} ({{blockerValue}}).",
       "contrastComputable_cantTell_foregroundUnparsable": "El contraste no es computable porque este análisis no puede leer el color del texto{{#blockerValue}} ({{blockerValue}}){{/blockerValue}}.",
       "contrastComputable_cantTell_backgroundNotComputable": "El contraste no es computable porque el fondo detrás de este texto no se puede deducir del CSS{{#blockerProperty}} ({{blockerProperty}}={{blockerValue}}){{/blockerProperty}}.",
@@ -46146,6 +46423,9 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está cerca de otro enlace en línea{{#neighbour}} ({{neighbour}}){{/neighbour}} dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está cerca de otro enlace en línea{{#neighbour}} ({{neighbour}}){{/neighbour}} dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Comprobar si estos enlaces están dentro de una frase o un párrafo, que está exento. Si no, hacer que el objetivo mida al menos 24×24 px CSS o darle más espacio.",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, en una caja que se queda en su sitio al desplazar la página, y objetivos de la página de menos de 24×24{{#neighbour}}, como {{neighbour}},{{/neighbour}} pasan a su alcance durante el desplazamiento.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, en una caja que se queda en su sitio al desplazar la página, y objetivos de la página de menos de 24×24{{#neighbour}}, como {{neighbour}},{{/neighbour}} pasan a su alcance durante el desplazamiento.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeMinimum_hint_cantTell_pinnedOverPage": "Desplazar la página y comprobar si otro objetivo se acerca tanto que un círculo de 24 px centrado en este lo alcanza, o alcanza su propio círculo. Si es así, hacer el objetivo de al menos 24×24 px CSS o mantenerlo apartado de los objetivos de la página.",
       "targetSizeEnhanced_title": "Los objetivos de puntero deben tener al menos 44x44px de tamaño",
       "targetSizeEnhanced_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 44 por 44 píxeles CSS, o cumplan una excepción permitida (en línea, tamaño fijado por el navegador, esencial).",
       "targetSizeEnhanced_summary_fail": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 44×44.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
@@ -46159,6 +46439,9 @@ const RUNTIME_CATALOG = {
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 44×44, y está junto a otro enlace en línea{{#neighbour}} ({{neighbour}}){{/neighbour}} dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 44×44, y está junto a otro enlace en línea{{#neighbour}} ({{neighbour}}){{/neighbour}} dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
       "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Comprobar si estos enlaces están dentro de una frase o un párrafo, que está exento. Si no, hacer que el objetivo mida al menos 44×44 px CSS.",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 44×44, en una caja que se queda en su sitio al desplazar la página, y objetivos de la página de menos de 44×44{{#neighbour}}, como {{neighbour}},{{/neighbour}} pasan a su alcance durante el desplazamiento.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 44×44, en una caja que se queda en su sitio al desplazar la página, y objetivos de la página de menos de 44×44{{#neighbour}}, como {{neighbour}},{{/neighbour}} pasan a su alcance durante el desplazamiento.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeEnhanced_hint_cantTell_pinnedOverPage": "Desplazar la página y comprobar si otro objetivo se acerca tanto que un círculo de 44 px centrado en este lo alcanza, o alcanza su propio círculo. Si es así, hacer el objetivo de al menos 44×44 px CSS o mantenerlo apartado de los objetivos de la página.",
       "ariaHidden_focus_title": "Los elementos ocultos con ARIA no deben ser enfocables",
       "ariaHidden_focus_description": "Comprueba que los elementos con aria-hidden=\"true\" no sean enfocables ni contengan descendientes enfocables.",
       "ariaHidden_focus_summary_fail_desc": "Este <{{element}}> con aria-hidden contiene {{focusableCount}} elemento(s) enfocable(s): se llega a ellos con el teclado, pero los lectores de pantalla no los anuncian.",
@@ -47677,6 +47960,7 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} masque cet élément <{{element}}> aux lecteurs d’écran : son texte alternatif « {{alt}} » n’est donc jamais lu. Vérifiez s’il est purement décoratif.",
       "img_altDecorative_hint_ownHiddenAlt": "S’il ne fait que décorer, rien n’est à changer. S’il porte une information, retirez {{hiddenBy}} pour que son texte alternatif soit lu.",
       "img_altDecorative_summary_unnamed": "Cet élément <{{element}}> n’a ni nom ni rôle : les lecteurs d’écran l’ignorent donc. Vérifiez s’il est purement décoratif.",
+      "img_altDecorative_summary_unnamedSvg": "Cet élément <svg> n’a pas de nom : les lecteurs d’écran l’ignorent donc. Vérifiez s’il est purement décoratif.",
       "img_altDecorative_summary_unnamedCanvasFallback": "Cet élément <{{element}}> n’a ni rôle ni nom propre : les lecteurs d’écran ignorent donc le dessin et ne lisent que son contenu de remplacement, « {{fallback}} ». Vérifiez si le dessin est purement décoratif.",
       "img_altQuality_lean_why": "Un nom de fichier, une adresse web ou un mot générique ne dit pas ce que montre l’image.",
       "img_altQuality_lean_why_overridden": "C’est le texte alt « {{alt}} », non le nom, qui est un nom de fichier, une adresse web ou un mot générique. aria-label ou aria-labelledby nomme l’image à sa place, mais les navigateurs affichent encore l’alt quand l’image ne se charge pas.",
@@ -47867,6 +48151,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textShadow": "Le contraste ne peut pas être calculé car une propriété text-shadow est utilisée, ce qui peut apporter un contraste que ce calcul ne prend pas en compte ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "Le contraste n’est pas calculable, car le texte a un contour (-webkit-text-stroke) de sa propre couleur, dont ce calcul ne tient pas compte ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Le contraste n’est pas calculable, car une partie du texte est peinte par {{blockerSelector}} avec sa propre propriété {{blockerProperty}} ({{blockerValue}}), et le texte concerné dépend de la coupure des lignes.",
+      "contrastComputable_cantTell_firstLetterColor": "Le contraste n’est pas calculable, car {{blockerSelector}} peint la première lettre avec sa propre propriété {{blockerProperty}} ({{blockerValue}}), et il n’a pas été possible de savoir si cette lettre, ou du texte après elle, fait partie de ce texte.",
       "contrastComputable_cantTell_selectOption": "Le contraste n’est pas calculable, car cette option d’une liste déroulante a sa propre propriété {{blockerProperty}} ({{blockerValue}}) et n’est affichée qu’à l’ouverture de la liste, dessinée comme la plateforme la dessine, avec ces couleurs ou les siennes.",
       "contrastComputable_cantTell_generatedText": "Le contraste n’est pas calculable pour le texte que génère le {{pseudo}} de cet élément ({{reasonCode}}{{#blockerProperty}} : {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Mesurez manuellement le contraste sur la page affichée, à l’endroit où l’arrière-plan derrière le texte donne le contraste le plus faible. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
@@ -47925,6 +48210,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_ancestorOpacity": "Le contraste n’est pas calculable car son ancêtre {{blockerElement}} a opacity: {{blockerValue}}, ce qui estompe le texte avec ce qui est dessiné derrière, et les couleurs qui en résultent à l’écran ne peuvent pas être déduites du CSS.",
       "contrastComputable_cantTell_elementOpacity": "Le contraste n’est pas calculable car cet élément a opacity: {{blockerValue}} et un arrière-plan propre, qui s’estompent ensemble sur ce qui est dessiné derrière, et les couleurs qui en résultent à l’écran ne peuvent pas être déduites du CSS.",
       "contrastComputable_cantTell_backgroundOverlap": "Le contraste n’est pas calculable car {{blockerElement}}, qui n’est pas un ancêtre du texte, est peint sous celui-ci ({{blockerProperty}}={{blockerValue}}) : le texte ne se détache donc pas seulement sur l’arrière-plan de ses ancêtres.",
+      "contrastComputable_cantTell_fixedBox": "Le contraste n’est pas calculable, car le texte se trouve dans {{blockerElement}}, qui a position: {{blockerValue}} et aucun arrière-plan opaque qui lui soit propre : ce qui se trouve dessous change quand la page défile.",
       "contrastComputable_cantTell_backgroundUnparsable": "Le contraste n’est pas calculable car cette analyse ne peut pas lire la couleur d’arrière-plan de {{#blockerAncestor}}son ancêtre {{/blockerAncestor}}{{blockerElement}} ({{blockerValue}}).",
       "contrastComputable_cantTell_foregroundUnparsable": "Le contraste n’est pas calculable car cette analyse ne peut pas lire la couleur du texte{{#blockerValue}} ({{blockerValue}}){{/blockerValue}}.",
       "contrastComputable_cantTell_backgroundNotComputable": "Le contraste n’est pas calculable car l’arrière-plan derrière ce texte ne peut pas être déduit du CSS{{#blockerProperty}} ({{blockerProperty}}={{blockerValue}}){{/blockerProperty}}.",
@@ -47950,6 +48236,9 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est proche d’un autre lien en ligne{{#neighbour}} ({{neighbour}}){{/neighbour}} dans le même texte, où l’exception de contenu en ligne peut s’appliquer.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est proche d’un autre lien en ligne{{#neighbour}} ({{neighbour}}){{/neighbour}} dans le même texte, où l’exception de contenu en ligne peut s’appliquer.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Vérifiez si ces liens sont dans une phrase ou un paragraphe, ce qui est exempté. Sinon, donnez à la cible au moins 24×24 px CSS ou plus d’espace.",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, dans une boîte qui reste en place quand la page défile, et des cibles de la page de moins de 24×24{{#neighbour}}, comme {{neighbour}},{{/neighbour}} passent à sa portée pendant le défilement.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, dans une boîte qui reste en place quand la page défile, et des cibles de la page de moins de 24×24{{#neighbour}}, comme {{neighbour}},{{/neighbour}} passent à sa portée pendant le défilement.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeMinimum_hint_cantTell_pinnedOverPage": "Faites défiler la page et vérifiez si une autre cible s’approche au point qu’un cercle de 24 px centré sur celle-ci l’atteigne, ou atteigne son propre cercle. Si c’est le cas, agrandissez la cible à au moins 24×24 px CSS ou tenez-la à l’écart des cibles de la page.",
       "targetSizeEnhanced_title": "Les cibles activables au pointeur doivent mesurer au moins 44×44px",
       "targetSizeEnhanced_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 44×44 pixels CSS, ou respectent une exception autorisée (contenu en ligne, taille fixée par le navigateur, essentielle).",
       "targetSizeEnhanced_summary_fail": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 44×44.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
@@ -47963,6 +48252,9 @@ const RUNTIME_CATALOG = {
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 44×44, et est à côté d’un autre lien en ligne{{#neighbour}} ({{neighbour}}){{/neighbour}} dans le même texte, où l’exception de contenu en ligne peut s’appliquer.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 44×44, et est à côté d’un autre lien en ligne{{#neighbour}} ({{neighbour}}){{/neighbour}} dans le même texte, où l’exception de contenu en ligne peut s’appliquer.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
       "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Vérifiez si ces liens sont dans une phrase ou un paragraphe, ce qui est exempté. Sinon, donnez à la cible au moins 44×44 px CSS.",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 44×44, dans une boîte qui reste en place quand la page défile, et des cibles de la page de moins de 44×44{{#neighbour}}, comme {{neighbour}},{{/neighbour}} passent à sa portée pendant le défilement.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 44×44, dans une boîte qui reste en place quand la page défile, et des cibles de la page de moins de 44×44{{#neighbour}}, comme {{neighbour}},{{/neighbour}} passent à sa portée pendant le défilement.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeEnhanced_hint_cantTell_pinnedOverPage": "Faites défiler la page et vérifiez si une autre cible s’approche au point qu’un cercle de 44 px centré sur celle-ci l’atteigne, ou atteigne son propre cercle. Si c’est le cas, agrandissez la cible à au moins 44×44 px CSS ou tenez-la à l’écart des cibles de la page.",
       "ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",
       "ariaHidden_focus_description": "Vérifie que les éléments avec aria-hidden=\"true\" ne sont pas focalisables et ne contiennent pas d’éléments focalisables.",
       "ariaHidden_focus_summary_fail_desc": "Cet élément <{{element}}> avec aria-hidden contient {{focusableCount}} élément(s) focalisable(s) : on les atteint au clavier, mais les lecteurs d’écran ne les annoncent pas.",
@@ -49481,6 +49773,7 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} によってこの <{{element}}> はスクリーンリーダーから隠されているため、代替テキスト「{{alt}}」は読み上げられません。純粋に装飾目的かどうか確認してください。",
       "img_altDecorative_hint_ownHiddenAlt": "装飾だけであれば、変更は不要です。情報を伝える場合は、{{hiddenBy}} を削除して、代替テキストが読み上げられるようにしてください。",
       "img_altDecorative_summary_unnamed": "この <{{element}}> には名前もロールもないため、スクリーンリーダーはこれを読み飛ばします。純粋に装飾目的かどうか確認してください。",
+      "img_altDecorative_summary_unnamedSvg": "この <svg> には名前がないため、スクリーンリーダーはこれを読み飛ばします。純粋に装飾目的かどうか確認してください。",
       "img_altDecorative_summary_unnamedCanvasFallback": "この <{{element}}> にはロールも独自の名前もないため、スクリーンリーダーは描画を読み飛ばし、代替コンテンツ「{{fallback}}」だけを読み上げます。描画が純粋に装飾目的かどうか確認してください。",
       "img_altQuality_lean_why": "ファイル名、Web アドレス、汎用的な語では、画像が何を示しているかは伝わりません。",
       "img_altQuality_lean_why_overridden": "名前ではなく alt テキスト「{{alt}}」が、ファイル名、Web アドレス、または汎用的な語です。画像の名前は aria-label または aria-labelledby が代わりに与えますが、画像が読み込まれないときブラウザーは alt を表示します。",
@@ -49671,6 +49964,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textShadow": "text-shadow が使われているため、コントラストを計算できません。text-shadow によってコントラストが高まる可能性がありますが、この計算では考慮していません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_textStroke": "テキストに独自の色の輪郭線 (-webkit-text-stroke) があり、この計算では考慮できないため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_pseudoElementColor": "テキストの一部が {{blockerSelector}} によって独自の {{blockerProperty}} ({{blockerValue}}) で描画され、どのテキストが該当するかは行の折り返しによって変わるため、コントラストを計算できません。",
+      "contrastComputable_cantTell_firstLetterColor": "{{blockerSelector}} が最初の文字を独自の {{blockerProperty}} ({{blockerValue}}) で描画しており、その文字やそれ以降のテキストがこのテキストに含まれるかを判断できないため、コントラストを計算できません。",
       "contrastComputable_cantTell_selectOption": "このドロップダウンリストの選択肢には独自の {{blockerProperty}} ({{blockerValue}}) があり、リストを開いたときにだけ表示され、プラットフォームがその色または独自の色で描画するため、コントラストを計算できません。",
       "contrastComputable_cantTell_generatedText": "この要素の {{pseudo}} が生成するテキストのコントラストを計算できません ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}})。",
       "contrastComputable_hint_cantTell_background": "表示されたページで、テキストの背後の背景とのコントラストが最も低くなる箇所を探し、コントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
@@ -49729,6 +50023,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_ancestorOpacity": "祖先要素 {{blockerElement}} に opacity: {{blockerValue}} が指定されており、テキストはその背後に描画されるものと一緒に薄められます。その結果画面に表示される色は CSS から割り出せないため、コントラストを計算できません。",
       "contrastComputable_cantTell_elementOpacity": "この要素に opacity: {{blockerValue}} と独自の背景が指定されており、両方が背後に描画されるものの上で一緒に薄められます。その結果画面に表示される色は CSS から割り出せないため、コントラストを計算できません。",
       "contrastComputable_cantTell_backgroundOverlap": "テキストの祖先要素ではない {{blockerElement}} がテキストの下に描画されており ({{blockerProperty}}={{blockerValue}})、テキストは祖先要素の背景だけを背にして表示されるわけではないため、コントラストを計算できません。",
+      "contrastComputable_cantTell_fixedBox": "テキストが {{blockerElement}} の中にあり、これは position: {{blockerValue}} で独自の不透明な背景がないため、ページのスクロールに応じて下にあるものが変わるので、コントラストを計算できません。",
       "contrastComputable_cantTell_backgroundUnparsable": "{{#blockerAncestor}}祖先要素 {{/blockerAncestor}}{{blockerElement}} の背景色 ({{blockerValue}}) をこのスキャンでは読み取れないため、コントラストを計算できません。",
       "contrastComputable_cantTell_foregroundUnparsable": "テキストの色{{#blockerValue}} ({{blockerValue}}){{/blockerValue}}をこのスキャンでは読み取れないため、コントラストを計算できません。",
       "contrastComputable_cantTell_backgroundNotComputable": "このテキストの背後の背景を CSS から割り出せないため、コントラストを計算できません{{#blockerProperty}} ({{blockerProperty}}={{blockerValue}}){{/blockerProperty}}。",
@@ -49754,6 +50049,9 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、同じ文中の別のインラインリンク{{#neighbour}} ({{neighbour}}){{/neighbour}}に近接しています。インラインの例外が適用される可能性があります。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、同じ文中の別のインラインリンク{{#neighbour}} ({{neighbour}}){{/neighbour}}に近接しています。インラインの例外が適用される可能性があります。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "これらのリンクが文や段落の中にあるか確認してください。その場合は対象外です。そうでなければ、ターゲットを 24×24 CSS px 以上にするか、間隔を広げてください。",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ページのスクロール中も位置が変わらないボックス内にあり、24×24 未満のページのターゲット{{#neighbour}} ({{neighbour}} など){{/neighbour}}がスクロールに伴ってその届く範囲を通過します。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ページのスクロール中も位置が変わらないボックス内にあり、24×24 未満のページのターゲット{{#neighbour}} ({{neighbour}} など){{/neighbour}}がスクロールに伴ってその届く範囲を通過します。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
+      "targetSizeMinimum_hint_cantTell_pinnedOverPage": "ページをスクロールし、このターゲットを中心とする 24 px の円が別のターゲット、またはその円に届くほど近づくかどうか確認してください。近づく場合は、ターゲットを 24×24 CSS px 以上にするか、ページのターゲットから離してください。",
       "targetSizeEnhanced_title": "ポインターのターゲットは 44×44px 以上の大きさが必要",
       "targetSizeEnhanced_description": "ポインターで操作できるターゲットの実効的なヒット領域が 44×44 CSS ピクセル以上であるか、または認められている例外 (インライン、ユーザエージェントによる大きさ、必要不可欠) に該当するかを確認します。",
       "targetSizeEnhanced_summary_fail": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 44×44 未満です。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
@@ -49767,6 +50065,9 @@ const RUNTIME_CATALOG = {
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 44×44 未満で、同じ文中の別のインラインリンク{{#neighbour}} ({{neighbour}}){{/neighbour}}の隣にあります。インラインの例外が適用される可能性があります。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 44×44 未満で、同じ文中の別のインラインリンク{{#neighbour}} ({{neighbour}}){{/neighbour}}の隣にあります。インラインの例外が適用される可能性があります。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
       "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "これらのリンクが文や段落の中にあるか確認してください。その場合は対象外です。そうでなければ、ターゲットを 44×44 CSS px 以上にしてください。",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 44×44 未満で、ページのスクロール中も位置が変わらないボックス内にあり、44×44 未満のページのターゲット{{#neighbour}} ({{neighbour}} など){{/neighbour}}がスクロールに伴ってその届く範囲を通過します。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 44×44 未満で、ページのスクロール中も位置が変わらないボックス内にあり、44×44 未満のページのターゲット{{#neighbour}} ({{neighbour}} など){{/neighbour}}がスクロールに伴ってその届く範囲を通過します。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
+      "targetSizeEnhanced_hint_cantTell_pinnedOverPage": "ページをスクロールし、このターゲットを中心とする 44 px の円が別のターゲット、またはその円に届くほど近づくかどうか確認してください。近づく場合は、ターゲットを 44×44 CSS px 以上にするか、ページのターゲットから離してください。",
       "ariaHidden_focus_title": "aria-hidden が指定された要素はフォーカス可能であってはならない",
       "ariaHidden_focus_description": "aria-hidden=\"true\" の要素がフォーカス可能でなく、フォーカス可能な子孫要素も含んでいないかを確認します。",
       "ariaHidden_focus_summary_fail_desc": "aria-hidden が指定されたこの <{{element}}> には、フォーカス可能な要素が {{focusableCount}} 個含まれています。キーボードでは到達できますが、スクリーンリーダーは読み上げません。",
@@ -67471,6 +67772,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { el: cur, docs };
   }
 
+  // Whether focus sits inside a shadow root the engine can't open, seen
+  // only as its host: moving it away could not put it back. A host is a
+  // custom element or one of the elements attachShadow takes; with no shadow
+  // root the engine can read, a custom element is taken as such a host
+  // (one with tabindex focused itself can't be told apart from one whose
+  // closed root holds focus), and a div or span that can't take focus on its
+  // own (no tabindex, not contenteditable) holds focus only that way. The
+  // page's body and root are where focus is when nothing has it.
+  function focusInClosedShadowRoot(el) {
+    if (!el || el === dom.body(document) || el === dom.documentElement(document)) return false;
+    if (dom.shadowRoot(el)) return false;
+    const tag = lower(dom.localName(el) || '');
+    if (!tag || tag === 'body' || tag === 'html') return false;
+    if (tag.indexOf('-') !== -1) return true;
+    const HOST_TAGS = [
+      'article',
+      'aside',
+      'blockquote',
+      'div',
+      'footer',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'header',
+      'main',
+      'nav',
+      'p',
+      'section',
+      'span'
+    ];
+    if (HOST_TAGS.indexOf(tag) === -1) return false;
+    if (dom.hasAttribute(el, 'tabindex')) return false;
+    const editable = dom.getAttribute(el, 'contenteditable');
+    return editable === null || lower(editable) === 'false';
+  }
+
   function focusElementSafe(el) {
     if (!el || typeof dom.get(el, 'focus') !== 'function') return false;
     try {
@@ -67689,6 +68029,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const candidate = entry.probeCandidates[0];
     if (!candidate) return null;
     const focusPath = getFocusPath();
+    // Focus inside a closed shadow root could not be put back: the probe is
+    // skipped, and the element judged as without it (round 9, R9-2).
+    if (focusInClosedShadowRoot(focusPath.el)) return null;
     const saved = saveSelections(focusPath);
     try {
       return probeFocus(entry, candidate, focusPath.el);
@@ -70062,13 +70405,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // of bug as aria-required-parent's ancestor search, just in the opposite
   // (descendant) direction.
   //
-  // Scoped to slot expansion only, does NOT separately
-  // descend into an unrelated nested custom element's own shadow root
-  // (e.g. a <my-widget> child with no <slot> involvement at all). That's a
-  // qualitatively different question (does an arbitrary component's own
-  // internal structure count as this container's "owned children"?) with
-  // no known case driving it yet; slot projection is the shape that
-  // actually comes up.
+  // Unless the scan leaves shadow DOM out, it also goes into an element's
+  // open shadow root, in place of its light children (the flat tree), as
+  // aria-required-parent climbs out of one: a role="row" a component draws
+  // in its shadow root is a row of the table the component is in.
+  const deepShadow = (ctx.engineOptions || {}).includeShadowDom !== false;
+  function openShadowRoot(node) {
+    if (!deepShadow) return null;
+    try {
+      return dom.nodeType(node) === 1 ? dom.shadowRoot(node) || null : null;
+    } catch {
+      return null;
+    }
+  }
   // An element's child elements by sibling links, not el.children: in jsdom
   // that collection stays live once read, and each later change under a
   // large parent (a list of thousands of items) rebuilds it.
@@ -70079,9 +70428,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return out;
   }
 
-  function collectComposedDescendants(node, out, seen, limit) {
-    if (!node || !dom.firstElementChild(node)) return;
-    for (const child of childElementsOf(node)) {
+  function collectComposedDescendants(node, out, seen, limit, depth = 0) {
+    if (!node || depth > 64) return;
+    const from = openShadowRoot(node) || node;
+    if (!dom.firstElementChild(from)) return;
+    for (const child of childElementsOf(from)) {
       if (out.length >= limit) return;
       if (seen.has(child)) continue;
 
@@ -70100,7 +70451,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           seen.add(a);
           out.push(a);
           if (out.length >= limit) return;
-          collectComposedDescendants(a, out, seen, limit);
+          collectComposedDescendants(a, out, seen, limit, depth + 1);
           if (out.length >= limit) return;
         }
         continue; // a <slot>'s own childNodes are unrendered fallback content once something is assigned
@@ -70108,7 +70459,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       seen.add(child);
       out.push(child);
-      collectComposedDescendants(child, out, seen, limit);
+      collectComposedDescendants(child, out, seen, limit, depth + 1);
     }
   }
 
@@ -70158,14 +70509,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // Slow path only when the fast path found nothing AND there's an actual
-    // <slot> somewhere in the subtree to expand, bounds the extra cost to
-    // exactly the containers that could possibly need it.
+    // <slot> somewhere in the subtree to expand, or shadow roots may be
+    // gone into: it bounds the extra cost to containers missing their
+    // children.
     if (!found) {
-      let hasSlot;
-      try {
-        hasSlot = !!dom.querySelector(el, 'slot');
-      } catch {
-        hasSlot = false;
+      let hasSlot = deepShadow;
+      if (!hasSlot) {
+        try {
+          hasSlot = !!dom.querySelector(el, 'slot');
+        } catch {
+          hasSlot = false;
+        }
       }
       if (hasSlot) {
         const composed = [];
@@ -75932,7 +76286,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       else if (rc === 'TEXT_SHADOW') summaryKey = 'contrastComputable_cantTell_textShadow';
       else if (rc === 'TEXT_STROKE') summaryKey = 'contrastComputable_cantTell_textStroke';
       else if (rc === 'PSEUDO_ELEMENT_COLOR')
-        summaryKey = 'contrastComputable_cantTell_pseudoElementColor';
+        // A first letter doesn't move with the line breaks: what is unknown
+        // is whether this text holds it, or anything past it.
+        summaryKey = /::first-letter$/.test(
+          String((extraDetails && extraDetails.blockerSelector) || '')
+        )
+          ? 'contrastComputable_cantTell_firstLetterColor'
+          : 'contrastComputable_cantTell_pseudoElementColor';
       else if (rc === 'SELECT_OPTION_COLOR')
         summaryKey = 'contrastComputable_cantTell_selectOption';
       else if (rc === 'COLOR_SCHEME_NOT_RENDERED')
@@ -75942,7 +76302,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summaryKey = 'contrastComputable_cantTell_ancestorOpacity';
       else if (rc === 'ELEMENT_OPACITY') summaryKey = 'contrastComputable_cantTell_elementOpacity';
       else if (rc === 'BACKGROUND_OVERLAP')
-        summaryKey = 'contrastComputable_cantTell_backgroundOverlap';
+        // Text in a fixed or sticky box with no opaque background: what is
+        // under it changes as the page scrolls.
+        summaryKey =
+          extraDetails && extraDetails.blockerProperty === 'position'
+            ? 'contrastComputable_cantTell_fixedBox'
+            : 'contrastComputable_cantTell_backgroundOverlap';
       else if (rc === 'BACKGROUND_UNPARSABLE')
         summaryKey = 'contrastComputable_cantTell_backgroundUnparsable';
       else if (rc === 'FOREGROUND_UNPARSABLE')
@@ -76255,8 +76620,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // of its own (PSEUDO_ELEMENT_COLOR) is decided by contrast-minimum and
   // contrast-enhanced where its own colors and the pseudo-element's agree,
   // at the AA ratio and at the AAA ratio, both reaching it or both falling
-  // short (helpers.contrast.measurePseudoElementText). It is asked about
-  // here only where they disagree at one of them.
+  // short (helpers.contrast.measurePseudoElementText), and where the color
+  // that falls short certainly paints some of the text (paintsText): the
+  // text fails in it. It is asked about here only where they disagree at
+  // one of them and the color that falls short may paint none of it.
   function pseudoColorsAgree(el, blocker) {
     try {
       if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
@@ -76267,11 +76634,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         collectStack: false
       });
       if (!m) return false;
-      return ['AA', 'AAA'].every(
-        (level) =>
-          m.own.ratio >= C.requiredRatio(level, m.own.isLargeText) ===
-          m.pseudo.ratio >= C.requiredRatio(level, m.pseudo.isLargeText)
-      );
+      return ['AA', 'AAA'].every((level) => {
+        const own = m.own.ratio >= C.requiredRatio(level, m.own.isLargeText);
+        const pseudo = m.pseudo.ratio >= C.requiredRatio(level, m.pseudo.isLargeText);
+        if (own === pseudo) return true;
+        return own ? !!m.pseudo.paintsText : !!m.own.paintsText;
+      });
     } catch {
       return false;
     }
@@ -77158,7 +77526,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // ratio, or both fall short of it, every reading of the text does too
   // (helpers.contrast.measurePseudoElementText). It is measured then by the
   // colors closest to their ratio when both reach it, and by the best when
-  // both fall short; where they disagree it is left to contrast-computable.
+  // both fall short. Where they disagree, a color that certainly paints
+  // some of the text (paintsText: the pseudo-element's where the text
+  // starts with the element's own, in its own font size, so a drop cap may
+  // be large text) and falls short fails it, measured in that color;
+  // otherwise it is left to contrast-computable.
   function pseudoColorAnalysis(el, blocker) {
     if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
       return null;
@@ -77191,15 +77563,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       threshold: helpers.contrast.requiredRatio('AAA', pLarge)
     };
     const ownPasses = own.ratio >= own.threshold;
-    if (ownPasses !== pseudo.ratio >= pseudo.threshold) return null;
     const share = (x) => x.ratio / x.threshold;
-    const pick = ownPasses
-      ? share(pseudo) < share(own)
-        ? pseudo
-        : own
-      : share(pseudo) > share(own)
-        ? pseudo
-        : own;
+    let pick;
+    if (ownPasses !== pseudo.ratio >= pseudo.threshold) {
+      const failing = ownPasses ? pseudo : own;
+      if (!failing.paintsText) return null;
+      pick = failing;
+    } else {
+      pick = ownPasses
+        ? share(pseudo) < share(own)
+          ? pseudo
+          : own
+        : share(pseudo) > share(own)
+          ? pseudo
+          : own;
+    }
     return {
       computable: true,
       ratio: pick.ratio,
@@ -78563,7 +78941,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // ratio, or both fall short of it, every reading of the text does too
   // (helpers.contrast.measurePseudoElementText). It is measured then by the
   // colors closest to their ratio when both reach it, and by the best when
-  // both fall short; where they disagree it is left to contrast-computable.
+  // both fall short. Where they disagree, a color that certainly paints
+  // some of the text (paintsText: the pseudo-element's where the text
+  // starts with the element's own, in its own font size, so a drop cap may
+  // be large text) and falls short fails it, measured in that color;
+  // otherwise it is left to contrast-computable.
   function pseudoColorAnalysis(el, blocker) {
     if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
       return null;
@@ -78597,7 +78979,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const own = { ...m.own, font: ownFont, threshold: thresholdFor(ownFont.isLargeText) };
     const pseudo = { ...m.pseudo, font: pseudoFont, threshold: thresholdFor(pLarge) };
     const ownPasses = own.ratio >= own.threshold;
-    if (ownPasses !== pseudo.ratio >= pseudo.threshold) {
+    const failing = ownPasses ? pseudo : own;
+    const disagree = ownPasses !== pseudo.ratio >= pseudo.threshold;
+    if (disagree && !failing.paintsText) {
       // contrast-computable asks where the colors disagree at WCAG's AA or
       // AAA ratio. Where they disagree only at ratios of this rule's own (a
       // variant's settings), no one else asks, so this rule does.
@@ -78612,13 +78996,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       };
     }
     const share = (x) => x.ratio / x.threshold;
-    const pick = ownPasses
-      ? share(pseudo) < share(own)
-        ? pseudo
-        : own
-      : share(pseudo) > share(own)
-        ? pseudo
-        : own;
+    const pick = disagree
+      ? failing
+      : ownPasses
+        ? share(pseudo) < share(own)
+          ? pseudo
+          : own
+        : share(pseudo) > share(own)
+          ? pseudo
+          : own;
     return {
       computable: true,
       ratio: pick.ratio,
@@ -89782,6 +90168,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (!/^[a-z]{2,8}$/i.test(xmlLang.split('-')[0])) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
+  // Nor has one whose primary subtag names no known language ("english"):
+  // only two languages that both exist can differ (round 9).
+  if (
+    typeof helpers.isValidLanguageTag === 'function' &&
+    !helpers.isValidLanguageTag(primary(xmlLang))
+  ) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
 
   if (primary(lang) === primary(xmlLang)) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -91904,7 +92298,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         detail: { excludedBy }
       };
     }
-    if (excludedBy === 'unnamed-svg' || excludedBy === 'unnamed-canvas') {
+    // An <svg> has a role, its implicit graphics-document (SVG-AAM), also
+    // when role="graphics-document" restates it: only the name is missing.
+    if (excludedBy === 'unnamed-svg') {
+      return {
+        summary:
+          'This <svg> has no name, so screen readers skip it. Check whether it is purely decorative.',
+        summaryKey: 'img_altDecorative_summary_unnamedSvg',
+        params: {},
+        detail: { excludedBy }
+      };
+    }
+    if (excludedBy === 'unnamed-canvas') {
       return {
         summary: `This <${tag}> has no name and no role, so screen readers skip it. Check whether it is purely decorative.`,
         summaryKey: 'img_altDecorative_summary_unnamed',
@@ -96341,8 +96746,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return /^transparent$/i.test(raw);
   }
 
-  // A border drawn in the color behind el (sameAsBackground) shows nothing
-  // either.
+  // A border is a cue by its color alone: drawn in a color less than 3:1
+  // from the one behind el (faintOn), it is no cue.
   function hasBorder(cs, el) {
     for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
       const style = String(cs['border' + side + 'Style'] || '')
@@ -96351,7 +96756,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!style || style === 'none' || style === 'hidden') continue;
       if (isTransparentColor(cs['border' + side + 'Color'])) continue;
       if (isZeroWidth(cs['border' + side + 'Width'])) continue;
-      if (el && sameAsBackground(el, cs['border' + side + 'Color'])) continue;
+      if (el && faintOn(el, cs['border' + side + 'Color'])) continue;
       return true;
     }
     return false;
@@ -96454,7 +96859,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         kinds.some(
           (k) =>
             k.kind !== 'none' &&
-            !(k.color && el && sameAsBackground(el, contrast.rgbaToString({ ...k.color, a: 1 })))
+            !(k.color && el && faintOn(el, contrast.rgbaToString({ ...k.color, a: 1 })))
         )
       );
     }
@@ -96673,6 +97078,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hex = linkBackgrounds.get(el);
     return !!hex && hex === c.rgbToHex(parsed);
   }
+  // Whether a mark that is a cue by its color alone (a border, an outline,
+  // a solid background layer) is too faint to count: drawn over the
+  // background behind el, it contrasts with it by less than 3:1, the
+  // contrast WCAG 1.4.1 asks of a color cue (G183). A color that draws
+  // nothing is faint; where the background can't be computed it is not.
+  const linkBackdrops = new Map();
+  function backdropOf(el) {
+    if (!linkBackdrops.has(el)) {
+      let rgba = null;
+      try {
+        const bg = c.computeEffectiveBackground(el, {
+          contrast: { mode, rootCanvasFallback },
+          collectStack: false
+        });
+        if (bg && bg.ok && bg.rgba) rgba = { ...bg.rgba, a: 1 };
+      } catch {}
+      linkBackdrops.set(el, rgba);
+    }
+    return linkBackdrops.get(el);
+  }
+  function faintOn(el, color) {
+    if (!c || !c.parseCssColorToRgba || !c.contrastRatio || !c.compositeRgba) return false;
+    const parsed = c.parseCssColorToRgba(String(color || ''));
+    if (!parsed) return false;
+    if (parsed.a === 0) return true;
+    const back = backdropOf(el);
+    if (!back) return false;
+    const drawn = parsed.a < 1 ? { ...c.compositeRgba(parsed, back), a: 1 } : parsed;
+    return !(c.contrastRatio(drawn, back) >= 3);
+  }
+  // Whether a background of the link's own sets it apart from the one
+  // around it: by 3:1 or more, as any cue by color alone must.
+  function highlightStandsOut(own, around) {
+    if (!own || !around) return false;
+    const ratio = c.contrastRatio({ ...own, a: 1 }, { ...around, a: 1 });
+    return ratio >= 3;
+  }
 
   function hasPseudoContent(el) {
     if (hasLayout()) return pseudoPaints(el, '::before') || pseudoPaints(el, '::after');
@@ -96689,7 +97131,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (
       cs &&
       (hasBorder(cs, el) ||
-        (hasOutline(cs) && !unseen(el, outlineColorOf(cs))) ||
+        (hasOutline(cs) &&
+          !isTransparentColor(outlineColorOf(cs)) &&
+          !faintOn(el, outlineColorOf(cs))) ||
         hasBoxShadow(cs) ||
         hasBackgroundImage(cs, el))
     ) {
@@ -97152,8 +97596,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const ownBg = c.parseCssColorToRgba(String(linkCs.backgroundColor || ''));
       if (ownBg && ownBg.a === 1) {
         const around = backgroundAround(el);
-        if (!around || (around.r === ownBg.r && around.g === ownBg.g && around.b === ownBg.b))
-          return null;
+        if (!around || !highlightStandsOut(ownBg, around)) return null;
         return {
           toward: 'pass',
           why: 'The link has an opaque background color of its own, unlike the one around it, which marks it without relying on its text color.',
@@ -97254,7 +97697,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const canvas = c.parseCssColorToRgba(rootCanvasFallback);
       if (!canvas || canvas.a !== 1) return null;
       const surround = { ...c.compositeRgba(around, canvas), a: 1 };
-      return c.rgbToHex(highlight) !== c.rgbToHex(surround);
+      return highlightStandsOut(highlight, surround);
     } catch {
       return null;
     }
@@ -97301,7 +97744,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const textFg = opaque(fgText, textBg);
       all.push({
         scheme,
-        differs: c.rgbToHex(own.rgba) !== c.rgbToHex(around.rgba),
+        differs: highlightStandsOut(own.rgba, around.rgba),
         ratio: c.contrastRatio(linkFg, textFg),
         fgLinkHex: c.rgbToHex(linkFg),
         fgParentHex: c.rgbToHex(textFg)
@@ -97620,24 +98063,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // background of its own unlike the surrounding text's, as a code chip or
   // <mark> does, or is raised or lowered, as a footnote's <sup> is (#107).
   function cueOnContent(el, parent, parentCs, aroundUnderlined) {
-    let parentBgHex;
-    const backgroundHex = (node) => {
+    let parentBg;
+    const backgroundOf = (node) => {
       try {
         const bg = c.computeEffectiveBackground(node, {
           contrast: { mode, rootCanvasFallback },
           collectStack: false
         });
-        return bg && bg.ok && bg.rgba ? c.rgbToHex(bg.rgba) : null;
+        return bg && bg.ok && bg.rgba ? bg.rgba : null;
       } catch {
         return null;
       }
     };
+    // A background of its own, by 3:1 or more from the surrounding text's.
     const ownBackground = (node, cs) => {
-      if (!c || !c.rgbToHex || isTransparentColor(cs.backgroundColor || 'transparent'))
+      if (!c || !c.contrastRatio || isTransparentColor(cs.backgroundColor || 'transparent'))
         return false;
-      if (parentBgHex === undefined) parentBgHex = backgroundHex(parent);
-      const hex = backgroundHex(node);
-      return !!hex && !!parentBgHex && hex !== parentBgHex;
+      if (parentBg === undefined) parentBg = backgroundOf(parent);
+      return highlightStandsOut(backgroundOf(node), parentBg);
     };
     const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
     const parentStyle = (parentCs && parentCs.fontStyle) || 'normal';
@@ -98007,7 +98450,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               collectStack: false
             });
             if (parentBg && parentBg.ok && parentBg.rgba) {
-              backgroundDiffers = c.rgbToHex(parentBg.rgba) !== c.rgbToHex(bg.rgba);
+              backgroundDiffers = highlightStandsOut(bg.rgba, parentBg.rgba);
               // Around it is the page's canvas, in the scheme the page is
               // drawn in: in the other the page supports, it is measured
               // too, as the contrast rules measure text there.
@@ -100093,6 +100536,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return el ? helpers.flatChildElements(el) : [];
   }
 
+  // A wrapper the accessibility tree sees through, as Chromium does: its
+  // children are the list's (<ul><div role="none"><li>, or a <div> with
+  // display: contents). An <li> is never one: its role is what is checked.
+  function isTransparentWrapper(child, tag) {
+    if (tag === 'li') return false;
+    const role = resolvedExplicitRole(child);
+    if (role === 'none' || role === 'presentation') {
+      return !(
+        typeof helpers.isPresentationalRoleIgnored === 'function' &&
+        helpers.isPresentationalRoleIgnored(child)
+      );
+    }
+    if (role) return false;
+    try {
+      // A native element with a role of its own (a named <section>, a <nav>)
+      // or a link or button is no wrapper the tree sees through.
+      if (helpers.aria.getContainmentRole(child)) return false;
+      if (/^(a|area|button)$/.test(String(dom.tagName(child) || '').toLowerCase())) return false;
+      const cs = helpers.computedStyle(child) || {};
+      return String(cs.display || '').trim() === 'contents';
+    } catch {
+      return false;
+    }
+  }
+
   // Non-whitespace text directly inside, in the flat tree.
   function hasDirectText(el) {
     return (el ? helpers.flatChildNodes(el) : []).some(
@@ -100100,9 +100568,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
+  // The list's children as the accessibility tree has them: the children
+  // of a wrapper it sees through stand in its place, and its text is the
+  // list's. Children not exposed to it are left out.
+  function listChildrenOf(el) {
+    const out = { items: [], text: hasDirectText(el) };
+    const walk = (container, depth) => {
+      for (const child of childElementsOf(container)) {
+        if (!child || !dom.tagName(child)) continue;
+        if (!isExposedToAt(child)) continue;
+        const tag = dom.tagName(child).toLowerCase();
+        if (depth < 32 && isTransparentWrapper(child, tag)) {
+          if (hasDirectText(child)) out.text = true;
+          walk(child, depth + 1);
+          continue;
+        }
+        out.items.push(child);
+      }
+    };
+    walk(el, 0);
+    return out;
+  }
+
   for (const el of nodes) {
     if (!el) continue;
-    const hasText = hasDirectText(el);
+    const listed = listChildrenOf(el);
+    const hasText = listed.text;
     if (!dom.firstElementChild(el) && !hasText) continue;
     const listRole = resolvedExplicitRole(el);
     if (listRole && listRole !== 'list') continue;
@@ -100119,9 +100610,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // in the markup (SC 1.3.1). Any other stray child, or loose text, breaks
     // HTML's content model without such a loss being shown.
     let showsLostItem = false;
-    for (const child of childElementsOf(el)) {
-      if (!child || !dom.tagName(child)) continue;
-      if (!isExposedToAt(child)) continue;
+    for (const child of listed.items) {
       const tag = dom.tagName(child).toLowerCase();
 
       const explicitRole = resolvedExplicitRole(child);
@@ -100429,6 +100918,51 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // A wrapper the accessibility tree sees through, as Chromium does: an
+  // element other than a list or list item whose role is none or
+  // presentation (not kept by a global ARIA attribute or focus), or one
+  // with no role, native or given, drawn with display: contents.
+  // list-children-valid sees through the same wrappers.
+  function isTransparentWrapper(n) {
+    const tag = dom.tagName(n) ? dom.tagName(n).toLowerCase() : '';
+    if (!tag || tag === 'ul' || tag === 'ol' || tag === 'menu' || tag === 'li') return false;
+    const role = resolvedRole(n);
+    if (role === 'none' || role === 'presentation') {
+      return !(
+        typeof helpers.isPresentationalRoleIgnored === 'function' &&
+        helpers.isPresentationalRoleIgnored(n)
+      );
+    }
+    if (role) return false;
+    try {
+      // A native element with a role of its own (a named <section>, a <nav>)
+      // or a link or button is no wrapper the tree sees through.
+      if (helpers.aria.getContainmentRole(n)) return false;
+      if (/^(a|area|button)$/.test(String(dom.tagName(n) || '').toLowerCase())) return false;
+      const cs = helpers.computedStyle(n) || {};
+      return String(cs.display || '').trim() === 'contents';
+    } catch {
+      return false;
+    }
+  }
+  // The container the <li> is in for the accessibility tree: past the
+  // wrappers it sees through, when a list or an element with a role of its
+  // own is above them; otherwise its parent, which the message names.
+  function containerOf(parent) {
+    let cur = parent;
+    for (let i = 0; cur && i < 32 && isTransparentWrapper(cur); i++) {
+      const up = flatParent(cur);
+      if (!up) return parent;
+      cur = up;
+    }
+    if (cur === parent) return parent;
+    const tag = dom.tagName(cur) ? dom.tagName(cur).toLowerCase() : '';
+    const role = resolvedRole(cur);
+    return tag === 'ul' || tag === 'ol' || tag === 'menu' || role === 'list' || role === 'directory'
+      ? cur
+      : parent;
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
   // An element as a message names it: <div class="item-wrap">.
@@ -100496,8 +101030,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el) continue;
-    const parent = flatParent(el);
-    if (!parent) continue;
+    const directParent = flatParent(el);
+    if (!directParent) continue;
+    const parent = containerOf(directParent);
 
     // An explicit role on the <li> ITSELF overrides its native "listitem"
     // role entirely, the same "any explicit role wins over the tag's
@@ -100523,18 +101058,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // role none or presentation is a valid parent only on a <ul>, <ol> or
       // <menu>: the list's presentation passes to its <li> children
       // (WAI-ARIA 1.2, required owned elements), which are no list items
-      // then. On any other element (<div role="none">) it only removes that
-      // element's own role, and the <li> is still in no list. A role none
-      // wrapper inside a list (<ul><div role="none"><li>) is left as it was,
-      // passing here, pending a decision (round 9, N9-5 b); list-children-valid
-      // reports the wrapper.
-      const grand = flatParent(parent);
-      const grandTag = grand && dom.tagName(grand) ? dom.tagName(grand).toLowerCase() : '';
-      const grandRole = grand ? resolvedRole(grand) : '';
-      const inList =
-        grandRole === 'list' ||
-        (!grandRole && (grandTag === 'ul' || grandTag === 'ol' || grandTag === 'menu'));
-      valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu' || inList;
+      // then. A wrapper inside a list (<ul><div role="none"><li>) was seen
+      // through above (containerOf); one in no list (<div role="none"><li>)
+      // leaves the <li> in no list.
+      valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu';
     } else if (explicitRole) {
       // An explicit role always wins over the tag's native role, in either
       // direction, see the header comment.
@@ -102749,16 +103276,138 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.animationsAtScanStart()
       : [];
 
-  function rendered(el) {
+  // Whether the element is drawn, as the style hides it: visibility and
+  // opacity 0 are left aside where the animation changes them.
+  function shownByStyle(el, changes) {
     if (!helpers.isDomVisibleEligible) return true;
+    const animated = changes || {};
     try {
       const info = helpers.isDomVisibleEligible(el, ctx, {
         visibilityMode: 'styleOnly',
-        disableGeometry: true
+        disableGeometry: true,
+        ignoreOpacity: 'opacity' in animated
       });
-      return !(info && info.eligible === false);
+      if (!info || info.eligible !== false) return true;
+      return 'visibility' in animated && (info.reasons || []).includes('visibilityHidden');
     } catch {
       return true;
+    }
+  }
+
+  // Properties whose change can't draw a box that isn't drawn: colours.
+  // A translation moves what is drawn, and is weighed by how far it goes.
+  const PAINT_ONLY =
+    /^(color|backgroundColor|border(Top|Right|Bottom|Left|Block|Inline)?(Start|End)?Color|outlineColor|textDecorationColor|columnRuleColor|caretColor|accentColor|fill|stroke|stopColor|floodColor|lightingColor)$/;
+  const view = dom.defaultView(document) || null;
+
+  // How far the animation's translations take the element, left/right
+  // and up/down: the spread of the values its keyframes give transform and
+  // translate. null for one it can't tell (a rotation, a scale, a
+  // percentage, a value it can't read).
+  function translationReach(changes) {
+    const reach = { x: 0, y: 0 };
+    const Matrix = view && (view.DOMMatrixReadOnly || view.DOMMatrix);
+    for (const prop of ['transform', 'translate']) {
+      const values = changes[prop];
+      if (!values) continue;
+      if (!Matrix) return null;
+      const xs = [];
+      const ys = [];
+      for (const raw of values) {
+        const v = String(raw).trim();
+        if (/%/.test(v)) return null;
+        let m;
+        try {
+          if (prop === 'translate') {
+            const parts = v === 'none' ? ['0px'] : v.split(/\s+/);
+            m = new Matrix(`translate(${parts.slice(0, 2).join(', ')})`);
+          } else {
+            m = new Matrix(v === 'none' ? 'none' : v);
+          }
+        } catch {
+          return null;
+        }
+        if (m.a !== 1 || m.b !== 0 || m.c !== 0 || m.d !== 1 || !m.is2D) return null;
+        xs.push(m.e);
+        ys.push(m.f);
+      }
+      reach.x += Math.max(...xs) - Math.min(...xs);
+      reach.y += Math.max(...ys) - Math.min(...ys);
+    }
+    return reach;
+  }
+
+  const clipsOverflow = (v) => !!v && v !== 'visible';
+  // Whether the element is not drawn while the animation runs, from its
+  // box: clipped to nothing, no size with its overflow clipped, or off the
+  // page, wherever its translation takes it. Only for an animation that
+  // changes colours or translations: another change may bring it into view.
+  function notDrawnByGeometry(el, changes) {
+    if (!changes) return false;
+    const props = Object.keys(changes);
+    if (!props.every((p) => PAINT_ONLY.test(p) || p === 'transform' || p === 'translate'))
+      return false;
+    const reach = translationReach(changes);
+    if (!reach) return false;
+    try {
+      const cs = helpers.computedStyle(el) || {};
+      if (typeof helpers.isElementClipHidden === 'function' && helpers.isElementClipHidden(el, cs))
+        return true;
+      const r = dom.getBoundingClientRect(el);
+      if (
+        (r.width === 0 || r.height === 0) &&
+        clipsOverflow(cs.overflowX) &&
+        clipsOverflow(cs.overflowY)
+      )
+        return true;
+      // The box's reach: where the translation can take it.
+      const box = {
+        l: r.left - reach.x,
+        r: r.right + reach.x,
+        t: r.top - reach.y,
+        b: r.bottom + reach.y
+      };
+      // An ancestor's overflow clip, up to a box that leaves it (fixed or
+      // absolute: what clips it then is not simply above it).
+      let escapes = cs.position === 'fixed' || cs.position === 'absolute';
+      for (let a = helpers.flatParentElement(el), i = 0; a && !escapes && i < 256; i++) {
+        const acs = helpers.computedStyle(a) || {};
+        const cx = clipsOverflow(acs.overflowX);
+        const cy = clipsOverflow(acs.overflowY);
+        if (cx || cy) {
+          const ar = dom.getBoundingClientRect(a);
+          if ((cx && ar.width === 0) || (cy && ar.height === 0)) return true;
+          if (cx && (box.r <= ar.left || box.l >= ar.right)) return true;
+          if (cy && (box.b <= ar.top || box.t >= ar.bottom)) return true;
+        }
+        if (acs.position === 'fixed' || acs.position === 'absolute') escapes = true;
+        a = helpers.flatParentElement(a);
+      }
+      // Off the page: wholly before its start, which no scrolling reaches
+      // (left of it on a left-to-right page, or above it), or past its
+      // right edge where the root clips overflow. A fixed box is off the
+      // viewport instead.
+      if (!view) return false;
+      const root = dom.documentElement(document);
+      const rootCs = helpers.computedStyle(root) || {};
+      if (cs.position === 'fixed') {
+        return box.r <= 0 || box.b <= 0 || box.l >= view.innerWidth || box.t >= view.innerHeight;
+      }
+      const sx = Number(view.scrollX) || 0;
+      const sy = Number(view.scrollY) || 0;
+      if (box.b + sy <= 0) return true;
+      if (rootCs.direction !== 'rtl') {
+        if (box.r + sx <= 0) return true;
+        const bodyCs = dom.body(document) ? helpers.computedStyle(dom.body(document)) || {} : {};
+        if (
+          (clipsOverflow(rootCs.overflowX) || clipsOverflow(bodyCs.overflowX)) &&
+          box.l + sx >= Math.max(view.innerWidth, dom.clientWidth(root) || 0)
+        )
+          return true;
+      }
+      return false;
+    } catch {
+      return false;
     }
   }
 
@@ -102769,7 +103418,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const loops = a.endTime === null;
     if (!loops && !(a.endTime > LIMIT_MS)) continue;
     if (helpers.isExcluded && helpers.isExcluded(el)) continue;
-    if (!rendered(el)) continue;
+    // Keyframes that change nothing visible: no motion to show.
+    const changes = a.changes && typeof a.changes === 'object' ? a.changes : null;
+    if (changes && !Object.keys(changes).length) continue;
+    if (!shownByStyle(el, changes)) continue;
+    if (notDrawnByGeometry(el, changes)) continue;
     let entry = byElement.get(el);
     if (!entry) {
       entry = { loops: false, animations: [] };
@@ -111209,10 +111862,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const descText = titleText ? '' : nonEmptyDescText(el); // avoid second scan if title already passes
     const hasTitleOrDesc = !!(titleText || descText);
 
+    // role="graphics-document" restates the <svg>'s implicit role: no intent.
     const hasIntent =
       role === 'img' ||
       role === 'graphics-symbol' ||
-      role === 'graphics-document' ||
       hasAriaNamingAttr ||
       hasTitleOrDesc ||
       focusable;
@@ -114388,8 +115041,89 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   const gap = (p, q) =>
     Math.hypot(Math.max(0, p.l - q.r, q.l - p.r), Math.max(0, p.t - q.b, q.t - p.b));
+  // The box layer a target moves with as the page scrolls: the viewport
+  // for one in a position: fixed box placed against it (PINNED_VIEWPORT),
+  // the sticky box for one in a position: sticky box, null for the page.
+  // Targets are spaced only against those of their own layer: where a
+  // pinned target lies against the page's targets depends on the scroll
+  // position, and the verdict must not. Where the page doesn't scroll,
+  // nothing moves, and every target is the page's.
+  const PINNED_VIEWPORT = { viewport: true };
+  const pageScroll = (() => {
+    try {
+      const se = dom.get(document, 'scrollingElement') || dom.documentElement(document);
+      const win = dom.defaultView(document);
+      const size = (name) => Number(dom.get(se, name)) || 0;
+      const maxX = Math.max(0, size('scrollWidth') - size('clientWidth'));
+      const maxY = Math.max(0, size('scrollHeight') - size('clientHeight'));
+      const rootCs = getStyle(dom.documentElement(document));
+      const rtl = !!rootCs && rootCs.direction === 'rtl';
+      return {
+        sx: (win && Number(win.scrollX)) || 0,
+        sy: (win && Number(win.scrollY)) || 0,
+        x0: rtl ? -maxX : 0,
+        x1: rtl ? 0 : maxX,
+        y0: 0,
+        y1: maxY,
+        scrolls: maxX > 0 || maxY > 0
+      };
+    } catch {
+      return { sx: 0, sy: 0, x0: 0, x1: 0, y0: 0, y1: 0, scrolls: false };
+    }
+  })();
+  const __layer = new WeakMap();
+  function layerOf(el) {
+    if (!pageScroll.scrolls || !el) return null;
+    if (__layer.has(el)) return __layer.get(el);
+    let out = null;
+    for (let a = el, i = 0; a && i < 10000; a = helpers.flatParentElement(a), i++) {
+      const cs = getStyle(a);
+      if (!cs) continue;
+      if (cs.position === 'fixed' && !containingBlockOf(a)) {
+        out = PINNED_VIEWPORT;
+        break;
+      }
+      if (cs.position === 'sticky') {
+        out = a;
+        break;
+      }
+    }
+    __layer.set(el, out);
+    return out;
+  }
+  const sameLayer = (a, b) => layerOf(a) === layerOf(b);
+  // Where a pinned target's centre can be against the page as it scrolls,
+  // as a box of viewport positions at the scroll position now: a fixed
+  // one's centre stays where it is while the page moves under it by any
+  // scroll offset the page allows; a sticky one's ranges over the box that
+  // holds it (its parent), which scrolls with the page. Each is turned into
+  // { l, t, r, b } offsets for the page's targets, or the sticky's span.
+  function pinnedPath(e) {
+    const layer = layerOf(e.el);
+    const c = { x: (e.extent.l + e.extent.r) / 2, y: (e.extent.t + e.extent.b) / 2 };
+    if (layer === PINNED_VIEWPORT) {
+      // The page's targets move by the scroll offset: now - any other.
+      const ox0 = pageScroll.sx - pageScroll.x1;
+      const ox1 = pageScroll.sx - pageScroll.x0;
+      const oy0 = pageScroll.sy - pageScroll.y1;
+      const oy1 = pageScroll.sy - pageScroll.y0;
+      return { l: c.x - ox1, r: c.x - ox0, t: c.y - oy1, b: c.y - oy0 };
+    }
+    const holder = layer && helpers.flatParentElement(layer);
+    const box = holder ? dom.getBoundingClientRect(holder) : null;
+    if (!box) return { l: c.x, r: c.x, t: c.y, b: c.y };
+    const hw = (e.extent.r - e.extent.l) / 2;
+    const hh = (e.extent.b - e.extent.t) / 2;
+    return {
+      l: Math.min(c.x, box.left + hw),
+      r: Math.max(c.x, box.right - hw),
+      t: Math.min(c.y, box.top + hh),
+      b: Math.max(c.y, box.bottom - hh)
+    };
+  }
   const spaced = entries.filter((e) => !e.exempt);
   const extentCells = gridOf(spaced, (e) => e.extent);
+  const pageSpaced = spaced.filter((e) => !layerOf(e.el));
   for (const e of spaced) {
     // With no spacing exception, every target's size decides it.
     if (!SPACING_APPLIES) {
@@ -114397,10 +115131,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
     for (const f of around(extentCells, e.extent, SPACING)) {
-      if (f === e || isRelated(e.el, f.el) || gap(e.extent, f.extent) >= SPACING) continue;
+      if (f === e || isRelated(e.el, f.el) || !sameLayer(e.el, f.el)) continue;
+      if (gap(e.extent, f.extent) >= SPACING) continue;
       e.near = true;
       break;
     }
+    // A pinned target in scope, with the page's targets its scroll path
+    // can bring within reach: those are its neighbours at some scroll
+    // position, so it is measured, and they are, to be asked about.
+    if (!e.inScope || !layerOf(e.el)) continue;
+    // The area its extent sweeps over the page.
+    const path = pinnedPath(e);
+    const hw = (e.extent.r - e.extent.l) / 2;
+    const hh = (e.extent.b - e.extent.t) / 2;
+    const sweep = { l: path.l - hw, r: path.r + hw, t: path.t - hh, b: path.b + hh };
+    e.pagePath = path;
+    e.pageNear = pageSpaced.filter((f) => !isRelated(e.el, f.el) && gap(sweep, f.extent) < SPACING);
+    if (e.pageNear.length) e.near = true;
   }
   for (const e of entries) if (e.near) e.item = measure(e.el);
 
@@ -114529,6 +115276,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const c = { x: target.center.cx, y: target.center.cy };
     for (const other of nearbyItems(target.center)) {
       if (!other || !other.el || isRelated(target.el, other.el)) continue;
+      if (!sameLayer(target.el, other.el)) continue;
       if (!seenTogether(target.el, other.el)) continue;
 
       // Ignore inline-text exception targets when evaluating spacing conflicts.
@@ -114809,6 +115557,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : `Another target comes within ${s.distancePx} px of its centre, and a 24 px circle centred on it needs ${s.minDistancePx} px clear. Make the target at least 24×24 CSS px, or move it at least ${s.shortfallPx} px further from that target.`;
   }
 
+  // An undersized page target that a pinned target's circle can reach at
+  // some scroll position, the target's own centre path being worked out
+  // from its extent's (pinnedPath): the region within 12px, or the centre
+  // within 24px. The first found, or null.
+  const entryOf = new Map(entries.map((e) => [e.el, e]));
+  function pageTargetInPath(it) {
+    const e = entryOf.get(it.el);
+    if (!e || !e.pageNear || !e.pageNear.length) return null;
+    const dx = it.center.cx - (e.extent.l + e.extent.r) / 2;
+    const dy = it.center.cy - (e.extent.t + e.extent.b) / 2;
+    const path = {
+      l: e.pagePath.l + dx,
+      r: e.pagePath.r + dx,
+      t: e.pagePath.t + dy,
+      b: e.pagePath.b + dy
+    };
+    for (const f of e.pageNear) {
+      if (f.item === undefined) f.item = measure(f.el);
+      const o = f.item;
+      if (!o || !isUndersized(o)) continue;
+      const region = { l: o.rect.left, t: o.rect.top, r: o.rect.right, b: o.rect.bottom };
+      const centre = { l: o.center.cx, r: o.center.cx, t: o.center.cy, b: o.center.cy };
+      if (gap(path, region) < RADIUS - EPS || gap(path, centre) < SPACING - EPS) return o.el;
+    }
+    return null;
+  }
+
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
     if (isInlineTextExceptionTarget(it.el)) {
@@ -114826,6 +115601,50 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const info = hasSpacingConflict(it);
     const size = sizeParams(it);
     const sized = sizeText(it, size);
+
+    // A pinned target clear of its own layer's targets, over a page whose
+    // undersized targets pass within its reach as the page scrolls: whether
+    // it is too close depends on the scroll position, so it is asked about,
+    // the same at any.
+    if (SPACING_APPLIES && !info.conflict) {
+      const crossed = pageTargetInPath(it);
+      if (crossed) {
+        const pageNeighbour = neighbourOf(crossed);
+        const clipped = clipParams(it);
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(it.el, {
+            occurrenceOutcome: 'cantTell',
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than ${MIN}×${MIN}, in a box that stays in place as the page scrolls, and the page's targets under ${MIN}×${MIN}${pageNeighbour ? `, such as ${pageNeighbour},` : ''} pass within its reach as it scrolls.${clipText(clipped)}`,
+            hint: `Scroll the page and check whether another target comes so close that a ${SPACING} px circle centred on this one reaches it, or its own circle. If one does, make the target at least ${MIN}×${MIN} CSS px or keep it clear of the page's targets.`,
+            i18n: {
+              summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_pinnedOverPage'),
+              hintKey: 'targetSizeMinimum_hint_cantTell_pinnedOverPage',
+              params: {
+                ...size,
+                ...(pageNeighbour ? { neighbour: pageNeighbour } : {}),
+                ...clipped
+              }
+            },
+            uncertainty: {
+              code: 'judgement-required',
+              needed:
+                'Whether a target of the page comes too close to this one at a scroll position where both are shown.',
+              evidence: { measured: measuredOf(it) }
+            },
+            data: {
+              details: {
+                measured: measuredOf(it),
+                reasonCode: 'undersized-pinned-over-page',
+                conflictWith: buildSelector(crossed),
+                ...clipped,
+                ...measurements(it, info)
+              }
+            }
+          })
+        );
+        continue;
+      }
+    }
     // Without the spacing exception the size alone decides, and the distance
     // to a neighbour is reported only where it is why the target is asked
     // about (the inline link run below).
@@ -116352,8 +117171,89 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   const gap = (p, q) =>
     Math.hypot(Math.max(0, p.l - q.r, q.l - p.r), Math.max(0, p.t - q.b, q.t - p.b));
+  // The box layer a target moves with as the page scrolls: the viewport
+  // for one in a position: fixed box placed against it (PINNED_VIEWPORT),
+  // the sticky box for one in a position: sticky box, null for the page.
+  // Targets are spaced only against those of their own layer: where a
+  // pinned target lies against the page's targets depends on the scroll
+  // position, and the verdict must not. Where the page doesn't scroll,
+  // nothing moves, and every target is the page's.
+  const PINNED_VIEWPORT = { viewport: true };
+  const pageScroll = (() => {
+    try {
+      const se = dom.get(document, 'scrollingElement') || dom.documentElement(document);
+      const win = dom.defaultView(document);
+      const size = (name) => Number(dom.get(se, name)) || 0;
+      const maxX = Math.max(0, size('scrollWidth') - size('clientWidth'));
+      const maxY = Math.max(0, size('scrollHeight') - size('clientHeight'));
+      const rootCs = getStyle(dom.documentElement(document));
+      const rtl = !!rootCs && rootCs.direction === 'rtl';
+      return {
+        sx: (win && Number(win.scrollX)) || 0,
+        sy: (win && Number(win.scrollY)) || 0,
+        x0: rtl ? -maxX : 0,
+        x1: rtl ? 0 : maxX,
+        y0: 0,
+        y1: maxY,
+        scrolls: maxX > 0 || maxY > 0
+      };
+    } catch {
+      return { sx: 0, sy: 0, x0: 0, x1: 0, y0: 0, y1: 0, scrolls: false };
+    }
+  })();
+  const __layer = new WeakMap();
+  function layerOf(el) {
+    if (!pageScroll.scrolls || !el) return null;
+    if (__layer.has(el)) return __layer.get(el);
+    let out = null;
+    for (let a = el, i = 0; a && i < 10000; a = helpers.flatParentElement(a), i++) {
+      const cs = getStyle(a);
+      if (!cs) continue;
+      if (cs.position === 'fixed' && !containingBlockOf(a)) {
+        out = PINNED_VIEWPORT;
+        break;
+      }
+      if (cs.position === 'sticky') {
+        out = a;
+        break;
+      }
+    }
+    __layer.set(el, out);
+    return out;
+  }
+  const sameLayer = (a, b) => layerOf(a) === layerOf(b);
+  // Where a pinned target's centre can be against the page as it scrolls,
+  // as a box of viewport positions at the scroll position now: a fixed
+  // one's centre stays where it is while the page moves under it by any
+  // scroll offset the page allows; a sticky one's ranges over the box that
+  // holds it (its parent), which scrolls with the page. Each is turned into
+  // { l, t, r, b } offsets for the page's targets, or the sticky's span.
+  function pinnedPath(e) {
+    const layer = layerOf(e.el);
+    const c = { x: (e.extent.l + e.extent.r) / 2, y: (e.extent.t + e.extent.b) / 2 };
+    if (layer === PINNED_VIEWPORT) {
+      // The page's targets move by the scroll offset: now - any other.
+      const ox0 = pageScroll.sx - pageScroll.x1;
+      const ox1 = pageScroll.sx - pageScroll.x0;
+      const oy0 = pageScroll.sy - pageScroll.y1;
+      const oy1 = pageScroll.sy - pageScroll.y0;
+      return { l: c.x - ox1, r: c.x - ox0, t: c.y - oy1, b: c.y - oy0 };
+    }
+    const holder = layer && helpers.flatParentElement(layer);
+    const box = holder ? dom.getBoundingClientRect(holder) : null;
+    if (!box) return { l: c.x, r: c.x, t: c.y, b: c.y };
+    const hw = (e.extent.r - e.extent.l) / 2;
+    const hh = (e.extent.b - e.extent.t) / 2;
+    return {
+      l: Math.min(c.x, box.left + hw),
+      r: Math.max(c.x, box.right - hw),
+      t: Math.min(c.y, box.top + hh),
+      b: Math.max(c.y, box.bottom - hh)
+    };
+  }
   const spaced = entries.filter((e) => !e.exempt);
   const extentCells = gridOf(spaced, (e) => e.extent);
+  const pageSpaced = spaced.filter((e) => !layerOf(e.el));
   for (const e of spaced) {
     // With no spacing exception, every target's size decides it.
     if (!SPACING_APPLIES) {
@@ -116361,10 +117261,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
     for (const f of around(extentCells, e.extent, SPACING)) {
-      if (f === e || isRelated(e.el, f.el) || gap(e.extent, f.extent) >= SPACING) continue;
+      if (f === e || isRelated(e.el, f.el) || !sameLayer(e.el, f.el)) continue;
+      if (gap(e.extent, f.extent) >= SPACING) continue;
       e.near = true;
       break;
     }
+    // A pinned target in scope, with the page's targets its scroll path
+    // can bring within reach: those are its neighbours at some scroll
+    // position, so it is measured, and they are, to be asked about.
+    if (!e.inScope || !layerOf(e.el)) continue;
+    // The area its extent sweeps over the page.
+    const path = pinnedPath(e);
+    const hw = (e.extent.r - e.extent.l) / 2;
+    const hh = (e.extent.b - e.extent.t) / 2;
+    const sweep = { l: path.l - hw, r: path.r + hw, t: path.t - hh, b: path.b + hh };
+    e.pagePath = path;
+    e.pageNear = pageSpaced.filter((f) => !isRelated(e.el, f.el) && gap(sweep, f.extent) < SPACING);
+    if (e.pageNear.length) e.near = true;
   }
   for (const e of entries) if (e.near) e.item = measure(e.el);
 
@@ -116493,6 +117406,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const c = { x: target.center.cx, y: target.center.cy };
     for (const other of nearbyItems(target.center)) {
       if (!other || !other.el || isRelated(target.el, other.el)) continue;
+      if (!sameLayer(target.el, other.el)) continue;
       if (!seenTogether(target.el, other.el)) continue;
 
       // Ignore inline-text exception targets when evaluating spacing conflicts.
@@ -116773,6 +117687,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : `Another target comes within ${s.distancePx} px of its centre, and a 24 px circle centred on it needs ${s.minDistancePx} px clear. Make the target at least 24×24 CSS px, or move it at least ${s.shortfallPx} px further from that target.`;
   }
 
+  // An undersized page target that a pinned target's circle can reach at
+  // some scroll position, the target's own centre path being worked out
+  // from its extent's (pinnedPath): the region within 12px, or the centre
+  // within 24px. The first found, or null.
+  const entryOf = new Map(entries.map((e) => [e.el, e]));
+  function pageTargetInPath(it) {
+    const e = entryOf.get(it.el);
+    if (!e || !e.pageNear || !e.pageNear.length) return null;
+    const dx = it.center.cx - (e.extent.l + e.extent.r) / 2;
+    const dy = it.center.cy - (e.extent.t + e.extent.b) / 2;
+    const path = {
+      l: e.pagePath.l + dx,
+      r: e.pagePath.r + dx,
+      t: e.pagePath.t + dy,
+      b: e.pagePath.b + dy
+    };
+    for (const f of e.pageNear) {
+      if (f.item === undefined) f.item = measure(f.el);
+      const o = f.item;
+      if (!o || !isUndersized(o)) continue;
+      const region = { l: o.rect.left, t: o.rect.top, r: o.rect.right, b: o.rect.bottom };
+      const centre = { l: o.center.cx, r: o.center.cx, t: o.center.cy, b: o.center.cy };
+      if (gap(path, region) < RADIUS - EPS || gap(path, centre) < SPACING - EPS) return o.el;
+    }
+    return null;
+  }
+
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
     if (isInlineTextExceptionTarget(it.el)) {
@@ -116790,6 +117731,50 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const info = hasSpacingConflict(it);
     const size = sizeParams(it);
     const sized = sizeText(it, size);
+
+    // A pinned target clear of its own layer's targets, over a page whose
+    // undersized targets pass within its reach as the page scrolls: whether
+    // it is too close depends on the scroll position, so it is asked about,
+    // the same at any.
+    if (SPACING_APPLIES && !info.conflict) {
+      const crossed = pageTargetInPath(it);
+      if (crossed) {
+        const pageNeighbour = neighbourOf(crossed);
+        const clipped = clipParams(it);
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(it.el, {
+            occurrenceOutcome: 'cantTell',
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than ${MIN}×${MIN}, in a box that stays in place as the page scrolls, and the page's targets under ${MIN}×${MIN}${pageNeighbour ? `, such as ${pageNeighbour},` : ''} pass within its reach as it scrolls.${clipText(clipped)}`,
+            hint: `Scroll the page and check whether another target comes so close that a ${SPACING} px circle centred on this one reaches it, or its own circle. If one does, make the target at least ${MIN}×${MIN} CSS px or keep it clear of the page's targets.`,
+            i18n: {
+              summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_pinnedOverPage'),
+              hintKey: 'targetSizeMinimum_hint_cantTell_pinnedOverPage',
+              params: {
+                ...size,
+                ...(pageNeighbour ? { neighbour: pageNeighbour } : {}),
+                ...clipped
+              }
+            },
+            uncertainty: {
+              code: 'judgement-required',
+              needed:
+                'Whether a target of the page comes too close to this one at a scroll position where both are shown.',
+              evidence: { measured: measuredOf(it) }
+            },
+            data: {
+              details: {
+                measured: measuredOf(it),
+                reasonCode: 'undersized-pinned-over-page',
+                conflictWith: buildSelector(crossed),
+                ...clipped,
+                ...measurements(it, info)
+              }
+            }
+          })
+        );
+        continue;
+      }
+    }
     // Without the spacing exception the size alone decides, and the distance
     // to a neighbour is reported only where it is why the target is asked
     // about (the inline link run below).
@@ -121085,6 +122070,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} verbirgt dieses <{{element}}> vor Screenreadern, sodass sein Alternativtext „{{alt}}“ nie vorgelesen wird. Prüfen Sie, ob es rein dekorativ ist.",
       "img_altDecorative_hint_ownHiddenAlt": "Wenn es nur schmückt, ist nichts zu ändern. Wenn es eine Information trägt, entfernen Sie {{hiddenBy}}, damit sein Alternativtext vorgelesen wird.",
       "img_altDecorative_summary_unnamed": "Dieses <{{element}}> hat weder einen Namen noch eine Rolle, daher überspringen Screenreader es. Prüfen Sie, ob es rein dekorativ ist.",
+      "img_altDecorative_summary_unnamedSvg": "Dieses <svg> hat keinen Namen, daher überspringen Screenreader es. Prüfen Sie, ob es rein dekorativ ist.",
       "img_altDecorative_summary_unnamedCanvasFallback": "Dieses <{{element}}> hat weder eine Rolle noch einen eigenen Namen, daher überspringen Screenreader die Zeichnung und lesen nur seinen Ersatzinhalt „{{fallback}}“ vor. Prüfen Sie, ob die Zeichnung rein dekorativ ist.",
       "img_altQuality_lean_why": "Ein Dateiname, eine Webadresse oder ein allgemeines Wort sagt nicht, was das Bild zeigt.",
       "img_altQuality_lean_why_overridden": "Der alt-Text „{{alt}}“, nicht der Name, ist ein Dateiname, eine Webadresse oder ein allgemeines Wort. aria-label oder aria-labelledby benennt das Bild stattdessen, aber Browser zeigen den alt-Text weiterhin an, wenn das Bild nicht lädt.",
@@ -121275,6 +122261,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textShadow": "Der Kontrast ist nicht berechenbar, weil ein text-shadow verwendet wird, der zusätzlichen Kontrast liefern könnte, den diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "Der Kontrast ist nicht berechenbar, weil der Text eine Kontur (-webkit-text-stroke) in eigener Farbe hat, die diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Der Kontrast ist nicht berechenbar, weil ein Teil des Textes von {{blockerSelector}} mit einem eigenen Wert für {{blockerProperty}} ({{blockerValue}}) gezeichnet wird. Welcher Text betroffen ist, hängt vom Zeilenumbruch ab.",
+      "contrastComputable_cantTell_firstLetterColor": "Der Kontrast ist nicht berechenbar, weil {{blockerSelector}} den ersten Buchstaben mit einem eigenen Wert für {{blockerProperty}} ({{blockerValue}}) zeichnet. Ob dieser Buchstabe oder Text danach zu diesem Text gehört, ließ sich nicht feststellen.",
       "contrastComputable_cantTell_selectOption": "Der Kontrast ist nicht berechenbar, weil diese Option einer Auswahlliste einen eigenen Wert für {{blockerProperty}} ({{blockerValue}}) hat und nur bei geöffneter Liste angezeigt wird, so wie die Plattform sie zeichnet: in diesen Farben oder in ihren eigenen.",
       "contrastComputable_cantTell_generatedText": "Der Kontrast ist für den Text, den {{pseudo}} dieses Elements erzeugt, nicht berechenbar ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Messen Sie den Kontrast manuell auf der gerenderten Seite, an der Stelle, an der der Hintergrund hinter dem Text den geringsten Kontrast ergibt. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
@@ -121333,6 +122320,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_ancestorOpacity": "Der Kontrast ist nicht berechenbar, weil das übergeordnete Element {{blockerElement}} opacity: {{blockerValue}} hat, was den Text zusammen mit dem dahinter Gezeichneten abschwächt; die Farben, die so auf dem Bildschirm entstehen, lassen sich nicht aus dem CSS ermitteln.",
       "contrastComputable_cantTell_elementOpacity": "Der Kontrast ist nicht berechenbar, weil dieses Element opacity: {{blockerValue}} und einen eigenen Hintergrund hat, die zusammen über dem dahinter Gezeichneten abgeschwächt werden; die Farben, die so auf dem Bildschirm entstehen, lassen sich nicht aus dem CSS ermitteln.",
       "contrastComputable_cantTell_backgroundOverlap": "Der Kontrast ist nicht berechenbar, weil {{blockerElement}}, das kein übergeordnetes Element des Textes ist, unter ihm gezeichnet wird ({{blockerProperty}}={{blockerValue}}), sodass der Text nicht nur vor dem Hintergrund seiner übergeordneten Elemente zu sehen ist.",
+      "contrastComputable_cantTell_fixedBox": "Der Kontrast ist nicht berechenbar, weil der Text in {{blockerElement}} steht, das position: {{blockerValue}} und keinen eigenen deckenden Hintergrund hat. Was darunter liegt, ändert sich beim Scrollen der Seite.",
       "contrastComputable_cantTell_backgroundUnparsable": "Der Kontrast ist nicht berechenbar, weil diese Prüfung die Hintergrundfarbe von {{#blockerAncestor}}dem übergeordneten Element {{/blockerAncestor}}{{blockerElement}} ({{blockerValue}}) nicht lesen kann.",
       "contrastComputable_cantTell_foregroundUnparsable": "Der Kontrast ist nicht berechenbar, weil diese Prüfung die Textfarbe{{#blockerValue}} ({{blockerValue}}){{/blockerValue}} nicht lesen kann.",
       "contrastComputable_cantTell_backgroundNotComputable": "Der Kontrast ist nicht berechenbar, weil sich der Hintergrund hinter diesem Text nicht aus dem CSS ermitteln lässt{{#blockerProperty}} ({{blockerProperty}}={{blockerValue}}){{/blockerProperty}}.",
@@ -121358,6 +122346,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt nah an einem anderen Inline-Link{{#neighbour}} ({{neighbour}}){{/neighbour}} im selben Textfluss, wo die Inline-Ausnahme gelten kann.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt nah an einem anderen Inline-Link{{#neighbour}} ({{neighbour}}){{/neighbour}} im selben Textfluss, wo die Inline-Ausnahme gelten kann.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links in einem Satz oder Absatz stehen, was ausgenommen ist. Wenn nicht, machen Sie das Ziel mindestens 24×24 CSS-Pixel groß oder geben Sie ihm mehr Abstand.",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, in einem Kasten, der beim Scrollen der Seite an seinem Platz bleibt, und Ziele der Seite unter 24×24{{#neighbour}}, etwa {{neighbour}},{{/neighbour}} ziehen beim Scrollen in seiner Reichweite vorbei.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, in einem Kasten, der beim Scrollen der Seite an seinem Platz bleibt, und Ziele der Seite unter 24×24{{#neighbour}}, etwa {{neighbour}},{{/neighbour}} ziehen beim Scrollen in seiner Reichweite vorbei.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
+      "targetSizeMinimum_hint_cantTell_pinnedOverPage": "Scrollen Sie die Seite und prüfen Sie, ob ein anderes Ziel so nah kommt, dass ein Kreis von 24 px um die Mitte dieses Ziels es oder seinen eigenen Kreis erreicht. Wenn ja, machen Sie das Ziel mindestens 24×24 CSS-Pixel groß oder halten Sie es von den Zielen der Seite fern.",
       "targetSizeEnhanced_title": "Zeigerziele müssen mindestens 44x44px groß sein",
       "targetSizeEnhanced_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 44 mal 44 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (Inline, vom Browser bestimmte Größe, wesentlich).",
       "targetSizeEnhanced_summary_fail": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 44×44.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
@@ -121371,6 +122362,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 44×44, und steht neben einem anderen Inline-Link{{#neighbour}} ({{neighbour}}){{/neighbour}} im selben Textfluss, wo die Inline-Ausnahme gelten kann.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 44×44, und steht neben einem anderen Inline-Link{{#neighbour}} ({{neighbour}}){{/neighbour}} im selben Textfluss, wo die Inline-Ausnahme gelten kann.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
       "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links in einem Satz oder Absatz stehen, was ausgenommen ist. Wenn nicht, machen Sie das Ziel mindestens 44×44 CSS-Pixel groß.",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 44×44, in einem Kasten, der beim Scrollen der Seite an seinem Platz bleibt, und Ziele der Seite unter 44×44{{#neighbour}}, etwa {{neighbour}},{{/neighbour}} ziehen beim Scrollen in seiner Reichweite vorbei.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 44×44, in einem Kasten, der beim Scrollen der Seite an seinem Platz bleibt, und Ziele der Seite unter 44×44{{#neighbour}}, etwa {{neighbour}},{{/neighbour}} ziehen beim Scrollen in seiner Reichweite vorbei.{{#clippedBy}} Sein Vorfahr {{clippedBy}} schneidet es mit {{clipProperty}} auf diese Größe zu.{{/clippedBy}}",
+      "targetSizeEnhanced_hint_cantTell_pinnedOverPage": "Scrollen Sie die Seite und prüfen Sie, ob ein anderes Ziel so nah kommt, dass ein Kreis von 44 px um die Mitte dieses Ziels es oder seinen eigenen Kreis erreicht. Wenn ja, machen Sie das Ziel mindestens 44×44 CSS-Pixel groß oder halten Sie es von den Zielen der Seite fern.",
       "ariaHidden_focus_title": "ARIA-hidden-Elemente dürfen nicht fokussierbar sein",
       "ariaHidden_focus_description": "Prüft, ob Elemente mit aria-hidden=\"true\" nicht fokussierbar sind und keine fokussierbaren Nachfahren enthalten.",
       "ariaHidden_focus_summary_fail_desc": "Dieses <{{element}}> mit aria-hidden enthält {{focusableCount}} fokussierbare(s) Element(e): Tastaturnutzende erreichen sie, aber Screenreader geben sie nicht aus.",
@@ -122889,6 +123883,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} hides this <{{element}}> from screen readers, so its alt text \"{{alt}}\" is never read. Check whether it is purely decorative.",
       "img_altDecorative_hint_ownHiddenAlt": "If it only decorates, nothing needs to change. If it carries information, remove {{hiddenBy}} so its alt text is read.",
       "img_altDecorative_summary_unnamed": "This <{{element}}> has no name and no role, so screen readers skip it. Check whether it is purely decorative.",
+      "img_altDecorative_summary_unnamedSvg": "This <svg> has no name, so screen readers skip it. Check whether it is purely decorative.",
       "img_altDecorative_summary_unnamedCanvasFallback": "This <{{element}}> has no role and no name of its own, so screen readers skip the drawing and read only its fallback content, \"{{fallback}}\". Check whether the drawing is purely decorative.",
       "img_altQuality_lean_why": "A file name, a web address or a generic word does not say what the image shows.",
       "img_altQuality_lean_why_overridden": "The alt text \"{{alt}}\", not the name, is a file name, a web address or a generic word. aria-label or aria-labelledby names the image instead, but browsers still show the alt when the image does not load.",
@@ -123079,6 +124074,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "Contrast is not computable because the text has an outline (-webkit-text-stroke), drawn in its own color, which this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Contrast is not computable because part of the text is painted by {{blockerSelector}} in a {{blockerProperty}} of its own ({{blockerValue}}), and which text that is depends on how the lines break.",
+      "contrastComputable_cantTell_firstLetterColor": "Contrast is not computable because {{blockerSelector}} paints the first letter in a {{blockerProperty}} of its own ({{blockerValue}}), and whether that letter, or any text past it, is in this text could not be told.",
       "contrastComputable_cantTell_selectOption": "Contrast is not computable because this option of a drop-down list has a {{blockerProperty}} of its own ({{blockerValue}}), and it is shown only when the list opens, drawn as the platform draws it, in those colors or its own.",
       "contrastComputable_cantTell_generatedText": "Contrast is not computable for the text this element's {{pseudo}} generates ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Measure the contrast by hand on the rendered page, where the background behind the text gives the least contrast. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
@@ -123137,6 +124133,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_ancestorOpacity": "Contrast is not computable because its ancestor {{blockerElement}} has opacity: {{blockerValue}}, which fades the text together with what is drawn behind it, and the colors that leaves on screen can't be worked out from the CSS.",
       "contrastComputable_cantTell_elementOpacity": "Contrast is not computable because this element has opacity: {{blockerValue}} and a background of its own, which fade together over what is drawn behind it, and the colors that leaves on screen can't be worked out from the CSS.",
       "contrastComputable_cantTell_backgroundOverlap": "Contrast is not computable because {{blockerElement}}, which is not an ancestor of the text, is painted under it ({{blockerProperty}}={{blockerValue}}), so the text isn't seen against its ancestors' background alone.",
+      "contrastComputable_cantTell_fixedBox": "Contrast is not computable because the text is in {{blockerElement}}, which has position: {{blockerValue}} and no opaque background of its own, so what lies under it changes as the page scrolls.",
       "contrastComputable_cantTell_backgroundUnparsable": "Contrast is not computable because the background color of {{#blockerAncestor}}its ancestor {{/blockerAncestor}}{{blockerElement}} ({{blockerValue}}) is a value this scan can't read.",
       "contrastComputable_cantTell_foregroundUnparsable": "Contrast is not computable because the text color{{#blockerValue}} ({{blockerValue}}){{/blockerValue}} is a value this scan can't read.",
       "contrastComputable_cantTell_backgroundNotComputable": "Contrast is not computable because the background behind this text can't be worked out from the CSS{{#blockerProperty}} ({{blockerProperty}}={{blockerValue}}){{/blockerProperty}}.",
@@ -123162,6 +124159,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 24×24, and close to another inline link{{#neighbour}} ({{neighbour}}){{/neighbour}} in the same run of text, where the inline exception may apply.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, smaller than 24×24, and close to another inline link{{#neighbour}} ({{neighbour}}){{/neighbour}} in the same run of text, where the inline exception may apply.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least 24×24 CSS px or give it more space.",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 24×24, in a box that stays in place as the page scrolls, and the page's targets under 24×24{{#neighbour}}, such as {{neighbour}},{{/neighbour}} pass within its reach as it scrolls.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, smaller than 24×24, in a box that stays in place as the page scrolls, and the page's targets under 24×24{{#neighbour}}, such as {{neighbour}},{{/neighbour}} pass within its reach as it scrolls.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeMinimum_hint_cantTell_pinnedOverPage": "Scroll the page and check whether another target comes so close that a 24 px circle centred on this one reaches it, or its own circle. If one does, make the target at least 24×24 CSS px or keep it clear of the page's targets.",
       "targetSizeEnhanced_title": "Pointer targets must be at least 44x44px large",
       "targetSizeEnhanced_description": "Checks that pointer-operable targets have an effective hit region of at least 44 by 44 CSS pixels, or meet an allowed exception (inline, user-agent sizing, essential).",
       "targetSizeEnhanced_summary_fail": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 44×44.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
@@ -123175,6 +124175,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 44×44, and beside another inline link{{#neighbour}} ({{neighbour}}){{/neighbour}} in the same run of text, where the inline exception may apply.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, smaller than 44×44, and beside another inline link{{#neighbour}} ({{neighbour}}){{/neighbour}} in the same run of text, where the inline exception may apply.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
       "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least 44×44 CSS px.",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 44×44, in a box that stays in place as the page scrolls, and the page's targets under 44×44{{#neighbour}}, such as {{neighbour}},{{/neighbour}} pass within its reach as it scrolls.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, smaller than 44×44, in a box that stays in place as the page scrolls, and the page's targets under 44×44{{#neighbour}}, such as {{neighbour}},{{/neighbour}} pass within its reach as it scrolls.{{#clippedBy}} Its ancestor {{clippedBy}} cuts it to that size with {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeEnhanced_hint_cantTell_pinnedOverPage": "Scroll the page and check whether another target comes so close that a 44 px circle centred on this one reaches it, or its own circle. If one does, make the target at least 44×44 CSS px or keep it clear of the page's targets.",
       "ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
       "ariaHidden_focus_description": "Checks that aria-hidden=\"true\" elements are not focusable and do not contain focusable descendants.",
       "ariaHidden_focus_summary_fail_desc": "This aria-hidden <{{element}}> contains {{focusableCount}} focusable element(s): keyboard users can reach them, but screen readers don't announce them.",
@@ -124693,6 +125696,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} oculta este <{{element}}> a los lectores de pantalla, así que su texto alternativo \"{{alt}}\" nunca se lee. Comprobar si es solo decorativo.",
       "img_altDecorative_hint_ownHiddenAlt": "Si solo decora, no hay que cambiar nada. Si transmite información, quitar {{hiddenBy}} para que se lea su texto alternativo.",
       "img_altDecorative_summary_unnamed": "Este <{{element}}> no tiene nombre ni rol, así que los lectores de pantalla lo omiten. Comprobar si es solo decorativo.",
+      "img_altDecorative_summary_unnamedSvg": "Este <svg> no tiene nombre, así que los lectores de pantalla lo omiten. Comprobar si es solo decorativo.",
       "img_altDecorative_summary_unnamedCanvasFallback": "Este <{{element}}> no tiene rol ni nombre propio, así que los lectores de pantalla omiten el dibujo y solo leen su contenido alternativo, «{{fallback}}». Comprobar si el dibujo es solo decorativo.",
       "img_altQuality_lean_why": "Un nombre de archivo, una dirección web o una palabra genérica no dice lo que muestra la imagen.",
       "img_altQuality_lean_why_overridden": "El texto alt \"{{alt}}\", no el nombre, es un nombre de archivo, una dirección web o una palabra genérica. aria-label o aria-labelledby da nombre a la imagen en su lugar, pero los navegadores siguen mostrando el alt cuando la imagen no carga.",
@@ -124883,6 +125887,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textShadow": "El contraste no es computable porque se usa text-shadow, que puede aportar contraste que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "El contraste no se puede calcular porque el texto tiene un contorno (-webkit-text-stroke) de su propio color, que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "El contraste no se puede calcular porque {{blockerSelector}} dibuja parte del texto con un valor propio de {{blockerProperty}} ({{blockerValue}}). El texto afectado depende de los saltos de línea.",
+      "contrastComputable_cantTell_firstLetterColor": "El contraste no se puede calcular porque {{blockerSelector}} dibuja la primera letra con un valor propio de {{blockerProperty}} ({{blockerValue}}). No se pudo saber si esa letra, o texto posterior a ella, forma parte de este texto.",
       "contrastComputable_cantTell_selectOption": "El contraste no se puede calcular porque esta opción de una lista desplegable tiene un valor propio de {{blockerProperty}} ({{blockerValue}}) y solo se muestra al abrirse la lista, dibujada como la dibuje la plataforma, con esos colores o con los suyos.",
       "contrastComputable_cantTell_generatedText": "El contraste no se puede calcular para el texto que genera el {{pseudo}} de este elemento ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
@@ -124941,6 +125946,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_ancestorOpacity": "El contraste no es computable porque su ancestro {{blockerElement}} tiene opacity: {{blockerValue}}, que atenúa el texto junto con lo que se dibuja detrás, y los colores que eso deja en pantalla no se pueden deducir del CSS.",
       "contrastComputable_cantTell_elementOpacity": "El contraste no es computable porque este elemento tiene opacity: {{blockerValue}} y un fondo propio, que se atenúan juntos sobre lo que se dibuja detrás, y los colores que eso deja en pantalla no se pueden deducir del CSS.",
       "contrastComputable_cantTell_backgroundOverlap": "El contraste no es computable porque {{blockerElement}}, que no es un ancestro del texto, se pinta debajo de él ({{blockerProperty}}={{blockerValue}}), así que el texto no se ve solo sobre el fondo de sus ancestros.",
+      "contrastComputable_cantTell_fixedBox": "El contraste no se puede calcular porque el texto está en {{blockerElement}}, que tiene position: {{blockerValue}} y ningún fondo opaco propio, así que lo que queda debajo cambia al desplazar la página.",
       "contrastComputable_cantTell_backgroundUnparsable": "El contraste no es computable porque este análisis no puede leer el color de fondo de {{#blockerAncestor}}su ancestro {{/blockerAncestor}}{{blockerElement}} ({{blockerValue}}).",
       "contrastComputable_cantTell_foregroundUnparsable": "El contraste no es computable porque este análisis no puede leer el color del texto{{#blockerValue}} ({{blockerValue}}){{/blockerValue}}.",
       "contrastComputable_cantTell_backgroundNotComputable": "El contraste no es computable porque el fondo detrás de este texto no se puede deducir del CSS{{#blockerProperty}} ({{blockerProperty}}={{blockerValue}}){{/blockerProperty}}.",
@@ -124966,6 +125972,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está cerca de otro enlace en línea{{#neighbour}} ({{neighbour}}){{/neighbour}} dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está cerca de otro enlace en línea{{#neighbour}} ({{neighbour}}){{/neighbour}} dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Comprobar si estos enlaces están dentro de una frase o un párrafo, que está exento. Si no, hacer que el objetivo mida al menos 24×24 px CSS o darle más espacio.",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, en una caja que se queda en su sitio al desplazar la página, y objetivos de la página de menos de 24×24{{#neighbour}}, como {{neighbour}},{{/neighbour}} pasan a su alcance durante el desplazamiento.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, en una caja que se queda en su sitio al desplazar la página, y objetivos de la página de menos de 24×24{{#neighbour}}, como {{neighbour}},{{/neighbour}} pasan a su alcance durante el desplazamiento.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeMinimum_hint_cantTell_pinnedOverPage": "Desplazar la página y comprobar si otro objetivo se acerca tanto que un círculo de 24 px centrado en este lo alcanza, o alcanza su propio círculo. Si es así, hacer el objetivo de al menos 24×24 px CSS o mantenerlo apartado de los objetivos de la página.",
       "targetSizeEnhanced_title": "Los objetivos de puntero deben tener al menos 44x44px de tamaño",
       "targetSizeEnhanced_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 44 por 44 píxeles CSS, o cumplan una excepción permitida (en línea, tamaño fijado por el navegador, esencial).",
       "targetSizeEnhanced_summary_fail": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 44×44.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
@@ -124979,6 +125988,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 44×44, y está junto a otro enlace en línea{{#neighbour}} ({{neighbour}}){{/neighbour}} dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 44×44, y está junto a otro enlace en línea{{#neighbour}} ({{neighbour}}){{/neighbour}} dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
       "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Comprobar si estos enlaces están dentro de una frase o un párrafo, que está exento. Si no, hacer que el objetivo mida al menos 44×44 px CSS.",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 44×44, en una caja que se queda en su sitio al desplazar la página, y objetivos de la página de menos de 44×44{{#neighbour}}, como {{neighbour}},{{/neighbour}} pasan a su alcance durante el desplazamiento.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 44×44, en una caja que se queda en su sitio al desplazar la página, y objetivos de la página de menos de 44×44{{#neighbour}}, como {{neighbour}},{{/neighbour}} pasan a su alcance durante el desplazamiento.{{#clippedBy}} Su ancestro {{clippedBy}} lo recorta a ese tamaño con {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeEnhanced_hint_cantTell_pinnedOverPage": "Desplazar la página y comprobar si otro objetivo se acerca tanto que un círculo de 44 px centrado en este lo alcanza, o alcanza su propio círculo. Si es así, hacer el objetivo de al menos 44×44 px CSS o mantenerlo apartado de los objetivos de la página.",
       "ariaHidden_focus_title": "Los elementos ocultos con ARIA no deben ser enfocables",
       "ariaHidden_focus_description": "Comprueba que los elementos con aria-hidden=\"true\" no sean enfocables ni contengan descendientes enfocables.",
       "ariaHidden_focus_summary_fail_desc": "Este <{{element}}> con aria-hidden contiene {{focusableCount}} elemento(s) enfocable(s): se llega a ellos con el teclado, pero los lectores de pantalla no los anuncian.",
@@ -126497,6 +127509,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} masque cet élément <{{element}}> aux lecteurs d’écran : son texte alternatif « {{alt}} » n’est donc jamais lu. Vérifiez s’il est purement décoratif.",
       "img_altDecorative_hint_ownHiddenAlt": "S’il ne fait que décorer, rien n’est à changer. S’il porte une information, retirez {{hiddenBy}} pour que son texte alternatif soit lu.",
       "img_altDecorative_summary_unnamed": "Cet élément <{{element}}> n’a ni nom ni rôle : les lecteurs d’écran l’ignorent donc. Vérifiez s’il est purement décoratif.",
+      "img_altDecorative_summary_unnamedSvg": "Cet élément <svg> n’a pas de nom : les lecteurs d’écran l’ignorent donc. Vérifiez s’il est purement décoratif.",
       "img_altDecorative_summary_unnamedCanvasFallback": "Cet élément <{{element}}> n’a ni rôle ni nom propre : les lecteurs d’écran ignorent donc le dessin et ne lisent que son contenu de remplacement, « {{fallback}} ». Vérifiez si le dessin est purement décoratif.",
       "img_altQuality_lean_why": "Un nom de fichier, une adresse web ou un mot générique ne dit pas ce que montre l’image.",
       "img_altQuality_lean_why_overridden": "C’est le texte alt « {{alt}} », non le nom, qui est un nom de fichier, une adresse web ou un mot générique. aria-label ou aria-labelledby nomme l’image à sa place, mais les navigateurs affichent encore l’alt quand l’image ne se charge pas.",
@@ -126687,6 +127700,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textShadow": "Le contraste ne peut pas être calculé car une propriété text-shadow est utilisée, ce qui peut apporter un contraste que ce calcul ne prend pas en compte ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "Le contraste n’est pas calculable, car le texte a un contour (-webkit-text-stroke) de sa propre couleur, dont ce calcul ne tient pas compte ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Le contraste n’est pas calculable, car une partie du texte est peinte par {{blockerSelector}} avec sa propre propriété {{blockerProperty}} ({{blockerValue}}), et le texte concerné dépend de la coupure des lignes.",
+      "contrastComputable_cantTell_firstLetterColor": "Le contraste n’est pas calculable, car {{blockerSelector}} peint la première lettre avec sa propre propriété {{blockerProperty}} ({{blockerValue}}), et il n’a pas été possible de savoir si cette lettre, ou du texte après elle, fait partie de ce texte.",
       "contrastComputable_cantTell_selectOption": "Le contraste n’est pas calculable, car cette option d’une liste déroulante a sa propre propriété {{blockerProperty}} ({{blockerValue}}) et n’est affichée qu’à l’ouverture de la liste, dessinée comme la plateforme la dessine, avec ces couleurs ou les siennes.",
       "contrastComputable_cantTell_generatedText": "Le contraste n’est pas calculable pour le texte que génère le {{pseudo}} de cet élément ({{reasonCode}}{{#blockerProperty}} : {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Mesurez manuellement le contraste sur la page affichée, à l’endroit où l’arrière-plan derrière le texte donne le contraste le plus faible. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
@@ -126745,6 +127759,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_ancestorOpacity": "Le contraste n’est pas calculable car son ancêtre {{blockerElement}} a opacity: {{blockerValue}}, ce qui estompe le texte avec ce qui est dessiné derrière, et les couleurs qui en résultent à l’écran ne peuvent pas être déduites du CSS.",
       "contrastComputable_cantTell_elementOpacity": "Le contraste n’est pas calculable car cet élément a opacity: {{blockerValue}} et un arrière-plan propre, qui s’estompent ensemble sur ce qui est dessiné derrière, et les couleurs qui en résultent à l’écran ne peuvent pas être déduites du CSS.",
       "contrastComputable_cantTell_backgroundOverlap": "Le contraste n’est pas calculable car {{blockerElement}}, qui n’est pas un ancêtre du texte, est peint sous celui-ci ({{blockerProperty}}={{blockerValue}}) : le texte ne se détache donc pas seulement sur l’arrière-plan de ses ancêtres.",
+      "contrastComputable_cantTell_fixedBox": "Le contraste n’est pas calculable, car le texte se trouve dans {{blockerElement}}, qui a position: {{blockerValue}} et aucun arrière-plan opaque qui lui soit propre : ce qui se trouve dessous change quand la page défile.",
       "contrastComputable_cantTell_backgroundUnparsable": "Le contraste n’est pas calculable car cette analyse ne peut pas lire la couleur d’arrière-plan de {{#blockerAncestor}}son ancêtre {{/blockerAncestor}}{{blockerElement}} ({{blockerValue}}).",
       "contrastComputable_cantTell_foregroundUnparsable": "Le contraste n’est pas calculable car cette analyse ne peut pas lire la couleur du texte{{#blockerValue}} ({{blockerValue}}){{/blockerValue}}.",
       "contrastComputable_cantTell_backgroundNotComputable": "Le contraste n’est pas calculable car l’arrière-plan derrière ce texte ne peut pas être déduit du CSS{{#blockerProperty}} ({{blockerProperty}}={{blockerValue}}){{/blockerProperty}}.",
@@ -126770,6 +127785,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est proche d’un autre lien en ligne{{#neighbour}} ({{neighbour}}){{/neighbour}} dans le même texte, où l’exception de contenu en ligne peut s’appliquer.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est proche d’un autre lien en ligne{{#neighbour}} ({{neighbour}}){{/neighbour}} dans le même texte, où l’exception de contenu en ligne peut s’appliquer.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Vérifiez si ces liens sont dans une phrase ou un paragraphe, ce qui est exempté. Sinon, donnez à la cible au moins 24×24 px CSS ou plus d’espace.",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, dans une boîte qui reste en place quand la page défile, et des cibles de la page de moins de 24×24{{#neighbour}}, comme {{neighbour}},{{/neighbour}} passent à sa portée pendant le défilement.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, dans une boîte qui reste en place quand la page défile, et des cibles de la page de moins de 24×24{{#neighbour}}, comme {{neighbour}},{{/neighbour}} passent à sa portée pendant le défilement.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeMinimum_hint_cantTell_pinnedOverPage": "Faites défiler la page et vérifiez si une autre cible s’approche au point qu’un cercle de 24 px centré sur celle-ci l’atteigne, ou atteigne son propre cercle. Si c’est le cas, agrandissez la cible à au moins 24×24 px CSS ou tenez-la à l’écart des cibles de la page.",
       "targetSizeEnhanced_title": "Les cibles activables au pointeur doivent mesurer au moins 44×44px",
       "targetSizeEnhanced_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 44×44 pixels CSS, ou respectent une exception autorisée (contenu en ligne, taille fixée par le navigateur, essentielle).",
       "targetSizeEnhanced_summary_fail": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 44×44.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
@@ -126783,6 +127801,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 44×44, et est à côté d’un autre lien en ligne{{#neighbour}} ({{neighbour}}){{/neighbour}} dans le même texte, où l’exception de contenu en ligne peut s’appliquer.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 44×44, et est à côté d’un autre lien en ligne{{#neighbour}} ({{neighbour}}){{/neighbour}} dans le même texte, où l’exception de contenu en ligne peut s’appliquer.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
       "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Vérifiez si ces liens sont dans une phrase ou un paragraphe, ce qui est exempté. Sinon, donnez à la cible au moins 44×44 px CSS.",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 44×44, dans une boîte qui reste en place quand la page défile, et des cibles de la page de moins de 44×44{{#neighbour}}, comme {{neighbour}},{{/neighbour}} passent à sa portée pendant le défilement.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 44×44, dans une boîte qui reste en place quand la page défile, et des cibles de la page de moins de 44×44{{#neighbour}}, comme {{neighbour}},{{/neighbour}} passent à sa portée pendant le défilement.{{#clippedBy}} Son ancêtre {{clippedBy}} la rogne à cette taille avec {{clipProperty}}.{{/clippedBy}}",
+      "targetSizeEnhanced_hint_cantTell_pinnedOverPage": "Faites défiler la page et vérifiez si une autre cible s’approche au point qu’un cercle de 44 px centré sur celle-ci l’atteigne, ou atteigne son propre cercle. Si c’est le cas, agrandissez la cible à au moins 44×44 px CSS ou tenez-la à l’écart des cibles de la page.",
       "ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",
       "ariaHidden_focus_description": "Vérifie que les éléments avec aria-hidden=\"true\" ne sont pas focalisables et ne contiennent pas d’éléments focalisables.",
       "ariaHidden_focus_summary_fail_desc": "Cet élément <{{element}}> avec aria-hidden contient {{focusableCount}} élément(s) focalisable(s) : on les atteint au clavier, mais les lecteurs d’écran ne les annoncent pas.",
@@ -128301,6 +129322,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_summary_ownHiddenAlt": "{{hiddenBy}} によってこの <{{element}}> はスクリーンリーダーから隠されているため、代替テキスト「{{alt}}」は読み上げられません。純粋に装飾目的かどうか確認してください。",
       "img_altDecorative_hint_ownHiddenAlt": "装飾だけであれば、変更は不要です。情報を伝える場合は、{{hiddenBy}} を削除して、代替テキストが読み上げられるようにしてください。",
       "img_altDecorative_summary_unnamed": "この <{{element}}> には名前もロールもないため、スクリーンリーダーはこれを読み飛ばします。純粋に装飾目的かどうか確認してください。",
+      "img_altDecorative_summary_unnamedSvg": "この <svg> には名前がないため、スクリーンリーダーはこれを読み飛ばします。純粋に装飾目的かどうか確認してください。",
       "img_altDecorative_summary_unnamedCanvasFallback": "この <{{element}}> にはロールも独自の名前もないため、スクリーンリーダーは描画を読み飛ばし、代替コンテンツ「{{fallback}}」だけを読み上げます。描画が純粋に装飾目的かどうか確認してください。",
       "img_altQuality_lean_why": "ファイル名、Web アドレス、汎用的な語では、画像が何を示しているかは伝わりません。",
       "img_altQuality_lean_why_overridden": "名前ではなく alt テキスト「{{alt}}」が、ファイル名、Web アドレス、または汎用的な語です。画像の名前は aria-label または aria-labelledby が代わりに与えますが、画像が読み込まれないときブラウザーは alt を表示します。",
@@ -128491,6 +129513,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textShadow": "text-shadow が使われているため、コントラストを計算できません。text-shadow によってコントラストが高まる可能性がありますが、この計算では考慮していません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_textStroke": "テキストに独自の色の輪郭線 (-webkit-text-stroke) があり、この計算では考慮できないため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_pseudoElementColor": "テキストの一部が {{blockerSelector}} によって独自の {{blockerProperty}} ({{blockerValue}}) で描画され、どのテキストが該当するかは行の折り返しによって変わるため、コントラストを計算できません。",
+      "contrastComputable_cantTell_firstLetterColor": "{{blockerSelector}} が最初の文字を独自の {{blockerProperty}} ({{blockerValue}}) で描画しており、その文字やそれ以降のテキストがこのテキストに含まれるかを判断できないため、コントラストを計算できません。",
       "contrastComputable_cantTell_selectOption": "このドロップダウンリストの選択肢には独自の {{blockerProperty}} ({{blockerValue}}) があり、リストを開いたときにだけ表示され、プラットフォームがその色または独自の色で描画するため、コントラストを計算できません。",
       "contrastComputable_cantTell_generatedText": "この要素の {{pseudo}} が生成するテキストのコントラストを計算できません ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}})。",
       "contrastComputable_hint_cantTell_background": "表示されたページで、テキストの背後の背景とのコントラストが最も低くなる箇所を探し、コントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
@@ -128549,6 +129572,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_ancestorOpacity": "祖先要素 {{blockerElement}} に opacity: {{blockerValue}} が指定されており、テキストはその背後に描画されるものと一緒に薄められます。その結果画面に表示される色は CSS から割り出せないため、コントラストを計算できません。",
       "contrastComputable_cantTell_elementOpacity": "この要素に opacity: {{blockerValue}} と独自の背景が指定されており、両方が背後に描画されるものの上で一緒に薄められます。その結果画面に表示される色は CSS から割り出せないため、コントラストを計算できません。",
       "contrastComputable_cantTell_backgroundOverlap": "テキストの祖先要素ではない {{blockerElement}} がテキストの下に描画されており ({{blockerProperty}}={{blockerValue}})、テキストは祖先要素の背景だけを背にして表示されるわけではないため、コントラストを計算できません。",
+      "contrastComputable_cantTell_fixedBox": "テキストが {{blockerElement}} の中にあり、これは position: {{blockerValue}} で独自の不透明な背景がないため、ページのスクロールに応じて下にあるものが変わるので、コントラストを計算できません。",
       "contrastComputable_cantTell_backgroundUnparsable": "{{#blockerAncestor}}祖先要素 {{/blockerAncestor}}{{blockerElement}} の背景色 ({{blockerValue}}) をこのスキャンでは読み取れないため、コントラストを計算できません。",
       "contrastComputable_cantTell_foregroundUnparsable": "テキストの色{{#blockerValue}} ({{blockerValue}}){{/blockerValue}}をこのスキャンでは読み取れないため、コントラストを計算できません。",
       "contrastComputable_cantTell_backgroundNotComputable": "このテキストの背後の背景を CSS から割り出せないため、コントラストを計算できません{{#blockerProperty}} ({{blockerProperty}}={{blockerValue}}){{/blockerProperty}}。",
@@ -128574,6 +129598,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、同じ文中の別のインラインリンク{{#neighbour}} ({{neighbour}}){{/neighbour}}に近接しています。インラインの例外が適用される可能性があります。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、同じ文中の別のインラインリンク{{#neighbour}} ({{neighbour}}){{/neighbour}}に近接しています。インラインの例外が適用される可能性があります。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "これらのリンクが文や段落の中にあるか確認してください。その場合は対象外です。そうでなければ、ターゲットを 24×24 CSS px 以上にするか、間隔を広げてください。",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ページのスクロール中も位置が変わらないボックス内にあり、24×24 未満のページのターゲット{{#neighbour}} ({{neighbour}} など){{/neighbour}}がスクロールに伴ってその届く範囲を通過します。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
+      "targetSizeMinimum_summary_cantTell_pinnedOverPage_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ページのスクロール中も位置が変わらないボックス内にあり、24×24 未満のページのターゲット{{#neighbour}} ({{neighbour}} など){{/neighbour}}がスクロールに伴ってその届く範囲を通過します。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
+      "targetSizeMinimum_hint_cantTell_pinnedOverPage": "ページをスクロールし、このターゲットを中心とする 24 px の円が別のターゲット、またはその円に届くほど近づくかどうか確認してください。近づく場合は、ターゲットを 24×24 CSS px 以上にするか、ページのターゲットから離してください。",
       "targetSizeEnhanced_title": "ポインターのターゲットは 44×44px 以上の大きさが必要",
       "targetSizeEnhanced_description": "ポインターで操作できるターゲットの実効的なヒット領域が 44×44 CSS ピクセル以上であるか、または認められている例外 (インライン、ユーザエージェントによる大きさ、必要不可欠) に該当するかを確認します。",
       "targetSizeEnhanced_summary_fail": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 44×44 未満です。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
@@ -128587,6 +129614,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 44×44 未満で、同じ文中の別のインラインリンク{{#neighbour}} ({{neighbour}}){{/neighbour}}の隣にあります。インラインの例外が適用される可能性があります。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
       "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 44×44 未満で、同じ文中の別のインラインリンク{{#neighbour}} ({{neighbour}}){{/neighbour}}の隣にあります。インラインの例外が適用される可能性があります。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
       "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "これらのリンクが文や段落の中にあるか確認してください。その場合は対象外です。そうでなければ、ターゲットを 44×44 CSS px 以上にしてください。",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 44×44 未満で、ページのスクロール中も位置が変わらないボックス内にあり、44×44 未満のページのターゲット{{#neighbour}} ({{neighbour}} など){{/neighbour}}がスクロールに伴ってその届く範囲を通過します。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
+      "targetSizeEnhanced_summary_cantTell_pinnedOverPage_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 44×44 未満で、ページのスクロール中も位置が変わらないボックス内にあり、44×44 未満のページのターゲット{{#neighbour}} ({{neighbour}} など){{/neighbour}}がスクロールに伴ってその届く範囲を通過します。{{#clippedBy}}祖先要素 {{clippedBy}} の {{clipProperty}} によって、このサイズに切り取られています。{{/clippedBy}}",
+      "targetSizeEnhanced_hint_cantTell_pinnedOverPage": "ページをスクロールし、このターゲットを中心とする 44 px の円が別のターゲット、またはその円に届くほど近づくかどうか確認してください。近づく場合は、ターゲットを 44×44 CSS px 以上にするか、ページのターゲットから離してください。",
       "ariaHidden_focus_title": "aria-hidden が指定された要素はフォーカス可能であってはならない",
       "ariaHidden_focus_description": "aria-hidden=\"true\" の要素がフォーカス可能でなく、フォーカス可能な子孫要素も含んでいないかを確認します。",
       "ariaHidden_focus_summary_fail_desc": "aria-hidden が指定されたこの <{{element}}> には、フォーカス可能な要素が {{focusableCount}} 個含まれています。キーボードでは到達できますが、スクリーンリーダーは読み上げません。",
@@ -130362,17 +131392,36 @@ function ownString(dict, key) {
   return (typeof dict[key] === 'string' && dict[key]) ? dict[key] : null;
 }
 
+// The locales a string is looked for in, most specific first: the code
+// asked for, then its base language when it carries a subtag. English comes
+// after these, in t().
+function localeChain(requested) {
+  const primary = requested.split('-')[0];
+  return primary.toLowerCase() === requested.toLowerCase() ? [requested] : [requested, primary];
+}
+
+// One locale's string: the caller's dictionary for it first, then the
+// built-in one, each matched without regard to case.
+function messageIn(locale, key, engineOptions) {
+  return (
+    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), locale), key) ||
+    ownString(dictIgnoringCase(I18N, locale), key)
+  );
+}
+
 // A caller-supplied dictionary layers over the built-in one for the same
 // locale rather than replacing it, so overriding one string does not cost the
-// caller every other string in that language.
+// caller every other string in that language. A regional code then falls back
+// to its base language, string by string: messages: { 'de-AT': { one key } }
+// keeps the rest of the German, the caller's de and then the built-in de,
+// before English (round 9, A9-4). An exact hit returns before any allocation.
 function localeMessage(key, engineOptions) {
-  const matched = matchLocale(normalizeLocale(engineOptions && engineOptions.locale), engineOptions);
-  if (!matched) return null;
+  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const direct = messageIn(requested, key, engineOptions);
+  if (direct) return direct;
 
-  return (
-    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), matched), key) ||
-    ownString(dictIgnoringCase(I18N, matched), key)
-  );
+  const chain = localeChain(requested);
+  return chain.length > 1 ? messageIn(chain[1], key, engineOptions) : null;
 }
 
 function isKnownLocale(locale) {
@@ -130403,18 +131452,26 @@ function resolveLocale(engineOptions) {
   if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
 
   if (dict !== en) {
-    const supplied = dictIgnoringCase(getSuppliedMessages(engineOptions), matched);
-    const builtIn = dictIgnoringCase(I18N, matched);
-
-    const builtInKey = ownDict(I18N, matched) ? matched : matchIgnoringCase(I18N, matched);
-    const leftOut =
-      (builtInKey && Object.prototype.hasOwnProperty.call(I18N_LEFT_OUT, builtInKey)
-        ? I18N_LEFT_OUT[builtInKey]
-        : null) || {};
+    // Every locale a string can come from before English, as localeMessage
+    // looks: a regional dictionary missing a key the base language has is
+    // not partial, since that string shows in the language asked for.
+    const chain = localeChain(requested);
+    const leftOut = {};
+    for (const locale of chain) {
+      const builtInKey = ownDict(I18N, locale) ? locale : matchIgnoringCase(I18N, locale);
+      const own =
+        builtInKey && Object.prototype.hasOwnProperty.call(I18N_LEFT_OUT, builtInKey)
+          ? I18N_LEFT_OUT[builtInKey]
+          : null;
+      if (own) Object.assign(leftOut, own);
+    }
 
     for (const key in en) {
       if (leftOut[key] === true) continue;
-      if (!ownString(supplied, key) && !ownString(builtIn, key)) {
+      const found = chain.some(function (locale) {
+        return messageIn(locale, key, engineOptions);
+      });
+      if (!found) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
     }
@@ -131560,6 +132617,47 @@ function enforceKnownProfile(selection, eo) {
   throw err;
 }
 
+// engineOptions.rules, .tags and .tests as a filter: { include, exclude },
+// or a bare list or string as the include list, as runOnly takes one. Null
+// when the option is not a filter.
+function includeExcludeOf(v) {
+  return Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
+    ? { include: typeof v === 'string' ? [v] : [...v] }
+    : (v && typeof v === 'object' ? v : null);
+}
+
+// runOnly with a filter wins over engineOptions' rules, tags and tests
+// filters, which are then not read: said so, as other options left unread
+// are, and an error under strictOptions (round 9, A9-14). A rules entry for
+// one rule's settings is no filter, and is still read.
+function warnFiltersBesideRunOnly(eo) {
+  const given = ['rules', 'tags', 'tests'].filter((name) => {
+    const filter = includeExcludeOf(eo[name]);
+    return !!filter && (
+      parseCommaList(filter.include, { lower: false }).length > 0 ||
+      parseCommaList(filter.exclude, { lower: false }).length > 0
+    );
+  });
+  if (!given.length) return;
+  const message =
+    given.map((name) => 'engineOptions.' + name).join(', ') +
+    ': runOnly has a filter, which wins over ' + (given.length > 1 ? 'them' : 'it');
+  if (strictOf(eo)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    err.problems = given.map((name) => ({
+      path: name,
+      kind: 'invalid',
+      suggestion: null,
+      message: 'engineOptions.' + name + ': runOnly has a filter, which wins over it'
+    }));
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '; ignored.');
+  } catch {}
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   // A number or a boolean, and an object none of whose keys the engine
@@ -131645,6 +132743,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const requestedProfile = normalizeProfileName(eo.profile);
 
   if (hasAnyRunOnlyKeys(runOnly)) {
+    warnFiltersBesideRunOnly(eo);
     const selection = normalizeRunOnly(runOnly);
     canonicalizeRuleIds(selection, eo);
     checkSelectionNames(
@@ -131673,10 +132772,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
 
   // { include, exclude }; a bare list or string is the include list, as
   // runOnly takes one. As an object with neither key it ran every rule.
-  const includeExclude = (v) =>
-    Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-      ? { include: typeof v === 'string' ? [v] : [...v] }
-      : (v && typeof v === 'object' ? v : null);
+  const includeExclude = includeExcludeOf;
   const rules = includeExclude(eo.rules);
   const tags = includeExclude(eo.tags);
   const tests = includeExclude(eo.tests);
@@ -138963,6 +140059,81 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return !!(field && field.placeholder);
   }
 
+  // The blank about:blank frame the browser's own colors are read in: one
+  // per document for the scan, reused, and taken out when the scan ends
+  // (dom-runner's runCore, through the run's shared cache); made and taken
+  // out at each use where there is no run, as for the catalog's color
+  // parser. It sits in a closed shadow root of an element hidden at the end
+  // of <html>, so its load event, which isn't composed, never reaches the
+  // page's listeners, and no rule finds it. A page's MutationObserver still
+  // sees that element added and removed (round 9, R9-9).
+  function __probeFrameEntries() {
+    const sc = shared && shared.__contrastSharedCache ? shared.__contrastSharedCache : null;
+    if (!sc) return null;
+    if (!Array.isArray(sc.probeFrames)) sc.probeFrames = [];
+    return sc.probeFrames;
+  }
+  function __removeProbeFrame(entry) {
+    try {
+      if (entry && entry.holder && dom.parentNode(entry.holder))
+        dom.removeChild(dom.parentNode(entry.holder), entry.holder);
+    } catch {}
+  }
+  // { frame, fdoc, fview, froot, release() } for doc, or null. release()
+  // empties the frame for its next use, or takes it out with no run.
+  function __openProbeFrame(doc) {
+    const entries = __probeFrameEntries();
+    let entry = null;
+    if (entries) {
+      for (const e of entries) {
+        if (e.doc === doc && e.holder && dom.isConnected(e.holder)) {
+          entry = e;
+          break;
+        }
+      }
+    }
+    if (!entry) {
+      const host = dom.createElement(doc, 'surea11y-probe');
+      host.style.display = 'none';
+      let root = null;
+      try {
+        root = host.attachShadow({ mode: 'closed' });
+      } catch {}
+      const frame = dom.createElement(doc, 'iframe');
+      dom.appendChild(root || host, frame);
+      dom.appendChild(dom.documentElement(doc), host);
+      entry = { doc, holder: host, frame };
+      if (entries) entries.push(entry);
+    }
+    const frame = entry.frame;
+    const fdoc = dom.get(frame, 'contentDocument');
+    const fview = dom.get(frame, 'contentWindow');
+    const froot = fdoc && dom.documentElement(fdoc);
+    const kept = entries && entries.indexOf(entry) !== -1;
+    return {
+      fdoc,
+      fview,
+      froot,
+      release() {
+        if (!kept) {
+          __removeProbeFrame(entry);
+          return;
+        }
+        try {
+          const body = fdoc && dom.body(fdoc);
+          if (body) body.textContent = '';
+          if (froot) {
+            froot.style.colorScheme = '';
+            froot.style.forcedColorAdjust = '';
+          }
+        } catch {
+          __removeProbeFrame(entry);
+          entries.splice(entries.indexOf(entry), 1);
+        }
+      }
+    };
+  }
+
   // Where a field's placeholder colors come from: 'browser' when its
   // color, opacity and background, and the field's own background, are all
   // the browser's (WCAG G148: colors left to the browser count as meeting
@@ -138970,26 +140141,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // can't be told (no layout, or no blank frame to compare with). The
   // browser's values are read from the same kind of field in a blank
   // about:blank frame with the field's color-scheme, which no page style
-  // reaches; the frame is removed straight away.
+  // reaches (__openProbeFrame).
   const __placeholderDefaults = new Map();
   function __readPlaceholderDefaults(doc, tag, type, scheme) {
     const key = tag + '|' + type + '|' + scheme;
     if (__placeholderDefaults.has(key)) return __placeholderDefaults.get(key);
     let out = null;
-    let frame = null;
+    let probe = null;
     try {
-      frame = dom.createElement(doc, 'iframe');
-      frame.style.position = 'absolute';
-      frame.style.left = '-9999px';
-      frame.style.top = '-9999px';
-      frame.style.width = '10px';
-      frame.style.height = '10px';
-      frame.style.border = '0';
-      const parent = dom.body(doc) || dom.documentElement(doc);
-      dom.appendChild(parent, frame);
-      const fdoc = dom.get(frame, 'contentDocument');
-      const fview = dom.get(frame, 'contentWindow');
-      const froot = fdoc && dom.documentElement(fdoc);
+      probe = __openProbeFrame(doc);
+      const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
         // Under forced colors the scan holds the page in its own colors
@@ -139015,9 +140176,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       out = null;
     }
-    try {
-      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
-    } catch {}
+    if (probe) probe.release();
     __placeholderDefaults.set(key, out);
     return out;
   }
@@ -139118,20 +140277,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function __readSelectFieldDefaults(doc, scheme) {
     if (__selectFieldDefaults.has(scheme)) return __selectFieldDefaults.get(scheme);
     let out = null;
-    let frame = null;
+    let probe = null;
     try {
-      frame = dom.createElement(doc, 'iframe');
-      frame.style.position = 'absolute';
-      frame.style.left = '-9999px';
-      frame.style.top = '-9999px';
-      frame.style.width = '10px';
-      frame.style.height = '10px';
-      frame.style.border = '0';
-      const parent = dom.body(doc) || dom.documentElement(doc);
-      dom.appendChild(parent, frame);
-      const fdoc = dom.get(frame, 'contentDocument');
-      const fview = dom.get(frame, 'contentWindow');
-      const froot = fdoc && dom.documentElement(fdoc);
+      probe = __openProbeFrame(doc);
+      const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
         froot.style.forcedColorAdjust = 'none';
@@ -139161,9 +140310,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       out = null;
     }
-    try {
-      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
-    } catch {}
+    if (probe) probe.release();
     __selectFieldDefaults.set(scheme, out);
     return out;
   }
@@ -139435,11 +140582,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // El's text measured in its own colors and in those of the
   // ::first-line or ::first-letter its blocker carries (pseudoColors):
   // { own, pseudo }, each { fg, bg, ratio, fontSizePx, fontWeightNum,
-  // isLargeText }, with `pseudo.pseudo` naming the pseudo-element, and the
-  // background's assumptions. Null when the blocker carries no colors or
-  // the background can't be worked out. Which text the pseudo-element
-  // paints depends on line breaks, but where both colors meet a ratio, or
-  // both fall short of it, every reading of the text does too.
+  // isLargeText, paintsText }, with `pseudo.pseudo` naming the
+  // pseudo-element, and the background's assumptions. Null when the
+  // blocker carries no colors or the background can't be worked out.
+  // paintsText: whether that color certainly paints some of el's own text
+  // (the pseudo-element's where el's text starts with its own text; el's
+  // own past a ::first-letter, with a second letter). Which words a
+  // ::first-line holds depends on line breaks, but where both colors meet
+  // a ratio, or both fall short of it, every reading of the text does too,
+  // and a color that certainly paints text and falls short fails it.
   function measurePseudoElementText(el, bgOpts) {
     try {
       const blocker = getComputabilityBlocker(el);
@@ -139465,8 +140616,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const pAlpha = clamp01(pc.color.a * fade);
       const pFg = { ...compositeRgba({ ...pc.color, a: pAlpha }, pBack), a: 1 };
       const pPx = Number.isFinite(pc.fontSizePx) ? pc.fontSizePx * scale : ownPx;
+      // Whether each color certainly paints some of el's own text. Where
+      // el's first child is text with a letter or digit in it, the
+      // pseudo-element paints the start of that text: the first letter, or
+      // the first line, whichever words it holds. The rest of the text is
+      // in el's own colors for certain only past a ::first-letter, where
+      // there is a second letter or digit; past a ::first-line it may all
+      // fit on the first line.
+      const ALNUM = /[\p{L}\p{N}]/u;
+      let first = dom.firstChild(el);
+      while (
+        first &&
+        (dom.nodeType(first) === 8 ||
+          (dom.nodeType(first) === 3 && !/\S/.test(dom.nodeValue(first) || '')))
+      )
+        first = dom.nextSibling(first);
+      const pseudoPaints =
+        !!first && dom.nodeType(first) === 3 && ALNUM.test(dom.nodeValue(first) || '');
+      let letters = 0;
+      if (pseudoPaints && pc.pseudo === '::first-letter') {
+        for (let n = dom.firstChild(el); n && letters < 2; n = dom.nextSibling(n)) {
+          if (dom.nodeType(n) !== 3) continue;
+          const m = String(dom.nodeValue(n) || '').match(/[\p{L}\p{N}]/gu);
+          letters += m ? m.length : 0;
+        }
+      }
       return {
         own: {
+          paintsText: letters >= 2,
           fg: ownFg,
           bg: back,
           ratio: contrastRatio(ownFg, back),
@@ -139476,6 +140653,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         },
         pseudo: {
           pseudo: pc.pseudo,
+          paintsText: pseudoPaints,
           fg: pFg,
           bg: pBack,
           ratio: contrastRatio(pFg, pBack),
@@ -140001,6 +141179,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         paintOccluded = true;
         occluder = cur;
       }
+
+      // A box that stays in place as the page scrolls (position: fixed,
+      // against the viewport) or sticks while it scrolls (sticky), with no
+      // opaque background between the text and it, inclusive: what lies
+      // under it changes as the page scrolls past, so no one background
+      // stands behind the text, whatever the scroll position is now. A box
+      // in the top layer (a modal dialog) is measured over its ::backdrop
+      // as above.
+      if (!paintOccluded && !top && cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
+        if (cs.position === 'sticky' || __fixedToViewport(cur)) {
+          const out = {
+            ok: false,
+            reasonCode: 'BACKGROUND_OVERLAP',
+            blockerSelector: __getSimpleSelectorCached(
+              cur,
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
+            ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
+            blockerProperty: 'position',
+            blockerValue: cs.position
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch {}
+          return out;
+        }
+      }
     }
 
     const overlap = __findPaintUnderText(el, chain);
@@ -140164,6 +141370,32 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
     __topLayerCache.set(node, out);
     return out;
+  }
+  // Whether a position: fixed box is placed against the viewport: no
+  // ancestor holds fixed boxes (a transform, a filter, perspective, contain
+  // paint or layout, or a will-change of those), which would make it
+  // scroll with that ancestor.
+  function __fixedToViewport(node) {
+    const set = (v) => !!v && String(v) !== 'none';
+    let guard = 0;
+    for (let cur = composedParent(node); cur && guard++ < 200; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      const cs = __contrastComputedStyle(cur);
+      if (!cs) continue;
+      if (
+        set(cs.transform) ||
+        set(cs.translate) ||
+        set(cs.rotate) ||
+        set(cs.scale) ||
+        set(cs.perspective) ||
+        set(cs.filter) ||
+        set(cs.backdropFilter) ||
+        /\b(paint|layout|strict|content)\b/.test(String(cs.contain || '')) ||
+        /\b(transform|perspective|filter)\b/.test(String(cs.willChange || ''))
+      )
+        return false;
+    }
+    return true;
   }
   function __isPinned(node) {
     const path = [];
@@ -156074,8 +157306,50 @@ const settleAnimations = (function settleAnimations(doc, includeShadowDom) {
       delay: ms(timing && timing.delay),
       duration: ms(timing && timing.duration),
       iterations: timing && Number.isFinite(timing.iterations) ? timing.iterations : null,
-      endTime: ms(timing && timing.endTime)
+      endTime: ms(timing && timing.endTime),
+      changes: keyframeChanges(effect)
     };
+  }
+  // The properties an animation's keyframes change, each with the values it
+  // takes (up to eight): {} for keyframes that change nothing (the same
+  // value throughout, or only custom properties, which show nothing by
+  // themselves), null where they can't be read. A property missing from
+  // the first or last keyframe, or one added to the value under it, changes.
+  function keyframeChanges(effect) {
+    try {
+      if (!effect || typeof effect.getKeyframes !== 'function') return null;
+      const frames = effect.getKeyframes();
+      const adds =
+        effect.composite === 'add' ||
+        effect.composite === 'accumulate' ||
+        effect.iterationComposite === 'accumulate';
+      const NOT_PROPERTIES = new Set(['offset', 'computedOffset', 'easing', 'composite']);
+      const seen = new Map();
+      for (const frame of frames) {
+        const offset = Number(frame.computedOffset);
+        const frameAdds = frame.composite === 'add' || frame.composite === 'accumulate';
+        for (const key of Object.keys(frame)) {
+          if (NOT_PROPERTIES.has(key) || key.startsWith('--')) continue;
+          let entry = seen.get(key);
+          if (!entry) {
+            entry = { values: new Set(), first: false, last: false, adds: false };
+            seen.set(key, entry);
+          }
+          entry.values.add(String(frame[key]));
+          if (offset === 0) entry.first = true;
+          if (offset === 1) entry.last = true;
+          if (frameAdds) entry.adds = true;
+        }
+      }
+      const out = {};
+      for (const [key, entry] of seen) {
+        if (entry.values.size > 1 || !entry.first || !entry.last || entry.adds || adds)
+          out[key] = [...entry.values].slice(0, 8);
+      }
+      return out;
+    } catch {
+      return null;
+    }
   }
 
   const dom = createSafeDom();
@@ -158616,6 +159890,18 @@ const runCore = (function runCore(
           : typeof document !== 'undefined' && document
             ? dom.defaultView(document)
             : null;
+      // The contrast helpers' blank frames, kept for the run
+      // (__openProbeFrame), go with it.
+      const shared = w && w.__a11ycoreSharedCache;
+      const frames = shared && shared.contrast && shared.contrast.probeFrames;
+      if (Array.isArray(frames)) {
+        for (const entry of frames) {
+          try {
+            const parent = entry && entry.holder ? dom.parentNode(entry.holder) : null;
+            if (parent) dom.removeChild(parent, entry.holder);
+          } catch {}
+        }
+      }
       if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
     } catch {}
   }

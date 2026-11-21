@@ -382,3 +382,22 @@ test('a loaded side file translates the result without being copied into it', as
 
   dom.window.close();
 });
+
+// A regional locale's strings the caller leaves out come from the loaded
+// side file for its base language, then English, as in Node (round 9, A9-4).
+test("a regional locale's missing strings come from the base language's side file", async () => {
+  const dom = await loadBundleViaScriptTag(LOCALE_PAGE, 'https://example.test/', ['de']);
+  const run = (engineOptions) =>
+    dom.window.a11ycore
+      .runa11yCoreInPage('https://example.test/', null, engineOptions, null)
+      .checksResults.find((r) => r.ruleId === 'aria-deprecated-role');
+  const check = run({
+    locale: 'de-AT',
+    messages: { 'de-AT': { ariaDeprecatedRole_guidance_generic: 'Eigene Übersetzung.' } }
+  });
+  assert.equal(check.occurrences[0].hint, 'Eigene Übersetzung.');
+  assert.equal(check.title, run({ locale: 'de' }).title);
+  assert.notEqual(check.title, run({ locale: 'en' }).title);
+
+  dom.window.close();
+});

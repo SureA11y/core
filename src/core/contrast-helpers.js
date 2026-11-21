@@ -5790,6 +5790,81 @@ function createContrastHelpers(opts, shared) {
     return !!(field && field.placeholder);
   }
 
+  // The blank about:blank frame the browser's own colors are read in: one
+  // per document for the scan, reused, and taken out when the scan ends
+  // (dom-runner's runCore, through the run's shared cache); made and taken
+  // out at each use where there is no run, as for the catalog's color
+  // parser. It sits in a closed shadow root of an element hidden at the end
+  // of <html>, so its load event, which isn't composed, never reaches the
+  // page's listeners, and no rule finds it. A page's MutationObserver still
+  // sees that element added and removed (round 9, R9-9).
+  function __probeFrameEntries() {
+    const sc = shared && shared.__contrastSharedCache ? shared.__contrastSharedCache : null;
+    if (!sc) return null;
+    if (!Array.isArray(sc.probeFrames)) sc.probeFrames = [];
+    return sc.probeFrames;
+  }
+  function __removeProbeFrame(entry) {
+    try {
+      if (entry && entry.holder && dom.parentNode(entry.holder))
+        dom.removeChild(dom.parentNode(entry.holder), entry.holder);
+    } catch {}
+  }
+  // { frame, fdoc, fview, froot, release() } for doc, or null. release()
+  // empties the frame for its next use, or takes it out with no run.
+  function __openProbeFrame(doc) {
+    const entries = __probeFrameEntries();
+    let entry = null;
+    if (entries) {
+      for (const e of entries) {
+        if (e.doc === doc && e.holder && dom.isConnected(e.holder)) {
+          entry = e;
+          break;
+        }
+      }
+    }
+    if (!entry) {
+      const host = dom.createElement(doc, 'surea11y-probe');
+      host.style.display = 'none';
+      let root = null;
+      try {
+        root = host.attachShadow({ mode: 'closed' });
+      } catch {}
+      const frame = dom.createElement(doc, 'iframe');
+      dom.appendChild(root || host, frame);
+      dom.appendChild(dom.documentElement(doc), host);
+      entry = { doc, holder: host, frame };
+      if (entries) entries.push(entry);
+    }
+    const frame = entry.frame;
+    const fdoc = dom.get(frame, 'contentDocument');
+    const fview = dom.get(frame, 'contentWindow');
+    const froot = fdoc && dom.documentElement(fdoc);
+    const kept = entries && entries.indexOf(entry) !== -1;
+    return {
+      fdoc,
+      fview,
+      froot,
+      release() {
+        if (!kept) {
+          __removeProbeFrame(entry);
+          return;
+        }
+        try {
+          const body = fdoc && dom.body(fdoc);
+          if (body) body.textContent = '';
+          if (froot) {
+            froot.style.colorScheme = '';
+            froot.style.forcedColorAdjust = '';
+          }
+        } catch {
+          __removeProbeFrame(entry);
+          entries.splice(entries.indexOf(entry), 1);
+        }
+      }
+    };
+  }
+
   // Where a field's placeholder colors come from: 'browser' when its
   // color, opacity and background, and the field's own background, are all
   // the browser's (WCAG G148: colors left to the browser count as meeting
@@ -5797,26 +5872,16 @@ function createContrastHelpers(opts, shared) {
   // can't be told (no layout, or no blank frame to compare with). The
   // browser's values are read from the same kind of field in a blank
   // about:blank frame with the field's color-scheme, which no page style
-  // reaches; the frame is removed straight away.
+  // reaches (__openProbeFrame).
   const __placeholderDefaults = new Map();
   function __readPlaceholderDefaults(doc, tag, type, scheme) {
     const key = tag + '|' + type + '|' + scheme;
     if (__placeholderDefaults.has(key)) return __placeholderDefaults.get(key);
     let out = null;
-    let frame = null;
+    let probe = null;
     try {
-      frame = dom.createElement(doc, 'iframe');
-      frame.style.position = 'absolute';
-      frame.style.left = '-9999px';
-      frame.style.top = '-9999px';
-      frame.style.width = '10px';
-      frame.style.height = '10px';
-      frame.style.border = '0';
-      const parent = dom.body(doc) || dom.documentElement(doc);
-      dom.appendChild(parent, frame);
-      const fdoc = dom.get(frame, 'contentDocument');
-      const fview = dom.get(frame, 'contentWindow');
-      const froot = fdoc && dom.documentElement(fdoc);
+      probe = __openProbeFrame(doc);
+      const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
         // Under forced colors the scan holds the page in its own colors
@@ -5842,9 +5907,7 @@ function createContrastHelpers(opts, shared) {
     } catch {
       out = null;
     }
-    try {
-      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
-    } catch {}
+    if (probe) probe.release();
     __placeholderDefaults.set(key, out);
     return out;
   }
@@ -5945,20 +6008,10 @@ function createContrastHelpers(opts, shared) {
   function __readSelectFieldDefaults(doc, scheme) {
     if (__selectFieldDefaults.has(scheme)) return __selectFieldDefaults.get(scheme);
     let out = null;
-    let frame = null;
+    let probe = null;
     try {
-      frame = dom.createElement(doc, 'iframe');
-      frame.style.position = 'absolute';
-      frame.style.left = '-9999px';
-      frame.style.top = '-9999px';
-      frame.style.width = '10px';
-      frame.style.height = '10px';
-      frame.style.border = '0';
-      const parent = dom.body(doc) || dom.documentElement(doc);
-      dom.appendChild(parent, frame);
-      const fdoc = dom.get(frame, 'contentDocument');
-      const fview = dom.get(frame, 'contentWindow');
-      const froot = fdoc && dom.documentElement(fdoc);
+      probe = __openProbeFrame(doc);
+      const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
         froot.style.forcedColorAdjust = 'none';
@@ -5988,9 +6041,7 @@ function createContrastHelpers(opts, shared) {
     } catch {
       out = null;
     }
-    try {
-      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
-    } catch {}
+    if (probe) probe.release();
     __selectFieldDefaults.set(scheme, out);
     return out;
   }
@@ -6262,11 +6313,15 @@ function createContrastHelpers(opts, shared) {
   // El's text measured in its own colors and in those of the
   // ::first-line or ::first-letter its blocker carries (pseudoColors):
   // { own, pseudo }, each { fg, bg, ratio, fontSizePx, fontWeightNum,
-  // isLargeText }, with `pseudo.pseudo` naming the pseudo-element, and the
-  // background's assumptions. Null when the blocker carries no colors or
-  // the background can't be worked out. Which text the pseudo-element
-  // paints depends on line breaks, but where both colors meet a ratio, or
-  // both fall short of it, every reading of the text does too.
+  // isLargeText, paintsText }, with `pseudo.pseudo` naming the
+  // pseudo-element, and the background's assumptions. Null when the
+  // blocker carries no colors or the background can't be worked out.
+  // paintsText: whether that color certainly paints some of el's own text
+  // (the pseudo-element's where el's text starts with its own text; el's
+  // own past a ::first-letter, with a second letter). Which words a
+  // ::first-line holds depends on line breaks, but where both colors meet
+  // a ratio, or both fall short of it, every reading of the text does too,
+  // and a color that certainly paints text and falls short fails it.
   function measurePseudoElementText(el, bgOpts) {
     try {
       const blocker = getComputabilityBlocker(el);
@@ -6292,8 +6347,34 @@ function createContrastHelpers(opts, shared) {
       const pAlpha = clamp01(pc.color.a * fade);
       const pFg = { ...compositeRgba({ ...pc.color, a: pAlpha }, pBack), a: 1 };
       const pPx = Number.isFinite(pc.fontSizePx) ? pc.fontSizePx * scale : ownPx;
+      // Whether each color certainly paints some of el's own text. Where
+      // el's first child is text with a letter or digit in it, the
+      // pseudo-element paints the start of that text: the first letter, or
+      // the first line, whichever words it holds. The rest of the text is
+      // in el's own colors for certain only past a ::first-letter, where
+      // there is a second letter or digit; past a ::first-line it may all
+      // fit on the first line.
+      const ALNUM = /[\p{L}\p{N}]/u;
+      let first = dom.firstChild(el);
+      while (
+        first &&
+        (dom.nodeType(first) === 8 ||
+          (dom.nodeType(first) === 3 && !/\S/.test(dom.nodeValue(first) || '')))
+      )
+        first = dom.nextSibling(first);
+      const pseudoPaints =
+        !!first && dom.nodeType(first) === 3 && ALNUM.test(dom.nodeValue(first) || '');
+      let letters = 0;
+      if (pseudoPaints && pc.pseudo === '::first-letter') {
+        for (let n = dom.firstChild(el); n && letters < 2; n = dom.nextSibling(n)) {
+          if (dom.nodeType(n) !== 3) continue;
+          const m = String(dom.nodeValue(n) || '').match(/[\p{L}\p{N}]/gu);
+          letters += m ? m.length : 0;
+        }
+      }
       return {
         own: {
+          paintsText: letters >= 2,
           fg: ownFg,
           bg: back,
           ratio: contrastRatio(ownFg, back),
@@ -6303,6 +6384,7 @@ function createContrastHelpers(opts, shared) {
         },
         pseudo: {
           pseudo: pc.pseudo,
+          paintsText: pseudoPaints,
           fg: pFg,
           bg: pBack,
           ratio: contrastRatio(pFg, pBack),
@@ -6828,6 +6910,34 @@ function createContrastHelpers(opts, shared) {
         paintOccluded = true;
         occluder = cur;
       }
+
+      // A box that stays in place as the page scrolls (position: fixed,
+      // against the viewport) or sticks while it scrolls (sticky), with no
+      // opaque background between the text and it, inclusive: what lies
+      // under it changes as the page scrolls past, so no one background
+      // stands behind the text, whatever the scroll position is now. A box
+      // in the top layer (a modal dialog) is measured over its ::backdrop
+      // as above.
+      if (!paintOccluded && !top && cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
+        if (cs.position === 'sticky' || __fixedToViewport(cur)) {
+          const out = {
+            ok: false,
+            reasonCode: 'BACKGROUND_OVERLAP',
+            blockerSelector: __getSimpleSelectorCached(
+              cur,
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
+            ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
+            blockerProperty: 'position',
+            blockerValue: cs.position
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch {}
+          return out;
+        }
+      }
     }
 
     const overlap = __findPaintUnderText(el, chain);
@@ -6991,6 +7101,32 @@ function createContrastHelpers(opts, shared) {
     }
     __topLayerCache.set(node, out);
     return out;
+  }
+  // Whether a position: fixed box is placed against the viewport: no
+  // ancestor holds fixed boxes (a transform, a filter, perspective, contain
+  // paint or layout, or a will-change of those), which would make it
+  // scroll with that ancestor.
+  function __fixedToViewport(node) {
+    const set = (v) => !!v && String(v) !== 'none';
+    let guard = 0;
+    for (let cur = composedParent(node); cur && guard++ < 200; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      const cs = __contrastComputedStyle(cur);
+      if (!cs) continue;
+      if (
+        set(cs.transform) ||
+        set(cs.translate) ||
+        set(cs.rotate) ||
+        set(cs.scale) ||
+        set(cs.perspective) ||
+        set(cs.filter) ||
+        set(cs.backdropFilter) ||
+        /\b(paint|layout|strict|content)\b/.test(String(cs.contain || '')) ||
+        /\b(transform|perspective|filter)\b/.test(String(cs.willChange || ''))
+      )
+        return false;
+    }
+    return true;
   }
   function __isPinned(node) {
     const path = [];
