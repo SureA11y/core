@@ -80,7 +80,12 @@
  *   of each document on the way (direction included, and no selection
  *   where there was none) and the selection or caret in a focused text
  *   field. Focus inside a closed shadow root is seen only as its host and
- *   can't be put back there.
+ *   couldn't be put back there, so then the probe is not run: focus stays
+ *   where it is, and the hidden focusable elements are judged without it
+ *   (reported, never passed on as sentinels). A focused custom element whose
+ *   shadow root the engine can't read is taken as such a host, as is a
+ *   focused div, span or other element attachShadow takes that can't take
+ *   focus on its own.
  */
 
 const id = 'aria-hidden-focus';
@@ -316,6 +321,45 @@ function runInPage(ctx) {
     return { el: cur, docs };
   }
 
+  // Whether focus sits inside a shadow root the engine can't open, seen
+  // only as its host: moving it away could not put it back. A host is a
+  // custom element or one of the elements attachShadow takes; with no shadow
+  // root the engine can read, a custom element is taken as such a host
+  // (one with tabindex focused itself can't be told apart from one whose
+  // closed root holds focus), and a div or span that can't take focus on its
+  // own (no tabindex, not contenteditable) holds focus only that way. The
+  // page's body and root are where focus is when nothing has it.
+  function focusInClosedShadowRoot(el) {
+    if (!el || el === dom.body(document) || el === dom.documentElement(document)) return false;
+    if (dom.shadowRoot(el)) return false;
+    const tag = lower(dom.localName(el) || '');
+    if (!tag || tag === 'body' || tag === 'html') return false;
+    if (tag.indexOf('-') !== -1) return true;
+    const HOST_TAGS = [
+      'article',
+      'aside',
+      'blockquote',
+      'div',
+      'footer',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'header',
+      'main',
+      'nav',
+      'p',
+      'section',
+      'span'
+    ];
+    if (HOST_TAGS.indexOf(tag) === -1) return false;
+    if (dom.hasAttribute(el, 'tabindex')) return false;
+    const editable = dom.getAttribute(el, 'contenteditable');
+    return editable === null || lower(editable) === 'false';
+  }
+
   function focusElementSafe(el) {
     if (!el || typeof dom.get(el, 'focus') !== 'function') return false;
     try {
@@ -534,6 +578,9 @@ function runInPage(ctx) {
     const candidate = entry.probeCandidates[0];
     if (!candidate) return null;
     const focusPath = getFocusPath();
+    // Focus inside a closed shadow root could not be put back: the probe is
+    // skipped, and the element judged as without it (round 9, R9-2).
+    if (focusInClosedShadowRoot(focusPath.el)) return null;
     const saved = saveSelections(focusPath);
     try {
       return probeFocus(entry, candidate, focusPath.el);

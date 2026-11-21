@@ -483,9 +483,12 @@ test('renderSarifReport: a non-string occurrence html is reported as an empty st
 
   const sarifResult = parse(renderSarifReport(result, {})).runs[0].results[0];
   assert.strictEqual(sarifResult.properties.html, '');
+  // With no markup, the selector names the finding (round 9, A9-10).
+  const selector = sarifResult.locations[0].logicalLocations[0].fullyQualifiedName;
+  assert.ok(selector);
   assert.strictEqual(
     sarifResult.partialFingerprints['surea11y/violation/v2'],
-    sha256(computeBaselineKey('img-alt-present', 'DEFAULT', ''))
+    sha256(computeBaselineKey('img-alt-present', 'DEFAULT', '', [], selector))
   );
 });
 

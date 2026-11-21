@@ -501,17 +501,36 @@ function ownString(dict, key) {
   return (typeof dict[key] === 'string' && dict[key]) ? dict[key] : null;
 }
 
+// The locales a string is looked for in, most specific first: the code
+// asked for, then its base language when it carries a subtag. English comes
+// after these, in t().
+function localeChain(requested) {
+  const primary = requested.split('-')[0];
+  return primary.toLowerCase() === requested.toLowerCase() ? [requested] : [requested, primary];
+}
+
+// One locale's string: the caller's dictionary for it first, then the
+// built-in one, each matched without regard to case.
+function messageIn(locale, key, engineOptions) {
+  return (
+    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), locale), key) ||
+    ownString(dictIgnoringCase(I18N, locale), key)
+  );
+}
+
 // A caller-supplied dictionary layers over the built-in one for the same
 // locale rather than replacing it, so overriding one string does not cost the
-// caller every other string in that language.
+// caller every other string in that language. A regional code then falls back
+// to its base language, string by string: messages: { 'de-AT': { one key } }
+// keeps the rest of the German, the caller's de and then the built-in de,
+// before English (round 9, A9-4). An exact hit returns before any allocation.
 function localeMessage(key, engineOptions) {
-  const matched = matchLocale(normalizeLocale(engineOptions && engineOptions.locale), engineOptions);
-  if (!matched) return null;
+  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const direct = messageIn(requested, key, engineOptions);
+  if (direct) return direct;
 
-  return (
-    ownString(dictIgnoringCase(getSuppliedMessages(engineOptions), matched), key) ||
-    ownString(dictIgnoringCase(I18N, matched), key)
-  );
+  const chain = localeChain(requested);
+  return chain.length > 1 ? messageIn(chain[1], key, engineOptions) : null;
 }
 
 function isKnownLocale(locale) {
@@ -542,18 +561,26 @@ function resolveLocale(engineOptions) {
   if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
 
   if (dict !== en) {
-    const supplied = dictIgnoringCase(getSuppliedMessages(engineOptions), matched);
-    const builtIn = dictIgnoringCase(I18N, matched);
-
-    const builtInKey = ownDict(I18N, matched) ? matched : matchIgnoringCase(I18N, matched);
-    const leftOut =
-      (builtInKey && Object.prototype.hasOwnProperty.call(I18N_LEFT_OUT, builtInKey)
-        ? I18N_LEFT_OUT[builtInKey]
-        : null) || {};
+    // Every locale a string can come from before English, as localeMessage
+    // looks: a regional dictionary missing a key the base language has is
+    // not partial, since that string shows in the language asked for.
+    const chain = localeChain(requested);
+    const leftOut = {};
+    for (const locale of chain) {
+      const builtInKey = ownDict(I18N, locale) ? locale : matchIgnoringCase(I18N, locale);
+      const own =
+        builtInKey && Object.prototype.hasOwnProperty.call(I18N_LEFT_OUT, builtInKey)
+          ? I18N_LEFT_OUT[builtInKey]
+          : null;
+      if (own) Object.assign(leftOut, own);
+    }
 
     for (const key in en) {
       if (leftOut[key] === true) continue;
-      if (!ownString(supplied, key) && !ownString(builtIn, key)) {
+      const found = chain.some(function (locale) {
+        return messageIn(locale, key, engineOptions);
+      });
+      if (!found) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
     }
@@ -1538,6 +1565,47 @@ function enforceKnownProfile(selection, eo) {
   throw err;
 }
 
+// engineOptions.rules, .tags and .tests as a filter: { include, exclude },
+// or a bare list or string as the include list, as runOnly takes one. Null
+// when the option is not a filter.
+function includeExcludeOf(v) {
+  return Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
+    ? { include: typeof v === 'string' ? [v] : [...v] }
+    : (v && typeof v === 'object' ? v : null);
+}
+
+// runOnly with a filter wins over engineOptions' rules, tags and tests
+// filters, which are then not read: said so, as other options left unread
+// are, and an error under strictOptions (round 9, A9-14). A rules entry for
+// one rule's settings is no filter, and is still read.
+function warnFiltersBesideRunOnly(eo) {
+  const given = ['rules', 'tags', 'tests'].filter((name) => {
+    const filter = includeExcludeOf(eo[name]);
+    return !!filter && (
+      parseCommaList(filter.include, { lower: false }).length > 0 ||
+      parseCommaList(filter.exclude, { lower: false }).length > 0
+    );
+  });
+  if (!given.length) return;
+  const message =
+    given.map((name) => 'engineOptions.' + name).join(', ') +
+    ': runOnly has a filter, which wins over ' + (given.length > 1 ? 'them' : 'it');
+  if (strictOf(eo)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    err.problems = given.map((name) => ({
+      path: name,
+      kind: 'invalid',
+      suggestion: null,
+      message: 'engineOptions.' + name + ': runOnly has a filter, which wins over it'
+    }));
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '; ignored.');
+  } catch {}
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   // A number or a boolean, and an object none of whose keys the engine
@@ -1623,6 +1691,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const requestedProfile = normalizeProfileName(eo.profile);
 
   if (hasAnyRunOnlyKeys(runOnly)) {
+    warnFiltersBesideRunOnly(eo);
     const selection = normalizeRunOnly(runOnly);
     canonicalizeRuleIds(selection, eo);
     checkSelectionNames(
@@ -1651,10 +1720,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
 
   // { include, exclude }; a bare list or string is the include list, as
   // runOnly takes one. As an object with neither key it ran every rule.
-  const includeExclude = (v) =>
-    Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-      ? { include: typeof v === 'string' ? [v] : [...v] }
-      : (v && typeof v === 'object' ? v : null);
+  const includeExclude = includeExcludeOf;
   const rules = includeExclude(eo.rules);
   const tags = includeExclude(eo.tags);
   const tests = includeExclude(eo.tests);

@@ -116,8 +116,17 @@ function normalizeIdentityHtml(html) {
 // A finding in a child frame is told apart from the same finding in the
 // page or another frame by its frame's path (flattenCrossFrameResult); one
 // in the page has none, and keeps the key it always had.
-function computeBaselineKey(ruleId, reasonCode, html, framePath) {
-  const key = `${ruleId}\u0000${reasonCode}\u0000${normalizeIdentityHtml(html == null ? '' : html)}`;
+// A finding with no markup (a scan with output.includeHtml: false) is named
+// by its selector instead, so a new element is a new finding rather than one
+// more of the rule's and code's known ones (round 9, A9-10). That key moves
+// when the selector does; a key with markup never reads the selector.
+function computeBaselineKey(ruleId, reasonCode, html, framePath, selector) {
+  const markup = html == null ? '' : String(html);
+  const identity =
+    markup === '' && typeof selector === 'string' && selector !== ''
+      ? `\u0000selector\u0000${selector}`
+      : normalizeIdentityHtml(markup);
+  const key = `${ruleId}\u0000${reasonCode}\u0000${identity}`;
   return Array.isArray(framePath) && framePath.length
     ? `${key}\u0000frame\u0000${framePath.join('\u0001')}`
     : key;
@@ -140,7 +149,7 @@ function buildBaselineEntries(result, options) {
   const entryOf = (f, extra) => ({
     ruleId: f.ruleId,
     reasonCode: f.reasonCode,
-    selector: locationText(f.occurrence),
+    selector: f.selector,
     html: f.html,
     ...extra,
     // In a child frame of a cross-frame result: the path to it.
@@ -262,7 +271,8 @@ function entryKey(entry) {
     entry.ruleId,
     entry.reasonCode || 'DEFAULT',
     typeof entry.html === 'string' ? entry.html : '',
-    entry.frame
+    entry.frame,
+    typeof entry.selector === 'string' ? entry.selector : ''
   );
 }
 
@@ -283,12 +293,30 @@ function entryCounts(baselineEntries, lean = false) {
   return remaining;
 }
 
-// Which of the findings ({ ruleId, reasonCode, html, framePath }) the
-// baseline knows, taking one entry from `remaining` for each. Every finding
-// is looked up under its own code first; only then is one that a release
-// moved to a new code looked up under the code it had (src/baseline-moves.json),
-// with the same rule, markup and frame. So an entry that names a finding
-// exactly is never taken by another that only matches it through a move.
+// The keys a finding is looked up under once every finding has been looked
+// up under its own (findingKey): for one with no markup, the key without its
+// selector, so an entry that names neither (written by hand, or for an
+// occurrence with no selector) still matches it; then those under each code
+// a release moved its finding from (src/baseline-moves.json).
+function findingKey(f, code) {
+  return computeBaselineKey(f.ruleId, code, f.html, f.framePath, f.selector);
+}
+function laterKeysOf(f) {
+  const bare = (code) =>
+    f.html === '' && f.selector ? [computeBaselineKey(f.ruleId, code, '', f.framePath)] : [];
+  const keys = bare(f.reasonCode);
+  for (const code of earlierCodesOf(f.ruleId, f.reasonCode)) {
+    keys.push(findingKey(f, code), ...bare(code));
+  }
+  return keys;
+}
+
+// Which of the findings ({ ruleId, reasonCode, html, selector, framePath })
+// the baseline knows, taking one entry from `remaining` for each. Every
+// finding is looked up under its own code first; only then is one that a
+// release moved to a new code looked up under the code it had, with the same
+// rule, markup and frame. So an entry that names a finding exactly is never
+// taken by another that only matches it through a move.
 function takeKnown(remaining, findings) {
   const take = (key) => {
     const left = remaining.get(key) || 0;
@@ -296,14 +324,9 @@ function takeKnown(remaining, findings) {
     remaining.set(key, left - 1);
     return true;
   };
-  const known = findings.map((f) =>
-    take(computeBaselineKey(f.ruleId, f.reasonCode, f.html, f.framePath))
-  );
+  const known = findings.map((f) => take(findingKey(f, f.reasonCode)));
   findings.forEach((f, i) => {
-    if (known[i]) return;
-    known[i] = earlierCodesOf(f.ruleId, f.reasonCode).some((code) =>
-      take(computeBaselineKey(f.ruleId, code, f.html, f.framePath))
-    );
+    if (!known[i]) known[i] = laterKeysOf(f).some(take);
   });
   return known;
 }
@@ -315,12 +338,13 @@ function findingOf(frame, check, occurrence) {
     ruleId: check.ruleId,
     reasonCode: getReasonCode(occurrence),
     html: typeof occurrence.html === 'string' ? occurrence.html : '',
+    selector: locationText(occurrence),
     framePath: frame.path
   };
 }
 
 // The fail occurrences of frames (framesOf), in order: { check, occurrence,
-// ruleId, reasonCode, html, framePath }.
+// ruleId, reasonCode, html, selector, framePath }.
 function failFindingsOf(frames) {
   const out = [];
   for (const { frame, result: frameResult } of frames) {
@@ -452,13 +476,11 @@ function migrateBaselineEntries(baselineEntries, result) {
       const list = byKey.get(key);
       return list && list.length ? list.shift() : null;
     };
-    const exact = findings.map((f) =>
-      takeEntry(computeBaselineKey(f.ruleId, f.reasonCode, f.html, f.framePath))
-    );
+    const exact = findings.map((f) => takeEntry(findingKey(f, f.reasonCode)));
     findings.forEach((f, i) => {
       if (exact[i]) return;
-      for (const code of earlierCodesOf(f.ruleId, f.reasonCode)) {
-        const entry = takeEntry(computeBaselineKey(f.ruleId, code, f.html, f.framePath));
+      for (const key of laterKeysOf(f)) {
+        const entry = takeEntry(key);
         if (entry) {
           entry.reasonCode = f.reasonCode;
           break;
