@@ -1378,6 +1378,8 @@
   "ariaOwnsValid_hint_fail_ancestor": "Entfernen Sie diese ID aus aria-owns: Ein Element kann keinen seiner Vorfahren besitzen, und der Browser ignoriert es.",
   "ariaOwnsValid_summary_cantTell_self": "Das aria-owns dieses Elements nennt seine eigene ID, {{id}}.",
   "ariaOwnsValid_hint_cantTell_self": "Entfernen Sie seine eigene ID aus aria-owns: Ein Element kann sich nicht selbst besitzen, und der Browser ignoriert es.",
+  "ariaOwnsValid_summary_cantTell_cycle": "Das aria-owns dieses Elements nennt {{id}}, das über aria-owns wiederum dieses Element besitzt: ein Zyklus.",
+  "ariaOwnsValid_hint_cantTell_cycle": "Entfernen Sie eine der IDs, die den Zyklus bilden, aus aria-owns: Ein Element kann keinen seiner Besitzer besitzen, und der Browser ignoriert eine davon.",
   "widgetKeyboardFocusable_title": "Widgets sollten mit der Tastatur erreichbar sein",
   "widgetKeyboardFocusable_description": "Markiert zur manuellen Prüfung ein Element mit einer Widget-Rolle, das keinen Fokus erhalten kann oder nicht in der Tab-Reihenfolge ist, und ein zusammengesetztes Widget ohne Tab-Stopp.",
   "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Dieses Element hat die Rolle {{role}}, kann aber keinen Tastaturfokus erhalten.",

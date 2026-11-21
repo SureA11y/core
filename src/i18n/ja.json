@@ -1378,6 +1378,8 @@
   "ariaOwnsValid_hint_fail_ancestor": "その id を aria-owns から外してください。要素は自身の祖先を所有できず、ブラウザーはそれを無視します。",
   "ariaOwnsValid_summary_cantTell_self": "この要素の aria-owns は、自身の id {{id}} を指しています。",
   "ariaOwnsValid_hint_cantTell_self": "自身の id を aria-owns から外してください。要素は自身を所有できず、ブラウザーはそれを無視します。",
+  "ariaOwnsValid_summary_cantTell_cycle": "この要素の aria-owns は {{id}} を指していますが、それが aria-owns を通じてこの要素を所有し返しており、循環になっています。",
+  "ariaOwnsValid_hint_cantTell_cycle": "循環を作っている id のいずれかを aria-owns から外してください。要素は自身の所有者を所有できず、ブラウザーはそのどちらかを無視します。",
   "widgetKeyboardFocusable_title": "ウィジェットはキーボードで到達できることが望ましい",
   "widgetKeyboardFocusable_description": "ウィジェットのロールを持つのにフォーカスを受け取れない、またはタブ順序に含まれない要素と、タブストップのない複合ウィジェットを、手動確認のために報告します。",
   "widgetKeyboardFocusable_summary_cantTell_notFocusable": "この要素はロール {{role}} を持っていますが、キーボードフォーカスを受け取れません。",

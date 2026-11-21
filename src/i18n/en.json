@@ -1378,6 +1378,8 @@
   "ariaOwnsValid_hint_fail_ancestor": "Remove that id from aria-owns: an element cannot own one of its ancestors, and the browser ignores it.",
   "ariaOwnsValid_summary_cantTell_self": "This element’s aria-owns names its own id, {{id}}.",
   "ariaOwnsValid_hint_cantTell_self": "Remove its own id from aria-owns: an element cannot own itself, and the browser ignores it.",
+  "ariaOwnsValid_summary_cantTell_cycle": "This element’s aria-owns names {{id}}, which through aria-owns comes back to own this element: a cycle.",
+  "ariaOwnsValid_hint_cantTell_cycle": "Remove one of the ids that make the cycle from aria-owns: an element cannot own one of its owners, and the browser ignores one of them.",
   "widgetKeyboardFocusable_title": "Widgets should be reachable with the keyboard",
   "widgetKeyboardFocusable_description": "Flags an element with a widget role that cannot take focus or is out of the tab order, and a composite widget with no tab stop, for manual review.",
   "widgetKeyboardFocusable_summary_cantTell_notFocusable": "This element has the role {{role}} but cannot take keyboard focus.",

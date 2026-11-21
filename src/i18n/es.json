@@ -1378,6 +1378,8 @@
   "ariaOwnsValid_hint_fail_ancestor": "Quitar ese id de aria-owns: un elemento no puede ser propietario de uno de sus antecesores, y el navegador lo ignora.",
   "ariaOwnsValid_summary_cantTell_self": "El aria-owns de este elemento nombra su propio id, {{id}}.",
   "ariaOwnsValid_hint_cantTell_self": "Quitar su propio id de aria-owns: un elemento no puede ser propietario de sí mismo, y el navegador lo ignora.",
+  "ariaOwnsValid_summary_cantTell_cycle": "El aria-owns de este elemento nombra {{id}}, que, a través de aria-owns, vuelve a ser propietario de este elemento: un ciclo.",
+  "ariaOwnsValid_hint_cantTell_cycle": "Quitar de aria-owns uno de los id que forman el ciclo: un elemento no puede ser propietario de uno de sus propietarios, y el navegador ignora uno de ellos.",
   "widgetKeyboardFocusable_title": "Los widgets deberían poder alcanzarse con el teclado",
   "widgetKeyboardFocusable_description": "Señala, para revisión manual, un elemento con un rol de widget que no puede recibir el foco o está fuera del orden de tabulación, y un widget compuesto sin parada de tabulación.",
   "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Este elemento tiene el rol {{role}}, pero no puede recibir el foco del teclado.",
