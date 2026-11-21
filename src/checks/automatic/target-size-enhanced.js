@@ -11,7 +11,11 @@
  * @applicability
  *   The targets target-size-minimum applies to: <button>, <summary>,
  *   <a href>, <area href>, <input>, <select>, <textarea> and elements whose
- *   role resolves to button or link, that a pointer can reach and hit.
+ *   role resolves to button, link or another interactive widget role
+ *   (checkbox, combobox, menuitem, menuitemcheckbox, menuitemradio, option,
+ *   radio, scrollbar, searchbox, slider, spinbutton, switch, tab, textbox,
+ *   treeitem, and gridcell where it has a tabindex), that a pointer can
+ *   reach and hit.
  * @expectation
  *   Each target is at least 44 by 44 CSS pixels, measured as
  *   target-size-minimum measures 24 (the region a pointer can hit, and the

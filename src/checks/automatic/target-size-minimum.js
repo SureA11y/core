@@ -10,15 +10,19 @@
  * @sc 2.5.8
  * @applicability
  *   Applies to <button>, <summary>, <a href>, <area href>, <input>,
- *   <select>, <textarea> and elements whose role resolves to button or link
- *   (the first real role in the role attribute, in any case) that are
+ *   <select>, <textarea> and elements whose role resolves to button, link or
+ *   another interactive widget role (checkbox, combobox, menuitem,
+ *   menuitemcheckbox, menuitemradio, option, radio, scrollbar, searchbox,
+ *   slider, spinbutton, switch, tab, textbox, treeitem, and gridcell where
+ *   it has a tabindex) (the first real role in the role attribute, in any
+ *   case) that are
  *   pointer-reachable: rendered, not suppressed by pointer-events:none, and
  *   with something left for a pointer to hit (a target clipped away is none;
  *   one with display: contents is its content). Accessibility-tree exclusion isn't a filter here: an
  *   aria-hidden control is still a target a pointer can hit.
  *   <area> is matched but never actually evaluated: it has no box of its own
  *   to measure.
- *   A custom element whose ElementInternals give it the button or link role
+ *   A custom element whose ElementInternals give it one of those roles
  *   (this.attachInternals().role), with no role attribute naming another,
  *   counts as a native element with that role does.
  * @expectation
@@ -1412,9 +1416,37 @@ function runInPage(ctx) {
   }
 
   const NATIVE_CANDIDATE_SELECTOR = 'button, summary, a[href], area[href], input, select, textarea';
+  // The roles of a control a pointer operates: a button or a link, and each
+  // interactive widget role. A gridcell is one only where the grid makes it
+  // focusable (a tabindex), as a date picker's day is; a cell of a grid read
+  // as a table is not. Containers (tablist, menu, listbox, grid...) are not
+  // targets: their items are.
+  const TARGET_ROLES = new Set([
+    'button',
+    'link',
+    'checkbox',
+    'combobox',
+    'gridcell',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'textbox',
+    'treeitem'
+  ]);
   // role~= matches the token anywhere in the fallback list, so the resolved
-  // role is checked below (role="tab button" is a tab, not a target here).
-  const CANDIDATE_SELECTOR = `${NATIVE_CANDIDATE_SELECTOR}, [role~="button" i], [role~="link" i]`;
+  // role is checked below (role="tooltip button" is a tooltip, not a target).
+  const CANDIDATE_SELECTOR = [
+    NATIVE_CANDIDATE_SELECTOR,
+    ...[...TARGET_ROLES].map((role) => `[role~="${role}" i]`)
+  ].join(', ');
 
   function isCandidate(el) {
     try {
@@ -1425,7 +1457,14 @@ function runInPage(ctx) {
         return true;
     } catch {}
     const role = getExplicitRole(el);
-    return role === 'button' || role === 'link';
+    if (role === 'gridcell') {
+      try {
+        return dom.hasAttribute(el, 'tabindex');
+      } catch {
+        return false;
+      }
+    }
+    return TARGET_ROLES.has(role);
   }
 
   // --- candidate collection ---

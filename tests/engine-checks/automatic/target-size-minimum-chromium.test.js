@@ -39,6 +39,7 @@ const skip = !chromium
 
 const RULE_ID = 'target-size-minimum';
 const { addBundle } = require('../../helpers/browserBundle');
+const { internalsHookScript } = require('../../../src/index.js');
 
 const SR_ONLY =
   'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;white-space:nowrap;border:0';
@@ -392,5 +393,42 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     );
     assert.equal(outcome, 'fail');
     assert.equal(findings.length, 3, JSON.stringify(findings));
+  });
+  // Round 8, LY-6: a tab, a switch or another widget is a target, its role
+  // given by an attribute or by a custom element's ElementInternals.
+  await t.test('controls with an interactive widget role are targets', async () => {
+    const box = 'display:inline-block;width:16px;height:16px;margin-right:2px';
+    const [byAttribute, attributeFindings] = await scan(
+      `<div role="tablist"><span role="tab" tabindex="0" style="${box}">A</span><span role="tab" tabindex="-1" style="${box}">B</span></div>` +
+        `<div style="margin-top:40px"><span role="switch" tabindex="0" style="${box}"></span><span role="switch" tabindex="0" style="${box}"></span></div>`
+    );
+    assert.equal(byAttribute, 'fail');
+    assert.equal(attributeFindings.length, 4, JSON.stringify(attributeFindings));
+    // The internals hook, installed before the page's scripts, reads the role.
+    const p = await browser.newPage({ viewport: { width: 390, height: 900 } });
+    try {
+      await p.addInitScript({ content: internalsHookScript() });
+      const html =
+        `<!doctype html><html lang="en"><head><title>t</title></head><body>` +
+        `<script>customElements.define('x-tab', class extends HTMLElement { constructor() { super(); this.attachInternals().role = 'tab'; } });</script>` +
+        `<x-tab tabindex="0" style="${box}">A</x-tab><x-tab tabindex="-1" style="${box}">B</x-tab></body></html>`;
+      // Served from an origin, so the init script runs as on a real site.
+      await p.route('https://example.test/**', (route) =>
+        route.fulfill({ contentType: 'text/html', body: html })
+      );
+      await p.goto('https://example.test/');
+      await addBundle(p);
+      const r = await p.evaluate(
+        (id) =>
+          window.a11ycore
+            .runa11yCoreInPage(null, null, { rules: { include: id } }, null)
+            .checksResults.find((c) => c.ruleId === id),
+        RULE_ID
+      );
+      assert.equal(r.outcome, 'fail');
+      assert.equal(r.occurrences.length, 2);
+    } finally {
+      await p.close();
+    }
   });
 });
