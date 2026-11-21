@@ -709,6 +709,7 @@
   "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
   "ariaProhibitedAttr_description": "Comprueba que aria-label/aria-labelledby no estén presentes en roles WAI-ARIA cuya especificación prohíbe explícitamente el nombrado ARIA (por ejemplo, generic, emphasis, strong, paragraph).",
   "ariaProhibitedAttr_summary_fail": "{{attr}} está prohibido en role=\"{{role}}\".",
+  "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} está prohibido en un <{{element}}>, cuyo rol, {{role}}, no puede tener nombre.",
   "ariaProhibitedAttr_hint_fail": "Quitar este atributo. Los elementos con este rol no pueden tener nombre, así que las tecnologías de apoyo pueden ignorarlo.",
   "ariaProhibitedAttr_summary_fail_roleless": "Este <{{element}}> no tiene rol ni otra fuente de nombre, así que puede que las tecnologías de apoyo no anuncien su {{attr}}.",
   "ariaProhibitedAttr_hint_fail_roleless": "Darle un rol que admita nombre, como role=\"img\" o role=\"button\", o quitar el atributo si sin rol no sirve de nada.",

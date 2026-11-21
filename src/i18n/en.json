@@ -709,6 +709,7 @@
   "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
   "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
   "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
+  "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} is prohibited on a <{{element}}>, whose role, {{role}}, can't be named.",
   "ariaProhibitedAttr_hint_fail": "Remove this attribute. Elements with this role can't be named, so assistive technology may ignore it.",
   "ariaProhibitedAttr_summary_fail_roleless": "This <{{element}}> has no role and no other source of a name, so assistive technology may not announce its {{attr}}.",
   "ariaProhibitedAttr_hint_fail_roleless": "Give it a role that can be named, such as role=\"img\" or role=\"button\", or remove the attribute if it does nothing without one.",

@@ -709,6 +709,7 @@
   "ariaProhibitedAttr_title": "名前付けを禁止しているロールに ARIA の名前付け属性を使用してはならない",
   "ariaProhibitedAttr_description": "仕様で ARIA による名前付けが明示的に禁止されている WAI-ARIA ロール (generic、emphasis、strong、paragraph など) に、aria-label/aria-labelledby が指定されていないかを確認します。",
   "ariaProhibitedAttr_summary_fail": "{{attr}} は role=\"{{role}}\" では禁止されています。",
+  "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} は <{{element}}> では禁止されています。そのロール {{role}} には名前を付けられません。",
   "ariaProhibitedAttr_hint_fail": "この属性を削除してください。このロールの要素には名前を付けられないため、支援技術はこの属性を無視することがあります。",
   "ariaProhibitedAttr_summary_fail_roleless": "この <{{element}}> にはロールもほかの名前の源もないため、支援技術が {{attr}} を読み上げない可能性があります。",
   "ariaProhibitedAttr_hint_fail_roleless": "role=\"img\" や role=\"button\" のように名前を付けられるロールを与えるか、ロールなしでは役に立たないなら属性を削除してください。",

@@ -709,6 +709,7 @@
   "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
   "ariaProhibitedAttr_description": "Prüft, ob aria-label/aria-labelledby nicht bei WAI-ARIA-Rollen vorhanden sind, deren Spezifikation die ARIA-Benennung ausdrücklich untersagt (z. B. generic, emphasis, strong, paragraph).",
   "ariaProhibitedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" untersagt.",
+  "ariaProhibitedAttr_summary_fail_implicitRole": "{{attr}} ist bei einem <{{element}}> untersagt, dessen Rolle {{role}} keinen Namen erhalten kann.",
   "ariaProhibitedAttr_hint_fail": "Entfernen Sie dieses Attribut. Elemente mit dieser Rolle können keinen Namen haben, daher ignorieren assistive Technologien es möglicherweise.",
   "ariaProhibitedAttr_summary_fail_roleless": "Dieses <{{element}}> hat keine Rolle und keine andere Namensquelle, daher geben assistive Technologien sein {{attr}} möglicherweise nicht aus.",
   "ariaProhibitedAttr_hint_fail_roleless": "Geben Sie ihm eine Rolle, die einen Namen haben kann, etwa role=\"img\" oder role=\"button\", oder entfernen Sie das Attribut, wenn es ohne Rolle nichts bewirkt.",
