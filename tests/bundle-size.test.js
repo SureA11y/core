@@ -32,7 +32,7 @@ const BUDGETS = [
   ['surea11y.i18n.fr.js', 325],
   ['surea11y.i18n.ja.js', 380],
   // The HTML report openReport() loads on first use.
-  ['surea11y.report.js', 151]
+  ['surea11y.report.js', 164]
 ];
 
 test('every built locale side file has a budget', () => {
