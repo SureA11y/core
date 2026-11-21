@@ -76,7 +76,7 @@ test(`${RULE_ID}: a same-colored link marked by a border, shadow, outline, backg
     ['.m { border-bottom: 1px solid; }', 'la suite'],
     ['.m { box-shadow: 0 1px 0 #222222; }', 'la suite'],
     ['.m { outline: 1px dotted #222222; }', 'la suite'],
-    ['.m { background-color: #ffff99; }', 'la suite'],
+    ['.m { background-color: #767676; }', 'la suite'],
     ['.m { background-image: url(ext.svg); }', 'la suite'],
     ['.m::after { content: " \\2197"; }', 'la suite'],
     ['', 'la suite <img src="ext.png" alt="">'],
@@ -222,7 +222,7 @@ test(`${RULE_ID}: an empty ::after that paints a line, and a chip or <sup> insid
       '.m::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; border-bottom: 1px solid #2a2a2a; }',
       'la suite'
     ],
-    ['', '<code style="background-color: #dddddd">fetch()</code>'],
+    ['', '<code style="background-color: #888888">fetch()</code>'],
     ['', '<sup>1</sup>']
   ]) {
     const html = `<!doctype html><html><head><style>${base} ${css}</style></head><body><p>Lire <a href="/x" class="nodeco m">${inner}</a> ici.</p></body></html>`;
@@ -763,7 +763,7 @@ test(`${RULE_ID}: a gradient behind link and text alike leans fail on the same c
     a { text-decoration: none; }
   </style></head><body><div>
     <p>Read <a id="same" href="#" style="color:rgba(0,0,0,0.8)">this guide</a> before you start.</p>
-    <p style="background-color:#ffffff">Read <a id="marked" href="#" style="color:#000000; background-color:#ffff00; opacity:0.9">this guide</a> before you start.</p>
+    <p style="background-color:#ffffff">Read <a id="marked" href="#" style="color:#000000; background-color:#808080; opacity:0.9">this guide</a> before you start.</p>
   </div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
@@ -820,7 +820,7 @@ test(`${RULE_ID}: a link told apart by color alone leans by the hover and focus 
 
 test(`${RULE_ID}: a highlight of its own on a page with no background is decided on the page's canvas`, () => {
   const para =
-    '<p style="color:#000">Read the <a id="hl" href="/x" style="color:#000;text-decoration:none;background:#ff0">annual report</a> today.</p>';
+    '<p style="color:#000">Read the <a id="hl" href="/x" style="color:#000;text-decoration:none;background:#808080">annual report</a> today.</p>';
   const page = (head, body = para) =>
     `<!doctype html><html><head>${head}</head><body>${body}</body></html>`;
   const scan = (html, contrast) =>
@@ -830,14 +830,14 @@ test(`${RULE_ID}: a highlight of its own on a page with no background is decided
     });
 
   // The canvas follows from the page's color scheme: white for a page that
-  // declares none, where the yellow highlight sets the link apart.
+  // declares none, where the gray highlight sets the link apart.
   assertRule(scan(page('')), RULE_ID, 'pass', { maxOccurrences: 0 });
   // The dark canvas for a page drawn in dark.
   assertRule(scan(page('<meta name="color-scheme" content="dark">')), RULE_ID, 'pass', {
     maxOccurrences: 0
   });
   const onDark = assertRule(
-    scan(page('<meta name="color-scheme" content="dark">', para.replace('#ff0', '#121212'))),
+    scan(page('<meta name="color-scheme" content="dark">', para.replace('#808080', '#121212'))),
     RULE_ID,
     'fail',
     { minOccurrences: 1, maxOccurrences: 1 }
@@ -847,7 +847,7 @@ test(`${RULE_ID}: a highlight of its own on a page with no background is decided
   // A canvas the run names decides it, in strict mode too: in the
   // highlight's color it marks nothing, and the link fails; in another
   // color, white included, the highlight sets the link apart.
-  const same = assertRule(scan(page(''), { rootCanvasFallback: '#ffff00' }), RULE_ID, 'fail', {
+  const same = assertRule(scan(page(''), { rootCanvasFallback: '#808080' }), RULE_ID, 'fail', {
     minOccurrences: 1,
     maxOccurrences: 1
   });
@@ -876,7 +876,7 @@ test(`${RULE_ID}: a highlight of its own on a page with no background is decided
     rootCanvasFallback: '#ffffff',
     rootCanvasFallbackSet: false
   });
-  assertRule(scan(page('', para.replace('#ff0', '#fff')), defaultEcho), RULE_ID, 'fail', {
+  assertRule(scan(page('', para.replace('#808080', '#fff')), defaultEcho), RULE_ID, 'fail', {
     minOccurrences: 1,
     maxOccurrences: 1
   });
@@ -894,13 +894,13 @@ test(`${RULE_ID}: a highlight of its own on a page with no background is decided
     assert.strictEqual(asked.lean, undefined);
   }
   // auditorAssist on a known canvas decides it as any highlight.
-  const onYellow = assertRule(
-    scan(page(''), { mode: 'auditorAssist', rootCanvasFallback: '#ffff00' }),
+  const onGray = assertRule(
+    scan(page(''), { mode: 'auditorAssist', rootCanvasFallback: '#808080' }),
     RULE_ID,
     'fail',
     { minOccurrences: 1, maxOccurrences: 1 }
   );
-  assert.strictEqual(onYellow.occurrences[0].data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION');
+  assert.strictEqual(onGray.occurrences[0].data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION');
 });
 
 // A page that supports light and dark: the highlight is compared with the
@@ -922,8 +922,8 @@ test(`${RULE_ID}: a highlight is compared with the page's canvas in each color s
     maxOccurrences: 1
   });
   assert.strictEqual(light.occurrences[0].data.details.colorScheme, 'light');
-  // Yellow stands out on both canvases.
-  assertRule(scan(page('', '#ffff00')), RULE_ID, 'pass', { maxOccurrences: 0 });
+  // Gray stands out on both canvases, by 3:1 or more.
+  assertRule(scan(page('', '#808080')), RULE_ID, 'pass', { maxOccurrences: 0 });
   // A prefers-color-scheme rule reaching the link: the dark scheme isn't
   // measured, and the finding says which was.
   const themed = assertRule(
@@ -1033,4 +1033,39 @@ test(`${RULE_ID}: a ratio just under 3:1 never reads as 3.00:1`, () => {
   assert.ok(occ.data.details.metrics.ratio < 3);
   assert.strictEqual(occ.i18n.params.ratio, '2.99');
   assert.ok(occ.summary.includes('2.99:1'), occ.summary);
+});
+
+// A mark that is a cue by its color alone (a background, a border, an
+// outline) counts only at 3:1 or more from what is behind it; below that the
+// link is judged as without it. Shape cues are not weighed by color.
+test(`${RULE_ID}: a color cue under 3:1 from what is behind it does not count (round 9, V9-7)`, () => {
+  const base = `body { background: #ffffff; } p { color: #333333; } .nodeco { text-decoration: none; color: #444444; }`;
+  const scan = (css, inner = 'la suite') =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html><head><style>${base} ${css}</style></head><body><p>Lire <a href="/x" class="nodeco m">${inner}</a> ici.</p></body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+  for (const css of [
+    '.m { background-color: rgba(0, 0, 0, 0.01); }',
+    '.m { background-color: #f4f4f4; }',
+    '.m { border-bottom: 1px solid #eeeeee; }',
+    '.m { outline: 1px solid #dddddd; }'
+  ]) {
+    const rule = assertRule(scan(css), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(
+      rule.occurrences[0].data.details.reasonCode,
+      'COLOR_ONLY_DIFFERENTIATION',
+      css
+    );
+  }
+  for (const [css, inner] of [
+    ['.m { background-color: #767676; }', undefined],
+    ['.m { border-bottom: 1px solid #767676; }', undefined],
+    ['.m { outline: 1px solid #767676; }', undefined],
+    ['.m { text-decoration: underline; text-decoration-color: #eeeeee; }', undefined],
+    ['.m { font-weight: 700; }', undefined],
+    ['', 'la suite <img src="ext.png" alt="">']
+  ]) {
+    assertRule(scan(css, inner), RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
 });
