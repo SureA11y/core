@@ -200,3 +200,18 @@ test('reporter switches are true or false, as the others are (PK-8)', () => {
   renderJunitReport(r, { includeNotApplicable: true });
   renderHtmlReport(r, { manualChecks: false });
 });
+
+test('standard data that holds itself or nests too deep is a problem, not a RangeError (PK-9)', () => {
+  const { checkStandardData, standardFromData } = require('../src/pack.js');
+  const cyclic = { format: 'surea11y-standard/1', key: 'x' };
+  cyclic.self = cyclic;
+  const deep = { format: 'surea11y-standard/1', key: 'x' };
+  let c = deep;
+  for (let i = 0; i < 20000; i++) c = c.a = {};
+  for (const data of [cyclic, deep]) {
+    const problems = checkStandardData(data);
+    assert.ok(problems.length > 0);
+    assert.throws(() => standardFromData(data), TypeError);
+  }
+  assert.match(checkStandardData(cyclic)[0], /holds itself/);
+});

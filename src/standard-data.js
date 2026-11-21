@@ -106,16 +106,35 @@ const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const isUnsafeKey = (k) => k === '__proto__' || k === 'constructor' || k === 'prototype';
 const isText = (v) => typeof v === 'string' && v.trim() !== '';
 
+// How deep a standard's data may nest: far deeper than any standard needs,
+// and shallow enough that checking it can't exhaust the stack.
+const MAX_DATA_DEPTH = 100;
+
 // Where a value holds something JSON can't: a function, a symbol, undefined
 // in a list, a number that isn't finite. Data must survive JSON.
-function notJson(value, at, out) {
+// `ancestors` are the objects and lists `value` sits in: data that holds
+// itself, or nests past MAX_DATA_DEPTH, is a problem, where it threw a
+// RangeError (round 8, PK-9).
+function notJson(value, at, out, ancestors = new Set(), depth = 0) {
   if (value === null || typeof value === 'string' || typeof value === 'boolean') return out;
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) out.push(`${at}: ${value} is not a JSON number`);
     return out;
   }
+  if (Array.isArray(value) || isObject(value)) {
+    if (ancestors.has(value)) {
+      out.push(`${at}: holds itself, which JSON can't`);
+      return out;
+    }
+    if (depth >= MAX_DATA_DEPTH) {
+      out.push(`${at}: nests deeper than ${MAX_DATA_DEPTH} levels`);
+      return out;
+    }
+  }
   if (Array.isArray(value)) {
-    value.forEach((v, i) => notJson(v, `${at}[${i}]`, out));
+    ancestors.add(value);
+    value.forEach((v, i) => notJson(v, `${at}[${i}]`, out, ancestors, depth + 1));
+    ancestors.delete(value);
     return out;
   }
   if (isObject(value)) {
@@ -126,10 +145,12 @@ function notJson(value, at, out) {
       out.push(`${at}: must be a plain object`);
       return out;
     }
+    ancestors.add(value);
     for (const [k, v] of Object.entries(value)) {
       if (isUnsafeKey(k)) out.push(`${at}: a key named "${k}" is not allowed`);
-      else notJson(v, `${at}.${k}`, out);
+      else notJson(v, `${at}.${k}`, out, ancestors, depth + 1);
     }
+    ancestors.delete(value);
     return out;
   }
   out.push(`${at}: a ${typeof value} is not data`);
