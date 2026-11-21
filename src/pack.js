@@ -2283,15 +2283,16 @@ function pageCodeProblems(rule, where) {
 // "<!--" then "<script" (escaped, then double escaped), with no "-->" or
 // "</script" after. The states as HTML defines them: "<!-->" and "<!--->"
 // close at once; in the double escaped state "</script" goes back to the
-// escaped state and "-->" to plain script data. Returns the "<script" that
-// opened it, or null (round 8, NW-12).
+// escaped state and "-->" to plain script data; "--!>", which ends a comment
+// in markup, ends nothing in a script and is matched only to be skipped.
+// Returns the "<script" that opened it, or null (round 8, NW-12).
 function unclosedScriptInComment(text) {
-  const re = /<!--->|<!-->|<!--|-->|<\/script(?=[\s/>])|<script(?=[\s/>])/gi;
+  const re = /<!--->|<!-->|<!--|--!>|-->|<\/script(?=[\s/>])|<script(?=[\s/>])/gi;
   let state = 'data';
   let opener = null;
   for (let m = re.exec(text); m; m = re.exec(text)) {
     const t = m[0].toLowerCase();
-    if (t === '<!--->' || t === '<!-->') continue;
+    if (t === '<!--->' || t === '<!-->' || t === '--!>') continue;
     if (t === '<!--') {
       if (state === 'data') state = 'escaped';
     } else if (t === '-->') {

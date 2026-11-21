@@ -299,6 +299,14 @@ test('docs and types match: review dictionaries, baseline exports, occurrence ti
   }
 
   const page = '<html lang="en"><head><title>t</title></head><body><p id="a">x</p></body></html>';
+  // Each rule's source written out, so no value is spliced into code.
+  const TIER_SOURCES = {
+    FAIL: "function(ctx){ return { outcome: 'cantTell', occurrences: [{ selector: '#a', summary: 's', occurrenceOutcome: 'FAIL' }] }; }",
+    CANTTELL:
+      "function(ctx){ return { outcome: 'cantTell', occurrences: [{ selector: '#a', summary: 's', occurrenceOutcome: 'CANTTELL' }] }; }",
+    bogus:
+      "function(ctx){ return { outcome: 'cantTell', occurrences: [{ selector: '#a', summary: 's', occurrenceOutcome: 'bogus' }] }; }"
+  };
   const tierScan = (tier) =>
     runa11yCoreOnHtml(page, {
       engineOptions: {
@@ -306,7 +314,7 @@ test('docs and types match: review dictionaries, baseline exports, occurrence ti
           {
             id: 'org-tier',
             meta: { title: 'T', description: 'd', tags: ['wcag2a', 'wcag111'], wcagSc: ['1.1.1'] },
-            runInPage: `function(ctx){ return { outcome: 'cantTell', occurrences: [{ selector: '#a', summary: 's', occurrenceOutcome: ${JSON.stringify(tier)} }] }; }`
+            runInPage: TIER_SOURCES[tier]
           }
         ]
       },
