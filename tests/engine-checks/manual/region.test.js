@@ -244,3 +244,32 @@ test(`${RULE_ID}: text directly in <body> is outside every landmark (round 8, NA
     maxOccurrences: 0
   });
 });
+
+// A decorative image nothing overrides is left out of the accessibility
+// tree (Chromium ignores it): a tracking pixel outside the landmarks is no
+// content that needs one. One a global ARIA attribute or focusability keeps
+// in the tree is still asked about.
+test(`${RULE_ID}: a decorative <img> outside the landmarks is not asked about (round 9, N9-10)`, () => {
+  const page = (extra) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><header>h</header><main>x</main><footer>f</footer>${extra}</body></html>`;
+  for (const extra of [
+    '<img src="https://px.example/p.gif" width="1" height="1" alt="" border="0">',
+    '<img src="bg.png" role="presentation">',
+    '<div><img src="bg.png" role="none" alt="Background"></div>'
+  ]) {
+    assertRule(runa11yCoreOnHtml(page(extra), { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+  for (const extra of [
+    '<img src="p.gif" alt="" aria-label="Logo">',
+    '<img src="p.gif" role="none" tabindex="0">',
+    '<img src="p.gif" alt="Logo">'
+  ]) {
+    assertRule(runa11yCoreOnHtml(page(extra), { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+  }
+});
