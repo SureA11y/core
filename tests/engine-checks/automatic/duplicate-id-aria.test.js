@@ -219,3 +219,22 @@ test(`${RULE_ID}: nested repeated cards: each referrer's nearest copy found with
   );
   assert.equal(nearer.length, 59);
 });
+
+// Only the duplicated ids something refers to are queried for scope, by an
+// attribute selector; an id holding a quote or a backslash is
+// still found and reported (round 8 leftover).
+test('duplicate-id-aria: a duplicated id with a quote or a backslash is reported', () => {
+  for (const id of ['a"b', 'a\\b']) {
+    const doc = new (require('jsdom').JSDOM)(
+      '<!doctype html><html lang="en"><head><title>t</title></head><body><main><p>a</p><p>b</p><button>Go</button></main></body></html>'
+    ).window.document;
+    const [p1, p2] = doc.querySelectorAll('p');
+    p1.id = id;
+    p2.id = id;
+    doc.querySelector('button').setAttribute('aria-describedby', id);
+    const html = doc.documentElement.outerHTML;
+    const rule = runa11yCoreOnHtml(`<!doctype html>${html}`, { runOnly: ['duplicate-id-aria'] })
+      .checksResults[0];
+    assert.equal(rule.occurrences.length, 2, JSON.stringify(id));
+  }
+});
