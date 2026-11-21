@@ -5780,6 +5780,21 @@ function createDomHelpers(opts) {
           const rectCount = rects ? rects.length : 0;
 
           if (!rectCount) {
+            // An element with display: contents (a slot, or a wrapper made
+            // so) generates no box of its own, so it never has client rects,
+            // but its text and children are drawn: it is visible where they
+            // are.
+            const drawn = __contentsDrawn(node);
+            if (drawn) {
+              return __cacheAndReturn(
+                out(true, reasons, {
+                  rectCount: drawn.rectCount,
+                  width: drawn.width,
+                  height: drawn.height,
+                  opacity: opacityProduct
+                })
+              );
+            }
             return __cacheAndReturn(out(false, ['noClientRects'], { rectCount: 0 }));
           }
 
@@ -5806,6 +5821,37 @@ function createDomHelpers(opts) {
     }
 
     return __cacheAndReturn(out(true, reasons, { opacity: opacityProduct }));
+  }
+
+  // For an element with display: contents, the rects its content is drawn
+  // in, as { rectCount, width, height } of their union, or null when it has
+  // another display or nothing of it is drawn.
+  function __contentsDrawn(node) {
+    try {
+      const cs = computedStyle(node);
+      if (!cs || trim(cs.display) !== 'contents') return null;
+      const range = dom.createRange(dom.ownerDocument(node));
+      range.selectNodeContents(node);
+      const all = dom.getClientRects(range);
+      let count = 0;
+      let left = Infinity;
+      let top = Infinity;
+      let right = -Infinity;
+      let bottom = -Infinity;
+      for (let i = 0; all && i < all.length; i++) {
+        const r = all[i];
+        if (!r || !(r.width > 0) || !(r.height > 0)) continue;
+        count++;
+        left = Math.min(left, r.left);
+        top = Math.min(top, r.top);
+        right = Math.max(right, r.right);
+        bottom = Math.max(bottom, r.bottom);
+      }
+      if (!count) return null;
+      return { rectCount: count, width: right - left, height: bottom - top };
+    } catch {
+      return null;
+    }
   }
 
   function getEligibilityInfo(node, _ctx, opts) {

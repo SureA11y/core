@@ -1706,7 +1706,10 @@ function runInPage(ctx) {
       if (dom.firstElementChild(parent) !== child || dom.lastElementChild(parent) !== child) break;
       const wcs = safeComputedStyle(parent) || {};
       const display = String(wcs.display || '');
-      if (!display.startsWith('inline') || display === 'inline-block') break;
+      // A display: contents wrapper has no box: its content is laid out in
+      // the line around it, as an inline wrapper's is.
+      if (display !== 'contents' && (!display.startsWith('inline') || display === 'inline-block'))
+        break;
       // A wrapper that sets the link apart itself is not transparent: a
       // footnote marker raised by <sup>, or a bold or underlined wrapper.
       const valign = String(wcs.verticalAlign || 'baseline');
