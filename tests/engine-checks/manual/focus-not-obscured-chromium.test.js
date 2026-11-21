@@ -358,4 +358,19 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
     );
     assert.equal(res[RULE_ID].outcome, 'cantTell');
   });
+  // Round 8, NW-2: the hit test drills into shadow roots, and a point that
+  // landed in a component the header holds wasn't counted as the header's.
+  await t.test('an opaque sticky header holding a component is asked about', async () => {
+    const links = Array.from(
+      { length: 80 },
+      (_, i) => `<p><a href="#" id="l${i}">Link ${i}</a></p>`
+    ).join('');
+    const res = await scan(
+      '<!doctype html><html lang="en"><head><title>t</title><style>body{margin:0}</style></head><body>' +
+        `<script>customElements.define('x-bar', class extends HTMLElement { constructor() { super(); this.attachShadow({ mode: 'open' }).innerHTML = '<div style="height:60px;background:#fff">Site</div>'; } });</script>` +
+        `<header style="position:sticky;top:0;height:60px;background:#fff"><x-bar></x-bar></header>${links}</body></html>`
+    );
+    assert.equal(res[RULE_ID].outcome, 'cantTell', JSON.stringify(res[RULE_ID]));
+    assert.ok(res[RULE_ID].findings.some((f) => f.code === 'FOCUS_OBSCURED_ENTIRELY'));
+  });
 });

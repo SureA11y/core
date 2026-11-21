@@ -82080,6 +82080,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (r && r.width > 0 && r.height > 0 && shown(m)) modals.push(m);
   }
   const inModal = (el) => modals.some((m) => dom.contains(m, el));
+  // The parent in the composed tree, through a shadow root to its host, and
+  // whether a node is inside another there.
+  const composedUp = (n) =>
+    typeof helpers.composedParent === 'function' ? helpers.composedParent(n) : dom.parentElement(n);
+  const inComposed = (node, container) => {
+    for (let cur = node, i = 0; cur && i < 100000; cur = composedUp(cur), i++) {
+      if (cur === container) return true;
+    }
+    return false;
+  };
 
   // A sticky box stays inside its containing block, the nearest ancestor
   // that is no inline box, no display: contents and no table row, row group
@@ -82303,13 +82313,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         } catch {
           top = null;
         }
-        if (!top || top === c.el || dom.contains(c.el, top) || dom.contains(top, c.el)) continue;
-        if (!dom.contains(cover.root, top)) continue;
+        // The hit is read in the composed tree: it may be inside a
+        // component the cover or the focused element holds, where contains()
+        // stops at the shadow boundary (round 8, NW-2).
+        if (!top || top === c.el || inComposed(top, c.el) || inComposed(c.el, top)) continue;
+        if (!inComposed(top, cover.root)) continue;
         // Drawn there: the part hit, or a box around it within the root,
         // and for 2.4.11 drawn opaque, as what shows through hides nothing
         // entirely.
         let drawn = false;
-        for (let n = top, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+        for (let n = top, i = 0; n && i < 10000; n = composedUp(n), i++) {
           const ncs = styleOf(n);
           if (partlyToo ? paints(n, ncs) : opaque(n, ncs)) {
             drawn = true;
@@ -82759,6 +82772,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (r && r.width > 0 && r.height > 0 && shown(m)) modals.push(m);
   }
   const inModal = (el) => modals.some((m) => dom.contains(m, el));
+  // The parent in the composed tree, through a shadow root to its host, and
+  // whether a node is inside another there.
+  const composedUp = (n) =>
+    typeof helpers.composedParent === 'function' ? helpers.composedParent(n) : dom.parentElement(n);
+  const inComposed = (node, container) => {
+    for (let cur = node, i = 0; cur && i < 100000; cur = composedUp(cur), i++) {
+      if (cur === container) return true;
+    }
+    return false;
+  };
 
   // A sticky box stays inside its containing block, the nearest ancestor
   // that is no inline box, no display: contents and no table row, row group
@@ -82982,13 +83005,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         } catch {
           top = null;
         }
-        if (!top || top === c.el || dom.contains(c.el, top) || dom.contains(top, c.el)) continue;
-        if (!dom.contains(cover.root, top)) continue;
+        // The hit is read in the composed tree: it may be inside a
+        // component the cover or the focused element holds, where contains()
+        // stops at the shadow boundary (round 8, NW-2).
+        if (!top || top === c.el || inComposed(top, c.el) || inComposed(c.el, top)) continue;
+        if (!inComposed(top, cover.root)) continue;
         // Drawn there: the part hit, or a box around it within the root,
         // and for 2.4.11 drawn opaque, as what shows through hides nothing
         // entirely.
         let drawn = false;
-        for (let n = top, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+        for (let n = top, i = 0; n && i < 10000; n = composedUp(n), i++) {
           const ncs = styleOf(n);
           if (partlyToo ? paints(n, ncs) : opaque(n, ncs)) {
             drawn = true;
