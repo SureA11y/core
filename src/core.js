@@ -26682,6 +26682,15 @@ const runCoreSettled = (function runCoreSettled(
     engineOptions.timeBudgetMs > 0
       ? engineOptions.timeBudgetMs
       : null;
+  // A scan of several profiles whose budget ran out before this profile's
+  // scan started asks it to start no rule, so it lists its selection in
+  // notRun (runProfilesUncapped). Set by the engine only, not enumerable.
+  const budgetSpent = !!(
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent') &&
+    engineOptions.__budgetSpent === true
+  );
   const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
   // for a key that looks like a typo of a known one.
@@ -27712,7 +27721,7 @@ const runCoreSettled = (function runCoreSettled(
     if (typeof impl !== 'function') continue;
     // Past the time budget, a rule is not started: listed, so the scan never
     // reads as one that checked it.
-    if (timeBudgetMs !== null && nowMs() - scanStartMs >= timeBudgetMs) {
+    if (budgetSpent || (timeBudgetMs !== null && nowMs() - scanStartMs >= timeBudgetMs)) {
       notRunRules.push({ ruleId: defResolved.ruleId, reason: 'timeBudget' });
       continue;
     }
@@ -28089,7 +28098,10 @@ const runCoreSettled = (function runCoreSettled(
       console.warn(
         '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
           timeBudgetMs +
-          ' ms and did not run ' +
+          (budgetSpent
+            ? ' ms before profile "' + String(engineOptions.profile) + '" started, so it'
+            : ' ms and') +
+          ' did not run ' +
           notRunRules.length +
           ' rule' +
           (notRunRules.length === 1 ? '' : 's') +
@@ -29047,10 +29059,27 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
       }
       const left = budget === null ? null : budget - (clock() - started);
       if (left !== null && i > 0 && left <= 0) {
-        const skipped = {};
-        Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
-        runs.push({ profile: unique[i], result: skipped });
-        return step(i + 1);
+        // Not run, but its rules are listed in notRun, as a profile's scan
+        // that ran out lists those it did not start: its scan is asked to
+        // start none (__budgetSpent), which only works out its selection.
+        const dryOptions = Object.assign({}, engineOptions, { profile: unique[i] });
+        Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        const skippedOf = (dry) => {
+          const skipped = {};
+          Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
+          const applied = dry && dry.engine ? dry.engine.profile : undefined;
+          const ids =
+            typeof applied === 'string' &&
+            lowerAscii(applied) === lowerAscii(unique[i]) &&
+            Array.isArray(dry.notRun)
+              ? dry.notRun.filter((n) => n && n.ruleId).map((n) => n.ruleId)
+              : [];
+          Object.defineProperty(skipped, '__rulesNotRun', { value: ids });
+          runs.push({ profile: unique[i], result: skipped });
+          return step(i + 1);
+        };
+        const dry = run(dryOptions);
+        return thenable(dry) ? dry.then(skippedOf) : skippedOf(dry);
       }
       const result = run(
         Object.assign(
@@ -29103,20 +29132,29 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
       .slice(0, max)
       .sort((a, b) => a - b);
     const byOutcome = {};
+    let leaningFail = 0;
     const keep = new Set(kept);
     list.forEach((o, i) => {
       if (keep.has(i)) return;
       const tier = tierOf(check, o);
       byOutcome[tier] = (byOutcome[tier] || 0) + 1;
+      if (rankOf(check, o) === 1) leaningFail += 1;
     });
     const omitted = list.length - kept.length;
     omittedTotal += omitted;
     keptByRule.set(check.ruleId, { kept, total: list.length });
-    return Object.assign({}, check, {
-      occurrences: kept.map((i) => list[i]),
-      occurrencesOmitted: omitted,
-      occurrencesOmittedByOutcome: byOutcome
-    });
+    // The undecided ones that lean fail, which a lean-fail gate counts, are
+    // counted apart from the other undecided ones.
+    return Object.assign(
+      {},
+      check,
+      {
+        occurrences: kept.map((i) => list[i]),
+        occurrencesOmitted: omitted,
+        occurrencesOmittedByOutcome: byOutcome
+      },
+      leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {}
+    );
   });
   if (!omittedTotal) return result;
   // A rollup's record of what it made of each finding follows the findings
@@ -29576,10 +29614,17 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   if (!oneLaw) delete engine.law;
   // The rules a profile's scan did not start, and the profiles not started,
   // for the time budget: the merged scan is incomplete.
+  // A profile the budget left unstarted lists every rule of its selection.
   const rulesNotRun = [];
-  for (const r of ran) {
-    for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
-      if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+  for (const r of runs) {
+    if (ran.includes(r)) {
+      for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
+        if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+      }
+    } else if (r.result && Array.isArray(r.result.__rulesNotRun)) {
+      for (const ruleId of r.result.__rulesNotRun) {
+        rulesNotRun.push({ ruleId, reason: 'timeBudget', profile: r.profile });
+      }
     }
   }
   const budgetProfiles = notRun.filter((n) => n.reason === 'timeBudget');
@@ -44519,6 +44564,7 @@ const RUNTIME_CATALOG = {
       "report_card_ruleError": "Die Regel wurde nicht abgeschlossen: {{error}}",
       "report_card_representative": "Selektor und Zusammenfassung oben stammen von einer repräsentativen Fundstelle; insgesamt {{count}} bei dieser Regel.",
       "report_card_moreOmitted": "+{{count}} weitere, nicht aufgeführt: Der Scan hat {{kept}} Fundstellen dieser Regel behalten (output.maxOccurrencesPerRule). Sie sind oben mitgezählt.",
+      "report_card_moreOmitted_one": "+{{count}} weitere, nicht aufgeführt: Der Scan hat {{kept}} Fundstelle dieser Regel behalten (output.maxOccurrencesPerRule). Sie sind oben mitgezählt.",
       "report_card_help": "So beheben Sie {{rule}}",
       "report_card_understanding": "{{sc}} {{title}} verstehen",
       "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
@@ -46347,6 +46393,7 @@ const RUNTIME_CATALOG = {
       "report_card_ruleError": "The rule did not complete: {{error}}",
       "report_card_representative": "Selector/summary above are from one representative occurrence; {{count}} total on this rule.",
       "report_card_moreOmitted": "+{{count}} more not listed: the scan kept {{kept}} occurrences of this rule (output.maxOccurrencesPerRule). They are counted above.",
+      "report_card_moreOmitted_one": "+{{count}} more not listed: the scan kept {{kept}} occurrence of this rule (output.maxOccurrencesPerRule). They are counted above.",
       "report_card_help": "How to fix {{rule}}",
       "report_card_understanding": "Understanding {{sc}} {{title}}",
       "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
@@ -48175,6 +48222,7 @@ const RUNTIME_CATALOG = {
       "report_card_ruleError": "La regla no se completó: {{error}}",
       "report_card_representative": "El selector y el resumen anteriores corresponden a una aparición representativa; {{count}} en total en esta regla.",
       "report_card_moreOmitted": "+{{count}} más, sin listar: el análisis conservó {{kept}} apariciones de esta regla (output.maxOccurrencesPerRule). Se cuentan arriba.",
+      "report_card_moreOmitted_one": "+{{count}} más, sin listar: el análisis conservó {{kept}} aparición de esta regla (output.maxOccurrencesPerRule). Se cuentan arriba.",
       "report_card_help": "Cómo corregir {{rule}}",
       "report_card_understanding": "Comprender {{sc}} {{title}}",
       "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
@@ -50003,6 +50051,7 @@ const RUNTIME_CATALOG = {
       "report_card_ruleError": "La règle ne s'est pas terminée : {{error}}",
       "report_card_representative": "Le sélecteur et le résumé ci-dessus proviennent d’une occurrence représentative ; {{count}} au total pour cette règle.",
       "report_card_moreOmitted": "+{{count}} de plus, non listées : l’analyse a gardé {{kept}} occurrences de cette règle (output.maxOccurrencesPerRule). Elles sont comptées ci-dessus.",
+      "report_card_moreOmitted_one": "+{{count}} de plus, non listées : l’analyse a gardé {{kept}} occurrence de cette règle (output.maxOccurrencesPerRule). Elles sont comptées ci-dessus.",
       "report_card_help": "Comment corriger {{rule}}",
       "report_card_understanding": "Comprendre {{sc}} {{title}}",
       "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
@@ -51831,6 +51880,7 @@ const RUNTIME_CATALOG = {
       "report_card_ruleError": "ルールは完了しませんでした: {{error}}",
       "report_card_representative": "上記のセレクターと概要は、代表的な 1 件のものです。このルールの検出箇所は合計 {{count}} 件です。",
       "report_card_moreOmitted": "ほかに {{count}} 件 (一覧には表示されません): スキャンはこのルールの検出箇所を {{kept}} 件まで保持しました (output.maxOccurrencesPerRule)。上の件数には含まれています。",
+      "report_card_moreOmitted_one": "ほかに {{count}} 件 (一覧には表示されません): スキャンはこのルールの検出箇所を {{kept}} 件まで保持しました (output.maxOccurrencesPerRule)。上の件数には含まれています。",
       "report_card_help": "{{rule}} の修正方法",
       "report_card_understanding": "{{sc}} {{title}} の解説",
       "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
@@ -110094,6 +110144,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return shape;
   }
 
+  // Whether a box's writing mode is vertical: its lines run down the page,
+  // so its inline axis is y, and its block axis x.
+  function verticalOf(el) {
+    const cs = styleOf(el);
+    return !!cs && /^(vertical|sideways|tb)/.test(String(cs.writingMode || ''));
+  }
+
   // The line count a box is clamped to, as { lines, css }, or null.
   function lineClampOf(el) {
     const cs = styleOf(el);
@@ -110237,6 +110294,56 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // The rects of a text's glyphs only: a range over each run of characters
+  // that are not white space. Preserved spaces at the end of a line hang
+  // past the box's edge (white-space: pre-wrap, CSS Text 4.1.3) and show
+  // nothing, so they cut no content. Past MAX_RUNS runs, one range from the
+  // first such character to the last. The runs of one line are joined into
+  // one rect, as linesOf gives it. Null where it can't be measured.
+  function glyphLinesOf(node, vertical) {
+    const MAX_RUNS = 400;
+    const data = String(dom.nodeValue(node) || '');
+    const runs = [];
+    const re = /[^\s\u00a0]+/g;
+    for (let m = re.exec(data); m; m = re.exec(data)) {
+      runs.push([m.index, m.index + m[0].length]);
+      if (runs.length > MAX_RUNS) break;
+    }
+    if (!runs.length) return null;
+    const spans =
+      runs.length > MAX_RUNS ? [[runs[0][0], data.replace(/[\s\u00a0]+$/, '').length]] : runs;
+    const range = dom.createRange(document);
+    try {
+      const out = [];
+      for (const [start, end] of spans) {
+        range.setStart(node, start);
+        range.setEnd(node, end);
+        for (const r of dom.getClientRects(range)) {
+          if (r.width < 1 || r.height < 1) continue;
+          const last = out[out.length - 1];
+          const [a, b] = vertical ? ['left', 'right'] : ['top', 'bottom'];
+          if (last && Math.abs(last[a] - r[a]) < 0.5 && Math.abs(last[b] - r[b]) < 0.5) {
+            for (const side of vertical ? ['top', 'bottom'] : ['left', 'right']) {
+              last[side] =
+                side === 'top' || side === 'left'
+                  ? Math.min(last[side], r[side])
+                  : Math.max(last[side], r[side]);
+            }
+            continue;
+          }
+          out.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+        }
+      }
+      return out.length ? out : null;
+    } catch {
+      return null;
+    } finally {
+      try {
+        range.detach();
+      } catch {}
+    }
+  }
+
   // How far a line sits outside a box, along the axes the box clips.
   function outside(line, box, c) {
     const dy = c.y ? Math.max(0, box.top - line.top, line.bottom - box.bottom) : 0;
@@ -110266,8 +110373,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const cs = styleOf(c.el);
       if (!cs) return '';
       const parts = [];
+      // The inline axis follows the box's writing mode.
+      const vertical = verticalOf(c.el);
+      const inline = axis === (vertical ? 'y' : 'x');
+      const [maxSize, size] = axis === 'x' ? ['maxWidth', 'width'] : ['maxHeight', 'height'];
+      const cssName = {
+        maxWidth: 'max-width',
+        width: 'width',
+        maxHeight: 'max-height',
+        height: 'height'
+      };
       if (clamp) parts.push(clamp.css);
-      else if (axis === 'x') {
+      else if (inline) {
         let ws = '';
         for (let cur = textEl, i = 0; cur && i < 100; cur = upOf(cur), i++) {
           const st = styleOf(cur);
@@ -110279,10 +110396,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           if (cur === c.el) break;
         }
         if (ws) parts.push(ws);
-        else if (cs.maxWidth && cs.maxWidth !== 'none') parts.push(`max-width: ${cs.maxWidth}`);
-        else if (cs.width && cs.width !== 'auto') parts.push(`width: ${cs.width}`);
-      } else if (cs.maxHeight && cs.maxHeight !== 'none') parts.push(`max-height: ${cs.maxHeight}`);
-      else if (cs.height && cs.height !== 'auto') parts.push(`height: ${cs.height}`);
+        else if (cs[maxSize] && cs[maxSize] !== 'none')
+          parts.push(`${cssName[maxSize]}: ${cs[maxSize]}`);
+        else if (cs[size] && cs[size] !== 'auto') parts.push(`${cssName[size]}: ${cs[size]}`);
+      } else if (cs[maxSize] && cs[maxSize] !== 'none')
+        parts.push(`${cssName[maxSize]}: ${cs[maxSize]}`);
+      else if (cs[size] && cs[size] !== 'auto') parts.push(`${cssName[size]}: ${cs[size]}`);
       const ox = String(cs.overflowX || '');
       const oy = String(cs.overflowY || '');
       const own = axis === 'x' ? ox : oy;
@@ -110293,7 +110412,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         parts.push(`clip-path: ${cs.clipPath}`);
       else if (c.shape && cs.clip && cs.clip !== 'auto') parts.push(`clip: ${cs.clip}`);
       else return '';
-      if (axis === 'x' && cs.textOverflow === 'ellipsis') parts.push('text-overflow: ellipsis');
+      if (inline && cs.textOverflow === 'ellipsis') parts.push('text-overflow: ellipsis');
       return parts.join('; ');
     } catch {
       return '';
@@ -110309,8 +110428,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const { n, box: textEl, holder } of texts) {
     const clippers = clippersOf(textEl);
     if (!clippers.length) continue;
-    const lines = linesOf(n);
+    let lines = linesOf(n);
     if (!lines.length) continue;
+    // A text that goes past a box that clips it is measured again by its
+    // glyphs, so white space alone past the edge is no cut.
+    if (
+      /[\s\u00a0]/.test(String(dom.nodeValue(n) || '')) &&
+      clippers.some((c) => {
+        const b = clipBoxOf(c);
+        return lines.some((l) => {
+          const o = outside(l, b, c);
+          return o.dx > PARTLY_PX || o.dy > PARTLY_PX;
+        });
+      })
+    ) {
+      lines = glyphLinesOf(n, verticalOf(textEl)) || lines;
+    }
     // Visible text: some of it shows in every box that clips it. A box a
     // pixel wide or high is visually hidden text, not a cut.
     let visible = true;
@@ -110324,6 +110457,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!visible) continue;
     measured += 1;
     const fontSize = px(styleOf(textEl) && styleOf(textEl).fontSize) || 16;
+    // Half an em along the line, and half the line's thickness across it:
+    // in a vertical writing mode, the line runs down (y).
+    const textVertical = verticalOf(textEl);
     for (const c of clippers) {
       if (isExcluded(c.el)) continue;
       const known = byBox.get(c.el);
@@ -110332,8 +110468,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let worst = null;
       for (const l of lines) {
         const o = outside(l, b, c);
-        const x = { axis: 'x', overflowPx: o.dx, thresholdPx: fontSize / 2 };
-        const y = { axis: 'y', overflowPx: o.dy, thresholdPx: (l.bottom - l.top) / 2 };
+        const x = {
+          axis: 'x',
+          overflowPx: o.dx,
+          thresholdPx: textVertical ? (l.right - l.left) / 2 : fontSize / 2
+        };
+        const y = {
+          axis: 'y',
+          overflowPx: o.dy,
+          thresholdPx: textVertical ? fontSize / 2 : (l.bottom - l.top) / 2
+        };
         const lost = o.dx >= x.thresholdPx || o.dy >= y.thresholdPx;
         if (lost) {
           const m = o.dx >= x.thresholdPx ? x : y;
@@ -110348,8 +110492,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       if (!worst) continue;
       const cs = styleOf(c.el);
-      const clamp = worst.axis === 'y' ? lineClampOf(c.el) : null;
-      const ellipsis = worst.axis === 'x' && !!cs && cs.textOverflow === 'ellipsis';
+      // The ellipsis shortens a line on the box's inline axis, and the clamp
+      // its lines on its block axis.
+      const inlineAxis = verticalOf(c.el) ? 'y' : 'x';
+      const clamp = worst.axis !== inlineAxis ? lineClampOf(c.el) : null;
+      const ellipsis = worst.axis === inlineAxis && !!cs && cs.textOverflow === 'ellipsis';
       const truncated = !!clamp || ellipsis;
       if (known && !worst.lost && !truncated) continue;
       const text = String(dom.nodeValue(n) || '')
@@ -124916,6 +125063,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_ruleError": "Die Regel wurde nicht abgeschlossen: {{error}}",
       "report_card_representative": "Selektor und Zusammenfassung oben stammen von einer repräsentativen Fundstelle; insgesamt {{count}} bei dieser Regel.",
       "report_card_moreOmitted": "+{{count}} weitere, nicht aufgeführt: Der Scan hat {{kept}} Fundstellen dieser Regel behalten (output.maxOccurrencesPerRule). Sie sind oben mitgezählt.",
+      "report_card_moreOmitted_one": "+{{count}} weitere, nicht aufgeführt: Der Scan hat {{kept}} Fundstelle dieser Regel behalten (output.maxOccurrencesPerRule). Sie sind oben mitgezählt.",
       "report_card_help": "So beheben Sie {{rule}}",
       "report_card_understanding": "{{sc}} {{title}} verstehen",
       "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
@@ -126744,6 +126892,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_ruleError": "The rule did not complete: {{error}}",
       "report_card_representative": "Selector/summary above are from one representative occurrence; {{count}} total on this rule.",
       "report_card_moreOmitted": "+{{count}} more not listed: the scan kept {{kept}} occurrences of this rule (output.maxOccurrencesPerRule). They are counted above.",
+      "report_card_moreOmitted_one": "+{{count}} more not listed: the scan kept {{kept}} occurrence of this rule (output.maxOccurrencesPerRule). They are counted above.",
       "report_card_help": "How to fix {{rule}}",
       "report_card_understanding": "Understanding {{sc}} {{title}}",
       "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
@@ -128572,6 +128721,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_ruleError": "La regla no se completó: {{error}}",
       "report_card_representative": "El selector y el resumen anteriores corresponden a una aparición representativa; {{count}} en total en esta regla.",
       "report_card_moreOmitted": "+{{count}} más, sin listar: el análisis conservó {{kept}} apariciones de esta regla (output.maxOccurrencesPerRule). Se cuentan arriba.",
+      "report_card_moreOmitted_one": "+{{count}} más, sin listar: el análisis conservó {{kept}} aparición de esta regla (output.maxOccurrencesPerRule). Se cuentan arriba.",
       "report_card_help": "Cómo corregir {{rule}}",
       "report_card_understanding": "Comprender {{sc}} {{title}}",
       "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
@@ -130400,6 +130550,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_ruleError": "La règle ne s'est pas terminée : {{error}}",
       "report_card_representative": "Le sélecteur et le résumé ci-dessus proviennent d’une occurrence représentative ; {{count}} au total pour cette règle.",
       "report_card_moreOmitted": "+{{count}} de plus, non listées : l’analyse a gardé {{kept}} occurrences de cette règle (output.maxOccurrencesPerRule). Elles sont comptées ci-dessus.",
+      "report_card_moreOmitted_one": "+{{count}} de plus, non listées : l’analyse a gardé {{kept}} occurrence de cette règle (output.maxOccurrencesPerRule). Elles sont comptées ci-dessus.",
       "report_card_help": "Comment corriger {{rule}}",
       "report_card_understanding": "Comprendre {{sc}} {{title}}",
       "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
@@ -132228,6 +132379,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_ruleError": "ルールは完了しませんでした: {{error}}",
       "report_card_representative": "上記のセレクターと概要は、代表的な 1 件のものです。このルールの検出箇所は合計 {{count}} 件です。",
       "report_card_moreOmitted": "ほかに {{count}} 件 (一覧には表示されません): スキャンはこのルールの検出箇所を {{kept}} 件まで保持しました (output.maxOccurrencesPerRule)。上の件数には含まれています。",
+      "report_card_moreOmitted_one": "ほかに {{count}} 件 (一覧には表示されません): スキャンはこのルールの検出箇所を {{kept}} 件まで保持しました (output.maxOccurrencesPerRule)。上の件数には含まれています。",
       "report_card_help": "{{rule}} の修正方法",
       "report_card_understanding": "{{sc}} {{title}} の解説",
       "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
@@ -159184,6 +159336,15 @@ const runCoreSettled = (function runCoreSettled(
     engineOptions.timeBudgetMs > 0
       ? engineOptions.timeBudgetMs
       : null;
+  // A scan of several profiles whose budget ran out before this profile's
+  // scan started asks it to start no rule, so it lists its selection in
+  // notRun (runProfilesUncapped). Set by the engine only, not enumerable.
+  const budgetSpent = !!(
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent') &&
+    engineOptions.__budgetSpent === true
+  );
   const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
   // for a key that looks like a typo of a known one.
@@ -160214,7 +160375,7 @@ const runCoreSettled = (function runCoreSettled(
     if (typeof impl !== 'function') continue;
     // Past the time budget, a rule is not started: listed, so the scan never
     // reads as one that checked it.
-    if (timeBudgetMs !== null && nowMs() - scanStartMs >= timeBudgetMs) {
+    if (budgetSpent || (timeBudgetMs !== null && nowMs() - scanStartMs >= timeBudgetMs)) {
       notRunRules.push({ ruleId: defResolved.ruleId, reason: 'timeBudget' });
       continue;
     }
@@ -160591,7 +160752,10 @@ const runCoreSettled = (function runCoreSettled(
       console.warn(
         '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
           timeBudgetMs +
-          ' ms and did not run ' +
+          (budgetSpent
+            ? ' ms before profile "' + String(engineOptions.profile) + '" started, so it'
+            : ' ms and') +
+          ' did not run ' +
           notRunRules.length +
           ' rule' +
           (notRunRules.length === 1 ? '' : 's') +
@@ -161549,10 +161713,27 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
       }
       const left = budget === null ? null : budget - (clock() - started);
       if (left !== null && i > 0 && left <= 0) {
-        const skipped = {};
-        Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
-        runs.push({ profile: unique[i], result: skipped });
-        return step(i + 1);
+        // Not run, but its rules are listed in notRun, as a profile's scan
+        // that ran out lists those it did not start: its scan is asked to
+        // start none (__budgetSpent), which only works out its selection.
+        const dryOptions = Object.assign({}, engineOptions, { profile: unique[i] });
+        Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        const skippedOf = (dry) => {
+          const skipped = {};
+          Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
+          const applied = dry && dry.engine ? dry.engine.profile : undefined;
+          const ids =
+            typeof applied === 'string' &&
+            lowerAscii(applied) === lowerAscii(unique[i]) &&
+            Array.isArray(dry.notRun)
+              ? dry.notRun.filter((n) => n && n.ruleId).map((n) => n.ruleId)
+              : [];
+          Object.defineProperty(skipped, '__rulesNotRun', { value: ids });
+          runs.push({ profile: unique[i], result: skipped });
+          return step(i + 1);
+        };
+        const dry = run(dryOptions);
+        return thenable(dry) ? dry.then(skippedOf) : skippedOf(dry);
       }
       const result = run(
         Object.assign(
@@ -161605,20 +161786,29 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
       .slice(0, max)
       .sort((a, b) => a - b);
     const byOutcome = {};
+    let leaningFail = 0;
     const keep = new Set(kept);
     list.forEach((o, i) => {
       if (keep.has(i)) return;
       const tier = tierOf(check, o);
       byOutcome[tier] = (byOutcome[tier] || 0) + 1;
+      if (rankOf(check, o) === 1) leaningFail += 1;
     });
     const omitted = list.length - kept.length;
     omittedTotal += omitted;
     keptByRule.set(check.ruleId, { kept, total: list.length });
-    return Object.assign({}, check, {
-      occurrences: kept.map((i) => list[i]),
-      occurrencesOmitted: omitted,
-      occurrencesOmittedByOutcome: byOutcome
-    });
+    // The undecided ones that lean fail, which a lean-fail gate counts, are
+    // counted apart from the other undecided ones.
+    return Object.assign(
+      {},
+      check,
+      {
+        occurrences: kept.map((i) => list[i]),
+        occurrencesOmitted: omitted,
+        occurrencesOmittedByOutcome: byOutcome
+      },
+      leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {}
+    );
   });
   if (!omittedTotal) return result;
   // A rollup's record of what it made of each finding follows the findings
@@ -162078,10 +162268,17 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   if (!oneLaw) delete engine.law;
   // The rules a profile's scan did not start, and the profiles not started,
   // for the time budget: the merged scan is incomplete.
+  // A profile the budget left unstarted lists every rule of its selection.
   const rulesNotRun = [];
-  for (const r of ran) {
-    for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
-      if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+  for (const r of runs) {
+    if (ran.includes(r)) {
+      for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
+        if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+      }
+    } else if (r.result && Array.isArray(r.result.__rulesNotRun)) {
+      for (const ruleId of r.result.__rulesNotRun) {
+        rulesNotRun.push({ ruleId, reason: 'timeBudget', profile: r.profile });
+      }
     }
   }
   const budgetProfiles = notRun.filter((n) => n.reason === 'timeBudget');

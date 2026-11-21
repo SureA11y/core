@@ -3389,10 +3389,11 @@ At a viewport 640 CSS pixels wide or less, as a 1280 pixel window shows a page a
 
 **Expectation.**
 
-WCAG 1.4.4: text can be resized to 200% without loss of content. The rule measures the layout at one width and asks; it never fails. Each line of the text is measured (Range.getClientRects) against the box that clips it: its padding box, or the rectangle of its clip-path or clip.
+WCAG 1.4.4: text can be resized to 200% without loss of content. The rule measures the layout at one width and asks; it never fails. Each line of the text is measured (Range.getClientRects) against the box that clips it: its padding box, or the rectangle of its clip-path or clip. Only its characters other than white space are measured: spaces that hang past the edge at the end of a line (`white-space: pre-wrap`) show nothing, so they cut no content.
 
 - Text that a box cuts short with an ellipsis (`text-overflow: ellipsis`) or a line clamp is asked about, leaning fail (TEXT_TRUNCATED_AT_640): part of it is not shown.
 - Text with a line that reaches more than 2 pixels past the edge of a box that clips it is asked about (TEXT_CLIPPED_AT_640). It leans fail where the text is certainly cut: a line at least half outside (half its height, or half an em across). A line cut by less gets no lean: it may still be read.
+- In a vertical writing mode (`writing-mode: vertical-rl` and the like), lines run down the page: the ellipsis and `nowrap` are read on the box's inline axis (y), the line clamp on its block axis (x), and a line is half outside by half an em down or half its width across.
 - Text that every box clipping it shows in full passes.
 
 Each box is reported once, for the first text it cuts most. Whether the full text is offered another way (a control that opens the box, the same text elsewhere) is for a person to confirm. At most 50 boxes are listed per reason code; the result's `data.omitted` says how many more each had.
@@ -3403,7 +3404,7 @@ Each box is reported once, for the first text it cuts most. Whether the full tex
 **What a finding reports.**
 
 - `text`: the start of the text, up to 60 characters.
-- `metrics.overflowPx`: how far, in CSS pixels, the line went past the edge of the box that clips it; `metrics.thresholdPx`, how far it may go before the text counts as cut (half an em across, or half the line's height down); `metrics.axis`, `x` or `y`.
+- `metrics.overflowPx`: how far, in CSS pixels, the line went past the edge of the box that clips it; `metrics.thresholdPx`, how far it may go before the text counts as cut (half an em along the line, or half the line's thickness across it); `metrics.axis`, `x` or `y`.
 - `edge`: the edge of the box the line went furthest past: `top`, `right`, `bottom` or `left`.
 - `clipCss` (where it can be read): the CSS that cuts the text off, as declarations: what fixes the box's size on that axis (`white-space: nowrap`, `width`, `height`, `max-height`, a clamp) and what hides the overflow, as `height: 48px; overflow: hidden`.
 - `container.widthPx`, `container.heightPx`: the size of the clipping box.
