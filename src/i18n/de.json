@@ -435,6 +435,7 @@
   "buttonNamePresent_title": "Schaltflächen haben einen zugänglichen Namen",
   "buttonNamePresent_description": "Prüft, ob Schaltflächen einen nicht leeren zugänglichen Namen aufweisen.",
   "buttonNamePresent_summary_fail": "Diese Schaltfläche hat keinen zugänglichen Namen.",
+  "buttonNamePresent_summary_fail_otherRole": "Dieses <{{element}}> hat die Rolle {{role}} und keinen zugänglichen Namen.",
   "buttonNamePresent_hint_fail": "Geben Sie der Schaltfläche sichtbaren Text oder einen Namen mit aria-label, damit Screenreader-Nutzende wissen, was sie tut.",
   "buttonNamePresent_summary_cantTell_closedContent": "Diese Schaltfläche erhält ihren Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob sie einen hat, ließ sich daher nicht feststellen.",
   "buttonNamePresent_hint_cantTell_closedContent": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat sie keinen, geben Sie ihr ein aria-label oder sichtbaren Text.",

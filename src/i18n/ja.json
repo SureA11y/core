@@ -435,6 +435,7 @@
   "buttonNamePresent_title": "ボタンにアクセシブルな名前があること",
   "buttonNamePresent_description": "ボタンが空でないアクセシブルな名前を公開しているかを確認します。",
   "buttonNamePresent_summary_fail": "このボタンにはアクセシブルな名前がありません。",
+  "buttonNamePresent_summary_fail_otherRole": "この <{{element}}> のロールは {{role}} で、アクセシブルな名前がありません。",
   "buttonNamePresent_hint_fail": "ボタンに表示テキストを入れるか、aria-label で名前を付けて、スクリーンリーダーの利用者がボタンの働きを分かるようにしてください。",
   "buttonNamePresent_summary_cantTell_closedContent": "このボタンは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
   "buttonNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",

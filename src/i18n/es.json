@@ -435,6 +435,7 @@
   "buttonNamePresent_title": "Los botones tienen un nombre accesible",
   "buttonNamePresent_description": "Comprueba que los botones expongan un nombre accesible no vacío.",
   "buttonNamePresent_summary_fail": "Este botón no tiene nombre accesible.",
+  "buttonNamePresent_summary_fail_otherRole": "Este <{{element}}> tiene el rol {{role}} y no tiene nombre accesible.",
   "buttonNamePresent_hint_fail": "Darle al botón texto visible, o un nombre con aria-label, para que quienes usan lector de pantalla sepan lo que hace.",
   "buttonNamePresent_summary_cantTell_closedContent": "Este botón puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
   "buttonNamePresent_hint_cantTell_closedContent": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle un aria-label o un texto visible.",

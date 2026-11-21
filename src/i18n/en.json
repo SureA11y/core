@@ -435,6 +435,7 @@
   "buttonNamePresent_title": "Buttons have an accessible name",
   "buttonNamePresent_description": "Checks that buttons expose a non-empty accessible name.",
   "buttonNamePresent_summary_fail": "This button has no accessible name.",
+  "buttonNamePresent_summary_fail_otherRole": "This <{{element}}> has role {{role}} and no accessible name.",
   "buttonNamePresent_hint_fail": "Give the button visible text, or name it with aria-label, so screen reader users know what it does.",
   "buttonNamePresent_summary_cantTell_closedContent": "This button may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
   "buttonNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
