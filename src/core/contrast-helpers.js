@@ -4695,7 +4695,7 @@ function createContrastHelpers(opts, shared) {
       }
 
       const cs = __contrastComputedStyle(cur);
-      const bgColor = backgroundColorOf(cs);
+      const bgColor = __forcedSelectBackground(cur, cs) || backgroundColorOf(cs);
       const bg = parseCssColorToRgba(bgColor);
       const op = opacityOf(cs);
 
@@ -5753,6 +5753,12 @@ function createContrastHelpers(opts, shared) {
       const froot = fdoc && dom.documentElement(fdoc);
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
+        // Under forced colors the scan holds the page in its own colors
+        // (forced-color-adjust: none); the blank frame is held so too, or
+        // the browser's placeholder color read there is the forced palette's
+        // and the page's own browser placeholder looks like the page's
+        // choice.
+        froot.style.forcedColorAdjust = 'none';
         const field = dom.createElement(fdoc, tag);
         if (tag === 'input') dom.setAttribute(field, 'type', type);
         dom.setAttribute(field, 'placeholder', 'x');
@@ -5812,6 +5818,64 @@ function createContrastHelpers(opts, shared) {
   // The browser's values are read once per color-scheme in a blank frame,
   // as the placeholder defaults are.
   const __selectFieldDefaults = new Map();
+  // A drop-down select's ButtonFace background and the Field color in each
+  // scheme in Chromium (read in Chromium 153), for a scan under forced
+  // colors, where the browser gives the palette's in their place.
+  const __SELECT_COLORS = {
+    light: { background: 'rgb(239, 239, 239)', field: 'rgb(255, 255, 255)' },
+    dark: { background: 'rgb(107, 107, 107)', field: 'rgb(59, 59, 59)' }
+  };
+  // The scheme a color-scheme value draws in: dark when it names dark alone,
+  // or both and the user prefers dark.
+  function __schemeOfValue(value) {
+    const named = __schemesNamed(value);
+    if (!named.includes('dark')) return 'light';
+    if (!named.includes('light')) return 'dark';
+    try {
+      return window &&
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(prefers-color-scheme: dark)'), 'matches')
+        ? 'dark'
+        : 'light';
+    } catch {
+      return 'light';
+    }
+  }
+  // Whether the page is shown in forced colors, whether or not the scan
+  // holds it in its own (colorsForced is whether it couldn't).
+  let __forcedMedia;
+  function __forcedColorsMedia() {
+    if (__forcedMedia !== undefined) return __forcedMedia;
+    try {
+      __forcedMedia = !!(
+        window &&
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      );
+    } catch {
+      __forcedMedia = false;
+    }
+    return __forcedMedia;
+  }
+  // The background a drop-down select in the browser's own background is
+  // measured on under forced colors (__readSelectFieldDefaults), or null
+  // for any other element, or without forced colors.
+  function __forcedSelectBackground(el, cs) {
+    if (!__forcedColorsMedia()) return null;
+    try {
+      if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
+      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
+      if (appearance === 'none' || appearance === 'base-select') return null;
+      const doc = dom.ownerDocument(el);
+      if (!__hasLayout(doc)) return null;
+      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      if (!ref || !ref.measured || String(cs.backgroundColor) !== ref.background) return null;
+      return ref.measured;
+    } catch {
+      return null;
+    }
+  }
   function __readSelectFieldDefaults(doc, scheme) {
     if (__selectFieldDefaults.has(scheme)) return __selectFieldDefaults.get(scheme);
     let out = null;
@@ -5831,6 +5895,7 @@ function createContrastHelpers(opts, shared) {
       const froot = fdoc && dom.documentElement(fdoc);
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
         if (scheme) froot.style.colorScheme = scheme;
+        froot.style.forcedColorAdjust = 'none';
         const host = dom.body(fdoc) || froot;
         const select = dom.createElement(fdoc, 'select');
         const swatch = dom.createElement(fdoc, 'div');
@@ -5841,6 +5906,18 @@ function createContrastHelpers(opts, shared) {
           background: String(fview.getComputedStyle(select).backgroundColor),
           field: String(fview.getComputedStyle(swatch).backgroundColor)
         };
+        // Under forced colors the system colors a select is drawn in
+        // (ButtonFace, Field) take the forced palette's values even where
+        // forced-color-adjust is none, so both read the palette's background.
+        // The scan measures the page as drawn without forced colors, so it
+        // takes Chromium's own colors for the scheme; `background` still
+        // tells a select in the browser's background from one the page
+        // colored.
+        if (__forcedColorsMedia()) {
+          const own = __SELECT_COLORS[__schemeOfValue(scheme)];
+          out.measured = own.background;
+          out.field = own.field;
+        }
       }
     } catch {
       out = null;
@@ -5864,7 +5941,7 @@ function createContrastHelpers(opts, shared) {
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
       const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
-      if (!ref || ref.field === ref.background) return null;
+      if (!ref || ref.field === (ref.measured || ref.background)) return null;
       if (String(cs.backgroundColor) !== ref.background) return null;
       if (hasBackgroundImageOrGradient(cs)) return null;
       const rgba = parseCssColorToRgba(ref.field);
