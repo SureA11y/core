@@ -16,6 +16,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - **`engineOptions.timeBudgetMs`**: once a scan has spent that many milliseconds it starts no more rules. The rules it did not start are listed in `notRun` (`{ ruleId, reason: 'timeBudget', profile? }`) and `engine.incomplete` says the scan was cut short. Such a scan never reads as a pass: its rollups are `cantTell`, the HTML report says it is incomplete, SARIF gives an error notification per rule (`executionSuccessful: false`), JUnit an error per rule, EARL `earl:untested`, the console `table()` a `notRun` row, and `matchBaseline` adds `incomplete`. In a scan of several profiles the budget is the whole scan's.
 - **The reports name each pack a scan ran with and its version**: SARIF as `tool.extensions` and `runs[0].properties.packs`, JUnit as a `packs` property, the HTML report beside the engine, and EARL as `dct:hasPart` of the assertor.
 - **`engineOptions.output.maxOccurrencesPerRule`**: each check result keeps at most that many occurrences, failures first, and counts the rest in `occurrencesOmitted` and `occurrencesOmittedByOutcome` (`engine.occurrenceCap` for the scan). Outcomes, rollups, counts and gates are as without it. The reporters show "+N more". Against a baseline an omitted failure counts as new, and `buildBaselineEntries` warns that a capped result writes an incomplete baseline.
+- **`form-group-name-present`**: asks about radio buttons (leaning fail) or checkboxes that share a name but sit in no `<fieldset>` with a `<legend>` and no named `group` or `radiogroup` (WCAG 1.3.1, H71, ARIA17).
+- **`symbol-graphic-contrast`**: asks about symbol-only text used as a graphic (★☆, ●○, arrows, check marks) under 3:1 against its background, leaning fail (WCAG 1.4.11). Text with a letter or digit stays with the text contrast rules.
+- **`page-title-patterns` asks about a placeholder left in the title** (`placeholderTitle`, leaning fail): `undefined`, `null`, `{{title}}`, `${title}`, `%s` and the like.
 
 ### Changed
 
@@ -52,6 +55,11 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - **A `::first-letter` or `::first-line` colour that fails contrast now fails `contrast-minimum` and `contrast-enhanced`**, measured in its own colour and font size (a drop cap may be large text). `contrast-computable` no longer says a first letter "depends on how the lines break".
 - **`contrast-computable` asks about (`BACKGROUND_OVERLAP`) text in a `position: fixed` or `sticky` box with no opaque background between the text and the box**, at any scroll position, since what lies under it changes as the page scrolls. It was measured against whatever was scrolled under it.
 - **`target-size-minimum` spaces a fixed or sticky target only against the targets that move with it, and page targets only against each other.** A small fixed or sticky target that the page's small targets can pass within reach of as the page scrolls is asked about (`undersized-pinned-over-page`), so the verdict is the same at any scroll position.
+- **`timeBudgetMs` is the whole scan's across frames too**: each frame gets what is left, and a frame reached with none left lists its rules in `notRun` and is incomplete; the HTML report says so. `timeBudgetMs: Infinity` means no limit.
+- **`p-as-heading` asks about a bold line ending in a colon** ("Ingredients:", "Step 1:"), a common pseudo-heading in CMS content.
+- **`page-title-patterns` knows default titles in all five languages, and CMS defaults**, as `genericTitle` whatever the page's language.
+- **`click-handler-keyboard-operable` asks about a non-focusable element drawn as a button** (short text, padding, a border or background of its own) even without `cursor: pointer`.
+- **`video-poster-text-alternative-present` asks about an unnamed video with a poster** (leaning fail) instead of failing it, as WCAG 1.1.1's exception for time-based media asks only for a descriptive identification. Its message keys are renamed from `_fail` to `_cantTell`; an override of the old keys no longer applies.
 
 ### Changed (experimental)
 
