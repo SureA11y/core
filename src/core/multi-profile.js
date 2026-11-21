@@ -72,8 +72,9 @@ function runProfiles(engineOptions, run) {
  * rollup or count changes. The occurrences kept are the failing ones first,
  * then the undecided that lean fail, then the other undecided, then the
  * rest, each in the order the rule gave them, and they stay in that order.
- * A capped result says what it left out: occurrencesOmitted (how many) and
- * occurrencesOmittedByOutcome (by tier) on each check result that lost any,
+ * A capped result says what it left out: occurrencesOmitted (how many),
+ * occurrencesOmittedByOutcome (by tier) and occurrencesOmittedLeaningFail
+ * (the undecided ones that lean fail) on each check result that lost any,
  * and engine.occurrenceCap for the scan. Any value but a whole number of 1
  * or more leaves the result as it is (enforceEngineOptions says so).
  */
@@ -107,20 +108,29 @@ function capOccurrences(result, engineOptions) {
       .slice(0, max)
       .sort((a, b) => a - b);
     const byOutcome = {};
+    let leaningFail = 0;
     const keep = new Set(kept);
     list.forEach((o, i) => {
       if (keep.has(i)) return;
       const tier = tierOf(check, o);
       byOutcome[tier] = (byOutcome[tier] || 0) + 1;
+      if (rankOf(check, o) === 1) leaningFail += 1;
     });
     const omitted = list.length - kept.length;
     omittedTotal += omitted;
     keptByRule.set(check.ruleId, { kept, total: list.length });
-    return Object.assign({}, check, {
-      occurrences: kept.map((i) => list[i]),
-      occurrencesOmitted: omitted,
-      occurrencesOmittedByOutcome: byOutcome
-    });
+    // The undecided ones that lean fail, which a lean-fail gate counts, are
+    // counted apart from the other undecided ones.
+    return Object.assign(
+      {},
+      check,
+      {
+        occurrences: kept.map((i) => list[i]),
+        occurrencesOmitted: omitted,
+        occurrencesOmittedByOutcome: byOutcome
+      },
+      leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {}
+    );
   });
   if (!omittedTotal) return result;
   // A rollup's record of what it made of each finding follows the findings

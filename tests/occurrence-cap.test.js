@@ -248,6 +248,61 @@ test('matchBaseline: a failure left out counts as new, so a capped result never 
   assert.equal('incomplete' in fullMatch, false);
 });
 
+// Undecided findings that lean fail and the cap left out gate as those kept
+// do under the lean-fail gates (round 10, S10-2): seven small data tables
+// without headers (td-has-header, leaning fail), against a baseline of one.
+test('the lean-fail gates count the findings that lean fail the cap left out', () => {
+  const TABLE = '<table><tr><td>a</td><td>1</td></tr><tr><td>b</td><td>2</td></tr></table>';
+  const pageOf = (n) =>
+    `<!doctype html><html lang="en"><head><title>p</title></head><body><main><h1>h</h1>${TABLE.repeat(n)}</main></body></html>`;
+  const run = (n, engineOptions) =>
+    quietly(() => runa11yCoreOnHtml(pageOf(n), { engineOptions })).value;
+  const before = run(1, {});
+  const after = run(7, {});
+  const afterCap = run(7, { output: { maxOccurrencesPerRule: 1 } });
+  const capCheck = check(afterCap, 'td-has-header');
+  assert.equal(capCheck.occurrencesOmittedLeaningFail, 6);
+  const entries = buildBaselineEntries(before, { leanFail: true });
+
+  const lean = (r) => matchBaseline(r, entries, { leanFail: true }).leanFail;
+  assert.deepEqual(
+    [lean(afterCap).total, lean(afterCap).newCount],
+    [lean(after).total, lean(after).newCount]
+  );
+  assert.equal(
+    matchBaseline(afterCap, entries, { leanFail: true }).incomplete.occurrencesOmittedLeaningFail,
+    6
+  );
+  assert.equal(
+    quietly(() => buildBaselineEntries(afterCap, { leanFail: true })).said.some((s) =>
+      /6 occurrence\(s\) that lean fail/.test(s)
+    ),
+    true
+  );
+
+  const junit = renderJunitReport(afterCap, { baselineEntries: entries, leanFailAs: 'failure' });
+  assert.match(
+    junit,
+    /<failure type="leanFail" message="6 occurrences likely fail: left out of the result/
+  );
+  assert.match(junit, /\+6 more: 6 occurrences that likely fail not listed/);
+  const unbaselined = renderJunitReport(run(7, { output: { maxOccurrencesPerRule: 2 } }), {
+    leanFailAs: 'failure'
+  });
+  assert.match(unbaselined, /<failure type="leanFail" message="7 occurrences likely fail: /);
+  assert.match(unbaselined, /\+5 more: 5 occurrences that likely fail not listed/);
+
+  const sarif = JSON.parse(
+    renderSarifReport(afterCap, { baselineEntries: entries, leanFailAs: 'error' })
+  );
+  const errors = sarif.runs[0].results.filter(
+    (r) => r.level === 'error' && r.ruleId === 'td-has-header'
+  );
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0].properties.reasonCode, 'OCCURRENCES_OMITTED');
+  assert.match(errors[0].message.text, /6 undecided occurrences that lean fail were left out/);
+});
+
 test('EARL asserts the same outcomes', () => {
   assert.deepEqual(renderEarlReport(capped), renderEarlReport(full));
 });
