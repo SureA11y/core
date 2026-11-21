@@ -147,3 +147,35 @@ test("engineOptions' rule filters beside a runOnly filter are warned about, and 
       /engineOptions\.tests: runOnly has a filter/.test(err.message)
   );
 });
+
+test('the jsdom helpers warn once about an engine option given beside engineOptions (A9-15)', () => {
+  const { createDom, runa11yCoreOnDom } = require('../src/testing.js');
+  const saved = console.warn;
+  const warnings = [];
+  console.warn = (...a) => warnings.push(a.map(String).join(' '));
+  try {
+    runa11yCoreOnHtml(PAGE, { locale: 'de', profile: 'wcag22-aa', url: 'https://example.test/x' });
+    assert.deepEqual(warnings, [
+      '[surea11y] runa11yCoreOnHtml: locale is an engine option; pass it as engineOptions.locale; ' +
+        'profile is an engine option; pass it as engineOptions.profile; ignored.'
+    ]);
+    warnings.length = 0;
+    runa11yCoreOnDom(createDom(PAGE), { fragment: true });
+    assert.deepEqual(warnings, [
+      '[surea11y] runa11yCoreOnDom: fragment is an engine option; pass it as engineOptions.fragment; ignored.'
+    ]);
+    // The top-level keys the helpers read stay quiet.
+    warnings.length = 0;
+    runa11yCoreOnHtml(PAGE, {
+      excludeSelectors: ['img'],
+      includeShadowDom: true,
+      rules: {},
+      engineOptions: { locale: 'de' },
+      runOnly: null,
+      entryPointParity: false
+    });
+    assert.deepEqual(warnings, []);
+  } finally {
+    console.warn = saved;
+  }
+});

@@ -109,6 +109,29 @@ function assertEntryPointParity(inPageResult, nodeResult) {
 }
 
 // --- scanning HTML and a JSDOM -----------------------------------------------------
+// The engine options these helpers' options take at the top level, as a
+// convenience; the rest belong under engineOptions.
+const TOP_LEVEL_ENGINE_OPTIONS = new Set(['excludeSelectors', 'includeShadowDom', 'rules']);
+
+// An engine option given beside engineOptions rather than in it was read as
+// nothing at all: { locale: 'de' } scanned in English. Said once per call,
+// naming each (round 9, A9-15).
+function warnMisplacedEngineOptions(helper, options) {
+  if (!options || typeof options !== 'object') return;
+  const { engineOptionSpec } = require('./core/engine-options.js');
+  const spec = engineOptionSpec();
+  const misplaced = Object.keys(options).filter(
+    (key) => !TOP_LEVEL_ENGINE_OPTIONS.has(key) && Object.prototype.hasOwnProperty.call(spec, key)
+  );
+  if (!misplaced.length) return;
+  const said = misplaced
+    .map((key) => `${key} is an engine option; pass it as engineOptions.${key}`)
+    .join('; ');
+  try {
+    console.warn(`[surea11y] ${helper}: ${said}; ignored.`);
+  } catch {}
+}
+
 function normalizeEngineOptions(opts = {}) {
   const engineOptions = { ...(opts.engineOptions || {}) };
 
@@ -259,9 +282,9 @@ function clearStyleCache(document) {
  * - Sets global.window/global.document
  * - Runs checks immediately
  */
-function runa11yCoreOnHtml(
-  html,
-  {
+function runa11yCoreOnHtml(html, options = {}) {
+  warnMisplacedEngineOptions('runa11yCoreOnHtml', options);
+  const {
     url = 'https://example.test/',
     contentType = 'text/html',
     contextSelector = null,
@@ -273,8 +296,7 @@ function runa11yCoreOnHtml(
     excludeSelectors,
     includeShadowDom,
     rules
-  } = {}
-) {
+  } = options || {};
   const normalizedEngineOptions = normalizeEngineOptions({
     engineOptions,
     excludeSelectors,
@@ -366,9 +388,12 @@ function createDom(html, { url = 'https://example.test/', contentType = 'text/ht
 /**
  * New helper: run checks on an existing JSDOM instance (supports Shadow DOM mutations).
  */
-function runa11yCoreOnDom(
-  dom,
-  {
+function runa11yCoreOnDom(dom, options = {}) {
+  if (!dom || !dom.window || !dom.window.document) {
+    throw new Error('runa11yCoreOnDom(dom, ...) requires a JSDOM instance.');
+  }
+  warnMisplacedEngineOptions('runa11yCoreOnDom', options);
+  const {
     url = 'https://example.test/',
     contextSelector = null,
     engineOptions = {},
@@ -379,11 +404,7 @@ function runa11yCoreOnDom(
     excludeSelectors,
     includeShadowDom,
     rules
-  } = {}
-) {
-  if (!dom || !dom.window || !dom.window.document) {
-    throw new Error('runa11yCoreOnDom(dom, ...) requires a JSDOM instance.');
-  }
+  } = options || {};
 
   global.window = dom.window;
   global.document = dom.window.document;
