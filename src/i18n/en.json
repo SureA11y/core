@@ -1306,7 +1306,7 @@
   "imagesOfText_hint_cantTell_svg": "Use real text styled with CSS, such as the SVG inline in the page or the text next to the image, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.",
   "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
   "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
-  "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but neither it nor anything inside it can take keyboard focus.",
+  "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
   "scrollableRegionFocusable_hint_cantTell": "If its content does overflow, add tabindex=\"0\" and a name, so keyboard users can focus it and scroll with the arrow keys.",
   "scrollableRegionFocusable_lean_why_overflows": "Its content overflows the box, and nothing in it can take keyboard focus to scroll it.",
   "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.",

@@ -30,8 +30,9 @@
  *   operable.
  * @reason-codes
  *   - `SCROLLABLE_OVERFLOW_NOT_FOCUSABLE` (cantTell): the element's CSS lets
- *     it scroll, but neither it nor anything inside it can be reached by
- *     keyboard; whether its content really overflows is for a person to
+ *     it scroll, but it has no tabindex and holds nothing in the tab order
+ *     (Chromium and Firefox still make a scrolling box a tab stop; Safari
+ *     does not); whether its content really overflows is for a person to
  *     check.
  *     Where the page is laid out, it leans fail when the content overflows
  *     the box by more than 2px and pass when it fits; in jsdom, no lean.
@@ -240,7 +241,7 @@ function runInPage(ctx) {
       selector: stableSelector,
       html,
       summary:
-        'This element can scroll (overflow: auto or scroll), but neither it nor anything inside it can take keyboard focus.',
+        'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.',
       hint: 'If this region’s content actually overflows, add tabindex="0" (and a suitable label) so keyboard users can focus it and scroll with the arrow keys.',
       i18n: {
         summaryKey: 'scrollableRegionFocusable_summary_cantTell',
