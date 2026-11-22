@@ -22,6 +22,12 @@ export interface HtmlReportOptions {
    * is shown by default, in Node; the browser report has none.
    */
   manualChecks?: boolean;
+  /**
+   * true makes an option of the wrong type throw a TypeError. Without it,
+   * manualChecks given as 'true', 'false', '1', '0', 1 or 0 is read as that,
+   * and a number title as text, with a warning (docs/REPORT.md).
+   */
+  strictOptions?: boolean;
 }
 
 /** A self-contained HTML page, as text. A cross-frame result covers every frame. Throws a TypeError for anything else. */

@@ -34,6 +34,12 @@ export interface JunitOptions {
   packs?: readonly unknown[] | null;
   /** The root <testsuites> name; 'surea11y' by default. */
   name?: string;
+  /**
+   * true makes an option of the wrong type throw a TypeError. Without it, a
+   * switch given as 'true', 'false', '1', '0', 1 or 0 is read as that, with
+   * a warning (docs/JUNIT.md).
+   */
+  strictOptions?: boolean;
 }
 
 /** JUnit XML, as text. A cross-frame result covers every frame. Throws a TypeError for anything else. */

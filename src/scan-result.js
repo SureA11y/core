@@ -787,6 +787,65 @@ function describeValue(v) {
   return Array.isArray(v) ? 'an array' : 'an object';
 }
 
+// A reporter's options, as given, are strict when their strictOptions is
+// true, or as a command line or an environment variable spells it ('true',
+// '1', 1), as engineOptions.strictOptions is read.
+function reporterStrict(options) {
+  const v = options && typeof options === 'object' ? options.strictOptions : undefined;
+  if (v === true || v === 1) return true;
+  return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
+}
+
+function warnOption(name, message) {
+  try {
+    console.warn(`[surea11y] ${name}: ${message}`);
+  } catch {}
+}
+
+// A reporter's on/off option, read as the engine reads its own: true or
+// false; 'true', 'false', '1', '0', 1 and 0, as a command line or an
+// environment variable spells one, read as that, with a warning; any other
+// string or number read as not given, with a warning. A value that can't be
+// read (a BigInt, an object, a Symbol, a function) throws a TypeError, as
+// does anything but true or false under strictOptions. Undefined when not
+// given.
+function reporterSwitch(name, key, value, strict) {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === 'boolean') return value;
+  const readable = typeof value === 'string' || typeof value === 'number';
+  if (!readable || strict) {
+    throw new TypeError(`${name}: ${key} must be true or false, not ${describeValue(value)}`);
+  }
+  const s = String(value).trim().toLowerCase();
+  const read = s === 'true' || s === '1' ? true : s === 'false' || s === '0' ? false : null;
+  warnOption(
+    name,
+    read === null
+      ? `${key} must be true or false, not ${describeValue(value)}; ignored.`
+      : `${key} should be true or false; read ${describeValue(value)} as ${read}.`
+  );
+  return read === null ? undefined : read;
+}
+
+// A reporter's text option: a string; a number written as text, with a
+// warning; true or false ignored, with a warning. A value that can't be
+// read (a BigInt, an object, a Symbol, a function) throws a TypeError, as
+// does anything but a string under strictOptions. Undefined when not given.
+function reporterText(name, key, value, strict) {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === 'string') return value;
+  const readable = typeof value === 'number' || typeof value === 'boolean';
+  if (!readable || strict) {
+    throw new TypeError(`${name}: ${key} must be a string, not ${describeValue(value)}`);
+  }
+  if (typeof value === 'boolean') {
+    warnOption(name, `${key} must be a string, not ${value}; ignored.`);
+    return undefined;
+  }
+  warnOption(name, `${key} should be a string; read ${describeValue(value)} as text.`);
+  return String(value);
+}
+
 // A string option read without case or surrounding space; anything else
 // as it is, so the check that follows refuses it.
 function lowerOption(v) {
@@ -795,6 +854,9 @@ function lowerOption(v) {
 
 module.exports = {
   describeValue,
+  reporterStrict,
+  reporterSwitch,
+  reporterText,
   lowerOption,
   reporterOptions,
   assertScanResult,
