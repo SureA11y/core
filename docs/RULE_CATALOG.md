@@ -3754,13 +3754,14 @@ Elements whose whole visible text is made of symbols, with no letter or digit at
 
 - text with a letter or a digit anywhere in the element ("4.5 ★", "Next →"): the text-contrast rules judge it as text, at its own ratio; letter-free text is the only text they leave out (ACT afw4f7), so the two never judge the same text;
 - emoji drawn in their own colours, and text that is only separators (`|`, `¦`, `~`, `·`, `•`, `/`, dashes), which decorate;
+- symbols in an inactive user interface component (a disabled control, one in a disabled fieldset, or one with aria-disabled, set as an attribute or through ElementInternals), which 1.4.11 exempts, as contrast-minimum leaves its text out;
 - text in `<svg>`, `<math>`, form controls (`<select>`, `<option>`, `<textarea>`) and elements that are not drawn (`<script>`, `<style>`, `<template>`, `<title>`), and text whose colours can't be measured (a background image, a gradient, a filter or blending: the reasons the text-contrast rules give).
 
 **Expectation.** A symbol drawn as text in place of a picture is a graphic under WCAG 1.4.11 when a person needs it to understand the content, as rating stars or status marks are: its colour against its background reaches 3:1. Below 3:1 it is asked about (cantTell), leaning fail: whether the symbols carry information, rather than decorate or repeat a text beside them, is for a person to judge. At 3:1 or more, pass.
 
 **What a finding reports.**
 
-- `symbols`: the symbols, with spacing collapsed, up to 20 characters.
+- `symbols`: the element's own symbols (its text nodes), with spacing collapsed, up to 20 characters.
 - `ratio`: their contrast against their background, to two decimals.
 - `foreground`, `background`: the colours measured, as hex.
 - `threshold`: 3.
@@ -3800,7 +3801,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Checks that tabindex values are 0 or negative, not a positive number.
 
-**Applies to.** Applies to elements with a tabindex attribute whose value parses as a valid integer.
+**Applies to.** Applies to elements with a tabindex attribute whose value HTML's rules for parsing integers read as a number, as a browser does ("1.5" is 1, "2abc" is 2, "0x1" is 0).
 
 **Expectation.** The tabindex value is 0 or negative. A positive tabindex reorders keyboard tab order explicitly, which is fragile to maintain as a page changes and usually indicates the natural DOM order should be fixed instead.
 
