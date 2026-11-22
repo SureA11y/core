@@ -152,7 +152,7 @@ Total rules: **154**. With fixture: **149**. Without fixture: **5**.
 | svg-image-text-alternative-present | automatic | `tests/fixtures/svg-image-text-alternative-present-all-scenarios.html` | 20 | 5 | 9 | 0 | 6 |
 | svg-text-alternative-present | automatic | `tests/fixtures/svg-text-alternative-present-all-scenarios.html` | 27 | 6 | 13 | 0 | 8 |
 | svg-text-alternative-quality | manual | `tests/fixtures/svg-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| symbol-graphic-contrast | manual | `tests/fixtures/symbol-graphic-contrast-all-scenarios.html` | 9 | 2 | 0 | 3 | 4 |
+| symbol-graphic-contrast | manual | `tests/fixtures/symbol-graphic-contrast-all-scenarios.html` | 14 | 2 | 0 | 6 | 6 |
 | tab-name-present | automatic | `tests/fixtures/tab-name-present-all-scenarios.html` | 17 | 4 | 5 | 0 | 8 |
 | tabindex | manual | `tests/fixtures/tabindex-all-scenarios.html` | 3 | 2 | 0 | 1 | 0 |
 | table-duplicate-name | manual | `tests/fixtures/table-duplicate-name-all-scenarios.html` | 2 | 0 | 0 | 1 | 1 |

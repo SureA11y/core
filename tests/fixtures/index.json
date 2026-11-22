@@ -2544,12 +2544,12 @@
       "testFile": "tests/engine-checks/manual/symbol-graphic-contrast-chromium.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/symbol-graphic-contrast-all-scenarios.html",
-      "totalCases": 9,
+      "totalCases": 14,
       "caseCounts": {
         "PASS": 2,
         "FAIL": 0,
-        "CANTTELL": 3,
-        "OTHER": 4
+        "CANTTELL": 6,
+        "OTHER": 6
       }
     },
     {

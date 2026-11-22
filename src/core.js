@@ -3303,21 +3303,30 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // text element asks it of each of its ancestors, and under jsdom matching
   // :disabled walks the ancestors again, so a deep page cost elements x
   // depth x depth.
-  function isDisabledWidget(node) {
-    const cache = __getSharedWeakMapCache('__disabledWidgetCache');
+  //
+  // aria-disabled="true" (or ElementInternals' ariaDisabled) makes content
+  // inactive only on a user interface component, or on an ancestor whose
+  // content belongs to one (round 11, D6): WCAG exempts inactive user
+  // interface components, and aria-disabled on a plain <span> or <div>
+  // with no control disables nothing. A disabled control (:disabled, a
+  // disabled fieldset among them) is one already.
+  // The bits: 1 for :disabled, 2 for aria-disabled true.
+  function __disabledBits(node) {
+    const cache = __getSharedWeakMapCache('__disabledBitsCache');
     if (cache && node && typeof node === 'object') {
       const known = cache.get(node);
       if (known !== undefined) return known;
-      const out = isDisabledWidgetUncached(node);
+      const out = __disabledBitsUncached(node);
       cache.set(node, out);
       return out;
     }
-    return isDisabledWidgetUncached(node);
+    return __disabledBitsUncached(node);
   }
-  function isDisabledWidgetUncached(node) {
+  function __disabledBitsUncached(node) {
+    let bits = 0;
     try {
       if (typeof dom.get(node, 'matches') === 'function' && dom.matches(node, ':disabled'))
-        return true;
+        bits |= 1;
     } catch {}
     try {
       const ad = dom.get(node, 'getAttribute')
@@ -3325,16 +3334,107 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             .trim()
             .toLowerCase()
         : '';
-      if (ad === 'true') return true;
+      if (ad === 'true') bits |= 2;
       // A custom element disabled through its ElementInternals
       // (internals.ariaDisabled = 'true'), where it has no aria-disabled
       // attribute of its own, is disabled as the attribute would make it.
-      if (!ad && typeof shared.getInternalsStateInfo === 'function') {
+      else if (!ad && typeof shared.getInternalsStateInfo === 'function') {
         const info = shared.getInternalsStateInfo(node, 'aria-disabled');
-        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') return true;
+        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') bits |= 2;
       }
     } catch {}
-    return false;
+    return bits;
+  }
+
+  // Widget roles (WAI-ARIA 1.2, the widget and composite roles), and
+  // toolbar, a group of controls.
+  const __WIDGET_ROLES = new Set([
+    'button',
+    'checkbox',
+    'combobox',
+    'grid',
+    'gridcell',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'radiogroup',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'toolbar',
+    'tree',
+    'treegrid',
+    'treeitem'
+  ]);
+  const __NATIVE_CONTROLS = new Set([
+    'button',
+    'input',
+    'select',
+    'textarea',
+    'option',
+    'optgroup'
+  ]);
+
+  // Whether node is a user interface component: an element whose resolved
+  // role is a widget role, a native control, or a focusable element.
+  function __isUiComponent(node) {
+    const cache = __getSharedWeakMapCache('__uiComponentCache');
+    if (cache && node && typeof node === 'object' && cache.has(node)) return cache.get(node);
+    let out = false;
+    try {
+      const tag = String(dom.localName(node) || '').toLowerCase();
+      if (__NATIVE_CONTROLS.has(tag) && dom.namespaceURI(node) !== __SVG_NS) {
+        out = !(
+          tag === 'input' &&
+          String(dom.getAttribute(node, 'type') || '')
+            .trim()
+            .toLowerCase() === 'hidden'
+        );
+      }
+      if (!out) {
+        let role = '';
+        if (typeof shared.getRoleInfo === 'function') {
+          const info = shared.getRoleInfo(node);
+          role = info && info.role ? String(info.role) : '';
+        } else {
+          role = String(dom.getAttribute(node, 'role') || '')
+            .trim()
+            .toLowerCase()
+            .split(/\s+/)[0];
+        }
+        out = __WIDGET_ROLES.has(role);
+      }
+      if (!out) {
+        if (typeof shared.getFocusableInfo === 'function') {
+          const f = shared.getFocusableInfo(node);
+          out = !!(f && f.focusable);
+        } else {
+          out = /^\s*[+-]?\d+\s*$/.test(String(dom.getAttribute(node, 'tabindex') || ''));
+        }
+      }
+    } catch {
+      out = false;
+    }
+    if (cache && node && typeof node === 'object') cache.set(node, out);
+    return out;
+  }
+
+  // A disabled control, as a label's control or a widget naming itself by
+  // a label: disabled, or aria-disabled on a user interface component.
+  function isDisabledWidget(node) {
+    const bits = __disabledBits(node);
+    return !!(bits & 1) || (!!(bits & 2) && __isUiComponent(node));
   }
 
   // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
@@ -3405,17 +3505,24 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let prev = null;
     let depth = 0;
     let labelAncestor = null;
+    // Whether el or an ancestor met so far is a user interface component:
+    // aria-disabled from there up disables the content of one. Asked only
+    // once an aria-disabled is met, of the elements not asked yet.
+    let inComponent = false;
+    const unasked = [];
     while (node && dom.nodeType(node) === 1 && depth++ < 100) {
+      const bits = __disabledBits(node);
+      if (!inComponent) unasked.push(node);
+      if (bits & 2 && !inComponent) {
+        inComponent = unasked.some((n) => __isUiComponent(n));
+        unasked.length = 0;
+      }
+      const aria = !!(bits & 2) && inComponent;
       // A disabled fieldset disables nothing in its first legend: only an
       // aria-disabled on it counts there.
       if (prev && __isFirstLegendOf(prev, node)) {
-        if (
-          String(dom.getAttribute(node, 'aria-disabled') || '')
-            .trim()
-            .toLowerCase() === 'true'
-        )
-          return true;
-      } else if (isDisabledWidget(node)) return true;
+        if (aria) return true;
+      } else if (bits & 1 || aria) return true;
       if (!labelAncestor && String(dom.tagName(node) || '').toLowerCase() === 'label') {
         labelAncestor = node;
       }
@@ -3430,6 +3537,147 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     if (labelAncestor && labelNamesDisabled(labelAncestor)) return true;
 
     return false;
+  }
+
+  // -------- A currency sign in a run of text (round 11, B11-9) --------
+  //
+  // A currency sign (Unicode Sc: € $ £ ¥ …) or the postal mark 〒 next to
+  // letters or digits on the same line is part of that text ("€45,00",
+  // "〒100-0001"), even when markup gives it an element of its own: it is
+  // read, so it is text, held to 1.4.3, not a graphic. "Next to" is the
+  // nearest visible character before or after it, not past a block
+  // boundary (a block, a line break) and not counting text that is not
+  // drawn (display:none, visibility:hidden, visually hidden), nor the text
+  // of a link beside it. A sign alone between links, or a separator such
+  // as ">", is not this: it stays a graphic.
+  const __RUN_SIGN = /[\p{Sc}〒]/u;
+  const __RUN_SIGN_ONLY = /^[\s\p{Sc}〒\p{P}]*$/u;
+  const __RUN_TEXT = /[\p{L}\p{N}]/u;
+  // Text nodes are kept only for the run; the shared cache is per engine run.
+  const __localSignRunCache = new WeakMap();
+
+  function __isSignText(text) {
+    const s = String(text == null ? '' : text);
+    return __RUN_SIGN.test(s) && __RUN_SIGN_ONLY.test(s);
+  }
+
+  function __inlineDisplay(cs) {
+    const d = String((cs && cs.display) || 'inline');
+    return d === 'contents' || d.startsWith('inline') || d.startsWith('ruby');
+  }
+
+  function __runHidden(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.display) === 'none') return true;
+    try {
+      if (typeof shared.isVisuallyHidden === 'function' && shared.isVisuallyHidden(el)) return true;
+    } catch {}
+    return false;
+  }
+
+  // The nearest visible character beside node in its block, in the given
+  // direction: a character, '' at a boundary or where none is found within
+  // the budget.
+  function __runNeighbour(node, block, forward) {
+    let budget = 400;
+    const into = (n) => {
+      if (budget-- <= 0) return '';
+      const type = dom.nodeType(n);
+      if (type === 3) {
+        const parent = dom.parentElement(n);
+        const pcs = parent ? __contrastComputedStyle(parent) : null;
+        if (pcs && trim(pcs.visibility) && trim(pcs.visibility) !== 'visible') return null;
+        const s = String(dom.nodeValue(n) || '').replace(/\s+/g, '');
+        if (!s) return null;
+        const chars = [...s];
+        return forward ? chars[0] : chars[chars.length - 1];
+      }
+      if (type !== 1) return null;
+      const name = __lname(n);
+      if (name === 'br') return '';
+      if (/^(script|style|template|noscript|title)$/.test(name)) return null;
+      // A link's text is its own: a sign between links separates them.
+      if ((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) return '';
+      if (
+        String(dom.getAttribute(n, 'role') || '')
+          .trim()
+          .split(/\s+/)[0] === 'link'
+      )
+        return '';
+      const cs = __contrastComputedStyle(n);
+      if (__runHidden(n, cs)) return null;
+      if (!__inlineDisplay(cs)) return '';
+      for (
+        let c = forward ? dom.firstChild(n) : dom.lastChild(n);
+        c;
+        c = forward ? dom.nextSibling(c) : dom.previousSibling(c)
+      ) {
+        const found = into(c);
+        if (found !== null) return found;
+      }
+      return null;
+    };
+    let cur = node;
+    while (cur && budget > 0) {
+      let sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
+      while (!sib) {
+        const parent = dom.parentNode(cur);
+        if (!parent || parent === block || dom.nodeType(parent) !== 1) return '';
+        cur = parent;
+        sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
+      }
+      cur = sib;
+      const found = into(cur);
+      if (found !== null) return found;
+    }
+    return '';
+  }
+
+  function __signTextNodeInRun(t) {
+    const cache = __getSharedWeakMapCache('__signRunCache') || __localSignRunCache;
+    if (cache.has(t)) return cache.get(t);
+    let out = false;
+    try {
+      if (__isSignText(dom.nodeValue(t))) {
+        let block = dom.parentElement(t);
+        for (let guard = 0; block && guard < 200; guard++) {
+          if (!__inlineDisplay(__contrastComputedStyle(block))) break;
+          block = dom.parentElement(block);
+        }
+        if (block) {
+          out =
+            __RUN_TEXT.test(__runNeighbour(t, block, false) || '') ||
+            __RUN_TEXT.test(__runNeighbour(t, block, true) || '');
+        }
+      }
+    } catch {
+      out = false;
+    }
+    cache.set(t, out);
+    return out;
+  }
+
+  // Whether node (a text node, or an element by its own text nodes) is a
+  // currency sign or 〒 in a run of text: its text is only such signs,
+  // punctuation and spaces, and a letter or digit is the nearest visible
+  // character beside it on its line.
+  function isSignInTextRun(node) {
+    try {
+      if (!node) return false;
+      if (dom.nodeType(node) === 3) return __signTextNodeInRun(node);
+      if (dom.nodeType(node) !== 1) return false;
+      let own = '';
+      const texts = [];
+      for (let n = dom.firstChild(node); n; n = dom.nextSibling(n)) {
+        if (dom.nodeType(n) !== 3) continue;
+        own += String(dom.nodeValue(n) || '');
+        if (/\S/.test(dom.nodeValue(n) || '')) texts.push(n);
+      }
+      if (!__isSignText(own)) return false;
+      return texts.some((t) => __signTextNodeInRun(t));
+    } catch {
+      return false;
+    }
   }
 
   // -------- Text shown in a form field (#103) --------
@@ -4184,7 +4432,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           visitedTextNodes.add(node);
 
           const text = node && dom.nodeValue(node);
-          if (!isNonEmptyText(text)) continue;
+          // A currency sign beside letters or digits is part of their text
+          // (isSignInTextRun), though it has none of its own.
+          if (!isNonEmptyText(text) && !(__isSignText(text) && isSignInTextRun(node))) continue;
 
           const parentNode = dom.parentNode(node);
           // Text assigned straight to a shadow root has no parent element, but
@@ -11196,7 +11446,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // Without a layout (jsdom), where an SVG shape paints can't be told. A
   // shape painted before SVG text in the same <svg> may lie behind it, and
   // then the text's background can't be told either: the shape, as paint
-  // in the way, or null. With a layout, __svgBackdropOf measures it.
+  // in the way, or null. A shape certainly under all of the text is its
+  // background (__svgNoLayoutScan); only one painted after the last such
+  // shape is in the way. With a layout, __svgBackdropOf measures it.
   const __SVG_PAINT_TAGS =
     'rect, circle, ellipse, line, path, polygon, polyline, image, use, foreignObject';
   const __SVG_UNPAINTED_TAGS = new Set([
@@ -11211,11 +11463,37 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     'filter'
   ]);
   function __svgShapeMaybeBehind(el) {
+    const scan = __svgNoLayoutScan(el);
+    return scan ? scan.blocker : null;
+  }
+
+  // Without a layout, the simple, certain case is measured (round 11, D11):
+  // a <rect>, <circle> or <ellipse> painted before the text with an opaque
+  // solid fill, no transform, opacity, filter, mask or clip on it or its
+  // ancestors in the <svg>, whose geometry certainly covers the text's
+  // area. The last such shape is the text's background; a shape painted
+  // after it that may lie behind the text (any other) keeps the text
+  // asked about. { certain: { el, rgba } | null, blocker: {...} | null },
+  // or null where nothing applies (with a layout, or not SVG text).
+  const __svgNoLayoutCache = new WeakMap();
+  function __svgNoLayoutScan(el) {
     if (!__isSvgTextElement(el)) return null;
     const doc = dom.ownerDocument(el);
     if (!doc) return null;
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (__layoutByDoc.get(doc)) return null;
+    if (__svgNoLayoutCache.has(el)) return __svgNoLayoutCache.get(el);
+    let out;
+    try {
+      out = __computeSvgNoLayoutScan(el);
+    } catch {
+      out = null;
+    }
+    __svgNoLayoutCache.set(el, out);
+    return out;
+  }
+
+  function __computeSvgNoLayoutScan(el) {
     let svg = composedParent(el);
     for (
       let guard = 0;
@@ -11230,6 +11508,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       return null;
     }
+    let area;
+    const textArea = () => {
+      if (area === undefined) area = __svgTextArea(el, svg);
+      return area;
+    };
+    let certain = null;
+    let blocker = null;
     for (const shape of shapes) {
       // Painted after el (or el's own ancestor): not behind it.
       if (!(dom.compareDocumentPosition(shape, el) & 4) || __isComposedInside(el, shape)) break;
@@ -11258,14 +11543,267 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const tag = __lname(shape);
       const shapeOnly = tag !== 'image' && tag !== 'use' && tag !== 'foreignobject';
       if (shapeOnly && !paints(fill) && !paints(stroke)) continue;
-      return {
-        selector: __getSimpleSelectorCached(shape, tag),
-        element: describeElement(shape),
-        property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
-        value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
-      };
+      const rgba = __svgCertainCover(shape, cs, svg, paints(stroke), textArea);
+      if (rgba) {
+        // Opaque, over all of the text: what lies under it doesn't show.
+        certain = { el: shape, rgba };
+        blocker = null;
+        continue;
+      }
+      if (!blocker) {
+        blocker = {
+          selector: __getSimpleSelectorCached(shape, tag),
+          element: describeElement(shape),
+          property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
+          value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
+        };
+      }
     }
-    return null;
+    return { certain, blocker };
+  }
+
+  // An SVG length in user units: a number, px, or a percentage of `full`
+  // (NaN where `full` is unknown). NaN for anything else.
+  function __svgLength(value, full) {
+    const v = trim(value);
+    if (!v) return NaN;
+    let m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(px)?$/i.exec(v);
+    if (m) return Number.parseFloat(m[1]);
+    m = /^([+-]?(?:\d+\.?\d*|\.\d+))%$/.exec(v);
+    if (m) return Number.isFinite(full) ? (Number.parseFloat(m[1]) / 100) * full : NaN;
+    return NaN;
+  }
+
+  // The svg's viewport in user units: its viewBox, or its own width and
+  // height where it has none. { x, y, w, h }, a side NaN where unknown.
+  function __svgViewport(svg) {
+    const vb = trim(dom.getAttribute(svg, 'viewBox'));
+    if (vb) {
+      const n = vb.split(/[\s,]+/).map(Number);
+      if (n.length === 4 && n.every(Number.isFinite) && n[2] > 0 && n[3] > 0)
+        return { x: n[0], y: n[1], w: n[2], h: n[3], viewBox: true };
+      return { x: 0, y: 0, w: NaN, h: NaN, viewBox: true };
+    }
+    return {
+      x: 0,
+      y: 0,
+      w: __svgLength(dom.getAttribute(svg, 'width'), NaN),
+      h: __svgLength(dom.getAttribute(svg, 'height'), NaN),
+      viewBox: false
+    };
+  }
+
+  const __SVG_GROUP_ATTRS = ['transform', 'filter', 'mask', 'clip-path'];
+  // Whether node draws as a group or moves: a transform, opacity, a filter,
+  // a mask or a clip, as an attribute, in its style or computed.
+  function __svgGroupedOrMoved(node) {
+    for (const a of __SVG_GROUP_ATTRS) {
+      const v = trim(dom.getAttribute(node, a)).toLowerCase();
+      if (v && v !== 'none') return true;
+    }
+    const op = trim(dom.getAttribute(node, 'opacity'));
+    if (op && !(Number.parseFloat(op) >= 1)) return true;
+    if (
+      /(^|;)\s*(transform|opacity|filter|mask|clip|clip-path)\s*:/i.test(
+        String(dom.getAttribute(node, 'style') || '')
+      )
+    )
+      return true;
+    const cs = __contrastComputedStyle(node);
+    if (!cs) return false;
+    if (opacityOf(cs) < 1) return true;
+    const set = (v) => !!trim(v) && trim(v) !== 'none';
+    return (
+      set(cs.transform) ||
+      set(cs.filter) ||
+      set(cs.clipPath) ||
+      set(cs.maskImage) ||
+      set(cs.mask) ||
+      (!!cs.mixBlendMode && trim(cs.mixBlendMode) !== 'normal')
+    );
+  }
+
+  // The area SVG text certainly lies in, in the svg's user units, without a
+  // layout: from its x and y, its font size and its number of characters,
+  // each at most one em wide, from 1.2em above the baseline to 0.4em below.
+  // null where that isn't simple: a transform, positions per character,
+  // a textLength, spacing, a vertical writing mode or a text path.
+  function __svgTextArea(el, svg) {
+    let text = el;
+    while (text && text !== svg && __lname(text) !== 'text') text = dom.parentElement(text);
+    if (!text || text === svg) return null;
+    for (let n = text; n && n !== svg; n = dom.parentElement(n)) {
+      if (__svgGroupedOrMoved(n) && n !== text) return null;
+      const t = trim(dom.getAttribute(n, 'transform'));
+      if (t && t !== 'none') return null;
+      const ncs = __contrastComputedStyle(n);
+      if (ncs && trim(ncs.transform) && trim(ncs.transform) !== 'none') return null;
+    }
+    const parts = [text, ...dom.querySelectorAll(text, '*')];
+    for (const n of parts) {
+      const name = __lname(n);
+      if (name === 'textpath') return null;
+      for (const a of ['dx', 'dy', 'rotate', 'textLength', 'letter-spacing', 'word-spacing'])
+        if (dom.hasAttribute(n, a)) return null;
+      if (n !== text && (dom.hasAttribute(n, 'x') || dom.hasAttribute(n, 'y'))) return null;
+      if (
+        /(^|;)\s*(letter-spacing|word-spacing|writing-mode|font-size)\s*:/i.test(
+          String(dom.getAttribute(n, 'style') || '')
+        ) &&
+        n !== text
+      )
+        return null;
+    }
+    const tcs = __contrastComputedStyle(text) || {};
+    if (
+      /^(vertical|tb|sideways)/.test(trim(tcs.writingMode)) ||
+      dom.hasAttribute(text, 'writing-mode')
+    )
+      return null;
+    const spacing = (v) => !trim(v) || trim(v) === 'normal' || Number.parseFloat(v) === 0;
+    if (!spacing(tcs.letterSpacing) || !spacing(tcs.wordSpacing)) return null;
+    const vp = __svgViewport(svg);
+    const x = dom.hasAttribute(text, 'x') ? __svgLength(dom.getAttribute(text, 'x'), vp.w) : 0;
+    const y = dom.hasAttribute(text, 'y') ? __svgLength(dom.getAttribute(text, 'y'), vp.h) : 0;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    // The font size: the larger of the computed one and the nearest
+    // font-size attribute, which jsdom doesn't apply.
+    let fs = parsePx(tcs.fontSize);
+    if (!/^\s*[\d.]+px\s*$/.test(String(tcs.fontSize || ''))) fs = NaN;
+    const host = dom.closest(text, '[font-size]');
+    if (host && __isComposedInside(host, svg)) {
+      const a = __svgLength(dom.getAttribute(host, 'font-size'), NaN);
+      if (!Number.isFinite(a)) return null;
+      fs = Number.isFinite(fs) ? Math.max(fs, a) : a;
+    }
+    if (!Number.isFinite(fs)) fs = 16;
+    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')].length;
+    if (!chars) return null;
+    const w = chars * fs;
+    const anchorHost = dom.closest(text, '[text-anchor]');
+    let anchor = trim(tcs.textAnchor) || 'start';
+    if (anchorHost && __isComposedInside(anchorHost, svg))
+      anchor = trim(dom.getAttribute(anchorHost, 'text-anchor')).toLowerCase();
+    const rtl = trim(tcs.direction) === 'rtl' || !!dom.closest(text, '[direction="rtl"]');
+    let left;
+    let right;
+    if (rtl || !/^(start|middle|end)$/.test(anchor)) {
+      left = x - w;
+      right = x + w;
+    } else if (anchor === 'middle') {
+      left = x - w / 2;
+      right = x + w / 2;
+    } else if (anchor === 'end') {
+      left = x - w;
+      right = x;
+    } else {
+      left = x;
+      right = x + w;
+    }
+    const baselineSet = ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
+      (a) => !!dom.closest(text, '[' + a + ']')
+    );
+    const above = baselineSet ? 1.3 * fs : 1.2 * fs;
+    const below = baselineSet ? 1.3 * fs : 0.4 * fs;
+    return { left, right, top: y - above, bottom: y + below };
+  }
+
+  // The opaque color a <rect>, <circle> or <ellipse> certainly paints
+  // under all of el's text, without a layout, or null.
+  function __svgCertainCover(shape, cs, svg, stroked, textArea) {
+    const tag = __lname(shape);
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
+    // Its own <svg>: not in a nested one, a <switch> or a link's group.
+    for (let p = dom.parentElement(shape); p !== svg; p = dom.parentElement(p)) {
+      if (!p) return null;
+      const name = __lname(p);
+      if (name !== 'g' && name !== 'a') return null;
+      if (__svgGroupedOrMoved(p)) return null;
+    }
+    if (__svgGroupedOrMoved(shape)) return null;
+    const fill = parseCssColorToRgba(cs.fill);
+    if (!fill || fill.a < 1) return null;
+    const fo = trim(dom.getAttribute(shape, 'fill-opacity')) || trim(cs.fillOpacity);
+    if (fo && !(Number.parseFloat(fo) >= 1)) return null;
+    if (
+      /(^|;)\s*(fill-opacity|x|y|width|height|rx|ry|r|cx|cy)\s*:/i.test(
+        String(dom.getAttribute(shape, 'style') || '')
+      )
+    )
+      return null;
+    const vp = __svgViewport(svg);
+    const attr = (a, full, dflt) =>
+      dom.hasAttribute(shape, a) ? __svgLength(dom.getAttribute(shape, a), full) : dflt;
+    let half = 0;
+    if (stroked) {
+      const sw = dom.hasAttribute(shape, 'stroke-width')
+        ? __svgLength(dom.getAttribute(shape, 'stroke-width'), NaN)
+        : parsePx(cs.strokeWidth) || 1;
+      if (!Number.isFinite(sw)) return null;
+      half = Math.max(0, sw) / 2;
+    }
+    const rgb = { r: fill.r, g: fill.g, b: fill.b, a: 1 };
+    if (tag === 'rect') {
+      const x = attr('x', vp.w, 0);
+      const y = attr('y', vp.h, 0);
+      const w = attr('width', vp.w, NaN);
+      const h = attr('height', vp.h, NaN);
+      if (![x, y, w, h].every(Number.isFinite) || !(w > 0) || !(h > 0)) return null;
+      let rx = attr('rx', vp.w, NaN);
+      let ry = attr('ry', vp.h, NaN);
+      const rxSet = dom.hasAttribute(shape, 'rx');
+      const rySet = dom.hasAttribute(shape, 'ry');
+      if ((rxSet && !Number.isFinite(rx)) || (rySet && !Number.isFinite(ry))) return null;
+      if (!rxSet) rx = rySet ? ry : 0;
+      if (!rySet) ry = rx;
+      rx = Math.min(Math.max(rx, 0), w / 2);
+      ry = Math.min(Math.max(ry, 0), h / 2);
+      // The whole svg: covers any text in it.
+      const whole = (v, full, raw) => trim(raw) === '100%' || (Number.isFinite(full) && v === full);
+      if (
+        !rx &&
+        !ry &&
+        x === vp.x &&
+        y === vp.y &&
+        whole(w, vp.w, dom.getAttribute(shape, 'width')) &&
+        whole(h, vp.h, dom.getAttribute(shape, 'height'))
+      )
+        return rgb;
+      const area = textArea();
+      if (!area) return null;
+      const ix = Math.max(rx, half);
+      const iy = Math.max(ry, half);
+      return area.left >= x + ix &&
+        area.right <= x + w - ix &&
+        area.top >= y + iy &&
+        area.bottom <= y + h - iy
+        ? rgb
+        : null;
+    }
+    const cx = attr('cx', NaN, 0);
+    const cy = attr('cy', NaN, 0);
+    let rx;
+    let ry;
+    if (tag === 'circle') {
+      rx = attr('r', NaN, NaN);
+      ry = rx;
+    } else {
+      rx = attr('rx', NaN, NaN);
+      ry = attr('ry', NaN, NaN);
+    }
+    if (![cx, cy, rx, ry].every(Number.isFinite)) return null;
+    rx -= half;
+    ry -= half;
+    if (!(rx > 0) || !(ry > 0)) return null;
+    const area = textArea();
+    if (!area) return null;
+    const inside = (px, py) => ((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2 <= 1;
+    return inside(area.left, area.top) &&
+      inside(area.right, area.top) &&
+      inside(area.left, area.bottom) &&
+      inside(area.right, area.bottom)
+      ? rgb
+      : null;
   }
 
   // -------- SVG shapes behind SVG text (#96) --------
@@ -11295,7 +11833,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __computeSvgBackdrop(el) {
     const index = __getOverlapIndex();
-    if (!index) return null;
+    if (!index) {
+      // Without a layout: the last shape certainly under all of the text,
+      // with nothing uncertain painted after it (__svgNoLayoutScan).
+      const scan = __svgNoLayoutScan(el);
+      return scan && scan.certain && !scan.blocker
+        ? { layers: [scan.certain], blocked: false }
+        : null;
+    }
     let svg = composedParent(el);
     let guard = 0;
     while (
@@ -12152,6 +12697,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     looksLikeLogo,
     contrastSwitchName,
     isInactiveUiComponent,
+    isSignInTextRun,
     // The author's declaration of a property that applies to an element:
     // { value }, null where none does, { unknown: true } where it can't be
     // told.
@@ -24772,6 +25318,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getInternalsStateInfo,
     cssRulesOf,
     selectorIndex,
+    isVisuallyHidden,
+    getRoleInfo: (el) => getRoleInfo(el),
+    getFocusableInfo: (el) => getFocusableInfo(el),
     __contrastSharedCache
   };
 
@@ -115603,6 +116152,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return true;
   }
 
+  // The text el shows: its text nodes, less those in an element that is not
+  // drawn (display:none, a closed <details>), hidden (visibility:hidden) or
+  // visually hidden (a screen-reader-only clip or 1px box). aria-hidden
+  // doesn't matter to sight. Read through at most 400 nodes.
+  function visibleTextOf(el) {
+    let out = '';
+    let budget = 400;
+    const walk = (node) => {
+      for (let n = dom.firstChild(node); n && budget > 0; n = dom.nextSibling(n)) {
+        budget -= 1;
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          let cs = null;
+          try {
+            cs = helpers.computedStyle ? helpers.computedStyle(node) : null;
+          } catch {}
+          const vis = trim(cs && cs.visibility);
+          if (!vis || vis === 'visible') out += String(dom.nodeValue(n) || '');
+        } else if (type === 1 && shown(n)) {
+          walk(n);
+        }
+      }
+    };
+    walk(el);
+    return out;
+  }
+
   // The element's own symbol text: its direct text children, holding a
   // symbol, with the whole of its text free of letters and digits. Only
   // the element's own text is its, as the text-contrast rules report text:
@@ -115615,7 +116191,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     own = trim(own).replace(/\s+/g, ' ');
     if (!own || !SYMBOL.test(own.replace(SEPARATORS, ''))) return '';
-    const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
+    const text = trim(visibleTextOf(el)).replace(/\s+/g, ' ');
     if (!text || [...text].length > 40) return '';
     if (LETTER_OR_DIGIT.test(text) || EMOJI.test(text)) return '';
     if (!SYMBOL.test(text.replace(SEPARATORS, ''))) return '';
@@ -115637,6 +116213,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
     if (!shown(el)) continue;
+    // A currency sign or 〒 beside letters or digits on its line ("€45,00")
+    // is part of that text: contrast-minimum judges it, at the text ratio.
+    try {
+      if (typeof c.isSignInTextRun === 'function' && c.isSignInTextRun(el)) continue;
+    } catch {}
     // Part of an inactive user interface component (disabled, in a
     // disabled fieldset, aria-disabled, or disabled through its
     // ElementInternals): 1.4.11 asks nothing of it, as contrast-minimum
@@ -138101,21 +138682,30 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // text element asks it of each of its ancestors, and under jsdom matching
   // :disabled walks the ancestors again, so a deep page cost elements x
   // depth x depth.
-  function isDisabledWidget(node) {
-    const cache = __getSharedWeakMapCache('__disabledWidgetCache');
+  //
+  // aria-disabled="true" (or ElementInternals' ariaDisabled) makes content
+  // inactive only on a user interface component, or on an ancestor whose
+  // content belongs to one (round 11, D6): WCAG exempts inactive user
+  // interface components, and aria-disabled on a plain <span> or <div>
+  // with no control disables nothing. A disabled control (:disabled, a
+  // disabled fieldset among them) is one already.
+  // The bits: 1 for :disabled, 2 for aria-disabled true.
+  function __disabledBits(node) {
+    const cache = __getSharedWeakMapCache('__disabledBitsCache');
     if (cache && node && typeof node === 'object') {
       const known = cache.get(node);
       if (known !== undefined) return known;
-      const out = isDisabledWidgetUncached(node);
+      const out = __disabledBitsUncached(node);
       cache.set(node, out);
       return out;
     }
-    return isDisabledWidgetUncached(node);
+    return __disabledBitsUncached(node);
   }
-  function isDisabledWidgetUncached(node) {
+  function __disabledBitsUncached(node) {
+    let bits = 0;
     try {
       if (typeof dom.get(node, 'matches') === 'function' && dom.matches(node, ':disabled'))
-        return true;
+        bits |= 1;
     } catch {}
     try {
       const ad = dom.get(node, 'getAttribute')
@@ -138123,16 +138713,107 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             .trim()
             .toLowerCase()
         : '';
-      if (ad === 'true') return true;
+      if (ad === 'true') bits |= 2;
       // A custom element disabled through its ElementInternals
       // (internals.ariaDisabled = 'true'), where it has no aria-disabled
       // attribute of its own, is disabled as the attribute would make it.
-      if (!ad && typeof shared.getInternalsStateInfo === 'function') {
+      else if (!ad && typeof shared.getInternalsStateInfo === 'function') {
         const info = shared.getInternalsStateInfo(node, 'aria-disabled');
-        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') return true;
+        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') bits |= 2;
       }
     } catch {}
-    return false;
+    return bits;
+  }
+
+  // Widget roles (WAI-ARIA 1.2, the widget and composite roles), and
+  // toolbar, a group of controls.
+  const __WIDGET_ROLES = new Set([
+    'button',
+    'checkbox',
+    'combobox',
+    'grid',
+    'gridcell',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'radiogroup',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'toolbar',
+    'tree',
+    'treegrid',
+    'treeitem'
+  ]);
+  const __NATIVE_CONTROLS = new Set([
+    'button',
+    'input',
+    'select',
+    'textarea',
+    'option',
+    'optgroup'
+  ]);
+
+  // Whether node is a user interface component: an element whose resolved
+  // role is a widget role, a native control, or a focusable element.
+  function __isUiComponent(node) {
+    const cache = __getSharedWeakMapCache('__uiComponentCache');
+    if (cache && node && typeof node === 'object' && cache.has(node)) return cache.get(node);
+    let out = false;
+    try {
+      const tag = String(dom.localName(node) || '').toLowerCase();
+      if (__NATIVE_CONTROLS.has(tag) && dom.namespaceURI(node) !== __SVG_NS) {
+        out = !(
+          tag === 'input' &&
+          String(dom.getAttribute(node, 'type') || '')
+            .trim()
+            .toLowerCase() === 'hidden'
+        );
+      }
+      if (!out) {
+        let role = '';
+        if (typeof shared.getRoleInfo === 'function') {
+          const info = shared.getRoleInfo(node);
+          role = info && info.role ? String(info.role) : '';
+        } else {
+          role = String(dom.getAttribute(node, 'role') || '')
+            .trim()
+            .toLowerCase()
+            .split(/\s+/)[0];
+        }
+        out = __WIDGET_ROLES.has(role);
+      }
+      if (!out) {
+        if (typeof shared.getFocusableInfo === 'function') {
+          const f = shared.getFocusableInfo(node);
+          out = !!(f && f.focusable);
+        } else {
+          out = /^\s*[+-]?\d+\s*$/.test(String(dom.getAttribute(node, 'tabindex') || ''));
+        }
+      }
+    } catch {
+      out = false;
+    }
+    if (cache && node && typeof node === 'object') cache.set(node, out);
+    return out;
+  }
+
+  // A disabled control, as a label's control or a widget naming itself by
+  // a label: disabled, or aria-disabled on a user interface component.
+  function isDisabledWidget(node) {
+    const bits = __disabledBits(node);
+    return !!(bits & 1) || (!!(bits & 2) && __isUiComponent(node));
   }
 
   // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
@@ -138203,17 +138884,24 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let prev = null;
     let depth = 0;
     let labelAncestor = null;
+    // Whether el or an ancestor met so far is a user interface component:
+    // aria-disabled from there up disables the content of one. Asked only
+    // once an aria-disabled is met, of the elements not asked yet.
+    let inComponent = false;
+    const unasked = [];
     while (node && dom.nodeType(node) === 1 && depth++ < 100) {
+      const bits = __disabledBits(node);
+      if (!inComponent) unasked.push(node);
+      if (bits & 2 && !inComponent) {
+        inComponent = unasked.some((n) => __isUiComponent(n));
+        unasked.length = 0;
+      }
+      const aria = !!(bits & 2) && inComponent;
       // A disabled fieldset disables nothing in its first legend: only an
       // aria-disabled on it counts there.
       if (prev && __isFirstLegendOf(prev, node)) {
-        if (
-          String(dom.getAttribute(node, 'aria-disabled') || '')
-            .trim()
-            .toLowerCase() === 'true'
-        )
-          return true;
-      } else if (isDisabledWidget(node)) return true;
+        if (aria) return true;
+      } else if (bits & 1 || aria) return true;
       if (!labelAncestor && String(dom.tagName(node) || '').toLowerCase() === 'label') {
         labelAncestor = node;
       }
@@ -138228,6 +138916,147 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     if (labelAncestor && labelNamesDisabled(labelAncestor)) return true;
 
     return false;
+  }
+
+  // -------- A currency sign in a run of text (round 11, B11-9) --------
+  //
+  // A currency sign (Unicode Sc: € $ £ ¥ …) or the postal mark 〒 next to
+  // letters or digits on the same line is part of that text ("€45,00",
+  // "〒100-0001"), even when markup gives it an element of its own: it is
+  // read, so it is text, held to 1.4.3, not a graphic. "Next to" is the
+  // nearest visible character before or after it, not past a block
+  // boundary (a block, a line break) and not counting text that is not
+  // drawn (display:none, visibility:hidden, visually hidden), nor the text
+  // of a link beside it. A sign alone between links, or a separator such
+  // as ">", is not this: it stays a graphic.
+  const __RUN_SIGN = /[\p{Sc}〒]/u;
+  const __RUN_SIGN_ONLY = /^[\s\p{Sc}〒\p{P}]*$/u;
+  const __RUN_TEXT = /[\p{L}\p{N}]/u;
+  // Text nodes are kept only for the run; the shared cache is per engine run.
+  const __localSignRunCache = new WeakMap();
+
+  function __isSignText(text) {
+    const s = String(text == null ? '' : text);
+    return __RUN_SIGN.test(s) && __RUN_SIGN_ONLY.test(s);
+  }
+
+  function __inlineDisplay(cs) {
+    const d = String((cs && cs.display) || 'inline');
+    return d === 'contents' || d.startsWith('inline') || d.startsWith('ruby');
+  }
+
+  function __runHidden(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.display) === 'none') return true;
+    try {
+      if (typeof shared.isVisuallyHidden === 'function' && shared.isVisuallyHidden(el)) return true;
+    } catch {}
+    return false;
+  }
+
+  // The nearest visible character beside node in its block, in the given
+  // direction: a character, '' at a boundary or where none is found within
+  // the budget.
+  function __runNeighbour(node, block, forward) {
+    let budget = 400;
+    const into = (n) => {
+      if (budget-- <= 0) return '';
+      const type = dom.nodeType(n);
+      if (type === 3) {
+        const parent = dom.parentElement(n);
+        const pcs = parent ? __contrastComputedStyle(parent) : null;
+        if (pcs && trim(pcs.visibility) && trim(pcs.visibility) !== 'visible') return null;
+        const s = String(dom.nodeValue(n) || '').replace(/\s+/g, '');
+        if (!s) return null;
+        const chars = [...s];
+        return forward ? chars[0] : chars[chars.length - 1];
+      }
+      if (type !== 1) return null;
+      const name = __lname(n);
+      if (name === 'br') return '';
+      if (/^(script|style|template|noscript|title)$/.test(name)) return null;
+      // A link's text is its own: a sign between links separates them.
+      if ((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) return '';
+      if (
+        String(dom.getAttribute(n, 'role') || '')
+          .trim()
+          .split(/\s+/)[0] === 'link'
+      )
+        return '';
+      const cs = __contrastComputedStyle(n);
+      if (__runHidden(n, cs)) return null;
+      if (!__inlineDisplay(cs)) return '';
+      for (
+        let c = forward ? dom.firstChild(n) : dom.lastChild(n);
+        c;
+        c = forward ? dom.nextSibling(c) : dom.previousSibling(c)
+      ) {
+        const found = into(c);
+        if (found !== null) return found;
+      }
+      return null;
+    };
+    let cur = node;
+    while (cur && budget > 0) {
+      let sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
+      while (!sib) {
+        const parent = dom.parentNode(cur);
+        if (!parent || parent === block || dom.nodeType(parent) !== 1) return '';
+        cur = parent;
+        sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
+      }
+      cur = sib;
+      const found = into(cur);
+      if (found !== null) return found;
+    }
+    return '';
+  }
+
+  function __signTextNodeInRun(t) {
+    const cache = __getSharedWeakMapCache('__signRunCache') || __localSignRunCache;
+    if (cache.has(t)) return cache.get(t);
+    let out = false;
+    try {
+      if (__isSignText(dom.nodeValue(t))) {
+        let block = dom.parentElement(t);
+        for (let guard = 0; block && guard < 200; guard++) {
+          if (!__inlineDisplay(__contrastComputedStyle(block))) break;
+          block = dom.parentElement(block);
+        }
+        if (block) {
+          out =
+            __RUN_TEXT.test(__runNeighbour(t, block, false) || '') ||
+            __RUN_TEXT.test(__runNeighbour(t, block, true) || '');
+        }
+      }
+    } catch {
+      out = false;
+    }
+    cache.set(t, out);
+    return out;
+  }
+
+  // Whether node (a text node, or an element by its own text nodes) is a
+  // currency sign or 〒 in a run of text: its text is only such signs,
+  // punctuation and spaces, and a letter or digit is the nearest visible
+  // character beside it on its line.
+  function isSignInTextRun(node) {
+    try {
+      if (!node) return false;
+      if (dom.nodeType(node) === 3) return __signTextNodeInRun(node);
+      if (dom.nodeType(node) !== 1) return false;
+      let own = '';
+      const texts = [];
+      for (let n = dom.firstChild(node); n; n = dom.nextSibling(n)) {
+        if (dom.nodeType(n) !== 3) continue;
+        own += String(dom.nodeValue(n) || '');
+        if (/\S/.test(dom.nodeValue(n) || '')) texts.push(n);
+      }
+      if (!__isSignText(own)) return false;
+      return texts.some((t) => __signTextNodeInRun(t));
+    } catch {
+      return false;
+    }
   }
 
   // -------- Text shown in a form field (#103) --------
@@ -138982,7 +139811,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           visitedTextNodes.add(node);
 
           const text = node && dom.nodeValue(node);
-          if (!isNonEmptyText(text)) continue;
+          // A currency sign beside letters or digits is part of their text
+          // (isSignInTextRun), though it has none of its own.
+          if (!isNonEmptyText(text) && !(__isSignText(text) && isSignInTextRun(node))) continue;
 
           const parentNode = dom.parentNode(node);
           // Text assigned straight to a shadow root has no parent element, but
@@ -145994,7 +146825,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // Without a layout (jsdom), where an SVG shape paints can't be told. A
   // shape painted before SVG text in the same <svg> may lie behind it, and
   // then the text's background can't be told either: the shape, as paint
-  // in the way, or null. With a layout, __svgBackdropOf measures it.
+  // in the way, or null. A shape certainly under all of the text is its
+  // background (__svgNoLayoutScan); only one painted after the last such
+  // shape is in the way. With a layout, __svgBackdropOf measures it.
   const __SVG_PAINT_TAGS =
     'rect, circle, ellipse, line, path, polygon, polyline, image, use, foreignObject';
   const __SVG_UNPAINTED_TAGS = new Set([
@@ -146009,11 +146842,37 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     'filter'
   ]);
   function __svgShapeMaybeBehind(el) {
+    const scan = __svgNoLayoutScan(el);
+    return scan ? scan.blocker : null;
+  }
+
+  // Without a layout, the simple, certain case is measured (round 11, D11):
+  // a <rect>, <circle> or <ellipse> painted before the text with an opaque
+  // solid fill, no transform, opacity, filter, mask or clip on it or its
+  // ancestors in the <svg>, whose geometry certainly covers the text's
+  // area. The last such shape is the text's background; a shape painted
+  // after it that may lie behind the text (any other) keeps the text
+  // asked about. { certain: { el, rgba } | null, blocker: {...} | null },
+  // or null where nothing applies (with a layout, or not SVG text).
+  const __svgNoLayoutCache = new WeakMap();
+  function __svgNoLayoutScan(el) {
     if (!__isSvgTextElement(el)) return null;
     const doc = dom.ownerDocument(el);
     if (!doc) return null;
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (__layoutByDoc.get(doc)) return null;
+    if (__svgNoLayoutCache.has(el)) return __svgNoLayoutCache.get(el);
+    let out;
+    try {
+      out = __computeSvgNoLayoutScan(el);
+    } catch {
+      out = null;
+    }
+    __svgNoLayoutCache.set(el, out);
+    return out;
+  }
+
+  function __computeSvgNoLayoutScan(el) {
     let svg = composedParent(el);
     for (
       let guard = 0;
@@ -146028,6 +146887,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       return null;
     }
+    let area;
+    const textArea = () => {
+      if (area === undefined) area = __svgTextArea(el, svg);
+      return area;
+    };
+    let certain = null;
+    let blocker = null;
     for (const shape of shapes) {
       // Painted after el (or el's own ancestor): not behind it.
       if (!(dom.compareDocumentPosition(shape, el) & 4) || __isComposedInside(el, shape)) break;
@@ -146056,14 +146922,267 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const tag = __lname(shape);
       const shapeOnly = tag !== 'image' && tag !== 'use' && tag !== 'foreignobject';
       if (shapeOnly && !paints(fill) && !paints(stroke)) continue;
-      return {
-        selector: __getSimpleSelectorCached(shape, tag),
-        element: describeElement(shape),
-        property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
-        value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
-      };
+      const rgba = __svgCertainCover(shape, cs, svg, paints(stroke), textArea);
+      if (rgba) {
+        // Opaque, over all of the text: what lies under it doesn't show.
+        certain = { el: shape, rgba };
+        blocker = null;
+        continue;
+      }
+      if (!blocker) {
+        blocker = {
+          selector: __getSimpleSelectorCached(shape, tag),
+          element: describeElement(shape),
+          property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
+          value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
+        };
+      }
     }
-    return null;
+    return { certain, blocker };
+  }
+
+  // An SVG length in user units: a number, px, or a percentage of `full`
+  // (NaN where `full` is unknown). NaN for anything else.
+  function __svgLength(value, full) {
+    const v = trim(value);
+    if (!v) return NaN;
+    let m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(px)?$/i.exec(v);
+    if (m) return Number.parseFloat(m[1]);
+    m = /^([+-]?(?:\d+\.?\d*|\.\d+))%$/.exec(v);
+    if (m) return Number.isFinite(full) ? (Number.parseFloat(m[1]) / 100) * full : NaN;
+    return NaN;
+  }
+
+  // The svg's viewport in user units: its viewBox, or its own width and
+  // height where it has none. { x, y, w, h }, a side NaN where unknown.
+  function __svgViewport(svg) {
+    const vb = trim(dom.getAttribute(svg, 'viewBox'));
+    if (vb) {
+      const n = vb.split(/[\s,]+/).map(Number);
+      if (n.length === 4 && n.every(Number.isFinite) && n[2] > 0 && n[3] > 0)
+        return { x: n[0], y: n[1], w: n[2], h: n[3], viewBox: true };
+      return { x: 0, y: 0, w: NaN, h: NaN, viewBox: true };
+    }
+    return {
+      x: 0,
+      y: 0,
+      w: __svgLength(dom.getAttribute(svg, 'width'), NaN),
+      h: __svgLength(dom.getAttribute(svg, 'height'), NaN),
+      viewBox: false
+    };
+  }
+
+  const __SVG_GROUP_ATTRS = ['transform', 'filter', 'mask', 'clip-path'];
+  // Whether node draws as a group or moves: a transform, opacity, a filter,
+  // a mask or a clip, as an attribute, in its style or computed.
+  function __svgGroupedOrMoved(node) {
+    for (const a of __SVG_GROUP_ATTRS) {
+      const v = trim(dom.getAttribute(node, a)).toLowerCase();
+      if (v && v !== 'none') return true;
+    }
+    const op = trim(dom.getAttribute(node, 'opacity'));
+    if (op && !(Number.parseFloat(op) >= 1)) return true;
+    if (
+      /(^|;)\s*(transform|opacity|filter|mask|clip|clip-path)\s*:/i.test(
+        String(dom.getAttribute(node, 'style') || '')
+      )
+    )
+      return true;
+    const cs = __contrastComputedStyle(node);
+    if (!cs) return false;
+    if (opacityOf(cs) < 1) return true;
+    const set = (v) => !!trim(v) && trim(v) !== 'none';
+    return (
+      set(cs.transform) ||
+      set(cs.filter) ||
+      set(cs.clipPath) ||
+      set(cs.maskImage) ||
+      set(cs.mask) ||
+      (!!cs.mixBlendMode && trim(cs.mixBlendMode) !== 'normal')
+    );
+  }
+
+  // The area SVG text certainly lies in, in the svg's user units, without a
+  // layout: from its x and y, its font size and its number of characters,
+  // each at most one em wide, from 1.2em above the baseline to 0.4em below.
+  // null where that isn't simple: a transform, positions per character,
+  // a textLength, spacing, a vertical writing mode or a text path.
+  function __svgTextArea(el, svg) {
+    let text = el;
+    while (text && text !== svg && __lname(text) !== 'text') text = dom.parentElement(text);
+    if (!text || text === svg) return null;
+    for (let n = text; n && n !== svg; n = dom.parentElement(n)) {
+      if (__svgGroupedOrMoved(n) && n !== text) return null;
+      const t = trim(dom.getAttribute(n, 'transform'));
+      if (t && t !== 'none') return null;
+      const ncs = __contrastComputedStyle(n);
+      if (ncs && trim(ncs.transform) && trim(ncs.transform) !== 'none') return null;
+    }
+    const parts = [text, ...dom.querySelectorAll(text, '*')];
+    for (const n of parts) {
+      const name = __lname(n);
+      if (name === 'textpath') return null;
+      for (const a of ['dx', 'dy', 'rotate', 'textLength', 'letter-spacing', 'word-spacing'])
+        if (dom.hasAttribute(n, a)) return null;
+      if (n !== text && (dom.hasAttribute(n, 'x') || dom.hasAttribute(n, 'y'))) return null;
+      if (
+        /(^|;)\s*(letter-spacing|word-spacing|writing-mode|font-size)\s*:/i.test(
+          String(dom.getAttribute(n, 'style') || '')
+        ) &&
+        n !== text
+      )
+        return null;
+    }
+    const tcs = __contrastComputedStyle(text) || {};
+    if (
+      /^(vertical|tb|sideways)/.test(trim(tcs.writingMode)) ||
+      dom.hasAttribute(text, 'writing-mode')
+    )
+      return null;
+    const spacing = (v) => !trim(v) || trim(v) === 'normal' || Number.parseFloat(v) === 0;
+    if (!spacing(tcs.letterSpacing) || !spacing(tcs.wordSpacing)) return null;
+    const vp = __svgViewport(svg);
+    const x = dom.hasAttribute(text, 'x') ? __svgLength(dom.getAttribute(text, 'x'), vp.w) : 0;
+    const y = dom.hasAttribute(text, 'y') ? __svgLength(dom.getAttribute(text, 'y'), vp.h) : 0;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    // The font size: the larger of the computed one and the nearest
+    // font-size attribute, which jsdom doesn't apply.
+    let fs = parsePx(tcs.fontSize);
+    if (!/^\s*[\d.]+px\s*$/.test(String(tcs.fontSize || ''))) fs = NaN;
+    const host = dom.closest(text, '[font-size]');
+    if (host && __isComposedInside(host, svg)) {
+      const a = __svgLength(dom.getAttribute(host, 'font-size'), NaN);
+      if (!Number.isFinite(a)) return null;
+      fs = Number.isFinite(fs) ? Math.max(fs, a) : a;
+    }
+    if (!Number.isFinite(fs)) fs = 16;
+    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')].length;
+    if (!chars) return null;
+    const w = chars * fs;
+    const anchorHost = dom.closest(text, '[text-anchor]');
+    let anchor = trim(tcs.textAnchor) || 'start';
+    if (anchorHost && __isComposedInside(anchorHost, svg))
+      anchor = trim(dom.getAttribute(anchorHost, 'text-anchor')).toLowerCase();
+    const rtl = trim(tcs.direction) === 'rtl' || !!dom.closest(text, '[direction="rtl"]');
+    let left;
+    let right;
+    if (rtl || !/^(start|middle|end)$/.test(anchor)) {
+      left = x - w;
+      right = x + w;
+    } else if (anchor === 'middle') {
+      left = x - w / 2;
+      right = x + w / 2;
+    } else if (anchor === 'end') {
+      left = x - w;
+      right = x;
+    } else {
+      left = x;
+      right = x + w;
+    }
+    const baselineSet = ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
+      (a) => !!dom.closest(text, '[' + a + ']')
+    );
+    const above = baselineSet ? 1.3 * fs : 1.2 * fs;
+    const below = baselineSet ? 1.3 * fs : 0.4 * fs;
+    return { left, right, top: y - above, bottom: y + below };
+  }
+
+  // The opaque color a <rect>, <circle> or <ellipse> certainly paints
+  // under all of el's text, without a layout, or null.
+  function __svgCertainCover(shape, cs, svg, stroked, textArea) {
+    const tag = __lname(shape);
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
+    // Its own <svg>: not in a nested one, a <switch> or a link's group.
+    for (let p = dom.parentElement(shape); p !== svg; p = dom.parentElement(p)) {
+      if (!p) return null;
+      const name = __lname(p);
+      if (name !== 'g' && name !== 'a') return null;
+      if (__svgGroupedOrMoved(p)) return null;
+    }
+    if (__svgGroupedOrMoved(shape)) return null;
+    const fill = parseCssColorToRgba(cs.fill);
+    if (!fill || fill.a < 1) return null;
+    const fo = trim(dom.getAttribute(shape, 'fill-opacity')) || trim(cs.fillOpacity);
+    if (fo && !(Number.parseFloat(fo) >= 1)) return null;
+    if (
+      /(^|;)\s*(fill-opacity|x|y|width|height|rx|ry|r|cx|cy)\s*:/i.test(
+        String(dom.getAttribute(shape, 'style') || '')
+      )
+    )
+      return null;
+    const vp = __svgViewport(svg);
+    const attr = (a, full, dflt) =>
+      dom.hasAttribute(shape, a) ? __svgLength(dom.getAttribute(shape, a), full) : dflt;
+    let half = 0;
+    if (stroked) {
+      const sw = dom.hasAttribute(shape, 'stroke-width')
+        ? __svgLength(dom.getAttribute(shape, 'stroke-width'), NaN)
+        : parsePx(cs.strokeWidth) || 1;
+      if (!Number.isFinite(sw)) return null;
+      half = Math.max(0, sw) / 2;
+    }
+    const rgb = { r: fill.r, g: fill.g, b: fill.b, a: 1 };
+    if (tag === 'rect') {
+      const x = attr('x', vp.w, 0);
+      const y = attr('y', vp.h, 0);
+      const w = attr('width', vp.w, NaN);
+      const h = attr('height', vp.h, NaN);
+      if (![x, y, w, h].every(Number.isFinite) || !(w > 0) || !(h > 0)) return null;
+      let rx = attr('rx', vp.w, NaN);
+      let ry = attr('ry', vp.h, NaN);
+      const rxSet = dom.hasAttribute(shape, 'rx');
+      const rySet = dom.hasAttribute(shape, 'ry');
+      if ((rxSet && !Number.isFinite(rx)) || (rySet && !Number.isFinite(ry))) return null;
+      if (!rxSet) rx = rySet ? ry : 0;
+      if (!rySet) ry = rx;
+      rx = Math.min(Math.max(rx, 0), w / 2);
+      ry = Math.min(Math.max(ry, 0), h / 2);
+      // The whole svg: covers any text in it.
+      const whole = (v, full, raw) => trim(raw) === '100%' || (Number.isFinite(full) && v === full);
+      if (
+        !rx &&
+        !ry &&
+        x === vp.x &&
+        y === vp.y &&
+        whole(w, vp.w, dom.getAttribute(shape, 'width')) &&
+        whole(h, vp.h, dom.getAttribute(shape, 'height'))
+      )
+        return rgb;
+      const area = textArea();
+      if (!area) return null;
+      const ix = Math.max(rx, half);
+      const iy = Math.max(ry, half);
+      return area.left >= x + ix &&
+        area.right <= x + w - ix &&
+        area.top >= y + iy &&
+        area.bottom <= y + h - iy
+        ? rgb
+        : null;
+    }
+    const cx = attr('cx', NaN, 0);
+    const cy = attr('cy', NaN, 0);
+    let rx;
+    let ry;
+    if (tag === 'circle') {
+      rx = attr('r', NaN, NaN);
+      ry = rx;
+    } else {
+      rx = attr('rx', NaN, NaN);
+      ry = attr('ry', NaN, NaN);
+    }
+    if (![cx, cy, rx, ry].every(Number.isFinite)) return null;
+    rx -= half;
+    ry -= half;
+    if (!(rx > 0) || !(ry > 0)) return null;
+    const area = textArea();
+    if (!area) return null;
+    const inside = (px, py) => ((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2 <= 1;
+    return inside(area.left, area.top) &&
+      inside(area.right, area.top) &&
+      inside(area.left, area.bottom) &&
+      inside(area.right, area.bottom)
+      ? rgb
+      : null;
   }
 
   // -------- SVG shapes behind SVG text (#96) --------
@@ -146093,7 +147212,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __computeSvgBackdrop(el) {
     const index = __getOverlapIndex();
-    if (!index) return null;
+    if (!index) {
+      // Without a layout: the last shape certainly under all of the text,
+      // with nothing uncertain painted after it (__svgNoLayoutScan).
+      const scan = __svgNoLayoutScan(el);
+      return scan && scan.certain && !scan.blocker
+        ? { layers: [scan.certain], blocked: false }
+        : null;
+    }
     let svg = composedParent(el);
     let guard = 0;
     while (
@@ -146950,6 +148076,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     looksLikeLogo,
     contrastSwitchName,
     isInactiveUiComponent,
+    isSignInTextRun,
     // The author's declaration of a property that applies to an element:
     // { value }, null where none does, { unknown: true } where it can't be
     // told.
@@ -159570,6 +160697,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getInternalsStateInfo,
     cssRulesOf,
     selectorIndex,
+    isVisuallyHidden,
+    getRoleInfo: (el) => getRoleInfo(el),
+    getFocusableInfo: (el) => getFocusableInfo(el),
     __contrastSharedCache
   };
 
