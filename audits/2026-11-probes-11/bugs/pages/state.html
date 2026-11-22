@@ -1,0 +1,30 @@
+<!doctype html><html lang="en"><head><title>Stateful page for a scan</title>
+<style>
+.ticker{animation:slide 4s linear infinite}@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+a:focus{outline:3px solid red} .fade{transition:opacity 2s} .fade:focus{opacity:.5}
+.menu{display:none} .nav:focus-within .menu{display:block}
+.box{height:60px;overflow:auto} input:focus{background:yellow}
+.sticky{position:sticky;top:0;background:#fff}
+:root{--x:1}
+</style></head>
+<body><header class="sticky"><a href="#main" id="skip">Skip</a></header>
+<main id="main"><h1>Page</h1>
+<div class="ticker">Breaking news ticker</div>
+<div class="nav"><a href="/" id="navlink">Products</a><ul class="menu"><li><a href="/a" id="sub">A</a></li></ul></div>
+<div class="box" id="box"><p>1</p><p>2</p><p>3</p><p>4</p><p>5</p><a href="#" id="inbox">link</a></div>
+<form><label>Name <input id="name" value="Ana" onfocus="this.dataset.f=(+this.dataset.f||0)+1" onblur="window.blurs=(window.blurs||0)+1"></label>
+<label><input type="checkbox" id="cb" checked> Keep</label>
+<select id="sel"><option>1</option><option selected>2</option></select>
+<textarea id="ta">hello</textarea></form>
+<details id="d"><summary>More</summary><p>Hidden <a href="/x" id="dlink">x</a></p></details>
+<dialog id="dlg"><p>Dialog <button>OK</button></p></dialog>
+<div popover id="pop"><button>pop</button></div><button popovertarget="pop">Open</button>
+<a href="/far" id="far" style="display:block;margin-top:2000px">Far link</a>
+<button id="b" class="fade" onfocus="this.textContent='Focused!'">Press</button>
+<div tabindex="0" id="t0" onfocus="document.title='Changed by focus'">Focusable div</div>
+<input id="auto" onfocus="this.select()" value="select me">
+<video id="v" src="data:video/mp4;base64,AAAA" muted></video>
+<p id="sel1">Some text the user selected</p>
+</main>
+<script>getSelection().selectAllChildren(document.getElementById('sel1')); document.getElementById('box').scrollTop=20; scrollTo(0,300); document.getElementById('name').focus();</script>
+</body></html>

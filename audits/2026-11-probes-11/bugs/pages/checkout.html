@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Checkout – My Shop</title>
+<style>body{font-family:sans-serif;color:#333;background:#fff} .screen-reader-text{position:absolute;clip:rect(1px,1px,1px,1px);width:1px;height:1px;overflow:hidden} .required{color:#e2401c;text-decoration:none;border:0} .star-rating{color:#ccc;font-size:14px} .btn{background:#7f54b3;color:#fff;padding:8px 16px;border:0} .woocommerce-error{background:#fde;padding:8px} .price del{color:#999} .tag{display:inline-block;padding:2px 6px;background:#eee;border-radius:3px;font-size:12px} .crumb a{color:#555} .sep{color:#bbb}</style></head>
+<body><a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+<header><nav aria-label="Primary"><ul><li><a href="/">Home</a></li><li><a href="/shop">Shop</a></li><li><a href="/cart">Cart <span class="count">(2)</span></a></li></ul></nav></header>
+<main id="main"><nav class="crumb" aria-label="Breadcrumb"><a href="/">Home</a> <span class="sep">&gt;</span> <a href="/shop">Shop</a> <span class="sep">/</span> Checkout</nav>
+<h1>Checkout</h1>
+<div class="woocommerce-error" role="alert"><ul><li><strong>Billing First name</strong> is a required field.</li></ul></div>
+<form name="checkout" method="post" class="checkout" action="/checkout">
+<h3>Billing details</h3>
+<p class="form-row"><label for="billing_first_name">First name&nbsp;<abbr class="required" title="required">*</abbr></label><input type="text" name="billing_first_name" id="billing_first_name" autocomplete="given-name" aria-invalid="true" required></p>
+<p class="form-row"><label for="billing_last_name">Last name&nbsp;<abbr class="required" title="required">*</abbr></label><input type="text" name="billing_last_name" id="billing_last_name" autocomplete="family-name"></p>
+<p class="form-row"><label for="billing_country">Country / Region</label><select name="billing_country" id="billing_country" autocomplete="country"><option value="">Select a country / region…</option><option value="ES">Spain</option></select></p>
+<p class="form-row"><label for="billing_phone">Phone</label><input type="tel" name="billing_phone" id="billing_phone" autocomplete="tel"></p>
+<p class="form-row"><label for="billing_email">Email address</label><input type="email" name="billing_email" id="billing_email" autocomplete="email"></p>
+<p><label><input type="checkbox" name="ship_to_different_address" value="1"> <span>Ship to a different address?</span></label></p>
+<p><label for="order_comments">Order notes <span class="optional">(optional)</span></label><textarea name="order_comments" id="order_comments" placeholder="Notes about your order, e.g. special notes for delivery." rows="2"></textarea></p>
+<h3 id="order_review_heading">Your order</h3>
+<table class="shop_table"><thead><tr><th class="product-name">Product</th><th class="product-total">Subtotal</th></tr></thead>
+<tbody><tr><td>Hoodie <strong class="product-quantity">×&nbsp;2</strong></td><td><span class="price"><del aria-hidden="true"><span class="amount"><bdi><span class="currencySymbol">$</span>45.00</bdi></span></del> <ins><span class="amount"><bdi><span class="currencySymbol">$</span>40.00</bdi></span></ins></span></td></tr></tbody>
+<tfoot><tr><th>Subtotal</th><td>$80.00</td></tr><tr><th>Shipping</th><td><ul id="shipping_method"><li><input type="radio" name="shipping_method[0]" id="sm0" value="flat" checked><label for="sm0">Flat rate: $5.00</label></li><li><input type="radio" name="shipping_method[0]" id="sm1" value="free"><label for="sm1">Free shipping</label></li></ul></td></tr></tfoot></table>
+<div id="payment"><ul class="wc_payment_methods"><li><input id="payment_method_bacs" type="radio" name="payment_method" value="bacs" checked><label for="payment_method_bacs">Direct bank transfer</label><div class="payment_box"><p>Make your payment directly into our bank account.</p></div></li><li><input id="payment_method_cod" type="radio" name="payment_method" value="cod"><label for="payment_method_cod">Cash on delivery</label></li></ul>
+<p><label><input type="checkbox" name="terms" id="terms"> I have read and agree to the website <a href="/terms" target="_blank">terms and conditions</a></label><span class="required">*</span></p>
+<button type="submit" class="btn" name="woocommerce_checkout_place_order" id="place_order" value="Place order">Place order</button></div>
+</form>
+<section><h2>Reviews</h2><div class="star-rating" role="img" aria-label="Rated 4 out of 5">★★★★☆</div><span class="star-rating">★★★☆☆</span>
+<span class="tag" onclick="filter('a')">Cotton</span> <span class="tag" onclick="filter('b')">Winter</span>
+<div class="card" onclick="location='/p/1'" style="padding:16px;border:1px solid #ddd"><h3>Beanie</h3><p>A warm beanie.</p></div></section>
+</main><footer><p>© 2026 My Shop</p></footer>
+<script>function filter(){}</script></body></html>

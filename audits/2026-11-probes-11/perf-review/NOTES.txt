@@ -1,0 +1,5 @@
+R11P-1 (medium, clear bug, jsdom only): t-r11p-moz.js — lazily-throwing selector (button:-moz-focusring) in the joined suppressor list makes matches(el, list) throw -> read as no hit -> all listed suppressors skipped for that element.
+R11P-2 (low, judgement): t-target.js — role="x button" (NBSP/VT/U+FEFF separated) now a target-size candidate in Chromium; root cause aria firstConcreteRole splits on \s not ASCII whitespace.
+R11P-3 (low, perf): abj.js css-focus-indicator-suppressed scale:rules:1000 — jsdom 7.3-8.1 s -> 9.9-10.9 s when every candidate hits the list.
+R11P-4 (info): jsdom dom-selector 7.1.1 list != OR for :nth-child(An+B of S) (min-list.js); not reached at scan level.
+Sound: P11-1, P11-2, P11-3 (except NBSP), P11-4, P11-6; fixtures 155 x 0 diffs jsdom+Chromium.

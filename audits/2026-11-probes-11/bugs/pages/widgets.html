@@ -1,0 +1,23 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Settings - Acme</title>
+<style>[role=tab][aria-selected=true]{border-bottom:2px solid blue} .MuiButtonBase-root{cursor:pointer;padding:6px 8px;border-radius:4px;background:#1976d2;color:#fff;display:inline-flex} .chip{display:inline-flex;padding:4px 12px;border-radius:16px;background:#e0e0e0} .icon{font-family:Material Icons}</style></head>
+<body><main><h1>Settings</h1>
+<div class="MuiTabs-root"><div class="MuiTabs-scroller"><div role="tablist" aria-label="Sections" class="MuiTabs-flexContainer"><button role="tab" aria-selected="true" aria-controls="p1" id="t1" tabindex="0">General</button><button role="tab" aria-selected="false" aria-controls="p2" id="t2" tabindex="-1">Privacy</button></div><span class="MuiTabs-indicator"></span></div></div>
+<div role="tabpanel" id="p1" aria-labelledby="t1"><p>General settings.</p></div><div role="tabpanel" id="p2" aria-labelledby="t2" hidden></div>
+<div class="chakra-tabs"><div role="tablist" aria-orientation="horizontal"><div class="tab-wrap"><button role="tab" aria-selected="true">One</button></div><div class="tab-wrap"><button role="tab" aria-selected="false">Two</button></div></div></div>
+<button id="mb" aria-haspopup="true" aria-expanded="true" aria-controls="m">Actions</button>
+<ul role="menu" id="m" aria-labelledby="mb"><li role="none"><a role="menuitem" href="#">Edit</a></li><li role="separator"></li><li role="none"><a role="menuitem" href="#">Delete</a></li></ul>
+<div role="menu" aria-label="Format"><div role="group" aria-label="Style"><div role="menuitemcheckbox" aria-checked="true" tabindex="-1">Bold</div></div><hr></div>
+<label id="cl">Fruit</label><div role="combobox" aria-expanded="true" aria-haspopup="listbox" aria-labelledby="cl" aria-controls="lb" tabindex="0">Apple</div>
+<ul role="listbox" id="lb" aria-labelledby="cl"><li role="option" aria-selected="true">Apple</li><li role="presentation" class="divider"></li><li role="option" aria-selected="false">Pear</li></ul>
+<div role="listbox" aria-label="Virtual"><div style="height:0"></div><div role="option" aria-selected="false">A</div></div>
+<div role="radiogroup" aria-label="Plan"><div role="radio" aria-checked="true" tabindex="0">Free</div><div role="radio" aria-checked="false" tabindex="-1">Pro</div></div>
+<span class="MuiButtonBase-root" onclick="go()">Save</span>
+<span class="chip" onclick="go()">React</span>
+<div class="chip" onclick="go()" role="button">Vue</div>
+<span class="icon" onclick="go()" style="cursor:pointer">&#xe5cd;</span>
+<div role="dialog" aria-modal="true" aria-labelledby="dh"><h2 id="dh">Delete item?</h2><button>Cancel</button><button>Delete</button></div>
+<div role="tree" aria-label="Files"><div role="treeitem" aria-expanded="true">src<div role="group"><div role="treeitem">a.js</div></div></div></div>
+<div role="grid" aria-label="Data"><div role="row"><div role="columnheader">Name</div></div><div role="row"><div role="gridcell">x</div></div></div>
+<details><summary>Advanced</summary><p>More</p></details>
+<div role="toolbar" aria-label="Edit"><button aria-pressed="false">B</button><button aria-pressed="true" aria-label="Italic">I</button></div>
+</main><script>function go(){}</script></body></html>
