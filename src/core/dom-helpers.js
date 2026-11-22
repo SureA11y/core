@@ -633,25 +633,87 @@ function createDomHelpers(opts) {
   ]);
   const __HINT_SELECTOR = 'font[color], body[text], body[link], [bgcolor], [fill]';
   const __hintRootCache = new WeakMap();
-  // Whether the element's tree holds any presentational attribute at all:
-  // most pages hold none, and then nothing here runs.
+  // Whether the element's document, or an open shadow root in it, holds
+  // any presentational attribute at all: most pages hold none, and then
+  // nothing here runs. A hint reaches across shadow boundaries, as color
+  // inherits along the flat tree.
   function __treeHasHints(el) {
-    let root;
+    let doc;
     try {
-      root = dom.getRootNode(el);
+      doc = dom.ownerDocument(el);
     } catch {
-      root = null;
+      doc = null;
     }
-    if (!root) return false;
-    if (__hintRootCache.has(root)) return __hintRootCache.get(root);
-    let has;
-    try {
-      has = !!dom.querySelector(root, __HINT_SELECTOR);
-    } catch {
-      has = false;
-    }
-    __hintRootCache.set(root, has);
+    if (!doc) return false;
+    if (__hintRootCache.has(doc)) return __hintRootCache.get(doc);
+    let has = false;
+    const visit = (root, depth) => {
+      try {
+        if (dom.querySelector(root, __HINT_SELECTOR)) has = true;
+      } catch {
+        // none read
+      }
+      if (has || depth > 20) return;
+      // Shadow roots found for queries are reused (collectShadowRoots).
+      let roots = __shadowRootsByRoot ? __shadowRootsByRoot.get(root) : null;
+      if (!roots) {
+        roots = [];
+        try {
+          for (const host of dom.querySelectorAll(root, '*')) {
+            const sr = dom.shadowRoot(host);
+            if (sr) roots.push(sr);
+          }
+        } catch {
+          // none read
+        }
+      }
+      for (const sr of roots) {
+        visit(sr, depth + 1);
+        if (has) return;
+      }
+    };
+    visit(doc, 0);
+    __hintRootCache.set(doc, has);
     return has;
+  }
+  // An element's parent in the flat tree: the slot it is assigned to, its
+  // parent, or, at the top of a shadow tree, its host.
+  function __flatParentElement(el) {
+    let p = composedParent(el);
+    for (let i = 0; p && dom.nodeType(p) !== 1 && i < 4; i++)
+      p = dom.nodeType(p) === 11 ? composedParent(p) : null;
+    return p && dom.nodeType(p) === 1 ? p : null;
+  }
+  // The nearest element at or above el in the flat tree that matches
+  // selector, cached per selector for the elements on the way.
+  const __flatHostCaches = new Map();
+  function __flatClosest(el, selector) {
+    let cache = __flatHostCaches.get(selector);
+    if (!cache) {
+      cache = new WeakMap();
+      __flatHostCaches.set(selector, cache);
+    }
+    const way = [];
+    let found = null;
+    for (let cur = el, i = 0; cur && i < 100000; cur = __flatParentElement(cur), i++) {
+      if (cache.has(cur)) {
+        found = cache.get(cur);
+        break;
+      }
+      way.push(cur);
+      let match;
+      try {
+        match = dom.matches(cur, selector);
+      } catch {
+        match = false;
+      }
+      if (match) {
+        found = cur;
+        break;
+      }
+    }
+    for (const w of way) cache.set(w, found);
+    return found;
   }
   // HTML's rules for parsing a legacy colour value, as rgb(): null where
   // the value is no colour (empty, or "transparent").
@@ -729,12 +791,12 @@ function createDomHelpers(opts) {
       !(prop === 'color' && decl === 'currentcolor')
     )
       return null;
-    const parent = dom.parentElement(el);
+    const parent = __flatParentElement(el);
     if (!parent) return null;
     // Resolve the elements between host and el from the top, so each
     // reads its parent's answer from the cache.
     const path = [];
-    for (let p = parent, i = 0; p && p !== host && i < 10000; p = dom.parentElement(p), i++)
+    for (let p = parent, i = 0; p && p !== host && i < 10000; p = __flatParentElement(p), i++)
       path.push(p);
     for (let k = path.length - 1; k >= 0; k--) computedStyle(path[k]);
     const pcs = computedStyle(parent);
@@ -839,12 +901,7 @@ function createDomHelpers(opts) {
     // The nearest element that can set a color hint: a link's color is the
     // browser's (or <body link>'s), whatever is around it.
     let color = null;
-    let colorHost;
-    try {
-      colorHost = dom.closest(el, 'font[color], body[text], a[href], area[href]');
-    } catch {
-      colorHost = null;
-    }
+    const colorHost = __flatClosest(el, 'font[color], body[text], a[href], area[href]');
     if (colorHost === el) {
       if (__authorDecl(el, 'color') === null) {
         if (html && tag === 'font') color = __legacyColor(dom.getAttribute(el, 'color'));
@@ -896,12 +953,7 @@ function createDomHelpers(opts) {
                 : `rgb(${rgba.r}, ${rgba.g}, ${rgba.b})`;
         }
       } else if (fillDecl === null || (fillDecl && __INHERIT_KEYWORDS.has(fillDecl))) {
-        let host;
-        try {
-          host = dom.closest(el, '[fill]');
-        } catch {
-          host = null;
-        }
+        const host = __flatClosest(el, '[fill]');
         if (host && dom.namespaceURI(host) === 'http://www.w3.org/2000/svg')
           fill = __inheritedHint(el, cs, 'fill', host);
       }

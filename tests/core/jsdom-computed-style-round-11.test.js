@@ -16,7 +16,11 @@ const { chromium, executablePath, skip } = require('../helpers/chromium.js');
 
 const page = (body, head = '') =>
   `<!doctype html><html><head>${head}</head><body>${body}</body></html>`;
+// A script that gives #host an open shadow root holding inner.
+const shadow = (host, inner) =>
+  `<script>document.getElementById(${JSON.stringify(host)}).attachShadow({mode:"open"}).innerHTML=${JSON.stringify(inner)}</script>`;
 const OVERFLOW = ['overflow', 'overflowX', 'overflowY'];
+const RED = ['rgb(255, 0, 0)'];
 
 // [label, html, selector (' >>> ' enters a shadow root), properties,
 // values Chromium computes]
@@ -134,6 +138,61 @@ const CASES = [
     '#t',
     OVERFLOW,
     ['visible', 'visible', 'visible']
+  ],
+  // R11F-5: a colour hint inherits along the flat tree.
+  [
+    'text in a shadow root under a <font color>',
+    page('<div id="h"></div>' + shadow('h', '<font color="red"><span id="t">x</span></font>')),
+    '#h >>> #t',
+    ['color'],
+    RED
+  ],
+  [
+    'a light child slotted into a <font color> in a shadow root',
+    page(
+      '<div id="h"><span id="t">x</span></div>' +
+        shadow('h', '<font color="red"><slot></slot></font>')
+    ),
+    '#t',
+    ['color'],
+    RED
+  ],
+  [
+    "a slot's fallback content in a <font color>",
+    page(
+      '<div id="h"></div>' +
+        shadow('h', '<font color="red"><slot><span id="t">x</span></slot></font>')
+    ),
+    '#h >>> #t',
+    ['color'],
+    RED
+  ],
+  [
+    'shadow text in a host inside a <font color>',
+    page('<font color="red"><div id="h"></div></font>' + shadow('h', '<span id="t">x</span>')),
+    '#h >>> #t',
+    ['color'],
+    RED
+  ],
+  [
+    'shadow text under <body text>',
+    page('<div id="h"></div>' + shadow('h', '<span id="t">x</span>')).replace(
+      '<body>',
+      '<body text="red">'
+    ),
+    '#h >>> #t',
+    ['color'],
+    RED
+  ],
+  [
+    'a link in a shadow root under <body link>',
+    page('<div id="h"></div>' + shadow('h', '<a href="#" id="t">x</a>')).replace(
+      '<body>',
+      '<body link="red">'
+    ),
+    '#h >>> #t',
+    ['color'],
+    RED
   ]
 ];
 
