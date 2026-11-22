@@ -587,6 +587,57 @@ function createDomHelpers(opts) {
     });
   }
 
+  // -------- What jsdom's getComputedStyle leaves out --------
+  //
+  // Under jsdom (no layout), some values a browser computes are missing
+  // from getComputedStyle, and are put in here, as computedStyle reads them
+  // (withLayeredOverrides):
+  // - The `overflow` shorthand is not expanded: `overflow: auto` leaves
+  //   overflow-x and overflow-y "visible", and `overflow-y: scroll` leaves
+  //   overflow "". The longhands take the shorthand's one or two values,
+  //   and, as CSS Overflow 3 computes them, `visible` becomes `auto` (and
+  //   `clip` `hidden`) when the other axis scrolls or hides.
+  function __jsdomStyleFixesOf(el, cs) {
+    let out = null;
+    const set = (prop, value) => {
+      if (!out) out = new Map();
+      out.set(prop, value);
+    };
+
+    // overflow
+    const lx = String(cs.overflowX || '')
+      .trim()
+      .toLowerCase();
+    const ly = String(cs.overflowY || '')
+      .trim()
+      .toLowerCase();
+    const short = String(cs.overflow || '')
+      .trim()
+      .toLowerCase();
+    let x = lx;
+    let y = ly;
+    const words =
+      short && !/^(inherit|initial|unset|revert|revert-layer)$/.test(short)
+        ? short.split(/\s+/)
+        : null;
+    if (words && words.length <= 2) {
+      if (!x || x === 'visible') x = words[0];
+      if (!y || y === 'visible') y = words[1] || words[0];
+    }
+    const hides = (v) => !!v && v !== 'visible' && v !== 'clip';
+    if (hides(x) || hides(y)) {
+      if (x === 'visible') x = 'auto';
+      else if (x === 'clip') x = 'hidden';
+      if (y === 'visible') y = 'auto';
+      else if (y === 'clip') y = 'hidden';
+    }
+    if (x !== lx) set('overflow-x', x);
+    if (y !== ly) set('overflow-y', y);
+    if (!short && (x !== 'visible' || y !== 'visible')) set('overflow', x === y ? x : x + ' ' + y);
+
+    return out;
+  }
+
   const computedStyle = (el) => {
     // Per-run memoization scoped by *helper scope* (root/document), to ensure
     // style caching does not bleed across helper instances with different roots.
@@ -645,6 +696,8 @@ function createDomHelpers(opts) {
             if (chunk && chunk.depth > __WARM_UP_DEPTH) cs = withInheritedWarmUp(cs, el);
             const overrides = layeredOverridesOf(el);
             if (overrides) cs = withLayeredOverrides(cs, overrides);
+            const fixes = __jsdomStyleFixesOf(el, cs);
+            if (fixes) cs = withLayeredOverrides(cs, fixes);
           }
         }
       } catch {}

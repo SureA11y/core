@@ -131,3 +131,17 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/scrollable-region-focusable-a
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: a box set with the overflow shorthand is asked about under jsdom (round 11, B11-4)`, () => {
+  for (const [head, attrs] of [
+    ['', 'style="height:80px;overflow:auto"'],
+    ['<style>.s{height:80px;overflow:hidden scroll}</style>', 'class="s"']
+  ]) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main><div id="box" ${attrs}><p>Long text</p></div></main></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.ok(hasOccurrenceForId(rule, 'box'));
+  }
+});
