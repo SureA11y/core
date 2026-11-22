@@ -279,12 +279,15 @@
      WCAG 2.5.8 "User Agent Control" exception — size is browser-default, not
      the author's choice, so the size requirement (and any spacing conflict
      stemming from it) doesn't apply at all, even though they sit close
-     together the way real checkbox lists usually do. -->
+     together the way real checkbox lists usually do. The checkboxes opt out
+     of the sizing script (data-rect-mode="test-only"): a width and height it
+     set on them would be the author's size, which the exception does not
+     cover. -->
 <label class="candidate" style="position:absolute; left:10px; top:920px;">
-  <input type="checkbox" id="pass_ua_checkbox_1" data-rect="10,920,13,13"> Option A
+  <input type="checkbox" id="pass_ua_checkbox_1" data-rect="10,920,13,13" data-rect-mode="test-only"> Option A
 </label>
 <label class="candidate" style="position:absolute; left:10px; top:940px;">
-  <input type="checkbox" id="pass_ua_checkbox_2" data-rect="10,940,13,13"> Option B
+  <input type="checkbox" id="pass_ua_checkbox_2" data-rect="10,940,13,13" data-rect-mode="test-only"> Option B
 </label>
 </div>
 
