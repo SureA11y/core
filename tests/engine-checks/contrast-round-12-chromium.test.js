@@ -13,7 +13,7 @@ const assert = require('node:assert/strict');
 
 const { chromium, executablePath, skip } = require('../helpers/chromium.js');
 const { addBundle } = require('../helpers/browserBundle');
-const { SIGN_CASES_C12_1 } = require('./contrast-round-12-cases.js');
+const { SIGN_CASES_C12_1, SIGN_LINK_CASES_C12_12 } = require('./contrast-round-12-cases.js');
 
 const page = (body, head = '') =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>t</title>${head}</head><body><main>${body}</main></body></html>`;
@@ -143,6 +143,21 @@ test(
     for (const body of SIGN_CASES_C12_1) {
       assert.equal((await run(page(body), 'contrast-minimum')).outcome, 'pass', body);
       assert.equal((await run(page(body), 'symbol-graphic-contrast')).outcome, 'cantTell', body);
+    }
+  }
+);
+
+test(
+  'a sign beside a link whose nearest character is a digit is text (C12-12)',
+  { skip },
+  async () => {
+    for (const [body, minimum, symbol] of SIGN_LINK_CASES_C12_12) {
+      for (const [id, want] of [
+        ['contrast-minimum', minimum],
+        ['symbol-graphic-contrast', symbol]
+      ]) {
+        assert.equal((await run(page(body), id)).outcome, want, `${id}: ${body}`);
+      }
     }
   }
 );

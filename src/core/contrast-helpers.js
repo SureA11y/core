@@ -565,8 +565,9 @@ function createContrastHelpers(opts, shared) {
   // boundary (a block, a flex or grid item, a float, an absolutely
   // positioned box, a line break) and not counting text that is not
   // drawn (display:none, visibility:hidden, visually hidden), nor the text
-  // of a link beside it. A sign alone between links, or a separator such
-  // as ">", is not this: it stays a graphic.
+  // of a link beside it, unless the link's nearest character is a digit
+  // (an amount). A sign alone between links, or a separator such as ">",
+  // is not this: it stays a graphic.
   const __RUN_SIGN = /[\p{Sc}〒]/u;
   const __RUN_SIGN_ONLY = /^[\s\p{Sc}〒\p{P}]*$/u;
   const __RUN_TEXT = /[\p{L}\p{N}]/u;
@@ -612,7 +613,7 @@ function createContrastHelpers(opts, shared) {
   // the budget.
   function __runNeighbour(node, block, forward) {
     let budget = 400;
-    const into = (n) => {
+    const into = (n, inLink) => {
       if (budget-- <= 0) return '';
       const type = dom.nodeType(n);
       if (type === 3) {
@@ -628,26 +629,28 @@ function createContrastHelpers(opts, shared) {
       const name = __lname(n);
       if (name === 'br') return '';
       if (/^(script|style|template|noscript|title)$/.test(name)) return null;
-      // A link's text is its own: a sign between links separates them.
-      if ((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) return '';
-      if (
-        String(dom.getAttribute(n, 'role') || '')
-          .trim()
-          .split(/\s+/)[0] === 'link'
-      )
-        return '';
+      // A link's text is its own: a sign between links separates them,
+      // as a breadcrumb's ">" does. A link whose nearest character is a
+      // digit is the amount of a price, "$" in <span>$</span><a>45</a>,
+      // and the sign is read with it (round 12, C12-12).
+      const link =
+        !inLink &&
+        (((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) ||
+          String(dom.getAttribute(n, 'role') || '')
+            .trim()
+            .split(/\s+/)[0] === 'link');
       const cs = __contrastComputedStyle(n);
-      if (__runHidden(n, cs)) return null;
+      if (__runHidden(n, cs)) return link ? '' : null;
       if (!__inlineDisplay(cs) || __runBlockified(n, cs)) return '';
       for (
         let c = forward ? dom.firstChild(n) : dom.lastChild(n);
         c;
         c = forward ? dom.nextSibling(c) : dom.previousSibling(c)
       ) {
-        const found = into(c);
-        if (found !== null) return found;
+        const found = into(c, inLink || link);
+        if (found !== null) return link && !/\p{Nd}/u.test(found) ? '' : found;
       }
-      return null;
+      return link ? '' : null;
     };
     let cur = node;
     while (cur && budget > 0) {
@@ -659,7 +662,7 @@ function createContrastHelpers(opts, shared) {
         sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
       }
       cur = sib;
-      const found = into(cur);
+      const found = into(cur, false);
       if (found !== null) return found;
     }
     return '';

@@ -26,7 +26,8 @@
  *   - a currency sign (Unicode Sc, such as € $ £ ¥) or 〒 whose nearest
  *     visible character on its line, not past a block boundary (a block,
  *     a flex or grid item, a float, an absolutely positioned box), a line
- *     break or a link's text, is a letter or a digit ("€" in
+ *     break or a link's text (unless its nearest character is a digit, a
+ *     linked amount), is a letter or a digit ("€" in
  *     <span>€</span>45,00): it is read with that text, and
  *     contrast-minimum judges it as text, at 4.5:1 or 3:1 if large. A
  *     separator between links, such as a breadcrumb's ">", stays here;

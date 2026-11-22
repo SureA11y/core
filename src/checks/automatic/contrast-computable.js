@@ -15,8 +15,10 @@
  *   as € $ £ ¥) or 〒, with punctuation and spaces, where the nearest
  *   visible character beside it on its line, not past a block boundary (a
  *   block, a flex or grid item, a float, an absolutely positioned box), a
- *   line break or a link's text, is a letter or a digit: "€" in
- *   <span>€</span>45,00 is read with its price, so it is text. Plus the
+ *   line break or a link's text unless that text's nearest character is a
+ *   digit, is a letter or a digit: "€" in <span>€</span>45,00, or "$" in
+ *   <span>$</span><a href>45</a>, is read with its price, so it is text.
+ *   Plus the
  *   label of <input
  *   type="button">/[type="submit"]/[type="reset"], which is rendered from
  *   the value attribute and so is invisible to a text-node walk, and the

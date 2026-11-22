@@ -15,7 +15,7 @@ const {
   runa11yCoreOnDom
 } = require('../helpers/runDomRulesOnHtml.js');
 
-const { SIGN_CASES_C12_1 } = require('./contrast-round-12-cases.js');
+const { SIGN_CASES_C12_1, SIGN_LINK_CASES_C12_12 } = require('./contrast-round-12-cases.js');
 
 const page = (body, head = '') =>
   `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main>${body}</main></body></html>`;
@@ -144,4 +144,15 @@ test('a sign that is a flex or grid item, or beside a float or a positioned box,
   // In one inline run, the sign is text.
   const inline = '<p style="color:#000"><span style="color:#aaa">$</span><span>45.00</span></p>';
   assert.equal(check(page(inline), 'contrast-minimum').outcome, 'fail');
+});
+
+test('a sign beside a link whose nearest character is a digit is text (C12-12)', () => {
+  for (const [body, minimum, symbol] of SIGN_LINK_CASES_C12_12) {
+    for (const [id, want] of [
+      ['contrast-minimum', minimum],
+      ['symbol-graphic-contrast', symbol]
+    ]) {
+      assert.equal(check(page(body), id).outcome, want, `${id}: ${body}`);
+    }
+  }
 });
