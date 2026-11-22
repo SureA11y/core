@@ -44,7 +44,8 @@
  *   radio buttons: options of one question without a shared name are not
  *   seen, nor are options split between two named groups.
  * - The name of a group comes from the accessible name helper, with a
- *   fieldset's first <legend> as a fallback.
+ *   fieldset's first <legend> as a fallback, named from its content as
+ *   accname does (an <img alt> in it counts).
  * - A group contains the options in the flat tree, as the accessibility
  *   tree nests them: options slotted into a shadow <fieldset>, or in a
  *   shadow root inside a light one, are in that fieldset.
@@ -130,7 +131,16 @@ function runInPage(ctx) {
     }
     if (tag === 'fieldset') {
       for (let c = dom.firstElementChild(el); c; c = dom.nextElementSibling(c)) {
-        if (tagOf(c) === 'legend') return !!trim(dom.textContent(c));
+        if (tagOf(c) !== 'legend') continue;
+        // The legend's name from its content, as accname computes it: an
+        // <img alt> inside it names the group too.
+        if (typeof helpers.getNameFromContentInfo === 'function') {
+          try {
+            const info = helpers.getNameFromContentInfo(c, ctx);
+            return !!(info && info.present && trim(info.value));
+          } catch {}
+        }
+        return !!trim(dom.textContent(c));
       }
     }
     return false;

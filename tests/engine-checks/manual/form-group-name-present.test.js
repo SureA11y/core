@@ -60,6 +60,9 @@ test(`${RULE_ID}: a group with a name passes`, () => {
     `<fieldset aria-label="Shipping">${RADIOS}</fieldset>`,
     `<p id="q">Shipping</p><div role="radiogroup" aria-labelledby="q">${RADIOS}</div>`,
     `<div role="group" aria-label="Interests">${CHECKBOXES}</div>`,
+    // a legend named by its content: an image's alt text (B11-6)
+    `<fieldset><legend><img alt="Shipping" src="x.png"></legend>${RADIOS}</fieldset>`,
+    `<fieldset><legend><svg role="img" aria-label="Shipping" width="10" height="10"></svg></legend>${RADIOS}</fieldset>`,
     // a named fieldset around more than the group
     `<fieldset><legend>Delivery</legend><div>${RADIOS}</div><label>Notes <input name="n"></label></fieldset>`
   ]) {
