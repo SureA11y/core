@@ -8464,7 +8464,7 @@ function createContrastHelpers(opts, shared) {
     try {
       if (!el || dom.nodeType(el) !== 1 || !chain.length) return null;
       const index = __getOverlapIndex();
-      if (!index) return __svgShapeMaybeBehind(el);
+      if (!index) return __svgShapeMaybeBehind(el) || __noLayoutPseudoUnder(el, chain);
       const opaque = chain[chain.length - 1];
       const ancestors = new Set(chain);
       // Painters near el's box at all, before measuring its text, which
@@ -8582,6 +8582,101 @@ function createContrastHelpers(opts, shared) {
     } catch {
       return null;
     }
+  }
+
+  // Without a layout (jsdom), no pseudo-element's style is computed, so a
+  // positioned ::before or ::after painting a color or an image under the
+  // text (the overlay pattern, z-index: -1 among them) was never seen, and
+  // white text over a dark one was measured against the white page and
+  // dropped as invisible (round 12, C12-18). Read from the style sheets
+  // instead: a ::before or ::after their rules give content, a position of
+  // absolute or fixed and a background, on el or an ancestor in `chain`,
+  // is paint in the way, and the text is asked about. A sheet that can't
+  // be read is taken as giving none.
+  const __noLayoutPseudosByRoot = new WeakMap();
+  function __noLayoutPseudos(root) {
+    if (__noLayoutPseudosByRoot.has(root)) return __noLayoutPseudosByRoot.get(root);
+    const byKey = new Map();
+    try {
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
+      const stack = [];
+      for (const sheet of sheets) {
+        try {
+          stack.push(sheet.cssRules || []);
+        } catch {}
+      }
+      while (stack.length) {
+        const list = stack.pop();
+        const n = (list && list.length) || 0;
+        for (let i = 0; i < n; i++) {
+          const rule = list[i];
+          if (!rule) continue;
+          if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+          const text = rule.selectorText;
+          const style = rule.style;
+          if (typeof text !== 'string' || !style || !__beforeOrAfterRe.test(text)) continue;
+          const get = (prop) =>
+            trim(
+              typeof style.getPropertyValue === 'function' ? style.getPropertyValue(prop) : ''
+            ).toLowerCase();
+          const content = get('content');
+          const position = get('position');
+          const color = get('background-color');
+          const image = get('background-image');
+          const shorthand = get('background');
+          for (const part of __splitTopLevel(text)) {
+            const m = /::?(before|after)\b/i.exec(part);
+            if (!m) continue;
+            let base = part.slice(0, m.index).trim();
+            if (!base || /[>+~]$/.test(base)) base += '*';
+            const key = base + '::' + m[1].toLowerCase();
+            const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
+            if (content) at.content = content !== 'none' && content !== 'normal';
+            if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            const paint = [color, image, shorthand].find(
+              (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
+            );
+            if (paint) {
+              const c = parseCssColorToRgba(paint);
+              if (!c || c.a > 0) at.paint = paint;
+            }
+            byKey.set(key, at);
+          }
+        }
+      }
+    } catch {}
+    const out = [...byKey.values()].filter((p) => p.content && p.positioned && p.paint);
+    __noLayoutPseudosByRoot.set(root, out);
+    return out;
+  }
+  function __noLayoutPseudoUnder(el, chain) {
+    for (const host of chain) {
+      let root;
+      try {
+        root = dom.getRootNode(host);
+      } catch {
+        root = null;
+      }
+      if (!root) continue;
+      for (const p of __noLayoutPseudos(root)) {
+        let matched;
+        try {
+          matched = dom.matches(host, p.base);
+        } catch {
+          matched = false;
+        }
+        if (!matched) continue;
+        return {
+          selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
+          element: describeElement(host) + p.pseudo,
+          property: 'background',
+          value: p.paint
+        };
+      }
+    }
+    return null;
   }
 
   // Without a layout (jsdom), where an SVG shape paints can't be told. A

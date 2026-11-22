@@ -248,3 +248,29 @@ test('color: revert on a link gives the browser’s link color (C12-14)', () => 
       assert.equal(Math.round(r.occurrences[0].data.details.metrics.ratio * 100) / 100, ratio);
   }
 });
+
+test('text over a positioned ::before that paints is asked about, without a layout (C12-18)', () => {
+  const overlay =
+    '<style>.h{position:relative;color:#fff}.h::before{content:"";position:absolute;inset:0;background:#000;z-index:-1}</style>';
+  const r = check(page('<div class="h">Hello world</div>', overlay), 'contrast-computable');
+  assert.equal(r.outcome, 'cantTell');
+  assert.equal(r.occurrences[0].data.details.reasonCode, 'BACKGROUND_OVERLAP');
+  // Text inside the host too.
+  const inner = check(
+    page('<div class="h"><p>Hello <b>world</b></p></div>', overlay),
+    'contrast-computable'
+  );
+  assert.equal(inner.outcome, 'cantTell');
+  // A ::before that isn't positioned, or paints nothing, is not in the way.
+  for (const css of [
+    '.h{color:#000}.h::before{content:"";background:#000}',
+    '.h{position:relative;color:#000}.h::before{content:"";position:absolute;inset:0}',
+    '.h{position:relative;color:#000}.h::before{position:absolute;inset:0;background:#000}'
+  ]) {
+    const ok = check(
+      page('<div class="h">Hello world</div>', `<style>${css}</style>`),
+      'contrast-computable'
+    );
+    assert.equal(ok.outcome, 'pass', css);
+  }
+});
