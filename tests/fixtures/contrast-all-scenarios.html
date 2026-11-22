@@ -677,8 +677,8 @@
   </div>
 </section>
 
-<!-- Asked about: in a browser, the rounded corner of the white frame crosses the text; without a layout (jsdom), the black rect painted before the text may lie behind it. -->
-<section class="case" id="case-paint-svg-rx-percent" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL">
+<!-- Asked about: in a browser, the rounded corner of the white frame crosses the text; without a layout (jsdom), the black rect painted before the text may lie behind it. #888888 reaches 7:1 on no background, so 1.4.6 fails it either way. -->
+<section class="case" id="case-paint-svg-rx-percent" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="FAIL">
   <p class="case-title">42 — NEUTRAL: SVG text in a frame's corner rounded by a percentage radius</p>
   <svg width="300" height="200"><rect width="300" height="200" fill="#000000"/><rect x="10" y="10" width="270" height="180" rx="50%" fill="none" stroke="#ffffff" stroke-width="20"/><text id="paint_svg_rx_percent" x="22" y="40" fill="#888888" font-size="14">Growth</text></svg>
 </section>
