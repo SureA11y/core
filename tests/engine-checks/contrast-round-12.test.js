@@ -93,3 +93,26 @@ test('a baseline set in CSS keeps SVG text asked about, without a layout (C12-5)
   );
   assert.equal(check(tall, 'contrast-computable').outcome, 'pass');
 });
+
+test('SVG geometry set in CSS keeps text over the shape asked about, without a layout (C12-6)', () => {
+  const label = '<text x="100" y="50" fill="#fff">Sales</text>';
+  for (const [head, shape] of [
+    ['<style>.bg{width:20px}</style>', '<rect class="bg" width="300" height="100" fill="#000"/>'],
+    ['<style>rect{x:200px}</style>', '<rect width="300" height="100" fill="#000"/>'],
+    ['<style>circle{r:5px}</style>', '<circle cx="120" cy="45" r="100" fill="#000"/>'],
+    ['<style>circle{cx:0}</style>', '<circle cx="120" cy="45" r="100" fill="#000"/>']
+  ]) {
+    const r = check(svgPage(shape + label, head), 'contrast-computable');
+    assert.equal(r.outcome, 'cantTell', head);
+    assert.equal(r.occurrences[0].data.details.reasonCode, 'BACKGROUND_OVERLAP', head);
+  }
+  // Geometry from attributes alone is read.
+  const plain = check(
+    svgPage(
+      '<rect width="300" height="100" fill="#000"/>' + label,
+      '<style>rect{stroke:none}</style>'
+    ),
+    'contrast-computable'
+  );
+  assert.equal(plain.outcome, 'pass');
+});

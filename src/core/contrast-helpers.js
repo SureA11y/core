@@ -8833,6 +8833,7 @@ function createContrastHelpers(opts, shared) {
     return { left, right, top: y - above, bottom: y + below };
   }
 
+  const __SVG_GEOMETRY_PROPS = ['x', 'y', 'width', 'height', 'rx', 'ry', 'r', 'cx', 'cy'];
   // The opaque color a <rect>, <circle> or <ellipse> certainly paints
   // under all of el's text, without a layout, or null.
   function __svgCertainCover(shape, cs, svg, stroked, textArea) {
@@ -8856,6 +8857,13 @@ function createContrastHelpers(opts, shared) {
       )
     )
       return null;
+    // Geometry set in CSS overrides the attributes (SVG 2), and jsdom
+    // places nothing by it: a style sheet that sets any is not read, and the
+    // text is asked about (round 12, C12-6).
+    for (const prop of __SVG_GEOMETRY_PROPS) {
+      const decl = __authorColorDeclsOf(shape, prop);
+      if (decl.unknown || decl.values.length) return null;
+    }
     const vp = __svgViewport(svg);
     const attr = (a, full, dflt) =>
       dom.hasAttribute(shape, a) ? __svgLength(dom.getAttribute(shape, a), full) : dflt;
