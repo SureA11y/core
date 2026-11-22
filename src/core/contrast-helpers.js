@@ -1045,6 +1045,28 @@ function createContrastHelpers(opts, shared) {
       }
 
       const walkRoots = withShadowRoots(lightRoots);
+      // Whether any text walked can be left out of the flat tree
+      // (outOfFlatTree below): only where there is an open shadow root, under
+      // a root of the walk, around one, or holding one. A page with none skips
+      // the walk up from each text (round 12, F12-6).
+      let mayLeaveFlatTree = false;
+      if (includeShadowDom) {
+        mayLeaveFlatTree = walkRoots.some((r) => dom.nodeType(r) === 11);
+        for (const root of lightRoots) {
+          if (mayLeaveFlatTree) break;
+          try {
+            const top = dom.getRootNode(root);
+            if (!top || dom.nodeType(top) !== 9) mayLeaveFlatTree = true;
+            for (let cur = dom.parentNode(root), depth = 0; cur && !mayLeaveFlatTree; depth++) {
+              if (depth > 256 || (dom.nodeType(cur) === 1 && dom.shadowRoot(cur)))
+                mayLeaveFlatTree = true;
+              cur = dom.parentNode(cur);
+            }
+          } catch {
+            mayLeaveFlatTree = true;
+          }
+        }
+      }
 
       const SHOW_TEXT =
         w && w.NodeFilter && typeof w.NodeFilter.SHOW_TEXT === 'number'
@@ -1601,7 +1623,7 @@ function createContrastHelpers(opts, shared) {
           // A <textarea>'s text nodes are its default value; what it shows is
           // its current value, read with the other fields below.
           if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
-          if (includeShadowDom && outOfFlatTree(node)) continue;
+          if (mayLeaveFlatTree && outOfFlatTree(node)) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
