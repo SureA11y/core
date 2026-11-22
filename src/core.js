@@ -2650,7 +2650,11 @@ const SAFE_DOM_OTHER_NAMES = [
 const createSafeDom = (function createSafeDom() {
   // One instance per realm of this script: the lookups depend only on the
   // prototypes they are given, so sharing it across scans is safe.
-  if (createSafeDom.__instance) return createSafeDom.__instance;
+  // Own only, and defined, not assigned: a value of that name on
+  // Object.prototype is neither read nor refuses it (round 12, F12-4).
+  if (Object.prototype.hasOwnProperty.call(createSafeDom, '__instance')) {
+    return createSafeDom.__instance;
+  }
 
   // Captured once, so a page that later replaces them doesn't change how
   // the engine reads its own DOM.
@@ -3182,12 +3186,34 @@ const createSafeDom = (function createSafeDom() {
         : o.setAttribute(a, b, c, d)
   };
 
-  createSafeDom.__instance = Object.freeze(dom);
+  Object.defineProperty(createSafeDom, '__instance', {
+    value: Object.freeze(dom),
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   return createSafeDom.__instance;
 });
 
 // Inlined from src/core/contrast-helpers.js
 const createContrastHelpers = (function createContrastHelpers(opts, shared) {
+  // An option's own value, or undefined. The engine builds option objects
+  // without every key (colorScheme, rootCanvasFallbackSet), and a value a
+  // page's script put on Object.prototype is never read as one (round 12,
+  // R12F-6).
+  function __own(o, k) {
+    return o &&
+      (typeof o === 'object' || typeof o === 'function') &&
+      Object.prototype.hasOwnProperty.call(o, k)
+      ? o[k]
+      : undefined;
+  }
+  // Own keys along a path: __ownAt(o, 'options', 'engineOptions').
+  function __ownAt(o, ...keys) {
+    let v = o;
+    for (let i = 0; i < keys.length && v !== undefined; i++) v = __own(v, keys[i]);
+    return v;
+  }
   // A <select> drawn as a list box (a size above 1), read as Chromium reads
   // its size attribute (selectSizeOf in dom-helpers).
   function __selectDrawnAsListBox(select) {
@@ -3198,7 +3224,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return Number(dom.getAttribute(select, 'size')) > 1;
   }
   const dom = createSafeDom();
-  const window = opts && opts.window ? opts.window : null;
+  const window = __own(opts, 'window') || null;
 
   const trim = shared.trim;
   const computedStyle = shared.computedStyle;
@@ -3370,10 +3396,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // -------- Visibility mode resolution for getTextScan --------
 
   function __getVisibilityMode(engineOptions) {
-    const m =
-      engineOptions && typeof engineOptions.visibilityMode === 'string'
-        ? engineOptions.visibilityMode
-        : '';
+    const v = __own(engineOptions, 'visibilityMode');
+    const m = typeof v === 'string' ? v : '';
     return m || 'styleOnly';
   }
 
@@ -3385,79 +3409,49 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       engineOptions,
 
       // common shapes
-      ctx && ctx.engineOptions,
-      ctx && ctx.options && ctx.options.engineOptions,
-      ctx && ctx.options,
-      ctx && ctx.opts && ctx.opts.engineOptions,
-      ctx && ctx.opts,
+      __ownAt(ctx, 'engineOptions'),
+      __ownAt(ctx, 'options', 'engineOptions'),
+      __ownAt(ctx, 'options'),
+      __ownAt(ctx, 'opts', 'engineOptions'),
+      __ownAt(ctx, 'opts'),
 
       // policy layering shapes
-      ctx && ctx.policyOverrides && ctx.policyOverrides.engineOptions,
-      ctx && ctx.policyOverrides,
-      ctx && ctx.policy && ctx.policy.engineOptions,
-      ctx && ctx.policy,
+      __ownAt(ctx, 'policyOverrides', 'engineOptions'),
+      __ownAt(ctx, 'policyOverrides'),
+      __ownAt(ctx, 'policy', 'engineOptions'),
+      __ownAt(ctx, 'policy'),
 
       // sometimes hoisted
       ctx,
 
       // opts passed into createContrastHelpers
-      opts && opts.engineOptions,
-      opts && opts.options && opts.options.engineOptions,
-      opts && opts.options,
-      opts && opts.opts && opts.opts.engineOptions,
-      opts && opts.opts,
+      __ownAt(opts, 'engineOptions'),
+      __ownAt(opts, 'options', 'engineOptions'),
+      __ownAt(opts, 'options'),
+      __ownAt(opts, 'opts', 'engineOptions'),
+      __ownAt(opts, 'opts'),
 
-      opts && opts.policyOverrides && opts.policyOverrides.engineOptions,
-      opts && opts.policyOverrides,
-      opts && opts.policy && opts.policy.engineOptions,
-      opts && opts.policy,
+      __ownAt(opts, 'policyOverrides', 'engineOptions'),
+      __ownAt(opts, 'policyOverrides'),
+      __ownAt(opts, 'policy', 'engineOptions'),
+      __ownAt(opts, 'policy'),
 
       // globals sometimes used by runners
-      w && w.__a11ycoreEngineOptions,
-      d && d.__a11ycoreEngineOptions
+      __ownAt(w, '__a11ycoreEngineOptions'),
+      __ownAt(d, '__a11ycoreEngineOptions')
     ];
 
     for (const c of candidates) {
       if (!c || typeof c !== 'object') continue;
-
-      if (typeof c.visibilityMode === 'string') return c.visibilityMode;
-
-      if (
-        c.engineOptions &&
-        typeof c.engineOptions === 'object' &&
-        typeof c.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.options &&
-        typeof c.options === 'object' &&
-        c.options.engineOptions &&
-        typeof c.options.engineOptions === 'object' &&
-        typeof c.options.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.options.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policy &&
-        typeof c.policy === 'object' &&
-        c.policy.engineOptions &&
-        typeof c.policy.engineOptions === 'object' &&
-        typeof c.policy.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policy.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policyOverrides &&
-        typeof c.policyOverrides === 'object' &&
-        c.policyOverrides.engineOptions &&
-        typeof c.policyOverrides.engineOptions === 'object' &&
-        typeof c.policyOverrides.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policyOverrides.engineOptions.visibilityMode;
+      for (const path of [
+        [],
+        ['engineOptions'],
+        ['options', 'engineOptions'],
+        ['policy', 'engineOptions'],
+        ['policyOverrides', 'engineOptions']
+      ]) {
+        const mode = __ownAt(c, ...path, 'visibilityMode');
+        if (typeof mode === 'string') return mode;
       }
     }
 
@@ -4166,9 +4160,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function getTextScan(ctx, helpers, engineOptions) {
     try {
-      const d = (ctx && ctx.document) || (opts && opts.document) || null;
+      const d = __own(ctx, 'document') || __own(opts, 'document') || null;
 
-      const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
+      const w = __own(ctx, 'window') || (d && dom.defaultView(d)) || window || null;
 
       // Unset, the text a reader can see is decided from the layout where
       // there is one (#99): text off the page or clipped away is drawn
@@ -4189,7 +4183,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // Default on, opt out with includeShadowDom: false -- same contract as
       // helpers.queryAllSmart. Part of the cache key: a scan that skipped
       // shadow roots must not be reused by one that should not.
-      const includeShadowDom = !(engineOptions && engineOptions.includeShadowDom === false);
+      const includeShadowDom = __own(engineOptions, 'includeShadowDom') !== false;
 
       const cache = __getSharedTextScanCache();
       const cacheKey = `visibilityMode=${visibilityMode}|sd=${includeShadowDom ? 1 : 0}`;
@@ -4677,18 +4671,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // intent: it only fires when both colors are cleanly computable, and
       // leaves any gradient/image/partial-opacity background (which
       // contrast-computable already reports as cantTell) untouched.
-      const contrastOptsForBg =
-        engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
-          ? engineOptions.contrast
-          : {};
+      const contrastOptsForBg = __own(engineOptions, 'contrast');
+      const bgMode = __own(contrastOptsForBg, 'mode');
+      const bgFallback = __own(contrastOptsForBg, 'rootCanvasFallback');
       const bgResolveOpts = {
         contrast: {
-          mode: contrastOptsForBg.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
+          mode: bgMode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
           rootCanvasFallback:
-            typeof contrastOptsForBg.rootCanvasFallback === 'string' &&
-            contrastOptsForBg.rootCanvasFallback.trim()
-              ? contrastOptsForBg.rootCanvasFallback.trim()
-              : '#ffffff'
+            typeof bgFallback === 'string' && bgFallback.trim() ? bgFallback.trim() : '#ffffff'
         },
         collectStack: false
       };
@@ -4731,6 +4721,46 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // walker per root could otherwise walk the same subtree twice).
       const visitedTextNodes = new Set();
 
+      // Text the flat tree leaves out is not rendered (CSS Scoping 1): a
+      // light child of a shadow host that no slot takes, and the fallback
+      // content of a slot that has nodes assigned (round 12, F12-7). Only
+      // hosts with an open shadow root can be told; kept per parent.
+      const outOfFlatTreeCache = new WeakMap();
+      const outOfFlatTree = (start) => {
+        const seen = [];
+        let cur = start;
+        let out = false;
+        for (let depth = 0; cur && depth < 256; depth++) {
+          const parent = dom.parentNode(cur);
+          if (!parent || dom.nodeType(parent) !== 1) break;
+          if (dom.nodeType(cur) === 1 && outOfFlatTreeCache.has(cur)) {
+            out = outOfFlatTreeCache.get(cur);
+            break;
+          }
+          if (dom.nodeType(cur) === 1) seen.push(cur);
+          if (dom.shadowRoot(parent) && !dom.assignedSlot(cur)) {
+            out = true;
+            break;
+          }
+          if (String(dom.localName(parent) || '').toLowerCase() === 'slot') {
+            const root = dom.getRootNode(parent);
+            if (root && dom.nodeType(root) === 11) {
+              let assigned = [];
+              try {
+                assigned = dom.assignedNodes(parent) || [];
+              } catch {}
+              if (assigned.length) {
+                out = true;
+                break;
+              }
+            }
+          }
+          cur = parent;
+        }
+        for (const el of seen) outOfFlatTreeCache.set(el, out);
+        return out;
+      };
+
       for (const walkRoot of walkRoots) {
         if (guard >= 500000) break;
         let walker;
@@ -4763,6 +4793,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           // A <textarea>'s text nodes are its default value; what it shows is
           // its current value, read with the other fields below.
           if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
+          if (includeShadowDom && outOfFlatTree(node)) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
@@ -4884,7 +4915,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 if (!isVisibleEligible(el) || isInactive(el)) break;
                 const m = measureGeneratedText(el, pseudo, bgResolveOpts);
                 if (!m || m.same) continue;
-                generated.push(Object.freeze({ el, pseudo, textCount: 1 }));
+                generated.push(
+                  Object.freeze(Object.assign(Object.create(null), { el, pseudo, textCount: 1 }))
+                );
               }
             }
           }
@@ -4895,7 +4928,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         eligibleTextCount,
         visibilityMode,
         elements: Object.freeze(
-          elements.map((el) => Object.freeze({ el, textCount: elToCount.get(el) || 0 }))
+          // Records with no prototype: a value a page's script put on
+          // Object.prototype (pseudo) is never read as a record's own
+          // (round 12, F12-5).
+          elements.map((el) =>
+            Object.freeze(
+              Object.assign(Object.create(null), { el, textCount: elToCount.get(el) || 0 })
+            )
+          )
         ),
         generated: Object.freeze(generated)
       });
@@ -7112,7 +7152,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // elements x the rules that could apply, not elements x rules. Each entry
   // is { rule, part }; a pseudo-element's part is left out.
   function __colorPartsFor(found, el) {
-    if (!found.index) {
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
       const entries = [];
       for (const rule of found.rules) {
         for (const part of rule.parts) {
@@ -7122,7 +7164,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           entries.push({ rule, part });
         }
       }
-      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+      Object.defineProperty(found, 'index', {
+        value: { entries, index: selectorIndex(entries.map((e) => e.part)) },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const { entries, index } = found.index;
     return index.candidates(el).map((i) => entries[i]);
@@ -7139,8 +7186,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
+    // Answers with no prototype: a value a page's script put on
+    // Object.prototype (unknown) is never read as theirs (round 12, F12-5).
+    const answer = (o) => Object.assign(Object.create(null), o);
     const found = __colorRulesOf(root, prop);
-    if (found.unreadable) return { unknown: true };
+    if (found.unreadable) return answer({ unknown: true });
     let best = null;
     let unknown = false;
     for (const { rule, part } of __colorPartsFor(found, el)) {
@@ -7169,8 +7219,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (!best || rank > best.rank) best = { rank, value };
       }
     } catch {}
-    if (unknown) return { unknown: true };
-    return best ? { value: best.value } : null;
+    if (unknown) return answer({ unknown: true });
+    return best ? answer({ value: best.value }) : null;
   }
 
   // Every author declaration of prop (`color` by default) that matches el,
@@ -7399,7 +7449,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // computes the light scheme's colors). Null where the color computed
   // now is the one, or it can't be told (colorSchemeUnread).
   function __schemeTextOverride(el, opts) {
-    const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
+    const asked = __ownAt(opts, 'contrast', 'colorScheme');
     const scheme = asked === 'light' || asked === 'dark' ? asked : null;
     if (!scheme) {
       // A browser computes the colors of the scheme it draws.
@@ -7421,7 +7471,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // page's canvas (__schemeTextColor), where it isn't the one computed now.
   function computeEffectiveForeground(el, opts) {
     const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
-    if (opts && opts.contrast && opts.contrast.colorScheme) {
+    if (__ownAt(opts, 'contrast', 'colorScheme')) {
       const out = computeEffectiveForeground(el);
       if (!schemeOverride || !out || !out.rgba) return out;
       const op = Number.isFinite(out.opacityProduct) ? out.opacityProduct : 1;
@@ -7521,19 +7571,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     __getSharedWeakMapCache('__effectiveBackgroundCache') || __localEffectiveBackgroundCache;
 
   function __bgCacheKey(opts2) {
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const named = contrast.rootCanvasFallbackSet === true ? 'named' : '';
-    const scheme =
-      contrast.colorScheme === 'light' || contrast.colorScheme === 'dark'
-        ? contrast.colorScheme
-        : '';
+    const named = __own(contrast, 'rootCanvasFallbackSet') === true ? 'named' : '';
+    const asked = __own(contrast, 'colorScheme');
+    const scheme = asked === 'light' || asked === 'dark' ? asked : '';
 
     // Cache key must include any input that can affect computed background.
     // Note: we only cache when collectStack is false.
@@ -7597,7 +7644,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const doc = window && window.document;
       const root = doc && dom.documentElement(doc);
       if (!root || typeof window.getComputedStyle !== 'function') return null;
-      const rootScheme = String(window.getComputedStyle(root).colorScheme || '');
+      const rootScheme = String(
+        window.getComputedStyle(root).getPropertyValue('color-scheme') || ''
+      );
       const meta = dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]');
       const metaScheme = meta ? String(dom.getAttribute(meta, 'content') || '') : '';
       if (!/\bdark\b/i.test(rootScheme) && !/\bdark\b/i.test(metaScheme)) return null;
@@ -7715,9 +7764,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return null;
       }
       const rootCs = window.getComputedStyle(root);
-      const rootValue = String(
-        (rootCs && (rootCs.colorScheme || rootCs.getPropertyValue('color-scheme'))) || ''
-      ).trim();
+      const rootValue = String((rootCs && rootCs.getPropertyValue('color-scheme')) || '').trim();
       let supported = __schemesNamed(rootValue);
       // The meta element speaks for a root whose color-scheme is normal:
       // the first one naming a scheme (HTML, "the page's supported color
@@ -7769,8 +7816,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             const c = parseCssColorToRgba(value);
             return c && c.a === 1 ? { r: c.r, g: c.g, b: c.b, a: 1 } : null;
           };
+          // color-scheme by its CSS name: Chromium reads a camelCase
+          // style property a page's script put on Object.prototype ahead of
+          // its own (round 12, R12F-6).
           const readScheme = (scheme) => {
-            probe.style.colorScheme = scheme;
+            probe.style.setProperty('color-scheme', scheme);
             probe.style.backgroundColor = 'Canvas';
             probe.style.color = 'CanvasText';
             const cs = window.getComputedStyle(probe);
@@ -7826,9 +7876,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     __runCanvas = rgba && rgba.a === 1 ? { color: color.trim(), rgba: { ...rgba, a: 1 } } : null;
   }
   function __namedCanvas(contrast) {
-    if (contrast && contrast.rootCanvasFallbackSet === true) {
-      const value =
-        typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+    if (__own(contrast, 'rootCanvasFallbackSet') === true) {
+      const given = __own(contrast, 'rootCanvasFallback');
+      const value = typeof given === 'string' ? given.trim() : '';
       const rgba = value ? parseCssColorToRgba(value) : null;
       if (rgba && rgba.a === 1) return { color: value, rgba: { ...rgba, a: 1 } };
     }
@@ -8243,7 +8293,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (window.self !== window.top) return null;
       const info = __pageSchemes();
       if (!info) return null;
-      const asked = contrast && contrast.colorScheme;
+      const asked = __own(contrast, 'colorScheme');
       const scheme = asked === 'light' || asked === 'dark' ? asked : info.current;
       const named = __namedCanvas(contrast);
       if (named && scheme !== info.current) return null;
@@ -8348,7 +8398,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {}
 
     const __bgKey = __bgCacheKey(opts2);
-    const __collectStack = !!(opts2 && opts2.collectStack);
+    const __collectStack = !!__own(opts2, 'collectStack');
 
     // Only cache when stack collection is off
     if (!__collectStack) {
@@ -8360,15 +8410,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       } catch {}
     }
 
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const collectStack = !!(opts2 && opts2.collectStack);
+    const collectStack = !!__own(opts2, 'collectStack');
     const stack = collectStack ? [] : null;
 
     let acc = { r: 0, g: 0, b: 0, a: 0 };
@@ -9535,7 +9584,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           const body = fdoc && dom.body(fdoc);
           if (body) body.textContent = '';
           if (froot) {
-            froot.style.colorScheme = '';
+            froot.style.removeProperty('color-scheme');
             froot.style.forcedColorAdjust = '';
           }
         } catch {
@@ -9564,7 +9613,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         // Under forced colors the scan holds the page in its own colors
         // (forced-color-adjust: none); the blank frame is held so too, or
         // the browser's placeholder color read there is the forced palette's
@@ -9603,7 +9652,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const own = view.getComputedStyle(el);
       const tag = String(dom.localName(el) || '').toLowerCase();
       const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
-      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      const ref = __readPlaceholderDefaults(
+        doc,
+        tag,
+        type,
+        String(own.getPropertyValue('color-scheme') || '')
+      );
       if (!ref) return '';
       const ph = field.style;
       const same =
@@ -9679,7 +9733,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (appearance === 'none' || appearance === 'base-select') return null;
       const doc = dom.ownerDocument(el);
       if (!__hasLayout(doc)) return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || !ref.measured || String(cs.backgroundColor) !== ref.background) return null;
       return ref.measured;
     } catch {
@@ -9694,7 +9748,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         froot.style.forcedColorAdjust = 'none';
         const host = dom.body(fdoc) || froot;
         const select = dom.createElement(fdoc, 'select');
@@ -9738,7 +9792,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const cs = view.getComputedStyle(el);
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || ref.field === (ref.measured || ref.background)) return null;
       if (String(cs.backgroundColor) !== ref.background) return null;
       if (hasBackgroundImageOrGradient(cs)) return null;
@@ -9941,14 +9995,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return blocked;
     }
     const out = __computabilityBlockerOf(el, false);
-    if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
+    const ownPseudo = !!out && Object.prototype.hasOwnProperty.call(out, '__pseudo');
+    if (
+      ownPseudo &&
+      out.ok === false &&
+      out.reasonCode === 'PSEUDO_ELEMENT_COLOR' &&
+      out.__pseudo
+    ) {
       const pseudo = out.__pseudo;
       delete out.__pseudo;
       // The rest of the walk, past the pseudo-element: its colors are
       // carried only where nothing else blocks the measurement.
       const rest = __computabilityBlockerOf(el, true);
       if (rest && rest.ok === true) out.pseudoColors = pseudo;
-    } else if (out && out.__pseudo) {
+    } else if (ownPseudo) {
       delete out.__pseudo;
     }
     try {
@@ -10391,7 +10451,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           }
           if (out) {
             const colors = __pseudoColorsOf(differing);
-            if (colors) out.__pseudo = colors;
+            // Defined, not assigned: a read-only __pseudo on Object.prototype
+            // refuses none (round 12, R12F-6).
+            if (colors) {
+              Object.defineProperty(out, '__pseudo', {
+                value: colors,
+                writable: true,
+                enumerable: true,
+                configurable: true
+              });
+            }
             try {
               if (el) __computabilityBlockerCache.set(el, out);
             } catch {}
@@ -11818,6 +11887,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
             if (content) at.content = content !== 'none' && content !== 'normal';
             if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            // Drawn at all, and where, as far as the rules say (F12-2).
+            const display = get('display');
+            if (display) at.displayNone = display === 'none';
+            const visibility = get('visibility');
+            if (visibility) at.hidden = visibility === 'hidden' || visibility === 'collapse';
+            for (const prop of ['width', 'height', 'top', 'right', 'bottom', 'left']) {
+              const v = get(prop);
+              if (v) at[prop] = v;
+            }
             const paint = [color, image, shorthand].find(
               (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
             );
@@ -11830,9 +11908,43 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
     } catch {}
-    const out = [...byKey.values()].filter((p) => p.content && p.positioned && p.paint);
+    const out = [...byKey.values()].filter(
+      (p) => p.content && p.positioned && p.paint && !p.displayNone && !p.hidden
+    );
     __noLayoutPseudosByRoot.set(root, out);
     return out;
+  }
+  // Whether a ::before or ::after the rules position could lie under a
+  // line of el's text, from the size and offsets they give it (round 12,
+  // F12-2): a box narrower or shorter than a line of the text (a 4px corner
+  // badge) is no background to it, and one moved wholly off its host (an
+  // offset of 100% or more, or far off the page) doesn't reach it. A size or
+  // offset in any other unit is taken as possibly covering the text.
+  function __noLayoutPseudoMayCover(p, el) {
+    const px = (v) => {
+      const m = /^(-?\d*\.?\d+)px$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    const pct = (v) => {
+      const m = /^(-?\d*\.?\d+)%$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    let fontPx = 16;
+    try {
+      const f = px(trim((computedStyle(el) || {}).fontSize || ''));
+      if (f && f > 0) fontPx = f;
+    } catch {}
+    const w = px(p.width);
+    const h = px(p.height);
+    if ((w !== null && w < fontPx) || (h !== null && h < fontPx)) return false;
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      const v = p[side];
+      const percent = pct(v);
+      if (percent !== null && Math.abs(percent) >= 100) return false;
+      const length = px(v);
+      if (length !== null && length <= -1000) return false;
+    }
+    return true;
   }
   function __noLayoutPseudoUnder(el, chain) {
     for (const host of chain) {
@@ -11850,7 +11962,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         } catch {
           matched = false;
         }
-        if (!matched) continue;
+        if (!matched || !__noLayoutPseudoMayCover(p, el)) continue;
         return {
           selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
           element: describeElement(host) + p.pseudo,
@@ -12638,6 +12750,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       out = { fallback: true };
     }
+    // With no prototype: a value a page's script put on Object.prototype
+    // (rgba) is never read as the backdrop's own (round 12, F12-5).
+    if (out && typeof out === 'object') out = Object.assign(Object.create(null), out);
     __paintBackdropCache.set(el, out);
     return out;
   }
@@ -14339,6 +14454,34 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'aria-rowspan': 0
   };
 
+  // The tables above are looked up by a role, an element or an attribute
+  // the page names. With no prototype, a value a page's script put on
+  // Object.prototype (button, navigation) is never read as an entry
+  // (round 12, F12-5).
+  const __noPrototype = (o, depth) => {
+    if (!o || typeof o !== 'object' || Array.isArray(o) || depth > 4) return;
+    if (Object.getPrototypeOf(o) === Object.prototype) Object.setPrototypeOf(o, null);
+    for (const k of Object.keys(o)) __noPrototype(o[k], depth + 1);
+  };
+  for (const table of [
+    DEPRECATED_ROLE_GUIDANCE,
+    DEFAULT_DEPRECATED_ROLE_GUIDANCE,
+    ATTR_VALUE_TYPES,
+    ATTR_TOKEN_SETS,
+    REQUIRED_PROPS_BY_ROLE,
+    REQUIRED_PROP_IMPLICIT_VALUES,
+    REQUIRED_OWNED_ROLES,
+    REQUIRED_CONTEXT_ROLE,
+    ALLOWED_ROLES_BY_ELEMENT,
+    NATIVE_ROLE_BY_ELEMENT_KEY,
+    NATIVE_CONTAINMENT_ROLE_BY_ELEMENT,
+    NATIVE_CONTAINMENT_CONTEXT,
+    ROLE_SYNONYMS,
+    INTEGER_ATTR_MIN
+  ]) {
+    __noPrototype(table, 0);
+  }
+
   function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
     if (!type) return { valid: true, reason: 'unknown-attr-skip' };
@@ -15839,7 +15982,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Stored on the realm window when possible so multiple helper instances
   // within the same run share caches deterministically.
   // -------------------------------------------------------------------------
-  var __domSharedCache = {};
+  var __domSharedCache = Object.create(null);
   var __selectorCache = null;
   var __outerHtmlCache = null;
   var __siblingIndexCache = null; // WeakMap<Element, {first, last, info, tagCounts}>
@@ -17088,7 +17231,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return false;
     }
   }
-  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
+  // Defined, not assigned, as each key the engine sets on its functions
+  // (round 12, F12-4).
+  Object.defineProperty(hasTruncatedAncestorWalk, 'limit', {
+    value: ANCESTOR_WALK_LIMIT,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   function getClosestMap(el) {
     try {
@@ -19811,7 +19961,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // from the frame element up to the scanned document.
   function isOccurrenceExcluded(occ) {
     if (!__getEffectiveExcludeSelectors().length || !occ || typeof occ !== 'object') return false;
-    let node = occ.__node || null;
+    let node = (Object.prototype.hasOwnProperty.call(occ, '__node') && occ.__node) || null;
     if (!node) {
       const selector = occ.selector;
       if (!selector || typeof selector !== 'string' || !document) return false;
@@ -20294,13 +20444,28 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // put on Object.prototype is never read as one (round 12, R12F-1 to
       // R12F-6).
       const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
-      if (!ownKey(w, '__a11ycoreSharedCache')) w.__a11ycoreSharedCache = Object.create(null);
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype refuses none (round 12, R12F-6).
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
+      if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
       const shared = w.__a11ycoreSharedCache;
       if (!ownKey(shared, 'dom')) shared.dom = Object.create(null);
       __domSharedCache = shared.dom;
     }
   } catch {
-    __domSharedCache = {};
+    __domSharedCache = Object.create(null);
   }
 
   // Selector cache (per element), partitioned by __selectorOptsKey since
@@ -23501,7 +23666,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       while (i < n && isSep(s[i]) && s[i] !== ',') i++;
       const v0 = i;
       while (i < n && !isSep(s[i])) i++;
-      values[key] = s.slice(v0, i);
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype (width) refuses none (round 12, F12-4).
+      Object.defineProperty(values, key, {
+        value: s.slice(v0, i),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const number = (v) => {
       if (v === 'yes') return 1;
@@ -24918,9 +25090,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const hv = cs.height != null ? String(cs.height).trim() : '';
       const ov = cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
 
-      metrics.width = wv || null;
-      metrics.height = hv || null;
-      metrics.overflow = ov || null;
+      Object.defineProperty(metrics, 'width', {
+        value: wv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'height', {
+        value: hv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'overflow', {
+        value: ov || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
 
       const isZeroW = wv === '0px' || wv === '0';
       const isZeroH = hv === '0px' || hv === '0';
@@ -25906,7 +26093,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const o =
       partial && typeof partial === 'object' && !Array.isArray(partial) ? { ...partial } : {};
     // Attach the node for engine-side finalization. This must be removed later before returning results.
-    o.__node = node || null;
+    // Defined, not assigned: a read-only __node a page's script put on
+    // Object.prototype refuses no occurrence (round 12, R12F-6).
+    Object.defineProperty(o, '__node', {
+      value: node || null,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
     return o;
   }
 
@@ -25958,7 +26152,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  let __contrastSharedCache = {};
+  let __contrastSharedCache = Object.create(null);
   try {
     // In Node/JSDOM checks, the harness sets global.window/global.document.
     // The engine may instantiate helpers per rule without passing opts.window,
@@ -25969,15 +26163,28 @@ const createDomHelpers = (function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      // Own keys only, as for the DOM helpers' cache above.
+      // Own keys only, and defined, as for the DOM helpers' cache above.
       const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
-      if (!ownKey(w, '__a11ycoreSharedCache')) w.__a11ycoreSharedCache = Object.create(null);
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
+      if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
       const shared = w.__a11ycoreSharedCache;
       if (!ownKey(shared, 'contrast')) shared.contrast = Object.create(null);
       __contrastSharedCache = shared.contrast;
     }
   } catch {
-    __contrastSharedCache = {};
+    __contrastSharedCache = Object.create(null);
   }
 
   const __contrastShared = {
@@ -26013,7 +26220,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
   );
 
   // Expose shared cache to checks (deterministic, in-memory only)
-  contrast.sharedCache = __contrastShared.__contrastSharedCache;
+  Object.defineProperty(contrast, 'sharedCache', {
+    value: __contrastShared.__contrastSharedCache,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
@@ -26517,7 +26729,12 @@ const normalizeLean = (function normalizeLean(input) {
   if (LEAN_DIRECTIONS.indexOf(input.toward) === -1) return null;
   if (typeof input.why !== 'string' || !input.why.trim()) return null;
 
-  const out = { toward: input.toward, why: input.why.trim() };
+  // Built with no prototype, and handed back as a plain copy: a read-only
+  // value a page's script put on Object.prototype (signals, i18n, whyKey)
+  // refuses no key (round 12, F12-4).
+  const out = Object.create(null);
+  out.toward = input.toward;
+  out.why = input.why.trim();
 
   const signals = [];
   for (const s of Array.isArray(input.signals) ? input.signals : []) {
@@ -26541,22 +26758,24 @@ const normalizeLean = (function normalizeLean(input) {
     m.agreed >= 0 &&
     m.agreed <= m.cases
   ) {
-    out.measured = { agreed: m.agreed, cases: m.cases };
-    if (typeof m.corpus === 'string' && m.corpus) out.measured.corpus = m.corpus;
-    if (typeof m.coreVersion === 'string' && m.coreVersion)
-      out.measured.coreVersion = m.coreVersion;
+    out.measured = {
+      agreed: m.agreed,
+      cases: m.cases,
+      ...(typeof m.corpus === 'string' && m.corpus ? { corpus: m.corpus } : {}),
+      ...(typeof m.coreVersion === 'string' && m.coreVersion ? { coreVersion: m.coreVersion } : {})
+    };
   }
 
   const i = input.i18n;
   if (i && typeof i === 'object' && !Array.isArray(i)) {
-    const ii = {};
+    const ii = Object.create(null);
     if (typeof i.whyKey === 'string' && i.whyKey) ii.whyKey = i.whyKey;
     if (typeof i.cautionKey === 'string' && i.cautionKey) ii.cautionKey = i.cautionKey;
     if (i.params && typeof i.params === 'object' && !Array.isArray(i.params))
       ii.params = { ...i.params };
-    if (ii.whyKey || ii.cautionKey) out.i18n = ii;
+    if (ii.whyKey || ii.cautionKey) out.i18n = { ...ii };
   }
-  return out;
+  return { ...out };
 });
 
 // Inlined from src/core/number-format.js -- t() writes a message's decimals
@@ -26576,7 +26795,16 @@ const formatLocaleDecimal = (function formatLocaleDecimal(value, locale) {
   // The separator, worked out once per locale. A locale Intl does not know,
   // or one that writes other digits, keeps the point.
   const key = String(locale);
-  const cache = formatLocaleDecimal.separators || (formatLocaleDecimal.separators = {});
+  // Own, with no prototype, and defined, not assigned (round 12, F12-4).
+  if (!Object.prototype.hasOwnProperty.call(formatLocaleDecimal, 'separators')) {
+    Object.defineProperty(formatLocaleDecimal, 'separators', {
+      value: Object.create(null),
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
+  }
+  const cache = formatLocaleDecimal.separators;
   if (!Object.prototype.hasOwnProperty.call(cache, key)) {
     let sep = '.';
     try {
@@ -26946,6 +27174,13 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
 });
 
 // Inlined from src/core/dom-runner.js
+const setOwnKey = (function setOwnKey(o, key, value) {
+  Object.defineProperty(o, key, { value, writable: true, enumerable: true, configurable: true });
+  return value;
+});
+const ownKeyOf = (function ownKeyOf(o, key) {
+  return o != null && Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+});
 const normalizeWcagLevel = (function normalizeWcagLevel(v) {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
   return s === 'A' || s === 'AA' || s === 'AAA' ? s : null;
@@ -28996,6 +29231,7 @@ const runCoreSettled = (function runCoreSettled(
   // to "this run" as intended, without leaking across runs.
   try {
     if (window && Object.prototype.hasOwnProperty.call(window, '__a11ycoreSharedCache')) {
+      // The window's own key: set as it is, never through Object.prototype.
       window.__a11ycoreSharedCache = Object.create(null);
     }
   } catch {}
@@ -29024,19 +29260,19 @@ const runCoreSettled = (function runCoreSettled(
   // The animations running when the scan started, before they were settled:
   // [] where there are none or no getAnimations (jsdom).
   {
-    const startedWith = Array.isArray(settleAnimations.atScanStart)
+    const startedWith = Array.isArray(ownKeyOf(settleAnimations, 'atScanStart'))
       ? settleAnimations.atScanStart
       : [];
-    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+    setOwnKey(sharedHelpers, 'animationsAtScanStart', () => startedWith.map((a) => ({ ...a })));
   }
   // The elements whose box clips its content only for content-visibility:
   // auto, as the scan lays them out (layOutSkippedContent).
   {
     const paintContained =
-      layOutSkippedContent.paintContained instanceof Set
+      ownKeyOf(layOutSkippedContent, 'paintContained') instanceof Set
         ? layOutSkippedContent.paintContained
         : new Set();
-    sharedHelpers.paintContainedByContentVisibility = (el) => paintContained.has(el);
+    setOwnKey(sharedHelpers, 'paintContainedByContentVisibility', (el) => paintContained.has(el));
   }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
@@ -29620,15 +29856,24 @@ const runCoreSettled = (function runCoreSettled(
       }
       if (kind === '[object Set]') return [...v.values()].map((x) => plainData(x, path));
       if (typeof v.toJSON === 'function') return plainData(v.toJSON(), path);
+      // Each key defined, not assigned: a read-only value of that name on
+      // Object.prototype (__node) refuses none (round 12, R12F-6).
       const out = {};
+      const put = (key, value) =>
+        Object.defineProperty(out, key, {
+          value,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
       for (const key of Object.keys(v)) {
         const x = v[key];
         if (key === '__node') {
-          out[key] = x;
+          put(key, x);
           continue;
         }
         const plain = plainData(x, path);
-        if (plain !== undefined) out[key] = plain;
+        if (plain !== undefined) put(key, plain);
       }
       return out;
     } finally {
@@ -30327,7 +30572,8 @@ const runCoreSettled = (function runCoreSettled(
     for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
   }
   for (const r of checksResults) {
-    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
+    if (r && typeof r === 'object')
+      setOwnKey(r, 'rollupIds', (rollupIdsByRule[r.ruleId] || []).slice());
   }
 
   // Optional perf counters passthrough (only when enabled). Deterministic.
@@ -30803,13 +31049,13 @@ const runCore = (function runCore(
     );
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null, shadowDom);
     // The animations as they were before settling, for helpers.animationsAtScanStart.
-    settleAnimations.atScanStart = settled.running;
+    setOwnKey(settleAnimations, 'atScanStart', settled.running);
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     // Content content-visibility: auto skips, laid out as a reader sees it.
     const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
     // For helpers.paintContainedByContentVisibility.
-    layOutSkippedContent.paintContained = laidOut.paintContained;
+    setOwnKey(layOutSkippedContent, 'paintContained', laidOut.paintContained);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -30832,10 +31078,10 @@ const runCore = (function runCore(
       return result;
     } finally {
       laidOut.restore();
-      layOutSkippedContent.paintContained = null;
+      setOwnKey(layOutSkippedContent, 'paintContained', null);
       colorsHeld.restore();
       settled.restore();
-      settleAnimations.atScanStart = [];
+      setOwnKey(settleAnimations, 'atScanStart', []);
     }
   } finally {
     restoreDomProtection();
@@ -31696,7 +31942,12 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         // rollups it feeds and the requirements it maps to, whichever
         // profile was listed first.
         if (Array.isArray(own(check, 'rollupIds'))) {
-          merged.rollupIds = unionList(merged.rollupIds, check.rollupIds);
+          Object.defineProperty(merged, 'rollupIds', {
+            value: unionList(own(merged, 'rollupIds'), check.rollupIds),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
         }
         const mappings = Array.isArray(own(own(check, 'meta'), 'normativeMappings'))
           ? check.meta.normativeMappings
@@ -46910,6 +47161,7 @@ const RUNTIME_CATALOG = {
       "report_meta_profileNotRun": "nicht ausgeführt",
       "report_meta_optInRules": "Opt-in-Regeln",
       "report_meta_rulesNotRun": "Regeln nicht ausgeführt",
+      "report_meta_styleSheetsNotRead": "Stylesheets nicht gelesen",
       "report_incomplete_timeBudget": "Unvollständiger Scan: Sein Zeitbudget von {{budget}} ms war aufgebraucht, bevor alle ausgewählten Regeln gelaufen sind. Nicht ausgeführt ({{count}}): {{rules}}. Sie haben nichts geprüft; nichts in diesem Bericht gilt für sie als bestanden.",
       "report_incomplete_profilesNotRun": "Nicht gestartete Profile: {{profiles}}.",
       "report_meta_viewport": "Viewport",
@@ -48766,6 +49018,7 @@ const RUNTIME_CATALOG = {
       "report_meta_profileNotRun": "not run",
       "report_meta_optInRules": "opt-in rules",
       "report_meta_rulesNotRun": "rules not run",
+      "report_meta_styleSheetsNotRead": "style sheets not read",
       "report_incomplete_timeBudget": "Incomplete scan: its time budget of {{budget}} ms ran out before every rule it selected had run. Not run ({{count}}): {{rules}}. These checked nothing, so nothing in this report passes them.",
       "report_incomplete_profilesNotRun": "Profiles not started: {{profiles}}.",
       "report_meta_viewport": "viewport",
@@ -50622,6 +50875,7 @@ const RUNTIME_CATALOG = {
       "report_meta_profileNotRun": "no ejecutado",
       "report_meta_optInRules": "reglas activadas explícitamente",
       "report_meta_rulesNotRun": "reglas no ejecutadas",
+      "report_meta_styleSheetsNotRead": "hojas de estilo no leídas",
       "report_incomplete_timeBudget": "Análisis incompleto: su presupuesto de tiempo de {{budget}} ms se agotó antes de que se ejecutaran todas las reglas seleccionadas. No ejecutadas ({{count}}): {{rules}}. No comprobaron nada, así que nada en este informe las da por superadas.",
       "report_incomplete_profilesNotRun": "Perfiles no iniciados: {{profiles}}.",
       "report_meta_viewport": "área de visualización",
@@ -52478,6 +52732,7 @@ const RUNTIME_CATALOG = {
       "report_meta_profileNotRun": "non exécuté",
       "report_meta_optInRules": "règles activées explicitement",
       "report_meta_rulesNotRun": "règles non exécutées",
+      "report_meta_styleSheetsNotRead": "feuilles de style non lues",
       "report_incomplete_timeBudget": "Analyse incomplète : son budget de temps de {{budget}} ms a été épuisé avant que toutes les règles sélectionnées ne s’exécutent. Non exécutées ({{count}}) : {{rules}}. Elles n’ont rien vérifié : rien dans ce rapport ne les donne comme réussies.",
       "report_incomplete_profilesNotRun": "Profils non démarrés : {{profiles}}.",
       "report_meta_viewport": "zone d’affichage",
@@ -54334,6 +54589,7 @@ const RUNTIME_CATALOG = {
       "report_meta_profileNotRun": "未実行",
       "report_meta_optInRules": "オプトインルール",
       "report_meta_rulesNotRun": "未実行のルール",
+      "report_meta_styleSheetsNotRead": "読み込めなかったスタイルシート",
       "report_incomplete_timeBudget": "不完全なスキャン: 選択されたすべてのルールが実行される前に、{{budget}} ms の時間予算を使い切りました。実行されなかったもの ({{count}}): {{rules}}。これらは何も検査していないため、このレポートのどの結果もこれらの合格を意味しません。",
       "report_incomplete_profilesNotRun": "開始されなかったプロファイル: {{profiles}}。",
       "report_meta_viewport": "ビューポート",
@@ -80518,7 +80774,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
       const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum);
 
-      const out = {
+      // With no prototype: a value a page's script put on Object.prototype
+      // (sizeScaledBy) is never read as the font's own (round 12, F12-5).
+      const out = Object.assign(Object.create(null), {
         fontSizePx: sizePx,
         fontSizePt: helpers.contrast.pxToPt(sizePx),
         fontWeightNum,
@@ -80526,7 +80784,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         isBold,
         isLarge,
         isLargeText: isLarge
-      };
+      });
       // What the page drew it at, where that isn't its font-size.
       if (drawn.by.length && Number.isFinite(fontSizePx)) {
         out.declaredFontSizePx = fontSizePx;
@@ -80844,6 +81102,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Text that falls short in one of the two color schemes the page
       // supports, on its canvas: the hint names the scheme.
       if (
+        Object.prototype.hasOwnProperty.call(det, 'colorScheme') &&
         det.colorScheme &&
         !placeholder &&
         !symbol &&
@@ -81309,10 +81568,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // the page is drawn in, naming none); it passes where it passes in each,
   // by the ratio closest to its threshold.
   // colorSchemesChecked lists the schemes measured where one wasn't.
+  // The analysis comes back with no prototype: a value a page's script put
+  // on Object.prototype (colorScheme) is never read as its own (round 12,
+  // R12F-6).
   function acrossSchemes(el, analysis, measureIn) {
+    const own = (a) => (a && typeof a === 'object' ? Object.assign(Object.create(null), a) : a);
     const canvas = analysis && analysis.computable === true ? analysis.canvas : null;
-    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return analysis;
-    if (canvas.supported.length < 2) return analysis;
+    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return own(analysis);
+    if (canvas.supported.length < 2) return own(analysis);
     const measured = [{ scheme: canvas.scheme, a: analysis }];
     for (const scheme of canvas.supported) {
       if (scheme === canvas.scheme || !measureIn) continue;
@@ -81331,11 +81594,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : (failing.length ? failing : measured).reduce((best, m) =>
             share(m) < share(best) ? m : best
           );
-    const out = { ...pick.a };
-    if (failing.length && failing.length < measured.length) out.colorScheme = failing[0].scheme;
     const checked = canvas.supported.filter((s) => measured.some((m) => m.scheme === s));
-    if (checked.length < canvas.supported.length) out.colorSchemesChecked = checked;
-    return out;
+    // Spread, not assigned: a read-only value a page's script put on
+    // Object.prototype refuses no key (round 12, R12F-6).
+    return own({
+      ...pick.a,
+      ...(failing.length && failing.length < measured.length
+        ? { colorScheme: failing[0].scheme }
+        : {}),
+      ...(checked.length < canvas.supported.length ? { colorSchemesChecked: checked } : {})
+    });
   }
 
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
@@ -81796,7 +82064,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           : helpers.contrast.isLargeText(px, fontWeightNum, BOLD_LARGE_MIN_PX);
       const isLarge = largeAt(sizePx);
 
-      const out = {
+      // With no prototype: a value a page's script put on Object.prototype
+      // (sizeScaledBy) is never read as the font's own (round 12, F12-5).
+      const out = Object.assign(Object.create(null), {
         fontSizePx: sizePx,
         fontSizePt: helpers.contrast.pxToPt(sizePx),
         fontWeightNum,
@@ -81804,7 +82074,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         isBold,
         isLarge,
         isLargeText: isLarge
-      };
+      });
       // What the page drew it at, where that isn't its font-size.
       if (drawn.by.length && Number.isFinite(fontSizePx)) {
         out.declaredFontSizePx = fontSizePx;
@@ -82154,6 +82424,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Text that falls short in one of the two color schemes the page
       // supports, on its canvas: the hint names the scheme.
       if (
+        Object.prototype.hasOwnProperty.call(det, 'colorScheme') &&
         det.colorScheme &&
         !placeholder &&
         !symbol &&
@@ -82645,10 +82916,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // the page is drawn in, naming none); it passes where it passes in each,
   // by the ratio closest to its threshold.
   // colorSchemesChecked lists the schemes measured where one wasn't.
+  // The analysis comes back with no prototype: a value a page's script put
+  // on Object.prototype (colorScheme) is never read as its own (round 12,
+  // R12F-6).
   function acrossSchemes(el, analysis, measureIn) {
+    const own = (a) => (a && typeof a === 'object' ? Object.assign(Object.create(null), a) : a);
     const canvas = analysis && analysis.computable === true ? analysis.canvas : null;
-    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return analysis;
-    if (canvas.supported.length < 2) return analysis;
+    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return own(analysis);
+    if (canvas.supported.length < 2) return own(analysis);
     const measured = [{ scheme: canvas.scheme, a: analysis }];
     for (const scheme of canvas.supported) {
       if (scheme === canvas.scheme || !measureIn) continue;
@@ -82667,11 +82942,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : (failing.length ? failing : measured).reduce((best, m) =>
             share(m) < share(best) ? m : best
           );
-    const out = { ...pick.a };
-    if (failing.length && failing.length < measured.length) out.colorScheme = failing[0].scheme;
     const checked = canvas.supported.filter((s) => measured.some((m) => m.scheme === s));
-    if (checked.length < canvas.supported.length) out.colorSchemesChecked = checked;
-    return out;
+    // Spread, not assigned: a read-only value a page's script put on
+    // Object.prototype refuses no key (round 12, R12F-6).
+    return own({
+      ...pick.a,
+      ...(failing.length && failing.length < measured.length
+        ? { colorScheme: failing[0].scheme }
+        : {}),
+      ...(checked.length < canvas.supported.length ? { colorSchemesChecked: checked } : {})
+    });
   }
 
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
@@ -84656,7 +84936,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
       if (s.kind) return crossTreeStyles(s, el);
       if (!scopeOk(s, el)) return false;
-      if (s.also && !s.also.every((a) => matchesSafe(el, a))) return false;
+      if (Object.hasOwn(s, 'also') && !s.also.every((a) => matchesSafe(el, a))) return false;
       let hit = matched.get(s.base);
       if (hit === undefined) {
         const found = byBase && byBase.get(s.base);
@@ -92464,7 +92744,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // same-named fields apart.
   const byKey = new Map();
   for (const field of fields) {
-    field.key = `${field.normalized}||${contextKey(field.el, field.labelText)}`;
+    // Defined, not assigned: a read-only key on Object.prototype refuses
+    // none (round 12, F12-4).
+    Object.defineProperty(field, 'key', {
+      value: `${field.normalized}||${contextKey(field.el, field.labelText)}`,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
     const bucket = byKey.get(field.key);
     if (bucket) bucket.push(field);
     else byKey.set(field.key, [field]);
@@ -101344,7 +101631,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // rules costs links x the rules that could apply. The index is made once.
   function candidatePartsOf(found, el, field) {
     if (typeof helpers.selectorIndex !== 'function') return found.parts;
-    if (!found.index) found.index = helpers.selectorIndex(found.parts.map((p) => p[field]));
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
+      Object.defineProperty(found, 'index', {
+        value: helpers.selectorIndex(found.parts.map((p) => p[field])),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    }
     return found.index.candidates(el).map((i) => found.parts[i]);
   }
 
@@ -102572,10 +102868,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const asks = all.filter((r) => verdict(r) === 'ask');
     const short = fails.length ? fails : asks;
     const pick = short.length ? short[0] : all[0];
-    const detail = {};
-    if (short.length && short.length < all.length) detail.colorScheme = short[0].scheme;
     const checked = canvas.supported.filter((s) => all.some((r) => r.scheme === s));
-    if (checked.length < canvas.supported.length) detail.colorSchemesChecked = checked;
+    // Spread, not assigned: a read-only value a page's script put on
+    // Object.prototype refuses no key (round 12, R12F-6).
+    const detail = {
+      ...(short.length && short.length < all.length ? { colorScheme: short[0].scheme } : {}),
+      ...(checked.length < canvas.supported.length ? { colorSchemesChecked: checked } : {})
+    };
     return {
       differs: !short.length,
       ratio: pick.ratio,
@@ -130434,6 +130733,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_profileNotRun": "nicht ausgeführt",
       "report_meta_optInRules": "Opt-in-Regeln",
       "report_meta_rulesNotRun": "Regeln nicht ausgeführt",
+      "report_meta_styleSheetsNotRead": "Stylesheets nicht gelesen",
       "report_incomplete_timeBudget": "Unvollständiger Scan: Sein Zeitbudget von {{budget}} ms war aufgebraucht, bevor alle ausgewählten Regeln gelaufen sind. Nicht ausgeführt ({{count}}): {{rules}}. Sie haben nichts geprüft; nichts in diesem Bericht gilt für sie als bestanden.",
       "report_incomplete_profilesNotRun": "Nicht gestartete Profile: {{profiles}}.",
       "report_meta_viewport": "Viewport",
@@ -132290,6 +132590,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_profileNotRun": "not run",
       "report_meta_optInRules": "opt-in rules",
       "report_meta_rulesNotRun": "rules not run",
+      "report_meta_styleSheetsNotRead": "style sheets not read",
       "report_incomplete_timeBudget": "Incomplete scan: its time budget of {{budget}} ms ran out before every rule it selected had run. Not run ({{count}}): {{rules}}. These checked nothing, so nothing in this report passes them.",
       "report_incomplete_profilesNotRun": "Profiles not started: {{profiles}}.",
       "report_meta_viewport": "viewport",
@@ -134146,6 +134447,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_profileNotRun": "no ejecutado",
       "report_meta_optInRules": "reglas activadas explícitamente",
       "report_meta_rulesNotRun": "reglas no ejecutadas",
+      "report_meta_styleSheetsNotRead": "hojas de estilo no leídas",
       "report_incomplete_timeBudget": "Análisis incompleto: su presupuesto de tiempo de {{budget}} ms se agotó antes de que se ejecutaran todas las reglas seleccionadas. No ejecutadas ({{count}}): {{rules}}. No comprobaron nada, así que nada en este informe las da por superadas.",
       "report_incomplete_profilesNotRun": "Perfiles no iniciados: {{profiles}}.",
       "report_meta_viewport": "área de visualización",
@@ -136002,6 +136304,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_profileNotRun": "non exécuté",
       "report_meta_optInRules": "règles activées explicitement",
       "report_meta_rulesNotRun": "règles non exécutées",
+      "report_meta_styleSheetsNotRead": "feuilles de style non lues",
       "report_incomplete_timeBudget": "Analyse incomplète : son budget de temps de {{budget}} ms a été épuisé avant que toutes les règles sélectionnées ne s’exécutent. Non exécutées ({{count}}) : {{rules}}. Elles n’ont rien vérifié : rien dans ce rapport ne les donne comme réussies.",
       "report_incomplete_profilesNotRun": "Profils non démarrés : {{profiles}}.",
       "report_meta_viewport": "zone d’affichage",
@@ -137858,6 +138161,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_profileNotRun": "未実行",
       "report_meta_optInRules": "オプトインルール",
       "report_meta_rulesNotRun": "未実行のルール",
+      "report_meta_styleSheetsNotRead": "読み込めなかったスタイルシート",
       "report_incomplete_timeBudget": "不完全なスキャン: 選択されたすべてのルールが実行される前に、{{budget}} ms の時間予算を使い切りました。実行されなかったもの ({{count}}): {{rules}}。これらは何も検査していないため、このレポートのどの結果もこれらの合格を意味しません。",
       "report_incomplete_profilesNotRun": "開始されなかったプロファイル: {{profiles}}。",
       "report_meta_viewport": "ビューポート",
@@ -140873,7 +141177,11 @@ const SAFE_DOM_OTHER_NAMES = [
 const createSafeDom = (function createSafeDom() {
   // One instance per realm of this script: the lookups depend only on the
   // prototypes they are given, so sharing it across scans is safe.
-  if (createSafeDom.__instance) return createSafeDom.__instance;
+  // Own only, and defined, not assigned: a value of that name on
+  // Object.prototype is neither read nor refuses it (round 12, F12-4).
+  if (Object.prototype.hasOwnProperty.call(createSafeDom, '__instance')) {
+    return createSafeDom.__instance;
+  }
 
   // Captured once, so a page that later replaces them doesn't change how
   // the engine reads its own DOM.
@@ -141405,12 +141713,34 @@ const createSafeDom = (function createSafeDom() {
         : o.setAttribute(a, b, c, d)
   };
 
-  createSafeDom.__instance = Object.freeze(dom);
+  Object.defineProperty(createSafeDom, '__instance', {
+    value: Object.freeze(dom),
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   return createSafeDom.__instance;
 });
 
 // Inlined from src/core/contrast-helpers.js
 const createContrastHelpers = (function createContrastHelpers(opts, shared) {
+  // An option's own value, or undefined. The engine builds option objects
+  // without every key (colorScheme, rootCanvasFallbackSet), and a value a
+  // page's script put on Object.prototype is never read as one (round 12,
+  // R12F-6).
+  function __own(o, k) {
+    return o &&
+      (typeof o === 'object' || typeof o === 'function') &&
+      Object.prototype.hasOwnProperty.call(o, k)
+      ? o[k]
+      : undefined;
+  }
+  // Own keys along a path: __ownAt(o, 'options', 'engineOptions').
+  function __ownAt(o, ...keys) {
+    let v = o;
+    for (let i = 0; i < keys.length && v !== undefined; i++) v = __own(v, keys[i]);
+    return v;
+  }
   // A <select> drawn as a list box (a size above 1), read as Chromium reads
   // its size attribute (selectSizeOf in dom-helpers).
   function __selectDrawnAsListBox(select) {
@@ -141421,7 +141751,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return Number(dom.getAttribute(select, 'size')) > 1;
   }
   const dom = createSafeDom();
-  const window = opts && opts.window ? opts.window : null;
+  const window = __own(opts, 'window') || null;
 
   const trim = shared.trim;
   const computedStyle = shared.computedStyle;
@@ -141593,10 +141923,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // -------- Visibility mode resolution for getTextScan --------
 
   function __getVisibilityMode(engineOptions) {
-    const m =
-      engineOptions && typeof engineOptions.visibilityMode === 'string'
-        ? engineOptions.visibilityMode
-        : '';
+    const v = __own(engineOptions, 'visibilityMode');
+    const m = typeof v === 'string' ? v : '';
     return m || 'styleOnly';
   }
 
@@ -141608,79 +141936,49 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       engineOptions,
 
       // common shapes
-      ctx && ctx.engineOptions,
-      ctx && ctx.options && ctx.options.engineOptions,
-      ctx && ctx.options,
-      ctx && ctx.opts && ctx.opts.engineOptions,
-      ctx && ctx.opts,
+      __ownAt(ctx, 'engineOptions'),
+      __ownAt(ctx, 'options', 'engineOptions'),
+      __ownAt(ctx, 'options'),
+      __ownAt(ctx, 'opts', 'engineOptions'),
+      __ownAt(ctx, 'opts'),
 
       // policy layering shapes
-      ctx && ctx.policyOverrides && ctx.policyOverrides.engineOptions,
-      ctx && ctx.policyOverrides,
-      ctx && ctx.policy && ctx.policy.engineOptions,
-      ctx && ctx.policy,
+      __ownAt(ctx, 'policyOverrides', 'engineOptions'),
+      __ownAt(ctx, 'policyOverrides'),
+      __ownAt(ctx, 'policy', 'engineOptions'),
+      __ownAt(ctx, 'policy'),
 
       // sometimes hoisted
       ctx,
 
       // opts passed into createContrastHelpers
-      opts && opts.engineOptions,
-      opts && opts.options && opts.options.engineOptions,
-      opts && opts.options,
-      opts && opts.opts && opts.opts.engineOptions,
-      opts && opts.opts,
+      __ownAt(opts, 'engineOptions'),
+      __ownAt(opts, 'options', 'engineOptions'),
+      __ownAt(opts, 'options'),
+      __ownAt(opts, 'opts', 'engineOptions'),
+      __ownAt(opts, 'opts'),
 
-      opts && opts.policyOverrides && opts.policyOverrides.engineOptions,
-      opts && opts.policyOverrides,
-      opts && opts.policy && opts.policy.engineOptions,
-      opts && opts.policy,
+      __ownAt(opts, 'policyOverrides', 'engineOptions'),
+      __ownAt(opts, 'policyOverrides'),
+      __ownAt(opts, 'policy', 'engineOptions'),
+      __ownAt(opts, 'policy'),
 
       // globals sometimes used by runners
-      w && w.__a11ycoreEngineOptions,
-      d && d.__a11ycoreEngineOptions
+      __ownAt(w, '__a11ycoreEngineOptions'),
+      __ownAt(d, '__a11ycoreEngineOptions')
     ];
 
     for (const c of candidates) {
       if (!c || typeof c !== 'object') continue;
-
-      if (typeof c.visibilityMode === 'string') return c.visibilityMode;
-
-      if (
-        c.engineOptions &&
-        typeof c.engineOptions === 'object' &&
-        typeof c.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.options &&
-        typeof c.options === 'object' &&
-        c.options.engineOptions &&
-        typeof c.options.engineOptions === 'object' &&
-        typeof c.options.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.options.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policy &&
-        typeof c.policy === 'object' &&
-        c.policy.engineOptions &&
-        typeof c.policy.engineOptions === 'object' &&
-        typeof c.policy.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policy.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policyOverrides &&
-        typeof c.policyOverrides === 'object' &&
-        c.policyOverrides.engineOptions &&
-        typeof c.policyOverrides.engineOptions === 'object' &&
-        typeof c.policyOverrides.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policyOverrides.engineOptions.visibilityMode;
+      for (const path of [
+        [],
+        ['engineOptions'],
+        ['options', 'engineOptions'],
+        ['policy', 'engineOptions'],
+        ['policyOverrides', 'engineOptions']
+      ]) {
+        const mode = __ownAt(c, ...path, 'visibilityMode');
+        if (typeof mode === 'string') return mode;
       }
     }
 
@@ -142389,9 +142687,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function getTextScan(ctx, helpers, engineOptions) {
     try {
-      const d = (ctx && ctx.document) || (opts && opts.document) || null;
+      const d = __own(ctx, 'document') || __own(opts, 'document') || null;
 
-      const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
+      const w = __own(ctx, 'window') || (d && dom.defaultView(d)) || window || null;
 
       // Unset, the text a reader can see is decided from the layout where
       // there is one (#99): text off the page or clipped away is drawn
@@ -142412,7 +142710,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // Default on, opt out with includeShadowDom: false -- same contract as
       // helpers.queryAllSmart. Part of the cache key: a scan that skipped
       // shadow roots must not be reused by one that should not.
-      const includeShadowDom = !(engineOptions && engineOptions.includeShadowDom === false);
+      const includeShadowDom = __own(engineOptions, 'includeShadowDom') !== false;
 
       const cache = __getSharedTextScanCache();
       const cacheKey = `visibilityMode=${visibilityMode}|sd=${includeShadowDom ? 1 : 0}`;
@@ -142900,18 +143198,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // intent: it only fires when both colors are cleanly computable, and
       // leaves any gradient/image/partial-opacity background (which
       // contrast-computable already reports as cantTell) untouched.
-      const contrastOptsForBg =
-        engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
-          ? engineOptions.contrast
-          : {};
+      const contrastOptsForBg = __own(engineOptions, 'contrast');
+      const bgMode = __own(contrastOptsForBg, 'mode');
+      const bgFallback = __own(contrastOptsForBg, 'rootCanvasFallback');
       const bgResolveOpts = {
         contrast: {
-          mode: contrastOptsForBg.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
+          mode: bgMode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
           rootCanvasFallback:
-            typeof contrastOptsForBg.rootCanvasFallback === 'string' &&
-            contrastOptsForBg.rootCanvasFallback.trim()
-              ? contrastOptsForBg.rootCanvasFallback.trim()
-              : '#ffffff'
+            typeof bgFallback === 'string' && bgFallback.trim() ? bgFallback.trim() : '#ffffff'
         },
         collectStack: false
       };
@@ -142954,6 +143248,46 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // walker per root could otherwise walk the same subtree twice).
       const visitedTextNodes = new Set();
 
+      // Text the flat tree leaves out is not rendered (CSS Scoping 1): a
+      // light child of a shadow host that no slot takes, and the fallback
+      // content of a slot that has nodes assigned (round 12, F12-7). Only
+      // hosts with an open shadow root can be told; kept per parent.
+      const outOfFlatTreeCache = new WeakMap();
+      const outOfFlatTree = (start) => {
+        const seen = [];
+        let cur = start;
+        let out = false;
+        for (let depth = 0; cur && depth < 256; depth++) {
+          const parent = dom.parentNode(cur);
+          if (!parent || dom.nodeType(parent) !== 1) break;
+          if (dom.nodeType(cur) === 1 && outOfFlatTreeCache.has(cur)) {
+            out = outOfFlatTreeCache.get(cur);
+            break;
+          }
+          if (dom.nodeType(cur) === 1) seen.push(cur);
+          if (dom.shadowRoot(parent) && !dom.assignedSlot(cur)) {
+            out = true;
+            break;
+          }
+          if (String(dom.localName(parent) || '').toLowerCase() === 'slot') {
+            const root = dom.getRootNode(parent);
+            if (root && dom.nodeType(root) === 11) {
+              let assigned = [];
+              try {
+                assigned = dom.assignedNodes(parent) || [];
+              } catch {}
+              if (assigned.length) {
+                out = true;
+                break;
+              }
+            }
+          }
+          cur = parent;
+        }
+        for (const el of seen) outOfFlatTreeCache.set(el, out);
+        return out;
+      };
+
       for (const walkRoot of walkRoots) {
         if (guard >= 500000) break;
         let walker;
@@ -142986,6 +143320,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           // A <textarea>'s text nodes are its default value; what it shows is
           // its current value, read with the other fields below.
           if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
+          if (includeShadowDom && outOfFlatTree(node)) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
@@ -143107,7 +143442,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 if (!isVisibleEligible(el) || isInactive(el)) break;
                 const m = measureGeneratedText(el, pseudo, bgResolveOpts);
                 if (!m || m.same) continue;
-                generated.push(Object.freeze({ el, pseudo, textCount: 1 }));
+                generated.push(
+                  Object.freeze(Object.assign(Object.create(null), { el, pseudo, textCount: 1 }))
+                );
               }
             }
           }
@@ -143118,7 +143455,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         eligibleTextCount,
         visibilityMode,
         elements: Object.freeze(
-          elements.map((el) => Object.freeze({ el, textCount: elToCount.get(el) || 0 }))
+          // Records with no prototype: a value a page's script put on
+          // Object.prototype (pseudo) is never read as a record's own
+          // (round 12, F12-5).
+          elements.map((el) =>
+            Object.freeze(
+              Object.assign(Object.create(null), { el, textCount: elToCount.get(el) || 0 })
+            )
+          )
         ),
         generated: Object.freeze(generated)
       });
@@ -145335,7 +145679,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // elements x the rules that could apply, not elements x rules. Each entry
   // is { rule, part }; a pseudo-element's part is left out.
   function __colorPartsFor(found, el) {
-    if (!found.index) {
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
       const entries = [];
       for (const rule of found.rules) {
         for (const part of rule.parts) {
@@ -145345,7 +145691,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           entries.push({ rule, part });
         }
       }
-      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+      Object.defineProperty(found, 'index', {
+        value: { entries, index: selectorIndex(entries.map((e) => e.part)) },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const { entries, index } = found.index;
     return index.candidates(el).map((i) => entries[i]);
@@ -145362,8 +145713,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
+    // Answers with no prototype: a value a page's script put on
+    // Object.prototype (unknown) is never read as theirs (round 12, F12-5).
+    const answer = (o) => Object.assign(Object.create(null), o);
     const found = __colorRulesOf(root, prop);
-    if (found.unreadable) return { unknown: true };
+    if (found.unreadable) return answer({ unknown: true });
     let best = null;
     let unknown = false;
     for (const { rule, part } of __colorPartsFor(found, el)) {
@@ -145392,8 +145746,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (!best || rank > best.rank) best = { rank, value };
       }
     } catch {}
-    if (unknown) return { unknown: true };
-    return best ? { value: best.value } : null;
+    if (unknown) return answer({ unknown: true });
+    return best ? answer({ value: best.value }) : null;
   }
 
   // Every author declaration of prop (`color` by default) that matches el,
@@ -145622,7 +145976,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // computes the light scheme's colors). Null where the color computed
   // now is the one, or it can't be told (colorSchemeUnread).
   function __schemeTextOverride(el, opts) {
-    const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
+    const asked = __ownAt(opts, 'contrast', 'colorScheme');
     const scheme = asked === 'light' || asked === 'dark' ? asked : null;
     if (!scheme) {
       // A browser computes the colors of the scheme it draws.
@@ -145644,7 +145998,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // page's canvas (__schemeTextColor), where it isn't the one computed now.
   function computeEffectiveForeground(el, opts) {
     const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
-    if (opts && opts.contrast && opts.contrast.colorScheme) {
+    if (__ownAt(opts, 'contrast', 'colorScheme')) {
       const out = computeEffectiveForeground(el);
       if (!schemeOverride || !out || !out.rgba) return out;
       const op = Number.isFinite(out.opacityProduct) ? out.opacityProduct : 1;
@@ -145744,19 +146098,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     __getSharedWeakMapCache('__effectiveBackgroundCache') || __localEffectiveBackgroundCache;
 
   function __bgCacheKey(opts2) {
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const named = contrast.rootCanvasFallbackSet === true ? 'named' : '';
-    const scheme =
-      contrast.colorScheme === 'light' || contrast.colorScheme === 'dark'
-        ? contrast.colorScheme
-        : '';
+    const named = __own(contrast, 'rootCanvasFallbackSet') === true ? 'named' : '';
+    const asked = __own(contrast, 'colorScheme');
+    const scheme = asked === 'light' || asked === 'dark' ? asked : '';
 
     // Cache key must include any input that can affect computed background.
     // Note: we only cache when collectStack is false.
@@ -145820,7 +146171,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const doc = window && window.document;
       const root = doc && dom.documentElement(doc);
       if (!root || typeof window.getComputedStyle !== 'function') return null;
-      const rootScheme = String(window.getComputedStyle(root).colorScheme || '');
+      const rootScheme = String(
+        window.getComputedStyle(root).getPropertyValue('color-scheme') || ''
+      );
       const meta = dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]');
       const metaScheme = meta ? String(dom.getAttribute(meta, 'content') || '') : '';
       if (!/\bdark\b/i.test(rootScheme) && !/\bdark\b/i.test(metaScheme)) return null;
@@ -145938,9 +146291,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return null;
       }
       const rootCs = window.getComputedStyle(root);
-      const rootValue = String(
-        (rootCs && (rootCs.colorScheme || rootCs.getPropertyValue('color-scheme'))) || ''
-      ).trim();
+      const rootValue = String((rootCs && rootCs.getPropertyValue('color-scheme')) || '').trim();
       let supported = __schemesNamed(rootValue);
       // The meta element speaks for a root whose color-scheme is normal:
       // the first one naming a scheme (HTML, "the page's supported color
@@ -145992,8 +146343,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             const c = parseCssColorToRgba(value);
             return c && c.a === 1 ? { r: c.r, g: c.g, b: c.b, a: 1 } : null;
           };
+          // color-scheme by its CSS name: Chromium reads a camelCase
+          // style property a page's script put on Object.prototype ahead of
+          // its own (round 12, R12F-6).
           const readScheme = (scheme) => {
-            probe.style.colorScheme = scheme;
+            probe.style.setProperty('color-scheme', scheme);
             probe.style.backgroundColor = 'Canvas';
             probe.style.color = 'CanvasText';
             const cs = window.getComputedStyle(probe);
@@ -146049,9 +146403,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     __runCanvas = rgba && rgba.a === 1 ? { color: color.trim(), rgba: { ...rgba, a: 1 } } : null;
   }
   function __namedCanvas(contrast) {
-    if (contrast && contrast.rootCanvasFallbackSet === true) {
-      const value =
-        typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+    if (__own(contrast, 'rootCanvasFallbackSet') === true) {
+      const given = __own(contrast, 'rootCanvasFallback');
+      const value = typeof given === 'string' ? given.trim() : '';
       const rgba = value ? parseCssColorToRgba(value) : null;
       if (rgba && rgba.a === 1) return { color: value, rgba: { ...rgba, a: 1 } };
     }
@@ -146466,7 +146820,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (window.self !== window.top) return null;
       const info = __pageSchemes();
       if (!info) return null;
-      const asked = contrast && contrast.colorScheme;
+      const asked = __own(contrast, 'colorScheme');
       const scheme = asked === 'light' || asked === 'dark' ? asked : info.current;
       const named = __namedCanvas(contrast);
       if (named && scheme !== info.current) return null;
@@ -146571,7 +146925,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {}
 
     const __bgKey = __bgCacheKey(opts2);
-    const __collectStack = !!(opts2 && opts2.collectStack);
+    const __collectStack = !!__own(opts2, 'collectStack');
 
     // Only cache when stack collection is off
     if (!__collectStack) {
@@ -146583,15 +146937,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       } catch {}
     }
 
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const collectStack = !!(opts2 && opts2.collectStack);
+    const collectStack = !!__own(opts2, 'collectStack');
     const stack = collectStack ? [] : null;
 
     let acc = { r: 0, g: 0, b: 0, a: 0 };
@@ -147758,7 +148111,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           const body = fdoc && dom.body(fdoc);
           if (body) body.textContent = '';
           if (froot) {
-            froot.style.colorScheme = '';
+            froot.style.removeProperty('color-scheme');
             froot.style.forcedColorAdjust = '';
           }
         } catch {
@@ -147787,7 +148140,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         // Under forced colors the scan holds the page in its own colors
         // (forced-color-adjust: none); the blank frame is held so too, or
         // the browser's placeholder color read there is the forced palette's
@@ -147826,7 +148179,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const own = view.getComputedStyle(el);
       const tag = String(dom.localName(el) || '').toLowerCase();
       const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
-      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      const ref = __readPlaceholderDefaults(
+        doc,
+        tag,
+        type,
+        String(own.getPropertyValue('color-scheme') || '')
+      );
       if (!ref) return '';
       const ph = field.style;
       const same =
@@ -147902,7 +148260,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (appearance === 'none' || appearance === 'base-select') return null;
       const doc = dom.ownerDocument(el);
       if (!__hasLayout(doc)) return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || !ref.measured || String(cs.backgroundColor) !== ref.background) return null;
       return ref.measured;
     } catch {
@@ -147917,7 +148275,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         froot.style.forcedColorAdjust = 'none';
         const host = dom.body(fdoc) || froot;
         const select = dom.createElement(fdoc, 'select');
@@ -147961,7 +148319,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const cs = view.getComputedStyle(el);
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || ref.field === (ref.measured || ref.background)) return null;
       if (String(cs.backgroundColor) !== ref.background) return null;
       if (hasBackgroundImageOrGradient(cs)) return null;
@@ -148164,14 +148522,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return blocked;
     }
     const out = __computabilityBlockerOf(el, false);
-    if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
+    const ownPseudo = !!out && Object.prototype.hasOwnProperty.call(out, '__pseudo');
+    if (
+      ownPseudo &&
+      out.ok === false &&
+      out.reasonCode === 'PSEUDO_ELEMENT_COLOR' &&
+      out.__pseudo
+    ) {
       const pseudo = out.__pseudo;
       delete out.__pseudo;
       // The rest of the walk, past the pseudo-element: its colors are
       // carried only where nothing else blocks the measurement.
       const rest = __computabilityBlockerOf(el, true);
       if (rest && rest.ok === true) out.pseudoColors = pseudo;
-    } else if (out && out.__pseudo) {
+    } else if (ownPseudo) {
       delete out.__pseudo;
     }
     try {
@@ -148614,7 +148978,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           }
           if (out) {
             const colors = __pseudoColorsOf(differing);
-            if (colors) out.__pseudo = colors;
+            // Defined, not assigned: a read-only __pseudo on Object.prototype
+            // refuses none (round 12, R12F-6).
+            if (colors) {
+              Object.defineProperty(out, '__pseudo', {
+                value: colors,
+                writable: true,
+                enumerable: true,
+                configurable: true
+              });
+            }
             try {
               if (el) __computabilityBlockerCache.set(el, out);
             } catch {}
@@ -150041,6 +150414,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
             if (content) at.content = content !== 'none' && content !== 'normal';
             if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            // Drawn at all, and where, as far as the rules say (F12-2).
+            const display = get('display');
+            if (display) at.displayNone = display === 'none';
+            const visibility = get('visibility');
+            if (visibility) at.hidden = visibility === 'hidden' || visibility === 'collapse';
+            for (const prop of ['width', 'height', 'top', 'right', 'bottom', 'left']) {
+              const v = get(prop);
+              if (v) at[prop] = v;
+            }
             const paint = [color, image, shorthand].find(
               (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
             );
@@ -150053,9 +150435,43 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
     } catch {}
-    const out = [...byKey.values()].filter((p) => p.content && p.positioned && p.paint);
+    const out = [...byKey.values()].filter(
+      (p) => p.content && p.positioned && p.paint && !p.displayNone && !p.hidden
+    );
     __noLayoutPseudosByRoot.set(root, out);
     return out;
+  }
+  // Whether a ::before or ::after the rules position could lie under a
+  // line of el's text, from the size and offsets they give it (round 12,
+  // F12-2): a box narrower or shorter than a line of the text (a 4px corner
+  // badge) is no background to it, and one moved wholly off its host (an
+  // offset of 100% or more, or far off the page) doesn't reach it. A size or
+  // offset in any other unit is taken as possibly covering the text.
+  function __noLayoutPseudoMayCover(p, el) {
+    const px = (v) => {
+      const m = /^(-?\d*\.?\d+)px$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    const pct = (v) => {
+      const m = /^(-?\d*\.?\d+)%$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    let fontPx = 16;
+    try {
+      const f = px(trim((computedStyle(el) || {}).fontSize || ''));
+      if (f && f > 0) fontPx = f;
+    } catch {}
+    const w = px(p.width);
+    const h = px(p.height);
+    if ((w !== null && w < fontPx) || (h !== null && h < fontPx)) return false;
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      const v = p[side];
+      const percent = pct(v);
+      if (percent !== null && Math.abs(percent) >= 100) return false;
+      const length = px(v);
+      if (length !== null && length <= -1000) return false;
+    }
+    return true;
   }
   function __noLayoutPseudoUnder(el, chain) {
     for (const host of chain) {
@@ -150073,7 +150489,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         } catch {
           matched = false;
         }
-        if (!matched) continue;
+        if (!matched || !__noLayoutPseudoMayCover(p, el)) continue;
         return {
           selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
           element: describeElement(host) + p.pseudo,
@@ -150861,6 +151277,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       out = { fallback: true };
     }
+    // With no prototype: a value a page's script put on Object.prototype
+    // (rgba) is never read as the backdrop's own (round 12, F12-5).
+    if (out && typeof out === 'object') out = Object.assign(Object.create(null), out);
     __paintBackdropCache.set(el, out);
     return out;
   }
@@ -152562,6 +152981,34 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'aria-rowspan': 0
   };
 
+  // The tables above are looked up by a role, an element or an attribute
+  // the page names. With no prototype, a value a page's script put on
+  // Object.prototype (button, navigation) is never read as an entry
+  // (round 12, F12-5).
+  const __noPrototype = (o, depth) => {
+    if (!o || typeof o !== 'object' || Array.isArray(o) || depth > 4) return;
+    if (Object.getPrototypeOf(o) === Object.prototype) Object.setPrototypeOf(o, null);
+    for (const k of Object.keys(o)) __noPrototype(o[k], depth + 1);
+  };
+  for (const table of [
+    DEPRECATED_ROLE_GUIDANCE,
+    DEFAULT_DEPRECATED_ROLE_GUIDANCE,
+    ATTR_VALUE_TYPES,
+    ATTR_TOKEN_SETS,
+    REQUIRED_PROPS_BY_ROLE,
+    REQUIRED_PROP_IMPLICIT_VALUES,
+    REQUIRED_OWNED_ROLES,
+    REQUIRED_CONTEXT_ROLE,
+    ALLOWED_ROLES_BY_ELEMENT,
+    NATIVE_ROLE_BY_ELEMENT_KEY,
+    NATIVE_CONTAINMENT_ROLE_BY_ELEMENT,
+    NATIVE_CONTAINMENT_CONTEXT,
+    ROLE_SYNONYMS,
+    INTEGER_ATTR_MIN
+  ]) {
+    __noPrototype(table, 0);
+  }
+
   function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
     if (!type) return { valid: true, reason: 'unknown-attr-skip' };
@@ -154062,7 +154509,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Stored on the realm window when possible so multiple helper instances
   // within the same run share caches deterministically.
   // -------------------------------------------------------------------------
-  var __domSharedCache = {};
+  var __domSharedCache = Object.create(null);
   var __selectorCache = null;
   var __outerHtmlCache = null;
   var __siblingIndexCache = null; // WeakMap<Element, {first, last, info, tagCounts}>
@@ -155311,7 +155758,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return false;
     }
   }
-  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
+  // Defined, not assigned, as each key the engine sets on its functions
+  // (round 12, F12-4).
+  Object.defineProperty(hasTruncatedAncestorWalk, 'limit', {
+    value: ANCESTOR_WALK_LIMIT,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   function getClosestMap(el) {
     try {
@@ -158034,7 +158488,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // from the frame element up to the scanned document.
   function isOccurrenceExcluded(occ) {
     if (!__getEffectiveExcludeSelectors().length || !occ || typeof occ !== 'object') return false;
-    let node = occ.__node || null;
+    let node = (Object.prototype.hasOwnProperty.call(occ, '__node') && occ.__node) || null;
     if (!node) {
       const selector = occ.selector;
       if (!selector || typeof selector !== 'string' || !document) return false;
@@ -158517,13 +158971,28 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // put on Object.prototype is never read as one (round 12, R12F-1 to
       // R12F-6).
       const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
-      if (!ownKey(w, '__a11ycoreSharedCache')) w.__a11ycoreSharedCache = Object.create(null);
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype refuses none (round 12, R12F-6).
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
+      if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
       const shared = w.__a11ycoreSharedCache;
       if (!ownKey(shared, 'dom')) shared.dom = Object.create(null);
       __domSharedCache = shared.dom;
     }
   } catch {
-    __domSharedCache = {};
+    __domSharedCache = Object.create(null);
   }
 
   // Selector cache (per element), partitioned by __selectorOptsKey since
@@ -161724,7 +162193,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       while (i < n && isSep(s[i]) && s[i] !== ',') i++;
       const v0 = i;
       while (i < n && !isSep(s[i])) i++;
-      values[key] = s.slice(v0, i);
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype (width) refuses none (round 12, F12-4).
+      Object.defineProperty(values, key, {
+        value: s.slice(v0, i),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const number = (v) => {
       if (v === 'yes') return 1;
@@ -163141,9 +163617,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const hv = cs.height != null ? String(cs.height).trim() : '';
       const ov = cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
 
-      metrics.width = wv || null;
-      metrics.height = hv || null;
-      metrics.overflow = ov || null;
+      Object.defineProperty(metrics, 'width', {
+        value: wv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'height', {
+        value: hv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'overflow', {
+        value: ov || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
 
       const isZeroW = wv === '0px' || wv === '0';
       const isZeroH = hv === '0px' || hv === '0';
@@ -164129,7 +164620,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const o =
       partial && typeof partial === 'object' && !Array.isArray(partial) ? { ...partial } : {};
     // Attach the node for engine-side finalization. This must be removed later before returning results.
-    o.__node = node || null;
+    // Defined, not assigned: a read-only __node a page's script put on
+    // Object.prototype refuses no occurrence (round 12, R12F-6).
+    Object.defineProperty(o, '__node', {
+      value: node || null,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
     return o;
   }
 
@@ -164181,7 +164679,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  let __contrastSharedCache = {};
+  let __contrastSharedCache = Object.create(null);
   try {
     // In Node/JSDOM checks, the harness sets global.window/global.document.
     // The engine may instantiate helpers per rule without passing opts.window,
@@ -164192,15 +164690,28 @@ const createDomHelpers = (function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      // Own keys only, as for the DOM helpers' cache above.
+      // Own keys only, and defined, as for the DOM helpers' cache above.
       const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
-      if (!ownKey(w, '__a11ycoreSharedCache')) w.__a11ycoreSharedCache = Object.create(null);
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
+      if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
       const shared = w.__a11ycoreSharedCache;
       if (!ownKey(shared, 'contrast')) shared.contrast = Object.create(null);
       __contrastSharedCache = shared.contrast;
     }
   } catch {
-    __contrastSharedCache = {};
+    __contrastSharedCache = Object.create(null);
   }
 
   const __contrastShared = {
@@ -164236,7 +164747,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
   );
 
   // Expose shared cache to checks (deterministic, in-memory only)
-  contrast.sharedCache = __contrastShared.__contrastSharedCache;
+  Object.defineProperty(contrast, 'sharedCache', {
+    value: __contrastShared.__contrastSharedCache,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
@@ -164740,7 +165256,12 @@ const normalizeLean = (function normalizeLean(input) {
   if (LEAN_DIRECTIONS.indexOf(input.toward) === -1) return null;
   if (typeof input.why !== 'string' || !input.why.trim()) return null;
 
-  const out = { toward: input.toward, why: input.why.trim() };
+  // Built with no prototype, and handed back as a plain copy: a read-only
+  // value a page's script put on Object.prototype (signals, i18n, whyKey)
+  // refuses no key (round 12, F12-4).
+  const out = Object.create(null);
+  out.toward = input.toward;
+  out.why = input.why.trim();
 
   const signals = [];
   for (const s of Array.isArray(input.signals) ? input.signals : []) {
@@ -164764,22 +165285,24 @@ const normalizeLean = (function normalizeLean(input) {
     m.agreed >= 0 &&
     m.agreed <= m.cases
   ) {
-    out.measured = { agreed: m.agreed, cases: m.cases };
-    if (typeof m.corpus === 'string' && m.corpus) out.measured.corpus = m.corpus;
-    if (typeof m.coreVersion === 'string' && m.coreVersion)
-      out.measured.coreVersion = m.coreVersion;
+    out.measured = {
+      agreed: m.agreed,
+      cases: m.cases,
+      ...(typeof m.corpus === 'string' && m.corpus ? { corpus: m.corpus } : {}),
+      ...(typeof m.coreVersion === 'string' && m.coreVersion ? { coreVersion: m.coreVersion } : {})
+    };
   }
 
   const i = input.i18n;
   if (i && typeof i === 'object' && !Array.isArray(i)) {
-    const ii = {};
+    const ii = Object.create(null);
     if (typeof i.whyKey === 'string' && i.whyKey) ii.whyKey = i.whyKey;
     if (typeof i.cautionKey === 'string' && i.cautionKey) ii.cautionKey = i.cautionKey;
     if (i.params && typeof i.params === 'object' && !Array.isArray(i.params))
       ii.params = { ...i.params };
-    if (ii.whyKey || ii.cautionKey) out.i18n = ii;
+    if (ii.whyKey || ii.cautionKey) out.i18n = { ...ii };
   }
-  return out;
+  return { ...out };
 });
 
 // Inlined from src/core/number-format.js -- t() writes a message's decimals
@@ -164799,7 +165322,16 @@ const formatLocaleDecimal = (function formatLocaleDecimal(value, locale) {
   // The separator, worked out once per locale. A locale Intl does not know,
   // or one that writes other digits, keeps the point.
   const key = String(locale);
-  const cache = formatLocaleDecimal.separators || (formatLocaleDecimal.separators = {});
+  // Own, with no prototype, and defined, not assigned (round 12, F12-4).
+  if (!Object.prototype.hasOwnProperty.call(formatLocaleDecimal, 'separators')) {
+    Object.defineProperty(formatLocaleDecimal, 'separators', {
+      value: Object.create(null),
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
+  }
+  const cache = formatLocaleDecimal.separators;
   if (!Object.prototype.hasOwnProperty.call(cache, key)) {
     let sep = '.';
     try {
@@ -165169,6 +165701,13 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
 });
 
 // Inlined from src/core/dom-runner.js
+const setOwnKey = (function setOwnKey(o, key, value) {
+  Object.defineProperty(o, key, { value, writable: true, enumerable: true, configurable: true });
+  return value;
+});
+const ownKeyOf = (function ownKeyOf(o, key) {
+  return o != null && Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+});
 const normalizeWcagLevel = (function normalizeWcagLevel(v) {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
   return s === 'A' || s === 'AA' || s === 'AAA' ? s : null;
@@ -167219,6 +167758,7 @@ const runCoreSettled = (function runCoreSettled(
   // to "this run" as intended, without leaking across runs.
   try {
     if (window && Object.prototype.hasOwnProperty.call(window, '__a11ycoreSharedCache')) {
+      // The window's own key: set as it is, never through Object.prototype.
       window.__a11ycoreSharedCache = Object.create(null);
     }
   } catch {}
@@ -167247,19 +167787,19 @@ const runCoreSettled = (function runCoreSettled(
   // The animations running when the scan started, before they were settled:
   // [] where there are none or no getAnimations (jsdom).
   {
-    const startedWith = Array.isArray(settleAnimations.atScanStart)
+    const startedWith = Array.isArray(ownKeyOf(settleAnimations, 'atScanStart'))
       ? settleAnimations.atScanStart
       : [];
-    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+    setOwnKey(sharedHelpers, 'animationsAtScanStart', () => startedWith.map((a) => ({ ...a })));
   }
   // The elements whose box clips its content only for content-visibility:
   // auto, as the scan lays them out (layOutSkippedContent).
   {
     const paintContained =
-      layOutSkippedContent.paintContained instanceof Set
+      ownKeyOf(layOutSkippedContent, 'paintContained') instanceof Set
         ? layOutSkippedContent.paintContained
         : new Set();
-    sharedHelpers.paintContainedByContentVisibility = (el) => paintContained.has(el);
+    setOwnKey(sharedHelpers, 'paintContainedByContentVisibility', (el) => paintContained.has(el));
   }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
@@ -167843,15 +168383,24 @@ const runCoreSettled = (function runCoreSettled(
       }
       if (kind === '[object Set]') return [...v.values()].map((x) => plainData(x, path));
       if (typeof v.toJSON === 'function') return plainData(v.toJSON(), path);
+      // Each key defined, not assigned: a read-only value of that name on
+      // Object.prototype (__node) refuses none (round 12, R12F-6).
       const out = {};
+      const put = (key, value) =>
+        Object.defineProperty(out, key, {
+          value,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
       for (const key of Object.keys(v)) {
         const x = v[key];
         if (key === '__node') {
-          out[key] = x;
+          put(key, x);
           continue;
         }
         const plain = plainData(x, path);
-        if (plain !== undefined) out[key] = plain;
+        if (plain !== undefined) put(key, plain);
       }
       return out;
     } finally {
@@ -168550,7 +169099,8 @@ const runCoreSettled = (function runCoreSettled(
     for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
   }
   for (const r of checksResults) {
-    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
+    if (r && typeof r === 'object')
+      setOwnKey(r, 'rollupIds', (rollupIdsByRule[r.ruleId] || []).slice());
   }
 
   // Optional perf counters passthrough (only when enabled). Deterministic.
@@ -169026,13 +169576,13 @@ const runCore = (function runCore(
     );
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null, shadowDom);
     // The animations as they were before settling, for helpers.animationsAtScanStart.
-    settleAnimations.atScanStart = settled.running;
+    setOwnKey(settleAnimations, 'atScanStart', settled.running);
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     // Content content-visibility: auto skips, laid out as a reader sees it.
     const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
     // For helpers.paintContainedByContentVisibility.
-    layOutSkippedContent.paintContained = laidOut.paintContained;
+    setOwnKey(layOutSkippedContent, 'paintContained', laidOut.paintContained);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -169055,10 +169605,10 @@ const runCore = (function runCore(
       return result;
     } finally {
       laidOut.restore();
-      layOutSkippedContent.paintContained = null;
+      setOwnKey(layOutSkippedContent, 'paintContained', null);
       colorsHeld.restore();
       settled.restore();
-      settleAnimations.atScanStart = [];
+      setOwnKey(settleAnimations, 'atScanStart', []);
     }
   } finally {
     restoreDomProtection();
@@ -169919,7 +170469,12 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         // rollups it feeds and the requirements it maps to, whichever
         // profile was listed first.
         if (Array.isArray(own(check, 'rollupIds'))) {
-          merged.rollupIds = unionList(merged.rollupIds, check.rollupIds);
+          Object.defineProperty(merged, 'rollupIds', {
+            value: unionList(own(merged, 'rollupIds'), check.rollupIds),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
         }
         const mappings = Array.isArray(own(own(check, 'meta'), 'normativeMappings'))
           ? check.meta.normativeMappings
@@ -170413,7 +170968,11 @@ const SAFE_DOM_OTHER_NAMES = [
 const createSafeDom = (function createSafeDom() {
   // One instance per realm of this script: the lookups depend only on the
   // prototypes they are given, so sharing it across scans is safe.
-  if (createSafeDom.__instance) return createSafeDom.__instance;
+  // Own only, and defined, not assigned: a value of that name on
+  // Object.prototype is neither read nor refuses it (round 12, F12-4).
+  if (Object.prototype.hasOwnProperty.call(createSafeDom, '__instance')) {
+    return createSafeDom.__instance;
+  }
 
   // Captured once, so a page that later replaces them doesn't change how
   // the engine reads its own DOM.
@@ -170945,7 +171504,12 @@ const createSafeDom = (function createSafeDom() {
         : o.setAttribute(a, b, c, d)
   };
 
-  createSafeDom.__instance = Object.freeze(dom);
+  Object.defineProperty(createSafeDom, '__instance', {
+    value: Object.freeze(dom),
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   return createSafeDom.__instance;
 });
 const getFrameRpcRegistry = (function getFrameRpcRegistry(win) {

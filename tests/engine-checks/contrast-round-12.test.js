@@ -274,3 +274,80 @@ test('text over a positioned ::before that paints is asked about, without a layo
     assert.equal(ok.outcome, 'pass', css);
   }
 });
+
+// A ::before that is not drawn (display: none, visibility: hidden), or one
+// too small or too far off to lie under the text (a 4px corner badge, a box
+// moved off its host), is no background: the text is measured, and light
+// grey on white fails. One that covers its host is still asked about
+// (round 12, F12-2).
+test('a hidden, small or moved-off ::before leaves the text measured, without a layout (F12-2)', () => {
+  const base = '.h{position:relative;color:#eee}';
+  for (const pseudo of [
+    'content:"";display:none;position:absolute;inset:0;background:#000;z-index:-1',
+    'content:"";visibility:hidden;position:absolute;inset:0;background:#000;z-index:-1',
+    'content:"";position:absolute;top:0;right:0;width:4px;height:4px;background:#000',
+    'content:"";position:absolute;top:100%;left:0;width:100%;height:20px;background:#000',
+    'content:"";position:absolute;left:-9999px;top:0;width:200px;height:40px;background:#000'
+  ]) {
+    const css = `<style>${base}.h::before{${pseudo}}</style>`;
+    const body = '<div class="h">Light on white</div>';
+    assert.equal(check(page(body, css), 'contrast-computable').outcome, 'pass', pseudo);
+    assert.equal(check(page(body, css), 'contrast-minimum').outcome, 'fail', pseudo);
+  }
+  for (const pseudo of [
+    'content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:#000;z-index:-1',
+    'content:"";position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:-1',
+    'content:"";position:absolute;top:0;left:0;width:300px;height:40px;background:#000;z-index:-1'
+  ]) {
+    const css = `<style>${base}.h::before{${pseudo}}</style>`;
+    const r = check(page('<div class="h">Light on white</div>', css), 'contrast-computable');
+    assert.equal(r.outcome, 'cantTell', pseudo);
+    assert.equal(r.occurrences[0].data.details.reasonCode, 'BACKGROUND_OVERLAP', pseudo);
+  }
+});
+
+// Text the flat tree leaves out is not rendered, so not measured: a light
+// child of a shadow host that no slot takes, and the fallback of a slot that
+// has nodes assigned (CSS Scoping 1; round 12, F12-7).
+test('text no slot takes, and slot fallback that is not shown, are left out of the contrast scan (F12-7)', () => {
+  const run = (host, shadow) => {
+    const dom = createDom(page(host));
+    dom.window.document.getElementById('h').attachShadow({ mode: 'open' }).innerHTML = shadow;
+    const result = runa11yCoreOnDom(dom, { runOnly: ['contrast-minimum'] });
+    return result.checksResults.find((c) => c.ruleId === 'contrast-minimum');
+  };
+  // No slot: the host's grey text is not rendered.
+  assert.notEqual(
+    run('<x-s id="h" style="color:#bbb">Unrendered grey</x-s>', '<p>Shadow only</p>').outcome,
+    'fail'
+  );
+  // Only a named slot: the unassigned grey text is not rendered.
+  assert.notEqual(
+    run(
+      '<x-s id="h" style="color:#bbb">Unassigned grey<b slot="a" style="color:#000">Bold</b></x-s>',
+      '<slot name="a"></slot>'
+    ).outcome,
+    'fail'
+  );
+  // Text assigned to the slot: its grey fallback is not rendered.
+  assert.notEqual(
+    run(
+      '<x-s id="h">Assigned text</x-s>',
+      '<slot style="color:#000"><span style="color:#bbb">fallback</span></slot>'
+    ).outcome,
+    'fail'
+  );
+  // With nothing assigned, the fallback is rendered and measured.
+  assert.equal(
+    run(
+      '<x-s id="h"></x-s>',
+      '<slot style="color:#000"><span style="color:#bbb">fallback</span></slot>'
+    ).outcome,
+    'fail'
+  );
+  // Slotted grey text is still measured.
+  assert.equal(
+    run('<x-s id="h">Slotted grey</x-s>', '<slot style="color:#bbb"></slot>').outcome,
+    'fail'
+  );
+});

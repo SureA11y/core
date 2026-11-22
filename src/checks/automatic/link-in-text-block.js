@@ -547,7 +547,16 @@ function runInPage(ctx) {
   // rules costs links x the rules that could apply. The index is made once.
   function candidatePartsOf(found, el, field) {
     if (typeof helpers.selectorIndex !== 'function') return found.parts;
-    if (!found.index) found.index = helpers.selectorIndex(found.parts.map((p) => p[field]));
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
+      Object.defineProperty(found, 'index', {
+        value: helpers.selectorIndex(found.parts.map((p) => p[field])),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    }
     return found.index.candidates(el).map((i) => found.parts[i]);
   }
 
@@ -1775,10 +1784,13 @@ function runInPage(ctx) {
     const asks = all.filter((r) => verdict(r) === 'ask');
     const short = fails.length ? fails : asks;
     const pick = short.length ? short[0] : all[0];
-    const detail = {};
-    if (short.length && short.length < all.length) detail.colorScheme = short[0].scheme;
     const checked = canvas.supported.filter((s) => all.some((r) => r.scheme === s));
-    if (checked.length < canvas.supported.length) detail.colorSchemesChecked = checked;
+    // Spread, not assigned: a read-only value a page's script put on
+    // Object.prototype refuses no key (round 12, R12F-6).
+    const detail = {
+      ...(short.length && short.length < all.length ? { colorScheme: short[0].scheme } : {}),
+      ...(checked.length < canvas.supported.length ? { colorSchemesChecked: checked } : {})
+    };
     return {
       differs: !short.length,
       ratio: pick.ratio,

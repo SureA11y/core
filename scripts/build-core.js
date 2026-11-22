@@ -58,6 +58,8 @@ const {
   resolveCustomRules,
   runCore,
   runCoreSettled,
+  setOwnKey,
+  ownKeyOf,
   settleAnimations,
   holdPageColors,
   layOutSkippedContent,
@@ -2786,6 +2788,8 @@ ${inlineConstFunction('resolveMargin', resolveMargin)}
 ${inlineConstFunction('normalizeRuleMeta', normalizeRuleMeta)}
 
 // Inlined from src/core/dom-runner.js
+${inlineConstFunction('setOwnKey', setOwnKey)}
+${inlineConstFunction('ownKeyOf', ownKeyOf)}
 ${inlineConstFunction('normalizeWcagLevel', normalizeWcagLevel)}
 ${inlineConstFunction('normalizeWcagVersion', normalizeWcagVersion)}
 ${inlineConstFunction('targetWcagVersionOf', targetWcagVersionOf)}

@@ -350,7 +350,7 @@ function createDomHelpers(opts) {
   // Stored on the realm window when possible so multiple helper instances
   // within the same run share caches deterministically.
   // -------------------------------------------------------------------------
-  var __domSharedCache = {};
+  var __domSharedCache = Object.create(null);
   var __selectorCache = null;
   var __outerHtmlCache = null;
   var __siblingIndexCache = null; // WeakMap<Element, {first, last, info, tagCounts}>
@@ -1599,7 +1599,14 @@ function createDomHelpers(opts) {
       return false;
     }
   }
-  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
+  // Defined, not assigned, as each key the engine sets on its functions
+  // (round 12, F12-4).
+  Object.defineProperty(hasTruncatedAncestorWalk, 'limit', {
+    value: ANCESTOR_WALK_LIMIT,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   function getClosestMap(el) {
     try {
@@ -4322,7 +4329,7 @@ function createDomHelpers(opts) {
   // from the frame element up to the scanned document.
   function isOccurrenceExcluded(occ) {
     if (!__getEffectiveExcludeSelectors().length || !occ || typeof occ !== 'object') return false;
-    let node = occ.__node || null;
+    let node = (Object.prototype.hasOwnProperty.call(occ, '__node') && occ.__node) || null;
     if (!node) {
       const selector = occ.selector;
       if (!selector || typeof selector !== 'string' || !document) return false;
@@ -4805,13 +4812,28 @@ function createDomHelpers(opts) {
       // put on Object.prototype is never read as one (round 12, R12F-1 to
       // R12F-6).
       const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
-      if (!ownKey(w, '__a11ycoreSharedCache')) w.__a11ycoreSharedCache = Object.create(null);
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype refuses none (round 12, R12F-6).
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
+      if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
       const shared = w.__a11ycoreSharedCache;
       if (!ownKey(shared, 'dom')) shared.dom = Object.create(null);
       __domSharedCache = shared.dom;
     }
   } catch {
-    __domSharedCache = {};
+    __domSharedCache = Object.create(null);
   }
 
   // Selector cache (per element), partitioned by __selectorOptsKey since
@@ -8012,7 +8034,14 @@ function createDomHelpers(opts) {
       while (i < n && isSep(s[i]) && s[i] !== ',') i++;
       const v0 = i;
       while (i < n && !isSep(s[i])) i++;
-      values[key] = s.slice(v0, i);
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype (width) refuses none (round 12, F12-4).
+      Object.defineProperty(values, key, {
+        value: s.slice(v0, i),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const number = (v) => {
       if (v === 'yes') return 1;
@@ -9429,9 +9458,24 @@ function createDomHelpers(opts) {
       const hv = cs.height != null ? String(cs.height).trim() : '';
       const ov = cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
 
-      metrics.width = wv || null;
-      metrics.height = hv || null;
-      metrics.overflow = ov || null;
+      Object.defineProperty(metrics, 'width', {
+        value: wv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'height', {
+        value: hv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'overflow', {
+        value: ov || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
 
       const isZeroW = wv === '0px' || wv === '0';
       const isZeroH = hv === '0px' || hv === '0';
@@ -10417,7 +10461,14 @@ function createDomHelpers(opts) {
     const o =
       partial && typeof partial === 'object' && !Array.isArray(partial) ? { ...partial } : {};
     // Attach the node for engine-side finalization. This must be removed later before returning results.
-    o.__node = node || null;
+    // Defined, not assigned: a read-only __node a page's script put on
+    // Object.prototype refuses no occurrence (round 12, R12F-6).
+    Object.defineProperty(o, '__node', {
+      value: node || null,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
     return o;
   }
 
@@ -10469,7 +10520,7 @@ function createDomHelpers(opts) {
     return { outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  let __contrastSharedCache = {};
+  let __contrastSharedCache = Object.create(null);
   try {
     // In Node/JSDOM checks, the harness sets global.window/global.document.
     // The engine may instantiate helpers per rule without passing opts.window,
@@ -10480,15 +10531,28 @@ function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      // Own keys only, as for the DOM helpers' cache above.
+      // Own keys only, and defined, as for the DOM helpers' cache above.
       const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
-      if (!ownKey(w, '__a11ycoreSharedCache')) w.__a11ycoreSharedCache = Object.create(null);
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
+      if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
       const shared = w.__a11ycoreSharedCache;
       if (!ownKey(shared, 'contrast')) shared.contrast = Object.create(null);
       __contrastSharedCache = shared.contrast;
     }
   } catch {
-    __contrastSharedCache = {};
+    __contrastSharedCache = Object.create(null);
   }
 
   const __contrastShared = {
@@ -10524,7 +10588,12 @@ function createDomHelpers(opts) {
   );
 
   // Expose shared cache to checks (deterministic, in-memory only)
-  contrast.sharedCache = __contrastShared.__contrastSharedCache;
+  Object.defineProperty(contrast, 'sharedCache', {
+    value: __contrastShared.__contrastSharedCache,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },

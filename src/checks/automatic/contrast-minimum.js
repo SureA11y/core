@@ -380,7 +380,9 @@ function runInPage(ctx) {
           : helpers.contrast.isLargeText(px, fontWeightNum, BOLD_LARGE_MIN_PX);
       const isLarge = largeAt(sizePx);
 
-      const out = {
+      // With no prototype: a value a page's script put on Object.prototype
+      // (sizeScaledBy) is never read as the font's own (round 12, F12-5).
+      const out = Object.assign(Object.create(null), {
         fontSizePx: sizePx,
         fontSizePt: helpers.contrast.pxToPt(sizePx),
         fontWeightNum,
@@ -388,7 +390,7 @@ function runInPage(ctx) {
         isBold,
         isLarge,
         isLargeText: isLarge
-      };
+      });
       // What the page drew it at, where that isn't its font-size.
       if (drawn.by.length && Number.isFinite(fontSizePx)) {
         out.declaredFontSizePx = fontSizePx;
@@ -738,6 +740,7 @@ function runInPage(ctx) {
       // Text that falls short in one of the two color schemes the page
       // supports, on its canvas: the hint names the scheme.
       if (
+        Object.prototype.hasOwnProperty.call(det, 'colorScheme') &&
         det.colorScheme &&
         !placeholder &&
         !symbol &&
@@ -1229,10 +1232,14 @@ function runInPage(ctx) {
   // the page is drawn in, naming none); it passes where it passes in each,
   // by the ratio closest to its threshold.
   // colorSchemesChecked lists the schemes measured where one wasn't.
+  // The analysis comes back with no prototype: a value a page's script put
+  // on Object.prototype (colorScheme) is never read as its own (round 12,
+  // R12F-6).
   function acrossSchemes(el, analysis, measureIn) {
+    const own = (a) => (a && typeof a === 'object' ? Object.assign(Object.create(null), a) : a);
     const canvas = analysis && analysis.computable === true ? analysis.canvas : null;
-    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return analysis;
-    if (canvas.supported.length < 2) return analysis;
+    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return own(analysis);
+    if (canvas.supported.length < 2) return own(analysis);
     const measured = [{ scheme: canvas.scheme, a: analysis }];
     for (const scheme of canvas.supported) {
       if (scheme === canvas.scheme || !measureIn) continue;
@@ -1251,11 +1258,16 @@ function runInPage(ctx) {
         : (failing.length ? failing : measured).reduce((best, m) =>
             share(m) < share(best) ? m : best
           );
-    const out = { ...pick.a };
-    if (failing.length && failing.length < measured.length) out.colorScheme = failing[0].scheme;
     const checked = canvas.supported.filter((s) => measured.some((m) => m.scheme === s));
-    if (checked.length < canvas.supported.length) out.colorSchemesChecked = checked;
-    return out;
+    // Spread, not assigned: a read-only value a page's script put on
+    // Object.prototype refuses no key (round 12, R12F-6).
+    return own({
+      ...pick.a,
+      ...(failing.length && failing.length < measured.length
+        ? { colorScheme: failing[0].scheme }
+        : {}),
+      ...(checked.length < canvas.supported.length ? { colorSchemesChecked: checked } : {})
+    });
   }
 
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.

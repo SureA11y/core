@@ -400,6 +400,31 @@ test('HTML report: counts each rule not run once, and lists unstarted profiles a
   assert.deepEqual(listed.sort(), ids.sort());
 });
 
+// Every rule ran, and some style sheets were not read in time
+// (engine.incomplete.styleSheetsNotRead, rulesNotRun 0): the report counts
+// the sheets, in each locale, and shows no chip for 0 rules (round 12,
+// R12F-8).
+test('HTML report: style sheets not read get a chip, and 0 rules not run none, in every locale (round 12, R12F-8)', () => {
+  const { value: result } = scan({}, RUN_ONLY);
+  assert.deepEqual(result.notRun || [], []);
+  result.engine.incomplete = {
+    reason: 'timeBudget',
+    timeBudgetMs: 100,
+    rulesNotRun: 0,
+    styleSheetsNotRead: ['https://cdn.other.test/a.css', 'https://cdn.other.test/b.css']
+  };
+  for (const locale of ['en', 'fr', 'de', 'es', 'ja']) {
+    const messages = require(`../src/i18n/${locale}.json`);
+    result.engine.locale = { ...result.engine.locale, resolved: locale };
+    const html = renderHtmlReport(result, { manualChecks: false });
+    assert.ok(
+      html.includes(`<div><b>2</b>${messages.report_meta_styleSheetsNotRead}</div>`),
+      locale
+    );
+    assert.ok(!html.includes(messages.report_meta_rulesNotRun), locale);
+  }
+});
+
 // The browser bundle's runa11yCoreInPageAsync counts the style sheets it
 // fetches against the budget, and gives them half of it at most: then it
 // stops waiting for them, names those it did not read, and runs the rules in

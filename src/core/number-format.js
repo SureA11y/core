@@ -34,7 +34,16 @@ function formatLocaleDecimal(value, locale) {
   // The separator, worked out once per locale. A locale Intl does not know,
   // or one that writes other digits, keeps the point.
   const key = String(locale);
-  const cache = formatLocaleDecimal.separators || (formatLocaleDecimal.separators = {});
+  // Own, with no prototype, and defined, not assigned (round 12, F12-4).
+  if (!Object.prototype.hasOwnProperty.call(formatLocaleDecimal, 'separators')) {
+    Object.defineProperty(formatLocaleDecimal, 'separators', {
+      value: Object.create(null),
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
+  }
+  const cache = formatLocaleDecimal.separators;
   if (!Object.prototype.hasOwnProperty.call(cache, key)) {
     let sep = '.';
     try {

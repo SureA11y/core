@@ -17,6 +17,9 @@ const path = require('node:path');
 const main = require('../src/index.js');
 const { createDom } = require('../src/testing.js');
 
+// Names jsdom itself can't run with as a read-only value on Object.prototype.
+const JSDOM_READ_ONLY_BREAKS = new Set(['colorScheme', 'width']);
+
 const PAGE =
   '<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>t</h1>' +
   '<img src="a.png"><img src="b.png"><a href="/x"></a></main></body></html>';
@@ -136,6 +139,76 @@ test('a plain or read-only value on Object.prototype changes no scan (round 12, 
         });
         assert.deepEqual(got, clean[name], `${key} (${form}) on Object.prototype, ${name} scan`);
       }
+    }
+  }
+});
+
+// A page drawn in light or dark, with text whose contrast depends on the
+// scheme and the canvas: the contrast helpers build their own option
+// objects without colorScheme or rootCanvasFallbackSet, and read neither
+// from Object.prototype (round 12, R12F-6).
+const CONTRAST_PAGE =
+  '<!doctype html><html lang="en"><head><title>t</title>' +
+  '<style>:root { color-scheme: light dark }</style></head><body><main><h1>t</h1>' +
+  '<p style="color:#767676">grey text</p><p style="color:#000">black text</p>' +
+  '<p style="color:#555;background:#fff">on white</p></main></body></html>';
+
+test('a contrast option on Object.prototype changes no contrast result (round 12, R12F-6)', () => {
+  const contrastSummary = () => {
+    createDom(CONTRAST_PAGE);
+    return summary(main.runa11yCoreInPage('https://example.test/', null, {}, null)).checks.filter(
+      ([id]) => /contrast/.test(id)
+    );
+  };
+  const clean = contrastSummary();
+  assert.ok(clean.some(([id, outcome]) => id === 'contrast-minimum' && outcome === 'fail'));
+  for (const [key, value] of [
+    ['colorScheme', 'dark'],
+    ['colorScheme', 'light'],
+    ['rootCanvasFallbackSet', true],
+    ['rootCanvasFallback', '#000000'],
+    ['collectStack', true],
+    ['visibilityMode', 'styleAndGeometry'],
+    ['includeShadowDom', false]
+  ]) {
+    for (const [form, descriptor] of [
+      ['plain', { value, writable: true, enumerable: true }],
+      ['read-only', { value, writable: false, enumerable: false }]
+    ]) {
+      // jsdom's own computed style can't be read with a read-only
+      // colorScheme there; that one is tried in Chromium
+      // (object-prototype-values-browser.test.js).
+      if (key === 'colorScheme' && form === 'read-only') continue;
+      const got = withPrototypeValue(key, descriptor, contrastSummary);
+      assert.deepEqual(got, clean, `${key} ${JSON.stringify(value)} (${form}) on Object.prototype`);
+    }
+  }
+});
+
+// The names the round 12 final review found: a read-only value stopped the
+// scan (i18n to paintContained) or a rule (__node to index), and a plain
+// one changed a result (pseudo to colorScheme). A page with a finding for
+// each (round 12, F12-4, F12-5). Shared with the Chromium twin.
+const { NAMES: F12_NAMES, PAGE: F12_PAGE } = require('./helpers/prototype-names.js');
+
+test('a plain or read-only value of each name the final review found changes no scan (round 12, F12-4, F12-5)', () => {
+  const brief = () => {
+    createDom(F12_PAGE);
+    return summary(main.runa11yCoreInPage('https://example.test/', null, {}, null));
+  };
+  const clean = brief();
+  assert.ok(clean.checks.some(([id, outcome]) => id === 'contrast-minimum' && outcome === 'fail'));
+  for (const key of F12_NAMES) {
+    for (const [form, descriptor] of [
+      ['plain', { value: true, writable: true, enumerable: true }],
+      ['read-only', { value: undefined, writable: false, enumerable: false }]
+    ]) {
+      // jsdom's own computed style can't be read with a read-only
+      // colorScheme or width on Object.prototype; those are tried in
+      // Chromium (object-prototype-values-browser.test.js).
+      if (form === 'read-only' && JSDOM_READ_ONLY_BREAKS.has(key)) continue;
+      const got = withPrototypeValue(key, descriptor, brief);
+      assert.deepEqual(got, clean, `${key} (${form}) on Object.prototype`);
     }
   }
 });

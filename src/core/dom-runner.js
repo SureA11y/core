@@ -54,6 +54,18 @@ const { readLiveRegionHook } = require('./live-region-hook');
    COMPLETE_CHECK_SCS, WCAG_LEVELS_BY_SC, isIsoDateTime, ownOptions, plainOptions */
 
 // A WCAG conformance level as the engine names it ('aa' is 'AA'), or null.
+// A key the engine sets on its own objects and functions, defined rather
+// than assigned, and read as their own: a value of that name a page's
+// script put on Object.prototype, read-only or not, is neither read nor
+// refuses the key (round 12, F12-4).
+function setOwnKey(o, key, value) {
+  Object.defineProperty(o, key, { value, writable: true, enumerable: true, configurable: true });
+  return value;
+}
+function ownKeyOf(o, key) {
+  return o != null && Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+}
+
 function normalizeWcagLevel(v) {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
   return s === 'A' || s === 'AA' || s === 'AAA' ? s : null;
@@ -2379,13 +2391,13 @@ function runCore(
     );
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null, shadowDom);
     // The animations as they were before settling, for helpers.animationsAtScanStart.
-    settleAnimations.atScanStart = settled.running;
+    setOwnKey(settleAnimations, 'atScanStart', settled.running);
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     // Content content-visibility: auto skips, laid out as a reader sees it.
     const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
     // For helpers.paintContainedByContentVisibility.
-    layOutSkippedContent.paintContained = laidOut.paintContained;
+    setOwnKey(layOutSkippedContent, 'paintContained', laidOut.paintContained);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -2408,10 +2420,10 @@ function runCore(
       return result;
     } finally {
       laidOut.restore();
-      layOutSkippedContent.paintContained = null;
+      setOwnKey(layOutSkippedContent, 'paintContained', null);
       colorsHeld.restore();
       settled.restore();
-      settleAnimations.atScanStart = [];
+      setOwnKey(settleAnimations, 'atScanStart', []);
     }
   } finally {
     restoreDomProtection();
@@ -2694,6 +2706,7 @@ function runCoreSettled(
   // to "this run" as intended, without leaking across runs.
   try {
     if (window && Object.prototype.hasOwnProperty.call(window, '__a11ycoreSharedCache')) {
+      // The window's own key: set as it is, never through Object.prototype.
       window.__a11ycoreSharedCache = Object.create(null);
     }
   } catch {}
@@ -2722,19 +2735,19 @@ function runCoreSettled(
   // The animations running when the scan started, before they were settled:
   // [] where there are none or no getAnimations (jsdom).
   {
-    const startedWith = Array.isArray(settleAnimations.atScanStart)
+    const startedWith = Array.isArray(ownKeyOf(settleAnimations, 'atScanStart'))
       ? settleAnimations.atScanStart
       : [];
-    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+    setOwnKey(sharedHelpers, 'animationsAtScanStart', () => startedWith.map((a) => ({ ...a })));
   }
   // The elements whose box clips its content only for content-visibility:
   // auto, as the scan lays them out (layOutSkippedContent).
   {
     const paintContained =
-      layOutSkippedContent.paintContained instanceof Set
+      ownKeyOf(layOutSkippedContent, 'paintContained') instanceof Set
         ? layOutSkippedContent.paintContained
         : new Set();
-    sharedHelpers.paintContainedByContentVisibility = (el) => paintContained.has(el);
+    setOwnKey(sharedHelpers, 'paintContainedByContentVisibility', (el) => paintContained.has(el));
   }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
@@ -3318,15 +3331,24 @@ function runCoreSettled(
       }
       if (kind === '[object Set]') return [...v.values()].map((x) => plainData(x, path));
       if (typeof v.toJSON === 'function') return plainData(v.toJSON(), path);
+      // Each key defined, not assigned: a read-only value of that name on
+      // Object.prototype (__node) refuses none (round 12, R12F-6).
       const out = {};
+      const put = (key, value) =>
+        Object.defineProperty(out, key, {
+          value,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
       for (const key of Object.keys(v)) {
         const x = v[key];
         if (key === '__node') {
-          out[key] = x;
+          put(key, x);
           continue;
         }
         const plain = plainData(x, path);
-        if (plain !== undefined) out[key] = plain;
+        if (plain !== undefined) put(key, plain);
       }
       return out;
     } finally {
@@ -4025,7 +4047,8 @@ function runCoreSettled(
     for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
   }
   for (const r of checksResults) {
-    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
+    if (r && typeof r === 'object')
+      setOwnKey(r, 'rollupIds', (rollupIdsByRule[r.ruleId] || []).slice());
   }
 
   // Optional perf counters passthrough (only when enabled). Deterministic.
@@ -4221,6 +4244,8 @@ function runCoreSettled(
 }
 
 module.exports = {
+  setOwnKey,
+  ownKeyOf,
   isThenable,
   assertPageBuiltins,
   assertArrayFromFor,

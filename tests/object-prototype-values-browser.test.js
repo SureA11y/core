@@ -12,6 +12,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { chromium, executablePath, skip } = require('./helpers/chromium');
+const { NAMES: F12_NAMES, PAGE: F12_PAGE } = require('./helpers/prototype-names.js');
 
 const BUNDLE = fs.readFileSync(path.join(__dirname, '..', 'surea11y.browser.js'), 'utf8');
 
@@ -20,28 +21,44 @@ const BODY =
   '<a href="#y" style="opacity:0">hidden link</a><button>ok</button>' +
   '<img src="a.png"><img src="b.png"></main>';
 // The page's script runs first, then the bundle, as a page loads it.
-const pageHtml = (script) =>
-  '<!doctype html><html lang="en"><head><title>t</title>' +
-  `<script>${script}</script><script src="/surea11y.browser.js"></script>` +
-  `</head><body>${BODY}</body></html>`;
+const pageHtml = (script, body = BODY) =>
+  body === F12_PAGE
+    ? F12_PAGE.replace(
+        '<head>',
+        `<head><script>${script}</script><script src="/surea11y.browser.js"></script>`
+      )
+    : '<!doctype html><html lang="en"><head><title>t</title>' +
+      `<script>${script}</script><script src="/surea11y.browser.js"></script>` +
+      `</head><body>${body}</body></html>`;
 
-// What a scan found, rule by rule.
+// Text whose contrast depends on the color scheme the page is drawn in.
+const CONTRAST_BODY =
+  '<style>:root { color-scheme: light dark }</style><main><h1>t</h1>' +
+  '<p style="color:#767676">grey text</p><p style="color:#000">black text</p>' +
+  '<p style="color:#555;background:#fff">on white</p><a href="#y" style="opacity:0">hidden</a></main>';
+
+// What a scan found, rule by rule, and whether a rule stopped on an error.
 const brief = () => {
   const r = window.a11ycore.runa11yCoreInPage(location.href, null, {}, null);
-  return r.checksResults.map((c) => [c.ruleId, c.outcome, (c.occurrences || []).length]);
+  return r.checksResults.map((c) => [
+    c.ruleId,
+    c.outcome,
+    (c.occurrences || []).length,
+    Object.prototype.hasOwnProperty.call(c, 'error') ? String(c.error) : null
+  ]);
 };
 
 test('a value on Object.prototype in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
 
-  async function withPage(script, fn) {
+  async function withPage(script, fn, body) {
     const page = await browser.newPage();
     try {
       await page.route('https://example.test/**', (route) =>
         route.request().url().endsWith('.js')
           ? route.fulfill({ contentType: 'text/javascript', body: BUNDLE })
-          : route.fulfill({ contentType: 'text/html', body: pageHtml(script) })
+          : route.fulfill({ contentType: 'text/html', body: pageHtml(script, body) })
       );
       await page.goto('https://example.test/');
       return await fn(page);
@@ -120,4 +137,69 @@ test('a value on Object.prototype in Chromium', { skip }, async (t) => {
       if (/flag/.test(script)) assert.equal(got.flag, 'on');
     });
   }
+  // The contrast helpers build their own option objects without colorScheme
+  // or rootCanvasFallbackSet, and read neither from Object.prototype
+  // (R12F-6).
+  const cleanContrast = await withPage('', (page) => page.evaluate(brief), CONTRAST_BODY);
+  assert.ok(cleanContrast.some(([id, outcome]) => id === 'contrast-minimum' && outcome === 'fail'));
+  for (const [name, script] of [
+    ['a plain colorScheme', "Object.prototype.colorScheme = 'dark';"],
+    [
+      'a read-only colorScheme',
+      "Object.defineProperty(Object.prototype, 'colorScheme', { value: 'dark' });"
+    ],
+    ['a plain rootCanvasFallbackSet', 'Object.prototype.rootCanvasFallbackSet = true;'],
+    [
+      'a read-only rootCanvasFallbackSet',
+      "Object.defineProperty(Object.prototype, 'rootCanvasFallbackSet', { value: true });"
+    ]
+  ]) {
+    await t.test(`${name} changes no contrast result (R12F-6)`, async () => {
+      const got = await withPage(script, (page) => page.evaluate(brief), CONTRAST_BODY);
+      assert.deepEqual(got, cleanContrast);
+    });
+  }
+  // The engine's own keys, set on an occurrence (__node) or a cache the
+  // rules share: a read-only value of that name on Object.prototype refuses
+  // none, so no rule stops on an error (R12F-6).
+  for (const key of [
+    '__node',
+    '__a11ycoreSharedCache',
+    '__contrastSharedCache',
+    '__pseudo',
+    '__elBgCache',
+    '__elFgCache',
+    '__elBlockerCache',
+    '__textScanCache',
+    '__colorParseCache',
+    '__signRunBudget',
+    '__overlapIndex'
+  ]) {
+    await t.test(`a read-only ${key} stops no rule (R12F-6)`, async () => {
+      const script = `Object.defineProperty(Object.prototype, '${key}', { value: null });`;
+      assert.deepEqual(await withPage(script, (page) => page.evaluate(brief)), clean);
+      assert.deepEqual(
+        await withPage(script, (page) => page.evaluate(brief), CONTRAST_BODY),
+        cleanContrast
+      );
+    });
+  }
+  // Each name the final review found, as a plain and as a read-only value
+  // (round 12, F12-4, F12-5).
+  const cleanNames = await withPage('', (page) => page.evaluate(brief), F12_PAGE);
+  assert.ok(cleanNames.some(([id, outcome]) => id === 'contrast-minimum' && outcome === 'fail'));
+  await t.test('each name the final review found changes no scan (F12-4, F12-5)', async () => {
+    for (const key of F12_NAMES) {
+      for (const [form, script] of [
+        ['plain', `Object.prototype[${JSON.stringify(key)}] = true;`],
+        [
+          'read-only',
+          `Object.defineProperty(Object.prototype, ${JSON.stringify(key)}, { value: undefined });`
+        ]
+      ]) {
+        const got = await withPage(script, (page) => page.evaluate(brief), F12_PAGE);
+        assert.deepEqual(got, cleanNames, `${key} (${form})`);
+      }
+    }
+  });
 });

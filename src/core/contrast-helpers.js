@@ -5,6 +5,23 @@
 const { createSafeDom } = require('./safe-dom');
 
 function createContrastHelpers(opts, shared) {
+  // An option's own value, or undefined. The engine builds option objects
+  // without every key (colorScheme, rootCanvasFallbackSet), and a value a
+  // page's script put on Object.prototype is never read as one (round 12,
+  // R12F-6).
+  function __own(o, k) {
+    return o &&
+      (typeof o === 'object' || typeof o === 'function') &&
+      Object.prototype.hasOwnProperty.call(o, k)
+      ? o[k]
+      : undefined;
+  }
+  // Own keys along a path: __ownAt(o, 'options', 'engineOptions').
+  function __ownAt(o, ...keys) {
+    let v = o;
+    for (let i = 0; i < keys.length && v !== undefined; i++) v = __own(v, keys[i]);
+    return v;
+  }
   // A <select> drawn as a list box (a size above 1), read as Chromium reads
   // its size attribute (selectSizeOf in dom-helpers).
   function __selectDrawnAsListBox(select) {
@@ -15,7 +32,7 @@ function createContrastHelpers(opts, shared) {
     return Number(dom.getAttribute(select, 'size')) > 1;
   }
   const dom = createSafeDom();
-  const window = opts && opts.window ? opts.window : null;
+  const window = __own(opts, 'window') || null;
 
   const trim = shared.trim;
   const computedStyle = shared.computedStyle;
@@ -187,10 +204,8 @@ function createContrastHelpers(opts, shared) {
   // -------- Visibility mode resolution for getTextScan --------
 
   function __getVisibilityMode(engineOptions) {
-    const m =
-      engineOptions && typeof engineOptions.visibilityMode === 'string'
-        ? engineOptions.visibilityMode
-        : '';
+    const v = __own(engineOptions, 'visibilityMode');
+    const m = typeof v === 'string' ? v : '';
     return m || 'styleOnly';
   }
 
@@ -202,79 +217,49 @@ function createContrastHelpers(opts, shared) {
       engineOptions,
 
       // common shapes
-      ctx && ctx.engineOptions,
-      ctx && ctx.options && ctx.options.engineOptions,
-      ctx && ctx.options,
-      ctx && ctx.opts && ctx.opts.engineOptions,
-      ctx && ctx.opts,
+      __ownAt(ctx, 'engineOptions'),
+      __ownAt(ctx, 'options', 'engineOptions'),
+      __ownAt(ctx, 'options'),
+      __ownAt(ctx, 'opts', 'engineOptions'),
+      __ownAt(ctx, 'opts'),
 
       // policy layering shapes
-      ctx && ctx.policyOverrides && ctx.policyOverrides.engineOptions,
-      ctx && ctx.policyOverrides,
-      ctx && ctx.policy && ctx.policy.engineOptions,
-      ctx && ctx.policy,
+      __ownAt(ctx, 'policyOverrides', 'engineOptions'),
+      __ownAt(ctx, 'policyOverrides'),
+      __ownAt(ctx, 'policy', 'engineOptions'),
+      __ownAt(ctx, 'policy'),
 
       // sometimes hoisted
       ctx,
 
       // opts passed into createContrastHelpers
-      opts && opts.engineOptions,
-      opts && opts.options && opts.options.engineOptions,
-      opts && opts.options,
-      opts && opts.opts && opts.opts.engineOptions,
-      opts && opts.opts,
+      __ownAt(opts, 'engineOptions'),
+      __ownAt(opts, 'options', 'engineOptions'),
+      __ownAt(opts, 'options'),
+      __ownAt(opts, 'opts', 'engineOptions'),
+      __ownAt(opts, 'opts'),
 
-      opts && opts.policyOverrides && opts.policyOverrides.engineOptions,
-      opts && opts.policyOverrides,
-      opts && opts.policy && opts.policy.engineOptions,
-      opts && opts.policy,
+      __ownAt(opts, 'policyOverrides', 'engineOptions'),
+      __ownAt(opts, 'policyOverrides'),
+      __ownAt(opts, 'policy', 'engineOptions'),
+      __ownAt(opts, 'policy'),
 
       // globals sometimes used by runners
-      w && w.__a11ycoreEngineOptions,
-      d && d.__a11ycoreEngineOptions
+      __ownAt(w, '__a11ycoreEngineOptions'),
+      __ownAt(d, '__a11ycoreEngineOptions')
     ];
 
     for (const c of candidates) {
       if (!c || typeof c !== 'object') continue;
-
-      if (typeof c.visibilityMode === 'string') return c.visibilityMode;
-
-      if (
-        c.engineOptions &&
-        typeof c.engineOptions === 'object' &&
-        typeof c.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.options &&
-        typeof c.options === 'object' &&
-        c.options.engineOptions &&
-        typeof c.options.engineOptions === 'object' &&
-        typeof c.options.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.options.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policy &&
-        typeof c.policy === 'object' &&
-        c.policy.engineOptions &&
-        typeof c.policy.engineOptions === 'object' &&
-        typeof c.policy.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policy.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policyOverrides &&
-        typeof c.policyOverrides === 'object' &&
-        c.policyOverrides.engineOptions &&
-        typeof c.policyOverrides.engineOptions === 'object' &&
-        typeof c.policyOverrides.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policyOverrides.engineOptions.visibilityMode;
+      for (const path of [
+        [],
+        ['engineOptions'],
+        ['options', 'engineOptions'],
+        ['policy', 'engineOptions'],
+        ['policyOverrides', 'engineOptions']
+      ]) {
+        const mode = __ownAt(c, ...path, 'visibilityMode');
+        if (typeof mode === 'string') return mode;
       }
     }
 
@@ -983,9 +968,9 @@ function createContrastHelpers(opts, shared) {
 
   function getTextScan(ctx, helpers, engineOptions) {
     try {
-      const d = (ctx && ctx.document) || (opts && opts.document) || null;
+      const d = __own(ctx, 'document') || __own(opts, 'document') || null;
 
-      const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
+      const w = __own(ctx, 'window') || (d && dom.defaultView(d)) || window || null;
 
       // Unset, the text a reader can see is decided from the layout where
       // there is one (#99): text off the page or clipped away is drawn
@@ -1006,7 +991,7 @@ function createContrastHelpers(opts, shared) {
       // Default on, opt out with includeShadowDom: false -- same contract as
       // helpers.queryAllSmart. Part of the cache key: a scan that skipped
       // shadow roots must not be reused by one that should not.
-      const includeShadowDom = !(engineOptions && engineOptions.includeShadowDom === false);
+      const includeShadowDom = __own(engineOptions, 'includeShadowDom') !== false;
 
       const cache = __getSharedTextScanCache();
       const cacheKey = `visibilityMode=${visibilityMode}|sd=${includeShadowDom ? 1 : 0}`;
@@ -1494,18 +1479,14 @@ function createContrastHelpers(opts, shared) {
       // intent: it only fires when both colors are cleanly computable, and
       // leaves any gradient/image/partial-opacity background (which
       // contrast-computable already reports as cantTell) untouched.
-      const contrastOptsForBg =
-        engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
-          ? engineOptions.contrast
-          : {};
+      const contrastOptsForBg = __own(engineOptions, 'contrast');
+      const bgMode = __own(contrastOptsForBg, 'mode');
+      const bgFallback = __own(contrastOptsForBg, 'rootCanvasFallback');
       const bgResolveOpts = {
         contrast: {
-          mode: contrastOptsForBg.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
+          mode: bgMode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
           rootCanvasFallback:
-            typeof contrastOptsForBg.rootCanvasFallback === 'string' &&
-            contrastOptsForBg.rootCanvasFallback.trim()
-              ? contrastOptsForBg.rootCanvasFallback.trim()
-              : '#ffffff'
+            typeof bgFallback === 'string' && bgFallback.trim() ? bgFallback.trim() : '#ffffff'
         },
         collectStack: false
       };
@@ -1548,6 +1529,46 @@ function createContrastHelpers(opts, shared) {
       // walker per root could otherwise walk the same subtree twice).
       const visitedTextNodes = new Set();
 
+      // Text the flat tree leaves out is not rendered (CSS Scoping 1): a
+      // light child of a shadow host that no slot takes, and the fallback
+      // content of a slot that has nodes assigned (round 12, F12-7). Only
+      // hosts with an open shadow root can be told; kept per parent.
+      const outOfFlatTreeCache = new WeakMap();
+      const outOfFlatTree = (start) => {
+        const seen = [];
+        let cur = start;
+        let out = false;
+        for (let depth = 0; cur && depth < 256; depth++) {
+          const parent = dom.parentNode(cur);
+          if (!parent || dom.nodeType(parent) !== 1) break;
+          if (dom.nodeType(cur) === 1 && outOfFlatTreeCache.has(cur)) {
+            out = outOfFlatTreeCache.get(cur);
+            break;
+          }
+          if (dom.nodeType(cur) === 1) seen.push(cur);
+          if (dom.shadowRoot(parent) && !dom.assignedSlot(cur)) {
+            out = true;
+            break;
+          }
+          if (String(dom.localName(parent) || '').toLowerCase() === 'slot') {
+            const root = dom.getRootNode(parent);
+            if (root && dom.nodeType(root) === 11) {
+              let assigned = [];
+              try {
+                assigned = dom.assignedNodes(parent) || [];
+              } catch {}
+              if (assigned.length) {
+                out = true;
+                break;
+              }
+            }
+          }
+          cur = parent;
+        }
+        for (const el of seen) outOfFlatTreeCache.set(el, out);
+        return out;
+      };
+
       for (const walkRoot of walkRoots) {
         if (guard >= 500000) break;
         let walker;
@@ -1580,6 +1601,7 @@ function createContrastHelpers(opts, shared) {
           // A <textarea>'s text nodes are its default value; what it shows is
           // its current value, read with the other fields below.
           if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
+          if (includeShadowDom && outOfFlatTree(node)) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
@@ -1701,7 +1723,9 @@ function createContrastHelpers(opts, shared) {
                 if (!isVisibleEligible(el) || isInactive(el)) break;
                 const m = measureGeneratedText(el, pseudo, bgResolveOpts);
                 if (!m || m.same) continue;
-                generated.push(Object.freeze({ el, pseudo, textCount: 1 }));
+                generated.push(
+                  Object.freeze(Object.assign(Object.create(null), { el, pseudo, textCount: 1 }))
+                );
               }
             }
           }
@@ -1712,7 +1736,14 @@ function createContrastHelpers(opts, shared) {
         eligibleTextCount,
         visibilityMode,
         elements: Object.freeze(
-          elements.map((el) => Object.freeze({ el, textCount: elToCount.get(el) || 0 }))
+          // Records with no prototype: a value a page's script put on
+          // Object.prototype (pseudo) is never read as a record's own
+          // (round 12, F12-5).
+          elements.map((el) =>
+            Object.freeze(
+              Object.assign(Object.create(null), { el, textCount: elToCount.get(el) || 0 })
+            )
+          )
         ),
         generated: Object.freeze(generated)
       });
@@ -3929,7 +3960,9 @@ function createContrastHelpers(opts, shared) {
   // elements x the rules that could apply, not elements x rules. Each entry
   // is { rule, part }; a pseudo-element's part is left out.
   function __colorPartsFor(found, el) {
-    if (!found.index) {
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
       const entries = [];
       for (const rule of found.rules) {
         for (const part of rule.parts) {
@@ -3939,7 +3972,12 @@ function createContrastHelpers(opts, shared) {
           entries.push({ rule, part });
         }
       }
-      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+      Object.defineProperty(found, 'index', {
+        value: { entries, index: selectorIndex(entries.map((e) => e.part)) },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const { entries, index } = found.index;
     return index.candidates(el).map((i) => entries[i]);
@@ -3956,8 +3994,11 @@ function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
+    // Answers with no prototype: a value a page's script put on
+    // Object.prototype (unknown) is never read as theirs (round 12, F12-5).
+    const answer = (o) => Object.assign(Object.create(null), o);
     const found = __colorRulesOf(root, prop);
-    if (found.unreadable) return { unknown: true };
+    if (found.unreadable) return answer({ unknown: true });
     let best = null;
     let unknown = false;
     for (const { rule, part } of __colorPartsFor(found, el)) {
@@ -3986,8 +4027,8 @@ function createContrastHelpers(opts, shared) {
         if (!best || rank > best.rank) best = { rank, value };
       }
     } catch {}
-    if (unknown) return { unknown: true };
-    return best ? { value: best.value } : null;
+    if (unknown) return answer({ unknown: true });
+    return best ? answer({ value: best.value }) : null;
   }
 
   // Every author declaration of prop (`color` by default) that matches el,
@@ -4216,7 +4257,7 @@ function createContrastHelpers(opts, shared) {
   // computes the light scheme's colors). Null where the color computed
   // now is the one, or it can't be told (colorSchemeUnread).
   function __schemeTextOverride(el, opts) {
-    const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
+    const asked = __ownAt(opts, 'contrast', 'colorScheme');
     const scheme = asked === 'light' || asked === 'dark' ? asked : null;
     if (!scheme) {
       // A browser computes the colors of the scheme it draws.
@@ -4238,7 +4279,7 @@ function createContrastHelpers(opts, shared) {
   // page's canvas (__schemeTextColor), where it isn't the one computed now.
   function computeEffectiveForeground(el, opts) {
     const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
-    if (opts && opts.contrast && opts.contrast.colorScheme) {
+    if (__ownAt(opts, 'contrast', 'colorScheme')) {
       const out = computeEffectiveForeground(el);
       if (!schemeOverride || !out || !out.rgba) return out;
       const op = Number.isFinite(out.opacityProduct) ? out.opacityProduct : 1;
@@ -4338,19 +4379,16 @@ function createContrastHelpers(opts, shared) {
     __getSharedWeakMapCache('__effectiveBackgroundCache') || __localEffectiveBackgroundCache;
 
   function __bgCacheKey(opts2) {
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const named = contrast.rootCanvasFallbackSet === true ? 'named' : '';
-    const scheme =
-      contrast.colorScheme === 'light' || contrast.colorScheme === 'dark'
-        ? contrast.colorScheme
-        : '';
+    const named = __own(contrast, 'rootCanvasFallbackSet') === true ? 'named' : '';
+    const asked = __own(contrast, 'colorScheme');
+    const scheme = asked === 'light' || asked === 'dark' ? asked : '';
 
     // Cache key must include any input that can affect computed background.
     // Note: we only cache when collectStack is false.
@@ -4414,7 +4452,9 @@ function createContrastHelpers(opts, shared) {
       const doc = window && window.document;
       const root = doc && dom.documentElement(doc);
       if (!root || typeof window.getComputedStyle !== 'function') return null;
-      const rootScheme = String(window.getComputedStyle(root).colorScheme || '');
+      const rootScheme = String(
+        window.getComputedStyle(root).getPropertyValue('color-scheme') || ''
+      );
       const meta = dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]');
       const metaScheme = meta ? String(dom.getAttribute(meta, 'content') || '') : '';
       if (!/\bdark\b/i.test(rootScheme) && !/\bdark\b/i.test(metaScheme)) return null;
@@ -4532,9 +4572,7 @@ function createContrastHelpers(opts, shared) {
         return null;
       }
       const rootCs = window.getComputedStyle(root);
-      const rootValue = String(
-        (rootCs && (rootCs.colorScheme || rootCs.getPropertyValue('color-scheme'))) || ''
-      ).trim();
+      const rootValue = String((rootCs && rootCs.getPropertyValue('color-scheme')) || '').trim();
       let supported = __schemesNamed(rootValue);
       // The meta element speaks for a root whose color-scheme is normal:
       // the first one naming a scheme (HTML, "the page's supported color
@@ -4586,8 +4624,11 @@ function createContrastHelpers(opts, shared) {
             const c = parseCssColorToRgba(value);
             return c && c.a === 1 ? { r: c.r, g: c.g, b: c.b, a: 1 } : null;
           };
+          // color-scheme by its CSS name: Chromium reads a camelCase
+          // style property a page's script put on Object.prototype ahead of
+          // its own (round 12, R12F-6).
           const readScheme = (scheme) => {
-            probe.style.colorScheme = scheme;
+            probe.style.setProperty('color-scheme', scheme);
             probe.style.backgroundColor = 'Canvas';
             probe.style.color = 'CanvasText';
             const cs = window.getComputedStyle(probe);
@@ -4643,9 +4684,9 @@ function createContrastHelpers(opts, shared) {
     __runCanvas = rgba && rgba.a === 1 ? { color: color.trim(), rgba: { ...rgba, a: 1 } } : null;
   }
   function __namedCanvas(contrast) {
-    if (contrast && contrast.rootCanvasFallbackSet === true) {
-      const value =
-        typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+    if (__own(contrast, 'rootCanvasFallbackSet') === true) {
+      const given = __own(contrast, 'rootCanvasFallback');
+      const value = typeof given === 'string' ? given.trim() : '';
       const rgba = value ? parseCssColorToRgba(value) : null;
       if (rgba && rgba.a === 1) return { color: value, rgba: { ...rgba, a: 1 } };
     }
@@ -5060,7 +5101,7 @@ function createContrastHelpers(opts, shared) {
       if (window.self !== window.top) return null;
       const info = __pageSchemes();
       if (!info) return null;
-      const asked = contrast && contrast.colorScheme;
+      const asked = __own(contrast, 'colorScheme');
       const scheme = asked === 'light' || asked === 'dark' ? asked : info.current;
       const named = __namedCanvas(contrast);
       if (named && scheme !== info.current) return null;
@@ -5165,7 +5206,7 @@ function createContrastHelpers(opts, shared) {
     } catch {}
 
     const __bgKey = __bgCacheKey(opts2);
-    const __collectStack = !!(opts2 && opts2.collectStack);
+    const __collectStack = !!__own(opts2, 'collectStack');
 
     // Only cache when stack collection is off
     if (!__collectStack) {
@@ -5177,15 +5218,14 @@ function createContrastHelpers(opts, shared) {
       } catch {}
     }
 
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const collectStack = !!(opts2 && opts2.collectStack);
+    const collectStack = !!__own(opts2, 'collectStack');
     const stack = collectStack ? [] : null;
 
     let acc = { r: 0, g: 0, b: 0, a: 0 };
@@ -6352,7 +6392,7 @@ function createContrastHelpers(opts, shared) {
           const body = fdoc && dom.body(fdoc);
           if (body) body.textContent = '';
           if (froot) {
-            froot.style.colorScheme = '';
+            froot.style.removeProperty('color-scheme');
             froot.style.forcedColorAdjust = '';
           }
         } catch {
@@ -6381,7 +6421,7 @@ function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         // Under forced colors the scan holds the page in its own colors
         // (forced-color-adjust: none); the blank frame is held so too, or
         // the browser's placeholder color read there is the forced palette's
@@ -6420,7 +6460,12 @@ function createContrastHelpers(opts, shared) {
       const own = view.getComputedStyle(el);
       const tag = String(dom.localName(el) || '').toLowerCase();
       const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
-      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      const ref = __readPlaceholderDefaults(
+        doc,
+        tag,
+        type,
+        String(own.getPropertyValue('color-scheme') || '')
+      );
       if (!ref) return '';
       const ph = field.style;
       const same =
@@ -6496,7 +6541,7 @@ function createContrastHelpers(opts, shared) {
       if (appearance === 'none' || appearance === 'base-select') return null;
       const doc = dom.ownerDocument(el);
       if (!__hasLayout(doc)) return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || !ref.measured || String(cs.backgroundColor) !== ref.background) return null;
       return ref.measured;
     } catch {
@@ -6511,7 +6556,7 @@ function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         froot.style.forcedColorAdjust = 'none';
         const host = dom.body(fdoc) || froot;
         const select = dom.createElement(fdoc, 'select');
@@ -6555,7 +6600,7 @@ function createContrastHelpers(opts, shared) {
       const cs = view.getComputedStyle(el);
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || ref.field === (ref.measured || ref.background)) return null;
       if (String(cs.backgroundColor) !== ref.background) return null;
       if (hasBackgroundImageOrGradient(cs)) return null;
@@ -6758,14 +6803,20 @@ function createContrastHelpers(opts, shared) {
       return blocked;
     }
     const out = __computabilityBlockerOf(el, false);
-    if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
+    const ownPseudo = !!out && Object.prototype.hasOwnProperty.call(out, '__pseudo');
+    if (
+      ownPseudo &&
+      out.ok === false &&
+      out.reasonCode === 'PSEUDO_ELEMENT_COLOR' &&
+      out.__pseudo
+    ) {
       const pseudo = out.__pseudo;
       delete out.__pseudo;
       // The rest of the walk, past the pseudo-element: its colors are
       // carried only where nothing else blocks the measurement.
       const rest = __computabilityBlockerOf(el, true);
       if (rest && rest.ok === true) out.pseudoColors = pseudo;
-    } else if (out && out.__pseudo) {
+    } else if (ownPseudo) {
       delete out.__pseudo;
     }
     try {
@@ -7208,7 +7259,16 @@ function createContrastHelpers(opts, shared) {
           }
           if (out) {
             const colors = __pseudoColorsOf(differing);
-            if (colors) out.__pseudo = colors;
+            // Defined, not assigned: a read-only __pseudo on Object.prototype
+            // refuses none (round 12, R12F-6).
+            if (colors) {
+              Object.defineProperty(out, '__pseudo', {
+                value: colors,
+                writable: true,
+                enumerable: true,
+                configurable: true
+              });
+            }
             try {
               if (el) __computabilityBlockerCache.set(el, out);
             } catch {}
@@ -8635,6 +8695,15 @@ function createContrastHelpers(opts, shared) {
             const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
             if (content) at.content = content !== 'none' && content !== 'normal';
             if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            // Drawn at all, and where, as far as the rules say (F12-2).
+            const display = get('display');
+            if (display) at.displayNone = display === 'none';
+            const visibility = get('visibility');
+            if (visibility) at.hidden = visibility === 'hidden' || visibility === 'collapse';
+            for (const prop of ['width', 'height', 'top', 'right', 'bottom', 'left']) {
+              const v = get(prop);
+              if (v) at[prop] = v;
+            }
             const paint = [color, image, shorthand].find(
               (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
             );
@@ -8647,9 +8716,43 @@ function createContrastHelpers(opts, shared) {
         }
       }
     } catch {}
-    const out = [...byKey.values()].filter((p) => p.content && p.positioned && p.paint);
+    const out = [...byKey.values()].filter(
+      (p) => p.content && p.positioned && p.paint && !p.displayNone && !p.hidden
+    );
     __noLayoutPseudosByRoot.set(root, out);
     return out;
+  }
+  // Whether a ::before or ::after the rules position could lie under a
+  // line of el's text, from the size and offsets they give it (round 12,
+  // F12-2): a box narrower or shorter than a line of the text (a 4px corner
+  // badge) is no background to it, and one moved wholly off its host (an
+  // offset of 100% or more, or far off the page) doesn't reach it. A size or
+  // offset in any other unit is taken as possibly covering the text.
+  function __noLayoutPseudoMayCover(p, el) {
+    const px = (v) => {
+      const m = /^(-?\d*\.?\d+)px$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    const pct = (v) => {
+      const m = /^(-?\d*\.?\d+)%$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    let fontPx = 16;
+    try {
+      const f = px(trim((computedStyle(el) || {}).fontSize || ''));
+      if (f && f > 0) fontPx = f;
+    } catch {}
+    const w = px(p.width);
+    const h = px(p.height);
+    if ((w !== null && w < fontPx) || (h !== null && h < fontPx)) return false;
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      const v = p[side];
+      const percent = pct(v);
+      if (percent !== null && Math.abs(percent) >= 100) return false;
+      const length = px(v);
+      if (length !== null && length <= -1000) return false;
+    }
+    return true;
   }
   function __noLayoutPseudoUnder(el, chain) {
     for (const host of chain) {
@@ -8667,7 +8770,7 @@ function createContrastHelpers(opts, shared) {
         } catch {
           matched = false;
         }
-        if (!matched) continue;
+        if (!matched || !__noLayoutPseudoMayCover(p, el)) continue;
         return {
           selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
           element: describeElement(host) + p.pseudo,
@@ -9455,6 +9558,9 @@ function createContrastHelpers(opts, shared) {
     } catch {
       out = { fallback: true };
     }
+    // With no prototype: a value a page's script put on Object.prototype
+    // (rgba) is never read as the backdrop's own (round 12, F12-5).
+    if (out && typeof out === 'object') out = Object.assign(Object.create(null), out);
     __paintBackdropCache.set(el, out);
     return out;
   }

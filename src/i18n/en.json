@@ -1709,6 +1709,7 @@
   "report_meta_profileNotRun": "not run",
   "report_meta_optInRules": "opt-in rules",
   "report_meta_rulesNotRun": "rules not run",
+  "report_meta_styleSheetsNotRead": "style sheets not read",
   "report_incomplete_timeBudget": "Incomplete scan: its time budget of {{budget}} ms ran out before every rule it selected had run. Not run ({{count}}): {{rules}}. These checked nothing, so nothing in this report passes them.",
   "report_incomplete_profilesNotRun": "Profiles not started: {{profiles}}.",
   "report_meta_viewport": "viewport",
