@@ -554,6 +554,31 @@ test(`${RULE_ID}: a semibold <p> over lighter text is asked about; large text is
   );
 });
 
+test(`${RULE_ID}: a line one step heavier than body text of 18px or more is asked about`, () => {
+  // WordPress's Twenty Twenty-Five: body text at 21px and weight 300, <strong> at 400.
+  const body = (title) =>
+    `<main style="font-size:21px;font-weight:300"><p>Lorem ipsum dolor sit amet.</p>${title}<p>Lorem ipsum dolor sit amet.</p></main>`;
+  assert.deepEqual(codesOf(body('<p><strong style="font-weight:400">Next steps</strong></p>')), [
+    'BOLD_SHORT_PARAGRAPH'
+  ]);
+  // Bold outright stays large text, as before.
+  assert.deepEqual(codesOf(body('<p><strong style="font-weight:700">Next steps</strong></p>')), [
+    'BOLD_LARGE_PARAGRAPH'
+  ]);
+  // A sentence or a long line is not a title, as at body size.
+  assert.deepEqual(
+    codesOf(body('<p><strong style="font-weight:400">Read this first.</strong></p>')),
+    []
+  );
+  // Larger than the text after it, it still has to be semibold or bolder.
+  assert.deepEqual(
+    codesOf(
+      '<p style="font-size:24px;font-weight:300"><strong style="font-weight:400">Next steps</strong></p><p style="font-size:16px;font-weight:300">Lorem ipsum dolor sit amet.</p>'
+    ),
+    []
+  );
+});
+
 test(`${RULE_ID}: under jsdom, em and % sizes are read against the parent's`, () => {
   // 1.4em of 12px is 16.8px: body size, not large.
   assert.deepEqual(

@@ -25,7 +25,9 @@
  *   (a widget's or a <label>'s own text) is left out.
  *   A `<p>` whose visible text is all bold, or all heavier than the text
  *   around it (the paragraph's own, or its parent's where the paragraph
- *   itself is set heavier), at body size (smaller than 18px) applies too,
+ *   itself is set heavier), at body size (smaller than 18px), or from
+ *   18px when the next element shown is drawn at least as large (a theme
+ *   whose body text is 18px or more), applies too,
  *   when the text is short (8 words or fewer, or 60 characters or fewer
  *   in a script written without spaces between words, such as Chinese,
  *   Japanese or Thai, instead of the 120 characters of large text), when
@@ -52,8 +54,8 @@
  *     `HEADING_LIKE_LINK` when it is all inside one link, so a report can
  *     set either kind aside as a group; otherwise `BOLD_LARGE_PARAGRAPH`
  *     for a <p> and `BOLD_LARGE_DIV` for a <div> of 18px or more, and
- *     `BOLD_SHORT_PARAGRAPH` for a bold <p> at body size. All are asked
- *     about.
+ *     `BOLD_SHORT_PARAGRAPH` for a bold <p> at body size, or no larger
+ *     than the text after it. All are asked about.
  *   - `fontSizePx`: the font size of the text as drawn, in CSS pixels (the
  *     computed size times CSS zoom, an SVG transform or what
  *     font-size-adjust scales the font by), the smallest one when the
@@ -84,8 +86,8 @@
  *     Basis: WCAG 1.3.1 (not settled); H42; F2.
  *   - `BOLD_SHORT_PARAGRAPH` (cantTell): a short p (8 words, or 60
  *     characters in a script written without spaces) whose visible text is
- *     all bold, or all heavier than the paragraph's own text, at body size,
- *     doesn't end as a sentence and is followed by lighter text, may be a
+ *     all bold, or all heavier than the paragraph's own text, at body size
+ *     or no larger than the text after it, doesn't end as a sentence and is followed by lighter text, may be a
  *     heading shown only by its style.
  *     Text that is only a number or all one link is left out at this size.
  *     Basis: WCAG 1.3.1 (not settled); H42; F2.
@@ -108,7 +110,10 @@
  * - Uses an absolute 18px size threshold rather than comparing against
  *   surrounding text (unlike `link-in-text-block`); it's simpler on
  *   purpose, since "looks like a heading" is closer to an absolute
- *   judgment than a relative-contrast one.
+ *   judgment than a relative-contrast one. The one exception: a line of
+ *   18px or more that is no larger than the text after it is judged as
+ *   body text, since on a page whose body text is that large, weight is
+ *   the only sign of a title.
  * - Weight and size are read from the element that holds each piece of
  *   text, so `<p><span style="font-weight:bold">` counts and a `<p>` with
  *   one normal-weight word does not.
@@ -405,22 +410,30 @@ function runInPage(ctx) {
   // font-size-adjust scale it: helpers.contrast.renderedTextScale) when its
   // text is bold, or heavier than the block's own text (`blockWeight`), else
   // 0. `bold` says whether it is bold outright (700 or more), which large
-  // text needs; heavier-than-its-block counts only at body size, where a
-  // theme may draw body text at 300 and <strong> at 400. Whether the text
-  // is large enough is the caller's call.
+  // text needs; heavier-than-its-block counts only at body size, or over
+  // text as large, where a theme may draw body text at 300 and <strong> at
+  // 400. Whether the text is large enough is the caller's call.
   function boldStyleOf(holder, blockWeight) {
-    const cs = safeComputedStyle(holder);
     // One read of the weight, `bolder` resolved against the parent's: 700 or
     // more is bold outright, as isBoldWeight reads it.
     const weight = weightOf(holder);
     const bold = weight >= 700;
     if (!bold && !(weight > blockWeight)) return null;
+    const px = drawnPxOf(holder);
+    return px > 0 ? { px, bold, weight } : null;
+  }
+
+  // An element's font size as drawn, in CSS pixels, or 0 when there is none
+  // to read.
+  function drawnPxOf(el) {
+    if (!el) return 0;
+    const cs = safeComputedStyle(el);
     const scale =
       helpers.contrast && typeof helpers.contrast.renderedTextScale === 'function'
-        ? helpers.contrast.renderedTextScale(holder, cs)
+        ? helpers.contrast.renderedTextScale(el, cs)
         : 1;
-    const px = Number(fontPxOf(holder, cs)) * scale;
-    return Number.isFinite(px) && px > 0 ? { px, bold, weight } : null;
+    const px = Number(fontPxOf(el, cs)) * scale;
+    return Number.isFinite(px) && px > 0 ? px : 0;
   }
 
   // An element's font size in pixels. A browser computes it; jsdom keeps it
@@ -775,9 +788,14 @@ function runInPage(ctx) {
     // text is judged as before: every piece bold outright and 18px or more.
     const large = pieces.every((piece) => isLargeTitle(piece));
     if (!large) {
-      // Body size only: large text not bold enough to be a title is not
-      // asked about as bold body text either.
-      if (fontSizePx >= MIN_FONT_SIZE_PX) return;
+      // Large text not bold enough to be a title is not asked about as bold
+      // body text either, unless the text after it is as large: a theme
+      // that sets its body text at 18px or more (WordPress's Twenty
+      // Twenty-Five draws it at 21px, weight 300, and <strong> at 400)
+      // makes a title by bolding a line, as at body size.
+      if (fontSizePx >= MIN_FONT_SIZE_PX && !(drawnPxOf(nextShown(el)) >= fontSizePx - 0.5)) {
+        return;
+      }
       if (!isParagraph || kindCode || endsAsSentenceOf(shown)) return;
       if (!isShortLine(shown)) return;
       const titleWeight = Math.min(...pieces.map((piece) => piece.weight));
