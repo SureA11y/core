@@ -438,6 +438,10 @@ function runInPage(ctx) {
 
   // A declaration wins if it is the last one, in (specificity, order), whose
   // selector matches. `!important` outranks everything non-important.
+  // Besides whether it underlines: the line's color it sets, if any (the
+  // shorthand sets currentcolor where it names none).
+  const DECORATION_KEYWORDS =
+    /^(underline|overline|line-through|blink|none|solid|double|dotted|dashed|wavy|auto|from-font|spelling-error|grammar-error|[+-]?[\d.]+[a-z%]*)$/;
   function underlineFromDeclaration(style) {
     if (!style || typeof style.getPropertyValue !== 'function') return null;
     for (const prop of ['text-decoration-line', 'text-decoration']) {
@@ -446,7 +450,13 @@ function runInPage(ctx) {
         .toLowerCase();
       if (!raw) continue;
       const important = String(style.getPropertyPriority(prop) || '') === 'important';
-      return { underlined: /\bunderline\b/.test(raw), important };
+      let color = String(style.getPropertyValue('text-decoration-color') || '').trim() || null;
+      if (prop === 'text-decoration') {
+        // The color is what is left once the line, style and thickness are.
+        const rest = raw.split(/\s+(?![^(]*\))/).filter((t) => t && !DECORATION_KEYWORDS.test(t));
+        color = rest.length === 1 ? rest[0] : null;
+      }
+      return { underlined: /\bunderline\b/.test(raw), important, color };
     }
     return null;
   }
@@ -500,7 +510,7 @@ function runInPage(ctx) {
           continue;
         }
         const rank = (decl.important ? 1e9 : 0) + specificityOf(part);
-        found.parts.push({ part, rank, underlined: decl.underlined });
+        found.parts.push({ part, rank, underlined: decl.underlined, color: decl.color });
       }
     }
 
@@ -542,7 +552,8 @@ function runInPage(ctx) {
   }
 
   // Whether the style sheets underline el at rest (see underlineFromDeclaration
-  // for which declaration wins): { underlined, resolved }.
+  // for which declaration wins): { underlined, resolved, color }, color
+  // being the line's color the winning declaration sets, or null.
   function resolveUnderlineFromCssom(el) {
     const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
     if (!doc || typeof dom.get(el, 'matches') !== 'function')
@@ -550,9 +561,9 @@ function runInPage(ctx) {
 
     const found = underlineRulesOf(doc);
     if (found.broken) return { underlined: false, resolved: false };
-    let best = null; // { rank, underlined }
+    let best = null; // { rank, underlined, color }
     let unparsableSelector = false;
-    for (const { part, rank, underlined } of candidatePartsOf(found, el, 'part')) {
+    for (const { part, rank, underlined, color } of candidatePartsOf(found, el, 'part')) {
       let matched;
       try {
         matched = dom.matches(el, part);
@@ -561,14 +572,14 @@ function runInPage(ctx) {
         continue;
       }
       if (!matched) continue;
-      if (!best || rank >= best.rank) best = { rank, underlined };
+      if (!best || rank >= best.rank) best = { rank, underlined, color };
     }
 
     // The inline style attribute outranks every stylesheet declaration.
     const inline = underlineFromDeclaration(dom.get(el, 'style'));
-    if (inline) return { underlined: inline.underlined, resolved: true };
+    if (inline) return { underlined: inline.underlined, resolved: true, color: inline.color };
 
-    if (best) return { underlined: best.underlined, resolved: true };
+    if (best) return { underlined: best.underlined, resolved: true, color: best.color };
 
     // No author declaration reached this element. If a sheet or selector was
     // unreadable, one of them might have, so the answer is unknown; otherwise
@@ -1843,18 +1854,23 @@ function runInPage(ctx) {
     }
     if (outerCs && (cs.fontStyle || 'normal') !== (outerCs.fontStyle || 'normal')) return true;
     if (hasBorder(cs, wrapper)) return true;
-    return underlinedAtRest(wrapper, cs) && !unseen(wrapper, cs.textDecorationColor);
+    return underlinedAtRest(wrapper, cs, (color) => !unseen(wrapper, color));
   }
 
-  // Whether el's own text-decoration underlines it: from its computed style
-  // where that can be trusted, else from the style sheets, as the link's
-  // own underline is read (jsdom cascades no text-decoration).
-  function underlinedAtRest(el, cs) {
+  // Whether el's own text-decoration underlines it in a color that shows
+  // (shows(color)): from its computed style where that can be trusted, else
+  // from the style sheets, as the link's own underline is read (jsdom
+  // cascades no text-decoration, and the color it gives is the text's).
+  function underlinedAtRest(el, cs, shows) {
     const deco = decorationInfo(cs);
-    if (deco.trustworthy) return deco.underlined;
+    if (deco.trustworthy) return deco.underlined && shows(cs.textDecorationColor);
     const fromCssom = resolveUnderlineFromCssom(el);
-    return fromCssom.resolved && fromCssom.underlined;
+    return (
+      fromCssom.resolved && fromCssom.underlined && shows(fromCssom.color || cs.textDecorationColor)
+    );
   }
+
+  const notTransparent = (color) => !isTransparentColor(color);
 
   // Whether the text around the link is underlined too: by its own element's
   // text-decoration, or by one an ancestor propagates to it. An underline
@@ -1871,7 +1887,7 @@ function runInPage(ctx) {
     ) {
       const cs = safeComputedStyle(a);
       if (!cs) return false;
-      if (underlinedAtRest(a, cs) && !isTransparentColor(cs.textDecorationColor)) return true;
+      if (underlinedAtRest(a, cs, notTransparent)) return true;
       const display = String(cs.display || '');
       const float = String(cs.cssFloat || cs.float || 'none');
       if (
@@ -1944,9 +1960,7 @@ function runInPage(ctx) {
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
       if (hasBackgroundImage(cs, node) || ownBackground(node, cs)) return true;
       return (
-        underlinedAtRest(node, cs) &&
-        !isTransparentColor(cs.textDecorationColor) &&
-        !(aroundUnderlined && aroundUnderlined())
+        underlinedAtRest(node, cs, notTransparent) && !(aroundUnderlined && aroundUnderlined())
       );
     };
     let sawText = false;
@@ -2139,7 +2153,9 @@ function runInPage(ctx) {
     } else {
       const fromCssom = resolveUnderlineFromCssom(el);
       if (fromCssom.resolved)
-        underlined = fromCssom.underlined && !unseen(el, linkCs && linkCs.textDecorationColor);
+        underlined =
+          fromCssom.underlined &&
+          !unseen(el, fromCssom.color || (linkCs && linkCs.textDecorationColor));
     }
     // The surrounding text underlined too: the underline is no cue.
     if (underlined === true && aroundUnderlined()) underlined = false;

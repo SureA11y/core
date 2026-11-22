@@ -1084,3 +1084,16 @@ test(`${RULE_ID}: an underline on the link's content sets it apart under jsdom t
     });
   }
 });
+
+// The cases of round 11's review, each with its outcome in Chromium, and
+// under jsdom where that differs (link-in-text-block-chromium.test.js runs
+// them there).
+const ROUND_11_UNDERLINE_CASES = require('./link-in-text-block-round-11-cases.js');
+
+for (const [label, head, body, chromium, jsdom = chromium] of ROUND_11_UNDERLINE_CASES) {
+  test(`${RULE_ID}: ${label}, under jsdom (round 11)`, () => {
+    const html = `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main>${body}</main></body></html>`;
+    const r = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assert.equal(r.checksResults.find((c) => c.ruleId === RULE_ID).outcome, jsdom);
+  });
+}
