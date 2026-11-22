@@ -127,9 +127,18 @@ function runInPage(ctx) {
   // reported, so only they are queried: the scope's hidden-content filter
   // works out each element's style, which under jsdom cost most of the
   // rule's time on a page of many ids (round 8 leftover). Past a few
-  // hundred such ids, one query of every id is shorter than the selector.
+  // hundred such ids, one query of every id is shorter than the selector,
+  // and so it is past a few thousand characters of ids: a selector engine
+  // can take time that grows with the square of a selector's length, so a
+  // 200,000-character id took minutes to query.
   const reportedIds = [];
-  for (const key of referencedIds) if ((idMap.get(key) || []).length > 1) reportedIds.push(key);
+  let reportedLength = 0;
+  for (const key of referencedIds) {
+    if ((idMap.get(key) || []).length > 1) {
+      reportedIds.push(key);
+      reportedLength += key.length;
+    }
+  }
   const attrValue = (key) =>
     key
       .replace(/[\\"]/g, '\\$&')
@@ -137,7 +146,7 @@ function runInPage(ctx) {
       .replace(/\r/g, '\\d ')
       .replace(/\f/g, '\\c ');
   const scopeSelector =
-    reportedIds.length <= 300
+    reportedIds.length <= 300 && reportedLength <= 4000
       ? reportedIds.map((key) => `[id="${attrValue(key)}"]`).join(',')
       : '[id]';
   let inScope = null;
