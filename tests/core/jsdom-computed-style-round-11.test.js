@@ -193,7 +193,21 @@ const CASES = [
     '#h >>> #t',
     ['color'],
     RED
-  ]
+  ],
+  // R11F-6: HTML's legacy colour rules match CSS's named colours only.
+  ...[
+    ['Canvas', 'rgb(202, 0, 160)'],
+    ['AccentColor', 'rgb(172, 0, 0)'],
+    ['inherit', 'rgb(0, 224, 0)'],
+    ['currentcolor', 'rgb(192, 224, 0)'],
+    ['RebeccaPurple', 'rgb(102, 51, 153)']
+  ].map(([value, rgb]) => [
+    `<font color="${value}">`,
+    page(`<p style="color:green"><font id="t" color="${value}">x</font></p>`),
+    '#t',
+    ['color'],
+    [rgb]
+  ])
 ];
 
 function jsdomStyle(html, selector, props) {

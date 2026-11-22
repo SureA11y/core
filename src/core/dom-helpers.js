@@ -715,13 +715,26 @@ function createDomHelpers(opts) {
     for (const w of way) cache.set(w, found);
     return found;
   }
+  const __NOT_NAMED_COLORS = new RegExp(
+    '^(currentcolor|inherit|initial|unset|revert|accentcolor|accentcolortext|activetext|' +
+      'buttonborder|buttonface|buttontext|canvas|canvastext|field|fieldtext|graytext|' +
+      'highlight|highlighttext|linktext|mark|marktext|selecteditem|selecteditemtext|' +
+      'visitedtext|activeborder|activecaption|appworkspace|background|buttonhighlight|' +
+      'buttonshadow|captiontext|inactiveborder|inactivecaption|inactivecaptiontext|' +
+      'infobackground|infotext|menu|menutext|scrollbar|threeddarkshadow|threedface|' +
+      'threedhighlight|threedlightshadow|threedshadow|window|windowframe|windowtext)$',
+    'i'
+  );
   // HTML's rules for parsing a legacy colour value, as rgb(): null where
   // the value is no colour (empty, or "transparent").
   function __legacyColor(raw) {
     let input = String(raw == null ? '' : raw).replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '');
     if (!input || /^transparent$/i.test(input)) return null;
     const rgb = (r, g, b) => `rgb(${r}, ${g}, ${b})`;
-    if (/^[a-z]+$/i.test(input)) {
+    // Only CSS's named colors: not the other keywords a CSS color takes
+    // (currentcolor, the system colors, the CSS-wide keywords), which the
+    // hex rules below read as any other text.
+    if (/^[a-z]+$/i.test(input) && !__NOT_NAMED_COLORS.test(input)) {
       const named = contrast.parseCssColorToRgba(input.toLowerCase());
       if (named) return rgb(named.r, named.g, named.b);
     }
