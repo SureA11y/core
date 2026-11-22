@@ -667,6 +667,28 @@ module.
   are up to date (`npm run procedures:check`). `npm run i18n:sync` doesn't
   cover `src/i18n/procedures/`: add the keys to each locale's file by hand.
 
+### 8.7 Contrast edge cases
+
+The four contrast rules (`contrast-computable`, `contrast-minimum`,
+`contrast-enhanced`, `symbol-graphic-contrast`) cover a long tail of edge
+cases, and each one costs time on every page. A new case follows this policy.
+
+- **When a case is added.** Only when it comes from real pages (a pattern of
+  a CMS, a theme, a page builder or a component library), from the ACT or
+  W3C test cases, or when it is a wrong result on common markup.
+- **Cases built only by a stress test or by hand** are not dropped
+  automatically. Each is brought to the maintainer to evaluate one by one.
+  One not taken is recorded in [`LIMITATIONS.md`](./LIMITATIONS.md).
+- **Speed budget.** The four rules may not get more than 5% slower in a
+  release, measured on the realistic pages ([`PERFORMANCE.md`](./PERFORMANCE.md):
+  the composite and real-world pages), without the maintainer's sign-off.
+  Each new case states its speed cost in its change.
+- **Without a layout (jsdom).** Emulate only what CSS defines exactly: style,
+  such as presentational hints, `revert`, cascade layers or a shorthand.
+  Never guess geometry (a text width, a box's size or offset, whether one
+  box covers another, where a box starts): ask (`cantTell`) instead, and say
+  in the message that no layout was there to measure.
+
 ---
 
 ## 9) Occurrence object shape
