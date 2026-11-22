@@ -315,6 +315,25 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   );
 
+  // The message names the zoom that lays a 1280 pixel window out at the
+  // width the page was scanned at: 400% at 320, not 200% (round 12, U12-2).
+  await t.test('the message states the zoom the scanned width stands for', async () => {
+    const html = page(
+      '.box{width:200px;height:20px;overflow:hidden}',
+      `<div class="box">${LONG}</div>`
+    );
+    const at640 = await scan(html);
+    assert.match(at640.occurrences[0].summary, /^At 6\d\d pixels wide, as a 1280 pixel window/);
+    const at320 = await scan(html, { pageOptions: { viewport: { width: 320, height: 800 } } });
+    const [o] = at320.occurrences;
+    const width = o.data.details.viewport.width;
+    const zoom = String(Math.round(128000 / width));
+    assert.equal(o.i18n.params.zoomPercent, zoom);
+    assert.ok(Number(zoom) >= 400, zoom);
+    assert.ok(o.summary.includes(`shows the page at ${zoom}% zoom`), o.summary);
+    assert.doesNotMatch(o.summary, /200% zoom/);
+  });
+
   await t.test('in a frame not named as the page, notApplicable', async () => {
     const p = await browser.newPage(ZOOMED);
     try {

@@ -81,6 +81,8 @@
  *     box.
  *   - `viewport.width`, `viewport.height`: the viewport the page was laid
  *     out in, in CSS pixels.
+ *   The message names the zoom at which a 1280 pixel window is laid out at
+ *   the scanned width (`zoomPercent`): 200% at 640, 400% at 320.
  * @reason-codes
  *   - `TEXT_CLIPPED_AT_640` (cantTell): at 640 CSS pixels wide or less, a
  *     box that hides its overflow cuts off part of this text. It leans fail
@@ -832,7 +834,7 @@ function runInPage(ctx) {
     TEXT_CLIPPED_AT_640: {
       key: 'clipped',
       summary: (p, edge) =>
-        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element cuts off the text "${p.text}" (${p.overflowPx} pixels past its ${EDGE_WORDS[edge] || ''}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
+        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at ${p.zoomPercent}% zoom, this element cuts off the text "${p.text}" (${p.overflowPx} pixels past its ${EDGE_WORDS[edge] || ''}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
       hint: (p) =>
         p.clipCss
           ? `Let the box grow with its text when the page is zoomed: change ${p.clipCss}, or let it scroll.`
@@ -841,7 +843,7 @@ function runInPage(ctx) {
     TEXT_TRUNCATED_AT_640: {
       key: 'truncated',
       summary: (p) =>
-        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element shortens the text "${p.text}" with an ellipsis or a line clamp, so part of it is not shown.${p.clipCss ? ` The CSS that shortens it: ${p.clipCss}.` : ''}`,
+        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at ${p.zoomPercent}% zoom, this element shortens the text "${p.text}" with an ellipsis or a line clamp, so part of it is not shown.${p.clipCss ? ` The CSS that shortens it: ${p.clipCss}.` : ''}`,
       hint: () =>
         'Let the text wrap and the box show all of it when the page is zoomed, or offer the full text another way that works with the keyboard, such as a "read more" link.'
     }
@@ -858,6 +860,9 @@ function runInPage(ctx) {
       text: f.text,
       overflowPx: String(Math.round(f.metrics.overflowPx)),
       viewportWidth: String(viewport.width),
+      // The zoom at which a 1280 pixel window lays the page out this wide:
+      // 200% at 640, 400% at 320.
+      zoomPercent: String(Math.round((1280 * 100) / (viewport.width || ZOOM_WIDTH))),
       ...(edgeKey ? { [edgeKey]: true } : {}),
       ...(f.clipCss ? { clipCss: f.clipCss } : {})
     };
