@@ -4,6 +4,8 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-11-22
+
 ### Highlights and upgrade notes
 
 - **Five new rules**: `reflow-horizontal-scroll` (1.4.10) and `resize-text-content-loss` (1.4.4) measure layout in a browser and ask, never fail; `form-group-name-present` (1.3.1) asks about radio buttons and checkboxes with no group name; `symbol-graphic-contrast` (1.4.11) asks about symbols such as ★ under 3:1; `link-name-quality-link-only` (2.4.9, AAA) asks about generic link text.
