@@ -67,6 +67,17 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- **`form-group-name-present` finds groups made through shadow DOM**: radio buttons slotted into a shadow `<fieldset>` or `radiogroup`, or in a shadow root inside a light `<fieldset>`, are in that group, as in the accessibility tree (round 11, B11-2).
+- **`form-group-name-present` names a fieldset from its legend's content**, so `<legend><img alt="Size"></legend>` names the group (round 11, B11-6).
+- **`form-group-name-present` leaves out radio buttons and checkboxes under `aria-hidden`**, which are not in the accessibility tree (round 11, B11-8).
+- **`link-in-text-block` no longer fails, under jsdom, a link whose underline is on an element inside it** (round 11, B11-3).
+- **tabindex is read with HTML's rules for parsing integers everywhere**, as `el.tabIndex` reads it: `1.5` and `2abc` are positive (1 and 2), `0x1` is 0 and `1e3` is 1 (round 11, B11-5).
+- **`symbol-graphic-contrast` leaves out symbols in inactive controls** (disabled, in a disabled fieldset, or `aria-disabled`), which WCAG 1.4.11 exempts, as `contrast-minimum` already did (round 11, B11-7).
+- **`symbol-graphic-contrast` reports each symbol once**: an element is reported for the symbols in its own text, so nested symbol elements no longer repeat them (round 11, B11-11).
+- **Under jsdom, the `overflow` shorthand fills `overflow-x` and `overflow-y`**, so `scrollable-region-focusable` asks about boxes set with `overflow: auto` (round 11, B11-4).
+- **Under jsdom, a `<marquee hidden>` is drawn**, as Chromium draws it, so `deprecated-elements-not-used` asks about it (round 11, B11-15).
+- **Under jsdom, the contrast rules read HTML's presentational colour hints and the SVG `fill` attribute**: `<font color>`, `<body text>`, `<body link>`, and `bgcolor` on body, tables, rows and cells. A style or CSS rule still wins over a hint (round 11, B11-1).
+
 - **Target size and focus not obscured read a hit inside a component as its element's**: since they look through open shadow roots, a point that landed in a component a target or a sticky header holds was taken as something else, so plain targets beside one whose icon a component draws stopped failing, and an opaque sticky header holding a web component was no longer asked about. The containment checks now follow the composed tree.
 - **A standard's verdict keeps to the scan's policy, and a profile keeps its own outcome for findings it doesn't count**: a policy whose `allowedOutcomes` leave out `fail` was undone where a pack's standard made a check fail; and in a scan of several profiles, a check one profile's standard doesn't count read as `pass` there, so a failure RAWeb alone reports vanished from SARIF, JUnit and baselines beside another profile. Each profile now gives the outcome a scan of it alone gives.
 - **A pack whose `name`, `version` or `standard` throws while read is skipped by the scan**, as one whose `rules` or `core` throws was: the scan threw.
