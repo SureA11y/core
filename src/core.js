@@ -108546,18 +108546,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const titleParts = titleNorm.split(TITLE_SEPARATOR).filter(Boolean);
 
   // A placeholder a template or a script left in the title instead of the
-  // page's name: a value never set ("undefined", "null", "NaN", "[object
-  // Object]") as the whole title or one part of it, or a template token
-  // ("{{title}}", "${title}", "%s", "{title}", "<%= title %>"). It names
-  // nothing, so it leans fail.
+  // page's name. Only clear cases count, and they lean fail:
+  // - anywhere in the title: a double-brace token ("{{title}}"), a
+  //   template literal of one JavaScript name or dotted path ("${title}",
+  //   "${page.title}"), or a format token ("%s", "%d");
+  // - as the whole title or one part of it: a value never set
+  //   ("undefined", "null", "NaN", "[object Object]"), a single-brace token
+  //   ("{title}"), any template literal ("${...}") or a server tag
+  //   ("<%= title %>");
+  // - as the whole title: a bracketed name ("[title]"), which as one part
+  //   of a title is often a real tag ("[Draft] - Acme").
+  // A single-brace word or an odd template literal among other words ("{Fancy}
+  // Brackets: a CSS guide", "Template literals ${...} explained") may be the
+  // page's own subject, and is asked about as any other title is.
   const placeholderToken = (() => {
     const m =
-      /\{\{[^{}]*\}\}|\$\{[^{}]*\}|<%=?[^%]*%>|\[object [A-Za-z]+\]|\{[A-Za-z_][\w.-]*\}|(?:^|[^%\w])(%[sd])(?![\w])/.exec(
+      /\{\{[^{}]*\}\}|\$\{\s*[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\s*\}|(?:^|[^%\w])(%[sd])(?![\w])/.exec(
         titleText
       );
     if (m) return m[1] || m[0];
-    const raw = titleText.split(TITLE_SEPARATOR).filter(Boolean);
-    return raw.find((part) => part === 'undefined' || part === 'null' || part === 'NaN') || '';
+    const whole = titleText.trim();
+    if (/^\[[A-Za-z_][\w.-]*\]$/.test(whole)) return whole;
+    const raw = titleText
+      .split(TITLE_SEPARATOR)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    return (
+      raw.find(
+        (part) =>
+          part === 'undefined' ||
+          part === 'null' ||
+          part === 'NaN' ||
+          /^\[object [A-Za-z]+\]$/.test(part) ||
+          /^\{[A-Za-z_][\w.-]*\}$/.test(part) ||
+          /^\$\{[^{}]*\}$/.test(part) ||
+          /^<%=?[^%]*%>$/.test(part)
+      ) || ''
+    );
   })();
 
   // Conservative signals:

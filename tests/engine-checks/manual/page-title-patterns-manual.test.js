@@ -488,6 +488,44 @@ test(`${RULE_ID}: a placeholder left in the title is asked about, leaning fail`,
     assert.strictEqual(occ.data.details.reasonCode, 'titleReview', title);
     assert.strictEqual(occ.lean, undefined, title);
   }
+  // Clear cases lean fail wherever they are in the title (round 11, B11-13).
+  for (const [title, token] of [
+    ['{{title}}', '{{title}}'],
+    ['${title}', '${title}'],
+    ['[title]', '[title]'],
+    ['%s', '%s'],
+    ['null', 'null'],
+    ['Welcome to {{ site.name }} today', '{{ site.name }}'],
+    ['Read ${page.title} online', '${page.title}'],
+    ['Results for %d items', '%d'],
+    ['${...}', '${...}']
+  ]) {
+    const occ = runa11yCoreOnHtml(withTitle(title), { runOnly: [RULE_ID] }).checksResults.find(
+      (r) => r.ruleId === RULE_ID
+    ).occurrences[0];
+    assert.strictEqual(occ.data.details.reasonCode, 'placeholderTitle', title);
+    assert.strictEqual(occ.data.details.placeholderToken, token, title);
+    assert.strictEqual(occ.lean.toward, 'fail', title);
+  }
+  // Anything else is asked about with no lean, as any other title is: a
+  // single-brace word or an odd template literal among other words, a
+  // bracketed tag as one part, a spaced "$ {".
+  for (const title of [
+    '{Fancy} Brackets: a CSS guide',
+    'Template literals ${...} explained',
+    'Template literals ${a + b} explained',
+    '50% off: {sale}',
+    '$ {title} pricing',
+    '[Draft] - Acme annual report',
+    'Undefined behavior in C | cppreference',
+    'NaN days left'
+  ]) {
+    const occ = runa11yCoreOnHtml(withTitle(title), { runOnly: [RULE_ID] }).checksResults.find(
+      (r) => r.ruleId === RULE_ID
+    ).occurrences[0];
+    assert.strictEqual(occ.data.details.reasonCode, 'titleReview', title);
+    assert.strictEqual(occ.lean, undefined, title);
+  }
   // The summary quotes the placeholder in every locale.
   const de = runa11yCoreOnHtml(withTitle('undefined | Acme'), {
     runOnly: [RULE_ID],
