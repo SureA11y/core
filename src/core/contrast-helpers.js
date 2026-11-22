@@ -611,8 +611,29 @@ function createContrastHelpers(opts, shared) {
   // The nearest visible character beside node in its block, in the given
   // direction: a character, '' at a boundary or where none is found within
   // the budget.
+  // Styles of elements no one has read yet that the search below may read
+  // in one run, over all its signs (round 12, C12-13): each sign walks its
+  // own neighbours, and a page of signs each beside hundreds of empty
+  // inline elements read a style for every one. Past it, a sign is a
+  // graphic, as it was before signs were read with their text. A real
+  // page's signs sit a node or two from digits whose styles the scan has
+  // read already: a catalogue of 3,000 WooCommerce prices reads none.
+  const __SIGN_RUN_BUDGET = 2000;
+  const __localSignRunBudget = { left: __SIGN_RUN_BUDGET };
+  function __signRunBudget() {
+    try {
+      const sc = shared && shared.__contrastSharedCache ? shared.__contrastSharedCache : null;
+      if (sc) {
+        if (!sc.__signRunBudget) sc.__signRunBudget = { left: __SIGN_RUN_BUDGET };
+        return sc.__signRunBudget;
+      }
+    } catch {}
+    return __localSignRunBudget;
+  }
+
   function __runNeighbour(node, block, forward) {
     let budget = 400;
+    const total = __signRunBudget();
     const into = (n, inLink) => {
       if (budget-- <= 0) return '';
       const type = dom.nodeType(n);
@@ -639,6 +660,9 @@ function createContrastHelpers(opts, shared) {
           String(dom.getAttribute(n, 'role') || '')
             .trim()
             .split(/\s+/)[0] === 'link');
+      // A style the scan has not read already counts against the run's
+      // budget: the text around a sign has been read, empty padding not.
+      if (!__computedStyleCache.has(n) && total.left-- <= 0) return '';
       const cs = __contrastComputedStyle(n);
       if (__runHidden(n, cs)) return link ? '' : null;
       if (!__inlineDisplay(cs) || __runBlockified(n, cs)) return '';

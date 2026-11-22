@@ -156,3 +156,29 @@ test('a sign beside a link whose nearest character is a digit is text (C12-12)',
     }
   }
 });
+
+test('the search for a sign’s neighbours has a budget for the whole scan (C12-13)', () => {
+  // Grey signs, each on its own line, 150 empty inline elements before
+  // their digit. The
+  // first are read as text; past the budget of styles not read yet, a
+  // sign is a graphic, as before signs were read with their text.
+  const padding = '<span><b></b></span>'.repeat(150);
+  let body = '<p>';
+  for (let i = 0; i < 12; i++) body += `<br><span style="color:#aaa">$</span>${padding}5`;
+  body += '</p>';
+  const minimum = check(page(body), 'contrast-minimum');
+  assert.equal(minimum.outcome, 'fail');
+  assert.ok(minimum.occurrences.length < 12);
+  assert.equal(check(page(body), 'symbol-graphic-contrast').outcome, 'cantTell');
+  // A sign beside digits whose styles the scan has read costs nothing:
+  // after the budget is spent, a plain price is still text.
+  const after = body + '<p><span style="color:#aaa">€</span>45</p>';
+  const occ = check(page(after), 'contrast-minimum').occurrences;
+  assert.ok(occ.some((o) => o.html.includes('€')));
+  // A page of real prices stays well within it: each sign is text.
+  let prices = '<ul>';
+  for (let i = 0; i < 300; i++)
+    prices += `<li><span><bdi><span style="color:#aaa">€</span>${i},00</bdi></span></li>`;
+  prices += '</ul>';
+  assert.equal(check(page(prices), 'symbol-graphic-contrast').outcome, 'notApplicable');
+});
