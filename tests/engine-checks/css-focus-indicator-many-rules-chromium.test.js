@@ -94,3 +94,34 @@ test(`${RULE_ID}: many rules and many matching links, in Chromium`, { skip }, as
   assert.equal(bySelector('.in a:focus').length, 10);
   assert.equal(occ.length, n + 1 + 10);
 });
+
+// The same verdict and quote as in jsdom: Chromium drops a list with an
+// invalid selector, and serializes `*:focus` as `:focus` (round 12, U12-16).
+test(
+  `${RULE_ID}: an invalid selector list and a universal selector, in Chromium`,
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    async function run(css) {
+      const p = await browser.newPage();
+      try {
+        await p.setContent(
+          `<!doctype html><html lang="en"><head><title>t</title><style>${css}</style></head><body><main><button>Go</button></main></body></html>`
+        );
+        await addBundle(p);
+        return await p.evaluate((id) => {
+          const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0];
+          return [r.outcome, r.occurrences.map((o) => o.data.details.suppressingSelectors)];
+        }, RULE_ID);
+      } finally {
+        await p.close();
+      }
+    }
+    assert.deepEqual(await run('button:-moz-focusring, button:focus{outline:none}'), [
+      'notApplicable',
+      []
+    ]);
+    assert.deepEqual(await run('*:focus{outline:none}'), ['cantTell', [[':focus']]]);
+  }
+);

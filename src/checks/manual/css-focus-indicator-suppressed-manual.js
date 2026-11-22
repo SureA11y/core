@@ -98,7 +98,12 @@
  *   `:where()` or `:matches()` counts too: `a:is(:focus, :hover)` is met
  *   by the focused link, so the whole `:is()` goes. A selector the engine cannot parse
  *   (vendor pseudo-elements, `:host`, unsupported `:is()` forms) throws
- *   there and is skipped rather than guessed at.
+ *   there and is skipped rather than guessed at. A selector list holding
+ *   one selector that can't be parsed (`button:-moz-focusring,
+ *   button:focus`) is invalid as a whole, and a browser drops the rule; in
+ *   jsdom, which keeps it, the list is tested with a query and the rule
+ *   skipped when it throws. Selectors are quoted as browsers
+ *   serialize them: `*:focus` reads `:focus`.
  */
 
 const id = 'css-focus-indicator-suppressed';
@@ -640,7 +645,14 @@ function runInPage(ctx) {
     if (!suppresses && !provides) return;
     const kills = suppresses ? outlineParts(style).kills : null;
 
-    for (const part of splitSelectorList(selectorText)) {
+    const parts = splitSelectorList(selectorText);
+    // A selector list with one selector the browser can't parse is invalid
+    // as a whole, and a browser drops the rule (`button:-moz-focusring,
+    // button:focus` in Chromium). jsdom keeps it in its style sheets: test
+    // the list as the browser parsed it.
+    if (parts.length > 1 && !validSelectorList(selectorText)) return;
+
+    for (const part of parts) {
       // The polyfill's form is read as native :not(:focus-visible) for the
       // outline it removes; what the same rule draws is read as written.
       const asNative = suppresses ? polyfillAsNative(part) : part;
@@ -651,6 +663,44 @@ function runInPage(ctx) {
         collectFromPart(part, suppresses, provides, kills);
       }
     }
+  }
+
+  // A browser has already dropped a rule whose selector list it can't
+  // parse, so only a DOM without CSS.supports (jsdom) is tested, by a query
+  // that compiles the whole list: jsdom's matches() can return before it
+  // reaches the selector it can't parse.
+  const validLists = new Map();
+  const parsedByBrowser = (() => {
+    try {
+      const v = dom.defaultView(document);
+      // Read directly: an element named CSS can shadow it, which only
+      // costs the query below.
+      const css = v ? v.CSS : null;
+      return !!css && typeof css.supports === 'function';
+    } catch {
+      return false;
+    }
+  })();
+  function validSelectorList(selectorText) {
+    // Only a vendor-prefixed pseudo-class or pseudo-element (`:-moz-…`,
+    // `::-webkit-…`) is parsed by one and not the other: a list without one
+    // is not queried, which in jsdom walks the whole document.
+    if (parsedByBrowser || !/::?-/.test(selectorText)) return true;
+    if (validLists.has(selectorText)) return validLists.get(selectorText);
+    let valid = true;
+    try {
+      dom.querySelector(document, selectorText);
+    } catch {
+      valid = false;
+    }
+    validLists.set(selectorText, valid);
+    return valid;
+  }
+  // The selector as quoted in the message, serialized as browsers do: a
+  // universal selector before another simple selector is left out
+  // (`*:focus` reads `:focus`), as Chromium already gives it.
+  function quotedSelector(part) {
+    return trim(part).replace(/(^|[\s>+~(,])\*(?=[:.#[])/g, '$1');
   }
 
   function collectFromPart(part, suppresses, provides, kills) {
@@ -670,7 +720,12 @@ function runInPage(ctx) {
       // outline. Other states (:hover, :active) never match the static
       // element, so el.matches() leaves them out below.
       if (suppresses && !hasPseudoElement(part)) {
-        suppressors.push({ selector: trim(part), base: trim(part), sheet: currentSheet, kills });
+        suppressors.push({
+          selector: quotedSelector(part),
+          base: trim(part),
+          sheet: currentSheet,
+          kills
+        });
       }
       return;
     }
@@ -690,7 +745,7 @@ function runInPage(ctx) {
 
     if (suppresses && isSubject && !hasPseudoElement(part)) {
       suppressors.push({
-        selector: trim(part),
+        selector: quotedSelector(part),
         base: stripFocusPseudo(part),
         sheet: currentSheet,
         kills

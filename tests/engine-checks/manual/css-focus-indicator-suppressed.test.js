@@ -38,7 +38,8 @@ test(`${RULE_ID}: cantTell for a global outline reset with no replacement`, () =
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'FOCUS_INDICATOR_SUPPRESSED');
-  assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, ['*:focus']);
+  // Quoted as browsers serialize it (round 12, U12-16).
+  assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, [':focus']);
 });
 
 test(`${RULE_ID}: an outline removed by a rule with no focus state is asked about (F78)`, () => {
@@ -541,10 +542,10 @@ test(`${RULE_ID}: says which <style> element the removing rule is in`, () => {
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'This element takes a tab stop, and "*:focus" in <style> element 2 of the page removes its focus outline with no replacement indicator in any other focus rule matching it.'
+    'This element takes a tab stop, and ":focus" in <style> element 2 of the page removes its focus outline with no replacement indicator in any other focus rule matching it.'
   );
   assert.strictEqual(occ.i18n.summaryKey, 'cssFocusIndicatorSuppressed_summary_cantTell_inStyle');
-  assert.deepStrictEqual(occ.i18n.params, { selectors: '*:focus', index: 2 });
+  assert.deepStrictEqual(occ.i18n.params, { selectors: ':focus', index: 2 });
   assert.strictEqual(occ.data.details.styleElementIndex, 2);
 });
 
@@ -591,4 +592,22 @@ test(`${RULE_ID}: jsdom tests each selector on its own, never as a list (round 1
   assert.deepStrictEqual(lists, []);
   for (let i = 0; i < 20; i++) assert.ok(hasOccurrenceForId(rule, `a${i}`), `a${i}`);
   assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
+// A selector list with one selector the browser can't parse is invalid as a
+// whole: Chromium drops `button:-moz-focusring, button:focus`, and jsdom,
+// which keeps it, now skips it too (round 12, U12-16).
+test(`${RULE_ID}: a rule whose selector list holds an invalid selector is dropped`, () => {
+  const run = (css) =>
+    runa11yCoreOnHtml(page(css, '<button id="b">Go</button>'), { runOnly: [RULE_ID] });
+  assertRule(run('button:-moz-focusring, button:focus{outline:none}'), RULE_ID, 'notApplicable');
+  const valid = assertRule(run('button:hover, button:focus{outline:none}'), RULE_ID, 'cantTell');
+  assert.deepStrictEqual(valid.occurrences[0].data.details.suppressingSelectors, ['button:focus']);
+  // A universal selector before another simple selector is left out.
+  const universal = assertRule(
+    run('main *:focus, *.x:focus, *:focus{outline:none}'),
+    RULE_ID,
+    'cantTell'
+  );
+  assert.deepStrictEqual(universal.occurrences[0].data.details.suppressingSelectors, [':focus']);
 });
