@@ -26411,8 +26411,8 @@ const LEAN_DIRECTIONS = [
 ];
 // From scripts/data/lean-measures.json -- how often each lean was right.
 const LEAN_MEASURES = {
-  "corpus": "W3C ACT Task Force test cases, 2026-11-13",
-  "coreVersion": "1.17.0",
+  "corpus": "W3C ACT Task Force test cases, 2026-11-22",
+  "coreVersion": "1.18.0",
   "minCases": 5,
   "leans": {
     "aria-prohibited-attr": {
@@ -164758,8 +164758,8 @@ const LEAN_DIRECTIONS = [
 ];
 // From scripts/data/lean-measures.json -- how often each lean was right.
 const LEAN_MEASURES = {
-  "corpus": "W3C ACT Task Force test cases, 2026-11-13",
-  "coreVersion": "1.17.0",
+  "corpus": "W3C ACT Task Force test cases, 2026-11-22",
+  "coreVersion": "1.18.0",
   "minCases": 5,
   "leans": {
     "aria-prohibited-attr": {
