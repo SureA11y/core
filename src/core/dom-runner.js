@@ -3959,7 +3959,9 @@ function runCoreSettled(
           (budgetSpent
             ? flagOf('__budgetSpentAt') === 'profile' && typeof engineOptions.profile === 'string'
               ? ' before profile "' + engineOptions.profile + '" started, so it'
-              : " before this frame's scan started, so it"
+              : flagOf('__budgetSpentAt') === 'styleSheets'
+                ? " fetching the style sheets the page can't read, before any rule started, so it"
+                : " before this frame's scan started, so it"
             : ' and') +
           ' did not run ' +
           notRunRules.length +

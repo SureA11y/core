@@ -312,7 +312,7 @@ In jsdom (Pattern 1) there is nothing to wait for: jsdom loads no fonts or image
 
 A page's script can't read the rules of a style sheet served from another origin (a CDN, a fonts service), so a rule that looks for something in the CSS, such as `css-orientation-lock`, can't tell whether it is there, and asks. Give the scan their text in `engineOptions.styleSheetTexts` (`[{ href, text }]`, the sheet's URL and its CSS) and the rules read it in their place (`css-orientation-lock`, `css-hidden-focus` and `css-focus-indicator-suppressed`). Each result's `engineOptions` echoes it as the sheets' hrefs, `[{ href }]`, without their text.
 
-`preloadStyleSheets()` fetches it in the page: every sheet the page can't read, linked or imported, that the server shares (CORS), each given up after `timeoutMs` (default 5000). `runa11yCoreInPageAsync`, on the bundle, does that and then scans:
+`preloadStyleSheets()` fetches it in the page: every sheet the page can't read, linked or imported, that the server shares (CORS), each given up after `timeoutMs` (default 5000), or at `deadline` (a `Date.now()` time) when given, the sheets that cut short named in the list's `notRead`. `runa11yCoreInPageAsync`, on the bundle, does that and then scans, within `engineOptions.timeBudgetMs` when given ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#a-time-budget-timebudgetms)):
 
 ```js
 const result = await a11ycore.runa11yCoreInPageAsync(location.href, null, {}, null);

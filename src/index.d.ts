@@ -642,6 +642,11 @@ export interface ScanIncomplete {
   rulesNotRun: number;
   /** A scan of several profiles only: profiles not started (engine.profilesNotRun). */
   profilesNotRun?: number;
+  /**
+   * runa11yCoreInPageAsync only: the URLs of the style sheets the page can't
+   * read that the budget ran out before it had fetched.
+   */
+  styleSheetsNotRead?: string[];
 }
 
 /** A rule the scan selected and did not start (result.notRun). */
@@ -1286,10 +1291,7 @@ export interface HowToCheck {
  */
 export function addHowToCheck<
   T extends ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult
->(
-  result: T,
-  options?: HowToCheckOptions
-): T;
+>(result: T, options?: HowToCheckOptions): T;
 
 /**
  * The packs a result was scanned with: their rules' meta.review, and their
@@ -1791,12 +1793,15 @@ export function waitForPageReady(options?: PageReadyOptions): Promise<PageReadyR
  * Fetches, in the page, the style sheets the page can't read (another
  * origin's, linked or imported), for engineOptions.styleSheetTexts. Only those the
  * server shares (CORS) come back; each fetch gives up after `timeoutMs`
- * (default 5000). Never rejects; [] without a document or fetch.
+ * (default 5000), and none waits past `deadline` (a Date.now() time), when
+ * given: the list then names in `notRead` the sheets it gave up on or never
+ * started. Never rejects; [] without a document or fetch.
  */
 export function preloadStyleSheets(options?: {
   timeoutMs?: number;
+  deadline?: number;
   document?: unknown;
-}): Promise<Array<{ href: string; text: string }>>;
+}): Promise<Array<{ href: string; text: string }> & { readonly notRead: string[] }>;
 
 /**
  * The internals hook, opt-in: a script to run in every frame of a page before
@@ -2044,13 +2049,7 @@ export function getProfileWcagTarget(profile: string): WcagTarget | null;
  * `frame`, the path to it.
  */
 export function getMargins(
-  result:
-    | ScanResult
-    | CompactScanResult
-    | CrossFrameResult
-    | BindingFramesResult
-    | null
-    | undefined
+  result: ScanResult | CompactScanResult | CrossFrameResult | BindingFramesResult | null | undefined
 ): Array<Margin & { ruleId: string; frame?: string[] }>;
 
 /**
@@ -2058,7 +2057,9 @@ export function getMargins(
  * a11yCoreEnableFrameResponder(), over postMessage. For code running inside
  * the page with no automation driver; see docs/INTEGRATION.md.
  */
-export function runa11yCoreAcrossFrames<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
+export function runa11yCoreAcrossFrames<
+  T extends EngineOptions | StrictEngineOptions = EngineOptions
+>(
   pageUrl?: string | null,
   contextSelector?: ContextSelector | null,
   engineOptions?: CheckedEngineOptions<T> | null,

@@ -399,3 +399,63 @@ test('HTML report: counts each rule not run once, and lists unstarted profiles a
   const listed = /Not run \(\d+\): ([^.]*)\./.exec(banner)[1].split(', ');
   assert.deepEqual(listed.sort(), ids.sort());
 });
+
+// The browser bundle's runa11yCoreInPageAsync counts the style sheets it
+// fetches against the budget: it stops waiting for them when the budget is
+// spent, names those it did not read, and lists the rules it did not start
+// (round 12, A12-7).
+test('runa11yCoreInPageAsync counts fetching style sheets against the time budget (round 12, A12-7)', async () => {
+  const src = pathToFileURL(path.join(__dirname, '..', 'surea11y.browser.js')).href;
+  const dom = await new Promise((resolve, reject) => {
+    const d = new JSDOM(PAGE.replace('</body>', `<script src="${src}"></script></body>`), {
+      url: 'https://example.test/',
+      runScripts: 'dangerously',
+      resources: 'usable'
+    });
+    d.window.addEventListener('load', () => resolve(d));
+    d.window.addEventListener('error', (e) => reject(e.error));
+  });
+  try {
+    const w = dom.window;
+    // A sheet from another origin the page can't read, whose server never
+    // answers.
+    const sheet = {
+      href: 'https://cdn.other.test/slow.css',
+      get cssRules() {
+        throw new w.DOMException('cross-origin', 'SecurityError');
+      }
+    };
+    Object.defineProperty(w.Document.prototype, 'styleSheets', {
+      get: () => [sheet],
+      configurable: true
+    });
+    w.fetch = () => new Promise(() => {});
+    const warned = [];
+    const warn = w.console.warn;
+    w.console.warn = (m) => warned.push(String(m));
+    const started = Date.now();
+    let result;
+    try {
+      result = await w.a11ycore.runa11yCoreInPageAsync(null, null, { timeBudgetMs: 100 }, RUN_ONLY);
+    } finally {
+      w.console.warn = warn;
+    }
+    // Far less than the 5 s each fetch may otherwise take.
+    assert.ok(Date.now() - started < 3000);
+    assert.equal(result.engine.incomplete.reason, 'timeBudget');
+    assert.equal(result.engine.incomplete.timeBudgetMs, 100);
+    assert.deepEqual([...result.engine.incomplete.styleSheetsNotRead], [sheet.href]);
+    assert.equal(result.notRun.length, 2);
+    assert.ok(
+      warned.some((m) => m.includes(`not read: ${sheet.href}`)),
+      String(warned)
+    );
+    assert.ok(
+      warned.some((m) =>
+        /fetching the style sheets the page can't read, before any rule started/.test(m)
+      )
+    );
+  } finally {
+    dom.window.close();
+  }
+});

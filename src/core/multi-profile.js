@@ -201,6 +201,12 @@ function runProfilesUncapped(engineOptions, run) {
   const carryBudgetSpent = (from, to) => {
     if (flagOf(from, '__budgetSpent') === true) {
       Object.defineProperty(to, '__budgetSpent', { value: true });
+      // Where it was spent, for the warning (round 12, A12-7); a profile the
+      // budget leaves unstarted says its own.
+      const at = flagOf(from, '__budgetSpentAt');
+      if (typeof at === 'string') {
+        Object.defineProperty(to, '__budgetSpentAt', { value: at, configurable: true });
+      }
     }
     const scanBudget = flagOf(from, '__scanTimeBudgetMs');
     if (
@@ -225,12 +231,6 @@ function runProfilesUncapped(engineOptions, run) {
       const p = asked[i];
       if (typeof p !== 'string' || !p.trim()) ignored++;
     }
-    if (ignored) {
-      try {
-        console.warn(
-          '[surea11y] engineOptions.profile: ignoring ' +
-            ignored +
-            ' item(s) that are not a profile name (a string that is not blank).'
     // An empty list names no profile, and the scan runs as with none
     // (round 12, A12-13); under strictOptions enforceEngineOptions refuses it.
     if (!asked.length) {
@@ -240,6 +240,12 @@ function runProfilesUncapped(engineOptions, run) {
         // no console
       }
     }
+    if (ignored) {
+      try {
+        console.warn(
+          '[surea11y] engineOptions.profile: ignoring ' +
+            ignored +
+            ' item(s) that are not a profile name (a string that is not blank).'
         );
       } catch {
         // no console
@@ -319,7 +325,10 @@ function runProfilesUncapped(engineOptions, run) {
         );
         if (!spentOnArrival) Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
         // Its warning names the profile, not a frame.
-        Object.defineProperty(dryOptions, '__budgetSpentAt', { value: 'profile' });
+        Object.defineProperty(dryOptions, '__budgetSpentAt', {
+          value: 'profile',
+          configurable: true
+        });
         const skippedOf = (dry) => {
           const skipped = {};
           Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
