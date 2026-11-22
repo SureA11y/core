@@ -117,3 +117,19 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/symbol-graphic-contrast-all-s
     ['sgc_case_01', 'sgc_case_02', 'sgc_case_03']
   );
 });
+
+test(`${RULE_ID}: symbols in an inactive control are left out, as 1.4.11 exempts them (round 11, B11-7)`, () => {
+  const B = 'style="color:#ccc;background:#fff;border:1px solid #ccc"';
+  for (const body of [
+    `<button disabled ${B}>×</button>`,
+    `<fieldset disabled><button ${B}>+</button></fieldset>`,
+    `<div role="button" tabindex="0" aria-disabled="true" ${B}>×</div>`
+  ]) {
+    assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  // The same control, active, is asked about.
+  assertRule(run(`<button ${B}>×</button>`), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});

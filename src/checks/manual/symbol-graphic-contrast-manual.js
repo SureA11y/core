@@ -21,6 +21,10 @@
  *     two never judge the same text;
  *   - emoji drawn in their own colours, and text that is only separators
  *     (`|`, `¦`, `~`, `·`, `•`, `/`, dashes), which decorate;
+ *   - symbols in an inactive user interface component (a disabled
+ *     control, one in a disabled fieldset, or one with aria-disabled,
+ *     set as an attribute or through ElementInternals), which 1.4.11
+ *     exempts, as contrast-minimum leaves its text out;
  *   - text in `<svg>`, `<math>`, form controls (`<select>`, `<option>`,
  *     `<textarea>`) and elements that are not drawn (`<script>`, `<style>`,
  *     `<template>`, `<title>`), and text whose colours can't be measured
@@ -164,6 +168,13 @@ function runInPage(ctx) {
       continue;
     }
     if (!shown(el)) continue;
+    // Part of an inactive user interface component (disabled, in a
+    // disabled fieldset, aria-disabled, or disabled through its
+    // ElementInternals): 1.4.11 asks nothing of it, as contrast-minimum
+    // leaves its text out.
+    try {
+      if (typeof c.isInactiveUiComponent === 'function' && c.isInactiveUiComponent(el)) continue;
+    } catch {}
 
     let ratio;
     let fgHex;
