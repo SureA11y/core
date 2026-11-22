@@ -109,3 +109,28 @@ test(
     assert.equal(half.outcome, 'fail');
   }
 );
+
+test(
+  'SVG text over a circle or ellipse that covers it is measured, as without a layout (C12-7)',
+  { skip },
+  async () => {
+    const badge = (shape) =>
+      page(
+        `<svg width="200" height="100">${shape}<text x="100" y="57" text-anchor="middle" fill="#fff" font-size="20">12</text></svg>`
+      );
+    for (const shape of [
+      '<circle cx="100" cy="50" r="40" fill="#1a7f37"/>',
+      '<ellipse cx="100" cy="50" rx="90" ry="40" fill="#1a7f37"/>'
+    ]) {
+      const r = await run(badge(shape), 'contrast-computable');
+      assert.equal(r.outcome, 'pass', shape);
+    }
+    // A circle smaller than the text: asked about.
+    const small = await run(
+      badge('<circle cx="100" cy="50" r="8" fill="#1a7f37"/>'),
+      'contrast-computable'
+    );
+    assert.equal(small.outcome, 'cantTell');
+    assert.equal(small.occ[0][1], 'BACKGROUND_OVERLAP');
+  }
+);

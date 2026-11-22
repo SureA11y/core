@@ -5137,7 +5137,7 @@ function createContrastHelpers(opts, shared) {
         const layer = svgBackdrop.layers[i];
         if (collectStack) {
           stack.push({
-            selector: __getSimpleSelectorCached(layer.el, 'rect'),
+            selector: __getSimpleSelectorCached(layer.el, __lname(layer.el)),
             bg: { r: layer.rgba.r, g: layer.rgba.g, b: layer.rgba.b, a: layer.rgba.a },
             opacity: 1
           });
@@ -8953,12 +8953,13 @@ function createContrastHelpers(opts, shared) {
   //
   // SVG paints in document order, so a shape earlier than a text element and
   // under it is the text's background, which no CSS background shows. The
-  // simple case is measured: a <rect> with a solid fill, painted before the
-  // text, not rotated, covering all of the text clear of its rounded corners
-  // and stroke, with nothing between it and the text that groups it (opacity,
-  // a filter, a mask or a clip). Several such rects stack. Any other shape
-  // under or over the text is left to the paint-overlap check, which reports
-  // it. Needs a layout; without one nothing is found and nothing changes.
+  // simple case is measured: a <rect>, <circle> or <ellipse> (round 12,
+  // C12-7) with a solid fill, painted before the text, not rotated, covering
+  // all of the text clear of its rounded corners and stroke, with nothing
+  // between it and the text that groups it (opacity, a filter, a mask or a
+  // clip). Several such shapes stack. Any other shape under or over the text
+  // is left to the paint-overlap check, which reports it. With a layout;
+  // without one, __svgNoLayoutScan measures the same shapes.
   const __svgBackdropCache = new WeakMap();
 
   function __svgBackdropOf(el) {
@@ -9026,7 +9027,10 @@ function createContrastHelpers(opts, shared) {
   // The color a <rect> paints behind all of el's text, or null when it isn't
   // that simple case.
   function __svgRectLayer(shape, box, el, textRects) {
-    if (String(dom.localName(shape)) !== 'rect') return null;
+    const tag = String(dom.localName(shape));
+    // A <circle> or <ellipse> too (round 12, C12-7): its box is its
+    // bounding box, so its center and radii are known.
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
     // Painted before el: el follows it in document order.
     if (!(dom.compareDocumentPosition(shape, el) & 4)) return null;
     const cs = __contrastComputedStyle(shape);
@@ -9061,19 +9065,36 @@ function createContrastHelpers(opts, shared) {
       const n = parsePx(v);
       return Number.isFinite(n) && n > 0 ? n : 0;
     };
-    let rx = len(cs.rx);
-    let ry = len(cs.ry);
-    if (!rx) rx = ry;
-    if (!ry) ry = rx;
     const stroke = trim(cs.stroke);
     const halfStroke = stroke && stroke !== 'none' ? len(cs.strokeWidth) / 2 : 0;
-    const ix = Math.max(rx, halfStroke) * ctm.a;
-    const iy = Math.max(ry, halfStroke) * ctm.d;
-    const inside = (r) =>
-      r.left >= box.left + ix - 0.5 &&
-      r.right <= box.right - ix + 0.5 &&
-      r.top >= box.top + iy - 0.5 &&
-      r.bottom <= box.bottom - iy + 0.5;
+    let inside;
+    if (tag === 'rect') {
+      let rx = len(cs.rx);
+      let ry = len(cs.ry);
+      if (!rx) rx = ry;
+      if (!ry) ry = rx;
+      const ix = Math.max(rx, halfStroke) * ctm.a;
+      const iy = Math.max(ry, halfStroke) * ctm.d;
+      inside = (r) =>
+        r.left >= box.left + ix - 0.5 &&
+        r.right <= box.right - ix + 0.5 &&
+        r.top >= box.top + iy - 0.5 &&
+        r.bottom <= box.bottom - iy + 0.5;
+    } else {
+      // Every corner of each line of text inside the ellipse, clear of the
+      // inner half of its stroke.
+      const cx = (box.left + box.right) / 2;
+      const cy = (box.top + box.bottom) / 2;
+      const ex = (box.right - box.left) / 2 - halfStroke * ctm.a;
+      const ey = (box.bottom - box.top) / 2 - halfStroke * ctm.d;
+      if (!(ex > 0) || !(ey > 0)) return null;
+      const within = (x, y) => ((x - cx) / ex) ** 2 + ((y - cy) / ey) ** 2 <= 1;
+      inside = (r) =>
+        within(r.left, r.top) &&
+        within(r.right, r.top) &&
+        within(r.left, r.bottom) &&
+        within(r.right, r.bottom);
+    }
     if (!textRects.every(inside)) return null;
     const fillOpacity = Number.parseFloat(cs.fillOpacity);
     const opacity = Number.parseFloat(cs.opacity);
