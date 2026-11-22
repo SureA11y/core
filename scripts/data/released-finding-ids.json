@@ -1,6 +1,6 @@
 {
   "$comment": "Written by scripts/freeze-finding-ids.js at each release: the rule ids and reason codes that version shipped. tests/released-finding-ids.test.js fails when one is missing and not listed under retired with its reason. See docs/API_STABILITY.md, \"Finding identity\".",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "ruleIds": [
     "accesskeys",
     "area-alt-present",
@@ -59,6 +59,7 @@
     "form-control-programmatic-label-present",
     "form-control-programmatic-label-quality",
     "form-control-single-label",
+    "form-group-name-present",
     "heading-order",
     "heading-quality",
     "html-lang-attr-present",
@@ -93,6 +94,7 @@
     "link-in-text-block",
     "link-name-present",
     "link-name-quality",
+    "link-name-quality-link-only",
     "list-children-valid",
     "listbox-name-present",
     "listitem-parent-valid",
@@ -121,7 +123,9 @@
     "presentation-role-conflict",
     "presentational-children-focusable-absent",
     "progressbar-name-present",
+    "reflow-horizontal-scroll",
     "region",
+    "resize-text-content-loss",
     "role-img-text-alternative-present",
     "scope-attr-valid",
     "scrollable-region-focusable",
@@ -134,6 +138,7 @@
     "svg-image-text-alternative-present",
     "svg-text-alternative-present",
     "svg-text-alternative-quality",
+    "symbol-graphic-contrast",
     "tab-name-present",
     "tabindex",
     "table-duplicate-name",
@@ -190,7 +195,8 @@
       "EXPANDED_TRUE_CONTROLLED_HIDDEN"
     ],
     "aria-hidden-body": [
-      "ARIA_HIDDEN_BODY"
+      "ARIA_HIDDEN_BODY",
+      "ARIA_HIDDEN_HTML"
     ],
     "aria-hidden-focus": [
       "ariaHiddenContainsFocusable",
@@ -355,7 +361,8 @@
       "DL_NO_DT_DD"
     ],
     "deprecated-elements-not-used": [
-      "MARQUEE_PAUSE_MECHANISM_UNKNOWN"
+      "MARQUEE_PAUSE_MECHANISM_UNKNOWN",
+      "MARQUEE_STOPS_ONLY_ON_HOVER"
     ],
     "dialog-name-present": [
       "name_internals",
@@ -422,6 +429,12 @@
     "form-control-single-label": [
       "FORM_FIELD_EXTRA_EMPTY_LABEL",
       "FORM_FIELD_MULTIPLE_LABELS"
+    ],
+    "form-group-name-present": [
+      "CHECKBOX_GROUP_NO_NAME",
+      "CHECKBOX_GROUP_SPLIT",
+      "RADIO_GROUP_NO_NAME",
+      "RADIO_GROUP_SPLIT"
     ],
     "heading-order": [
       "HEADING_ORDER_SKIPPED_LEVEL"
@@ -558,7 +571,11 @@
     ],
     "link-name-quality": [
       "AMBIGUOUS_FORMAT_NAME",
-      "GENERIC_LINK_TEXT"
+      "GENERIC_LINK_TEXT",
+      "GENERIC_LINK_TEXT_IN_CONTEXT"
+    ],
+    "link-name-quality-link-only": [
+      "GENERIC_LINK_TEXT_IN_CONTEXT"
     ],
     "list-children-valid": [
       "LIST_INVALID_CHILD",
@@ -639,6 +656,7 @@
     "p-as-heading": [
       "BOLD_LARGE_DIV",
       "BOLD_LARGE_PARAGRAPH",
+      "BOLD_SHORT_PARAGRAPH",
       "HEADING_LIKE_LINK",
       "HEADING_LIKE_NUMBER"
     ],
@@ -648,6 +666,7 @@
     "page-title-patterns": [
       "duplicateTitlesAcrossPages",
       "genericTitle",
+      "placeholderTitle",
       "templateLikeTitle",
       "templatedTitlesAcrossPages",
       "titleReview",
@@ -679,8 +698,22 @@
       "name_internals",
       "name_missing"
     ],
+    "reflow-horizontal-scroll": [
+      "CLIPPED_AT_VIEWPORT_EDGE",
+      "CLIPPED_BY_CONTAINER",
+      "HORIZONTAL_SCROLL",
+      "HORIZONTAL_SCROLL_UNATTRIBUTED",
+      "SCROLLS_IN_CONTAINER",
+      "WIDE_MEDIA",
+      "WIDE_PREFORMATTED",
+      "WIDE_TABLE"
+    ],
     "region": [
       "CONTENT_OUTSIDE_LANDMARK"
+    ],
+    "resize-text-content-loss": [
+      "TEXT_CLIPPED_AT_640",
+      "TEXT_TRUNCATED_AT_640"
     ],
     "role-img-text-alternative-present": [
       "emptyAriaLabel",
@@ -729,6 +762,9 @@
       "IMAGE_ONLY_CONTROL_CONTENT",
       "TEXT_ALTERNATIVE_REVIEW"
     ],
+    "symbol-graphic-contrast": [
+      "SYMBOLS_BELOW_GRAPHIC_THRESHOLD"
+    ],
     "tab-name-present": [
       "name_closedContent",
       "name_contentTooDeep",
@@ -760,6 +796,7 @@
       "undersized",
       "undersized-and-too-close",
       "undersized-inline-link-run",
+      "undersized-pinned-over-page",
       "undersized-plausibly-essential"
     ],
     "td-has-header": [
