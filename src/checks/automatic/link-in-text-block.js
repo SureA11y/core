@@ -1775,10 +1775,13 @@ function runInPage(ctx) {
     const asks = all.filter((r) => verdict(r) === 'ask');
     const short = fails.length ? fails : asks;
     const pick = short.length ? short[0] : all[0];
-    const detail = {};
-    if (short.length && short.length < all.length) detail.colorScheme = short[0].scheme;
     const checked = canvas.supported.filter((s) => all.some((r) => r.scheme === s));
-    if (checked.length < canvas.supported.length) detail.colorSchemesChecked = checked;
+    // Spread, not assigned: a read-only value a page's script put on
+    // Object.prototype refuses no key (round 12, R12F-6).
+    const detail = {
+      ...(short.length && short.length < all.length ? { colorScheme: short[0].scheme } : {}),
+      ...(checked.length < canvas.supported.length ? { colorSchemesChecked: checked } : {})
+    };
     return {
       differs: !short.length,
       ratio: pick.ratio,

@@ -5,6 +5,23 @@
 const { createSafeDom } = require('./safe-dom');
 
 function createContrastHelpers(opts, shared) {
+  // An option's own value, or undefined. The engine builds option objects
+  // without every key (colorScheme, rootCanvasFallbackSet), and a value a
+  // page's script put on Object.prototype is never read as one (round 12,
+  // R12F-6).
+  function __own(o, k) {
+    return o &&
+      (typeof o === 'object' || typeof o === 'function') &&
+      Object.prototype.hasOwnProperty.call(o, k)
+      ? o[k]
+      : undefined;
+  }
+  // Own keys along a path: __ownAt(o, 'options', 'engineOptions').
+  function __ownAt(o, ...keys) {
+    let v = o;
+    for (let i = 0; i < keys.length && v !== undefined; i++) v = __own(v, keys[i]);
+    return v;
+  }
   // A <select> drawn as a list box (a size above 1), read as Chromium reads
   // its size attribute (selectSizeOf in dom-helpers).
   function __selectDrawnAsListBox(select) {
@@ -15,7 +32,7 @@ function createContrastHelpers(opts, shared) {
     return Number(dom.getAttribute(select, 'size')) > 1;
   }
   const dom = createSafeDom();
-  const window = opts && opts.window ? opts.window : null;
+  const window = __own(opts, 'window') || null;
 
   const trim = shared.trim;
   const computedStyle = shared.computedStyle;
@@ -187,10 +204,8 @@ function createContrastHelpers(opts, shared) {
   // -------- Visibility mode resolution for getTextScan --------
 
   function __getVisibilityMode(engineOptions) {
-    const m =
-      engineOptions && typeof engineOptions.visibilityMode === 'string'
-        ? engineOptions.visibilityMode
-        : '';
+    const v = __own(engineOptions, 'visibilityMode');
+    const m = typeof v === 'string' ? v : '';
     return m || 'styleOnly';
   }
 
@@ -202,79 +217,49 @@ function createContrastHelpers(opts, shared) {
       engineOptions,
 
       // common shapes
-      ctx && ctx.engineOptions,
-      ctx && ctx.options && ctx.options.engineOptions,
-      ctx && ctx.options,
-      ctx && ctx.opts && ctx.opts.engineOptions,
-      ctx && ctx.opts,
+      __ownAt(ctx, 'engineOptions'),
+      __ownAt(ctx, 'options', 'engineOptions'),
+      __ownAt(ctx, 'options'),
+      __ownAt(ctx, 'opts', 'engineOptions'),
+      __ownAt(ctx, 'opts'),
 
       // policy layering shapes
-      ctx && ctx.policyOverrides && ctx.policyOverrides.engineOptions,
-      ctx && ctx.policyOverrides,
-      ctx && ctx.policy && ctx.policy.engineOptions,
-      ctx && ctx.policy,
+      __ownAt(ctx, 'policyOverrides', 'engineOptions'),
+      __ownAt(ctx, 'policyOverrides'),
+      __ownAt(ctx, 'policy', 'engineOptions'),
+      __ownAt(ctx, 'policy'),
 
       // sometimes hoisted
       ctx,
 
       // opts passed into createContrastHelpers
-      opts && opts.engineOptions,
-      opts && opts.options && opts.options.engineOptions,
-      opts && opts.options,
-      opts && opts.opts && opts.opts.engineOptions,
-      opts && opts.opts,
+      __ownAt(opts, 'engineOptions'),
+      __ownAt(opts, 'options', 'engineOptions'),
+      __ownAt(opts, 'options'),
+      __ownAt(opts, 'opts', 'engineOptions'),
+      __ownAt(opts, 'opts'),
 
-      opts && opts.policyOverrides && opts.policyOverrides.engineOptions,
-      opts && opts.policyOverrides,
-      opts && opts.policy && opts.policy.engineOptions,
-      opts && opts.policy,
+      __ownAt(opts, 'policyOverrides', 'engineOptions'),
+      __ownAt(opts, 'policyOverrides'),
+      __ownAt(opts, 'policy', 'engineOptions'),
+      __ownAt(opts, 'policy'),
 
       // globals sometimes used by runners
-      w && w.__a11ycoreEngineOptions,
-      d && d.__a11ycoreEngineOptions
+      __ownAt(w, '__a11ycoreEngineOptions'),
+      __ownAt(d, '__a11ycoreEngineOptions')
     ];
 
     for (const c of candidates) {
       if (!c || typeof c !== 'object') continue;
-
-      if (typeof c.visibilityMode === 'string') return c.visibilityMode;
-
-      if (
-        c.engineOptions &&
-        typeof c.engineOptions === 'object' &&
-        typeof c.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.options &&
-        typeof c.options === 'object' &&
-        c.options.engineOptions &&
-        typeof c.options.engineOptions === 'object' &&
-        typeof c.options.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.options.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policy &&
-        typeof c.policy === 'object' &&
-        c.policy.engineOptions &&
-        typeof c.policy.engineOptions === 'object' &&
-        typeof c.policy.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policy.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policyOverrides &&
-        typeof c.policyOverrides === 'object' &&
-        c.policyOverrides.engineOptions &&
-        typeof c.policyOverrides.engineOptions === 'object' &&
-        typeof c.policyOverrides.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policyOverrides.engineOptions.visibilityMode;
+      for (const path of [
+        [],
+        ['engineOptions'],
+        ['options', 'engineOptions'],
+        ['policy', 'engineOptions'],
+        ['policyOverrides', 'engineOptions']
+      ]) {
+        const mode = __ownAt(c, ...path, 'visibilityMode');
+        if (typeof mode === 'string') return mode;
       }
     }
 
@@ -983,9 +968,9 @@ function createContrastHelpers(opts, shared) {
 
   function getTextScan(ctx, helpers, engineOptions) {
     try {
-      const d = (ctx && ctx.document) || (opts && opts.document) || null;
+      const d = __own(ctx, 'document') || __own(opts, 'document') || null;
 
-      const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
+      const w = __own(ctx, 'window') || (d && dom.defaultView(d)) || window || null;
 
       // Unset, the text a reader can see is decided from the layout where
       // there is one (#99): text off the page or clipped away is drawn
@@ -1006,7 +991,7 @@ function createContrastHelpers(opts, shared) {
       // Default on, opt out with includeShadowDom: false -- same contract as
       // helpers.queryAllSmart. Part of the cache key: a scan that skipped
       // shadow roots must not be reused by one that should not.
-      const includeShadowDom = !(engineOptions && engineOptions.includeShadowDom === false);
+      const includeShadowDom = __own(engineOptions, 'includeShadowDom') !== false;
 
       const cache = __getSharedTextScanCache();
       const cacheKey = `visibilityMode=${visibilityMode}|sd=${includeShadowDom ? 1 : 0}`;
@@ -1494,18 +1479,14 @@ function createContrastHelpers(opts, shared) {
       // intent: it only fires when both colors are cleanly computable, and
       // leaves any gradient/image/partial-opacity background (which
       // contrast-computable already reports as cantTell) untouched.
-      const contrastOptsForBg =
-        engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
-          ? engineOptions.contrast
-          : {};
+      const contrastOptsForBg = __own(engineOptions, 'contrast');
+      const bgMode = __own(contrastOptsForBg, 'mode');
+      const bgFallback = __own(contrastOptsForBg, 'rootCanvasFallback');
       const bgResolveOpts = {
         contrast: {
-          mode: contrastOptsForBg.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
+          mode: bgMode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
           rootCanvasFallback:
-            typeof contrastOptsForBg.rootCanvasFallback === 'string' &&
-            contrastOptsForBg.rootCanvasFallback.trim()
-              ? contrastOptsForBg.rootCanvasFallback.trim()
-              : '#ffffff'
+            typeof bgFallback === 'string' && bgFallback.trim() ? bgFallback.trim() : '#ffffff'
         },
         collectStack: false
       };
@@ -4216,7 +4197,7 @@ function createContrastHelpers(opts, shared) {
   // computes the light scheme's colors). Null where the color computed
   // now is the one, or it can't be told (colorSchemeUnread).
   function __schemeTextOverride(el, opts) {
-    const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
+    const asked = __ownAt(opts, 'contrast', 'colorScheme');
     const scheme = asked === 'light' || asked === 'dark' ? asked : null;
     if (!scheme) {
       // A browser computes the colors of the scheme it draws.
@@ -4238,7 +4219,7 @@ function createContrastHelpers(opts, shared) {
   // page's canvas (__schemeTextColor), where it isn't the one computed now.
   function computeEffectiveForeground(el, opts) {
     const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
-    if (opts && opts.contrast && opts.contrast.colorScheme) {
+    if (__ownAt(opts, 'contrast', 'colorScheme')) {
       const out = computeEffectiveForeground(el);
       if (!schemeOverride || !out || !out.rgba) return out;
       const op = Number.isFinite(out.opacityProduct) ? out.opacityProduct : 1;
@@ -4338,19 +4319,16 @@ function createContrastHelpers(opts, shared) {
     __getSharedWeakMapCache('__effectiveBackgroundCache') || __localEffectiveBackgroundCache;
 
   function __bgCacheKey(opts2) {
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const named = contrast.rootCanvasFallbackSet === true ? 'named' : '';
-    const scheme =
-      contrast.colorScheme === 'light' || contrast.colorScheme === 'dark'
-        ? contrast.colorScheme
-        : '';
+    const named = __own(contrast, 'rootCanvasFallbackSet') === true ? 'named' : '';
+    const asked = __own(contrast, 'colorScheme');
+    const scheme = asked === 'light' || asked === 'dark' ? asked : '';
 
     // Cache key must include any input that can affect computed background.
     // Note: we only cache when collectStack is false.
@@ -4414,7 +4392,9 @@ function createContrastHelpers(opts, shared) {
       const doc = window && window.document;
       const root = doc && dom.documentElement(doc);
       if (!root || typeof window.getComputedStyle !== 'function') return null;
-      const rootScheme = String(window.getComputedStyle(root).colorScheme || '');
+      const rootScheme = String(
+        window.getComputedStyle(root).getPropertyValue('color-scheme') || ''
+      );
       const meta = dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]');
       const metaScheme = meta ? String(dom.getAttribute(meta, 'content') || '') : '';
       if (!/\bdark\b/i.test(rootScheme) && !/\bdark\b/i.test(metaScheme)) return null;
@@ -4532,9 +4512,7 @@ function createContrastHelpers(opts, shared) {
         return null;
       }
       const rootCs = window.getComputedStyle(root);
-      const rootValue = String(
-        (rootCs && (rootCs.colorScheme || rootCs.getPropertyValue('color-scheme'))) || ''
-      ).trim();
+      const rootValue = String((rootCs && rootCs.getPropertyValue('color-scheme')) || '').trim();
       let supported = __schemesNamed(rootValue);
       // The meta element speaks for a root whose color-scheme is normal:
       // the first one naming a scheme (HTML, "the page's supported color
@@ -4586,8 +4564,11 @@ function createContrastHelpers(opts, shared) {
             const c = parseCssColorToRgba(value);
             return c && c.a === 1 ? { r: c.r, g: c.g, b: c.b, a: 1 } : null;
           };
+          // color-scheme by its CSS name: Chromium reads a camelCase
+          // style property a page's script put on Object.prototype ahead of
+          // its own (round 12, R12F-6).
           const readScheme = (scheme) => {
-            probe.style.colorScheme = scheme;
+            probe.style.setProperty('color-scheme', scheme);
             probe.style.backgroundColor = 'Canvas';
             probe.style.color = 'CanvasText';
             const cs = window.getComputedStyle(probe);
@@ -4643,9 +4624,9 @@ function createContrastHelpers(opts, shared) {
     __runCanvas = rgba && rgba.a === 1 ? { color: color.trim(), rgba: { ...rgba, a: 1 } } : null;
   }
   function __namedCanvas(contrast) {
-    if (contrast && contrast.rootCanvasFallbackSet === true) {
-      const value =
-        typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+    if (__own(contrast, 'rootCanvasFallbackSet') === true) {
+      const given = __own(contrast, 'rootCanvasFallback');
+      const value = typeof given === 'string' ? given.trim() : '';
       const rgba = value ? parseCssColorToRgba(value) : null;
       if (rgba && rgba.a === 1) return { color: value, rgba: { ...rgba, a: 1 } };
     }
@@ -5060,7 +5041,7 @@ function createContrastHelpers(opts, shared) {
       if (window.self !== window.top) return null;
       const info = __pageSchemes();
       if (!info) return null;
-      const asked = contrast && contrast.colorScheme;
+      const asked = __own(contrast, 'colorScheme');
       const scheme = asked === 'light' || asked === 'dark' ? asked : info.current;
       const named = __namedCanvas(contrast);
       if (named && scheme !== info.current) return null;
@@ -5165,7 +5146,7 @@ function createContrastHelpers(opts, shared) {
     } catch {}
 
     const __bgKey = __bgCacheKey(opts2);
-    const __collectStack = !!(opts2 && opts2.collectStack);
+    const __collectStack = !!__own(opts2, 'collectStack');
 
     // Only cache when stack collection is off
     if (!__collectStack) {
@@ -5177,15 +5158,14 @@ function createContrastHelpers(opts, shared) {
       } catch {}
     }
 
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const collectStack = !!(opts2 && opts2.collectStack);
+    const collectStack = !!__own(opts2, 'collectStack');
     const stack = collectStack ? [] : null;
 
     let acc = { r: 0, g: 0, b: 0, a: 0 };
@@ -6352,7 +6332,7 @@ function createContrastHelpers(opts, shared) {
           const body = fdoc && dom.body(fdoc);
           if (body) body.textContent = '';
           if (froot) {
-            froot.style.colorScheme = '';
+            froot.style.removeProperty('color-scheme');
             froot.style.forcedColorAdjust = '';
           }
         } catch {
@@ -6381,7 +6361,7 @@ function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         // Under forced colors the scan holds the page in its own colors
         // (forced-color-adjust: none); the blank frame is held so too, or
         // the browser's placeholder color read there is the forced palette's
@@ -6420,7 +6400,12 @@ function createContrastHelpers(opts, shared) {
       const own = view.getComputedStyle(el);
       const tag = String(dom.localName(el) || '').toLowerCase();
       const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
-      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      const ref = __readPlaceholderDefaults(
+        doc,
+        tag,
+        type,
+        String(own.getPropertyValue('color-scheme') || '')
+      );
       if (!ref) return '';
       const ph = field.style;
       const same =
@@ -6496,7 +6481,7 @@ function createContrastHelpers(opts, shared) {
       if (appearance === 'none' || appearance === 'base-select') return null;
       const doc = dom.ownerDocument(el);
       if (!__hasLayout(doc)) return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || !ref.measured || String(cs.backgroundColor) !== ref.background) return null;
       return ref.measured;
     } catch {
@@ -6511,7 +6496,7 @@ function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         froot.style.forcedColorAdjust = 'none';
         const host = dom.body(fdoc) || froot;
         const select = dom.createElement(fdoc, 'select');
@@ -6555,7 +6540,7 @@ function createContrastHelpers(opts, shared) {
       const cs = view.getComputedStyle(el);
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || ref.field === (ref.measured || ref.background)) return null;
       if (String(cs.backgroundColor) !== ref.background) return null;
       if (hasBackgroundImageOrGradient(cs)) return null;
