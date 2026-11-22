@@ -677,3 +677,19 @@ test(`${RULE_ID}: a drawn button's label is read without its hidden text`, () =>
   // Long visible text is a wrapper, not a drawn control.
   assertRule(box('<span>the blue widget now today ok</span>'), RULE_ID, 'notApplicable');
 });
+
+// A styled span inside a native button is part of the button's look; the
+// button is what the keyboard operates (round 12, U12-12).
+test(`${RULE_ID}: a styled <span onclick> inside a <button> is left out`, () => {
+  assertRule(
+    run('<button><span onclick="x()" style="padding:2px;background:#eee">Go</span></button>'),
+    RULE_ID,
+    'notApplicable'
+  );
+  // The same span outside the button is asked about.
+  assertRule(
+    run('<span onclick="x()" style="padding:2px;background:#eee">Go</span>'),
+    RULE_ID,
+    'cantTell'
+  );
+});

@@ -127,6 +127,18 @@ const CASES = [
     'cantTell',
     'CLICK_HANDLER_NOT_FOCUSABLE'
   ],
+  // Drawn inside a native button, which the keyboard operates (round 12,
+  // U12-12).
+  [
+    'a styled <span onclick> inside a <button>',
+    '<button><span id="host" style="padding:2px;background:#eee" onclick="hits.push(1)">Go</span></button>',
+    null,
+    false,
+    false,
+    false,
+    'notApplicable',
+    null
+  ],
   [
     'a padded card with a background, a heading and a paragraph',
     '<div id="host" style="background:#eee;padding:16px" onclick="hits.push(1)"><h3>Weekly newsletter</h3><p>The news of the week, every Monday.</p></div>',

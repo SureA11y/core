@@ -79,7 +79,9 @@
  *     out) with
  *     padding, in a box set apart by a border or a background of its own,
  *     as "Add to cart" on a coloured `<div onclick>`: cantTell
- *     (`CLICK_HANDLER_NOT_FOCUSABLE`). An
+ *     (`CLICK_HANDLER_NOT_FOCUSABLE`). One drawn so inside a native control
+ *     in the tab order (a styled `<span>` in a `<button>`) is part of that
+ *     control's look, and is left out. An
  *     option of a combobox's list or a cell of a grid is often operated from
  *     the element that keeps focus, and the action may be offered by another
  *     control of the page.
@@ -869,7 +871,13 @@ function runInPage(ctx) {
 
     const isWidget = WIDGET_ROLES.has(role);
     const pointer = !isWidget && hasPointerCursor(el);
-    const styledControl = !isWidget && !pointer && looksLikeControl(el);
+    // Drawn inside a native control the keyboard operates (a <span> styled
+    // in a <button>): it is part of that control's look, and the control is
+    // what a keyboard user operates. Browsers draw a button's own
+    // background, which jsdom doesn't, so this keeps the two alike.
+    const inNativeControl =
+      !isWidget && !pointer && ancestorList.some((a) => firesClickFromKeyboard(a, focusOf(a)));
+    const styledControl = !isWidget && !pointer && !inNativeControl && looksLikeControl(el);
     if (!isWidget && !pointer && !styledControl) continue;
     applicableCount += 1;
 
