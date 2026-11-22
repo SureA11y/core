@@ -36,3 +36,23 @@ const SIGN_LINK_CASES_C12_12 = [
 ];
 
 module.exports.SIGN_LINK_CASES_C12_12 = SIGN_LINK_CASES_C12_12;
+
+// [host attributes, shadow markup, contrast-minimum] (round 12, C12-10).
+const SHADOW_DISABLED_CASES_C12_10 = [
+  [
+    'role="button" aria-disabled="true" tabindex="0"',
+    '<span style="color:#aaa">Buy</span>',
+    'notApplicable'
+  ],
+  [
+    'aria-disabled="true"',
+    '<button style="color:#aaa;background:#fff;border:0">Buy</button>',
+    'notApplicable'
+  ],
+  ['role="button" aria-disabled="true" tabindex="0"', '<div><slot></slot></div>', 'notApplicable'],
+  // aria-disabled on a plain element disables nothing (round 11, D6).
+  ['aria-disabled="true"', '<span style="color:#aaa">Buy</span>', 'fail'],
+  ['role="button" tabindex="0"', '<span style="color:#aaa">Buy</span>', 'fail']
+];
+
+module.exports.SHADOW_DISABLED_CASES_C12_10 = SHADOW_DISABLED_CASES_C12_10;

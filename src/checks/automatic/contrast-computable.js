@@ -46,6 +46,8 @@
  *   interface component (an element whose role is a widget role, a native
  *   control, or a focusable element) or on an ancestor of the one the text
  *   is in: on a plain <span> or <div> with no control it exempts nothing.
+ *   Ancestors are those of the flat tree: a shadow host that is a control
+ *   with aria-disabled exempts the text of its shadow root.
  *   Subtrees excluded
  *   via engineOptions.excludeSelectors are skipped, and open shadow roots
  *   are walked as roots in their own right.

@@ -517,6 +517,16 @@ function createContrastHelpers(opts, shared) {
   }
 
   function isInactiveUiComponent(el) {
+    // The flat tree (round 12, C12-10): text in a shadow root is the
+    // content of its host, and a slotted node of its slot, so an
+    // aria-disabled host with role=button disables the text it draws. The
+    // chain of ancestors is kept for the run.
+    const chain = ancestorsOf(el);
+    let at = 0;
+    const next = () => {
+      while (++at < chain.length && dom.nodeType(chain[at]) === 11);
+      return chain[at] || null;
+    };
     let node = el;
     let prev = null;
     let depth = 0;
@@ -543,7 +553,7 @@ function createContrastHelpers(opts, shared) {
         labelAncestor = node;
       }
       prev = node;
-      node = dom.parentElement(node);
+      node = next();
     }
 
     // WCAG 1.4.3/1.4.6 "disabled label" exception: see labelNamesDisabled.

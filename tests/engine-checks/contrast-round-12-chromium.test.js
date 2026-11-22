@@ -13,7 +13,11 @@ const assert = require('node:assert/strict');
 
 const { chromium, executablePath, skip } = require('../helpers/chromium.js');
 const { addBundle } = require('../helpers/browserBundle');
-const { SIGN_CASES_C12_1, SIGN_LINK_CASES_C12_12 } = require('./contrast-round-12-cases.js');
+const {
+  SIGN_CASES_C12_1,
+  SIGN_LINK_CASES_C12_12,
+  SHADOW_DISABLED_CASES_C12_10
+} = require('./contrast-round-12-cases.js');
 
 const page = (body, head = '') =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>t</title>${head}</head><body><main>${body}</main></body></html>`;
@@ -158,6 +162,20 @@ test(
       ]) {
         assert.equal((await run(page(body), id)).outcome, want, `${id}: ${body}`);
       }
+    }
+  }
+);
+
+test(
+  'aria-disabled on a shadow host that is a control exempts the text it draws (C12-10)',
+  { skip },
+  async () => {
+    for (const [attrs, shadow, want] of SHADOW_DISABLED_CASES_C12_10) {
+      const light = shadow.includes('<slot>') ? '<span style="color:#aaa">Buy</span>' : '';
+      const html = page(
+        `<x-d ${attrs}>${light}</x-d><script>customElements.define('x-d', class extends HTMLElement { connectedCallback() { this.attachShadow({ mode: 'open' }).innerHTML = '${shadow}'; } });</script>`
+      );
+      assert.equal((await run(html, 'contrast-minimum')).outcome, want, `${attrs} ${shadow}`);
     }
   }
 );

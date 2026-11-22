@@ -15,7 +15,11 @@ const {
   runa11yCoreOnDom
 } = require('../helpers/runDomRulesOnHtml.js');
 
-const { SIGN_CASES_C12_1, SIGN_LINK_CASES_C12_12 } = require('./contrast-round-12-cases.js');
+const {
+  SIGN_CASES_C12_1,
+  SIGN_LINK_CASES_C12_12,
+  SHADOW_DISABLED_CASES_C12_10
+} = require('./contrast-round-12-cases.js');
 
 const page = (body, head = '') =>
   `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main>${body}</main></body></html>`;
@@ -211,5 +215,16 @@ test('a failing sign read with its price says why it needs the text ratio, in ev
       assert.ok(sign.summary.endsWith(sentence), `${ruleId} ${locale}: ${sign.summary}`);
       assert.ok(!plain.summary.includes(sentence), `${ruleId} ${locale}`);
     }
+  }
+});
+
+test('aria-disabled on a shadow host that is a control exempts the text it draws (C12-10)', () => {
+  for (const [attrs, shadow, want] of SHADOW_DISABLED_CASES_C12_10) {
+    const light = shadow.includes('<slot>') ? '<span style="color:#aaa">Buy</span>' : '';
+    const dom = createDom(page(`<x-d id="h" ${attrs}>${light}</x-d>`));
+    dom.window.document.getElementById('h').attachShadow({ mode: 'open' }).innerHTML = shadow;
+    const result = runa11yCoreOnDom(dom, { runOnly: ['contrast-minimum'] });
+    const r = result.checksResults.find((c) => c.ruleId === 'contrast-minimum');
+    assert.equal(r.outcome, want, `${attrs} ${shadow}`);
   }
 });
