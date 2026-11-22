@@ -10,20 +10,40 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
+const {
+  runa11yCoreOnHtml,
+  createDom,
+  runa11yCoreOnDom
+} = require('../helpers/runDomRulesOnHtml.js');
 
 const spans = (n, word) =>
   Array.from({ length: n }, (_, i) => `<span>${word} ${i}</span> `).join('');
 
 test('contrast-computable: a label with thousands of text nodes is scanned in linear time', () => {
-  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>x</h1><label id="choose">Choose <input type="checkbox">${spans(3000, 'word')}</label></main></body></html>`;
-  const start = Date.now();
-  const result = runa11yCoreOnHtml(html, { runOnly: ['contrast-computable'] });
-  const ms = Date.now() - start;
-  assert.equal(result.checksResults[0].outcome, 'pass');
-  // About 75 s before the fix; about 6 s now, more on a busy machine, so the
-  // bound only catches the old growth, not a slow runner.
-  assert.ok(ms < 30000, `${ms} ms`);
+  // Under jsdom each text's element costs a getComputedStyle that matches
+  // the whole style sheet against it (about 1 ms), so a wall-clock bound
+  // fails on a busy machine. The test compares the processor time of one
+  // scan of 750 and of 3000 text nodes instead: four times the text takes
+  // two to four times as long (fixed costs included), and the quadratic
+  // walk this guards against (reading the label again for each text node)
+  // took 14 to 16.
+  function cpuMs(n) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>x</h1><label id="choose">Choose <input type="checkbox">${spans(n, 'word')}</label></main></body></html>`;
+    const dom = createDom(html);
+    const start = process.cpuUsage();
+    const result = runa11yCoreOnDom(dom, {
+      runOnly: ['contrast-computable'],
+      entryPointParity: false
+    });
+    const used = process.cpuUsage(start);
+    dom.window.close();
+    assert.equal(result.checksResults[0].outcome, 'pass');
+    return (used.user + used.system) / 1000;
+  }
+  cpuMs(200); // warm up the engine and jsdom
+  const small = cpuMs(750);
+  const large = cpuMs(3000);
+  assert.ok(large < small * 8, `${Math.round(small)} ms for 750, ${Math.round(large)} ms for 3000`);
 });
 
 test('contrast-minimum: the text of a label still follows its control, once per label', () => {

@@ -90,6 +90,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- **`css-focus-indicator-suppressed` is faster on pages with many focus rules**: a selector that needs a class or id no element in the element's tree carries is no longer tested against it; results are unchanged. With 200 rules that match nothing over 4,000 tabbable elements in jsdom, processor time drops from about 11.4 s to 8.6 s (round 12, P12-1).
 - **A value a page put on `Object.prototype` no longer changes a scan**: `Object.prototype.occurrenceOutcome = 'pass'` turned every failure into a pass (a regression since 1.17.0), `__budgetSpent`, `timeBudgetMs` or `excludeSelectors` there changed the scan, and a read-only `type` or `profile` threw a bare `TypeError`. Such values are taken off `Object.prototype` for the scan and put back after; one that can be neither taken off nor written stops the scan with `PAGE_BUILTINS_BROKEN` (round 12, A12-1, A12-2, A12-3).
 - **A frame the time budget never started, in a scan of several profiles**, runs its first profile only and lists the others in `engine.profilesNotRun`, as the top document does; budget warnings give the scan's budget in whole milliseconds, and say "before this frame's scan started" only for a frame (round 12, A12-4, A12-5).
 - **The HTML report counts each rule not run once** (it said "330 rules not run" for 118 rules), and names the profiles not started apart from the rules (round 12, A12-6).

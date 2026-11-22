@@ -681,3 +681,37 @@ test(`${RULE_ID}: a rule whose selector list holds an invalid selector is droppe
   );
   assert.deepStrictEqual(universal.occurrences[0].data.details.suppressingSelectors, [':focus']);
 });
+
+// A selector that needs a class or id no element in the element's tree
+// carries is not tested; one whose name is only inside :not(), :is(),
+// :where() or :has() still is (round 12, P12-1).
+test(`${RULE_ID}: a class or id is only required outside functional pseudo-classes`, () => {
+  const selectorsFor = (css, body, quirks = false) => {
+    const html = `${quirks ? '' : '<!doctype html>'}<html><head><style>${css}</style></head><body>${body}</body></html>`;
+    const rule = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults[0];
+    return (rule.occurrences || []).flatMap((o) => o.data.details.suppressingSelectors);
+  };
+  const body = '<main class="m"><a href="/a" class="x" id="a">a</a></main>';
+  assert.deepStrictEqual(
+    selectorsFor(
+      '.nope a:focus, #nope a:focus, .m .nope:focus, a:not(.nope):focus, :is(.nope, .x):focus, :where(main) a:focus{outline:none}',
+      body
+    ),
+    ['a:not(.nope):focus', ':is(.nope, .x):focus', ':where(main) a:focus']
+  );
+  // A quirks-mode page matches class names in any case.
+  assert.deepStrictEqual(selectorsFor('.M .X:focus{outline:none}', body, true), ['.M .X:focus']);
+  // A shadow root's sheet is matched against the names in that root: the
+  // host's class is outside it.
+  const dom = createDom(
+    '<!doctype html><html><body><div class="outer" id="h"></div></body></html>'
+  );
+  const root = dom.window.document.getElementById('h').attachShadow({ mode: 'open' });
+  root.innerHTML =
+    '<button class="inner" id="b">b</button><style>.inner:focus, .outer button:focus{outline:none}</style>';
+  const rule = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }).checksResults[0];
+  assert.deepStrictEqual(
+    rule.occurrences.flatMap((o) => o.data.details.suppressingSelectors),
+    ['.inner:focus']
+  );
+});
