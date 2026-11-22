@@ -38,7 +38,8 @@
  *   symbols carry information, rather than decorate or repeat a text
  *   beside them, is for a person to judge. At 3:1 or more, pass.
  * @reports
- *   - `symbols`: the symbols, with spacing collapsed, up to 20 characters.
+ *   - `symbols`: the element's own symbols (its text nodes), with spacing
+ *     collapsed, up to 20 characters.
  *   - `ratio`: their contrast against their background, to two decimals.
  *   - `foreground`, `background`: the colours measured, as hex.
  *   - `threshold`: 3.
@@ -53,6 +54,10 @@
  * - The colours are measured with the contrast helpers the text-contrast
  *   rules use (helpers.contrast): the effective foreground, with its
  *   opacity, over the effective background.
+ * - Each element is reported for the symbols in its own text nodes, the
+ *   innermost element that holds them, as the text-contrast rules report
+ *   text: symbols nested in another symbol element are reported once, on
+ *   the element that holds them, measured in its colour.
  * - Icon fonts draw their glyphs from the Private Use Area, which is not a
  *   symbol category: they are not seen here.
  */
@@ -135,22 +140,23 @@ function runInPage(ctx) {
     return true;
   }
 
-  // The element's own symbol text: a direct text child with a symbol, and
-  // the whole of its text free of letters and digits.
+  // The element's own symbol text: its direct text children, holding a
+  // symbol, with the whole of its text free of letters and digits. Only
+  // the element's own text is its, as the text-contrast rules report text:
+  // <span>★<b>★★</b></span> gives “★” on the span and “★★” on the <b>,
+  // each measured in its own colour, so no symbol is reported twice.
   function symbolTextOf(el) {
-    let own = false;
+    let own = '';
     for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
-      if (dom.nodeType(n) === 3 && SYMBOL.test(String(dom.nodeValue(n) || ''))) {
-        own = true;
-        break;
-      }
+      if (dom.nodeType(n) === 3) own += String(dom.nodeValue(n) || '');
     }
-    if (!own) return '';
+    own = trim(own).replace(/\s+/g, ' ');
+    if (!own || !SYMBOL.test(own.replace(SEPARATORS, ''))) return '';
     const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
     if (!text || [...text].length > 40) return '';
     if (LETTER_OR_DIGIT.test(text) || EMOJI.test(text)) return '';
     if (!SYMBOL.test(text.replace(SEPARATORS, ''))) return '';
-    return text;
+    return own;
   }
 
   const round2 = (n) => Math.round(n * 100) / 100;

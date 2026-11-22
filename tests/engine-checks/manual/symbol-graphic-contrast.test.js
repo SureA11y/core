@@ -133,3 +133,19 @@ test(`${RULE_ID}: symbols in an inactive control are left out, as 1.4.11 exempts
     maxOccurrences: 1
   });
 });
+
+test(`${RULE_ID}: nested symbol elements report each symbol once, on the element that holds it (round 11, B11-11)`, () => {
+  const rule = assertRule(
+    run('<p><span id="o" style="color:#ccc">★<b id="i">★★</b></span></p>'),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 2, maxOccurrences: 2 }
+  );
+  assert.deepEqual(
+    rule.occurrences.map((o) => [/id="(\w)"/.exec(o.html)[1], o.data.details.symbols]),
+    [
+      ['o', '★'],
+      ['i', '★★']
+    ]
+  );
+});
