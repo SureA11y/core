@@ -9,8 +9,10 @@
  * @standard WCAG 2.2
  * @sc 1.4.12
  * @applicability
- *   Applies to a page with visible text. The loss of content needs a layout
- *   (a browser): without one, only the style sheets are read.
+ *   Applies to a page with visible text, including text its box already
+ *   cuts off where part of it shows (more than a pixel in every box that
+ *   clips it). The loss of content needs a layout (a browser): without
+ *   one, only the style sheets are read.
  * @expectation
  *   WCAG 1.4.12: with line height at 1.5 times the font
  *   size, spacing after paragraphs at 2 times, letter spacing at 0.12 times
@@ -1621,6 +1623,18 @@ function runInPage(ctx) {
         const o = outside(l, box, c);
         return o.dx <= 1 && o.dy <= 1;
       };
+      // Text partly shown before is visible text the rule measures: the page
+      // has some, even when the spacing cuts no more of it. A line counts
+      // when more than a pixel of it shows in every box that clips it, so
+      // visually hidden text, cut by a 1px box of its own, doesn't.
+      const partlyShown = (l) =>
+        clippers.every((c) => {
+          const box = before.boxes.get(c.el);
+          if (!box) return false;
+          const o = outside(l, box, c);
+          return o.dx < l.right - l.left - 1 && o.dy < l.bottom - l.top - 1;
+        });
+      if (linesBefore.some(partlyShown)) textCount += 1;
       // Counted by rows: under a clamp, the text after the ellipsis is laid
       // out beside the last row shown, and isn't shown. Vertical lines are
       // columns side by side, counted by where each starts across.

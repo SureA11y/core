@@ -585,6 +585,26 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.deepEqual(occ.data.details.lines, { shownBefore: 3, shownAfter: 2 });
   });
 
+  // Text its box already cut is still visible text that the rule measures:
+  // a page whose only text is such a box passes when the spacing cuts no
+  // more of it (round 12, U12-5). Text a box hides entirely is not visible.
+  await t.test('a page whose only text is already cut passes', async () => {
+    const cut = await scan(
+      page(
+        '',
+        '<nav><a href="#" style="display:inline-block;width:110px;white-space:nowrap;overflow:hidden">Products &amp; services</a></nav>'
+      )
+    );
+    assert.equal(outcome(cut), 'pass');
+    const hidden = await scan(
+      page(
+        '',
+        '<span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">Skip to content</span>'
+      )
+    );
+    assert.equal(outcome(hidden), 'notApplicable');
+  });
+
   await t.test('room to grow, a scrolling box, or text already hidden before: pass', async () => {
     for (const [css, body] of [
       ['', `<p>${TEXT}, and the rest of the week from nine to five.</p>`],
