@@ -76,7 +76,7 @@ Total rules: **154**. With fixture: **149**. Without fixture: **5**.
 | form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 43 | 13 | 12 | 0 | 18 |
 | form-control-programmatic-label-quality | manual | `tests/fixtures/form-control-programmatic-label-quality-manual-all-scenarios.html` | 18 | 0 | 0 | 0 | 18 |
 | form-control-single-label | automatic | `tests/fixtures/form-control-single-label-all-scenarios.html` | 9 | 5 | 0 | 3 | 1 |
-| form-group-name-present | manual | `tests/fixtures/form-group-name-present-all-scenarios.html` | 10 | 3 | 0 | 4 | 3 |
+| form-group-name-present | manual | `tests/fixtures/form-group-name-present-all-scenarios.html` | 11 | 3 | 0 | 5 | 3 |
 | heading-order | manual | `tests/fixtures/heading-order-all-scenarios.html` | 4 | 0 | 0 | 3 | 1 |
 | heading-quality | manual | `tests/fixtures/heading-quality-all-scenarios.html` | 12 | 4 | 0 | 6 | 2 |
 | html-lang-attr-present | automatic | `tests/fixtures/language-page-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
@@ -128,7 +128,7 @@ Total rules: **154**. With fixture: **149**. Without fixture: **5**.
 | object-text-alternative-present | automatic | `tests/fixtures/object-text-alternative-present-all-scenarios.html` | 18 | 5 | 6 | 0 | 7 |
 | object-text-alternative-quality | manual | `tests/fixtures/object-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | option-name-present | automatic | `tests/fixtures/option-name-present-all-scenarios.html` | 17 | 4 | 5 | 0 | 8 |
-| p-as-heading | manual | `tests/fixtures/p-as-heading-all-scenarios.html` | 26 | 0 | 0 | 13 | 13 |
+| p-as-heading | manual | `tests/fixtures/p-as-heading-all-scenarios.html` | 28 | 0 | 0 | 14 | 14 |
 | page-has-heading-one | manual | `tests/fixtures/page-has-heading-one-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | page-title-patterns | manual | `tests/fixtures/page-title-patterns-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | page-title-present | automatic | `tests/fixtures/page-title-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |

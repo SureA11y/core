@@ -1091,11 +1091,11 @@
       "testFile": "tests/engine-checks/manual/form-group-name-present-chromium.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-group-name-present-all-scenarios.html",
-      "totalCases": 10,
+      "totalCases": 11,
       "caseCounts": {
         "PASS": 3,
         "FAIL": 0,
-        "CANTTELL": 4,
+        "CANTTELL": 5,
         "OTHER": 3
       }
     },
@@ -2098,12 +2098,12 @@
       "testFile": "tests/engine-checks/manual/p-as-heading.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/p-as-heading-all-scenarios.html",
-      "totalCases": 26,
+      "totalCases": 28,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 13,
-        "OTHER": 13
+        "CANTTELL": 14,
+        "OTHER": 14
       }
     },
     {
