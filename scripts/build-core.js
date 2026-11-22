@@ -1669,11 +1669,60 @@ function warnEmptyRunOnly(runOnly, eo) {
         named.push('runOnly.' + key);
       }
     }
+    // { type } with no values names no rule or tag, and {} names nothing
+    // (round 12, R12F-10).
+    const keys = Object.keys(runOnly);
+    if (!keys.length) {
+      emptyRunOnlyWarning('runOnly is an empty object', eo);
+      return;
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(runOnly, 'type') &&
+      !Object.prototype.hasOwnProperty.call(runOnly, 'values') &&
+      keys.every((k) => k === 'type' || k === 'includeMode')
+    ) {
+      emptyRunOnlyWarning('runOnly.type has no values', eo);
+      return;
+    }
   }
   if (!named.length) return;
-  const message =
-    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists') +
-    ': it selects no rule, so every rule runs';
+  emptyRunOnlyWarning(
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists'),
+    eo
+  );
+}
+
+// An include list of engineOptions.rules, .tags or .tests given empty
+// ([], '', { include: [] }) selects nothing, and every rule runs, as with no
+// filter: said, and under strictOptions refused, as for runOnly (round 12,
+// R12F-10). Read only where runOnly has no filter, which wins over them.
+function warnEmptyOptionFilters(eo) {
+  const empty = (v) =>
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'string' && !v.trim()) ||
+    (Object.prototype.toString.call(v) === '[object Set]' && v.size === 0);
+  const named = [];
+  for (const name of ['rules', 'tags', 'tests']) {
+    const v = Object.prototype.hasOwnProperty.call(eo, name) ? eo[name] : undefined;
+    if (empty(v)) named.push('engineOptions.' + name);
+    else if (
+      v &&
+      typeof v === 'object' &&
+      Object.prototype.hasOwnProperty.call(v, 'include') &&
+      empty(v.include)
+    ) {
+      named.push('engineOptions.' + name + '.include');
+    }
+  }
+  if (!named.length) return;
+  emptyRunOnlyWarning(
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists'),
+    eo
+  );
+}
+
+function emptyRunOnlyWarning(what, eo) {
+  const message = what + ': it selects no rule, so every rule runs';
   if (strictOf(eo)) {
     const err = new Error(message + '. (strictOptions)');
     err.code = 'INVALID_ENGINE_OPTIONS';
@@ -1797,6 +1846,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     return applyOptInRules(enforceKnownProfile(applyProfile(selection, requestedProfile), eo), eo.optInRules);
   }
 
+  warnEmptyOptionFilters(eo);
   const mode = normalizeIncludeMode(eo.includeMode);
 
   // { include, exclude }; a bare list or string is the include list, as
