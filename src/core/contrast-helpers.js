@@ -8809,9 +8809,25 @@ function createContrastHelpers(opts, shared) {
       left = x;
       right = x + w;
     }
-    const baselineSet = ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
-      (a) => !!dom.closest(text, '[' + a + ']')
-    );
+    // A baseline set as an attribute, or in CSS on the text or a part of it
+    // (round 12, C12-5): jsdom computes CSS ones, and passes
+    // dominant-baseline down, but applies no attribute.
+    const baselineSet =
+      ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
+        (a) => !!dom.closest(text, '[' + a + ']')
+      ) ||
+      parts.some((n) => {
+        const ncs = n === text ? tcs : __contrastComputedStyle(n);
+        if (!ncs || typeof ncs.getPropertyValue !== 'function') return false;
+        const db = trim(ncs.getPropertyValue('dominant-baseline')).toLowerCase();
+        const ab = trim(ncs.getPropertyValue('alignment-baseline')).toLowerCase();
+        const bs = trim(ncs.getPropertyValue('baseline-shift')).toLowerCase();
+        return (
+          !/^(|auto|alphabetic)$/.test(db) ||
+          !/^(|auto|baseline|alphabetic)$/.test(ab) ||
+          !/^(|0|0px|baseline)$/.test(bs)
+        );
+      });
     const above = baselineSet ? 1.3 * fs : 1.2 * fs;
     const below = baselineSet ? 1.3 * fs : 0.4 * fs;
     return { left, right, top: y - above, bottom: y + below };

@@ -70,3 +70,26 @@ test('an SVG shape its display or visibility hides is no background, without a l
     'pass'
   );
 });
+
+test('a baseline set in CSS keeps SVG text asked about, without a layout (C12-5)', () => {
+  const svg = (head) =>
+    svgPage(
+      '<rect width="300" height="35" fill="#000"/><text x="10" y="25" font-size="20" fill="#fff">Sales<tspan>!</tspan></text>',
+      head
+    );
+  for (const head of [
+    '<style>text{dominant-baseline:hanging}</style>',
+    '<style>svg{dominant-baseline:hanging}</style>',
+    '<style>tspan{alignment-baseline:hanging}</style>',
+    '<style>tspan{baseline-shift:-10px}</style>'
+  ]) {
+    const r = check(svg(head), 'contrast-computable');
+    assert.equal(r.outcome, 'cantTell', head);
+    assert.equal(r.occurrences[0].data.details.reasonCode, 'BACKGROUND_OVERLAP', head);
+  }
+  // Text clear inside the rect on its usual baseline is measured.
+  const tall = svgPage(
+    '<rect width="300" height="60" fill="#000"/><text x="10" y="30" font-size="20" fill="#fff">Sales</text>'
+  );
+  assert.equal(check(tall, 'contrast-computable').outcome, 'pass');
+});
