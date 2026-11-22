@@ -3931,15 +3931,31 @@ function runCoreSettled(
     }
   );
   if (notRunRules.length) {
+    // The budget the scan was given, not what was left of it when this
+    // profile or frame started (__scanTimeBudgetMs, set by the engine
+    // only), in whole ms, or tenths below 10 (round 12, A12-5).
+    const flagOf = (key) =>
+      Object.prototype.hasOwnProperty.call(engineOptions, key) &&
+      !Object.prototype.propertyIsEnumerable.call(engineOptions, key)
+        ? engineOptions[key]
+        : undefined;
+    const given =
+      typeof flagOf('__scanTimeBudgetMs') === 'number'
+        ? flagOf('__scanTimeBudgetMs')
+        : timeBudgetMs;
+    const budgetText =
+      typeof given === 'number' && Number.isFinite(given)
+        ? ' of ' + (given >= 10 ? Math.round(given) : Math.round(given * 10) / 10) + ' ms'
+        : '';
     try {
       console.warn(
-        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
-          timeBudgetMs +
+        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget' +
+          budgetText +
           (budgetSpent
-            ? typeof engineOptions.profile === 'string'
-              ? ' ms before profile "' + engineOptions.profile + '" started, so it'
-              : " ms before this frame's scan started, so it"
-            : ' ms and') +
+            ? flagOf('__budgetSpentAt') === 'profile' && typeof engineOptions.profile === 'string'
+              ? ' before profile "' + engineOptions.profile + '" started, so it'
+              : " before this frame's scan started, so it"
+            : ' and') +
           ' did not run ' +
           notRunRules.length +
           ' rule' +

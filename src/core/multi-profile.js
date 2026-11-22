@@ -188,16 +188,26 @@ function runProfilesUncapped(engineOptions, run) {
   // A frame's scan that starts with no time budget left (frame-scan.js) is
   // asked to start no rule (__budgetSpent, set by the engine only, not
   // enumerable): each profile's scan is asked the same, so it lists its
-  // selection in notRun.
+  // selection in notRun. The scan's budget (__scanTimeBudgetMs), which the
+  // warnings give, goes with it. Read only as the options' own, never from
+  // Object.prototype (round 12, A12-2).
+  const flagOf = (from, key) =>
+    from &&
+    typeof from === 'object' &&
+    Object.prototype.hasOwnProperty.call(from, key) &&
+    !Object.prototype.propertyIsEnumerable.call(from, key)
+      ? from[key]
+      : undefined;
   const carryBudgetSpent = (from, to) => {
-    if (
-      from &&
-      typeof from === 'object' &&
-      Object.prototype.hasOwnProperty.call(from, '__budgetSpent') &&
-      from.__budgetSpent === true &&
-      !Object.prototype.propertyIsEnumerable.call(from, '__budgetSpent')
-    ) {
+    if (flagOf(from, '__budgetSpent') === true) {
       Object.defineProperty(to, '__budgetSpent', { value: true });
+    }
+    const scanBudget = flagOf(from, '__scanTimeBudgetMs');
+    if (
+      typeof scanBudget === 'number' &&
+      !Object.prototype.hasOwnProperty.call(to, '__scanTimeBudgetMs')
+    ) {
+      Object.defineProperty(to, '__scanTimeBudgetMs', { value: scanBudget });
     }
     return to;
   };
@@ -259,23 +269,48 @@ function runProfilesUncapped(engineOptions, run) {
       return Date.now();
     };
     const started = budget === null ? 0 : clock();
+    const spentOnArrival = flagOf(engineOptions, '__budgetSpent') === true;
+    // The scan's budget: this one's, or, in a frame, the whole scan's.
+    const scanBudget =
+      typeof flagOf(engineOptions, '__scanTimeBudgetMs') === 'number'
+        ? flagOf(engineOptions, '__scanTimeBudgetMs')
+        : budget;
+    // What a later profile's scan is given: what is left, and the scan's
+    // budget for its warnings.
+    const withScanBudget = (options) => {
+      if (
+        scanBudget !== null &&
+        !Object.prototype.hasOwnProperty.call(options, '__scanTimeBudgetMs')
+      ) {
+        Object.defineProperty(options, '__scanTimeBudgetMs', { value: scanBudget });
+      }
+      return options;
+    };
     const step = (i) => {
       if (i >= unique.length) {
         const merged = mergeProfileResults(runs, unique, allowFail);
         // The budget the scan was given, not what was left of it for the
         // profile that ran out.
         if (merged && merged.engine && merged.engine.incomplete) {
-          merged.engine.incomplete.timeBudgetMs = budget;
+          merged.engine.incomplete.timeBudgetMs = scanBudget;
         }
         return merged;
       }
       const left = budget === null ? null : budget - (clock() - started);
-      if (left !== null && i > 0 && left <= 0) {
+      // A frame's scan reached with no budget left (spentOnArrival) starts
+      // its first profile only, as a scan whose first profile used it all
+      // does: the others are not run, not run with nothing started (round
+      // 12, A12-4).
+      if (i > 0 && ((left !== null && left <= 0) || spentOnArrival)) {
         // Not run, but its rules are listed in notRun, as a profile's scan
         // that ran out lists those it did not start: its scan is asked to
         // start none (__budgetSpent), which only works out its selection.
-        const dryOptions = Object.assign({}, engineOptions, { profile: unique[i] });
-        Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        const dryOptions = withScanBudget(
+          carryBudgetSpent(engineOptions, Object.assign({}, engineOptions, { profile: unique[i] }))
+        );
+        if (!spentOnArrival) Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        // Its warning names the profile, not a frame.
+        Object.defineProperty(dryOptions, '__budgetSpentAt', { value: 'profile' });
         const skippedOf = (dry) => {
           const skipped = {};
           Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
@@ -294,13 +329,15 @@ function runProfilesUncapped(engineOptions, run) {
         return thenable(dry) ? dry.then(skippedOf) : skippedOf(dry);
       }
       const result = run(
-        carryBudgetSpent(
-          engineOptions,
-          Object.assign(
-            {},
+        withScanBudget(
+          carryBudgetSpent(
             engineOptions,
-            { profile: unique[i] },
-            left !== null && i > 0 ? { timeBudgetMs: left } : {}
+            Object.assign(
+              {},
+              engineOptions,
+              { profile: unique[i] },
+              left !== null && i > 0 ? { timeBudgetMs: left } : {}
+            )
           )
         )
       );

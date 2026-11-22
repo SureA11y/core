@@ -317,3 +317,65 @@ test('the browser bundle honors timeBudgetMs', async () => {
     dom.window.close();
   }
 });
+
+// A frame the scan reaches with no budget left, in a scan of several
+// profiles: its first profile starts no rule and the others are not run, as
+// at the top (round 12, A12-4). Its warnings give the scan's budget, not
+// what was left of it (A12-5).
+test('a frame reached with no budget left, scanning several profiles, lists the profiles not run (round 12, A12-4, A12-5)', () => {
+  const main = require('../src/index.js');
+  const { createDom } = require('../src/testing.js');
+  const { budgetedOptions } = require('../src/core/frame-scan.js');
+  createDom(PAGE);
+  const given = { timeBudgetMs: 300, profile: ['wcag22-aa', 'wcag21-aa'] };
+  // Started 1 s ago: nothing left.
+  const frameOptions = budgetedOptions(given, given, 300, Date.now() - 1000);
+  const { value: frame, said } = quietly(() =>
+    main.runa11yCoreInPage('https://example.test/f.html', null, frameOptions, null)
+  );
+  assert.deepEqual(frame.engine.profiles, ['wcag22-aa']);
+  assert.deepEqual(frame.engine.profilesNotRun, [{ profile: 'wcag21-aa', reason: 'timeBudget' }]);
+  assert.equal(frame.engine.incomplete.profilesNotRun, 1);
+  assert.equal(frame.engine.incomplete.timeBudgetMs, 300);
+  assert.equal(frame.engine.incomplete.rulesNotRun, frame.notRun.length);
+  assert.ok(said.some((s) => s.includes("time budget of 300 ms before this frame's scan started")));
+  assert.ok(
+    said.some((s) => s.includes('time budget of 300 ms before profile "wcag21-aa" started'))
+  );
+
+  // A frame with some budget left: its warnings give the scan's 300 ms, not
+  // a fraction of a ms left over.
+  const partOptions = budgetedOptions(given, given, 300, Date.now() - 299.9999);
+  const { said: partSaid } = quietly(() =>
+    main.runa11yCoreInPage('https://example.test/f.html', null, partOptions, null)
+  );
+  const budgets = partSaid
+    .map((s) => /time budget of ([^ ]+) ms/.exec(s))
+    .filter(Boolean)
+    .map((m) => m[1]);
+  assert.ok(budgets.length > 0);
+  assert.ok(
+    budgets.every((b) => b === '300'),
+    String(budgets)
+  );
+});
+
+test('the budget warnings give the scan’s budget in whole ms (round 12, A12-5)', () => {
+  const slow = {
+    id: 'org-slow',
+    meta: { title: 'Slow', tags: ['wcag2a', 'wcag111'], wcagSc: ['1.1.1'] },
+    runInPage(ctx) {
+      const t = Date.now();
+      while (Date.now() - t < 20);
+      return { ruleId: ctx.rule.ruleId, outcome: 'pass', severity: 'moderate', occurrences: [] };
+    }
+  };
+  const { said } = scan({
+    profile: ['wcag21-aa', 'wcag22-aa'],
+    timeBudgetMs: 12.345,
+    customRules: [slow]
+  });
+  const named = said.filter((s) => /time budget/.test(s));
+  assert.equal(named.length, 2, String(named));
+  for (const s of named) assert.match(s, /time budget of 12 ms/, s);
+});

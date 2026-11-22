@@ -370,10 +370,12 @@ function budgetedOptions(engineOptions, eo, budget, scanStartedAt) {
   if (budget === null || scanStartedAt === null) return engineOptions;
   const left = budget - (Date.now() - scanStartedAt);
   if (left >= budget) return engineOptions;
-  if (left > 0) return Object.assign({}, eo, { timeBudgetMs: left });
-  const spent = Object.assign({}, eo);
-  Object.defineProperty(spent, '__budgetSpent', { value: true });
-  return spent;
+  const out = Object.assign({}, eo, left > 0 ? { timeBudgetMs: left } : {});
+  if (left <= 0) Object.defineProperty(out, '__budgetSpent', { value: true });
+  // The scan's budget, which the warnings give, not what is left of it
+  // (round 12, A12-5). Set by the engine only, not enumerable.
+  Object.defineProperty(out, '__scanTimeBudgetMs', { value: budget });
+  return out;
 }
 
 // The budget a frame's result says it was given is the scan's, not what was
