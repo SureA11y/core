@@ -21,6 +21,19 @@ module.exports = [
     link('guide', 'color:#000', ' class="u"'),
     'fail'
   ],
+  // Round 12, C12-15: one in the color behind it shows nothing either.
+  [
+    'an underline in the background color on the content is no cue',
+    sheet('.u{text-decoration:underline #fff}'),
+    link('<span class="u">guide</span>'),
+    'fail'
+  ],
+  [
+    'an underline in the background color on the content is no cue, in a style attribute',
+    '',
+    link('<span style="text-decoration:underline #fff">guide</span>'),
+    'fail'
+  ],
   [
     'an underline in a color of its own on the content is a cue',
     sheet('.u{text-decoration:underline #c00}'),

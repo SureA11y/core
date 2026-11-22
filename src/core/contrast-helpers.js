@@ -517,6 +517,16 @@ function createContrastHelpers(opts, shared) {
   }
 
   function isInactiveUiComponent(el) {
+    // The flat tree (round 12, C12-10): text in a shadow root is the
+    // content of its host, and a slotted node of its slot, so an
+    // aria-disabled host with role=button disables the text it draws. The
+    // chain of ancestors is kept for the run.
+    const chain = ancestorsOf(el);
+    let at = 0;
+    const next = () => {
+      while (++at < chain.length && dom.nodeType(chain[at]) === 11);
+      return chain[at] || null;
+    };
     let node = el;
     let prev = null;
     let depth = 0;
@@ -543,7 +553,7 @@ function createContrastHelpers(opts, shared) {
         labelAncestor = node;
       }
       prev = node;
-      node = dom.parentElement(node);
+      node = next();
     }
 
     // WCAG 1.4.3/1.4.6 "disabled label" exception: see labelNamesDisabled.
@@ -562,10 +572,12 @@ function createContrastHelpers(opts, shared) {
   // "〒100-0001"), even when markup gives it an element of its own: it is
   // read, so it is text, held to 1.4.3, not a graphic. "Next to" is the
   // nearest visible character before or after it, not past a block
-  // boundary (a block, a line break) and not counting text that is not
+  // boundary (a block, a flex or grid item, a float, an absolutely
+  // positioned box, a line break) and not counting text that is not
   // drawn (display:none, visibility:hidden, visually hidden), nor the text
-  // of a link beside it. A sign alone between links, or a separator such
-  // as ">", is not this: it stays a graphic.
+  // of a link beside it, unless the link's nearest character is a digit
+  // (an amount). A sign alone between links, or a separator such as ">",
+  // is not this: it stays a graphic.
   const __RUN_SIGN = /[\p{Sc}〒]/u;
   const __RUN_SIGN_ONLY = /^[\s\p{Sc}〒\p{P}]*$/u;
   const __RUN_TEXT = /[\p{L}\p{N}]/u;
@@ -582,6 +594,21 @@ function createContrastHelpers(opts, shared) {
     return d === 'contents' || d.startsWith('inline') || d.startsWith('ruby');
   }
 
+  // Whether el's box is a block whatever its display says: a float, an
+  // absolutely positioned box, or an item of a flex or grid container
+  // (CSS Display 3, blockification). A browser computes such a display as
+  // a block already; jsdom doesn't, so it is read here, and both agree
+  // (round 12, C12-1).
+  function __runBlockified(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.cssFloat || cs.float) && trim(cs.cssFloat || cs.float) !== 'none') return true;
+    if (cs.position === 'absolute' || cs.position === 'fixed') return true;
+    const parent = composedParent(el);
+    if (!parent || dom.nodeType(parent) !== 1) return false;
+    const d = String(__contrastComputedStyle(parent).display || '');
+    return /(^|\s|-)(flex|grid)\b/.test(d);
+  }
+
   function __runHidden(el, cs) {
     if (!cs) return false;
     if (trim(cs.display) === 'none') return true;
@@ -594,9 +621,30 @@ function createContrastHelpers(opts, shared) {
   // The nearest visible character beside node in its block, in the given
   // direction: a character, '' at a boundary or where none is found within
   // the budget.
+  // Styles of elements no one has read yet that the search below may read
+  // in one run, over all its signs (round 12, C12-13): each sign walks its
+  // own neighbours, and a page of signs each beside hundreds of empty
+  // inline elements read a style for every one. Past it, a sign is a
+  // graphic, as it was before signs were read with their text. A real
+  // page's signs sit a node or two from digits whose styles the scan has
+  // read already: a catalogue of 3,000 WooCommerce prices reads none.
+  const __SIGN_RUN_BUDGET = 2000;
+  const __localSignRunBudget = { left: __SIGN_RUN_BUDGET };
+  function __signRunBudget() {
+    try {
+      const sc = shared && shared.__contrastSharedCache ? shared.__contrastSharedCache : null;
+      if (sc) {
+        if (!sc.__signRunBudget) sc.__signRunBudget = { left: __SIGN_RUN_BUDGET };
+        return sc.__signRunBudget;
+      }
+    } catch {}
+    return __localSignRunBudget;
+  }
+
   function __runNeighbour(node, block, forward) {
     let budget = 400;
-    const into = (n) => {
+    const total = __signRunBudget();
+    const into = (n, inLink) => {
       if (budget-- <= 0) return '';
       const type = dom.nodeType(n);
       if (type === 3) {
@@ -612,26 +660,31 @@ function createContrastHelpers(opts, shared) {
       const name = __lname(n);
       if (name === 'br') return '';
       if (/^(script|style|template|noscript|title)$/.test(name)) return null;
-      // A link's text is its own: a sign between links separates them.
-      if ((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) return '';
-      if (
-        String(dom.getAttribute(n, 'role') || '')
-          .trim()
-          .split(/\s+/)[0] === 'link'
-      )
-        return '';
+      // A link's text is its own: a sign between links separates them,
+      // as a breadcrumb's ">" does. A link whose nearest character is a
+      // digit is the amount of a price, "$" in <span>$</span><a>45</a>,
+      // and the sign is read with it (round 12, C12-12).
+      const link =
+        !inLink &&
+        (((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) ||
+          String(dom.getAttribute(n, 'role') || '')
+            .trim()
+            .split(/\s+/)[0] === 'link');
+      // A style the scan has not read already counts against the run's
+      // budget: the text around a sign has been read, empty padding not.
+      if (!__computedStyleCache.has(n) && total.left-- <= 0) return '';
       const cs = __contrastComputedStyle(n);
-      if (__runHidden(n, cs)) return null;
-      if (!__inlineDisplay(cs)) return '';
+      if (__runHidden(n, cs)) return link ? '' : null;
+      if (!__inlineDisplay(cs) || __runBlockified(n, cs)) return '';
       for (
         let c = forward ? dom.firstChild(n) : dom.lastChild(n);
         c;
         c = forward ? dom.nextSibling(c) : dom.previousSibling(c)
       ) {
-        const found = into(c);
-        if (found !== null) return found;
+        const found = into(c, inLink || link);
+        if (found !== null) return link && !/\p{Nd}/u.test(found) ? '' : found;
       }
-      return null;
+      return link ? '' : null;
     };
     let cur = node;
     while (cur && budget > 0) {
@@ -643,7 +696,7 @@ function createContrastHelpers(opts, shared) {
         sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
       }
       cur = sib;
-      const found = into(cur);
+      const found = into(cur, false);
       if (found !== null) return found;
     }
     return '';
@@ -657,7 +710,8 @@ function createContrastHelpers(opts, shared) {
       if (__isSignText(dom.nodeValue(t))) {
         let block = dom.parentElement(t);
         for (let guard = 0; block && guard < 200; guard++) {
-          if (!__inlineDisplay(__contrastComputedStyle(block))) break;
+          const bcs = __contrastComputedStyle(block);
+          if (!__inlineDisplay(bcs) || __runBlockified(block, bcs)) break;
           block = dom.parentElement(block);
         }
         if (block) {
@@ -781,11 +835,40 @@ function createContrastHelpers(opts, shared) {
   }
 
   // The computed style that sets the color and font of el's text: the
-  // ::placeholder style while a field shows its placeholder, el's own
+  // ::placeholder style while a field shows its placeholder, the slot's
+  // where el's own text is slotted into its shadow tree, el's own
   // otherwise.
   function textStyleOf(el) {
     const field = __fieldText(el);
-    return field && field.placeholder ? field.style : __contrastComputedStyle(el);
+    return field && field.placeholder
+      ? field.style
+      : __contrastComputedStyle(__ownTextSlot(el) || el);
+  }
+
+  // The <slot> a shadow host's own text is drawn in, or null (round 12,
+  // C12-2). Text placed straight into a host is rendered where its shadow
+  // tree's slot puts it, and inherits from that slot in the flat tree (CSS
+  // Scoping, 3.1), not from the host: a host with color: black whose slot
+  // sits in a grey <div> draws its text grey. The first text with
+  // something other than spaces decides.
+  const __ownTextSlotCache = new WeakMap();
+  function __ownTextSlot(el) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    if (__ownTextSlotCache.has(el)) return __ownTextSlotCache.get(el);
+    let out = null;
+    try {
+      if (dom.shadowRoot(el)) {
+        for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
+          if (dom.nodeType(n) !== 3 || !trim(dom.nodeValue(n))) continue;
+          out = dom.assignedSlot(n) || null;
+          break;
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __ownTextSlotCache.set(el, out);
+    return out;
   }
 
   // -------- The options of a drop-down <select> (#219) --------
@@ -1110,11 +1193,34 @@ function createContrastHelpers(opts, shared) {
             clipsX,
             clipsY,
             rect: clipsX || clipsY ? dom.getBoundingClientRect(node) : null,
-            stops: !!acs && (acs.position === 'fixed' || acs.position === 'absolute')
+            stops: !!acs && acs.position === 'fixed',
+            // An absolutely positioned box is clipped by its containing
+            // block and the boxes around that, not by the boxes between
+            // (round 12, C12-3).
+            absolute: !!acs && acs.position === 'absolute'
           };
           clipBoxCache.set(node, box);
         }
         return box;
+      };
+      // The box whose overflow clips next after node: its parent, or for an
+      // absolutely positioned node the nearest positioned ancestor (its
+      // containing block), or null at the root.
+      const clipParentOf = (node) => {
+        let cur = composedParent(node);
+        if (!clipBoxOf(node).absolute) return cur;
+        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 1000; depth++) {
+          const pcs = __contrastComputedStyle(cur);
+          if (
+            !pcs ||
+            (pcs.position && pcs.position !== 'static') ||
+            (trim(pcs.transform) && trim(pcs.transform) !== 'none') ||
+            __lname(cur) === 'html'
+          )
+            return cur;
+          cur = composedParent(cur);
+        }
+        return cur;
       };
       // The clip of node and the boxes above it, up to the first that stops
       // the walk (or the root), as one rectangle: an axis no box clips is
@@ -1136,7 +1242,7 @@ function createContrastHelpers(opts, shared) {
           }
           path.push(cur);
           if (clipBoxOf(cur).stops) break;
-          cur = composedParent(cur);
+          cur = clipParentOf(cur);
         }
         // A walk cut short by the depth limit leaves the rest unknown: too
         // long, and isUndrawn walks it box by box.
@@ -1285,41 +1391,49 @@ function createContrastHelpers(opts, shared) {
           )
             return true;
         }
-        let left = r.left;
-        let top = r.top;
-        let right = r.right;
-        let bottom = r.bottom;
         // Inside a marquee, only the boxes around the marquee clip.
-        let cur = composedParent(marquee || el);
+        const start = marquee || el;
+        let cur = clipParentOf(start);
+        let cl = -Infinity;
+        let ct = -Infinity;
+        let cr = Infinity;
+        let cb = Infinity;
         const up = cur && dom.nodeType(cur) === 1 ? clipUpOf(cur) : null;
         if (up && up.len <= 100) {
           if (!up.clips) return false;
-          left = Math.max(left, up.left);
-          right = Math.min(right, up.right);
-          top = Math.max(top, up.top);
-          bottom = Math.min(bottom, up.bottom);
-          return right - left <= 1 || bottom - top <= 1;
-        }
-        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
-          // hidden and clip cut content off; auto and scroll let a reader
-          // scroll to it.
-          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
-          if (clipsX || clipsY) {
+          cl = up.left;
+          cr = up.right;
+          ct = up.top;
+          cb = up.bottom;
+        } else {
+          for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
+            // hidden and clip cut content off; auto and scroll let a reader
+            // scroll to it.
+            const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
             if (clipsX) {
-              left = Math.max(left, a.left);
-              right = Math.min(right, a.right);
+              cl = Math.max(cl, a.left);
+              cr = Math.min(cr, a.right);
             }
             if (clipsY) {
-              top = Math.max(top, a.top);
-              bottom = Math.min(bottom, a.bottom);
+              ct = Math.max(ct, a.top);
+              cb = Math.min(cb, a.bottom);
             }
-            // A pixel or less: the 1px box of visually hidden text.
-            if (right - left <= 1 || bottom - top <= 1) return true;
+            if (stops) break;
+            cur = clipParentOf(cur);
           }
-          if (stops) break;
-          cur = composedParent(cur);
         }
-        return false;
+        // A pixel or less: the 1px box of visually hidden text.
+        const cut = (b) =>
+          Math.min(b.right, cr) - Math.max(b.left, cl) <= 1 ||
+          Math.min(b.bottom, cb) - Math.max(b.top, ct) <= 1;
+        if (cut(r)) return true;
+        if (marquee || (cl === -Infinity && ct === -Infinity && cr === Infinity && cb === Infinity))
+          return false;
+        // The box shows, but its own text may lie in the part cut off, as
+        // padding pushes it there (round 12, C12-3): a screen-reader text
+        // pushed below a 1em box of rating stars. Its lines decide.
+        const lines = __ownTextRects(el);
+        return lines.length > 0 && lines.every(cut);
       };
 
       // An <option> has no layout box of its own, yet it is drawn: the
@@ -3981,6 +4095,12 @@ function createContrastHelpers(opts, shared) {
     }
     const value = decl.value.toLowerCase();
     if (__CSS_INHERITING.has(value)) return inherited();
+    // revert takes the browser's own value: a link's link color, as an
+    // unstyled link has it, and for an element in a link (whose color the
+    // browser's sheet doesn't set, but for a <mark>) its parent's (round
+    // 12, C12-14).
+    if (value === 'revert' && __isLink(el)) return __SCHEME_COLORS.light.link;
+    if (value === 'revert' && __lname(el) !== 'mark') return inherited();
     // A custom property jsdom doesn't substitute, or a keyword taking the
     // browser's own value.
     if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
@@ -4154,7 +4274,9 @@ function createContrastHelpers(opts, shared) {
     // its own opacity as well as the field's.
     const field = __fieldText(el);
     const placeholder = field && field.placeholder ? field.style : null;
-    const cs = placeholder || __contrastComputedStyle(el);
+    // A host's own text slotted into its shadow tree takes the slot's color.
+    const slot = placeholder ? null : __ownTextSlot(el);
+    const cs = placeholder || __contrastComputedStyle(slot || el);
     // SVG text is painted with `fill`, not `color` (which only feeds
     // currentColor): <text fill="#000" style="color:#eee"> is black. A fill
     // of none (outline-only text) or a paint server (url(#gradient)) does
@@ -4163,7 +4285,7 @@ function createContrastHelpers(opts, shared) {
     // Text in a link, under jsdom, whose color jsdom ranks below its own
     // link color, is read from the page's rules (__htmlTextFillOf).
     const fillValue =
-      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
+      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(slot || el, cs));
     let c = parseCssColorToRgba(fillValue);
     // On the canvas of a page drawn only in dark, in an emulator: the dark
     // scheme's color where the text takes it from the scheme.
@@ -4195,7 +4317,7 @@ function createContrastHelpers(opts, shared) {
       return out;
     }
 
-    let op = computeOpacityProduct(el);
+    let op = computeOpacityProduct(slot || el);
     if (placeholder) {
       const own = Number.parseFloat(placeholder.opacity);
       if (Number.isFinite(own)) op *= clamp01(own);
@@ -5075,7 +5197,7 @@ function createContrastHelpers(opts, shared) {
         const layer = svgBackdrop.layers[i];
         if (collectStack) {
           stack.push({
-            selector: __getSimpleSelectorCached(layer.el, 'rect'),
+            selector: __getSimpleSelectorCached(layer.el, __lname(layer.el)),
             bg: { r: layer.rgba.r, g: layer.rgba.g, b: layer.rgba.b, a: layer.rgba.a },
             opacity: 1
           });
@@ -5107,7 +5229,10 @@ function createContrastHelpers(opts, shared) {
     // text): that background is the text's color, not behind it.
     const clipOwner = __clipTextOwner(el);
 
-    for (const cur of ancestorsOf(el)) {
+    // A host's own text slotted into its shadow tree is drawn there, over
+    // the backgrounds of the slot's flat-tree ancestors, the host's among
+    // them.
+    for (const cur of ancestorsOf(__ownTextSlot(el) || el)) {
       if (dom.nodeType(cur) !== 1) continue;
       if (cur === clipOwner) {
         const ocs = __contrastComputedStyle(cur);
@@ -8339,7 +8464,7 @@ function createContrastHelpers(opts, shared) {
     try {
       if (!el || dom.nodeType(el) !== 1 || !chain.length) return null;
       const index = __getOverlapIndex();
-      if (!index) return __svgShapeMaybeBehind(el);
+      if (!index) return __svgShapeMaybeBehind(el) || __noLayoutPseudoUnder(el, chain);
       const opaque = chain[chain.length - 1];
       const ancestors = new Set(chain);
       // Painters near el's box at all, before measuring its text, which
@@ -8459,6 +8584,101 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Without a layout (jsdom), no pseudo-element's style is computed, so a
+  // positioned ::before or ::after painting a color or an image under the
+  // text (the overlay pattern, z-index: -1 among them) was never seen, and
+  // white text over a dark one was measured against the white page and
+  // dropped as invisible (round 12, C12-18). Read from the style sheets
+  // instead: a ::before or ::after their rules give content, a position of
+  // absolute or fixed and a background, on el or an ancestor in `chain`,
+  // is paint in the way, and the text is asked about. A sheet that can't
+  // be read is taken as giving none.
+  const __noLayoutPseudosByRoot = new WeakMap();
+  function __noLayoutPseudos(root) {
+    if (__noLayoutPseudosByRoot.has(root)) return __noLayoutPseudosByRoot.get(root);
+    const byKey = new Map();
+    try {
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
+      const stack = [];
+      for (const sheet of sheets) {
+        try {
+          stack.push(sheet.cssRules || []);
+        } catch {}
+      }
+      while (stack.length) {
+        const list = stack.pop();
+        const n = (list && list.length) || 0;
+        for (let i = 0; i < n; i++) {
+          const rule = list[i];
+          if (!rule) continue;
+          if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+          const text = rule.selectorText;
+          const style = rule.style;
+          if (typeof text !== 'string' || !style || !__beforeOrAfterRe.test(text)) continue;
+          const get = (prop) =>
+            trim(
+              typeof style.getPropertyValue === 'function' ? style.getPropertyValue(prop) : ''
+            ).toLowerCase();
+          const content = get('content');
+          const position = get('position');
+          const color = get('background-color');
+          const image = get('background-image');
+          const shorthand = get('background');
+          for (const part of __splitTopLevel(text)) {
+            const m = /::?(before|after)\b/i.exec(part);
+            if (!m) continue;
+            let base = part.slice(0, m.index).trim();
+            if (!base || /[>+~]$/.test(base)) base += '*';
+            const key = base + '::' + m[1].toLowerCase();
+            const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
+            if (content) at.content = content !== 'none' && content !== 'normal';
+            if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            const paint = [color, image, shorthand].find(
+              (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
+            );
+            if (paint) {
+              const c = parseCssColorToRgba(paint);
+              if (!c || c.a > 0) at.paint = paint;
+            }
+            byKey.set(key, at);
+          }
+        }
+      }
+    } catch {}
+    const out = [...byKey.values()].filter((p) => p.content && p.positioned && p.paint);
+    __noLayoutPseudosByRoot.set(root, out);
+    return out;
+  }
+  function __noLayoutPseudoUnder(el, chain) {
+    for (const host of chain) {
+      let root;
+      try {
+        root = dom.getRootNode(host);
+      } catch {
+        root = null;
+      }
+      if (!root) continue;
+      for (const p of __noLayoutPseudos(root)) {
+        let matched;
+        try {
+          matched = dom.matches(host, p.base);
+        } catch {
+          matched = false;
+        }
+        if (!matched) continue;
+        return {
+          selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
+          element: describeElement(host) + p.pseudo,
+          property: 'background',
+          value: p.paint
+        };
+      }
+    }
+    return null;
+  }
+
   // Without a layout (jsdom), where an SVG shape paints can't be told. A
   // shape painted before SVG text in the same <svg> may lie behind it, and
   // then the text's background can't be told either: the shape, as paint
@@ -8544,7 +8764,7 @@ function createContrastHelpers(opts, shared) {
       }
       if (unpainted) continue;
       const cs = __contrastComputedStyle(shape);
-      if (!cs || trim(cs.display) === 'none' || trim(cs.visibility) === 'hidden') continue;
+      if (!cs || __svgHiddenNoLayout(shape, cs, svg)) continue;
       const paints = (v) => {
         if (!v || v === 'none') return false;
         const c = parseCssColorToRgba(v);
@@ -8576,6 +8796,34 @@ function createContrastHelpers(opts, shared) {
       }
     }
     return { certain, blocker };
+  }
+
+  // Whether an SVG shape is not drawn, without a layout (round 12, C12-4):
+  // display none on it or a group around it, or visibility hidden on it or
+  // inherited, set in CSS or as a presentation attribute, which jsdom
+  // doesn't apply.
+  function __svgHiddenNoLayout(shape, cs, svg) {
+    if (trim(cs.display) === 'none') return true;
+    const vis = trim(cs.visibility);
+    if (vis === 'hidden' || vis === 'collapse') return true;
+    let visKnown = false;
+    for (let n = shape; n && n !== svg; n = dom.parentElement(n)) {
+      if (trim(dom.getAttribute(n, 'display')).toLowerCase() === 'none') return true;
+      if (n !== shape) {
+        const ncs = __contrastComputedStyle(n);
+        if (ncs && trim(ncs.display) === 'none') return true;
+      }
+      if (!visKnown && dom.hasAttribute(n, 'visibility')) {
+        visKnown = true;
+        const v = trim(dom.getAttribute(n, 'visibility')).toLowerCase();
+        if (v === 'hidden' || v === 'collapse') return true;
+      }
+    }
+    if (!visKnown && svg && dom.hasAttribute(svg, 'visibility')) {
+      const v = trim(dom.getAttribute(svg, 'visibility')).toLowerCase();
+      if (v === 'hidden' || v === 'collapse') return true;
+    }
+    return false;
   }
 
   // An SVG length in user units: a number, px, or a percentage of `full`
@@ -8639,9 +8887,14 @@ function createContrastHelpers(opts, shared) {
     );
   }
 
+  // Emoji, and characters of East Asian Width W or F (Unicode UAX #11),
+  // drawn up to two em wide.
+  const __WIDE_CHAR =
+    /[\p{Extended_Pictographic}\u1100-\u115F\u231A\u231B\u2329\u232A\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uA960-\uA97F\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6\u{16FE0}-\u{18AFF}\u{1B000}-\u{1B2FF}\u{1F000}-\u{1FAFF}\u{20000}-\u{3FFFD}]/u;
   // The area SVG text certainly lies in, in the svg's user units, without a
-  // layout: from its x and y, its font size and its number of characters,
-  // each at most one em wide, from 1.2em above the baseline to 0.4em below.
+  // layout: from its x and y, its font size and its characters, each at
+  // most 1.1em wide (2em if wide), from 1.2em above the baseline to 0.4em
+  // below.
   // null where that isn't simple: a transform, positions per character,
   // a textLength, spacing, a vertical writing mode or a text path.
   function __svgTextArea(el, svg) {
@@ -8693,9 +8946,14 @@ function createContrastHelpers(opts, shared) {
       fs = Number.isFinite(fs) ? Math.max(fs, a) : a;
     }
     if (!Number.isFinite(fs)) fs = 16;
-    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')].length;
-    if (!chars) return null;
-    const w = chars * fs;
+    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')];
+    if (!chars.length) return null;
+    // An upper bound on the width (round 12, C12-8): 1.1em a character,
+    // above the widest Latin glyphs of common fonts (@ is about 1.02em in
+    // Arial), and 2em for emoji and wide East Asian characters. Text that
+    // fits by a clear margin is measured; text close to the edge is asked
+    // about.
+    const w = chars.reduce((sum, ch) => sum + (__WIDE_CHAR.test(ch) ? 2 : 1.1), 0) * fs;
     const anchorHost = dom.closest(text, '[text-anchor]');
     let anchor = trim(tcs.textAnchor) || 'start';
     if (anchorHost && __isComposedInside(anchorHost, svg))
@@ -8716,14 +8974,31 @@ function createContrastHelpers(opts, shared) {
       left = x;
       right = x + w;
     }
-    const baselineSet = ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
-      (a) => !!dom.closest(text, '[' + a + ']')
-    );
+    // A baseline set as an attribute, or in CSS on the text or a part of it
+    // (round 12, C12-5): jsdom computes CSS ones, and passes
+    // dominant-baseline down, but applies no attribute.
+    const baselineSet =
+      ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
+        (a) => !!dom.closest(text, '[' + a + ']')
+      ) ||
+      parts.some((n) => {
+        const ncs = n === text ? tcs : __contrastComputedStyle(n);
+        if (!ncs || typeof ncs.getPropertyValue !== 'function') return false;
+        const db = trim(ncs.getPropertyValue('dominant-baseline')).toLowerCase();
+        const ab = trim(ncs.getPropertyValue('alignment-baseline')).toLowerCase();
+        const bs = trim(ncs.getPropertyValue('baseline-shift')).toLowerCase();
+        return (
+          !/^(|auto|alphabetic)$/.test(db) ||
+          !/^(|auto|baseline|alphabetic)$/.test(ab) ||
+          !/^(|0|0px|baseline)$/.test(bs)
+        );
+      });
     const above = baselineSet ? 1.3 * fs : 1.2 * fs;
     const below = baselineSet ? 1.3 * fs : 0.4 * fs;
     return { left, right, top: y - above, bottom: y + below };
   }
 
+  const __SVG_GEOMETRY_PROPS = ['x', 'y', 'width', 'height', 'rx', 'ry', 'r', 'cx', 'cy'];
   // The opaque color a <rect>, <circle> or <ellipse> certainly paints
   // under all of el's text, without a layout, or null.
   function __svgCertainCover(shape, cs, svg, stroked, textArea) {
@@ -8747,6 +9022,13 @@ function createContrastHelpers(opts, shared) {
       )
     )
       return null;
+    // Geometry set in CSS overrides the attributes (SVG 2), and jsdom
+    // places nothing by it: a style sheet that sets any is not read, and the
+    // text is asked about (round 12, C12-6).
+    for (const prop of __SVG_GEOMETRY_PROPS) {
+      const decl = __authorColorDeclsOf(shape, prop);
+      if (decl.unknown || decl.values.length) return null;
+    }
     const vp = __svgViewport(svg);
     const attr = (a, full, dflt) =>
       dom.hasAttribute(shape, a) ? __svgLength(dom.getAttribute(shape, a), full) : dflt;
@@ -8826,12 +9108,13 @@ function createContrastHelpers(opts, shared) {
   //
   // SVG paints in document order, so a shape earlier than a text element and
   // under it is the text's background, which no CSS background shows. The
-  // simple case is measured: a <rect> with a solid fill, painted before the
-  // text, not rotated, covering all of the text clear of its rounded corners
-  // and stroke, with nothing between it and the text that groups it (opacity,
-  // a filter, a mask or a clip). Several such rects stack. Any other shape
-  // under or over the text is left to the paint-overlap check, which reports
-  // it. Needs a layout; without one nothing is found and nothing changes.
+  // simple case is measured: a <rect>, <circle> or <ellipse> (round 12,
+  // C12-7) with a solid fill, painted before the text, not rotated, covering
+  // all of the text clear of its rounded corners and stroke, with nothing
+  // between it and the text that groups it (opacity, a filter, a mask or a
+  // clip). Several such shapes stack. Any other shape under or over the text
+  // is left to the paint-overlap check, which reports it. With a layout;
+  // without one, __svgNoLayoutScan measures the same shapes.
   const __svgBackdropCache = new WeakMap();
 
   function __svgBackdropOf(el) {
@@ -8899,7 +9182,10 @@ function createContrastHelpers(opts, shared) {
   // The color a <rect> paints behind all of el's text, or null when it isn't
   // that simple case.
   function __svgRectLayer(shape, box, el, textRects) {
-    if (String(dom.localName(shape)) !== 'rect') return null;
+    const tag = String(dom.localName(shape));
+    // A <circle> or <ellipse> too (round 12, C12-7): its box is its
+    // bounding box, so its center and radii are known.
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
     // Painted before el: el follows it in document order.
     if (!(dom.compareDocumentPosition(shape, el) & 4)) return null;
     const cs = __contrastComputedStyle(shape);
@@ -8934,19 +9220,36 @@ function createContrastHelpers(opts, shared) {
       const n = parsePx(v);
       return Number.isFinite(n) && n > 0 ? n : 0;
     };
-    let rx = len(cs.rx);
-    let ry = len(cs.ry);
-    if (!rx) rx = ry;
-    if (!ry) ry = rx;
     const stroke = trim(cs.stroke);
     const halfStroke = stroke && stroke !== 'none' ? len(cs.strokeWidth) / 2 : 0;
-    const ix = Math.max(rx, halfStroke) * ctm.a;
-    const iy = Math.max(ry, halfStroke) * ctm.d;
-    const inside = (r) =>
-      r.left >= box.left + ix - 0.5 &&
-      r.right <= box.right - ix + 0.5 &&
-      r.top >= box.top + iy - 0.5 &&
-      r.bottom <= box.bottom - iy + 0.5;
+    let inside;
+    if (tag === 'rect') {
+      let rx = len(cs.rx);
+      let ry = len(cs.ry);
+      if (!rx) rx = ry;
+      if (!ry) ry = rx;
+      const ix = Math.max(rx, halfStroke) * ctm.a;
+      const iy = Math.max(ry, halfStroke) * ctm.d;
+      inside = (r) =>
+        r.left >= box.left + ix - 0.5 &&
+        r.right <= box.right - ix + 0.5 &&
+        r.top >= box.top + iy - 0.5 &&
+        r.bottom <= box.bottom - iy + 0.5;
+    } else {
+      // Every corner of each line of text inside the ellipse, clear of the
+      // inner half of its stroke.
+      const cx = (box.left + box.right) / 2;
+      const cy = (box.top + box.bottom) / 2;
+      const ex = (box.right - box.left) / 2 - halfStroke * ctm.a;
+      const ey = (box.bottom - box.top) / 2 - halfStroke * ctm.d;
+      if (!(ex > 0) || !(ey > 0)) return null;
+      const within = (x, y) => ((x - cx) / ex) ** 2 + ((y - cy) / ey) ** 2 <= 1;
+      inside = (r) =>
+        within(r.left, r.top) &&
+        within(r.right, r.top) &&
+        within(r.left, r.bottom) &&
+        within(r.right, r.bottom);
+    }
     if (!textRects.every(inside)) return null;
     const fillOpacity = Number.parseFloat(cs.fillOpacity);
     const opacity = Number.parseFloat(cs.opacity);

@@ -4,9 +4,10 @@
  * SVG text is measured against the SVG shapes painted behind it (#96).
  *
  * SVG paints in document order, so a shape earlier than a text element and
- * under it is the text's background, which no CSS background shows. A <rect>
- * with a solid fill that covers all of the text is measured against; any
- * other shape under or over the text makes it not computable
+ * under it is the text's background, which no CSS background shows. A
+ * <rect>, <circle> or <ellipse> with a solid fill that covers all of the
+ * text is measured against; any other shape under or over the text makes
+ * it not computable
  * (BACKGROUND_OVERLAP). This needs a layout, which jsdom doesn't have, so
  * these tests run in Chromium.
  *
@@ -87,8 +88,15 @@ const CASES = [
     15.46
   ],
   [
-    'a circle behind the text',
+    // Measured since round 12 (C12-7), as without a layout.
+    'a circle covering the text',
     svg(`<circle cx="60" cy="20" r="60" fill="#000"/>${LABEL}`),
+    'pass',
+    15.46
+  ],
+  [
+    'a circle under part of the text',
+    svg(`<circle cx="20" cy="20" r="15" fill="#000"/>${LABEL}`),
     'notApplicable',
     'BACKGROUND_OVERLAP'
   ],

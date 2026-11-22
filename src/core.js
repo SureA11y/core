@@ -3610,6 +3610,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   function isInactiveUiComponent(el) {
+    // The flat tree (round 12, C12-10): text in a shadow root is the
+    // content of its host, and a slotted node of its slot, so an
+    // aria-disabled host with role=button disables the text it draws. The
+    // chain of ancestors is kept for the run.
+    const chain = ancestorsOf(el);
+    let at = 0;
+    const next = () => {
+      while (++at < chain.length && dom.nodeType(chain[at]) === 11);
+      return chain[at] || null;
+    };
     let node = el;
     let prev = null;
     let depth = 0;
@@ -3636,7 +3646,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         labelAncestor = node;
       }
       prev = node;
-      node = dom.parentElement(node);
+      node = next();
     }
 
     // WCAG 1.4.3/1.4.6 "disabled label" exception: see labelNamesDisabled.
@@ -3655,10 +3665,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // "〒100-0001"), even when markup gives it an element of its own: it is
   // read, so it is text, held to 1.4.3, not a graphic. "Next to" is the
   // nearest visible character before or after it, not past a block
-  // boundary (a block, a line break) and not counting text that is not
+  // boundary (a block, a flex or grid item, a float, an absolutely
+  // positioned box, a line break) and not counting text that is not
   // drawn (display:none, visibility:hidden, visually hidden), nor the text
-  // of a link beside it. A sign alone between links, or a separator such
-  // as ">", is not this: it stays a graphic.
+  // of a link beside it, unless the link's nearest character is a digit
+  // (an amount). A sign alone between links, or a separator such as ">",
+  // is not this: it stays a graphic.
   const __RUN_SIGN = /[\p{Sc}〒]/u;
   const __RUN_SIGN_ONLY = /^[\s\p{Sc}〒\p{P}]*$/u;
   const __RUN_TEXT = /[\p{L}\p{N}]/u;
@@ -3675,6 +3687,21 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return d === 'contents' || d.startsWith('inline') || d.startsWith('ruby');
   }
 
+  // Whether el's box is a block whatever its display says: a float, an
+  // absolutely positioned box, or an item of a flex or grid container
+  // (CSS Display 3, blockification). A browser computes such a display as
+  // a block already; jsdom doesn't, so it is read here, and both agree
+  // (round 12, C12-1).
+  function __runBlockified(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.cssFloat || cs.float) && trim(cs.cssFloat || cs.float) !== 'none') return true;
+    if (cs.position === 'absolute' || cs.position === 'fixed') return true;
+    const parent = composedParent(el);
+    if (!parent || dom.nodeType(parent) !== 1) return false;
+    const d = String(__contrastComputedStyle(parent).display || '');
+    return /(^|\s|-)(flex|grid)\b/.test(d);
+  }
+
   function __runHidden(el, cs) {
     if (!cs) return false;
     if (trim(cs.display) === 'none') return true;
@@ -3687,9 +3714,30 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // The nearest visible character beside node in its block, in the given
   // direction: a character, '' at a boundary or where none is found within
   // the budget.
+  // Styles of elements no one has read yet that the search below may read
+  // in one run, over all its signs (round 12, C12-13): each sign walks its
+  // own neighbours, and a page of signs each beside hundreds of empty
+  // inline elements read a style for every one. Past it, a sign is a
+  // graphic, as it was before signs were read with their text. A real
+  // page's signs sit a node or two from digits whose styles the scan has
+  // read already: a catalogue of 3,000 WooCommerce prices reads none.
+  const __SIGN_RUN_BUDGET = 2000;
+  const __localSignRunBudget = { left: __SIGN_RUN_BUDGET };
+  function __signRunBudget() {
+    try {
+      const sc = shared && shared.__contrastSharedCache ? shared.__contrastSharedCache : null;
+      if (sc) {
+        if (!sc.__signRunBudget) sc.__signRunBudget = { left: __SIGN_RUN_BUDGET };
+        return sc.__signRunBudget;
+      }
+    } catch {}
+    return __localSignRunBudget;
+  }
+
   function __runNeighbour(node, block, forward) {
     let budget = 400;
-    const into = (n) => {
+    const total = __signRunBudget();
+    const into = (n, inLink) => {
       if (budget-- <= 0) return '';
       const type = dom.nodeType(n);
       if (type === 3) {
@@ -3705,26 +3753,31 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const name = __lname(n);
       if (name === 'br') return '';
       if (/^(script|style|template|noscript|title)$/.test(name)) return null;
-      // A link's text is its own: a sign between links separates them.
-      if ((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) return '';
-      if (
-        String(dom.getAttribute(n, 'role') || '')
-          .trim()
-          .split(/\s+/)[0] === 'link'
-      )
-        return '';
+      // A link's text is its own: a sign between links separates them,
+      // as a breadcrumb's ">" does. A link whose nearest character is a
+      // digit is the amount of a price, "$" in <span>$</span><a>45</a>,
+      // and the sign is read with it (round 12, C12-12).
+      const link =
+        !inLink &&
+        (((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) ||
+          String(dom.getAttribute(n, 'role') || '')
+            .trim()
+            .split(/\s+/)[0] === 'link');
+      // A style the scan has not read already counts against the run's
+      // budget: the text around a sign has been read, empty padding not.
+      if (!__computedStyleCache.has(n) && total.left-- <= 0) return '';
       const cs = __contrastComputedStyle(n);
-      if (__runHidden(n, cs)) return null;
-      if (!__inlineDisplay(cs)) return '';
+      if (__runHidden(n, cs)) return link ? '' : null;
+      if (!__inlineDisplay(cs) || __runBlockified(n, cs)) return '';
       for (
         let c = forward ? dom.firstChild(n) : dom.lastChild(n);
         c;
         c = forward ? dom.nextSibling(c) : dom.previousSibling(c)
       ) {
-        const found = into(c);
-        if (found !== null) return found;
+        const found = into(c, inLink || link);
+        if (found !== null) return link && !/\p{Nd}/u.test(found) ? '' : found;
       }
-      return null;
+      return link ? '' : null;
     };
     let cur = node;
     while (cur && budget > 0) {
@@ -3736,7 +3789,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
       }
       cur = sib;
-      const found = into(cur);
+      const found = into(cur, false);
       if (found !== null) return found;
     }
     return '';
@@ -3750,7 +3803,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (__isSignText(dom.nodeValue(t))) {
         let block = dom.parentElement(t);
         for (let guard = 0; block && guard < 200; guard++) {
-          if (!__inlineDisplay(__contrastComputedStyle(block))) break;
+          const bcs = __contrastComputedStyle(block);
+          if (!__inlineDisplay(bcs) || __runBlockified(block, bcs)) break;
           block = dom.parentElement(block);
         }
         if (block) {
@@ -3874,11 +3928,40 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // The computed style that sets the color and font of el's text: the
-  // ::placeholder style while a field shows its placeholder, el's own
+  // ::placeholder style while a field shows its placeholder, the slot's
+  // where el's own text is slotted into its shadow tree, el's own
   // otherwise.
   function textStyleOf(el) {
     const field = __fieldText(el);
-    return field && field.placeholder ? field.style : __contrastComputedStyle(el);
+    return field && field.placeholder
+      ? field.style
+      : __contrastComputedStyle(__ownTextSlot(el) || el);
+  }
+
+  // The <slot> a shadow host's own text is drawn in, or null (round 12,
+  // C12-2). Text placed straight into a host is rendered where its shadow
+  // tree's slot puts it, and inherits from that slot in the flat tree (CSS
+  // Scoping, 3.1), not from the host: a host with color: black whose slot
+  // sits in a grey <div> draws its text grey. The first text with
+  // something other than spaces decides.
+  const __ownTextSlotCache = new WeakMap();
+  function __ownTextSlot(el) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    if (__ownTextSlotCache.has(el)) return __ownTextSlotCache.get(el);
+    let out = null;
+    try {
+      if (dom.shadowRoot(el)) {
+        for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
+          if (dom.nodeType(n) !== 3 || !trim(dom.nodeValue(n))) continue;
+          out = dom.assignedSlot(n) || null;
+          break;
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __ownTextSlotCache.set(el, out);
+    return out;
   }
 
   // -------- The options of a drop-down <select> (#219) --------
@@ -4203,11 +4286,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             clipsX,
             clipsY,
             rect: clipsX || clipsY ? dom.getBoundingClientRect(node) : null,
-            stops: !!acs && (acs.position === 'fixed' || acs.position === 'absolute')
+            stops: !!acs && acs.position === 'fixed',
+            // An absolutely positioned box is clipped by its containing
+            // block and the boxes around that, not by the boxes between
+            // (round 12, C12-3).
+            absolute: !!acs && acs.position === 'absolute'
           };
           clipBoxCache.set(node, box);
         }
         return box;
+      };
+      // The box whose overflow clips next after node: its parent, or for an
+      // absolutely positioned node the nearest positioned ancestor (its
+      // containing block), or null at the root.
+      const clipParentOf = (node) => {
+        let cur = composedParent(node);
+        if (!clipBoxOf(node).absolute) return cur;
+        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 1000; depth++) {
+          const pcs = __contrastComputedStyle(cur);
+          if (
+            !pcs ||
+            (pcs.position && pcs.position !== 'static') ||
+            (trim(pcs.transform) && trim(pcs.transform) !== 'none') ||
+            __lname(cur) === 'html'
+          )
+            return cur;
+          cur = composedParent(cur);
+        }
+        return cur;
       };
       // The clip of node and the boxes above it, up to the first that stops
       // the walk (or the root), as one rectangle: an axis no box clips is
@@ -4229,7 +4335,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           }
           path.push(cur);
           if (clipBoxOf(cur).stops) break;
-          cur = composedParent(cur);
+          cur = clipParentOf(cur);
         }
         // A walk cut short by the depth limit leaves the rest unknown: too
         // long, and isUndrawn walks it box by box.
@@ -4378,41 +4484,49 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           )
             return true;
         }
-        let left = r.left;
-        let top = r.top;
-        let right = r.right;
-        let bottom = r.bottom;
         // Inside a marquee, only the boxes around the marquee clip.
-        let cur = composedParent(marquee || el);
+        const start = marquee || el;
+        let cur = clipParentOf(start);
+        let cl = -Infinity;
+        let ct = -Infinity;
+        let cr = Infinity;
+        let cb = Infinity;
         const up = cur && dom.nodeType(cur) === 1 ? clipUpOf(cur) : null;
         if (up && up.len <= 100) {
           if (!up.clips) return false;
-          left = Math.max(left, up.left);
-          right = Math.min(right, up.right);
-          top = Math.max(top, up.top);
-          bottom = Math.min(bottom, up.bottom);
-          return right - left <= 1 || bottom - top <= 1;
-        }
-        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
-          // hidden and clip cut content off; auto and scroll let a reader
-          // scroll to it.
-          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
-          if (clipsX || clipsY) {
+          cl = up.left;
+          cr = up.right;
+          ct = up.top;
+          cb = up.bottom;
+        } else {
+          for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
+            // hidden and clip cut content off; auto and scroll let a reader
+            // scroll to it.
+            const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
             if (clipsX) {
-              left = Math.max(left, a.left);
-              right = Math.min(right, a.right);
+              cl = Math.max(cl, a.left);
+              cr = Math.min(cr, a.right);
             }
             if (clipsY) {
-              top = Math.max(top, a.top);
-              bottom = Math.min(bottom, a.bottom);
+              ct = Math.max(ct, a.top);
+              cb = Math.min(cb, a.bottom);
             }
-            // A pixel or less: the 1px box of visually hidden text.
-            if (right - left <= 1 || bottom - top <= 1) return true;
+            if (stops) break;
+            cur = clipParentOf(cur);
           }
-          if (stops) break;
-          cur = composedParent(cur);
         }
-        return false;
+        // A pixel or less: the 1px box of visually hidden text.
+        const cut = (b) =>
+          Math.min(b.right, cr) - Math.max(b.left, cl) <= 1 ||
+          Math.min(b.bottom, cb) - Math.max(b.top, ct) <= 1;
+        if (cut(r)) return true;
+        if (marquee || (cl === -Infinity && ct === -Infinity && cr === Infinity && cb === Infinity))
+          return false;
+        // The box shows, but its own text may lie in the part cut off, as
+        // padding pushes it there (round 12, C12-3): a screen-reader text
+        // pushed below a 1em box of rating stars. Its lines decide.
+        const lines = __ownTextRects(el);
+        return lines.length > 0 && lines.every(cut);
       };
 
       // An <option> has no layout box of its own, yet it is drawn: the
@@ -7074,6 +7188,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
     const value = decl.value.toLowerCase();
     if (__CSS_INHERITING.has(value)) return inherited();
+    // revert takes the browser's own value: a link's link color, as an
+    // unstyled link has it, and for an element in a link (whose color the
+    // browser's sheet doesn't set, but for a <mark>) its parent's (round
+    // 12, C12-14).
+    if (value === 'revert' && __isLink(el)) return __SCHEME_COLORS.light.link;
+    if (value === 'revert' && __lname(el) !== 'mark') return inherited();
     // A custom property jsdom doesn't substitute, or a keyword taking the
     // browser's own value.
     if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
@@ -7247,7 +7367,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // its own opacity as well as the field's.
     const field = __fieldText(el);
     const placeholder = field && field.placeholder ? field.style : null;
-    const cs = placeholder || __contrastComputedStyle(el);
+    // A host's own text slotted into its shadow tree takes the slot's color.
+    const slot = placeholder ? null : __ownTextSlot(el);
+    const cs = placeholder || __contrastComputedStyle(slot || el);
     // SVG text is painted with `fill`, not `color` (which only feeds
     // currentColor): <text fill="#000" style="color:#eee"> is black. A fill
     // of none (outline-only text) or a paint server (url(#gradient)) does
@@ -7256,7 +7378,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // Text in a link, under jsdom, whose color jsdom ranks below its own
     // link color, is read from the page's rules (__htmlTextFillOf).
     const fillValue =
-      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
+      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(slot || el, cs));
     let c = parseCssColorToRgba(fillValue);
     // On the canvas of a page drawn only in dark, in an emulator: the dark
     // scheme's color where the text takes it from the scheme.
@@ -7288,7 +7410,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return out;
     }
 
-    let op = computeOpacityProduct(el);
+    let op = computeOpacityProduct(slot || el);
     if (placeholder) {
       const own = Number.parseFloat(placeholder.opacity);
       if (Number.isFinite(own)) op *= clamp01(own);
@@ -8168,7 +8290,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const layer = svgBackdrop.layers[i];
         if (collectStack) {
           stack.push({
-            selector: __getSimpleSelectorCached(layer.el, 'rect'),
+            selector: __getSimpleSelectorCached(layer.el, __lname(layer.el)),
             bg: { r: layer.rgba.r, g: layer.rgba.g, b: layer.rgba.b, a: layer.rgba.a },
             opacity: 1
           });
@@ -8200,7 +8322,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // text): that background is the text's color, not behind it.
     const clipOwner = __clipTextOwner(el);
 
-    for (const cur of ancestorsOf(el)) {
+    // A host's own text slotted into its shadow tree is drawn there, over
+    // the backgrounds of the slot's flat-tree ancestors, the host's among
+    // them.
+    for (const cur of ancestorsOf(__ownTextSlot(el) || el)) {
       if (dom.nodeType(cur) !== 1) continue;
       if (cur === clipOwner) {
         const ocs = __contrastComputedStyle(cur);
@@ -11432,7 +11557,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     try {
       if (!el || dom.nodeType(el) !== 1 || !chain.length) return null;
       const index = __getOverlapIndex();
-      if (!index) return __svgShapeMaybeBehind(el);
+      if (!index) return __svgShapeMaybeBehind(el) || __noLayoutPseudoUnder(el, chain);
       const opaque = chain[chain.length - 1];
       const ancestors = new Set(chain);
       // Painters near el's box at all, before measuring its text, which
@@ -11552,6 +11677,101 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Without a layout (jsdom), no pseudo-element's style is computed, so a
+  // positioned ::before or ::after painting a color or an image under the
+  // text (the overlay pattern, z-index: -1 among them) was never seen, and
+  // white text over a dark one was measured against the white page and
+  // dropped as invisible (round 12, C12-18). Read from the style sheets
+  // instead: a ::before or ::after their rules give content, a position of
+  // absolute or fixed and a background, on el or an ancestor in `chain`,
+  // is paint in the way, and the text is asked about. A sheet that can't
+  // be read is taken as giving none.
+  const __noLayoutPseudosByRoot = new WeakMap();
+  function __noLayoutPseudos(root) {
+    if (__noLayoutPseudosByRoot.has(root)) return __noLayoutPseudosByRoot.get(root);
+    const byKey = new Map();
+    try {
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
+      const stack = [];
+      for (const sheet of sheets) {
+        try {
+          stack.push(sheet.cssRules || []);
+        } catch {}
+      }
+      while (stack.length) {
+        const list = stack.pop();
+        const n = (list && list.length) || 0;
+        for (let i = 0; i < n; i++) {
+          const rule = list[i];
+          if (!rule) continue;
+          if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+          const text = rule.selectorText;
+          const style = rule.style;
+          if (typeof text !== 'string' || !style || !__beforeOrAfterRe.test(text)) continue;
+          const get = (prop) =>
+            trim(
+              typeof style.getPropertyValue === 'function' ? style.getPropertyValue(prop) : ''
+            ).toLowerCase();
+          const content = get('content');
+          const position = get('position');
+          const color = get('background-color');
+          const image = get('background-image');
+          const shorthand = get('background');
+          for (const part of __splitTopLevel(text)) {
+            const m = /::?(before|after)\b/i.exec(part);
+            if (!m) continue;
+            let base = part.slice(0, m.index).trim();
+            if (!base || /[>+~]$/.test(base)) base += '*';
+            const key = base + '::' + m[1].toLowerCase();
+            const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
+            if (content) at.content = content !== 'none' && content !== 'normal';
+            if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            const paint = [color, image, shorthand].find(
+              (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
+            );
+            if (paint) {
+              const c = parseCssColorToRgba(paint);
+              if (!c || c.a > 0) at.paint = paint;
+            }
+            byKey.set(key, at);
+          }
+        }
+      }
+    } catch {}
+    const out = [...byKey.values()].filter((p) => p.content && p.positioned && p.paint);
+    __noLayoutPseudosByRoot.set(root, out);
+    return out;
+  }
+  function __noLayoutPseudoUnder(el, chain) {
+    for (const host of chain) {
+      let root;
+      try {
+        root = dom.getRootNode(host);
+      } catch {
+        root = null;
+      }
+      if (!root) continue;
+      for (const p of __noLayoutPseudos(root)) {
+        let matched;
+        try {
+          matched = dom.matches(host, p.base);
+        } catch {
+          matched = false;
+        }
+        if (!matched) continue;
+        return {
+          selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
+          element: describeElement(host) + p.pseudo,
+          property: 'background',
+          value: p.paint
+        };
+      }
+    }
+    return null;
+  }
+
   // Without a layout (jsdom), where an SVG shape paints can't be told. A
   // shape painted before SVG text in the same <svg> may lie behind it, and
   // then the text's background can't be told either: the shape, as paint
@@ -11637,7 +11857,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
       if (unpainted) continue;
       const cs = __contrastComputedStyle(shape);
-      if (!cs || trim(cs.display) === 'none' || trim(cs.visibility) === 'hidden') continue;
+      if (!cs || __svgHiddenNoLayout(shape, cs, svg)) continue;
       const paints = (v) => {
         if (!v || v === 'none') return false;
         const c = parseCssColorToRgba(v);
@@ -11669,6 +11889,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     }
     return { certain, blocker };
+  }
+
+  // Whether an SVG shape is not drawn, without a layout (round 12, C12-4):
+  // display none on it or a group around it, or visibility hidden on it or
+  // inherited, set in CSS or as a presentation attribute, which jsdom
+  // doesn't apply.
+  function __svgHiddenNoLayout(shape, cs, svg) {
+    if (trim(cs.display) === 'none') return true;
+    const vis = trim(cs.visibility);
+    if (vis === 'hidden' || vis === 'collapse') return true;
+    let visKnown = false;
+    for (let n = shape; n && n !== svg; n = dom.parentElement(n)) {
+      if (trim(dom.getAttribute(n, 'display')).toLowerCase() === 'none') return true;
+      if (n !== shape) {
+        const ncs = __contrastComputedStyle(n);
+        if (ncs && trim(ncs.display) === 'none') return true;
+      }
+      if (!visKnown && dom.hasAttribute(n, 'visibility')) {
+        visKnown = true;
+        const v = trim(dom.getAttribute(n, 'visibility')).toLowerCase();
+        if (v === 'hidden' || v === 'collapse') return true;
+      }
+    }
+    if (!visKnown && svg && dom.hasAttribute(svg, 'visibility')) {
+      const v = trim(dom.getAttribute(svg, 'visibility')).toLowerCase();
+      if (v === 'hidden' || v === 'collapse') return true;
+    }
+    return false;
   }
 
   // An SVG length in user units: a number, px, or a percentage of `full`
@@ -11732,9 +11980,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     );
   }
 
+  // Emoji, and characters of East Asian Width W or F (Unicode UAX #11),
+  // drawn up to two em wide.
+  const __WIDE_CHAR =
+    /[\p{Extended_Pictographic}\u1100-\u115F\u231A\u231B\u2329\u232A\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uA960-\uA97F\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6\u{16FE0}-\u{18AFF}\u{1B000}-\u{1B2FF}\u{1F000}-\u{1FAFF}\u{20000}-\u{3FFFD}]/u;
   // The area SVG text certainly lies in, in the svg's user units, without a
-  // layout: from its x and y, its font size and its number of characters,
-  // each at most one em wide, from 1.2em above the baseline to 0.4em below.
+  // layout: from its x and y, its font size and its characters, each at
+  // most 1.1em wide (2em if wide), from 1.2em above the baseline to 0.4em
+  // below.
   // null where that isn't simple: a transform, positions per character,
   // a textLength, spacing, a vertical writing mode or a text path.
   function __svgTextArea(el, svg) {
@@ -11786,9 +12039,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       fs = Number.isFinite(fs) ? Math.max(fs, a) : a;
     }
     if (!Number.isFinite(fs)) fs = 16;
-    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')].length;
-    if (!chars) return null;
-    const w = chars * fs;
+    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')];
+    if (!chars.length) return null;
+    // An upper bound on the width (round 12, C12-8): 1.1em a character,
+    // above the widest Latin glyphs of common fonts (@ is about 1.02em in
+    // Arial), and 2em for emoji and wide East Asian characters. Text that
+    // fits by a clear margin is measured; text close to the edge is asked
+    // about.
+    const w = chars.reduce((sum, ch) => sum + (__WIDE_CHAR.test(ch) ? 2 : 1.1), 0) * fs;
     const anchorHost = dom.closest(text, '[text-anchor]');
     let anchor = trim(tcs.textAnchor) || 'start';
     if (anchorHost && __isComposedInside(anchorHost, svg))
@@ -11809,14 +12067,31 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       left = x;
       right = x + w;
     }
-    const baselineSet = ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
-      (a) => !!dom.closest(text, '[' + a + ']')
-    );
+    // A baseline set as an attribute, or in CSS on the text or a part of it
+    // (round 12, C12-5): jsdom computes CSS ones, and passes
+    // dominant-baseline down, but applies no attribute.
+    const baselineSet =
+      ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
+        (a) => !!dom.closest(text, '[' + a + ']')
+      ) ||
+      parts.some((n) => {
+        const ncs = n === text ? tcs : __contrastComputedStyle(n);
+        if (!ncs || typeof ncs.getPropertyValue !== 'function') return false;
+        const db = trim(ncs.getPropertyValue('dominant-baseline')).toLowerCase();
+        const ab = trim(ncs.getPropertyValue('alignment-baseline')).toLowerCase();
+        const bs = trim(ncs.getPropertyValue('baseline-shift')).toLowerCase();
+        return (
+          !/^(|auto|alphabetic)$/.test(db) ||
+          !/^(|auto|baseline|alphabetic)$/.test(ab) ||
+          !/^(|0|0px|baseline)$/.test(bs)
+        );
+      });
     const above = baselineSet ? 1.3 * fs : 1.2 * fs;
     const below = baselineSet ? 1.3 * fs : 0.4 * fs;
     return { left, right, top: y - above, bottom: y + below };
   }
 
+  const __SVG_GEOMETRY_PROPS = ['x', 'y', 'width', 'height', 'rx', 'ry', 'r', 'cx', 'cy'];
   // The opaque color a <rect>, <circle> or <ellipse> certainly paints
   // under all of el's text, without a layout, or null.
   function __svgCertainCover(shape, cs, svg, stroked, textArea) {
@@ -11840,6 +12115,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       )
     )
       return null;
+    // Geometry set in CSS overrides the attributes (SVG 2), and jsdom
+    // places nothing by it: a style sheet that sets any is not read, and the
+    // text is asked about (round 12, C12-6).
+    for (const prop of __SVG_GEOMETRY_PROPS) {
+      const decl = __authorColorDeclsOf(shape, prop);
+      if (decl.unknown || decl.values.length) return null;
+    }
     const vp = __svgViewport(svg);
     const attr = (a, full, dflt) =>
       dom.hasAttribute(shape, a) ? __svgLength(dom.getAttribute(shape, a), full) : dflt;
@@ -11919,12 +12201,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   //
   // SVG paints in document order, so a shape earlier than a text element and
   // under it is the text's background, which no CSS background shows. The
-  // simple case is measured: a <rect> with a solid fill, painted before the
-  // text, not rotated, covering all of the text clear of its rounded corners
-  // and stroke, with nothing between it and the text that groups it (opacity,
-  // a filter, a mask or a clip). Several such rects stack. Any other shape
-  // under or over the text is left to the paint-overlap check, which reports
-  // it. Needs a layout; without one nothing is found and nothing changes.
+  // simple case is measured: a <rect>, <circle> or <ellipse> (round 12,
+  // C12-7) with a solid fill, painted before the text, not rotated, covering
+  // all of the text clear of its rounded corners and stroke, with nothing
+  // between it and the text that groups it (opacity, a filter, a mask or a
+  // clip). Several such shapes stack. Any other shape under or over the text
+  // is left to the paint-overlap check, which reports it. With a layout;
+  // without one, __svgNoLayoutScan measures the same shapes.
   const __svgBackdropCache = new WeakMap();
 
   function __svgBackdropOf(el) {
@@ -11992,7 +12275,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // The color a <rect> paints behind all of el's text, or null when it isn't
   // that simple case.
   function __svgRectLayer(shape, box, el, textRects) {
-    if (String(dom.localName(shape)) !== 'rect') return null;
+    const tag = String(dom.localName(shape));
+    // A <circle> or <ellipse> too (round 12, C12-7): its box is its
+    // bounding box, so its center and radii are known.
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
     // Painted before el: el follows it in document order.
     if (!(dom.compareDocumentPosition(shape, el) & 4)) return null;
     const cs = __contrastComputedStyle(shape);
@@ -12027,19 +12313,36 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const n = parsePx(v);
       return Number.isFinite(n) && n > 0 ? n : 0;
     };
-    let rx = len(cs.rx);
-    let ry = len(cs.ry);
-    if (!rx) rx = ry;
-    if (!ry) ry = rx;
     const stroke = trim(cs.stroke);
     const halfStroke = stroke && stroke !== 'none' ? len(cs.strokeWidth) / 2 : 0;
-    const ix = Math.max(rx, halfStroke) * ctm.a;
-    const iy = Math.max(ry, halfStroke) * ctm.d;
-    const inside = (r) =>
-      r.left >= box.left + ix - 0.5 &&
-      r.right <= box.right - ix + 0.5 &&
-      r.top >= box.top + iy - 0.5 &&
-      r.bottom <= box.bottom - iy + 0.5;
+    let inside;
+    if (tag === 'rect') {
+      let rx = len(cs.rx);
+      let ry = len(cs.ry);
+      if (!rx) rx = ry;
+      if (!ry) ry = rx;
+      const ix = Math.max(rx, halfStroke) * ctm.a;
+      const iy = Math.max(ry, halfStroke) * ctm.d;
+      inside = (r) =>
+        r.left >= box.left + ix - 0.5 &&
+        r.right <= box.right - ix + 0.5 &&
+        r.top >= box.top + iy - 0.5 &&
+        r.bottom <= box.bottom - iy + 0.5;
+    } else {
+      // Every corner of each line of text inside the ellipse, clear of the
+      // inner half of its stroke.
+      const cx = (box.left + box.right) / 2;
+      const cy = (box.top + box.bottom) / 2;
+      const ex = (box.right - box.left) / 2 - halfStroke * ctm.a;
+      const ey = (box.bottom - box.top) / 2 - halfStroke * ctm.d;
+      if (!(ex > 0) || !(ey > 0)) return null;
+      const within = (x, y) => ((x - cx) / ex) ** 2 + ((y - cy) / ey) ** 2 <= 1;
+      inside = (r) =>
+        within(r.left, r.top) &&
+        within(r.right, r.top) &&
+        within(r.left, r.bottom) &&
+        within(r.right, r.bottom);
+    }
     if (!textRects.every(inside)) return null;
     const fillOpacity = Number.parseFloat(cs.fillOpacity);
     const opacity = Number.parseFloat(cs.opacity);
@@ -45017,7 +45320,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_colorScheme_light": "Im hellen Farbschema der Seite hat dieser Text ein Kontrastverhältnis von {{ratio}}:1 zu {{backgroundHex}}, unter {{threshold}}:1. Ändern Sie seine Farben in diesem Farbschema, sodass das Verhältnis diesen Wert erreicht.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
       "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
-      "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}{{#signWithPrice}} Dieses Zeichen wird mit dem Preis daneben gelesen; es ist also Text und braucht das Kontrastverhältnis für Text.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
@@ -45035,7 +45338,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_hint_cantTell_outline": "Zoomen Sie hinein und messen Sie die Farbe, die den Großteil jedes Buchstabens bildet, gegen den Hintergrund; sie braucht {{threshold}}:1.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
-      "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}{{#signWithPrice}} Dieses Zeichen wird mit dem Preis daneben gelesen; es ist also Text und braucht das erhöhte Kontrastverhältnis für Text.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
@@ -46227,8 +46530,10 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_summary_cantTell_radio_some": "Einige dieser {{count}} Optionsfelder mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen (kein <fieldset> mit <legend> und kein Element mit role=\"radiogroup\" oder role=\"group\" und zugänglichem Namen); die anderen stehen in einer.",
       "formGroupNamePresent_summary_cantTell_radio_split": "Diese {{count}} Optionsfelder mit dem Namen „{{name}}“ haben denselben Namen, sodass der Browser sie zu einer Auswahl macht, stehen aber in verschiedenen Gruppen mit Namen ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Diese {{count}} Kontrollkästchen mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"group\" und zugänglichem Namen.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "Diese {{count}} Kontrollkästchen mit dem Namen „{{name}}“ haben denselben Namen, stehen aber in verschiedenen Gruppen mit Namen ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "Wenn die Optionen eine Frage beantworten, setzen Sie sie in ein <fieldset>, dessen <legend> sie nennt, oder in ein Element mit role=\"radiogroup\" (role=\"group\" für Kontrollkästchen), das mit aria-labelledby auf die Frage benannt ist.",
       "formGroupNamePresent_hint_cantTell_radio_split": "Prüfen Sie, ob sie Optionen einer einzigen Auswahl sind. Wenn ja, setzen Sie sie in eine Gruppe, deren Name sagt, was ausgewählt wird; wenn es getrennte Auswahlen sind, geben Sie jeder einen eigenen Namen.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Prüfen Sie, ob sie eine einzige Frage beantworten. Wenn ja, setzen Sie sie in eine Gruppe, deren Name die Frage nennt; beantworten sie getrennte Fragen, können die Gruppen bleiben.",
       "formGroupNamePresent_lean_why_radio": "Optionsfelder mit gleichem Namen sind eine einzige Auswahl, und nichts gibt dieser Auswahl einen Namen.",
       "formGroupNamePresent_lean_caution_radio": "Die Beschriftung jeder Option kann die ganze Frage schon selbst sagen.",
       "symbolGraphicContrast_title": "Als Grafik verwendete Symbole sollten einen Kontrast von mindestens 3:1 haben",
@@ -46871,7 +47176,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_colorScheme_light": "In the page's light color scheme, this text has a contrast ratio of {{ratio}}:1 against {{backgroundHex}}, below {{threshold}}:1. Change its colors in that scheme so the ratio reaches it.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
       "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
-      "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}{{#signWithPrice}} This sign is read with the price beside it, so it is text and needs the text ratio.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
@@ -46889,7 +47194,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_hint_cantTell_outline": "Zoom in and measure the color that forms most of each letter against the background; it needs {{threshold}}:1.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
-      "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}{{#signWithPrice}} This sign is read with the price beside it, so it is text and needs the enhanced text ratio.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
@@ -48081,8 +48386,10 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_summary_cantTell_radio_some": "Some of these {{count}} radio buttons named “{{name}}” are in no group with a name (no <fieldset> with a <legend>, and no element with role=\"radiogroup\" or role=\"group\" and an accessible name); the others are in one.",
       "formGroupNamePresent_summary_cantTell_radio_split": "These {{count}} radio buttons named “{{name}}” share a name, so a browser makes them one choice, but sit in different groups with names ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "These {{count}} checkboxes named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"group\" and an accessible name.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "These {{count}} checkboxes named “{{name}}” share a name, but sit in different groups with names ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "If the options answer one question, put them in a <fieldset> whose <legend> says it, or in an element with role=\"radiogroup\" (role=\"group\" for checkboxes) named with aria-labelledby pointing to the question.",
       "formGroupNamePresent_hint_cantTell_radio_split": "Check whether they are options of one choice. If they are, put them in one group whose name says what is chosen; if they are separate choices, give each its own name.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Check whether they answer one question. If they do, put them in one group whose name says the question; if they answer separate questions, the groups they are in can stay.",
       "formGroupNamePresent_lean_why_radio": "Radio buttons that share a name are one choice a person makes, and nothing gives that choice a name.",
       "formGroupNamePresent_lean_caution_radio": "Each option’s own label may say the whole question.",
       "symbolGraphicContrast_title": "Symbols used as a graphic should have a contrast of at least 3:1",
@@ -48725,7 +49032,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_colorScheme_light": "En el esquema de color claro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
       "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4,5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
-      "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}{{#signWithPrice}} Este signo se lee con el precio que tiene al lado, así que es texto y necesita la relación de contraste del texto.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
@@ -48743,7 +49050,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_hint_cantTell_outline": "Ampliar y medir frente al fondo el color que forma la mayor parte de cada letra; necesita {{threshold}}:1.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4,5:1 (grande), cuando el contraste es computable a partir de CSS.",
-      "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}{{#signWithPrice}} Este signo se lee con el precio que tiene al lado, así que es texto y necesita la relación de contraste mejorada del texto.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
@@ -49935,8 +50242,10 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_summary_cantTell_radio_some": "Algunos de estos {{count}} botones de opción con el nombre «{{name}}» no están en ningún grupo con nombre (ningún <fieldset> con <legend> ni ningún elemento con role=\"radiogroup\" o role=\"group\" y nombre accesible); los demás sí lo están.",
       "formGroupNamePresent_summary_cantTell_radio_split": "Estos {{count}} botones de opción con el nombre «{{name}}» comparten nombre, así que el navegador los trata como una sola elección, pero están en grupos con nombre distintos ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Estas {{count}} casillas de verificación con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"group\" y nombre accesible.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "Estas {{count}} casillas de verificación con el nombre «{{name}}» comparten nombre, pero están en grupos con nombre distintos ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "Si las opciones responden a una sola pregunta, ponerlas en un <fieldset> cuyo <legend> la diga, o en un elemento con role=\"radiogroup\" (role=\"group\" para casillas) nombrado con aria-labelledby apuntando a la pregunta.",
       "formGroupNamePresent_hint_cantTell_radio_split": "Comprobar si son opciones de una sola elección. Si lo son, ponerlas en un solo grupo cuyo nombre diga qué se elige; si son elecciones distintas, dar a cada una su propio nombre.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Comprobar si responden a una sola pregunta. Si es así, ponerlas en un solo grupo cuyo nombre diga la pregunta; si responden a preguntas distintas, pueden quedarse en sus grupos.",
       "formGroupNamePresent_lean_why_radio": "Los botones de opción que comparten nombre son una sola elección, y nada le da nombre a esa elección.",
       "formGroupNamePresent_lean_caution_radio": "La etiqueta de cada opción puede decir por sí sola la pregunta entera.",
       "symbolGraphicContrast_title": "Los símbolos usados como gráfico deberían tener un contraste de al menos 3:1",
@@ -50579,7 +50888,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_colorScheme_light": "Dans le jeu de couleurs clair de la page, ce texte a un ratio de contraste de {{ratio}}:1 sur {{backgroundHex}}, inférieur à {{threshold}}:1. Modifiez ses couleurs dans ce jeu de couleurs pour que le ratio l’atteigne.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
       "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
-      "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}{{#signWithPrice}} Ce signe se lit avec le prix à côté de lui : c’est donc du texte, qui doit atteindre le rapport de contraste du texte.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
@@ -50597,7 +50906,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_hint_cantTell_outline": "Zoomez et mesurez la couleur qui forme l’essentiel de chaque lettre par rapport à l’arrière-plan ; elle doit atteindre {{threshold}}:1.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
-      "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}{{#signWithPrice}} Ce signe se lit avec le prix à côté de lui : c’est donc du texte, qui doit atteindre le rapport de contraste renforcé du texte.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
@@ -51789,8 +52098,10 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_summary_cantTell_radio_some": "Certains de ces {{count}} boutons radio nommés « {{name}} » ne sont dans aucun groupe nommé (aucun <fieldset> avec <legend>, ni aucun élément avec role=\"radiogroup\" ou role=\"group\" et un nom accessible) ; les autres le sont.",
       "formGroupNamePresent_summary_cantTell_radio_split": "Ces {{count}} boutons radio nommés « {{name}} » partagent un nom, ce qui en fait un seul choix pour le navigateur, mais sont dans des groupes nommés différents ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Ces {{count}} cases à cocher nommées « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"group\" et un nom accessible.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "Ces {{count}} cases à cocher nommées « {{name}} » partagent un nom, mais sont dans des groupes nommés différents ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "Si les options répondent à une seule question, placez-les dans un <fieldset> dont la <legend> la formule, ou dans un élément avec role=\"radiogroup\" (role=\"group\" pour des cases à cocher) nommé par aria-labelledby pointant vers la question.",
       "formGroupNamePresent_hint_cantTell_radio_split": "Vérifiez s’ils sont les options d’un seul choix. Si oui, placez-les dans un seul groupe dont le nom dit ce qui est choisi ; si ce sont des choix distincts, donnez à chacun son propre nom.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Vérifiez si elles répondent à une seule question. Si oui, placez-les dans un seul groupe dont le nom dit la question ; si elles répondent à des questions distinctes, leurs groupes peuvent rester.",
       "formGroupNamePresent_lean_why_radio": "Des boutons radio qui partagent un nom sont un seul choix, et rien ne donne de nom à ce choix.",
       "formGroupNamePresent_lean_caution_radio": "L’étiquette de chaque option peut formuler à elle seule toute la question.",
       "symbolGraphicContrast_title": "Les symboles utilisés comme graphique devraient avoir un contraste d’au moins 3:1",
@@ -52433,7 +52744,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_colorScheme_light": "ページのライトな配色では、このテキストの {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で、{{threshold}}:1 を下回ります。比がこの値に達するよう、その配色でのテキストの色を変更してください。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
       "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
-      "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}{{#signWithPrice}}この記号は隣の価格と一緒に読まれるため、テキストであり、テキストのコントラスト比が必要です。{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastMinimum_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastMinimum_pass_allAboveThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
@@ -52451,7 +52762,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_hint_cantTell_outline": "拡大して、各文字の大部分を形作っている色を背景に対して測定してください。{{threshold}}:1 が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
-      "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}{{#signWithPrice}}この記号は隣の価格と一緒に読まれるため、テキストであり、テキストの強化されたコントラスト比が必要です。{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastEnhanced_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastEnhanced_pass_allAboveThreshold": "計算できたすべてのテキストが、高度なコントラスト (AAA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
@@ -53643,8 +53954,10 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_summary_cantTell_radio_some": "name が「{{name}}」の {{count}} 個のラジオボタンのうち一部は、名前のあるグループに入っていません (<legend> のある <fieldset> も、アクセシブルな名前のある role=\"radiogroup\" や role=\"group\" の要素もありません)。残りは名前のあるグループに入っています。",
       "formGroupNamePresent_summary_cantTell_radio_split": "name が「{{name}}」の {{count}} 個のラジオボタンは同じ name を持つため、ブラウザーは一つの選択として扱いますが、名前の異なるグループ ({{groups}}) に分かれています。",
       "formGroupNamePresent_summary_cantTell_checkbox": "name が「{{name}}」の {{count}} 個のチェックボックスは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"group\" の要素もありません。",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "name が「{{name}}」の {{count}} 個のチェックボックスは同じ name を持ちますが、名前の異なるグループ ({{groups}}) に分かれています。",
       "formGroupNamePresent_hint_cantTell": "選択肢が一つの質問に答えるものなら、その質問を <legend> に書いた <fieldset> に入れるか、質問を指す aria-labelledby で名前を付けた role=\"radiogroup\" (チェックボックスなら role=\"group\") の要素に入れてください。",
       "formGroupNamePresent_hint_cantTell_radio_split": "一つの選択の選択肢かどうかを確認してください。そうであれば、何を選ぶのかを名前で伝える一つのグループに入れてください。別々の選択であれば、それぞれに別の name を付けてください。",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "一つの質問に答えるものかどうかを確認してください。そうであれば、その質問を名前で伝える一つのグループに入れてください。別々の質問に答えるものであれば、今のグループのままで構いません。",
       "formGroupNamePresent_lean_why_radio": "同じ name を持つラジオボタンは一つの選択であり、その選択に名前を付けているものがありません。",
       "formGroupNamePresent_lean_caution_radio": "各選択肢のラベルだけで質問全体を伝えている場合もあります。",
       "symbolGraphicContrast_title": "グラフィックとして使われる記号は、少なくとも 3:1 のコントラストを持つべきです",
@@ -80276,6 +80589,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           character: symbol
         };
       }
+      // A currency sign or 〒 judged as text with the price beside it (round
+      // 11, B11-9): the message says why it needs the text ratio (round 12,
+      // C12-17).
+      if (!placeholder && !symbol && !pseudo) {
+        try {
+          if (
+            helpers.contrast &&
+            typeof helpers.contrast.isSignInTextRun === 'function' &&
+            helpers.contrast.isSignInTextRun(el)
+          )
+            params = { ...(params || {}), signWithPrice: true };
+        } catch {}
+      }
 
       // Every reason code here describes a ratio the rule computed: text
       // whose colors can't be worked out is left to contrast-computable.
@@ -81580,6 +81906,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           reasonCode: 'SYMBOLIC_CHARACTER_BELOW_THRESHOLD',
           character: symbol
         };
+      }
+      // A currency sign or 〒 judged as text with the price beside it (round
+      // 11, B11-9): the message says why it needs the text ratio (round 12,
+      // C12-17).
+      if (!placeholder && !symbol && !pseudo) {
+        try {
+          if (
+            helpers.contrast &&
+            typeof helpers.contrast.isSignInTextRun === 'function' &&
+            helpers.contrast.isSignInTextRun(el)
+          )
+            params = { ...(params || {}), signWithPrice: true };
+        } catch {}
       }
 
       // Every reason code here describes a ratio the rule computed: text
@@ -93036,50 +93375,58 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const count = group.members.length;
       const shownName = group.name.length > 60 ? `${group.name.slice(0, 59)}…` : group.name;
 
-      // Radio buttons each in a named group, but not all in the same one:
-      // one choice split over groups, or two choices sharing a name by
-      // mistake. Checkboxes are left as they were: fields a script names
-      // alike often sit in different groups on purpose.
+      // Options each in a named group, but not all in the same one: one
+      // choice split over groups, or two choices sharing a name by mistake.
+      // Neither leans: checkboxes a script names alike often sit in
+      // different groups on purpose, and so may radio buttons.
       let anchor = group.members[0];
       let some = false;
-      if (radio) {
-        const found = group.members.map(nearestNamedGroup);
-        const unnamed = group.members.filter((_, i) => !found[i]);
-        if (!unnamed.length) {
-          const seen = new Set();
-          const names = [];
-          for (const g of found) {
-            if (seen.has(g.el)) continue;
-            seen.add(g.el);
-            names.push(shorten(g.name, 40));
-          }
-          const shownGroups = names.length > 5 ? [...names.slice(0, 5), '…'] : names;
-          const groupsText = shownGroups.join(', ');
-          const splitOcc = {
-            summary: `These ${count} radio buttons named “${shownName}” share a name, so a browser makes them one choice, but sit in different groups with names (${groupsText}).`,
-            hint: 'Check whether they are options of one choice. If they are, put them in one group whose name says what is chosen; if they are separate choices, give each its own name.',
-            i18n: {
-              summaryKey: 'formGroupNamePresent_summary_cantTell_radio_split',
-              hintKey: 'formGroupNamePresent_hint_cantTell_radio_split',
-              params: { name: shownName, count, groups: groupsText }
-            },
-            data: {
-              details: {
-                reasonCode: 'RADIO_GROUP_SPLIT',
-                name: shownName,
-                count,
-                inputType: group.type,
-                groups: names
-              }
-            }
-          };
-          occurrences.push(
-            typeof helpers.reportOccurrence === 'function'
-              ? helpers.reportOccurrence(anchor, splitOcc)
-              : splitOcc
-          );
-          continue;
+      const found = group.members.map(nearestNamedGroup);
+      const unnamed = group.members.filter((_, i) => !found[i]);
+      if (!unnamed.length) {
+        const seen = new Set();
+        const names = [];
+        for (const g of found) {
+          if (seen.has(g.el)) continue;
+          seen.add(g.el);
+          names.push(shorten(g.name, 40));
         }
+        const shownGroups = names.length > 5 ? [...names.slice(0, 5), '…'] : names;
+        const groupsText = shownGroups.join(', ');
+        const splitOcc = {
+          summary: radio
+            ? `These ${count} radio buttons named “${shownName}” share a name, so a browser makes them one choice, but sit in different groups with names (${groupsText}).`
+            : `These ${count} checkboxes named “${shownName}” share a name, but sit in different groups with names (${groupsText}).`,
+          hint: radio
+            ? 'Check whether they are options of one choice. If they are, put them in one group whose name says what is chosen; if they are separate choices, give each its own name.'
+            : 'Check whether they answer one question. If they do, put them in one group whose name says the question; if they answer separate questions, the groups they are in can stay.',
+          i18n: {
+            summaryKey: radio
+              ? 'formGroupNamePresent_summary_cantTell_radio_split'
+              : 'formGroupNamePresent_summary_cantTell_checkbox_split',
+            hintKey: radio
+              ? 'formGroupNamePresent_hint_cantTell_radio_split'
+              : 'formGroupNamePresent_hint_cantTell_checkbox_split',
+            params: { name: shownName, count, groups: groupsText }
+          },
+          data: {
+            details: {
+              reasonCode: radio ? 'RADIO_GROUP_SPLIT' : 'CHECKBOX_GROUP_SPLIT',
+              name: shownName,
+              count,
+              inputType: group.type,
+              groups: names
+            }
+          }
+        };
+        occurrences.push(
+          typeof helpers.reportOccurrence === 'function'
+            ? helpers.reportOccurrence(anchor, splitOcc)
+            : splitOcc
+        );
+        continue;
+      }
+      if (radio) {
         // Some options in a named group and some in none: asked about as
         // options in no named group, pointing at the first of those.
         if (unnamed.length < count) {
@@ -102126,7 +102473,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (hasBorder(cs, node)) return true;
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
       if (hasBackgroundImage(cs, node) || ownBackground(node, cs)) return true;
-      const underlined = underlinedAtRest(node, cs, notTransparent);
+      // An underline drawn in the color behind it shows nothing, as the
+      // link's own is read (round 12, C12-15).
+      const underlined = underlinedAtRest(node, cs, (color) => !unseen(node, color));
       if (underlined === false || (aroundUnderlined && aroundUnderlined())) return false;
       if (underlined === null) {
         unreadUnderline = true;
@@ -117417,8 +117766,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return true;
   }
 
+  // An element whose content is not seen though it is drawn (round 12,
+  // C12-11): fully transparent (opacity: 0), or a box of no width that
+  // hides its overflow (width: 0; overflow: hidden, with text-indent:
+  // -9999px or not).
+  function unseen(n) {
+    let cs = null;
+    try {
+      cs = helpers.computedStyle ? helpers.computedStyle(n) : null;
+    } catch {}
+    if (!cs) return false;
+    if (trim(cs.opacity) && Number.parseFloat(cs.opacity) === 0) return true;
+    const clips = /^(hidden|clip)$/.test(trim(cs.overflowX || cs.overflow));
+    const inline = trim(cs.display) === 'inline' || trim(cs.display) === 'contents';
+    return clips && !inline && Number.parseFloat(cs.width) === 0;
+  }
+
   // The text el shows: its text nodes, less those in an element that is not
-  // drawn (display:none, a closed <details>), hidden (visibility:hidden) or
+  // drawn (display:none, a closed <details>), not seen (unseen, or a font
+  // size of 0), hidden (visibility:hidden) or
   // visually hidden (a screen-reader-only clip or 1px box). aria-hidden
   // doesn't matter to sight. Read through at most 400 nodes.
   function visibleTextOf(el) {
@@ -117434,8 +117800,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             cs = helpers.computedStyle ? helpers.computedStyle(node) : null;
           } catch {}
           const vis = trim(cs && cs.visibility);
-          if (!vis || vis === 'visible') out += String(dom.nodeValue(n) || '');
-        } else if (type === 1 && shown(n)) {
+          // Text at a font size of 0 draws nothing (round 12, C12-11).
+          const drawn = !cs || !cs.fontSize || Number.parseFloat(cs.fontSize) !== 0;
+          if ((!vis || vis === 'visible') && drawn) out += String(dom.nodeValue(n) || '');
+        } else if (type === 1 && shown(n) && !unseen(n)) {
           walk(n);
         }
       }
@@ -117449,7 +117817,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // the element's own text is its, as the text-contrast rules report text:
   // <span>★<b>★★</b></span> gives “★” on the span and “★★” on the <b>,
   // each measured in its own colour, so no symbol is reported twice.
+  // The parents of the text nodes holding a symbol other than a separator,
+  // found with one walk over the text of each tree (document or shadow
+  // root): an element no such text node is a child of has no symbol text,
+  // so its children are not read one by one (round 12, P12-2).
+  const symbolParents = new Set();
+  // Each tree: true once walked, false where the walk failed.
+  const walkedTrees = new Map();
+  function mayHaveSymbolText(el) {
+    let tree;
+    try {
+      tree = dom.getRootNode(el);
+    } catch {
+      return true;
+    }
+    if (!walkedTrees.has(tree)) {
+      let ok = true;
+      try {
+        const walker = dom.createTreeWalker(dom.ownerDocument(el) || tree, tree, 4);
+        for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+          const v = String(dom.nodeValue(t) || '');
+          if (SYMBOL.test(v.replace(SEPARATORS, ''))) symbolParents.add(dom.parentNode(t));
+        }
+      } catch {
+        ok = false;
+      }
+      walkedTrees.set(tree, ok);
+    }
+    return !walkedTrees.get(tree) || symbolParents.has(el);
+  }
+
   function symbolTextOf(el) {
+    if (!mayHaveSymbolText(el)) return '';
     let own = '';
     for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
       if (dom.nodeType(n) === 3) own += String(dom.nodeValue(n) || '');
@@ -127769,7 +128168,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_colorScheme_light": "Im hellen Farbschema der Seite hat dieser Text ein Kontrastverhältnis von {{ratio}}:1 zu {{backgroundHex}}, unter {{threshold}}:1. Ändern Sie seine Farben in diesem Farbschema, sodass das Verhältnis diesen Wert erreicht.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
       "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
-      "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}{{#signWithPrice}} Dieses Zeichen wird mit dem Preis daneben gelesen; es ist also Text und braucht das Kontrastverhältnis für Text.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
@@ -127787,7 +128186,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_hint_cantTell_outline": "Zoomen Sie hinein und messen Sie die Farbe, die den Großteil jedes Buchstabens bildet, gegen den Hintergrund; sie braucht {{threshold}}:1.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
-      "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}{{#signWithPrice}} Dieses Zeichen wird mit dem Preis daneben gelesen; es ist also Text und braucht das erhöhte Kontrastverhältnis für Text.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
@@ -128979,8 +129378,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_summary_cantTell_radio_some": "Einige dieser {{count}} Optionsfelder mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen (kein <fieldset> mit <legend> und kein Element mit role=\"radiogroup\" oder role=\"group\" und zugänglichem Namen); die anderen stehen in einer.",
       "formGroupNamePresent_summary_cantTell_radio_split": "Diese {{count}} Optionsfelder mit dem Namen „{{name}}“ haben denselben Namen, sodass der Browser sie zu einer Auswahl macht, stehen aber in verschiedenen Gruppen mit Namen ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Diese {{count}} Kontrollkästchen mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"group\" und zugänglichem Namen.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "Diese {{count}} Kontrollkästchen mit dem Namen „{{name}}“ haben denselben Namen, stehen aber in verschiedenen Gruppen mit Namen ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "Wenn die Optionen eine Frage beantworten, setzen Sie sie in ein <fieldset>, dessen <legend> sie nennt, oder in ein Element mit role=\"radiogroup\" (role=\"group\" für Kontrollkästchen), das mit aria-labelledby auf die Frage benannt ist.",
       "formGroupNamePresent_hint_cantTell_radio_split": "Prüfen Sie, ob sie Optionen einer einzigen Auswahl sind. Wenn ja, setzen Sie sie in eine Gruppe, deren Name sagt, was ausgewählt wird; wenn es getrennte Auswahlen sind, geben Sie jeder einen eigenen Namen.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Prüfen Sie, ob sie eine einzige Frage beantworten. Wenn ja, setzen Sie sie in eine Gruppe, deren Name die Frage nennt; beantworten sie getrennte Fragen, können die Gruppen bleiben.",
       "formGroupNamePresent_lean_why_radio": "Optionsfelder mit gleichem Namen sind eine einzige Auswahl, und nichts gibt dieser Auswahl einen Namen.",
       "formGroupNamePresent_lean_caution_radio": "Die Beschriftung jeder Option kann die ganze Frage schon selbst sagen.",
       "symbolGraphicContrast_title": "Als Grafik verwendete Symbole sollten einen Kontrast von mindestens 3:1 haben",
@@ -129623,7 +130024,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_colorScheme_light": "In the page's light color scheme, this text has a contrast ratio of {{ratio}}:1 against {{backgroundHex}}, below {{threshold}}:1. Change its colors in that scheme so the ratio reaches it.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
       "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
-      "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}{{#signWithPrice}} This sign is read with the price beside it, so it is text and needs the text ratio.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
@@ -129641,7 +130042,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_hint_cantTell_outline": "Zoom in and measure the color that forms most of each letter against the background; it needs {{threshold}}:1.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
-      "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}{{#signWithPrice}} This sign is read with the price beside it, so it is text and needs the enhanced text ratio.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
@@ -130833,8 +131234,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_summary_cantTell_radio_some": "Some of these {{count}} radio buttons named “{{name}}” are in no group with a name (no <fieldset> with a <legend>, and no element with role=\"radiogroup\" or role=\"group\" and an accessible name); the others are in one.",
       "formGroupNamePresent_summary_cantTell_radio_split": "These {{count}} radio buttons named “{{name}}” share a name, so a browser makes them one choice, but sit in different groups with names ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "These {{count}} checkboxes named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"group\" and an accessible name.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "These {{count}} checkboxes named “{{name}}” share a name, but sit in different groups with names ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "If the options answer one question, put them in a <fieldset> whose <legend> says it, or in an element with role=\"radiogroup\" (role=\"group\" for checkboxes) named with aria-labelledby pointing to the question.",
       "formGroupNamePresent_hint_cantTell_radio_split": "Check whether they are options of one choice. If they are, put them in one group whose name says what is chosen; if they are separate choices, give each its own name.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Check whether they answer one question. If they do, put them in one group whose name says the question; if they answer separate questions, the groups they are in can stay.",
       "formGroupNamePresent_lean_why_radio": "Radio buttons that share a name are one choice a person makes, and nothing gives that choice a name.",
       "formGroupNamePresent_lean_caution_radio": "Each option’s own label may say the whole question.",
       "symbolGraphicContrast_title": "Symbols used as a graphic should have a contrast of at least 3:1",
@@ -131477,7 +131880,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_colorScheme_light": "En el esquema de color claro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
       "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4,5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
-      "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}{{#signWithPrice}} Este signo se lee con el precio que tiene al lado, así que es texto y necesita la relación de contraste del texto.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
@@ -131495,7 +131898,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_hint_cantTell_outline": "Ampliar y medir frente al fondo el color que forma la mayor parte de cada letra; necesita {{threshold}}:1.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4,5:1 (grande), cuando el contraste es computable a partir de CSS.",
-      "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}{{#signWithPrice}} Este signo se lee con el precio que tiene al lado, así que es texto y necesita la relación de contraste mejorada del texto.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
@@ -132687,8 +133090,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_summary_cantTell_radio_some": "Algunos de estos {{count}} botones de opción con el nombre «{{name}}» no están en ningún grupo con nombre (ningún <fieldset> con <legend> ni ningún elemento con role=\"radiogroup\" o role=\"group\" y nombre accesible); los demás sí lo están.",
       "formGroupNamePresent_summary_cantTell_radio_split": "Estos {{count}} botones de opción con el nombre «{{name}}» comparten nombre, así que el navegador los trata como una sola elección, pero están en grupos con nombre distintos ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Estas {{count}} casillas de verificación con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"group\" y nombre accesible.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "Estas {{count}} casillas de verificación con el nombre «{{name}}» comparten nombre, pero están en grupos con nombre distintos ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "Si las opciones responden a una sola pregunta, ponerlas en un <fieldset> cuyo <legend> la diga, o en un elemento con role=\"radiogroup\" (role=\"group\" para casillas) nombrado con aria-labelledby apuntando a la pregunta.",
       "formGroupNamePresent_hint_cantTell_radio_split": "Comprobar si son opciones de una sola elección. Si lo son, ponerlas en un solo grupo cuyo nombre diga qué se elige; si son elecciones distintas, dar a cada una su propio nombre.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Comprobar si responden a una sola pregunta. Si es así, ponerlas en un solo grupo cuyo nombre diga la pregunta; si responden a preguntas distintas, pueden quedarse en sus grupos.",
       "formGroupNamePresent_lean_why_radio": "Los botones de opción que comparten nombre son una sola elección, y nada le da nombre a esa elección.",
       "formGroupNamePresent_lean_caution_radio": "La etiqueta de cada opción puede decir por sí sola la pregunta entera.",
       "symbolGraphicContrast_title": "Los símbolos usados como gráfico deberían tener un contraste de al menos 3:1",
@@ -133331,7 +133736,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_colorScheme_light": "Dans le jeu de couleurs clair de la page, ce texte a un ratio de contraste de {{ratio}}:1 sur {{backgroundHex}}, inférieur à {{threshold}}:1. Modifiez ses couleurs dans ce jeu de couleurs pour que le ratio l’atteigne.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
       "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
-      "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}{{#signWithPrice}} Ce signe se lit avec le prix à côté de lui : c’est donc du texte, qui doit atteindre le rapport de contraste du texte.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
@@ -133349,7 +133754,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_hint_cantTell_outline": "Zoomez et mesurez la couleur qui forme l’essentiel de chaque lettre par rapport à l’arrière-plan ; elle doit atteindre {{threshold}}:1.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
-      "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}{{#signWithPrice}} Ce signe se lit avec le prix à côté de lui : c’est donc du texte, qui doit atteindre le rapport de contraste renforcé du texte.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
@@ -134541,8 +134946,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_summary_cantTell_radio_some": "Certains de ces {{count}} boutons radio nommés « {{name}} » ne sont dans aucun groupe nommé (aucun <fieldset> avec <legend>, ni aucun élément avec role=\"radiogroup\" ou role=\"group\" et un nom accessible) ; les autres le sont.",
       "formGroupNamePresent_summary_cantTell_radio_split": "Ces {{count}} boutons radio nommés « {{name}} » partagent un nom, ce qui en fait un seul choix pour le navigateur, mais sont dans des groupes nommés différents ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Ces {{count}} cases à cocher nommées « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"group\" et un nom accessible.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "Ces {{count}} cases à cocher nommées « {{name}} » partagent un nom, mais sont dans des groupes nommés différents ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "Si les options répondent à une seule question, placez-les dans un <fieldset> dont la <legend> la formule, ou dans un élément avec role=\"radiogroup\" (role=\"group\" pour des cases à cocher) nommé par aria-labelledby pointant vers la question.",
       "formGroupNamePresent_hint_cantTell_radio_split": "Vérifiez s’ils sont les options d’un seul choix. Si oui, placez-les dans un seul groupe dont le nom dit ce qui est choisi ; si ce sont des choix distincts, donnez à chacun son propre nom.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Vérifiez si elles répondent à une seule question. Si oui, placez-les dans un seul groupe dont le nom dit la question ; si elles répondent à des questions distinctes, leurs groupes peuvent rester.",
       "formGroupNamePresent_lean_why_radio": "Des boutons radio qui partagent un nom sont un seul choix, et rien ne donne de nom à ce choix.",
       "formGroupNamePresent_lean_caution_radio": "L’étiquette de chaque option peut formuler à elle seule toute la question.",
       "symbolGraphicContrast_title": "Les symboles utilisés comme graphique devraient avoir un contraste d’au moins 3:1",
@@ -135185,7 +135592,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_colorScheme_light": "ページのライトな配色では、このテキストの {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で、{{threshold}}:1 を下回ります。比がこの値に達するよう、その配色でのテキストの色を変更してください。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
       "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
-      "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}{{#signWithPrice}}この記号は隣の価格と一緒に読まれるため、テキストであり、テキストのコントラスト比が必要です。{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastMinimum_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastMinimum_pass_allAboveThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
@@ -135203,7 +135610,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_hint_cantTell_outline": "拡大して、各文字の大部分を形作っている色を背景に対して測定してください。{{threshold}}:1 が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
-      "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}{{#signWithPrice}}この記号は隣の価格と一緒に読まれるため、テキストであり、テキストの強化されたコントラスト比が必要です。{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastEnhanced_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastEnhanced_pass_allAboveThreshold": "計算できたすべてのテキストが、高度なコントラスト (AAA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
@@ -136395,8 +136802,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_summary_cantTell_radio_some": "name が「{{name}}」の {{count}} 個のラジオボタンのうち一部は、名前のあるグループに入っていません (<legend> のある <fieldset> も、アクセシブルな名前のある role=\"radiogroup\" や role=\"group\" の要素もありません)。残りは名前のあるグループに入っています。",
       "formGroupNamePresent_summary_cantTell_radio_split": "name が「{{name}}」の {{count}} 個のラジオボタンは同じ name を持つため、ブラウザーは一つの選択として扱いますが、名前の異なるグループ ({{groups}}) に分かれています。",
       "formGroupNamePresent_summary_cantTell_checkbox": "name が「{{name}}」の {{count}} 個のチェックボックスは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"group\" の要素もありません。",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "name が「{{name}}」の {{count}} 個のチェックボックスは同じ name を持ちますが、名前の異なるグループ ({{groups}}) に分かれています。",
       "formGroupNamePresent_hint_cantTell": "選択肢が一つの質問に答えるものなら、その質問を <legend> に書いた <fieldset> に入れるか、質問を指す aria-labelledby で名前を付けた role=\"radiogroup\" (チェックボックスなら role=\"group\") の要素に入れてください。",
       "formGroupNamePresent_hint_cantTell_radio_split": "一つの選択の選択肢かどうかを確認してください。そうであれば、何を選ぶのかを名前で伝える一つのグループに入れてください。別々の選択であれば、それぞれに別の name を付けてください。",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "一つの質問に答えるものかどうかを確認してください。そうであれば、その質問を名前で伝える一つのグループに入れてください。別々の質問に答えるものであれば、今のグループのままで構いません。",
       "formGroupNamePresent_lean_why_radio": "同じ name を持つラジオボタンは一つの選択であり、その選択に名前を付けているものがありません。",
       "formGroupNamePresent_lean_caution_radio": "各選択肢のラベルだけで質問全体を伝えている場合もあります。",
       "symbolGraphicContrast_title": "グラフィックとして使われる記号は、少なくとも 3:1 のコントラストを持つべきです",
@@ -140563,6 +140972,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   function isInactiveUiComponent(el) {
+    // The flat tree (round 12, C12-10): text in a shadow root is the
+    // content of its host, and a slotted node of its slot, so an
+    // aria-disabled host with role=button disables the text it draws. The
+    // chain of ancestors is kept for the run.
+    const chain = ancestorsOf(el);
+    let at = 0;
+    const next = () => {
+      while (++at < chain.length && dom.nodeType(chain[at]) === 11);
+      return chain[at] || null;
+    };
     let node = el;
     let prev = null;
     let depth = 0;
@@ -140589,7 +141008,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         labelAncestor = node;
       }
       prev = node;
-      node = dom.parentElement(node);
+      node = next();
     }
 
     // WCAG 1.4.3/1.4.6 "disabled label" exception: see labelNamesDisabled.
@@ -140608,10 +141027,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // "〒100-0001"), even when markup gives it an element of its own: it is
   // read, so it is text, held to 1.4.3, not a graphic. "Next to" is the
   // nearest visible character before or after it, not past a block
-  // boundary (a block, a line break) and not counting text that is not
+  // boundary (a block, a flex or grid item, a float, an absolutely
+  // positioned box, a line break) and not counting text that is not
   // drawn (display:none, visibility:hidden, visually hidden), nor the text
-  // of a link beside it. A sign alone between links, or a separator such
-  // as ">", is not this: it stays a graphic.
+  // of a link beside it, unless the link's nearest character is a digit
+  // (an amount). A sign alone between links, or a separator such as ">",
+  // is not this: it stays a graphic.
   const __RUN_SIGN = /[\p{Sc}〒]/u;
   const __RUN_SIGN_ONLY = /^[\s\p{Sc}〒\p{P}]*$/u;
   const __RUN_TEXT = /[\p{L}\p{N}]/u;
@@ -140628,6 +141049,21 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return d === 'contents' || d.startsWith('inline') || d.startsWith('ruby');
   }
 
+  // Whether el's box is a block whatever its display says: a float, an
+  // absolutely positioned box, or an item of a flex or grid container
+  // (CSS Display 3, blockification). A browser computes such a display as
+  // a block already; jsdom doesn't, so it is read here, and both agree
+  // (round 12, C12-1).
+  function __runBlockified(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.cssFloat || cs.float) && trim(cs.cssFloat || cs.float) !== 'none') return true;
+    if (cs.position === 'absolute' || cs.position === 'fixed') return true;
+    const parent = composedParent(el);
+    if (!parent || dom.nodeType(parent) !== 1) return false;
+    const d = String(__contrastComputedStyle(parent).display || '');
+    return /(^|\s|-)(flex|grid)\b/.test(d);
+  }
+
   function __runHidden(el, cs) {
     if (!cs) return false;
     if (trim(cs.display) === 'none') return true;
@@ -140640,9 +141076,30 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // The nearest visible character beside node in its block, in the given
   // direction: a character, '' at a boundary or where none is found within
   // the budget.
+  // Styles of elements no one has read yet that the search below may read
+  // in one run, over all its signs (round 12, C12-13): each sign walks its
+  // own neighbours, and a page of signs each beside hundreds of empty
+  // inline elements read a style for every one. Past it, a sign is a
+  // graphic, as it was before signs were read with their text. A real
+  // page's signs sit a node or two from digits whose styles the scan has
+  // read already: a catalogue of 3,000 WooCommerce prices reads none.
+  const __SIGN_RUN_BUDGET = 2000;
+  const __localSignRunBudget = { left: __SIGN_RUN_BUDGET };
+  function __signRunBudget() {
+    try {
+      const sc = shared && shared.__contrastSharedCache ? shared.__contrastSharedCache : null;
+      if (sc) {
+        if (!sc.__signRunBudget) sc.__signRunBudget = { left: __SIGN_RUN_BUDGET };
+        return sc.__signRunBudget;
+      }
+    } catch {}
+    return __localSignRunBudget;
+  }
+
   function __runNeighbour(node, block, forward) {
     let budget = 400;
-    const into = (n) => {
+    const total = __signRunBudget();
+    const into = (n, inLink) => {
       if (budget-- <= 0) return '';
       const type = dom.nodeType(n);
       if (type === 3) {
@@ -140658,26 +141115,31 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const name = __lname(n);
       if (name === 'br') return '';
       if (/^(script|style|template|noscript|title)$/.test(name)) return null;
-      // A link's text is its own: a sign between links separates them.
-      if ((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) return '';
-      if (
-        String(dom.getAttribute(n, 'role') || '')
-          .trim()
-          .split(/\s+/)[0] === 'link'
-      )
-        return '';
+      // A link's text is its own: a sign between links separates them,
+      // as a breadcrumb's ">" does. A link whose nearest character is a
+      // digit is the amount of a price, "$" in <span>$</span><a>45</a>,
+      // and the sign is read with it (round 12, C12-12).
+      const link =
+        !inLink &&
+        (((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) ||
+          String(dom.getAttribute(n, 'role') || '')
+            .trim()
+            .split(/\s+/)[0] === 'link');
+      // A style the scan has not read already counts against the run's
+      // budget: the text around a sign has been read, empty padding not.
+      if (!__computedStyleCache.has(n) && total.left-- <= 0) return '';
       const cs = __contrastComputedStyle(n);
-      if (__runHidden(n, cs)) return null;
-      if (!__inlineDisplay(cs)) return '';
+      if (__runHidden(n, cs)) return link ? '' : null;
+      if (!__inlineDisplay(cs) || __runBlockified(n, cs)) return '';
       for (
         let c = forward ? dom.firstChild(n) : dom.lastChild(n);
         c;
         c = forward ? dom.nextSibling(c) : dom.previousSibling(c)
       ) {
-        const found = into(c);
-        if (found !== null) return found;
+        const found = into(c, inLink || link);
+        if (found !== null) return link && !/\p{Nd}/u.test(found) ? '' : found;
       }
-      return null;
+      return link ? '' : null;
     };
     let cur = node;
     while (cur && budget > 0) {
@@ -140689,7 +141151,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
       }
       cur = sib;
-      const found = into(cur);
+      const found = into(cur, false);
       if (found !== null) return found;
     }
     return '';
@@ -140703,7 +141165,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (__isSignText(dom.nodeValue(t))) {
         let block = dom.parentElement(t);
         for (let guard = 0; block && guard < 200; guard++) {
-          if (!__inlineDisplay(__contrastComputedStyle(block))) break;
+          const bcs = __contrastComputedStyle(block);
+          if (!__inlineDisplay(bcs) || __runBlockified(block, bcs)) break;
           block = dom.parentElement(block);
         }
         if (block) {
@@ -140827,11 +141290,40 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // The computed style that sets the color and font of el's text: the
-  // ::placeholder style while a field shows its placeholder, el's own
+  // ::placeholder style while a field shows its placeholder, the slot's
+  // where el's own text is slotted into its shadow tree, el's own
   // otherwise.
   function textStyleOf(el) {
     const field = __fieldText(el);
-    return field && field.placeholder ? field.style : __contrastComputedStyle(el);
+    return field && field.placeholder
+      ? field.style
+      : __contrastComputedStyle(__ownTextSlot(el) || el);
+  }
+
+  // The <slot> a shadow host's own text is drawn in, or null (round 12,
+  // C12-2). Text placed straight into a host is rendered where its shadow
+  // tree's slot puts it, and inherits from that slot in the flat tree (CSS
+  // Scoping, 3.1), not from the host: a host with color: black whose slot
+  // sits in a grey <div> draws its text grey. The first text with
+  // something other than spaces decides.
+  const __ownTextSlotCache = new WeakMap();
+  function __ownTextSlot(el) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    if (__ownTextSlotCache.has(el)) return __ownTextSlotCache.get(el);
+    let out = null;
+    try {
+      if (dom.shadowRoot(el)) {
+        for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
+          if (dom.nodeType(n) !== 3 || !trim(dom.nodeValue(n))) continue;
+          out = dom.assignedSlot(n) || null;
+          break;
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __ownTextSlotCache.set(el, out);
+    return out;
   }
 
   // -------- The options of a drop-down <select> (#219) --------
@@ -141156,11 +141648,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             clipsX,
             clipsY,
             rect: clipsX || clipsY ? dom.getBoundingClientRect(node) : null,
-            stops: !!acs && (acs.position === 'fixed' || acs.position === 'absolute')
+            stops: !!acs && acs.position === 'fixed',
+            // An absolutely positioned box is clipped by its containing
+            // block and the boxes around that, not by the boxes between
+            // (round 12, C12-3).
+            absolute: !!acs && acs.position === 'absolute'
           };
           clipBoxCache.set(node, box);
         }
         return box;
+      };
+      // The box whose overflow clips next after node: its parent, or for an
+      // absolutely positioned node the nearest positioned ancestor (its
+      // containing block), or null at the root.
+      const clipParentOf = (node) => {
+        let cur = composedParent(node);
+        if (!clipBoxOf(node).absolute) return cur;
+        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 1000; depth++) {
+          const pcs = __contrastComputedStyle(cur);
+          if (
+            !pcs ||
+            (pcs.position && pcs.position !== 'static') ||
+            (trim(pcs.transform) && trim(pcs.transform) !== 'none') ||
+            __lname(cur) === 'html'
+          )
+            return cur;
+          cur = composedParent(cur);
+        }
+        return cur;
       };
       // The clip of node and the boxes above it, up to the first that stops
       // the walk (or the root), as one rectangle: an axis no box clips is
@@ -141182,7 +141697,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           }
           path.push(cur);
           if (clipBoxOf(cur).stops) break;
-          cur = composedParent(cur);
+          cur = clipParentOf(cur);
         }
         // A walk cut short by the depth limit leaves the rest unknown: too
         // long, and isUndrawn walks it box by box.
@@ -141331,41 +141846,49 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           )
             return true;
         }
-        let left = r.left;
-        let top = r.top;
-        let right = r.right;
-        let bottom = r.bottom;
         // Inside a marquee, only the boxes around the marquee clip.
-        let cur = composedParent(marquee || el);
+        const start = marquee || el;
+        let cur = clipParentOf(start);
+        let cl = -Infinity;
+        let ct = -Infinity;
+        let cr = Infinity;
+        let cb = Infinity;
         const up = cur && dom.nodeType(cur) === 1 ? clipUpOf(cur) : null;
         if (up && up.len <= 100) {
           if (!up.clips) return false;
-          left = Math.max(left, up.left);
-          right = Math.min(right, up.right);
-          top = Math.max(top, up.top);
-          bottom = Math.min(bottom, up.bottom);
-          return right - left <= 1 || bottom - top <= 1;
-        }
-        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
-          // hidden and clip cut content off; auto and scroll let a reader
-          // scroll to it.
-          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
-          if (clipsX || clipsY) {
+          cl = up.left;
+          cr = up.right;
+          ct = up.top;
+          cb = up.bottom;
+        } else {
+          for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
+            // hidden and clip cut content off; auto and scroll let a reader
+            // scroll to it.
+            const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
             if (clipsX) {
-              left = Math.max(left, a.left);
-              right = Math.min(right, a.right);
+              cl = Math.max(cl, a.left);
+              cr = Math.min(cr, a.right);
             }
             if (clipsY) {
-              top = Math.max(top, a.top);
-              bottom = Math.min(bottom, a.bottom);
+              ct = Math.max(ct, a.top);
+              cb = Math.min(cb, a.bottom);
             }
-            // A pixel or less: the 1px box of visually hidden text.
-            if (right - left <= 1 || bottom - top <= 1) return true;
+            if (stops) break;
+            cur = clipParentOf(cur);
           }
-          if (stops) break;
-          cur = composedParent(cur);
         }
-        return false;
+        // A pixel or less: the 1px box of visually hidden text.
+        const cut = (b) =>
+          Math.min(b.right, cr) - Math.max(b.left, cl) <= 1 ||
+          Math.min(b.bottom, cb) - Math.max(b.top, ct) <= 1;
+        if (cut(r)) return true;
+        if (marquee || (cl === -Infinity && ct === -Infinity && cr === Infinity && cb === Infinity))
+          return false;
+        // The box shows, but its own text may lie in the part cut off, as
+        // padding pushes it there (round 12, C12-3): a screen-reader text
+        // pushed below a 1em box of rating stars. Its lines decide.
+        const lines = __ownTextRects(el);
+        return lines.length > 0 && lines.every(cut);
       };
 
       // An <option> has no layout box of its own, yet it is drawn: the
@@ -144027,6 +144550,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
     const value = decl.value.toLowerCase();
     if (__CSS_INHERITING.has(value)) return inherited();
+    // revert takes the browser's own value: a link's link color, as an
+    // unstyled link has it, and for an element in a link (whose color the
+    // browser's sheet doesn't set, but for a <mark>) its parent's (round
+    // 12, C12-14).
+    if (value === 'revert' && __isLink(el)) return __SCHEME_COLORS.light.link;
+    if (value === 'revert' && __lname(el) !== 'mark') return inherited();
     // A custom property jsdom doesn't substitute, or a keyword taking the
     // browser's own value.
     if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
@@ -144200,7 +144729,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // its own opacity as well as the field's.
     const field = __fieldText(el);
     const placeholder = field && field.placeholder ? field.style : null;
-    const cs = placeholder || __contrastComputedStyle(el);
+    // A host's own text slotted into its shadow tree takes the slot's color.
+    const slot = placeholder ? null : __ownTextSlot(el);
+    const cs = placeholder || __contrastComputedStyle(slot || el);
     // SVG text is painted with `fill`, not `color` (which only feeds
     // currentColor): <text fill="#000" style="color:#eee"> is black. A fill
     // of none (outline-only text) or a paint server (url(#gradient)) does
@@ -144209,7 +144740,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // Text in a link, under jsdom, whose color jsdom ranks below its own
     // link color, is read from the page's rules (__htmlTextFillOf).
     const fillValue =
-      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
+      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(slot || el, cs));
     let c = parseCssColorToRgba(fillValue);
     // On the canvas of a page drawn only in dark, in an emulator: the dark
     // scheme's color where the text takes it from the scheme.
@@ -144241,7 +144772,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return out;
     }
 
-    let op = computeOpacityProduct(el);
+    let op = computeOpacityProduct(slot || el);
     if (placeholder) {
       const own = Number.parseFloat(placeholder.opacity);
       if (Number.isFinite(own)) op *= clamp01(own);
@@ -145121,7 +145652,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const layer = svgBackdrop.layers[i];
         if (collectStack) {
           stack.push({
-            selector: __getSimpleSelectorCached(layer.el, 'rect'),
+            selector: __getSimpleSelectorCached(layer.el, __lname(layer.el)),
             bg: { r: layer.rgba.r, g: layer.rgba.g, b: layer.rgba.b, a: layer.rgba.a },
             opacity: 1
           });
@@ -145153,7 +145684,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // text): that background is the text's color, not behind it.
     const clipOwner = __clipTextOwner(el);
 
-    for (const cur of ancestorsOf(el)) {
+    // A host's own text slotted into its shadow tree is drawn there, over
+    // the backgrounds of the slot's flat-tree ancestors, the host's among
+    // them.
+    for (const cur of ancestorsOf(__ownTextSlot(el) || el)) {
       if (dom.nodeType(cur) !== 1) continue;
       if (cur === clipOwner) {
         const ocs = __contrastComputedStyle(cur);
@@ -148385,7 +148919,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     try {
       if (!el || dom.nodeType(el) !== 1 || !chain.length) return null;
       const index = __getOverlapIndex();
-      if (!index) return __svgShapeMaybeBehind(el);
+      if (!index) return __svgShapeMaybeBehind(el) || __noLayoutPseudoUnder(el, chain);
       const opaque = chain[chain.length - 1];
       const ancestors = new Set(chain);
       // Painters near el's box at all, before measuring its text, which
@@ -148505,6 +149039,101 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Without a layout (jsdom), no pseudo-element's style is computed, so a
+  // positioned ::before or ::after painting a color or an image under the
+  // text (the overlay pattern, z-index: -1 among them) was never seen, and
+  // white text over a dark one was measured against the white page and
+  // dropped as invisible (round 12, C12-18). Read from the style sheets
+  // instead: a ::before or ::after their rules give content, a position of
+  // absolute or fixed and a background, on el or an ancestor in `chain`,
+  // is paint in the way, and the text is asked about. A sheet that can't
+  // be read is taken as giving none.
+  const __noLayoutPseudosByRoot = new WeakMap();
+  function __noLayoutPseudos(root) {
+    if (__noLayoutPseudosByRoot.has(root)) return __noLayoutPseudosByRoot.get(root);
+    const byKey = new Map();
+    try {
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
+      const stack = [];
+      for (const sheet of sheets) {
+        try {
+          stack.push(sheet.cssRules || []);
+        } catch {}
+      }
+      while (stack.length) {
+        const list = stack.pop();
+        const n = (list && list.length) || 0;
+        for (let i = 0; i < n; i++) {
+          const rule = list[i];
+          if (!rule) continue;
+          if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+          const text = rule.selectorText;
+          const style = rule.style;
+          if (typeof text !== 'string' || !style || !__beforeOrAfterRe.test(text)) continue;
+          const get = (prop) =>
+            trim(
+              typeof style.getPropertyValue === 'function' ? style.getPropertyValue(prop) : ''
+            ).toLowerCase();
+          const content = get('content');
+          const position = get('position');
+          const color = get('background-color');
+          const image = get('background-image');
+          const shorthand = get('background');
+          for (const part of __splitTopLevel(text)) {
+            const m = /::?(before|after)\b/i.exec(part);
+            if (!m) continue;
+            let base = part.slice(0, m.index).trim();
+            if (!base || /[>+~]$/.test(base)) base += '*';
+            const key = base + '::' + m[1].toLowerCase();
+            const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
+            if (content) at.content = content !== 'none' && content !== 'normal';
+            if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            const paint = [color, image, shorthand].find(
+              (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
+            );
+            if (paint) {
+              const c = parseCssColorToRgba(paint);
+              if (!c || c.a > 0) at.paint = paint;
+            }
+            byKey.set(key, at);
+          }
+        }
+      }
+    } catch {}
+    const out = [...byKey.values()].filter((p) => p.content && p.positioned && p.paint);
+    __noLayoutPseudosByRoot.set(root, out);
+    return out;
+  }
+  function __noLayoutPseudoUnder(el, chain) {
+    for (const host of chain) {
+      let root;
+      try {
+        root = dom.getRootNode(host);
+      } catch {
+        root = null;
+      }
+      if (!root) continue;
+      for (const p of __noLayoutPseudos(root)) {
+        let matched;
+        try {
+          matched = dom.matches(host, p.base);
+        } catch {
+          matched = false;
+        }
+        if (!matched) continue;
+        return {
+          selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
+          element: describeElement(host) + p.pseudo,
+          property: 'background',
+          value: p.paint
+        };
+      }
+    }
+    return null;
+  }
+
   // Without a layout (jsdom), where an SVG shape paints can't be told. A
   // shape painted before SVG text in the same <svg> may lie behind it, and
   // then the text's background can't be told either: the shape, as paint
@@ -148590,7 +149219,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
       if (unpainted) continue;
       const cs = __contrastComputedStyle(shape);
-      if (!cs || trim(cs.display) === 'none' || trim(cs.visibility) === 'hidden') continue;
+      if (!cs || __svgHiddenNoLayout(shape, cs, svg)) continue;
       const paints = (v) => {
         if (!v || v === 'none') return false;
         const c = parseCssColorToRgba(v);
@@ -148622,6 +149251,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     }
     return { certain, blocker };
+  }
+
+  // Whether an SVG shape is not drawn, without a layout (round 12, C12-4):
+  // display none on it or a group around it, or visibility hidden on it or
+  // inherited, set in CSS or as a presentation attribute, which jsdom
+  // doesn't apply.
+  function __svgHiddenNoLayout(shape, cs, svg) {
+    if (trim(cs.display) === 'none') return true;
+    const vis = trim(cs.visibility);
+    if (vis === 'hidden' || vis === 'collapse') return true;
+    let visKnown = false;
+    for (let n = shape; n && n !== svg; n = dom.parentElement(n)) {
+      if (trim(dom.getAttribute(n, 'display')).toLowerCase() === 'none') return true;
+      if (n !== shape) {
+        const ncs = __contrastComputedStyle(n);
+        if (ncs && trim(ncs.display) === 'none') return true;
+      }
+      if (!visKnown && dom.hasAttribute(n, 'visibility')) {
+        visKnown = true;
+        const v = trim(dom.getAttribute(n, 'visibility')).toLowerCase();
+        if (v === 'hidden' || v === 'collapse') return true;
+      }
+    }
+    if (!visKnown && svg && dom.hasAttribute(svg, 'visibility')) {
+      const v = trim(dom.getAttribute(svg, 'visibility')).toLowerCase();
+      if (v === 'hidden' || v === 'collapse') return true;
+    }
+    return false;
   }
 
   // An SVG length in user units: a number, px, or a percentage of `full`
@@ -148685,9 +149342,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     );
   }
 
+  // Emoji, and characters of East Asian Width W or F (Unicode UAX #11),
+  // drawn up to two em wide.
+  const __WIDE_CHAR =
+    /[\p{Extended_Pictographic}\u1100-\u115F\u231A\u231B\u2329\u232A\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uA960-\uA97F\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6\u{16FE0}-\u{18AFF}\u{1B000}-\u{1B2FF}\u{1F000}-\u{1FAFF}\u{20000}-\u{3FFFD}]/u;
   // The area SVG text certainly lies in, in the svg's user units, without a
-  // layout: from its x and y, its font size and its number of characters,
-  // each at most one em wide, from 1.2em above the baseline to 0.4em below.
+  // layout: from its x and y, its font size and its characters, each at
+  // most 1.1em wide (2em if wide), from 1.2em above the baseline to 0.4em
+  // below.
   // null where that isn't simple: a transform, positions per character,
   // a textLength, spacing, a vertical writing mode or a text path.
   function __svgTextArea(el, svg) {
@@ -148739,9 +149401,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       fs = Number.isFinite(fs) ? Math.max(fs, a) : a;
     }
     if (!Number.isFinite(fs)) fs = 16;
-    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')].length;
-    if (!chars) return null;
-    const w = chars * fs;
+    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')];
+    if (!chars.length) return null;
+    // An upper bound on the width (round 12, C12-8): 1.1em a character,
+    // above the widest Latin glyphs of common fonts (@ is about 1.02em in
+    // Arial), and 2em for emoji and wide East Asian characters. Text that
+    // fits by a clear margin is measured; text close to the edge is asked
+    // about.
+    const w = chars.reduce((sum, ch) => sum + (__WIDE_CHAR.test(ch) ? 2 : 1.1), 0) * fs;
     const anchorHost = dom.closest(text, '[text-anchor]');
     let anchor = trim(tcs.textAnchor) || 'start';
     if (anchorHost && __isComposedInside(anchorHost, svg))
@@ -148762,14 +149429,31 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       left = x;
       right = x + w;
     }
-    const baselineSet = ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
-      (a) => !!dom.closest(text, '[' + a + ']')
-    );
+    // A baseline set as an attribute, or in CSS on the text or a part of it
+    // (round 12, C12-5): jsdom computes CSS ones, and passes
+    // dominant-baseline down, but applies no attribute.
+    const baselineSet =
+      ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
+        (a) => !!dom.closest(text, '[' + a + ']')
+      ) ||
+      parts.some((n) => {
+        const ncs = n === text ? tcs : __contrastComputedStyle(n);
+        if (!ncs || typeof ncs.getPropertyValue !== 'function') return false;
+        const db = trim(ncs.getPropertyValue('dominant-baseline')).toLowerCase();
+        const ab = trim(ncs.getPropertyValue('alignment-baseline')).toLowerCase();
+        const bs = trim(ncs.getPropertyValue('baseline-shift')).toLowerCase();
+        return (
+          !/^(|auto|alphabetic)$/.test(db) ||
+          !/^(|auto|baseline|alphabetic)$/.test(ab) ||
+          !/^(|0|0px|baseline)$/.test(bs)
+        );
+      });
     const above = baselineSet ? 1.3 * fs : 1.2 * fs;
     const below = baselineSet ? 1.3 * fs : 0.4 * fs;
     return { left, right, top: y - above, bottom: y + below };
   }
 
+  const __SVG_GEOMETRY_PROPS = ['x', 'y', 'width', 'height', 'rx', 'ry', 'r', 'cx', 'cy'];
   // The opaque color a <rect>, <circle> or <ellipse> certainly paints
   // under all of el's text, without a layout, or null.
   function __svgCertainCover(shape, cs, svg, stroked, textArea) {
@@ -148793,6 +149477,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       )
     )
       return null;
+    // Geometry set in CSS overrides the attributes (SVG 2), and jsdom
+    // places nothing by it: a style sheet that sets any is not read, and the
+    // text is asked about (round 12, C12-6).
+    for (const prop of __SVG_GEOMETRY_PROPS) {
+      const decl = __authorColorDeclsOf(shape, prop);
+      if (decl.unknown || decl.values.length) return null;
+    }
     const vp = __svgViewport(svg);
     const attr = (a, full, dflt) =>
       dom.hasAttribute(shape, a) ? __svgLength(dom.getAttribute(shape, a), full) : dflt;
@@ -148872,12 +149563,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   //
   // SVG paints in document order, so a shape earlier than a text element and
   // under it is the text's background, which no CSS background shows. The
-  // simple case is measured: a <rect> with a solid fill, painted before the
-  // text, not rotated, covering all of the text clear of its rounded corners
-  // and stroke, with nothing between it and the text that groups it (opacity,
-  // a filter, a mask or a clip). Several such rects stack. Any other shape
-  // under or over the text is left to the paint-overlap check, which reports
-  // it. Needs a layout; without one nothing is found and nothing changes.
+  // simple case is measured: a <rect>, <circle> or <ellipse> (round 12,
+  // C12-7) with a solid fill, painted before the text, not rotated, covering
+  // all of the text clear of its rounded corners and stroke, with nothing
+  // between it and the text that groups it (opacity, a filter, a mask or a
+  // clip). Several such shapes stack. Any other shape under or over the text
+  // is left to the paint-overlap check, which reports it. With a layout;
+  // without one, __svgNoLayoutScan measures the same shapes.
   const __svgBackdropCache = new WeakMap();
 
   function __svgBackdropOf(el) {
@@ -148945,7 +149637,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // The color a <rect> paints behind all of el's text, or null when it isn't
   // that simple case.
   function __svgRectLayer(shape, box, el, textRects) {
-    if (String(dom.localName(shape)) !== 'rect') return null;
+    const tag = String(dom.localName(shape));
+    // A <circle> or <ellipse> too (round 12, C12-7): its box is its
+    // bounding box, so its center and radii are known.
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
     // Painted before el: el follows it in document order.
     if (!(dom.compareDocumentPosition(shape, el) & 4)) return null;
     const cs = __contrastComputedStyle(shape);
@@ -148980,19 +149675,36 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const n = parsePx(v);
       return Number.isFinite(n) && n > 0 ? n : 0;
     };
-    let rx = len(cs.rx);
-    let ry = len(cs.ry);
-    if (!rx) rx = ry;
-    if (!ry) ry = rx;
     const stroke = trim(cs.stroke);
     const halfStroke = stroke && stroke !== 'none' ? len(cs.strokeWidth) / 2 : 0;
-    const ix = Math.max(rx, halfStroke) * ctm.a;
-    const iy = Math.max(ry, halfStroke) * ctm.d;
-    const inside = (r) =>
-      r.left >= box.left + ix - 0.5 &&
-      r.right <= box.right - ix + 0.5 &&
-      r.top >= box.top + iy - 0.5 &&
-      r.bottom <= box.bottom - iy + 0.5;
+    let inside;
+    if (tag === 'rect') {
+      let rx = len(cs.rx);
+      let ry = len(cs.ry);
+      if (!rx) rx = ry;
+      if (!ry) ry = rx;
+      const ix = Math.max(rx, halfStroke) * ctm.a;
+      const iy = Math.max(ry, halfStroke) * ctm.d;
+      inside = (r) =>
+        r.left >= box.left + ix - 0.5 &&
+        r.right <= box.right - ix + 0.5 &&
+        r.top >= box.top + iy - 0.5 &&
+        r.bottom <= box.bottom - iy + 0.5;
+    } else {
+      // Every corner of each line of text inside the ellipse, clear of the
+      // inner half of its stroke.
+      const cx = (box.left + box.right) / 2;
+      const cy = (box.top + box.bottom) / 2;
+      const ex = (box.right - box.left) / 2 - halfStroke * ctm.a;
+      const ey = (box.bottom - box.top) / 2 - halfStroke * ctm.d;
+      if (!(ex > 0) || !(ey > 0)) return null;
+      const within = (x, y) => ((x - cx) / ex) ** 2 + ((y - cy) / ey) ** 2 <= 1;
+      inside = (r) =>
+        within(r.left, r.top) &&
+        within(r.right, r.top) &&
+        within(r.left, r.bottom) &&
+        within(r.right, r.bottom);
+    }
     if (!textRects.every(inside)) return null;
     const fillOpacity = Number.parseFloat(cs.fillOpacity);
     const opacity = Number.parseFloat(cs.opacity);

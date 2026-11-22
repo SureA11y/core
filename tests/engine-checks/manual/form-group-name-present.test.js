@@ -122,12 +122,22 @@ test(`${RULE_ID}: radio buttons sharing a name split over named groups are asked
     maxOccurrences: 0
   });
 
-  // Checkboxes in different named groups are asked about as before.
+  // Checkboxes in different named groups have a code of their own (round
+  // 12, U12-14 follow-up); only some in a named group are asked as before.
   const cb = assertRule(run(split.replace(/radio/g, 'checkbox')), RULE_ID, 'cantTell', {
     minOccurrences: 1,
     maxOccurrences: 1
   }).occurrences[0];
-  assert.equal(cb.data.details.reasonCode, 'CHECKBOX_GROUP_NO_NAME');
+  assert.equal(cb.data.details.reasonCode, 'CHECKBOX_GROUP_SPLIT');
+  const cbSome = assertRule(
+    run(
+      '<fieldset><legend>A</legend><input type="checkbox" name="s" aria-label="a"></fieldset><input type="checkbox" name="s" aria-label="b">'
+    ),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  ).occurrences[0];
+  assert.equal(cbSome.data.details.reasonCode, 'CHECKBOX_GROUP_NO_NAME');
 
   // Some options in a named group and some in none: asked about as options
   // in no named group, leaning fail, at the first option in no group.
@@ -148,6 +158,40 @@ test(`${RULE_ID}: radio buttons sharing a name split over named groups are asked
     /^Some of these 3 radio buttons named “s” are in no group with a name/
   );
   assert.equal(mixed.lean.toward, 'fail');
+});
+
+test(`${RULE_ID}: checkboxes sharing a name split over named groups are asked about, with no lean (round 12, U12-14)`, () => {
+  const split =
+    '<fieldset><legend>A</legend><input type="checkbox" name="s" aria-label="a" id="a"></fieldset><fieldset><legend>B</legend><input type="checkbox" name="s" aria-label="b"></fieldset>';
+  const occ = assertRule(run(split), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  }).occurrences[0];
+  assert.ok(occ.html.includes('id="a"'));
+  assert.deepEqual(occ.data.details, {
+    reasonCode: 'CHECKBOX_GROUP_SPLIT',
+    name: 's',
+    count: 2,
+    inputType: 'checkbox',
+    groups: ['A', 'B']
+  });
+  assert.equal(occ.i18n.summaryKey, 'formGroupNamePresent_summary_cantTell_checkbox_split');
+  assert.equal(occ.i18n.hintKey, 'formGroupNamePresent_hint_cantTell_checkbox_split');
+  assert.match(occ.summary, /share a name, but sit in different groups with names \(A, B\)/);
+  assert.doesNotMatch(occ.summary, /no group with a name/);
+  assert.equal(occ.lean, undefined);
+  const { howToCheckFor } = require('../../../src/how-to-check');
+  for (const locale of ['en', 'es', 'de', 'fr', 'ja']) {
+    const how = howToCheckFor(RULE_ID, 'CHECKBOX_GROUP_SPLIT', locale);
+    assert.ok(how && how.steps.length === 3 && how.passWhen && how.failWhen, locale);
+    const r = run(split, { locale }).checksResults.find((x) => x.ruleId === RULE_ID);
+    assert.match(r.occurrences[0].summary, /\(A, B\)/, locale);
+  }
+  // One named group around both: pass.
+  assertRule(run(`<fieldset><legend>Choose</legend>${split}</fieldset>`), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`${RULE_ID}: a single checkbox, options without a shared name, and hidden options are no group`, () => {
@@ -211,8 +255,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-group-name-present-all-s
     'utf8'
   );
   const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
-    minOccurrences: 5,
-    maxOccurrences: 5
+    minOccurrences: 6,
+    maxOccurrences: 6
   });
   const ids = rule.occurrences.map((o) => /id="(fgn_case_\d+)"/.exec(o.html)[1]);
   assert.deepEqual(ids, [
@@ -220,13 +264,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-group-name-present-all-s
     'fgn_case_02',
     'fgn_case_03',
     'fgn_case_04',
-    'fgn_case_11'
+    'fgn_case_11',
+    'fgn_case_12'
   ]);
   assert.deepEqual(
     rule.occurrences.map((o) => (o.lean ? o.lean.toward : null)),
-    ['fail', null, 'fail', 'fail', null]
+    ['fail', null, 'fail', 'fail', null, null]
   );
   assert.equal(rule.occurrences[4].data.details.reasonCode, 'RADIO_GROUP_SPLIT');
+  assert.equal(rule.occurrences[5].data.details.reasonCode, 'CHECKBOX_GROUP_SPLIT');
 });
 
 test(`${RULE_ID}: hidden legends and options the flat tree leaves out (round 11, R11F-11)`, () => {

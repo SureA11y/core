@@ -15,7 +15,8 @@
  *   symbol category (Sm, Sc, Sk, So), 40 characters at most, that is a
  *   direct text child of the element, which is rendered and not
  *   screen-reader-only. Only visible text counts: text in a descendant
- *   that is not drawn (display:none), hidden (visibility:hidden) or
+ *   that is not drawn (display:none), hidden (visibility:hidden), not seen
+ *   (opacity:0, font-size:0, a box of no width hiding its overflow) or
  *   visually hidden (a screen-reader-only clip or 1px box) is left out of
  *   the element's text, so ★★★★☆ with a screen-reader-only "4 of 5" is
  *   symbols only; aria-hidden doesn't matter to sight. Left out:
@@ -24,8 +25,10 @@
  *     letter-free text is the only text they leave out (ACT afw4f7), so the
  *     two never judge the same text;
  *   - a currency sign (Unicode Sc, such as € $ £ ¥) or 〒 whose nearest
- *     visible character on its line, not past a block boundary, a line
- *     break or a link's text, is a letter or a digit ("€" in
+ *     visible character on its line, not past a block boundary (a block,
+ *     a flex or grid item, a float, an absolutely positioned box), a line
+ *     break or a link's text (unless its nearest character is a digit, a
+ *     linked amount), is a letter or a digit ("€" in
  *     <span>€</span>45,00): it is read with that text, and
  *     contrast-minimum judges it as text, at 4.5:1 or 3:1 if large. A
  *     separator between links, such as a breadcrumb's ">", stays here;
@@ -153,8 +156,25 @@ function runInPage(ctx) {
     return true;
   }
 
+  // An element whose content is not seen though it is drawn (round 12,
+  // C12-11): fully transparent (opacity: 0), or a box of no width that
+  // hides its overflow (width: 0; overflow: hidden, with text-indent:
+  // -9999px or not).
+  function unseen(n) {
+    let cs = null;
+    try {
+      cs = helpers.computedStyle ? helpers.computedStyle(n) : null;
+    } catch {}
+    if (!cs) return false;
+    if (trim(cs.opacity) && Number.parseFloat(cs.opacity) === 0) return true;
+    const clips = /^(hidden|clip)$/.test(trim(cs.overflowX || cs.overflow));
+    const inline = trim(cs.display) === 'inline' || trim(cs.display) === 'contents';
+    return clips && !inline && Number.parseFloat(cs.width) === 0;
+  }
+
   // The text el shows: its text nodes, less those in an element that is not
-  // drawn (display:none, a closed <details>), hidden (visibility:hidden) or
+  // drawn (display:none, a closed <details>), not seen (unseen, or a font
+  // size of 0), hidden (visibility:hidden) or
   // visually hidden (a screen-reader-only clip or 1px box). aria-hidden
   // doesn't matter to sight. Read through at most 400 nodes.
   function visibleTextOf(el) {
@@ -170,8 +190,10 @@ function runInPage(ctx) {
             cs = helpers.computedStyle ? helpers.computedStyle(node) : null;
           } catch {}
           const vis = trim(cs && cs.visibility);
-          if (!vis || vis === 'visible') out += String(dom.nodeValue(n) || '');
-        } else if (type === 1 && shown(n)) {
+          // Text at a font size of 0 draws nothing (round 12, C12-11).
+          const drawn = !cs || !cs.fontSize || Number.parseFloat(cs.fontSize) !== 0;
+          if ((!vis || vis === 'visible') && drawn) out += String(dom.nodeValue(n) || '');
+        } else if (type === 1 && shown(n) && !unseen(n)) {
           walk(n);
         }
       }
@@ -185,7 +207,38 @@ function runInPage(ctx) {
   // the element's own text is its, as the text-contrast rules report text:
   // <span>★<b>★★</b></span> gives “★” on the span and “★★” on the <b>,
   // each measured in its own colour, so no symbol is reported twice.
+  // The parents of the text nodes holding a symbol other than a separator,
+  // found with one walk over the text of each tree (document or shadow
+  // root): an element no such text node is a child of has no symbol text,
+  // so its children are not read one by one (round 12, P12-2).
+  const symbolParents = new Set();
+  // Each tree: true once walked, false where the walk failed.
+  const walkedTrees = new Map();
+  function mayHaveSymbolText(el) {
+    let tree;
+    try {
+      tree = dom.getRootNode(el);
+    } catch {
+      return true;
+    }
+    if (!walkedTrees.has(tree)) {
+      let ok = true;
+      try {
+        const walker = dom.createTreeWalker(dom.ownerDocument(el) || tree, tree, 4);
+        for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+          const v = String(dom.nodeValue(t) || '');
+          if (SYMBOL.test(v.replace(SEPARATORS, ''))) symbolParents.add(dom.parentNode(t));
+        }
+      } catch {
+        ok = false;
+      }
+      walkedTrees.set(tree, ok);
+    }
+    return !walkedTrees.get(tree) || symbolParents.has(el);
+  }
+
   function symbolTextOf(el) {
+    if (!mayHaveSymbolText(el)) return '';
     let own = '';
     for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
       if (dom.nodeType(n) === 3) own += String(dom.nodeValue(n) || '');

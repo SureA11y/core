@@ -255,6 +255,7 @@ const PROCEDURES = {
         variants: {
           'form-group-name-present': [
             'CHECKBOX_GROUP_NO_NAME',
+            'CHECKBOX_GROUP_SPLIT',
             'RADIO_GROUP_NO_NAME',
             'RADIO_GROUP_SPLIT'
           ]

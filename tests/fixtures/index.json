@@ -1091,11 +1091,11 @@
       "testFile": "tests/engine-checks/manual/form-group-name-present-chromium.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-group-name-present-all-scenarios.html",
-      "totalCases": 11,
+      "totalCases": 12,
       "caseCounts": {
         "PASS": 3,
         "FAIL": 0,
-        "CANTTELL": 5,
+        "CANTTELL": 6,
         "OTHER": 3
       }
     },

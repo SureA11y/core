@@ -29,14 +29,17 @@
  *   lean: they may be one choice split over two groups, or two choices
  *   given the same name by mistake. If some of them are in no named group,
  *   they are asked about as options in no named group, pointing at the
- *   first of those. Checkboxes in different named groups are asked about
- *   as checkboxes in no named group.
+ *   first of those. Checkboxes each in a named group, but not all in one,
+ *   are asked about the same way, with no lean; checkboxes only some of
+ *   which are in a named group are asked about as checkboxes in no named
+ *   group.
  * @reports
  *   - `name`: the `name` the options share, up to 60 characters.
  *   - `count`: how many options share it.
  *   - `inputType`: `radio` or `checkbox`.
- *   - `groups` (`RADIO_GROUP_SPLIT` only): the names of the groups the
- *     radio buttons sit in, in document order, each up to 40 characters.
+ *   - `groups` (`RADIO_GROUP_SPLIT` and `CHECKBOX_GROUP_SPLIT` only): the
+ *     names of the groups the options sit in, in document order, each up
+ *     to 40 characters.
  * @reason-codes
  *   - `RADIO_GROUP_NO_NAME` (cantTell): radio buttons that share a name sit
  *     in no fieldset with a legend and no group or radiogroup with a name.
@@ -51,6 +54,11 @@
  *   - `CHECKBOX_GROUP_NO_NAME` (cantTell): checkboxes that share a name sit
  *     in no fieldset with a legend and no group with a name; whether they
  *     answer one question that needs a name is for a person to judge.
+ *     Basis: WCAG 1.3.1 (not settled); H71; ARIA17.
+ *   - `CHECKBOX_GROUP_SPLIT` (cantTell): checkboxes that share a name are
+ *     each in a named group, but the groups differ. No lean: they may answer
+ *     one question that belongs in one group, or separate questions whose
+ *     fields a script names alike.
  *     Basis: WCAG 1.3.1 (not settled); H71; ARIA17.
  * @implementation-notes
  * - The group is found from the options' shared name, as a browser groups
@@ -272,50 +280,58 @@ function runInPage(ctx) {
       const count = group.members.length;
       const shownName = group.name.length > 60 ? `${group.name.slice(0, 59)}…` : group.name;
 
-      // Radio buttons each in a named group, but not all in the same one:
-      // one choice split over groups, or two choices sharing a name by
-      // mistake. Checkboxes are left as they were: fields a script names
-      // alike often sit in different groups on purpose.
+      // Options each in a named group, but not all in the same one: one
+      // choice split over groups, or two choices sharing a name by mistake.
+      // Neither leans: checkboxes a script names alike often sit in
+      // different groups on purpose, and so may radio buttons.
       let anchor = group.members[0];
       let some = false;
-      if (radio) {
-        const found = group.members.map(nearestNamedGroup);
-        const unnamed = group.members.filter((_, i) => !found[i]);
-        if (!unnamed.length) {
-          const seen = new Set();
-          const names = [];
-          for (const g of found) {
-            if (seen.has(g.el)) continue;
-            seen.add(g.el);
-            names.push(shorten(g.name, 40));
-          }
-          const shownGroups = names.length > 5 ? [...names.slice(0, 5), '…'] : names;
-          const groupsText = shownGroups.join(', ');
-          const splitOcc = {
-            summary: `These ${count} radio buttons named “${shownName}” share a name, so a browser makes them one choice, but sit in different groups with names (${groupsText}).`,
-            hint: 'Check whether they are options of one choice. If they are, put them in one group whose name says what is chosen; if they are separate choices, give each its own name.',
-            i18n: {
-              summaryKey: 'formGroupNamePresent_summary_cantTell_radio_split',
-              hintKey: 'formGroupNamePresent_hint_cantTell_radio_split',
-              params: { name: shownName, count, groups: groupsText }
-            },
-            data: {
-              details: {
-                reasonCode: 'RADIO_GROUP_SPLIT',
-                name: shownName,
-                count,
-                inputType: group.type,
-                groups: names
-              }
-            }
-          };
-          occurrences.push(
-            typeof helpers.reportOccurrence === 'function'
-              ? helpers.reportOccurrence(anchor, splitOcc)
-              : splitOcc
-          );
-          continue;
+      const found = group.members.map(nearestNamedGroup);
+      const unnamed = group.members.filter((_, i) => !found[i]);
+      if (!unnamed.length) {
+        const seen = new Set();
+        const names = [];
+        for (const g of found) {
+          if (seen.has(g.el)) continue;
+          seen.add(g.el);
+          names.push(shorten(g.name, 40));
         }
+        const shownGroups = names.length > 5 ? [...names.slice(0, 5), '…'] : names;
+        const groupsText = shownGroups.join(', ');
+        const splitOcc = {
+          summary: radio
+            ? `These ${count} radio buttons named “${shownName}” share a name, so a browser makes them one choice, but sit in different groups with names (${groupsText}).`
+            : `These ${count} checkboxes named “${shownName}” share a name, but sit in different groups with names (${groupsText}).`,
+          hint: radio
+            ? 'Check whether they are options of one choice. If they are, put them in one group whose name says what is chosen; if they are separate choices, give each its own name.'
+            : 'Check whether they answer one question. If they do, put them in one group whose name says the question; if they answer separate questions, the groups they are in can stay.',
+          i18n: {
+            summaryKey: radio
+              ? 'formGroupNamePresent_summary_cantTell_radio_split'
+              : 'formGroupNamePresent_summary_cantTell_checkbox_split',
+            hintKey: radio
+              ? 'formGroupNamePresent_hint_cantTell_radio_split'
+              : 'formGroupNamePresent_hint_cantTell_checkbox_split',
+            params: { name: shownName, count, groups: groupsText }
+          },
+          data: {
+            details: {
+              reasonCode: radio ? 'RADIO_GROUP_SPLIT' : 'CHECKBOX_GROUP_SPLIT',
+              name: shownName,
+              count,
+              inputType: group.type,
+              groups: names
+            }
+          }
+        };
+        occurrences.push(
+          typeof helpers.reportOccurrence === 'function'
+            ? helpers.reportOccurrence(anchor, splitOcc)
+            : splitOcc
+        );
+        continue;
+      }
+      if (radio) {
         // Some options in a named group and some in none: asked about as
         // options in no named group, pointing at the first of those.
         if (unnamed.length < count) {

@@ -2601,6 +2601,15 @@
       "fr-CA": "f0ca998a135c7976",
       "pt": "e2e534c824d4c560"
     },
+    "form-group-name-present CHECKBOX_GROUP_SPLIT": {
+      "en": "2f81bbe890f280d9",
+      "de": "66eddb037e3b7e7e",
+      "es": "78bdec7162a9a398",
+      "fr": "4339f4fccb45a9ca",
+      "ja": "75aaac79679dc6c2",
+      "fr-CA": "4339f4fccb45a9ca",
+      "pt": "2f81bbe890f280d9"
+    },
     "form-group-name-present RADIO_GROUP_NO_NAME": {
       "en": "8aa9b2bd6b73a93b",
       "de": "db1434624732bde4",
@@ -2880,7 +2889,7 @@
     "focus-order-semantics": "8ccfa31ee2e20ffd",
     "form-control-label-quality": "194f1852031a9ebf",
     "form-control-programmatic-label-quality": "bd6b61fce0a27ad9",
-    "form-group-name-present": "da46e81d65a126ef",
+    "form-group-name-present": "dd8f6eee4ed705b9",
     "heading-order": "9187b3869645d2da",
     "heading-quality": "6f3c7c9e71929bbe",
     "identical-links-same-purpose": "95233350be32dadd",
@@ -2930,10 +2939,10 @@
     "symbol-graphic-contrast": "cc944d054342fe60"
   },
   "dictionaries": {
-    "de": "44eecf2f1f17fc7a090322eac576150d48088b49e7e7ce6496e767c5c04961dd",
-    "en": "3c1b6292879261a60b56fb888ba0c30f8904fff21107ef72985cab2db06b30c3",
-    "es": "0e497446a84ffa891461386397f4fc64d60c497dfc60f61648201b859d84c257",
-    "fr": "cf5bba01c9d0970547640e53a30bc698ef021727dd51412f91acb4418ea39556",
-    "ja": "9b4c700c3bda0f62219a1fbeb2a5a5a59b6999ffc100c473f0e0016fb21c3f6d"
+    "de": "2f962231fb18e95ac6761d7034e742f38207cdc0f130d1cd44b127f2e2f09e5d",
+    "en": "4bd45bc438a41b02860d3167957fad0893820edca42a868e860799ffd5d78219",
+    "es": "7c9f56f06cf8f185842b43ade29fb1b4d648bbf6edcaf0f9f9d73fe94c0305b4",
+    "fr": "9e06114906ae702bdb8ba89bf214014832a7ea2b61fcc30f6bcf7bedc7927a7d",
+    "ja": "120deba0596d5da0f0a2546f2b476523ecc61b9f97344b9065f502684846b1b8"
   }
 }

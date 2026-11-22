@@ -15,7 +15,8 @@
  *   leaves this rule notApplicable rather than cantTell: reporting that
  *   uncertainty belongs to contrast-computable, so the two never report the
  *   same text twice. A currency sign or 〒 beside letters or digits on its
- *   line ("€" in <span>€</span>45,00) is text here, at the text ratio;
+ *   line ("€" in <span>€</span>45,00) is text here, at the text ratio, and
+ *   a failure on it says that it is read with the price beside it;
  *   symbol-graphic-contrast leaves it out.
  * @expectation
  *   Every computable text node reaches the ratio SC 1.4.3 requires for its
@@ -658,6 +659,19 @@ function runInPage(ctx) {
           reasonCode: 'SYMBOLIC_CHARACTER_BELOW_THRESHOLD',
           character: symbol
         };
+      }
+      // A currency sign or 〒 judged as text with the price beside it (round
+      // 11, B11-9): the message says why it needs the text ratio (round 12,
+      // C12-17).
+      if (!placeholder && !symbol && !pseudo) {
+        try {
+          if (
+            helpers.contrast &&
+            typeof helpers.contrast.isSignInTextRun === 'function' &&
+            helpers.contrast.isSignInTextRun(el)
+          )
+            params = { ...(params || {}), signWithPrice: true };
+        } catch {}
       }
 
       // Every reason code here describes a ratio the rule computed: text
