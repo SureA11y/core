@@ -19,6 +19,12 @@
  *     "Next →"): the text-contrast rules judge it as text, at its own ratio;
  *     letter-free text is the only text they leave out (ACT afw4f7), so the
  *     two never judge the same text;
+ *   - a currency sign (Unicode Sc, such as € $ £ ¥) or 〒 whose nearest
+ *     visible character on its line, not past a block boundary, a line
+ *     break or a link's text, is a letter or a digit ("€" in
+ *     <span>€</span>45,00): it is read with that text, and
+ *     contrast-minimum judges it as text, at 4.5:1 or 3:1 if large. A
+ *     separator between links, such as a breadcrumb's ">", stays here;
  *   - emoji drawn in their own colours, and text that is only separators
  *     (`|`, `¦`, `~`, `·`, `•`, `/`, dashes), which decorate;
  *   - symbols in an inactive user interface component (a disabled
@@ -174,6 +180,11 @@ function runInPage(ctx) {
       continue;
     }
     if (!shown(el)) continue;
+    // A currency sign or 〒 beside letters or digits on its line ("€45,00")
+    // is part of that text: contrast-minimum judges it, at the text ratio.
+    try {
+      if (typeof c.isSignInTextRun === 'function' && c.isSignInTextRun(el)) continue;
+    } catch {}
     // Part of an inactive user interface component (disabled, in a
     // disabled fieldset, aria-disabled, or disabled through its
     // ElementInternals): 1.4.11 asks nothing of it, as contrast-minimum

@@ -427,6 +427,147 @@ function createContrastHelpers(opts, shared) {
     return false;
   }
 
+  // -------- A currency sign in a run of text (round 11, B11-9) --------
+  //
+  // A currency sign (Unicode Sc: € $ £ ¥ …) or the postal mark 〒 next to
+  // letters or digits on the same line is part of that text ("€45,00",
+  // "〒100-0001"), even when markup gives it an element of its own: it is
+  // read, so it is text, held to 1.4.3, not a graphic. "Next to" is the
+  // nearest visible character before or after it, not past a block
+  // boundary (a block, a line break) and not counting text that is not
+  // drawn (display:none, visibility:hidden, visually hidden), nor the text
+  // of a link beside it. A sign alone between links, or a separator such
+  // as ">", is not this: it stays a graphic.
+  const __RUN_SIGN = /[\p{Sc}〒]/u;
+  const __RUN_SIGN_ONLY = /^[\s\p{Sc}〒\p{P}]*$/u;
+  const __RUN_TEXT = /[\p{L}\p{N}]/u;
+  // Text nodes are kept only for the run; the shared cache is per engine run.
+  const __localSignRunCache = new WeakMap();
+
+  function __isSignText(text) {
+    const s = String(text == null ? '' : text);
+    return __RUN_SIGN.test(s) && __RUN_SIGN_ONLY.test(s);
+  }
+
+  function __inlineDisplay(cs) {
+    const d = String((cs && cs.display) || 'inline');
+    return d === 'contents' || d.startsWith('inline') || d.startsWith('ruby');
+  }
+
+  function __runHidden(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.display) === 'none') return true;
+    try {
+      if (typeof shared.isVisuallyHidden === 'function' && shared.isVisuallyHidden(el)) return true;
+    } catch {}
+    return false;
+  }
+
+  // The nearest visible character beside node in its block, in the given
+  // direction: a character, '' at a boundary or where none is found within
+  // the budget.
+  function __runNeighbour(node, block, forward) {
+    let budget = 400;
+    const into = (n) => {
+      if (budget-- <= 0) return '';
+      const type = dom.nodeType(n);
+      if (type === 3) {
+        const parent = dom.parentElement(n);
+        const pcs = parent ? __contrastComputedStyle(parent) : null;
+        if (pcs && trim(pcs.visibility) && trim(pcs.visibility) !== 'visible') return null;
+        const s = String(dom.nodeValue(n) || '').replace(/\s+/g, '');
+        if (!s) return null;
+        const chars = [...s];
+        return forward ? chars[0] : chars[chars.length - 1];
+      }
+      if (type !== 1) return null;
+      const name = __lname(n);
+      if (name === 'br') return '';
+      if (/^(script|style|template|noscript|title)$/.test(name)) return null;
+      // A link's text is its own: a sign between links separates them.
+      if ((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) return '';
+      if (
+        String(dom.getAttribute(n, 'role') || '')
+          .trim()
+          .split(/\s+/)[0] === 'link'
+      )
+        return '';
+      const cs = __contrastComputedStyle(n);
+      if (__runHidden(n, cs)) return null;
+      if (!__inlineDisplay(cs)) return '';
+      for (
+        let c = forward ? dom.firstChild(n) : dom.lastChild(n);
+        c;
+        c = forward ? dom.nextSibling(c) : dom.previousSibling(c)
+      ) {
+        const found = into(c);
+        if (found !== null) return found;
+      }
+      return null;
+    };
+    let cur = node;
+    while (cur && budget > 0) {
+      let sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
+      while (!sib) {
+        const parent = dom.parentNode(cur);
+        if (!parent || parent === block || dom.nodeType(parent) !== 1) return '';
+        cur = parent;
+        sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
+      }
+      cur = sib;
+      const found = into(cur);
+      if (found !== null) return found;
+    }
+    return '';
+  }
+
+  function __signTextNodeInRun(t) {
+    const cache = __getSharedWeakMapCache('__signRunCache') || __localSignRunCache;
+    if (cache.has(t)) return cache.get(t);
+    let out = false;
+    try {
+      if (__isSignText(dom.nodeValue(t))) {
+        let block = dom.parentElement(t);
+        for (let guard = 0; block && guard < 200; guard++) {
+          if (!__inlineDisplay(__contrastComputedStyle(block))) break;
+          block = dom.parentElement(block);
+        }
+        if (block) {
+          out =
+            __RUN_TEXT.test(__runNeighbour(t, block, false) || '') ||
+            __RUN_TEXT.test(__runNeighbour(t, block, true) || '');
+        }
+      }
+    } catch {
+      out = false;
+    }
+    cache.set(t, out);
+    return out;
+  }
+
+  // Whether node (a text node, or an element by its own text nodes) is a
+  // currency sign or 〒 in a run of text: its text is only such signs,
+  // punctuation and spaces, and a letter or digit is the nearest visible
+  // character beside it on its line.
+  function isSignInTextRun(node) {
+    try {
+      if (!node) return false;
+      if (dom.nodeType(node) === 3) return __signTextNodeInRun(node);
+      if (dom.nodeType(node) !== 1) return false;
+      let own = '';
+      const texts = [];
+      for (let n = dom.firstChild(node); n; n = dom.nextSibling(n)) {
+        if (dom.nodeType(n) !== 3) continue;
+        own += String(dom.nodeValue(n) || '');
+        if (/\S/.test(dom.nodeValue(n) || '')) texts.push(n);
+      }
+      if (!__isSignText(own)) return false;
+      return texts.some((t) => __signTextNodeInRun(t));
+    } catch {
+      return false;
+    }
+  }
+
   // -------- Text shown in a form field (#103) --------
   //
   // An <input>'s value, a <textarea>'s current value and a placeholder are
@@ -1179,7 +1320,9 @@ function createContrastHelpers(opts, shared) {
           visitedTextNodes.add(node);
 
           const text = node && dom.nodeValue(node);
-          if (!isNonEmptyText(text)) continue;
+          // A currency sign beside letters or digits is part of their text
+          // (isSignInTextRun), though it has none of its own.
+          if (!isNonEmptyText(text) && !(__isSignText(text) && isSignInTextRun(node))) continue;
 
           const parentNode = dom.parentNode(node);
           // Text assigned straight to a shadow root has no parent element, but
@@ -9147,6 +9290,7 @@ function createContrastHelpers(opts, shared) {
     looksLikeLogo,
     contrastSwitchName,
     isInactiveUiComponent,
+    isSignInTextRun,
     // The author's declaration of a property that applies to an element:
     // { value }, null where none does, { unknown: true } where it can't be
     // told.

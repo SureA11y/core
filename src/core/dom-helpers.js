@@ -10464,6 +10464,7 @@ function createDomHelpers(opts) {
     getInternalsStateInfo,
     cssRulesOf,
     selectorIndex,
+    isVisuallyHidden,
     __contrastSharedCache
   };
 

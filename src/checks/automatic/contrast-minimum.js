@@ -14,7 +14,9 @@
  *   foreground are actually computable. Eligible text that is not computable
  *   leaves this rule notApplicable rather than cantTell: reporting that
  *   uncertainty belongs to contrast-computable, so the two never report the
- *   same text twice.
+ *   same text twice. A currency sign or 〒 beside letters or digits on its
+ *   line ("€" in <span>€</span>45,00) is text here, at the text ratio;
+ *   symbol-graphic-contrast leaves it out.
  * @expectation
  *   Every computable text node reaches the ratio SC 1.4.3 requires for its
  *   size: 3:1 for large text, 4.5:1 for everything else. Text is large at

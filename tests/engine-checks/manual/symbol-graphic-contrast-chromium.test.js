@@ -47,11 +47,13 @@ test(`${RULE_ID}: the fixture in Chromium`, { skip }, async (t) => {
     };
   }, RULE_ID);
   assert.equal(got.outcome, 'cantTell');
-  assert.deepEqual(got.ids, ['sgc_case_01', 'sgc_case_02', 'sgc_case_03']);
+  assert.deepEqual(got.ids, ['sgc_case_01', 'sgc_case_02', 'sgc_case_03', 'sgc_case_11']);
   assert.ok(got.ratios.every((r) => r < 3));
   assert.equal(got.ratios[0], 1.42);
   // The symbols asked about are no text the text-contrast rules judge.
   for (const id of got.ids) assert.ok(!got.textRules.includes(id), id);
+  // A currency sign beside its digits is text they judge (round 11, B11-9).
+  assert.ok(got.textRules.includes('sgc_case_10'));
 });
 
 // A disabled fieldset leaves the controls in its first legend enabled

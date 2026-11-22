@@ -10,7 +10,13 @@
  * @sc 1.4.3
  * @sc 1.4.6
  * @applicability
- *   Applies to every visible text node in scope, plus the label of <input
+ *   Applies to every visible text node in scope that holds a letter or a
+ *   digit (ACT afw4f7), or that holds only currency signs (Unicode Sc, such
+ *   as € $ £ ¥) or 〒, with punctuation and spaces, where the nearest
+ *   visible character beside it on its line, not past a block boundary, a
+ *   line break or a link's text, is a letter or a digit: "€" in
+ *   <span>€</span>45,00 is read with its price, so it is text. Plus the
+ *   label of <input
  *   type="button">/[type="submit"]/[type="reset"], which is rendered from
  *   the value attribute and so is invisible to a text-node walk, and the
  *   text a form field shows: the current value of a <textarea> or of an
