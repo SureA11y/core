@@ -1,20 +1,6 @@
 {
   "disagreements": [
     {
-      "ruleId": "contrast-enhanced",
-      "caseId": "case-paint-svg-rx-percent",
-      "marked": "pass",
-      "engine": "fail",
-      "label": "SVG text in a frame's corner rounded by a percentage radius"
-    },
-    {
-      "ruleId": "contrast-minimum",
-      "caseId": "case-paint-svg-rx-percent",
-      "marked": "pass",
-      "engine": "fail",
-      "label": "SVG text in a frame's corner rounded by a percentage radius"
-    },
-    {
       "ruleId": "empty-heading",
       "caseId": "case_02",
       "marked": "cantTell",
