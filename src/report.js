@@ -252,12 +252,26 @@ function renderTargetChips(engine, ui, profileResults, result) {
   // counted once: a scan of several profiles lists a rule once for each
   // profile it did not run in, and engine.incomplete.rulesNotRun counts
   // those entries (round 12, A12-6).
+  // No chip for none: a scan whose every rule ran is incomplete only for
+  // the style sheets it did not read (R12F-8).
   if (engine.incomplete && Number.isFinite(engine.incomplete.rulesNotRun)) {
     const ids = new Set(notRunOf(result).map((n) => n.ruleId));
-    chips.push(
-      `<div><b>${esc(ui.num(ids.size))}</b>${esc(ui.tr('report_meta_rulesNotRun'))}</div>`
-    );
+    if (ids.size)
+      chips.push(
+        `<div><b>${esc(ui.num(ids.size))}</b>${esc(ui.tr('report_meta_rulesNotRun'))}</div>`
+      );
   }
+  // The style sheets runa11yCoreInPageAsync had not fetched when its share
+  // of the time budget ran out (engine.incomplete.styleSheetsNotRead): the
+  // rules ran without them (round 12, R12F-8).
+  const sheetsNotRead =
+    engine.incomplete && Array.isArray(engine.incomplete.styleSheetsNotRead)
+      ? engine.incomplete.styleSheetsNotRead.filter((u) => typeof u === 'string')
+      : [];
+  if (sheetsNotRead.length)
+    chips.push(
+      `<div><b>${esc(ui.num(sheetsNotRead.length))}</b>${esc(ui.tr('report_meta_styleSheetsNotRead'))}</div>`
+    );
   // Rules beyond the targeted standard ran (engineOptions.optInRules).
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     chips.push(
