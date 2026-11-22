@@ -200,8 +200,9 @@ export interface EngineOptionFields {
    * Packs from @surea11y/core/pack: their rules, variants, standard and
    * messages join the scan. In Node, the packs themselves (runDomRulesInPage
    * and the catalog functions); in a page, their names as name@version, once
-   * packScript has registered them (runa11yCoreInPage). A pack object is
-   * frozen on its first use, as definePack freezes it.
+   * packScript has registered them (runa11yCoreInPage). A pack from
+   * definePack is frozen; of one passed as a plain object, the scan uses a
+   * frozen copy, and leaves the object as it was.
    */
   packs?: import('./pack').Pack[] | string[];
   probes?: unknown;
