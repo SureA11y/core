@@ -72,13 +72,20 @@ test('inert content in Chromium', { skip }, async (t) => {
   await t.test(
     'no rule reports what is inside an inert subtree, but the ones left alone',
     async () => {
+      // Four pages at a time: each example is its own page, so the order
+      // they finish in changes nothing but the time the test takes.
       const judged = [];
-      for (const ex of examples) {
-        const { outcome: got } = await outcome(inertPage(toPage(ex.html)), ex.ruleId);
-        if (got !== 'notApplicable' && got !== 'pass')
-          judged.push(`${ex.ruleId} (${ex.label}): ${got}`);
-      }
-      assert.deepEqual(judged, []);
+      let next = 0;
+      const worker = async () => {
+        while (next < examples.length) {
+          const ex = examples[next++];
+          const { outcome: got } = await outcome(inertPage(toPage(ex.html)), ex.ruleId);
+          if (got !== 'notApplicable' && got !== 'pass')
+            judged.push(`${ex.ruleId} (${ex.label}): ${got}`);
+        }
+      };
+      await Promise.all([worker(), worker(), worker(), worker()]);
+      assert.deepEqual(judged.sort(), []);
     }
   );
 
