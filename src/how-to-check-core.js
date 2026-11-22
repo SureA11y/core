@@ -39,6 +39,9 @@ const { chainOf, standardReviewsOf, standardSteps, withPackReview } = require('.
 const { fillHowToCheck, placeholderValues } = require('./review-placeholders.js');
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+// A field of a result, a finding or the options as their own, never one a
+// page's script put on Object.prototype (round 12, R12F-1 to R12F-6).
+const own = (o, k) => (o && typeof o === 'object' && hasOwn(o, k) ? o[k] : undefined);
 
 function dictionaryFor(dictionaries, locale) {
   let dict = null;
@@ -97,8 +100,8 @@ function stepsFrom(dictionaries, prefix, code, locales) {
 }
 
 function isPastWalkLimit(occ) {
-  const evidence = occ.uncertainty && occ.uncertainty.evidence;
-  return !!evidence && typeof evidence === 'object' && 'ancestorWalkLimit' in evidence;
+  const evidence = own(own(occ, 'uncertainty'), 'evidence');
+  return !!evidence && typeof evidence === 'object' && hasOwn(evidence, 'ancestorWalkLimit');
 }
 
 function isUndecided(check, occ) {
@@ -114,16 +117,19 @@ const prefixOfKey = (key) =>
 // (variantOf), its base rule's, whose steps it shares where it has none of
 // its own.
 function prefixesOf(check) {
-  const i18n = check.i18n && typeof check.i18n === 'object' ? check.i18n : {};
-  const own = prefixOfKey(i18n.titleKey);
-  const base = typeof check.variantOf === 'string' ? prefixOfKey(i18n.variantOfTitleKey) : null;
-  return [own, base].filter((p, i, all) => p && all.indexOf(p) === i);
+  const i18n = own(check, 'i18n');
+  const ownPrefix = prefixOfKey(own(i18n, 'titleKey'));
+  const base =
+    typeof own(check, 'variantOf') === 'string'
+      ? prefixOfKey(own(i18n, 'variantOfTitleKey'))
+      : null;
+  return [ownPrefix, base].filter((p, i, all) => p && all.indexOf(p) === i);
 }
 
 // engine.locale says which dictionary the scan used: { requested, resolved,
 // reason }, or a plain tag in a result written by hand.
 function engineLocaleOf(result) {
-  const locale = result.engine && result.engine.locale;
+  const locale = own(own(result, 'engine'), 'locale');
   if (typeof locale === 'string') return locale;
   return locale && typeof locale === 'object' && typeof locale.resolved === 'string'
     ? locale.resolved
@@ -136,20 +142,21 @@ function engineLocaleOf(result) {
 function isCustom(result, check) {
   const ids = (list, of) => Array.isArray(list) && list.some((entry) => of(entry) === check.ruleId);
   return (
-    ids(result.overriddenBuiltinIds, (id) => id) ||
-    ids(check.engineOptions && check.engineOptions.customRules, (rule) => rule && rule.id)
+    ids(own(result, 'overriddenBuiltinIds'), (id) => id) ||
+    ids(own(own(check, 'engineOptions'), 'customRules'), (rule) => rule && rule.id)
   );
 }
 
 // The profiles that ask about a finding: those whose verdict on it is
 // cantTell in a scan of several, the scan's own profile otherwise.
 function askingProfiles(result, occ) {
-  if (occ.verdicts && typeof occ.verdicts === 'object') {
-    return Object.keys(occ.verdicts)
-      .filter((p) => occ.verdicts[p] === 'cantTell')
+  const verdicts = own(occ, 'verdicts');
+  if (verdicts && typeof verdicts === 'object') {
+    return Object.keys(verdicts)
+      .filter((p) => verdicts[p] === 'cantTell')
       .map((p) => p.toLowerCase());
   }
-  const profile = result.engine && result.engine.profile;
+  const profile = own(own(result, 'engine'), 'profile');
   return typeof profile === 'string' && profile ? [profile.toLowerCase()] : [];
 }
 
@@ -164,15 +171,17 @@ function addToResult(result, dictionaries, wanted, reviews) {
     if (isCustom(result, check)) return check;
     const prefixes = prefixesOf(check);
     if (!prefixes.length) return check;
-    const locale = wanted || (check.engineOptions && check.engineOptions.locale) || engineLocale;
+    const locale = wanted || own(own(check, 'engineOptions'), 'locale') || engineLocale;
     let changed = false;
     const occurrences = check.occurrences.map((occ) => {
       if (!occ || typeof occ !== 'object' || !isUndecided(check, occ)) return occ;
       // Steps the engine gave itself, for an element deeper than it walks
       // (OUTPUT_SCHEMA.md, ancestorWalkLimit), are in the scan's locale.
-      if (occ.howToCheck && (!wanted || isPastWalkLimit(occ))) return occ;
-      const code = occ.data && occ.data.details && occ.data.details.reasonCode;
-      const ruleIds = [check.ruleId, check.variantOf].filter((id) => typeof id === 'string');
+      if (own(occ, 'howToCheck') && (!wanted || isPastWalkLimit(occ))) return occ;
+      const code = own(own(own(occ, 'data'), 'details'), 'reasonCode');
+      const ruleIds = [check.ruleId, own(check, 'variantOf')].filter(
+        (id) => typeof id === 'string'
+      );
       let how = standardSteps(reviews, askingProfiles(result, occ), ruleIds, code, locale);
       for (const prefix of how ? [] : prefixes) {
         how = stepsFrom(dictionaries, prefix, code, locale);
@@ -193,12 +202,13 @@ function addToResult(result, dictionaries, wanted, reviews) {
 // an error is left as it is.
 function addToTree(node, dictionaries, wanted, reviews) {
   if (!node || typeof node !== 'object') return node;
-  if (!node.topFrame && Array.isArray(node.checksResults)) {
+  if (!own(node, 'topFrame') && Array.isArray(own(node, 'checksResults'))) {
     return addToResult(node, dictionaries, wanted, reviews);
   }
   const out = { ...node };
-  if (node.topFrame) out.topFrame = addToResult(node.topFrame, dictionaries, wanted, reviews);
-  if (Array.isArray(node.frames)) {
+  if (own(node, 'topFrame'))
+    out.topFrame = addToResult(node.topFrame, dictionaries, wanted, reviews);
+  if (Array.isArray(own(node, 'frames'))) {
     out.frames = node.frames.map((n) => addToTree(n, dictionaries, wanted, reviews));
   }
   return out;
@@ -207,7 +217,7 @@ function addToTree(node, dictionaries, wanted, reviews) {
 // options.locale as addToResult reads it: a tag, or a list of tags, or null
 // for the scan's own.
 function wantedLocale(options) {
-  const locale = options && typeof options === 'object' ? options.locale : null;
+  const locale = own(options, 'locale');
   if (typeof locale === 'string') return locale.trim() || null;
   if (Array.isArray(locale)) {
     const tags = locale.filter((l) => typeof l === 'string' && l.trim()).map((l) => l.trim());
@@ -235,11 +245,11 @@ function wantedLocale(options) {
  * English otherwise.
  */
 function applyHowToCheck(result, dictionaries, options) {
-  const packs = options && typeof options === 'object' ? options.packs : null;
+  const packs = own(options, 'packs') || null;
   const dicts = withPackReview(dictionaries, packs);
   const wanted = wantedLocale(options);
   const reviews = standardReviewsOf(packs);
-  if (result && typeof result === 'object' && 'topFrame' in result) {
+  if (result && typeof result === 'object' && hasOwn(result, 'topFrame')) {
     return addToTree(result, dicts, wanted, reviews);
   }
   return addToResult(result, dicts, wanted, reviews);

@@ -53,9 +53,21 @@ function loadPacks() {
   return nodeRequire('./pack.js');
 }
 
+// An option of the caller's own, never one a page's script put on
+// Object.prototype (round 12, R12F-1 to R12F-6).
+function ownOption(engineOptions, key) {
+  return engineOptions &&
+    typeof engineOptions === 'object' &&
+    Object.prototype.hasOwnProperty.call(engineOptions, key)
+    ? engineOptions[key]
+    : undefined;
+}
+
 function withPacks(engineOptions) {
   if (!engineOptions || typeof engineOptions !== 'object') return null;
-  const { packs, ...rest } = engineOptions;
+  const packs = ownOption(engineOptions, 'packs');
+  const { packs: given, ...rest } = engineOptions;
+  void given;
   if (packs !== undefined && !Array.isArray(packs)) {
     const message =
       'engineOptions.packs must be a list of packs ([pack]), and is ' +
@@ -110,7 +122,7 @@ function stampPacks(result, engine, given = []) {
     }
   }
   const notRun = (e) =>
-    e && Array.isArray(e.profilesNotRun) && skippedProfiles.size
+    Array.isArray(ownOption(e, 'profilesNotRun')) && skippedProfiles.size
       ? {
           profilesNotRun: e.profilesNotRun.map((n) =>
             n &&
@@ -251,10 +263,7 @@ function renderProcedures(input, options) {
 // the packs it ran; a result that is a promise, once it settles. Without
 // Node it is returned as it is, silently.
 function withHowToCheck(result, engineOptions) {
-  const packs =
-    engineOptions && typeof engineOptions === 'object' && Array.isArray(engineOptions.packs)
-      ? engineOptions.packs
-      : null;
+  const packs = Array.isArray(ownOption(engineOptions, 'packs')) ? engineOptions.packs : null;
   const withSteps = (r) => {
     const m = loadHowToCheck();
     return m ? m.addHowToCheck(r, packs ? { packs } : undefined) : r;
@@ -274,14 +283,10 @@ function scanInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (!p) {
     // packs: [] is a scan without packs, and reads as one: not echoed.
     let options = engineOptions;
-    if (
-      options &&
-      typeof options === 'object' &&
-      Array.isArray(options.packs) &&
-      !options.packs.length
-    ) {
-      const { packs, ...rest } = options;
-      void packs;
+    const packs = ownOption(options, 'packs');
+    if (Array.isArray(packs) && !packs.length) {
+      const { packs: none, ...rest } = options;
+      void none;
       options = rest;
     }
     return core.runDomRulesInPage(pageUrl, contextSelector, options, runOnly);
@@ -289,7 +294,7 @@ function scanInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return stampPacks(
     p.engine.runtime.runDomRulesInPage(pageUrl, contextSelector, p.engineOptions, runOnly),
     p.engine,
-    engineOptions.packs
+    ownOption(engineOptions, 'packs')
   );
 }
 

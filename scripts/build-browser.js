@@ -141,7 +141,10 @@ ${inPageRunnerSource}
     const loaded = Object.keys(registered);
     if (loaded.length === 0) return options;
 
-    const given = options.messages;
+    // Its own, never one on Object.prototype (round 12, R12F-1 to R12F-6).
+    const given = Object.prototype.hasOwnProperty.call(options, 'messages')
+      ? options.messages
+      : undefined;
     if (given !== undefined && given !== null && (typeof given !== 'object' || Array.isArray(given))) {
       // Not a table of locales: the engine says so, as without a side file.
       return options;
@@ -161,7 +164,7 @@ ${inPageRunnerSource}
         messages[locale] = own;
       }
     }
-    return Object.assign({}, options, { messages: messages });
+    return Object.assign(Object.create(null), options, { messages: messages });
   }
 
   const api = {

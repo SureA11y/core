@@ -280,7 +280,12 @@ function tieredCheck(check) {
   // Each occurrence's tier, a pass tier included; one with none has the
   // outcome's. The same table the engine settles by (normalizeRuleResult).
   const tiers = check.occurrences.map((o) =>
-    o && typeof o === 'object' && o.occurrenceOutcome === 'pass' ? 'pass' : tierOf(o)
+    o &&
+    typeof o === 'object' &&
+    Object.prototype.hasOwnProperty.call(o, 'occurrenceOutcome') &&
+    o.occurrenceOutcome === 'pass'
+      ? 'pass'
+      : tierOf(o)
   );
   const eff = tiers.map((t) => t || check.outcome);
   let outcome = check.outcome;

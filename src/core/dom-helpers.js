@@ -4801,9 +4801,14 @@ function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      if (!w.__a11ycoreSharedCache) w.__a11ycoreSharedCache = {};
-      if (!w.__a11ycoreSharedCache.dom) w.__a11ycoreSharedCache.dom = {};
-      __domSharedCache = w.__a11ycoreSharedCache.dom;
+      // The window's own cache, with no prototype: a value a page's script
+      // put on Object.prototype is never read as one (round 12, R12F-1 to
+      // R12F-6).
+      const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      if (!ownKey(w, '__a11ycoreSharedCache')) w.__a11ycoreSharedCache = Object.create(null);
+      const shared = w.__a11ycoreSharedCache;
+      if (!ownKey(shared, 'dom')) shared.dom = Object.create(null);
+      __domSharedCache = shared.dom;
     }
   } catch {
     __domSharedCache = {};
@@ -10475,9 +10480,12 @@ function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      if (!w.__a11ycoreSharedCache) w.__a11ycoreSharedCache = {};
-      if (!w.__a11ycoreSharedCache.contrast) w.__a11ycoreSharedCache.contrast = {};
-      __contrastSharedCache = w.__a11ycoreSharedCache.contrast;
+      // Own keys only, as for the DOM helpers' cache above.
+      const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      if (!ownKey(w, '__a11ycoreSharedCache')) w.__a11ycoreSharedCache = Object.create(null);
+      const shared = w.__a11ycoreSharedCache;
+      if (!ownKey(shared, 'contrast')) shared.contrast = Object.create(null);
+      __contrastSharedCache = shared.contrast;
     }
   } catch {
     __contrastSharedCache = {};
@@ -10502,8 +10510,16 @@ function createDomHelpers(opts) {
     __contrastSharedCache
   };
 
+  // With no prototype: a key it is not given (contrast) is never read from
+  // Object.prototype (round 12, R12F-1 to R12F-6).
   const contrast = createContrastHelpers(
-    { window: realmWindow || window, document, root: roots, includeShadowDom, excludeSelectors },
+    Object.assign(Object.create(null), {
+      window: realmWindow || window,
+      document,
+      root: roots,
+      includeShadowDom,
+      excludeSelectors
+    }),
     __contrastShared
   );
 

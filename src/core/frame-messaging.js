@@ -27,14 +27,17 @@ const { createSafeDom } = require('./safe-dom');
 
 const FRAME_RPC_CHANNEL = '__frame_rpc_v1__';
 
+// The registry is the window's own, with no prototype, so a value a page's
+// script put on Object.prototype is never read as one of its entries
+// (round 12, R12F-1 to R12F-6).
 function getFrameRpcRegistry(win) {
-  if (!win.__a11yCoreFrameRpc__) {
-    win.__a11yCoreFrameRpc__ = {
-      pending: new Map(),
-      seq: 0,
-      responder: null,
-      listening: false
-    };
+  if (!Object.prototype.hasOwnProperty.call(win, '__a11yCoreFrameRpc__')) {
+    const registry = Object.create(null);
+    registry.pending = new Map();
+    registry.seq = 0;
+    registry.responder = null;
+    registry.listening = false;
+    win.__a11yCoreFrameRpc__ = registry;
   }
   return win.__a11yCoreFrameRpc__;
 }
@@ -45,8 +48,14 @@ function installFrameRpcListener(win, channel) {
   if (registry.listening) return registry;
 
   dom.addEventListener(win, 'message', function a11yCoreFrameRpcListener(event) {
-    const data = event && event.data;
-    if (!data || data.__a11ycore !== true || data.channel !== channel) return;
+    // A message's fields are read as its own, never from Object.prototype.
+    const message = event && event.data;
+    if (!message || typeof message !== 'object') return;
+    const data = Object.create(null);
+    for (const key of ['__a11ycore', 'channel', 'type', 'requestId', 'payload']) {
+      if (Object.prototype.hasOwnProperty.call(message, key)) data[key] = message[key];
+    }
+    if (data.__a11ycore !== true || data.channel !== channel) return;
 
     if (data.type === 'ping') {
       try {
