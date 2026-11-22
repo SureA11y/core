@@ -2648,7 +2648,11 @@ const SAFE_DOM_OTHER_NAMES = [
 const createSafeDom = (function createSafeDom() {
   // One instance per realm of this script: the lookups depend only on the
   // prototypes they are given, so sharing it across scans is safe.
-  if (createSafeDom.__instance) return createSafeDom.__instance;
+  // Own only, and defined, not assigned: a value of that name on
+  // Object.prototype is neither read nor refuses it (round 12, F12-4).
+  if (Object.prototype.hasOwnProperty.call(createSafeDom, '__instance')) {
+    return createSafeDom.__instance;
+  }
 
   // Captured once, so a page that later replaces them doesn't change how
   // the engine reads its own DOM.
@@ -3180,7 +3184,12 @@ const createSafeDom = (function createSafeDom() {
         : o.setAttribute(a, b, c, d)
   };
 
-  createSafeDom.__instance = Object.freeze(dom);
+  Object.defineProperty(createSafeDom, '__instance', {
+    value: Object.freeze(dom),
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   return createSafeDom.__instance;
 });
 
@@ -4710,6 +4719,46 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // walker per root could otherwise walk the same subtree twice).
       const visitedTextNodes = new Set();
 
+      // Text the flat tree leaves out is not rendered (CSS Scoping 1): a
+      // light child of a shadow host that no slot takes, and the fallback
+      // content of a slot that has nodes assigned (round 12, F12-7). Only
+      // hosts with an open shadow root can be told; kept per parent.
+      const outOfFlatTreeCache = new WeakMap();
+      const outOfFlatTree = (start) => {
+        const seen = [];
+        let cur = start;
+        let out = false;
+        for (let depth = 0; cur && depth < 256; depth++) {
+          const parent = dom.parentNode(cur);
+          if (!parent || dom.nodeType(parent) !== 1) break;
+          if (dom.nodeType(cur) === 1 && outOfFlatTreeCache.has(cur)) {
+            out = outOfFlatTreeCache.get(cur);
+            break;
+          }
+          if (dom.nodeType(cur) === 1) seen.push(cur);
+          if (dom.shadowRoot(parent) && !dom.assignedSlot(cur)) {
+            out = true;
+            break;
+          }
+          if (String(dom.localName(parent) || '').toLowerCase() === 'slot') {
+            const root = dom.getRootNode(parent);
+            if (root && dom.nodeType(root) === 11) {
+              let assigned = [];
+              try {
+                assigned = dom.assignedNodes(parent) || [];
+              } catch {}
+              if (assigned.length) {
+                out = true;
+                break;
+              }
+            }
+          }
+          cur = parent;
+        }
+        for (const el of seen) outOfFlatTreeCache.set(el, out);
+        return out;
+      };
+
       for (const walkRoot of walkRoots) {
         if (guard >= 500000) break;
         let walker;
@@ -4742,6 +4791,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           // A <textarea>'s text nodes are its default value; what it shows is
           // its current value, read with the other fields below.
           if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
+          if (includeShadowDom && outOfFlatTree(node)) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
@@ -4863,7 +4913,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 if (!isVisibleEligible(el) || isInactive(el)) break;
                 const m = measureGeneratedText(el, pseudo, bgResolveOpts);
                 if (!m || m.same) continue;
-                generated.push(Object.freeze({ el, pseudo, textCount: 1 }));
+                generated.push(
+                  Object.freeze(Object.assign(Object.create(null), { el, pseudo, textCount: 1 }))
+                );
               }
             }
           }
@@ -4874,7 +4926,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         eligibleTextCount,
         visibilityMode,
         elements: Object.freeze(
-          elements.map((el) => Object.freeze({ el, textCount: elToCount.get(el) || 0 }))
+          // Records with no prototype: a value a page's script put on
+          // Object.prototype (pseudo) is never read as a record's own
+          // (round 12, F12-5).
+          elements.map((el) =>
+            Object.freeze(
+              Object.assign(Object.create(null), { el, textCount: elToCount.get(el) || 0 })
+            )
+          )
         ),
         generated: Object.freeze(generated)
       });
@@ -7091,7 +7150,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // elements x the rules that could apply, not elements x rules. Each entry
   // is { rule, part }; a pseudo-element's part is left out.
   function __colorPartsFor(found, el) {
-    if (!found.index) {
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
       const entries = [];
       for (const rule of found.rules) {
         for (const part of rule.parts) {
@@ -7101,7 +7162,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           entries.push({ rule, part });
         }
       }
-      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+      Object.defineProperty(found, 'index', {
+        value: { entries, index: selectorIndex(entries.map((e) => e.part)) },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const { entries, index } = found.index;
     return index.candidates(el).map((i) => entries[i]);
@@ -7118,8 +7184,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
+    // Answers with no prototype: a value a page's script put on
+    // Object.prototype (unknown) is never read as theirs (round 12, F12-5).
+    const answer = (o) => Object.assign(Object.create(null), o);
     const found = __colorRulesOf(root, prop);
-    if (found.unreadable) return { unknown: true };
+    if (found.unreadable) return answer({ unknown: true });
     let best = null;
     let unknown = false;
     for (const { rule, part } of __colorPartsFor(found, el)) {
@@ -7148,8 +7217,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (!best || rank > best.rank) best = { rank, value };
       }
     } catch {}
-    if (unknown) return { unknown: true };
-    return best ? { value: best.value } : null;
+    if (unknown) return answer({ unknown: true });
+    return best ? answer({ value: best.value }) : null;
   }
 
   // Every author declaration of prop (`color` by default) that matches el,
@@ -11816,6 +11885,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
             if (content) at.content = content !== 'none' && content !== 'normal';
             if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            // Drawn at all, and where, as far as the rules say (F12-2).
+            const display = get('display');
+            if (display) at.displayNone = display === 'none';
+            const visibility = get('visibility');
+            if (visibility) at.hidden = visibility === 'hidden' || visibility === 'collapse';
+            for (const prop of ['width', 'height', 'top', 'right', 'bottom', 'left']) {
+              const v = get(prop);
+              if (v) at[prop] = v;
+            }
             const paint = [color, image, shorthand].find(
               (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
             );
@@ -11828,9 +11906,43 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
     } catch {}
-    const out = [...byKey.values()].filter((p) => p.content && p.positioned && p.paint);
+    const out = [...byKey.values()].filter(
+      (p) => p.content && p.positioned && p.paint && !p.displayNone && !p.hidden
+    );
     __noLayoutPseudosByRoot.set(root, out);
     return out;
+  }
+  // Whether a ::before or ::after the rules position could lie under a
+  // line of el's text, from the size and offsets they give it (round 12,
+  // F12-2): a box narrower or shorter than a line of the text (a 4px corner
+  // badge) is no background to it, and one moved wholly off its host (an
+  // offset of 100% or more, or far off the page) doesn't reach it. A size or
+  // offset in any other unit is taken as possibly covering the text.
+  function __noLayoutPseudoMayCover(p, el) {
+    const px = (v) => {
+      const m = /^(-?\d*\.?\d+)px$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    const pct = (v) => {
+      const m = /^(-?\d*\.?\d+)%$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    let fontPx = 16;
+    try {
+      const f = px(trim((computedStyle(el) || {}).fontSize || ''));
+      if (f && f > 0) fontPx = f;
+    } catch {}
+    const w = px(p.width);
+    const h = px(p.height);
+    if ((w !== null && w < fontPx) || (h !== null && h < fontPx)) return false;
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      const v = p[side];
+      const percent = pct(v);
+      if (percent !== null && Math.abs(percent) >= 100) return false;
+      const length = px(v);
+      if (length !== null && length <= -1000) return false;
+    }
+    return true;
   }
   function __noLayoutPseudoUnder(el, chain) {
     for (const host of chain) {
@@ -11848,7 +11960,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         } catch {
           matched = false;
         }
-        if (!matched) continue;
+        if (!matched || !__noLayoutPseudoMayCover(p, el)) continue;
         return {
           selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
           element: describeElement(host) + p.pseudo,
@@ -12636,6 +12748,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       out = { fallback: true };
     }
+    // With no prototype: a value a page's script put on Object.prototype
+    // (rgba) is never read as the backdrop's own (round 12, F12-5).
+    if (out && typeof out === 'object') out = Object.assign(Object.create(null), out);
     __paintBackdropCache.set(el, out);
     return out;
   }
@@ -14336,6 +14451,34 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'aria-colspan': 1,
     'aria-rowspan': 0
   };
+
+  // The tables above are looked up by a role, an element or an attribute
+  // the page names. With no prototype, a value a page's script put on
+  // Object.prototype (button, navigation) is never read as an entry
+  // (round 12, F12-5).
+  const __noPrototype = (o, depth) => {
+    if (!o || typeof o !== 'object' || Array.isArray(o) || depth > 4) return;
+    if (Object.getPrototypeOf(o) === Object.prototype) Object.setPrototypeOf(o, null);
+    for (const k of Object.keys(o)) __noPrototype(o[k], depth + 1);
+  };
+  for (const table of [
+    DEPRECATED_ROLE_GUIDANCE,
+    DEFAULT_DEPRECATED_ROLE_GUIDANCE,
+    ATTR_VALUE_TYPES,
+    ATTR_TOKEN_SETS,
+    REQUIRED_PROPS_BY_ROLE,
+    REQUIRED_PROP_IMPLICIT_VALUES,
+    REQUIRED_OWNED_ROLES,
+    REQUIRED_CONTEXT_ROLE,
+    ALLOWED_ROLES_BY_ELEMENT,
+    NATIVE_ROLE_BY_ELEMENT_KEY,
+    NATIVE_CONTAINMENT_ROLE_BY_ELEMENT,
+    NATIVE_CONTAINMENT_CONTEXT,
+    ROLE_SYNONYMS,
+    INTEGER_ATTR_MIN
+  ]) {
+    __noPrototype(table, 0);
+  }
 
   function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
@@ -17086,7 +17229,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return false;
     }
   }
-  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
+  // Defined, not assigned, as each key the engine sets on its functions
+  // (round 12, F12-4).
+  Object.defineProperty(hasTruncatedAncestorWalk, 'limit', {
+    value: ANCESTOR_WALK_LIMIT,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   function getClosestMap(el) {
     try {
@@ -23508,7 +23658,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       while (i < n && isSep(s[i]) && s[i] !== ',') i++;
       const v0 = i;
       while (i < n && !isSep(s[i])) i++;
-      values[key] = s.slice(v0, i);
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype (width) refuses none (round 12, F12-4).
+      Object.defineProperty(values, key, {
+        value: s.slice(v0, i),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const number = (v) => {
       if (v === 'yes') return 1;
@@ -24925,9 +25082,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const hv = cs.height != null ? String(cs.height).trim() : '';
       const ov = cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
 
-      metrics.width = wv || null;
-      metrics.height = hv || null;
-      metrics.overflow = ov || null;
+      Object.defineProperty(metrics, 'width', {
+        value: wv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'height', {
+        value: hv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'overflow', {
+        value: ov || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
 
       const isZeroW = wv === '0px' || wv === '0';
       const isZeroH = hv === '0px' || hv === '0';
@@ -26034,7 +26206,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
   );
 
   // Expose shared cache to checks (deterministic, in-memory only)
-  contrast.sharedCache = __contrastShared.__contrastSharedCache;
+  Object.defineProperty(contrast, 'sharedCache', {
+    value: __contrastShared.__contrastSharedCache,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
@@ -26538,7 +26715,12 @@ const normalizeLean = (function normalizeLean(input) {
   if (LEAN_DIRECTIONS.indexOf(input.toward) === -1) return null;
   if (typeof input.why !== 'string' || !input.why.trim()) return null;
 
-  const out = { toward: input.toward, why: input.why.trim() };
+  // Built with no prototype, and handed back as a plain copy: a read-only
+  // value a page's script put on Object.prototype (signals, i18n, whyKey)
+  // refuses no key (round 12, F12-4).
+  const out = Object.create(null);
+  out.toward = input.toward;
+  out.why = input.why.trim();
 
   const signals = [];
   for (const s of Array.isArray(input.signals) ? input.signals : []) {
@@ -26562,22 +26744,24 @@ const normalizeLean = (function normalizeLean(input) {
     m.agreed >= 0 &&
     m.agreed <= m.cases
   ) {
-    out.measured = { agreed: m.agreed, cases: m.cases };
-    if (typeof m.corpus === 'string' && m.corpus) out.measured.corpus = m.corpus;
-    if (typeof m.coreVersion === 'string' && m.coreVersion)
-      out.measured.coreVersion = m.coreVersion;
+    out.measured = {
+      agreed: m.agreed,
+      cases: m.cases,
+      ...(typeof m.corpus === 'string' && m.corpus ? { corpus: m.corpus } : {}),
+      ...(typeof m.coreVersion === 'string' && m.coreVersion ? { coreVersion: m.coreVersion } : {})
+    };
   }
 
   const i = input.i18n;
   if (i && typeof i === 'object' && !Array.isArray(i)) {
-    const ii = {};
+    const ii = Object.create(null);
     if (typeof i.whyKey === 'string' && i.whyKey) ii.whyKey = i.whyKey;
     if (typeof i.cautionKey === 'string' && i.cautionKey) ii.cautionKey = i.cautionKey;
     if (i.params && typeof i.params === 'object' && !Array.isArray(i.params))
       ii.params = { ...i.params };
-    if (ii.whyKey || ii.cautionKey) out.i18n = ii;
+    if (ii.whyKey || ii.cautionKey) out.i18n = { ...ii };
   }
-  return out;
+  return { ...out };
 });
 
 // Inlined from src/core/number-format.js -- t() writes a message's decimals
@@ -26597,7 +26781,16 @@ const formatLocaleDecimal = (function formatLocaleDecimal(value, locale) {
   // The separator, worked out once per locale. A locale Intl does not know,
   // or one that writes other digits, keeps the point.
   const key = String(locale);
-  const cache = formatLocaleDecimal.separators || (formatLocaleDecimal.separators = {});
+  // Own, with no prototype, and defined, not assigned (round 12, F12-4).
+  if (!Object.prototype.hasOwnProperty.call(formatLocaleDecimal, 'separators')) {
+    Object.defineProperty(formatLocaleDecimal, 'separators', {
+      value: Object.create(null),
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
+  }
+  const cache = formatLocaleDecimal.separators;
   if (!Object.prototype.hasOwnProperty.call(cache, key)) {
     let sep = '.';
     try {
@@ -26967,6 +27160,13 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
 });
 
 // Inlined from src/core/dom-runner.js
+const setOwnKey = (function setOwnKey(o, key, value) {
+  Object.defineProperty(o, key, { value, writable: true, enumerable: true, configurable: true });
+  return value;
+});
+const ownKeyOf = (function ownKeyOf(o, key) {
+  return o != null && Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+});
 const normalizeWcagLevel = (function normalizeWcagLevel(v) {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
   return s === 'A' || s === 'AA' || s === 'AAA' ? s : null;
@@ -29051,19 +29251,19 @@ const runCoreSettled = (function runCoreSettled(
   // The animations running when the scan started, before they were settled:
   // [] where there are none or no getAnimations (jsdom).
   {
-    const startedWith = Array.isArray(settleAnimations.atScanStart)
+    const startedWith = Array.isArray(ownKeyOf(settleAnimations, 'atScanStart'))
       ? settleAnimations.atScanStart
       : [];
-    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+    setOwnKey(sharedHelpers, 'animationsAtScanStart', () => startedWith.map((a) => ({ ...a })));
   }
   // The elements whose box clips its content only for content-visibility:
   // auto, as the scan lays them out (layOutSkippedContent).
   {
     const paintContained =
-      layOutSkippedContent.paintContained instanceof Set
+      ownKeyOf(layOutSkippedContent, 'paintContained') instanceof Set
         ? layOutSkippedContent.paintContained
         : new Set();
-    sharedHelpers.paintContainedByContentVisibility = (el) => paintContained.has(el);
+    setOwnKey(sharedHelpers, 'paintContainedByContentVisibility', (el) => paintContained.has(el));
   }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
@@ -30363,7 +30563,8 @@ const runCoreSettled = (function runCoreSettled(
     for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
   }
   for (const r of checksResults) {
-    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
+    if (r && typeof r === 'object')
+      setOwnKey(r, 'rollupIds', (rollupIdsByRule[r.ruleId] || []).slice());
   }
 
   // Optional perf counters passthrough (only when enabled). Deterministic.
@@ -30839,13 +31040,13 @@ const runCore = (function runCore(
     );
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null, shadowDom);
     // The animations as they were before settling, for helpers.animationsAtScanStart.
-    settleAnimations.atScanStart = settled.running;
+    setOwnKey(settleAnimations, 'atScanStart', settled.running);
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     // Content content-visibility: auto skips, laid out as a reader sees it.
     const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
     // For helpers.paintContainedByContentVisibility.
-    layOutSkippedContent.paintContained = laidOut.paintContained;
+    setOwnKey(layOutSkippedContent, 'paintContained', laidOut.paintContained);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -30868,10 +31069,10 @@ const runCore = (function runCore(
       return result;
     } finally {
       laidOut.restore();
-      layOutSkippedContent.paintContained = null;
+      setOwnKey(layOutSkippedContent, 'paintContained', null);
       colorsHeld.restore();
       settled.restore();
-      settleAnimations.atScanStart = [];
+      setOwnKey(settleAnimations, 'atScanStart', []);
     }
   } finally {
     restoreDomProtection();
@@ -31732,7 +31933,12 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         // rollups it feeds and the requirements it maps to, whichever
         // profile was listed first.
         if (Array.isArray(own(check, 'rollupIds'))) {
-          merged.rollupIds = unionList(merged.rollupIds, check.rollupIds);
+          Object.defineProperty(merged, 'rollupIds', {
+            value: unionList(own(merged, 'rollupIds'), check.rollupIds),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
         }
         const mappings = Array.isArray(own(own(check, 'meta'), 'normativeMappings'))
           ? check.meta.normativeMappings
@@ -80559,7 +80765,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
       const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum);
 
-      const out = {
+      // With no prototype: a value a page's script put on Object.prototype
+      // (sizeScaledBy) is never read as the font's own (round 12, F12-5).
+      const out = Object.assign(Object.create(null), {
         fontSizePx: sizePx,
         fontSizePt: helpers.contrast.pxToPt(sizePx),
         fontWeightNum,
@@ -80567,7 +80775,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         isBold,
         isLarge,
         isLargeText: isLarge
-      };
+      });
       // What the page drew it at, where that isn't its font-size.
       if (drawn.by.length && Number.isFinite(fontSizePx)) {
         out.declaredFontSizePx = fontSizePx;
@@ -81847,7 +82055,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           : helpers.contrast.isLargeText(px, fontWeightNum, BOLD_LARGE_MIN_PX);
       const isLarge = largeAt(sizePx);
 
-      const out = {
+      // With no prototype: a value a page's script put on Object.prototype
+      // (sizeScaledBy) is never read as the font's own (round 12, F12-5).
+      const out = Object.assign(Object.create(null), {
         fontSizePx: sizePx,
         fontSizePt: helpers.contrast.pxToPt(sizePx),
         fontWeightNum,
@@ -81855,7 +82065,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         isBold,
         isLarge,
         isLargeText: isLarge
-      };
+      });
       // What the page drew it at, where that isn't its font-size.
       if (drawn.by.length && Number.isFinite(fontSizePx)) {
         out.declaredFontSizePx = fontSizePx;
@@ -84488,7 +84698,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const matched = new Map();
     const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
       if (!scopeOk(s, el)) return false;
-      if (s.also && !s.also.every((a) => matchesSafe(el, a))) return false;
+      if (Object.hasOwn(s, 'also') && !s.also.every((a) => matchesSafe(el, a))) return false;
       let hit = matched.get(s.base);
       if (hit === undefined) {
         const found = byBase && byBase.get(s.base);
@@ -92290,7 +92500,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // same-named fields apart.
   const byKey = new Map();
   for (const field of fields) {
-    field.key = `${field.normalized}||${contextKey(field.el, field.labelText)}`;
+    // Defined, not assigned: a read-only key on Object.prototype refuses
+    // none (round 12, F12-4).
+    Object.defineProperty(field, 'key', {
+      value: `${field.normalized}||${contextKey(field.el, field.labelText)}`,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
     const bucket = byKey.get(field.key);
     if (bucket) bucket.push(field);
     else byKey.set(field.key, [field]);
@@ -101170,7 +101387,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // rules costs links x the rules that could apply. The index is made once.
   function candidatePartsOf(found, el, field) {
     if (typeof helpers.selectorIndex !== 'function') return found.parts;
-    if (!found.index) found.index = helpers.selectorIndex(found.parts.map((p) => p[field]));
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
+      Object.defineProperty(found, 'index', {
+        value: helpers.selectorIndex(found.parts.map((p) => p[field])),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    }
     return found.index.candidates(el).map((i) => found.parts[i]);
   }
 
@@ -140439,7 +140665,11 @@ const SAFE_DOM_OTHER_NAMES = [
 const createSafeDom = (function createSafeDom() {
   // One instance per realm of this script: the lookups depend only on the
   // prototypes they are given, so sharing it across scans is safe.
-  if (createSafeDom.__instance) return createSafeDom.__instance;
+  // Own only, and defined, not assigned: a value of that name on
+  // Object.prototype is neither read nor refuses it (round 12, F12-4).
+  if (Object.prototype.hasOwnProperty.call(createSafeDom, '__instance')) {
+    return createSafeDom.__instance;
+  }
 
   // Captured once, so a page that later replaces them doesn't change how
   // the engine reads its own DOM.
@@ -140971,7 +141201,12 @@ const createSafeDom = (function createSafeDom() {
         : o.setAttribute(a, b, c, d)
   };
 
-  createSafeDom.__instance = Object.freeze(dom);
+  Object.defineProperty(createSafeDom, '__instance', {
+    value: Object.freeze(dom),
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   return createSafeDom.__instance;
 });
 
@@ -142501,6 +142736,46 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // walker per root could otherwise walk the same subtree twice).
       const visitedTextNodes = new Set();
 
+      // Text the flat tree leaves out is not rendered (CSS Scoping 1): a
+      // light child of a shadow host that no slot takes, and the fallback
+      // content of a slot that has nodes assigned (round 12, F12-7). Only
+      // hosts with an open shadow root can be told; kept per parent.
+      const outOfFlatTreeCache = new WeakMap();
+      const outOfFlatTree = (start) => {
+        const seen = [];
+        let cur = start;
+        let out = false;
+        for (let depth = 0; cur && depth < 256; depth++) {
+          const parent = dom.parentNode(cur);
+          if (!parent || dom.nodeType(parent) !== 1) break;
+          if (dom.nodeType(cur) === 1 && outOfFlatTreeCache.has(cur)) {
+            out = outOfFlatTreeCache.get(cur);
+            break;
+          }
+          if (dom.nodeType(cur) === 1) seen.push(cur);
+          if (dom.shadowRoot(parent) && !dom.assignedSlot(cur)) {
+            out = true;
+            break;
+          }
+          if (String(dom.localName(parent) || '').toLowerCase() === 'slot') {
+            const root = dom.getRootNode(parent);
+            if (root && dom.nodeType(root) === 11) {
+              let assigned = [];
+              try {
+                assigned = dom.assignedNodes(parent) || [];
+              } catch {}
+              if (assigned.length) {
+                out = true;
+                break;
+              }
+            }
+          }
+          cur = parent;
+        }
+        for (const el of seen) outOfFlatTreeCache.set(el, out);
+        return out;
+      };
+
       for (const walkRoot of walkRoots) {
         if (guard >= 500000) break;
         let walker;
@@ -142533,6 +142808,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           // A <textarea>'s text nodes are its default value; what it shows is
           // its current value, read with the other fields below.
           if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
+          if (includeShadowDom && outOfFlatTree(node)) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
@@ -142654,7 +142930,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 if (!isVisibleEligible(el) || isInactive(el)) break;
                 const m = measureGeneratedText(el, pseudo, bgResolveOpts);
                 if (!m || m.same) continue;
-                generated.push(Object.freeze({ el, pseudo, textCount: 1 }));
+                generated.push(
+                  Object.freeze(Object.assign(Object.create(null), { el, pseudo, textCount: 1 }))
+                );
               }
             }
           }
@@ -142665,7 +142943,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         eligibleTextCount,
         visibilityMode,
         elements: Object.freeze(
-          elements.map((el) => Object.freeze({ el, textCount: elToCount.get(el) || 0 }))
+          // Records with no prototype: a value a page's script put on
+          // Object.prototype (pseudo) is never read as a record's own
+          // (round 12, F12-5).
+          elements.map((el) =>
+            Object.freeze(
+              Object.assign(Object.create(null), { el, textCount: elToCount.get(el) || 0 })
+            )
+          )
         ),
         generated: Object.freeze(generated)
       });
@@ -144882,7 +145167,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // elements x the rules that could apply, not elements x rules. Each entry
   // is { rule, part }; a pseudo-element's part is left out.
   function __colorPartsFor(found, el) {
-    if (!found.index) {
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
       const entries = [];
       for (const rule of found.rules) {
         for (const part of rule.parts) {
@@ -144892,7 +145179,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           entries.push({ rule, part });
         }
       }
-      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+      Object.defineProperty(found, 'index', {
+        value: { entries, index: selectorIndex(entries.map((e) => e.part)) },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const { entries, index } = found.index;
     return index.candidates(el).map((i) => entries[i]);
@@ -144909,8 +145201,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
+    // Answers with no prototype: a value a page's script put on
+    // Object.prototype (unknown) is never read as theirs (round 12, F12-5).
+    const answer = (o) => Object.assign(Object.create(null), o);
     const found = __colorRulesOf(root, prop);
-    if (found.unreadable) return { unknown: true };
+    if (found.unreadable) return answer({ unknown: true });
     let best = null;
     let unknown = false;
     for (const { rule, part } of __colorPartsFor(found, el)) {
@@ -144939,8 +145234,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (!best || rank > best.rank) best = { rank, value };
       }
     } catch {}
-    if (unknown) return { unknown: true };
-    return best ? { value: best.value } : null;
+    if (unknown) return answer({ unknown: true });
+    return best ? answer({ value: best.value }) : null;
   }
 
   // Every author declaration of prop (`color` by default) that matches el,
@@ -149607,6 +149902,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
             if (content) at.content = content !== 'none' && content !== 'normal';
             if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            // Drawn at all, and where, as far as the rules say (F12-2).
+            const display = get('display');
+            if (display) at.displayNone = display === 'none';
+            const visibility = get('visibility');
+            if (visibility) at.hidden = visibility === 'hidden' || visibility === 'collapse';
+            for (const prop of ['width', 'height', 'top', 'right', 'bottom', 'left']) {
+              const v = get(prop);
+              if (v) at[prop] = v;
+            }
             const paint = [color, image, shorthand].find(
               (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
             );
@@ -149619,9 +149923,43 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
     } catch {}
-    const out = [...byKey.values()].filter((p) => p.content && p.positioned && p.paint);
+    const out = [...byKey.values()].filter(
+      (p) => p.content && p.positioned && p.paint && !p.displayNone && !p.hidden
+    );
     __noLayoutPseudosByRoot.set(root, out);
     return out;
+  }
+  // Whether a ::before or ::after the rules position could lie under a
+  // line of el's text, from the size and offsets they give it (round 12,
+  // F12-2): a box narrower or shorter than a line of the text (a 4px corner
+  // badge) is no background to it, and one moved wholly off its host (an
+  // offset of 100% or more, or far off the page) doesn't reach it. A size or
+  // offset in any other unit is taken as possibly covering the text.
+  function __noLayoutPseudoMayCover(p, el) {
+    const px = (v) => {
+      const m = /^(-?\d*\.?\d+)px$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    const pct = (v) => {
+      const m = /^(-?\d*\.?\d+)%$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    let fontPx = 16;
+    try {
+      const f = px(trim((computedStyle(el) || {}).fontSize || ''));
+      if (f && f > 0) fontPx = f;
+    } catch {}
+    const w = px(p.width);
+    const h = px(p.height);
+    if ((w !== null && w < fontPx) || (h !== null && h < fontPx)) return false;
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      const v = p[side];
+      const percent = pct(v);
+      if (percent !== null && Math.abs(percent) >= 100) return false;
+      const length = px(v);
+      if (length !== null && length <= -1000) return false;
+    }
+    return true;
   }
   function __noLayoutPseudoUnder(el, chain) {
     for (const host of chain) {
@@ -149639,7 +149977,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         } catch {
           matched = false;
         }
-        if (!matched) continue;
+        if (!matched || !__noLayoutPseudoMayCover(p, el)) continue;
         return {
           selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
           element: describeElement(host) + p.pseudo,
@@ -150427,6 +150765,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       out = { fallback: true };
     }
+    // With no prototype: a value a page's script put on Object.prototype
+    // (rgba) is never read as the backdrop's own (round 12, F12-5).
+    if (out && typeof out === 'object') out = Object.assign(Object.create(null), out);
     __paintBackdropCache.set(el, out);
     return out;
   }
@@ -152127,6 +152468,34 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'aria-colspan': 1,
     'aria-rowspan': 0
   };
+
+  // The tables above are looked up by a role, an element or an attribute
+  // the page names. With no prototype, a value a page's script put on
+  // Object.prototype (button, navigation) is never read as an entry
+  // (round 12, F12-5).
+  const __noPrototype = (o, depth) => {
+    if (!o || typeof o !== 'object' || Array.isArray(o) || depth > 4) return;
+    if (Object.getPrototypeOf(o) === Object.prototype) Object.setPrototypeOf(o, null);
+    for (const k of Object.keys(o)) __noPrototype(o[k], depth + 1);
+  };
+  for (const table of [
+    DEPRECATED_ROLE_GUIDANCE,
+    DEFAULT_DEPRECATED_ROLE_GUIDANCE,
+    ATTR_VALUE_TYPES,
+    ATTR_TOKEN_SETS,
+    REQUIRED_PROPS_BY_ROLE,
+    REQUIRED_PROP_IMPLICIT_VALUES,
+    REQUIRED_OWNED_ROLES,
+    REQUIRED_CONTEXT_ROLE,
+    ALLOWED_ROLES_BY_ELEMENT,
+    NATIVE_ROLE_BY_ELEMENT_KEY,
+    NATIVE_CONTAINMENT_ROLE_BY_ELEMENT,
+    NATIVE_CONTAINMENT_CONTEXT,
+    ROLE_SYNONYMS,
+    INTEGER_ATTR_MIN
+  ]) {
+    __noPrototype(table, 0);
+  }
 
   function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
@@ -154877,7 +155246,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return false;
     }
   }
-  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
+  // Defined, not assigned, as each key the engine sets on its functions
+  // (round 12, F12-4).
+  Object.defineProperty(hasTruncatedAncestorWalk, 'limit', {
+    value: ANCESTOR_WALK_LIMIT,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   function getClosestMap(el) {
     try {
@@ -161299,7 +161675,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       while (i < n && isSep(s[i]) && s[i] !== ',') i++;
       const v0 = i;
       while (i < n && !isSep(s[i])) i++;
-      values[key] = s.slice(v0, i);
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype (width) refuses none (round 12, F12-4).
+      Object.defineProperty(values, key, {
+        value: s.slice(v0, i),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const number = (v) => {
       if (v === 'yes') return 1;
@@ -162716,9 +163099,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const hv = cs.height != null ? String(cs.height).trim() : '';
       const ov = cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
 
-      metrics.width = wv || null;
-      metrics.height = hv || null;
-      metrics.overflow = ov || null;
+      Object.defineProperty(metrics, 'width', {
+        value: wv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'height', {
+        value: hv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'overflow', {
+        value: ov || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
 
       const isZeroW = wv === '0px' || wv === '0';
       const isZeroH = hv === '0px' || hv === '0';
@@ -163825,7 +164223,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
   );
 
   // Expose shared cache to checks (deterministic, in-memory only)
-  contrast.sharedCache = __contrastShared.__contrastSharedCache;
+  Object.defineProperty(contrast, 'sharedCache', {
+    value: __contrastShared.__contrastSharedCache,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
@@ -164329,7 +164732,12 @@ const normalizeLean = (function normalizeLean(input) {
   if (LEAN_DIRECTIONS.indexOf(input.toward) === -1) return null;
   if (typeof input.why !== 'string' || !input.why.trim()) return null;
 
-  const out = { toward: input.toward, why: input.why.trim() };
+  // Built with no prototype, and handed back as a plain copy: a read-only
+  // value a page's script put on Object.prototype (signals, i18n, whyKey)
+  // refuses no key (round 12, F12-4).
+  const out = Object.create(null);
+  out.toward = input.toward;
+  out.why = input.why.trim();
 
   const signals = [];
   for (const s of Array.isArray(input.signals) ? input.signals : []) {
@@ -164353,22 +164761,24 @@ const normalizeLean = (function normalizeLean(input) {
     m.agreed >= 0 &&
     m.agreed <= m.cases
   ) {
-    out.measured = { agreed: m.agreed, cases: m.cases };
-    if (typeof m.corpus === 'string' && m.corpus) out.measured.corpus = m.corpus;
-    if (typeof m.coreVersion === 'string' && m.coreVersion)
-      out.measured.coreVersion = m.coreVersion;
+    out.measured = {
+      agreed: m.agreed,
+      cases: m.cases,
+      ...(typeof m.corpus === 'string' && m.corpus ? { corpus: m.corpus } : {}),
+      ...(typeof m.coreVersion === 'string' && m.coreVersion ? { coreVersion: m.coreVersion } : {})
+    };
   }
 
   const i = input.i18n;
   if (i && typeof i === 'object' && !Array.isArray(i)) {
-    const ii = {};
+    const ii = Object.create(null);
     if (typeof i.whyKey === 'string' && i.whyKey) ii.whyKey = i.whyKey;
     if (typeof i.cautionKey === 'string' && i.cautionKey) ii.cautionKey = i.cautionKey;
     if (i.params && typeof i.params === 'object' && !Array.isArray(i.params))
       ii.params = { ...i.params };
-    if (ii.whyKey || ii.cautionKey) out.i18n = ii;
+    if (ii.whyKey || ii.cautionKey) out.i18n = { ...ii };
   }
-  return out;
+  return { ...out };
 });
 
 // Inlined from src/core/number-format.js -- t() writes a message's decimals
@@ -164388,7 +164798,16 @@ const formatLocaleDecimal = (function formatLocaleDecimal(value, locale) {
   // The separator, worked out once per locale. A locale Intl does not know,
   // or one that writes other digits, keeps the point.
   const key = String(locale);
-  const cache = formatLocaleDecimal.separators || (formatLocaleDecimal.separators = {});
+  // Own, with no prototype, and defined, not assigned (round 12, F12-4).
+  if (!Object.prototype.hasOwnProperty.call(formatLocaleDecimal, 'separators')) {
+    Object.defineProperty(formatLocaleDecimal, 'separators', {
+      value: Object.create(null),
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
+  }
+  const cache = formatLocaleDecimal.separators;
   if (!Object.prototype.hasOwnProperty.call(cache, key)) {
     let sep = '.';
     try {
@@ -164758,6 +165177,13 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
 });
 
 // Inlined from src/core/dom-runner.js
+const setOwnKey = (function setOwnKey(o, key, value) {
+  Object.defineProperty(o, key, { value, writable: true, enumerable: true, configurable: true });
+  return value;
+});
+const ownKeyOf = (function ownKeyOf(o, key) {
+  return o != null && Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+});
 const normalizeWcagLevel = (function normalizeWcagLevel(v) {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
   return s === 'A' || s === 'AA' || s === 'AAA' ? s : null;
@@ -166842,19 +167268,19 @@ const runCoreSettled = (function runCoreSettled(
   // The animations running when the scan started, before they were settled:
   // [] where there are none or no getAnimations (jsdom).
   {
-    const startedWith = Array.isArray(settleAnimations.atScanStart)
+    const startedWith = Array.isArray(ownKeyOf(settleAnimations, 'atScanStart'))
       ? settleAnimations.atScanStart
       : [];
-    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+    setOwnKey(sharedHelpers, 'animationsAtScanStart', () => startedWith.map((a) => ({ ...a })));
   }
   // The elements whose box clips its content only for content-visibility:
   // auto, as the scan lays them out (layOutSkippedContent).
   {
     const paintContained =
-      layOutSkippedContent.paintContained instanceof Set
+      ownKeyOf(layOutSkippedContent, 'paintContained') instanceof Set
         ? layOutSkippedContent.paintContained
         : new Set();
-    sharedHelpers.paintContainedByContentVisibility = (el) => paintContained.has(el);
+    setOwnKey(sharedHelpers, 'paintContainedByContentVisibility', (el) => paintContained.has(el));
   }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
@@ -168154,7 +168580,8 @@ const runCoreSettled = (function runCoreSettled(
     for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
   }
   for (const r of checksResults) {
-    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
+    if (r && typeof r === 'object')
+      setOwnKey(r, 'rollupIds', (rollupIdsByRule[r.ruleId] || []).slice());
   }
 
   // Optional perf counters passthrough (only when enabled). Deterministic.
@@ -168630,13 +169057,13 @@ const runCore = (function runCore(
     );
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null, shadowDom);
     // The animations as they were before settling, for helpers.animationsAtScanStart.
-    settleAnimations.atScanStart = settled.running;
+    setOwnKey(settleAnimations, 'atScanStart', settled.running);
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     // Content content-visibility: auto skips, laid out as a reader sees it.
     const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
     // For helpers.paintContainedByContentVisibility.
-    layOutSkippedContent.paintContained = laidOut.paintContained;
+    setOwnKey(layOutSkippedContent, 'paintContained', laidOut.paintContained);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -168659,10 +169086,10 @@ const runCore = (function runCore(
       return result;
     } finally {
       laidOut.restore();
-      layOutSkippedContent.paintContained = null;
+      setOwnKey(layOutSkippedContent, 'paintContained', null);
       colorsHeld.restore();
       settled.restore();
-      settleAnimations.atScanStart = [];
+      setOwnKey(settleAnimations, 'atScanStart', []);
     }
   } finally {
     restoreDomProtection();
@@ -169523,7 +169950,12 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         // rollups it feeds and the requirements it maps to, whichever
         // profile was listed first.
         if (Array.isArray(own(check, 'rollupIds'))) {
-          merged.rollupIds = unionList(merged.rollupIds, check.rollupIds);
+          Object.defineProperty(merged, 'rollupIds', {
+            value: unionList(own(merged, 'rollupIds'), check.rollupIds),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
         }
         const mappings = Array.isArray(own(own(check, 'meta'), 'normativeMappings'))
           ? check.meta.normativeMappings
@@ -170015,7 +170447,11 @@ const SAFE_DOM_OTHER_NAMES = [
 const createSafeDom = (function createSafeDom() {
   // One instance per realm of this script: the lookups depend only on the
   // prototypes they are given, so sharing it across scans is safe.
-  if (createSafeDom.__instance) return createSafeDom.__instance;
+  // Own only, and defined, not assigned: a value of that name on
+  // Object.prototype is neither read nor refuses it (round 12, F12-4).
+  if (Object.prototype.hasOwnProperty.call(createSafeDom, '__instance')) {
+    return createSafeDom.__instance;
+  }
 
   // Captured once, so a page that later replaces them doesn't change how
   // the engine reads its own DOM.
@@ -170547,7 +170983,12 @@ const createSafeDom = (function createSafeDom() {
         : o.setAttribute(a, b, c, d)
   };
 
-  createSafeDom.__instance = Object.freeze(dom);
+  Object.defineProperty(createSafeDom, '__instance', {
+    value: Object.freeze(dom),
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   return createSafeDom.__instance;
 });
 const getFrameRpcRegistry = (function getFrameRpcRegistry(win) {
