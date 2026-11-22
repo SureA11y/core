@@ -547,7 +547,16 @@ function runInPage(ctx) {
   // rules costs links x the rules that could apply. The index is made once.
   function candidatePartsOf(found, el, field) {
     if (typeof helpers.selectorIndex !== 'function') return found.parts;
-    if (!found.index) found.index = helpers.selectorIndex(found.parts.map((p) => p[field]));
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
+      Object.defineProperty(found, 'index', {
+        value: helpers.selectorIndex(found.parts.map((p) => p[field])),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    }
     return found.index.candidates(el).map((i) => found.parts[i]);
   }
 

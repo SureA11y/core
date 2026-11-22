@@ -12,6 +12,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { chromium, executablePath, skip } = require('./helpers/chromium');
+const { NAMES: F12_NAMES, PAGE: F12_PAGE } = require('./helpers/prototype-names.js');
 
 const BUNDLE = fs.readFileSync(path.join(__dirname, '..', 'surea11y.browser.js'), 'utf8');
 
@@ -21,9 +22,14 @@ const BODY =
   '<img src="a.png"><img src="b.png"></main>';
 // The page's script runs first, then the bundle, as a page loads it.
 const pageHtml = (script, body = BODY) =>
-  '<!doctype html><html lang="en"><head><title>t</title>' +
-  `<script>${script}</script><script src="/surea11y.browser.js"></script>` +
-  `</head><body>${body}</body></html>`;
+  body === F12_PAGE
+    ? F12_PAGE.replace(
+        '<head>',
+        `<head><script>${script}</script><script src="/surea11y.browser.js"></script>`
+      )
+    : '<!doctype html><html lang="en"><head><title>t</title>' +
+      `<script>${script}</script><script src="/surea11y.browser.js"></script>` +
+      `</head><body>${body}</body></html>`;
 
 // Text whose contrast depends on the color scheme the page is drawn in.
 const CONTRAST_BODY =
@@ -178,4 +184,22 @@ test('a value on Object.prototype in Chromium', { skip }, async (t) => {
       );
     });
   }
+  // Each name the final review found, as a plain and as a read-only value
+  // (round 12, F12-4, F12-5).
+  const cleanNames = await withPage('', (page) => page.evaluate(brief), F12_PAGE);
+  assert.ok(cleanNames.some(([id, outcome]) => id === 'contrast-minimum' && outcome === 'fail'));
+  await t.test('each name the final review found changes no scan (F12-4, F12-5)', async () => {
+    for (const key of F12_NAMES) {
+      for (const [form, script] of [
+        ['plain', `Object.prototype[${JSON.stringify(key)}] = true;`],
+        [
+          'read-only',
+          `Object.defineProperty(Object.prototype, ${JSON.stringify(key)}, { value: undefined });`
+        ]
+      ]) {
+        const got = await withPage(script, (page) => page.evaluate(brief), F12_PAGE);
+        assert.deepEqual(got, cleanNames, `${key} (${form})`);
+      }
+    }
+  });
 });

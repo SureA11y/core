@@ -975,7 +975,14 @@ function runInPage(ctx) {
   // same-named fields apart.
   const byKey = new Map();
   for (const field of fields) {
-    field.key = `${field.normalized}||${contextKey(field.el, field.labelText)}`;
+    // Defined, not assigned: a read-only key on Object.prototype refuses
+    // none (round 12, F12-4).
+    Object.defineProperty(field, 'key', {
+      value: `${field.normalized}||${contextKey(field.el, field.labelText)}`,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
     const bucket = byKey.get(field.key);
     if (bucket) bucket.push(field);
     else byKey.set(field.key, [field]);

@@ -1682,7 +1682,9 @@ function createContrastHelpers(opts, shared) {
                 if (!isVisibleEligible(el) || isInactive(el)) break;
                 const m = measureGeneratedText(el, pseudo, bgResolveOpts);
                 if (!m || m.same) continue;
-                generated.push(Object.freeze({ el, pseudo, textCount: 1 }));
+                generated.push(
+                  Object.freeze(Object.assign(Object.create(null), { el, pseudo, textCount: 1 }))
+                );
               }
             }
           }
@@ -1693,7 +1695,14 @@ function createContrastHelpers(opts, shared) {
         eligibleTextCount,
         visibilityMode,
         elements: Object.freeze(
-          elements.map((el) => Object.freeze({ el, textCount: elToCount.get(el) || 0 }))
+          // Records with no prototype: a value a page's script put on
+          // Object.prototype (pseudo) is never read as a record's own
+          // (round 12, F12-5).
+          elements.map((el) =>
+            Object.freeze(
+              Object.assign(Object.create(null), { el, textCount: elToCount.get(el) || 0 })
+            )
+          )
         ),
         generated: Object.freeze(generated)
       });
@@ -3910,7 +3919,9 @@ function createContrastHelpers(opts, shared) {
   // elements x the rules that could apply, not elements x rules. Each entry
   // is { rule, part }; a pseudo-element's part is left out.
   function __colorPartsFor(found, el) {
-    if (!found.index) {
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
       const entries = [];
       for (const rule of found.rules) {
         for (const part of rule.parts) {
@@ -3920,7 +3931,12 @@ function createContrastHelpers(opts, shared) {
           entries.push({ rule, part });
         }
       }
-      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+      Object.defineProperty(found, 'index', {
+        value: { entries, index: selectorIndex(entries.map((e) => e.part)) },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const { entries, index } = found.index;
     return index.candidates(el).map((i) => entries[i]);

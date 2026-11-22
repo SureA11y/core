@@ -1452,7 +1452,7 @@ function runInPage(ctx) {
     const matched = new Map();
     const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
       if (!scopeOk(s, el)) return false;
-      if (s.also && !s.also.every((a) => matchesSafe(el, a))) return false;
+      if (Object.hasOwn(s, 'also') && !s.also.every((a) => matchesSafe(el, a))) return false;
       let hit = matched.get(s.base);
       if (hit === undefined) {
         const found = byBase && byBase.get(s.base);

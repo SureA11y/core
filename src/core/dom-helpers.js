@@ -1599,7 +1599,14 @@ function createDomHelpers(opts) {
       return false;
     }
   }
-  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
+  // Defined, not assigned, as each key the engine sets on its functions
+  // (round 12, F12-4).
+  Object.defineProperty(hasTruncatedAncestorWalk, 'limit', {
+    value: ANCESTOR_WALK_LIMIT,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   function getClosestMap(el) {
     try {
@@ -8021,7 +8028,14 @@ function createDomHelpers(opts) {
       while (i < n && isSep(s[i]) && s[i] !== ',') i++;
       const v0 = i;
       while (i < n && !isSep(s[i])) i++;
-      values[key] = s.slice(v0, i);
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype (width) refuses none (round 12, F12-4).
+      Object.defineProperty(values, key, {
+        value: s.slice(v0, i),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const number = (v) => {
       if (v === 'yes') return 1;
@@ -9438,9 +9452,24 @@ function createDomHelpers(opts) {
       const hv = cs.height != null ? String(cs.height).trim() : '';
       const ov = cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
 
-      metrics.width = wv || null;
-      metrics.height = hv || null;
-      metrics.overflow = ov || null;
+      Object.defineProperty(metrics, 'width', {
+        value: wv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'height', {
+        value: hv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'overflow', {
+        value: ov || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
 
       const isZeroW = wv === '0px' || wv === '0';
       const isZeroH = hv === '0px' || hv === '0';
@@ -10547,7 +10576,12 @@ function createDomHelpers(opts) {
   );
 
   // Expose shared cache to checks (deterministic, in-memory only)
-  contrast.sharedCache = __contrastShared.__contrastSharedCache;
+  Object.defineProperty(contrast, 'sharedCache', {
+    value: __contrastShared.__contrastSharedCache,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },

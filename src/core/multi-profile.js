@@ -723,7 +723,12 @@ function mergeProfileResults(runs, asked, allowFail = true) {
         // rollups it feeds and the requirements it maps to, whichever
         // profile was listed first.
         if (Array.isArray(own(check, 'rollupIds'))) {
-          merged.rollupIds = unionList(merged.rollupIds, check.rollupIds);
+          Object.defineProperty(merged, 'rollupIds', {
+            value: unionList(own(merged, 'rollupIds'), check.rollupIds),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
         }
         const mappings = Array.isArray(own(own(check, 'meta'), 'normativeMappings'))
           ? check.meta.normativeMappings
