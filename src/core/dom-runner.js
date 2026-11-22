@@ -2694,7 +2694,13 @@ function runCoreSettled(
   // to "this run" as intended, without leaking across runs.
   try {
     if (window && Object.prototype.hasOwnProperty.call(window, '__a11ycoreSharedCache')) {
-      window.__a11ycoreSharedCache = Object.create(null);
+      // Defined, not assigned, as dom-helpers sets it (round 12, R12F-6).
+      Object.defineProperty(window, '__a11ycoreSharedCache', {
+        value: Object.create(null),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
   } catch {}
 
@@ -3318,15 +3324,24 @@ function runCoreSettled(
       }
       if (kind === '[object Set]') return [...v.values()].map((x) => plainData(x, path));
       if (typeof v.toJSON === 'function') return plainData(v.toJSON(), path);
+      // Each key defined, not assigned: a read-only value of that name on
+      // Object.prototype (__node) refuses none (round 12, R12F-6).
       const out = {};
+      const put = (key, value) =>
+        Object.defineProperty(out, key, {
+          value,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
       for (const key of Object.keys(v)) {
         const x = v[key];
         if (key === '__node') {
-          out[key] = x;
+          put(key, x);
           continue;
         }
         const plain = plainData(x, path);
-        if (plain !== undefined) out[key] = plain;
+        if (plain !== undefined) put(key, plain);
       }
       return out;
     } finally {

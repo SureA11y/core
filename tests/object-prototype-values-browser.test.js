@@ -153,4 +153,29 @@ test('a value on Object.prototype in Chromium', { skip }, async (t) => {
       assert.deepEqual(got, cleanContrast);
     });
   }
+  // The engine's own keys, set on an occurrence (__node) or a cache the
+  // rules share: a read-only value of that name on Object.prototype refuses
+  // none, so no rule stops on an error (R12F-6).
+  for (const key of [
+    '__node',
+    '__a11ycoreSharedCache',
+    '__contrastSharedCache',
+    '__pseudo',
+    '__elBgCache',
+    '__elFgCache',
+    '__elBlockerCache',
+    '__textScanCache',
+    '__colorParseCache',
+    '__signRunBudget',
+    '__overlapIndex'
+  ]) {
+    await t.test(`a read-only ${key} stops no rule (R12F-6)`, async () => {
+      const script = `Object.defineProperty(Object.prototype, '${key}', { value: null });`;
+      assert.deepEqual(await withPage(script, (page) => page.evaluate(brief)), clean);
+      assert.deepEqual(
+        await withPage(script, (page) => page.evaluate(brief), CONTRAST_BODY),
+        cleanContrast
+      );
+    });
+  }
 });
