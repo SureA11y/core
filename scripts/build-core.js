@@ -999,20 +999,20 @@ function isWcagTag(tag) {
 // The level is matched case-insensitively.
 function checkWcagTarget(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + JSON.stringify(value) + '.');
+    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + optionValueText(value) + '.');
   }
   const version = typeof value.version === 'string' ? value.version.trim() : value.version;
   if (!WCAG_TARGET_VERSIONS.includes(version)) {
     throw invalidRunOnly(
       'runOnly.wcag.version must be "2.0", "2.1" or "2.2", ' +
-        (value.version === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.version) + '.')
+        (value.version === undefined ? 'and is missing.' : 'not ' + optionValueText(value.version) + '.')
     );
   }
   const level = typeof value.level === 'string' ? value.level.trim().toUpperCase() : value.level;
   if (!WCAG_TARGET_LEVELS.includes(level)) {
     throw invalidRunOnly(
       'runOnly.wcag.level must be "A", "AA" or "AAA", ' +
-        (value.level === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.level) + '.')
+        (value.level === undefined ? 'and is missing.' : 'not ' + optionValueText(value.level) + '.')
     );
   }
   return { version, level };
@@ -1456,6 +1456,21 @@ function describeWcagLevelTag(tag) {
   return 'WCAG ' + t.version + ' Level ' + t.level + ' ("' + tag + '")';
 }
 
+// A value given for an option, for the message that refuses it: as JSON
+// where it has some, and named otherwise, never throwing. A BigInt threw a
+// bare TypeError from the message itself (round 12, A12-9).
+function optionValueText(value) {
+  if (typeof value === 'bigint') return String(value) + 'n';
+  let shown;
+  try {
+    shown = JSON.stringify(value);
+  } catch {
+    shown = undefined;
+  }
+  if (typeof shown === 'string') return shown;
+  return value !== null && typeof value === 'object' ? 'an object' : 'a ' + typeof value;
+}
+
 function invalidRunOnly(message) {
   const err = new Error(message);
   err.code = 'INVALID_RUN_ONLY';
@@ -1670,7 +1685,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
         : runOnly.values;
     if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
     else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
-    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
+    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + optionValueText(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
   // includeMode is 'and' or 'or'; anything else was read as 'and' without a
@@ -1682,7 +1697,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     if (value === undefined || value === null) continue;
     const mode = typeof value === 'string' ? value.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
     if (mode === 'and' || mode === 'or') continue;
-    const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
+    const message = field + ' must be "and" or "or", not ' + optionValueText(value) + '; read as "and".';
     if (strictOf(eo)) throw invalidRunOnly(message);
     try {
       console.warn('[surea11y] ' + message);
@@ -1692,7 +1707,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     if (runOnly.wcag != null) checkWcagTarget(runOnly.wcag);
     if (runOnly.bestPractices !== undefined && typeof runOnly.bestPractices !== 'boolean') {
       throw invalidRunOnly(
-        'runOnly.bestPractices must be true or false, not ' + JSON.stringify(runOnly.bestPractices) + '.'
+        'runOnly.bestPractices must be true or false, not ' + optionValueText(runOnly.bestPractices) + '.'
       );
     }
   }

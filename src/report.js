@@ -26,7 +26,8 @@ const {
   notRunOf,
   timeBudgetOf,
   packsOf,
-  omittedOf
+  omittedOf,
+  describeValue
 } = require('./scan-result.js');
 const { esc, jsonForScript } = require('./html-text.js');
 
@@ -1148,7 +1149,7 @@ function renderHtmlReport(input, given) {
   const manualChecks = options ? options.manualChecks : undefined;
   if (manualChecks != null && typeof manualChecks !== 'boolean') {
     throw new TypeError(
-      `renderHtmlReport: manualChecks must be true or false, not ${JSON.stringify(manualChecks)}`
+      `renderHtmlReport: manualChecks must be true or false, not ${describeValue(manualChecks)}`
     );
   }
   const lefts =
@@ -1173,7 +1174,15 @@ function renderHtmlReport(input, given) {
   } catch {
     generatedAtLabel = when.toLocaleString('en-US', dateFormat);
   }
-  const title = (options && options.title) || ui.tr('report_title_default');
+  // title is a string; anything else but null was written as it converted,
+  // and an object with no prototype threw a bare TypeError (round 12, A12-9).
+  const givenTitle = options ? options.title : undefined;
+  if (givenTitle != null && typeof givenTitle !== 'string') {
+    throw new TypeError(
+      `renderHtmlReport: title must be a string, not ${describeValue(givenTitle)}`
+    );
+  }
+  const title = givenTitle || ui.tr('report_title_default');
 
   const defaultOnList = OUTCOME_ORDER.filter((c) => OUTCOME_INFO[c].defaultOn);
   const rows = flattenOccurrences(checksResults, ui);

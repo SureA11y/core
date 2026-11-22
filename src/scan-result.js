@@ -764,7 +764,33 @@ function reporterOptions(name, options, known) {
   return options;
 }
 
+// A value a reporter's option was given, for the message that refuses it:
+// as JSON where it has some, and named otherwise, never throwing. A BigInt
+// or an object with no prototype threw a bare TypeError from the message
+// itself (round 12, A12-9).
+function describeValue(v) {
+  if (typeof v === 'bigint') return String(v) + 'n';
+  if (typeof v === 'symbol') return 'a Symbol';
+  if (typeof v === 'function') return 'a function';
+  if (v === undefined) return 'undefined';
+  try {
+    const text = JSON.stringify(v);
+    if (typeof text === 'string') return text;
+  } catch {
+    // a value JSON can't write: named below
+  }
+  return Array.isArray(v) ? 'an array' : 'an object';
+}
+
+// A string option read without case or surrounding space; anything else
+// as it is, so the check that follows refuses it.
+function lowerOption(v) {
+  return typeof v === 'string' ? v.trim().toLowerCase() : v;
+}
+
 module.exports = {
+  describeValue,
+  lowerOption,
   reporterOptions,
   assertScanResult,
   isCrossFrameResult,
