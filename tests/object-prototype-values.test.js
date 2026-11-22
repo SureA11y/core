@@ -357,3 +357,36 @@ test('a getter on Object.prototype the engine would read still stops the scan (r
     }
   );
 });
+
+test('preloadStyleSheets reads its own deadline and timeout, never ones on Object.prototype (round 12, R12F-7)', async () => {
+  createDom(PAGE);
+  const href = 'https://cdn.other.test/a.css';
+  const sheet = {
+    href,
+    get cssRules() {
+      throw new window.DOMException('cross-origin', 'SecurityError');
+    }
+  };
+  const descriptor = Object.getOwnPropertyDescriptor(window.Document.prototype, 'styleSheets');
+  Object.defineProperty(window.Document.prototype, 'styleSheets', {
+    get: () => [sheet],
+    configurable: true
+  });
+  const fetchWas = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, text: async () => 'a { color: red }' });
+  Object.prototype.deadline = 0;
+  Object.prototype.timeoutMs = 0;
+  try {
+    const sheets = await main.preloadStyleSheets();
+    assert.deepEqual(
+      sheets.map((s) => s.href),
+      [href]
+    );
+    assert.deepEqual(sheets.notRead, []);
+  } finally {
+    delete Object.prototype.deadline;
+    delete Object.prototype.timeoutMs;
+    globalThis.fetch = fetchWas;
+    Object.defineProperty(window.Document.prototype, 'styleSheets', descriptor);
+  }
+});
