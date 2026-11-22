@@ -2174,15 +2174,48 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     helpers &&
     (typeof helpers.isOccurrenceExcluded === 'function' || typeof helpers.isExcluded === 'function')
   ) {
+    // An occurrence named only by a selector that matches several elements
+    // is dropped only when every one of them is excluded: read as its first
+    // match, it was dropped whatever element the rule meant. One some of
+    // whose matches are excluded is kept, and said to be ambiguous (round
+    // 12, A12-16).
+    let ambiguous = 0;
+    const matchesOf = (o) => {
+      if (o.__node || typeof o.selector !== 'string' || !o.selector) return null;
+      if (Array.isArray(o.shadowHostSelectors) && o.shadowHostSelectors.length) return null;
+      if (typeof document === 'undefined' || !document) return null;
+      try {
+        const found = [...createSafeDom().querySelectorAll(document, o.selector)];
+        return found.length > 1 ? found : null;
+      } catch {
+        return null;
+      }
+    };
     const kept = out.occurrences.filter((o) => {
       if (!o || typeof o !== 'object') return true;
       try {
-        if (typeof helpers.isOccurrenceExcluded === 'function') return helpers.isOccurrenceExcluded(o) !== true;
+        if (typeof helpers.isOccurrenceExcluded === 'function') {
+          const matches = matchesOf(o);
+          if (matches) {
+            let excluded = 0;
+            for (const el of matches) if (helpers.isOccurrenceExcluded({ __node: el }) === true) excluded++;
+            if (excluded === matches.length) return false;
+            if (excluded) ambiguous++;
+            return true;
+          }
+          return helpers.isOccurrenceExcluded(o) !== true;
+        }
         return !o.__node || helpers.isExcluded(o.__node) !== true;
       } catch {
         return true;
       }
     });
+    if (ambiguous) {
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule reported ' + ambiguous + ' occurrence' + (ambiguous === 1 ? '' : 's') +
+        ' by a selector alone that matches elements both inside and outside the areas left out with excludeSelectors; kept, as which element was meant is ambiguous. Report the element (__node) instead.';
+    }
     const dropped = out.occurrences.length - kept.length;
     if (dropped > 0) {
       const given = out.outcome;

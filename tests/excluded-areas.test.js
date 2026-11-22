@@ -305,3 +305,37 @@ test('an element in the document of a frame inside an excluded area is held to t
   assert.strictEqual(r.outcome, 'notApplicable');
   assert.deepStrictEqual(r.excludedOccurrences, { dropped: 1, coercedFrom: 'fail' });
 });
+
+// An occurrence named only by a selector that matches several elements is
+// dropped only when all of them are excluded; when some are, it is kept and
+// said to be ambiguous (round 12, A12-16).
+test('a selector-only occurrence is dropped only when every element it matches is excluded (round 12, A12-16)', () => {
+  const page =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
+    '<div id="ex"><span id="a">A</span></div><div id="ok"><span id="b">B</span></div>' +
+    '<div id="ex2"><em>x</em></div></main></body></html>';
+  const rule = (id, selector) => ({
+    id,
+    meta: { title: id, tags: ['wcag2a', 'wcag111'], wcagSc: ['1.1.1'], type: 'automatic' },
+    runInPage: new Function(
+      'ctx',
+      `return { ruleId: ctx.rule.ruleId, outcome: 'fail', occurrences: [{ selector: ${JSON.stringify(selector)}, summary: 's' }] };`
+    )
+  });
+  const customRules = [rule('org-ambig', 'span'), rule('org-all', 'em, #a'), rule('org-one', '#a')];
+  const result = runa11yCoreOnHtml(page, {
+    engineOptions: { customRules, excludeSelectors: ['#ex', '#ex2'] },
+    runOnly: { type: 'rules', values: customRules.map((r) => r.id) }
+  });
+  const byId = Object.fromEntries(result.checksResults.map((c) => [c.ruleId, c]));
+  // span matches #a (excluded) and #b (not): kept, and said.
+  assert.strictEqual(byId['org-ambig'].outcome, 'fail');
+  assert.strictEqual(byId['org-ambig'].occurrences.length, 1);
+  assert.strictEqual(byId['org-ambig'].excludedOccurrences, undefined);
+  assert.match(byId['org-ambig'].error, /matches elements both inside and outside .* ambiguous/);
+  // Every match excluded: dropped, as one match is.
+  for (const id of ['org-all', 'org-one']) {
+    assert.strictEqual(byId[id].outcome, 'notApplicable', id);
+    assert.deepStrictEqual(byId[id].excludedOccurrences, { dropped: 1, coercedFrom: 'fail' }, id);
+  }
+});
