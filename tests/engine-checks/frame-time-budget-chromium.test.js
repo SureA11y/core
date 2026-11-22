@@ -56,7 +56,10 @@ test('the time budget is the whole cross-frame scan’s, in Chromium', { skip },
           .runa11yCoreAcrossFrames(
             null,
             null,
-            { timeBudgetMs: budget, customRules: [slow] },
+            // These frames share the page's one thread with a rule that
+            // runs for 400 ms, so on a busy machine a frame can miss the
+            // default 500 ms ping and drop out of the scan as unreachable.
+            { timeBudgetMs: budget, customRules: [slow], pingWaitTime: 10000 },
             { includeRuleIds: ['org-slow', 'page-title-present'] }
           )
           .finally(() => {
