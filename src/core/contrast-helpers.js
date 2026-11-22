@@ -3994,8 +3994,11 @@ function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
+    // Answers with no prototype: a value a page's script put on
+    // Object.prototype (unknown) is never read as theirs (round 12, F12-5).
+    const answer = (o) => Object.assign(Object.create(null), o);
     const found = __colorRulesOf(root, prop);
-    if (found.unreadable) return { unknown: true };
+    if (found.unreadable) return answer({ unknown: true });
     let best = null;
     let unknown = false;
     for (const { rule, part } of __colorPartsFor(found, el)) {
@@ -4024,8 +4027,8 @@ function createContrastHelpers(opts, shared) {
         if (!best || rank > best.rank) best = { rank, value };
       }
     } catch {}
-    if (unknown) return { unknown: true };
-    return best ? { value: best.value } : null;
+    if (unknown) return answer({ unknown: true });
+    return best ? answer({ value: best.value }) : null;
   }
 
   // Every author declaration of prop (`color` by default) that matches el,
@@ -9555,6 +9558,9 @@ function createContrastHelpers(opts, shared) {
     } catch {
       out = { fallback: true };
     }
+    // With no prototype: a value a page's script put on Object.prototype
+    // (rgba) is never read as the backdrop's own (round 12, F12-5).
+    if (out && typeof out === 'object') out = Object.assign(Object.create(null), out);
     __paintBackdropCache.set(el, out);
     return out;
   }

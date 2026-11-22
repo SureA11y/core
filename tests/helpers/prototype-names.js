@@ -31,7 +31,11 @@ const NAMES = [
   'also',
   'button',
   'navigation',
-  'colorScheme'
+  'colorScheme',
+  // Found by the same probe once those were fixed.
+  'unknown',
+  'sizeScaledBy',
+  'rgba'
 ];
 
 const PAGE =

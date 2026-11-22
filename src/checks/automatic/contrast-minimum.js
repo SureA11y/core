@@ -380,7 +380,9 @@ function runInPage(ctx) {
           : helpers.contrast.isLargeText(px, fontWeightNum, BOLD_LARGE_MIN_PX);
       const isLarge = largeAt(sizePx);
 
-      const out = {
+      // With no prototype: a value a page's script put on Object.prototype
+      // (sizeScaledBy) is never read as the font's own (round 12, F12-5).
+      const out = Object.assign(Object.create(null), {
         fontSizePx: sizePx,
         fontSizePt: helpers.contrast.pxToPt(sizePx),
         fontWeightNum,
@@ -388,7 +390,7 @@ function runInPage(ctx) {
         isBold,
         isLarge,
         isLargeText: isLarge
-      };
+      });
       // What the page drew it at, where that isn't its font-size.
       if (drawn.by.length && Number.isFinite(fontSizePx)) {
         out.declaredFontSizePx = fontSizePx;
