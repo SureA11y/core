@@ -169,20 +169,22 @@ function runInPage(ctx) {
     // The tab stops it jumps ahead of, the first named, for the message.
     const skipped = jumps === true ? skippedBy(el) : [];
     const first = skipped.length ? helpers.describeElement(skipped[0], { text: true }) : '';
+    // The attribute as written, capped as page text quoted in a message is.
+    const quoted = helpers.quoteText(raw);
     occurrences.push(
       helpers.reportOccurrence(el, {
         ...(lean ? { lean } : {}),
         summary: skipped.length
-          ? `This element has tabindex="${raw}", so Tab reaches it before earlier tab stops in the page (${skipped.length}, starting with ${first}).`
-          : `This element has tabindex="${raw}", overriding the natural tab order.`,
+          ? `This element has tabindex="${quoted}", so Tab reaches it before earlier tab stops in the page (${skipped.length}, starting with ${first}).`
+          : `This element has tabindex="${quoted}", overriding the natural tab order.`,
         hint: 'Use tabindex="0" to add the element to the tab order, or a negative value to take it out. If the tab order needs to change, change the order of the content instead.',
         i18n: {
           summaryKey: skipped.length
             ? 'tabindex_summary_cantTell_jumpsAhead'
             : 'tabindex_summary_cantTell_value',
           hintKey: 'tabindex_hint_cantTell',
-          // The attribute as written; details.value is the number read.
-          params: { value: raw, skippedCount: String(skipped.length), first }
+          // The attribute as written, capped; details.value is the number read.
+          params: { value: quoted, skippedCount: String(skipped.length), first }
         },
         data: {
           details: {
