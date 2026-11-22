@@ -570,6 +570,21 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.deepEqual(findings(clamped), []);
   });
 
+  // Vertical lines are columns side by side: they are counted by column, not
+  // by row, or every column shares one top and counts as one (round 12,
+  // U12-4).
+  await t.test('a vertical excerpt that shows fewer columns is asked about', async () => {
+    const result = await scan(
+      page(
+        'body{font:16px/1.2 sans-serif} #box{writing-mode:vertical-rl;height:120px;width:60px;overflow:hidden}',
+        '<div id="box" lang="ja">日本語の長いテキストが入ります日本語の長いテキスト</div>'
+      ).replace('lang="en"', 'lang="ja"')
+    );
+    assert.deepEqual(findings(result), [['box', 'cantTell', 'TEXT_CLIPPED_FURTHER']]);
+    const occ = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+    assert.deepEqual(occ.data.details.lines, { shownBefore: 3, shownAfter: 2 });
+  });
+
   await t.test('room to grow, a scrolling box, or text already hidden before: pass', async () => {
     for (const [css, body] of [
       ['', `<p>${TEXT}, and the rest of the week from nine to five.</p>`],

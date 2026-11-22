@@ -46,8 +46,9 @@
  *     the excerpt was cut on purpose, but shows less. A box that grows with
  *     its lines, as line-clamp does, shows as many and is left alone,
  *     whether it showed all of its text before or not; lines are counted
- *     by rows, so the text a clamp hides after its ellipsis, laid out
- *     beside the last row it shows, isn't counted as shown.
+ *     by rows (by columns, in vertical text), so the text a clamp hides
+ *     after its ellipsis, laid out beside the last row it shows, isn't
+ *     counted as shown.
  *   - In any environment, a style sheet rule that sets line-height,
  *     letter-spacing or word-spacing below those values with `!important`
  *     is asked about (STYLESHEET_IMPORTANT): a tool that adds its own style
@@ -1621,14 +1622,17 @@ function runInPage(ctx) {
         return o.dx <= 1 && o.dy <= 1;
       };
       // Counted by rows: under a clamp, the text after the ellipsis is laid
-      // out beside the last row shown, and isn't shown.
+      // out beside the last row shown, and isn't shown. Vertical lines are
+      // columns side by side, counted by where each starts across.
+      const horizontal = growth(textEl(n)).horizontal;
       const shownIn = (lines, boxes) => {
-        const tops = [];
+        const starts = [];
         for (const l of lines) {
           if (!clippers.every((c) => keeps(l, boxes, c))) continue;
-          if (!tops.some((t) => Math.abs(t - l.top) < 1)) tops.push(l.top);
+          const at = horizontal ? l.top : l.left;
+          if (!starts.some((t) => Math.abs(t - at) < 1)) starts.push(at);
         }
-        return tops.length;
+        return starts.length;
       };
       const shownBefore = shownIn(linesBefore, before.boxes);
       if (!shownBefore || shownIn(linesAfter, after.boxes) >= shownBefore) continue;
