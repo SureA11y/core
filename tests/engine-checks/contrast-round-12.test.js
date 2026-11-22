@@ -305,3 +305,49 @@ test('a hidden, small or moved-off ::before leaves the text measured, without a 
     assert.equal(r.occurrences[0].data.details.reasonCode, 'BACKGROUND_OVERLAP', pseudo);
   }
 });
+
+// Text the flat tree leaves out is not rendered, so not measured: a light
+// child of a shadow host that no slot takes, and the fallback of a slot that
+// has nodes assigned (CSS Scoping 1; round 12, F12-7).
+test('text no slot takes, and slot fallback that is not shown, are left out of the contrast scan (F12-7)', () => {
+  const run = (host, shadow) => {
+    const dom = createDom(page(host));
+    dom.window.document.getElementById('h').attachShadow({ mode: 'open' }).innerHTML = shadow;
+    const result = runa11yCoreOnDom(dom, { runOnly: ['contrast-minimum'] });
+    return result.checksResults.find((c) => c.ruleId === 'contrast-minimum');
+  };
+  // No slot: the host's grey text is not rendered.
+  assert.notEqual(
+    run('<x-s id="h" style="color:#bbb">Unrendered grey</x-s>', '<p>Shadow only</p>').outcome,
+    'fail'
+  );
+  // Only a named slot: the unassigned grey text is not rendered.
+  assert.notEqual(
+    run(
+      '<x-s id="h" style="color:#bbb">Unassigned grey<b slot="a" style="color:#000">Bold</b></x-s>',
+      '<slot name="a"></slot>'
+    ).outcome,
+    'fail'
+  );
+  // Text assigned to the slot: its grey fallback is not rendered.
+  assert.notEqual(
+    run(
+      '<x-s id="h">Assigned text</x-s>',
+      '<slot style="color:#000"><span style="color:#bbb">fallback</span></slot>'
+    ).outcome,
+    'fail'
+  );
+  // With nothing assigned, the fallback is rendered and measured.
+  assert.equal(
+    run(
+      '<x-s id="h"></x-s>',
+      '<slot style="color:#000"><span style="color:#bbb">fallback</span></slot>'
+    ).outcome,
+    'fail'
+  );
+  // Slotted grey text is still measured.
+  assert.equal(
+    run('<x-s id="h">Slotted grey</x-s>', '<slot style="color:#bbb"></slot>').outcome,
+    'fail'
+  );
+});

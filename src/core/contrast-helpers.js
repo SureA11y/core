@@ -1529,6 +1529,46 @@ function createContrastHelpers(opts, shared) {
       // walker per root could otherwise walk the same subtree twice).
       const visitedTextNodes = new Set();
 
+      // Text the flat tree leaves out is not rendered (CSS Scoping 1): a
+      // light child of a shadow host that no slot takes, and the fallback
+      // content of a slot that has nodes assigned (round 12, F12-7). Only
+      // hosts with an open shadow root can be told; kept per parent.
+      const outOfFlatTreeCache = new WeakMap();
+      const outOfFlatTree = (start) => {
+        const seen = [];
+        let cur = start;
+        let out = false;
+        for (let depth = 0; cur && depth < 256; depth++) {
+          const parent = dom.parentNode(cur);
+          if (!parent || dom.nodeType(parent) !== 1) break;
+          if (dom.nodeType(cur) === 1 && outOfFlatTreeCache.has(cur)) {
+            out = outOfFlatTreeCache.get(cur);
+            break;
+          }
+          if (dom.nodeType(cur) === 1) seen.push(cur);
+          if (dom.shadowRoot(parent) && !dom.assignedSlot(cur)) {
+            out = true;
+            break;
+          }
+          if (String(dom.localName(parent) || '').toLowerCase() === 'slot') {
+            const root = dom.getRootNode(parent);
+            if (root && dom.nodeType(root) === 11) {
+              let assigned = [];
+              try {
+                assigned = dom.assignedNodes(parent) || [];
+              } catch {}
+              if (assigned.length) {
+                out = true;
+                break;
+              }
+            }
+          }
+          cur = parent;
+        }
+        for (const el of seen) outOfFlatTreeCache.set(el, out);
+        return out;
+      };
+
       for (const walkRoot of walkRoots) {
         if (guard >= 500000) break;
         let walker;
@@ -1561,6 +1601,7 @@ function createContrastHelpers(opts, shared) {
           // A <textarea>'s text nodes are its default value; what it shows is
           // its current value, read with the other fields below.
           if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
+          if (includeShadowDom && outOfFlatTree(node)) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
