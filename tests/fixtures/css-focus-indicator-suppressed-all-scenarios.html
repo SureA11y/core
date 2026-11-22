@@ -58,6 +58,12 @@
     The rule reads focus styles out of the page's own stylesheets, so every case
     depends on the <code>&lt;style&gt;</code> block above.
   </p>
+  <p class="note">
+    Not covered here: rules in a shadow root's sheets, and the rules that reach
+    across a shadow tree's edge (<code>::part()</code>, <code>::slotted()</code>,
+    <code>:host</code>). jsdom builds no shadow root from markup, so the rule's
+    tests attach the roots from script instead.
+  </p>
 
   <h2>A. Outline removed with no replacement</h2>
 

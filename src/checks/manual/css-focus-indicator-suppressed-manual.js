@@ -34,11 +34,24 @@
  *     elements in the document's own tree: as CSS Scoping has it, their
  *     selectors do not reach into a shadow root. Each open shadow root's
  *     sheets, adopted ones included, are read against the elements in
- *     that root only. A rule
- *   that removes it only under `:not(:focus-visible)` keeps it for keyboard
- *   focus and is not counted; nor is the focus-visible polyfill's form of
- *   it, `:not(.focus-visible)` under `.js-focus-visible`, or
- *   `:not([data-focus-visible-added])` under `[data-js-focus-visible]`.
+ *     that root only. Every open shadow root's sheets are read before the
+ *     candidates are looked for, so a page with no removing rule in any
+ *     of them ends there.
+ *   - Rules that reach across a shadow tree's edge are read on the element
+ *     they style (CSS Scoping): `::part(x)` in a sheet of the tree a host
+ *     is in, on the elements of the host's shadow tree whose `part` names
+ *     x; `::slotted(sel)` in a shadow root's sheet, on the light elements
+ *     assigned to its slots; `:host` and `:host(sel)` alone in a shadow
+ *     root's sheet, on its host. Each removes the outline in the focused
+ *     state where it names that element's focus (`::part(x):focus`,
+ *     `::slotted(button:focus)`, `:host(:focus)`) or names no state, and
+ *     draws a replacement where it names the focus. A part reached
+ *     through `exportparts`, and a state other than focus, are not read.
+ *   - A rule that removes it only under `:not(:focus-visible)` keeps it
+ *     for keyboard focus and is not counted; nor is the focus-visible
+ *     polyfill's form of it, `:not(.focus-visible)` under
+ *     `.js-focus-visible`, or `:not([data-focus-visible-added])` under
+ *     `[data-js-focus-visible]`.
  * @reports
  *   - `suppressingSelectors`: the selector of each style sheet rule that
  *     removes the element's outline, one item per selector.
@@ -109,13 +122,15 @@
  *   stripped out of the selector. A focus pseudo inside `:is()`,
  *   `:where()` or `:matches()` counts too: `a:is(:focus, :hover)` is met
  *   by the focused link, so the whole `:is()` goes. A selector the engine cannot parse
- *   (vendor pseudo-elements, `:host`, unsupported `:is()` forms) throws
+ *   (vendor pseudo-elements, `:host` before another compound, unsupported `:is()` forms) throws
  *   there and is skipped rather than guessed at. A selector list holding
  *   one selector that can't be parsed (`button:-moz-focusring,
  *   button:focus`) is invalid as a whole, and a browser drops the rule; in
  *   jsdom, which keeps it, the list is tested with a query and the rule
- *   skipped when it throws. Selectors are quoted as browsers
- *   serialize them: `*:focus` reads `:focus`.
+ *   skipped when it throws. Selectors are quoted as Chromium serializes
+ *   them, in jsdom too: `*:focus` reads `:focus`, `a:where(:focus,:hover)`
+ *   reads `a:where(:focus, :hover)`, `a>b` reads `a > b` and
+ *   `[type=text]` reads `[type="text"]`.
  */
 
 const id = 'css-focus-indicator-suppressed';
@@ -611,8 +626,8 @@ function runInPage(ctx) {
   }
   // A sheet styles only the elements in its own tree: a document sheet's
   // selectors do not reach into a shadow root (CSS Scoping), and a shadow
-  // root's do not reach out of it. (::part() is a pseudo-element, never a
-  // suppressor here, and outline is not inherited.)
+  // root's do not reach out of it, but through ::part(), ::slotted() and
+  // :host (crossTreeForm). Outline is not inherited.
   const scopeOk = (x, el) => treeOf(el) === (x.scope || document);
 
   // A rule whose focus state is on an ancestor of its subject
@@ -778,11 +793,194 @@ function runInPage(ctx) {
     validLists.set(selectorText, valid);
     return valid;
   }
-  // The selector as quoted in the message, serialized as browsers do: a
-  // universal selector before another simple selector is left out
-  // (`*:focus` reads `:focus`), as Chromium already gives it.
+  // The selector as quoted in the message, serialized as Chromium gives it,
+  // so jsdom quotes it the same (round 12, U12-16, F12-9): a universal
+  // selector before another simple selector is left out (`*:focus` reads
+  // `:focus`), white space is one space, a combinator has a space on each
+  // side, a comma in a selector argument (`:is()`, `:where()`, `:not()`,
+  // `:has()`) one after it, and an attribute's value is quoted
+  // (`[type="text"]`). An argument that is not a selector (`:nth-child()`,
+  // `::part()`) is only trimmed.
+  const SELECTOR_ARGS = /:(is|where|not|has|matches|-webkit-any|host|host-context|slotted)\($/i;
+  function serializedAttribute(text) {
+    const m =
+      /^\[\s*([^\s~|^$*=\]]+)\s*([~|^$*]?=)\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s"'\]]+)\s*([is])?\s*\]$/i.exec(
+        text
+      );
+    if (!m) return text.replace(/^\[\s*/, '[').replace(/\s*\]$/, ']');
+    let value = m[3];
+    if (value[0] === "'")
+      value = '"' + value.slice(1, -1).replace(/\\'/g, "'").replace(/"/g, '\\"') + '"';
+    else if (value[0] !== '"') value = '"' + value + '"';
+    return `[${m[1]}${m[2]}${value}${m[4] ? ' ' + m[4].toLowerCase() : ''}]`;
+  }
   function quotedSelector(part) {
-    return trim(part).replace(/(^|[\s>+~(,])\*(?=[:.#[])/g, '$1');
+    const text = trim(part);
+    let out = '';
+    const stack = []; // per open parenthesis: whether it holds a selector
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '\\') {
+        out += ch + (text[i + 1] || '');
+        i += 1;
+        continue;
+      }
+      if (ch === '"' || ch === "'") {
+        let j = i + 1;
+        while (j < text.length && text[j] !== ch) j += text[j] === '\\' ? 2 : 1;
+        out += text.slice(i, j + 1);
+        i = j;
+        continue;
+      }
+      if (ch === '[') {
+        let j = i + 1;
+        let quote = '';
+        for (; j < text.length; j++) {
+          if (quote) {
+            if (text[j] === '\\') j += 1;
+            else if (text[j] === quote) quote = '';
+          } else if (text[j] === '"' || text[j] === "'") quote = text[j];
+          else if (text[j] === ']') break;
+        }
+        out += serializedAttribute(text.slice(i, j + 1));
+        i = j;
+        continue;
+      }
+      const inSelector = !stack.length || stack[stack.length - 1];
+      if (ch === '(') {
+        stack.push(SELECTOR_ARGS.test(out + ch));
+        out += ch;
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      if (ch === ')') {
+        stack.pop();
+        out = out.replace(/ +$/, '') + ch;
+        continue;
+      }
+      if (/\s/.test(ch)) {
+        if (!/[\s(]$/.test(out)) out += ' ';
+        continue;
+      }
+      if (!inSelector) {
+        out += ch;
+        continue;
+      }
+      if (ch === ',') {
+        out = out.replace(/ +$/, '') + ', ';
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      if (ch === '>' || ch === '+' || ch === '~') {
+        out = out.replace(/ +$/, '');
+        out += (/\($/.test(out) || !out ? '' : ' ') + ch + ' ';
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      out += ch;
+    }
+    return trim(out).replace(/(^|[\s>+~(,])\*(?=[:.#[])/g, '$1');
+  }
+
+  // Rules that reach across a shadow tree's edge (round 12, F12-8), read
+  // as CSS Scoping has them: `::part()` in a sheet of the tree a host is
+  // in styles the elements of the host's shadow tree with that part name;
+  // `::slotted()` in a shadow root's sheet styles the light elements
+  // assigned to its slots; `:host` and `:host()` alone in a shadow root's
+  // sheet style its host. Each is a focus rule on the element it styles
+  // where its focus state is that element's (`::part(x):focus`,
+  // `::slotted(button:focus)`, `:host(:focus)`), and a rule with no state
+  // otherwise. Returns { kind, focused, pseudo, ... }, null for a selector
+  // with none of them, or 'skip' for one of them in a form not read (a
+  // state other than focus, a part reached through exportparts).
+  function closeParen(text, open) {
+    let depth = 1;
+    for (let j = open; j < text.length; j++) {
+      if (text[j] === '(') depth += 1;
+      else if (text[j] === ')' && --depth === 0) return j;
+    }
+    return -1;
+  }
+  // What follows a pseudo-element: its focus state and a ::before or
+  // ::after, or null where it holds anything else.
+  function restOf(rest) {
+    const pseudo = /::?(before|after)$/i.test(trim(rest));
+    const left = trim(dropFocus(trim(rest).replace(/::?(before|after)$/i, '')));
+    return left ? null : { focused: hasFocusPseudo(rest), pseudo };
+  }
+  function crossTreeForm(part) {
+    if (!/::part\(|::slotted\(|:host(?![-\w])/i.test(part)) return null;
+    const partAt = part.search(/::part\(/i);
+    if (partAt !== -1) {
+      const close = closeParen(part, partAt + 7);
+      if (close === -1) return 'skip';
+      const prefix = part.slice(0, partAt);
+      const names = trim(part.slice(partAt + 7, close))
+        .split(/\s+/)
+        .filter(Boolean);
+      const rest = restOf(part.slice(close + 1));
+      if (!rest || !names.length || hasFocusPseudo(prefix) || /:host/i.test(prefix)) return 'skip';
+      const host = trim(prefix) ? trim(prefix) + (/[\s>+~]$/.test(prefix) ? ' *' : '') : '*';
+      return { kind: 'part', hostSel: host, names, ...rest };
+    }
+    const slottedAt = part.search(/::slotted\(/i);
+    if (slottedAt !== -1) {
+      const close = closeParen(part, slottedAt + 10);
+      if (close === -1 || !currentScope) return 'skip';
+      const prefix = part.slice(0, slottedAt);
+      const arg = part.slice(slottedAt + 10, close);
+      const rest = restOf(part.slice(close + 1));
+      if (!rest || rest.focused || hasFocusPseudo(prefix)) return 'skip';
+      // The slot: any (`::slotted()`, `:host ::slotted()`), one the selector
+      // before it names (`slot[name=a]::slotted()`), or one under a host
+      // that matches (`:host(.x) ::slotted()`).
+      let slot = trim(prefix) || '*';
+      let hostSel = '*';
+      const hm = /^:host(?:\(([^()]*)\))?(\s+|$)/i.exec(trim(prefix));
+      if (hm) {
+        if (trim(prefix).length !== hm[0].length) return 'skip';
+        hostSel = trim(hm[1] || '') || '*';
+        slot = '*';
+      } else if (/:host|[\s>+~]$/i.test(prefix)) return 'skip';
+      return {
+        kind: 'slotted',
+        slot,
+        hostSel,
+        inner: stripFocusPseudo(arg),
+        focused: hasFocusPseudo(arg),
+        pseudo: rest.pseudo
+      };
+    }
+    const hm = /^:host(?:\((.*)\))?((?:::?(?:before|after))?)$/i.exec(trim(part));
+    if (!hm) return null;
+    if (!currentScope) return 'skip';
+    const arg = hm[1] || '';
+    return {
+      kind: 'host',
+      inner: arg ? stripFocusPseudo(arg) : '*',
+      focused: hasFocusPseudo(arg),
+      pseudo: !!hm[2]
+    };
+  }
+  // Whether a rule read by crossTreeForm styles el.
+  function crossTreeStyles(x, el) {
+    try {
+      if (x.kind === 'host') return dom.host(x.scope) === el && matchesSafe(el, x.inner);
+      if (x.kind === 'slotted') {
+        const slot = dom.assignedSlot(el);
+        if (!slot || treeOf(slot) !== x.scope) return false;
+        if (x.hostSel !== '*' && !matchesSafe(dom.host(x.scope), x.hostSel)) return false;
+        return matchesSafe(slot, x.slot) && matchesSafe(el, x.inner);
+      }
+      const tree = treeOf(el);
+      if (!tree || dom.nodeType(tree) !== 11) return false;
+      const host = dom.host(tree);
+      if (!host || treeOf(host) !== (x.scope || document)) return false;
+      const names = String(dom.getAttribute(el, 'part') || '').split(/[ \t\n\f\r]+/);
+      return x.names.every((n) => names.includes(n)) && matchesSafe(host, x.hostSel);
+    } catch {
+      return false;
+    }
   }
 
   function collectFromPart(part, suppresses, provides, kills) {
@@ -793,6 +991,31 @@ function runInPage(ctx) {
     // `:not(:focus-within)` no longer holds once the element inside has
     // focus: the rule removes nothing then.
     if (suppresses && /:not\(\s*:focus-within\s*\)/.test(part)) suppresses = false;
+    const cross = crossTreeForm(part);
+    if (cross === 'skip') return;
+    if (cross) {
+      if (suppresses && !cross.pseudo) {
+        suppressors.push({
+          ...cross,
+          selector: quotedSelector(part),
+          base: null,
+          sheet: currentSheet,
+          kills,
+          scope: currentScope
+        });
+      }
+      if (provides && cross.focused) {
+        providers.push({
+          ...cross,
+          base: null,
+          subject: true,
+          own: !cross.pseudo,
+          decls: provides,
+          scope: currentScope
+        });
+      }
+      return;
+    }
     if (provides && /:focus-within(?![-\w])|:has\(/i.test(part)) {
       for (const compound of splitCompounds(part)) {
         let base = compound;
@@ -989,47 +1212,43 @@ function runInPage(ctx) {
   }
   readSheets(document, null);
 
-  // With no removing rule in the document's sheets and no open shadow root
-  // whose sheets could hold one, nothing is checked: the candidates are not
-  // looked for (round 12, R12F-13).
-  if (!suppressors.length) {
-    let hasShadowRoot = false;
-    try {
-      for (const el of dom.querySelectorAll(document, '*')) {
-        if (dom.shadowRoot(el)) {
-          hasShadowRoot = true;
-          break;
+  // Every open shadow root, nested ones too, in tree order. Their style
+  // sheets, and the sheets they adopt, are read before the candidates are
+  // looked for: with no removing rule in any sheet, nothing is checked, on
+  // a page with shadow roots as on one without (round 12, R12F-13, F12-3).
+  const shadowRoots = [];
+  {
+    const queue = [document];
+    for (let i = 0; i < queue.length; i++) {
+      let all;
+      try {
+        all = dom.querySelectorAll(queue[i], '*');
+      } catch {
+        all = [];
+      }
+      for (const el of all) {
+        let sr;
+        try {
+          sr = dom.shadowRoot(el);
+        } catch {
+          sr = null;
+        }
+        if (sr) {
+          queue.push(sr);
+          shadowRoots.push(sr);
         }
       }
-    } catch {
-      hasShadowRoot = true;
     }
-    if (!hasShadowRoot) {
-      return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-    }
+  }
+  for (const root of shadowRoots) readSheets(root, root);
+
+  if (sheetCount === 0 || !suppressors.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   const candidates = helpers.queryAllSmart
     ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
     : helpers.queryAll(CANDIDATE_SELECTOR);
-
-  // The open shadow roots the candidates are in: their style sheets, and
-  // the sheets they adopt, style the elements in them (and only those).
-  const shadowScopes = [];
-  {
-    const seen = new Set();
-    for (const el of candidates) {
-      const tree = el ? treeOf(el) : null;
-      if (!tree || seen.has(tree) || dom.nodeType(tree) !== 11) continue;
-      seen.add(tree);
-      shadowScopes.push(tree);
-    }
-  }
-  for (const root of shadowScopes) readSheets(root, root);
-
-  if (sheetCount === 0 || !suppressors.length) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
 
   // Where a sheet is, for the message: { href } for a linked or imported
   // sheet, { index } for the page's nth <style> element, or null. Read once
@@ -1288,6 +1507,7 @@ function runInPage(ctx) {
     // :scope, & and :host read differently from a tree's querySelectorAll
     // than from the element's matches(): tested element by element.
     if (
+      s.kind ||
       listed.has(s.base) ||
       !probe ||
       s.scope ||
@@ -1313,7 +1533,7 @@ function runInPage(ctx) {
     }
   }
   const unlisted = suppressors.filter(
-    (s) => !listed.has(s.base) || s.scope || (s.also && s.also.length)
+    (s) => s.kind || !listed.has(s.base) || s.scope || (s.also && s.also.length)
   );
 
   // Which candidates the list matches, and how many in each tree. Where
@@ -1451,6 +1671,7 @@ function runInPage(ctx) {
     const byBase = listHit ? listedMatchesIn(tree) : null;
     const matched = new Map();
     const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
+      if (s.kind) return crossTreeStyles(s, el);
       if (!scopeOk(s, el)) return false;
       if (s.also && !s.also.every((a) => matchesSafe(el, a))) return false;
       let hit = matched.get(s.base);
@@ -1466,11 +1687,17 @@ function runInPage(ctx) {
     const killed = new Set();
     for (const s of suppressing) for (const k of s.kills || ['style']) killed.add(k);
     const indicated = providers.some((p) => {
-      if (!scopeOk(p, el)) return false;
-      if (
-        !(p.subject ? matchesSafe(el, p.base) : matchesSafe(el, p.base) || closestSafe(el, p.base))
-      )
-        return false;
+      if (p.kind) {
+        if (!crossTreeStyles(p, el)) return false;
+      } else {
+        if (!scopeOk(p, el)) return false;
+        if (
+          !(p.subject
+            ? matchesSafe(el, p.base)
+            : matchesSafe(el, p.base) || closestSafe(el, p.base))
+        )
+          return false;
+      }
       const decls = drawingDecls(el, p, killed);
       return decls.length > 0 && (!p.own || changesElement(el, decls));
     });

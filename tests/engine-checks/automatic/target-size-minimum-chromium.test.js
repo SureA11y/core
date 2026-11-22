@@ -372,6 +372,40 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(outcome, 'fail');
   });
 
+  // A declaration counts only where it changes the size the browser draws
+  // the control at: common resets leave a checkbox list sized by the
+  // browser, a width that changes it does not (round 12, F12-1).
+  await t.test('a reset that leaves a checkbox at its drawn size keeps the exception', async () => {
+    const list = (type, css) =>
+      `<style>${css}</style><fieldset><legend>Size</legend>` +
+      [1, 2, 3, 4]
+        .map(
+          (i) =>
+            `<label style="display:block;line-height:16px"><input type="${type}" name="s"> Opt ${i}</label>`
+        )
+        .join('') +
+      '</fieldset>';
+    for (const css of [
+      'button,input,optgroup,select,textarea{font-family:inherit;font-size:100%;line-height:1.15;margin:0}',
+      '*{margin:0;padding:0}',
+      'input{max-width:100%}',
+      'input{min-width:0}',
+      'input{padding:0}',
+      'input{width:13px;height:13px}',
+      'input{transform:translateY(2px)}',
+      'input{font-size:inherit;line-height:inherit}'
+    ]) {
+      for (const type of ['checkbox', 'radio']) {
+        assert.equal((await scan(list(type, css)))[0], 'pass', `${type} ${css}`);
+      }
+    }
+    assert.equal((await scan(list('checkbox', 'input{width:16px;height:16px}')))[0], 'fail');
+    // A text input given a font size is drawn larger than the browser's.
+    const text = (css) => `<style>${css}</style><input aria-label="a"><br><input aria-label="b">`;
+    assert.equal((await scan(text('input{font-size:100%;line-height:1.15}')))[0], 'pass');
+    assert.equal((await scan(text('input{box-sizing:border-box;height:20px}')))[0], 'fail');
+  });
+
   // CSS zoom is the author's change of size, as a transform is, on the
   // control or an ancestor (round 12, U12-9).
   await t.test('a checkbox shrunk by zoom is not sized by the browser', async () => {

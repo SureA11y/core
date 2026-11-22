@@ -83584,8 +83584,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   // A sheet styles only the elements in its own tree: a document sheet's
   // selectors do not reach into a shadow root (CSS Scoping), and a shadow
-  // root's do not reach out of it. (::part() is a pseudo-element, never a
-  // suppressor here, and outline is not inherited.)
+  // root's do not reach out of it, but through ::part(), ::slotted() and
+  // :host (crossTreeForm). Outline is not inherited.
   const scopeOk = (x, el) => treeOf(el) === (x.scope || document);
 
   // A rule whose focus state is on an ancestor of its subject
@@ -83751,11 +83751,194 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     validLists.set(selectorText, valid);
     return valid;
   }
-  // The selector as quoted in the message, serialized as browsers do: a
-  // universal selector before another simple selector is left out
-  // (`*:focus` reads `:focus`), as Chromium already gives it.
+  // The selector as quoted in the message, serialized as Chromium gives it,
+  // so jsdom quotes it the same (round 12, U12-16, F12-9): a universal
+  // selector before another simple selector is left out (`*:focus` reads
+  // `:focus`), white space is one space, a combinator has a space on each
+  // side, a comma in a selector argument (`:is()`, `:where()`, `:not()`,
+  // `:has()`) one after it, and an attribute's value is quoted
+  // (`[type="text"]`). An argument that is not a selector (`:nth-child()`,
+  // `::part()`) is only trimmed.
+  const SELECTOR_ARGS = /:(is|where|not|has|matches|-webkit-any|host|host-context|slotted)\($/i;
+  function serializedAttribute(text) {
+    const m =
+      /^\[\s*([^\s~|^$*=\]]+)\s*([~|^$*]?=)\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s"'\]]+)\s*([is])?\s*\]$/i.exec(
+        text
+      );
+    if (!m) return text.replace(/^\[\s*/, '[').replace(/\s*\]$/, ']');
+    let value = m[3];
+    if (value[0] === "'")
+      value = '"' + value.slice(1, -1).replace(/\\'/g, "'").replace(/"/g, '\\"') + '"';
+    else if (value[0] !== '"') value = '"' + value + '"';
+    return `[${m[1]}${m[2]}${value}${m[4] ? ' ' + m[4].toLowerCase() : ''}]`;
+  }
   function quotedSelector(part) {
-    return trim(part).replace(/(^|[\s>+~(,])\*(?=[:.#[])/g, '$1');
+    const text = trim(part);
+    let out = '';
+    const stack = []; // per open parenthesis: whether it holds a selector
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '\\') {
+        out += ch + (text[i + 1] || '');
+        i += 1;
+        continue;
+      }
+      if (ch === '"' || ch === "'") {
+        let j = i + 1;
+        while (j < text.length && text[j] !== ch) j += text[j] === '\\' ? 2 : 1;
+        out += text.slice(i, j + 1);
+        i = j;
+        continue;
+      }
+      if (ch === '[') {
+        let j = i + 1;
+        let quote = '';
+        for (; j < text.length; j++) {
+          if (quote) {
+            if (text[j] === '\\') j += 1;
+            else if (text[j] === quote) quote = '';
+          } else if (text[j] === '"' || text[j] === "'") quote = text[j];
+          else if (text[j] === ']') break;
+        }
+        out += serializedAttribute(text.slice(i, j + 1));
+        i = j;
+        continue;
+      }
+      const inSelector = !stack.length || stack[stack.length - 1];
+      if (ch === '(') {
+        stack.push(SELECTOR_ARGS.test(out + ch));
+        out += ch;
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      if (ch === ')') {
+        stack.pop();
+        out = out.replace(/ +$/, '') + ch;
+        continue;
+      }
+      if (/\s/.test(ch)) {
+        if (!/[\s(]$/.test(out)) out += ' ';
+        continue;
+      }
+      if (!inSelector) {
+        out += ch;
+        continue;
+      }
+      if (ch === ',') {
+        out = out.replace(/ +$/, '') + ', ';
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      if (ch === '>' || ch === '+' || ch === '~') {
+        out = out.replace(/ +$/, '');
+        out += (/\($/.test(out) || !out ? '' : ' ') + ch + ' ';
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      out += ch;
+    }
+    return trim(out).replace(/(^|[\s>+~(,])\*(?=[:.#[])/g, '$1');
+  }
+
+  // Rules that reach across a shadow tree's edge (round 12, F12-8), read
+  // as CSS Scoping has them: `::part()` in a sheet of the tree a host is
+  // in styles the elements of the host's shadow tree with that part name;
+  // `::slotted()` in a shadow root's sheet styles the light elements
+  // assigned to its slots; `:host` and `:host()` alone in a shadow root's
+  // sheet style its host. Each is a focus rule on the element it styles
+  // where its focus state is that element's (`::part(x):focus`,
+  // `::slotted(button:focus)`, `:host(:focus)`), and a rule with no state
+  // otherwise. Returns { kind, focused, pseudo, ... }, null for a selector
+  // with none of them, or 'skip' for one of them in a form not read (a
+  // state other than focus, a part reached through exportparts).
+  function closeParen(text, open) {
+    let depth = 1;
+    for (let j = open; j < text.length; j++) {
+      if (text[j] === '(') depth += 1;
+      else if (text[j] === ')' && --depth === 0) return j;
+    }
+    return -1;
+  }
+  // What follows a pseudo-element: its focus state and a ::before or
+  // ::after, or null where it holds anything else.
+  function restOf(rest) {
+    const pseudo = /::?(before|after)$/i.test(trim(rest));
+    const left = trim(dropFocus(trim(rest).replace(/::?(before|after)$/i, '')));
+    return left ? null : { focused: hasFocusPseudo(rest), pseudo };
+  }
+  function crossTreeForm(part) {
+    if (!/::part\(|::slotted\(|:host(?![-\w])/i.test(part)) return null;
+    const partAt = part.search(/::part\(/i);
+    if (partAt !== -1) {
+      const close = closeParen(part, partAt + 7);
+      if (close === -1) return 'skip';
+      const prefix = part.slice(0, partAt);
+      const names = trim(part.slice(partAt + 7, close))
+        .split(/\s+/)
+        .filter(Boolean);
+      const rest = restOf(part.slice(close + 1));
+      if (!rest || !names.length || hasFocusPseudo(prefix) || /:host/i.test(prefix)) return 'skip';
+      const host = trim(prefix) ? trim(prefix) + (/[\s>+~]$/.test(prefix) ? ' *' : '') : '*';
+      return { kind: 'part', hostSel: host, names, ...rest };
+    }
+    const slottedAt = part.search(/::slotted\(/i);
+    if (slottedAt !== -1) {
+      const close = closeParen(part, slottedAt + 10);
+      if (close === -1 || !currentScope) return 'skip';
+      const prefix = part.slice(0, slottedAt);
+      const arg = part.slice(slottedAt + 10, close);
+      const rest = restOf(part.slice(close + 1));
+      if (!rest || rest.focused || hasFocusPseudo(prefix)) return 'skip';
+      // The slot: any (`::slotted()`, `:host ::slotted()`), one the selector
+      // before it names (`slot[name=a]::slotted()`), or one under a host
+      // that matches (`:host(.x) ::slotted()`).
+      let slot = trim(prefix) || '*';
+      let hostSel = '*';
+      const hm = /^:host(?:\(([^()]*)\))?(\s+|$)/i.exec(trim(prefix));
+      if (hm) {
+        if (trim(prefix).length !== hm[0].length) return 'skip';
+        hostSel = trim(hm[1] || '') || '*';
+        slot = '*';
+      } else if (/:host|[\s>+~]$/i.test(prefix)) return 'skip';
+      return {
+        kind: 'slotted',
+        slot,
+        hostSel,
+        inner: stripFocusPseudo(arg),
+        focused: hasFocusPseudo(arg),
+        pseudo: rest.pseudo
+      };
+    }
+    const hm = /^:host(?:\((.*)\))?((?:::?(?:before|after))?)$/i.exec(trim(part));
+    if (!hm) return null;
+    if (!currentScope) return 'skip';
+    const arg = hm[1] || '';
+    return {
+      kind: 'host',
+      inner: arg ? stripFocusPseudo(arg) : '*',
+      focused: hasFocusPseudo(arg),
+      pseudo: !!hm[2]
+    };
+  }
+  // Whether a rule read by crossTreeForm styles el.
+  function crossTreeStyles(x, el) {
+    try {
+      if (x.kind === 'host') return dom.host(x.scope) === el && matchesSafe(el, x.inner);
+      if (x.kind === 'slotted') {
+        const slot = dom.assignedSlot(el);
+        if (!slot || treeOf(slot) !== x.scope) return false;
+        if (x.hostSel !== '*' && !matchesSafe(dom.host(x.scope), x.hostSel)) return false;
+        return matchesSafe(slot, x.slot) && matchesSafe(el, x.inner);
+      }
+      const tree = treeOf(el);
+      if (!tree || dom.nodeType(tree) !== 11) return false;
+      const host = dom.host(tree);
+      if (!host || treeOf(host) !== (x.scope || document)) return false;
+      const names = String(dom.getAttribute(el, 'part') || '').split(/[ \t\n\f\r]+/);
+      return x.names.every((n) => names.includes(n)) && matchesSafe(host, x.hostSel);
+    } catch {
+      return false;
+    }
   }
 
   function collectFromPart(part, suppresses, provides, kills) {
@@ -83766,6 +83949,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // `:not(:focus-within)` no longer holds once the element inside has
     // focus: the rule removes nothing then.
     if (suppresses && /:not\(\s*:focus-within\s*\)/.test(part)) suppresses = false;
+    const cross = crossTreeForm(part);
+    if (cross === 'skip') return;
+    if (cross) {
+      if (suppresses && !cross.pseudo) {
+        suppressors.push({
+          ...cross,
+          selector: quotedSelector(part),
+          base: null,
+          sheet: currentSheet,
+          kills,
+          scope: currentScope
+        });
+      }
+      if (provides && cross.focused) {
+        providers.push({
+          ...cross,
+          base: null,
+          subject: true,
+          own: !cross.pseudo,
+          decls: provides,
+          scope: currentScope
+        });
+      }
+      return;
+    }
     if (provides && /:focus-within(?![-\w])|:has\(/i.test(part)) {
       for (const compound of splitCompounds(part)) {
         let base = compound;
@@ -83962,47 +84170,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   readSheets(document, null);
 
-  // With no removing rule in the document's sheets and no open shadow root
-  // whose sheets could hold one, nothing is checked: the candidates are not
-  // looked for (round 12, R12F-13).
-  if (!suppressors.length) {
-    let hasShadowRoot = false;
-    try {
-      for (const el of dom.querySelectorAll(document, '*')) {
-        if (dom.shadowRoot(el)) {
-          hasShadowRoot = true;
-          break;
+  // Every open shadow root, nested ones too, in tree order. Their style
+  // sheets, and the sheets they adopt, are read before the candidates are
+  // looked for: with no removing rule in any sheet, nothing is checked, on
+  // a page with shadow roots as on one without (round 12, R12F-13, F12-3).
+  const shadowRoots = [];
+  {
+    const queue = [document];
+    for (let i = 0; i < queue.length; i++) {
+      let all;
+      try {
+        all = dom.querySelectorAll(queue[i], '*');
+      } catch {
+        all = [];
+      }
+      for (const el of all) {
+        let sr;
+        try {
+          sr = dom.shadowRoot(el);
+        } catch {
+          sr = null;
+        }
+        if (sr) {
+          queue.push(sr);
+          shadowRoots.push(sr);
         }
       }
-    } catch {
-      hasShadowRoot = true;
     }
-    if (!hasShadowRoot) {
-      return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-    }
+  }
+  for (const root of shadowRoots) readSheets(root, root);
+
+  if (sheetCount === 0 || !suppressors.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   const candidates = helpers.queryAllSmart
     ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
     : helpers.queryAll(CANDIDATE_SELECTOR);
-
-  // The open shadow roots the candidates are in: their style sheets, and
-  // the sheets they adopt, style the elements in them (and only those).
-  const shadowScopes = [];
-  {
-    const seen = new Set();
-    for (const el of candidates) {
-      const tree = el ? treeOf(el) : null;
-      if (!tree || seen.has(tree) || dom.nodeType(tree) !== 11) continue;
-      seen.add(tree);
-      shadowScopes.push(tree);
-    }
-  }
-  for (const root of shadowScopes) readSheets(root, root);
-
-  if (sheetCount === 0 || !suppressors.length) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
 
   // Where a sheet is, for the message: { href } for a linked or imported
   // sheet, { index } for the page's nth <style> element, or null. Read once
@@ -84261,6 +84465,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // :scope, & and :host read differently from a tree's querySelectorAll
     // than from the element's matches(): tested element by element.
     if (
+      s.kind ||
       listed.has(s.base) ||
       !probe ||
       s.scope ||
@@ -84286,7 +84491,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
   const unlisted = suppressors.filter(
-    (s) => !listed.has(s.base) || s.scope || (s.also && s.also.length)
+    (s) => s.kind || !listed.has(s.base) || s.scope || (s.also && s.also.length)
   );
 
   // Which candidates the list matches, and how many in each tree. Where
@@ -84424,6 +84629,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const byBase = listHit ? listedMatchesIn(tree) : null;
     const matched = new Map();
     const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
+      if (s.kind) return crossTreeStyles(s, el);
       if (!scopeOk(s, el)) return false;
       if (s.also && !s.also.every((a) => matchesSafe(el, a))) return false;
       let hit = matched.get(s.base);
@@ -84439,11 +84645,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const killed = new Set();
     for (const s of suppressing) for (const k of s.kills || ['style']) killed.add(k);
     const indicated = providers.some((p) => {
-      if (!scopeOk(p, el)) return false;
-      if (
-        !(p.subject ? matchesSafe(el, p.base) : matchesSafe(el, p.base) || closestSafe(el, p.base))
-      )
-        return false;
+      if (p.kind) {
+        if (!crossTreeStyles(p, el)) return false;
+      } else {
+        if (!scopeOk(p, el)) return false;
+        if (
+          !(p.subject
+            ? matchesSafe(el, p.base)
+            : matchesSafe(el, p.base) || closestSafe(el, p.base))
+        )
+          return false;
+      }
       const decls = drawingDecls(el, p, killed);
       return decls.length > 0 && (!p.own || changesElement(el, decls));
     });
@@ -119819,9 +120031,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // per undersized target it's compared against, via
   // isInlineTextExceptionTarget/isInlineTextTarget -- so with U undersized
   // targets and N total candidates this was an uncached O(U * N)
-  // getComputedStyle call count. The DOM is read-only for the rest of this
-  // rule's run (no writes between reads), so caching per element here is
-  // safe -- style cannot change mid-run.
+  // getComputedStyle call count. The page's DOM is read-only for the rest
+  // of this rule's run (the one write, the twins of userAgentSizedControls,
+  // is in a closed shadow root and taken out at once), so caching per
+  // element here is safe -- style cannot change mid-run.
   const __styleCache = new WeakMap();
   function getStyle(el) {
     if (__styleCache.has(el)) return __styleCache.get(el);
@@ -121170,17 +121383,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // - for the controls drawn around text (all but the checkbox, radio and
   //   range), the font size browsers give them, 10.5 to 14 px (13.33):
   //   another was set by the author, and changes the size.
-  // - no author declaration on the control itself, in its style attribute
-  //   or a matching rule, of a property that sets its size: width, height,
-  //   their logical forms and min-/max- forms, padding, font-size,
-  //   line-height, zoom or transform (round 12, R12F-11). A text input
-  //   given `height: 20px` lands inside the sizes below, but its size is
-  //   the author's. A declaration of the property's initial value (`width:
-  //   auto`, `transform: none`) or of initial, unset or revert changes
-  //   nothing and is not counted. Where the rules can't be read (another
-  //   origin's sheet), the sizes below decide alone.
+  // - its size not modified by the author (round 12, R12F-11 and F12-1).
+  //   The exception is about the size the control is drawn at, so a
+  //   declaration counts only where it changes that size:
+  //   - where the page is laid out, the control's box is compared with
+  //     the box of an unstyled twin of the same kind (same type, size and
+  //     multiple attributes, a select's options), drawn in the same
+  //     document inside a closed shadow root, where no page style reaches
+  //     it. Any difference is the author's: a text input given `height:
+  //     20px`, a checkbox given `width: 16px`. A reset that leaves the size
+  //     alone (normalize.css's `font-size: 100%; line-height: 1.15` on a
+  //     checkbox, `* { padding: 0 }`, `max-width: 100%`, `width: 13px`, a
+  //     translate) doesn't count. The twins are drawn once a scan, all
+  //     together, and taken out at once.
+  //   - where there is no layout (jsdom), the declarations on the control
+  //     itself, in its style attribute or a matching rule, of a property
+  //     that sets its size: width, height, their logical forms and min-/
+  //     max- forms, padding, font-size, line-height, zoom or transform.
+  //     Padding, font-size and line-height don't change the drawn size of
+  //     a checkbox or radio button and are not read for them, and a value
+  //     of the property's initial value (`width: auto`, `transform: none`)
+  //     or of inherit, initial, unset or revert is not counted. Where the
+  //     rules can't be read (another origin's sheet), the sizes above
+  //     decide alone.
   // A control outside these was resized by the author, which the exception
-  // doesn't cover.
+  // doesn't cover. The sizes are checked first: a control they rule out
+  // needs neither a twin nor a declaration read.
   const SIZE_PROPS = [
     'width',
     'height',
@@ -121194,6 +121422,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'max-height',
     'max-inline-size',
     'max-block-size',
+    'zoom',
+    'transform'
+  ];
+  // Read for every control but a checkbox or radio button.
+  const TEXT_SIZE_PROPS = [
     'padding-top',
     'padding-right',
     'padding-bottom',
@@ -121203,11 +121436,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'padding-inline-start',
     'padding-inline-end',
     'font-size',
-    'line-height',
-    'zoom',
-    'transform'
+    'line-height'
   ];
-  const KEEPS_SIZE = new Set(['initial', 'unset', 'revert', 'revert-layer']);
+  const KEEPS_SIZE = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer']);
   function keepsSize(prop, value) {
     const v = String(value || '')
       .trim()
@@ -121219,10 +121450,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (/^(min-)?(width|height|inline-size|block-size)$/.test(prop)) return v === 'auto';
     return false;
   }
-  function authorResized(el) {
+  function declaredResized(el, kind) {
     const c = helpers.contrast;
     if (!c || typeof c.authorDeclarationOf !== 'function') return false;
-    for (const prop of SIZE_PROPS) {
+    const props = kind === 'box' ? SIZE_PROPS : SIZE_PROPS.concat(TEXT_SIZE_PROPS);
+    for (const prop of props) {
       let d;
       try {
         d = c.authorDeclarationOf(el, prop);
@@ -121262,29 +121494,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     return zoom;
   }
-  function isUserAgentSizedControl(el) {
+  // What a native control is, and whether its box, its appearance and its
+  // zoom leave it as the browser draws it: { kind, type, box } for one
+  // that may be sized by the browser, or null (see above).
+  function userAgentShape(el) {
     try {
-      if (!el || dom.nodeType(el) !== 1) return false;
+      if (!el || dom.nodeType(el) !== 1) return null;
       const tag = (dom.tagName(el) || '').toLowerCase();
       let kind = '';
+      let type = '';
       if (tag === 'select') {
         // A list box (multiple, or more than one row) is not a drop-down.
-        if (dom.hasAttribute(el, 'multiple')) return false;
+        if (dom.hasAttribute(el, 'multiple')) return null;
         const rows = helpers.parseHtmlInteger
           ? helpers.parseHtmlInteger(String(dom.getAttribute(el, 'size') || ''))
           : null;
-        if (typeof rows === 'number' && rows > 1) return false;
+        if (typeof rows === 'number' && rows > 1) return null;
         kind = 'text';
       } else if (tag === 'input') {
-        const type = String(dom.getAttribute(el, 'type') || 'text')
+        type = String(dom.getAttribute(el, 'type') || 'text')
           .trim()
           .toLowerCase();
         if (type === 'checkbox' || type === 'radio') kind = 'box';
         else if (type === 'range' || type === 'color') kind = type;
         else if (UA_TEXT_INPUT_TYPES.has(type)) kind = type === 'file' ? 'file' : 'text';
-        else if (!dom.hasAttribute(el, 'type') || type === '') kind = 'text';
-        else return false;
-      } else return false;
+        else if (!dom.hasAttribute(el, 'type') || type === '') {
+          kind = 'text';
+          type = 'text';
+        } else return null;
+      } else return null;
 
       const cs = getStyle(el);
       let appearance = '';
@@ -121300,27 +121538,133 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
-      if (appearance === 'none' && kind !== 'file') return false;
+      if (appearance === 'none' && kind !== 'file') return null;
 
       // Zoomed by the author, on the control or an ancestor.
-      if (Math.abs(cssZoomOf(el) - 1) > 0.01) return false;
-
-      // Sized by the author's own declaration on it.
-      if (authorResized(el)) return false;
+      if (Math.abs(cssZoomOf(el) - 1) > 0.01) return null;
 
       const box = dom.getBoundingClientRect(el);
       const w = box.width;
       const h = box.height;
       const within = (v, lo, hi) => v >= lo - EPS && v <= hi + EPS;
-      if (kind === 'box') return within(w, 12, 16) && within(h, 12, 16);
-      if (kind === 'range') return within(w, 100, 180) && within(h, 12, 26);
-      const fontSize = Number.parseFloat((cs && cs.fontSize) || '');
-      if (!within(fontSize, 10.5, 14)) return false;
-      if (kind === 'color') return within(w, 40, 70) && within(h, 20, 34);
-      return w >= 20 - EPS && within(h, 18, 26);
+      let fits;
+      if (kind === 'box') fits = within(w, 12, 16) && within(h, 12, 16);
+      else if (kind === 'range') fits = within(w, 100, 180) && within(h, 12, 26);
+      else {
+        const fontSize = Number.parseFloat((cs && cs.fontSize) || '');
+        if (!within(fontSize, 10.5, 14)) return null;
+        if (kind === 'color') fits = within(w, 40, 70) && within(h, 20, 34);
+        else fits = w >= 20 - EPS && within(h, 18, 26);
+      }
+      return fits ? { tag, kind, type, w, h } : null;
     } catch {
-      return false;
+      return null;
     }
+  }
+
+  // The unstyled twin of a control: the same element and type, with the
+  // attributes that set its drawn size (a text input's size, a file
+  // input's multiple, a select's options), and nothing else.
+  function twinSpecOf(el, shape) {
+    if (shape.tag === 'select') {
+      const labels = [];
+      for (const o of qsaIn(el, 'option')) labels.push(String(dom.get(o, 'label') || ''));
+      return { key: 'select\n' + labels.join('\n'), tag: 'select', labels };
+    }
+    const attrs = [['type', shape.type]];
+    for (const name of ['size', 'multiple']) {
+      if (dom.hasAttribute(el, name)) attrs.push([name, String(dom.getAttribute(el, name))]);
+    }
+    return { key: 'input\n' + JSON.stringify(attrs), tag: 'input', attrs };
+  }
+  function qsaIn(el, sel) {
+    try {
+      return [...dom.querySelectorAll(el, sel)];
+    } catch {
+      return [];
+    }
+  }
+  // The size each twin is drawn at, by key, for the document (kept for the
+  // scan, so target-size-enhanced reads it): { w, h }, or null where the
+  // twin has no box (no layout, as in jsdom). The twins are drawn all at
+  // once in one host: a closed shadow root keeps the page's styles out,
+  // and the host's own inline !important declarations keep its rules off
+  // the host.
+  const twinMemo = memoOf('twins');
+  function measureTwins(doc, specs) {
+    let sizes = twinMemo.get(doc);
+    if (!sizes) {
+      sizes = new Map();
+      twinMemo.set(doc, sizes);
+    }
+    const todo = specs.filter((s) => !sizes.has(s.key));
+    if (!todo.length) return sizes;
+    let host = null;
+    try {
+      const html = dom.documentElement(doc);
+      host = dom.createElement(doc, 'surea11y-probe');
+      dom.setAttribute(
+        host,
+        'style',
+        'all:initial!important;display:block!important;position:absolute!important;' +
+          'left:0!important;top:0!important;visibility:hidden!important;' +
+          'zoom:1!important;pointer-events:none!important'
+      );
+      const root = dom.call(host, 'attachShadow', { mode: 'closed' });
+      const twins = [];
+      for (const s of todo) {
+        const twin = dom.createElement(doc, s.tag);
+        if (s.tag === 'select') {
+          for (const label of s.labels) {
+            const o = dom.createElement(doc, 'option');
+            o.textContent = label;
+            dom.appendChild(twin, o);
+          }
+        } else {
+          for (const [name, value] of s.attrs) dom.setAttribute(twin, name, value);
+        }
+        dom.appendChild(root, twin);
+        twins.push(twin);
+      }
+      dom.appendChild(html, host);
+      todo.forEach((s, i) => {
+        const r = dom.getBoundingClientRect(twins[i]);
+        sizes.set(s.key, r && r.width > 0 && r.height > 0 ? { w: r.width, h: r.height } : null);
+      });
+    } catch {
+      for (const s of todo) if (!sizes.has(s.key)) sizes.set(s.key, null);
+    }
+    try {
+      if (host && dom.parentNode(host)) dom.removeChild(dom.parentNode(host), host);
+    } catch {}
+    return sizes;
+  }
+
+  // The controls among els sized by the browser (see above), decided for
+  // all at once.
+  function userAgentSizedControls(els) {
+    const out = new Set();
+    const found = [];
+    for (const el of els) {
+      const shape = userAgentShape(el);
+      if (shape) found.push({ el, shape, spec: twinSpecOf(el, shape) });
+    }
+    const byDoc = new Map();
+    for (const f of found) {
+      const doc = dom.ownerDocument(f.el);
+      if (!byDoc.has(doc)) byDoc.set(doc, []);
+      byDoc.get(doc).push(f.spec);
+    }
+    const sizesOf = new Map();
+    for (const [doc, specs] of byDoc) sizesOf.set(doc, measureTwins(doc, specs));
+    const SAME = 0.05;
+    for (const { el, shape, spec } of found) {
+      const twin = sizesOf.get(dom.ownerDocument(el)).get(spec.key);
+      if (twin) {
+        if (Math.abs(shape.w - twin.w) <= SAME && Math.abs(shape.h - twin.h) <= SAME) out.add(el);
+      } else if (!declaredResized(el, shape.kind)) out.add(el);
+    }
+    return out;
   }
 
   function isPlausiblyEssentialOrEquivalent(el) {
@@ -121598,9 +121942,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // The controls sized by the browser, read for all targets at once: the
   // spacing checks below can leave the style to be recomputed, and a style
-  // read between them would wait for that each time.
-  const userAgentSized = new Set();
-  for (const it of undersized) if (isUserAgentSizedControl(it.el)) userAgentSized.add(it.el);
+  // read between them would wait for that each time. The browser's own
+  // sizes are read here too, from twins drawn and taken out before any
+  // hit test.
+  const userAgentSized = userAgentSizedControls(undersized.map((it) => it.el));
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
@@ -122138,9 +122483,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // per undersized target it's compared against, via
   // isInlineTextExceptionTarget/isInlineTextTarget -- so with U undersized
   // targets and N total candidates this was an uncached O(U * N)
-  // getComputedStyle call count. The DOM is read-only for the rest of this
-  // rule's run (no writes between reads), so caching per element here is
-  // safe -- style cannot change mid-run.
+  // getComputedStyle call count. The page's DOM is read-only for the rest
+  // of this rule's run (the one write, the twins of userAgentSizedControls,
+  // is in a closed shadow root and taken out at once), so caching per
+  // element here is safe -- style cannot change mid-run.
   const __styleCache = new WeakMap();
   function getStyle(el) {
     if (__styleCache.has(el)) return __styleCache.get(el);
@@ -123489,17 +123835,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // - for the controls drawn around text (all but the checkbox, radio and
   //   range), the font size browsers give them, 10.5 to 14 px (13.33):
   //   another was set by the author, and changes the size.
-  // - no author declaration on the control itself, in its style attribute
-  //   or a matching rule, of a property that sets its size: width, height,
-  //   their logical forms and min-/max- forms, padding, font-size,
-  //   line-height, zoom or transform (round 12, R12F-11). A text input
-  //   given `height: 20px` lands inside the sizes below, but its size is
-  //   the author's. A declaration of the property's initial value (`width:
-  //   auto`, `transform: none`) or of initial, unset or revert changes
-  //   nothing and is not counted. Where the rules can't be read (another
-  //   origin's sheet), the sizes below decide alone.
+  // - its size not modified by the author (round 12, R12F-11 and F12-1).
+  //   The exception is about the size the control is drawn at, so a
+  //   declaration counts only where it changes that size:
+  //   - where the page is laid out, the control's box is compared with
+  //     the box of an unstyled twin of the same kind (same type, size and
+  //     multiple attributes, a select's options), drawn in the same
+  //     document inside a closed shadow root, where no page style reaches
+  //     it. Any difference is the author's: a text input given `height:
+  //     20px`, a checkbox given `width: 16px`. A reset that leaves the size
+  //     alone (normalize.css's `font-size: 100%; line-height: 1.15` on a
+  //     checkbox, `* { padding: 0 }`, `max-width: 100%`, `width: 13px`, a
+  //     translate) doesn't count. The twins are drawn once a scan, all
+  //     together, and taken out at once.
+  //   - where there is no layout (jsdom), the declarations on the control
+  //     itself, in its style attribute or a matching rule, of a property
+  //     that sets its size: width, height, their logical forms and min-/
+  //     max- forms, padding, font-size, line-height, zoom or transform.
+  //     Padding, font-size and line-height don't change the drawn size of
+  //     a checkbox or radio button and are not read for them, and a value
+  //     of the property's initial value (`width: auto`, `transform: none`)
+  //     or of inherit, initial, unset or revert is not counted. Where the
+  //     rules can't be read (another origin's sheet), the sizes above
+  //     decide alone.
   // A control outside these was resized by the author, which the exception
-  // doesn't cover.
+  // doesn't cover. The sizes are checked first: a control they rule out
+  // needs neither a twin nor a declaration read.
   const SIZE_PROPS = [
     'width',
     'height',
@@ -123513,6 +123874,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'max-height',
     'max-inline-size',
     'max-block-size',
+    'zoom',
+    'transform'
+  ];
+  // Read for every control but a checkbox or radio button.
+  const TEXT_SIZE_PROPS = [
     'padding-top',
     'padding-right',
     'padding-bottom',
@@ -123522,11 +123888,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'padding-inline-start',
     'padding-inline-end',
     'font-size',
-    'line-height',
-    'zoom',
-    'transform'
+    'line-height'
   ];
-  const KEEPS_SIZE = new Set(['initial', 'unset', 'revert', 'revert-layer']);
+  const KEEPS_SIZE = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer']);
   function keepsSize(prop, value) {
     const v = String(value || '')
       .trim()
@@ -123538,10 +123902,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (/^(min-)?(width|height|inline-size|block-size)$/.test(prop)) return v === 'auto';
     return false;
   }
-  function authorResized(el) {
+  function declaredResized(el, kind) {
     const c = helpers.contrast;
     if (!c || typeof c.authorDeclarationOf !== 'function') return false;
-    for (const prop of SIZE_PROPS) {
+    const props = kind === 'box' ? SIZE_PROPS : SIZE_PROPS.concat(TEXT_SIZE_PROPS);
+    for (const prop of props) {
       let d;
       try {
         d = c.authorDeclarationOf(el, prop);
@@ -123581,29 +123946,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     return zoom;
   }
-  function isUserAgentSizedControl(el) {
+  // What a native control is, and whether its box, its appearance and its
+  // zoom leave it as the browser draws it: { kind, type, box } for one
+  // that may be sized by the browser, or null (see above).
+  function userAgentShape(el) {
     try {
-      if (!el || dom.nodeType(el) !== 1) return false;
+      if (!el || dom.nodeType(el) !== 1) return null;
       const tag = (dom.tagName(el) || '').toLowerCase();
       let kind = '';
+      let type = '';
       if (tag === 'select') {
         // A list box (multiple, or more than one row) is not a drop-down.
-        if (dom.hasAttribute(el, 'multiple')) return false;
+        if (dom.hasAttribute(el, 'multiple')) return null;
         const rows = helpers.parseHtmlInteger
           ? helpers.parseHtmlInteger(String(dom.getAttribute(el, 'size') || ''))
           : null;
-        if (typeof rows === 'number' && rows > 1) return false;
+        if (typeof rows === 'number' && rows > 1) return null;
         kind = 'text';
       } else if (tag === 'input') {
-        const type = String(dom.getAttribute(el, 'type') || 'text')
+        type = String(dom.getAttribute(el, 'type') || 'text')
           .trim()
           .toLowerCase();
         if (type === 'checkbox' || type === 'radio') kind = 'box';
         else if (type === 'range' || type === 'color') kind = type;
         else if (UA_TEXT_INPUT_TYPES.has(type)) kind = type === 'file' ? 'file' : 'text';
-        else if (!dom.hasAttribute(el, 'type') || type === '') kind = 'text';
-        else return false;
-      } else return false;
+        else if (!dom.hasAttribute(el, 'type') || type === '') {
+          kind = 'text';
+          type = 'text';
+        } else return null;
+      } else return null;
 
       const cs = getStyle(el);
       let appearance = '';
@@ -123619,27 +123990,133 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
-      if (appearance === 'none' && kind !== 'file') return false;
+      if (appearance === 'none' && kind !== 'file') return null;
 
       // Zoomed by the author, on the control or an ancestor.
-      if (Math.abs(cssZoomOf(el) - 1) > 0.01) return false;
-
-      // Sized by the author's own declaration on it.
-      if (authorResized(el)) return false;
+      if (Math.abs(cssZoomOf(el) - 1) > 0.01) return null;
 
       const box = dom.getBoundingClientRect(el);
       const w = box.width;
       const h = box.height;
       const within = (v, lo, hi) => v >= lo - EPS && v <= hi + EPS;
-      if (kind === 'box') return within(w, 12, 16) && within(h, 12, 16);
-      if (kind === 'range') return within(w, 100, 180) && within(h, 12, 26);
-      const fontSize = Number.parseFloat((cs && cs.fontSize) || '');
-      if (!within(fontSize, 10.5, 14)) return false;
-      if (kind === 'color') return within(w, 40, 70) && within(h, 20, 34);
-      return w >= 20 - EPS && within(h, 18, 26);
+      let fits;
+      if (kind === 'box') fits = within(w, 12, 16) && within(h, 12, 16);
+      else if (kind === 'range') fits = within(w, 100, 180) && within(h, 12, 26);
+      else {
+        const fontSize = Number.parseFloat((cs && cs.fontSize) || '');
+        if (!within(fontSize, 10.5, 14)) return null;
+        if (kind === 'color') fits = within(w, 40, 70) && within(h, 20, 34);
+        else fits = w >= 20 - EPS && within(h, 18, 26);
+      }
+      return fits ? { tag, kind, type, w, h } : null;
     } catch {
-      return false;
+      return null;
     }
+  }
+
+  // The unstyled twin of a control: the same element and type, with the
+  // attributes that set its drawn size (a text input's size, a file
+  // input's multiple, a select's options), and nothing else.
+  function twinSpecOf(el, shape) {
+    if (shape.tag === 'select') {
+      const labels = [];
+      for (const o of qsaIn(el, 'option')) labels.push(String(dom.get(o, 'label') || ''));
+      return { key: 'select\n' + labels.join('\n'), tag: 'select', labels };
+    }
+    const attrs = [['type', shape.type]];
+    for (const name of ['size', 'multiple']) {
+      if (dom.hasAttribute(el, name)) attrs.push([name, String(dom.getAttribute(el, name))]);
+    }
+    return { key: 'input\n' + JSON.stringify(attrs), tag: 'input', attrs };
+  }
+  function qsaIn(el, sel) {
+    try {
+      return [...dom.querySelectorAll(el, sel)];
+    } catch {
+      return [];
+    }
+  }
+  // The size each twin is drawn at, by key, for the document (kept for the
+  // scan, so target-size-enhanced reads it): { w, h }, or null where the
+  // twin has no box (no layout, as in jsdom). The twins are drawn all at
+  // once in one host: a closed shadow root keeps the page's styles out,
+  // and the host's own inline !important declarations keep its rules off
+  // the host.
+  const twinMemo = memoOf('twins');
+  function measureTwins(doc, specs) {
+    let sizes = twinMemo.get(doc);
+    if (!sizes) {
+      sizes = new Map();
+      twinMemo.set(doc, sizes);
+    }
+    const todo = specs.filter((s) => !sizes.has(s.key));
+    if (!todo.length) return sizes;
+    let host = null;
+    try {
+      const html = dom.documentElement(doc);
+      host = dom.createElement(doc, 'surea11y-probe');
+      dom.setAttribute(
+        host,
+        'style',
+        'all:initial!important;display:block!important;position:absolute!important;' +
+          'left:0!important;top:0!important;visibility:hidden!important;' +
+          'zoom:1!important;pointer-events:none!important'
+      );
+      const root = dom.call(host, 'attachShadow', { mode: 'closed' });
+      const twins = [];
+      for (const s of todo) {
+        const twin = dom.createElement(doc, s.tag);
+        if (s.tag === 'select') {
+          for (const label of s.labels) {
+            const o = dom.createElement(doc, 'option');
+            o.textContent = label;
+            dom.appendChild(twin, o);
+          }
+        } else {
+          for (const [name, value] of s.attrs) dom.setAttribute(twin, name, value);
+        }
+        dom.appendChild(root, twin);
+        twins.push(twin);
+      }
+      dom.appendChild(html, host);
+      todo.forEach((s, i) => {
+        const r = dom.getBoundingClientRect(twins[i]);
+        sizes.set(s.key, r && r.width > 0 && r.height > 0 ? { w: r.width, h: r.height } : null);
+      });
+    } catch {
+      for (const s of todo) if (!sizes.has(s.key)) sizes.set(s.key, null);
+    }
+    try {
+      if (host && dom.parentNode(host)) dom.removeChild(dom.parentNode(host), host);
+    } catch {}
+    return sizes;
+  }
+
+  // The controls among els sized by the browser (see above), decided for
+  // all at once.
+  function userAgentSizedControls(els) {
+    const out = new Set();
+    const found = [];
+    for (const el of els) {
+      const shape = userAgentShape(el);
+      if (shape) found.push({ el, shape, spec: twinSpecOf(el, shape) });
+    }
+    const byDoc = new Map();
+    for (const f of found) {
+      const doc = dom.ownerDocument(f.el);
+      if (!byDoc.has(doc)) byDoc.set(doc, []);
+      byDoc.get(doc).push(f.spec);
+    }
+    const sizesOf = new Map();
+    for (const [doc, specs] of byDoc) sizesOf.set(doc, measureTwins(doc, specs));
+    const SAME = 0.05;
+    for (const { el, shape, spec } of found) {
+      const twin = sizesOf.get(dom.ownerDocument(el)).get(spec.key);
+      if (twin) {
+        if (Math.abs(shape.w - twin.w) <= SAME && Math.abs(shape.h - twin.h) <= SAME) out.add(el);
+      } else if (!declaredResized(el, shape.kind)) out.add(el);
+    }
+    return out;
   }
 
   function isPlausiblyEssentialOrEquivalent(el) {
@@ -123917,9 +124394,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // The controls sized by the browser, read for all targets at once: the
   // spacing checks below can leave the style to be recomputed, and a style
-  // read between them would wait for that each time.
-  const userAgentSized = new Set();
-  for (const it of undersized) if (isUserAgentSizedControl(it.el)) userAgentSized.add(it.el);
+  // read between them would wait for that each time. The browser's own
+  // sizes are read here too, from twins drawn and taken out before any
+  // hit test.
+  const userAgentSized = userAgentSizedControls(undersized.map((it) => it.el));
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.

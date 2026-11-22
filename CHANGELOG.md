@@ -24,6 +24,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Changed
 
+- **`css-focus-indicator-suppressed` reports outlines removed by `::part()`, `::slotted()` and `:host` rules** on the elements those rules style (round 12, F12-8).
 - **`target-size-minimum` and `target-size-enhanced` exempt a native control as sized by the browser only when the author sets none of these on it**: width, height, their logical and min-/max- forms, padding, font-size, line-height, zoom or transform. A text input given `height: 20px` is judged as a target again (round 12, R12F-11).
 - **`page-title-patterns` reads unreplaced WordPress SEO variables** (`%%title%% %%sep%% %%sitename%%`) as a placeholder that leans fail, and WordPress's "Sample Page" and its Spanish, German, French and Japanese translations as a default title (round 12, R12F-14).
 - **`deprecated-elements-not-used` reads marquee stop handlers that only listen for hover as hover-only** (`MARQUEE_STOPS_ONLY_ON_HOVER`, leaning fail) also when they are added inside `DOMContentLoaded` or `load` listeners, or with jQuery's `.hover()` or `.on('mouseenter'|'mouseover')` (round 12, R12F-15).
@@ -105,6 +106,8 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- **`target-size-minimum` and `target-size-enhanced` count an author declaration on a native control only where it changes the size the browser draws it at**: common resets (normalize.css, `* { padding: 0 }`, `max-width: 100%`, `min-width: 0`, a translate, Bootstrap Reboot's `inherit`) no longer make checkbox and radio lists fail. In a browser the control is compared with an unstyled copy drawn once per scan in a closed shadow root and removed at once; without a layout, padding, font-size, line-height and `inherit` are ignored on checkboxes and radio buttons. A text input given its own height is still judged. Author declarations are no longer read one property at a time, and controls outside the browser's sizes are not checked further, which makes both rules faster in a browser (round 12, F12-1, F12-6).
+- **`css-focus-indicator-suppressed` ends early again on a page with open shadow roots and no rule that removes an outline**: shadow roots' sheets are read before candidates are looked for (3.6 s to 0.2 s of processor time in jsdom on a large page). Its quoted selector is the same in jsdom and in browsers, serialized as Chromium does (round 12, F12-3, F12-9).
 - **`css-focus-indicator-suppressed` applies document style sheets only to elements in the document's own tree**: document selectors don't reach into shadow trees (CSS Scoping), which gave a false finding on buttons inside a component (round 12, R12F-12).
 - **`css-focus-indicator-suppressed` ends again before looking for candidates when no rule removes an outline and the page has no open shadow root**: run alone in jsdom on a large page, processor time goes from 2,690 ms to about 90 ms (round 12, R12F-13).
 - **`css-focus-indicator-suppressed` is faster on pages with many focus rules**: a selector that needs a class or id no element in the element's tree carries is no longer tested against it; results are unchanged. With 200 rules that match nothing over 4,000 tabbable elements in jsdom, processor time drops from about 11.4 s to 8.6 s (round 12, P12-1).
