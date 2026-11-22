@@ -141,3 +141,16 @@ test(`${RULE_ID}: reads tabindex with HTML's rules for parsing integers (round 1
   assert.deepStrictEqual(read('abc'), ['notApplicable', []]);
   assert.deepStrictEqual(read(' 1'), ['notApplicable', []]);
 });
+
+test(`${RULE_ID}: a tabindex outside the 32-bit range is ignored (round 11, R11F-9)`, () => {
+  const read = (tag, value) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html><body><a href="/a">A</a><${tag} tabindex="${value}">B</${tag}></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((c) => c.ruleId === RULE_ID).outcome;
+  // As el.tabIndex gives it in Chromium: a div is not focusable, a button
+  // keeps its default.
+  assert.strictEqual(read('div', '2147483648'), 'notApplicable');
+  assert.strictEqual(read('button', '99999999999'), 'notApplicable');
+  assert.strictEqual(read('div', '2147483647'), 'cantTell');
+});

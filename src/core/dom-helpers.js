@@ -1719,7 +1719,11 @@ function createDomHelpers(opts) {
     const m = /^[\t\n\f\r ]*([+-]?)([0-9]+)/.exec(String(raw == null ? '' : raw));
     if (!m) return null;
     const n = parseInt(m[2], 10);
-    return m[1] === '-' ? -n || 0 : n;
+    const v = m[1] === '-' ? -n || 0 : n;
+    // A reflected `long` (tabIndex) ignores a value outside its 32-bit
+    // range, as if the attribute were missing (HTML, Reflecting content
+    // attributes in IDL attributes).
+    return v < -2147483648 || v > 2147483647 ? null : v;
   }
 
   function parseTabIndex(el) {
