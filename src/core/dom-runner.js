@@ -2706,13 +2706,8 @@ function runCoreSettled(
   // to "this run" as intended, without leaking across runs.
   try {
     if (window && Object.prototype.hasOwnProperty.call(window, '__a11ycoreSharedCache')) {
-      // Defined, not assigned, as dom-helpers sets it (round 12, R12F-6).
-      Object.defineProperty(window, '__a11ycoreSharedCache', {
-        value: Object.create(null),
-        writable: true,
-        enumerable: true,
-        configurable: true
-      });
+      // The window's own key: set as it is, never through Object.prototype.
+      window.__a11ycoreSharedCache = Object.create(null);
     }
   } catch {}
 

@@ -4814,13 +4814,19 @@ function createDomHelpers(opts) {
       const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
       // Defined, not assigned: a read-only value of that name on
       // Object.prototype refuses none (round 12, R12F-6).
-      const defineOwn = (o, k) =>
-        Object.defineProperty(o, k, {
-          value: Object.create(null),
-          writable: true,
-          enumerable: true,
-          configurable: true
-        });
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
       if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
       const shared = w.__a11ycoreSharedCache;
       if (!ownKey(shared, 'dom')) shared.dom = Object.create(null);
@@ -10527,13 +10533,19 @@ function createDomHelpers(opts) {
     if (w) {
       // Own keys only, and defined, as for the DOM helpers' cache above.
       const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
-      const defineOwn = (o, k) =>
-        Object.defineProperty(o, k, {
-          value: Object.create(null),
-          writable: true,
-          enumerable: true,
-          configurable: true
-        });
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
       if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
       const shared = w.__a11ycoreSharedCache;
       if (!ownKey(shared, 'contrast')) shared.contrast = Object.create(null);
