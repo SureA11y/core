@@ -14,7 +14,10 @@ const ENGINE_VERSION = "1.17.0";
  * prepared with more rules and standards (src/core/prepare-catalog.js) gets
  * an engine of its own the same way.
  */
-function createRuntime(CATALOG) {
+function createRuntime(catalog) {
+// Its own keys only: a catalog without packs has no packCodeRuleIds, and
+// one on Object.prototype is never read (round 12, R12F-1 to R12F-6).
+const CATALOG = Object.assign(Object.create(null), catalog);
 // Rule catalog (data only)
 const CHECK_DEFS = CATALOG.checkDefs;
 
@@ -45,6 +48,15 @@ const I18N_LEFT_OUT = CATALOG.i18nLeftOut;
 // Lets an absent dictionary be told apart from a language that does not exist.
 const KNOWN_LOCALES = CATALOG.knownLocales;
 
+// A key of an object's own, never one a page's script put on
+// Object.prototype (round 12, R12F-1 to R12F-6): the options a result
+// echoes, a rule's result and its occurrences are plain objects.
+function ownValue(object, key) {
+  return object && typeof object === 'object' && Object.prototype.hasOwnProperty.call(object, key)
+    ? object[key]
+    : undefined;
+}
+
 function normalizeLocale(locale) {
   if (typeof locale !== 'string') return 'en';
   const s = locale.trim();
@@ -54,7 +66,7 @@ function normalizeLocale(locale) {
 // Dictionaries supplied by the caller. This function is serialized into the
 // page, so a table that was not compiled in can only arrive as data.
 function getSuppliedMessages(engineOptions) {
-  const supplied = engineOptions && engineOptions.messages;
+  const supplied = ownValue(engineOptions, 'messages');
   return (supplied && typeof supplied === 'object' && !Array.isArray(supplied)) ? supplied : null;
 }
 
@@ -115,7 +127,7 @@ function matchLocale(requested, engineOptions) {
 }
 
 function getLocaleDict(engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const matched = matchLocale(requested, engineOptions);
 
   return matched
@@ -152,7 +164,7 @@ function messageIn(locale, key, engineOptions) {
 // keeps the rest of the German, the caller's de and then the built-in de,
 // before English (round 9, A9-4). An exact hit returns before any allocation.
 function localeMessage(key, engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const direct = messageIn(requested, key, engineOptions);
   if (direct) return direct;
 
@@ -171,7 +183,7 @@ function isKnownLocale(locale) {
 // is visible in the result rather than only in the wording. Shares matchLocale
 // with getLocaleDict, so the reported locale and the strings cannot disagree.
 function resolveLocale(engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const matched = matchLocale(requested, engineOptions);
 
   if (!matched) {
@@ -335,13 +347,15 @@ function t(key, fallback, params, engineOptions) {
   // Decimals read as the message's language writes them ("1,36:1" in
   // French): the locale asked for where its string was found, English
   // otherwise. The params themselves keep plain numbers.
-  const numberLocale = v ? normalizeLocale(engineOptions && engineOptions.locale) : 'en';
+  const numberLocale = v ? normalizeLocale(ownValue(engineOptions, 'locale')) : 'en';
   return applyI18nParams(base, localizeNumberParams(params, numberLocale));
 }
 
 function resolveRuleDefI18n(def, engineOptions) {
   if (!def || typeof def !== 'object') return def;
-  const out = { ...def };
+  // With no prototype: a field a rule doesn't declare (variant, settings,
+  // margin) is never read from Object.prototype.
+  const out = Object.assign(Object.create(null), def);
   if (out.i18n && typeof out.i18n === 'object') {
     out.title = t(out.i18n.titleKey, out.title, null, engineOptions);
     out.description = t(out.i18n.descriptionKey, out.description, null, engineOptions);
@@ -384,6 +398,10 @@ const POLICY_CONTRACTS = {
 
 // This is the single source of truth, inlined from src/policy/resolvePolicy.js
 const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions, strict) {
+  // The caller's own keys only, never ones a page's script put on
+  // Object.prototype (round 12, R12F-1 to R12F-6).
+  const own = (o, k) =>
+    o && typeof o === 'object' && Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined;
   function normalizePolicyContract(POLICY_CONTRACTS, contract, fallbackId) {
     const fallback = POLICY_CONTRACTS[fallbackId] || POLICY_CONTRACTS.a11y;
     if (typeof contract === 'string') {
@@ -426,27 +444,27 @@ const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions, s
       // no gate could fail.
       const allowedOutcomes =
         knownValues(
-          contract.allowedOutcomes,
+          own(contract, 'allowedOutcomes'),
           ['fail', 'pass', 'cantTell', 'notApplicable'],
           'policyContract.allowedOutcomes'
         ) || fallback.allowedOutcomes.slice();
 
       const allowedConfidence =
         knownValues(
-          contract.allowedConfidence,
+          own(contract, 'allowedConfidence'),
           ['high', 'medium', 'low'],
           'policyContract.allowedConfidence'
         ) || fallback.allowedConfidence.slice();
 
       return {
         id:
-          typeof contract.id === 'string' && contract.id.trim()
+          typeof own(contract, 'id') === 'string' && contract.id.trim()
             ? contract.id.trim()
             : fallback.id || fallbackId || 'custom',
         allowedOutcomes,
         allowedConfidence,
         coerceManualFailToCantTell:
-          typeof contract.coerceManualFailToCantTell === 'boolean'
+          typeof own(contract, 'coerceManualFailToCantTell') === 'boolean'
             ? contract.coerceManualFailToCantTell
             : !!fallback.coerceManualFailToCantTell
       };
@@ -483,26 +501,31 @@ const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions, s
   }
 
   function normalizePolicyOverrides(policy) {
-    const p = policy && typeof policy === 'object' ? policy : {};
+    const p = policy && typeof policy === 'object' ? policy : null;
     return {
       allowedOutcomes: knownValues(
-        p.allowedOutcomes,
+        own(p, 'allowedOutcomes'),
         ['fail', 'pass', 'cantTell', 'notApplicable'],
         'policy.allowedOutcomes'
       ),
       allowedConfidence: knownValues(
-        p.allowedConfidence,
+        own(p, 'allowedConfidence'),
         ['high', 'medium', 'low'],
         'policy.allowedConfidence'
       ),
       coerceManualFailToCantTell:
-        typeof p.coerceManualFailToCantTell === 'boolean' ? p.coerceManualFailToCantTell : null
+        typeof own(p, 'coerceManualFailToCantTell') === 'boolean'
+          ? p.coerceManualFailToCantTell
+          : null
     };
   }
 
-  const opts = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
-  const contract = normalizePolicyContract(POLICY_CONTRACTS, opts.policyContract, 'a11y');
-  const ov = normalizePolicyOverrides(opts.policy);
+  const contract = normalizePolicyContract(
+    POLICY_CONTRACTS,
+    own(engineOptions, 'policyContract'),
+    'a11y'
+  );
+  const ov = normalizePolicyOverrides(own(engineOptions, 'policy'));
 
   return {
     contractId: contract.id,
@@ -606,7 +629,11 @@ function hasAnyRunOnlyKeys(runOnly) {
  * { includeMode, tags, excludeTags, includeRuleIds, excludeRuleIds, includeTestIds, excludeTestIds }
  */
 function normalizeRunOnly(runOnly) {
-  const out = {
+  // With no prototype, and read from a copy with none (ownOptions): no
+  // value on Object.prototype is read as part of a selection (round 12,
+  // R12F-1 to R12F-6).
+  runOnly = ownOptions(runOnly);
+  const out = Object.assign(Object.create(null), {
     includeMode: 'and',
     tags: [],
     excludeTags: [],
@@ -620,7 +647,7 @@ function normalizeRunOnly(runOnly) {
     standardRuleIds: [],
     wcag: null,
     bestPractices: false
-  };
+  });
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   // A WCAG conformance target, { version, level }, checked by
@@ -1377,8 +1404,8 @@ function enforceKnownProfile(selection, eo) {
 // when the option is not a filter.
 function includeExcludeOf(v) {
   return Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-    ? { include: typeof v === 'string' ? [v] : [...v] }
-    : (v && typeof v === 'object' ? v : null);
+    ? Object.assign(Object.create(null), { include: typeof v === 'string' ? [v] : [...v] })
+    : (v && typeof v === 'object' ? ownOptions(v) : null);
 }
 
 // runOnly with a filter wins over engineOptions' rules, tags and tests
@@ -1431,11 +1458,60 @@ function warnEmptyRunOnly(runOnly, eo) {
         named.push('runOnly.' + key);
       }
     }
+    // { type } with no values names no rule or tag, and {} names nothing
+    // (round 12, R12F-10).
+    const keys = Object.keys(runOnly);
+    if (!keys.length) {
+      emptyRunOnlyWarning('runOnly is an empty object', eo);
+      return;
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(runOnly, 'type') &&
+      !Object.prototype.hasOwnProperty.call(runOnly, 'values') &&
+      keys.every((k) => k === 'type' || k === 'includeMode')
+    ) {
+      emptyRunOnlyWarning('runOnly.type has no values', eo);
+      return;
+    }
   }
   if (!named.length) return;
-  const message =
-    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists') +
-    ': it selects no rule, so every rule runs';
+  emptyRunOnlyWarning(
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists'),
+    eo
+  );
+}
+
+// An include list of engineOptions.rules, .tags or .tests given empty
+// ([], '', { include: [] }) selects nothing, and every rule runs, as with no
+// filter: said, and under strictOptions refused, as for runOnly (round 12,
+// R12F-10). Read only where runOnly has no filter, which wins over them.
+function warnEmptyOptionFilters(eo) {
+  const empty = (v) =>
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'string' && !v.trim()) ||
+    (Object.prototype.toString.call(v) === '[object Set]' && v.size === 0);
+  const named = [];
+  for (const name of ['rules', 'tags', 'tests']) {
+    const v = Object.prototype.hasOwnProperty.call(eo, name) ? eo[name] : undefined;
+    if (empty(v)) named.push('engineOptions.' + name);
+    else if (
+      v &&
+      typeof v === 'object' &&
+      Object.prototype.hasOwnProperty.call(v, 'include') &&
+      empty(v.include)
+    ) {
+      named.push('engineOptions.' + name + '.include');
+    }
+  }
+  if (!named.length) return;
+  emptyRunOnlyWarning(
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists'),
+    eo
+  );
+}
+
+function emptyRunOnlyWarning(what, eo) {
+  const message = what + ': it selects no rule, so every rule runs';
   if (strictOf(eo)) {
     const err = new Error(message + '. (strictOptions)');
     err.code = 'INVALID_ENGINE_OPTIONS';
@@ -1447,7 +1523,9 @@ function warnEmptyRunOnly(runOnly, eo) {
 }
 
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
-  const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+  // The options' and runOnly's own keys only (ownOptions).
+  const eo = (engineOptions && typeof engineOptions === 'object') ? ownOptions(engineOptions) : Object.create(null);
+  runOnly = ownOptions(runOnly);
   // A number or a boolean, and an object none of whose keys the engine
   // reads ({ includeRuleId: [...] }), used to run every rule, as no runOnly
   // does: a typo that looks like a full scan.
@@ -1492,7 +1570,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // excludeRuleIds...) still apply.
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
     const kind = String(runOnly.type).trim().replace(/[A-Z]/g, asciiLowerChar);
-    const rest = { ...runOnly };
+    const rest = Object.assign(Object.create(null), runOnly);
     delete rest.type;
     delete rest.values;
     // A Set of names is read as the list it holds; passed on as it is, the
@@ -1501,11 +1579,11 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       runOnly.values && typeof runOnly.values === 'object' && Object.prototype.toString.call(runOnly.values) === '[object Set]'
         ? [...runOnly.values]
         : runOnly.values;
-    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
-    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
+    if (kind === 'rule' || kind === 'rules') runOnly = Object.assign(rest, { includeRuleIds: values });
+    else if (kind === 'tag' || kind === 'tags') runOnly = Object.assign(rest, { tags: values });
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + optionValueText(runOnly.type) + '.');
   }
-  runOnly = expandRunOnlyShorthand(runOnly, eo);
+  runOnly = ownOptions(expandRunOnlyShorthand(runOnly, eo));
   // includeMode is 'and' or 'or'; anything else was read as 'and' without a
   // word, which can select nothing.
   for (const [field, value] of [
@@ -1557,6 +1635,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     return applyOptInRules(enforceKnownProfile(applyProfile(selection, requestedProfile), eo), eo.optInRules);
   }
 
+  warnEmptyOptionFilters(eo);
   const mode = normalizeIncludeMode(eo.includeMode);
 
   // { include, exclude }; a bare list or string is the include list, as
@@ -1575,7 +1654,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const includeTestIds = parseCommaList(tests && tests.include, { lower: false });
   const excludeTestIds = parseCommaList(tests && tests.exclude, { lower: false });
 
-  const out = {
+  const out = Object.assign(Object.create(null), {
     includeMode: mode,
     tags: includeTags,
     excludeTags,
@@ -1583,7 +1662,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeRuleIds,
     includeTestIds,
     excludeTestIds
-  };
+  });
   canonicalizeRuleIds(out, eo);
   checkSelectionNames(
     [
@@ -1863,7 +1942,17 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
     throw new Error('normalizeRuleResult requires a resolved policy');
   }
   const pol = policy;
-  const out = raw && typeof raw === 'object' ? { ...raw } : {};
+  // The rule's result and its occurrences are worked on as copies with no
+  // prototype, so a field the rule left out is never read from, nor refused
+  // by, Object.prototype (round 12, R12F-1 to R12F-6); they are handed back
+  // as plain objects.
+  const bare = (x) => Object.assign(Object.create(null), x);
+  const out = bare(raw && typeof raw === 'object' ? raw : null);
+  if (Array.isArray(out.occurrences)) {
+    out.occurrences = out.occurrences.map((o) =>
+      o && typeof o === 'object' && !Array.isArray(o) ? bare(o) : o
+    );
+  }
   out.ruleId = def.ruleId;
   
   // NOTE: title and description are included here (already localized)
@@ -1900,7 +1989,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
       const key = typeof given === 'string' ? given.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
       const tier = Object.prototype.hasOwnProperty.call(TIERS, key) ? TIERS[key] : null;
       if (tier === given) return o;
-      const next = { ...o };
+      const next = bare(o);
       if (tier) next.occurrenceOutcome = tier;
       else {
         delete next.occurrenceOutcome;
@@ -2065,7 +2154,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
       out.policyOutcome = 'fail';
       out.outcome = 'cantTell';
       if (Array.isArray(out.occurrences)) out.occurrences = out.occurrences.map((o) =>
-        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? Object.assign(bare(o), { occurrenceOutcome: 'cantTell' }) : o
       );
     }
   }
@@ -2073,12 +2162,11 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
   out.outcomeNormalized =
     out.outcome === 'notApplicable' ? 'inapplicable' : out.outcome;
     
-    const output = (out.engineOptions && out.engineOptions.output && typeof out.engineOptions.output === 'object')
-    ? out.engineOptions.output
-    : null;
+    const echoedOutput = ownValue(out.engineOptions, 'output');
+    const output = (echoedOutput && typeof echoedOutput === 'object') ? echoedOutput : null;
 
-  const includeSelector = !(output && switchOf(output.includeSelector) === false);
-  const includeHtml = !(output && switchOf(output.includeHtml) === false);
+  const includeSelector = !(output && switchOf(ownValue(output, 'includeSelector')) === false);
+  const includeHtml = !(output && switchOf(ownValue(output, 'includeHtml')) === false);
 
   const needsDetails = (out.outcome === 'fail' || out.outcome === 'cantTell');
 
@@ -2090,7 +2178,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
     // would still count a failure.
     if (Array.isArray(out.occurrences)) {
       out.occurrences = out.occurrences.map((o) =>
-        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? Object.assign(bare(o), { occurrenceOutcome: 'cantTell' }) : o
       );
     }
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
@@ -2103,7 +2191,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
   }
   out.severity = out.severity || def.defaultSeverity;
 
-  let conf = raw && raw.confidence;
+  let conf = out.confidence;
   if (!pol.allowedConfidence.includes(conf)) conf = def.defaultConfidence;
   out.confidence = conf;
 
@@ -2156,7 +2244,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
   // Uncertainty codes outside the closed set, dropped and noted in error.
   const __invalidUncertaintyCodes = [];
   out.occurrences = occ.map((item) => {
-    const o = item && typeof item === 'object' ? { ...item } : {};
+    const o = bare(item && typeof item === 'object' ? item : null);
 
     // Engine-side finalization (only if rule reported a node)
     const node = o.__node || null;
@@ -2307,7 +2395,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
       o.i18n = null;
     }
 
-    return o;
+    return { ...o };
   });
 
   // Said beside the result, not in error: the rule completed. The result is
@@ -2332,7 +2420,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
   // neither replaces the other.
   if (out.error != null && typeof out.error !== 'string') out.error = String(out.error);
 
-  return out;
+  return { ...out };
 }
 
 // The standards a catalog entry names for these options, chosen exactly as for
@@ -14943,7 +15031,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     policyContract: {
       test: (v) => typeof v === 'string' || isPlain(v),
       expected: "a contract's name, or a contract object",
-      keys: Object.assign({ id: T.string }, policyFields)
+      keys: { id: T.string, ...policyFields }
     },
     policy: { test: isPlain, expected: 'a plain object', keys: policyFields },
     output: {
@@ -15137,10 +15225,77 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   }
 });
 const strictOf = (function strictOf(engineOptions) {
+  // The options' own, never one on Object.prototype (round 12, R12F-1 to
+  // R12F-6).
   const v =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : undefined;
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    Object.prototype.hasOwnProperty.call(engineOptions, 'strictOptions')
+      ? engineOptions.strictOptions
+      : undefined;
   if (v === true || v === 1) return true;
   return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
+});
+const ownOptions = (function ownOptions(options) {
+  if (!options || typeof options !== 'object' || Array.isArray(options)) return options;
+  // A Set, a Map or a Date is no table of options: kept, for the checks
+  // that say so.
+  if (Object.prototype.toString.call(options) !== '[object Object]') return options;
+  const isPlain = (v) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+    if (Object.prototype.toString.call(v) !== '[object Object]') return false;
+    const proto = Object.getPrototypeOf(v);
+    // Another realm's Object.prototype too (a frame's, a vm context's).
+    return proto === null || Object.getPrototypeOf(proto) === null;
+  };
+  const copied = new Map();
+  const copy = (from, depth) => {
+    if (copied.has(from)) return copied.get(from);
+    const to = Object.create(null);
+    copied.set(from, to);
+    const keys = Object.keys(from);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const v = from[key];
+      to[key] =
+        depth < 8 && isPlain(v) && !(depth === 0 && (key === 'probes' || key === 'messages'))
+          ? copy(v, depth + 1)
+          : v;
+    }
+    return to;
+  };
+  const out = copy(options, 0);
+  const flags = ['__budgetSpent', '__budgetSpentAt', '__scanTimeBudgetMs'];
+  for (let i = 0; i < flags.length; i++) {
+    const d = Object.getOwnPropertyDescriptor(options, flags[i]);
+    if (d && !d.enumerable && Object.prototype.hasOwnProperty.call(d, 'value')) {
+      Object.defineProperty(out, flags[i], { value: d.value, configurable: true });
+    }
+  }
+  return out;
+});
+const plainOptions = (function plainOptions(options) {
+  const copied = new Map();
+  const copy = (v, depth) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v) || Object.getPrototypeOf(v) !== null) {
+      return v;
+    }
+    if (copied.has(v)) return copied.get(v);
+    // Spread defines each key, so a read-only value on Object.prototype
+    // refuses none.
+    const out = { ...v };
+    copied.set(v, out);
+    if (depth < 8) {
+      const keys = Object.keys(out);
+      for (let i = 0; i < keys.length; i++) {
+        const x = out[keys[i]];
+        const c = copy(x, depth + 1);
+        if (c !== x) out[keys[i]] = c;
+      }
+    }
+    return out;
+  };
+  return copy(options, 0);
 });
 const switchOf = (function switchOf(v) {
   if (v === true || v === 1) return true;
@@ -19830,9 +19985,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      if (!w.__a11ycoreSharedCache) w.__a11ycoreSharedCache = {};
-      if (!w.__a11ycoreSharedCache.dom) w.__a11ycoreSharedCache.dom = {};
-      __domSharedCache = w.__a11ycoreSharedCache.dom;
+      // The window's own cache, with no prototype: a value a page's script
+      // put on Object.prototype is never read as one (round 12, R12F-1 to
+      // R12F-6).
+      const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      if (!ownKey(w, '__a11ycoreSharedCache')) w.__a11ycoreSharedCache = Object.create(null);
+      const shared = w.__a11ycoreSharedCache;
+      if (!ownKey(shared, 'dom')) shared.dom = Object.create(null);
+      __domSharedCache = shared.dom;
     }
   } catch {
     __domSharedCache = {};
@@ -25504,9 +25664,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      if (!w.__a11ycoreSharedCache) w.__a11ycoreSharedCache = {};
-      if (!w.__a11ycoreSharedCache.contrast) w.__a11ycoreSharedCache.contrast = {};
-      __contrastSharedCache = w.__a11ycoreSharedCache.contrast;
+      // Own keys only, as for the DOM helpers' cache above.
+      const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      if (!ownKey(w, '__a11ycoreSharedCache')) w.__a11ycoreSharedCache = Object.create(null);
+      const shared = w.__a11ycoreSharedCache;
+      if (!ownKey(shared, 'contrast')) shared.contrast = Object.create(null);
+      __contrastSharedCache = shared.contrast;
     }
   } catch {
     __contrastSharedCache = {};
@@ -25531,8 +25694,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __contrastSharedCache
   };
 
+  // With no prototype: a key it is not given (contrast) is never read from
+  // Object.prototype (round 12, R12F-1 to R12F-6).
   const contrast = createContrastHelpers(
-    { window: realmWindow || window, document, root: roots, includeShadowDom, excludeSelectors },
+    Object.assign(Object.create(null), {
+      window: realmWindow || window,
+      document,
+      root: roots,
+      includeShadowDom,
+      excludeSelectors
+    }),
     __contrastShared
   );
 
@@ -26206,7 +26377,9 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
 
   const round = declaration.unit === 'px' ? (n) => Math.round(n * 10) / 10 : (n) => n;
   const counted = Number(measuredCount);
-  const margin = {
+  // Filled with no prototype, so a read-only value on Object.prototype
+  // refuses no key; handed back plain (round 12, R12F-6).
+  const margin = Object.assign(Object.create(null), {
     measure: declaration.measure,
     unit: declaration.unit,
     limit: declaration.limit,
@@ -26217,9 +26390,13 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
       Number.isFinite(counted) && counted >= candidates.length
         ? Math.floor(counted)
         : candidates.length
-  };
+  });
 
-  const includeSelector = !(options && options.includeSelector === false);
+  const includeSelector = !(
+    options &&
+    Object.prototype.hasOwnProperty.call(options, 'includeSelector') &&
+    options.includeSelector === false
+  );
   if (best.el && helpers) {
     let selector = '';
     if (includeSelector && typeof helpers.buildSelector === 'function') {
@@ -26246,7 +26423,7 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
   if (best.context && typeof best.context === 'object' && !Array.isArray(best.context)) {
     margin.context = { ...best.context };
   }
-  return margin;
+  return { ...margin };
 });
 
 // Inlined from src/core/rule-meta.js (also used at build time by loadRuleModules
@@ -26608,6 +26785,8 @@ const rollupCompositeResults = (function rollupCompositeResults(
   const rulesResults = [];
   try {
     const composites = Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : [];
+    // What each rollup echoes: the options as plain objects (plainOptions).
+    const echoedOptions = plainOptions(engineOptionsResolved || {});
 
     const LEVEL_RANK = { A: 1, AA: 2, AAA: 3 };
 
@@ -26691,10 +26870,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const ruleId = isNonEmptyString(entry.id) ? entry.id.trim() : String(entry.id || '').trim();
       if (!ruleId) return null;
 
-      const metaIn =
+      // Its own keys only (round 12, R12F-1 to R12F-6).
+      const metaIn = Object.assign(
+        Object.create(null),
         entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)
           ? entry.meta
-          : {};
+          : null
+      );
 
       const titleKey =
         typeof metaIn.titleKey === 'string' && metaIn.titleKey.trim() ? metaIn.titleKey.trim() : '';
@@ -26798,7 +26980,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
             .filter(Boolean)
         : [];
 
-      return {
+      return Object.assign(Object.create(null), {
         ruleId,
         title: metaIn.title || ruleId,
         description: metaIn.description || '',
@@ -26865,7 +27047,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
         // A standard's requirement its rules don't check in full
         // (ruleMappedStandard requirements' partial).
         __partial: !!ownStandard && metaIn.partial === true
-      };
+      });
     }
 
     // Whether a finding's data.details has every value `when` gives, each
@@ -27167,7 +27349,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
         reasonCode = 'composite.rollup.cantTell.partialCheck';
       }
 
-      const raw = {
+      // With no prototype, so no key set below is refused by a read-only
+      // value on Object.prototype (round 12, R12F-6).
+      const raw = Object.assign(Object.create(null), {
         outcome,
         occurrences: [],
 
@@ -27209,10 +27393,10 @@ const rollupCompositeResults = (function rollupCompositeResults(
         },
 
         engineOptions: {
-          ...(engineOptionsResolved || {}),
+          ...echoedOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
-      };
+      });
 
       // Promote composite severity based on contributors (deterministic).
       // - If composite fails: use max severity among failing children.
@@ -27552,7 +27736,10 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // whether it was installed before the page's scripts: what the name rules
   // could read of custom elements' internals. Left out without one.
   const hook = readInternalsHook(win);
-  const internalsHook = hook ? { internalsHook: hook.early ? 'early' : 'late' } : {};
+  // Filled with no prototype, so a read-only value on Object.prototype
+  // refuses no key; handed back plain (round 12, R12F-6).
+  const internalsHook = Object.create(null);
+  if (hook) internalsHook.internalsHook = hook.early ? 'early' : 'late';
   // The same for the listener hook (listenerHookScript): which event
   // listeners added from script the keyboard rules could see.
   const listeners = readListenerHook(win);
@@ -27563,7 +27750,8 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   if (liveRegions) internalsHook.liveRegionHook = liveRegions.early ? 'early' : 'late';
   if (!layout) return { layout: false, ...internalsHook };
 
-  const env = { layout: true };
+  const env = Object.create(null);
+  env.layout = true;
   const width = Number(win.innerWidth);
   const height = Number(win.innerHeight);
   if (Number.isFinite(width) && Number.isFinite(height)) env.viewport = { width, height };
@@ -27624,7 +27812,7 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
       env.images = loading ? 'loading' : 'loaded';
     }
   } catch {}
-  return Object.assign(env, internalsHook);
+  return { ...env, ...internalsHook };
 });
 
 const settleAnimations = (function settleAnimations(doc, includeShadowDom) {
@@ -28266,6 +28454,9 @@ const runCoreSettled = (function runCoreSettled(
   COMPOSITE_RULES
 ) {
   const dom = createSafeDom();
+  // The options' own keys only, with no prototype, so a value a page's
+  // script put on Object.prototype is never read as an option (ownOptions).
+  engineOptions = ownOptions(engineOptions);
   // engineOptions.timeBudgetMs: once the scan has spent this long, it starts
   // no more rules, and lists those it didn't start (notRun). Read only when
   // it is a number above 0; enforceEngineOptions says anything else.
@@ -28316,15 +28507,21 @@ const runCoreSettled = (function runCoreSettled(
   }
   // Normalize contrast options without mutating caller-provided engineOptions.
   function __normalizeContrastOptions(engineOptions2) {
-    const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
-    const c = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : {};
+    const eo =
+      engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : Object.create(null);
+    const c = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : Object.create(null);
     const mode = c.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
     const rootCanvasFallback =
       typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim()
         ? c.rootCanvasFallback.trim()
         : '#ffffff';
-    // Set below, once the color is known to be usable.
-    return { mode, rootCanvasFallback, rootCanvasFallbackSet: false };
+    // Set below, once the color is known to be usable. With no prototype,
+    // as the options it comes from.
+    return Object.assign(Object.create(null), {
+      mode,
+      rootCanvasFallback,
+      rootCanvasFallbackSet: false
+    });
   }
 
   // Whether the caller gave contrast.rootCanvasFallback, rather than the
@@ -28344,10 +28541,11 @@ const runCoreSettled = (function runCoreSettled(
     );
   }
 
-  const engineOptionsResolved =
-    engineOptions && typeof engineOptions === 'object'
-      ? { ...engineOptions, contrast: __normalizeContrastOptions(engineOptions) }
-      : { contrast: __normalizeContrastOptions(null) };
+  const engineOptionsResolved = Object.assign(
+    Object.create(null),
+    engineOptions && typeof engineOptions === 'object' ? engineOptions : null,
+    { contrast: __normalizeContrastOptions(engineOptions) }
+  );
 
   const policy = resolvePolicy(POLICY_CONTRACTS, engineOptionsResolved, strictOf(engineOptions));
 
@@ -28492,7 +28690,9 @@ const runCoreSettled = (function runCoreSettled(
   // the same window. Clearing at the start of every run keeps sharing scoped
   // to "this run" as intended, without leaking across runs.
   try {
-    if (window && window.__a11ycoreSharedCache) window.__a11ycoreSharedCache = {};
+    if (window && Object.prototype.hasOwnProperty.call(window, '__a11ycoreSharedCache')) {
+      window.__a11ycoreSharedCache = Object.create(null);
+    }
   } catch {}
 
   const sharedHelpers = createDomHelpers({
@@ -28619,7 +28819,9 @@ const runCoreSettled = (function runCoreSettled(
     }
 
     if (t === 'object') {
-      const out = {};
+      // Filled with no prototype, so no key is refused by a read-only value
+      // on Object.prototype; handed back plain.
+      const out = Object.create(null);
       const keys = Object.keys(v).sort();
       // cap object keys
       const n = Math.min(keys.length, 50);
@@ -28629,7 +28831,7 @@ const runCoreSettled = (function runCoreSettled(
         if (typeof k !== 'string') continue;
         out[k] = sanitizeProbeValue(v[k], depth - 1);
       }
-      return out;
+      return { ...out };
     }
 
     return null;
@@ -28900,10 +29102,15 @@ const runCoreSettled = (function runCoreSettled(
     const occurrences = Array.isArray(result.occurrences)
       ? result.occurrences.map((occ) => {
           if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
-          const next =
-            occ.occurrenceOutcome === 'fail'
-              ? { ...occ, occurrenceOutcome: 'cantTell' }
-              : { ...occ };
+          // With no prototype, as the result (round 12, R12F-1 to R12F-6).
+          const next = Object.assign(
+            Object.create(null),
+            occ,
+            Object.prototype.hasOwnProperty.call(occ, 'occurrenceOutcome') &&
+              occ.occurrenceOutcome === 'fail'
+              ? { occurrenceOutcome: 'cantTell' }
+              : null
+          );
           if (!next.uncertainty) {
             next.uncertainty = {
               code: 'out-of-scope',
@@ -28942,8 +29149,7 @@ const runCoreSettled = (function runCoreSettled(
 
     // Deliberately NOT reported through `error`: nothing went wrong here,
     // and consumers read a non-empty `error` as "this rule threw".
-    return {
-      ...result,
+    return Object.assign(Object.create(null), result, {
       outcome: 'cantTell',
       occurrences,
       wcagVersionScope: {
@@ -28952,7 +29158,7 @@ const runCoreSettled = (function runCoreSettled(
         coercedFrom: 'fail',
         ...(why === 'errata' ? { by: 'errata' } : {})
       }
-    };
+    });
   }
 
   const checksResults = [];
@@ -29260,7 +29466,11 @@ const runCoreSettled = (function runCoreSettled(
   }
   const readOnlyViews = new WeakMap();
   const ruleEngineOptions =
-    engineOptionsResolved && typeof engineOptionsResolved === 'object' ? engineOptionsResolved : {};
+    engineOptionsResolved && typeof engineOptionsResolved === 'object'
+      ? engineOptionsResolved
+      : Object.create(null);
+  // What each result echoes: the same options, as plain objects.
+  const echoedEngineOptions = plainOptions(ruleEngineOptions);
   // Changes a pack's or caller's rule made to the page, by rule id.
   const pageChangedBy = [];
   for (const def of runOrder) {
@@ -29337,12 +29547,16 @@ const runCoreSettled = (function runCoreSettled(
     const settingNames = Array.isArray(defResolved.settings) ? defResolved.settings : [];
     let ruleConfig = callerConfig;
     if (ruleConfig && settingNames.length) {
-      ruleConfig = { ...ruleConfig };
+      ruleConfig = Object.assign(Object.create(null), ruleConfig);
       for (const name of settingNames) delete ruleConfig[name];
     }
     const variant =
       defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
-    if (variant && variant.config) ruleConfig = { ...(ruleConfig || {}), ...variant.config };
+    // With no prototype, as the caller's settings are (ownOptions): a
+    // variant's config never reads excludeSelectors from Object.prototype.
+    if (variant && variant.config) {
+      ruleConfig = Object.assign(Object.create(null), ruleConfig, variant.config);
+    }
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -29390,7 +29604,7 @@ const runCoreSettled = (function runCoreSettled(
             outcome: 'notApplicable',
             occurrences: [],
             engineOptions: {
-              ...ruleEngineOptions,
+              ...echoedEngineOptions,
               locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
             }
           },
@@ -29436,7 +29650,7 @@ const runCoreSettled = (function runCoreSettled(
           occurrences: [],
           error: describeThrown(err),
           engineOptions: {
-            ...ruleEngineOptions,
+            ...echoedEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
           }
         };
@@ -29453,7 +29667,7 @@ const runCoreSettled = (function runCoreSettled(
           outcome: 'notApplicable',
           occurrences: [],
           engineOptions: {
-            ...ruleEngineOptions,
+            ...echoedEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
           }
         };
@@ -29478,7 +29692,7 @@ const runCoreSettled = (function runCoreSettled(
         occurrences: [],
         error: describeThrown(err),
         engineOptions: {
-          ...ruleEngineOptions,
+          ...echoedEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
       };
@@ -29489,6 +29703,11 @@ const runCoreSettled = (function runCoreSettled(
       if (changes) pageChangedBy.push({ ruleId: defResolved.ruleId, changes });
     }
     if (foreign) result = plainRuleOutput(result);
+    // Read with no prototype from here: a field the rule left out is never
+    // read from Object.prototype (round 12, R12F-1 to R12F-6).
+    if (result && typeof result === 'object' && !isThenable(result)) {
+      result = Object.assign(Object.create(null), result);
+    }
 
     // A rule that returned nothing usable is reported, not dropped: a
     // missing result would read as a rule that never existed.
@@ -29506,7 +29725,7 @@ const runCoreSettled = (function runCoreSettled(
         occurrences: [],
         error: unusable,
         engineOptions: {
-          ...ruleEngineOptions,
+          ...echoedEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
       };
@@ -29515,7 +29734,7 @@ const runCoreSettled = (function runCoreSettled(
     // neither how it is judged nor what the result says, and is noted.
     if (result && Object.prototype.hasOwnProperty.call(result, 'type')) {
       const returnedType = result.type;
-      result = { ...result };
+      result = Object.assign(Object.create(null), result);
       delete result.type;
       if (returnedType !== undefined && returnedType !== defResolved.type) {
         result.error =
@@ -29539,8 +29758,7 @@ const runCoreSettled = (function runCoreSettled(
         else dropped += 1;
       }
       if (dropped) {
-        result = {
-          ...result,
+        result = Object.assign(Object.create(null), result, {
           occurrences: kept,
           error:
             (result.error ? String(result.error) + ' | ' : '') +
@@ -29548,7 +29766,7 @@ const runCoreSettled = (function runCoreSettled(
             dropped +
             (dropped === 1 ? ' occurrence that is' : ' occurrences that are') +
             ' not an object; left out.'
-        };
+        });
       }
     }
 
@@ -29559,7 +29777,7 @@ const runCoreSettled = (function runCoreSettled(
         Object.prototype.hasOwnProperty.call(result, key)
       );
       if (owned.length) {
-        result = { ...result };
+        result = Object.assign(Object.create(null), result);
         for (const key of owned) delete result[key];
         result.error =
           (result.error ? String(result.error) + ' | ' : '') +
@@ -29577,8 +29795,7 @@ const runCoreSettled = (function runCoreSettled(
       result.outcome === 'fail' &&
       !(Array.isArray(result.occurrences) && result.occurrences.length)
     ) {
-      result = {
-        ...result,
+      result = Object.assign(Object.create(null), result, {
         occurrences: [
           {
             __node: dom.documentElement(document),
@@ -29591,7 +29808,7 @@ const runCoreSettled = (function runCoreSettled(
             data: { details: { reasonCode: 'FAIL_WITHOUT_OCCURRENCE' } }
           }
         ]
-      };
+      });
     }
 
     // A variant reports in its own words: a message key of its base rule's
@@ -29617,13 +29834,12 @@ const runCoreSettled = (function runCoreSettled(
     // The scan's options and the WCAG scope are the engine's to state: an
     // engineOptions or wcagVersionScope in a rule's return is not taken (a
     // returned engineOptions.output could switch off the rule's selectors).
-    result = {
-      ...result,
+    result = Object.assign(Object.create(null), result, {
       engineOptions: {
-        ...ruleEngineOptions,
+        ...echoedEngineOptions,
         locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
       }
-    };
+    });
     delete result.wcagVersionScope;
     checksResults.push(
       normalizeRuleResult(
@@ -29781,19 +29997,16 @@ const runCoreSettled = (function runCoreSettled(
   for (const r of checksResults.concat(rulesResults)) {
     if (!r || !r.engineOptions || typeof r.engineOptions !== 'object') continue;
     const eo = r.engineOptions;
-    if (
-      !('messages' in eo) &&
-      !('probes' in eo) &&
-      !('customRules' in eo) &&
-      !('styleSheetTexts' in eo)
-    ) {
+    // Its own keys, not ones on Object.prototype.
+    const has = (key) => Object.prototype.hasOwnProperty.call(eo, key);
+    if (!has('messages') && !has('probes') && !has('customRules') && !has('styleSheetTexts')) {
       continue;
     }
     const echoed = { ...eo };
     delete echoed.messages;
-    if ('probes' in echoed) echoed.probes = probes;
-    if ('customRules' in echoed) echoed.customRules = echoedCustomRules;
-    if ('styleSheetTexts' in echoed) echoed.styleSheetTexts = echoedStyleSheets;
+    if (has('probes')) echoed.probes = probes;
+    if (has('customRules')) echoed.customRules = echoedCustomRules;
+    if (has('styleSheetTexts')) echoed.styleSheetTexts = echoedStyleSheets;
     r.engineOptions = echoed;
   }
 
@@ -29929,8 +30142,8 @@ const runCoreSettled = (function runCoreSettled(
     Array.isArray(CATALOG.packs) &&
     CATALOG.packs.length > 0;
   let coreWording = null;
-  if ('messages' in engineOptionsResolved) {
-    coreWording = { ...engineOptionsResolved };
+  if (Object.prototype.hasOwnProperty.call(engineOptionsResolved, 'messages')) {
+    coreWording = Object.assign(Object.create(null), engineOptionsResolved);
     delete coreWording.messages;
   }
   const restorable = (c) => {
@@ -30226,52 +30439,6 @@ const assertPageBuiltins = (function assertPageBuiltins() {
     throw err;
   }
 });
-const holdObjectPrototypeValues = (function holdObjectPrototypeValues() {
-  const proto = Object.prototype;
-  const own = Object.prototype.hasOwnProperty;
-  const held = [];
-  const release = () => {
-    for (let i = held.length - 1; i >= 0; i--) {
-      const h = held[i];
-      try {
-        if (h.cleared) proto[h.name] = h.descriptor.value;
-        else Object.defineProperty(proto, h.name, h.descriptor);
-      } catch {}
-    }
-    held.length = 0;
-  };
-  const names = Object.getOwnPropertyNames(proto);
-  const refused = [];
-  for (let i = 0; i < names.length; i++) {
-    const name = names[i];
-    if (name === '__proto__') continue;
-    const d = Object.getOwnPropertyDescriptor(proto, name);
-    if (!d) continue;
-    // Own reads: a descriptor is a plain object too.
-    if (own.call(d, 'value') && typeof d.value === 'function') continue;
-    if (d.configurable) {
-      delete proto[name];
-      held[held.length] = { name, descriptor: d, cleared: false };
-    } else if (own.call(d, 'writable') && d.writable) {
-      proto[name] = undefined;
-      held[held.length] = { name, descriptor: d, cleared: true };
-    } else refused[refused.length] = 'Object.prototype.' + name;
-  }
-  if (refused.length) {
-    release();
-    let list = '';
-    for (let i = 0; i < refused.length; i++) list += (i ? ', ' : '') + refused[i];
-    const err = new Error(
-      'The page has changed JavaScript built-ins the engine relies on (' +
-        list +
-        "), so a scan of it can't be trusted. Scan it before its scripts change them."
-    );
-    err.code = 'PAGE_BUILTINS_BROKEN';
-    err.broken = refused;
-    throw err;
-  }
-  return release;
-});
 const assertArrayFromFor = (function assertArrayFromFor(fns) {
   let works;
   /* eslint-disable no-restricted-properties -- the check is of Array.from itself */
@@ -30381,8 +30548,9 @@ const runCore = (function runCore(
             : null;
       // The contrast helpers' blank frames, kept for the run
       // (__openProbeFrame), go with it.
-      const shared = w && w.__a11ycoreSharedCache;
-      const frames = shared && shared.contrast && shared.contrast.probeFrames;
+      const own = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      const shared = own(w, '__a11ycoreSharedCache');
+      const frames = own(own(shared, 'contrast'), 'probeFrames');
       if (Array.isArray(frames)) {
         for (const entry of frames) {
           try {
@@ -30391,7 +30559,7 @@ const runCore = (function runCore(
           } catch {}
         }
       }
-      if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
+      if (shared) delete w.__a11ycoreSharedCache;
     } catch {}
   }
 });
@@ -30401,13 +30569,13 @@ const runCore = (function runCore(
 // cross-frame scanning for the "plain script injection" consumption mode).
 const FRAME_RPC_CHANNEL = "__frame_rpc_v1__";
 const getFrameRpcRegistry = (function getFrameRpcRegistry(win) {
-  if (!win.__a11yCoreFrameRpc__) {
-    win.__a11yCoreFrameRpc__ = {
-      pending: new Map(),
-      seq: 0,
-      responder: null,
-      listening: false
-    };
+  if (!Object.prototype.hasOwnProperty.call(win, '__a11yCoreFrameRpc__')) {
+    const registry = Object.create(null);
+    registry.pending = new Map();
+    registry.seq = 0;
+    registry.responder = null;
+    registry.listening = false;
+    win.__a11yCoreFrameRpc__ = registry;
   }
   return win.__a11yCoreFrameRpc__;
 });
@@ -30417,8 +30585,14 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
   if (registry.listening) return registry;
 
   dom.addEventListener(win, 'message', function a11yCoreFrameRpcListener(event) {
-    const data = event && event.data;
-    if (!data || data.__a11ycore !== true || data.channel !== channel) return;
+    // A message's fields are read as its own, never from Object.prototype.
+    const message = event && event.data;
+    if (!message || typeof message !== 'object') return;
+    const data = Object.create(null);
+    for (const key of ['__a11ycore', 'channel', 'type', 'requestId', 'payload']) {
+      if (Object.prototype.hasOwnProperty.call(message, key)) data[key] = message[key];
+    }
+    if (data.__a11ycore !== true || data.channel !== channel) return;
 
     if (data.type === 'ping') {
       try {
@@ -30634,8 +30808,10 @@ const profileOptionsOf = (function profileOptionsOf(engineOptions) {
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
   if (!Array.isArray(asked)) return [engineOptions];
   const unique = profileNamesOf(asked);
-  if (!unique.length) return [Object.assign({}, engineOptions, { profile: undefined })];
-  return unique.map((p) => Object.assign({}, engineOptions, { profile: p }));
+  // With no prototype, as ownOptions copies them.
+  if (!unique.length)
+    return [Object.assign(Object.create(null), engineOptions, { profile: undefined })];
+  return unique.map((p) => Object.assign(Object.create(null), engineOptions, { profile: p }));
 });
 const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packNames, declared) {
   const name = typeof profile === 'string' ? lowerAscii(profile.trim()) : '';
@@ -30663,8 +30839,10 @@ const runProfiles = (function runProfiles(engineOptions, run) {
   // page may put then on Object.prototype, and every plain result then has
   // one.
   const result = runProfilesUncapped(engineOptions, run);
-  const out = engineOptions && engineOptions.output;
-  if (!out || typeof out !== 'object' || out.maxOccurrencesPerRule === undefined) return result;
+  const out = ownField(engineOptions, 'output');
+  if (!out || typeof out !== 'object' || ownField(out, 'maxOccurrencesPerRule') === undefined) {
+    return result;
+  }
   return Object.prototype.toString.call(result) === '[object Promise]'
     ? result.then((x) => capOccurrences(x, engineOptions))
     : capOccurrences(result, engineOptions);
@@ -30704,8 +30882,7 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
     return to;
   };
   const allowFail = policyAllowsFail(engineOptions);
-  const asked =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
+  const asked = ownField(engineOptions, 'profile');
   if (Array.isArray(asked)) {
     // Names are matched without case, as a single profile's are: one asked
     // twice in two cases runs once.
@@ -30742,7 +30919,9 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         run(
           carryBudgetSpent(
             engineOptions,
-            Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+            Object.assign(Object.create(null), engineOptions, {
+              profile: unique.length ? unique[0] : undefined
+            })
           )
         ),
         allowFail
@@ -30752,12 +30931,10 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
     // engineOptions.timeBudgetMs is the whole scan's: each profile after the
     // first gets what is left of it, and one that would start with none left
     // is not run (engine.profilesNotRun, reason timeBudget).
+    const givenBudget = ownField(engineOptions, 'timeBudgetMs');
     const budget =
-      engineOptions &&
-      typeof engineOptions.timeBudgetMs === 'number' &&
-      Number.isFinite(engineOptions.timeBudgetMs) &&
-      engineOptions.timeBudgetMs > 0
-        ? engineOptions.timeBudgetMs
+      typeof givenBudget === 'number' && Number.isFinite(givenBudget) && givenBudget > 0
+        ? givenBudget
         : null;
     const clock = () => {
       try {
@@ -30792,9 +30969,8 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         const merged = mergeProfileResults(runs, unique, allowFail);
         // The budget the scan was given, not what was left of it for the
         // profile that ran out.
-        if (merged && merged.engine && merged.engine.incomplete) {
-          merged.engine.incomplete.timeBudgetMs = scanBudget;
-        }
+        const incomplete = ownField(ownField(merged, 'engine'), 'incomplete');
+        if (incomplete && typeof incomplete === 'object') incomplete.timeBudgetMs = scanBudget;
         return merged;
       }
       const left = budget === null ? null : budget - (clock() - started);
@@ -30807,7 +30983,10 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         // that ran out lists those it did not start: its scan is asked to
         // start none (__budgetSpent), which only works out its selection.
         const dryOptions = withScanBudget(
-          carryBudgetSpent(engineOptions, Object.assign({}, engineOptions, { profile: unique[i] }))
+          carryBudgetSpent(
+            engineOptions,
+            Object.assign(Object.create(null), engineOptions, { profile: unique[i] })
+          )
         );
         if (!spentOnArrival) Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
         // Its warning names the profile, not a frame.
@@ -30816,13 +30995,13 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
           configurable: true
         });
         const skippedOf = (dry) => {
-          const skipped = {};
+          const skipped = Object.create(null);
           Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
-          const applied = dry && dry.engine ? dry.engine.profile : undefined;
+          const applied = ownField(ownField(dry, 'engine'), 'profile');
           const ids =
             typeof applied === 'string' &&
             lowerAscii(applied) === lowerAscii(unique[i]) &&
-            Array.isArray(dry.notRun)
+            Array.isArray(ownField(dry, 'notRun'))
               ? dry.notRun.filter((n) => n && n.ruleId).map((n) => n.ruleId)
               : [];
           Object.defineProperty(skipped, '__rulesNotRun', { value: ids });
@@ -30837,7 +31016,7 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
           carryBudgetSpent(
             engineOptions,
             Object.assign(
-              {},
+              Object.create(null),
               engineOptions,
               { profile: unique[i] },
               left !== null && i > 0 ? { timeBudgetMs: left } : {}
@@ -30859,13 +31038,12 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   return withOwnVerdicts(run(engineOptions), allowFail);
 });
 const capOccurrences = (function capOccurrences(result, engineOptions) {
-  const output =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.output : undefined;
-  const max = output && typeof output === 'object' ? output.maxOccurrencesPerRule : undefined;
+  const output = ownField(engineOptions, 'output');
+  const max = ownField(output, 'maxOccurrencesPerRule');
   if (typeof max !== 'number' || !Number.isInteger(max) || max < 1) return result;
   if (!result || typeof result !== 'object' || !Array.isArray(result.checksResults)) return result;
   const tierOf = (check, o) => {
-    const own = o && typeof o === 'object' ? o.occurrenceOutcome || o.outcome : undefined;
+    const own = ownField(o, 'occurrenceOutcome') || ownField(o, 'outcome');
     if (own === 'fail' || own === 'cantTell' || own === 'pass') return own;
     return check.outcome === 'fail' || check.outcome === 'cantTell' || check.outcome === 'pass'
       ? check.outcome
@@ -30874,7 +31052,7 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
   const rankOf = (check, o) => {
     const tier = tierOf(check, o);
     if (tier === 'fail') return 0;
-    if (tier === 'cantTell') return o && o.lean && o.lean.toward === 'fail' ? 1 : 2;
+    if (tier === 'cantTell') return ownField(ownField(o, 'lean'), 'toward') === 'fail' ? 1 : 2;
     return 3;
   };
   const keptByRule = new Map();
@@ -30901,16 +31079,14 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
     keptByRule.set(check.ruleId, { kept, total: list.length });
     // The undecided ones that lean fail, which a lean-fail gate counts, are
     // counted apart from the other undecided ones.
-    return Object.assign(
-      {},
-      check,
-      {
-        occurrences: kept.map((i) => list[i]),
-        occurrencesOmitted: omitted,
-        occurrencesOmittedByOutcome: byOutcome
-      },
-      leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {}
-    );
+    // Spread, so a read-only value on Object.prototype refuses no key.
+    return {
+      ...check,
+      occurrences: kept.map((i) => list[i]),
+      occurrencesOmitted: omitted,
+      occurrencesOmittedByOutcome: byOutcome,
+      ...(leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {})
+    };
   });
   if (!omittedTotal) return result;
   // A rollup's record of what it made of each finding follows the findings
@@ -30926,31 +31102,27 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
           if (!cap || !Array.isArray(c.findingOutcomes) || c.findingOutcomes.length !== cap.total)
             return c;
           touched = true;
-          return Object.assign({}, c, {
-            findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i])
-          });
+          return { ...c, findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i]) };
         });
         if (!touched) return rollup;
-        return Object.assign({}, rollup, {
-          data: Object.assign({}, rollup.data, {
-            details: Object.assign({}, details, { contributors: next })
-          })
-        });
+        return { ...rollup, data: { ...rollup.data, details: { ...details, contributors: next } } };
       })
     : result.rulesResults;
-  const out = Object.assign({}, result, {
-    engine: Object.assign({}, result.engine, {
+  const out = {
+    ...result,
+    engine: {
+      ...result.engine,
       occurrenceCap: {
         maxOccurrencesPerRule: max,
         occurrencesOmitted: omittedTotal,
         rulesCapped: keptByRule.size
       }
-    }),
+    },
     checksResults,
     rulesResults
-  });
+  };
   // A mark the merge of several profiles reads stays with the result.
-  if (result.__profileNotApplied) {
+  if (ownField(result, '__profileNotApplied')) {
     try {
       Object.defineProperty(out, '__profileNotApplied', {
         value: result.__profileNotApplied,
@@ -30965,7 +31137,11 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
 const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
   // A result first: a page may add then to Object.prototype, which makes
   // any object look like a promise.
-  if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
+  if (
+    result &&
+    !Array.isArray(ownField(result, 'checksResults')) &&
+    typeof result.then === 'function'
+  ) {
     return result.then((r) => withOwnVerdicts(r, allowFail));
   }
   if (!result || !Array.isArray(result.checksResults)) return result;
@@ -30979,16 +31155,14 @@ const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
       const contributors =
         details && Array.isArray(details.contributors) ? details.contributors : [];
       const c = contributors.find((x) => x && x.testId === check.ruleId);
-      if (!c || !c.byReasonCode || !Array.isArray(c.findingOutcomes)) continue;
+      if (!c || !ownField(c, 'byReasonCode') || !Array.isArray(c.findingOutcomes)) continue;
       occurrences.forEach((o, i) => {
         if (c.findingOutcomes[i] === 'fail') fails[i] = true;
       });
     }
     if (!fails.some(Boolean)) continue;
     check.occurrences = occurrences.map((o, i) =>
-      fails[i] && o && typeof o === 'object'
-        ? Object.assign({}, o, { occurrenceOutcome: 'fail' })
-        : o
+      fails[i] && o && typeof o === 'object' ? { ...o, occurrenceOutcome: 'fail' } : o
     );
     check.outcome = 'fail';
     check.outcomeNormalized = 'fail';
@@ -30999,13 +31173,19 @@ const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
 const lowerAscii = (function lowerAscii(value) {
   return String(value).replace(/[A-Z]/g, (c) => c.toLowerCase());
 });
+const ownField = (function ownField(object, key) {
+  return object && typeof object === 'object' && Object.prototype.hasOwnProperty.call(object, key)
+    ? object[key]
+    : undefined;
+});
 const policyAllowsFail = (function policyAllowsFail(engineOptions) {
   try {
-    const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
-    for (const source of [eo.policy, eo.policyContract]) {
-      if (source && typeof source === 'object' && Array.isArray(source.allowedOutcomes)) {
-        return source.allowedOutcomes.includes('fail');
-      }
+    for (const source of [
+      ownField(engineOptions, 'policy'),
+      ownField(engineOptions, 'policyContract')
+    ]) {
+      const allowed = ownField(source, 'allowedOutcomes');
+      if (Array.isArray(allowed)) return allowed.includes('fail');
     }
   } catch {
     // unreadable options: the scan's own reading decides
@@ -31014,14 +31194,18 @@ const policyAllowsFail = (function policyAllowsFail(engineOptions) {
 });
 const capToPolicy = (function capToPolicy(check, allowFail) {
   if (allowFail || !check || check.outcome !== 'fail') return check;
-  check.policyOutcome = 'fail';
+  // Defined, so a read-only value on Object.prototype refuses it not.
+  Object.defineProperty(check, 'policyOutcome', {
+    value: 'fail',
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   check.outcome = 'cantTell';
   check.outcomeNormalized = 'cantTell';
   if (Array.isArray(check.occurrences)) {
     check.occurrences = check.occurrences.map((o) =>
-      o && typeof o === 'object' && o.occurrenceOutcome === 'fail'
-        ? Object.assign({}, o, { occurrenceOutcome: 'cantTell' })
-        : o
+      ownField(o, 'occurrenceOutcome') === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
     );
   }
   return check;
@@ -31058,30 +31242,30 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   };
   const unionList = (a, b) =>
     unionBy([a, b], (x) => (typeof x === 'string' ? x : JSON.stringify(x)));
+  const own = ownField;
+  const detailsOf = (o) => own(own(o, 'data'), 'details');
   const reasonCodeOf = (o) =>
-    o && o.data && o.data.details && typeof o.data.details.reasonCode === 'string'
-      ? o.data.details.reasonCode
-      : '';
+    typeof own(detailsOf(o), 'reasonCode') === 'string' ? own(detailsOf(o), 'reasonCode') : '';
   // An element's finding, as each profile's scan of the same page finds it:
   // where it is and why. Two findings of one rule on one element for the
   // same reason (two attributes it doesn't allow) differ by what else they
   // say, and else by their order, which each scan of the page shares.
   const baseKeyOf = (o) =>
     JSON.stringify([
-      (o && o.frameUrl) || '',
-      (o && o.selector) || '',
-      (o && o.structuralPath) || '',
+      own(o, 'frameUrl') || '',
+      own(o, 'selector') || '',
+      own(o, 'structuralPath') || '',
       reasonCodeOf(o),
-      (o && o.html) || '',
-      (o && o.summary) || '',
-      (o && o.data && o.data.details && JSON.stringify(o.data.details)) || ''
+      own(o, 'html') || '',
+      own(o, 'summary') || '',
+      (detailsOf(o) && JSON.stringify(detailsOf(o))) || ''
     ]);
   const normalizedOf = (o) => (o === 'notApplicable' ? 'inapplicable' : o);
 
   const ran = [];
   const notRun = [];
   for (const r of runs) {
-    const applied = r.result && r.result.engine ? r.result.engine.profile : undefined;
+    const applied = own(own(r.result, 'engine'), 'profile');
     const same =
       typeof applied === 'string' && lowerAscii(applied) === lowerAscii(String(r.profile));
     if (r.result && typeof r.result === 'object' && same) ran.push(r);
@@ -31089,7 +31273,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       // A name no profile has is unknown-profile, unless the scan marked it
       // as one a pack it skipped may have: a list with a typo beside a
       // skipped pack's profile names the typo as such.
-      const why = r.result && r.result.__profileNotApplied;
+      const why = own(r.result, '__profileNotApplied');
       notRun.push({
         profile: r.profile,
         reason:
@@ -31106,9 +31290,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   const first = (ran[0] || runs[0] || {}).result;
   if (!first || typeof first !== 'object') return first;
   if (!ran.length) {
-    return Object.assign({}, first, {
-      engine: Object.assign({}, first.engine, { profiles: [], profilesNotRun: notRun })
-    });
+    return { ...first, engine: { ...first.engine, profiles: [], profilesNotRun: notRun } };
   }
 
   // What a profile's rollups make of each finding of a check: by reason code
@@ -31117,7 +31299,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   // profile names the check.
   function verdictsByRollups(result, check) {
     const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
-    const tier = (o) => (o && o.occurrenceOutcome) || check.outcome;
+    const tier = (o) => own(o, 'occurrenceOutcome') || check.outcome;
     let seen = false;
     const out = occurrences.map(() => []);
     for (const rollup of Array.isArray(result.rulesResults) ? result.rulesResults : []) {
@@ -31128,7 +31310,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       if (!c) continue;
       seen = true;
       occurrences.forEach((o, i) => {
-        if (c.byReasonCode && Array.isArray(c.findingOutcomes)) {
+        if (own(c, 'byReasonCode') && Array.isArray(c.findingOutcomes)) {
           out[i].push(c.findingOutcomes[i] || 'notApplicable');
         } else out[i].push(tier(o));
       });
@@ -31142,7 +31324,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   // The WCAG version the result reports, the highest of the profiles'.
   const WCAG_ORDER = ['2.0', '2.1', '2.2'];
   let reportedWcag;
-  const targetingRuns = ran.filter((r) => r.result.engine && r.result.engine.wcagLevel);
+  const targetingRuns = ran.filter((r) => own(r.result.engine, 'wcagLevel'));
   for (const r of targetingRuns.length ? targetingRuns : ran) {
     const v = r.result.engine && r.result.engine.wcagVersion;
     if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
@@ -31155,7 +31337,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       if (!check || !check.ruleId) continue;
       let merged = checks.get(check.ruleId);
       if (!merged) {
-        merged = Object.assign({}, check, {
+        // Worked on with no prototype, and handed back plain below.
+        merged = Object.assign(Object.create(null), check, {
           verdicts: {},
           occurrences: [],
           ownOutcomes: [],
@@ -31172,7 +31355,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       // The severity this profile gives the rule (a profile's own, or the
       // rule's), and the rule's own.
       merged.severities[r.profile] = check.severity;
-      if (check.ruleSeverity && !merged.ownSeverity) merged.ownSeverity = check.ruleSeverity;
+      if (own(check, 'ruleSeverity') && !merged.ownSeverity)
+        merged.ownSeverity = check.ruleSeverity;
       const verdicts = isTier(check.outcome) ? verdictsByRollups(r.result, check) : [];
       const byKey = occurrenceMaps.get(check.ruleId);
       const seenHere = new Map(); // base key -> how many so far in this scan
@@ -31184,7 +31368,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         const ofReported = !!r.result.engine && r.result.engine.wcagVersion === reportedWcag;
         let m = byKey.get(key);
         if (!m) {
-          m = Object.assign({}, o, { verdicts: {} });
+          m = Object.assign(Object.create(null), o, { verdicts: {} });
           byKey.set(key, m);
           merged.occurrences.push(m);
           if (ofReported) textOfReported.add(m);
@@ -31195,7 +31379,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
           // order the profiles were listed in.
           const replace = ofReported && !textOfReported.has(m);
           for (const field of ['uncertainty', 'lean', 'howToCheck', 'hint']) {
-            if (o[field] === undefined) continue;
+            if (own(o, field) === undefined) continue;
             if (m[field] === undefined || replace) m[field] = o[field];
           }
           if (ofReported) textOfReported.add(m);
@@ -31206,21 +31390,20 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         // What each profile's scan says of the rule, all of it: the
         // rollups it feeds and the requirements it maps to, whichever
         // profile was listed first.
-        if (Array.isArray(check.rollupIds)) {
+        if (Array.isArray(own(check, 'rollupIds'))) {
           merged.rollupIds = unionList(merged.rollupIds, check.rollupIds);
         }
-        const mappings =
-          check.meta && Array.isArray(check.meta.normativeMappings)
-            ? check.meta.normativeMappings
-            : null;
+        const mappings = Array.isArray(own(own(check, 'meta'), 'normativeMappings'))
+          ? check.meta.normativeMappings
+          : null;
         if (mappings) {
-          const had =
-            merged.meta && Array.isArray(merged.meta.normativeMappings)
-              ? merged.meta.normativeMappings
-              : [];
-          merged.meta = Object.assign({}, merged.meta, {
+          const had = Array.isArray(own(merged.meta, 'normativeMappings'))
+            ? merged.meta.normativeMappings
+            : [];
+          merged.meta = {
+            ...merged.meta,
             normativeMappings: unionBy([had, mappings], (x) => JSON.stringify(x))
-          });
+          };
         }
       }
       // A check whose findings the profile counts nowhere keeps the outcome
@@ -31251,7 +31434,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     // own stays as ruleSeverity where that differs.
     const severities = merged.severities;
     delete merged.severities;
-    const own = merged.ownSeverity || merged.ruleSeverity || merged.severity;
+    const ruleOwn = merged.ownSeverity || merged.ruleSeverity || merged.severity;
     delete merged.ownSeverity;
     const judging = Object.keys(severities).filter((p) => isTier(merged.verdicts[p]));
     const severity = highestSeverity(
@@ -31259,7 +31442,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     );
     if (severity) {
       merged.severity = severity;
-      if (own && own !== severity) merged.ruleSeverity = own;
+      if (ruleOwn && ruleOwn !== severity) merged.ruleSeverity = ruleOwn;
       else delete merged.ruleSeverity;
     }
     const outcome = worst(Object.values(merged.verdicts)) || merged.outcome;
@@ -31267,11 +31450,9 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       const tier = worst(Object.values(m.verdicts));
       if (isTier(tier) && (m.occurrenceOutcome || tier !== outcome)) m.occurrenceOutcome = tier;
     }
+    merged.occurrences = merged.occurrences.map((m) => ({ ...m }));
     checksResults.push(
-      capToPolicy(
-        Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) }),
-        allowFail
-      )
+      capToPolicy({ ...merged, outcome, outcomeNormalized: normalizedOf(outcome) }, allowFail)
     );
   }
 
@@ -31283,45 +31464,45 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       if (!rollup || !rollup.ruleId) continue;
       outcomes[rollup.ruleId] = rollup.outcome;
       const had = rollups.get(rollup.ruleId);
-      if (!had) rollups.set(rollup.ruleId, Object.assign({}, rollup, { profiles: [r.profile] }));
+      if (!had) rollups.set(rollup.ruleId, { ...rollup, profiles: [r.profile] });
       else {
         had.profiles.push(r.profile);
         if (rank(rollup.outcome) > rank(had.outcome)) {
-          rollups.set(rollup.ruleId, Object.assign({}, rollup, { profiles: had.profiles }));
+          rollups.set(rollup.ruleId, { ...rollup, profiles: had.profiles });
         }
       }
     }
-    const standards = Array.isArray(r.result.standards) ? r.result.standards : [];
-    const engine = r.result.engine || {};
+    const standards = Array.isArray(own(r.result, 'standards')) ? r.result.standards : [];
+    const engine = own(r.result, 'engine') || {};
     // wcagLevel only for a profile that targets WCAG: one that doesn't
     // (WAI-ARIA's) carries core's default version, which judges nothing.
-    profiles[r.profile] = Object.assign(
-      { wcagVersion: engine.wcagVersion },
-      engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
-      engine.law ? { law: engine.law } : {},
-      standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
-      { rulesResults: outcomes },
+    profiles[r.profile] = {
+      wcagVersion: own(engine, 'wcagVersion'),
+      ...(own(engine, 'wcagLevel') ? { wcagLevel: engine.wcagLevel } : {}),
+      ...(own(engine, 'law') ? { law: engine.law } : {}),
+      ...(standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {}),
+      rulesResults: outcomes,
       // Each profile's own timings, where they were asked for: the result's
       // perfStats are the first profile's.
-      r.result.perfStats ? { perfStats: r.result.perfStats } : {}
-    );
+      ...(own(r.result, 'perfStats') ? { perfStats: r.result.perfStats } : {})
+    };
   }
 
   const results = ran.map((r) => r.result);
   const packs = unionBy(
-    results.map((x) => x.engine && x.engine.packs),
+    results.map((x) => own(own(x, 'engine'), 'packs')),
     (x) => x
   ).sort();
   const skippedPacks = unionBy(
-    runs.map((r) => r.result && r.result.skippedPacks),
+    runs.map((r) => own(r.result, 'skippedPacks')),
     (x) => (x && x.name) || JSON.stringify(x)
   );
   const standards = unionBy(
-    results.map((x) => x.standards),
+    results.map((x) => own(x, 'standards')),
     (x) => (x && (x.key || x.standard)) || JSON.stringify(x)
   );
   const overridden = unionBy(
-    results.map((x) => x.overriddenBuiltinIds),
+    results.map((x) => own(x, 'overriddenBuiltinIds')),
     (x) => x
   ).sort();
 
@@ -31336,7 +31517,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         out = v;
     return out;
   };
-  const engines = results.map((x) => x.engine || {});
+  // Each scan's engine, read as its own keys only.
+  const engines = results.map((x) => Object.assign(Object.create(null), own(x, 'engine')));
   // A profile with no WCAG target of its own (a standard that maps no WCAG
   // level, as WAI-ARIA's) carries core's default version: the version is
   // that of the profiles that target WCAG, where any does.
@@ -31358,7 +31540,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   // own is in profiles[name].law.
   const laws = engines.map((e) => (e.law && typeof e.law.id === 'string' ? e.law.id : null));
   const oneLaw = laws.length && laws[0] !== null && laws.every((id) => id === laws[0]);
-  const engine = Object.assign({}, first.engine, {
+  const engine = {
+    ...first.engine,
     ...(wcagVersion ? { wcagVersion } : {}),
     ...(wcagLevel ? { wcagLevel } : {}),
     ...(mappings.length ? { mappings } : {}),
@@ -31366,7 +31549,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     profiles: ran.map((r) => r.profile),
     ...(notRun.length ? { profilesNotRun: notRun } : {}),
     ...(packs.length ? { packs } : {})
-  });
+  };
   if (!oneLaw) delete engine.law;
   // The rules a profile's scan did not start, and the profiles not started,
   // for the time budget: the merged scan is incomplete.
@@ -31374,10 +31557,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   const rulesNotRun = [];
   for (const r of runs) {
     if (ran.includes(r)) {
-      for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
-        if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+      for (const n of Array.isArray(own(r.result, 'notRun')) ? r.result.notRun : []) {
+        if (n && n.ruleId) rulesNotRun.push({ ...n, profile: r.profile });
       }
-    } else if (r.result && Array.isArray(r.result.__rulesNotRun)) {
+    } else if (Array.isArray(own(r.result, '__rulesNotRun'))) {
       for (const ruleId of r.result.__rulesNotRun) {
         rulesNotRun.push({ ruleId, reason: 'timeBudget', profile: r.profile });
       }
@@ -31386,30 +31569,33 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   const budgetProfiles = notRun.filter((n) => n.reason === 'timeBudget');
   const incomplete = engines.find((e) => e.incomplete);
   if (incomplete || budgetProfiles.length) {
-    engine.incomplete = Object.assign(
-      { reason: 'timeBudget' },
-      incomplete ? incomplete.incomplete : {},
-      { rulesNotRun: rulesNotRun.length },
-      budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {}
-    );
+    engine.incomplete = {
+      reason: 'timeBudget',
+      ...(incomplete ? incomplete.incomplete : {}),
+      rulesNotRun: rulesNotRun.length,
+      ...(budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {})
+    };
   } else delete engine.incomplete;
   void asked;
-  const out = Object.assign({}, first, {
+  // Its keys defined, so a read-only value on Object.prototype refuses none.
+  const out = {
+    ...first,
     engine,
     checksResults,
     rulesResults: [...rollups.values()],
-    profiles
-  });
-  if (standards.length) out.standards = standards;
-  if (overridden.length || Array.isArray(first.overriddenBuiltinIds))
-    out.overriddenBuiltinIds = overridden;
-  if (skippedPacks.length) out.skippedPacks = skippedPacks;
-  if (rulesNotRun.length) out.notRun = rulesNotRun;
-  else delete out.notRun;
+    profiles,
+    ...(standards.length ? { standards } : {}),
+    ...(overridden.length || Array.isArray(own(first, 'overriddenBuiltinIds'))
+      ? { overriddenBuiltinIds: overridden }
+      : {}),
+    ...(skippedPacks.length ? { skippedPacks } : {}),
+    ...(rulesNotRun.length ? { notRun: rulesNotRun } : {})
+  };
+  if (!rulesNotRun.length) delete out.notRun;
   // A custom rule skipped is one no profile ran: one profile's selection
   // can leave out a rule another runs.
   const skippedLists = ran.map((r) =>
-    Array.isArray(r.result.skippedCustomRules) ? r.result.skippedCustomRules : []
+    Array.isArray(own(r.result, 'skippedCustomRules')) ? r.result.skippedCustomRules : []
   );
   if (skippedLists.length && skippedLists.some((list) => list.length)) {
     const idOf = (x) => (x && typeof x.id === 'string' ? x.id : JSON.stringify(x));
@@ -31737,15 +31923,8 @@ function getTestsForRunOnly(runOnly, engineOptions) {
  */
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   assertPageBuiltins();
-  const releaseObjectPrototype = holdObjectPrototypeValues();
-  try {
-    return runDomRulesHeld(pageUrl, contextSelector, engineOptions, runOnly);
-  } finally {
-    releaseObjectPrototype();
-  }
-}
-
-function runDomRulesHeld(pageUrl, contextSelector, engineOptions, runOnly) {
+  // The options' own keys only, with no prototype (ownOptions).
+  engineOptions = ownOptions(engineOptions);
   // Under strictOptions the options are checked before the selection is
   // worked out from them, as they are said to be.
   if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
@@ -54500,60 +54679,47 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 });
   assertPageBuiltinsFirst();
-  // The scan reads only what its objects hold (see holdObjectPrototypeValues).
-  const holdObjectPrototypeValuesFirst = (function holdObjectPrototypeValues() {
-  const proto = Object.prototype;
-  const own = Object.prototype.hasOwnProperty;
-  const held = [];
-  const release = () => {
-    for (let i = held.length - 1; i >= 0; i--) {
-      const h = held[i];
-      try {
-        if (h.cleared) proto[h.name] = h.descriptor.value;
-        else Object.defineProperty(proto, h.name, h.descriptor);
-      } catch {}
-    }
-    held.length = 0;
+  // The options' own keys only, with no prototype, before anything reads
+  // them (ownOptions).
+  const ownOptionsFirst = (function ownOptions(options) {
+  if (!options || typeof options !== 'object' || Array.isArray(options)) return options;
+  // A Set, a Map or a Date is no table of options: kept, for the checks
+  // that say so.
+  if (Object.prototype.toString.call(options) !== '[object Object]') return options;
+  const isPlain = (v) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+    if (Object.prototype.toString.call(v) !== '[object Object]') return false;
+    const proto = Object.getPrototypeOf(v);
+    // Another realm's Object.prototype too (a frame's, a vm context's).
+    return proto === null || Object.getPrototypeOf(proto) === null;
   };
-  const names = Object.getOwnPropertyNames(proto);
-  const refused = [];
-  for (let i = 0; i < names.length; i++) {
-    const name = names[i];
-    if (name === '__proto__') continue;
-    const d = Object.getOwnPropertyDescriptor(proto, name);
-    if (!d) continue;
-    // Own reads: a descriptor is a plain object too.
-    if (own.call(d, 'value') && typeof d.value === 'function') continue;
-    if (d.configurable) {
-      delete proto[name];
-      held[held.length] = { name, descriptor: d, cleared: false };
-    } else if (own.call(d, 'writable') && d.writable) {
-      proto[name] = undefined;
-      held[held.length] = { name, descriptor: d, cleared: true };
-    } else refused[refused.length] = 'Object.prototype.' + name;
+  const copied = new Map();
+  const copy = (from, depth) => {
+    if (copied.has(from)) return copied.get(from);
+    const to = Object.create(null);
+    copied.set(from, to);
+    const keys = Object.keys(from);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const v = from[key];
+      to[key] =
+        depth < 8 && isPlain(v) && !(depth === 0 && (key === 'probes' || key === 'messages'))
+          ? copy(v, depth + 1)
+          : v;
+    }
+    return to;
+  };
+  const out = copy(options, 0);
+  const flags = ['__budgetSpent', '__budgetSpentAt', '__scanTimeBudgetMs'];
+  for (let i = 0; i < flags.length; i++) {
+    const d = Object.getOwnPropertyDescriptor(options, flags[i]);
+    if (d && !d.enumerable && Object.prototype.hasOwnProperty.call(d, 'value')) {
+      Object.defineProperty(out, flags[i], { value: d.value, configurable: true });
+    }
   }
-  if (refused.length) {
-    release();
-    let list = '';
-    for (let i = 0; i < refused.length; i++) list += (i ? ', ' : '') + refused[i];
-    const err = new Error(
-      'The page has changed JavaScript built-ins the engine relies on (' +
-        list +
-        "), so a scan of it can't be trusted. Scan it before its scripts change them."
-    );
-    err.code = 'PAGE_BUILTINS_BROKEN';
-    err.broken = refused;
-    throw err;
-  }
-  return release;
+  return out;
 });
-  const releaseObjectPrototype = holdObjectPrototypeValuesFirst();
-  try {
-    return runHeld();
-  } finally {
-    releaseObjectPrototype();
-  }
-  function runHeld() {
+  engineOptions = ownOptionsFirst(engineOptions);
   const ENGINE_TAG = "a11ycore";
   const SCHEMA_VERSION = "1.0.0";
   const ENGINE_VERSION = "1.17.0";
@@ -136879,11 +137045,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       impls[id] = typeof impl === 'string' ? builtIn.impls[impl] : impl;
     }
     const i18n = {};
-    for (const locale of Object.keys(builtIn.i18n)) i18n[locale] = Object.assign({}, builtIn.i18n[locale]);
+    for (const locale of Object.keys(builtIn.i18n)) i18n[locale] = { ...builtIn.i18n[locale] };
     for (const locale of Object.keys(entry.i18n || {})) {
-      i18n[locale] = Object.assign(i18n[locale] || {}, entry.i18n[locale]);
+      i18n[locale] = { ...i18n[locale], ...entry.i18n[locale] };
     }
-    return Object.assign({}, entry, { impls, i18n });
+    return { ...entry, impls, i18n };
   }
   // In a page a pack is named (name@version): beside names, an item of the
   // list that is no name is left out, with a warning, and the named packs
@@ -136906,7 +137072,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           ' not a pack name (name@version) and left out; in a page, packs are named as packScript registered them.'
       );
     } catch {}
-    engineOptions = Object.assign({}, engineOptions, {
+    engineOptions = Object.assign(Object.create(null), engineOptions, {
       packs: engineOptions.packs.filter((p) => typeof p === 'string')
     });
   }
@@ -136931,9 +137097,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const registry = packRegistry && typeof packRegistry === 'object' ? packRegistry : null;
     const key = packNames.join(',');
     // Its own key only: "__proto__" or "toString" names no registered set.
+    // Read as its own keys only, with no prototype: a page's value on
+    // Object.prototype (overrides, impls) is never read as part of a set of
+    // packs (round 12, R12F-1 to R12F-6).
     const entry =
       registry && Object.prototype.hasOwnProperty.call(registry, key) && registry[key]
-        ? registry[key]
+        ? Object.assign(Object.create(null), registry[key])
         : null;
     // A name given twice is one pack named twice, as it is in Node.
     const twice = packNames.find((name, i) => i > 0 && packNames[i - 1] === name);
@@ -136967,7 +137136,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  const CATALOG = PACK_ENTRY ? packCatalog(BUILT_IN_CATALOG, PACK_ENTRY) : BUILT_IN_CATALOG;
+  // Its own keys only (createRuntime).
+  const CATALOG = Object.assign(
+    Object.create(null),
+    PACK_ENTRY ? packCatalog(BUILT_IN_CATALOG, PACK_ENTRY) : BUILT_IN_CATALOG
+  );
 
   // Rule catalog (data only)
   const CHECK_DEFS = CATALOG.checkDefs;
@@ -136998,6 +137171,15 @@ const I18N_LEFT_OUT = CATALOG.i18nLeftOut;
 // Lets an absent dictionary be told apart from a language that does not exist.
 const KNOWN_LOCALES = CATALOG.knownLocales;
 
+// A key of an object's own, never one a page's script put on
+// Object.prototype (round 12, R12F-1 to R12F-6): the options a result
+// echoes, a rule's result and its occurrences are plain objects.
+function ownValue(object, key) {
+  return object && typeof object === 'object' && Object.prototype.hasOwnProperty.call(object, key)
+    ? object[key]
+    : undefined;
+}
+
 function normalizeLocale(locale) {
   if (typeof locale !== 'string') return 'en';
   const s = locale.trim();
@@ -137007,7 +137189,7 @@ function normalizeLocale(locale) {
 // Dictionaries supplied by the caller. This function is serialized into the
 // page, so a table that was not compiled in can only arrive as data.
 function getSuppliedMessages(engineOptions) {
-  const supplied = engineOptions && engineOptions.messages;
+  const supplied = ownValue(engineOptions, 'messages');
   return (supplied && typeof supplied === 'object' && !Array.isArray(supplied)) ? supplied : null;
 }
 
@@ -137068,7 +137250,7 @@ function matchLocale(requested, engineOptions) {
 }
 
 function getLocaleDict(engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const matched = matchLocale(requested, engineOptions);
 
   return matched
@@ -137105,7 +137287,7 @@ function messageIn(locale, key, engineOptions) {
 // keeps the rest of the German, the caller's de and then the built-in de,
 // before English (round 9, A9-4). An exact hit returns before any allocation.
 function localeMessage(key, engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const direct = messageIn(requested, key, engineOptions);
   if (direct) return direct;
 
@@ -137124,7 +137306,7 @@ function isKnownLocale(locale) {
 // is visible in the result rather than only in the wording. Shares matchLocale
 // with getLocaleDict, so the reported locale and the strings cannot disagree.
 function resolveLocale(engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const matched = matchLocale(requested, engineOptions);
 
   if (!matched) {
@@ -137288,13 +137470,15 @@ function t(key, fallback, params, engineOptions) {
   // Decimals read as the message's language writes them ("1,36:1" in
   // French): the locale asked for where its string was found, English
   // otherwise. The params themselves keep plain numbers.
-  const numberLocale = v ? normalizeLocale(engineOptions && engineOptions.locale) : 'en';
+  const numberLocale = v ? normalizeLocale(ownValue(engineOptions, 'locale')) : 'en';
   return applyI18nParams(base, localizeNumberParams(params, numberLocale));
 }
 
 function resolveRuleDefI18n(def, engineOptions) {
   if (!def || typeof def !== 'object') return def;
-  const out = { ...def };
+  // With no prototype: a field a rule doesn't declare (variant, settings,
+  // margin) is never read from Object.prototype.
+  const out = Object.assign(Object.create(null), def);
   if (out.i18n && typeof out.i18n === 'object') {
     out.title = t(out.i18n.titleKey, out.title, null, engineOptions);
     out.description = t(out.i18n.descriptionKey, out.description, null, engineOptions);
@@ -137337,6 +137521,10 @@ const POLICY_CONTRACTS = {
 
 // This is the single source of truth, inlined from src/policy/resolvePolicy.js
 const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions, strict) {
+  // The caller's own keys only, never ones a page's script put on
+  // Object.prototype (round 12, R12F-1 to R12F-6).
+  const own = (o, k) =>
+    o && typeof o === 'object' && Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined;
   function normalizePolicyContract(POLICY_CONTRACTS, contract, fallbackId) {
     const fallback = POLICY_CONTRACTS[fallbackId] || POLICY_CONTRACTS.a11y;
     if (typeof contract === 'string') {
@@ -137379,27 +137567,27 @@ const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions, s
       // no gate could fail.
       const allowedOutcomes =
         knownValues(
-          contract.allowedOutcomes,
+          own(contract, 'allowedOutcomes'),
           ['fail', 'pass', 'cantTell', 'notApplicable'],
           'policyContract.allowedOutcomes'
         ) || fallback.allowedOutcomes.slice();
 
       const allowedConfidence =
         knownValues(
-          contract.allowedConfidence,
+          own(contract, 'allowedConfidence'),
           ['high', 'medium', 'low'],
           'policyContract.allowedConfidence'
         ) || fallback.allowedConfidence.slice();
 
       return {
         id:
-          typeof contract.id === 'string' && contract.id.trim()
+          typeof own(contract, 'id') === 'string' && contract.id.trim()
             ? contract.id.trim()
             : fallback.id || fallbackId || 'custom',
         allowedOutcomes,
         allowedConfidence,
         coerceManualFailToCantTell:
-          typeof contract.coerceManualFailToCantTell === 'boolean'
+          typeof own(contract, 'coerceManualFailToCantTell') === 'boolean'
             ? contract.coerceManualFailToCantTell
             : !!fallback.coerceManualFailToCantTell
       };
@@ -137436,26 +137624,31 @@ const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions, s
   }
 
   function normalizePolicyOverrides(policy) {
-    const p = policy && typeof policy === 'object' ? policy : {};
+    const p = policy && typeof policy === 'object' ? policy : null;
     return {
       allowedOutcomes: knownValues(
-        p.allowedOutcomes,
+        own(p, 'allowedOutcomes'),
         ['fail', 'pass', 'cantTell', 'notApplicable'],
         'policy.allowedOutcomes'
       ),
       allowedConfidence: knownValues(
-        p.allowedConfidence,
+        own(p, 'allowedConfidence'),
         ['high', 'medium', 'low'],
         'policy.allowedConfidence'
       ),
       coerceManualFailToCantTell:
-        typeof p.coerceManualFailToCantTell === 'boolean' ? p.coerceManualFailToCantTell : null
+        typeof own(p, 'coerceManualFailToCantTell') === 'boolean'
+          ? p.coerceManualFailToCantTell
+          : null
     };
   }
 
-  const opts = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
-  const contract = normalizePolicyContract(POLICY_CONTRACTS, opts.policyContract, 'a11y');
-  const ov = normalizePolicyOverrides(opts.policy);
+  const contract = normalizePolicyContract(
+    POLICY_CONTRACTS,
+    own(engineOptions, 'policyContract'),
+    'a11y'
+  );
+  const ov = normalizePolicyOverrides(own(engineOptions, 'policy'));
 
   return {
     contractId: contract.id,
@@ -137559,7 +137752,11 @@ function hasAnyRunOnlyKeys(runOnly) {
  * { includeMode, tags, excludeTags, includeRuleIds, excludeRuleIds, includeTestIds, excludeTestIds }
  */
 function normalizeRunOnly(runOnly) {
-  const out = {
+  // With no prototype, and read from a copy with none (ownOptions): no
+  // value on Object.prototype is read as part of a selection (round 12,
+  // R12F-1 to R12F-6).
+  runOnly = ownOptions(runOnly);
+  const out = Object.assign(Object.create(null), {
     includeMode: 'and',
     tags: [],
     excludeTags: [],
@@ -137573,7 +137770,7 @@ function normalizeRunOnly(runOnly) {
     standardRuleIds: [],
     wcag: null,
     bestPractices: false
-  };
+  });
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   // A WCAG conformance target, { version, level }, checked by
@@ -138330,8 +138527,8 @@ function enforceKnownProfile(selection, eo) {
 // when the option is not a filter.
 function includeExcludeOf(v) {
   return Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-    ? { include: typeof v === 'string' ? [v] : [...v] }
-    : (v && typeof v === 'object' ? v : null);
+    ? Object.assign(Object.create(null), { include: typeof v === 'string' ? [v] : [...v] })
+    : (v && typeof v === 'object' ? ownOptions(v) : null);
 }
 
 // runOnly with a filter wins over engineOptions' rules, tags and tests
@@ -138384,11 +138581,60 @@ function warnEmptyRunOnly(runOnly, eo) {
         named.push('runOnly.' + key);
       }
     }
+    // { type } with no values names no rule or tag, and {} names nothing
+    // (round 12, R12F-10).
+    const keys = Object.keys(runOnly);
+    if (!keys.length) {
+      emptyRunOnlyWarning('runOnly is an empty object', eo);
+      return;
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(runOnly, 'type') &&
+      !Object.prototype.hasOwnProperty.call(runOnly, 'values') &&
+      keys.every((k) => k === 'type' || k === 'includeMode')
+    ) {
+      emptyRunOnlyWarning('runOnly.type has no values', eo);
+      return;
+    }
   }
   if (!named.length) return;
-  const message =
-    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists') +
-    ': it selects no rule, so every rule runs';
+  emptyRunOnlyWarning(
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists'),
+    eo
+  );
+}
+
+// An include list of engineOptions.rules, .tags or .tests given empty
+// ([], '', { include: [] }) selects nothing, and every rule runs, as with no
+// filter: said, and under strictOptions refused, as for runOnly (round 12,
+// R12F-10). Read only where runOnly has no filter, which wins over them.
+function warnEmptyOptionFilters(eo) {
+  const empty = (v) =>
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'string' && !v.trim()) ||
+    (Object.prototype.toString.call(v) === '[object Set]' && v.size === 0);
+  const named = [];
+  for (const name of ['rules', 'tags', 'tests']) {
+    const v = Object.prototype.hasOwnProperty.call(eo, name) ? eo[name] : undefined;
+    if (empty(v)) named.push('engineOptions.' + name);
+    else if (
+      v &&
+      typeof v === 'object' &&
+      Object.prototype.hasOwnProperty.call(v, 'include') &&
+      empty(v.include)
+    ) {
+      named.push('engineOptions.' + name + '.include');
+    }
+  }
+  if (!named.length) return;
+  emptyRunOnlyWarning(
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists'),
+    eo
+  );
+}
+
+function emptyRunOnlyWarning(what, eo) {
+  const message = what + ': it selects no rule, so every rule runs';
   if (strictOf(eo)) {
     const err = new Error(message + '. (strictOptions)');
     err.code = 'INVALID_ENGINE_OPTIONS';
@@ -138400,7 +138646,9 @@ function warnEmptyRunOnly(runOnly, eo) {
 }
 
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
-  const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+  // The options' and runOnly's own keys only (ownOptions).
+  const eo = (engineOptions && typeof engineOptions === 'object') ? ownOptions(engineOptions) : Object.create(null);
+  runOnly = ownOptions(runOnly);
   // A number or a boolean, and an object none of whose keys the engine
   // reads ({ includeRuleId: [...] }), used to run every rule, as no runOnly
   // does: a typo that looks like a full scan.
@@ -138445,7 +138693,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // excludeRuleIds...) still apply.
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
     const kind = String(runOnly.type).trim().replace(/[A-Z]/g, asciiLowerChar);
-    const rest = { ...runOnly };
+    const rest = Object.assign(Object.create(null), runOnly);
     delete rest.type;
     delete rest.values;
     // A Set of names is read as the list it holds; passed on as it is, the
@@ -138454,11 +138702,11 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       runOnly.values && typeof runOnly.values === 'object' && Object.prototype.toString.call(runOnly.values) === '[object Set]'
         ? [...runOnly.values]
         : runOnly.values;
-    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
-    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
+    if (kind === 'rule' || kind === 'rules') runOnly = Object.assign(rest, { includeRuleIds: values });
+    else if (kind === 'tag' || kind === 'tags') runOnly = Object.assign(rest, { tags: values });
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + optionValueText(runOnly.type) + '.');
   }
-  runOnly = expandRunOnlyShorthand(runOnly, eo);
+  runOnly = ownOptions(expandRunOnlyShorthand(runOnly, eo));
   // includeMode is 'and' or 'or'; anything else was read as 'and' without a
   // word, which can select nothing.
   for (const [field, value] of [
@@ -138510,6 +138758,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     return applyOptInRules(enforceKnownProfile(applyProfile(selection, requestedProfile), eo), eo.optInRules);
   }
 
+  warnEmptyOptionFilters(eo);
   const mode = normalizeIncludeMode(eo.includeMode);
 
   // { include, exclude }; a bare list or string is the include list, as
@@ -138528,7 +138777,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const includeTestIds = parseCommaList(tests && tests.include, { lower: false });
   const excludeTestIds = parseCommaList(tests && tests.exclude, { lower: false });
 
-  const out = {
+  const out = Object.assign(Object.create(null), {
     includeMode: mode,
     tags: includeTags,
     excludeTags,
@@ -138536,7 +138785,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeRuleIds,
     includeTestIds,
     excludeTestIds
-  };
+  });
   canonicalizeRuleIds(out, eo);
   checkSelectionNames(
     [
@@ -138816,7 +139065,17 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
     throw new Error('normalizeRuleResult requires a resolved policy');
   }
   const pol = policy;
-  const out = raw && typeof raw === 'object' ? { ...raw } : {};
+  // The rule's result and its occurrences are worked on as copies with no
+  // prototype, so a field the rule left out is never read from, nor refused
+  // by, Object.prototype (round 12, R12F-1 to R12F-6); they are handed back
+  // as plain objects.
+  const bare = (x) => Object.assign(Object.create(null), x);
+  const out = bare(raw && typeof raw === 'object' ? raw : null);
+  if (Array.isArray(out.occurrences)) {
+    out.occurrences = out.occurrences.map((o) =>
+      o && typeof o === 'object' && !Array.isArray(o) ? bare(o) : o
+    );
+  }
   out.ruleId = def.ruleId;
   
   // NOTE: title and description are included here (already localized)
@@ -138853,7 +139112,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
       const key = typeof given === 'string' ? given.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
       const tier = Object.prototype.hasOwnProperty.call(TIERS, key) ? TIERS[key] : null;
       if (tier === given) return o;
-      const next = { ...o };
+      const next = bare(o);
       if (tier) next.occurrenceOutcome = tier;
       else {
         delete next.occurrenceOutcome;
@@ -139018,7 +139277,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
       out.policyOutcome = 'fail';
       out.outcome = 'cantTell';
       if (Array.isArray(out.occurrences)) out.occurrences = out.occurrences.map((o) =>
-        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? Object.assign(bare(o), { occurrenceOutcome: 'cantTell' }) : o
       );
     }
   }
@@ -139026,12 +139285,11 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
   out.outcomeNormalized =
     out.outcome === 'notApplicable' ? 'inapplicable' : out.outcome;
     
-    const output = (out.engineOptions && out.engineOptions.output && typeof out.engineOptions.output === 'object')
-    ? out.engineOptions.output
-    : null;
+    const echoedOutput = ownValue(out.engineOptions, 'output');
+    const output = (echoedOutput && typeof echoedOutput === 'object') ? echoedOutput : null;
 
-  const includeSelector = !(output && switchOf(output.includeSelector) === false);
-  const includeHtml = !(output && switchOf(output.includeHtml) === false);
+  const includeSelector = !(output && switchOf(ownValue(output, 'includeSelector')) === false);
+  const includeHtml = !(output && switchOf(ownValue(output, 'includeHtml')) === false);
 
   const needsDetails = (out.outcome === 'fail' || out.outcome === 'cantTell');
 
@@ -139043,7 +139301,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
     // would still count a failure.
     if (Array.isArray(out.occurrences)) {
       out.occurrences = out.occurrences.map((o) =>
-        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? Object.assign(bare(o), { occurrenceOutcome: 'cantTell' }) : o
       );
     }
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
@@ -139056,7 +139314,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
   }
   out.severity = out.severity || def.defaultSeverity;
 
-  let conf = raw && raw.confidence;
+  let conf = out.confidence;
   if (!pol.allowedConfidence.includes(conf)) conf = def.defaultConfidence;
   out.confidence = conf;
 
@@ -139109,7 +139367,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
   // Uncertainty codes outside the closed set, dropped and noted in error.
   const __invalidUncertaintyCodes = [];
   out.occurrences = occ.map((item) => {
-    const o = item && typeof item === 'object' ? { ...item } : {};
+    const o = bare(item && typeof item === 'object' ? item : null);
 
     // Engine-side finalization (only if rule reported a node)
     const node = o.__node || null;
@@ -139260,7 +139518,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
       o.i18n = null;
     }
 
-    return o;
+    return { ...o };
   });
 
   // Said beside the result, not in error: the rule completed. The result is
@@ -139285,7 +139543,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
   // neither replaces the other.
   if (out.error != null && typeof out.error !== 'string') out.error = String(out.error);
 
-  return out;
+  return { ...out };
 }
 
 // The standards a catalog entry names for these options, chosen exactly as for
@@ -151896,7 +152154,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     policyContract: {
       test: (v) => typeof v === 'string' || isPlain(v),
       expected: "a contract's name, or a contract object",
-      keys: Object.assign({ id: T.string }, policyFields)
+      keys: { id: T.string, ...policyFields }
     },
     policy: { test: isPlain, expected: 'a plain object', keys: policyFields },
     output: {
@@ -152090,10 +152348,77 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   }
 });
 const strictOf = (function strictOf(engineOptions) {
+  // The options' own, never one on Object.prototype (round 12, R12F-1 to
+  // R12F-6).
   const v =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : undefined;
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    Object.prototype.hasOwnProperty.call(engineOptions, 'strictOptions')
+      ? engineOptions.strictOptions
+      : undefined;
   if (v === true || v === 1) return true;
   return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
+});
+const ownOptions = (function ownOptions(options) {
+  if (!options || typeof options !== 'object' || Array.isArray(options)) return options;
+  // A Set, a Map or a Date is no table of options: kept, for the checks
+  // that say so.
+  if (Object.prototype.toString.call(options) !== '[object Object]') return options;
+  const isPlain = (v) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+    if (Object.prototype.toString.call(v) !== '[object Object]') return false;
+    const proto = Object.getPrototypeOf(v);
+    // Another realm's Object.prototype too (a frame's, a vm context's).
+    return proto === null || Object.getPrototypeOf(proto) === null;
+  };
+  const copied = new Map();
+  const copy = (from, depth) => {
+    if (copied.has(from)) return copied.get(from);
+    const to = Object.create(null);
+    copied.set(from, to);
+    const keys = Object.keys(from);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const v = from[key];
+      to[key] =
+        depth < 8 && isPlain(v) && !(depth === 0 && (key === 'probes' || key === 'messages'))
+          ? copy(v, depth + 1)
+          : v;
+    }
+    return to;
+  };
+  const out = copy(options, 0);
+  const flags = ['__budgetSpent', '__budgetSpentAt', '__scanTimeBudgetMs'];
+  for (let i = 0; i < flags.length; i++) {
+    const d = Object.getOwnPropertyDescriptor(options, flags[i]);
+    if (d && !d.enumerable && Object.prototype.hasOwnProperty.call(d, 'value')) {
+      Object.defineProperty(out, flags[i], { value: d.value, configurable: true });
+    }
+  }
+  return out;
+});
+const plainOptions = (function plainOptions(options) {
+  const copied = new Map();
+  const copy = (v, depth) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v) || Object.getPrototypeOf(v) !== null) {
+      return v;
+    }
+    if (copied.has(v)) return copied.get(v);
+    // Spread defines each key, so a read-only value on Object.prototype
+    // refuses none.
+    const out = { ...v };
+    copied.set(v, out);
+    if (depth < 8) {
+      const keys = Object.keys(out);
+      for (let i = 0; i < keys.length; i++) {
+        const x = out[keys[i]];
+        const c = copy(x, depth + 1);
+        if (c !== x) out[keys[i]] = c;
+      }
+    }
+    return out;
+  };
+  return copy(options, 0);
 });
 const switchOf = (function switchOf(v) {
   if (v === true || v === 1) return true;
@@ -156783,9 +157108,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      if (!w.__a11ycoreSharedCache) w.__a11ycoreSharedCache = {};
-      if (!w.__a11ycoreSharedCache.dom) w.__a11ycoreSharedCache.dom = {};
-      __domSharedCache = w.__a11ycoreSharedCache.dom;
+      // The window's own cache, with no prototype: a value a page's script
+      // put on Object.prototype is never read as one (round 12, R12F-1 to
+      // R12F-6).
+      const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      if (!ownKey(w, '__a11ycoreSharedCache')) w.__a11ycoreSharedCache = Object.create(null);
+      const shared = w.__a11ycoreSharedCache;
+      if (!ownKey(shared, 'dom')) shared.dom = Object.create(null);
+      __domSharedCache = shared.dom;
     }
   } catch {
     __domSharedCache = {};
@@ -162457,9 +162787,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      if (!w.__a11ycoreSharedCache) w.__a11ycoreSharedCache = {};
-      if (!w.__a11ycoreSharedCache.contrast) w.__a11ycoreSharedCache.contrast = {};
-      __contrastSharedCache = w.__a11ycoreSharedCache.contrast;
+      // Own keys only, as for the DOM helpers' cache above.
+      const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      if (!ownKey(w, '__a11ycoreSharedCache')) w.__a11ycoreSharedCache = Object.create(null);
+      const shared = w.__a11ycoreSharedCache;
+      if (!ownKey(shared, 'contrast')) shared.contrast = Object.create(null);
+      __contrastSharedCache = shared.contrast;
     }
   } catch {
     __contrastSharedCache = {};
@@ -162484,8 +162817,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __contrastSharedCache
   };
 
+  // With no prototype: a key it is not given (contrast) is never read from
+  // Object.prototype (round 12, R12F-1 to R12F-6).
   const contrast = createContrastHelpers(
-    { window: realmWindow || window, document, root: roots, includeShadowDom, excludeSelectors },
+    Object.assign(Object.create(null), {
+      window: realmWindow || window,
+      document,
+      root: roots,
+      includeShadowDom,
+      excludeSelectors
+    }),
     __contrastShared
   );
 
@@ -163159,7 +163500,9 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
 
   const round = declaration.unit === 'px' ? (n) => Math.round(n * 10) / 10 : (n) => n;
   const counted = Number(measuredCount);
-  const margin = {
+  // Filled with no prototype, so a read-only value on Object.prototype
+  // refuses no key; handed back plain (round 12, R12F-6).
+  const margin = Object.assign(Object.create(null), {
     measure: declaration.measure,
     unit: declaration.unit,
     limit: declaration.limit,
@@ -163170,9 +163513,13 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
       Number.isFinite(counted) && counted >= candidates.length
         ? Math.floor(counted)
         : candidates.length
-  };
+  });
 
-  const includeSelector = !(options && options.includeSelector === false);
+  const includeSelector = !(
+    options &&
+    Object.prototype.hasOwnProperty.call(options, 'includeSelector') &&
+    options.includeSelector === false
+  );
   if (best.el && helpers) {
     let selector = '';
     if (includeSelector && typeof helpers.buildSelector === 'function') {
@@ -163199,7 +163546,7 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
   if (best.context && typeof best.context === 'object' && !Array.isArray(best.context)) {
     margin.context = { ...best.context };
   }
-  return margin;
+  return { ...margin };
 });
 
 // Inlined from src/core/rule-meta.js (also used at build time by loadRuleModules
@@ -163561,6 +163908,8 @@ const rollupCompositeResults = (function rollupCompositeResults(
   const rulesResults = [];
   try {
     const composites = Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : [];
+    // What each rollup echoes: the options as plain objects (plainOptions).
+    const echoedOptions = plainOptions(engineOptionsResolved || {});
 
     const LEVEL_RANK = { A: 1, AA: 2, AAA: 3 };
 
@@ -163644,10 +163993,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const ruleId = isNonEmptyString(entry.id) ? entry.id.trim() : String(entry.id || '').trim();
       if (!ruleId) return null;
 
-      const metaIn =
+      // Its own keys only (round 12, R12F-1 to R12F-6).
+      const metaIn = Object.assign(
+        Object.create(null),
         entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)
           ? entry.meta
-          : {};
+          : null
+      );
 
       const titleKey =
         typeof metaIn.titleKey === 'string' && metaIn.titleKey.trim() ? metaIn.titleKey.trim() : '';
@@ -163751,7 +164103,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
             .filter(Boolean)
         : [];
 
-      return {
+      return Object.assign(Object.create(null), {
         ruleId,
         title: metaIn.title || ruleId,
         description: metaIn.description || '',
@@ -163818,7 +164170,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
         // A standard's requirement its rules don't check in full
         // (ruleMappedStandard requirements' partial).
         __partial: !!ownStandard && metaIn.partial === true
-      };
+      });
     }
 
     // Whether a finding's data.details has every value `when` gives, each
@@ -164120,7 +164472,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
         reasonCode = 'composite.rollup.cantTell.partialCheck';
       }
 
-      const raw = {
+      // With no prototype, so no key set below is refused by a read-only
+      // value on Object.prototype (round 12, R12F-6).
+      const raw = Object.assign(Object.create(null), {
         outcome,
         occurrences: [],
 
@@ -164162,10 +164516,10 @@ const rollupCompositeResults = (function rollupCompositeResults(
         },
 
         engineOptions: {
-          ...(engineOptionsResolved || {}),
+          ...echoedOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
-      };
+      });
 
       // Promote composite severity based on contributors (deterministic).
       // - If composite fails: use max severity among failing children.
@@ -164505,7 +164859,10 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // whether it was installed before the page's scripts: what the name rules
   // could read of custom elements' internals. Left out without one.
   const hook = readInternalsHook(win);
-  const internalsHook = hook ? { internalsHook: hook.early ? 'early' : 'late' } : {};
+  // Filled with no prototype, so a read-only value on Object.prototype
+  // refuses no key; handed back plain (round 12, R12F-6).
+  const internalsHook = Object.create(null);
+  if (hook) internalsHook.internalsHook = hook.early ? 'early' : 'late';
   // The same for the listener hook (listenerHookScript): which event
   // listeners added from script the keyboard rules could see.
   const listeners = readListenerHook(win);
@@ -164516,7 +164873,8 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   if (liveRegions) internalsHook.liveRegionHook = liveRegions.early ? 'early' : 'late';
   if (!layout) return { layout: false, ...internalsHook };
 
-  const env = { layout: true };
+  const env = Object.create(null);
+  env.layout = true;
   const width = Number(win.innerWidth);
   const height = Number(win.innerHeight);
   if (Number.isFinite(width) && Number.isFinite(height)) env.viewport = { width, height };
@@ -164577,7 +164935,7 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
       env.images = loading ? 'loading' : 'loaded';
     }
   } catch {}
-  return Object.assign(env, internalsHook);
+  return { ...env, ...internalsHook };
 });
 
 const settleAnimations = (function settleAnimations(doc, includeShadowDom) {
@@ -165219,6 +165577,9 @@ const runCoreSettled = (function runCoreSettled(
   COMPOSITE_RULES
 ) {
   const dom = createSafeDom();
+  // The options' own keys only, with no prototype, so a value a page's
+  // script put on Object.prototype is never read as an option (ownOptions).
+  engineOptions = ownOptions(engineOptions);
   // engineOptions.timeBudgetMs: once the scan has spent this long, it starts
   // no more rules, and lists those it didn't start (notRun). Read only when
   // it is a number above 0; enforceEngineOptions says anything else.
@@ -165269,15 +165630,21 @@ const runCoreSettled = (function runCoreSettled(
   }
   // Normalize contrast options without mutating caller-provided engineOptions.
   function __normalizeContrastOptions(engineOptions2) {
-    const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
-    const c = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : {};
+    const eo =
+      engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : Object.create(null);
+    const c = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : Object.create(null);
     const mode = c.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
     const rootCanvasFallback =
       typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim()
         ? c.rootCanvasFallback.trim()
         : '#ffffff';
-    // Set below, once the color is known to be usable.
-    return { mode, rootCanvasFallback, rootCanvasFallbackSet: false };
+    // Set below, once the color is known to be usable. With no prototype,
+    // as the options it comes from.
+    return Object.assign(Object.create(null), {
+      mode,
+      rootCanvasFallback,
+      rootCanvasFallbackSet: false
+    });
   }
 
   // Whether the caller gave contrast.rootCanvasFallback, rather than the
@@ -165297,10 +165664,11 @@ const runCoreSettled = (function runCoreSettled(
     );
   }
 
-  const engineOptionsResolved =
-    engineOptions && typeof engineOptions === 'object'
-      ? { ...engineOptions, contrast: __normalizeContrastOptions(engineOptions) }
-      : { contrast: __normalizeContrastOptions(null) };
+  const engineOptionsResolved = Object.assign(
+    Object.create(null),
+    engineOptions && typeof engineOptions === 'object' ? engineOptions : null,
+    { contrast: __normalizeContrastOptions(engineOptions) }
+  );
 
   const policy = resolvePolicy(POLICY_CONTRACTS, engineOptionsResolved, strictOf(engineOptions));
 
@@ -165445,7 +165813,9 @@ const runCoreSettled = (function runCoreSettled(
   // the same window. Clearing at the start of every run keeps sharing scoped
   // to "this run" as intended, without leaking across runs.
   try {
-    if (window && window.__a11ycoreSharedCache) window.__a11ycoreSharedCache = {};
+    if (window && Object.prototype.hasOwnProperty.call(window, '__a11ycoreSharedCache')) {
+      window.__a11ycoreSharedCache = Object.create(null);
+    }
   } catch {}
 
   const sharedHelpers = createDomHelpers({
@@ -165572,7 +165942,9 @@ const runCoreSettled = (function runCoreSettled(
     }
 
     if (t === 'object') {
-      const out = {};
+      // Filled with no prototype, so no key is refused by a read-only value
+      // on Object.prototype; handed back plain.
+      const out = Object.create(null);
       const keys = Object.keys(v).sort();
       // cap object keys
       const n = Math.min(keys.length, 50);
@@ -165582,7 +165954,7 @@ const runCoreSettled = (function runCoreSettled(
         if (typeof k !== 'string') continue;
         out[k] = sanitizeProbeValue(v[k], depth - 1);
       }
-      return out;
+      return { ...out };
     }
 
     return null;
@@ -165853,10 +166225,15 @@ const runCoreSettled = (function runCoreSettled(
     const occurrences = Array.isArray(result.occurrences)
       ? result.occurrences.map((occ) => {
           if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
-          const next =
-            occ.occurrenceOutcome === 'fail'
-              ? { ...occ, occurrenceOutcome: 'cantTell' }
-              : { ...occ };
+          // With no prototype, as the result (round 12, R12F-1 to R12F-6).
+          const next = Object.assign(
+            Object.create(null),
+            occ,
+            Object.prototype.hasOwnProperty.call(occ, 'occurrenceOutcome') &&
+              occ.occurrenceOutcome === 'fail'
+              ? { occurrenceOutcome: 'cantTell' }
+              : null
+          );
           if (!next.uncertainty) {
             next.uncertainty = {
               code: 'out-of-scope',
@@ -165895,8 +166272,7 @@ const runCoreSettled = (function runCoreSettled(
 
     // Deliberately NOT reported through `error`: nothing went wrong here,
     // and consumers read a non-empty `error` as "this rule threw".
-    return {
-      ...result,
+    return Object.assign(Object.create(null), result, {
       outcome: 'cantTell',
       occurrences,
       wcagVersionScope: {
@@ -165905,7 +166281,7 @@ const runCoreSettled = (function runCoreSettled(
         coercedFrom: 'fail',
         ...(why === 'errata' ? { by: 'errata' } : {})
       }
-    };
+    });
   }
 
   const checksResults = [];
@@ -166213,7 +166589,11 @@ const runCoreSettled = (function runCoreSettled(
   }
   const readOnlyViews = new WeakMap();
   const ruleEngineOptions =
-    engineOptionsResolved && typeof engineOptionsResolved === 'object' ? engineOptionsResolved : {};
+    engineOptionsResolved && typeof engineOptionsResolved === 'object'
+      ? engineOptionsResolved
+      : Object.create(null);
+  // What each result echoes: the same options, as plain objects.
+  const echoedEngineOptions = plainOptions(ruleEngineOptions);
   // Changes a pack's or caller's rule made to the page, by rule id.
   const pageChangedBy = [];
   for (const def of runOrder) {
@@ -166290,12 +166670,16 @@ const runCoreSettled = (function runCoreSettled(
     const settingNames = Array.isArray(defResolved.settings) ? defResolved.settings : [];
     let ruleConfig = callerConfig;
     if (ruleConfig && settingNames.length) {
-      ruleConfig = { ...ruleConfig };
+      ruleConfig = Object.assign(Object.create(null), ruleConfig);
       for (const name of settingNames) delete ruleConfig[name];
     }
     const variant =
       defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
-    if (variant && variant.config) ruleConfig = { ...(ruleConfig || {}), ...variant.config };
+    // With no prototype, as the caller's settings are (ownOptions): a
+    // variant's config never reads excludeSelectors from Object.prototype.
+    if (variant && variant.config) {
+      ruleConfig = Object.assign(Object.create(null), ruleConfig, variant.config);
+    }
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -166343,7 +166727,7 @@ const runCoreSettled = (function runCoreSettled(
             outcome: 'notApplicable',
             occurrences: [],
             engineOptions: {
-              ...ruleEngineOptions,
+              ...echoedEngineOptions,
               locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
             }
           },
@@ -166389,7 +166773,7 @@ const runCoreSettled = (function runCoreSettled(
           occurrences: [],
           error: describeThrown(err),
           engineOptions: {
-            ...ruleEngineOptions,
+            ...echoedEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
           }
         };
@@ -166406,7 +166790,7 @@ const runCoreSettled = (function runCoreSettled(
           outcome: 'notApplicable',
           occurrences: [],
           engineOptions: {
-            ...ruleEngineOptions,
+            ...echoedEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
           }
         };
@@ -166431,7 +166815,7 @@ const runCoreSettled = (function runCoreSettled(
         occurrences: [],
         error: describeThrown(err),
         engineOptions: {
-          ...ruleEngineOptions,
+          ...echoedEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
       };
@@ -166442,6 +166826,11 @@ const runCoreSettled = (function runCoreSettled(
       if (changes) pageChangedBy.push({ ruleId: defResolved.ruleId, changes });
     }
     if (foreign) result = plainRuleOutput(result);
+    // Read with no prototype from here: a field the rule left out is never
+    // read from Object.prototype (round 12, R12F-1 to R12F-6).
+    if (result && typeof result === 'object' && !isThenable(result)) {
+      result = Object.assign(Object.create(null), result);
+    }
 
     // A rule that returned nothing usable is reported, not dropped: a
     // missing result would read as a rule that never existed.
@@ -166459,7 +166848,7 @@ const runCoreSettled = (function runCoreSettled(
         occurrences: [],
         error: unusable,
         engineOptions: {
-          ...ruleEngineOptions,
+          ...echoedEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
       };
@@ -166468,7 +166857,7 @@ const runCoreSettled = (function runCoreSettled(
     // neither how it is judged nor what the result says, and is noted.
     if (result && Object.prototype.hasOwnProperty.call(result, 'type')) {
       const returnedType = result.type;
-      result = { ...result };
+      result = Object.assign(Object.create(null), result);
       delete result.type;
       if (returnedType !== undefined && returnedType !== defResolved.type) {
         result.error =
@@ -166492,8 +166881,7 @@ const runCoreSettled = (function runCoreSettled(
         else dropped += 1;
       }
       if (dropped) {
-        result = {
-          ...result,
+        result = Object.assign(Object.create(null), result, {
           occurrences: kept,
           error:
             (result.error ? String(result.error) + ' | ' : '') +
@@ -166501,7 +166889,7 @@ const runCoreSettled = (function runCoreSettled(
             dropped +
             (dropped === 1 ? ' occurrence that is' : ' occurrences that are') +
             ' not an object; left out.'
-        };
+        });
       }
     }
 
@@ -166512,7 +166900,7 @@ const runCoreSettled = (function runCoreSettled(
         Object.prototype.hasOwnProperty.call(result, key)
       );
       if (owned.length) {
-        result = { ...result };
+        result = Object.assign(Object.create(null), result);
         for (const key of owned) delete result[key];
         result.error =
           (result.error ? String(result.error) + ' | ' : '') +
@@ -166530,8 +166918,7 @@ const runCoreSettled = (function runCoreSettled(
       result.outcome === 'fail' &&
       !(Array.isArray(result.occurrences) && result.occurrences.length)
     ) {
-      result = {
-        ...result,
+      result = Object.assign(Object.create(null), result, {
         occurrences: [
           {
             __node: dom.documentElement(document),
@@ -166544,7 +166931,7 @@ const runCoreSettled = (function runCoreSettled(
             data: { details: { reasonCode: 'FAIL_WITHOUT_OCCURRENCE' } }
           }
         ]
-      };
+      });
     }
 
     // A variant reports in its own words: a message key of its base rule's
@@ -166570,13 +166957,12 @@ const runCoreSettled = (function runCoreSettled(
     // The scan's options and the WCAG scope are the engine's to state: an
     // engineOptions or wcagVersionScope in a rule's return is not taken (a
     // returned engineOptions.output could switch off the rule's selectors).
-    result = {
-      ...result,
+    result = Object.assign(Object.create(null), result, {
       engineOptions: {
-        ...ruleEngineOptions,
+        ...echoedEngineOptions,
         locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
       }
-    };
+    });
     delete result.wcagVersionScope;
     checksResults.push(
       normalizeRuleResult(
@@ -166734,19 +167120,16 @@ const runCoreSettled = (function runCoreSettled(
   for (const r of checksResults.concat(rulesResults)) {
     if (!r || !r.engineOptions || typeof r.engineOptions !== 'object') continue;
     const eo = r.engineOptions;
-    if (
-      !('messages' in eo) &&
-      !('probes' in eo) &&
-      !('customRules' in eo) &&
-      !('styleSheetTexts' in eo)
-    ) {
+    // Its own keys, not ones on Object.prototype.
+    const has = (key) => Object.prototype.hasOwnProperty.call(eo, key);
+    if (!has('messages') && !has('probes') && !has('customRules') && !has('styleSheetTexts')) {
       continue;
     }
     const echoed = { ...eo };
     delete echoed.messages;
-    if ('probes' in echoed) echoed.probes = probes;
-    if ('customRules' in echoed) echoed.customRules = echoedCustomRules;
-    if ('styleSheetTexts' in echoed) echoed.styleSheetTexts = echoedStyleSheets;
+    if (has('probes')) echoed.probes = probes;
+    if (has('customRules')) echoed.customRules = echoedCustomRules;
+    if (has('styleSheetTexts')) echoed.styleSheetTexts = echoedStyleSheets;
     r.engineOptions = echoed;
   }
 
@@ -166882,8 +167265,8 @@ const runCoreSettled = (function runCoreSettled(
     Array.isArray(CATALOG.packs) &&
     CATALOG.packs.length > 0;
   let coreWording = null;
-  if ('messages' in engineOptionsResolved) {
-    coreWording = { ...engineOptionsResolved };
+  if (Object.prototype.hasOwnProperty.call(engineOptionsResolved, 'messages')) {
+    coreWording = Object.assign(Object.create(null), engineOptionsResolved);
     delete coreWording.messages;
   }
   const restorable = (c) => {
@@ -167179,52 +167562,6 @@ const assertPageBuiltins = (function assertPageBuiltins() {
     throw err;
   }
 });
-const holdObjectPrototypeValues = (function holdObjectPrototypeValues() {
-  const proto = Object.prototype;
-  const own = Object.prototype.hasOwnProperty;
-  const held = [];
-  const release = () => {
-    for (let i = held.length - 1; i >= 0; i--) {
-      const h = held[i];
-      try {
-        if (h.cleared) proto[h.name] = h.descriptor.value;
-        else Object.defineProperty(proto, h.name, h.descriptor);
-      } catch {}
-    }
-    held.length = 0;
-  };
-  const names = Object.getOwnPropertyNames(proto);
-  const refused = [];
-  for (let i = 0; i < names.length; i++) {
-    const name = names[i];
-    if (name === '__proto__') continue;
-    const d = Object.getOwnPropertyDescriptor(proto, name);
-    if (!d) continue;
-    // Own reads: a descriptor is a plain object too.
-    if (own.call(d, 'value') && typeof d.value === 'function') continue;
-    if (d.configurable) {
-      delete proto[name];
-      held[held.length] = { name, descriptor: d, cleared: false };
-    } else if (own.call(d, 'writable') && d.writable) {
-      proto[name] = undefined;
-      held[held.length] = { name, descriptor: d, cleared: true };
-    } else refused[refused.length] = 'Object.prototype.' + name;
-  }
-  if (refused.length) {
-    release();
-    let list = '';
-    for (let i = 0; i < refused.length; i++) list += (i ? ', ' : '') + refused[i];
-    const err = new Error(
-      'The page has changed JavaScript built-ins the engine relies on (' +
-        list +
-        "), so a scan of it can't be trusted. Scan it before its scripts change them."
-    );
-    err.code = 'PAGE_BUILTINS_BROKEN';
-    err.broken = refused;
-    throw err;
-  }
-  return release;
-});
 const assertArrayFromFor = (function assertArrayFromFor(fns) {
   let works;
   /* eslint-disable no-restricted-properties -- the check is of Array.from itself */
@@ -167334,8 +167671,9 @@ const runCore = (function runCore(
             : null;
       // The contrast helpers' blank frames, kept for the run
       // (__openProbeFrame), go with it.
-      const shared = w && w.__a11ycoreSharedCache;
-      const frames = shared && shared.contrast && shared.contrast.probeFrames;
+      const own = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      const shared = own(w, '__a11ycoreSharedCache');
+      const frames = own(own(shared, 'contrast'), 'probeFrames');
       if (Array.isArray(frames)) {
         for (const entry of frames) {
           try {
@@ -167344,7 +167682,7 @@ const runCore = (function runCore(
           } catch {}
         }
       }
-      if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
+      if (shared) delete w.__a11ycoreSharedCache;
     } catch {}
   }
 });
@@ -167354,13 +167692,13 @@ const runCore = (function runCore(
 // cross-frame scanning for the "plain script injection" consumption mode).
 const FRAME_RPC_CHANNEL = "__frame_rpc_v1__";
 const getFrameRpcRegistry = (function getFrameRpcRegistry(win) {
-  if (!win.__a11yCoreFrameRpc__) {
-    win.__a11yCoreFrameRpc__ = {
-      pending: new Map(),
-      seq: 0,
-      responder: null,
-      listening: false
-    };
+  if (!Object.prototype.hasOwnProperty.call(win, '__a11yCoreFrameRpc__')) {
+    const registry = Object.create(null);
+    registry.pending = new Map();
+    registry.seq = 0;
+    registry.responder = null;
+    registry.listening = false;
+    win.__a11yCoreFrameRpc__ = registry;
   }
   return win.__a11yCoreFrameRpc__;
 });
@@ -167370,8 +167708,14 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
   if (registry.listening) return registry;
 
   dom.addEventListener(win, 'message', function a11yCoreFrameRpcListener(event) {
-    const data = event && event.data;
-    if (!data || data.__a11ycore !== true || data.channel !== channel) return;
+    // A message's fields are read as its own, never from Object.prototype.
+    const message = event && event.data;
+    if (!message || typeof message !== 'object') return;
+    const data = Object.create(null);
+    for (const key of ['__a11ycore', 'channel', 'type', 'requestId', 'payload']) {
+      if (Object.prototype.hasOwnProperty.call(message, key)) data[key] = message[key];
+    }
+    if (data.__a11ycore !== true || data.channel !== channel) return;
 
     if (data.type === 'ping') {
       try {
@@ -167587,8 +167931,10 @@ const profileOptionsOf = (function profileOptionsOf(engineOptions) {
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
   if (!Array.isArray(asked)) return [engineOptions];
   const unique = profileNamesOf(asked);
-  if (!unique.length) return [Object.assign({}, engineOptions, { profile: undefined })];
-  return unique.map((p) => Object.assign({}, engineOptions, { profile: p }));
+  // With no prototype, as ownOptions copies them.
+  if (!unique.length)
+    return [Object.assign(Object.create(null), engineOptions, { profile: undefined })];
+  return unique.map((p) => Object.assign(Object.create(null), engineOptions, { profile: p }));
 });
 const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packNames, declared) {
   const name = typeof profile === 'string' ? lowerAscii(profile.trim()) : '';
@@ -167616,8 +167962,10 @@ const runProfiles = (function runProfiles(engineOptions, run) {
   // page may put then on Object.prototype, and every plain result then has
   // one.
   const result = runProfilesUncapped(engineOptions, run);
-  const out = engineOptions && engineOptions.output;
-  if (!out || typeof out !== 'object' || out.maxOccurrencesPerRule === undefined) return result;
+  const out = ownField(engineOptions, 'output');
+  if (!out || typeof out !== 'object' || ownField(out, 'maxOccurrencesPerRule') === undefined) {
+    return result;
+  }
   return Object.prototype.toString.call(result) === '[object Promise]'
     ? result.then((x) => capOccurrences(x, engineOptions))
     : capOccurrences(result, engineOptions);
@@ -167657,8 +168005,7 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
     return to;
   };
   const allowFail = policyAllowsFail(engineOptions);
-  const asked =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
+  const asked = ownField(engineOptions, 'profile');
   if (Array.isArray(asked)) {
     // Names are matched without case, as a single profile's are: one asked
     // twice in two cases runs once.
@@ -167695,7 +168042,9 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         run(
           carryBudgetSpent(
             engineOptions,
-            Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+            Object.assign(Object.create(null), engineOptions, {
+              profile: unique.length ? unique[0] : undefined
+            })
           )
         ),
         allowFail
@@ -167705,12 +168054,10 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
     // engineOptions.timeBudgetMs is the whole scan's: each profile after the
     // first gets what is left of it, and one that would start with none left
     // is not run (engine.profilesNotRun, reason timeBudget).
+    const givenBudget = ownField(engineOptions, 'timeBudgetMs');
     const budget =
-      engineOptions &&
-      typeof engineOptions.timeBudgetMs === 'number' &&
-      Number.isFinite(engineOptions.timeBudgetMs) &&
-      engineOptions.timeBudgetMs > 0
-        ? engineOptions.timeBudgetMs
+      typeof givenBudget === 'number' && Number.isFinite(givenBudget) && givenBudget > 0
+        ? givenBudget
         : null;
     const clock = () => {
       try {
@@ -167745,9 +168092,8 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         const merged = mergeProfileResults(runs, unique, allowFail);
         // The budget the scan was given, not what was left of it for the
         // profile that ran out.
-        if (merged && merged.engine && merged.engine.incomplete) {
-          merged.engine.incomplete.timeBudgetMs = scanBudget;
-        }
+        const incomplete = ownField(ownField(merged, 'engine'), 'incomplete');
+        if (incomplete && typeof incomplete === 'object') incomplete.timeBudgetMs = scanBudget;
         return merged;
       }
       const left = budget === null ? null : budget - (clock() - started);
@@ -167760,7 +168106,10 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         // that ran out lists those it did not start: its scan is asked to
         // start none (__budgetSpent), which only works out its selection.
         const dryOptions = withScanBudget(
-          carryBudgetSpent(engineOptions, Object.assign({}, engineOptions, { profile: unique[i] }))
+          carryBudgetSpent(
+            engineOptions,
+            Object.assign(Object.create(null), engineOptions, { profile: unique[i] })
+          )
         );
         if (!spentOnArrival) Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
         // Its warning names the profile, not a frame.
@@ -167769,13 +168118,13 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
           configurable: true
         });
         const skippedOf = (dry) => {
-          const skipped = {};
+          const skipped = Object.create(null);
           Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
-          const applied = dry && dry.engine ? dry.engine.profile : undefined;
+          const applied = ownField(ownField(dry, 'engine'), 'profile');
           const ids =
             typeof applied === 'string' &&
             lowerAscii(applied) === lowerAscii(unique[i]) &&
-            Array.isArray(dry.notRun)
+            Array.isArray(ownField(dry, 'notRun'))
               ? dry.notRun.filter((n) => n && n.ruleId).map((n) => n.ruleId)
               : [];
           Object.defineProperty(skipped, '__rulesNotRun', { value: ids });
@@ -167790,7 +168139,7 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
           carryBudgetSpent(
             engineOptions,
             Object.assign(
-              {},
+              Object.create(null),
               engineOptions,
               { profile: unique[i] },
               left !== null && i > 0 ? { timeBudgetMs: left } : {}
@@ -167812,13 +168161,12 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   return withOwnVerdicts(run(engineOptions), allowFail);
 });
 const capOccurrences = (function capOccurrences(result, engineOptions) {
-  const output =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.output : undefined;
-  const max = output && typeof output === 'object' ? output.maxOccurrencesPerRule : undefined;
+  const output = ownField(engineOptions, 'output');
+  const max = ownField(output, 'maxOccurrencesPerRule');
   if (typeof max !== 'number' || !Number.isInteger(max) || max < 1) return result;
   if (!result || typeof result !== 'object' || !Array.isArray(result.checksResults)) return result;
   const tierOf = (check, o) => {
-    const own = o && typeof o === 'object' ? o.occurrenceOutcome || o.outcome : undefined;
+    const own = ownField(o, 'occurrenceOutcome') || ownField(o, 'outcome');
     if (own === 'fail' || own === 'cantTell' || own === 'pass') return own;
     return check.outcome === 'fail' || check.outcome === 'cantTell' || check.outcome === 'pass'
       ? check.outcome
@@ -167827,7 +168175,7 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
   const rankOf = (check, o) => {
     const tier = tierOf(check, o);
     if (tier === 'fail') return 0;
-    if (tier === 'cantTell') return o && o.lean && o.lean.toward === 'fail' ? 1 : 2;
+    if (tier === 'cantTell') return ownField(ownField(o, 'lean'), 'toward') === 'fail' ? 1 : 2;
     return 3;
   };
   const keptByRule = new Map();
@@ -167854,16 +168202,14 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
     keptByRule.set(check.ruleId, { kept, total: list.length });
     // The undecided ones that lean fail, which a lean-fail gate counts, are
     // counted apart from the other undecided ones.
-    return Object.assign(
-      {},
-      check,
-      {
-        occurrences: kept.map((i) => list[i]),
-        occurrencesOmitted: omitted,
-        occurrencesOmittedByOutcome: byOutcome
-      },
-      leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {}
-    );
+    // Spread, so a read-only value on Object.prototype refuses no key.
+    return {
+      ...check,
+      occurrences: kept.map((i) => list[i]),
+      occurrencesOmitted: omitted,
+      occurrencesOmittedByOutcome: byOutcome,
+      ...(leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {})
+    };
   });
   if (!omittedTotal) return result;
   // A rollup's record of what it made of each finding follows the findings
@@ -167879,31 +168225,27 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
           if (!cap || !Array.isArray(c.findingOutcomes) || c.findingOutcomes.length !== cap.total)
             return c;
           touched = true;
-          return Object.assign({}, c, {
-            findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i])
-          });
+          return { ...c, findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i]) };
         });
         if (!touched) return rollup;
-        return Object.assign({}, rollup, {
-          data: Object.assign({}, rollup.data, {
-            details: Object.assign({}, details, { contributors: next })
-          })
-        });
+        return { ...rollup, data: { ...rollup.data, details: { ...details, contributors: next } } };
       })
     : result.rulesResults;
-  const out = Object.assign({}, result, {
-    engine: Object.assign({}, result.engine, {
+  const out = {
+    ...result,
+    engine: {
+      ...result.engine,
       occurrenceCap: {
         maxOccurrencesPerRule: max,
         occurrencesOmitted: omittedTotal,
         rulesCapped: keptByRule.size
       }
-    }),
+    },
     checksResults,
     rulesResults
-  });
+  };
   // A mark the merge of several profiles reads stays with the result.
-  if (result.__profileNotApplied) {
+  if (ownField(result, '__profileNotApplied')) {
     try {
       Object.defineProperty(out, '__profileNotApplied', {
         value: result.__profileNotApplied,
@@ -167918,7 +168260,11 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
 const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
   // A result first: a page may add then to Object.prototype, which makes
   // any object look like a promise.
-  if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
+  if (
+    result &&
+    !Array.isArray(ownField(result, 'checksResults')) &&
+    typeof result.then === 'function'
+  ) {
     return result.then((r) => withOwnVerdicts(r, allowFail));
   }
   if (!result || !Array.isArray(result.checksResults)) return result;
@@ -167932,16 +168278,14 @@ const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
       const contributors =
         details && Array.isArray(details.contributors) ? details.contributors : [];
       const c = contributors.find((x) => x && x.testId === check.ruleId);
-      if (!c || !c.byReasonCode || !Array.isArray(c.findingOutcomes)) continue;
+      if (!c || !ownField(c, 'byReasonCode') || !Array.isArray(c.findingOutcomes)) continue;
       occurrences.forEach((o, i) => {
         if (c.findingOutcomes[i] === 'fail') fails[i] = true;
       });
     }
     if (!fails.some(Boolean)) continue;
     check.occurrences = occurrences.map((o, i) =>
-      fails[i] && o && typeof o === 'object'
-        ? Object.assign({}, o, { occurrenceOutcome: 'fail' })
-        : o
+      fails[i] && o && typeof o === 'object' ? { ...o, occurrenceOutcome: 'fail' } : o
     );
     check.outcome = 'fail';
     check.outcomeNormalized = 'fail';
@@ -167952,13 +168296,19 @@ const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
 const lowerAscii = (function lowerAscii(value) {
   return String(value).replace(/[A-Z]/g, (c) => c.toLowerCase());
 });
+const ownField = (function ownField(object, key) {
+  return object && typeof object === 'object' && Object.prototype.hasOwnProperty.call(object, key)
+    ? object[key]
+    : undefined;
+});
 const policyAllowsFail = (function policyAllowsFail(engineOptions) {
   try {
-    const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
-    for (const source of [eo.policy, eo.policyContract]) {
-      if (source && typeof source === 'object' && Array.isArray(source.allowedOutcomes)) {
-        return source.allowedOutcomes.includes('fail');
-      }
+    for (const source of [
+      ownField(engineOptions, 'policy'),
+      ownField(engineOptions, 'policyContract')
+    ]) {
+      const allowed = ownField(source, 'allowedOutcomes');
+      if (Array.isArray(allowed)) return allowed.includes('fail');
     }
   } catch {
     // unreadable options: the scan's own reading decides
@@ -167967,14 +168317,18 @@ const policyAllowsFail = (function policyAllowsFail(engineOptions) {
 });
 const capToPolicy = (function capToPolicy(check, allowFail) {
   if (allowFail || !check || check.outcome !== 'fail') return check;
-  check.policyOutcome = 'fail';
+  // Defined, so a read-only value on Object.prototype refuses it not.
+  Object.defineProperty(check, 'policyOutcome', {
+    value: 'fail',
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   check.outcome = 'cantTell';
   check.outcomeNormalized = 'cantTell';
   if (Array.isArray(check.occurrences)) {
     check.occurrences = check.occurrences.map((o) =>
-      o && typeof o === 'object' && o.occurrenceOutcome === 'fail'
-        ? Object.assign({}, o, { occurrenceOutcome: 'cantTell' })
-        : o
+      ownField(o, 'occurrenceOutcome') === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
     );
   }
   return check;
@@ -168011,30 +168365,30 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   };
   const unionList = (a, b) =>
     unionBy([a, b], (x) => (typeof x === 'string' ? x : JSON.stringify(x)));
+  const own = ownField;
+  const detailsOf = (o) => own(own(o, 'data'), 'details');
   const reasonCodeOf = (o) =>
-    o && o.data && o.data.details && typeof o.data.details.reasonCode === 'string'
-      ? o.data.details.reasonCode
-      : '';
+    typeof own(detailsOf(o), 'reasonCode') === 'string' ? own(detailsOf(o), 'reasonCode') : '';
   // An element's finding, as each profile's scan of the same page finds it:
   // where it is and why. Two findings of one rule on one element for the
   // same reason (two attributes it doesn't allow) differ by what else they
   // say, and else by their order, which each scan of the page shares.
   const baseKeyOf = (o) =>
     JSON.stringify([
-      (o && o.frameUrl) || '',
-      (o && o.selector) || '',
-      (o && o.structuralPath) || '',
+      own(o, 'frameUrl') || '',
+      own(o, 'selector') || '',
+      own(o, 'structuralPath') || '',
       reasonCodeOf(o),
-      (o && o.html) || '',
-      (o && o.summary) || '',
-      (o && o.data && o.data.details && JSON.stringify(o.data.details)) || ''
+      own(o, 'html') || '',
+      own(o, 'summary') || '',
+      (detailsOf(o) && JSON.stringify(detailsOf(o))) || ''
     ]);
   const normalizedOf = (o) => (o === 'notApplicable' ? 'inapplicable' : o);
 
   const ran = [];
   const notRun = [];
   for (const r of runs) {
-    const applied = r.result && r.result.engine ? r.result.engine.profile : undefined;
+    const applied = own(own(r.result, 'engine'), 'profile');
     const same =
       typeof applied === 'string' && lowerAscii(applied) === lowerAscii(String(r.profile));
     if (r.result && typeof r.result === 'object' && same) ran.push(r);
@@ -168042,7 +168396,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       // A name no profile has is unknown-profile, unless the scan marked it
       // as one a pack it skipped may have: a list with a typo beside a
       // skipped pack's profile names the typo as such.
-      const why = r.result && r.result.__profileNotApplied;
+      const why = own(r.result, '__profileNotApplied');
       notRun.push({
         profile: r.profile,
         reason:
@@ -168059,9 +168413,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   const first = (ran[0] || runs[0] || {}).result;
   if (!first || typeof first !== 'object') return first;
   if (!ran.length) {
-    return Object.assign({}, first, {
-      engine: Object.assign({}, first.engine, { profiles: [], profilesNotRun: notRun })
-    });
+    return { ...first, engine: { ...first.engine, profiles: [], profilesNotRun: notRun } };
   }
 
   // What a profile's rollups make of each finding of a check: by reason code
@@ -168070,7 +168422,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   // profile names the check.
   function verdictsByRollups(result, check) {
     const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
-    const tier = (o) => (o && o.occurrenceOutcome) || check.outcome;
+    const tier = (o) => own(o, 'occurrenceOutcome') || check.outcome;
     let seen = false;
     const out = occurrences.map(() => []);
     for (const rollup of Array.isArray(result.rulesResults) ? result.rulesResults : []) {
@@ -168081,7 +168433,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       if (!c) continue;
       seen = true;
       occurrences.forEach((o, i) => {
-        if (c.byReasonCode && Array.isArray(c.findingOutcomes)) {
+        if (own(c, 'byReasonCode') && Array.isArray(c.findingOutcomes)) {
           out[i].push(c.findingOutcomes[i] || 'notApplicable');
         } else out[i].push(tier(o));
       });
@@ -168095,7 +168447,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   // The WCAG version the result reports, the highest of the profiles'.
   const WCAG_ORDER = ['2.0', '2.1', '2.2'];
   let reportedWcag;
-  const targetingRuns = ran.filter((r) => r.result.engine && r.result.engine.wcagLevel);
+  const targetingRuns = ran.filter((r) => own(r.result.engine, 'wcagLevel'));
   for (const r of targetingRuns.length ? targetingRuns : ran) {
     const v = r.result.engine && r.result.engine.wcagVersion;
     if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
@@ -168108,7 +168460,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       if (!check || !check.ruleId) continue;
       let merged = checks.get(check.ruleId);
       if (!merged) {
-        merged = Object.assign({}, check, {
+        // Worked on with no prototype, and handed back plain below.
+        merged = Object.assign(Object.create(null), check, {
           verdicts: {},
           occurrences: [],
           ownOutcomes: [],
@@ -168125,7 +168478,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       // The severity this profile gives the rule (a profile's own, or the
       // rule's), and the rule's own.
       merged.severities[r.profile] = check.severity;
-      if (check.ruleSeverity && !merged.ownSeverity) merged.ownSeverity = check.ruleSeverity;
+      if (own(check, 'ruleSeverity') && !merged.ownSeverity)
+        merged.ownSeverity = check.ruleSeverity;
       const verdicts = isTier(check.outcome) ? verdictsByRollups(r.result, check) : [];
       const byKey = occurrenceMaps.get(check.ruleId);
       const seenHere = new Map(); // base key -> how many so far in this scan
@@ -168137,7 +168491,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         const ofReported = !!r.result.engine && r.result.engine.wcagVersion === reportedWcag;
         let m = byKey.get(key);
         if (!m) {
-          m = Object.assign({}, o, { verdicts: {} });
+          m = Object.assign(Object.create(null), o, { verdicts: {} });
           byKey.set(key, m);
           merged.occurrences.push(m);
           if (ofReported) textOfReported.add(m);
@@ -168148,7 +168502,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
           // order the profiles were listed in.
           const replace = ofReported && !textOfReported.has(m);
           for (const field of ['uncertainty', 'lean', 'howToCheck', 'hint']) {
-            if (o[field] === undefined) continue;
+            if (own(o, field) === undefined) continue;
             if (m[field] === undefined || replace) m[field] = o[field];
           }
           if (ofReported) textOfReported.add(m);
@@ -168159,21 +168513,20 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         // What each profile's scan says of the rule, all of it: the
         // rollups it feeds and the requirements it maps to, whichever
         // profile was listed first.
-        if (Array.isArray(check.rollupIds)) {
+        if (Array.isArray(own(check, 'rollupIds'))) {
           merged.rollupIds = unionList(merged.rollupIds, check.rollupIds);
         }
-        const mappings =
-          check.meta && Array.isArray(check.meta.normativeMappings)
-            ? check.meta.normativeMappings
-            : null;
+        const mappings = Array.isArray(own(own(check, 'meta'), 'normativeMappings'))
+          ? check.meta.normativeMappings
+          : null;
         if (mappings) {
-          const had =
-            merged.meta && Array.isArray(merged.meta.normativeMappings)
-              ? merged.meta.normativeMappings
-              : [];
-          merged.meta = Object.assign({}, merged.meta, {
+          const had = Array.isArray(own(merged.meta, 'normativeMappings'))
+            ? merged.meta.normativeMappings
+            : [];
+          merged.meta = {
+            ...merged.meta,
             normativeMappings: unionBy([had, mappings], (x) => JSON.stringify(x))
-          });
+          };
         }
       }
       // A check whose findings the profile counts nowhere keeps the outcome
@@ -168204,7 +168557,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     // own stays as ruleSeverity where that differs.
     const severities = merged.severities;
     delete merged.severities;
-    const own = merged.ownSeverity || merged.ruleSeverity || merged.severity;
+    const ruleOwn = merged.ownSeverity || merged.ruleSeverity || merged.severity;
     delete merged.ownSeverity;
     const judging = Object.keys(severities).filter((p) => isTier(merged.verdicts[p]));
     const severity = highestSeverity(
@@ -168212,7 +168565,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     );
     if (severity) {
       merged.severity = severity;
-      if (own && own !== severity) merged.ruleSeverity = own;
+      if (ruleOwn && ruleOwn !== severity) merged.ruleSeverity = ruleOwn;
       else delete merged.ruleSeverity;
     }
     const outcome = worst(Object.values(merged.verdicts)) || merged.outcome;
@@ -168220,11 +168573,9 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       const tier = worst(Object.values(m.verdicts));
       if (isTier(tier) && (m.occurrenceOutcome || tier !== outcome)) m.occurrenceOutcome = tier;
     }
+    merged.occurrences = merged.occurrences.map((m) => ({ ...m }));
     checksResults.push(
-      capToPolicy(
-        Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) }),
-        allowFail
-      )
+      capToPolicy({ ...merged, outcome, outcomeNormalized: normalizedOf(outcome) }, allowFail)
     );
   }
 
@@ -168236,45 +168587,45 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       if (!rollup || !rollup.ruleId) continue;
       outcomes[rollup.ruleId] = rollup.outcome;
       const had = rollups.get(rollup.ruleId);
-      if (!had) rollups.set(rollup.ruleId, Object.assign({}, rollup, { profiles: [r.profile] }));
+      if (!had) rollups.set(rollup.ruleId, { ...rollup, profiles: [r.profile] });
       else {
         had.profiles.push(r.profile);
         if (rank(rollup.outcome) > rank(had.outcome)) {
-          rollups.set(rollup.ruleId, Object.assign({}, rollup, { profiles: had.profiles }));
+          rollups.set(rollup.ruleId, { ...rollup, profiles: had.profiles });
         }
       }
     }
-    const standards = Array.isArray(r.result.standards) ? r.result.standards : [];
-    const engine = r.result.engine || {};
+    const standards = Array.isArray(own(r.result, 'standards')) ? r.result.standards : [];
+    const engine = own(r.result, 'engine') || {};
     // wcagLevel only for a profile that targets WCAG: one that doesn't
     // (WAI-ARIA's) carries core's default version, which judges nothing.
-    profiles[r.profile] = Object.assign(
-      { wcagVersion: engine.wcagVersion },
-      engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
-      engine.law ? { law: engine.law } : {},
-      standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
-      { rulesResults: outcomes },
+    profiles[r.profile] = {
+      wcagVersion: own(engine, 'wcagVersion'),
+      ...(own(engine, 'wcagLevel') ? { wcagLevel: engine.wcagLevel } : {}),
+      ...(own(engine, 'law') ? { law: engine.law } : {}),
+      ...(standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {}),
+      rulesResults: outcomes,
       // Each profile's own timings, where they were asked for: the result's
       // perfStats are the first profile's.
-      r.result.perfStats ? { perfStats: r.result.perfStats } : {}
-    );
+      ...(own(r.result, 'perfStats') ? { perfStats: r.result.perfStats } : {})
+    };
   }
 
   const results = ran.map((r) => r.result);
   const packs = unionBy(
-    results.map((x) => x.engine && x.engine.packs),
+    results.map((x) => own(own(x, 'engine'), 'packs')),
     (x) => x
   ).sort();
   const skippedPacks = unionBy(
-    runs.map((r) => r.result && r.result.skippedPacks),
+    runs.map((r) => own(r.result, 'skippedPacks')),
     (x) => (x && x.name) || JSON.stringify(x)
   );
   const standards = unionBy(
-    results.map((x) => x.standards),
+    results.map((x) => own(x, 'standards')),
     (x) => (x && (x.key || x.standard)) || JSON.stringify(x)
   );
   const overridden = unionBy(
-    results.map((x) => x.overriddenBuiltinIds),
+    results.map((x) => own(x, 'overriddenBuiltinIds')),
     (x) => x
   ).sort();
 
@@ -168289,7 +168640,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         out = v;
     return out;
   };
-  const engines = results.map((x) => x.engine || {});
+  // Each scan's engine, read as its own keys only.
+  const engines = results.map((x) => Object.assign(Object.create(null), own(x, 'engine')));
   // A profile with no WCAG target of its own (a standard that maps no WCAG
   // level, as WAI-ARIA's) carries core's default version: the version is
   // that of the profiles that target WCAG, where any does.
@@ -168311,7 +168663,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   // own is in profiles[name].law.
   const laws = engines.map((e) => (e.law && typeof e.law.id === 'string' ? e.law.id : null));
   const oneLaw = laws.length && laws[0] !== null && laws.every((id) => id === laws[0]);
-  const engine = Object.assign({}, first.engine, {
+  const engine = {
+    ...first.engine,
     ...(wcagVersion ? { wcagVersion } : {}),
     ...(wcagLevel ? { wcagLevel } : {}),
     ...(mappings.length ? { mappings } : {}),
@@ -168319,7 +168672,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     profiles: ran.map((r) => r.profile),
     ...(notRun.length ? { profilesNotRun: notRun } : {}),
     ...(packs.length ? { packs } : {})
-  });
+  };
   if (!oneLaw) delete engine.law;
   // The rules a profile's scan did not start, and the profiles not started,
   // for the time budget: the merged scan is incomplete.
@@ -168327,10 +168680,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   const rulesNotRun = [];
   for (const r of runs) {
     if (ran.includes(r)) {
-      for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
-        if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+      for (const n of Array.isArray(own(r.result, 'notRun')) ? r.result.notRun : []) {
+        if (n && n.ruleId) rulesNotRun.push({ ...n, profile: r.profile });
       }
-    } else if (r.result && Array.isArray(r.result.__rulesNotRun)) {
+    } else if (Array.isArray(own(r.result, '__rulesNotRun'))) {
       for (const ruleId of r.result.__rulesNotRun) {
         rulesNotRun.push({ ruleId, reason: 'timeBudget', profile: r.profile });
       }
@@ -168339,30 +168692,33 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   const budgetProfiles = notRun.filter((n) => n.reason === 'timeBudget');
   const incomplete = engines.find((e) => e.incomplete);
   if (incomplete || budgetProfiles.length) {
-    engine.incomplete = Object.assign(
-      { reason: 'timeBudget' },
-      incomplete ? incomplete.incomplete : {},
-      { rulesNotRun: rulesNotRun.length },
-      budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {}
-    );
+    engine.incomplete = {
+      reason: 'timeBudget',
+      ...(incomplete ? incomplete.incomplete : {}),
+      rulesNotRun: rulesNotRun.length,
+      ...(budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {})
+    };
   } else delete engine.incomplete;
   void asked;
-  const out = Object.assign({}, first, {
+  // Its keys defined, so a read-only value on Object.prototype refuses none.
+  const out = {
+    ...first,
     engine,
     checksResults,
     rulesResults: [...rollups.values()],
-    profiles
-  });
-  if (standards.length) out.standards = standards;
-  if (overridden.length || Array.isArray(first.overriddenBuiltinIds))
-    out.overriddenBuiltinIds = overridden;
-  if (skippedPacks.length) out.skippedPacks = skippedPacks;
-  if (rulesNotRun.length) out.notRun = rulesNotRun;
-  else delete out.notRun;
+    profiles,
+    ...(standards.length ? { standards } : {}),
+    ...(overridden.length || Array.isArray(own(first, 'overriddenBuiltinIds'))
+      ? { overriddenBuiltinIds: overridden }
+      : {}),
+    ...(skippedPacks.length ? { skippedPacks } : {}),
+    ...(rulesNotRun.length ? { notRun: rulesNotRun } : {})
+  };
+  if (!rulesNotRun.length) delete out.notRun;
   // A custom rule skipped is one no profile ran: one profile's selection
   // can leave out a rule another runs.
   const skippedLists = ran.map((r) =>
-    Array.isArray(r.result.skippedCustomRules) ? r.result.skippedCustomRules : []
+    Array.isArray(own(r.result, 'skippedCustomRules')) ? r.result.skippedCustomRules : []
   );
   if (skippedLists.length && skippedLists.some((list) => list.length)) {
     const idOf = (x) => (x && typeof x.id === 'string' ? x.id : JSON.stringify(x));
@@ -168418,13 +168774,14 @@ const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
     try {
       console.warn('[surea11y] ' + message + '.');
     } catch {}
-    const withoutPacks = Object.assign({}, engineOptions);
+    const withoutPacks = Object.assign(Object.create(null), engineOptions);
     delete withoutPacks.packs;
     const note = (r) =>
       r && typeof r === 'object'
-        ? Object.assign({}, r, {
+        ? {
+            ...r,
             skippedPacks: named.map((name) => ({ name: name, reason: packProblem }))
-          })
+          }
         : r;
     // The profiles the skipped packs declare, where a packScript in the
     // page registered them in some other set: those not built in, of the
@@ -168435,7 +168792,7 @@ const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
     const declared = [];
     const sets = packRegistry && typeof packRegistry === 'object' ? packRegistry : {};
     for (const key of Object.keys(sets)) {
-      const entry = sets[key];
+      const entry = sets[key] && typeof sets[key] === 'object' ? Object.assign(Object.create(null), sets[key]) : null;
       if (!entry || !Array.isArray(entry.packs) || !entry.packs.some((n) => named.includes(n))) continue;
       const own = Array.isArray(entry.packProfiles)
         ? entry.packProfiles
@@ -168476,7 +168833,7 @@ const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
   }
   // A scan with registered packs: the options without them, and a result
   // that names them and lists the core rules they replace.
-  const scanOptions = Object.assign({}, engineOptions);
+  const scanOptions = Object.assign(Object.create(null), engineOptions);
   delete scanOptions.packs;
   const result = runProfiles(scanOptions, (eo) => {
     const selection = resolveEffectiveRunOnly(eo, runOnly);
@@ -168488,17 +168845,14 @@ const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
   );
   const stamp = (r) => {
     if (!r || typeof r !== 'object') return r;
-    const out = Object.assign({}, r, {
-      engine: Object.assign({}, r.engine, { packs: PACK_ENTRY.packs.slice() })
-    });
+    const out = { ...r, engine: { ...r.engine, packs: PACK_ENTRY.packs.slice() } };
     if (PACK_ENTRY.overrides.length) {
-      const ids = (r.overriddenBuiltinIds || []).concat(PACK_ENTRY.overrides);
+      const ids = (Array.isArray(r.overriddenBuiltinIds) ? r.overriddenBuiltinIds : []).concat(PACK_ENTRY.overrides);
       out.overriddenBuiltinIds = ids.filter((id, i) => ids.indexOf(id) === i).sort();
     }
     return out;
   };
   return isThenable(result) ? result.then(stamp) : stamp(result);
-  }
 }
 
 // =======================
@@ -169188,13 +169542,13 @@ const createSafeDom = (function createSafeDom() {
   return createSafeDom.__instance;
 });
 const getFrameRpcRegistry = (function getFrameRpcRegistry(win) {
-  if (!win.__a11yCoreFrameRpc__) {
-    win.__a11yCoreFrameRpc__ = {
-      pending: new Map(),
-      seq: 0,
-      responder: null,
-      listening: false
-    };
+  if (!Object.prototype.hasOwnProperty.call(win, '__a11yCoreFrameRpc__')) {
+    const registry = Object.create(null);
+    registry.pending = new Map();
+    registry.seq = 0;
+    registry.responder = null;
+    registry.listening = false;
+    win.__a11yCoreFrameRpc__ = registry;
   }
   return win.__a11yCoreFrameRpc__;
 });
@@ -169204,8 +169558,14 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
   if (registry.listening) return registry;
 
   dom.addEventListener(win, 'message', function a11yCoreFrameRpcListener(event) {
-    const data = event && event.data;
-    if (!data || data.__a11ycore !== true || data.channel !== channel) return;
+    // A message's fields are read as its own, never from Object.prototype.
+    const message = event && event.data;
+    if (!message || typeof message !== 'object') return;
+    const data = Object.create(null);
+    for (const key of ['__a11ycore', 'channel', 'type', 'requestId', 'payload']) {
+      if (Object.prototype.hasOwnProperty.call(message, key)) data[key] = message[key];
+    }
+    if (data.__a11ycore !== true || data.channel !== channel) return;
 
     if (data.type === 'ping') {
       try {
@@ -169580,7 +169940,7 @@ function findChildFrameElements(roots, includeShadowDom) {
 }
 
 function engineOptionsForFrames(eo) {
-  if (!Array.isArray(eo.customRules)) return eo;
+  if (!Array.isArray(frameOptionOf(eo, 'customRules'))) return eo;
   const toSource = (v) => (typeof v === 'function' ? v.toString() : v);
   return {
     ...eo,
@@ -169806,7 +170166,9 @@ function budgetedOptions(engineOptions, eo, budget, scanStartedAt) {
   if (budget === null || scanStartedAt === null) return engineOptions;
   const left = budget - (Date.now() - scanStartedAt);
   if (left >= budget) return engineOptions;
-  const out = Object.assign({}, eo, left > 0 ? { timeBudgetMs: left } : {});
+  // With no prototype: a read-only value on Object.prototype can't refuse
+  // a key, and none is read from it (round 12, R12F-6).
+  const out = Object.assign(Object.create(null), eo, left > 0 ? { timeBudgetMs: left } : {});
   if (left <= 0) Object.defineProperty(out, '__budgetSpent', { value: true });
   // The scan's budget, which the warnings give, not what is left of it
   // (round 12, A12-5). Set by the engine only, not enumerable.
@@ -169946,12 +170308,18 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
 
 function a11yCoreEnableFrameResponder() {
   return enableFrameRpcResponder(window, function (payload) {
+    // The command's own fields, never ones on Object.prototype.
+    const field = (key, fallback) =>
+      payload && typeof payload === 'object' && Object.prototype.hasOwnProperty.call(payload, key)
+        ? payload[key]
+        : fallback;
+    const startedAt = field('scanStartedAt', null);
     return scanAcrossFrames(
-      payload ? payload.pageUrl : null,
-      payload ? payload.contextSelector : null,
-      payload ? payload.engineOptions : {},
-      payload ? payload.runOnly : null,
-      payload && typeof payload.scanStartedAt === 'number' ? payload.scanStartedAt : null
+      field('pageUrl', null),
+      field('contextSelector', null),
+      field('engineOptions', {}),
+      field('runOnly', null),
+      typeof startedAt === 'number' ? startedAt : null
     );
   });
 }
@@ -170143,15 +170511,22 @@ async function waitForPageReady(options) {
 // Fetches the style sheets a page can't read, for engineOptions.styleSheets
 // (src/core/stylesheet-preload.js).
 async function preloadStyleSheets(options) {
-  const opts = options && typeof options === 'object' ? options : {};
-  const doc = opts.document || (typeof document !== 'undefined' ? document : null);
+  // The options' own keys only: a value a page's script put on
+  // Object.prototype (deadline: 0) is never read as one (round 12, R12F-7).
+  const option = (key) =>
+    options && typeof options === 'object' && Object.prototype.hasOwnProperty.call(options, key)
+      ? options[key]
+      : undefined;
+  const doc = option('document') || (typeof document !== 'undefined' ? document : null);
+  const givenTimeout = option('timeoutMs');
   const timeoutMs =
-    typeof opts.timeoutMs === 'number' && Number.isFinite(opts.timeoutMs) && opts.timeoutMs >= 0
-      ? opts.timeoutMs
+    typeof givenTimeout === 'number' && Number.isFinite(givenTimeout) && givenTimeout >= 0
+      ? givenTimeout
       : 5000;
   const fetchFn = typeof fetch === 'function' ? fetch : null;
+  const givenDeadline = option('deadline');
   const deadline =
-    typeof opts.deadline === 'number' && Number.isFinite(opts.deadline) ? opts.deadline : null;
+    typeof givenDeadline === 'number' && Number.isFinite(givenDeadline) ? givenDeadline : null;
   // The sheets the deadline left unread, on the list resolved with.
   const notRead = [];
   const done = (list) => {
