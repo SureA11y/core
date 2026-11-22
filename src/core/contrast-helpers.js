@@ -3595,6 +3595,11 @@ function createContrastHelpers(opts, shared) {
       // unless the browser's sheet colors it (a <mark>): jsdom then gives
       // it a value of its own.
       if (__isLink(el)) {
+        // <body link> colors it, as computedStyle reads it under jsdom
+        // (dom-helpers' presentational hints).
+        const doc = dom.ownerDocument(el);
+        const body = doc ? dom.body(doc) : null;
+        if (body && dom.hasAttribute(body, 'link')) return undefined;
         const cs = __contrastComputedStyle(el);
         const own = cs ? parseCssColorToRgba(cs.color) : null;
         const link = parseCssColorToRgba(__SCHEME_COLORS.light.link);

@@ -601,6 +601,14 @@ function createDomHelpers(opts) {
   //   jsdom's [hidden] rule gives it display: none. Where no author rule
   //   or style attribute sets its display, it is inline-block, as Chromium
   //   draws it. Whether other engines draw it is unverified.
+  // - HTML's presentational hints (HTML, Rendering, 15.3) and SVG's fill
+  //   presentation attribute set no style: `<font color>`, `<body text>`,
+  //   `<body link>` (on links; `vlink` and `alink` are left out, as jsdom
+  //   visits and activates no link), `bgcolor` on <body>, <table>,
+  //   <thead>, <tbody>, <tfoot>, <tr>, <td> and <th>, and `fill` on an SVG
+  //   element. Each applies where no author declaration of the property
+  //   applies to the element (a style attribute or a rule wins over a
+  //   hint), and color and fill are inherited from where they apply.
   // The author's declaration of prop that applies to el, lower-cased: null
   // for none, undefined where it can't be told (contrast's reading of the
   // cascade: !important, the style attribute, specificity and order).
@@ -612,6 +620,106 @@ function createDomHelpers(opts) {
     } catch {
       return undefined;
     }
+  }
+  const __HINT_BGCOLOR_TAGS = new Set([
+    'body',
+    'table',
+    'thead',
+    'tbody',
+    'tfoot',
+    'tr',
+    'td',
+    'th'
+  ]);
+  const __HINT_SELECTOR = 'font[color], body[text], body[link], [bgcolor], [fill]';
+  const __hintRootCache = new WeakMap();
+  // Whether the element's tree holds any presentational attribute at all:
+  // most pages hold none, and then nothing here runs.
+  function __treeHasHints(el) {
+    let root;
+    try {
+      root = dom.getRootNode(el);
+    } catch {
+      root = null;
+    }
+    if (!root) return false;
+    if (__hintRootCache.has(root)) return __hintRootCache.get(root);
+    let has;
+    try {
+      has = !!dom.querySelector(root, __HINT_SELECTOR);
+    } catch {
+      has = false;
+    }
+    __hintRootCache.set(root, has);
+    return has;
+  }
+  // HTML's rules for parsing a legacy colour value, as rgb(): null where
+  // the value is no colour (empty, or "transparent").
+  function __legacyColor(raw) {
+    let input = String(raw == null ? '' : raw).replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '');
+    if (!input || /^transparent$/i.test(input)) return null;
+    const rgb = (r, g, b) => `rgb(${r}, ${g}, ${b})`;
+    if (/^[a-z]+$/i.test(input)) {
+      const named = contrast.parseCssColorToRgba(input.toLowerCase());
+      if (named) return rgb(named.r, named.g, named.b);
+    }
+    let m = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(input);
+    if (m) return rgb(...[m[1], m[2], m[3]].map((h) => parseInt(h + h, 16)));
+    input = [...input]
+      .map((ch) => (ch.codePointAt(0) > 0xffff ? '00' : ch))
+      .join('')
+      .slice(0, 128);
+    if (input[0] === '#') input = input.slice(1);
+    input = input.replace(/[^0-9a-f]/gi, '0');
+    while (!input.length || input.length % 3) input += '0';
+    let len = input.length / 3;
+    let parts = [input.slice(0, len), input.slice(len, 2 * len), input.slice(2 * len)];
+    if (len > 8) {
+      parts = parts.map((p) => p.slice(len - 8));
+      len = 8;
+    }
+    while (len > 2 && parts.every((p) => p[0] === '0')) {
+      parts = parts.map((p) => p.slice(1));
+      len -= 1;
+    }
+    if (len > 2) parts = parts.map((p) => p.slice(0, 2));
+    return rgb(...parts.map((p) => parseInt(p, 16)));
+  }
+  const __INHERIT_KEYWORDS = new Set(['inherit', 'unset']);
+  // jsdom's own value of prop for an element, before any hint here.
+  const __beforeHints = new WeakMap();
+  function __unhinted(el, prop) {
+    const own = __beforeHints.get(el);
+    if (own && own[prop] !== undefined) return own[prop];
+    return String(computedStyle(el)[prop] || '');
+  }
+  // The value of an inherited property (color or fill) that el takes from
+  // a hint on an ancestor (host: the nearest element with that hint), or
+  // null where el keeps jsdom's: el declares it itself, or jsdom's value
+  // is not the one it inherited.
+  function __inheritedHint(el, cs, prop, host) {
+    if (!host || host === el) return null;
+    const decl = __authorDecl(el, prop);
+    if (decl === undefined) return null;
+    if (
+      decl !== null &&
+      !__INHERIT_KEYWORDS.has(decl) &&
+      !(prop === 'color' && decl === 'currentcolor')
+    )
+      return null;
+    const parent = dom.parentElement(el);
+    if (!parent) return null;
+    // Resolve the elements between host and el from the top, so each
+    // reads its parent's answer from the cache.
+    const path = [];
+    for (let p = parent, i = 0; p && p !== host && i < 10000; p = dom.parentElement(p), i++)
+      path.push(p);
+    for (let k = path.length - 1; k >= 0; k--) computedStyle(path[k]);
+    const pcs = computedStyle(parent);
+    const was = __unhinted(parent, prop);
+    const now = String(pcs[prop] || '');
+    if (now === was || String(cs[prop] || '') !== was) return null;
+    return now;
   }
   function __jsdomStyleFixesOf(el, cs) {
     let out = null;
@@ -666,6 +774,87 @@ function createDomHelpers(opts) {
     )
       set('display', 'inline-block');
 
+    // Presentational hints
+    if (!__treeHasHints(el)) return out;
+    const ns = dom.namespaceURI(el);
+    const before = {};
+    // color: <font color>, <body text>, and <body link> on a link no
+    // author rule colors.
+    // The nearest element that can set a color hint: a link's color is the
+    // browser's (or <body link>'s), whatever is around it.
+    let color = null;
+    let colorHost;
+    try {
+      colorHost = dom.closest(el, 'font[color], body[text], a[href], area[href]');
+    } catch {
+      colorHost = null;
+    }
+    if (colorHost === el) {
+      if (__authorDecl(el, 'color') === null) {
+        if (html && tag === 'font') color = __legacyColor(dom.getAttribute(el, 'color'));
+        else if (html && tag === 'body') color = __legacyColor(dom.getAttribute(el, 'text'));
+        else if (html) {
+          const doc = dom.ownerDocument(el);
+          const body = doc ? dom.body(doc) : null;
+          if (body && dom.hasAttribute(body, 'link'))
+            color = __legacyColor(dom.getAttribute(body, 'link'));
+        }
+      }
+    } else if (colorHost) {
+      color = __inheritedHint(el, cs, 'color', colorHost);
+    }
+    if (color && color !== String(cs.color || '')) {
+      before.color = String(cs.color || '');
+      set('color', color);
+      // -webkit-text-fill-color follows color where the page sets none.
+      const fill = String(cs.webkitTextFillColor || '');
+      if (fill === before.color) {
+        set('-webkit-text-fill-color', color);
+        set('webkitTextFillColor', color);
+      }
+    }
+    // background-color: bgcolor, where no author background applies.
+    if (html && __HINT_BGCOLOR_TAGS.has(tag) && dom.hasAttribute(el, 'bgcolor')) {
+      const bg = __legacyColor(dom.getAttribute(el, 'bgcolor'));
+      if (
+        bg &&
+        __authorDecl(el, 'background-color') === null &&
+        __authorDecl(el, 'background') === null
+      )
+        set('background-color', bg);
+    }
+    // fill: the SVG presentation attribute, inherited.
+    if (ns === 'http://www.w3.org/2000/svg') {
+      let fill = null;
+      const fillDecl = __authorDecl(el, 'fill');
+      if (fillDecl === null && dom.hasAttribute(el, 'fill')) {
+        const v = String(dom.getAttribute(el, 'fill') || '').trim();
+        if (/^currentcolor$/i.test(v)) fill = color || String(cs.color || '');
+        else if (/^none$/i.test(v)) fill = 'none';
+        else {
+          const rgba = contrast.parseCssColorToRgba(v);
+          if (rgba)
+            fill =
+              rgba.a < 1
+                ? `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${rgba.a})`
+                : `rgb(${rgba.r}, ${rgba.g}, ${rgba.b})`;
+        }
+      } else if (fillDecl === null || (fillDecl && __INHERIT_KEYWORDS.has(fillDecl))) {
+        let host;
+        try {
+          host = dom.closest(el, '[fill]');
+        } catch {
+          host = null;
+        }
+        if (host && dom.namespaceURI(host) === 'http://www.w3.org/2000/svg')
+          fill = __inheritedHint(el, cs, 'fill', host);
+      }
+      if (fill && fill !== String(cs.fill || '')) {
+        before.fill = String(cs.fill || '');
+        set('fill', fill);
+      }
+    }
+    if (before.color !== undefined || before.fill !== undefined) __beforeHints.set(el, before);
     return out;
   }
 
