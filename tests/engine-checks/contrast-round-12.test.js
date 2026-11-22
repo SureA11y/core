@@ -15,6 +15,8 @@ const {
   runa11yCoreOnDom
 } = require('../helpers/runDomRulesOnHtml.js');
 
+const { SIGN_CASES_C12_1 } = require('./contrast-round-12-cases.js');
+
 const page = (body, head = '') =>
   `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main>${body}</main></body></html>`;
 
@@ -132,4 +134,14 @@ test('the width SVG text may take is a real upper bound, without a layout (C12-8
   assert.equal(outcome(bar(40, '😀A')), 'cantTell');
   assert.equal(outcome(bar(60, '売上')), 'cantTell');
   assert.equal(outcome(bar(72, '売上')), 'pass');
+});
+
+test('a sign that is a flex or grid item, or beside a float or a positioned box, is a graphic, as in Chromium (C12-1)', () => {
+  for (const body of SIGN_CASES_C12_1) {
+    assert.equal(check(page(body), 'contrast-minimum').outcome, 'pass', body);
+    assert.equal(check(page(body), 'symbol-graphic-contrast').outcome, 'cantTell', body);
+  }
+  // In one inline run, the sign is text.
+  const inline = '<p style="color:#000"><span style="color:#aaa">$</span><span>45.00</span></p>';
+  assert.equal(check(page(inline), 'contrast-minimum').outcome, 'fail');
 });

@@ -13,6 +13,7 @@ const assert = require('node:assert/strict');
 
 const { chromium, executablePath, skip } = require('../helpers/chromium.js');
 const { addBundle } = require('../helpers/browserBundle');
+const { SIGN_CASES_C12_1 } = require('./contrast-round-12-cases.js');
 
 const page = (body, head = '') =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>t</title>${head}</head><body><main>${body}</main></body></html>`;
@@ -132,5 +133,16 @@ test(
     );
     assert.equal(small.outcome, 'cantTell');
     assert.equal(small.occ[0][1], 'BACKGROUND_OVERLAP');
+  }
+);
+
+test(
+  'a sign that is a flex or grid item, or beside a float or a positioned box, is a graphic, as under jsdom (C12-1)',
+  { skip },
+  async () => {
+    for (const body of SIGN_CASES_C12_1) {
+      assert.equal((await run(page(body), 'contrast-minimum')).outcome, 'pass', body);
+      assert.equal((await run(page(body), 'symbol-graphic-contrast')).outcome, 'cantTell', body);
+    }
   }
 );

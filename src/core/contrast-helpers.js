@@ -562,7 +562,8 @@ function createContrastHelpers(opts, shared) {
   // "〒100-0001"), even when markup gives it an element of its own: it is
   // read, so it is text, held to 1.4.3, not a graphic. "Next to" is the
   // nearest visible character before or after it, not past a block
-  // boundary (a block, a line break) and not counting text that is not
+  // boundary (a block, a flex or grid item, a float, an absolutely
+  // positioned box, a line break) and not counting text that is not
   // drawn (display:none, visibility:hidden, visually hidden), nor the text
   // of a link beside it. A sign alone between links, or a separator such
   // as ">", is not this: it stays a graphic.
@@ -580,6 +581,21 @@ function createContrastHelpers(opts, shared) {
   function __inlineDisplay(cs) {
     const d = String((cs && cs.display) || 'inline');
     return d === 'contents' || d.startsWith('inline') || d.startsWith('ruby');
+  }
+
+  // Whether el's box is a block whatever its display says: a float, an
+  // absolutely positioned box, or an item of a flex or grid container
+  // (CSS Display 3, blockification). A browser computes such a display as
+  // a block already; jsdom doesn't, so it is read here, and both agree
+  // (round 12, C12-1).
+  function __runBlockified(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.cssFloat || cs.float) && trim(cs.cssFloat || cs.float) !== 'none') return true;
+    if (cs.position === 'absolute' || cs.position === 'fixed') return true;
+    const parent = composedParent(el);
+    if (!parent || dom.nodeType(parent) !== 1) return false;
+    const d = String(__contrastComputedStyle(parent).display || '');
+    return /(^|\s|-)(flex|grid)\b/.test(d);
   }
 
   function __runHidden(el, cs) {
@@ -622,7 +638,7 @@ function createContrastHelpers(opts, shared) {
         return '';
       const cs = __contrastComputedStyle(n);
       if (__runHidden(n, cs)) return null;
-      if (!__inlineDisplay(cs)) return '';
+      if (!__inlineDisplay(cs) || __runBlockified(n, cs)) return '';
       for (
         let c = forward ? dom.firstChild(n) : dom.lastChild(n);
         c;
@@ -657,7 +673,8 @@ function createContrastHelpers(opts, shared) {
       if (__isSignText(dom.nodeValue(t))) {
         let block = dom.parentElement(t);
         for (let guard = 0; block && guard < 200; guard++) {
-          if (!__inlineDisplay(__contrastComputedStyle(block))) break;
+          const bcs = __contrastComputedStyle(block);
+          if (!__inlineDisplay(bcs) || __runBlockified(block, bcs)) break;
           block = dom.parentElement(block);
         }
         if (block) {

@@ -13,7 +13,8 @@
  *   Applies to every visible text node in scope that holds a letter or a
  *   digit (ACT afw4f7), or that holds only currency signs (Unicode Sc, such
  *   as € $ £ ¥) or 〒, with punctuation and spaces, where the nearest
- *   visible character beside it on its line, not past a block boundary, a
+ *   visible character beside it on its line, not past a block boundary (a
+ *   block, a flex or grid item, a float, an absolutely positioned box), a
  *   line break or a link's text, is a letter or a digit: "€" in
  *   <span>€</span>45,00 is read with its price, so it is text. Plus the
  *   label of <input
