@@ -278,11 +278,13 @@ test('for-in order on Object.prototype stays as the page left it (round 12, R12F
   Object.prototype.zq2 = 2;
   Object.prototype.zq3 = 3;
   try {
-    main.runDomRulesInPage('https://example.test/', null, {}, null);
-    main.runa11yCoreInPage('https://example.test/', null, {}, null);
-    const keys = [];
-    for (const key in {}) keys.push(key);
-    assert.deepEqual(keys, ['zq1', 'zq2', 'zq3']);
+    // After each scan: two that each reversed it would put it back.
+    for (const scan of [main.runDomRulesInPage, main.runa11yCoreInPage]) {
+      scan('https://example.test/', null, {}, null);
+      const keys = [];
+      for (const key in {}) keys.push(key);
+      assert.deepEqual(keys, ['zq1', 'zq2', 'zq3']);
+    }
   } finally {
     delete Object.prototype.zq1;
     delete Object.prototype.zq2;
