@@ -160,7 +160,7 @@ test('dom helpers perf: queryAllDeep caches shadow root discovery when excludeSe
   );
 });
 
-test('dom helpers perf: queryAllDeep does NOT cache shadow root discovery when excludeSelectors is non-empty', () => {
+test('dom helpers perf: queryAllDeep caches shadow root discovery per exclude list when excludeSelectors is non-empty', () => {
   const dom = new JSDOM(
     `<!doctype html><html><body>
       <div id="host" class="excluded"></div>
@@ -190,7 +190,8 @@ test('dom helpers perf: queryAllDeep does NOT cache shadow root discovery when e
     return originalShadowQSA(sel, ...rest);
   };
 
-  // excludeSelectors present => discovery caching is intentionally disabled (correctness over perf).
+  // excludeSelectors present => discovery is cached under that exclude
+  // list's key, and the roots of excluded hosts are left out.
   const helpers = createDomHelpers({
     window,
     document,
@@ -200,16 +201,15 @@ test('dom helpers perf: queryAllDeep does NOT cache shadow root discovery when e
   });
 
   const before1 = starScans;
-  helpers.queryAllDeep('button');
+  const r1 = helpers.queryAllDeep('button').map((el) => el.id);
   const after1 = starScans;
   assert.ok(after1 > before1, 'first deep query should scan for shadow hosts');
+  assert.deepEqual(r1, ['light'], 'the excluded host keeps its shadow button out');
 
   const before2 = starScans;
-  helpers.queryAllDeep('button');
+  const r2 = helpers.queryAllDeep('button').map((el) => el.id);
   const after2 = starScans;
 
-  assert.ok(
-    after2 > before2,
-    'second deep query should scan again when excludeSelectors is non-empty (no discovery cache)'
-  );
+  assert.equal(after2, before2, 'second deep query reuses the discovery cached for this list');
+  assert.deepEqual(r2, ['light'], 'the cached discovery still leaves the excluded host out');
 });
