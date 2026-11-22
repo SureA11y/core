@@ -642,8 +642,12 @@ test(`${RULE_ID}: an unfocusable element drawn as a button is asked about withou
     }).occurrences[0];
     assert.equal(occ.data.details.reasonCode, 'CLICK_HANDLER_NOT_FOCUSABLE', body);
     assert.equal(occ.data.details.styledAsControl, true, body);
-    assert.equal(occ.lean.toward, 'fail', body);
-    assert.equal(occ.lean.i18n.whyKey, 'clickHandlerKeyboardOperable_lean_why_styledControl');
+    // A background alone gets no lean; a border leans fail (round 12, U12-13).
+    if (occ.data.details.controlCue === 'background') assert.equal(occ.lean, undefined, body);
+    else {
+      assert.equal(occ.lean.toward, 'fail', body);
+      assert.equal(occ.lean.i18n.whyKey, 'clickHandlerKeyboardOperable_lean_why_styledControl');
+    }
   }
   for (const body of [
     // no padding, no box of its own, or a background the same as behind it
@@ -657,5 +661,83 @@ test(`${RULE_ID}: an unfocusable element drawn as a button is asked about withou
     '<div onclick="a()" style="background:#2a9d8f;padding:12px"></div>'
   ]) {
     assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+// "Short visible text" leaves out hidden and screen-reader-only text
+// (round 12, U12-11).
+test(`${RULE_ID}: a drawn button's label is read without its hidden text`, () => {
+  const box = (extra) =>
+    run(
+      `<div id="d" onclick="x()" style="display:inline-block;padding:8px;border:1px solid">Buy ${extra}</div>`
+    );
+  for (const extra of [
+    '<span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">the blue widget now today ok</span>',
+    '<span style="display:none">the blue widget now today ok</span>'
+  ]) {
+    const rule = assertRule(box(extra), RULE_ID, 'cantTell');
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'CLICK_HANDLER_NOT_FOCUSABLE');
+  }
+  // Long visible text is a wrapper, not a drawn control.
+  assertRule(box('<span>the blue widget now today ok</span>'), RULE_ID, 'notApplicable');
+});
+
+// A styled span inside a native button is part of the button's look; the
+// button is what the keyboard operates (round 12, U12-12).
+test(`${RULE_ID}: a styled <span onclick> inside a <button> is left out`, () => {
+  assertRule(
+    run('<button><span onclick="x()" style="padding:2px;background:#eee">Go</span></button>'),
+    RULE_ID,
+    'notApplicable'
+  );
+  // The same span outside the button is asked about.
+  assertRule(
+    run('<span onclick="x()" style="padding:2px;background:#eee">Go</span>'),
+    RULE_ID,
+    'cantTell'
+  );
+});
+
+// Gradients, box-shadow outlines and close or menu symbols are control cues
+// too. Only a strong cue (a border, a shadow, a symbol, or a pointer
+// cursor) leans fail; a box set apart by a background alone, as a badge in
+// a sentence, is asked about with no lean (round 12, U12-13).
+test(`${RULE_ID}: control cues, and the lean only a strong one gives`, () => {
+  const occOf = (body) =>
+    assertRule(run(body), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 })
+      .occurrences[0];
+  for (const [body, cue, lean] of [
+    [
+      '<p>Status <span onclick="track()" style="padding:2px 6px;background:#eee;border-radius:4px">New</span></p>',
+      'background',
+      undefined
+    ],
+    [
+      '<div onclick="x()" style="display:inline-block;padding:8px 16px;background-image:linear-gradient(#36c,#039);color:#fff">Subscribe</div>',
+      'background',
+      undefined
+    ],
+    [
+      '<div onclick="x()" style="display:inline-block;padding:8px 16px;box-shadow:0 0 0 1px #333">Subscribe</div>',
+      'shadow',
+      'fail'
+    ],
+    ['<span onclick="x()">\u2715</span>', 'glyph', 'fail'],
+    ['<span onclick="x()">\u00d7</span>', 'glyph', 'fail'],
+    ['<span onclick="x()">\u2630</span>', 'glyph', 'fail']
+  ]) {
+    const occ = occOf(body);
+    assert.equal(occ.data.details.controlCue, cue, body);
+    assert.equal(occ.lean && occ.lean.toward, lean, body);
+  }
+  // A shadow in a transparent colour, or of no size, draws nothing.
+  for (const shadow of ['0 0 0 1px transparent', '0 0 0 0 #333']) {
+    assertRule(
+      run(
+        `<div onclick="x()" style="display:inline-block;padding:8px;box-shadow:${shadow}">Subscribe</div>`
+      ),
+      RULE_ID,
+      'notApplicable'
+    );
   }
 });

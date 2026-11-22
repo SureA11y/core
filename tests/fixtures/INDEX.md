@@ -56,7 +56,7 @@ Total rules: **154**. With fixture: **149**. Without fixture: **5**.
 | contrast-enhanced | automatic | `tests/fixtures/contrast-all-scenarios.html` | 45 | 4 | 5 | 0 | 36 |
 | contrast-minimum | automatic | `tests/fixtures/contrast-all-scenarios.html` | 45 | 4 | 5 | 0 | 36 |
 | control-name-title-only | manual | `tests/fixtures/control-name-title-only-all-scenarios.html` | 9 | 4 | 0 | 3 | 2 |
-| css-focus-indicator-suppressed | manual | `tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html` | 17 | 7 | 0 | 7 | 3 |
+| css-focus-indicator-suppressed | manual | `tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html` | 20 | 7 | 0 | 10 | 3 |
 | css-hidden-focus | manual | `tests/fixtures/css-hidden-focus-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | css-orientation-lock | automatic | `tests/fixtures/css-orientation-lock-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | definition-list-children-valid | automatic | `tests/fixtures/definition-list-children-valid-all-scenarios.html` | 14 | 6 | 0 | 7 | 1 |
@@ -139,7 +139,7 @@ Total rules: **154**. With fixture: **149**. Without fixture: **5**.
 | progressbar-name-present | automatic | `tests/fixtures/progressbar-name-present-all-scenarios.html` | 10 | 4 | 5 | 0 | 1 |
 | reflow-horizontal-scroll | manual | `tests/fixtures/reflow-horizontal-scroll-all-scenarios.html` | 8 | 3 | 2 | 3 | 0 |
 | region | manual | `tests/fixtures/region-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
-| resize-text-content-loss | manual | `tests/fixtures/resize-text-content-loss-all-scenarios.html` | 12 | 2 | 0 | 6 | 4 |
+| resize-text-content-loss | manual | `tests/fixtures/resize-text-content-loss-all-scenarios.html` | 13 | 2 | 0 | 7 | 4 |
 | role-img-text-alternative-present | automatic | `tests/fixtures/role-img-text-alternative-present-all-scenarios.html` | 28 | 6 | 11 | 0 | 11 |
 | scope-attr-valid | manual | `tests/fixtures/scope-attr-valid-all-scenarios.html` | 2 | 1 | 0 | 1 | 0 |
 | scrollable-region-focusable | manual | `tests/fixtures/scrollable-region-focusable-all-scenarios.html` | 8 | 0 | 0 | 5 | 3 |

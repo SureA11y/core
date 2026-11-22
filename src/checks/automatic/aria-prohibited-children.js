@@ -24,9 +24,12 @@
  *   may own without being required to (a separator between menu items, a
  *   submenu's role="menu" in a menu or menubar, a caption on a grid).
  *   The owned elements are the container's children in the accessibility
- *   tree: its DOM children, looking through generic wrappers (no role, no
- *   name, not focusable), and the elements its aria-owns
- *   references. A roleless wrapper with a name (a title) is a
+ *   tree: its children in the flat tree, looking through generic wrappers
+ *   (no role, no name, not focusable), and the elements its aria-owns
+ *   references. As in aria-required-children, unless the scan leaves shadow
+ *   DOM out, an element's open shadow root stands in for its light
+ *   children, and a <slot> for the elements assigned to it; a closed shadow
+ *   root stays unseen. A roleless wrapper with a name (a title) is a
  *   node of its own; it is still descended into to reach the items a
  *   component library buries inside it, but once one is found there the
  *   rest of that wrapper's subtree is not judged against the container.
@@ -279,10 +282,39 @@ function runInPage(ctx) {
   // An element's child elements by sibling links, not el.children: in jsdom
   // that collection stays live once read, and each later change under a
   // large parent (a list of thousands of items) rebuilds it.
+  //
+  // The children are those of the flat tree, as aria-required-children reads
+  // them: unless the scan leaves shadow DOM out, an element's open shadow
+  // root stands in for its light children, and a <slot> for the elements
+  // assigned to it (its fallback content is left out).
+  const deepShadow = (ctx.engineOptions || {}).includeShadowDom !== false;
+  function openShadowRoot(node) {
+    if (!deepShadow) return null;
+    try {
+      return dom.nodeType(node) === 1 ? dom.shadowRoot(node) || null : null;
+    } catch {
+      return null;
+    }
+  }
   function childElementsOf(el) {
     const out = [];
-    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c))
+    const from = el ? openShadowRoot(el) || el : null;
+    for (let c = from ? dom.firstElementChild(from) : null; c; c = dom.nextElementSibling(c)) {
+      if (
+        (dom.tagName(c) || '').toLowerCase() === 'slot' &&
+        typeof dom.get(c, 'assignedElements') === 'function'
+      ) {
+        let assigned;
+        try {
+          assigned = dom.assignedElements(c, { flatten: true }) || [];
+        } catch {
+          assigned = [];
+        }
+        for (const a of assigned) out.push(a);
+        continue;
+      }
       out.push(c);
+    }
     return out;
   }
 

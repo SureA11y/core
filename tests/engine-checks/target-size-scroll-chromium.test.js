@@ -6,7 +6,9 @@
  * one against those in its box, the page's against the page's. A fixed or
  * sticky target over a page whose small targets pass within its reach as it
  * scrolls is asked about (undersized-pinned-over-page), so the verdict is
- * the same at any scroll position (round 9, R9-8). This needs a layout, so
+ * the same at any scroll position (round 9, R9-8). One within reach only
+ * while it passes under the pinned box's background is hidden, not too
+ * close (round 12, U12-10). This needs a layout, so
  * it runs in Chromium.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
@@ -59,6 +61,11 @@ const SPREAD_LINKS =
 const TOP =
   '<button class="fixed" id="top" style="right:16px;bottom:40px" aria-label="Back to top">^</button>';
 
+const STICKY = (css) =>
+  `<!doctype html><html lang="en"><head><title>t</title>${STYLE}</head><body>` +
+  `<header style="position:sticky;top:0;height:64px;display:flex;align-items:center;${css}"><a id="icon" href="#s" style="display:inline-block;width:16px;height:16px">s</a></header>` +
+  `<main>${'<p style="margin:0"><a href="#x" style="display:inline-block;width:16px;height:16px">x</a></p><p style="height:200px"></p>'.repeat(20)}</main></body></html>`;
+
 // [name, page, expected occurrences as selector: reason code]
 const CASES = [
   [
@@ -74,6 +81,24 @@ const CASES = [
       '<button class="fixed" id="f1" style="left:8px;top:8px">a</button><button class="fixed" id="f2" style="left:28px;top:8px">b</button>'
     ),
     { '#f1': 'undersized-and-too-close', '#f2': 'undersized-and-too-close' }
+  ],
+  // A page target within reach of a header icon only while it passes under
+  // the header's background is hidden there, not too close (round 12,
+  // U12-10). A header that paints no background shows it.
+  [
+    'a small icon in a sticky header whose background hides the page links within reach',
+    STICKY('background:#fff'),
+    {}
+  ],
+  [
+    'a small icon in a transparent sticky header the page links pass within reach of',
+    STICKY(''),
+    { '#icon': 'undersized-pinned-over-page' }
+  ],
+  [
+    'a small icon in a sticky header too short to hide the page links within reach',
+    STICKY('background:#fff;height:20px'),
+    { '#icon': 'undersized-pinned-over-page' }
   ]
 ];
 

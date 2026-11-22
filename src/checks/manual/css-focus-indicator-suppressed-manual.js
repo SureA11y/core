@@ -22,7 +22,17 @@
  *   `:focus`/`:focus-visible` rule, or a rule with no state at all
  *   (`a { outline: none }`, `* { outline: 0 }`): an author declaration
  *   outranks the user agent's focus outline whatever its specificity, so
- *   it removes the indicator in the focused state too (WCAG F78). A rule
+ *   it removes the indicator in the focused state too (WCAG F78). A
+ *   `:focus-within` or `:has(:focus)` state is read the same way, as it
+ *   holds while the element has focus: `:focus-within` on the element
+ *   itself or on an ancestor (`main:focus-within a`), and `:has()` of a
+ *   focus state on an ancestor where the element matches its argument
+ *   (`main:has(a:focus) a`). A state on a sibling (`+`, `~`) says nothing
+ *   about the element's focus, and `:not(:focus-within)` stops holding once
+ *   it has focus: neither counts.
+ *   - The page's style sheets and those it adopts are read, and so are
+ *     each open shadow root's, adopted ones included, against the elements
+ *     in that root only. A rule
  *   that removes it only under `:not(:focus-visible)` keeps it for keyboard
  *   focus and is not counted; nor is the focus-visible polyfill's form of
  *   it, `:not(.focus-visible)` under `.js-focus-visible`, or
@@ -38,7 +48,7 @@
  *     element's focus outline and no focus rule draws a replacement; whether
  *     the page shows focus another way is for a person to check.
  *     It leans fail when every style sheet could be read, no :focus-within
- *     rule around the element draws a change, no inline focus or blur
+ *     or :has(:focus) rule around the element draws a change, no inline focus or blur
  *     handler is on it or an ancestor, the removing rule doesn't name
  *     focus-visible, and the listener hook, when it ran, saw no focus
  *     listener for it.
@@ -98,7 +108,12 @@
  *   `:where()` or `:matches()` counts too: `a:is(:focus, :hover)` is met
  *   by the focused link, so the whole `:is()` goes. A selector the engine cannot parse
  *   (vendor pseudo-elements, `:host`, unsupported `:is()` forms) throws
- *   there and is skipped rather than guessed at.
+ *   there and is skipped rather than guessed at. A selector list holding
+ *   one selector that can't be parsed (`button:-moz-focusring,
+ *   button:focus`) is invalid as a whole, and a browser drops the rule; in
+ *   jsdom, which keeps it, the list is tested with a query and the rule
+ *   skipped when it throws. Selectors are quoted as browsers
+ *   serialize them: `*:focus` reads `:focus`.
  */
 
 const id = 'css-focus-indicator-suppressed';
@@ -436,9 +451,8 @@ function runInPage(ctx) {
     return parts.map(trim).filter(Boolean);
   }
 
-  // :focus and :focus-visible, but never :focus-within: that one fires on
-  // an ancestor of the focused element and says nothing about whether the
-  // element itself is indicated.
+  // :focus and :focus-visible. :focus-within holds on the focused element's
+  // ancestors as well, and is read apart (ancestorFocusForm).
   const FOCUS_PSEUDO = /:focus(-visible)?(?![-\w])/g;
 
   function hasFocusPseudo(part) {
@@ -557,14 +571,81 @@ function runInPage(ctx) {
     }
   }
 
-  const suppressors = []; // { selector, base, sheet }
+  const suppressors = []; // { selector, base, also, sheet, kills, scope }
   // The style sheet being read, for the message to say where a rule is.
   let currentSheet = null;
-  const providers = []; // { base, subject }
-  // :focus-within rules that draw something: the compound holding the
-  // pseudo, without it. Read only for the lean, never to pass an element.
-  const withinProviders = [];
+  // The open shadow root whose style sheet is being read, or null for the
+  // document's: a shadow root's sheets style only the elements in it.
+  let currentScope = null;
+  const providers = []; // { base, subject, own, decls, scope }
+  // :focus-within and :has(:focus) rules that draw something: the compound
+  // holding the pseudo, without it. Read only for the lean, never to pass
+  // an element.
+  const withinProviders = []; // { base, scope }
   const FOCUS_WITHIN = /:focus-within(?![-\w])/g;
+  const HAS_START = /:has\(/gi;
+
+  // The :has() pseudo-classes in a compound whose argument names a focus
+  // state (`:has(:focus)`, `:has(> a:focus-visible)`), each as
+  // { text, arg }, where arg is the argument as written.
+  function focusHasOf(compound) {
+    const out = [];
+    HAS_START.lastIndex = 0;
+    let m;
+    while ((m = HAS_START.exec(compound))) {
+      const start = m.index + m[0].length;
+      let depth = 1;
+      let j = start;
+      for (; j < compound.length && depth; j++) {
+        if (compound[j] === '(') depth += 1;
+        else if (compound[j] === ')') depth -= 1;
+      }
+      const arg = compound.slice(start, depth ? j : j - 1);
+      if (hasFocusPseudo(arg) || /:focus-within(?![-\w])/.test(arg))
+        out.push({ text: compound.slice(m.index, j), arg });
+      HAS_START.lastIndex = j;
+    }
+    return out;
+  }
+  const scopeOk = (x, el) => !x.scope || treeOf(el) === x.scope;
+
+  // A rule whose focus state is on an ancestor of its subject
+  // (`main:focus-within a`, `main:has(a:focus) a`), or on the subject as
+  // :focus-within, read as it applies while the subject has focus: the
+  // ancestors the subject is inside are in the focus-within state, and a
+  // :has() of a focus state holds when the subject matches its argument.
+  // Returns { base, also } (the selector without those states, and the
+  // arguments the subject must match), or null. Only states reached
+  // through descendant and child combinators are read: a sibling's
+  // :focus-within says nothing of the subject's focus.
+  function ancestorFocusForm(part) {
+    if (!/:focus-within(?![-\w])|:has\(/i.test(part)) return null;
+    const pieces = splitWithCombinators(part);
+    const also = [];
+    let changed = false;
+    for (let i = 0; i < pieces.length; i++) {
+      let compound = pieces[i].compound;
+      const within = /:focus-within(?![-\w])/.test(compound);
+      const has = i < pieces.length - 1 ? focusHasOf(compound) : [];
+      if (!within && !has.length) continue;
+      if (/:not\([^)]*:focus-within/i.test(compound)) return null;
+      for (let k = i + 1; k < pieces.length; k++) {
+        if (!/^[\s>]+$/.test(pieces[k].comb)) return null;
+      }
+      FOCUS_WITHIN.lastIndex = 0;
+      compound = compound.replace(FOCUS_WITHIN, '');
+      for (const h of has) {
+        const arg = trim(dropFocus(h.arg).replace(FOCUS_WITHIN, ''));
+        if (/^[+~]/.test(arg) || splitArgs(h.arg).length > 1) return null;
+        also.push(trim(arg.replace(/^>\s*/, '')) || '*');
+        compound = compound.replace(h.text, '');
+      }
+      pieces[i].compound = trim(compound) || '*';
+      changed = true;
+    }
+    if (!changed) return null;
+    return { base: dropFocus(pieces.map((p) => p.comb + p.compound).join('')), also };
+  }
 
   // The focus-visible polyfill (WICG) marks keyboard focus with a class,
   // `.focus-visible`, and the scope it runs in with `.js-focus-visible`
@@ -640,7 +721,14 @@ function runInPage(ctx) {
     if (!suppresses && !provides) return;
     const kills = suppresses ? outlineParts(style).kills : null;
 
-    for (const part of splitSelectorList(selectorText)) {
+    const parts = splitSelectorList(selectorText);
+    // A selector list with one selector the browser can't parse is invalid
+    // as a whole, and a browser drops the rule (`button:-moz-focusring,
+    // button:focus` in Chromium). jsdom keeps it in its style sheets: test
+    // the list as the browser parsed it.
+    if (parts.length > 1 && !validSelectorList(selectorText)) return;
+
+    for (const part of parts) {
       // The polyfill's form is read as native :not(:focus-visible) for the
       // outline it removes; what the same rule draws is read as written.
       const asNative = suppresses ? polyfillAsNative(part) : part;
@@ -653,15 +741,79 @@ function runInPage(ctx) {
     }
   }
 
+  // A browser has already dropped a rule whose selector list it can't
+  // parse, so only a DOM without CSS.supports (jsdom) is tested, by a query
+  // that compiles the whole list: jsdom's matches() can return before it
+  // reaches the selector it can't parse.
+  const validLists = new Map();
+  const parsedByBrowser = (() => {
+    try {
+      const v = dom.defaultView(document);
+      // Read directly: an element named CSS can shadow it, which only
+      // costs the query below.
+      const css = v ? v.CSS : null;
+      return !!css && typeof css.supports === 'function';
+    } catch {
+      return false;
+    }
+  })();
+  function validSelectorList(selectorText) {
+    // Only a vendor-prefixed pseudo-class or pseudo-element (`:-moz-…`,
+    // `::-webkit-…`) is parsed by one and not the other: a list without one
+    // is not queried, which in jsdom walks the whole document.
+    if (parsedByBrowser || !/::?-/.test(selectorText)) return true;
+    if (validLists.has(selectorText)) return validLists.get(selectorText);
+    let valid = true;
+    try {
+      dom.querySelector(document, selectorText);
+    } catch {
+      valid = false;
+    }
+    validLists.set(selectorText, valid);
+    return valid;
+  }
+  // The selector as quoted in the message, serialized as browsers do: a
+  // universal selector before another simple selector is left out
+  // (`*:focus` reads `:focus`), as Chromium already gives it.
+  function quotedSelector(part) {
+    return trim(part).replace(/(^|[\s>+~(,])\*(?=[:.#[])/g, '$1');
+  }
+
   function collectFromPart(part, suppresses, provides, kills) {
     // `:not(:focus-visible)` leaves the outline on keyboard focus: what such
     // a rule removes is only the mouse's focus ring, so it is never a
     // suppressor.
     if (suppresses && /:not\(\s*:focus-visible\s*\)/.test(part)) suppresses = false;
-    if (provides && /:focus-within(?![-\w])/.test(part)) {
+    // `:not(:focus-within)` no longer holds once the element inside has
+    // focus: the rule removes nothing then.
+    if (suppresses && /:not\(\s*:focus-within\s*\)/.test(part)) suppresses = false;
+    if (provides && /:focus-within(?![-\w])|:has\(/i.test(part)) {
       for (const compound of splitCompounds(part)) {
-        if (!/:focus-within(?![-\w])/.test(compound)) continue;
-        withinProviders.push(trim(compound.replace(FOCUS_WITHIN, '')) || '*');
+        let base = compound;
+        const has = focusHasOf(compound);
+        if (!/:focus-within(?![-\w])/.test(compound) && !has.length) continue;
+        for (const h of has) base = base.replace(h.text, '');
+        FOCUS_WITHIN.lastIndex = 0;
+        withinProviders.push({
+          base: trim(base.replace(FOCUS_WITHIN, '')) || '*',
+          scope: currentScope
+        });
+      }
+    }
+    // A focus state on an ancestor (or :focus-within on the subject) that
+    // removes the subject's outline while it has focus.
+    if (suppresses && !hasPseudoElement(part)) {
+      const form = ancestorFocusForm(part);
+      if (form) {
+        suppressors.push({
+          selector: quotedSelector(part),
+          base: form.base,
+          also: form.also,
+          sheet: currentSheet,
+          kills,
+          scope: currentScope
+        });
+        suppresses = false;
       }
     }
     if (!hasFocusPseudo(part)) {
@@ -670,7 +822,13 @@ function runInPage(ctx) {
       // outline. Other states (:hover, :active) never match the static
       // element, so el.matches() leaves them out below.
       if (suppresses && !hasPseudoElement(part)) {
-        suppressors.push({ selector: trim(part), base: trim(part), sheet: currentSheet, kills });
+        suppressors.push({
+          selector: quotedSelector(part),
+          base: trim(part),
+          sheet: currentSheet,
+          kills,
+          scope: currentScope
+        });
       }
       return;
     }
@@ -690,10 +848,11 @@ function runInPage(ctx) {
 
     if (suppresses && isSubject && !hasPseudoElement(part)) {
       suppressors.push({
-        selector: trim(part),
+        selector: quotedSelector(part),
         base: stripFocusPseudo(part),
         sheet: currentSheet,
-        kills
+        kills,
+        scope: currentScope
       });
     }
 
@@ -706,7 +865,8 @@ function runInPage(ctx) {
         base: focusedBase,
         subject: isSubject,
         own: isSubject && !hasPseudoElement(part),
-        decls: provides
+        decls: provides,
+        scope: currentScope
       });
     }
   }
@@ -759,11 +919,60 @@ function runInPage(ctx) {
     }
   }
 
+  const CANDIDATE_SELECTOR =
+    'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
+  const candidates = helpers.queryAllSmart
+    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
+    : helpers.queryAll(CANDIDATE_SELECTOR);
+
+  // The open shadow roots the candidates are in: their style sheets, and
+  // the sheets they adopt, style the elements in them (and only those).
+  const shadowScopes = [];
+  {
+    const seen = new Set();
+    for (const el of candidates) {
+      const tree = el ? treeOf(el) : null;
+      if (!tree || seen.has(tree) || dom.nodeType(tree) !== 11) continue;
+      seen.add(tree);
+      shadowScopes.push(tree);
+    }
+  }
+  // A root's style sheets, then those it adopts. jsdom gives a shadow root
+  // no styleSheets list: its <style> elements are read instead.
+  const sheetsOf = (root) => {
+    const out = [];
+    try {
+      const list = root === document ? dom.styleSheets(document) : dom.get(root, 'styleSheets');
+      if (list) for (const sheet of list) out.push(sheet);
+      else
+        for (const style of dom.querySelectorAll(root, 'style')) {
+          let sheet = style.sheet;
+          // Nor does it parse a shadow root's <style> into a sheet: its text
+          // is parsed into a constructed one.
+          if (!sheet) {
+            const view = dom.defaultView(document);
+            const Sheet = view ? view.CSSStyleSheet : null;
+            if (typeof Sheet === 'function') {
+              sheet = new Sheet();
+              sheet.replaceSync(String(dom.textContent(style) || ''));
+            }
+          }
+          if (sheet) out.push(sheet);
+        }
+    } catch {}
+    try {
+      for (const sheet of dom.get(root, 'adoptedStyleSheets') || []) out.push(sheet);
+    } catch {}
+    return out;
+  };
+
   let sheetCount = 0;
   let unreadableSheets = 0;
   try {
-    const sheets = dom.styleSheets(document) || [];
-    for (const sheet of sheets) {
+    const scoped = [];
+    for (const sheet of sheetsOf(document)) scoped.push([sheet, null]);
+    for (const root of shadowScopes) for (const sheet of sheetsOf(root)) scoped.push([sheet, root]);
+    for (const [sheet, scope] of scoped) {
       if (!conditionApplies(sheet)) continue;
       // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
       // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
@@ -781,8 +990,10 @@ function runInPage(ctx) {
       }
       sheetCount += 1;
       currentSheet = sheet;
+      currentScope = scope;
       walkRules(rules, 0, '');
       currentSheet = null;
+      currentScope = null;
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
@@ -1001,12 +1212,6 @@ function runInPage(ctx) {
     return decls.some((d) => !sameAsUnfocused(cs, d.prop, d.value));
   }
 
-  const CANDIDATE_SELECTOR =
-    'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
-  const candidates = helpers.queryAllSmart
-    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
-    : helpers.queryAll(CANDIDATE_SELECTOR);
-
   // Every suppressor tested against each element costs rules x elements.
   // In a browser, the selectors that parse on their own, and whose text can't run into
   // the next one's (balanced brackets and quotes, no comment, no trailing
@@ -1054,7 +1259,14 @@ function runInPage(ctx) {
     if (!rendered) break;
     // :scope, & and :host read differently from a tree's querySelectorAll
     // than from the element's matches(): tested element by element.
-    if (listed.has(s.base) || !probe || !standsAlone(s.base) || /:scope|&|:host/i.test(s.base))
+    if (
+      listed.has(s.base) ||
+      !probe ||
+      s.scope ||
+      (s.also && s.also.length) ||
+      !standsAlone(s.base) ||
+      /:scope|&|:host/i.test(s.base)
+    )
       continue;
     try {
       dom.matches(probe, s.base);
@@ -1072,7 +1284,9 @@ function runInPage(ctx) {
       listed.clear();
     }
   }
-  const unlisted = suppressors.filter((s) => !listed.has(s.base));
+  const unlisted = suppressors.filter(
+    (s) => !listed.has(s.base) || s.scope || (s.also && s.also.length)
+  );
 
   // Which candidates the list matches, and how many in each tree. Where
   // many do, each listed selector is run once over the tree
@@ -1138,6 +1352,8 @@ function runInPage(ctx) {
     const byBase = listHit ? listedMatchesIn(treeOf(el)) : null;
     const matched = new Map();
     const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
+      if (!scopeOk(s, el)) return false;
+      if (s.also && !s.also.every((a) => matchesSafe(el, a))) return false;
       let hit = matched.get(s.base);
       if (hit === undefined) {
         const found = byBase && byBase.get(s.base);
@@ -1151,6 +1367,7 @@ function runInPage(ctx) {
     const killed = new Set();
     for (const s of suppressing) for (const k of s.kills || ['style']) killed.add(k);
     const indicated = providers.some((p) => {
+      if (!scopeOk(p, el)) return false;
       if (
         !(p.subject ? matchesSafe(el, p.base) : matchesSafe(el, p.base) || closestSafe(el, p.base))
       )
@@ -1176,7 +1393,7 @@ function runInPage(ctx) {
 
     // The lean: nothing the scan can read draws focus another way.
     const inlineHandler = closestSafe(el, INLINE_FOCUS_HANDLERS);
-    const focusWithin = withinProviders.some((b) => closestSafe(el, b));
+    const focusWithin = withinProviders.some((w) => scopeOk(w, el) && closestSafe(el, w.base));
     const namesFocusVisible = selectors.some((sel) => /focus-visible/i.test(sel));
     const scriptListener = scriptFocusListener(el);
     const leans =

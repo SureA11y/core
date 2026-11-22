@@ -46328,7 +46328,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Ein vor den Skripten der Seite installierter Hook hat weder am Element noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten- oder Fokus-Listener gesehen; Eingabe und Leertaste bewirken daher wahrscheinlich nichts.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Ein Vorfahre behält den Fokus für seine Elemente (aria-activedescendant oder ein fokussierbares zusammengesetztes Widget); so bedient ein solches Widget ein Element, ohne es zu fokussieren.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "Das Element zeigt einen Zeiger-Cursor und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "Das Element ist wie eine Schaltfläche gestaltet, ein kurzer Text in einem Kasten mit eigenem Hintergrund oder Rahmen, und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "Das Element ist wie ein Bedienelement gestaltet, ein kurzer Text in einem Kasten mit eigenem Rahmen oder Schatten oder ein Schließen- oder Menüsymbol, und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "Dieselbe Aktion kann ein anderes Bedienelement der Seite anbieten, etwa ein Link neben einer anklickbaren Zeile.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert (Eingabe und Leertaste sowie die Pfeiltasten seines Widgets), dasselbe bewirken wie ein Klick.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
@@ -46401,9 +46401,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_unattributed": "Es ließ sich kein Element benennen: Der Überlauf kann von einem Rand, generierten Inhalten oder einem geschlossenen Shadow Root stammen. Prüfen Sie, ob seitliches Scrollen Inhalte zeigt.",
       "resizeTextContentLoss_title": "Text wird bei 640 CSS-Pixeln Breite (200 % Zoom) nicht abgeschnitten",
       "resizeTextContentLoss_description": "Misst bei einem Viewport von höchstens 640 CSS-Pixeln Breite, wie ein 1280 Pixel breites Fenster eine Seite bei 200 % Zoom zeigt, jeden Text in einem Kasten, der seinen Überlauf verbirgt, und fragt nach Text, den der Kasten abschneidet oder mit Auslassungspunkten oder einer Zeilenbegrenzung kürzt, zur manuellen Prüfung, ob Inhalte verloren gehen.",
-      "resizeTextContentLoss_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite, wie ein 1280 Pixel breites Fenster die Seite bei 200 % Zoom zeigt, schneidet dieses Element den Text „{{text}}“ ab ({{overflowPx}} Pixel über seinen {{#edgeTop}}oberen {{/edgeTop}}{{#edgeRight}}rechten {{/edgeRight}}{{#edgeBottom}}unteren {{/edgeBottom}}{{#edgeLeft}}linken {{/edgeLeft}}Rand hinaus).{{#clipCss}} Das CSS, das ihn abschneidet: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite, {{#narrower}}schmaler als ein 1280 Pixel breites Fenster bei 200 % Zoom{{/narrower}}{{^narrower}}wie ein 1280 Pixel breites Fenster die Seite bei {{zoomPercent}} % Zoom zeigt{{/narrower}}, schneidet dieses Element den Text „{{text}}“ ab ({{overflowPx}} Pixel über seinen {{#edgeTop}}oberen {{/edgeTop}}{{#edgeRight}}rechten {{/edgeRight}}{{#edgeBottom}}unteren {{/edgeBottom}}{{#edgeLeft}}linken {{/edgeLeft}}Rand hinaus).{{#clipCss}} Das CSS, das ihn abschneidet: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Lassen Sie den Kasten mit seinem Text wachsen, wenn die Seite vergrößert wird: {{#clipCss}}Ändern Sie {{clipCss}}{{/clipCss}}{{^clipCss}}Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text{{/clipCss}}, oder lassen Sie ihn scrollen.",
-      "resizeTextContentLoss_summary_truncated": "Bei {{viewportWidth}} Pixeln Breite, wie ein 1280 Pixel breites Fenster die Seite bei 200 % Zoom zeigt, kürzt dieses Element den Text „{{text}}“ mit Auslassungspunkten oder einer Zeilenbegrenzung, sodass ein Teil davon nicht angezeigt wird.{{#clipCss}} Das CSS, das ihn kürzt: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "Bei {{viewportWidth}} Pixeln Breite, {{#narrower}}schmaler als ein 1280 Pixel breites Fenster bei 200 % Zoom{{/narrower}}{{^narrower}}wie ein 1280 Pixel breites Fenster die Seite bei {{zoomPercent}} % Zoom zeigt{{/narrower}}, kürzt dieses Element den Text „{{text}}“ mit Auslassungspunkten oder einer Zeilenbegrenzung, sodass ein Teil davon nicht angezeigt wird.{{#clipCss}} Das CSS, das ihn kürzt: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Lassen Sie den Text umbrechen und den Kasten ihn ganz zeigen, wenn die Seite vergrößert wird, oder bieten Sie den vollständigen Text auf einem anderen Weg an, der mit der Tastatur funktioniert, etwa über einen Link „Weiterlesen“.",
       "resizeTextContentLoss_lean_why_clipped": "Mindestens eine halbe Zeile des Textes liegt jenseits des Rands des Kastens, der sie verbirgt und nicht scrollt.",
       "resizeTextContentLoss_lean_caution_clipped": "Der vollständige Text kann auf andere Weise angezeigt werden, etwa über ein Bedienelement, das den Kasten öffnet.",
@@ -48182,7 +48182,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "A hook installed before the page’s scripts saw no key or focus listener on the element, its ancestors, the document or the window, so Enter and Space probably do nothing.",
       "clickHandlerKeyboardOperable_lean_why_managed": "An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "The element is drawn as a button, a short label in a box with a background or a border of its own, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "The element is drawn as a control, a short label in a box with a border or a shadow of its own, or a close or menu symbol, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "The same action may be offered by another control of the page, such as a link next to a clickable row.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Handle keydown so that the keys a {{role}} answers to (Enter and Space, and the arrow keys of its widget) do what a click does.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
@@ -48255,9 +48255,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_unattributed": "No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.",
       "resizeTextContentLoss_title": "Text is not cut off at 640 CSS pixels wide (200% zoom)",
       "resizeTextContentLoss_description": "At a viewport 640 CSS pixels wide or less, as a 1280 pixel window shows a page at 200% zoom, measures each text in a box that hides its overflow, and asks about text the box cuts off or shortens with an ellipsis or a line clamp, for manual review of whether content is lost.",
-      "resizeTextContentLoss_summary_clipped": "At {{viewportWidth}} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element cuts off the text \"{{text}}\" ({{overflowPx}} pixels past its {{#edgeTop}}top {{/edgeTop}}{{#edgeRight}}right {{/edgeRight}}{{#edgeBottom}}bottom {{/edgeBottom}}{{#edgeLeft}}left {{/edgeLeft}}edge).{{#clipCss}} The CSS that cuts it off: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "At {{viewportWidth}} pixels wide, {{#narrower}}narrower than a 1280 pixel window at 200% zoom{{/narrower}}{{^narrower}}as a 1280 pixel window shows the page at {{zoomPercent}}% zoom{{/narrower}}, this element cuts off the text \"{{text}}\" ({{overflowPx}} pixels past its {{#edgeTop}}top {{/edgeTop}}{{#edgeRight}}right {{/edgeRight}}{{#edgeBottom}}bottom {{/edgeBottom}}{{#edgeLeft}}left {{/edgeLeft}}edge).{{#clipCss}} The CSS that cuts it off: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Let the box grow with its text when the page is zoomed: {{#clipCss}}change {{clipCss}}{{/clipCss}}{{^clipCss}}avoid fixed heights and widths with overflow: hidden on text{{/clipCss}}, or let it scroll.",
-      "resizeTextContentLoss_summary_truncated": "At {{viewportWidth}} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element shortens the text \"{{text}}\" with an ellipsis or a line clamp, so part of it is not shown.{{#clipCss}} The CSS that shortens it: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "At {{viewportWidth}} pixels wide, {{#narrower}}narrower than a 1280 pixel window at 200% zoom{{/narrower}}{{^narrower}}as a 1280 pixel window shows the page at {{zoomPercent}}% zoom{{/narrower}}, this element shortens the text \"{{text}}\" with an ellipsis or a line clamp, so part of it is not shown.{{#clipCss}} The CSS that shortens it: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Let the text wrap and the box show all of it when the page is zoomed, or offer the full text another way that works with the keyboard, such as a \"read more\" link.",
       "resizeTextContentLoss_lean_why_clipped": "At least half a line of the text lies past the edge of the box, which hides it and does not scroll.",
       "resizeTextContentLoss_lean_caution_clipped": "The full text may be shown another way, such as a control that opens the box.",
@@ -50036,7 +50036,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook instalado antes de los scripts de la página no vio ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio probablemente no hacen nada.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "El elemento se dibuja como un botón, un texto corto en una caja con fondo o borde propios, y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "El elemento se dibuja como un control, un texto corto en una caja con borde o sombra propios, o un símbolo de cerrar o de menú, y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gestionar keydown para que las teclas a las que responde un {{role}} (Intro y Espacio, y las flechas de su widget) hagan lo mismo que un clic.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
@@ -50109,9 +50109,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_unattributed": "No se pudo nombrar ningún elemento: el desbordamiento puede venir de un margen, de contenido generado o de un shadow root cerrado. Comprobar que el desplazamiento lateral muestra contenido.",
       "resizeTextContentLoss_title": "El texto no se recorta a 640 píxeles CSS de ancho (zoom al 200 %)",
       "resizeTextContentLoss_description": "En una ventana de 640 píxeles CSS de ancho o menos, como una ventana de 1280 píxeles muestra una página con zoom al 200 %, mide cada texto dentro de una caja que oculta su desbordamiento y pregunta por el texto que la caja recorta o acorta con puntos suspensivos o un límite de líneas, para revisar manualmente si se pierde contenido.",
-      "resizeTextContentLoss_summary_clipped": "A {{viewportWidth}} píxeles de ancho, como una ventana de 1280 píxeles muestra la página con zoom al 200 %, este elemento recorta el texto «{{text}}» ({{overflowPx}} píxeles más allá de su borde{{#edgeTop}} superior{{/edgeTop}}{{#edgeRight}} derecho{{/edgeRight}}{{#edgeBottom}} inferior{{/edgeBottom}}{{#edgeLeft}} izquierdo{{/edgeLeft}}).{{#clipCss}} El CSS que lo recorta: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "A {{viewportWidth}} píxeles de ancho, {{#narrower}}más estrecho que una ventana de 1280 píxeles con zoom al 200 %{{/narrower}}{{^narrower}}como una ventana de 1280 píxeles muestra la página con zoom al {{zoomPercent}} %{{/narrower}}, este elemento recorta el texto «{{text}}» ({{overflowPx}} píxeles más allá de su borde{{#edgeTop}} superior{{/edgeTop}}{{#edgeRight}} derecho{{/edgeRight}}{{#edgeBottom}} inferior{{/edgeBottom}}{{#edgeLeft}} izquierdo{{/edgeLeft}}).{{#clipCss}} El CSS que lo recorta: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Dejar que la caja crezca con su texto al ampliar la página: {{#clipCss}}cambiar {{clipCss}}{{/clipCss}}{{^clipCss}}evitar alturas y anchuras fijas con overflow: hidden en texto{{/clipCss}}, o permitir que se desplace.",
-      "resizeTextContentLoss_summary_truncated": "A {{viewportWidth}} píxeles de ancho, como una ventana de 1280 píxeles muestra la página con zoom al 200 %, este elemento acorta el texto «{{text}}» con puntos suspensivos o un límite de líneas, así que parte de él no se muestra.{{#clipCss}} El CSS que lo acorta: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "A {{viewportWidth}} píxeles de ancho, {{#narrower}}más estrecho que una ventana de 1280 píxeles con zoom al 200 %{{/narrower}}{{^narrower}}como una ventana de 1280 píxeles muestra la página con zoom al {{zoomPercent}} %{{/narrower}}, este elemento acorta el texto «{{text}}» con puntos suspensivos o un límite de líneas, así que parte de él no se muestra.{{#clipCss}} El CSS que lo acorta: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Dejar que el texto se ajuste y que la caja lo muestre entero al ampliar la página, u ofrecer el texto completo de otra forma que funcione con el teclado, como un enlace «leer más».",
       "resizeTextContentLoss_lean_why_clipped": "Al menos media línea del texto queda más allá del borde de la caja, que la oculta y no se desplaza.",
       "resizeTextContentLoss_lean_caution_clipped": "El texto completo puede mostrarse de otra forma, como un control que abre la caja.",
@@ -51890,7 +51890,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook installé avant les scripts de la page n’a vu aucun écouteur de touches ni de focus sur l’élément, ses ancêtres, le document ni la fenêtre : Entrée et Espace ne font sans doute rien.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Un ancêtre garde le focus pour ses éléments (aria-activedescendant, ou un composant composite focalisable) : c’est ainsi qu’un tel composant actionne un élément sans lui donner le focus.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "L’élément affiche un curseur en forme de main et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "L’élément est dessiné comme un bouton, un texte court dans une boîte avec un fond ou une bordure à elle, et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "L’élément est dessiné comme une commande, un texte court dans une boîte avec une bordure ou une ombre à elle, ou un symbole de fermeture ou de menu, et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La même action peut être offerte par une autre commande de la page, comme un lien à côté d’une ligne cliquable.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gérez keydown pour que les touches auxquelles répond un {{role}} (Entrée et Espace, et les flèches de son composant) fassent ce que fait un clic.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
@@ -51963,9 +51963,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_unattributed": "Aucun élément n’a pu être nommé : le débordement peut venir d’une marge, d’un contenu généré ou d’un shadow root fermé. Vérifiez que le défilement horizontal montre du contenu.",
       "resizeTextContentLoss_title": "Le texte n’est pas rogné à 640 pixels CSS de large (zoom à 200 %)",
       "resizeTextContentLoss_description": "Dans une zone d’affichage de 640 pixels CSS de large ou moins, comme une fenêtre de 1280 pixels affiche une page zoomée à 200 %, mesure chaque texte placé dans une boîte qui masque son débordement, et pose la question pour le texte que la boîte rogne ou raccourcit par des points de suspension ou une limite de lignes, pour une vérification manuelle de la perte de contenu.",
-      "resizeTextContentLoss_summary_clipped": "À {{viewportWidth}} pixels de large, comme une fenêtre de 1280 pixels affiche la page zoomée à 200 %, cet élément rogne le texte « {{text}} » ({{overflowPx}} pixels au-delà de son bord{{#edgeTop}} supérieur{{/edgeTop}}{{#edgeRight}} droit{{/edgeRight}}{{#edgeBottom}} inférieur{{/edgeBottom}}{{#edgeLeft}} gauche{{/edgeLeft}}).{{#clipCss}} Le CSS qui le rogne : {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "À {{viewportWidth}} pixels de large, {{#narrower}}moins large qu’une fenêtre de 1280 pixels zoomée à 200 %{{/narrower}}{{^narrower}}comme une fenêtre de 1280 pixels affiche la page zoomée à {{zoomPercent}} %{{/narrower}}, cet élément rogne le texte « {{text}} » ({{overflowPx}} pixels au-delà de son bord{{#edgeTop}} supérieur{{/edgeTop}}{{#edgeRight}} droit{{/edgeRight}}{{#edgeBottom}} inférieur{{/edgeBottom}}{{#edgeLeft}} gauche{{/edgeLeft}}).{{#clipCss}} Le CSS qui le rogne : {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Laissez la boîte s’agrandir avec son texte quand la page est zoomée : {{#clipCss}}modifiez {{clipCss}}{{/clipCss}}{{^clipCss}}évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte{{/clipCss}}, ou laissez-la défiler.",
-      "resizeTextContentLoss_summary_truncated": "À {{viewportWidth}} pixels de large, comme une fenêtre de 1280 pixels affiche la page zoomée à 200 %, cet élément raccourcit le texte « {{text}} » par des points de suspension ou une limite de lignes, si bien qu’une partie n’est pas affichée.{{#clipCss}} Le CSS qui le raccourcit : {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "À {{viewportWidth}} pixels de large, {{#narrower}}moins large qu’une fenêtre de 1280 pixels zoomée à 200 %{{/narrower}}{{^narrower}}comme une fenêtre de 1280 pixels affiche la page zoomée à {{zoomPercent}} %{{/narrower}}, cet élément raccourcit le texte « {{text}} » par des points de suspension ou une limite de lignes, si bien qu’une partie n’est pas affichée.{{#clipCss}} Le CSS qui le raccourcit : {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Laissez le texte passer à la ligne et la boîte l’afficher en entier quand la page est zoomée, ou proposez le texte complet d’une autre façon utilisable au clavier, comme un lien « lire la suite ».",
       "resizeTextContentLoss_lean_why_clipped": "Au moins une demi-ligne du texte se trouve au-delà du bord de la boîte, qui la masque et ne défile pas.",
       "resizeTextContentLoss_lean_caution_clipped": "Le texte complet peut être affiché autrement, par exemple par une commande qui ouvre la boîte.",
@@ -53744,7 +53744,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーを見つけませんでした。Enter や Space ではおそらく何も起きません。",
       "clickHandlerKeyboardOperable_lean_why_managed": "祖先が項目のためにフォーカスを保持しています(aria-activedescendant、またはフォーカス可能な複合ウィジェット)。このようなウィジェットは、項目にフォーカスを移さずに操作します。",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "この要素はポインター カーソルを表示してクリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "この要素は、独自の背景または枠線を持つボックスに短いラベルを置いたボタンのような見た目で、クリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "この要素は、独自の枠線または影を持つボックスに短いラベルを置いたもの、または閉じるやメニューの記号だけのもので、コントロールのような見た目をしており、クリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "同じ操作をページ内の別のコントロール(クリックできる行の横のリンクなど)が提供している場合があります。",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "keydown を処理して、{{role}} が応答するキー (Enter と Space、そのウィジェットの矢印キー) でクリックと同じことが起きるようにしてください。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
@@ -53817,9 +53817,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_unattributed": "要素を特定できませんでした。はみ出しはマージン、生成コンテンツ、または閉じたシャドウ ルートによる可能性があります。横スクロールでコンテンツが表示されるかを確認してください。",
       "resizeTextContentLoss_title": "幅 640 CSS ピクセル（200% ズーム）でテキストが切り取られない",
       "resizeTextContentLoss_description": "幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ、幅 640 CSS ピクセル以下のビューポートで、はみ出しを隠すボックス内の各テキストを測定し、ボックスが切り取るテキストや、省略記号または行数制限で短くするテキストについて、コンテンツが失われていないかを手動で確認するよう求めます。",
-      "resizeTextContentLoss_summary_clipped": "幅 {{viewportWidth}} ピクセル（幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ）で、この要素はテキスト「{{text}}」を切り取ります（{{#edgeTop}}上{{/edgeTop}}{{#edgeRight}}右{{/edgeRight}}{{#edgeBottom}}下{{/edgeBottom}}{{#edgeLeft}}左{{/edgeLeft}}端から {{overflowPx}} ピクセルはみ出します）。{{#clipCss}}切り取っている CSS: {{clipCss}}。{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "幅 {{viewportWidth}} ピクセル（{{#narrower}}幅 1280 ピクセルのウィンドウでページを 200% にズームしたときより狭い{{/narrower}}{{^narrower}}幅 1280 ピクセルのウィンドウでページを {{zoomPercent}}% にズームしたときと同じ{{/narrower}}）で、この要素はテキスト「{{text}}」を切り取ります（{{#edgeTop}}上{{/edgeTop}}{{#edgeRight}}右{{/edgeRight}}{{#edgeBottom}}下{{/edgeBottom}}{{#edgeLeft}}左{{/edgeLeft}}端から {{overflowPx}} ピクセルはみ出します）。{{#clipCss}}切り取っている CSS: {{clipCss}}。{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "ページをズームしたときにボックスがテキストに合わせて広がるようにしてください。{{#clipCss}}{{clipCss}} を変更するか{{/clipCss}}{{^clipCss}}テキストに overflow: hidden と固定の高さや幅を組み合わせないか{{/clipCss}}、スクロールできるようにしてください。",
-      "resizeTextContentLoss_summary_truncated": "幅 {{viewportWidth}} ピクセル（幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ）で、この要素はテキスト「{{text}}」を省略記号または行数制限で短くするため、一部が表示されません。{{#clipCss}}短くしている CSS: {{clipCss}}。{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "幅 {{viewportWidth}} ピクセル（{{#narrower}}幅 1280 ピクセルのウィンドウでページを 200% にズームしたときより狭い{{/narrower}}{{^narrower}}幅 1280 ピクセルのウィンドウでページを {{zoomPercent}}% にズームしたときと同じ{{/narrower}}）で、この要素はテキスト「{{text}}」を省略記号または行数制限で短くするため、一部が表示されません。{{#clipCss}}短くしている CSS: {{clipCss}}。{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "ページをズームしたときにテキストが折り返され、ボックスが全体を表示するようにするか、「続きを読む」リンクなど、キーボードで使える別の方法で全文を提供してください。",
       "resizeTextContentLoss_lean_why_clipped": "テキストの少なくとも半行分がボックスの端の外側にあり、ボックスはそれを隠してスクロールしません。",
       "resizeTextContentLoss_lean_caution_clipped": "ボックスを開くコントロールなど、別の方法で全文が表示される場合があります。",
@@ -72450,10 +72450,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // An element's child elements by sibling links, not el.children: in jsdom
   // that collection stays live once read, and each later change under a
   // large parent (a list of thousands of items) rebuilds it.
+  //
+  // The children are those of the flat tree, as aria-required-children reads
+  // them: unless the scan leaves shadow DOM out, an element's open shadow
+  // root stands in for its light children, and a <slot> for the elements
+  // assigned to it (its fallback content is left out).
+  const deepShadow = (ctx.engineOptions || {}).includeShadowDom !== false;
+  function openShadowRoot(node) {
+    if (!deepShadow) return null;
+    try {
+      return dom.nodeType(node) === 1 ? dom.shadowRoot(node) || null : null;
+    } catch {
+      return null;
+    }
+  }
   function childElementsOf(el) {
     const out = [];
-    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c))
+    const from = el ? openShadowRoot(el) || el : null;
+    for (let c = from ? dom.firstElementChild(from) : null; c; c = dom.nextElementSibling(c)) {
+      if (
+        (dom.tagName(c) || '').toLowerCase() === 'slot' &&
+        typeof dom.get(c, 'assignedElements') === 'function'
+      ) {
+        let assigned;
+        try {
+          assigned = dom.assignedElements(c, { flatten: true }) || [];
+        } catch {
+          assigned = [];
+        }
+        for (const a of assigned) out.push(a);
+        continue;
+      }
       out.push(c);
+    }
     return out;
   }
 
@@ -78203,23 +78232,61 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Styled like a control though the cursor stays the default one: a short
-  // visible label ("Add to cart") in a box set apart by a background of its
-  // own or a border, with padding around the text, as a button is drawn.
+  // visible label ("Add to cart") in a box set apart by a background, a
+  // border or a shadow of its own, with padding around the text, as a
+  // button is drawn, or a close or menu symbol alone.
   // The visual styling and the action's wording are what tell a sighted
   // user it is clickable (round 10, C10-4). A large wrapper, with long text
   // or block content, is not one: its handler is more often delegated or a
   // click tracker.
   const BLOCK_CONTENT =
     'address,article,aside,blockquote,div,dl,fieldset,figure,footer,form,h1,h2,h3,h4,h5,h6,header,hr,li,main,nav,ol,p,pre,section,table,ul';
-  function looksLikeControl(el) {
+  // The text a sighted user sees in the element: its text without what is
+  // hidden (display: none, visibility) or visually hidden (a screen-reader
+  // only span, helpers.isVisuallyHidden). Read up to a little past the
+  // longest label that counts as short.
+  function visibleTextOf(el) {
+    let out = '';
+    let budget = 500;
+    const walk = (node) => {
+      for (const n of dom.childNodes(node) || []) {
+        if (budget-- <= 0 || out.length > 200) return;
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          const cs = helpers.computedStyle(node);
+          const visibility = trim(cs && cs.visibility).toLowerCase();
+          if (visibility !== 'hidden' && visibility !== 'collapse')
+            out += String(dom.nodeValue(n) || '');
+          continue;
+        }
+        if (type !== 1 || !shown(n)) continue;
+        if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(n)) continue;
+        walk(n);
+      }
+    };
+    walk(el);
+    return out;
+  }
+  // The close and menu symbols a control drawn as a glyph shows alone.
+  const CONTROL_GLYPHS = /^[\u2715\u2716\u00d7\u2a2f\u2630\u2261]$/u;
+  // The cue that draws the element as a control, or '' for none:
+  // - 'glyph': a close or menu symbol alone (✕, ×, ☰);
+  // - 'border', 'shadow': short visible text with padding in a box with a
+  //   border, or a box-shadow drawing an outline, of its own;
+  // - 'background': the same in a box set apart by a background colour or
+  //   a gradient of its own (`background-image`, with a transparent colour).
+  // A border, a shadow or a glyph is drawn as controls are; a background
+  // alone is also how a badge or a tag is drawn.
+  function controlCueOf(el) {
     try {
       const c = helpers.contrast;
       const cs = helpers.computedStyle(el);
-      if (!c || !cs) return false;
-      const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
-      if (!text || text.length > 40 || text.split(' ').length > 6) return false;
-      if (!/[\p{L}\p{N}]/u.test(text)) return false;
-      if (dom.querySelectorAll(el, BLOCK_CONTENT).length) return false;
+      if (!c || !cs) return '';
+      const text = trim(visibleTextOf(el)).replace(/\s+/g, ' ');
+      if (CONTROL_GLYPHS.test(text)) return 'glyph';
+      if (!text || text.length > 40 || text.split(' ').length > 6) return '';
+      if (!/[\p{L}\p{N}]/u.test(text)) return '';
+      if (dom.querySelectorAll(el, BLOCK_CONTENT).length) return '';
       const px = (v) => {
         const n = c.parsePx(v);
         return typeof n === 'number' && Number.isFinite(n) ? n : 0;
@@ -78227,7 +78294,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const padded = ['top', 'right', 'bottom', 'left'].some(
         (side) => px(cs.getPropertyValue('padding-' + side)) > 0
       );
-      if (!padded) return false;
+      if (!padded) return '';
       const bordered = ['top', 'right', 'bottom', 'left'].some((side) => {
         const style = trim(cs.getPropertyValue('border-' + side + '-style')).toLowerCase();
         const color = c.parseCssColorToRgba(cs.getPropertyValue('border-' + side + '-color'));
@@ -78240,17 +78307,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           color.a > 0
         );
       });
-      if (bordered) return true;
+      if (bordered) return 'border';
+      if (drawsShadow(trim(cs.getPropertyValue('box-shadow')))) return 'shadow';
+      if (/gradient\(/i.test(cs.getPropertyValue('background-image') || '')) return 'background';
       const bg = c.parseCssColorToRgba(cs.getPropertyValue('background-color'));
-      if (!bg || !(bg.a > 0.05)) return false;
+      if (!bg || !(bg.a > 0.05)) return '';
       // A background the same as what is behind it sets nothing apart.
       const parent = helpers.flatParentElement(el);
       const under = parent ? c.computeEffectiveBackground(parent) : null;
-      if (!under || !under.ok || !under.rgba) return true;
-      return c.contrastRatio(c.compositeRgba(bg, under.rgba), under.rgba) >= 1.1;
+      if (!under || !under.ok || !under.rgba) return 'background';
+      return c.contrastRatio(c.compositeRgba(bg, under.rgba), under.rgba) >= 1.1
+        ? 'background'
+        : '';
     } catch {
-      return false;
+      return '';
     }
+  }
+  // Whether a computed box-shadow draws something: a layer in a colour that
+  // isn't transparent, with a blur, a spread or an offset.
+  function drawsShadow(value) {
+    if (!value || value === 'none') return false;
+    const c = helpers.contrast;
+    return value.split(/,(?![^(]*\))/).some((layer) => {
+      if (/\btransparent\b/i.test(layer)) return false;
+      const color = (layer.match(/(rgba?|hsla?)\([^)]*\)|#[0-9a-f]{3,8}\b/i) || [])[0];
+      const rgba = color ? c.parseCssColorToRgba(color) : null;
+      if (color && (!rgba || !(rgba.a > 0))) return false;
+      const lengths = layer.replace(/(rgba?|hsla?)\([^)]*\)/gi, '').match(/-?[\d.]+px/g) || [];
+      return lengths.some((l) => Math.abs(Number.parseFloat(l)) > 0);
+    });
   }
 
   // The item roles each composite widget handles the keys of, for a lean:
@@ -78611,7 +78696,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const isWidget = WIDGET_ROLES.has(role);
     const pointer = !isWidget && hasPointerCursor(el);
-    const styledControl = !isWidget && !pointer && looksLikeControl(el);
+    // Drawn inside a native control the keyboard operates (a <span> styled
+    // in a <button>): it is part of that control's look, and the control is
+    // what a keyboard user operates. Browsers draw a button's own
+    // background, which jsdom doesn't, so this keeps the two alike.
+    const inNativeControl =
+      !isWidget && !pointer && ancestorList.some((a) => firesClickFromKeyboard(a, focusOf(a)));
+    const cue = !isWidget && !pointer && !inNativeControl ? controlCueOf(el) : '';
+    const styledControl = !!cue;
     if (!isWidget && !pointer && !styledControl) continue;
     applicableCount += 1;
 
@@ -78670,15 +78762,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } else if (
       !managedFromAbove &&
       styledControl &&
+      cue !== 'background' &&
       !ancestorList.some((a) => focusOf(a).focusable)
     ) {
       notFocusableLean = {
         toward: 'fail',
-        why: 'The element is drawn as a button, a short label in a box with a background or a border of its own, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.',
+        why: 'The element is drawn as a control, a short label in a box with a border or a shadow of its own, or a close or menu symbol, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.',
         signals: [
           { signal: 'managed-from-above', value: false },
           { signal: 'pointer-cursor', value: false },
           { signal: 'styled-as-control', value: true },
+          { signal: 'control-cue', value: cue },
           { signal: 'widget-role', value: false },
           { signal: 'focusable-ancestor', value: false }
         ],
@@ -78732,7 +78826,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             reasonCode: 'CLICK_HANDLER_NOT_FOCUSABLE',
             role,
             focusable: false,
-            ...(styledControl ? { styledAsControl: true } : {}),
+            ...(styledControl ? { styledAsControl: true, controlCue: cue } : {}),
             ...(noHref ? { noHref: true } : {})
           }
         }
@@ -82826,9 +82920,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return parts.map(trim).filter(Boolean);
   }
 
-  // :focus and :focus-visible, but never :focus-within: that one fires on
-  // an ancestor of the focused element and says nothing about whether the
-  // element itself is indicated.
+  // :focus and :focus-visible. :focus-within holds on the focused element's
+  // ancestors as well, and is read apart (ancestorFocusForm).
   const FOCUS_PSEUDO = /:focus(-visible)?(?![-\w])/g;
 
   function hasFocusPseudo(part) {
@@ -82947,14 +83040,81 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  const suppressors = []; // { selector, base, sheet }
+  const suppressors = []; // { selector, base, also, sheet, kills, scope }
   // The style sheet being read, for the message to say where a rule is.
   let currentSheet = null;
-  const providers = []; // { base, subject }
-  // :focus-within rules that draw something: the compound holding the
-  // pseudo, without it. Read only for the lean, never to pass an element.
-  const withinProviders = [];
+  // The open shadow root whose style sheet is being read, or null for the
+  // document's: a shadow root's sheets style only the elements in it.
+  let currentScope = null;
+  const providers = []; // { base, subject, own, decls, scope }
+  // :focus-within and :has(:focus) rules that draw something: the compound
+  // holding the pseudo, without it. Read only for the lean, never to pass
+  // an element.
+  const withinProviders = []; // { base, scope }
   const FOCUS_WITHIN = /:focus-within(?![-\w])/g;
+  const HAS_START = /:has\(/gi;
+
+  // The :has() pseudo-classes in a compound whose argument names a focus
+  // state (`:has(:focus)`, `:has(> a:focus-visible)`), each as
+  // { text, arg }, where arg is the argument as written.
+  function focusHasOf(compound) {
+    const out = [];
+    HAS_START.lastIndex = 0;
+    let m;
+    while ((m = HAS_START.exec(compound))) {
+      const start = m.index + m[0].length;
+      let depth = 1;
+      let j = start;
+      for (; j < compound.length && depth; j++) {
+        if (compound[j] === '(') depth += 1;
+        else if (compound[j] === ')') depth -= 1;
+      }
+      const arg = compound.slice(start, depth ? j : j - 1);
+      if (hasFocusPseudo(arg) || /:focus-within(?![-\w])/.test(arg))
+        out.push({ text: compound.slice(m.index, j), arg });
+      HAS_START.lastIndex = j;
+    }
+    return out;
+  }
+  const scopeOk = (x, el) => !x.scope || treeOf(el) === x.scope;
+
+  // A rule whose focus state is on an ancestor of its subject
+  // (`main:focus-within a`, `main:has(a:focus) a`), or on the subject as
+  // :focus-within, read as it applies while the subject has focus: the
+  // ancestors the subject is inside are in the focus-within state, and a
+  // :has() of a focus state holds when the subject matches its argument.
+  // Returns { base, also } (the selector without those states, and the
+  // arguments the subject must match), or null. Only states reached
+  // through descendant and child combinators are read: a sibling's
+  // :focus-within says nothing of the subject's focus.
+  function ancestorFocusForm(part) {
+    if (!/:focus-within(?![-\w])|:has\(/i.test(part)) return null;
+    const pieces = splitWithCombinators(part);
+    const also = [];
+    let changed = false;
+    for (let i = 0; i < pieces.length; i++) {
+      let compound = pieces[i].compound;
+      const within = /:focus-within(?![-\w])/.test(compound);
+      const has = i < pieces.length - 1 ? focusHasOf(compound) : [];
+      if (!within && !has.length) continue;
+      if (/:not\([^)]*:focus-within/i.test(compound)) return null;
+      for (let k = i + 1; k < pieces.length; k++) {
+        if (!/^[\s>]+$/.test(pieces[k].comb)) return null;
+      }
+      FOCUS_WITHIN.lastIndex = 0;
+      compound = compound.replace(FOCUS_WITHIN, '');
+      for (const h of has) {
+        const arg = trim(dropFocus(h.arg).replace(FOCUS_WITHIN, ''));
+        if (/^[+~]/.test(arg) || splitArgs(h.arg).length > 1) return null;
+        also.push(trim(arg.replace(/^>\s*/, '')) || '*');
+        compound = compound.replace(h.text, '');
+      }
+      pieces[i].compound = trim(compound) || '*';
+      changed = true;
+    }
+    if (!changed) return null;
+    return { base: dropFocus(pieces.map((p) => p.comb + p.compound).join('')), also };
+  }
 
   // The focus-visible polyfill (WICG) marks keyboard focus with a class,
   // `.focus-visible`, and the scope it runs in with `.js-focus-visible`
@@ -83030,7 +83190,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!suppresses && !provides) return;
     const kills = suppresses ? outlineParts(style).kills : null;
 
-    for (const part of splitSelectorList(selectorText)) {
+    const parts = splitSelectorList(selectorText);
+    // A selector list with one selector the browser can't parse is invalid
+    // as a whole, and a browser drops the rule (`button:-moz-focusring,
+    // button:focus` in Chromium). jsdom keeps it in its style sheets: test
+    // the list as the browser parsed it.
+    if (parts.length > 1 && !validSelectorList(selectorText)) return;
+
+    for (const part of parts) {
       // The polyfill's form is read as native :not(:focus-visible) for the
       // outline it removes; what the same rule draws is read as written.
       const asNative = suppresses ? polyfillAsNative(part) : part;
@@ -83043,15 +83210,79 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // A browser has already dropped a rule whose selector list it can't
+  // parse, so only a DOM without CSS.supports (jsdom) is tested, by a query
+  // that compiles the whole list: jsdom's matches() can return before it
+  // reaches the selector it can't parse.
+  const validLists = new Map();
+  const parsedByBrowser = (() => {
+    try {
+      const v = dom.defaultView(document);
+      // Read directly: an element named CSS can shadow it, which only
+      // costs the query below.
+      const css = v ? v.CSS : null;
+      return !!css && typeof css.supports === 'function';
+    } catch {
+      return false;
+    }
+  })();
+  function validSelectorList(selectorText) {
+    // Only a vendor-prefixed pseudo-class or pseudo-element (`:-moz-…`,
+    // `::-webkit-…`) is parsed by one and not the other: a list without one
+    // is not queried, which in jsdom walks the whole document.
+    if (parsedByBrowser || !/::?-/.test(selectorText)) return true;
+    if (validLists.has(selectorText)) return validLists.get(selectorText);
+    let valid = true;
+    try {
+      dom.querySelector(document, selectorText);
+    } catch {
+      valid = false;
+    }
+    validLists.set(selectorText, valid);
+    return valid;
+  }
+  // The selector as quoted in the message, serialized as browsers do: a
+  // universal selector before another simple selector is left out
+  // (`*:focus` reads `:focus`), as Chromium already gives it.
+  function quotedSelector(part) {
+    return trim(part).replace(/(^|[\s>+~(,])\*(?=[:.#[])/g, '$1');
+  }
+
   function collectFromPart(part, suppresses, provides, kills) {
     // `:not(:focus-visible)` leaves the outline on keyboard focus: what such
     // a rule removes is only the mouse's focus ring, so it is never a
     // suppressor.
     if (suppresses && /:not\(\s*:focus-visible\s*\)/.test(part)) suppresses = false;
-    if (provides && /:focus-within(?![-\w])/.test(part)) {
+    // `:not(:focus-within)` no longer holds once the element inside has
+    // focus: the rule removes nothing then.
+    if (suppresses && /:not\(\s*:focus-within\s*\)/.test(part)) suppresses = false;
+    if (provides && /:focus-within(?![-\w])|:has\(/i.test(part)) {
       for (const compound of splitCompounds(part)) {
-        if (!/:focus-within(?![-\w])/.test(compound)) continue;
-        withinProviders.push(trim(compound.replace(FOCUS_WITHIN, '')) || '*');
+        let base = compound;
+        const has = focusHasOf(compound);
+        if (!/:focus-within(?![-\w])/.test(compound) && !has.length) continue;
+        for (const h of has) base = base.replace(h.text, '');
+        FOCUS_WITHIN.lastIndex = 0;
+        withinProviders.push({
+          base: trim(base.replace(FOCUS_WITHIN, '')) || '*',
+          scope: currentScope
+        });
+      }
+    }
+    // A focus state on an ancestor (or :focus-within on the subject) that
+    // removes the subject's outline while it has focus.
+    if (suppresses && !hasPseudoElement(part)) {
+      const form = ancestorFocusForm(part);
+      if (form) {
+        suppressors.push({
+          selector: quotedSelector(part),
+          base: form.base,
+          also: form.also,
+          sheet: currentSheet,
+          kills,
+          scope: currentScope
+        });
+        suppresses = false;
       }
     }
     if (!hasFocusPseudo(part)) {
@@ -83060,7 +83291,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // outline. Other states (:hover, :active) never match the static
       // element, so el.matches() leaves them out below.
       if (suppresses && !hasPseudoElement(part)) {
-        suppressors.push({ selector: trim(part), base: trim(part), sheet: currentSheet, kills });
+        suppressors.push({
+          selector: quotedSelector(part),
+          base: trim(part),
+          sheet: currentSheet,
+          kills,
+          scope: currentScope
+        });
       }
       return;
     }
@@ -83080,10 +83317,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (suppresses && isSubject && !hasPseudoElement(part)) {
       suppressors.push({
-        selector: trim(part),
+        selector: quotedSelector(part),
         base: stripFocusPseudo(part),
         sheet: currentSheet,
-        kills
+        kills,
+        scope: currentScope
       });
     }
 
@@ -83096,7 +83334,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         base: focusedBase,
         subject: isSubject,
         own: isSubject && !hasPseudoElement(part),
-        decls: provides
+        decls: provides,
+        scope: currentScope
       });
     }
   }
@@ -83149,11 +83388,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  const CANDIDATE_SELECTOR =
+    'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
+  const candidates = helpers.queryAllSmart
+    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
+    : helpers.queryAll(CANDIDATE_SELECTOR);
+
+  // The open shadow roots the candidates are in: their style sheets, and
+  // the sheets they adopt, style the elements in them (and only those).
+  const shadowScopes = [];
+  {
+    const seen = new Set();
+    for (const el of candidates) {
+      const tree = el ? treeOf(el) : null;
+      if (!tree || seen.has(tree) || dom.nodeType(tree) !== 11) continue;
+      seen.add(tree);
+      shadowScopes.push(tree);
+    }
+  }
+  // A root's style sheets, then those it adopts. jsdom gives a shadow root
+  // no styleSheets list: its <style> elements are read instead.
+  const sheetsOf = (root) => {
+    const out = [];
+    try {
+      const list = root === document ? dom.styleSheets(document) : dom.get(root, 'styleSheets');
+      if (list) for (const sheet of list) out.push(sheet);
+      else
+        for (const style of dom.querySelectorAll(root, 'style')) {
+          let sheet = style.sheet;
+          // Nor does it parse a shadow root's <style> into a sheet: its text
+          // is parsed into a constructed one.
+          if (!sheet) {
+            const view = dom.defaultView(document);
+            const Sheet = view ? view.CSSStyleSheet : null;
+            if (typeof Sheet === 'function') {
+              sheet = new Sheet();
+              sheet.replaceSync(String(dom.textContent(style) || ''));
+            }
+          }
+          if (sheet) out.push(sheet);
+        }
+    } catch {}
+    try {
+      for (const sheet of dom.get(root, 'adoptedStyleSheets') || []) out.push(sheet);
+    } catch {}
+    return out;
+  };
+
   let sheetCount = 0;
   let unreadableSheets = 0;
   try {
-    const sheets = dom.styleSheets(document) || [];
-    for (const sheet of sheets) {
+    const scoped = [];
+    for (const sheet of sheetsOf(document)) scoped.push([sheet, null]);
+    for (const root of shadowScopes) for (const sheet of sheetsOf(root)) scoped.push([sheet, root]);
+    for (const [sheet, scope] of scoped) {
       if (!conditionApplies(sheet)) continue;
       // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
       // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
@@ -83171,8 +83459,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       sheetCount += 1;
       currentSheet = sheet;
+      currentScope = scope;
       walkRules(rules, 0, '');
       currentSheet = null;
+      currentScope = null;
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
@@ -83391,12 +83681,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return decls.some((d) => !sameAsUnfocused(cs, d.prop, d.value));
   }
 
-  const CANDIDATE_SELECTOR =
-    'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
-  const candidates = helpers.queryAllSmart
-    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
-    : helpers.queryAll(CANDIDATE_SELECTOR);
-
   // Every suppressor tested against each element costs rules x elements.
   // In a browser, the selectors that parse on their own, and whose text can't run into
   // the next one's (balanced brackets and quotes, no comment, no trailing
@@ -83444,7 +83728,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!rendered) break;
     // :scope, & and :host read differently from a tree's querySelectorAll
     // than from the element's matches(): tested element by element.
-    if (listed.has(s.base) || !probe || !standsAlone(s.base) || /:scope|&|:host/i.test(s.base))
+    if (
+      listed.has(s.base) ||
+      !probe ||
+      s.scope ||
+      (s.also && s.also.length) ||
+      !standsAlone(s.base) ||
+      /:scope|&|:host/i.test(s.base)
+    )
       continue;
     try {
       dom.matches(probe, s.base);
@@ -83462,7 +83753,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       listed.clear();
     }
   }
-  const unlisted = suppressors.filter((s) => !listed.has(s.base));
+  const unlisted = suppressors.filter(
+    (s) => !listed.has(s.base) || s.scope || (s.also && s.also.length)
+  );
 
   // Which candidates the list matches, and how many in each tree. Where
   // many do, each listed selector is run once over the tree
@@ -83528,6 +83821,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const byBase = listHit ? listedMatchesIn(treeOf(el)) : null;
     const matched = new Map();
     const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
+      if (!scopeOk(s, el)) return false;
+      if (s.also && !s.also.every((a) => matchesSafe(el, a))) return false;
       let hit = matched.get(s.base);
       if (hit === undefined) {
         const found = byBase && byBase.get(s.base);
@@ -83541,6 +83836,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const killed = new Set();
     for (const s of suppressing) for (const k of s.kills || ['style']) killed.add(k);
     const indicated = providers.some((p) => {
+      if (!scopeOk(p, el)) return false;
       if (
         !(p.subject ? matchesSafe(el, p.base) : matchesSafe(el, p.base) || closestSafe(el, p.base))
       )
@@ -83566,7 +83862,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // The lean: nothing the scan can read draws focus another way.
     const inlineHandler = closestSafe(el, INLINE_FOCUS_HANDLERS);
-    const focusWithin = withinProviders.some((b) => closestSafe(el, b));
+    const focusWithin = withinProviders.some((w) => scopeOk(w, el) && closestSafe(el, w.base));
     const namesFocusVisible = selectors.some((sel) => /focus-visible/i.test(sel));
     const scriptListener = scriptFocusListener(el);
     const leans =
@@ -113123,6 +113419,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { document, helpers, rule } = ctx;
   const view = dom.defaultView(document) || null;
   const ZOOM_WIDTH = 640;
+  const LEAN_MIN_WIDTH = 600;
   const MAX_TEXT_NODES = 3000;
   const MAX_PER_CODE = 50;
   // A line more than this far outside its box is cut off at all.
@@ -113658,6 +113955,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const own = axis === 'x' ? ox : oy;
       if (own && own !== 'visible')
         parts.push(ox === oy ? `overflow: ${own}` : `overflow-${axis}: ${own}`);
+      // A box the scan lays out in place of content-visibility: auto holds
+      // paint containment instead (contain: content): name what the author
+      // wrote.
+      else if (cvClips(c.el)) parts.push('content-visibility: auto');
       else if (cs.contain && cs.contain !== 'none') parts.push(`contain: ${cs.contain}`);
       else if (c.shape && cs.clipPath && cs.clipPath !== 'none')
         parts.push(`clip-path: ${cs.clipPath}`);
@@ -113671,6 +113972,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // ---- Measure ----
+
+  // Whether a box between the text and its clipping box was placed out of
+  // the flow (absolutely positioned or fixed) or moved by a transform: text
+  // it holds was put outside the clipping box, not pushed out by its size.
+  function placedOutside(textEl, clipEl) {
+    for (let a = textEl, i = 0; a && a !== clipEl && i < 1000; a = upOf(a), i++) {
+      const cs = styleOf(a);
+      if (!cs) continue;
+      if (cs.position === 'absolute' || cs.position === 'fixed') return true;
+      if (cs.transform && cs.transform !== 'none') return true;
+    }
+    return false;
+  }
+  // Whether a clipping box shows any of the text in it: a collapsed panel
+  // shows none. Kept per box; at most 200 texts are read in each.
+  const showsTextOf = new Map();
+  function showsSomeText(c) {
+    if (showsTextOf.has(c.el)) return showsTextOf.get(c.el);
+    let shows = false;
+    try {
+      const b = clipBoxOf(c);
+      const walker = dom.createTreeWalker(document, c.el, 4);
+      let read = 0;
+      for (let t = walker.nextNode(); t && !shows && read < 200; t = walker.nextNode()) {
+        if (!/\S/.test(dom.nodeValue(t) || '')) continue;
+        read += 1;
+        shows = linesOf(t).some((l) => showsIn(l, b, c));
+      }
+    } catch {}
+    showsTextOf.set(c.el, shows);
+    return shows;
+  }
 
   // Per clipping box, the finding it gives: the first text it cuts, or a
   // text it cuts for certain over one it cuts by less.
@@ -113695,17 +114028,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ) {
       lines = glyphLinesOf(n, verticalOf(textEl)) || lines;
     }
-    // Visible text: some of it shows in every box that clips it. A box a
-    // pixel wide or high is visually hidden text, not a cut.
-    let visible = true;
+    // A box a pixel wide or high is visually hidden text, not a cut. Text a
+    // box hides entirely is left out where the box shows none of its text
+    // (a collapsed panel), or where the text was placed out of it (an
+    // off-canvas menu, a carousel's next slide): it is hidden on purpose.
+    // Where the box shows other text, and the text only flowed out of it (a
+    // fixed-height card whose later lines or paragraphs drop out), it is
+    // cut off, and asked about as any cut text is.
+    let skip = false;
     for (const c of clippers) {
       const b = clipBoxOf(c);
-      if (b.right - b.left <= 1 || b.bottom - b.top <= 1 || !lines.some((l) => showsIn(l, b, c))) {
-        visible = false;
+      if (b.right - b.left <= 1 || b.bottom - b.top <= 1) {
+        skip = true;
+        break;
+      }
+      if (lines.some((l) => showsIn(l, b, c))) continue;
+      if (placedOutside(textEl, c.el) || !showsSomeText(c)) {
+        skip = true;
         break;
       }
     }
-    if (!visible) continue;
+    if (skip) continue;
     measured += 1;
     const fontSize = px(styleOf(textEl) && styleOf(textEl).fontSize) || 16;
     // Half an em along the line, and half the line's thickness across it:
@@ -113804,12 +114147,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
   };
+  // Below this width the page is laid out narrower than a 1280 pixel window
+  // at 200% zoom: what is cut there may be cut only at a larger zoom.
+  const narrower = viewport.width < LEAN_MIN_WIDTH;
   const EDGE_WORDS = { top: 'top ', right: 'right ', bottom: 'bottom ', left: 'left ' };
   const MESSAGES = {
     TEXT_CLIPPED_AT_640: {
       key: 'clipped',
       summary: (p, edge) =>
-        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element cuts off the text "${p.text}" (${p.overflowPx} pixels past its ${EDGE_WORDS[edge] || ''}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
+        `At ${p.viewportWidth} pixels wide, ${p.narrower ? 'narrower than a 1280 pixel window at 200% zoom' : `as a 1280 pixel window shows the page at ${p.zoomPercent}% zoom`}, this element cuts off the text "${p.text}" (${p.overflowPx} pixels past its ${EDGE_WORDS[edge] || ''}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
       hint: (p) =>
         p.clipCss
           ? `Let the box grow with its text when the page is zoomed: change ${p.clipCss}, or let it scroll.`
@@ -113818,7 +114164,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     TEXT_TRUNCATED_AT_640: {
       key: 'truncated',
       summary: (p) =>
-        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element shortens the text "${p.text}" with an ellipsis or a line clamp, so part of it is not shown.${p.clipCss ? ` The CSS that shortens it: ${p.clipCss}.` : ''}`,
+        `At ${p.viewportWidth} pixels wide, ${p.narrower ? 'narrower than a 1280 pixel window at 200% zoom' : `as a 1280 pixel window shows the page at ${p.zoomPercent}% zoom`}, this element shortens the text "${p.text}" with an ellipsis or a line clamp, so part of it is not shown.${p.clipCss ? ` The CSS that shortens it: ${p.clipCss}.` : ''}`,
       hint: () =>
         'Let the text wrap and the box show all of it when the page is zoomed, or offer the full text another way that works with the keyboard, such as a "read more" link.'
     }
@@ -113835,11 +114181,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       text: f.text,
       overflowPx: String(Math.round(f.metrics.overflowPx)),
       viewportWidth: String(viewport.width),
+      // The zoom at which a 1280 pixel window lays the page out this wide:
+      // 200% at 640, 400% at 320.
+      zoomPercent: String(Math.round((1280 * 100) / (viewport.width || ZOOM_WIDTH))),
+      ...(narrower ? { narrower: true } : {}),
       ...(edgeKey ? { [edgeKey]: true } : {}),
       ...(f.clipCss ? { clipCss: f.clipCss } : {})
     };
-    const lean =
-      f.code === 'TEXT_TRUNCATED_AT_640' ? LEANS.truncated : f.lost ? LEANS.clipped : null;
+    // Narrower than 200% zoom of a 1280 pixel window gives, the cut may
+    // appear only at a zoom 1.4.4 doesn't ask for: asked without a lean.
+    const lean = narrower
+      ? null
+      : f.code === 'TEXT_TRUNCATED_AT_640'
+        ? LEANS.truncated
+        : f.lost
+          ? LEANS.clipped
+          : null;
     questions.push(
       helpers.reportOccurrence(f.el, {
         ...(lean ? { lean } : {}),
@@ -117493,20 +117850,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // The tab stops it jumps ahead of, the first named, for the message.
     const skipped = jumps === true ? skippedBy(el) : [];
     const first = skipped.length ? helpers.describeElement(skipped[0], { text: true }) : '';
+    // The attribute as written, capped as page text quoted in a message is.
+    const quoted = helpers.quoteText(raw);
     occurrences.push(
       helpers.reportOccurrence(el, {
         ...(lean ? { lean } : {}),
         summary: skipped.length
-          ? `This element has tabindex="${raw}", so Tab reaches it before earlier tab stops in the page (${skipped.length}, starting with ${first}).`
-          : `This element has tabindex="${raw}", overriding the natural tab order.`,
+          ? `This element has tabindex="${quoted}", so Tab reaches it before earlier tab stops in the page (${skipped.length}, starting with ${first}).`
+          : `This element has tabindex="${quoted}", overriding the natural tab order.`,
         hint: 'Use tabindex="0" to add the element to the tab order, or a negative value to take it out. If the tab order needs to change, change the order of the content instead.',
         i18n: {
           summaryKey: skipped.length
             ? 'tabindex_summary_cantTell_jumpsAhead'
             : 'tabindex_summary_cantTell_value',
           hintKey: 'tabindex_hint_cantTell',
-          // The attribute as written; details.value is the number read.
-          params: { value: raw, skippedCount: String(skipped.length), first }
+          // The attribute as written, capped; details.value is the number read.
+          params: { value: quoted, skippedCount: String(skipped.length), first }
         },
         data: {
           details: {
@@ -119888,11 +120247,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!box) return { l: c.x, r: c.x, t: c.y, b: c.y };
     const hw = (e.extent.r - e.extent.l) / 2;
     const hh = (e.extent.b - e.extent.t) / 2;
+    // A sticky box moves only on an axis it has an inset on: `top: 0`
+    // holds it down the page, never across.
+    const cs = getStyle(layer) || {};
+    const inset = (side) => !!cs[side] && cs[side] !== 'auto';
+    const acrossX = inset('left') || inset('right');
+    const acrossY = inset('top') || inset('bottom');
     return {
-      l: Math.min(c.x, box.left + hw),
-      r: Math.max(c.x, box.right - hw),
-      t: Math.min(c.y, box.top + hh),
-      b: Math.max(c.y, box.bottom - hh)
+      l: acrossX ? Math.min(c.x, box.left + hw) : c.x,
+      r: acrossX ? Math.max(c.x, box.right - hw) : c.x,
+      t: acrossY ? Math.min(c.y, box.top + hh) : c.y,
+      b: acrossY ? Math.max(c.y, box.bottom - hh) : c.y
     };
   }
   const spaced = entries.filter((e) => !e.exempt);
@@ -120087,35 +120452,83 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // WCAG 2.5.8 "User Agent Control" exception: the target's size requirement
   // does not apply at all when its size is determined by the user agent and
-  // not modified by the author. The canonical example is an unstyled native
-  // checkbox/radio (browsers render these well under 24px by default, and
-  // that's not the author's choice). Scoped narrowly to
-  // input[type=checkbox]/[type=radio] specifically, the only form-control
-  // types with a universally-recognized, unambiguous native rendering, and
-  // not extended to select/range/color/file, whose "default" sizing varies
-  // enough across browsers/OSes that a wrong exemption there risks masking a
-  // real author-introduced undersized target.
+  // not modified by the author. It covers a native form control the browser
+  // draws at its own size: a checkbox or radio (browsers draw these well
+  // under 24px), a range, color, file, date or text input, or a drop-down
+  // <select>. A button is left out: its size follows the text the author
+  // wrote in it.
   //
-  // Detection signal: `appearance` (or the legacy `-webkit-appearance`)
-  // computed as `none` is the near-universal first step of custom
-  // checkbox/radio styling across every CSS framework/design system. If the
-  // author hasn't reset it, the browser is still rendering its own default
-  // control chrome, so the size is UA-determined rather than authored.
-  // A checkbox or radio sized outside the 12 to 16 CSS px browsers draw it at
-  // was resized by the author, so it isn't ("not modified by the author").
+  // Unstyled, as the exception needs, means:
+  // - `appearance` (or the legacy `-webkit-appearance`) not reset to `none`,
+  //   the near-universal first step of styling a control (a file input,
+  //   which Chromium computes as `none` by default, aside);
+  // - no CSS zoom on the control or an ancestor: zoom is the author's
+  //   change of size, as a transform is (a transform shows in the box, and
+  //   so takes it out of the sizes below);
+  // - the box within the sizes browsers draw the control at, by type
+  //   (Chromium's in brackets, checked in a scan; the ranges leave room
+  //   for other browsers, not verified): a checkbox or radio 12 to 16 px
+  //   (13 by 13), a range 100 to 180 wide and 12 to 26 high (129 by 16), a
+  //   color input 40 to 70 by 20 to 34 (50 by 27), and a file, date or
+  //   text input or a drop-down <select> 18 to 26 high (21, 19 for a
+  //   select), its width following its text;
+  // - for the controls drawn around text (all but the checkbox, radio and
+  //   range), the font size browsers give them, 10.5 to 14 px (13.33):
+  //   another was set by the author, and changes the size.
+  // A control outside these was resized by the author, which the exception
+  // doesn't cover.
+  const UA_TEXT_INPUT_TYPES = new Set([
+    'text',
+    'search',
+    'email',
+    'url',
+    'tel',
+    'password',
+    'number',
+    'date',
+    'time',
+    'datetime-local',
+    'month',
+    'week',
+    'file'
+  ]);
+  const upOf = (a) =>
+    typeof helpers.flatParentElement === 'function'
+      ? helpers.flatParentElement(a)
+      : dom.parentElement(a);
+  function cssZoomOf(el) {
+    const own = Number(dom.get(el, 'currentCSSZoom'));
+    if (Number.isFinite(own) && own > 0) return own;
+    let zoom = 1;
+    for (let a = el, i = 0; a && dom.nodeType(a) === 1 && i < 1000; a = upOf(a), i++) {
+      const z = Number.parseFloat((getStyle(a) || {}).zoom || '1');
+      if (Number.isFinite(z) && z > 0) zoom *= z;
+    }
+    return zoom;
+  }
   function isUserAgentSizedControl(el) {
     try {
       if (!el || dom.nodeType(el) !== 1) return false;
       const tag = (dom.tagName(el) || '').toLowerCase();
-      if (tag !== 'input') return false;
-
-      const type =
-        (dom.get(el, 'getAttribute') &&
-          String(dom.getAttribute(el, 'type') || '')
-            .trim()
-            .toLowerCase()) ||
-        '';
-      if (type !== 'checkbox' && type !== 'radio') return false;
+      let kind = '';
+      if (tag === 'select') {
+        // A list box (multiple, or more than one row) is not a drop-down.
+        if (dom.hasAttribute(el, 'multiple')) return false;
+        const rows = helpers.parseHtmlInteger
+          ? helpers.parseHtmlInteger(String(dom.getAttribute(el, 'size') || ''))
+          : null;
+        if (typeof rows === 'number' && rows > 1) return false;
+        kind = 'text';
+      } else if (tag === 'input') {
+        const type = String(dom.getAttribute(el, 'type') || 'text')
+          .trim()
+          .toLowerCase();
+        if (type === 'checkbox' || type === 'radio') kind = 'box';
+        else if (type === 'range' || type === 'color') kind = type;
+        else if (UA_TEXT_INPUT_TYPES.has(type)) kind = type === 'file' ? 'file' : 'text';
+        else if (!dom.hasAttribute(el, 'type') || type === '') kind = 'text';
+        else return false;
+      } else return false;
 
       const cs = getStyle(el);
       let appearance = '';
@@ -120131,19 +120544,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
-      if (appearance === 'none') return false;
+      if (appearance === 'none' && kind !== 'file') return false;
 
-      // Resized by the author: browsers draw an unstyled checkbox or radio
-      // at 12 to 16 CSS px (13 in Chromium and Firefox, 14 to 16 in Safari).
-      // A size outside that was set by the author, which the exception
-      // doesn't cover ("not modified by the author").
+      // Zoomed by the author, on the control or an ancestor.
+      if (Math.abs(cssZoomOf(el) - 1) > 0.01) return false;
+
       const box = dom.getBoundingClientRect(el);
-      const zoom = Number.parseFloat((cs && cs.zoom) || '1') || 1;
-      const w = box.width / zoom;
-      const h = box.height / zoom;
-      if (w < 12 - EPS || h < 12 - EPS || w > 16 + EPS || h > 16 + EPS) return false;
-
-      return true;
+      const w = box.width;
+      const h = box.height;
+      const within = (v, lo, hi) => v >= lo - EPS && v <= hi + EPS;
+      if (kind === 'box') return within(w, 12, 16) && within(h, 12, 16);
+      if (kind === 'range') return within(w, 100, 180) && within(h, 12, 26);
+      const fontSize = Number.parseFloat((cs && cs.fontSize) || '');
+      if (!within(fontSize, 10.5, 14)) return false;
+      if (kind === 'color') return within(w, 40, 70) && within(h, 20, 34);
+      return w >= 20 - EPS && within(h, 18, 26);
     } catch {
       return false;
     }
@@ -120334,8 +120749,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // An undersized page target that a pinned target's circle can reach at
   // some scroll position, the target's own centre path being worked out
   // from its extent's (pinnedPath): the region within 12px, or the centre
-  // within 24px. The first found, or null.
+  // within 24px. A page target that is within reach only while it passes
+  // under the pinned box, behind the background the box paints around the
+  // target, is hidden there (focus-not-obscured's concern), not too close.
+  // The first found, or null.
   const entryOf = new Map(entries.map((e) => [e.el, e]));
+  // Whether an element paints a background that hides what passes under it.
+  function paintsBackground(el) {
+    const cs = getStyle(el);
+    if (!cs) return false;
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+    const c = helpers.contrast;
+    const bg =
+      c && typeof c.parseCssColorToRgba === 'function'
+        ? c.parseCssColorToRgba(cs.backgroundColor)
+        : null;
+    return !!bg && bg.a > 0.5;
+  }
+  // The pinned box's background around a target, as a rectangle now: the
+  // outermost element from the target up to its fixed or sticky box that
+  // paints one; null where none does (a transparent bar shows the page).
+  function coverOf(el) {
+    let found = null;
+    for (let a = helpers.flatParentElement(el), i = 0; a && i < 10000; i++) {
+      const cs = getStyle(a);
+      if (paintsBackground(a)) found = a;
+      if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) break;
+      a = helpers.flatParentElement(a);
+    }
+    if (!found) return null;
+    const r = dom.getBoundingClientRect(found);
+    return r ? { l: r.left, t: r.top, r: r.right, b: r.bottom } : null;
+  }
   function pageTargetInPath(it) {
     const e = entryOf.get(it.el);
     if (!e || !e.pageNear || !e.pageNear.length) return null;
@@ -120347,16 +120792,56 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       t: e.pagePath.t + dy,
       b: e.pagePath.b + dy
     };
+    let cover;
     for (const f of e.pageNear) {
       if (f.item === undefined) f.item = measure(f.el);
       const o = f.item;
       if (!o || !isUndersized(o)) continue;
       const region = { l: o.rect.left, t: o.rect.top, r: o.rect.right, b: o.rect.bottom };
       const centre = { l: o.center.cx, r: o.center.cx, t: o.center.cy, b: o.center.cy };
-      if (gap(path, region) < RADIUS - EPS || gap(path, centre) < SPACING - EPS) return o.el;
+      const reaches = (q) => gap(q, region) < RADIUS - EPS || gap(q, centre) < SPACING - EPS;
+      if (!reaches(path)) continue;
+      if (cover === undefined) cover = coverOf(it.el);
+      if (!cover) return o.el;
+      // The centre positions along the path within reach of the target,
+      // sampled on a grid of at most about 2,500 points, edges included:
+      // one where the target is not wholly under the cover shows it close.
+      const L = Math.max(path.l, region.l - SPACING);
+      const R = Math.min(path.r, region.r + SPACING);
+      const T = Math.max(path.t, region.t - SPACING);
+      const B = Math.min(path.b, region.b + SPACING);
+      if (L > R + EPS || T > B + EPS) continue;
+      const step = Math.max(1, Math.sqrt(((R - L + 1) * (B - T + 1)) / 2500));
+      const along = (lo, hi) => {
+        const out = [];
+        for (let v = lo; v < hi; v += step) out.push(v);
+        out.push(hi);
+        return out;
+      };
+      const xs = along(L, R);
+      const ys = along(T, B);
+      for (const x of xs) {
+        for (const y of ys) {
+          if (!reaches({ l: x, r: x, t: y, b: y })) continue;
+          const vx = x - it.center.cx;
+          const vy = y - it.center.cy;
+          const under =
+            region.l >= cover.l + vx - EPS &&
+            region.r <= cover.r + vx + EPS &&
+            region.t >= cover.t + vy - EPS &&
+            region.b <= cover.b + vy + EPS;
+          if (!under) return o.el;
+        }
+      }
     }
     return null;
   }
+
+  // The controls sized by the browser, read for all targets at once: the
+  // spacing checks below can leave the style to be recomputed, and a style
+  // read between them would wait for that each time.
+  const userAgentSized = new Set();
+  for (const it of undersized) if (isUserAgentSizedControl(it.el)) userAgentSized.add(it.el);
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
@@ -120368,7 +120853,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // size requirement (and therefore any spacing conflict stemming from
     // it) doesn't apply at all. Skip straight to pass, no need to even
     // evaluate spacing.
-    if (isUserAgentSizedControl(it.el)) {
+    if (userAgentSized.has(it.el)) {
       continue;
     }
 
@@ -122017,11 +122502,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!box) return { l: c.x, r: c.x, t: c.y, b: c.y };
     const hw = (e.extent.r - e.extent.l) / 2;
     const hh = (e.extent.b - e.extent.t) / 2;
+    // A sticky box moves only on an axis it has an inset on: `top: 0`
+    // holds it down the page, never across.
+    const cs = getStyle(layer) || {};
+    const inset = (side) => !!cs[side] && cs[side] !== 'auto';
+    const acrossX = inset('left') || inset('right');
+    const acrossY = inset('top') || inset('bottom');
     return {
-      l: Math.min(c.x, box.left + hw),
-      r: Math.max(c.x, box.right - hw),
-      t: Math.min(c.y, box.top + hh),
-      b: Math.max(c.y, box.bottom - hh)
+      l: acrossX ? Math.min(c.x, box.left + hw) : c.x,
+      r: acrossX ? Math.max(c.x, box.right - hw) : c.x,
+      t: acrossY ? Math.min(c.y, box.top + hh) : c.y,
+      b: acrossY ? Math.max(c.y, box.bottom - hh) : c.y
     };
   }
   const spaced = entries.filter((e) => !e.exempt);
@@ -122216,35 +122707,83 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // WCAG 2.5.8 "User Agent Control" exception: the target's size requirement
   // does not apply at all when its size is determined by the user agent and
-  // not modified by the author. The canonical example is an unstyled native
-  // checkbox/radio (browsers render these well under 24px by default, and
-  // that's not the author's choice). Scoped narrowly to
-  // input[type=checkbox]/[type=radio] specifically, the only form-control
-  // types with a universally-recognized, unambiguous native rendering, and
-  // not extended to select/range/color/file, whose "default" sizing varies
-  // enough across browsers/OSes that a wrong exemption there risks masking a
-  // real author-introduced undersized target.
+  // not modified by the author. It covers a native form control the browser
+  // draws at its own size: a checkbox or radio (browsers draw these well
+  // under 24px), a range, color, file, date or text input, or a drop-down
+  // <select>. A button is left out: its size follows the text the author
+  // wrote in it.
   //
-  // Detection signal: `appearance` (or the legacy `-webkit-appearance`)
-  // computed as `none` is the near-universal first step of custom
-  // checkbox/radio styling across every CSS framework/design system. If the
-  // author hasn't reset it, the browser is still rendering its own default
-  // control chrome, so the size is UA-determined rather than authored.
-  // A checkbox or radio sized outside the 12 to 16 CSS px browsers draw it at
-  // was resized by the author, so it isn't ("not modified by the author").
+  // Unstyled, as the exception needs, means:
+  // - `appearance` (or the legacy `-webkit-appearance`) not reset to `none`,
+  //   the near-universal first step of styling a control (a file input,
+  //   which Chromium computes as `none` by default, aside);
+  // - no CSS zoom on the control or an ancestor: zoom is the author's
+  //   change of size, as a transform is (a transform shows in the box, and
+  //   so takes it out of the sizes below);
+  // - the box within the sizes browsers draw the control at, by type
+  //   (Chromium's in brackets, checked in a scan; the ranges leave room
+  //   for other browsers, not verified): a checkbox or radio 12 to 16 px
+  //   (13 by 13), a range 100 to 180 wide and 12 to 26 high (129 by 16), a
+  //   color input 40 to 70 by 20 to 34 (50 by 27), and a file, date or
+  //   text input or a drop-down <select> 18 to 26 high (21, 19 for a
+  //   select), its width following its text;
+  // - for the controls drawn around text (all but the checkbox, radio and
+  //   range), the font size browsers give them, 10.5 to 14 px (13.33):
+  //   another was set by the author, and changes the size.
+  // A control outside these was resized by the author, which the exception
+  // doesn't cover.
+  const UA_TEXT_INPUT_TYPES = new Set([
+    'text',
+    'search',
+    'email',
+    'url',
+    'tel',
+    'password',
+    'number',
+    'date',
+    'time',
+    'datetime-local',
+    'month',
+    'week',
+    'file'
+  ]);
+  const upOf = (a) =>
+    typeof helpers.flatParentElement === 'function'
+      ? helpers.flatParentElement(a)
+      : dom.parentElement(a);
+  function cssZoomOf(el) {
+    const own = Number(dom.get(el, 'currentCSSZoom'));
+    if (Number.isFinite(own) && own > 0) return own;
+    let zoom = 1;
+    for (let a = el, i = 0; a && dom.nodeType(a) === 1 && i < 1000; a = upOf(a), i++) {
+      const z = Number.parseFloat((getStyle(a) || {}).zoom || '1');
+      if (Number.isFinite(z) && z > 0) zoom *= z;
+    }
+    return zoom;
+  }
   function isUserAgentSizedControl(el) {
     try {
       if (!el || dom.nodeType(el) !== 1) return false;
       const tag = (dom.tagName(el) || '').toLowerCase();
-      if (tag !== 'input') return false;
-
-      const type =
-        (dom.get(el, 'getAttribute') &&
-          String(dom.getAttribute(el, 'type') || '')
-            .trim()
-            .toLowerCase()) ||
-        '';
-      if (type !== 'checkbox' && type !== 'radio') return false;
+      let kind = '';
+      if (tag === 'select') {
+        // A list box (multiple, or more than one row) is not a drop-down.
+        if (dom.hasAttribute(el, 'multiple')) return false;
+        const rows = helpers.parseHtmlInteger
+          ? helpers.parseHtmlInteger(String(dom.getAttribute(el, 'size') || ''))
+          : null;
+        if (typeof rows === 'number' && rows > 1) return false;
+        kind = 'text';
+      } else if (tag === 'input') {
+        const type = String(dom.getAttribute(el, 'type') || 'text')
+          .trim()
+          .toLowerCase();
+        if (type === 'checkbox' || type === 'radio') kind = 'box';
+        else if (type === 'range' || type === 'color') kind = type;
+        else if (UA_TEXT_INPUT_TYPES.has(type)) kind = type === 'file' ? 'file' : 'text';
+        else if (!dom.hasAttribute(el, 'type') || type === '') kind = 'text';
+        else return false;
+      } else return false;
 
       const cs = getStyle(el);
       let appearance = '';
@@ -122260,19 +122799,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
-      if (appearance === 'none') return false;
+      if (appearance === 'none' && kind !== 'file') return false;
 
-      // Resized by the author: browsers draw an unstyled checkbox or radio
-      // at 12 to 16 CSS px (13 in Chromium and Firefox, 14 to 16 in Safari).
-      // A size outside that was set by the author, which the exception
-      // doesn't cover ("not modified by the author").
+      // Zoomed by the author, on the control or an ancestor.
+      if (Math.abs(cssZoomOf(el) - 1) > 0.01) return false;
+
       const box = dom.getBoundingClientRect(el);
-      const zoom = Number.parseFloat((cs && cs.zoom) || '1') || 1;
-      const w = box.width / zoom;
-      const h = box.height / zoom;
-      if (w < 12 - EPS || h < 12 - EPS || w > 16 + EPS || h > 16 + EPS) return false;
-
-      return true;
+      const w = box.width;
+      const h = box.height;
+      const within = (v, lo, hi) => v >= lo - EPS && v <= hi + EPS;
+      if (kind === 'box') return within(w, 12, 16) && within(h, 12, 16);
+      if (kind === 'range') return within(w, 100, 180) && within(h, 12, 26);
+      const fontSize = Number.parseFloat((cs && cs.fontSize) || '');
+      if (!within(fontSize, 10.5, 14)) return false;
+      if (kind === 'color') return within(w, 40, 70) && within(h, 20, 34);
+      return w >= 20 - EPS && within(h, 18, 26);
     } catch {
       return false;
     }
@@ -122463,8 +123004,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // An undersized page target that a pinned target's circle can reach at
   // some scroll position, the target's own centre path being worked out
   // from its extent's (pinnedPath): the region within 12px, or the centre
-  // within 24px. The first found, or null.
+  // within 24px. A page target that is within reach only while it passes
+  // under the pinned box, behind the background the box paints around the
+  // target, is hidden there (focus-not-obscured's concern), not too close.
+  // The first found, or null.
   const entryOf = new Map(entries.map((e) => [e.el, e]));
+  // Whether an element paints a background that hides what passes under it.
+  function paintsBackground(el) {
+    const cs = getStyle(el);
+    if (!cs) return false;
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+    const c = helpers.contrast;
+    const bg =
+      c && typeof c.parseCssColorToRgba === 'function'
+        ? c.parseCssColorToRgba(cs.backgroundColor)
+        : null;
+    return !!bg && bg.a > 0.5;
+  }
+  // The pinned box's background around a target, as a rectangle now: the
+  // outermost element from the target up to its fixed or sticky box that
+  // paints one; null where none does (a transparent bar shows the page).
+  function coverOf(el) {
+    let found = null;
+    for (let a = helpers.flatParentElement(el), i = 0; a && i < 10000; i++) {
+      const cs = getStyle(a);
+      if (paintsBackground(a)) found = a;
+      if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) break;
+      a = helpers.flatParentElement(a);
+    }
+    if (!found) return null;
+    const r = dom.getBoundingClientRect(found);
+    return r ? { l: r.left, t: r.top, r: r.right, b: r.bottom } : null;
+  }
   function pageTargetInPath(it) {
     const e = entryOf.get(it.el);
     if (!e || !e.pageNear || !e.pageNear.length) return null;
@@ -122476,16 +123047,56 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       t: e.pagePath.t + dy,
       b: e.pagePath.b + dy
     };
+    let cover;
     for (const f of e.pageNear) {
       if (f.item === undefined) f.item = measure(f.el);
       const o = f.item;
       if (!o || !isUndersized(o)) continue;
       const region = { l: o.rect.left, t: o.rect.top, r: o.rect.right, b: o.rect.bottom };
       const centre = { l: o.center.cx, r: o.center.cx, t: o.center.cy, b: o.center.cy };
-      if (gap(path, region) < RADIUS - EPS || gap(path, centre) < SPACING - EPS) return o.el;
+      const reaches = (q) => gap(q, region) < RADIUS - EPS || gap(q, centre) < SPACING - EPS;
+      if (!reaches(path)) continue;
+      if (cover === undefined) cover = coverOf(it.el);
+      if (!cover) return o.el;
+      // The centre positions along the path within reach of the target,
+      // sampled on a grid of at most about 2,500 points, edges included:
+      // one where the target is not wholly under the cover shows it close.
+      const L = Math.max(path.l, region.l - SPACING);
+      const R = Math.min(path.r, region.r + SPACING);
+      const T = Math.max(path.t, region.t - SPACING);
+      const B = Math.min(path.b, region.b + SPACING);
+      if (L > R + EPS || T > B + EPS) continue;
+      const step = Math.max(1, Math.sqrt(((R - L + 1) * (B - T + 1)) / 2500));
+      const along = (lo, hi) => {
+        const out = [];
+        for (let v = lo; v < hi; v += step) out.push(v);
+        out.push(hi);
+        return out;
+      };
+      const xs = along(L, R);
+      const ys = along(T, B);
+      for (const x of xs) {
+        for (const y of ys) {
+          if (!reaches({ l: x, r: x, t: y, b: y })) continue;
+          const vx = x - it.center.cx;
+          const vy = y - it.center.cy;
+          const under =
+            region.l >= cover.l + vx - EPS &&
+            region.r <= cover.r + vx + EPS &&
+            region.t >= cover.t + vy - EPS &&
+            region.b <= cover.b + vy + EPS;
+          if (!under) return o.el;
+        }
+      }
     }
     return null;
   }
+
+  // The controls sized by the browser, read for all targets at once: the
+  // spacing checks below can leave the style to be recomputed, and a style
+  // read between them would wait for that each time.
+  const userAgentSized = new Set();
+  for (const it of undersized) if (isUserAgentSizedControl(it.el)) userAgentSized.add(it.el);
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
@@ -122497,7 +123108,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // size requirement (and therefore any spacing conflict stemming from
     // it) doesn't apply at all. Skip straight to pass, no need to even
     // evaluate spacing.
-    if (isUserAgentSizedControl(it.el)) {
+    if (userAgentSized.has(it.el)) {
       continue;
     }
 
@@ -124540,15 +125151,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const o = outside(l, box, c);
         return o.dx <= 1 && o.dy <= 1;
       };
+      // Text partly shown before is visible text the rule measures: the page
+      // has some, even when the spacing cuts no more of it. A line counts
+      // when more than a pixel of it shows in every box that clips it, so
+      // visually hidden text, cut by a 1px box of its own, doesn't.
+      const partlyShown = (l) =>
+        clippers.every((c) => {
+          const box = before.boxes.get(c.el);
+          if (!box) return false;
+          const o = outside(l, box, c);
+          return o.dx < l.right - l.left - 1 && o.dy < l.bottom - l.top - 1;
+        });
+      if (linesBefore.some(partlyShown)) textCount += 1;
       // Counted by rows: under a clamp, the text after the ellipsis is laid
-      // out beside the last row shown, and isn't shown.
+      // out beside the last row shown, and isn't shown. Vertical lines are
+      // columns side by side, counted by where each starts across.
+      const horizontal = growth(textEl(n)).horizontal;
       const shownIn = (lines, boxes) => {
-        const tops = [];
+        const starts = [];
         for (const l of lines) {
           if (!clippers.every((c) => keeps(l, boxes, c))) continue;
-          if (!tops.some((t) => Math.abs(t - l.top) < 1)) tops.push(l.top);
+          const at = horizontal ? l.top : l.left;
+          if (!starts.some((t) => Math.abs(t - at) < 1)) starts.push(at);
         }
-        return tops.length;
+        return starts.length;
       };
       const shownBefore = shownIn(linesBefore, before.boxes);
       if (!shownBefore || shownIn(linesAfter, after.boxes) >= shownBefore) continue;
@@ -128384,7 +129010,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Ein vor den Skripten der Seite installierter Hook hat weder am Element noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten- oder Fokus-Listener gesehen; Eingabe und Leertaste bewirken daher wahrscheinlich nichts.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Ein Vorfahre behält den Fokus für seine Elemente (aria-activedescendant oder ein fokussierbares zusammengesetztes Widget); so bedient ein solches Widget ein Element, ohne es zu fokussieren.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "Das Element zeigt einen Zeiger-Cursor und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "Das Element ist wie eine Schaltfläche gestaltet, ein kurzer Text in einem Kasten mit eigenem Hintergrund oder Rahmen, und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "Das Element ist wie ein Bedienelement gestaltet, ein kurzer Text in einem Kasten mit eigenem Rahmen oder Schatten oder ein Schließen- oder Menüsymbol, und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "Dieselbe Aktion kann ein anderes Bedienelement der Seite anbieten, etwa ein Link neben einer anklickbaren Zeile.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert (Eingabe und Leertaste sowie die Pfeiltasten seines Widgets), dasselbe bewirken wie ein Klick.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
@@ -128457,9 +129083,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_unattributed": "Es ließ sich kein Element benennen: Der Überlauf kann von einem Rand, generierten Inhalten oder einem geschlossenen Shadow Root stammen. Prüfen Sie, ob seitliches Scrollen Inhalte zeigt.",
       "resizeTextContentLoss_title": "Text wird bei 640 CSS-Pixeln Breite (200 % Zoom) nicht abgeschnitten",
       "resizeTextContentLoss_description": "Misst bei einem Viewport von höchstens 640 CSS-Pixeln Breite, wie ein 1280 Pixel breites Fenster eine Seite bei 200 % Zoom zeigt, jeden Text in einem Kasten, der seinen Überlauf verbirgt, und fragt nach Text, den der Kasten abschneidet oder mit Auslassungspunkten oder einer Zeilenbegrenzung kürzt, zur manuellen Prüfung, ob Inhalte verloren gehen.",
-      "resizeTextContentLoss_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite, wie ein 1280 Pixel breites Fenster die Seite bei 200 % Zoom zeigt, schneidet dieses Element den Text „{{text}}“ ab ({{overflowPx}} Pixel über seinen {{#edgeTop}}oberen {{/edgeTop}}{{#edgeRight}}rechten {{/edgeRight}}{{#edgeBottom}}unteren {{/edgeBottom}}{{#edgeLeft}}linken {{/edgeLeft}}Rand hinaus).{{#clipCss}} Das CSS, das ihn abschneidet: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite, {{#narrower}}schmaler als ein 1280 Pixel breites Fenster bei 200 % Zoom{{/narrower}}{{^narrower}}wie ein 1280 Pixel breites Fenster die Seite bei {{zoomPercent}} % Zoom zeigt{{/narrower}}, schneidet dieses Element den Text „{{text}}“ ab ({{overflowPx}} Pixel über seinen {{#edgeTop}}oberen {{/edgeTop}}{{#edgeRight}}rechten {{/edgeRight}}{{#edgeBottom}}unteren {{/edgeBottom}}{{#edgeLeft}}linken {{/edgeLeft}}Rand hinaus).{{#clipCss}} Das CSS, das ihn abschneidet: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Lassen Sie den Kasten mit seinem Text wachsen, wenn die Seite vergrößert wird: {{#clipCss}}Ändern Sie {{clipCss}}{{/clipCss}}{{^clipCss}}Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text{{/clipCss}}, oder lassen Sie ihn scrollen.",
-      "resizeTextContentLoss_summary_truncated": "Bei {{viewportWidth}} Pixeln Breite, wie ein 1280 Pixel breites Fenster die Seite bei 200 % Zoom zeigt, kürzt dieses Element den Text „{{text}}“ mit Auslassungspunkten oder einer Zeilenbegrenzung, sodass ein Teil davon nicht angezeigt wird.{{#clipCss}} Das CSS, das ihn kürzt: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "Bei {{viewportWidth}} Pixeln Breite, {{#narrower}}schmaler als ein 1280 Pixel breites Fenster bei 200 % Zoom{{/narrower}}{{^narrower}}wie ein 1280 Pixel breites Fenster die Seite bei {{zoomPercent}} % Zoom zeigt{{/narrower}}, kürzt dieses Element den Text „{{text}}“ mit Auslassungspunkten oder einer Zeilenbegrenzung, sodass ein Teil davon nicht angezeigt wird.{{#clipCss}} Das CSS, das ihn kürzt: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Lassen Sie den Text umbrechen und den Kasten ihn ganz zeigen, wenn die Seite vergrößert wird, oder bieten Sie den vollständigen Text auf einem anderen Weg an, der mit der Tastatur funktioniert, etwa über einen Link „Weiterlesen“.",
       "resizeTextContentLoss_lean_why_clipped": "Mindestens eine halbe Zeile des Textes liegt jenseits des Rands des Kastens, der sie verbirgt und nicht scrollt.",
       "resizeTextContentLoss_lean_caution_clipped": "Der vollständige Text kann auf andere Weise angezeigt werden, etwa über ein Bedienelement, das den Kasten öffnet.",
@@ -130238,7 +130864,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "A hook installed before the page’s scripts saw no key or focus listener on the element, its ancestors, the document or the window, so Enter and Space probably do nothing.",
       "clickHandlerKeyboardOperable_lean_why_managed": "An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "The element is drawn as a button, a short label in a box with a background or a border of its own, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "The element is drawn as a control, a short label in a box with a border or a shadow of its own, or a close or menu symbol, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "The same action may be offered by another control of the page, such as a link next to a clickable row.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Handle keydown so that the keys a {{role}} answers to (Enter and Space, and the arrow keys of its widget) do what a click does.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
@@ -130311,9 +130937,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_unattributed": "No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.",
       "resizeTextContentLoss_title": "Text is not cut off at 640 CSS pixels wide (200% zoom)",
       "resizeTextContentLoss_description": "At a viewport 640 CSS pixels wide or less, as a 1280 pixel window shows a page at 200% zoom, measures each text in a box that hides its overflow, and asks about text the box cuts off or shortens with an ellipsis or a line clamp, for manual review of whether content is lost.",
-      "resizeTextContentLoss_summary_clipped": "At {{viewportWidth}} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element cuts off the text \"{{text}}\" ({{overflowPx}} pixels past its {{#edgeTop}}top {{/edgeTop}}{{#edgeRight}}right {{/edgeRight}}{{#edgeBottom}}bottom {{/edgeBottom}}{{#edgeLeft}}left {{/edgeLeft}}edge).{{#clipCss}} The CSS that cuts it off: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "At {{viewportWidth}} pixels wide, {{#narrower}}narrower than a 1280 pixel window at 200% zoom{{/narrower}}{{^narrower}}as a 1280 pixel window shows the page at {{zoomPercent}}% zoom{{/narrower}}, this element cuts off the text \"{{text}}\" ({{overflowPx}} pixels past its {{#edgeTop}}top {{/edgeTop}}{{#edgeRight}}right {{/edgeRight}}{{#edgeBottom}}bottom {{/edgeBottom}}{{#edgeLeft}}left {{/edgeLeft}}edge).{{#clipCss}} The CSS that cuts it off: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Let the box grow with its text when the page is zoomed: {{#clipCss}}change {{clipCss}}{{/clipCss}}{{^clipCss}}avoid fixed heights and widths with overflow: hidden on text{{/clipCss}}, or let it scroll.",
-      "resizeTextContentLoss_summary_truncated": "At {{viewportWidth}} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element shortens the text \"{{text}}\" with an ellipsis or a line clamp, so part of it is not shown.{{#clipCss}} The CSS that shortens it: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "At {{viewportWidth}} pixels wide, {{#narrower}}narrower than a 1280 pixel window at 200% zoom{{/narrower}}{{^narrower}}as a 1280 pixel window shows the page at {{zoomPercent}}% zoom{{/narrower}}, this element shortens the text \"{{text}}\" with an ellipsis or a line clamp, so part of it is not shown.{{#clipCss}} The CSS that shortens it: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Let the text wrap and the box show all of it when the page is zoomed, or offer the full text another way that works with the keyboard, such as a \"read more\" link.",
       "resizeTextContentLoss_lean_why_clipped": "At least half a line of the text lies past the edge of the box, which hides it and does not scroll.",
       "resizeTextContentLoss_lean_caution_clipped": "The full text may be shown another way, such as a control that opens the box.",
@@ -132092,7 +132718,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook instalado antes de los scripts de la página no vio ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio probablemente no hacen nada.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "El elemento se dibuja como un botón, un texto corto en una caja con fondo o borde propios, y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "El elemento se dibuja como un control, un texto corto en una caja con borde o sombra propios, o un símbolo de cerrar o de menú, y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gestionar keydown para que las teclas a las que responde un {{role}} (Intro y Espacio, y las flechas de su widget) hagan lo mismo que un clic.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
@@ -132165,9 +132791,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_unattributed": "No se pudo nombrar ningún elemento: el desbordamiento puede venir de un margen, de contenido generado o de un shadow root cerrado. Comprobar que el desplazamiento lateral muestra contenido.",
       "resizeTextContentLoss_title": "El texto no se recorta a 640 píxeles CSS de ancho (zoom al 200 %)",
       "resizeTextContentLoss_description": "En una ventana de 640 píxeles CSS de ancho o menos, como una ventana de 1280 píxeles muestra una página con zoom al 200 %, mide cada texto dentro de una caja que oculta su desbordamiento y pregunta por el texto que la caja recorta o acorta con puntos suspensivos o un límite de líneas, para revisar manualmente si se pierde contenido.",
-      "resizeTextContentLoss_summary_clipped": "A {{viewportWidth}} píxeles de ancho, como una ventana de 1280 píxeles muestra la página con zoom al 200 %, este elemento recorta el texto «{{text}}» ({{overflowPx}} píxeles más allá de su borde{{#edgeTop}} superior{{/edgeTop}}{{#edgeRight}} derecho{{/edgeRight}}{{#edgeBottom}} inferior{{/edgeBottom}}{{#edgeLeft}} izquierdo{{/edgeLeft}}).{{#clipCss}} El CSS que lo recorta: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "A {{viewportWidth}} píxeles de ancho, {{#narrower}}más estrecho que una ventana de 1280 píxeles con zoom al 200 %{{/narrower}}{{^narrower}}como una ventana de 1280 píxeles muestra la página con zoom al {{zoomPercent}} %{{/narrower}}, este elemento recorta el texto «{{text}}» ({{overflowPx}} píxeles más allá de su borde{{#edgeTop}} superior{{/edgeTop}}{{#edgeRight}} derecho{{/edgeRight}}{{#edgeBottom}} inferior{{/edgeBottom}}{{#edgeLeft}} izquierdo{{/edgeLeft}}).{{#clipCss}} El CSS que lo recorta: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Dejar que la caja crezca con su texto al ampliar la página: {{#clipCss}}cambiar {{clipCss}}{{/clipCss}}{{^clipCss}}evitar alturas y anchuras fijas con overflow: hidden en texto{{/clipCss}}, o permitir que se desplace.",
-      "resizeTextContentLoss_summary_truncated": "A {{viewportWidth}} píxeles de ancho, como una ventana de 1280 píxeles muestra la página con zoom al 200 %, este elemento acorta el texto «{{text}}» con puntos suspensivos o un límite de líneas, así que parte de él no se muestra.{{#clipCss}} El CSS que lo acorta: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "A {{viewportWidth}} píxeles de ancho, {{#narrower}}más estrecho que una ventana de 1280 píxeles con zoom al 200 %{{/narrower}}{{^narrower}}como una ventana de 1280 píxeles muestra la página con zoom al {{zoomPercent}} %{{/narrower}}, este elemento acorta el texto «{{text}}» con puntos suspensivos o un límite de líneas, así que parte de él no se muestra.{{#clipCss}} El CSS que lo acorta: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Dejar que el texto se ajuste y que la caja lo muestre entero al ampliar la página, u ofrecer el texto completo de otra forma que funcione con el teclado, como un enlace «leer más».",
       "resizeTextContentLoss_lean_why_clipped": "Al menos media línea del texto queda más allá del borde de la caja, que la oculta y no se desplaza.",
       "resizeTextContentLoss_lean_caution_clipped": "El texto completo puede mostrarse de otra forma, como un control que abre la caja.",
@@ -133946,7 +134572,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook installé avant les scripts de la page n’a vu aucun écouteur de touches ni de focus sur l’élément, ses ancêtres, le document ni la fenêtre : Entrée et Espace ne font sans doute rien.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Un ancêtre garde le focus pour ses éléments (aria-activedescendant, ou un composant composite focalisable) : c’est ainsi qu’un tel composant actionne un élément sans lui donner le focus.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "L’élément affiche un curseur en forme de main et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "L’élément est dessiné comme un bouton, un texte court dans une boîte avec un fond ou une bordure à elle, et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "L’élément est dessiné comme une commande, un texte court dans une boîte avec une bordure ou une ombre à elle, ou un symbole de fermeture ou de menu, et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La même action peut être offerte par une autre commande de la page, comme un lien à côté d’une ligne cliquable.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gérez keydown pour que les touches auxquelles répond un {{role}} (Entrée et Espace, et les flèches de son composant) fassent ce que fait un clic.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
@@ -134019,9 +134645,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_unattributed": "Aucun élément n’a pu être nommé : le débordement peut venir d’une marge, d’un contenu généré ou d’un shadow root fermé. Vérifiez que le défilement horizontal montre du contenu.",
       "resizeTextContentLoss_title": "Le texte n’est pas rogné à 640 pixels CSS de large (zoom à 200 %)",
       "resizeTextContentLoss_description": "Dans une zone d’affichage de 640 pixels CSS de large ou moins, comme une fenêtre de 1280 pixels affiche une page zoomée à 200 %, mesure chaque texte placé dans une boîte qui masque son débordement, et pose la question pour le texte que la boîte rogne ou raccourcit par des points de suspension ou une limite de lignes, pour une vérification manuelle de la perte de contenu.",
-      "resizeTextContentLoss_summary_clipped": "À {{viewportWidth}} pixels de large, comme une fenêtre de 1280 pixels affiche la page zoomée à 200 %, cet élément rogne le texte « {{text}} » ({{overflowPx}} pixels au-delà de son bord{{#edgeTop}} supérieur{{/edgeTop}}{{#edgeRight}} droit{{/edgeRight}}{{#edgeBottom}} inférieur{{/edgeBottom}}{{#edgeLeft}} gauche{{/edgeLeft}}).{{#clipCss}} Le CSS qui le rogne : {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "À {{viewportWidth}} pixels de large, {{#narrower}}moins large qu’une fenêtre de 1280 pixels zoomée à 200 %{{/narrower}}{{^narrower}}comme une fenêtre de 1280 pixels affiche la page zoomée à {{zoomPercent}} %{{/narrower}}, cet élément rogne le texte « {{text}} » ({{overflowPx}} pixels au-delà de son bord{{#edgeTop}} supérieur{{/edgeTop}}{{#edgeRight}} droit{{/edgeRight}}{{#edgeBottom}} inférieur{{/edgeBottom}}{{#edgeLeft}} gauche{{/edgeLeft}}).{{#clipCss}} Le CSS qui le rogne : {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Laissez la boîte s’agrandir avec son texte quand la page est zoomée : {{#clipCss}}modifiez {{clipCss}}{{/clipCss}}{{^clipCss}}évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte{{/clipCss}}, ou laissez-la défiler.",
-      "resizeTextContentLoss_summary_truncated": "À {{viewportWidth}} pixels de large, comme une fenêtre de 1280 pixels affiche la page zoomée à 200 %, cet élément raccourcit le texte « {{text}} » par des points de suspension ou une limite de lignes, si bien qu’une partie n’est pas affichée.{{#clipCss}} Le CSS qui le raccourcit : {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "À {{viewportWidth}} pixels de large, {{#narrower}}moins large qu’une fenêtre de 1280 pixels zoomée à 200 %{{/narrower}}{{^narrower}}comme une fenêtre de 1280 pixels affiche la page zoomée à {{zoomPercent}} %{{/narrower}}, cet élément raccourcit le texte « {{text}} » par des points de suspension ou une limite de lignes, si bien qu’une partie n’est pas affichée.{{#clipCss}} Le CSS qui le raccourcit : {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Laissez le texte passer à la ligne et la boîte l’afficher en entier quand la page est zoomée, ou proposez le texte complet d’une autre façon utilisable au clavier, comme un lien « lire la suite ».",
       "resizeTextContentLoss_lean_why_clipped": "Au moins une demi-ligne du texte se trouve au-delà du bord de la boîte, qui la masque et ne défile pas.",
       "resizeTextContentLoss_lean_caution_clipped": "Le texte complet peut être affiché autrement, par exemple par une commande qui ouvre la boîte.",
@@ -135800,7 +136426,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーを見つけませんでした。Enter や Space ではおそらく何も起きません。",
       "clickHandlerKeyboardOperable_lean_why_managed": "祖先が項目のためにフォーカスを保持しています(aria-activedescendant、またはフォーカス可能な複合ウィジェット)。このようなウィジェットは、項目にフォーカスを移さずに操作します。",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "この要素はポインター カーソルを表示してクリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "この要素は、独自の背景または枠線を持つボックスに短いラベルを置いたボタンのような見た目で、クリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "この要素は、独自の枠線または影を持つボックスに短いラベルを置いたもの、または閉じるやメニューの記号だけのもので、コントロールのような見た目をしており、クリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "同じ操作をページ内の別のコントロール(クリックできる行の横のリンクなど)が提供している場合があります。",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "keydown を処理して、{{role}} が応答するキー (Enter と Space、そのウィジェットの矢印キー) でクリックと同じことが起きるようにしてください。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
@@ -135873,9 +136499,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_unattributed": "要素を特定できませんでした。はみ出しはマージン、生成コンテンツ、または閉じたシャドウ ルートによる可能性があります。横スクロールでコンテンツが表示されるかを確認してください。",
       "resizeTextContentLoss_title": "幅 640 CSS ピクセル（200% ズーム）でテキストが切り取られない",
       "resizeTextContentLoss_description": "幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ、幅 640 CSS ピクセル以下のビューポートで、はみ出しを隠すボックス内の各テキストを測定し、ボックスが切り取るテキストや、省略記号または行数制限で短くするテキストについて、コンテンツが失われていないかを手動で確認するよう求めます。",
-      "resizeTextContentLoss_summary_clipped": "幅 {{viewportWidth}} ピクセル（幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ）で、この要素はテキスト「{{text}}」を切り取ります（{{#edgeTop}}上{{/edgeTop}}{{#edgeRight}}右{{/edgeRight}}{{#edgeBottom}}下{{/edgeBottom}}{{#edgeLeft}}左{{/edgeLeft}}端から {{overflowPx}} ピクセルはみ出します）。{{#clipCss}}切り取っている CSS: {{clipCss}}。{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "幅 {{viewportWidth}} ピクセル（{{#narrower}}幅 1280 ピクセルのウィンドウでページを 200% にズームしたときより狭い{{/narrower}}{{^narrower}}幅 1280 ピクセルのウィンドウでページを {{zoomPercent}}% にズームしたときと同じ{{/narrower}}）で、この要素はテキスト「{{text}}」を切り取ります（{{#edgeTop}}上{{/edgeTop}}{{#edgeRight}}右{{/edgeRight}}{{#edgeBottom}}下{{/edgeBottom}}{{#edgeLeft}}左{{/edgeLeft}}端から {{overflowPx}} ピクセルはみ出します）。{{#clipCss}}切り取っている CSS: {{clipCss}}。{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "ページをズームしたときにボックスがテキストに合わせて広がるようにしてください。{{#clipCss}}{{clipCss}} を変更するか{{/clipCss}}{{^clipCss}}テキストに overflow: hidden と固定の高さや幅を組み合わせないか{{/clipCss}}、スクロールできるようにしてください。",
-      "resizeTextContentLoss_summary_truncated": "幅 {{viewportWidth}} ピクセル（幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ）で、この要素はテキスト「{{text}}」を省略記号または行数制限で短くするため、一部が表示されません。{{#clipCss}}短くしている CSS: {{clipCss}}。{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "幅 {{viewportWidth}} ピクセル（{{#narrower}}幅 1280 ピクセルのウィンドウでページを 200% にズームしたときより狭い{{/narrower}}{{^narrower}}幅 1280 ピクセルのウィンドウでページを {{zoomPercent}}% にズームしたときと同じ{{/narrower}}）で、この要素はテキスト「{{text}}」を省略記号または行数制限で短くするため、一部が表示されません。{{#clipCss}}短くしている CSS: {{clipCss}}。{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "ページをズームしたときにテキストが折り返され、ボックスが全体を表示するようにするか、「続きを読む」リンクなど、キーボードで使える別の方法で全文を提供してください。",
       "resizeTextContentLoss_lean_why_clipped": "テキストの少なくとも半行分がボックスの端の外側にあり、ボックスはそれを隠してスクロールしません。",
       "resizeTextContentLoss_lean_caution_clipped": "ボックスを開くコントロールなど、別の方法で全文が表示される場合があります。",

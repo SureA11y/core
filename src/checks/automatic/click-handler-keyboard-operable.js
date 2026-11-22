@@ -74,10 +74,14 @@
  *     moving focus to it: then cantTell.
  *   - Neither it nor a descendant can take focus, with another widget role,
  *     `cursor: pointer`, or drawn as a control without either: short visible
- *     text (40 characters and six words at most, no block content) with
- *     padding, in a box set apart by a border or a background of its own,
- *     as "Add to cart" on a coloured `<div onclick>`: cantTell
- *     (`CLICK_HANDLER_NOT_FOCUSABLE`). An
+ *     text (40 characters and six words at most, no block content; text
+ *     hidden or visually hidden, as a screen-reader-only span is, left
+ *     out) with padding, in a box set apart by a border, a box-shadow, a
+ *     background colour or a gradient of its own, as "Add to cart" on a
+ *     coloured `<div onclick>`, or a close or menu symbol alone (✕, ×, ☰):
+ *     cantTell (`CLICK_HANDLER_NOT_FOCUSABLE`). One drawn so inside a native control
+ *     in the tab order (a styled `<span>` in a `<button>`) is part of that
+ *     control's look, and is left out. An
  *     option of a combobox's list or a cell of a grid is often operated from
  *     the element that keeps focus, and the action may be offered by another
  *     control of the page.
@@ -86,6 +90,9 @@
  *   - `focusable`: whether the element itself can take focus.
  *   - `styledAsControl` (`CLICK_HANDLER_NOT_FOCUSABLE`): `true` when the
  *     element is asked about only because it is drawn as a control.
+ *   - `controlCue` (with `styledAsControl`): what draws it so: `border`,
+ *     `shadow`, `glyph` (a close or menu symbol) or `background` (a colour
+ *     or a gradient).
  * @reason-codes
  *   - `CLICK_HANDLER_NO_KEY_LISTENER` (fail): a button, link, checkbox,
  *     switch, tab or menu item with a click handler is in the tab order, but
@@ -127,13 +134,15 @@
  *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
  *   - `CLICK_HANDLER_NOT_FOCUSABLE` (cantTell): an element with a click
  *     handler that cannot take focus, with a widget role, a pointer cursor
- *     or a control's look (a short label in a padded box with a border or a
- *     background of its own); whether the action is offered by keyboard
- *     elsewhere is for a person to check.
+ *     or a control's look (a short label in a padded box with a border, a
+ *     shadow or a background of its own, or a close or menu symbol); whether
+ *     the action is offered by keyboard elsewhere is for a person to check.
  *     It leans pass when an ancestor keeps focus for it (aria-activedescendant,
  *     or a focusable composite widget), and fail when it has no widget role,
- *     shows a pointer cursor or is drawn as a control, and nothing above it
- *     takes focus or handles keys.
+ *     shows a pointer cursor or is drawn as a control by a border, a shadow
+ *     or a symbol, and nothing above it takes focus or handles keys. One
+ *     set apart only by a background (a coloured badge or tag in a
+ *     sentence) gets no lean.
  *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
  * @implementation-notes
  * - No ACT rule tests click handlers. WCAG 2.1.1 asks that all
@@ -433,23 +442,61 @@ function runInPage(ctx) {
   }
 
   // Styled like a control though the cursor stays the default one: a short
-  // visible label ("Add to cart") in a box set apart by a background of its
-  // own or a border, with padding around the text, as a button is drawn.
+  // visible label ("Add to cart") in a box set apart by a background, a
+  // border or a shadow of its own, with padding around the text, as a
+  // button is drawn, or a close or menu symbol alone.
   // The visual styling and the action's wording are what tell a sighted
   // user it is clickable (round 10, C10-4). A large wrapper, with long text
   // or block content, is not one: its handler is more often delegated or a
   // click tracker.
   const BLOCK_CONTENT =
     'address,article,aside,blockquote,div,dl,fieldset,figure,footer,form,h1,h2,h3,h4,h5,h6,header,hr,li,main,nav,ol,p,pre,section,table,ul';
-  function looksLikeControl(el) {
+  // The text a sighted user sees in the element: its text without what is
+  // hidden (display: none, visibility) or visually hidden (a screen-reader
+  // only span, helpers.isVisuallyHidden). Read up to a little past the
+  // longest label that counts as short.
+  function visibleTextOf(el) {
+    let out = '';
+    let budget = 500;
+    const walk = (node) => {
+      for (const n of dom.childNodes(node) || []) {
+        if (budget-- <= 0 || out.length > 200) return;
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          const cs = helpers.computedStyle(node);
+          const visibility = trim(cs && cs.visibility).toLowerCase();
+          if (visibility !== 'hidden' && visibility !== 'collapse')
+            out += String(dom.nodeValue(n) || '');
+          continue;
+        }
+        if (type !== 1 || !shown(n)) continue;
+        if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(n)) continue;
+        walk(n);
+      }
+    };
+    walk(el);
+    return out;
+  }
+  // The close and menu symbols a control drawn as a glyph shows alone.
+  const CONTROL_GLYPHS = /^[\u2715\u2716\u00d7\u2a2f\u2630\u2261]$/u;
+  // The cue that draws the element as a control, or '' for none:
+  // - 'glyph': a close or menu symbol alone (✕, ×, ☰);
+  // - 'border', 'shadow': short visible text with padding in a box with a
+  //   border, or a box-shadow drawing an outline, of its own;
+  // - 'background': the same in a box set apart by a background colour or
+  //   a gradient of its own (`background-image`, with a transparent colour).
+  // A border, a shadow or a glyph is drawn as controls are; a background
+  // alone is also how a badge or a tag is drawn.
+  function controlCueOf(el) {
     try {
       const c = helpers.contrast;
       const cs = helpers.computedStyle(el);
-      if (!c || !cs) return false;
-      const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
-      if (!text || text.length > 40 || text.split(' ').length > 6) return false;
-      if (!/[\p{L}\p{N}]/u.test(text)) return false;
-      if (dom.querySelectorAll(el, BLOCK_CONTENT).length) return false;
+      if (!c || !cs) return '';
+      const text = trim(visibleTextOf(el)).replace(/\s+/g, ' ');
+      if (CONTROL_GLYPHS.test(text)) return 'glyph';
+      if (!text || text.length > 40 || text.split(' ').length > 6) return '';
+      if (!/[\p{L}\p{N}]/u.test(text)) return '';
+      if (dom.querySelectorAll(el, BLOCK_CONTENT).length) return '';
       const px = (v) => {
         const n = c.parsePx(v);
         return typeof n === 'number' && Number.isFinite(n) ? n : 0;
@@ -457,7 +504,7 @@ function runInPage(ctx) {
       const padded = ['top', 'right', 'bottom', 'left'].some(
         (side) => px(cs.getPropertyValue('padding-' + side)) > 0
       );
-      if (!padded) return false;
+      if (!padded) return '';
       const bordered = ['top', 'right', 'bottom', 'left'].some((side) => {
         const style = trim(cs.getPropertyValue('border-' + side + '-style')).toLowerCase();
         const color = c.parseCssColorToRgba(cs.getPropertyValue('border-' + side + '-color'));
@@ -470,17 +517,35 @@ function runInPage(ctx) {
           color.a > 0
         );
       });
-      if (bordered) return true;
+      if (bordered) return 'border';
+      if (drawsShadow(trim(cs.getPropertyValue('box-shadow')))) return 'shadow';
+      if (/gradient\(/i.test(cs.getPropertyValue('background-image') || '')) return 'background';
       const bg = c.parseCssColorToRgba(cs.getPropertyValue('background-color'));
-      if (!bg || !(bg.a > 0.05)) return false;
+      if (!bg || !(bg.a > 0.05)) return '';
       // A background the same as what is behind it sets nothing apart.
       const parent = helpers.flatParentElement(el);
       const under = parent ? c.computeEffectiveBackground(parent) : null;
-      if (!under || !under.ok || !under.rgba) return true;
-      return c.contrastRatio(c.compositeRgba(bg, under.rgba), under.rgba) >= 1.1;
+      if (!under || !under.ok || !under.rgba) return 'background';
+      return c.contrastRatio(c.compositeRgba(bg, under.rgba), under.rgba) >= 1.1
+        ? 'background'
+        : '';
     } catch {
-      return false;
+      return '';
     }
+  }
+  // Whether a computed box-shadow draws something: a layer in a colour that
+  // isn't transparent, with a blur, a spread or an offset.
+  function drawsShadow(value) {
+    if (!value || value === 'none') return false;
+    const c = helpers.contrast;
+    return value.split(/,(?![^(]*\))/).some((layer) => {
+      if (/\btransparent\b/i.test(layer)) return false;
+      const color = (layer.match(/(rgba?|hsla?)\([^)]*\)|#[0-9a-f]{3,8}\b/i) || [])[0];
+      const rgba = color ? c.parseCssColorToRgba(color) : null;
+      if (color && (!rgba || !(rgba.a > 0))) return false;
+      const lengths = layer.replace(/(rgba?|hsla?)\([^)]*\)/gi, '').match(/-?[\d.]+px/g) || [];
+      return lengths.some((l) => Math.abs(Number.parseFloat(l)) > 0);
+    });
   }
 
   // The item roles each composite widget handles the keys of, for a lean:
@@ -841,7 +906,14 @@ function runInPage(ctx) {
 
     const isWidget = WIDGET_ROLES.has(role);
     const pointer = !isWidget && hasPointerCursor(el);
-    const styledControl = !isWidget && !pointer && looksLikeControl(el);
+    // Drawn inside a native control the keyboard operates (a <span> styled
+    // in a <button>): it is part of that control's look, and the control is
+    // what a keyboard user operates. Browsers draw a button's own
+    // background, which jsdom doesn't, so this keeps the two alike.
+    const inNativeControl =
+      !isWidget && !pointer && ancestorList.some((a) => firesClickFromKeyboard(a, focusOf(a)));
+    const cue = !isWidget && !pointer && !inNativeControl ? controlCueOf(el) : '';
+    const styledControl = !!cue;
     if (!isWidget && !pointer && !styledControl) continue;
     applicableCount += 1;
 
@@ -900,15 +972,17 @@ function runInPage(ctx) {
     } else if (
       !managedFromAbove &&
       styledControl &&
+      cue !== 'background' &&
       !ancestorList.some((a) => focusOf(a).focusable)
     ) {
       notFocusableLean = {
         toward: 'fail',
-        why: 'The element is drawn as a button, a short label in a box with a background or a border of its own, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.',
+        why: 'The element is drawn as a control, a short label in a box with a border or a shadow of its own, or a close or menu symbol, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.',
         signals: [
           { signal: 'managed-from-above', value: false },
           { signal: 'pointer-cursor', value: false },
           { signal: 'styled-as-control', value: true },
+          { signal: 'control-cue', value: cue },
           { signal: 'widget-role', value: false },
           { signal: 'focusable-ancestor', value: false }
         ],
@@ -962,7 +1036,7 @@ function runInPage(ctx) {
             reasonCode: 'CLICK_HANDLER_NOT_FOCUSABLE',
             role,
             focusable: false,
-            ...(styledControl ? { styledAsControl: true } : {}),
+            ...(styledControl ? { styledAsControl: true, controlCue: cue } : {}),
             ...(noHref ? { noHref: true } : {})
           }
         }
