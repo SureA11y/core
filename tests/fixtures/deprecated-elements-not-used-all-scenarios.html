@@ -35,6 +35,11 @@
     <button type="button" onclick="document.getElementById('dep_case_04').stop()">Pause</button>
   </div>
 
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: marquee that stops only while the pointer is over it (alone on a page it leans fail with MARQUEE_STOPS_ONLY_ON_HOVER; here case 04's Pause button makes every marquee lean pass)</div>
+    <marquee id="dep_case_05" onmouseover="this.stop()" onmouseout="this.start()">Today's offers</marquee>
+  </div>
+
   <h2>B. Not flagged (not counted; the whole page is checked as one pass/cantTell, see the rule's own tests for that)</h2>
 
   <div class="case" id="case_01">

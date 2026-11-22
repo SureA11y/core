@@ -44593,6 +44593,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "Prüfen Sie, ob das Bedienelement auf dieses marquee wirkt und per Tastatur erreichbar ist.",
       "deprecatedElements_lean_why_noMechanism": "Kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden, und kein Skript der Seite stoppt das marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Ein aus einer Datei geladenes Skript kann ein Bedienelement über seine id verknüpfen, etwa eine Symbolschaltfläche.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Dieses <{{element}}> scrollt seinen Inhalt und hält nur an, solange der Mauszeiger darüber ist; das können Nutzer mit Tastatur oder Touchscreen nicht.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Prüfen Sie, ob die Seite eine andere Möglichkeit bietet, diesen Inhalt anzuhalten, zu stoppen oder auszublenden, die auch mit der Tastatur funktioniert. Besser: Ersetzen Sie ihn durch statischen Inhalt oder durch eine Animation mit einer Pause-/Stopp-Steuerung.",
+      "deprecatedElements_lean_why_hoverOnly": "Das marquee hält nur an, solange der Mauszeiger darüber ist, was Nutzer mit Tastatur oder Touchscreen nicht können, und kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden.",
       "iframeNamePresent_title": "Frames haben einen zugänglichen Namen",
       "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
       "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
@@ -46439,6 +46442,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "Check that the control acts on this marquee and can be reached with the keyboard.",
       "deprecatedElements_lean_why_noMechanism": "No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.",
       "deprecatedElements_lean_caution_noMechanism": "A script loaded from a file may wire a control by its id, such as an icon button.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "This <{{element}}> scrolls its content and stops only while the pointer is over it, which keyboard and touch users cannot do.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Check that the page offers another way to pause, stop, or hide this content, one that works with the keyboard. Better: replace it with static content, or with an animation that has a pause/stop control.",
+      "deprecatedElements_lean_why_hoverOnly": "The marquee stops only while the pointer is over it, which keyboard and touch users cannot do, and no control on the page is named for pausing, stopping or hiding.",
       "iframeNamePresent_title": "Frames have an accessible name",
       "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
       "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
@@ -48285,6 +48291,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "Comprobar que el control actúa sobre este marquee y que se puede alcanzar con el teclado.",
       "deprecatedElements_lean_why_noMechanism": "Ningún control de la página indica en su nombre pausar, detener u ocultar, y ningún script de la página detiene el marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script cargado desde un archivo puede vincular un control por su id, como un botón de icono.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Este <{{element}}> desplaza su contenido y solo se detiene mientras el puntero está sobre él, algo que no pueden hacer quienes usan el teclado o una pantalla táctil.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Comprobar que la página ofrece otra forma de pausar, detener u ocultar este contenido, que funcione con el teclado. Mejor: sustituirlo por contenido estático, o por una animación con un control de pausa/detención.",
+      "deprecatedElements_lean_why_hoverOnly": "El marquee solo se detiene mientras el puntero está sobre él, algo que no pueden hacer quienes usan el teclado o una pantalla táctil, y ningún control de la página indica en su nombre pausar, detener u ocultar.",
       "iframeNamePresent_title": "Los marcos tienen un nombre accesible",
       "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
       "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
@@ -50131,6 +50140,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "Vérifiez que la commande agit sur ce marquee et qu’on peut l’atteindre au clavier.",
       "deprecatedElements_lean_why_noMechanism": "Aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque, et aucun script de la page n’arrête le marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script chargé depuis un fichier peut relier une commande par son id, comme un bouton icône.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Ce <{{element}}> fait défiler son contenu et ne s’arrête que tant que le pointeur le survole, ce que les utilisateurs du clavier ou d’un écran tactile ne peuvent pas faire.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Vérifiez que la page offre un autre moyen, utilisable au clavier, de mettre en pause, d’arrêter ou de masquer ce contenu. Mieux : remplacez-le par un contenu statique, ou par une animation dotée d’un contrôle de pause/arrêt.",
+      "deprecatedElements_lean_why_hoverOnly": "Le marquee ne s’arrête que tant que le pointeur le survole, ce que les utilisateurs du clavier ou d’un écran tactile ne peuvent pas faire, et aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque.",
       "iframeNamePresent_title": "Les cadres ont un nom accessible",
       "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
       "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
@@ -51977,6 +51989,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "そのコントロールがこの marquee に作用し、キーボードで操作できることを確認してください。",
       "deprecatedElements_lean_why_noMechanism": "ページには一時停止、停止、非表示を名前に示すコントロールがなく、marquee を止めるページ内のスクリプトもありません。",
       "deprecatedElements_lean_caution_noMechanism": "ファイルから読み込まれるスクリプトが、アイコンボタンなどのコントロールを id で結び付けている場合があります。",
+      "deprecatedElements_summary_cantTell_hoverOnly": "この <{{element}}> はコンテンツをスクロールさせ、ポインターが上にある間だけ止まります。キーボードやタッチ操作の利用者にはそれができません。",
+      "deprecatedElements_hint_cantTell_hoverOnly": "このコンテンツを一時停止、停止、非表示にする別の手段で、キーボードでも使えるものがページにあるかを確認してください。より良い方法: 静的なコンテンツか、一時停止/停止のコントロールを備えたアニメーションに置き換えてください。",
+      "deprecatedElements_lean_why_hoverOnly": "marquee はポインターが上にある間だけ止まり、キーボードやタッチ操作の利用者にはそれができません。また、ページには一時停止、停止、非表示を名前に示すコントロールがありません。",
       "iframeNamePresent_title": "フレームにアクセシブルな名前があること",
       "iframeNamePresent_description": "<iframe>/<frame> 要素が、aria-label、aria-labelledby、または title 属性によって空でないアクセシブルな名前を公開しているかを確認します。",
       "iframeNamePresent_summary_fail": "この <{{element}}> にはアクセシブルな名前がありません。",
@@ -85015,19 +85030,68 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         break;
       }
     }
-    if (!stopCall) {
-      const doc = dom.ownerDocument(nodes[0]) || ctx.document;
-      for (const sc of dom.querySelectorAll(doc, 'script:not([src])') || []) {
-        const text = String(dom.textContent(sc) || '');
-        if (isEngineScript(text)) continue;
-        if (STOP_CALL.test(text) && reachesMarquee(text)) {
-          stopCall = true;
-          break;
-        }
+    // Inline scripts that stop a marquee. One whose only events are the
+    // pointer's hover (mouseover, mouseenter and their ends) stops it only
+    // while the pointer is over it: kept apart in hoverScripts.
+    const hoverScripts = [];
+    const doc = dom.ownerDocument(nodes[0]) || ctx.document;
+    for (const sc of dom.querySelectorAll(doc, 'script:not([src])') || []) {
+      const text = String(dom.textContent(sc) || '');
+      if (isEngineScript(text)) continue;
+      if (!STOP_CALL.test(text) || !reachesMarquee(text)) continue;
+      if (isHoverOnlyScript(text)) {
+        hoverScripts.push(text);
+      } else {
+        stopCall = true;
       }
     }
-    pageEvidence = { pauseControl, stopCall };
+    pageEvidence = { pauseControl, stopCall, hoverScripts };
     return pageEvidence;
+  }
+
+  // The event types a script names: addEventListener('type', ...) and
+  // el.ontype = ....
+  const HOVER_TYPES = new Set(['mouseover', 'mouseenter', 'mouseout', 'mouseleave']);
+  function isHoverOnlyScript(text) {
+    const types = new Set();
+    for (const m of text.matchAll(/addEventListener\s*\(\s*['"`]([A-Za-z]+)['"`]/g))
+      types.add(m[1].toLowerCase());
+    for (const m of text.matchAll(/\.\s*on([A-Za-z]+)\s*=(?!=)/g)) types.add(m[1].toLowerCase());
+    return types.size > 0 && [...types].every((t) => HOVER_TYPES.has(t));
+  }
+
+  // Whether `text` reaches this marquee: by tag, or by its id.
+  function reachesThis(el, text) {
+    if (MARQUEE_BY_TAG.test(text)) return true;
+    const mid = String(dom.getAttribute(el, 'id') || '').trim();
+    if (!mid) return false;
+    const q = mid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('[\'"`#]' + q + '[\'"`]|(?:^|[^\\w$.-])' + q + '\\s*\\.\\s*stop\\s*\\(').test(
+      text
+    );
+  }
+
+  // Whether the marquee stops when the pointer is over it: its own
+  // onmouseover or onmouseenter calls this.stop(), another element's such
+  // handler stops it, or an inline script listening only for hover does.
+  const HOVER_ATTRS = ['onmouseover', 'onmouseenter'];
+  const STOP_ONLY = /\.\s*stop\s*\(/;
+  let hoverHandlers = null;
+  function stopsOnHover(el) {
+    for (const a of HOVER_ATTRS) {
+      const text = String(dom.getAttribute(el, a) || '');
+      if (/\bthis\s*\.\s*stop\s*\(/.test(text)) return true;
+    }
+    if (!hoverHandlers) hoverHandlers = helpers.queryAll('[onmouseover], [onmouseenter]') || [];
+    for (const h of hoverHandlers) {
+      for (const a of HOVER_ATTRS) {
+        const text = String(dom.getAttribute(h, a) || '');
+        if (STOP_ONLY.test(text) && reachesThis(el, text)) return true;
+      }
+    }
+    return readPageEvidence().hoverScripts.some(
+      (text) => STOP_ONLY.test(text) && reachesThis(el, text)
+    );
   }
 
   // A marquee with scrollamount="0" does not move, and a control named for
@@ -85070,6 +85134,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .toLowerCase();
     const scrollsOnce = (loop !== '' && parseInt(loop, 10) > 0) || behavior === 'slide';
     if (stopCall || scrollsOnce) return null;
+    if (stopsOnHover(el)) {
+      return {
+        toward: 'fail',
+        why: 'The marquee stops only while the pointer is over it, which keyboard and touch users cannot do, and no control on the page is named for pausing, stopping or hiding.',
+        signals: [
+          { signal: 'pause-control', value: null },
+          { signal: 'stop-call', value: false },
+          { signal: 'stops-on-hover', value: true },
+          { signal: 'scrollamount-zero', value: false }
+        ],
+        caution:
+          'A script loaded from a file may wire a control by its id, such as an icon button.',
+        i18n: {
+          whyKey: 'deprecatedElements_lean_why_hoverOnly',
+          cautionKey: 'deprecatedElements_lean_caution_noMechanism'
+        }
+      };
+    }
     return {
       toward: 'fail',
       why: 'No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.',
@@ -85090,27 +85172,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el || !dom.tagName(el)) continue;
 
     const tag = dom.tagName(el).toLowerCase();
+    const lean = marqueeLean(el);
+    // It stops only while the pointer is over it: the question is whether
+    // there is another way to pause it.
+    const hoverOnly = !!(
+      lean && lean.signals.some((x) => x.signal === 'stops-on-hover' && x.value)
+    );
+    const reasonCode = hoverOnly
+      ? 'MARQUEE_STOPS_ONLY_ON_HOVER'
+      : 'MARQUEE_PAUSE_MECHANISM_UNKNOWN';
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary:
-          'This <marquee> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.',
-        hint: 'Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.',
+        summary: hoverOnly
+          ? 'This <marquee> scrolls its content and stops only while the pointer is over it, which keyboard and touch users cannot do.'
+          : 'This <marquee> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.',
+        hint: hoverOnly
+          ? 'Check that the page offers another way to pause, stop, or hide this content, one that works with the keyboard. Better: replace it with static content, or with an animation that has a pause/stop control.'
+          : 'Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.',
         occurrenceOutcome: 'cantTell',
-        ...withLean(marqueeLean(el)),
+        ...withLean(lean),
         i18n: {
-          summaryKey: 'deprecatedElements_summary_cantTell',
-          hintKey: 'deprecatedElements_hint_cantTell',
+          summaryKey: hoverOnly
+            ? 'deprecatedElements_summary_cantTell_hoverOnly'
+            : 'deprecatedElements_summary_cantTell',
+          hintKey: hoverOnly
+            ? 'deprecatedElements_hint_cantTell_hoverOnly'
+            : 'deprecatedElements_hint_cantTell',
           params: { element: tag }
         },
         uncertainty: {
           code: 'runtime-dependent',
-          needed:
-            'Whether the page provides a control that pauses, stops, or hides the scrolling content.',
+          needed: hoverOnly
+            ? 'Whether the page offers another way, one that works with the keyboard, to pause, stop, or hide the scrolling content.'
+            : 'Whether the page provides a control that pauses, stops, or hides the scrolling content.',
           evidence: { element: tag }
         },
         data: {
-          details: { reasonCode: 'MARQUEE_PAUSE_MECHANISM_UNKNOWN', element: tag }
+          details: { reasonCode, element: tag }
         }
       })
     );
@@ -126251,6 +126350,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "Prüfen Sie, ob das Bedienelement auf dieses marquee wirkt und per Tastatur erreichbar ist.",
       "deprecatedElements_lean_why_noMechanism": "Kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden, und kein Skript der Seite stoppt das marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Ein aus einer Datei geladenes Skript kann ein Bedienelement über seine id verknüpfen, etwa eine Symbolschaltfläche.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Dieses <{{element}}> scrollt seinen Inhalt und hält nur an, solange der Mauszeiger darüber ist; das können Nutzer mit Tastatur oder Touchscreen nicht.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Prüfen Sie, ob die Seite eine andere Möglichkeit bietet, diesen Inhalt anzuhalten, zu stoppen oder auszublenden, die auch mit der Tastatur funktioniert. Besser: Ersetzen Sie ihn durch statischen Inhalt oder durch eine Animation mit einer Pause-/Stopp-Steuerung.",
+      "deprecatedElements_lean_why_hoverOnly": "Das marquee hält nur an, solange der Mauszeiger darüber ist, was Nutzer mit Tastatur oder Touchscreen nicht können, und kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden.",
       "iframeNamePresent_title": "Frames haben einen zugänglichen Namen",
       "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
       "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
@@ -128097,6 +128199,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "Check that the control acts on this marquee and can be reached with the keyboard.",
       "deprecatedElements_lean_why_noMechanism": "No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.",
       "deprecatedElements_lean_caution_noMechanism": "A script loaded from a file may wire a control by its id, such as an icon button.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "This <{{element}}> scrolls its content and stops only while the pointer is over it, which keyboard and touch users cannot do.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Check that the page offers another way to pause, stop, or hide this content, one that works with the keyboard. Better: replace it with static content, or with an animation that has a pause/stop control.",
+      "deprecatedElements_lean_why_hoverOnly": "The marquee stops only while the pointer is over it, which keyboard and touch users cannot do, and no control on the page is named for pausing, stopping or hiding.",
       "iframeNamePresent_title": "Frames have an accessible name",
       "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
       "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
@@ -129943,6 +130048,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "Comprobar que el control actúa sobre este marquee y que se puede alcanzar con el teclado.",
       "deprecatedElements_lean_why_noMechanism": "Ningún control de la página indica en su nombre pausar, detener u ocultar, y ningún script de la página detiene el marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script cargado desde un archivo puede vincular un control por su id, como un botón de icono.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Este <{{element}}> desplaza su contenido y solo se detiene mientras el puntero está sobre él, algo que no pueden hacer quienes usan el teclado o una pantalla táctil.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Comprobar que la página ofrece otra forma de pausar, detener u ocultar este contenido, que funcione con el teclado. Mejor: sustituirlo por contenido estático, o por una animación con un control de pausa/detención.",
+      "deprecatedElements_lean_why_hoverOnly": "El marquee solo se detiene mientras el puntero está sobre él, algo que no pueden hacer quienes usan el teclado o una pantalla táctil, y ningún control de la página indica en su nombre pausar, detener u ocultar.",
       "iframeNamePresent_title": "Los marcos tienen un nombre accesible",
       "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
       "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
@@ -131789,6 +131897,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "Vérifiez que la commande agit sur ce marquee et qu’on peut l’atteindre au clavier.",
       "deprecatedElements_lean_why_noMechanism": "Aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque, et aucun script de la page n’arrête le marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script chargé depuis un fichier peut relier une commande par son id, comme un bouton icône.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Ce <{{element}}> fait défiler son contenu et ne s’arrête que tant que le pointeur le survole, ce que les utilisateurs du clavier ou d’un écran tactile ne peuvent pas faire.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Vérifiez que la page offre un autre moyen, utilisable au clavier, de mettre en pause, d’arrêter ou de masquer ce contenu. Mieux : remplacez-le par un contenu statique, ou par une animation dotée d’un contrôle de pause/arrêt.",
+      "deprecatedElements_lean_why_hoverOnly": "Le marquee ne s’arrête que tant que le pointeur le survole, ce que les utilisateurs du clavier ou d’un écran tactile ne peuvent pas faire, et aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque.",
       "iframeNamePresent_title": "Les cadres ont un nom accessible",
       "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
       "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
@@ -133635,6 +133746,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "そのコントロールがこの marquee に作用し、キーボードで操作できることを確認してください。",
       "deprecatedElements_lean_why_noMechanism": "ページには一時停止、停止、非表示を名前に示すコントロールがなく、marquee を止めるページ内のスクリプトもありません。",
       "deprecatedElements_lean_caution_noMechanism": "ファイルから読み込まれるスクリプトが、アイコンボタンなどのコントロールを id で結び付けている場合があります。",
+      "deprecatedElements_summary_cantTell_hoverOnly": "この <{{element}}> はコンテンツをスクロールさせ、ポインターが上にある間だけ止まります。キーボードやタッチ操作の利用者にはそれができません。",
+      "deprecatedElements_hint_cantTell_hoverOnly": "このコンテンツを一時停止、停止、非表示にする別の手段で、キーボードでも使えるものがページにあるかを確認してください。より良い方法: 静的なコンテンツか、一時停止/停止のコントロールを備えたアニメーションに置き換えてください。",
+      "deprecatedElements_lean_why_hoverOnly": "marquee はポインターが上にある間だけ止まり、キーボードやタッチ操作の利用者にはそれができません。また、ページには一時停止、停止、非表示を名前に示すコントロールがありません。",
       "iframeNamePresent_title": "フレームにアクセシブルな名前があること",
       "iframeNamePresent_description": "<iframe>/<frame> 要素が、aria-label、aria-labelledby、または title 属性によって空でないアクセシブルな名前を公開しているかを確認します。",
       "iframeNamePresent_summary_fail": "この <{{element}}> にはアクセシブルな名前がありません。",

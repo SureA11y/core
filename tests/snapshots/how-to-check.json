@@ -2753,6 +2753,15 @@
       "ja": "90b624a54f61706a",
       "fr-CA": "6f3d255540092a04",
       "pt": "83fb2275072780ac"
+    },
+    "deprecated-elements-not-used MARQUEE_STOPS_ONLY_ON_HOVER": {
+      "en": "3f4bb2db533712d7",
+      "de": "7080924cd00c66bb",
+      "es": "27a786c39128359e",
+      "fr": "7eddb536ce932acb",
+      "ja": "d2f8c6cef7b09764",
+      "fr-CA": "7eddb536ce932acb",
+      "pt": "3f4bb2db533712d7"
     }
   },
   "reviews": {
@@ -2786,7 +2795,7 @@
     "contrast-minimum": "6c39c364ecea644b",
     "css-orientation-lock": "e7320ee9b2d2bb9b",
     "definition-list-children-valid": "9149b2ebde2ab04b",
-    "deprecated-elements-not-used": "1d21f3a37bbe5cb3",
+    "deprecated-elements-not-used": "a8c46243e8b9f213",
     "dialog-name-present": "b700575af232eb41",
     "dlitem-parent-valid": "79f6715ce18ea81c",
     "duplicate-id-aria": "7fed56bfe512e9fb",
@@ -2912,10 +2921,10 @@
     "symbol-graphic-contrast": "cc944d054342fe60"
   },
   "dictionaries": {
-    "de": "166442d15461b069244e0ee1efa5bffb9ba3096ffdf8df13ce8815db90a794de",
-    "en": "a43d4e6a0deb0b463307d8eb1665d987ef5fd8a7e5a6e67955aad4ccb36bd3df",
-    "es": "e7a0c03afff4e6b282a704c4be96b3b4b5b98b71b8c70f7be869ee7000063574",
-    "fr": "6e9d5f188df4709b2827585e8173a73d761dd75f73a1d227f248618023a4438a",
-    "ja": "855c7effe3dde85e0fcb8b6071e755a18e7b83376e90e47cac3257d313bcdf3d"
+    "de": "39ca4783c0a8807768e55ea041d8b11cb0047f501e1ffdb3568e472f4c9b95a6",
+    "en": "14060e127a2eb36cb9782cc0afe2493ed886a7cae220cae5b2a51965177de653",
+    "es": "6d7dc7e34a4fe23c6f1f965f35af50636f888add2f63affad19d2021c611ea07",
+    "fr": "d17bd6941acb4b3eafa55cadf2202d985a45625410d8461a649cec4d26dc8eb8",
+    "ja": "90cf73bdd9f703acd925e7503b98d58166b617d72247e7447f5f34e7d31cd08c"
   }
 }
