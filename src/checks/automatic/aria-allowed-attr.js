@@ -72,7 +72,8 @@
  *   HTML allows: `<a>`/`<area>` with `href` as `link`; `<img>` with
  *   `alt=""` and no other name as an element with no role (only global
  *   attributes), any other `<img>` as `img`; `<select>` as `listbox` with
- *   `multiple` or `size` above 1, else as `combobox` with `menu`'s
+ *   `multiple` or `size` above 1 (up to 4294967295, as Chromium draws
+ *   it; helpers.selectSizeOf), else as `combobox` with `menu`'s
  *   attributes too; date and time inputs with `textbox`'s attributes;
  *   `<input type="color">` with `aria-disabled` only and
  *   `<input type="file">` with `aria-disabled`, `aria-invalid` and
@@ -1074,8 +1075,9 @@ function runInPage(ctx) {
       return alt === '' && !named ? { roleless: true } : { role: 'img' };
     }
     if (tag === 'select') {
-      const size = parseInt(String(dom.getAttribute(el, 'size') || ''), 10);
-      if (dom.hasAttribute(el, 'multiple') || size > 1) return { role: 'listbox' };
+      const size = helpers.selectSizeOf(el);
+      if (dom.hasAttribute(el, 'multiple') || (size !== null && size > 1))
+        return { role: 'listbox' };
       return { role: 'combobox', also: 'menu' };
     }
     if (tag === 'input') {

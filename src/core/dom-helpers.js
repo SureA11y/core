@@ -952,7 +952,7 @@ function createDomHelpers(opts) {
         if (x === 'visible') x = 'auto';
         if (y === 'visible') y = 'auto';
       } else if (html && tag === 'select') {
-        const size = parseHtmlInteger(dom.getAttribute(el, 'size'));
+        const size = selectSizeOf(el);
         if (!dom.hasAttribute(el, 'multiple') && !(size !== null && size > 1)) {
           x = 'clip';
           y = 'clip';
@@ -1751,6 +1751,37 @@ function createDomHelpers(opts) {
     // range, as if the attribute were missing (HTML, Reflecting content
     // attributes in IDL attributes).
     return v < -2147483648 || v > 2147483647 ? null : v;
+  }
+
+  // HTML's rules for parsing non-negative integers, as browsers read a
+  // <select>'s size and a cell's colspan and rowspan: parseHtmlInteger's
+  // reading, null for a negative value, and no range limit, which each
+  // attribute applies its own way (selectSizeOf, tableCellSpanOf).
+  function parseHtmlNonNegativeInteger(raw) {
+    const m = /^[\t\n\f\r ]*([+-]?)([0-9]+)/.exec(String(raw == null ? '' : raw));
+    if (!m) return null;
+    const n = parseInt(m[2], 10);
+    if (m[1] === '-' && n !== 0) return null;
+    return n;
+  }
+
+  // A <select>'s size as Chromium draws it: a value up to 4294967295 (an
+  // unsigned long), a larger one ignored as if missing. Chromium draws
+  // size="2147483648" as a list box, though the size property reads 0.
+  function selectSizeOf(el) {
+    const n = parseHtmlNonNegativeInteger(getAttr(el, 'size'));
+    return n !== null && n <= 4294967295 ? n : null;
+  }
+
+  // A table cell's colspan or rowspan as HTML (forming a table) and
+  // Chromium read them: colspan 1 where it is missing, not a non-negative
+  // integer, or 0, and at most 1000; rowspan 1 where it is missing or not a
+  // non-negative integer, 0 to span to the end of its row group, and at
+  // most 65534. A larger value is clamped, not ignored.
+  function tableCellSpanOf(el, attr) {
+    const n = parseHtmlNonNegativeInteger(getAttr(el, attr));
+    if (attr === 'rowspan') return n === null ? 1 : Math.min(n, 65534);
+    return n === null || n === 0 ? 1 : Math.min(n, 1000);
   }
 
   function parseTabIndex(el) {
@@ -6630,7 +6661,7 @@ function createDomHelpers(opts) {
       else if (type === 'range') nativeRole = 'slider';
     } else if (tag === 'textarea') nativeRole = 'textbox';
     else if (isSelect) {
-      const size = parseHtmlInteger(getAttr(node, 'size'));
+      const size = selectSizeOf(node);
       nativeRole =
         dom.hasAttribute(node, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
     } else if (tag === 'progress') nativeRole = 'progressbar';
@@ -8536,7 +8567,7 @@ function createDomHelpers(opts) {
     else if (tag === 'summary') role = 'button';
     else if (tag === 'input') role = aria.getInputRole(el);
     else if (tag === 'select') {
-      const size = parseHtmlInteger(getAttr(el, 'size'));
+      const size = selectSizeOf(el);
       role =
         dom.hasAttribute(el, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
     } else if (tag === 'textarea') role = 'textbox';
@@ -10477,7 +10508,7 @@ function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl, getCustomElementInternals, flatParentElement }
+    { trim, getLabelControl, getCustomElementInternals, flatParentElement, selectSizeOf }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -10680,6 +10711,9 @@ function createDomHelpers(opts) {
     isIso639LanguageCode,
     getImagesUsingMap,
     parseHtmlInteger,
+    parseHtmlNonNegativeInteger,
+    selectSizeOf,
+    tableCellSpanOf,
 
     // Existing query/snippet utilities
     queryAll,

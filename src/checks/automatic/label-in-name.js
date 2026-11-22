@@ -666,8 +666,8 @@ function runInPage(ctx) {
   function dropDownSelectedText(node) {
     if (String(dom.localName(node) || '').toLowerCase() !== 'select') return null;
     if (dom.hasAttribute(node, 'multiple')) return null;
-    const size = Number.parseInt(String(dom.getAttribute(node, 'size') || ''), 10);
-    if (size > 1) return null;
+    const size = helpers.selectSizeOf(node);
+    if (size !== null && size > 1) return null;
     for (const opt of [...dom.querySelectorAll(node, 'option')]) {
       let selected;
       try {

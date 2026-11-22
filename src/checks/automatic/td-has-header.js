@@ -16,7 +16,9 @@
  *   doesn't make one a table of two),
  *   and with NO `colspan`/`rowspan` anywhere in the table (a `rowspan` of 0, which
  *   grows the cell to the end of its row group, is a span; a `colspan` of 0
- *   is 1). A table whose role (the
+ *   is 1, and so is a negative or unreadable value; a value past HTML's
+ *   limit, 1000 for colspan and 65534 for rowspan, is clamped to it, as
+ *   Chromium does, so it is a span). A table whose role (the
  *   role attribute's first known, non-abstract token, in any case) is
  *   anything but table, grid or treegrid, such as a layout table with
  *   role="presentation", is left out: it has no data cells. A presentation
@@ -332,15 +334,15 @@ function runInPage(ctx) {
     if (shownRows.length < MIN_SIZE || usedColumns.size < MIN_SIZE) continue;
 
     // A rowspan of 0 spans too: the cell grows down to the end of its row
-    // group (HTML, forming a table). A colspan of 0 is 1. parseInt reads
-    // the values as HTML's rules for parsing non-negative integers do:
-    // leading space and trailing junk allowed (" 0 ", "0x").
+    // group (HTML, forming a table). A colspan of 0 is 1. The values are
+    // read as HTML reads them (helpers.tableCellSpanOf): leading space and
+    // trailing junk allowed (" 0 ", "0x"), a negative one is 1, a large
+    // one clamped.
     const hasSpan = rowCells.some((cells) =>
-      cells.some((c) => {
-        const cs = Number.parseInt(dom.getAttribute(c, 'colspan') || '1', 10);
-        const rs = Number.parseInt(dom.getAttribute(c, 'rowspan') || '1', 10);
-        return (Number.isFinite(cs) && cs > 1) || (Number.isFinite(rs) && (rs > 1 || rs === 0));
-      })
+      cells.some(
+        (c) =>
+          helpers.tableCellSpanOf(c, 'colspan') > 1 || helpers.tableCellSpanOf(c, 'rowspan') !== 1
+      )
     );
     if (hasSpan) continue;
 
