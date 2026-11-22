@@ -194,7 +194,7 @@ function isWcagCriterion(m) {
 // What the scan was tested against, and any opt-in rules it added. A result
 // from an engine older than the WCAG-version target carries none of these
 // fields and gets no chips.
-function renderTargetChips(engine, ui, profileResults) {
+function renderTargetChips(engine, ui, profileResults, result) {
   if (!engine) return '';
   const chips = [];
   if (engine.wcagVersion)
@@ -247,11 +247,16 @@ function renderTargetChips(engine, ui, profileResults) {
     chips.push(
       `<div><b>${esc(notRun.join(', '))}</b>${esc(ui.tr('report_meta_profileNotRun'))}</div>`
     );
-  // Rules the scan's time budget left unstarted (result.notRun).
-  if (engine.incomplete && Number.isFinite(engine.incomplete.rulesNotRun))
+  // Rules the scan's time budget left unstarted (result.notRun), each
+  // counted once: a scan of several profiles lists a rule once for each
+  // profile it did not run in, and engine.incomplete.rulesNotRun counts
+  // those entries (round 12, A12-6).
+  if (engine.incomplete && Number.isFinite(engine.incomplete.rulesNotRun)) {
+    const ids = new Set(notRunOf(result).map((n) => n.ruleId));
     chips.push(
-      `<div><b>${esc(ui.num(engine.incomplete.rulesNotRun))}</b>${esc(ui.tr('report_meta_rulesNotRun'))}</div>`
+      `<div><b>${esc(ui.num(ids.size))}</b>${esc(ui.tr('report_meta_rulesNotRun'))}</div>`
     );
+  }
   // Rules beyond the targeted standard ran (engineOptions.optInRules).
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     chips.push(
@@ -289,11 +294,16 @@ function renderIncomplete(results, ui) {
   ];
   if (!ids.length && !profiles.length) return '';
   const budget = list.map(timeBudgetOf).find((b) => b !== null);
-  const text = ui.tr('report_incomplete_timeBudget', {
+  // The rules, each once, and apart from them the profiles the budget left
+  // unstarted, whose rules are among them: a profile is no rule (round 12,
+  // A12-6).
+  let text = ui.tr('report_incomplete_timeBudget', {
     budget: budget !== undefined ? ui.num(budget) : '?',
-    count: ui.num(ids.length + profiles.length),
-    rules: ids.concat(profiles).join(', ')
+    count: ui.num(ids.length),
+    rules: ids.join(', ')
   });
+  if (profiles.length)
+    text += ' ' + ui.tr('report_incomplete_profilesNotRun', { profiles: profiles.join(', ') });
   return `<p class="incomplete" role="note">${esc(text)}</p>`;
 }
 
@@ -1310,7 +1320,7 @@ function renderHtmlReport(input, given) {
   <div><b>${esc((engine && engine.tag) || '?')}</b>${esc(ui.tr('report_meta_engine'))}</div>
   <div><b>${esc((engine && engine.schemaVersion) || '?')}</b>${esc(ui.tr('report_meta_schemaVersion'))}</div>
   ${renderPacksChip(result, ui)}
-  ${renderTargetChips(engine, ui, result && result.profiles)}
+  ${renderTargetChips(engine, ui, result && result.profiles, result)}
   ${renderEnvironmentChips(engine, ui)}
   ${renderLocaleChip(engine, ui)}
 </div>

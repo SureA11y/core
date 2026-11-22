@@ -168,7 +168,8 @@ test('a profile the budget left unstarted lists its rules in notRun, and every r
   const target = earl['@graph'][0].assertions.find((a) => a.test.title === 'target-size-minimum');
   assert.equal(target.result.outcome, 'earl:untested');
   const html = renderHtmlReport(result, { manualChecks: false });
-  assert.match(html, new RegExp(`<div><b>${result.notRun.length}</b>rules not run</div>`));
+  const distinct = new Set(result.notRun.map((n) => n.ruleId)).size;
+  assert.match(html, new RegExp(`<div><b>${distinct}</b>rules not run</div>`));
   const warned = [];
   const helpers = consoleHelpers(
     { console: { table: () => {}, warn: (m) => warned.push(m) } },
@@ -378,4 +379,23 @@ test('the budget warnings give the scan’s budget in whole ms (round 12, A12-5)
   const named = said.filter((s) => /time budget/.test(s));
   assert.equal(named.length, 2, String(named));
   for (const s of named) assert.match(s, /time budget of 12 ms/, s);
+});
+
+// A scan of several profiles lists a rule once for each profile it did not
+// run in; the HTML report counts each rule once, and names the profiles the
+// budget left unstarted apart from the rules (round 12, A12-6).
+test('HTML report: counts each rule not run once, and lists unstarted profiles apart (round 12, A12-6)', () => {
+  const { value: result } = scan({
+    timeBudgetMs: NONE_LEFT,
+    profile: ['wcag22-aa', 'wcag21-aa', 'wcag20-a']
+  });
+  const ids = [...new Set(result.notRun.map((n) => n.ruleId))];
+  assert.ok(result.notRun.length > ids.length);
+  const html = renderHtmlReport(result, { manualChecks: false });
+  assert.match(html, new RegExp(`<div><b>${ids.length}</b>rules not run</div>`));
+  const banner = /<p class="incomplete" role="note">([^<]*)<\/p>/.exec(html)[1];
+  assert.match(banner, new RegExp(`Not run \\(${ids.length}\\): `));
+  assert.match(banner, /Profiles not started: wcag21-aa, wcag20-a\./);
+  const listed = /Not run \(\d+\): ([^.]*)\./.exec(banner)[1].split(', ');
+  assert.deepEqual(listed.sort(), ids.sort());
 });

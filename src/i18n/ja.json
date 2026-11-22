@@ -1701,6 +1701,7 @@
   "report_meta_optInRules": "オプトインルール",
   "report_meta_rulesNotRun": "未実行のルール",
   "report_incomplete_timeBudget": "不完全なスキャン: 選択されたすべてのルールが実行される前に、{{budget}} ms の時間予算を使い切りました。実行されなかったもの ({{count}}): {{rules}}。これらは何も検査していないため、このレポートのどの結果もこれらの合格を意味しません。",
+  "report_incomplete_profilesNotRun": "開始されなかったプロファイル: {{profiles}}。",
   "report_meta_viewport": "ビューポート",
   "report_meta_colorScheme": "カラースキーム",
   "report_meta_fonts": "Web フォント",

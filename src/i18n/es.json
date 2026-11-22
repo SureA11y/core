@@ -1701,6 +1701,7 @@
   "report_meta_optInRules": "reglas activadas explícitamente",
   "report_meta_rulesNotRun": "reglas no ejecutadas",
   "report_incomplete_timeBudget": "Análisis incompleto: su presupuesto de tiempo de {{budget}} ms se agotó antes de que se ejecutaran todas las reglas seleccionadas. No ejecutadas ({{count}}): {{rules}}. No comprobaron nada, así que nada en este informe las da por superadas.",
+  "report_incomplete_profilesNotRun": "Perfiles no iniciados: {{profiles}}.",
   "report_meta_viewport": "área de visualización",
   "report_meta_colorScheme": "esquema de color",
   "report_meta_fonts": "fuentes web",
