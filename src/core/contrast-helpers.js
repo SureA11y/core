@@ -781,11 +781,40 @@ function createContrastHelpers(opts, shared) {
   }
 
   // The computed style that sets the color and font of el's text: the
-  // ::placeholder style while a field shows its placeholder, el's own
+  // ::placeholder style while a field shows its placeholder, the slot's
+  // where el's own text is slotted into its shadow tree, el's own
   // otherwise.
   function textStyleOf(el) {
     const field = __fieldText(el);
-    return field && field.placeholder ? field.style : __contrastComputedStyle(el);
+    return field && field.placeholder
+      ? field.style
+      : __contrastComputedStyle(__ownTextSlot(el) || el);
+  }
+
+  // The <slot> a shadow host's own text is drawn in, or null (round 12,
+  // C12-2). Text placed straight into a host is rendered where its shadow
+  // tree's slot puts it, and inherits from that slot in the flat tree (CSS
+  // Scoping, 3.1), not from the host: a host with color: black whose slot
+  // sits in a grey <div> draws its text grey. The first text with
+  // something other than spaces decides.
+  const __ownTextSlotCache = new WeakMap();
+  function __ownTextSlot(el) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    if (__ownTextSlotCache.has(el)) return __ownTextSlotCache.get(el);
+    let out = null;
+    try {
+      if (dom.shadowRoot(el)) {
+        for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
+          if (dom.nodeType(n) !== 3 || !trim(dom.nodeValue(n))) continue;
+          out = dom.assignedSlot(n) || null;
+          break;
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __ownTextSlotCache.set(el, out);
+    return out;
   }
 
   // -------- The options of a drop-down <select> (#219) --------
@@ -4154,7 +4183,9 @@ function createContrastHelpers(opts, shared) {
     // its own opacity as well as the field's.
     const field = __fieldText(el);
     const placeholder = field && field.placeholder ? field.style : null;
-    const cs = placeholder || __contrastComputedStyle(el);
+    // A host's own text slotted into its shadow tree takes the slot's color.
+    const slot = placeholder ? null : __ownTextSlot(el);
+    const cs = placeholder || __contrastComputedStyle(slot || el);
     // SVG text is painted with `fill`, not `color` (which only feeds
     // currentColor): <text fill="#000" style="color:#eee"> is black. A fill
     // of none (outline-only text) or a paint server (url(#gradient)) does
@@ -4163,7 +4194,7 @@ function createContrastHelpers(opts, shared) {
     // Text in a link, under jsdom, whose color jsdom ranks below its own
     // link color, is read from the page's rules (__htmlTextFillOf).
     const fillValue =
-      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
+      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(slot || el, cs));
     let c = parseCssColorToRgba(fillValue);
     // On the canvas of a page drawn only in dark, in an emulator: the dark
     // scheme's color where the text takes it from the scheme.
@@ -4195,7 +4226,7 @@ function createContrastHelpers(opts, shared) {
       return out;
     }
 
-    let op = computeOpacityProduct(el);
+    let op = computeOpacityProduct(slot || el);
     if (placeholder) {
       const own = Number.parseFloat(placeholder.opacity);
       if (Number.isFinite(own)) op *= clamp01(own);
@@ -5107,7 +5138,10 @@ function createContrastHelpers(opts, shared) {
     // text): that background is the text's color, not behind it.
     const clipOwner = __clipTextOwner(el);
 
-    for (const cur of ancestorsOf(el)) {
+    // A host's own text slotted into its shadow tree is drawn there, over
+    // the backgrounds of the slot's flat-tree ancestors, the host's among
+    // them.
+    for (const cur of ancestorsOf(__ownTextSlot(el) || el)) {
       if (dom.nodeType(cur) !== 1) continue;
       if (cur === clipOwner) {
         const ocs = __contrastComputedStyle(cur);
