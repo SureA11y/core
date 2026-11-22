@@ -19,7 +19,8 @@ const {
   SIGN_CASES_C12_1,
   SIGN_LINK_CASES_C12_12,
   SHADOW_DISABLED_CASES_C12_10,
-  UNSEEN_TEXT_CASES_C12_11
+  UNSEEN_TEXT_CASES_C12_11,
+  REVERT_LINK_CASES_C12_14
 } = require('./contrast-round-12-cases.js');
 
 const page = (body, head = '') =>
@@ -237,4 +238,13 @@ test('symbols beside text that is not seen are judged as symbols (C12-11)', () =
   // Text that is seen makes the element text.
   const seen = '<span style="color:#ccc">★★★★☆<span>4 of 5</span></span>';
   assert.equal(check(page(seen), 'symbol-graphic-contrast').outcome, 'notApplicable');
+});
+
+test('color: revert on a link gives the browser’s link color (C12-14)', () => {
+  for (const [body, want, ratio] of REVERT_LINK_CASES_C12_14) {
+    const r = check(page(body), 'contrast-minimum');
+    assert.equal(r.outcome, want, body);
+    if (ratio)
+      assert.equal(Math.round(r.occurrences[0].data.details.metrics.ratio * 100) / 100, ratio);
+  }
 });

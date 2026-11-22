@@ -66,3 +66,20 @@ const UNSEEN_TEXT_CASES_C12_11 = [
 ];
 
 module.exports.UNSEEN_TEXT_CASES_C12_11 = UNSEEN_TEXT_CASES_C12_11;
+
+// color: revert in a link, on black: [markup, contrast-minimum, ratio]
+// (round 12, C12-14).
+const REVERT_LINK_CASES_C12_14 = [
+  [
+    '<div style="background:#000;color:#fff">See <a href="#" style="color:revert">the link</a></div>',
+    'fail',
+    2.23
+  ],
+  [
+    '<div style="background:#000;color:#fff">See <a href="#" style="color:#fff">the <span style="color:revert">link</span></a></div>',
+    'pass',
+    null
+  ]
+];
+
+module.exports.REVERT_LINK_CASES_C12_14 = REVERT_LINK_CASES_C12_14;

@@ -4095,6 +4095,12 @@ function createContrastHelpers(opts, shared) {
     }
     const value = decl.value.toLowerCase();
     if (__CSS_INHERITING.has(value)) return inherited();
+    // revert takes the browser's own value: a link's link color, as an
+    // unstyled link has it, and for an element in a link (whose color the
+    // browser's sheet doesn't set, but for a <mark>) its parent's (round
+    // 12, C12-14).
+    if (value === 'revert' && __isLink(el)) return __SCHEME_COLORS.light.link;
+    if (value === 'revert' && __lname(el) !== 'mark') return inherited();
     // A custom property jsdom doesn't substitute, or a keyword taking the
     // browser's own value.
     if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
