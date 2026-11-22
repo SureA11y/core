@@ -1336,6 +1336,75 @@ function runInPage(ctx) {
     return byBase;
   }
 
+  // An element matches a selector only through elements of its own tree
+  // (a shadow root's sheets are only read against their own tree). A
+  // selector that needs a class or id that no element in that tree carries
+  // matches nothing there, so it is not tested. Only names outside
+  // brackets, parentheses and quotes count: a name inside :is(), :where(),
+  // :not() or :has() may not be needed. A selector with an escape, a
+  // comment, :host, ::slotted, ::part, :scope or & is always tested, and so
+  // is one whose name the scan cannot read to its end. Names are compared
+  // in lower case, which also covers a quirks-mode page.
+  const namesBySel = new Map();
+  function requiredNames(sel) {
+    if (namesBySel.has(sel)) return namesBySel.get(sel);
+    let names = null;
+    if (!/\\|\/[*]|:host|::slotted|::part|:scope|&/i.test(sel)) {
+      names = [];
+      let depth = 0;
+      let quote = '';
+      for (let i = 0; i < sel.length; i++) {
+        const ch = sel[i];
+        if (quote) {
+          if (ch === quote) quote = '';
+        } else if (ch === '"' || ch === "'") quote = ch;
+        else if (ch === '(' || ch === '[') depth += 1;
+        else if (ch === ')' || ch === ']') depth -= 1;
+        else if (!depth && (ch === '.' || ch === '#')) {
+          // The group keeps `*` from a slash: scripts/validate-rule.js reads
+          // that pair as the end of a comment.
+          const m = /^-?[_a-zA-Z\u0080-\uffff](?:[-\w\u0080-\uffff]*)/.exec(sel.slice(i + 1));
+          const next = m ? sel[i + 1 + m[0].length] : '';
+          if (!m || (next && !/[\s.#[:>+~,)*|]/.test(next))) {
+            names = null;
+            break;
+          }
+          names.push((ch === '.' ? 'c:' : 'i:') + m[0].toLowerCase());
+        }
+      }
+    }
+    namesBySel.set(sel, names);
+    return names;
+  }
+  const namesByTree = new Map();
+  function namesIn(tree) {
+    if (namesByTree.has(tree)) return namesByTree.get(tree);
+    let found = null;
+    try {
+      const type = tree ? dom.nodeType(tree) : 0;
+      if (type === 9 || type === 11) {
+        found = new Set();
+        for (const n of dom.querySelectorAll(tree, '[class], [id]')) {
+          const cls = dom.getAttribute(n, 'class');
+          if (cls)
+            for (const c of cls.split(/[ \t\n\f\r]+/)) if (c) found.add('c:' + c.toLowerCase());
+          const ident = dom.getAttribute(n, 'id');
+          if (ident) found.add('i:' + ident.toLowerCase());
+        }
+      }
+    } catch {
+      found = null;
+    }
+    namesByTree.set(tree, found);
+    return found;
+  }
+  function mayMatchIn(tree, sel) {
+    const names = requiredNames(sel);
+    if (!names || !names.length) return true;
+    const found = namesIn(tree);
+    return !found || names.every((n) => found.has(n));
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -1349,7 +1418,8 @@ function runInPage(ctx) {
     // Many rules share a selector (a framework's reset repeated): each one
     // is tested once per element.
     const listHit = listHits.has(el);
-    const byBase = listHit ? listedMatchesIn(treeOf(el)) : null;
+    const tree = treeOf(el);
+    const byBase = listHit ? listedMatchesIn(tree) : null;
     const matched = new Map();
     const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
       if (!scopeOk(s, el)) return false;
@@ -1357,7 +1427,7 @@ function runInPage(ctx) {
       let hit = matched.get(s.base);
       if (hit === undefined) {
         const found = byBase && byBase.get(s.base);
-        hit = found ? found.has(el) : matchesSafe(el, s.base);
+        hit = found ? found.has(el) : mayMatchIn(tree, s.base) && matchesSafe(el, s.base);
         matched.set(s.base, hit);
       }
       return hit;
