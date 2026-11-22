@@ -2359,18 +2359,24 @@ function pageCodeProblems(rule, where) {
 // data double escaped state, where "</script>" no longer ends the element:
 // "<!--" then "<script" (escaped, then double escaped), with no "-->" or
 // "</script" after. The states as HTML defines them: "<!-->" and "<!--->"
-// close at once; in the double escaped state "</script" goes back to the
-// escaped state and "-->" to plain script data; "--!>", which ends a comment
-// in markup, ends nothing in a script and is matched only to be skipped.
-// Returns the "<script" that opened it, or null (round 8, NW-12).
+// end in plain script data whatever the state, as both end in "-->" ("--"
+// then ">"): in script data they open and close at once, and in the
+// escaped and double escaped states the "<!" is read as text and the rest
+// ends the escape (round 12, A12-8). In the double escaped state "</script"
+// goes back to the escaped state and "-->" to plain script data; "--!>",
+// which ends a comment in markup, ends nothing in a script and is matched
+// only to be skipped. Returns the "<script" that opened it, or null (round
+// 8, NW-12).
 function unclosedScriptInComment(text) {
   const re = /<!--->|<!-->|<!--|--!>|-->|<\/script(?=[\s/>])|<script(?=[\s/>])/gi;
   let state = 'data';
   let opener = null;
   for (let m = re.exec(text); m; m = re.exec(text)) {
     const t = m[0].toLowerCase();
-    if (t === '<!--->' || t === '<!-->' || t === '--!>') continue;
-    if (t === '<!--') {
+    if (t === '--!>') continue;
+    if (t === '<!--->' || t === '<!-->') {
+      state = 'data';
+    } else if (t === '<!--') {
       if (state === 'data') state = 'escaped';
     } else if (t === '-->') {
       state = 'data';

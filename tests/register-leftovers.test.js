@@ -221,3 +221,48 @@ test('a profile name with the Kelvin sign is no profile in a list either (round 
   const ascii = scan({ packs: [pack], profile: ['KEYS-1.0', 'wcag22-aa'] }).value;
   assert.ok(ascii.rulesResults.some((r) => r.ruleId.startsWith('keys-')));
 });
+
+// packScript refuses a pack's code only where HTML would leave an inline
+// <script> open: checked here against the HTML parser itself (jsdom's), for
+// "<!-->" and "<!--->" in each script data state (round 12, A12-8).
+test('packScript refuses code only where HTML leaves the script open (round 12, A12-8)', () => {
+  const { JSDOM } = require('jsdom');
+  const notes = [
+    '<!-- <!--> <script>',
+    '<!-- <!---> <script>',
+    '<!-- <script> <!-->',
+    '<!-- <script> <!--->',
+    '<!-- <script> <!--> <script>',
+    '<!-- <script>',
+    '<!-- <SCRIPT\t',
+    '<!-- <script/',
+    '<!-- <script> --!>',
+    '<!-- <script> <!-- -->',
+    '<!--<script>-->'
+  ];
+  for (const note of notes) {
+    const pack = definePack({
+      name: 'note-pack',
+      version: '1.0.0',
+      namespace: 'nt',
+      core: '*',
+      rules: [
+        {
+          id: 'nt-rule',
+          meta: { title: 'T', description: 'd', tags: ['nt'] },
+          runInPage: new Function(`return { outcome: 'pass', note: ${JSON.stringify(note)} };`)
+        }
+      ]
+    });
+    let refused = false;
+    try {
+      packScript([pack]);
+    } catch (e) {
+      assert.match(e.message, /keeps an inline <script> element from ending/);
+      refused = true;
+    }
+    const html = `<script>var s = ${JSON.stringify(note)};</script><p id="after">after</p>`;
+    const open = !new JSDOM(html).window.document.getElementById('after');
+    assert.equal(refused, open, note);
+  }
+});
