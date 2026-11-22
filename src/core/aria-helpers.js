@@ -1037,12 +1037,19 @@ function createAriaHelpers(opts, shared) {
   // judge role="image" as role="img".
   const ROLE_SYNONYMS = { image: 'img' };
 
+  // A role attribute's tokens. HTML splits a set of space-separated tokens
+  // on ASCII whitespace only, so a no-break space or a vertical tab is part
+  // of a token: role="x&nbsp;button" holds no role.
+  function roleTokens(value) {
+    return String(value == null ? '' : value)
+      .split(/[\t\n\f\r ]+/)
+      .filter(Boolean);
+  }
+
   function firstConcreteRole(value) {
-    const raw = trim(value);
-    if (!raw) return '';
-    for (const token of raw.split(/\s+/)) {
-      const t = lower(token);
-      if (t && CONCRETE_ROLES.has(t)) return ROLE_SYNONYMS[t] || t;
+    for (const token of roleTokens(value)) {
+      const t = token.toLowerCase();
+      if (CONCRETE_ROLES.has(t)) return ROLE_SYNONYMS[t] || t;
     }
     return '';
   }
@@ -1074,9 +1081,7 @@ function createAriaHelpers(opts, shared) {
 
   function getAllRoleTokens(el) {
     if (!isElement(el)) return [];
-    const raw = trim(getAttr(el, 'role'));
-    if (!raw) return [];
-    return raw.split(/\s+/).filter(Boolean).map(lower);
+    return roleTokens(getAttr(el, 'role')).map((t) => t.toLowerCase());
   }
 
   function isAbstractRole(role) {

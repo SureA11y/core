@@ -44,6 +44,25 @@ test('getAllRoleTokens: returns every lowercased space-separated token', () => {
   assert.deepEqual(helpers.getAllRoleTokens(null), []);
 });
 
+test('role tokens are split on ASCII whitespace only, as HTML splits them (round 11, R11P-2)', () => {
+  const { helpers, document } = helpersFor('<div id="x"></div>');
+  const el = document.getElementById('x');
+  const cases = [
+    ['x\u00A0button', '', ['x\u00a0button']],
+    ['\u000Bbutton', '', ['\u000bbutton']],
+    ['\u00A0button', '', ['\u00a0button']],
+    ['\uFEFFbutton', '', ['\ufeffbutton']],
+    ['x\u2003link', '', ['x\u2003link']],
+    ['button ', 'button', ['button']],
+    ['\tfoo\nLink\f\r', 'link', ['foo', 'link']]
+  ];
+  for (const [value, role, tokens] of cases) {
+    el.setAttribute('role', value);
+    assert.equal(helpers.getExplicitRole(el), role, JSON.stringify(value));
+    assert.deepEqual(helpers.getAllRoleTokens(el), tokens, JSON.stringify(value));
+  }
+});
+
 // ===== role classification =====
 
 test('isAbstractRole / isDeprecatedRole / isKnownRole / isValidConcreteRole', () => {

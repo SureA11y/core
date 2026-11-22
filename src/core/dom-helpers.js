@@ -2952,7 +2952,7 @@ function createDomHelpers(opts) {
         if (label && HIDDEN_TEXT_RE.test(text)) {
           const forId = dom.getAttribute(label, 'for');
           const labelTag = forId ? `<label for="${forId}">` : '<label>';
-          const role = attr(el, 'role').split(/\s+/)[0];
+          const role = attr(el, 'role').split(/[\t\n\f\r ]+/)[0];
           const control = role ? `${tag} role="${role}"` : tag;
           const labelId = attr(label, 'id');
           const base = `The ${labelTag} "${text}" names nothing here: a <label> only names native form fields (input, select, textarea…), not a <${control}>.`;
@@ -3591,12 +3591,18 @@ function createDomHelpers(opts) {
   function roleTypo(el) {
     let raw;
     try {
-      raw = trim(dom.getAttribute(el, 'role'));
+      raw = dom.getAttribute(el, 'role');
     } catch {
       return null;
     }
-    if (!raw) return null;
-    const tokens = raw.split(/\s+/).map(lower);
+    // Split as HTML splits tokens: on ASCII whitespace only.
+    raw = String(raw == null ? '' : raw);
+    const tokens = raw
+      .split(/[\t\n\f\r ]+/)
+      .filter(Boolean)
+      .map((t) => t.toLowerCase());
+    if (!tokens.length) return null;
+    raw = trim(raw);
     if (tokens.some((t) => aria.isKnownRole(t))) return null;
     let suggestion = '';
     for (const t of tokens) {
@@ -8502,7 +8508,7 @@ function createDomHelpers(opts) {
     const explicit = aria.getExplicitRole(el);
     if (explicit) {
       if (explicit === 'presentation' || explicit === 'none') flags.push('presentation');
-      if (/\s/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
+      if (/[\t\n\f\r ]/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
       return { role: explicit, source: 'explicit', flags };
     }
 

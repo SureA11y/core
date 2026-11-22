@@ -255,7 +255,9 @@ const LIVE_REGION_HOOK_SOURCE = [
   // The politeness a live region has, or '' for none.
   // The role the role attribute gives, as getExplicitRole reads it.
   '    function roleOf(el) {',
-  "      var tokens = attr(el, 'role').split(/\\s+/);",
+  "      var raw = el.getAttribute ? el.getAttribute('role') : null;",
+  // HTML splits tokens on ASCII whitespace only.
+  "      var tokens = String(raw == null ? '' : raw).toLowerCase().split(/[\\t\\n\\f\\r ]+/);",
   '      for (var i = 0; i < tokens.length; i++) if (CONCRETE.has(tokens[i])) return tokens[i];',
   "      return '';",
   '    }',
