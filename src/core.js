@@ -3010,6 +3010,15 @@ const createSafeDom = (function createSafeDom() {
 
 // Inlined from src/core/contrast-helpers.js
 const createContrastHelpers = (function createContrastHelpers(opts, shared) {
+  // A <select> drawn as a list box (a size above 1), read as Chromium reads
+  // its size attribute (selectSizeOf in dom-helpers).
+  function __selectDrawnAsListBox(select) {
+    if (shared && typeof shared.selectSizeOf === 'function') {
+      const n = shared.selectSizeOf(select);
+      return n !== null && n > 1;
+    }
+    return Number(dom.getAttribute(select, 'size')) > 1;
+  }
   const dom = createSafeDom();
   const window = opts && opts.window ? opts.window : null;
 
@@ -3813,7 +3822,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         select &&
         selectCs &&
         !dom.get(select, 'multiple') &&
-        !(Number(dom.get(select, 'size')) > 1) &&
+        !__selectDrawnAsListBox(select) &&
         !ownButton
       ) {
         const index = Number(dom.get(select, 'selectedIndex'));
@@ -9350,7 +9359,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     if (!__forcedColorsMedia()) return null;
     try {
       if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
-      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      if (dom.hasAttribute(el, 'multiple') || __selectDrawnAsListBox(el)) return null;
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
       const doc = dom.ownerDocument(el);
@@ -9406,7 +9415,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function nativeSelectField(el) {
     try {
       if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
-      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      if (dom.hasAttribute(el, 'multiple') || __selectDrawnAsListBox(el)) return null;
       const doc = dom.ownerDocument(el);
       if (!__hasLayout(doc)) return null;
       const view = doc && dom.defaultView(doc);
@@ -25357,6 +25366,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isVisuallyHidden,
     getRoleInfo: (el) => getRoleInfo(el),
     getFocusableInfo: (el) => getFocusableInfo(el),
+    selectSizeOf,
     __contrastSharedCache
   };
 
@@ -138712,6 +138722,15 @@ const createSafeDom = (function createSafeDom() {
 
 // Inlined from src/core/contrast-helpers.js
 const createContrastHelpers = (function createContrastHelpers(opts, shared) {
+  // A <select> drawn as a list box (a size above 1), read as Chromium reads
+  // its size attribute (selectSizeOf in dom-helpers).
+  function __selectDrawnAsListBox(select) {
+    if (shared && typeof shared.selectSizeOf === 'function') {
+      const n = shared.selectSizeOf(select);
+      return n !== null && n > 1;
+    }
+    return Number(dom.getAttribute(select, 'size')) > 1;
+  }
   const dom = createSafeDom();
   const window = opts && opts.window ? opts.window : null;
 
@@ -139515,7 +139534,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         select &&
         selectCs &&
         !dom.get(select, 'multiple') &&
-        !(Number(dom.get(select, 'size')) > 1) &&
+        !__selectDrawnAsListBox(select) &&
         !ownButton
       ) {
         const index = Number(dom.get(select, 'selectedIndex'));
@@ -145052,7 +145071,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     if (!__forcedColorsMedia()) return null;
     try {
       if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
-      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      if (dom.hasAttribute(el, 'multiple') || __selectDrawnAsListBox(el)) return null;
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
       const doc = dom.ownerDocument(el);
@@ -145108,7 +145127,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function nativeSelectField(el) {
     try {
       if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
-      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      if (dom.hasAttribute(el, 'multiple') || __selectDrawnAsListBox(el)) return null;
       const doc = dom.ownerDocument(el);
       if (!__hasLayout(doc)) return null;
       const view = doc && dom.defaultView(doc);
@@ -161059,6 +161078,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isVisuallyHidden,
     getRoleInfo: (el) => getRoleInfo(el),
     getFocusableInfo: (el) => getFocusableInfo(el),
+    selectSizeOf,
     __contrastSharedCache
   };
 

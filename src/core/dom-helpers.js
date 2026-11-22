@@ -10498,6 +10498,7 @@ function createDomHelpers(opts) {
     isVisuallyHidden,
     getRoleInfo: (el) => getRoleInfo(el),
     getFocusableInfo: (el) => getFocusableInfo(el),
+    selectSizeOf,
     __contrastSharedCache
   };
 
