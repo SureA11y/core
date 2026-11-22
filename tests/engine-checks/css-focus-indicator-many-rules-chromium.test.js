@@ -187,3 +187,46 @@ test(
     }
   }
 );
+
+// With no rule that removes an outline in any sheet, a shadow root's
+// included, the candidates are not looked for (round 12, F12-3).
+test(
+  `${RULE_ID}: no candidate is looked for on a page with a shadow root, in Chromium`,
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    async function run(shadowCss) {
+      const p = await browser.newPage();
+      try {
+        const links = Array.from({ length: 50 }, (_, i) => `<a href="#${i}">${i}</a>`).join('');
+        await p.setContent(
+          `<!doctype html><html lang="en"><head><title>t</title><style>a{color:#00e}</style></head><body><main>${links}<div id="h"></div></main></body></html>`
+        );
+        await p.evaluate((css) => {
+          const root = document.getElementById('h').attachShadow({ mode: 'open' });
+          root.innerHTML = `<button>b</button><style>${css}</style>`;
+          window.__candidateQueries = 0;
+          for (const proto of [Document.prototype, Element.prototype, DocumentFragment.prototype]) {
+            const query = proto.querySelectorAll;
+            proto.querySelectorAll = function (sel) {
+              if (String(sel).includes('area[href]')) window.__candidateQueries += 1;
+              return query.call(this, sel);
+            };
+          }
+        }, shadowCss);
+        await addBundle(p);
+        return await p.evaluate((id) => {
+          const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0];
+          return [r.outcome, window.__candidateQueries];
+        }, RULE_ID);
+      } finally {
+        await p.close();
+      }
+    }
+    assert.deepEqual(await run('button{color:red}'), ['notApplicable', 0]);
+    const [outcome, queries] = await run('button{outline:none}');
+    assert.equal(outcome, 'cantTell');
+    assert.ok(queries > 0);
+  }
+);

@@ -34,7 +34,9 @@
  *     elements in the document's own tree: as CSS Scoping has it, their
  *     selectors do not reach into a shadow root. Each open shadow root's
  *     sheets, adopted ones included, are read against the elements in
- *     that root only. A rule
+ *     that root only. Every open shadow root's sheets are read before the
+ *     candidates are looked for, so a page with no removing rule in any
+ *     of them ends there. A rule
  *   that removes it only under `:not(:focus-visible)` keeps it for keyboard
  *   focus and is not counted; nor is the focus-visible polyfill's form of
  *   it, `:not(.focus-visible)` under `.js-focus-visible`, or
@@ -989,47 +991,43 @@ function runInPage(ctx) {
   }
   readSheets(document, null);
 
-  // With no removing rule in the document's sheets and no open shadow root
-  // whose sheets could hold one, nothing is checked: the candidates are not
-  // looked for (round 12, R12F-13).
-  if (!suppressors.length) {
-    let hasShadowRoot = false;
-    try {
-      for (const el of dom.querySelectorAll(document, '*')) {
-        if (dom.shadowRoot(el)) {
-          hasShadowRoot = true;
-          break;
+  // Every open shadow root, nested ones too, in tree order. Their style
+  // sheets, and the sheets they adopt, are read before the candidates are
+  // looked for: with no removing rule in any sheet, nothing is checked, on
+  // a page with shadow roots as on one without (round 12, R12F-13, F12-3).
+  const shadowRoots = [];
+  {
+    const queue = [document];
+    for (let i = 0; i < queue.length; i++) {
+      let all;
+      try {
+        all = dom.querySelectorAll(queue[i], '*');
+      } catch {
+        all = [];
+      }
+      for (const el of all) {
+        let sr;
+        try {
+          sr = dom.shadowRoot(el);
+        } catch {
+          sr = null;
+        }
+        if (sr) {
+          queue.push(sr);
+          shadowRoots.push(sr);
         }
       }
-    } catch {
-      hasShadowRoot = true;
     }
-    if (!hasShadowRoot) {
-      return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-    }
+  }
+  for (const root of shadowRoots) readSheets(root, root);
+
+  if (sheetCount === 0 || !suppressors.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   const candidates = helpers.queryAllSmart
     ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
     : helpers.queryAll(CANDIDATE_SELECTOR);
-
-  // The open shadow roots the candidates are in: their style sheets, and
-  // the sheets they adopt, style the elements in them (and only those).
-  const shadowScopes = [];
-  {
-    const seen = new Set();
-    for (const el of candidates) {
-      const tree = el ? treeOf(el) : null;
-      if (!tree || seen.has(tree) || dom.nodeType(tree) !== 11) continue;
-      seen.add(tree);
-      shadowScopes.push(tree);
-    }
-  }
-  for (const root of shadowScopes) readSheets(root, root);
-
-  if (sheetCount === 0 || !suppressors.length) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
 
   // Where a sheet is, for the message: { href } for a linked or imported
   // sheet, { index } for the page's nth <style> element, or null. Read once

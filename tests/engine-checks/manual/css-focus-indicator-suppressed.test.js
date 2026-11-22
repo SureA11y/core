@@ -52,11 +52,18 @@ test(`${RULE_ID}: no candidate is read when no rule removes an outline`, () => {
       minOccurrences: 0,
       maxOccurrences: 0
     });
-    // A page with an open shadow root has its candidates looked for, as the
-    // root's own sheets are read only for the trees they are in.
-    if (shadow) assert.ok(reads > 0);
-    else assert.ok(reads < 10, String(reads));
+    // A page with an open shadow root exits as early: the root's sheets are
+    // read first (round 12, F12-3).
+    assert.ok(reads < 10, String(reads));
   }
+  // A removing rule in a shadow root's sheet is still read.
+  const dom = createDom(page('a { color: red }', '<div id="h"></div>'));
+  const root = dom.window.document.getElementById('h').attachShadow({ mode: 'open' });
+  root.innerHTML = '<button id="b">b</button><style>button{outline:none}</style>';
+  assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
 });
 
 test(`${RULE_ID}: cantTell for a global outline reset with no replacement`, () => {
