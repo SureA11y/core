@@ -2300,6 +2300,66 @@ function assertPageBuiltins() {
   }
 }
 
+// A value a page's script put on Object.prototype (Object.prototype.
+// occurrenceOutcome = 'pass', timeBudgetMs, excludeSelectors) is read for
+// every key a plain object lacks: of a rule's result, an occurrence, the
+// caller's options and flags only the engine sets. It turned every failure
+// into a pass (round 12, A12-1). A read-only one also stopped the engine
+// giving an object a key of its own (result.type), with a bare TypeError
+// (A12-3). So for the scan, which runs synchronously, every such value is
+// taken off Object.prototype, and the engine and the rules read only what
+// their objects hold; the returned function puts each back as it was. A
+// method put there (then, as a library may) is left, and a getter is
+// refused by assertPageBuiltins first. One that can't be taken off and
+// can't be written (non-configurable and read-only) stops the scan with
+// PAGE_BUILTINS_BROKEN naming it.
+function holdObjectPrototypeValues() {
+  const proto = Object.prototype;
+  const own = Object.prototype.hasOwnProperty;
+  const held = [];
+  const release = () => {
+    for (let i = held.length - 1; i >= 0; i--) {
+      const h = held[i];
+      try {
+        if (h.cleared) proto[h.name] = h.descriptor.value;
+        else Object.defineProperty(proto, h.name, h.descriptor);
+      } catch {}
+    }
+    held.length = 0;
+  };
+  const names = Object.getOwnPropertyNames(proto);
+  const refused = [];
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i];
+    if (name === '__proto__') continue;
+    const d = Object.getOwnPropertyDescriptor(proto, name);
+    if (!d) continue;
+    // Own reads: a descriptor is a plain object too.
+    if (own.call(d, 'value') && typeof d.value === 'function') continue;
+    if (d.configurable) {
+      delete proto[name];
+      held[held.length] = { name, descriptor: d, cleared: false };
+    } else if (own.call(d, 'writable') && d.writable) {
+      proto[name] = undefined;
+      held[held.length] = { name, descriptor: d, cleared: true };
+    } else refused[refused.length] = 'Object.prototype.' + name;
+  }
+  if (refused.length) {
+    release();
+    let list = '';
+    for (let i = 0; i < refused.length; i++) list += (i ? ', ' : '') + refused[i];
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (' +
+        list +
+        "), so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = refused;
+    throw err;
+  }
+  return release;
+}
+
 // Whether Array.from works as the language defines it, for the rules of a
 // pack or caller that use it: on a page whose scripts replaced it (Prototype
 // gives an empty list for a Set or a Map iterator and ignores the mapping
@@ -2464,8 +2524,9 @@ function runCoreSettled(
   const budgetSpent = !!(
     engineOptions &&
     typeof engineOptions === 'object' &&
-    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent') &&
-    engineOptions.__budgetSpent === true
+    Object.prototype.hasOwnProperty.call(engineOptions, '__budgetSpent') &&
+    engineOptions.__budgetSpent === true &&
+    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent')
   );
   const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
@@ -4154,6 +4215,7 @@ function runCoreSettled(
 module.exports = {
   isThenable,
   assertPageBuiltins,
+  holdObjectPrototypeValues,
   assertArrayFromFor,
   resolveCustomRules,
   runCore,

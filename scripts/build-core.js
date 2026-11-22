@@ -52,6 +52,7 @@ const {
 const {
   isThenable,
   assertPageBuiltins,
+  holdObjectPrototypeValues,
   assertArrayFromFor,
   resolveCustomRules,
   runCore,
@@ -162,6 +163,7 @@ const {
   describeFrameElement,
   getFrameElementUrl,
   frameTimeBudgetOf,
+  frameOptionOf,
   budgetedOptions,
   withScanBudget,
   scanAcrossFrames,
@@ -2636,6 +2638,7 @@ ${inlineConstFunction('resolveCustomRules', resolveCustomRules)}
 ${inlineConstFunction('runCoreSettled', runCoreSettled)}
 ${inlineConstFunction('isThenable', isThenable)}
 ${inlineConstFunction('assertPageBuiltins', assertPageBuiltins)}
+${inlineConstFunction('holdObjectPrototypeValues', holdObjectPrototypeValues)}
 ${inlineConstFunction('assertArrayFromFor', assertArrayFromFor)}
 ${inlineConstFunction('runCore', runCore)}
 
@@ -2671,6 +2674,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Before anything reads the page's built-ins (see assertPageBuiltins).
   ${inlineConstFunction('assertPageBuiltinsFirst', assertPageBuiltins)}
   assertPageBuiltinsFirst();
+  // The scan reads only what its objects hold (see holdObjectPrototypeValues).
+  ${inlineConstFunction('holdObjectPrototypeValuesFirst', holdObjectPrototypeValues)}
+  const releaseObjectPrototype = holdObjectPrototypeValuesFirst();
+  try {
+    return runHeld();
+  } finally {
+    releaseObjectPrototype();
+  }
+  function runHeld() {
   const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
   const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
   const ENGINE_VERSION = ${jsStringify(ENGINE_VERSION)};
@@ -2912,6 +2924,7 @@ ${implEntriesInPage.join(',\n')}
     return out;
   };
   return isThenable(result) ? result.then(stamp) : stamp(result);
+  }
 }
 `.trim();
 
@@ -2984,6 +2997,8 @@ ${describeFrameElement.toString()}
 ${getFrameElementUrl.toString()}
 
 ${frameTimeBudgetOf.toString()}
+
+${frameOptionOf.toString()}
 
 ${budgetedOptions.toString()}
 
@@ -3361,6 +3376,15 @@ function getTestsForRunOnly(runOnly, engineOptions) {
  */
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   assertPageBuiltins();
+  const releaseObjectPrototype = holdObjectPrototypeValues();
+  try {
+    return runDomRulesHeld(pageUrl, contextSelector, engineOptions, runOnly);
+  } finally {
+    releaseObjectPrototype();
+  }
+}
+
+function runDomRulesHeld(pageUrl, contextSelector, engineOptions, runOnly) {
   // Under strictOptions the options are checked before the selection is
   // worked out from them, as they are said to be.
   if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);

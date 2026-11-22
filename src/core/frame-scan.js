@@ -346,11 +346,18 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
 // engineOptions.timeBudgetMs, read as the scan reads it: a finite number
 // above 0, else null (no budget).
 function frameTimeBudgetOf(eo) {
-  return typeof eo.timeBudgetMs === 'number' &&
-    Number.isFinite(eo.timeBudgetMs) &&
-    eo.timeBudgetMs > 0
-    ? eo.timeBudgetMs
-    : null;
+  const ms = frameOptionOf(eo, 'timeBudgetMs');
+  return typeof ms === 'number' && Number.isFinite(ms) && ms > 0 ? ms : null;
+}
+
+// An option the caller gave: a key of the options' own, never one a page's
+// script put on Object.prototype (round 12, A12-2). The scan itself reads
+// with those taken off (holdObjectPrototypeValues); these reads are outside
+// it.
+function frameOptionOf(eo, key) {
+  return eo && typeof eo === 'object' && Object.prototype.hasOwnProperty.call(eo, key)
+    ? eo[key]
+    : undefined;
 }
 
 // The engineOptions this document's own scan runs with, under a time budget
@@ -411,14 +418,17 @@ function scanAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly, star
     return Promise.reject(err);
   }
 
-  const pingWaitTime = typeof eo.pingWaitTime === 'number' ? eo.pingWaitTime : undefined;
-  const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
+  const pingWaitTime =
+    typeof frameOptionOf(eo, 'pingWaitTime') === 'number' ? eo.pingWaitTime : undefined;
+  const frameWaitTime =
+    typeof frameOptionOf(eo, 'frameWaitTime') === 'number' ? eo.frameWaitTime : undefined;
 
   const { roots } = resolveContextRoots(document, contextSelector);
-  const frameElements = findChildFrameElements(roots, eo.includeShadowDom).filter(
+  const frameElements = findChildFrameElements(roots, frameOptionOf(eo, 'includeShadowDom')).filter(
     (el) =>
-      (eo.includeHiddenElements === true || (isFrameShown(el) && !isFrameBehindModal(el))) &&
-      !isFrameExcluded(el, eo.excludeSelectors)
+      (frameOptionOf(eo, 'includeHiddenElements') === true ||
+        (isFrameShown(el) && !isFrameBehindModal(el))) &&
+      !isFrameExcluded(el, frameOptionOf(eo, 'excludeSelectors'))
   );
 
   const framePromises = frameElements.map(function (el) {
@@ -541,6 +551,7 @@ module.exports = {
   describeFrameElement,
   getFrameElementUrl,
   frameTimeBudgetOf,
+  frameOptionOf,
   budgetedOptions,
   withScanBudget,
   scanAcrossFrames,

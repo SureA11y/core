@@ -193,8 +193,9 @@ function runProfilesUncapped(engineOptions, run) {
     if (
       from &&
       typeof from === 'object' &&
-      !Object.prototype.propertyIsEnumerable.call(from, '__budgetSpent') &&
-      from.__budgetSpent === true
+      Object.prototype.hasOwnProperty.call(from, '__budgetSpent') &&
+      from.__budgetSpent === true &&
+      !Object.prototype.propertyIsEnumerable.call(from, '__budgetSpent')
     ) {
       Object.defineProperty(to, '__budgetSpent', { value: true });
     }
