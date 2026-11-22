@@ -299,3 +299,34 @@ test('an empty runOnly rule or tag list warns that every rule runs, and throws u
   assert.ok(!scan({}, ['page-title-present']).warnings.some((w) => /empty list/.test(w)));
   assert.ok(!scan({}).warnings.some((w) => /empty list/.test(w)));
 });
+
+// The same through engineOptions' filters, and for a runOnly that names no
+// list at all: each ran every rule without a word, even under strictOptions
+// (round 12, R12F-10).
+test('an empty engineOptions filter, {} or a type with no values warns that every rule runs, and throws under strictOptions (round 12, R12F-10)', () => {
+  const all = scan({}).value.checksResults.length;
+  const cases = [
+    [{ rules: { include: [] } }, null, /engineOptions\.rules\.include is an empty list/],
+    [{ tags: [] }, null, /engineOptions\.tags is an empty list/],
+    [{ tags: { include: [] } }, null, /engineOptions\.tags\.include is an empty list/],
+    [{ rules: [] }, null, /engineOptions\.rules is an empty list/],
+    [{}, {}, /runOnly is an empty object/],
+    [{}, { type: 'tag' }, /runOnly\.type has no values/]
+  ];
+  for (const [engineOptions, runOnly, said] of cases) {
+    const loose = scan(engineOptions, runOnly);
+    assert.equal(loose.value.checksResults.length, all, String(said));
+    assert.ok(
+      loose.warnings.some((w) => said.test(w) && /it selects no rule, so every rule runs/.test(w)),
+      String(loose.warnings)
+    );
+    const strict = scan({ strictOptions: true, ...engineOptions }, runOnly);
+    assert.equal(strict.error && strict.error.code, 'INVALID_ENGINE_OPTIONS', String(said));
+  }
+  // A rule's settings in engineOptions.rules are no filter, and say nothing.
+  assert.ok(
+    !scan({ rules: { 'page-title-present': { enabled: true } } }).warnings.some((w) =>
+      /empty/.test(w)
+    )
+  );
+});

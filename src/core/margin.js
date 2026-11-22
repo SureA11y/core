@@ -120,7 +120,9 @@ function resolveMargin(declaration, candidates, measuredCount, helpers, options)
 
   const round = declaration.unit === 'px' ? (n) => Math.round(n * 10) / 10 : (n) => n;
   const counted = Number(measuredCount);
-  const margin = {
+  // Filled with no prototype, so a read-only value on Object.prototype
+  // refuses no key; handed back plain (round 12, R12F-6).
+  const margin = Object.assign(Object.create(null), {
     measure: declaration.measure,
     unit: declaration.unit,
     limit: declaration.limit,
@@ -131,9 +133,13 @@ function resolveMargin(declaration, candidates, measuredCount, helpers, options)
       Number.isFinite(counted) && counted >= candidates.length
         ? Math.floor(counted)
         : candidates.length
-  };
+  });
 
-  const includeSelector = !(options && options.includeSelector === false);
+  const includeSelector = !(
+    options &&
+    Object.prototype.hasOwnProperty.call(options, 'includeSelector') &&
+    options.includeSelector === false
+  );
   if (best.el && helpers) {
     let selector = '';
     if (includeSelector && typeof helpers.buildSelector === 'function') {
@@ -160,7 +166,7 @@ function resolveMargin(declaration, candidates, measuredCount, helpers, options)
   if (best.context && typeof best.context === 'object' && !Array.isArray(best.context)) {
     margin.context = { ...best.context };
   }
-  return margin;
+  return { ...margin };
 }
 
 // Every margin in a scan result, as [{ ruleId, ...margin }], sorted by ruleId.

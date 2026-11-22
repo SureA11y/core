@@ -401,10 +401,10 @@ test('HTML report: counts each rule not run once, and lists unstarted profiles a
 });
 
 // The browser bundle's runa11yCoreInPageAsync counts the style sheets it
-// fetches against the budget: it stops waiting for them when the budget is
-// spent, names those it did not read, and lists the rules it did not start
-// (round 12, A12-7).
-test('runa11yCoreInPageAsync counts fetching style sheets against the time budget (round 12, A12-7)', async () => {
+// fetches against the budget, and gives them half of it at most: then it
+// stops waiting for them, names those it did not read, and runs the rules in
+// what is left (round 12, A12-7, R12F-8).
+test('runa11yCoreInPageAsync gives fetching style sheets half the time budget, then runs the rules (round 12, A12-7, R12F-8)', async () => {
   const src = pathToFileURL(path.join(__dirname, '..', 'surea11y.browser.js')).href;
   const dom = await new Promise((resolve, reject) => {
     const d = new JSDOM(PAGE.replace('</body>', `<script src="${src}"></script></body>`), {
@@ -442,19 +442,20 @@ test('runa11yCoreInPageAsync counts fetching style sheets against the time budge
     }
     // Far less than the 5 s each fetch may otherwise take.
     assert.ok(Date.now() - started < 3000);
+    // The sheet it gave up on is named, and the scan is incomplete for it.
     assert.equal(result.engine.incomplete.reason, 'timeBudget');
     assert.equal(result.engine.incomplete.timeBudgetMs, 100);
     assert.deepEqual([...result.engine.incomplete.styleSheetsNotRead], [sheet.href]);
-    assert.equal(result.notRun.length, 2);
     assert.ok(
       warned.some((m) => m.includes(`not read: ${sheet.href}`)),
       String(warned)
     );
-    assert.ok(
-      warned.some((m) =>
-        /fetching the style sheets the page can't read, before any rule started/.test(m)
-      )
-    );
+    // Every rule ran, in the half the sheets left (R12F-8): one slow sheet
+    // no longer leaves a result with no findings at all.
+    assert.equal(result.notRun, undefined);
+    assert.equal(result.engine.incomplete.rulesNotRun, 0);
+    assert.equal(result.checksResults.length, 2);
+    assert.ok(!warned.some((m) => /before any rule started/.test(m)), String(warned));
   } finally {
     dom.window.close();
   }

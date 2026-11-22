@@ -124,8 +124,12 @@ function howToCheckFor(ruleId, reasonCode, locale, options) {
  * that locale instead, those a finding already has included.
  */
 function addHowToCheck(result, options) {
-  const opts = options && typeof options === 'object' ? options : {};
-  return applyHowToCheck(result, dictionary, { packs: opts.packs, locale: opts.locale });
+  // The options' own keys, never ones on Object.prototype.
+  const own = (key) =>
+    options && typeof options === 'object' && Object.prototype.hasOwnProperty.call(options, key)
+      ? options[key]
+      : undefined;
+  return applyHowToCheck(result, dictionary, { packs: own('packs'), locale: own('locale') });
 }
 
 module.exports = { addHowToCheck, howToCheckFor };

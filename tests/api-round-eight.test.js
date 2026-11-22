@@ -402,3 +402,26 @@ test('a pack passed as a plain object runs from a frozen copy, and the caller’
   });
   assert.ok(Object.isFrozen(defined) && Object.isFrozen(defined.rules[0].meta));
 });
+
+test('a plain-object pack made in another realm runs from a copy too, so a later change is seen (round 12, R12F-9)', () => {
+  const vm = require('node:vm');
+  const page = '<html lang="en"><head><title>t</title></head><body><p>x</p></body></html>';
+  // Made in a vm context: its objects have that realm's Object.prototype.
+  const pack = vm.runInContext(
+    "({ name: 'acme-realm', version: '1.0.0', namespace: 'acme', core: '*', rules: [{ id: 'acme-realm-r', meta: { title: 'T', description: 'd', tags: ['wcag2a', 'wcag111'], wcagSc: ['1.1.1'] } }] })",
+    vm.createContext({})
+  );
+  assert.notEqual(Object.getPrototypeOf(pack), Object.prototype);
+  pack.rules[0].runInPage = function () {
+    return { outcome: 'pass', occurrences: [] };
+  };
+  const scan = () =>
+    runa11yCoreOnHtml(page, { engineOptions: { packs: [pack] }, runOnly: ['acme-realm-r'] })
+      .checksResults[0].outcome;
+  assert.equal(scan(), 'pass');
+  assert.ok(!Object.isFrozen(pack) && !Object.isFrozen(pack.rules[0]));
+  pack.rules[0].runInPage = function () {
+    return { outcome: 'fail', occurrences: [] };
+  };
+  assert.equal(scan(), 'fail');
+});

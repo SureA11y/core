@@ -34,8 +34,10 @@ function profileOptionsOf(engineOptions) {
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
   if (!Array.isArray(asked)) return [engineOptions];
   const unique = profileNamesOf(asked);
-  if (!unique.length) return [Object.assign({}, engineOptions, { profile: undefined })];
-  return unique.map((p) => Object.assign({}, engineOptions, { profile: p }));
+  // With no prototype, as ownOptions copies them.
+  if (!unique.length)
+    return [Object.assign(Object.create(null), engineOptions, { profile: undefined })];
+  return unique.map((p) => Object.assign(Object.create(null), engineOptions, { profile: p }));
 }
 
 /**
@@ -46,6 +48,16 @@ function profileOptionsOf(engineOptions) {
 // Profile names match case in ASCII only, as the selection matches rule ids,
 // tags and profiles (asciiLowerChar in scripts/build-core.js): a full Unicode
 // fold reads the Kelvin sign (U+212A) as "k" (round 8, NW-11).
+// A key of an object's own, never one a page's script put on
+// Object.prototype: a result, a check result and an occurrence are plain
+// objects, and a field one leaves out is read as missing (round 12, R12F-1
+// to R12F-6).
+function ownField(object, key) {
+  return object && typeof object === 'object' && Object.prototype.hasOwnProperty.call(object, key)
+    ? object[key]
+    : undefined;
+}
+
 function lowerAscii(value) {
   return String(value).replace(/[A-Z]/g, (c) => c.toLowerCase());
 }
@@ -58,8 +70,10 @@ function runProfiles(engineOptions, run) {
   // page may put then on Object.prototype, and every plain result then has
   // one.
   const result = runProfilesUncapped(engineOptions, run);
-  const out = engineOptions && engineOptions.output;
-  if (!out || typeof out !== 'object' || out.maxOccurrencesPerRule === undefined) return result;
+  const out = ownField(engineOptions, 'output');
+  if (!out || typeof out !== 'object' || ownField(out, 'maxOccurrencesPerRule') === undefined) {
+    return result;
+  }
   return Object.prototype.toString.call(result) === '[object Promise]'
     ? result.then((x) => capOccurrences(x, engineOptions))
     : capOccurrences(result, engineOptions);
@@ -79,13 +93,12 @@ function runProfiles(engineOptions, run) {
  * or more leaves the result as it is (enforceEngineOptions says so).
  */
 function capOccurrences(result, engineOptions) {
-  const output =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.output : undefined;
-  const max = output && typeof output === 'object' ? output.maxOccurrencesPerRule : undefined;
+  const output = ownField(engineOptions, 'output');
+  const max = ownField(output, 'maxOccurrencesPerRule');
   if (typeof max !== 'number' || !Number.isInteger(max) || max < 1) return result;
   if (!result || typeof result !== 'object' || !Array.isArray(result.checksResults)) return result;
   const tierOf = (check, o) => {
-    const own = o && typeof o === 'object' ? o.occurrenceOutcome || o.outcome : undefined;
+    const own = ownField(o, 'occurrenceOutcome') || ownField(o, 'outcome');
     if (own === 'fail' || own === 'cantTell' || own === 'pass') return own;
     return check.outcome === 'fail' || check.outcome === 'cantTell' || check.outcome === 'pass'
       ? check.outcome
@@ -94,7 +107,7 @@ function capOccurrences(result, engineOptions) {
   const rankOf = (check, o) => {
     const tier = tierOf(check, o);
     if (tier === 'fail') return 0;
-    if (tier === 'cantTell') return o && o.lean && o.lean.toward === 'fail' ? 1 : 2;
+    if (tier === 'cantTell') return ownField(ownField(o, 'lean'), 'toward') === 'fail' ? 1 : 2;
     return 3;
   };
   const keptByRule = new Map();
@@ -121,16 +134,14 @@ function capOccurrences(result, engineOptions) {
     keptByRule.set(check.ruleId, { kept, total: list.length });
     // The undecided ones that lean fail, which a lean-fail gate counts, are
     // counted apart from the other undecided ones.
-    return Object.assign(
-      {},
-      check,
-      {
-        occurrences: kept.map((i) => list[i]),
-        occurrencesOmitted: omitted,
-        occurrencesOmittedByOutcome: byOutcome
-      },
-      leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {}
-    );
+    // Spread, so a read-only value on Object.prototype refuses no key.
+    return {
+      ...check,
+      occurrences: kept.map((i) => list[i]),
+      occurrencesOmitted: omitted,
+      occurrencesOmittedByOutcome: byOutcome,
+      ...(leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {})
+    };
   });
   if (!omittedTotal) return result;
   // A rollup's record of what it made of each finding follows the findings
@@ -146,31 +157,27 @@ function capOccurrences(result, engineOptions) {
           if (!cap || !Array.isArray(c.findingOutcomes) || c.findingOutcomes.length !== cap.total)
             return c;
           touched = true;
-          return Object.assign({}, c, {
-            findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i])
-          });
+          return { ...c, findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i]) };
         });
         if (!touched) return rollup;
-        return Object.assign({}, rollup, {
-          data: Object.assign({}, rollup.data, {
-            details: Object.assign({}, details, { contributors: next })
-          })
-        });
+        return { ...rollup, data: { ...rollup.data, details: { ...details, contributors: next } } };
       })
     : result.rulesResults;
-  const out = Object.assign({}, result, {
-    engine: Object.assign({}, result.engine, {
+  const out = {
+    ...result,
+    engine: {
+      ...result.engine,
       occurrenceCap: {
         maxOccurrencesPerRule: max,
         occurrencesOmitted: omittedTotal,
         rulesCapped: keptByRule.size
       }
-    }),
+    },
     checksResults,
     rulesResults
-  });
+  };
   // A mark the merge of several profiles reads stays with the result.
-  if (result.__profileNotApplied) {
+  if (ownField(result, '__profileNotApplied')) {
     try {
       Object.defineProperty(out, '__profileNotApplied', {
         value: result.__profileNotApplied,
@@ -218,8 +225,7 @@ function runProfilesUncapped(engineOptions, run) {
     return to;
   };
   const allowFail = policyAllowsFail(engineOptions);
-  const asked =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
+  const asked = ownField(engineOptions, 'profile');
   if (Array.isArray(asked)) {
     // Names are matched without case, as a single profile's are: one asked
     // twice in two cases runs once.
@@ -256,7 +262,9 @@ function runProfilesUncapped(engineOptions, run) {
         run(
           carryBudgetSpent(
             engineOptions,
-            Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+            Object.assign(Object.create(null), engineOptions, {
+              profile: unique.length ? unique[0] : undefined
+            })
           )
         ),
         allowFail
@@ -266,12 +274,10 @@ function runProfilesUncapped(engineOptions, run) {
     // engineOptions.timeBudgetMs is the whole scan's: each profile after the
     // first gets what is left of it, and one that would start with none left
     // is not run (engine.profilesNotRun, reason timeBudget).
+    const givenBudget = ownField(engineOptions, 'timeBudgetMs');
     const budget =
-      engineOptions &&
-      typeof engineOptions.timeBudgetMs === 'number' &&
-      Number.isFinite(engineOptions.timeBudgetMs) &&
-      engineOptions.timeBudgetMs > 0
-        ? engineOptions.timeBudgetMs
+      typeof givenBudget === 'number' && Number.isFinite(givenBudget) && givenBudget > 0
+        ? givenBudget
         : null;
     const clock = () => {
       try {
@@ -306,9 +312,8 @@ function runProfilesUncapped(engineOptions, run) {
         const merged = mergeProfileResults(runs, unique, allowFail);
         // The budget the scan was given, not what was left of it for the
         // profile that ran out.
-        if (merged && merged.engine && merged.engine.incomplete) {
-          merged.engine.incomplete.timeBudgetMs = scanBudget;
-        }
+        const incomplete = ownField(ownField(merged, 'engine'), 'incomplete');
+        if (incomplete && typeof incomplete === 'object') incomplete.timeBudgetMs = scanBudget;
         return merged;
       }
       const left = budget === null ? null : budget - (clock() - started);
@@ -321,7 +326,10 @@ function runProfilesUncapped(engineOptions, run) {
         // that ran out lists those it did not start: its scan is asked to
         // start none (__budgetSpent), which only works out its selection.
         const dryOptions = withScanBudget(
-          carryBudgetSpent(engineOptions, Object.assign({}, engineOptions, { profile: unique[i] }))
+          carryBudgetSpent(
+            engineOptions,
+            Object.assign(Object.create(null), engineOptions, { profile: unique[i] })
+          )
         );
         if (!spentOnArrival) Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
         // Its warning names the profile, not a frame.
@@ -330,13 +338,13 @@ function runProfilesUncapped(engineOptions, run) {
           configurable: true
         });
         const skippedOf = (dry) => {
-          const skipped = {};
+          const skipped = Object.create(null);
           Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
-          const applied = dry && dry.engine ? dry.engine.profile : undefined;
+          const applied = ownField(ownField(dry, 'engine'), 'profile');
           const ids =
             typeof applied === 'string' &&
             lowerAscii(applied) === lowerAscii(unique[i]) &&
-            Array.isArray(dry.notRun)
+            Array.isArray(ownField(dry, 'notRun'))
               ? dry.notRun.filter((n) => n && n.ruleId).map((n) => n.ruleId)
               : [];
           Object.defineProperty(skipped, '__rulesNotRun', { value: ids });
@@ -351,7 +359,7 @@ function runProfilesUncapped(engineOptions, run) {
           carryBudgetSpent(
             engineOptions,
             Object.assign(
-              {},
+              Object.create(null),
               engineOptions,
               { profile: unique[i] },
               left !== null && i > 0 ? { timeBudgetMs: left } : {}
@@ -381,11 +389,12 @@ function runProfilesUncapped(engineOptions, run) {
  */
 function policyAllowsFail(engineOptions) {
   try {
-    const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
-    for (const source of [eo.policy, eo.policyContract]) {
-      if (source && typeof source === 'object' && Array.isArray(source.allowedOutcomes)) {
-        return source.allowedOutcomes.includes('fail');
-      }
+    for (const source of [
+      ownField(engineOptions, 'policy'),
+      ownField(engineOptions, 'policyContract')
+    ]) {
+      const allowed = ownField(source, 'allowedOutcomes');
+      if (Array.isArray(allowed)) return allowed.includes('fail');
     }
   } catch {
     // unreadable options: the scan's own reading decides
@@ -398,14 +407,18 @@ function policyAllowsFail(engineOptions) {
 // with policyOutcome saying what was found.
 function capToPolicy(check, allowFail) {
   if (allowFail || !check || check.outcome !== 'fail') return check;
-  check.policyOutcome = 'fail';
+  // Defined, so a read-only value on Object.prototype refuses it not.
+  Object.defineProperty(check, 'policyOutcome', {
+    value: 'fail',
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   check.outcome = 'cantTell';
   check.outcomeNormalized = 'cantTell';
   if (Array.isArray(check.occurrences)) {
     check.occurrences = check.occurrences.map((o) =>
-      o && typeof o === 'object' && o.occurrenceOutcome === 'fail'
-        ? Object.assign({}, o, { occurrenceOutcome: 'cantTell' })
-        : o
+      ownField(o, 'occurrenceOutcome') === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
     );
   }
   return check;
@@ -422,7 +435,11 @@ function capToPolicy(check, allowFail) {
 function withOwnVerdicts(result, allowFail = true) {
   // A result first: a page may add then to Object.prototype, which makes
   // any object look like a promise.
-  if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
+  if (
+    result &&
+    !Array.isArray(ownField(result, 'checksResults')) &&
+    typeof result.then === 'function'
+  ) {
     return result.then((r) => withOwnVerdicts(r, allowFail));
   }
   if (!result || !Array.isArray(result.checksResults)) return result;
@@ -436,16 +453,14 @@ function withOwnVerdicts(result, allowFail = true) {
       const contributors =
         details && Array.isArray(details.contributors) ? details.contributors : [];
       const c = contributors.find((x) => x && x.testId === check.ruleId);
-      if (!c || !c.byReasonCode || !Array.isArray(c.findingOutcomes)) continue;
+      if (!c || !ownField(c, 'byReasonCode') || !Array.isArray(c.findingOutcomes)) continue;
       occurrences.forEach((o, i) => {
         if (c.findingOutcomes[i] === 'fail') fails[i] = true;
       });
     }
     if (!fails.some(Boolean)) continue;
     check.occurrences = occurrences.map((o, i) =>
-      fails[i] && o && typeof o === 'object'
-        ? Object.assign({}, o, { occurrenceOutcome: 'fail' })
-        : o
+      fails[i] && o && typeof o === 'object' ? { ...o, occurrenceOutcome: 'fail' } : o
     );
     check.outcome = 'fail';
     check.outcomeNormalized = 'fail';
@@ -559,30 +574,30 @@ function mergeProfileResults(runs, asked, allowFail = true) {
   };
   const unionList = (a, b) =>
     unionBy([a, b], (x) => (typeof x === 'string' ? x : JSON.stringify(x)));
+  const own = ownField;
+  const detailsOf = (o) => own(own(o, 'data'), 'details');
   const reasonCodeOf = (o) =>
-    o && o.data && o.data.details && typeof o.data.details.reasonCode === 'string'
-      ? o.data.details.reasonCode
-      : '';
+    typeof own(detailsOf(o), 'reasonCode') === 'string' ? own(detailsOf(o), 'reasonCode') : '';
   // An element's finding, as each profile's scan of the same page finds it:
   // where it is and why. Two findings of one rule on one element for the
   // same reason (two attributes it doesn't allow) differ by what else they
   // say, and else by their order, which each scan of the page shares.
   const baseKeyOf = (o) =>
     JSON.stringify([
-      (o && o.frameUrl) || '',
-      (o && o.selector) || '',
-      (o && o.structuralPath) || '',
+      own(o, 'frameUrl') || '',
+      own(o, 'selector') || '',
+      own(o, 'structuralPath') || '',
       reasonCodeOf(o),
-      (o && o.html) || '',
-      (o && o.summary) || '',
-      (o && o.data && o.data.details && JSON.stringify(o.data.details)) || ''
+      own(o, 'html') || '',
+      own(o, 'summary') || '',
+      (detailsOf(o) && JSON.stringify(detailsOf(o))) || ''
     ]);
   const normalizedOf = (o) => (o === 'notApplicable' ? 'inapplicable' : o);
 
   const ran = [];
   const notRun = [];
   for (const r of runs) {
-    const applied = r.result && r.result.engine ? r.result.engine.profile : undefined;
+    const applied = own(own(r.result, 'engine'), 'profile');
     const same =
       typeof applied === 'string' && lowerAscii(applied) === lowerAscii(String(r.profile));
     if (r.result && typeof r.result === 'object' && same) ran.push(r);
@@ -590,7 +605,7 @@ function mergeProfileResults(runs, asked, allowFail = true) {
       // A name no profile has is unknown-profile, unless the scan marked it
       // as one a pack it skipped may have: a list with a typo beside a
       // skipped pack's profile names the typo as such.
-      const why = r.result && r.result.__profileNotApplied;
+      const why = own(r.result, '__profileNotApplied');
       notRun.push({
         profile: r.profile,
         reason:
@@ -607,9 +622,7 @@ function mergeProfileResults(runs, asked, allowFail = true) {
   const first = (ran[0] || runs[0] || {}).result;
   if (!first || typeof first !== 'object') return first;
   if (!ran.length) {
-    return Object.assign({}, first, {
-      engine: Object.assign({}, first.engine, { profiles: [], profilesNotRun: notRun })
-    });
+    return { ...first, engine: { ...first.engine, profiles: [], profilesNotRun: notRun } };
   }
 
   // What a profile's rollups make of each finding of a check: by reason code
@@ -618,7 +631,7 @@ function mergeProfileResults(runs, asked, allowFail = true) {
   // profile names the check.
   function verdictsByRollups(result, check) {
     const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
-    const tier = (o) => (o && o.occurrenceOutcome) || check.outcome;
+    const tier = (o) => own(o, 'occurrenceOutcome') || check.outcome;
     let seen = false;
     const out = occurrences.map(() => []);
     for (const rollup of Array.isArray(result.rulesResults) ? result.rulesResults : []) {
@@ -629,7 +642,7 @@ function mergeProfileResults(runs, asked, allowFail = true) {
       if (!c) continue;
       seen = true;
       occurrences.forEach((o, i) => {
-        if (c.byReasonCode && Array.isArray(c.findingOutcomes)) {
+        if (own(c, 'byReasonCode') && Array.isArray(c.findingOutcomes)) {
           out[i].push(c.findingOutcomes[i] || 'notApplicable');
         } else out[i].push(tier(o));
       });
@@ -643,7 +656,7 @@ function mergeProfileResults(runs, asked, allowFail = true) {
   // The WCAG version the result reports, the highest of the profiles'.
   const WCAG_ORDER = ['2.0', '2.1', '2.2'];
   let reportedWcag;
-  const targetingRuns = ran.filter((r) => r.result.engine && r.result.engine.wcagLevel);
+  const targetingRuns = ran.filter((r) => own(r.result.engine, 'wcagLevel'));
   for (const r of targetingRuns.length ? targetingRuns : ran) {
     const v = r.result.engine && r.result.engine.wcagVersion;
     if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
@@ -656,7 +669,8 @@ function mergeProfileResults(runs, asked, allowFail = true) {
       if (!check || !check.ruleId) continue;
       let merged = checks.get(check.ruleId);
       if (!merged) {
-        merged = Object.assign({}, check, {
+        // Worked on with no prototype, and handed back plain below.
+        merged = Object.assign(Object.create(null), check, {
           verdicts: {},
           occurrences: [],
           ownOutcomes: [],
@@ -673,7 +687,8 @@ function mergeProfileResults(runs, asked, allowFail = true) {
       // The severity this profile gives the rule (a profile's own, or the
       // rule's), and the rule's own.
       merged.severities[r.profile] = check.severity;
-      if (check.ruleSeverity && !merged.ownSeverity) merged.ownSeverity = check.ruleSeverity;
+      if (own(check, 'ruleSeverity') && !merged.ownSeverity)
+        merged.ownSeverity = check.ruleSeverity;
       const verdicts = isTier(check.outcome) ? verdictsByRollups(r.result, check) : [];
       const byKey = occurrenceMaps.get(check.ruleId);
       const seenHere = new Map(); // base key -> how many so far in this scan
@@ -685,7 +700,7 @@ function mergeProfileResults(runs, asked, allowFail = true) {
         const ofReported = !!r.result.engine && r.result.engine.wcagVersion === reportedWcag;
         let m = byKey.get(key);
         if (!m) {
-          m = Object.assign({}, o, { verdicts: {} });
+          m = Object.assign(Object.create(null), o, { verdicts: {} });
           byKey.set(key, m);
           merged.occurrences.push(m);
           if (ofReported) textOfReported.add(m);
@@ -696,7 +711,7 @@ function mergeProfileResults(runs, asked, allowFail = true) {
           // order the profiles were listed in.
           const replace = ofReported && !textOfReported.has(m);
           for (const field of ['uncertainty', 'lean', 'howToCheck', 'hint']) {
-            if (o[field] === undefined) continue;
+            if (own(o, field) === undefined) continue;
             if (m[field] === undefined || replace) m[field] = o[field];
           }
           if (ofReported) textOfReported.add(m);
@@ -707,21 +722,20 @@ function mergeProfileResults(runs, asked, allowFail = true) {
         // What each profile's scan says of the rule, all of it: the
         // rollups it feeds and the requirements it maps to, whichever
         // profile was listed first.
-        if (Array.isArray(check.rollupIds)) {
+        if (Array.isArray(own(check, 'rollupIds'))) {
           merged.rollupIds = unionList(merged.rollupIds, check.rollupIds);
         }
-        const mappings =
-          check.meta && Array.isArray(check.meta.normativeMappings)
-            ? check.meta.normativeMappings
-            : null;
+        const mappings = Array.isArray(own(own(check, 'meta'), 'normativeMappings'))
+          ? check.meta.normativeMappings
+          : null;
         if (mappings) {
-          const had =
-            merged.meta && Array.isArray(merged.meta.normativeMappings)
-              ? merged.meta.normativeMappings
-              : [];
-          merged.meta = Object.assign({}, merged.meta, {
+          const had = Array.isArray(own(merged.meta, 'normativeMappings'))
+            ? merged.meta.normativeMappings
+            : [];
+          merged.meta = {
+            ...merged.meta,
             normativeMappings: unionBy([had, mappings], (x) => JSON.stringify(x))
-          });
+          };
         }
       }
       // A check whose findings the profile counts nowhere keeps the outcome
@@ -752,7 +766,7 @@ function mergeProfileResults(runs, asked, allowFail = true) {
     // own stays as ruleSeverity where that differs.
     const severities = merged.severities;
     delete merged.severities;
-    const own = merged.ownSeverity || merged.ruleSeverity || merged.severity;
+    const ruleOwn = merged.ownSeverity || merged.ruleSeverity || merged.severity;
     delete merged.ownSeverity;
     const judging = Object.keys(severities).filter((p) => isTier(merged.verdicts[p]));
     const severity = highestSeverity(
@@ -760,7 +774,7 @@ function mergeProfileResults(runs, asked, allowFail = true) {
     );
     if (severity) {
       merged.severity = severity;
-      if (own && own !== severity) merged.ruleSeverity = own;
+      if (ruleOwn && ruleOwn !== severity) merged.ruleSeverity = ruleOwn;
       else delete merged.ruleSeverity;
     }
     const outcome = worst(Object.values(merged.verdicts)) || merged.outcome;
@@ -768,11 +782,9 @@ function mergeProfileResults(runs, asked, allowFail = true) {
       const tier = worst(Object.values(m.verdicts));
       if (isTier(tier) && (m.occurrenceOutcome || tier !== outcome)) m.occurrenceOutcome = tier;
     }
+    merged.occurrences = merged.occurrences.map((m) => ({ ...m }));
     checksResults.push(
-      capToPolicy(
-        Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) }),
-        allowFail
-      )
+      capToPolicy({ ...merged, outcome, outcomeNormalized: normalizedOf(outcome) }, allowFail)
     );
   }
 
@@ -784,45 +796,45 @@ function mergeProfileResults(runs, asked, allowFail = true) {
       if (!rollup || !rollup.ruleId) continue;
       outcomes[rollup.ruleId] = rollup.outcome;
       const had = rollups.get(rollup.ruleId);
-      if (!had) rollups.set(rollup.ruleId, Object.assign({}, rollup, { profiles: [r.profile] }));
+      if (!had) rollups.set(rollup.ruleId, { ...rollup, profiles: [r.profile] });
       else {
         had.profiles.push(r.profile);
         if (rank(rollup.outcome) > rank(had.outcome)) {
-          rollups.set(rollup.ruleId, Object.assign({}, rollup, { profiles: had.profiles }));
+          rollups.set(rollup.ruleId, { ...rollup, profiles: had.profiles });
         }
       }
     }
-    const standards = Array.isArray(r.result.standards) ? r.result.standards : [];
-    const engine = r.result.engine || {};
+    const standards = Array.isArray(own(r.result, 'standards')) ? r.result.standards : [];
+    const engine = own(r.result, 'engine') || {};
     // wcagLevel only for a profile that targets WCAG: one that doesn't
     // (WAI-ARIA's) carries core's default version, which judges nothing.
-    profiles[r.profile] = Object.assign(
-      { wcagVersion: engine.wcagVersion },
-      engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
-      engine.law ? { law: engine.law } : {},
-      standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
-      { rulesResults: outcomes },
+    profiles[r.profile] = {
+      wcagVersion: own(engine, 'wcagVersion'),
+      ...(own(engine, 'wcagLevel') ? { wcagLevel: engine.wcagLevel } : {}),
+      ...(own(engine, 'law') ? { law: engine.law } : {}),
+      ...(standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {}),
+      rulesResults: outcomes,
       // Each profile's own timings, where they were asked for: the result's
       // perfStats are the first profile's.
-      r.result.perfStats ? { perfStats: r.result.perfStats } : {}
-    );
+      ...(own(r.result, 'perfStats') ? { perfStats: r.result.perfStats } : {})
+    };
   }
 
   const results = ran.map((r) => r.result);
   const packs = unionBy(
-    results.map((x) => x.engine && x.engine.packs),
+    results.map((x) => own(own(x, 'engine'), 'packs')),
     (x) => x
   ).sort();
   const skippedPacks = unionBy(
-    runs.map((r) => r.result && r.result.skippedPacks),
+    runs.map((r) => own(r.result, 'skippedPacks')),
     (x) => (x && x.name) || JSON.stringify(x)
   );
   const standards = unionBy(
-    results.map((x) => x.standards),
+    results.map((x) => own(x, 'standards')),
     (x) => (x && (x.key || x.standard)) || JSON.stringify(x)
   );
   const overridden = unionBy(
-    results.map((x) => x.overriddenBuiltinIds),
+    results.map((x) => own(x, 'overriddenBuiltinIds')),
     (x) => x
   ).sort();
 
@@ -837,7 +849,8 @@ function mergeProfileResults(runs, asked, allowFail = true) {
         out = v;
     return out;
   };
-  const engines = results.map((x) => x.engine || {});
+  // Each scan's engine, read as its own keys only.
+  const engines = results.map((x) => Object.assign(Object.create(null), own(x, 'engine')));
   // A profile with no WCAG target of its own (a standard that maps no WCAG
   // level, as WAI-ARIA's) carries core's default version: the version is
   // that of the profiles that target WCAG, where any does.
@@ -859,7 +872,8 @@ function mergeProfileResults(runs, asked, allowFail = true) {
   // own is in profiles[name].law.
   const laws = engines.map((e) => (e.law && typeof e.law.id === 'string' ? e.law.id : null));
   const oneLaw = laws.length && laws[0] !== null && laws.every((id) => id === laws[0]);
-  const engine = Object.assign({}, first.engine, {
+  const engine = {
+    ...first.engine,
     ...(wcagVersion ? { wcagVersion } : {}),
     ...(wcagLevel ? { wcagLevel } : {}),
     ...(mappings.length ? { mappings } : {}),
@@ -867,7 +881,7 @@ function mergeProfileResults(runs, asked, allowFail = true) {
     profiles: ran.map((r) => r.profile),
     ...(notRun.length ? { profilesNotRun: notRun } : {}),
     ...(packs.length ? { packs } : {})
-  });
+  };
   if (!oneLaw) delete engine.law;
   // The rules a profile's scan did not start, and the profiles not started,
   // for the time budget: the merged scan is incomplete.
@@ -875,10 +889,10 @@ function mergeProfileResults(runs, asked, allowFail = true) {
   const rulesNotRun = [];
   for (const r of runs) {
     if (ran.includes(r)) {
-      for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
-        if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+      for (const n of Array.isArray(own(r.result, 'notRun')) ? r.result.notRun : []) {
+        if (n && n.ruleId) rulesNotRun.push({ ...n, profile: r.profile });
       }
-    } else if (r.result && Array.isArray(r.result.__rulesNotRun)) {
+    } else if (Array.isArray(own(r.result, '__rulesNotRun'))) {
       for (const ruleId of r.result.__rulesNotRun) {
         rulesNotRun.push({ ruleId, reason: 'timeBudget', profile: r.profile });
       }
@@ -887,30 +901,33 @@ function mergeProfileResults(runs, asked, allowFail = true) {
   const budgetProfiles = notRun.filter((n) => n.reason === 'timeBudget');
   const incomplete = engines.find((e) => e.incomplete);
   if (incomplete || budgetProfiles.length) {
-    engine.incomplete = Object.assign(
-      { reason: 'timeBudget' },
-      incomplete ? incomplete.incomplete : {},
-      { rulesNotRun: rulesNotRun.length },
-      budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {}
-    );
+    engine.incomplete = {
+      reason: 'timeBudget',
+      ...(incomplete ? incomplete.incomplete : {}),
+      rulesNotRun: rulesNotRun.length,
+      ...(budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {})
+    };
   } else delete engine.incomplete;
   void asked;
-  const out = Object.assign({}, first, {
+  // Its keys defined, so a read-only value on Object.prototype refuses none.
+  const out = {
+    ...first,
     engine,
     checksResults,
     rulesResults: [...rollups.values()],
-    profiles
-  });
-  if (standards.length) out.standards = standards;
-  if (overridden.length || Array.isArray(first.overriddenBuiltinIds))
-    out.overriddenBuiltinIds = overridden;
-  if (skippedPacks.length) out.skippedPacks = skippedPacks;
-  if (rulesNotRun.length) out.notRun = rulesNotRun;
-  else delete out.notRun;
+    profiles,
+    ...(standards.length ? { standards } : {}),
+    ...(overridden.length || Array.isArray(own(first, 'overriddenBuiltinIds'))
+      ? { overriddenBuiltinIds: overridden }
+      : {}),
+    ...(skippedPacks.length ? { skippedPacks } : {}),
+    ...(rulesNotRun.length ? { notRun: rulesNotRun } : {})
+  };
+  if (!rulesNotRun.length) delete out.notRun;
   // A custom rule skipped is one no profile ran: one profile's selection
   // can leave out a rule another runs.
   const skippedLists = ran.map((r) =>
-    Array.isArray(r.result.skippedCustomRules) ? r.result.skippedCustomRules : []
+    Array.isArray(own(r.result, 'skippedCustomRules')) ? r.result.skippedCustomRules : []
   );
   if (skippedLists.length && skippedLists.some((list) => list.length)) {
     const idOf = (x) => (x && typeof x.id === 'string' ? x.id : JSON.stringify(x));
@@ -930,6 +947,7 @@ module.exports = {
   capOccurrences,
   withOwnVerdicts,
   lowerAscii,
+  ownField,
   policyAllowsFail,
   capToPolicy,
   mergeProfileResults,

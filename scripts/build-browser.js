@@ -141,7 +141,10 @@ ${inPageRunnerSource}
     const loaded = Object.keys(registered);
     if (loaded.length === 0) return options;
 
-    const given = options.messages;
+    // Its own, never one on Object.prototype (round 12, R12F-1 to R12F-6).
+    const given = Object.prototype.hasOwnProperty.call(options, 'messages')
+      ? options.messages
+      : undefined;
     if (given !== undefined && given !== null && (typeof given !== 'object' || Array.isArray(given))) {
       // Not a table of locales: the engine says so, as without a side file.
       return options;
@@ -161,7 +164,7 @@ ${inPageRunnerSource}
         messages[locale] = own;
       }
     }
-    return Object.assign({}, options, { messages: messages });
+    return Object.assign(Object.create(null), options, { messages: messages });
   }
 
   const api = {
@@ -203,18 +206,21 @@ ${inPageRunnerSource}
     },
     // runa11yCoreInPage, after fetching the style sheets the page can't read
     // and adding them to engineOptions.styleSheetTexts. A time budget
-    // (engineOptions.timeBudgetMs) counts from before the fetching: it stops
-    // waiting for sheets when the budget is spent, says which it did not
-    // read, and the scan gets what is left (round 12, A12-7).
+    // (engineOptions.timeBudgetMs) counts from before the fetching, which
+    // may take half of it: then it stops waiting for sheets, says which it
+    // did not read, and the scan runs its rules in what is left (round 12,
+    // A12-7, R12F-8).
     runa11yCoreInPageAsync: function (pageUrl, contextSelector, engineOptions, runOnly) {
       var eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
       var given = Object.prototype.hasOwnProperty.call(eo, 'timeBudgetMs') ? eo.timeBudgetMs : null;
       var budget = typeof given === 'number' && Number.isFinite(given) && given > 0 ? given : null;
       var started = Date.now();
       return api
-        .preloadStyleSheets(budget === null ? undefined : { deadline: started + budget })
+        .preloadStyleSheets(budget === null ? undefined : { deadline: started + budget / 2 })
         .then(function (sheets) {
-          var options = Object.assign({}, eo);
+          // Its own keys, with no prototype: a read-only value on
+          // Object.prototype refuses none (round 12, R12F-6).
+          var options = Object.assign(Object.create(null), eo);
           var texts = Array.isArray(options.styleSheetTexts) ? options.styleSheetTexts : [];
           options.styleSheetTexts = texts.concat(sheets);
           var notRead = sheets && Array.isArray(sheets.notRead) ? sheets.notRead.slice() : [];
@@ -237,17 +243,29 @@ ${inPageRunnerSource}
           if (notRead.length) {
             try {
               console.warn(
-                '[surea11y] engineOptions.timeBudgetMs: the time budget of ' +
+                '[surea11y] engineOptions.timeBudgetMs: fetching the style sheets the page ' +
+                  "can't read may take half of the time budget of " +
                   (budget >= 10 ? Math.round(budget) : Math.round(budget * 10) / 10) +
-                  " ms ran out while fetching the style sheets the page can't read; not read: " +
+                  ' ms, and it ran out; not read: ' +
                   notRead.join(', ') +
-                  ' (engine.incomplete.styleSheetsNotRead).'
+                  ' (engine.incomplete.styleSheetsNotRead). The rules ran without them.'
               );
             } catch (e) {}
           }
           var result = runa11yCoreInPage(pageUrl, contextSelector, scanOptions, runOnly);
-          if (notRead.length && result && result.engine && result.engine.incomplete) {
-            result.engine.incomplete.styleSheetsNotRead = notRead;
+          // A sheet the budget left unread makes the scan incomplete, whether
+          // or not every rule ran: a rule that would have read it asks.
+          if (notRead.length && result && result.engine) {
+            var had = Object.prototype.hasOwnProperty.call(result.engine, 'incomplete')
+              ? result.engine.incomplete
+              : null;
+            result.engine.incomplete = {
+              reason: 'timeBudget',
+              timeBudgetMs: budget,
+              rulesNotRun: 0,
+              ...had,
+              styleSheetsNotRead: notRead
+            };
           }
           return result;
         });

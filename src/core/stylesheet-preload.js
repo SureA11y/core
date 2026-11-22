@@ -24,15 +24,22 @@
  * globals: the browser bundle includes it by its source.
  */
 async function preloadStyleSheets(options) {
-  const opts = options && typeof options === 'object' ? options : {};
-  const doc = opts.document || (typeof document !== 'undefined' ? document : null);
+  // The options' own keys only: a value a page's script put on
+  // Object.prototype (deadline: 0) is never read as one (round 12, R12F-7).
+  const option = (key) =>
+    options && typeof options === 'object' && Object.prototype.hasOwnProperty.call(options, key)
+      ? options[key]
+      : undefined;
+  const doc = option('document') || (typeof document !== 'undefined' ? document : null);
+  const givenTimeout = option('timeoutMs');
   const timeoutMs =
-    typeof opts.timeoutMs === 'number' && Number.isFinite(opts.timeoutMs) && opts.timeoutMs >= 0
-      ? opts.timeoutMs
+    typeof givenTimeout === 'number' && Number.isFinite(givenTimeout) && givenTimeout >= 0
+      ? givenTimeout
       : 5000;
   const fetchFn = typeof fetch === 'function' ? fetch : null;
+  const givenDeadline = option('deadline');
   const deadline =
-    typeof opts.deadline === 'number' && Number.isFinite(opts.deadline) ? opts.deadline : null;
+    typeof givenDeadline === 'number' && Number.isFinite(givenDeadline) ? givenDeadline : null;
   // The sheets the deadline left unread, on the list resolved with.
   const notRead = [];
   const done = (list) => {

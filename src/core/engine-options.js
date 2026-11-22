@@ -195,7 +195,7 @@ function engineOptionSpec() {
     policyContract: {
       test: (v) => typeof v === 'string' || isPlain(v),
       expected: "a contract's name, or a contract object",
-      keys: Object.assign({ id: T.string }, policyFields)
+      keys: { id: T.string, ...policyFields }
     },
     policy: { test: isPlain, expected: 'a plain object', keys: policyFields },
     output: {
@@ -431,13 +431,98 @@ function switchOf(v) {
  * is neither.
  */
 function strictOf(engineOptions) {
+  // The options' own, never one on Object.prototype (round 12, R12F-1 to
+  // R12F-6).
   const v =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : undefined;
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    Object.prototype.hasOwnProperty.call(engineOptions, 'strictOptions')
+      ? engineOptions.strictOptions
+      : undefined;
   if (v === true || v === 1) return true;
   return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
 }
 
+/**
+ * The caller's options as a scan reads them: a copy with no prototype, of
+ * the options' own keys, and of each plain object they hold, so a value a
+ * page's script put on Object.prototype (excludeSelectors, timeBudgetMs,
+ * output) is never read as an option (round 12, R12F-1 to R12F-6). The
+ * flags only the engine sets (__budgetSpent) stay as they are, not
+ * enumerable. Lists, functions and objects of any other kind are kept as
+ * given, and so are probes and messages, which can be large.
+ */
+function ownOptions(options) {
+  if (!options || typeof options !== 'object' || Array.isArray(options)) return options;
+  // A Set, a Map or a Date is no table of options: kept, for the checks
+  // that say so.
+  if (Object.prototype.toString.call(options) !== '[object Object]') return options;
+  const isPlain = (v) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+    if (Object.prototype.toString.call(v) !== '[object Object]') return false;
+    const proto = Object.getPrototypeOf(v);
+    // Another realm's Object.prototype too (a frame's, a vm context's).
+    return proto === null || Object.getPrototypeOf(proto) === null;
+  };
+  const copied = new Map();
+  const copy = (from, depth) => {
+    if (copied.has(from)) return copied.get(from);
+    const to = Object.create(null);
+    copied.set(from, to);
+    const keys = Object.keys(from);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const v = from[key];
+      to[key] =
+        depth < 8 && isPlain(v) && !(depth === 0 && (key === 'probes' || key === 'messages'))
+          ? copy(v, depth + 1)
+          : v;
+    }
+    return to;
+  };
+  const out = copy(options, 0);
+  const flags = ['__budgetSpent', '__budgetSpentAt', '__scanTimeBudgetMs'];
+  for (let i = 0; i < flags.length; i++) {
+    const d = Object.getOwnPropertyDescriptor(options, flags[i]);
+    if (d && !d.enumerable && Object.prototype.hasOwnProperty.call(d, 'value')) {
+      Object.defineProperty(out, flags[i], { value: d.value, configurable: true });
+    }
+  }
+  return out;
+}
+
+/**
+ * Options copied by ownOptions, as plain objects again, for a result to echo
+ * (checksResults[].engineOptions): what has no prototype is given
+ * Object.prototype back; anything else is kept as it is.
+ */
+function plainOptions(options) {
+  const copied = new Map();
+  const copy = (v, depth) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v) || Object.getPrototypeOf(v) !== null) {
+      return v;
+    }
+    if (copied.has(v)) return copied.get(v);
+    // Spread defines each key, so a read-only value on Object.prototype
+    // refuses none.
+    const out = { ...v };
+    copied.set(v, out);
+    if (depth < 8) {
+      const keys = Object.keys(out);
+      for (let i = 0; i < keys.length; i++) {
+        const x = out[keys[i]];
+        const c = copy(x, depth + 1);
+        if (c !== x) out[keys[i]] = c;
+      }
+    }
+    return out;
+  };
+  return copy(options, 0);
+}
+
 module.exports = {
+  ownOptions,
+  plainOptions,
   isIsoDateTime,
   closestOptionKey,
   engineOptionSpec,

@@ -47,12 +47,13 @@ const {
   checkEngineOptions,
   enforceEngineOptions,
   strictOf,
-  switchOf
+  switchOf,
+  ownOptions,
+  plainOptions
 } = require('../src/core/engine-options');
 const {
   isThenable,
   assertPageBuiltins,
-  holdObjectPrototypeValues,
   assertArrayFromFor,
   resolveCustomRules,
   runCore,
@@ -87,6 +88,7 @@ const {
   capOccurrences,
   withOwnVerdicts,
   lowerAscii,
+  ownField,
   policyAllowsFail,
   capToPolicy,
   mergeProfileResults,
@@ -427,6 +429,15 @@ const I18N_LEFT_OUT = CATALOG.i18nLeftOut;
 // Lets an absent dictionary be told apart from a language that does not exist.
 const KNOWN_LOCALES = CATALOG.knownLocales;
 
+// A key of an object's own, never one a page's script put on
+// Object.prototype (round 12, R12F-1 to R12F-6): the options a result
+// echoes, a rule's result and its occurrences are plain objects.
+function ownValue(object, key) {
+  return object && typeof object === 'object' && Object.prototype.hasOwnProperty.call(object, key)
+    ? object[key]
+    : undefined;
+}
+
 function normalizeLocale(locale) {
   if (typeof locale !== 'string') return 'en';
   const s = locale.trim();
@@ -436,7 +447,7 @@ function normalizeLocale(locale) {
 // Dictionaries supplied by the caller. This function is serialized into the
 // page, so a table that was not compiled in can only arrive as data.
 function getSuppliedMessages(engineOptions) {
-  const supplied = engineOptions && engineOptions.messages;
+  const supplied = ownValue(engineOptions, 'messages');
   return (supplied && typeof supplied === 'object' && !Array.isArray(supplied)) ? supplied : null;
 }
 
@@ -497,7 +508,7 @@ function matchLocale(requested, engineOptions) {
 }
 
 function getLocaleDict(engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const matched = matchLocale(requested, engineOptions);
 
   return matched
@@ -534,7 +545,7 @@ function messageIn(locale, key, engineOptions) {
 // keeps the rest of the German, the caller's de and then the built-in de,
 // before English (round 9, A9-4). An exact hit returns before any allocation.
 function localeMessage(key, engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const direct = messageIn(requested, key, engineOptions);
   if (direct) return direct;
 
@@ -553,7 +564,7 @@ function isKnownLocale(locale) {
 // is visible in the result rather than only in the wording. Shares matchLocale
 // with getLocaleDict, so the reported locale and the strings cannot disagree.
 function resolveLocale(engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const matched = matchLocale(requested, engineOptions);
 
   if (!matched) {
@@ -717,13 +728,15 @@ function t(key, fallback, params, engineOptions) {
   // Decimals read as the message's language writes them ("1,36:1" in
   // French): the locale asked for where its string was found, English
   // otherwise. The params themselves keep plain numbers.
-  const numberLocale = v ? normalizeLocale(engineOptions && engineOptions.locale) : 'en';
+  const numberLocale = v ? normalizeLocale(ownValue(engineOptions, 'locale')) : 'en';
   return applyI18nParams(base, localizeNumberParams(params, numberLocale));
 }
 
 function resolveRuleDefI18n(def, engineOptions) {
   if (!def || typeof def !== 'object') return def;
-  const out = { ...def };
+  // With no prototype: a field a rule doesn't declare (variant, settings,
+  // margin) is never read from Object.prototype.
+  const out = Object.assign(Object.create(null), def);
   if (out.i18n && typeof out.i18n === 'object') {
     out.title = t(out.i18n.titleKey, out.title, null, engineOptions);
     out.description = t(out.i18n.descriptionKey, out.description, null, engineOptions);
@@ -827,7 +840,11 @@ function hasAnyRunOnlyKeys(runOnly) {
  * { includeMode, tags, excludeTags, includeRuleIds, excludeRuleIds, includeTestIds, excludeTestIds }
  */
 function normalizeRunOnly(runOnly) {
-  const out = {
+  // With no prototype, and read from a copy with none (ownOptions): no
+  // value on Object.prototype is read as part of a selection (round 12,
+  // R12F-1 to R12F-6).
+  runOnly = ownOptions(runOnly);
+  const out = Object.assign(Object.create(null), {
     includeMode: 'and',
     tags: [],
     excludeTags: [],
@@ -841,7 +858,7 @@ function normalizeRunOnly(runOnly) {
     standardRuleIds: [],
     wcag: null,
     bestPractices: false
-  };
+  });
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   // A WCAG conformance target, { version, level }, checked by
@@ -1598,8 +1615,8 @@ function enforceKnownProfile(selection, eo) {
 // when the option is not a filter.
 function includeExcludeOf(v) {
   return Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-    ? { include: typeof v === 'string' ? [v] : [...v] }
-    : (v && typeof v === 'object' ? v : null);
+    ? Object.assign(Object.create(null), { include: typeof v === 'string' ? [v] : [...v] })
+    : (v && typeof v === 'object' ? ownOptions(v) : null);
 }
 
 // runOnly with a filter wins over engineOptions' rules, tags and tests
@@ -1652,11 +1669,60 @@ function warnEmptyRunOnly(runOnly, eo) {
         named.push('runOnly.' + key);
       }
     }
+    // { type } with no values names no rule or tag, and {} names nothing
+    // (round 12, R12F-10).
+    const keys = Object.keys(runOnly);
+    if (!keys.length) {
+      emptyRunOnlyWarning('runOnly is an empty object', eo);
+      return;
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(runOnly, 'type') &&
+      !Object.prototype.hasOwnProperty.call(runOnly, 'values') &&
+      keys.every((k) => k === 'type' || k === 'includeMode')
+    ) {
+      emptyRunOnlyWarning('runOnly.type has no values', eo);
+      return;
+    }
   }
   if (!named.length) return;
-  const message =
-    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists') +
-    ': it selects no rule, so every rule runs';
+  emptyRunOnlyWarning(
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists'),
+    eo
+  );
+}
+
+// An include list of engineOptions.rules, .tags or .tests given empty
+// ([], '', { include: [] }) selects nothing, and every rule runs, as with no
+// filter: said, and under strictOptions refused, as for runOnly (round 12,
+// R12F-10). Read only where runOnly has no filter, which wins over them.
+function warnEmptyOptionFilters(eo) {
+  const empty = (v) =>
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'string' && !v.trim()) ||
+    (Object.prototype.toString.call(v) === '[object Set]' && v.size === 0);
+  const named = [];
+  for (const name of ['rules', 'tags', 'tests']) {
+    const v = Object.prototype.hasOwnProperty.call(eo, name) ? eo[name] : undefined;
+    if (empty(v)) named.push('engineOptions.' + name);
+    else if (
+      v &&
+      typeof v === 'object' &&
+      Object.prototype.hasOwnProperty.call(v, 'include') &&
+      empty(v.include)
+    ) {
+      named.push('engineOptions.' + name + '.include');
+    }
+  }
+  if (!named.length) return;
+  emptyRunOnlyWarning(
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists'),
+    eo
+  );
+}
+
+function emptyRunOnlyWarning(what, eo) {
+  const message = what + ': it selects no rule, so every rule runs';
   if (strictOf(eo)) {
     const err = new Error(message + '. (strictOptions)');
     err.code = 'INVALID_ENGINE_OPTIONS';
@@ -1668,7 +1734,9 @@ function warnEmptyRunOnly(runOnly, eo) {
 }
 
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
-  const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+  // The options' and runOnly's own keys only (ownOptions).
+  const eo = (engineOptions && typeof engineOptions === 'object') ? ownOptions(engineOptions) : Object.create(null);
+  runOnly = ownOptions(runOnly);
   // A number or a boolean, and an object none of whose keys the engine
   // reads ({ includeRuleId: [...] }), used to run every rule, as no runOnly
   // does: a typo that looks like a full scan.
@@ -1713,7 +1781,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // excludeRuleIds...) still apply.
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
     const kind = String(runOnly.type).trim().replace(/[A-Z]/g, asciiLowerChar);
-    const rest = { ...runOnly };
+    const rest = Object.assign(Object.create(null), runOnly);
     delete rest.type;
     delete rest.values;
     // A Set of names is read as the list it holds; passed on as it is, the
@@ -1722,11 +1790,11 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       runOnly.values && typeof runOnly.values === 'object' && Object.prototype.toString.call(runOnly.values) === '[object Set]'
         ? [...runOnly.values]
         : runOnly.values;
-    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
-    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
+    if (kind === 'rule' || kind === 'rules') runOnly = Object.assign(rest, { includeRuleIds: values });
+    else if (kind === 'tag' || kind === 'tags') runOnly = Object.assign(rest, { tags: values });
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + optionValueText(runOnly.type) + '.');
   }
-  runOnly = expandRunOnlyShorthand(runOnly, eo);
+  runOnly = ownOptions(expandRunOnlyShorthand(runOnly, eo));
   // includeMode is 'and' or 'or'; anything else was read as 'and' without a
   // word, which can select nothing.
   for (const [field, value] of [
@@ -1778,6 +1846,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     return applyOptInRules(enforceKnownProfile(applyProfile(selection, requestedProfile), eo), eo.optInRules);
   }
 
+  warnEmptyOptionFilters(eo);
   const mode = normalizeIncludeMode(eo.includeMode);
 
   // { include, exclude }; a bare list or string is the include list, as
@@ -1796,7 +1865,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const includeTestIds = parseCommaList(tests && tests.include, { lower: false });
   const excludeTestIds = parseCommaList(tests && tests.exclude, { lower: false });
 
-  const out = {
+  const out = Object.assign(Object.create(null), {
     includeMode: mode,
     tags: includeTags,
     excludeTags,
@@ -1804,7 +1873,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeRuleIds,
     includeTestIds,
     excludeTestIds
-  };
+  });
   canonicalizeRuleIds(out, eo);
   checkSelectionNames(
     [
@@ -2084,7 +2153,17 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
     throw new Error('normalizeRuleResult requires a resolved policy');
   }
   const pol = policy;
-  const out = raw && typeof raw === 'object' ? { ...raw } : {};
+  // The rule's result and its occurrences are worked on as copies with no
+  // prototype, so a field the rule left out is never read from, nor refused
+  // by, Object.prototype (round 12, R12F-1 to R12F-6); they are handed back
+  // as plain objects.
+  const bare = (x) => Object.assign(Object.create(null), x);
+  const out = bare(raw && typeof raw === 'object' ? raw : null);
+  if (Array.isArray(out.occurrences)) {
+    out.occurrences = out.occurrences.map((o) =>
+      o && typeof o === 'object' && !Array.isArray(o) ? bare(o) : o
+    );
+  }
   out.ruleId = def.ruleId;
   
   // NOTE: title and description are included here (already localized)
@@ -2121,7 +2200,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
       const key = typeof given === 'string' ? given.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
       const tier = Object.prototype.hasOwnProperty.call(TIERS, key) ? TIERS[key] : null;
       if (tier === given) return o;
-      const next = { ...o };
+      const next = bare(o);
       if (tier) next.occurrenceOutcome = tier;
       else {
         delete next.occurrenceOutcome;
@@ -2286,7 +2365,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
       out.policyOutcome = 'fail';
       out.outcome = 'cantTell';
       if (Array.isArray(out.occurrences)) out.occurrences = out.occurrences.map((o) =>
-        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? Object.assign(bare(o), { occurrenceOutcome: 'cantTell' }) : o
       );
     }
   }
@@ -2294,12 +2373,11 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
   out.outcomeNormalized =
     out.outcome === 'notApplicable' ? 'inapplicable' : out.outcome;
     
-    const output = (out.engineOptions && out.engineOptions.output && typeof out.engineOptions.output === 'object')
-    ? out.engineOptions.output
-    : null;
+    const echoedOutput = ownValue(out.engineOptions, 'output');
+    const output = (echoedOutput && typeof echoedOutput === 'object') ? echoedOutput : null;
 
-  const includeSelector = !(output && switchOf(output.includeSelector) === false);
-  const includeHtml = !(output && switchOf(output.includeHtml) === false);
+  const includeSelector = !(output && switchOf(ownValue(output, 'includeSelector')) === false);
+  const includeHtml = !(output && switchOf(ownValue(output, 'includeHtml')) === false);
 
   const needsDetails = (out.outcome === 'fail' || out.outcome === 'cantTell');
 
@@ -2311,7 +2389,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
     // would still count a failure.
     if (Array.isArray(out.occurrences)) {
       out.occurrences = out.occurrences.map((o) =>
-        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? Object.assign(bare(o), { occurrenceOutcome: 'cantTell' }) : o
       );
     }
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
@@ -2324,7 +2402,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
   }
   out.severity = out.severity || def.defaultSeverity;
 
-  let conf = raw && raw.confidence;
+  let conf = out.confidence;
   if (!pol.allowedConfidence.includes(conf)) conf = def.defaultConfidence;
   out.confidence = conf;
 
@@ -2377,7 +2455,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
   // Uncertainty codes outside the closed set, dropped and noted in error.
   const __invalidUncertaintyCodes = [];
   out.occurrences = occ.map((item) => {
-    const o = item && typeof item === 'object' ? { ...item } : {};
+    const o = bare(item && typeof item === 'object' ? item : null);
 
     // Engine-side finalization (only if rule reported a node)
     const node = o.__node || null;
@@ -2528,7 +2606,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
       o.i18n = null;
     }
 
-    return o;
+    return { ...o };
   });
 
   // Said beside the result, not in error: the rule completed. The result is
@@ -2553,7 +2631,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding
   // neither replaces the other.
   if (out.error != null && typeof out.error !== 'string') out.error = String(out.error);
 
-  return out;
+  return { ...out };
 }
 
 // The standards a catalog entry names for these options, chosen exactly as for
@@ -2672,6 +2750,8 @@ ${inlineConstFunction('engineOptionSpec', engineOptionSpec)}
 ${inlineConstFunction('checkEngineOptions', checkEngineOptions)}
 ${inlineConstFunction('enforceEngineOptions', enforceEngineOptions)}
 ${inlineConstFunction('strictOf', strictOf)}
+${inlineConstFunction('ownOptions', ownOptions)}
+${inlineConstFunction('plainOptions', plainOptions)}
 ${inlineConstFunction('switchOf', switchOf)}
 ${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 ${inlineConstFunction('createDomHelpers', createDomHelpers)}
@@ -2732,7 +2812,6 @@ ${inlineConstFunction('resolveCustomRules', resolveCustomRules)}
 ${inlineConstFunction('runCoreSettled', runCoreSettled)}
 ${inlineConstFunction('isThenable', isThenable)}
 ${inlineConstFunction('assertPageBuiltins', assertPageBuiltins)}
-${inlineConstFunction('holdObjectPrototypeValues', holdObjectPrototypeValues)}
 ${inlineConstFunction('assertArrayFromFor', assertArrayFromFor)}
 ${inlineConstFunction('runCore', runCore)}
 
@@ -2757,6 +2836,7 @@ ${inlineConstFunction('runProfilesUncapped', runProfilesUncapped)}
 ${inlineConstFunction('capOccurrences', capOccurrences)}
 ${inlineConstFunction('withOwnVerdicts', withOwnVerdicts)}
 ${inlineConstFunction('lowerAscii', lowerAscii)}
+${inlineConstFunction('ownField', ownField)}
 ${inlineConstFunction('policyAllowsFail', policyAllowsFail)}
 ${inlineConstFunction('capToPolicy', capToPolicy)}
 ${inlineConstFunction('mergeProfileResults', mergeProfileResults)}
@@ -2768,15 +2848,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Before anything reads the page's built-ins (see assertPageBuiltins).
   ${inlineConstFunction('assertPageBuiltinsFirst', assertPageBuiltins)}
   assertPageBuiltinsFirst();
-  // The scan reads only what its objects hold (see holdObjectPrototypeValues).
-  ${inlineConstFunction('holdObjectPrototypeValuesFirst', holdObjectPrototypeValues)}
-  const releaseObjectPrototype = holdObjectPrototypeValuesFirst();
-  try {
-    return runHeld();
-  } finally {
-    releaseObjectPrototype();
-  }
-  function runHeld() {
+  // The options' own keys only, with no prototype, before anything reads
+  // them (ownOptions).
+  ${inlineConstFunction('ownOptionsFirst', ownOptions)}
+  engineOptions = ownOptionsFirst(engineOptions);
   const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
   const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
   const ENGINE_VERSION = ${jsStringify(ENGINE_VERSION)};
@@ -2804,11 +2879,11 @@ ${implEntriesInPage.join(',\n')}
       impls[id] = typeof impl === 'string' ? builtIn.impls[impl] : impl;
     }
     const i18n = {};
-    for (const locale of Object.keys(builtIn.i18n)) i18n[locale] = Object.assign({}, builtIn.i18n[locale]);
+    for (const locale of Object.keys(builtIn.i18n)) i18n[locale] = { ...builtIn.i18n[locale] };
     for (const locale of Object.keys(entry.i18n || {})) {
-      i18n[locale] = Object.assign(i18n[locale] || {}, entry.i18n[locale]);
+      i18n[locale] = { ...i18n[locale], ...entry.i18n[locale] };
     }
-    return Object.assign({}, entry, { impls, i18n });
+    return { ...entry, impls, i18n };
   }
   // In a page a pack is named (name@version): beside names, an item of the
   // list that is no name is left out, with a warning, and the named packs
@@ -2831,7 +2906,7 @@ ${implEntriesInPage.join(',\n')}
           ' not a pack name (name@version) and left out; in a page, packs are named as packScript registered them.'
       );
     } catch {}
-    engineOptions = Object.assign({}, engineOptions, {
+    engineOptions = Object.assign(Object.create(null), engineOptions, {
       packs: engineOptions.packs.filter((p) => typeof p === 'string')
     });
   }
@@ -2856,9 +2931,12 @@ ${implEntriesInPage.join(',\n')}
     const registry = packRegistry && typeof packRegistry === 'object' ? packRegistry : null;
     const key = packNames.join(',');
     // Its own key only: "__proto__" or "toString" names no registered set.
+    // Read as its own keys only, with no prototype: a page's value on
+    // Object.prototype (overrides, impls) is never read as part of a set of
+    // packs (round 12, R12F-1 to R12F-6).
     const entry =
       registry && Object.prototype.hasOwnProperty.call(registry, key) && registry[key]
-        ? registry[key]
+        ? Object.assign(Object.create(null), registry[key])
         : null;
     // A name given twice is one pack named twice, as it is in Node.
     const twice = packNames.find((name, i) => i > 0 && packNames[i - 1] === name);
@@ -2892,7 +2970,11 @@ ${implEntriesInPage.join(',\n')}
     }
   }
 
-  const CATALOG = PACK_ENTRY ? packCatalog(BUILT_IN_CATALOG, PACK_ENTRY) : BUILT_IN_CATALOG;
+  // Its own keys only (createRuntime).
+  const CATALOG = Object.assign(
+    Object.create(null),
+    PACK_ENTRY ? packCatalog(BUILT_IN_CATALOG, PACK_ENTRY) : BUILT_IN_CATALOG
+  );
 
   // Rule catalog (data only)
   const CHECK_DEFS = CATALOG.checkDefs;
@@ -2938,13 +3020,14 @@ ${implEntriesInPage.join(',\n')}
     try {
       console.warn('[surea11y] ' + message + '.');
     } catch {}
-    const withoutPacks = Object.assign({}, engineOptions);
+    const withoutPacks = Object.assign(Object.create(null), engineOptions);
     delete withoutPacks.packs;
     const note = (r) =>
       r && typeof r === 'object'
-        ? Object.assign({}, r, {
+        ? {
+            ...r,
             skippedPacks: named.map((name) => ({ name: name, reason: packProblem }))
-          })
+          }
         : r;
     // The profiles the skipped packs declare, where a packScript in the
     // page registered them in some other set: those not built in, of the
@@ -2955,7 +3038,7 @@ ${implEntriesInPage.join(',\n')}
     const declared = [];
     const sets = packRegistry && typeof packRegistry === 'object' ? packRegistry : {};
     for (const key of Object.keys(sets)) {
-      const entry = sets[key];
+      const entry = sets[key] && typeof sets[key] === 'object' ? Object.assign(Object.create(null), sets[key]) : null;
       if (!entry || !Array.isArray(entry.packs) || !entry.packs.some((n) => named.includes(n))) continue;
       const own = Array.isArray(entry.packProfiles)
         ? entry.packProfiles
@@ -2996,7 +3079,7 @@ ${implEntriesInPage.join(',\n')}
   }
   // A scan with registered packs: the options without them, and a result
   // that names them and lists the core rules they replace.
-  const scanOptions = Object.assign({}, engineOptions);
+  const scanOptions = Object.assign(Object.create(null), engineOptions);
   delete scanOptions.packs;
   const result = runProfiles(scanOptions, (eo) => {
     const selection = resolveEffectiveRunOnly(eo, runOnly);
@@ -3008,17 +3091,14 @@ ${implEntriesInPage.join(',\n')}
   );
   const stamp = (r) => {
     if (!r || typeof r !== 'object') return r;
-    const out = Object.assign({}, r, {
-      engine: Object.assign({}, r.engine, { packs: PACK_ENTRY.packs.slice() })
-    });
+    const out = { ...r, engine: { ...r.engine, packs: PACK_ENTRY.packs.slice() } };
     if (PACK_ENTRY.overrides.length) {
-      const ids = (r.overriddenBuiltinIds || []).concat(PACK_ENTRY.overrides);
+      const ids = (Array.isArray(r.overriddenBuiltinIds) ? r.overriddenBuiltinIds : []).concat(PACK_ENTRY.overrides);
       out.overriddenBuiltinIds = ids.filter((id, i) => ids.indexOf(id) === i).sort();
     }
     return out;
   };
   return isThenable(result) ? result.then(stamp) : stamp(result);
-  }
 }
 `.trim();
 
@@ -3152,7 +3232,10 @@ const ENGINE_VERSION = ${jsStringify(ENGINE_VERSION)};
  * prepared with more rules and standards (src/core/prepare-catalog.js) gets
  * an engine of its own the same way.
  */
-function createRuntime(CATALOG) {
+function createRuntime(catalog) {
+// Its own keys only: a catalog without packs has no packCodeRuleIds, and
+// one on Object.prototype is never read (round 12, R12F-1 to R12F-6).
+const CATALOG = Object.assign(Object.create(null), catalog);
 // Rule catalog (data only)
 const CHECK_DEFS = CATALOG.checkDefs;
 
@@ -3470,15 +3553,8 @@ function getTestsForRunOnly(runOnly, engineOptions) {
  */
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   assertPageBuiltins();
-  const releaseObjectPrototype = holdObjectPrototypeValues();
-  try {
-    return runDomRulesHeld(pageUrl, contextSelector, engineOptions, runOnly);
-  } finally {
-    releaseObjectPrototype();
-  }
-}
-
-function runDomRulesHeld(pageUrl, contextSelector, engineOptions, runOnly) {
+  // The options' own keys only, with no prototype (ownOptions).
+  engineOptions = ownOptions(engineOptions);
   // Under strictOptions the options are checked before the selection is
   // worked out from them, as they are said to be.
   if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
