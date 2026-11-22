@@ -2074,7 +2074,7 @@ function criteriaNamingRule(def, runOnly) {
     .map((t) => WCAG_SC_BY_TAG[t]);
 }
 
-function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
+function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding) {
   if (!policy || typeof policy !== 'object') {
     throw new Error('normalizeRuleResult requires a resolved policy');
   }
@@ -2195,7 +2195,9 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       if (!o || typeof o !== 'object') return true;
       try {
         if (typeof helpers.isOccurrenceExcluded === 'function') {
-          const matches = matchesOf(o);
+          // Looked up only while an area is left out for the rule: a
+          // selector can be slow to match, and every scan has none.
+          const matches = excluding === true ? matchesOf(o) : null;
           if (matches) {
             let excluded = 0;
             for (const el of matches) if (helpers.isOccurrenceExcluded({ __node: el }) === true) excluded++;

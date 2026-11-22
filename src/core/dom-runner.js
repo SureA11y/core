@@ -3591,6 +3591,12 @@ function runCoreSettled(
     if (typeof sharedHelpers.__setActiveRuleExcludeSelectors === 'function') {
       sharedHelpers.__setActiveRuleExcludeSelectors(ruleConfig && ruleConfig.excludeSelectors);
     }
+    // Whether any area is left out for this rule: only then does
+    // normalizeRuleResult look up every element a selector-only occurrence
+    // matches (round 12, A12-16).
+    const excluding =
+      excludeSelectors.length > 0 ||
+      normalizeSelectorList(ruleConfig && ruleConfig.excludeSelectors).length > 0;
 
     const foreign = foreignCode.has(defResolved.ruleId);
     const ctx = {
@@ -3629,7 +3635,8 @@ function runCoreSettled(
           },
           SCHEMA_VERSION,
           policy,
-          sharedHelpers
+          sharedHelpers,
+          excluding
         )
       );
       if (ruleTimings)
@@ -3673,7 +3680,7 @@ function runCoreSettled(
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -3690,7 +3697,7 @@ function runCoreSettled(
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -3863,7 +3870,8 @@ function runCoreSettled(
         scopeOutcomeToWcagVersion(defResolved, result),
         SCHEMA_VERSION,
         policy,
-        sharedHelpers
+        sharedHelpers,
+        excluding
       )
     );
     if (ruleTimings)
