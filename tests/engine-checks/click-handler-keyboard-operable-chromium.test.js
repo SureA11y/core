@@ -115,6 +115,18 @@ const CASES = [
     'cantTell',
     'CLICK_HANDLER_NOT_FOCUSABLE'
   ],
+  // Short visible text: hidden and screen-reader-only text is left out
+  // (round 12, U12-11).
+  [
+    'a drawn button whose label is short once its screen-reader-only text is left out',
+    '<div id="host" style="display:inline-block;padding:8px;border:1px solid" onclick="hits.push(1)">Buy <span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">the blue widget now today ok</span><span style="display:none">and more words that are not shown</span></div>',
+    null,
+    false,
+    false,
+    false,
+    'cantTell',
+    'CLICK_HANDLER_NOT_FOCUSABLE'
+  ],
   [
     'a padded card with a background, a heading and a paragraph',
     '<div id="host" style="background:#eee;padding:16px" onclick="hits.push(1)"><h3>Weekly newsletter</h3><p>The news of the week, every Monday.</p></div>',

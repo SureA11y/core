@@ -74,7 +74,9 @@
  *     moving focus to it: then cantTell.
  *   - Neither it nor a descendant can take focus, with another widget role,
  *     `cursor: pointer`, or drawn as a control without either: short visible
- *     text (40 characters and six words at most, no block content) with
+ *     text (40 characters and six words at most, no block content; text
+ *     hidden or visually hidden, as a screen-reader-only span is, left
+ *     out) with
  *     padding, in a box set apart by a border or a background of its own,
  *     as "Add to cart" on a coloured `<div onclick>`: cantTell
  *     (`CLICK_HANDLER_NOT_FOCUSABLE`). An
@@ -441,12 +443,38 @@ function runInPage(ctx) {
   // click tracker.
   const BLOCK_CONTENT =
     'address,article,aside,blockquote,div,dl,fieldset,figure,footer,form,h1,h2,h3,h4,h5,h6,header,hr,li,main,nav,ol,p,pre,section,table,ul';
+  // The text a sighted user sees in the element: its text without what is
+  // hidden (display: none, visibility) or visually hidden (a screen-reader
+  // only span, helpers.isVisuallyHidden). Read up to a little past the
+  // longest label that counts as short.
+  function visibleTextOf(el) {
+    let out = '';
+    let budget = 500;
+    const walk = (node) => {
+      for (const n of dom.childNodes(node) || []) {
+        if (budget-- <= 0 || out.length > 200) return;
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          const cs = helpers.computedStyle(node);
+          const visibility = trim(cs && cs.visibility).toLowerCase();
+          if (visibility !== 'hidden' && visibility !== 'collapse')
+            out += String(dom.nodeValue(n) || '');
+          continue;
+        }
+        if (type !== 1 || !shown(n)) continue;
+        if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(n)) continue;
+        walk(n);
+      }
+    };
+    walk(el);
+    return out;
+  }
   function looksLikeControl(el) {
     try {
       const c = helpers.contrast;
       const cs = helpers.computedStyle(el);
       if (!c || !cs) return false;
-      const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
+      const text = trim(visibleTextOf(el)).replace(/\s+/g, ' ');
       if (!text || text.length > 40 || text.split(' ').length > 6) return false;
       if (!/[\p{L}\p{N}]/u.test(text)) return false;
       if (dom.querySelectorAll(el, BLOCK_CONTENT).length) return false;

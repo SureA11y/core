@@ -659,3 +659,21 @@ test(`${RULE_ID}: an unfocusable element drawn as a button is asked about withou
     assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
   }
 });
+
+// "Short visible text" leaves out hidden and screen-reader-only text
+// (round 12, U12-11).
+test(`${RULE_ID}: a drawn button's label is read without its hidden text`, () => {
+  const box = (extra) =>
+    run(
+      `<div id="d" onclick="x()" style="display:inline-block;padding:8px;border:1px solid">Buy ${extra}</div>`
+    );
+  for (const extra of [
+    '<span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">the blue widget now today ok</span>',
+    '<span style="display:none">the blue widget now today ok</span>'
+  ]) {
+    const rule = assertRule(box(extra), RULE_ID, 'cantTell');
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'CLICK_HANDLER_NOT_FOCUSABLE');
+  }
+  // Long visible text is a wrapper, not a drawn control.
+  assertRule(box('<span>the blue widget now today ok</span>'), RULE_ID, 'notApplicable');
+});
