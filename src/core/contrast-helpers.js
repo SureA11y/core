@@ -441,6 +441,15 @@ function createContrastHelpers(opts, shared) {
     return !!(bits & 1) || (!!(bits & 2) && __isUiComponent(node));
   }
 
+  // Whether a control a label names is inactive: disabled itself, or a user
+  // interface component inside an element that disables it, such as a
+  // role="group" with aria-disabled="true" around the label and its input
+  // (ACT afw4f7, inapplicable example 9; round 11, D6).
+  function __namedControlInactive(control) {
+    if (isDisabledWidget(control)) return true;
+    return __isUiComponent(control) && isInactiveUiComponent(control);
+  }
+
   // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
   // accessible name of a disabled widget has no contrast requirement
   // either, even when the disabled control itself is a SIBLING of the
@@ -457,6 +466,9 @@ function createContrastHelpers(opts, shared) {
   function labelNamesDisabled(labelAncestor) {
     if (__labelNamesDisabledCache.has(labelAncestor))
       return __labelNamesDisabledCache.get(labelAncestor);
+    // Set first: the control a label names may sit inside the label, and
+    // asking whether that control is inactive walks back up to it.
+    __labelNamesDisabledCache.set(labelAncestor, false);
     const disabled = findLabelNamesDisabled(labelAncestor);
     __labelNamesDisabledCache.set(labelAncestor, disabled);
     return disabled;
@@ -468,7 +480,7 @@ function createContrastHelpers(opts, shared) {
       const control = shared.getLabelControl
         ? shared.getLabelControl(labelAncestor)
         : labelAncestor.control || null;
-      if (control && isDisabledWidget(control)) return true;
+      if (control && __namedControlInactive(control)) return true;
     } catch {}
 
     try {
@@ -486,7 +498,7 @@ function createContrastHelpers(opts, shared) {
           '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
         );
         for (const ref of referrers) {
-          if (isDisabledWidget(ref)) return true;
+          if (__namedControlInactive(ref)) return true;
         }
       }
     } catch {}
