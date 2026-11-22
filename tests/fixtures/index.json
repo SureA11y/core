@@ -2687,10 +2687,10 @@
       "testFile": "tests/engine-checks/automatic/target-size-minimum.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/target-size-all-scenarios.html",
-      "totalCases": 25,
+      "totalCases": 26,
       "caseCounts": {
         "PASS": 8,
-        "FAIL": 8,
+        "FAIL": 9,
         "CANTTELL": 1,
         "OTHER": 8
       }
