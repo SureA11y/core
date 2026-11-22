@@ -2181,14 +2181,23 @@ function warnLostKeepsParsing(packs) {
 // own keys and symbols with their attributes, and frozen; functions, objects
 // frozen already and objects of other kinds (a Map, a class instance) kept as
 // they are. `memo` keeps an object reached twice one copy.
+// A plain object, from this realm or another (a frame's, a vm context's):
+// its prototype is null or an Object.prototype, whose own prototype is null,
+// or one whose constructor is named Object. Another realm's failed
+// `proto === Object.prototype`, so a pack made there was neither copied nor
+// frozen, and a later change to it went unseen (round 12, R12F-9).
+function isPlainInAnyRealm(value, proto) {
+  if (Object.prototype.toString.call(value) !== '[object Object]') return false;
+  if (proto === null || Object.getPrototypeOf(proto) === null) return true;
+  const d = Object.getOwnPropertyDescriptor(proto, 'constructor');
+  return !!d && typeof d.value === 'function' && d.value.name === 'Object';
+}
+
 function frozenCopy(value, memo) {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
   if (memo.has(value)) return memo.get(value);
   const proto = Object.getPrototypeOf(value);
-  const plain =
-    Array.isArray(value) ||
-    (Object.prototype.toString.call(value) === '[object Object]' &&
-      (proto === null || proto === Object.prototype));
+  const plain = Array.isArray(value) || isPlainInAnyRealm(value, proto);
   if (!plain) return value;
   const out = Array.isArray(value) ? [] : Object.create(proto);
   memo.set(value, out);
