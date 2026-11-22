@@ -304,15 +304,26 @@ function createDomHelpers(opts) {
   // closure state because rule execution is synchronous and single-rule-
   // at-a-time: exactly one rule's excludes are ever "active" at once.
   var __activeRuleExcludeSelectors = [];
+  // The effective list and its cache key, computed once per change of the
+  // active rule's excludes rather than on every isExcluded() call: sorting
+  // and joining the list per element made each exclude selector add about
+  // 40% to a scan.
+  var __effectiveExcludeSelectors = null;
+  var __selectorOptsKey = null;
 
   function __getEffectiveExcludeSelectors() {
-    return __activeRuleExcludeSelectors.length
-      ? excludeSelectors.concat(__activeRuleExcludeSelectors)
-      : excludeSelectors;
+    if (__effectiveExcludeSelectors === null) {
+      __effectiveExcludeSelectors = __activeRuleExcludeSelectors.length
+        ? excludeSelectors.concat(__activeRuleExcludeSelectors)
+        : excludeSelectors;
+    }
+    return __effectiveExcludeSelectors;
   }
 
   function __setActiveRuleExcludeSelectors(list) {
     __activeRuleExcludeSelectors = normalizeSelectorList(list);
+    __effectiveExcludeSelectors = null;
+    __selectorOptsKey = null;
   }
 
   // Selector-related caches (selector uniqueness index, per-element built
@@ -322,14 +333,16 @@ function createDomHelpers(opts) {
   // calls on the same window/document (see __domSharedCache below), so a
   // run -- or a rule with its own rule-scoped excludes -- must not
   // read/write another run/rule's cached selectors. This key partitions
-  // those caches per effective option set; recomputed per call (not a
-  // constant) since the effective list changes as the active rule changes.
+  // those caches per effective option set; recomputed whenever the active
+  // rule's excludes change (__setActiveRuleExcludeSelectors), not a constant.
   function __getSelectorOptsKey() {
-    return (
-      (includeShadowDom ? 'sd1' : 'sd0') +
-      '|' +
-      __getEffectiveExcludeSelectors().slice().sort().join(',')
-    );
+    if (__selectorOptsKey === null) {
+      __selectorOptsKey =
+        (includeShadowDom ? 'sd1' : 'sd0') +
+        '|' +
+        __getEffectiveExcludeSelectors().slice().sort().join(',');
+    }
+    return __selectorOptsKey;
   }
 
   // -------------------------------------------------------------------------
@@ -348,6 +361,7 @@ function createDomHelpers(opts) {
   var __idRefReverseIndexByScope = null; // WeakMap<object, Map<string, Set<Element>>>
   var __uniqIndexByScope = null; // WeakMap<object, object> (selector uniqueness index per scope)
   var __shadowRootsByRoot = null; // WeakMap<object, Array<object>> (cached open shadow roots per root)
+  var __shadowRootsByOpts = null; // Map<optsKey, WeakMap<object, Array<object>>> (the same, with excludes)
   var __excludedCache = null; // Map<optsKey, WeakMap<Element, boolean>> (isExcluded results)
 
   // Shared recursion-depth guard across the mutually-recursive naming
@@ -587,6 +601,482 @@ function createDomHelpers(opts) {
     });
   }
 
+  // -------- What jsdom's getComputedStyle leaves out --------
+  //
+  // Under jsdom (no layout), some values a browser computes are missing
+  // from getComputedStyle, and are put in here, as computedStyle reads them
+  // (withLayeredOverrides):
+  // - The `overflow` shorthand is not expanded: `overflow: auto` leaves
+  //   overflow-x and overflow-y "visible", and `overflow-y: scroll` leaves
+  //   overflow "". The longhands take the shorthand's one or two values,
+  //   and, as CSS Overflow 3 computes them, `visible` becomes `auto` (and
+  //   `clip` `hidden`) when the other axis scrolls or hides.
+  // - A <marquee hidden> is drawn in Chromium (display: inline-block), but
+  //   jsdom's [hidden] rule gives it display: none. Where no author rule
+  //   or style attribute sets its display, it is inline-block, as Chromium
+  //   draws it. Whether other engines draw it is unverified.
+  // - HTML's presentational hints (HTML, Rendering, 15.3) and SVG's fill
+  //   presentation attribute set no style: `<font color>`, `<body text>`,
+  //   `<body link>` (on links; `vlink` and `alink` are left out, as jsdom
+  //   visits and activates no link), `bgcolor` on <body>, <table>,
+  //   <thead>, <tbody>, <tfoot>, <tr>, <td> and <th>, and `fill` on an SVG
+  //   element. Each applies where no author declaration of the property
+  //   applies to the element (a style attribute or a rule wins over a
+  //   hint), and color and fill are inherited from where they apply.
+  // The author's declaration of prop that applies to el, lower-cased: null
+  // for none, undefined where it can't be told (contrast's reading of the
+  // cascade: !important, the style attribute, specificity and order).
+  function __authorDecl(el, prop) {
+    try {
+      const d = contrast.authorDeclarationOf(el, prop);
+      if (d && d.unknown) return undefined;
+      return d ? String(d.value).trim().toLowerCase() : null;
+    } catch {
+      return undefined;
+    }
+  }
+  const __HINT_BGCOLOR_TAGS = new Set([
+    'body',
+    'marquee',
+    'table',
+    'thead',
+    'tbody',
+    'tfoot',
+    'tr',
+    'td',
+    'th'
+  ]);
+  const __HINT_SELECTOR = 'font[color], body[text], body[link], [bgcolor], [fill]';
+  const __hintRootCache = new WeakMap();
+  // Whether the element's document, or an open shadow root in it, holds
+  // any presentational attribute at all: most pages hold none, and then
+  // nothing here runs. A hint reaches across shadow boundaries, as color
+  // inherits along the flat tree.
+  function __treeHasHints(el) {
+    let doc;
+    try {
+      doc = dom.ownerDocument(el);
+    } catch {
+      doc = null;
+    }
+    if (!doc) return false;
+    if (__hintRootCache.has(doc)) return __hintRootCache.get(doc);
+    let has = false;
+    const visit = (root, depth) => {
+      try {
+        if (dom.querySelector(root, __HINT_SELECTOR)) has = true;
+      } catch {
+        // none read
+      }
+      if (has || depth > 20) return;
+      // Shadow roots found for queries are reused (collectShadowRoots).
+      let roots = __shadowRootsByRoot ? __shadowRootsByRoot.get(root) : null;
+      if (!roots) {
+        roots = [];
+        try {
+          for (const host of dom.querySelectorAll(root, '*')) {
+            const sr = dom.shadowRoot(host);
+            if (sr) roots.push(sr);
+          }
+        } catch {
+          // none read
+        }
+      }
+      for (const sr of roots) {
+        visit(sr, depth + 1);
+        if (has) return;
+      }
+    };
+    visit(doc, 0);
+    __hintRootCache.set(doc, has);
+    return has;
+  }
+  // An element's parent in the flat tree: the slot it is assigned to, its
+  // parent, or, at the top of a shadow tree, its host.
+  function __flatParentElement(el) {
+    let p = composedParent(el);
+    for (let i = 0; p && dom.nodeType(p) !== 1 && i < 4; i++)
+      p = dom.nodeType(p) === 11 ? composedParent(p) : null;
+    return p && dom.nodeType(p) === 1 ? p : null;
+  }
+  // The nearest element at or above el in the flat tree that matches
+  // selector, cached per selector for the elements on the way.
+  const __flatHostCaches = new Map();
+  function __flatClosest(el, selector) {
+    let cache = __flatHostCaches.get(selector);
+    if (!cache) {
+      cache = new WeakMap();
+      __flatHostCaches.set(selector, cache);
+    }
+    const way = [];
+    let found = null;
+    for (let cur = el, i = 0; cur && i < 100000; cur = __flatParentElement(cur), i++) {
+      if (cache.has(cur)) {
+        found = cache.get(cur);
+        break;
+      }
+      way.push(cur);
+      let match;
+      try {
+        match = dom.matches(cur, selector);
+      } catch {
+        match = false;
+      }
+      if (match) {
+        found = cur;
+        break;
+      }
+    }
+    for (const w of way) cache.set(w, found);
+    return found;
+  }
+  const __NOT_NAMED_COLORS = new RegExp(
+    '^(currentcolor|inherit|initial|unset|revert|accentcolor|accentcolortext|activetext|' +
+      'buttonborder|buttonface|buttontext|canvas|canvastext|field|fieldtext|graytext|' +
+      'highlight|highlighttext|linktext|mark|marktext|selecteditem|selecteditemtext|' +
+      'visitedtext|activeborder|activecaption|appworkspace|background|buttonhighlight|' +
+      'buttonshadow|captiontext|inactiveborder|inactivecaption|inactivecaptiontext|' +
+      'infobackground|infotext|menu|menutext|scrollbar|threeddarkshadow|threedface|' +
+      'threedhighlight|threedlightshadow|threedshadow|window|windowframe|windowtext)$',
+    'i'
+  );
+  // HTML's rules for parsing a legacy colour value, as rgb(): null where
+  // the value is no colour (empty, or "transparent").
+  function __legacyColor(raw) {
+    let input = String(raw == null ? '' : raw).replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '');
+    if (!input || /^transparent$/i.test(input)) return null;
+    const rgb = (r, g, b) => `rgb(${r}, ${g}, ${b})`;
+    // Only CSS's named colors: not the other keywords a CSS color takes
+    // (currentcolor, the system colors, the CSS-wide keywords), which the
+    // hex rules below read as any other text.
+    if (/^[a-z]+$/i.test(input) && !__NOT_NAMED_COLORS.test(input)) {
+      const named = contrast.parseCssColorToRgba(input.toLowerCase());
+      if (named) return rgb(named.r, named.g, named.b);
+    }
+    let m = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(input);
+    if (m) return rgb(...[m[1], m[2], m[3]].map((h) => parseInt(h + h, 16)));
+    input = [...input]
+      .map((ch) => (ch.codePointAt(0) > 0xffff ? '00' : ch))
+      .join('')
+      .slice(0, 128);
+    if (input[0] === '#') input = input.slice(1);
+    input = input.replace(/[^0-9a-f]/gi, '0');
+    while (!input.length || input.length % 3) input += '0';
+    let len = input.length / 3;
+    let parts = [input.slice(0, len), input.slice(len, 2 * len), input.slice(2 * len)];
+    if (len > 8) {
+      parts = parts.map((p) => p.slice(len - 8));
+      len = 8;
+    }
+    while (len > 2 && parts.every((p) => p[0] === '0')) {
+      parts = parts.map((p) => p.slice(1));
+      len -= 1;
+    }
+    if (len > 2) parts = parts.map((p) => p.slice(0, 2));
+    return rgb(...parts.map((p) => parseInt(p, 16)));
+  }
+  // value with each var() in it replaced by the custom property's computed
+  // value (or the var()'s fallback), as a browser substitutes them; value
+  // as it is where it holds none, and null where one can't be resolved.
+  function __substituteVars(cs, value) {
+    if (!value || !value.includes('var(')) return value;
+    let out = value;
+    const one = /var\(\s*(--[\w-]+)\s*(?:,([^()]*))?\)/i;
+    for (let i = 0; i < 20 && out.includes('var('); i++) {
+      const m = one.exec(out);
+      if (!m) return null;
+      let v;
+      try {
+        v = String(cs.getPropertyValue(m[1]) || '').trim();
+      } catch {
+        v = '';
+      }
+      if (!v && m[2] !== undefined) v = m[2].trim();
+      if (!v) return null;
+      out = out.slice(0, m.index) + v + out.slice(m.index + m[0].length);
+    }
+    return out.includes('var(') ? null : out.trim().toLowerCase();
+  }
+  const __INHERIT_KEYWORDS = new Set(['inherit', 'unset']);
+  // jsdom's own value of prop for an element, before any hint here.
+  const __beforeHints = new WeakMap();
+  function __unhinted(el, prop) {
+    const own = __beforeHints.get(el);
+    if (own && own[prop] !== undefined) return own[prop];
+    return String(computedStyle(el)[prop] || '');
+  }
+  // The value of an inherited property (color or fill) that el takes from
+  // a hint on an ancestor (host: the nearest element with that hint), or
+  // null where el keeps jsdom's: el declares it itself, or jsdom's value
+  // is not the one it inherited.
+  function __inheritedHint(el, cs, prop, host) {
+    if (!host || host === el) return null;
+    const decl = __authorDecl(el, prop);
+    if (decl === undefined) return null;
+    if (
+      decl !== null &&
+      !__INHERIT_KEYWORDS.has(decl) &&
+      !(prop === 'color' && decl === 'currentcolor')
+    )
+      return null;
+    const parent = __flatParentElement(el);
+    if (!parent) return null;
+    // Resolve the elements between host and el from the top, so each
+    // reads its parent's answer from the cache; where the parent's is
+    // there already (a scan reads the page top down), they all are.
+    if (!__styleCached(parent)) {
+      const path = [];
+      for (let p = parent, i = 0; p && p !== host && i < 10000; p = __flatParentElement(p), i++)
+        path.push(p);
+      for (let k = path.length - 1; k >= 0; k--) computedStyle(path[k]);
+    }
+    const pcs = computedStyle(parent);
+    const was = __unhinted(parent, prop);
+    const now = String(pcs[prop] || '');
+    if (now === was || String(cs[prop] || '') !== was) return null;
+    return now;
+  }
+  // color: revert and revert-layer, which jsdom leaves as the keyword, and
+  // its elements' descendants inherit as is; once another property has
+  // been read, jsdom gives them as transparent instead. The value they
+  // take, as Chromium computes it: the browser's color for a link (or
+  // <body link>'s), <mark> and form controls; for revert-layer on
+  // <font color>, the hint, which is below every layer; else the parent's,
+  // inherited. null where jsdom's value stands. Elements whose color is
+  // set here are remembered, for their descendants.
+  const __revertedColorEls = new WeakSet();
+  function __revertedColor(el, cs, raw, tag, html) {
+    const keyword = raw === 'revert' || raw === 'revert-layer';
+    if (!keyword && raw !== 'rgba(0, 0, 0, 0)') return null;
+    const own = __authorDecl(el, 'color');
+    const parent = __flatParentElement(el);
+    let value = null;
+    if (own === 'revert' || own === 'revert-layer') {
+      const link = html && (tag === 'a' || tag === 'area') && dom.hasAttribute(el, 'href');
+      if (link) {
+        const doc = dom.ownerDocument(el);
+        const body = doc ? dom.body(doc) : null;
+        value =
+          (body &&
+            dom.hasAttribute(body, 'link') &&
+            __legacyColor(dom.getAttribute(body, 'link'))) ||
+          'rgb(0, 0, 238)';
+      } else if (own === 'revert-layer' && html && tag === 'font' && dom.hasAttribute(el, 'color'))
+        value = __legacyColor(dom.getAttribute(el, 'color'));
+      else if (html && /^(mark|button|input|select|textarea)$/.test(tag)) value = 'rgb(0, 0, 0)';
+    } else if (own === null || __INHERIT_KEYWORDS.has(own)) {
+      // Inherited from an element set here, as jsdom inherits the keyword.
+      if (!parent) return null;
+      computedStyle(parent);
+      if (!__revertedColorEls.has(parent)) return null;
+    } else return null;
+    if (!value) value = parent ? String(computedStyle(parent).color || '') : 'rgb(0, 0, 0)';
+    if (!value) return null;
+    __revertedColorEls.add(el);
+    return value;
+  }
+  // An SVG paint, as getComputedStyle gives it: a color, none, or a
+  // url() reference with its fallback (`url("#g") rgb(255, 0, 0)`); null
+  // where the value is no paint.
+  function __svgPaint(raw, currentColor) {
+    const one = (v) => {
+      if (/^currentcolor$/i.test(v)) return currentColor || null;
+      if (/^none$/i.test(v)) return 'none';
+      const rgba = contrast.parseCssColorToRgba(v);
+      if (!rgba) return null;
+      return rgba.a < 1
+        ? `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${rgba.a})`
+        : `rgb(${rgba.r}, ${rgba.g}, ${rgba.b})`;
+    };
+    const v = String(raw == null ? '' : raw).trim();
+    const m = /^url\(\s*(?:"([^"]*)"|'([^']*)'|([^\s"'()]*))\s*\)\s*(.*)$/i.exec(v);
+    if (!m) return one(v);
+    const ref = `url("${m[1] ?? m[2] ?? m[3]}")`;
+    if (!m[4]) return ref;
+    const fallback = one(m[4].trim());
+    return fallback ? `${ref} ${fallback}` : null;
+  }
+  function __jsdomStyleFixesOf(el, cs) {
+    let out = null;
+    const set = (prop, value) => {
+      if (!out) out = new Map();
+      out.set(prop, value);
+    };
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    const html = dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
+    const norm = (v) =>
+      String(v || '')
+        .trim()
+        .toLowerCase();
+    // Read before any other property: jsdom turns a color it can't resolve
+    // transparent once another one has been read (__revertedColor).
+    const rawColor = norm(cs.color);
+    const revertedColor = __revertedColor(el, cs, rawColor, tag, html);
+    if (revertedColor) {
+      set('color', revertedColor);
+      set('-webkit-text-fill-color', revertedColor);
+      set('webkitTextFillColor', revertedColor);
+    }
+
+    // overflow
+    const lx = norm(cs.overflowX);
+    const ly = norm(cs.overflowY);
+    const short = norm(cs.overflow);
+    // jsdom computes custom properties but substitutes none: a value that
+    // holds a var() is read with them (__substituteVars), and one that
+    // can't be resolved is invalid at computed-value time, which makes it
+    // the initial value, visible.
+    const sx = __substituteVars(cs, lx);
+    const sy = __substituteVars(cs, ly);
+    const ss = __substituteVars(cs, short);
+    {
+      // `overlay` is an alias of `auto` (CSS Overflow 3).
+      const canon = (v) => (v === null ? 'visible' : v === 'overlay' ? 'auto' : v);
+      let x = canon(sx);
+      let y = canon(sy);
+      const sv = canon(ss);
+      const words =
+        sv && !/^(inherit|initial|unset|revert|revert-layer)$/.test(sv)
+          ? sv.split(/\s+/).map(canon)
+          : null;
+      if (words && words.length <= 2) {
+        if (!x || x === 'visible') x = words[0];
+        if (!y || y === 'visible') y = words[1] || words[0];
+      }
+      // Form controls, as Chromium computes them: a <textarea> always
+      // scrolls where it would show its overflow; a drop-down <select>
+      // clips, whatever the page sets; a list box (multiple, or a size
+      // above 1) takes overflow-x hidden and overflow-y scroll from the
+      // browser's style where no author declaration sets them.
+      if (html && tag === 'textarea') {
+        if (x === 'visible') x = 'auto';
+        if (y === 'visible') y = 'auto';
+      } else if (html && tag === 'select') {
+        const size = parseHtmlInteger(dom.getAttribute(el, 'size'));
+        if (!dom.hasAttribute(el, 'multiple') && !(size !== null && size > 1)) {
+          x = 'clip';
+          y = 'clip';
+        } else if (__authorDecl(el, 'overflow') === null) {
+          if (__authorDecl(el, 'overflow-x') === null) x = 'hidden';
+          if (__authorDecl(el, 'overflow-y') === null) y = 'scroll';
+        }
+      }
+      const hides = (v) => !!v && v !== 'visible' && v !== 'clip';
+      if (hides(x) || hides(y)) {
+        if (x === 'visible') x = 'auto';
+        else if (x === 'clip') x = 'hidden';
+        if (y === 'visible') y = 'auto';
+        else if (y === 'clip') y = 'hidden';
+      }
+      if (x !== lx) set('overflow-x', x);
+      if (y !== ly) set('overflow-y', y);
+      if (
+        x === lx &&
+        y === ly &&
+        short !== (x === y ? x : x + ' ' + y) &&
+        (short || x !== 'visible' || y !== 'visible')
+      )
+        set('overflow', x === y ? x : x + ' ' + y);
+    }
+
+    // <marquee hidden>: drawn inline-block by the browser's style, which
+    // `revert` goes back to; `unset` and `initial` make it inline.
+    if (
+      html &&
+      tag === 'marquee' &&
+      String(cs.display || '') === 'none' &&
+      dom.hasAttribute(el, 'hidden') &&
+      String(dom.getAttribute(el, 'hidden') || '')
+        .trim()
+        .toLowerCase() !== 'until-found'
+    ) {
+      let decl = __authorDecl(el, 'display');
+      if (decl === null) decl = __authorDecl(el, 'all');
+      if (decl === null || decl === 'revert' || decl === 'revert-layer')
+        set('display', 'inline-block');
+      else if (decl === 'unset' || decl === 'initial') set('display', 'inline');
+    }
+
+    // Presentational hints
+    if (!__treeHasHints(el)) return out;
+    const ns = dom.namespaceURI(el);
+    const before = {};
+    // color: <font color>, <body text>, and <body link> on a link no
+    // author rule colors.
+    // The nearest element that can set a color hint: a link's color is the
+    // browser's (or <body link>'s), whatever is around it.
+    let color = null;
+    const colorHost = revertedColor
+      ? null
+      : __flatClosest(el, 'font[color], body[text], a[href], area[href]');
+    if (colorHost === el) {
+      if (__authorDecl(el, 'color') === null && __authorDecl(el, 'all') === null) {
+        if (html && tag === 'font') color = __legacyColor(dom.getAttribute(el, 'color'));
+        else if (html && tag === 'body') color = __legacyColor(dom.getAttribute(el, 'text'));
+        else if (html) {
+          const doc = dom.ownerDocument(el);
+          const body = doc ? dom.body(doc) : null;
+          if (body && dom.hasAttribute(body, 'link'))
+            color = __legacyColor(dom.getAttribute(body, 'link'));
+        }
+      }
+    } else if (colorHost) {
+      color = __inheritedHint(el, cs, 'color', colorHost);
+    }
+    if (color && color !== String(cs.color || '')) {
+      before.color = String(cs.color || '');
+      set('color', color);
+      // -webkit-text-fill-color follows color where the page sets none.
+      const fill = String(cs.webkitTextFillColor || '');
+      if (fill === before.color) {
+        set('-webkit-text-fill-color', color);
+        set('webkitTextFillColor', color);
+      }
+    }
+    // background-color: bgcolor, where no author background applies.
+    if (html && __HINT_BGCOLOR_TAGS.has(tag) && dom.hasAttribute(el, 'bgcolor')) {
+      const bg = __legacyColor(dom.getAttribute(el, 'bgcolor'));
+      if (
+        bg &&
+        __authorDecl(el, 'background-color') === null &&
+        __authorDecl(el, 'background') === null &&
+        __authorDecl(el, 'all') === null
+      )
+        set('background-color', bg);
+    }
+    // fill: the SVG presentation attribute, inherited.
+    if (ns === 'http://www.w3.org/2000/svg') {
+      let fill = null;
+      const fillDecl = __authorDecl(el, 'fill');
+      if (fillDecl === null && dom.hasAttribute(el, 'fill') && __authorDecl(el, 'all') === null)
+        fill = __svgPaint(dom.getAttribute(el, 'fill'), color || String(cs.color || ''));
+      // No fill of its own, or one that is no paint (ignored, as an invalid
+      // presentation attribute is): inherited.
+      if (!fill && (fillDecl === null || (fillDecl && __INHERIT_KEYWORDS.has(fillDecl)))) {
+        const parent = __flatParentElement(el);
+        const host = parent ? __flatClosest(parent, '[fill]') : null;
+        if (host && dom.namespaceURI(host) === 'http://www.w3.org/2000/svg')
+          fill = __inheritedHint(el, cs, 'fill', host);
+      }
+      if (fill && fill !== String(cs.fill || '')) {
+        before.fill = String(cs.fill || '');
+        set('fill', fill);
+      }
+    }
+    if (before.color !== undefined || before.fill !== undefined) __beforeHints.set(el, before);
+    return out;
+  }
+
+  // Whether computedStyle has el's style in this scan's cache.
+  function __styleCached(el) {
+    try {
+      const map = __computedStyleCacheByScope && __computedStyleCacheByScope.get(__getScopeObj());
+      return !!map && map.has(el);
+    } catch {
+      return false;
+    }
+  }
+
   const computedStyle = (el) => {
     // Per-run memoization scoped by *helper scope* (root/document), to ensure
     // style caching does not bleed across helper instances with different roots.
@@ -645,6 +1135,8 @@ function createDomHelpers(opts) {
             if (chunk && chunk.depth > __WARM_UP_DEPTH) cs = withInheritedWarmUp(cs, el);
             const overrides = layeredOverridesOf(el);
             if (overrides) cs = withLayeredOverrides(cs, overrides);
+            const fixes = __jsdomStyleFixesOf(el, cs);
+            if (fixes) cs = withLayeredOverrides(cs, fixes);
           }
         }
       } catch {}
@@ -673,7 +1165,8 @@ function createDomHelpers(opts) {
   // `<span hidden style="display:inline">` is rendered, and browsers expose
   // it (Chromium names a button from it). So `hidden` counts as hiding only
   // while the element's computed display is none, or when no computed style
-  // can be read. jsdom applies the UA rule too, so it agrees.
+  // can be read. jsdom applies the UA rule too, so it agrees, but for a
+  // <marquee hidden>, which Chromium draws (__jsdomStyleFixesOf).
   // `hidden="until-found"` hides through content-visibility instead, so it
   // hides its descendants where content-visibility would (below).
   const hasEffectiveHiddenAttr = (el) => {
@@ -1253,7 +1746,11 @@ function createDomHelpers(opts) {
     const m = /^[\t\n\f\r ]*([+-]?)([0-9]+)/.exec(String(raw == null ? '' : raw));
     if (!m) return null;
     const n = parseInt(m[2], 10);
-    return m[1] === '-' ? -n || 0 : n;
+    const v = m[1] === '-' ? -n || 0 : n;
+    // A reflected `long` (tabIndex) ignores a value outside its 32-bit
+    // range, as if the attribute were missing (HTML, Reflecting content
+    // attributes in IDL attributes).
+    return v < -2147483648 || v > 2147483647 ? null : v;
   }
 
   function parseTabIndex(el) {
@@ -2455,7 +2952,7 @@ function createDomHelpers(opts) {
         if (label && HIDDEN_TEXT_RE.test(text)) {
           const forId = dom.getAttribute(label, 'for');
           const labelTag = forId ? `<label for="${forId}">` : '<label>';
-          const role = attr(el, 'role').split(/\s+/)[0];
+          const role = attr(el, 'role').split(/[\t\n\f\r ]+/)[0];
           const control = role ? `${tag} role="${role}"` : tag;
           const labelId = attr(label, 'id');
           const base = `The ${labelTag} "${text}" names nothing here: a <label> only names native form fields (input, select, textarea…), not a <${control}>.`;
@@ -3094,12 +3591,18 @@ function createDomHelpers(opts) {
   function roleTypo(el) {
     let raw;
     try {
-      raw = trim(dom.getAttribute(el, 'role'));
+      raw = dom.getAttribute(el, 'role');
     } catch {
       return null;
     }
-    if (!raw) return null;
-    const tokens = raw.split(/\s+/).map(lower);
+    // Split as HTML splits tokens: on ASCII whitespace only.
+    raw = String(raw == null ? '' : raw);
+    const tokens = raw
+      .split(/[\t\n\f\r ]+/)
+      .filter(Boolean)
+      .map((t) => t.toLowerCase());
+    if (!tokens.length) return null;
+    raw = trim(raw);
     if (tokens.some((t) => aria.isKnownRole(t))) return null;
     let suggestion = '';
     for (const t of tokens) {
@@ -3924,12 +4427,14 @@ function createDomHelpers(opts) {
       if (!scope || !dom.get(scope, 'querySelectorAll')) return [];
 
       // Cache shadow root discovery per root to avoid repeated querySelectorAll('*') walks.
-      // IMPORTANT: do not cache when the effective exclude list (global
-      // ∪ active rule-scoped excludes) is non-empty -- different rules
-      // may have different effective lists and must not share results.
-      if (!__getEffectiveExcludeSelectors().length && __shadowRootsByRoot) {
+      // With an exclude list (global ∪ active rule-scoped excludes), the
+      // roots under excluded hosts are left out, so the cache is
+      // partitioned by that list's key: rules with different effective
+      // lists never share results.
+      const cache = __getShadowRootsCache(keepExcluded);
+      if (cache) {
         try {
-          const cached = __shadowRootsByRoot.get(scope);
+          const cached = cache.get(scope);
           if (cached) {
             __perfInc('shadowRoots.hit');
             return cached;
@@ -3946,12 +4451,13 @@ function createDomHelpers(opts) {
           const roots = [];
           for (const el of hosts) {
             if (!el || dom.nodeType(el) !== 1) continue;
+            if (out(el)) continue;
             const sr = dom.shadowRoot(el);
             if (sr) roots.push(sr);
           }
 
           try {
-            __shadowRootsByRoot.set(scope, roots);
+            cache.set(scope, roots);
           } catch {
             __perfInc('shadowRoots.nocache');
           }
@@ -4402,15 +4908,37 @@ function createDomHelpers(opts) {
     __uniqIndexByScope = null;
   }
 
-  // Shadow root discovery cache (per root) within a run.
-  // Only used when excludeSelectors is empty to avoid cross-helper bleed.
+  // Shadow root discovery cache (per root) within a run. Without excludes it
+  // is one WeakMap; with them, one per effective exclude list (and per
+  // keepExcluded), since the roots under excluded hosts are left out.
   try {
     __shadowRootsByRoot =
       __domSharedCache.shadowRootsByRoot instanceof WeakMap
         ? __domSharedCache.shadowRootsByRoot
         : (__domSharedCache.shadowRootsByRoot = new WeakMap());
+    __shadowRootsByOpts =
+      __domSharedCache.shadowRootsByOpts instanceof Map
+        ? __domSharedCache.shadowRootsByOpts
+        : (__domSharedCache.shadowRootsByOpts = new Map());
   } catch {
     __shadowRootsByRoot = null;
+    __shadowRootsByOpts = null;
+  }
+
+  function __getShadowRootsCache(keepExcluded) {
+    if (!__getEffectiveExcludeSelectors().length || keepExcluded) return __shadowRootsByRoot;
+    if (!__shadowRootsByOpts) return null;
+    try {
+      const key = __getSelectorOptsKey();
+      let wm = __shadowRootsByOpts.get(key);
+      if (!(wm instanceof WeakMap)) {
+        wm = new WeakMap();
+        __shadowRootsByOpts.set(key, wm);
+      }
+      return wm;
+    } catch {
+      return null;
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -7980,7 +8508,7 @@ function createDomHelpers(opts) {
     const explicit = aria.getExplicitRole(el);
     if (explicit) {
       if (explicit === 'presentation' || explicit === 'none') flags.push('presentation');
-      if (/\s/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
+      if (/[\t\n\f\r ]/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
       return { role: explicit, source: 'explicit', flags };
     }
 
@@ -8696,17 +9224,25 @@ function createDomHelpers(opts) {
       const y = byName.get('overflow-y') || String(cs.overflowY || '');
       byName.set('overflow', x === y ? x : x + ' ' + y);
     }
+    // Every element of a page with a presentational hint gets one, and the
+    // rules read its properties over and over: each is read from the style
+    // below once (jsdom's computed style is a snapshot, which computedStyle
+    // keeps for the scan), and each method bound once.
+    const getPropertyValue = (name) => {
+      const k = String(name).toLowerCase();
+      return byName.has(k) ? byName.get(k) : cs.getPropertyValue(name);
+    };
+    const seen = new Map();
     return new Proxy(cs, {
       get(target, key) {
-        if (typeof key === 'string' && byName.has(key)) return byName.get(key);
-        if (key === 'getPropertyValue') {
-          return (name) => {
-            const k = String(name).toLowerCase();
-            return byName.has(k) ? byName.get(k) : target.getPropertyValue(name);
-          };
-        }
+        const own = byName.get(key);
+        if (own !== undefined) return own;
+        if (key === 'getPropertyValue') return getPropertyValue;
+        let b = seen.get(key);
+        if (b !== undefined) return b;
         const v = Reflect.get(target, key, target);
-        return typeof v === 'function' ? v.bind(target) : v;
+        seen.set(key, (b = typeof v === 'function' ? v.bind(target) : v));
+        return b;
       }
     });
   }

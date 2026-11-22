@@ -60,6 +60,9 @@ test(`${RULE_ID}: a group with a name passes`, () => {
     `<fieldset aria-label="Shipping">${RADIOS}</fieldset>`,
     `<p id="q">Shipping</p><div role="radiogroup" aria-labelledby="q">${RADIOS}</div>`,
     `<div role="group" aria-label="Interests">${CHECKBOXES}</div>`,
+    // a legend named by its content: an image's alt text (B11-6)
+    `<fieldset><legend><img alt="Shipping" src="x.png"></legend>${RADIOS}</fieldset>`,
+    `<fieldset><legend><svg role="img" aria-label="Shipping" width="10" height="10"></svg></legend>${RADIOS}</fieldset>`,
     // a named fieldset around more than the group
     `<fieldset><legend>Delivery</legend><div>${RADIOS}</div><label>Notes <input name="n"></label></fieldset>`
   ]) {
@@ -85,6 +88,8 @@ test(`${RULE_ID}: a single checkbox, options without a shared name, and hidden o
     '<label><input type="radio" name="a"> A</label><label><input type="radio" name="b"> B</label>',
     '<label><input type="radio"> A</label><label><input type="radio"> B</label>',
     '<label><input type="radio" name="g"> A</label><label hidden><input type="radio" name="g"> B</label>',
+    // under aria-hidden: out of the accessibility tree (B11-8)
+    '<div aria-hidden="true"><label><input type="radio" name="h"> A</label><label><input type="radio" name="h"> B</label></div>',
     // a radio and a checkbox sharing a name are not one group
     '<label><input type="radio" name="x"> A</label><label><input type="checkbox" name="x"> B</label>'
   ]) {
@@ -96,6 +101,33 @@ test(`${RULE_ID}: a single checkbox, options without a shared name, and hidden o
     { runOnly: [RULE_ID] }
   );
   assertRule(twoForms, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a named group made through shadow DOM contains the options in the flat tree`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  const R2 =
+    '<label><input type="radio" name="s"> S</label><label><input type="radio" name="s"> M</label>';
+  const cases = [
+    // light radios slotted into a shadow <fieldset>
+    [`<x-group id="h">${R2}</x-group>`, '<fieldset><legend>Size</legend><slot></slot></fieldset>'],
+    // radios in a shadow root inside a light <fieldset>
+    ['<fieldset><legend>Size</legend><x-r id="h"></x-r></fieldset>', R2],
+    // a named radiogroup in the shadow root, radios slotted
+    [
+      `<x-g id="h">${R2}</x-g>`,
+      '<p id="q">Size</p><div role="radiogroup" aria-labelledby="q"><slot></slot></div>'
+    ]
+  ];
+  for (const [light, shadow] of cases) {
+    const dom = createDom(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${light}</main></body></html>`
+    );
+    dom.window.document.getElementById('h').attachShadow({ mode: 'open' }).innerHTML = shadow;
+    assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
 });
 
 test(`${RULE_ID}: the summary names the group in every locale`, () => {
@@ -120,4 +152,24 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-group-name-present-all-s
     rule.occurrences.map((o) => (o.lean ? o.lean.toward : null)),
     ['fail', null, 'fail', 'fail']
   );
+});
+
+test(`${RULE_ID}: hidden legends and options the flat tree leaves out (round 11, R11F-11)`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  for (const [
+    label,
+    light,
+    shadow,
+    outcome
+  ] of require('./form-group-name-present-round-11-cases.js')) {
+    const dom = createDom(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${light}</main></body></html>`
+    );
+    if (shadow)
+      dom.window.document.getElementById('h').attachShadow({ mode: 'open' }).innerHTML = shadow;
+    const r = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }).checksResults.find(
+      (c) => c.ruleId === RULE_ID
+    );
+    assert.strictEqual(r.outcome, outcome, label);
+  }
 });

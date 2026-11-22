@@ -8,8 +8,9 @@
  * @summary tabindex should not be greater than 0
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to elements with a tabindex attribute whose value parses as
- *   a valid integer.
+ *   Applies to elements with a tabindex attribute whose value HTML's rules
+ *   for parsing integers read as a number, as a browser does ("1.5" is 1,
+ *   "2abc" is 2, "0x1" is 0).
  * @expectation
  *   The tabindex value is 0 or negative. A positive tabindex reorders
  *   keyboard tab order explicitly, which is fragile to maintain as a
@@ -84,8 +85,8 @@ function runInPage(ctx) {
         } catch {}
         if (!info || !info.tabbable) continue;
         if (helpers.isHiddenContent && helpers.isHiddenContent(d)) continue;
-        const t = Number(String(dom.getAttribute(d, 'tabindex') || '').trim());
-        stops.push({ el: d, value: Number.isInteger(t) && t > 0 ? t : 0 });
+        const t = helpers.parseHtmlInteger(dom.getAttribute(d, 'tabindex'));
+        stops.push({ el: d, value: t !== null && t > 0 ? t : 0 });
       }
     } catch {}
     const visit = stops
@@ -123,10 +124,11 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
-    const raw = String(dom.getAttribute(el, 'tabindex') || '').trim();
-    if (!raw) continue;
-    const n = Number(raw);
-    if (!Number.isInteger(n)) continue;
+    // Read as HTML's rules for parsing integers read it, as a browser
+    // does: "1.5" is 1, "2abc" is 2, "0x1" is 0, "1e3" is 1.
+    const raw = String(dom.getAttribute(el, 'tabindex'));
+    const n = helpers.parseHtmlInteger(raw);
+    if (n === null) continue;
 
     applicableCount += 1;
 
@@ -171,15 +173,16 @@ function runInPage(ctx) {
       helpers.reportOccurrence(el, {
         ...(lean ? { lean } : {}),
         summary: skipped.length
-          ? `This element has tabindex="${n}", so Tab reaches it before earlier tab stops in the page (${skipped.length}, starting with ${first}).`
-          : `This element has tabindex="${n}", overriding the natural tab order.`,
+          ? `This element has tabindex="${raw}", so Tab reaches it before earlier tab stops in the page (${skipped.length}, starting with ${first}).`
+          : `This element has tabindex="${raw}", overriding the natural tab order.`,
         hint: 'Use tabindex="0" to add the element to the tab order, or a negative value to take it out. If the tab order needs to change, change the order of the content instead.',
         i18n: {
           summaryKey: skipped.length
             ? 'tabindex_summary_cantTell_jumpsAhead'
             : 'tabindex_summary_cantTell_value',
           hintKey: 'tabindex_hint_cantTell',
-          params: { value: String(n), skippedCount: String(skipped.length), first }
+          // The attribute as written; details.value is the number read.
+          params: { value: raw, skippedCount: String(skipped.length), first }
         },
         data: {
           details: {

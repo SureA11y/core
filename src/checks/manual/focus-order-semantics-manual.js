@@ -167,8 +167,8 @@ function runInPage(ctx) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const tabindexAttr = dom.getAttribute(el, 'tabindex');
-    const tabindex = Number.parseInt(tabindexAttr, 10);
-    if (!Number.isFinite(tabindex) || tabindex < 0) continue;
+    const tabindex = helpers.parseHtmlInteger(tabindexAttr);
+    if (tabindex === null || tabindex < 0) continue;
 
     // The role the attribute resolves to: its first known, non-abstract
     // token, in any case. role="foo heading" is a heading; role="foo" gives

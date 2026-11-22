@@ -1069,3 +1069,31 @@ test(`${RULE_ID}: a color cue under 3:1 from what is behind it does not count (r
     assertRule(scan(css, inner), RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }
 });
+
+test(`${RULE_ID}: an underline on the link's content sets it apart under jsdom too (round 11, B11-3)`, () => {
+  const link = (inner) =>
+    `<p style="color:#000">Read the <a href="/" style="color:#000;text-decoration:none">${inner}</a> before you start the work today.</p>`;
+  for (const [head, body] of [
+    ['', link('<span style="text-decoration:underline">guide</span>')],
+    ['<style>.u{text-decoration:underline}</style>', link('<span class="u">guide</span>')]
+  ]) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main>${body}</main></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+});
+
+// The cases of round 11's review, each with its outcome in Chromium, and
+// under jsdom where that differs (link-in-text-block-chromium.test.js runs
+// them there).
+const ROUND_11_UNDERLINE_CASES = require('./link-in-text-block-round-11-cases.js');
+
+for (const [label, head, body, chromium, jsdom = chromium] of ROUND_11_UNDERLINE_CASES) {
+  test(`${RULE_ID}: ${label}, under jsdom (round 11)`, () => {
+    const html = `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main>${body}</main></body></html>`;
+    const r = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assert.equal(r.checksResults.find((c) => c.ruleId === RULE_ID).outcome, jsdom);
+  });
+}

@@ -181,3 +181,23 @@ test(`${RULE_ID}: only a script that stops or starts a marquee takes the fail le
   }
   assert.equal(lean('<marquee onclick="this.stop()">News</marquee>'), undefined);
 });
+
+test(`${RULE_ID}: a <marquee hidden> is drawn, as Chromium draws it, unless a style hides it (round 11, B11-15)`, () => {
+  const run = (body, head = '') =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body>${body}</body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+  const rule = assertRule(run('<marquee id="a" hidden>scroll</marquee>'), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  for (const [body, head] of [
+    ['<marquee hidden style="display:none">scroll</marquee>', ''],
+    ['<marquee hidden class="x">scroll</marquee>', '<style>.x{display:none}</style>'],
+    ['<div hidden><marquee>scroll</marquee></div>', '']
+  ]) {
+    assertRule(run(body, head), RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});

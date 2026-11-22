@@ -227,8 +227,7 @@ function runInPage(ctx) {
         focusable = !!(fi && fi.focusable);
       } else {
         const tabindex = dom.getAttribute(el, 'tabindex');
-        focusable =
-          tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
+        focusable = tabindex != null && ctx.helpers.parseHtmlInteger(tabindex) !== null;
       }
       // A global ARIA attribute keeps its role too (presentational roles
       // conflict resolution), as being focusable does.

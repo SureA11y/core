@@ -1480,3 +1480,24 @@ test(`${RULE_ID}: a background painted by an ancestor names the ancestor`, () =>
     assert.doesNotMatch(byId(id).summary, /painted by/, id);
   }
 });
+
+test(`${RULE_ID}: text in a control in a disabled fieldset's first legend is checked (round 11, R11F-10)`, () => {
+  const scan = (body) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+  const B = 'style="color:#ccc;background:#fff"';
+  assertRule(
+    scan(`<fieldset disabled><legend><button ${B}>Help me</button></legend></fieldset>`),
+    RULE_ID,
+    'fail',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  assertRule(
+    scan(`<fieldset disabled><legend>Size</legend><button ${B}>Help me</button></fieldset>`),
+    RULE_ID,
+    'pass',
+    { minOccurrences: 0, maxOccurrences: 1 }
+  );
+});

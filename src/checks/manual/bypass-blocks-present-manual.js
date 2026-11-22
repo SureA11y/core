@@ -423,7 +423,7 @@ function runInPage(ctx) {
     for (const el of queryAll(FOCUSABLE)) {
       if (!el || !isExposedToAt(el) || !precedes(el, content)) continue;
       const tabindex = dom.getAttribute(el, 'tabindex');
-      if (tabindex !== null && parseInt(tabindex, 10) < 0) continue;
+      if (tabindex !== null && ctx.helpers.parseHtmlInteger(tabindex) < 0) continue;
       leading += 1;
       if (!navWithLinks && isInNavigationOrAside(el)) {
         let guard = 0;

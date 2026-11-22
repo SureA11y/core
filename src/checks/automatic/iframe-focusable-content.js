@@ -285,10 +285,7 @@ function runInPage(ctx) {
   // ignored. null when there are no digits: the attribute is then ignored,
   // and the element keeps the focusability it has without one.
   function parseTabIndex(raw) {
-    const m = /^[\t\n\f\r ]*([+-]?)(\d+)/.exec(String(raw));
-    if (!m) return null;
-    const n = Number(m[2]);
-    return m[1] === '-' ? -n : n;
+    return helpers.parseHtmlInteger(raw);
   }
 
   // The <img> elements in the same document that use an <area>'s <map>: an

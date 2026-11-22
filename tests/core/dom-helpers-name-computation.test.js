@@ -1537,7 +1537,13 @@ test('parseHtmlInteger reads tabindex as HTML does', () => {
     [' 3', null],
     ['x', null],
     ['', null],
-    ['-0', 0]
+    ['-0', 0],
+    // Outside the 32-bit range a reflected long ignores (round 11, R11F-9).
+    ['2147483647', 2147483647],
+    ['-2147483648', -2147483648],
+    ['2147483648', null],
+    ['-2147483649', null],
+    ['99999999999', null]
   ];
   for (const [raw, n] of cases)
     assert.strictEqual(helpers.parseHtmlInteger(raw), n, JSON.stringify(raw));

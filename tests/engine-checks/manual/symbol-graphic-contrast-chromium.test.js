@@ -53,3 +53,48 @@ test(`${RULE_ID}: the fixture in Chromium`, { skip }, async (t) => {
   // The symbols asked about are no text the text-contrast rules judge.
   for (const id of got.ids) assert.ok(!got.textRules.includes(id), id);
 });
+
+// A disabled fieldset leaves the controls in its first legend enabled
+// (round 11, R11F-10).
+test(
+  `${RULE_ID}: a control in a disabled fieldset's first legend is active in Chromium`,
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    const B = 'style="color:#ccc;background:#fff;border:1px solid #ccc"';
+    const outcomes = async (body) => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`
+        );
+        await addBundle(page);
+        return await page.evaluate((ruleId) => {
+          const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [ruleId, 'contrast-minimum']);
+          return [ruleId, 'contrast-minimum'].map(
+            (id) => r.checksResults.find((c) => c.ruleId === id).outcome
+          );
+        }, RULE_ID);
+      } finally {
+        await page.close();
+      }
+    };
+    assert.deepEqual(
+      await outcomes(`<fieldset disabled><legend><button ${B}>★</button></legend></fieldset>`),
+      ['cantTell', 'notApplicable']
+    );
+    assert.deepEqual(
+      await outcomes(
+        `<fieldset disabled><legend><button ${B}>Help me</button></legend></fieldset>`
+      ),
+      ['notApplicable', 'fail']
+    );
+    assert.deepEqual(
+      await outcomes(
+        `<fieldset disabled><legend>A</legend><button ${B}>★ Help me</button></fieldset>`
+      ),
+      ['notApplicable', 'pass']
+    );
+  }
+);

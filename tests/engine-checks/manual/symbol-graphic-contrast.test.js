@@ -117,3 +117,55 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/symbol-graphic-contrast-all-s
     ['sgc_case_01', 'sgc_case_02', 'sgc_case_03']
   );
 });
+
+test(`${RULE_ID}: symbols in an inactive control are left out, as 1.4.11 exempts them (round 11, B11-7)`, () => {
+  const B = 'style="color:#ccc;background:#fff;border:1px solid #ccc"';
+  for (const body of [
+    `<button disabled ${B}>×</button>`,
+    `<fieldset disabled><button ${B}>+</button></fieldset>`,
+    `<div role="button" tabindex="0" aria-disabled="true" ${B}>×</div>`
+  ]) {
+    assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  // The same control, active, is asked about.
+  assertRule(run(`<button ${B}>×</button>`), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});
+
+test(`${RULE_ID}: nested symbol elements report each symbol once, on the element that holds it (round 11, B11-11)`, () => {
+  const rule = assertRule(
+    run('<p><span id="o" style="color:#ccc">★<b id="i">★★</b></span></p>'),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 2, maxOccurrences: 2 }
+  );
+  assert.deepEqual(
+    rule.occurrences.map((o) => [/id="(\w)"/.exec(o.html)[1], o.data.details.symbols]),
+    [
+      ['o', '★'],
+      ['i', '★★']
+    ]
+  );
+});
+
+test(`${RULE_ID}: a control in a disabled fieldset's first legend is active (round 11, R11F-10)`, () => {
+  const B = 'style="color:#ccc;background:#fff;border:1px solid #ccc"';
+  // HTML leaves it enabled (:disabled is false), as Chromium does.
+  assertRule(
+    run(
+      `<fieldset disabled><legend><button ${B}>★</button></legend><input aria-label="x"></fieldset>`
+    ),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  // In a second legend, or out of a legend, it is disabled.
+  for (const body of [
+    `<fieldset disabled><legend>A</legend><legend><button ${B}>★</button></legend></fieldset>`,
+    `<fieldset disabled><legend>A</legend><button ${B}>★</button></fieldset>`
+  ]) {
+    assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});

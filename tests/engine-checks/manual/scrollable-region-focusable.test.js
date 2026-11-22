@@ -131,3 +131,35 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/scrollable-region-focusable-a
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: a box set with the overflow shorthand is asked about under jsdom (round 11, B11-4)`, () => {
+  for (const [head, attrs] of [
+    ['', 'style="height:80px;overflow:auto"'],
+    ['<style>.s{height:80px;overflow:hidden scroll}</style>', 'class="s"']
+  ]) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main><div id="box" ${attrs}><p>Long text</p></div></main></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.ok(hasOccurrenceForId(rule, 'box'));
+  }
+});
+
+test(`${RULE_ID}: overflow through var() or overlay is read as Chromium reads it under jsdom (round 11, R11F-4)`, () => {
+  const scan = (style) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main><div id="box" style="height:40px;width:100px;${style}">Opening hours today and tomorrow and more text here</div></main></body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+  for (const style of ['--o:visible;overflow:var(--o)', '--o:visible;overflow-y:var(--o)']) {
+    assertRule(scan(style), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  for (const style of ['--o:auto;overflow:var(--o)', 'overflow:overlay']) {
+    const rule = assertRule(scan(style), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.ok(hasOccurrenceForId(rule, 'box'), style);
+  }
+});

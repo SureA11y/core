@@ -385,3 +385,26 @@ test(`${RULE_ID} in Chromium: a link that draws nothing is not applicable`, { sk
   assert.equal(await outcome(`<a href="#z" style="${S}">guide</a>`), 'fail');
   assert.equal(await outcome(`<a href="#z" style="${S};display:contents">guide</a>`), 'fail');
 });
+
+// Round 11's underline cases, as Chromium draws them (the jsdom tests run
+// them too).
+test(`${RULE_ID} in Chromium: round 11's underline cases`, { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  for (const [label, head, body, expected] of require('./link-in-text-block-round-11-cases.js')) {
+    const p = await browser.newPage();
+    try {
+      await p.setContent(
+        `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main>${body}</main></body></html>`
+      );
+      await addBundle(p);
+      const outcome = await p.evaluate(
+        (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0].outcome,
+        RULE_ID
+      );
+      assert.equal(outcome, expected, label);
+    } finally {
+      await p.close();
+    }
+  }
+});

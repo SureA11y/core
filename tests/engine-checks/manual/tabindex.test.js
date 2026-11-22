@@ -124,3 +124,44 @@ test(`${RULE_ID}: gives the value and the tab stops it jumps ahead of`, () => {
   );
   assert.strictEqual(first.i18n.summaryKey, 'tabindex_summary_cantTell_value');
 });
+
+test(`${RULE_ID}: reads tabindex with HTML's rules for parsing integers (round 11, B11-5)`, () => {
+  const read = (value) => {
+    const r = runa11yCoreOnHtml(
+      `<!doctype html><html><body><a href="/a">A</a><button tabindex="${value}">B</button></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((c) => c.ruleId === RULE_ID);
+    return [r.outcome, r.occurrences.map((o) => o.data.details.value)];
+  };
+  // What el.tabIndex gives in a browser: 1, 2, 0, 1, and none for junk.
+  assert.deepStrictEqual(read('1.5'), ['cantTell', [1]]);
+  assert.deepStrictEqual(read(' +2abc'), ['cantTell', [2]]);
+  assert.deepStrictEqual(read('0x1'), ['pass', []]);
+  assert.deepStrictEqual(read('1e3'), ['cantTell', [1]]);
+  assert.deepStrictEqual(read('abc'), ['notApplicable', []]);
+  assert.deepStrictEqual(read(' 1'), ['notApplicable', []]);
+});
+
+test(`${RULE_ID}: a tabindex outside the 32-bit range is ignored (round 11, R11F-9)`, () => {
+  const read = (tag, value) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html><body><a href="/a">A</a><${tag} tabindex="${value}">B</${tag}></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((c) => c.ruleId === RULE_ID).outcome;
+  // As el.tabIndex gives it in Chromium: a div is not focusable, a button
+  // keeps its default.
+  assert.strictEqual(read('div', '2147483648'), 'notApplicable');
+  assert.strictEqual(read('button', '99999999999'), 'notApplicable');
+  assert.strictEqual(read('div', '2147483647'), 'cantTell');
+});
+
+test(`${RULE_ID}: the summary quotes the attribute as written (round 11)`, () => {
+  const occ = runa11yCoreOnHtml(
+    `<!doctype html><html><body><a href="/a">A</a><button tabindex="1.5">B</button></body></html>`,
+    { runOnly: [RULE_ID] }
+  )
+    .checksResults.find((c) => c.ruleId === RULE_ID)
+    .occurrences.find((o) => o.data.details.value === 1);
+  assert.match(occ.summary, /tabindex="1\.5"/);
+  assert.strictEqual(occ.i18n.params.value, '1.5');
+});

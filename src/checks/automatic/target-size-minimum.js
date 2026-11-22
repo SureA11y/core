@@ -1459,12 +1459,11 @@ function runInPage(ctx) {
     'textbox',
     'treeitem'
   ]);
-  // role~= matches the token anywhere in the fallback list, so the resolved
-  // role is checked below (role="tooltip button" is a tooltip, not a target).
-  const CANDIDATE_SELECTOR = [
-    NATIVE_CANDIDATE_SELECTOR,
-    ...[...TARGET_ROLES].map((role) => `[role~="${role}" i]`)
-  ].join(', ');
+  // Any element with a role, and the resolved role is checked below
+  // (role="tooltip button" is a tooltip, not a target). One [role] costs a
+  // selector engine far less than a [role~="x" i] for each target role,
+  // which made jsdom match every element against each of them.
+  const CANDIDATE_SELECTOR = NATIVE_CANDIDATE_SELECTOR + ', [role]';
 
   function isCandidate(el) {
     try {

@@ -144,3 +144,13 @@ test(`${RULE_ID}: a fail says a name attribute is a target, not a name`, () => {
   );
   assert.strictEqual(occ.i18n.params.frameName, 'Map of our office');
 });
+
+test(`${RULE_ID}: an iframe whose tabindex is outside the 32-bit range keeps its default (round 11, R11F-9)`, () => {
+  // Chromium ignores the value, as if the attribute were missing: the
+  // iframe stays in the tab order, so it needs a name.
+  const html = `<!doctype html><html><body><iframe tabindex="-2147483649" src="/x.html"></iframe></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});

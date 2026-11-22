@@ -55,3 +55,40 @@ test(`${RULE_ID}: the fixture in Chromium`, { skip }, async (t) => {
     assert.ok(named.includes(name), name);
   }
 });
+
+test(
+  `${RULE_ID}: hidden legends and options the flat tree leaves out, in Chromium (round 11)`,
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    for (const [
+      label,
+      light,
+      shadow,
+      outcome
+    ] of require('./form-group-name-present-round-11-cases.js')) {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${light}</main></body></html>`
+        );
+        if (shadow)
+          await page.evaluate((inner) => {
+            document.getElementById('h').attachShadow({ mode: 'open' }).innerHTML = inner;
+          }, shadow);
+        await addBundle(page);
+        const got = await page.evaluate(
+          (ruleId) =>
+            window.a11ycore
+              .runa11yCoreInPage(null, null, {}, [ruleId])
+              .checksResults.find((c) => c.ruleId === ruleId).outcome,
+          RULE_ID
+        );
+        assert.equal(got, outcome, label);
+      } finally {
+        await page.close();
+      }
+    }
+  }
+);
