@@ -3,7 +3,9 @@
 /**
  * Code written against the 1.17 types still compiles: options typed
  * `EngineOptions | StrictEngineOptions` are taken by every scan, catalog
- * and testing function, and each returns the type it returned in 1.17.
+ * and testing function, and by the browser bundle's, also from a generic
+ * wrapper, and each returns the type it returned in 1.17. Checked with
+ * TypeScript 5.9, 6.0 and 7.0 when this was written.
  * Skipped when TypeScript is not installed.
  */
 
@@ -109,6 +111,71 @@ test(
     declare function evaluate<A extends unknown[], T>(f: (...args: A) => T, ...args: A): Promise<T>;
     const q: Promise<ScanResult> = evaluate(runa11yCoreInPage, 'u', null, {}, null);
     void [b, c, d, e, p, r, fn, q];
+  `);
+    assert.deepEqual(errors, []);
+  }
+);
+
+test(
+  'wrappers written for 1.17 compile: generic, typed by either kind of options, and in the browser bundle',
+  { skip: !ts && 'typescript not installed' },
+  () => {
+    const errors = compile(`
+    import { runDomRulesInPage, runa11yCoreInPage, getChecksForRunOnly, getRulesCatalog } from ${at('index')};
+    import type { EngineOptions, StrictEngineOptions, ScanResult } from ${at('index')};
+    import browser = require(${BROWSER});
+    const a: StrictEngineOptions = { strictOptions: true, locale: 'de' };
+    const r1: ScanResult = runDomRulesInPage('u', null, a);
+    const b: EngineOptions = { locale: 'fr', output: { detail: 'findings' } };
+    const r2: ScanResult = runDomRulesInPage('u', null, b);
+    const c = { locale: 'fr', foo: 1 };
+    const r3: ScanResult = runDomRulesInPage('u', null, c);
+    const d: EngineOptions | undefined = undefined;
+    const r4: ScanResult = runDomRulesInPage('u', null, d);
+    const e: Record<string, unknown> = { locale: 'fr' };
+    const r5: ScanResult = runDomRulesInPage('u', null, e);
+    const f = { output: { detail: 'full' as const } };
+    const r6: ScanResult = runDomRulesInPage('u', null, f);
+    const g: Partial<EngineOptions> = {};
+    const r7: ScanResult = runDomRulesInPage('u', null, g);
+    function wrap(o: EngineOptions | StrictEngineOptions) {
+      const r: ScanResult = runDomRulesInPage('u', null, o);
+      void r;
+      return getChecksForRunOnly(null, o);
+    }
+    function scanWith<T extends EngineOptions>(o: T): ScanResult { return runa11yCoreInPage('u', null, o); }
+    function scanAny(o: EngineOptions): ScanResult { return runa11yCoreInPage('u', null, o); }
+    function scanStrict(o: StrictEngineOptions): ScanResult { return runa11yCoreInPage('u', null, o); }
+    function scanMaybe(o?: EngineOptions | null) { return getRulesCatalog(o); }
+    function inPage<T extends EngineOptions>(o: T): Promise<ScanResult> { return browser.runa11yCoreInPageAsync('u', null, o); }
+    function runIt<T extends EngineOptions>(o: T): Promise<ScanResult> { return browser.run(o); }
+    function runEither(o: EngineOptions | StrictEngineOptions): Promise<ScanResult> { return browser.run(o); }
+    void [r1, r2, r3, r4, r5, r6, r7, wrap, scanWith, scanAny, scanStrict, scanMaybe, inPage, runIt, runEither];
+  `);
+    assert.deepEqual(errors, []);
+  }
+);
+
+test(
+  'a misspelt option written in a strictOptions literal still does not compile',
+  { skip: !ts && 'typescript not installed' },
+  () => {
+    const errors = compile(`
+    import { runDomRulesInPage, runa11yCoreAcrossFrames, getRulesCatalog } from ${at('index')};
+    import { runa11yCoreOnHtml } from ${at('testing')};
+    import browser = require(${BROWSER});
+    // @ts-expect-error a misspelt option
+    runDomRulesInPage('u', null, { strictOptions: true, lcoale: 'de' }, null);
+    // @ts-expect-error a misspelt option
+    void runa11yCoreAcrossFrames(null, null, { strictOptions: true, output: { detail: 'full' }, acme: 1 });
+    // @ts-expect-error a misspelt option
+    getRulesCatalog({ strictOptions: true, lcoale: 'de' });
+    // @ts-expect-error a misspelt option
+    runa11yCoreOnHtml('<p>', { engineOptions: { strictOptions: true, lcoale: 'de' } });
+    // @ts-expect-error a misspelt option
+    void browser.run({ strictOptions: true, lcoale: 'de' });
+    // @ts-expect-error a misspelt option
+    void browser.runa11yCoreInPageAsync(null, null, { strictOptions: true, lcoale: 'de' });
   `);
     assert.deepEqual(errors, []);
   }
