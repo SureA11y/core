@@ -47,11 +47,11 @@ function compile(source) {
 }
 
 test(
-  'a compact result is read by the reporters and the baseline, and a compact scan returns one (round 9, A9-2)',
+  'a compact result is read by the reporters and the baseline, and a compact scan result can be typed as one (round 9, A9-2)',
   { skip: !ts && 'typescript not installed' },
   () => {
     const errors = compile(`
-    import type { ScanResult, CompactScanResult } from ${at('index')};
+    import type { ScanResult, CompactScanResult, ScanResultFor } from ${at('index')};
     import { runDomRulesInPage, runa11yCoreInPage, addHowToCheck, leaningFailures, flattenCrossFrameResult, getMargins } from ${at('index')};
     import { renderSarifReport } from ${at('sarif')};
     import { renderJunitReport } from ${at('junit')};
@@ -85,14 +85,16 @@ test(
     // A compact check result lists no occurrences, so they must be asked for.
     // @ts-expect-error a compact check result has no occurrences
     const n: number = a.checksResults[0].occurrences.length;
-    // @ts-expect-error a compact scan's result is not typed as a full one
+    // The scan is typed as returning a ScanResult, as in 1.17, so code
+    // written for 1.17 still compiles; ScanResultFor names the compact type.
     const full: ScanResult = runDomRulesInPage('u', null, { output: { detail: 'findings' } });
+    const named: ScanResultFor<{ output: { detail: 'findings' } }> = a;
     // Any other scan is a full result, as before.
     const e: ScanResult = runDomRulesInPage('u', null, { output: { detail: 'full' } });
     const f: ScanResult = runDomRulesInPage();
     const g: ScanResult = runa11yCoreOnHtml('<p>');
     const h: Promise<ScanResult> = browser.runa11yCoreInPageAsync(null, null, { locale: 'de' });
-    void [steps, a, b, c, d, n, full, e, f, g, h];
+    void [steps, a, b, c, d, n, full, named, e, f, g, h];
   `);
     assert.deepEqual(errors, []);
   }
