@@ -808,11 +808,14 @@ function createDomHelpers(opts) {
     const parent = __flatParentElement(el);
     if (!parent) return null;
     // Resolve the elements between host and el from the top, so each
-    // reads its parent's answer from the cache.
-    const path = [];
-    for (let p = parent, i = 0; p && p !== host && i < 10000; p = __flatParentElement(p), i++)
-      path.push(p);
-    for (let k = path.length - 1; k >= 0; k--) computedStyle(path[k]);
+    // reads its parent's answer from the cache; where the parent's is
+    // there already (a scan reads the page top down), they all are.
+    if (!__styleCached(parent)) {
+      const path = [];
+      for (let p = parent, i = 0; p && p !== host && i < 10000; p = __flatParentElement(p), i++)
+        path.push(p);
+      for (let k = path.length - 1; k >= 0; k--) computedStyle(path[k]);
+    }
     const pcs = computedStyle(parent);
     const was = __unhinted(parent, prop);
     const now = String(pcs[prop] || '');
@@ -1048,6 +1051,16 @@ function createDomHelpers(opts) {
     }
     if (before.color !== undefined || before.fill !== undefined) __beforeHints.set(el, before);
     return out;
+  }
+
+  // Whether computedStyle has el's style in this scan's cache.
+  function __styleCached(el) {
+    try {
+      const map = __computedStyleCacheByScope && __computedStyleCacheByScope.get(__getScopeObj());
+      return !!map && map.has(el);
+    } catch {
+      return false;
+    }
   }
 
   const computedStyle = (el) => {
@@ -9166,17 +9179,25 @@ function createDomHelpers(opts) {
       const y = byName.get('overflow-y') || String(cs.overflowY || '');
       byName.set('overflow', x === y ? x : x + ' ' + y);
     }
+    // Every element of a page with a presentational hint gets one, and the
+    // rules read its properties over and over: each is read from the style
+    // below once (jsdom's computed style is a snapshot, which computedStyle
+    // keeps for the scan), and each method bound once.
+    const getPropertyValue = (name) => {
+      const k = String(name).toLowerCase();
+      return byName.has(k) ? byName.get(k) : cs.getPropertyValue(name);
+    };
+    const seen = new Map();
     return new Proxy(cs, {
       get(target, key) {
-        if (typeof key === 'string' && byName.has(key)) return byName.get(key);
-        if (key === 'getPropertyValue') {
-          return (name) => {
-            const k = String(name).toLowerCase();
-            return byName.has(k) ? byName.get(k) : target.getPropertyValue(name);
-          };
-        }
+        const own = byName.get(key);
+        if (own !== undefined) return own;
+        if (key === 'getPropertyValue') return getPropertyValue;
+        let b = seen.get(key);
+        if (b !== undefined) return b;
         const v = Reflect.get(target, key, target);
-        return typeof v === 'function' ? v.bind(target) : v;
+        seen.set(key, (b = typeof v === 'function' ? v.bind(target) : v));
+        return b;
       }
     });
   }
