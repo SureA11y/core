@@ -1,0 +1,36 @@
+const { four, page, close } = require('./h.js');
+const ids = ['contrast-minimum','symbol-graphic-contrast'];
+const G = 'color:#aaa'; // 2.32 on white
+const cases = [
+ ['flex price (sign and digits as flex items)', `<div style="display:flex;color:#000"><span style="${G}">$</span><span>45.00</span></div>`],
+ ['grid price', `<div style="display:grid;grid-template-columns:auto auto;justify-content:start;color:#000"><span style="${G}">£</span><span>12</span></div>`],
+ ['inline-flex price', `<p>Total <span style="display:inline-flex;color:#000"><span style="${G}">€</span><span>9,99</span></span></p>`],
+ ['breadcrumb > between links', `<nav><a href="/">Home</a> <span style="${G}">&gt;</span> <a href="/shop">Shop</a></nav>`],
+ ['breadcrumb › between links', `<nav><a href="/">Home</a> <span style="${G}">›</span> <a href="/shop">Shop</a></nav>`],
+ ['$ between links', `<p><a href="/a">Cheap</a> <span style="${G}">$</span> <a href="/b">Pricey</a></p>`],
+ ['sign before a linked price', `<p><span style="${G}">$</span><a href="/p">45</a></p>`],
+ ['sign after block boundary', `<div><span style="${G}">€</span></div><div>45</div>`],
+ ['sign then <br> then digits', `<p><span style="${G}">€</span><br>45</p>`],
+ ['sign next to sr-only text only', `<p><span style="${G}">$</span><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">USD</span></p>`],
+ ['sign next to display:none digits', `<p><span style="${G}">$</span><span style="display:none">45</span></p>`],
+ ['sign with visibility:hidden digits', `<p><span style="${G}">$</span><span style="visibility:hidden">45</span></p>`],
+ ['〒 in span before postcode', `<p lang="ja" style="color:#000"><span style="${G}">〒</span>100-0001 東京都千代田区</p>`],
+ ['fullwidth ￥ before digits', `<p lang="ja"><span style="${G}">￥</span>1,980</p>`],
+ ['sign in ::before (generated)', `<style>.p::before{content:"$";color:#aaa}</style><p class="p">45.00</p>`],
+ ['sign as icon font i before price', `<p><i style="${G};font-style:normal">€</i> 45</p>`],
+ ['sign after digits with only space', `<p>45 <span style="${G}">€</span></p>`],
+ ['sign next to <img> then digits', `<p><span style="${G}">$</span><img alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="1" height="1">45</p>`],
+ ['sign next to emoji', `<p><span style="${G}">$</span>💰</p>`],
+ ['sign plus ± math (Sm, not Sc)', `<p><span style="${G}">±</span>5%</p>`],
+ ['degree sign °C after digits (Sk/So)', `<p>21<span style="${G}">°</span>C</p>`],
+ ['percent sign % after digits (Po)', `<p>21<span style="${G}">%</span></p>`],
+ ['strikethrough old price and sign', `<p><del><span style="${G}">$</span>50</del> <ins>$40</ins></p>`],
+ ['sign separated by inline-block icon with text', `<p><span style="${G}">$</span><span style="display:inline-block">45</span></p>`],
+ ['sign with position:absolute neighbour', `<p style="position:relative"><span style="${G}">$</span><span style="position:absolute;left:0;top:40px">45</span></p>`],
+ ['sign followed by float digits', `<p><span style="${G}">$</span><span style="float:right">45</span></p>`],
+ ['RTL price ‏ ₪', `<p dir="rtl" lang="he"><span style="${G}">₪</span>45</p>`],
+ ['sign inside button with digits', `<button style="color:#000;background:#fff"><span style="${G}">$</span>5</button>`],
+ ['sign in table cell next to digits cell', `<table><tr><td><span style="${G}">$</span></td><td>45</td></tr></table>`],
+ ['large sign 24px', `<p><span style="color:#949494;font-size:24px">€</span>45</p>`],
+];
+(async () => { for (const [l, b] of cases) await four(l, page(b), ids); await close(); })();

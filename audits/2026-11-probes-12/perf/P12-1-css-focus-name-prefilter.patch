@@ -1,0 +1,86 @@
+diff --git a/src/checks/manual/css-focus-indicator-suppressed-manual.js b/src/checks/manual/css-focus-indicator-suppressed-manual.js
+index 453c4212..e0b78b25 100644
+--- a/src/checks/manual/css-focus-indicator-suppressed-manual.js
++++ b/src/checks/manual/css-focus-indicator-suppressed-manual.js
+@@ -1122,6 +1122,64 @@ function runInPage(ctx) {
+     return byBase;
+   }
+ 
++  // A selector that needs an element with a class or id that nothing in
++  // the element's tree carries matches nothing there, so it is not tested.
++  // Only names outside brackets, parentheses and quotes count (every
++  // compound of a selector needs its element to exist in the tree); a
++  // selector with an escape, :host, ::slotted, :scope or & is always tested.
++  // Names are compared in lower case, as a quirks-mode page matches them.
++  const namesBySel = new Map();
++  function requiredNames(sel) {
++    if (namesBySel.has(sel)) return namesBySel.get(sel);
++    let names = null;
++    if (!/\\|:host|::slotted|:scope|&/i.test(sel)) {
++      names = [];
++      let depth = 0;
++      let quote = '';
++      for (let i = 0; i < sel.length; i++) {
++        const ch = sel[i];
++        if (quote) {
++          if (ch === quote) quote = '';
++        } else if (ch === '"' || ch === "'") quote = ch;
++        else if (ch === '(' || ch === '[') depth += 1;
++        else if (ch === ')' || ch === ']') depth -= 1;
++        else if (!depth && (ch === '.' || ch === '#')) {
++          const m = /^-?[_a-zA-Z\u0080-￿][-\w\u0080-￿]*/.exec(sel.slice(i + 1));
++          if (m) names.push((ch === '.' ? 'c:' : 'i:') + m[0].toLowerCase());
++        }
++      }
++    }
++    namesBySel.set(sel, names);
++    return names;
++  }
++  const namesByTree = new Map();
++  function namesIn(tree) {
++    if (namesByTree.has(tree)) return namesByTree.get(tree);
++    let found = null;
++    try {
++      const type = tree ? dom.nodeType(tree) : 0;
++      if (type === 9 || type === 11) {
++        found = new Set();
++        for (const n of dom.querySelectorAll(tree, '[class], [id]')) {
++          const cls = dom.getAttribute(n, 'class');
++          if (cls) for (const c of cls.split(/[ \t\n\f\r]+/)) if (c) found.add('c:' + c.toLowerCase());
++          const id = dom.getAttribute(n, 'id');
++          if (id) found.add('i:' + id.toLowerCase());
++        }
++      }
++    } catch {
++      found = null;
++    }
++    namesByTree.set(tree, found);
++    return found;
++  }
++  function mayMatchIn(tree, sel) {
++    const names = requiredNames(sel);
++    if (!names || !names.length) return true;
++    const found = namesIn(tree);
++    return !found || names.every((n) => found.has(n));
++  }
++
+   const occurrences = [];
+   let applicableCount = 0;
+ 
+@@ -1135,13 +1193,14 @@ function runInPage(ctx) {
+     // Many rules share a selector (a framework's reset repeated): each one
+     // is tested once per element.
+     const listHit = listHits.has(el);
+-    const byBase = listHit ? listedMatchesIn(treeOf(el)) : null;
++    const tree = treeOf(el);
++    const byBase = listHit ? listedMatchesIn(tree) : null;
+     const matched = new Map();
+     const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
+       let hit = matched.get(s.base);
+       if (hit === undefined) {
+         const found = byBase && byBase.get(s.base);
+-        hit = found ? found.has(el) : matchesSafe(el, s.base);
++        hit = found ? found.has(el) : mayMatchIn(tree, s.base) && matchesSafe(el, s.base);
+         matched.set(s.base, hit);
+       }
+       return hit;

@@ -1,0 +1,17 @@
+const H = require('./h.js');
+const html = H.page('<img src="a.png"><a href="/x"></a><p>p</p>');
+const slow = H.slowRule('org-slow', 300);
+const { r } = H.scan(html, { timeBudgetMs: 150, customRules: [slow], profile: ['wcag22-aa', 'wcag21-aa', 'wcag20-a'] });
+const ids = new Set(r.notRun.map(n => n.ruleId));
+const ran = new Set(r.checksResults.map(c => c.ruleId));
+console.log('unique notRun', ids.size, 'notRun but also ran', [...ids].filter(i => ran.has(i)).length, 'notRun-not-ran', [...ids].filter(i => !ran.has(i)).length);
+console.log('engine.profiles', JSON.stringify(r.engine.profiles), 'engine.profile', r.engine.profile);
+const e = H.earl.renderEarlReport(r);
+const s = JSON.stringify(e); console.log('earl outcomes', JSON.stringify((s.match(/earl:(failed|cantTell|passed|inapplicable|untested)/g) || []).reduce((m, x) => (m[x] = (m[x] || 0) + 1, m), {})));
+console.log('earl keys', Object.keys(e), JSON.stringify(e).slice(0, 600));
+const W = console.warn; console.warn = (...a) => console.log('WARN', String(a[0]).slice(0, 300));
+H.baseline.buildBaselineEntries(r);
+console.warn = W;
+const hr = H.report.renderHtmlReport(r); const t = hr.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+console.log((t.match(/Incomplete scan[^.]*\.[^.]*\.[^.]*\./g) || []).map(x => x.slice(0, 200)));
+console.log((t.match(/not run[^.]{0,200}/gi) || []).slice(0, 6));

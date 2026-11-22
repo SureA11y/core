@@ -1,0 +1,2 @@
+const {chromeRun}=require('./h.js');
+(async()=>{const r=await chromeRun('now',{full:true,rules:['resize-text-content-loss','p-as-heading'],html:'<html lang=en><body><p><b>Shipping:</b></p><p>Text</p><div style="width:100px;height:20px;overflow:hidden">Some long text that is clipped badly here and more</div></body></html>',viewport:{width:640,height:800}});console.log(JSON.stringify(JSON.parse(r['resize-text-content-loss'].replace(/^\S+ (\[\w+\] )?/,'')),null,1).slice(0,3000));console.log(r['p-as-heading']);process.exit(0)})();

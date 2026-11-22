@@ -7,25 +7,31 @@
 
 | | |
 |---|---|
-| **Verified against** | `main` at `d1a51036`, 2026-11-22, for the eleventh round (found at `462df5b4`), its fixes (#422, merged as `ec311ea8`) and its decisions (#423); `462df5b4`, 2026-11-21, for the tenth round (found at `6e2b905c`) and its fixes and decisions (#421); `ad47fe3e`, 2026-11-21, for the ninth round (found at `805f33ff`, the round 8 branch) and its fixes (#417); `a021f714`, 2026-11-21, for the eighth round (found at `254b644f`) and its fixes (#416); `78354cc4`, 2026-11-20, for #413's features; `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the leftovers fixed in #412; `ec664338`, 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
-| **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)), [second](./2026-10-stress-test-2.md) (`cfefc02`), [third](./2026-10-stress-test-3.md) (`eaa5d3f1`, with its [outcomes log](./2026-10-stress-test-3-outcomes.md)), [fourth](./2026-10-stress-test-4.md) (`3af2008`) [fifth](./2026-10-stress-test-5.md) (`c528af08`), [sixth](./2026-11-stress-test-6.md) (`23e0a387`), [seventh](./2026-11-stress-test-7.md) (`ec664338`), [eighth](./2026-11-stress-test-8.md) (`254b644f`), [ninth](./2026-11-stress-test-9.md) (`805f33ff`), [tenth](./2026-11-stress-test-10.md) (`6e2b905c`) and [eleventh](./2026-11-stress-test-11.md) (`462df5b4`) |
+| **Verified against** | `main` at `d1a51036`, 2026-11-22, for the twelfth round (found at `ec311ea8`) and its fixes and decisions (#423); `d1a51036`, 2026-11-22, for the eleventh round (found at `462df5b4`), its fixes (#422, merged as `ec311ea8`) and its decisions (#423); `462df5b4`, 2026-11-21, for the tenth round (found at `6e2b905c`) and its fixes and decisions (#421); `ad47fe3e`, 2026-11-21, for the ninth round (found at `805f33ff`, the round 8 branch) and its fixes (#417); `a021f714`, 2026-11-21, for the eighth round (found at `254b644f`) and its fixes (#416); `78354cc4`, 2026-11-20, for #413's features; `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the leftovers fixed in #412; `ec664338`, 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
+| **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)), [second](./2026-10-stress-test-2.md) (`cfefc02`), [third](./2026-10-stress-test-3.md) (`eaa5d3f1`, with its [outcomes log](./2026-10-stress-test-3-outcomes.md)), [fourth](./2026-10-stress-test-4.md) (`3af2008`) [fifth](./2026-10-stress-test-5.md) (`c528af08`), [sixth](./2026-11-stress-test-6.md) (`23e0a387`), [seventh](./2026-11-stress-test-7.md) (`ec664338`), [eighth](./2026-11-stress-test-8.md) (`254b644f`), [ninth](./2026-11-stress-test-9.md) (`805f33ff`), [tenth](./2026-11-stress-test-10.md) (`6e2b905c`), [eleventh](./2026-11-stress-test-11.md) (`462df5b4`) and [twelfth](./2026-11-stress-test-12.md) (`ec311ea8`) |
 | **How it is kept** | See [`README.md`](./README.md): before each audit, merge `main`; after it, re-run every open item, move fixed ones to §3, and add new ones |
 
 **How it was built.** Every first-round item was re-run on `cfefc02`, including those the outcomes log marks as fixed, by the re-check probes in [`2026-10-probes-2/recheck-round-1/`](./2026-10-probes-2/recheck-round-1/). Every second-round item was re-run independently while writing that round's report, except those marked *(not re-run)*. Where two audits found the same problem, the entry keeps the **oldest id** and lists the others.
 
 Rounds 3 to 5 were kept on branches of their own until 2026-10-27, when they were gathered here. The third round's follow-up is recorded item by item in its outcomes log; the fourth round's findings were re-run on `c528af08` by the fifth round ([`RECHECK.md`](./2026-10-probes-5/robust/RECHECK.md)); every fifth-round finding, and every round-4 lead still open, was re-run on `92e54df6` with the round's own probes, in Chromium 153 and jsdom.
 
-**Reading an entry.** The id says where it came from: `C-`, `S-`, `O-` and `R-` are first-round ids (custom rules, options, outputs, rules); `NM-`, `VS-`, `ST-`, `OP-`, `RP-` and `RB-` are second-round ids (names, visual, structure, options, reporters, robustness). From the third round on, an id is written with its round (`R3:`, `R4:`, `R5:`, `R6:`, `R7:`), since those rounds reused prefixes of the second (`RB-`, `OP-`, `RP-`); the round's report and probes use the short id. The sixth round's prefixes are `RF-` (reflow), `CG-` (changed rules, the exclusion filter, reporters), `EX-` (experimental APIs, pack tooling), `CE-` (other engines) and `PF-` (speed and memory); the seventh round's are `RW-` (reflow and `p-as-heading`), `VL-` (target size, focus not obscured), `AN-` (names, ARIA, landmarks), `IF-` (the integrator's API) and `SP-` (robustness, speed, memory); the eighth round's are `NW-` (regressions and new-work checks), `NA-` (names, ARIA), `LY-` (layout, visual), `PK-` (packs, API) and `RO-` (robustness). The ninth round's ids carry their round already (`A9-`, `V9-`, `N9-`, `R9-`: API, visual, names, robustness) and are written as they are, as are the tenth round's (`S10-`: the general stress test; `C10-` and `G10-`: core's findings and coverage gaps from the comparison with other engines) and the eleventh's (`B11-`: bugs; `P11-`: speed; `R11F-` and `R11P-`: the reviews of the bug and speed fixes). Ids never change and are never reused. Verdicts and severities are defined in the [README](./README.md#running-an-audit). The **Details** link leads to the full evidence: repro, spec quotes, browser evidence, cause.
+**Reading an entry.** The id says where it came from: `C-`, `S-`, `O-` and `R-` are first-round ids (custom rules, options, outputs, rules); `NM-`, `VS-`, `ST-`, `OP-`, `RP-` and `RB-` are second-round ids (names, visual, structure, options, reporters, robustness). From the third round on, an id is written with its round (`R3:`, `R4:`, `R5:`, `R6:`, `R7:`), since those rounds reused prefixes of the second (`RB-`, `OP-`, `RP-`); the round's report and probes use the short id. The sixth round's prefixes are `RF-` (reflow), `CG-` (changed rules, the exclusion filter, reporters), `EX-` (experimental APIs, pack tooling), `CE-` (other engines) and `PF-` (speed and memory); the seventh round's are `RW-` (reflow and `p-as-heading`), `VL-` (target size, focus not obscured), `AN-` (names, ARIA, landmarks), `IF-` (the integrator's API) and `SP-` (robustness, speed, memory); the eighth round's are `NW-` (regressions and new-work checks), `NA-` (names, ARIA), `LY-` (layout, visual), `PK-` (packs, API) and `RO-` (robustness). The ninth round's ids carry their round already (`A9-`, `V9-`, `N9-`, `R9-`: API, visual, names, robustness) and are written as they are, as are the tenth round's (`S10-`: the general stress test; `C10-` and `G10-`: core's findings and coverage gaps from the comparison with other engines) and the eleventh's (`B11-`: bugs; `P11-`: speed; `R11F-` and `R11P-`: the reviews of the bug and speed fixes) and the twelfth's (`A12-`: API; `U12-`: rules; `C12-`: contrast; `K12-` and `PK12-`: CMS and packs; `P12-`: speed; `R12F-` and `F12-`: the first and final reviews of #423). Ids never change and are never reused. Verdicts and severities are defined in the [README](./README.md#running-an-audit). The **Details** link leads to the full evidence: repro, spec quotes, browser evidence, cause.
 
 ---
 
 ## 1. Open — to fix
 
-Every finding of rounds 1 to 11 is fixed, decided or closed (§3, §4). Round 11's fixes are in [#422](https://github.com/SureA11y/core/pull/422), merged 2026-11-22 as `ec311ea8`; its decisions were made in [#423](https://github.com/SureA11y/core/pull/423), merged 2026-11-22 as `d1a51036` (§3). Of round 9's 61, the 48 evident ones are fixed in [#417](https://github.com/SureA11y/core/pull/417), merged 2026-11-21; the rest were decided the same day and made in [#418](https://github.com/SureA11y/core/pull/418), merged 2026-11-21 (below). Each fix has a regression test that fails on `main` before it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
+Every finding of rounds 1 to 12 is fixed, decided or closed (§3, §4), apart from round 12's release items (below). Round 12's fixes and decisions are in [#423](https://github.com/SureA11y/core/pull/423), merged 2026-11-22 as `d1a51036` (§3). Round 11's fixes are in [#422](https://github.com/SureA11y/core/pull/422), merged 2026-11-22 as `ec311ea8`; its decisions were made in [#423](https://github.com/SureA11y/core/pull/423), merged 2026-11-22 as `d1a51036` (§3). Of round 9's 61, the 48 evident ones are fixed in [#417](https://github.com/SureA11y/core/pull/417), merged 2026-11-21; the rest were decided the same day and made in [#418](https://github.com/SureA11y/core/pull/418), merged 2026-11-21 (below). Each fix has a regression test that fails on `main` before it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
 
 ### Still open
 
-Nothing from rounds 1 to 11.
+No bug is open. For the owner, after round 12 ([report](./2026-11-stress-test-12.md), §6):
+
+1. Under jsdom, ask instead of emulating layout-dependent contrast cases (SVG geometry, `::before` sizing, flex blocks).
+2. A complexity budget for new contrast edge cases: add them only from real pages or ACT, not because a stress test can build them.
+3. Some internal records are still read through the prototype chain (F12-5); `TROUBLESHOOTING.md` says so.
+4. Known limits: forwarded `exportparts`; a closed root on a built-in element styled through `:host` (the hole in the F12-6 speed gate); closed shadow roots in general.
+5. Release work for 1.18.0: `pack-rgaa` 1.3.0, then `pack-raweb`'s dependency on it (PK12-1); lockfiles; the core ranges of `pack-cms` and the panel (K12-6); a speed re-measure on an idle machine.
 
 Before round 11, nothing was open. The two Low leftovers of round 8 (`aria-valid-attr` quoting a very long attribute name whole and taking seconds on it; jsdom's `getComputedStyle` cost in `duplicate-id-aria` on big pages) are fixed in [#419](https://github.com/SureA11y/core/pull/419), merged 2026-11-21.
 
@@ -102,6 +108,49 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 ---
 
 ## 3. Fixed — history
+
+### Twelfth round's findings (in `main`)
+
+Pull request [#423](https://github.com/SureA11y/core/pull/423), merged 2026-11-22 as the single commit `d1a51036`; unreleased, for 1.18.0. The [twelfth round](./2026-11-stress-test-12.md) (at `ec311ea8`) stress-tested everything changed in the 48 hours before, and #423 before merge. Of its 92 findings, 53 are fixed in #423, 27 were decided by the owner on 2026-11-22 and made there, and the 12 CMS and pack findings were acted on in their repositories, apart from two release items (§1). Each fix has a regression test that fails without it. The reviews of #423 found regressions its fixes had caused three times: R12F-1 to R12F-6, then F12-1, F12-2 and F12-3.
+
+| # | Finding | Fixed in |
+|---|---|---|
+| A12-1 to A12-6, A12-8 to A12-11 | `Object.prototype` values read by the engine (failures turned into passes, flags, a bare `TypeError`); budget across frames and in warnings; rules not run counted twice in the HTML report; `packScript` and `<!-->`; `BigInt` option values; the docs on `occurrenceOutcome`; "a undefined" | #423 |
+| U12-3 to U12-7, U12-9, U12-11, U12-12 (and U12-2's message, U12-16's parity) | `resize-text-content-loss` messages and `clipCss`; `text-spacing-content-loss` on vertical text (a regression) and clipped pages; the tabindex quote capped; `aria-prohibited-children` through shadow roots; author `zoom` on targets; `click-handler-keyboard-operable` visible text and parity; jsdom's focus selector lists | #423 |
+| C12-1 to C12-7, C12-10, C12-11, C12-13 to C12-16, C12-18 | Slotted text in its slot's colours; text an overflow clip hides; SVG text without a layout; signs in flex boxes; `aria-disabled` across a shadow host; text not seen; the neighbour search's budget; `color: revert` and background-coloured underlines on links; the changelog; a `::before` under text asked about | #423 |
+| K12-4, K12-5 | The `LIST_ROLE_OVERRIDDEN` hint; the zoom message below 640 px, and decimals as each language writes them | #423 |
+| P12-1 to P12-3 | Focus rules needing an absent class or id skipped; symbol text in one walk per tree; the label test bounded by processor time | #423 |
+| R12F-1 to R12F-5, R12F-7, R12F-9, R12F-10, R12F-12, R12F-13, R12F-16 | The first review: the `Object.prototype` hold (regressions of A12-1's fix) replaced; the preload's own options; packs from another realm; empty selections; document sheets in shadow trees; the focus rule's early exit (a regression); a comment | #423 |
+| F12-1 to F12-5, F12-7, F12-9 | The final review: author-sized controls counted only by declarations that change the size (a regression of R12F-11's fix); `::before` paint under text (a regression of C12-18's fix); the early exit with shadow roots (a regression of R12F-13's fix); read-only and inherited names; host text no slot takes; the quoted selector | #423 |
+
+Decided by the owner on 2026-11-22 ([report §2](./2026-11-stress-test-12.md#2-decisions-taken)):
+
+| # | Question | Decision |
+|---|---|---|
+| A12-7, R12F-8 | The time budget and the browser bundle's style-sheet preload | The preload counts, with half the budget at most |
+| A12-12 | An empty `runOnly` list | Warns; throws under `strictOptions` |
+| A12-13 | What `strictOptions` accepts | Stricter option checks |
+| A12-14 | Misspelt test helper keys | Warned about |
+| A12-15 | A plain pack frozen in place | Frozen as a copy |
+| A12-16 | A selector-only occurrence in an excluded area | Dropped only if every match is excluded |
+| A12-17, U12-17, F12-6 | Speed | A speed pass: rare CSS features gated per page; +0.7% against `main`, +9% against v1.17.0, the remainder new checks |
+| U12-1 | Text a box hides wholly while it shows other text | Asked about |
+| U12-2 | `resize-text-content-loss` below 640 px | No lean below 600 px |
+| U12-8, R12F-11 | Native controls and the user-agent exception | Unstyled native controls exempt, scope confirmed; author-sized ones judged, counting only declarations that change the drawn size (F12-1) |
+| U12-10 | Small icons in a sticky header | Asked about only on real reach |
+| U12-13 | Cues for an element drawn as a control | Better cues; a fail lean only on strong ones |
+| U12-14 | Radios or checkboxes split over named groups | `RADIO_GROUP_SPLIT`, then `CHECKBOX_GROUP_SPLIT` |
+| U12-15 | A bold line and its colon | A trailing colon outside the bold counts; short is 8 words |
+| U12-16, F12-8 | Focus rules in shadow sheets, `:focus-within`, `:has`, `::part`, `::slotted`, `:host` | All read |
+| C12-8 | SVG text width without a layout | 1.1em a character, 2em for wide characters |
+| C12-9 | Bootstrap's disabled nav link without `href` | Still fails; no change |
+| C12-12 | A sign before a linked amount | A link's digits count as a neighbour |
+| C12-17 | Why a currency sign is held to the text ratio | A note in the message |
+| R12F-1 to R12F-6 | The `Object.prototype` hold | Replaced by records with no prototype and own reads |
+| R12F-14 | WordPress title placeholders | `%%var%%` and "Sample Page" count |
+| R12F-15 | Hover handlers on a marquee | Those added on load or with jQuery count |
+| K12-1, K12-3, K12-7 | CMS: resize-text findings; developer wording; "How to check" | Theme, unless the box is in the content; editor texts in `pack-cms` with a "For your developer" part; a heading (CMS branch `round-12-docs`) |
+| PK12-2, PK12-3, PK12-5 | Packs: the checkbox threshold; `pack-wai-aria`'s range; symbols under RGAA | `pack-rgaa` asks from 2 checkboxes; `^1.15.0` kept; 3.3.2 kept as the pack's reading |
 
 ### Eleventh round's findings (in `main`)
 

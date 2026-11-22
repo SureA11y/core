@@ -1,0 +1,11 @@
+process.env.ROOT=process.env.ROOT||'/home/user/r12-review';
+const H=require('/tmp/surea11y-audit/r12/api/h.js');
+const html=H.page('<img src=a.png>');
+const N=+process.env.N||500;
+const p={name:'big',version:'1.0.0',namespace:'big',core:'*',rules:[]};
+for(let i=0;i<N;i++)p.rules.push({id:'big-r'+i,meta:{title:'T'+i,description:'d'.repeat(200),tags:['wcag2a','wcag111'],wcagSc:['1.1.1'],reasonCodes:['A','B','C'],messages:{en:Object.fromEntries(Array.from({length:20},(_,j)=>['k'+j,'text '+j]))}},runInPage(){return{outcome:'pass',occurrences:[]}}});
+const eo={packs:[p],rules:{include:['img-alt-present']}};
+const cpu=()=>process.cpuUsage().user/1000;
+H.scan(html,eo);
+let t=cpu();for(let i=0;i<20;i++)H.scan(html,eo);console.log(process.env.ROOT.split('/').pop(),'N',N,'cpu ms/scan (pack reused, include 1 rule)',((cpu()-t)/20).toFixed(1));
+const eo0={rules:{include:['img-alt-present']}};H.scan(html,eo0);t=cpu();for(let i=0;i<20;i++)H.scan(html,eo0);console.log('  no pack',((cpu()-t)/20).toFixed(1));

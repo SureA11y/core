@@ -1,0 +1,10 @@
+const {createRequire}=require('module');
+const R=createRequire('/home/user/pack-raweb/index.js');
+const M=require('module');const o=M._resolveFilename;
+M._resolveFilename=function(...a){const r=o.apply(this,a); if(typeof r==='string'&&/\/(family\/pack-rgaa|rgaa118)\//.test(r)&&process.env.OLD) return r.replace(/.*\/(family\/pack-rgaa|rgaa118)\//,'/tmp/surea11y-audit/r12/cms/rgaa121/'); return r;};
+const core=R('@surea11y/core'); const {runa11yCoreOnHtml}=R('@surea11y/core/testing');
+const raweb=R('/home/user/pack-raweb/index.js'); const rgaa=R('@surea11y/pack-rgaa');
+console.log('rgaa',rgaa.version,'range',rgaa.core,'core',R('@surea11y/core/package.json').version);
+const html='<!doctype html><html lang="fr"><head><title>Accueil</title></head><body><main><h1>Bonjour</h1><img src="a.png"></main></body></html>';
+const r=runa11yCoreOnHtml(html,{engineOptions:{packs:[rgaa,raweb],profile:'raweb-1.1'}});
+console.log('skipped', JSON.stringify(r.skippedPacks||r.engine&&r.engine.skippedPacks), 'results',r.checksResults.length,'rollups',(r.rulesResults||[]).filter(x=>x.ruleId.startsWith('raweb-1.1-')).length);

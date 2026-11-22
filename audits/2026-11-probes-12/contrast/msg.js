@@ -1,0 +1,3 @@
+const { js, rule } = require('./h.js');
+(async()=>{const h=`<!doctype html><html lang="en"><head><title>t</title></head><body><main><p>Price <span class="amount"><bdi>45,00&nbsp;<span class="sym" style="color:#aaa">€</span></bdi></span></p><button style="color:#aaa;background:#fff">$</button></main></body></html>`;
+const r=await js('br',h,['contrast-minimum','contrast-computable']);for(const id of ['contrast-minimum']){const c=rule(r,id);for(const o of c.occurrences){console.log(o.outcome,o.selector,JSON.stringify(o.summary||o.message).slice(0,400));console.log(JSON.stringify(o.data.details).slice(0,700));}}})();
