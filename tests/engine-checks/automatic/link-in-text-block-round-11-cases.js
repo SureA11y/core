@@ -26,5 +26,46 @@ module.exports = [
     sheet('.u{text-decoration:underline #c00}'),
     link('<span class="u">guide</span>'),
     'pass'
+  ],
+  // R11F-3: an underline the browser's style sheet draws, or one a rule
+  // wins with by !important or from a layer.
+  ['<u> inside a link is underlined', '', link('<u>guide</u>'), 'pass'],
+  ['<ins> inside a link is underlined', '', link('<ins>guide</ins>'), 'pass'],
+  [
+    '<u> with its underline taken away is no cue',
+    '',
+    link('<u style="text-decoration:none">guide</u>'),
+    'fail'
+  ],
+  [
+    'an underline reverted to the browser style is a cue',
+    sheet('u{text-decoration:none}.r{text-decoration:revert}'),
+    link('<u class="r">guide</u>'),
+    'pass'
+  ],
+  [
+    'an !important underline beats an inline none',
+    sheet('.u{text-decoration:underline!important}'),
+    link('<span class="u" style="text-decoration:none">guide</span>'),
+    'pass'
+  ],
+  [
+    'an underline from an @layer is a cue',
+    sheet('@layer x{.u{text-decoration:underline}}'),
+    link('<span class="u">guide</span>'),
+    'pass'
+  ],
+  [
+    'an underline in an @layer loses to a none in no layer',
+    sheet('@layer x{#x .u{text-decoration:underline}} .u{text-decoration:none}'),
+    link('<span class="u">guide</span>'),
+    'fail'
+  ],
+  [
+    'an underline through var() is a cue (asked about under jsdom)',
+    sheet('.u{--d:underline;text-decoration:var(--d)}'),
+    link('<span class="u">guide</span>'),
+    'pass',
+    'cantTell'
   ]
 ];
