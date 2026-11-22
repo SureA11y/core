@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Verified against** | `main` at `462df5b4`, 2026-11-22, for the eleventh round, whose fixes are in #422, open (branch head `ed38251a`); `462df5b4`, 2026-11-21, for the tenth round (found at `6e2b905c`) and its fixes and decisions (#421); `ad47fe3e`, 2026-11-21, for the ninth round (found at `805f33ff`, the round 8 branch) and its fixes (#417); `a021f714`, 2026-11-21, for the eighth round (found at `254b644f`) and its fixes (#416); `78354cc4`, 2026-11-20, for #413's features; `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the leftovers fixed in #412; `ec664338`, 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
+| **Verified against** | `main` at `d1a51036`, 2026-11-22, for the eleventh round (found at `462df5b4`), its fixes (#422, merged as `ec311ea8`) and its decisions (#423); `462df5b4`, 2026-11-21, for the tenth round (found at `6e2b905c`) and its fixes and decisions (#421); `ad47fe3e`, 2026-11-21, for the ninth round (found at `805f33ff`, the round 8 branch) and its fixes (#417); `a021f714`, 2026-11-21, for the eighth round (found at `254b644f`) and its fixes (#416); `78354cc4`, 2026-11-20, for #413's features; `e8031bcf` (1.17.0 plus the unreleased 1.18.0 work), 2026-11-20, for the leftovers fixed in #412; `ec664338`, 2026-11-20, for the seventh round and the items it re-ran; `c1bb82de`, 2026-11-20, for the rest of what is open and for the sixth round; the fifth round at `92e54df6`, 2026-10-27; earlier rounds as each section says |
 | **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)), [second](./2026-10-stress-test-2.md) (`cfefc02`), [third](./2026-10-stress-test-3.md) (`eaa5d3f1`, with its [outcomes log](./2026-10-stress-test-3-outcomes.md)), [fourth](./2026-10-stress-test-4.md) (`3af2008`) [fifth](./2026-10-stress-test-5.md) (`c528af08`), [sixth](./2026-11-stress-test-6.md) (`23e0a387`), [seventh](./2026-11-stress-test-7.md) (`ec664338`), [eighth](./2026-11-stress-test-8.md) (`254b644f`), [ninth](./2026-11-stress-test-9.md) (`805f33ff`), [tenth](./2026-11-stress-test-10.md) (`6e2b905c`) and [eleventh](./2026-11-stress-test-11.md) (`462df5b4`) |
 | **How it is kept** | See [`README.md`](./README.md): before each audit, merge `main`; after it, re-run every open item, move fixed ones to §3, and add new ones |
 
@@ -21,31 +21,11 @@ Rounds 3 to 5 were kept on branches of their own until 2026-10-27, when they wer
 
 ## 1. Open — to fix
 
-Round 11's fixes are in [#422](https://github.com/SureA11y/core/pull/422), open, awaiting merge; five of its findings await a decision (below). Every finding of rounds 1 to 8 and 10 is fixed, decided or closed (§3, §4); round 10's are all in [#421](https://github.com/SureA11y/core/pull/421), merged 2026-11-21 (§3). Of round 9's 61, the 48 evident ones are fixed in [#417](https://github.com/SureA11y/core/pull/417), merged 2026-11-21; the rest were decided the same day and made in [#418](https://github.com/SureA11y/core/pull/418), merged 2026-11-21 (below). Each fix has a regression test that fails on `main` before it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
+Every finding of rounds 1 to 11 is fixed, decided or closed (§3, §4). Round 11's fixes are in [#422](https://github.com/SureA11y/core/pull/422), merged 2026-11-22 as `ec311ea8`; its decisions were made in [#423](https://github.com/SureA11y/core/pull/423), merged 2026-11-22 as `d1a51036` (§3). Of round 9's 61, the 48 evident ones are fixed in [#417](https://github.com/SureA11y/core/pull/417), merged 2026-11-21; the rest were decided the same day and made in [#418](https://github.com/SureA11y/core/pull/418), merged 2026-11-21 (below). Each fix has a regression test that fails on `main` before it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
 
 ### Still open
 
-Round 11 (at `462df5b4`, [report](./2026-11-stress-test-11.md)): 36 findings, 31 fixed in [#422](https://github.com/SureA11y/core/pull/422), open, awaiting merge (branch `round-11-fixes`, head `ed38251a`, CI green). Each fix has a regression test that fails without it. They move to §3 once #422 is merged.
-
-| # | Finding | Fixed in |
-|---|---|---|
-| B11-1 to B11-8, B11-11, B11-15 | Under jsdom, presentational colour hints and SVG `fill`, an underline on a link's content, the `overflow` shorthand and `<marquee hidden>` read as Chromium does; `form-group-name-present` through shadow DOM, with a legend named from its content and without radios under `aria-hidden`; tabindex read with HTML's integer parsing; `symbol-graphic-contrast` leaving out inactive controls and reporting each symbol once | #422 (open) |
-| P11-1 to P11-6 | `excludeSelectors` cost per element; `contrast-computable` per ancestor (regression of round 8); target-size candidates under jsdom (regression of round 8); `form-control-label-quality` quadratic; `css-focus-indicator-suppressed` per rule; `label-in-name` expressions per scan (regression of round 9). No leak found | #422 (open) |
-| R11F-1 to R11F-11 | The review of the B11 fixes; R11F-1, R11F-2 and R11F-4 were regressions they had caused (SVG text over a shape, a transparent underline, `var()` in `overflow`) | #422 (open) |
-| R11P-1 to R11P-4 | The review of the P11 fixes: an unreadable selector in the joined focus-rule list under jsdom, role tokens split on non-ASCII whitespace, jsdom's speed and list answers | #422 (open) |
-
-Awaiting the owner's decision ([report §2](./2026-11-stress-test-11.md#2-open-decisions)):
-
-| # | Question |
-|---|---|
-| B11-9 | Currency signs and 〒 inside text judged as graphics at 3:1 by `symbol-graphic-contrast`; a breadcrumb `>` too |
-| B11-10 | Rating stars with screen-reader-only text left out of `symbol-graphic-contrast` |
-| B11-12 | An ARIA combobox and its listbox given `DUPLICATE_LABEL_TEXT` |
-| B11-13 | Real titles containing `{…}` or `${…}` leaning fail as placeholders |
-| B11-14 | A marquee with `onmouseover=this.stop()` leaning fail, while an external pause button leans pass |
-| R11 (reviews) | `aria-disabled` on non-widget elements exempting symbols; `tscl_case_05` asked about under jsdom where Chromium sees no overflow; closed shadow roots; two `@layer` rules disagreeing on an underline asked about under jsdom where Chromium fails; the tabindex 32-bit range check applying to the parser's other users, such as `<select size>` |
-
-Known follow-up: jsdom draws no SVG shapes, so under jsdom SVG text after a painted shape is asked about (R11F-1).
+Nothing from rounds 1 to 11.
 
 Before round 11, nothing was open. The two Low leftovers of round 8 (`aria-valid-attr` quoting a very long attribute name whole and taking seconds on it; jsdom's `getComputedStyle` cost in `duplicate-id-aria` on big pages) are fixed in [#419](https://github.com/SureA11y/core/pull/419), merged 2026-11-21.
 
@@ -122,6 +102,33 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 ---
 
 ## 3. Fixed — history
+
+### Eleventh round's findings (in `main`)
+
+Pull request [#422](https://github.com/SureA11y/core/pull/422), merged 2026-11-22 as the single commit `ec311ea8`; unreleased, for 1.18.0. The 31 evident findings of the [eleventh round](./2026-11-stress-test-11.md) (at `462df5b4`), each reproduced again while it was fixed, with a regression test that fails without its fix. R11F-1, R11F-2 and R11F-4 were regressions the bug fixes had caused; the reviews caught them before merge.
+
+| # | Finding | Fixed in |
+|---|---|---|
+| B11-1 to B11-8, B11-11, B11-15 | Under jsdom, presentational colour hints and SVG `fill`, an underline on a link's content, the `overflow` shorthand and `<marquee hidden>` read as Chromium does; `form-group-name-present` through shadow DOM, with a legend named from its content and without radios under `aria-hidden`; tabindex read with HTML's integer parsing; `symbol-graphic-contrast` leaving out inactive controls and reporting each symbol once | #422 |
+| P11-1 to P11-6 | `excludeSelectors` cost per element; `contrast-computable` per ancestor (regression of round 8); target-size candidates under jsdom (regression of round 8); `form-control-label-quality` quadratic; `css-focus-indicator-suppressed` per rule; `label-in-name` expressions per scan (regression of round 9). No leak found | #422 |
+| R11F-1 to R11F-11 | The review of the B11 fixes; R11F-1, R11F-2 and R11F-4 were regressions they had caused (SVG text over a shape, a transparent underline, `var()` in `overflow`) | #422 |
+| R11P-1 to R11P-4 | The review of the P11 fixes: an unreadable selector in the joined focus-rule list under jsdom, role tokens split on non-ASCII whitespace, jsdom's speed and list answers | #422 |
+
+Decided by the owner on 2026-11-22 and made in [#423](https://github.com/SureA11y/core/pull/423), merged 2026-11-22 as `d1a51036` ([report §2](./2026-11-stress-test-11.md#2-decisions-taken)). #423's commits number the review questions D6 to D10, and the SVG follow-up D11.
+
+| # | Question | Decision |
+|---|---|---|
+| B11-9 | Currency signs and 〒 inside text judged as graphics at 3:1; a breadcrumb `>` too | A currency sign or 〒 next to letters or digits is text (4.5:1); a separator such as a breadcrumb `>` stays a graphic |
+| B11-10 | Rating stars with screen-reader-only text left out of `symbol-graphic-contrast` | Only visible text counts |
+| B11-12 | An ARIA combobox and its listbox given `DUPLICATE_LABEL_TEXT` | A combobox and its own popup are one field |
+| B11-13 | Real titles containing `{…}` or `${…}` leaning fail as placeholders | Lean fail only in clear cases |
+| B11-14 | A marquee with `onmouseover=this.stop()` leaning fail with "no way to pause" | Keeps its fail lean, with a true message (`MARQUEE_STOPS_ONLY_ON_HOVER`) |
+| D6 | `aria-disabled` on non-widget elements exempting symbols | `aria-disabled` exempts contrast only on user interface components; a CI catch kept ACT afw4f7's case, a label in an `aria-disabled` group, exempt |
+| D7 | `tscl_case_05` asked about under jsdom, where Chromium sees no overflow | Still asked; the question says no layout was available |
+| D8 | Closed shadow roots | Documented in `LIMITATIONS.md` |
+| D9 | Two `@layer` rules disagreeing on an underline, asked about under jsdom | Cascade layer order applied under jsdom |
+| D10 | The tabindex 32-bit range check for the parser's other users | Checked per attribute, as Chromium does: `select size` up to 4294967295; `colspan` clamped to 1000; `rowspan` to 65534 |
+| D11 | Under jsdom, SVG text after a painted shape asked about (R11F-1) | SVG text over a shape that certainly covers it is measured |
 
 ### Tenth round's findings (in `main`)
 

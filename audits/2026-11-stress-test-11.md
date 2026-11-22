@@ -7,7 +7,7 @@ The eleventh round ran at `462df5b4`, `main` after #421 (1.17.0 plus the unrelea
 - **an independent stress test of the speed fixes** (prefix R11P);
 - **a run of the other projects against the fixes** (§4).
 
-Every fix is in [#422](https://github.com/SureA11y/core/pull/422) (branch `round-11-fixes`, head `ed38251a`, CI green). **It is open, awaiting merge**; unreleased, for 1.18.0. Five B11 findings, and five questions from the reviews, await the owner's decision (§2). As in rounds 6 to 10, there is no `FINDINGS.md` per area; probes are under [`2026-11-probes-11/`](./2026-11-probes-11/):
+Every fix is in [#422](https://github.com/SureA11y/core/pull/422) (branch `round-11-fixes`), merged 2026-11-22 as `ec311ea8`; unreleased, for 1.18.0. Five B11 findings, and five questions from the reviews, were decided by the owner on 2026-11-22 and made in [#423](https://github.com/SureA11y/core/pull/423), merged the same day as `d1a51036` (§2). As in rounds 6 to 10, there is no `FINDINGS.md` per area; probes are under [`2026-11-probes-11/`](./2026-11-probes-11/):
 
 | Part | Folder | Prefix | Runtime | Findings |
 |---|---|---|---|---|
@@ -16,7 +16,7 @@ Every fix is in [#422](https://github.com/SureA11y/core/pull/422) (branch `round
 | Review of the bug fixes | [`review/`](./2026-11-probes-11/review/) | R11F | jsdom, Chromium | 11 |
 | Review of the speed fixes | [`perf-review/`](./2026-11-probes-11/perf-review/) | R11P | jsdom, Chromium | 4 |
 
-That makes 36 findings. **31 are fixed** in #422: 10 of B11, all of P11, R11F and R11P. **5 await a decision**: B11-9, B11-10, B11-12, B11-13 and B11-14. Three of the R11F findings were regressions the bug fixes had caused (R11F-1, R11F-2, R11F-4); the reviews caught them before merge.
+That makes 36 findings. **31 are fixed** in #422: 10 of B11, all of P11, R11F and R11P. **5 needed a decision**: B11-9, B11-10, B11-12, B11-13 and B11-14, decided and made in #423. Three of the R11F findings were regressions the bug fixes had caused (R11F-1, R11F-2, R11F-4); the reviews caught them before merge.
 
 **Basis**
 - `main` at `462df5b4` (1.17.0 plus the unreleased 1.18.0 work), Chromium 153 (`/opt/pw-browsers/chromium`), jsdom from the repo. The speed part also ran `254b644f` (round 8) and v1.17.0 for comparison.
@@ -43,13 +43,13 @@ That makes 36 findings. **31 are fixed** in #422: 10 of B11, all of P11, R11F an
 | B11-5 | `tabindex` is read with `Number()`, not HTML's integer parsing: `1.5` and `2abc` missed, `0x1` reported as positive, `1e3` quoted as 1000 (`tabidx.js`). | Low–Med. | Fixed everywhere tabindex is read |
 | B11-6 | `form-group-name-present`: a `<legend>` holding only `<img alt="Size">` counts as no name (`fg.js`). | Low–Med. | Fixed: legend named from content |
 | B11-7 | `symbol-graphic-contrast` leans fail on disabled controls, which 1.4.11 exempts (`sym.js`). | Low–Med. | Fixed |
-| B11-9 | `symbol-graphic-contrast` judges a currency sign or 〒 inside text as a graphic at 3:1; a breadcrumb `>` too (`sym.js`, `sym2.js`, `pages/checkout.html`). | Low–Med. | Awaiting decision |
-| B11-10 | `symbol-graphic-contrast` leaves out rating stars that carry screen-reader-only text; its header says "visible text" (`sym.js`). | Low–Med. | Awaiting decision |
+| B11-9 | `symbol-graphic-contrast` judges a currency sign or 〒 inside text as a graphic at 3:1; a breadcrumb `>` too (`sym.js`, `sym2.js`, `pages/checkout.html`). | Low–Med. | Decided (§2) |
+| B11-10 | `symbol-graphic-contrast` leaves out rating stars that carry screen-reader-only text; its header says "visible text" (`sym.js`). | Low–Med. | Decided (§2) |
 | B11-8 | `form-group-name-present` counts radios under `aria-hidden`, against its header (`fg.js`). | Low | Fixed |
 | B11-11 | `symbol-graphic-contrast` reports nested symbol elements twice (`sym.js`). | Low | Fixed: each element for its own text |
-| B11-12 | `form-control-label-quality` gives `DUPLICATE_LABEL_TEXT` to an ARIA combobox and its own popup listbox (`combo.js`). | Low | Awaiting decision |
-| B11-13 | `page-title-patterns`: real titles with `{word}` or `${...}` lean fail as leaked placeholders (`titles.js`). | Low | Awaiting decision |
-| B11-14 | `<marquee onmouseover="this.stop()">` leans fail with "no way to pause", while a button elsewhere that stops it leans pass (`battery5.js`). | Low | Awaiting decision |
+| B11-12 | `form-control-label-quality` gives `DUPLICATE_LABEL_TEXT` to an ARIA combobox and its own popup listbox (`combo.js`). | Low | Decided (§2) |
+| B11-13 | `page-title-patterns`: real titles with `{word}` or `${...}` lean fail as leaked placeholders (`titles.js`). | Low | Decided (§2) |
+| B11-14 | `<marquee onmouseover="this.stop()">` leans fail with "no way to pause", while a button elsewhere that stops it leans pass (`battery5.js`). | Low | Decided (§2) |
 | B11-15 | `<marquee hidden>`: jsdom passes; Chromium draws it (`display: inline-block`) and asks (`marq.js`). | Low | Fixed: drawn under jsdom |
 
 What behaved correctly: 115 accessible-name cases against Chromium's tree (`names1.js`); five batteries of 63 to 82 cases over ARIA, images, forms, tables, widgets, landmarks and media (`battery1.js` to `battery5.js`); round 10's rule changes (`p-as-heading`, video posters, `aria-prohibited-children`, `<embed>`, click handlers); odd time budgets; a full Chromium scan left the page's DOM, focus, scroll, form values, selection and open states unchanged (`mutate.js`); no rule gave `error` on the three realistic pages (`parity.js`); the new rules' messages in de, es, fr and ja.
@@ -104,25 +104,26 @@ The review found P11-1 to P11-4 and P11-6 sound, with no change on 155 fixtures 
 
 ---
 
-## 2. Open decisions
+## 2. Decisions taken
 
-For the owner. Nothing here is changed in #422.
+All taken by the owner on 2026-11-22 and made in [#423](https://github.com/SureA11y/core/pull/423), merged 2026-11-22 as `d1a51036`, each with a test that fails before it. #423's commits number the review questions D6 to D10, and the SVG follow-up D11.
 
 **From the bug hunt**
-- **B11-9:** currency signs and 〒 inside text are judged as graphics at 3:1; so is a breadcrumb `>`. A symbol in a run of letters or digits is arguably text (1.4.3).
-- **B11-10:** rating stars that carry screen-reader-only text are left out, because the rule reads `textContent`; the stars still need 3:1 for sighted users.
-- **B11-12:** an ARIA combobox and its own listbox (`aria-controls`) get `DUPLICATE_LABEL_TEXT`.
-- **B11-13:** real titles containing `{…}` or `${…}` lean fail as placeholders.
-- **B11-14:** a marquee with `onmouseover="this.stop()"` leans fail, while an external pause button leans pass.
+- **B11-9:** a currency sign or 〒 next to letters or digits is text, held to 4.5:1; a separator such as a breadcrumb `>` stays a graphic.
+- **B11-10:** `symbol-graphic-contrast` counts visible text only.
+- **B11-12:** a combobox and its own popup are one field.
+- **B11-13:** a placeholder title leans fail only in clear cases.
+- **B11-14:** a marquee that stops only on hover keeps its fail lean, with a true message (`MARQUEE_STOPS_ONLY_ON_HOVER`).
 
 **From the reviews**
-- `aria-disabled` on non-widget elements exempts symbols from `symbol-graphic-contrast`.
-- Under jsdom, `tscl_case_05` (`scrollable-region-focusable`) is asked about, where Chromium sees no overflow.
-- Closed shadow roots stay a limitation.
-- Two `@layer` rules that disagree on an underline are asked about under jsdom, where Chromium fails the link.
-- The tabindex 32-bit range check also applies to the parser's other users, such as `<select size>`.
+- **D6:** `aria-disabled` exempts contrast only on user interface components. A later CI catch kept ACT afw4f7's case: a label in an `aria-disabled` group stays exempt.
+- **D7:** under jsdom, the overflow question says no layout was available.
+- **D8:** closed shadow roots are documented in `LIMITATIONS.md`.
+- **D9:** cascade layer order is applied for underlines under jsdom.
+- **D10:** the 32-bit range is checked per attribute, as Chromium does: `select size` up to 4294967295; `colspan` clamped to 1000; `rowspan` clamped to 65534.
+- **D11 (the follow-up):** under jsdom, SVG text over a shape that certainly covers it is measured.
 
-**Known follow-up.** jsdom draws no SVG shapes. Under jsdom, SVG text after a painted shape is now asked about (R11F-1).
+Round 12 stress-tested #423 before merge ([report](./2026-11-stress-test-12.md)).
 
 ## 3. Lesson
 
@@ -132,4 +133,4 @@ Round 10's measure, an independent stress test before merge, was applied to both
 
 - The 12 published packages were run against the branch. One result changed: a `pack-rgaa` test expected `<marquee hidden>` to be not applicable. Chromium draws it (`display: inline-block`), so the test was updated on `pack-rgaa`'s draft branch `core-1.18` (`255e6aa`).
 - The CMS repository's tests give the same results on `main` and on the branch.
-- The four packs' draft branches are being rerun against the round 11 core.
+- The four packs' draft branches were rerun against the round 11 core in round 12 ([report §5](./2026-11-stress-test-12.md#5-downstream)).
