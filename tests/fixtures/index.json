@@ -698,11 +698,11 @@
       "testFile": "tests/engine-checks/manual/css-focus-indicator-suppressed.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html",
-      "totalCases": 17,
+      "totalCases": 20,
       "caseCounts": {
         "PASS": 7,
         "FAIL": 0,
-        "CANTTELL": 7,
+        "CANTTELL": 10,
         "OTHER": 3
       }
     },
@@ -2299,11 +2299,11 @@
       "testFile": "tests/engine-checks/manual/resize-text-content-loss-chromium.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/resize-text-content-loss-all-scenarios.html",
-      "totalCases": 12,
+      "totalCases": 13,
       "caseCounts": {
         "PASS": 2,
         "FAIL": 0,
-        "CANTTELL": 6,
+        "CANTTELL": 7,
         "OTHER": 4
       }
     },
