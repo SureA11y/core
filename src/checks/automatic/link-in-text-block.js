@@ -41,7 +41,8 @@
  *       own other than white space, or an empty or blank box painting a
  *       background, border, outline or shadow, as an underline drawn that
  *       way does), OR
- *     - a mark on all of its content: bold, italic, underlined, bordered,
+ *     - a mark on all of its content: bold, italic, underlined (in a
+ *       color other than transparent or the one behind it), bordered,
  *       a background unlike the surrounding text's (a code chip, <mark>),
  *       or raised or lowered (a footnote's <sup>).
  *   A mark that is a cue only by its color counts only where that color
@@ -2121,7 +2122,9 @@ function runInPage(ctx) {
       if (hasBorder(cs, node)) return true;
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
       if (hasBackgroundImage(cs, node) || ownBackground(node, cs)) return true;
-      const underlined = underlinedAtRest(node, cs, notTransparent);
+      // An underline drawn in the color behind it shows nothing, as the
+      // link's own is read (round 12, C12-15).
+      const underlined = underlinedAtRest(node, cs, (color) => !unseen(node, color));
       if (underlined === false || (aroundUnderlined && aroundUnderlined())) return false;
       if (underlined === null) {
         unreadUnderline = true;
