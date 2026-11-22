@@ -31,7 +31,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
     incomplete?: { reason: "timeBudget", timeBudgetMs: number, rulesNotRun: number, profilesNotRun?: number, styleSheetsNotRead?: string[] },
     occurrenceCap?: { maxOccurrencesPerRule: number, occurrencesOmitted: number, rulesCapped: number },
     mappings?: string[],   // e.g. ["en301549"] or ["en301549:V3.2.1"]
-    profileExcludes?: { rules: string[], criteria: string[] },
+    profileExcludes?: { rules: string[], criteria: string[], requirements?: string[] },
     optInRules?: string[],
     outputDetail?: "findings",
     packs?: string[],      // name@version
@@ -217,7 +217,7 @@ What reads such a result:
   },
   excludedOccurrences?: {  // present only when the rule reported on elements left out with excludeSelectors
     dropped: number,       // the occurrences dropped
-    coercedFrom?: "fail" | "cantTell" | "pass"  // none was left, so the outcome became notApplicable
+    coercedFrom?: "fail" | "cantTell" | "pass"  // the outcome the rule gave, when dropping changed it (notApplicable when none was left)
   },
   error?: string           // present when the rule did not complete, or the engine noted a change to what it returned — see below
 }

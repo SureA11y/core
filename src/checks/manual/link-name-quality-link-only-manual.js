@@ -21,9 +21,8 @@
  *   2.4.4, which counts that context, but not 2.4.9 (F84), unless the page
  *   offers a mechanism that makes such links descriptive, which a scan
  *   cannot see. Each such link is asked about.
- *   It is link-name-quality run with `whenContextFound: 'ask'` (a variant:
- *   docs/RULE_AUTHORING.md, "Rule variants"), so its phrase lists and its
- *   reading of context are that rule's. A generic link with no context is
+ *   It is link-name-quality run with `whenContextFound: 'ask'` (a variant
+ *   of it), so its phrase lists and its reading of context are that rule's. A generic link with no context is
  *   link-name-quality's own finding, which counts toward 2.4.9 already, so
  *   no link is reported by both. A bare format name ("PDF") is left to
  *   link-name-quality too: F84 is about generic phrases.

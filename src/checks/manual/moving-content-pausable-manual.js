@@ -23,7 +23,7 @@
  *   themselves), and one on an element that is not drawn while it runs.
  *   That is an element hidden by visibility or opacity 0 (unless the
  *   animation changes that property), or, when the animation changes only
- *   colours or moves the element by a translation, one clipped to nothing
+ *   colors or moves the element by a translation, one clipped to nothing
  *   (its own clip or clip-path, or an ancestor's overflow clip with no
  *   width or height, or one it lies wholly outside of, however far the
  *   translation takes it), with no size and its overflow clipped, or

@@ -20,7 +20,7 @@
  *   - `count`: how many contentinfo landmarks the page exposes to assistive
  *     technology, against a limit of 1.
  *   - `others`: the other landmarks of this role, as the message names
- *     them, with their text (`<div role="banner" class="cookie"> "Cookies"`).
+ *     them, with their text (`<div role="contentinfo" class="legal"> "Legal notice"`).
  * @reason-codes
  *   - `LANDMARK_DUPLICATE_CONTENTINFO` (cantTell): the page exposes more than
  *     one contentinfo landmark; each one is reported.

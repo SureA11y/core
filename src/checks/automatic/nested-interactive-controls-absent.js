@@ -35,8 +35,8 @@
  *   tab): the nested control's role is removed there, so a control that is
  *   still in sequential focus navigation has no role to determine (SC 4.1.2,
  *   as ACT 307n5z has it). A nested control there with tabindex="-1" takes
- *   no tab stop and is not counted, as presentational-children-focusable-
- *   absent leaves it.
+ *   no tab stop and is not counted, as
+ *   presentational-children-focusable-absent leaves it.
  *   Elsewhere (a link, textbox, combobox, listbox, menuitem, searchbox,
  *   spinbutton or treeitem holding a control) both keep their roles; HTML's
  *   content model forbids the nesting, but whether a name, role or value is
@@ -85,8 +85,8 @@
  *   presentational children, so it is asked about (CANTTELL). A control
  *   inside one of its options is the select's finding too, an owned option
  *   not counting as a control of its own; the option's presentational
- *   children make it a failure, which presentational-children-focusable-
- *   absent reports.
+ *   children make it a failure, which
+ *   presentational-children-focusable-absent reports.
  * - A disabled native control (<button disabled>, <input disabled>) and an
  *   inert descendant are not focusable, so they do not nest an interactive
  *   control; a display:none or aria-hidden descendant is not exposed to AT

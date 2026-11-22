@@ -21,7 +21,7 @@
  *   - `count`: how many main landmarks the page exposes to assistive
  *     technology, against a limit of 1.
  *   - `others`: the other landmarks of this role, as the message names
- *     them, with their text (`<div role="banner" class="cookie"> "Cookies"`).
+ *     them, with their text (`<div role="main" class="preview"> "Preview"`).
  * @reason-codes
  *   - `LANDMARK_DUPLICATE_MAIN` (cantTell): the page exposes more than one
  *     main landmark; each one is reported.

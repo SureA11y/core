@@ -162,8 +162,11 @@ the engine will not:
   only whether it meets the applicable contrast ratio;
 - determine whether an error message actually *explains* the problem,
   since that depends on validation logic a static scan can't see;
-- detect a keyboard trap, or reflow and clipping at 400% zoom, since both
-  require simulating real user interaction over time;
+- detect a keyboard trap, since that requires simulating real user
+  interaction over time;
+- zoom the page itself: reflow and cut-off text are measured only in a page
+  laid out at the narrow width their rules name (320 and 640 CSS pixels),
+  and whether content or a function is lost there is still for a person;
 - see anything that only exists after a click or an async load.
 
 Where a case comes down to judgement, such as whether a heading is
