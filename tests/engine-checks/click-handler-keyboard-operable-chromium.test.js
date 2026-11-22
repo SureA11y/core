@@ -139,6 +139,37 @@ const CASES = [
     'notApplicable',
     null
   ],
+  // Control cues read from Chromium's computed style (round 12, U12-13).
+  [
+    'a <div onclick> with a gradient and the default cursor',
+    '<div id="host" style="display:inline-block;padding:8px 16px;background-image:linear-gradient(#36c,#039);color:#fff" onclick="hits.push(1)">Subscribe</div>',
+    null,
+    false,
+    false,
+    false,
+    'cantTell',
+    'CLICK_HANDLER_NOT_FOCUSABLE'
+  ],
+  [
+    'a <div onclick> outlined by a box-shadow',
+    '<div id="host" style="display:inline-block;padding:8px 16px;box-shadow:0 0 0 1px #333" onclick="hits.push(1)">Subscribe</div>',
+    null,
+    false,
+    false,
+    false,
+    'cantTell',
+    'CLICK_HANDLER_NOT_FOCUSABLE'
+  ],
+  [
+    'a close symbol alone',
+    '<span id="host" onclick="hits.push(1)">\u2715</span>',
+    null,
+    false,
+    false,
+    false,
+    'cantTell',
+    'CLICK_HANDLER_NOT_FOCUSABLE'
+  ],
   [
     'a padded card with a background, a heading and a paragraph',
     '<div id="host" style="background:#eee;padding:16px" onclick="hits.push(1)"><h3>Weekly newsletter</h3><p>The news of the week, every Monday.</p></div>',
