@@ -9,6 +9,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - **Docs and rule text**: the README and `LIMITATIONS.md` no longer say reflow at zoom isn't checked at all: they say the engine doesn't zoom the page, and that `reflow-horizontal-scroll` and `resize-text-content-loss` measure a page scanned at 320 and 640 CSS pixels wide. Rule text no longer points at `docs/RULE_AUTHORING.md` (`focus-not-obscured-enhanced`, `link-name-quality-link-only`, `target-size-enhanced`); `nested-interactive-controls-absent` names `presentational-children-focusable-absent` without a break inside the id; `landmark-no-duplicate-contentinfo` and `-main` give an example of their own role in `others`; `page-zones-landmark` says it reads a field named q, s, search or query; `aria-prohibited-children` drops a clause its own code contradicts; `p-as-heading`'s `reasonCode` lists `BOLD_SHORT_PARAGRAPH`; `video-poster-text-alternative-present` says its figure-caption question has no lean, where it said "rather than failed" beside the other question, which no longer fails either; `page-title-patterns` says every placeholder leans fail, not only `%s` and `%d`; and rule text writes "color".
 - **Docs**: `PROCEDURES.md` counts the procedures as 1.18 has them (42 of the 87 criteria, 186 facets, 63 procedures, 123 technology facets, 45 criteria with none, and 14 best-practice facets, page zones as landmarks among them); `I18N.md` gives the side files' size as 310 to 390 KB; and `OUTPUT_SCHEMA.md`'s type block lists `profileExcludes.requirements` and says `excludedOccurrences.coercedFrom` is set whenever dropping changed the outcome, as its prose and the code do.
 
+### Fixed
+
+- **`p-as-heading` asks about a bold line on a page whose body text is 18px or more** (`BOLD_SHORT_PARAGRAPH`), when the line is no larger than the text after it and only heavier than it, as WordPress's Twenty Twenty-Five sets `<strong>` (400 over body text at 21px and 300). 1.18.0 asked about such a line only below 18px. A line larger than the text after it still has to be semibold or bolder (#428).
+
 ## [1.18.0] - 2026-11-22
 
 ### Highlights and upgrade notes

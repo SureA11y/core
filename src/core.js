@@ -110057,22 +110057,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // font-size-adjust scale it: helpers.contrast.renderedTextScale) when its
   // text is bold, or heavier than the block's own text (`blockWeight`), else
   // 0. `bold` says whether it is bold outright (700 or more), which large
-  // text needs; heavier-than-its-block counts only at body size, where a
-  // theme may draw body text at 300 and <strong> at 400. Whether the text
-  // is large enough is the caller's call.
+  // text needs; heavier-than-its-block counts only at body size, or over
+  // text as large, where a theme may draw body text at 300 and <strong> at
+  // 400. Whether the text is large enough is the caller's call.
   function boldStyleOf(holder, blockWeight) {
-    const cs = safeComputedStyle(holder);
     // One read of the weight, `bolder` resolved against the parent's: 700 or
     // more is bold outright, as isBoldWeight reads it.
     const weight = weightOf(holder);
     const bold = weight >= 700;
     if (!bold && !(weight > blockWeight)) return null;
+    const px = drawnPxOf(holder);
+    return px > 0 ? { px, bold, weight } : null;
+  }
+
+  // An element's font size as drawn, in CSS pixels, or 0 when there is none
+  // to read.
+  function drawnPxOf(el) {
+    if (!el) return 0;
+    const cs = safeComputedStyle(el);
     const scale =
       helpers.contrast && typeof helpers.contrast.renderedTextScale === 'function'
-        ? helpers.contrast.renderedTextScale(holder, cs)
+        ? helpers.contrast.renderedTextScale(el, cs)
         : 1;
-    const px = Number(fontPxOf(holder, cs)) * scale;
-    return Number.isFinite(px) && px > 0 ? { px, bold, weight } : null;
+    const px = Number(fontPxOf(el, cs)) * scale;
+    return Number.isFinite(px) && px > 0 ? px : 0;
   }
 
   // An element's font size in pixels. A browser computes it; jsdom keeps it
@@ -110427,9 +110435,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // text is judged as before: every piece bold outright and 18px or more.
     const large = pieces.every((piece) => isLargeTitle(piece));
     if (!large) {
-      // Body size only: large text not bold enough to be a title is not
-      // asked about as bold body text either.
-      if (fontSizePx >= MIN_FONT_SIZE_PX) return;
+      // Large text not bold enough to be a title is not asked about as bold
+      // body text either, unless the text after it is as large: a theme
+      // that sets its body text at 18px or more (WordPress's Twenty
+      // Twenty-Five draws it at 21px, weight 300, and <strong> at 400)
+      // makes a title by bolding a line, as at body size.
+      if (fontSizePx >= MIN_FONT_SIZE_PX && !(drawnPxOf(nextShown(el)) >= fontSizePx - 0.5)) {
+        return;
+      }
       if (!isParagraph || kindCode || endsAsSentenceOf(shown)) return;
       if (!isShortLine(shown)) return;
       const titleWeight = Math.min(...pieces.map((piece) => piece.weight));
