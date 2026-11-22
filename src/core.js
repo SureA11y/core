@@ -13170,12 +13170,19 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // judge role="image" as role="img".
   const ROLE_SYNONYMS = { image: 'img' };
 
+  // A role attribute's tokens. HTML splits a set of space-separated tokens
+  // on ASCII whitespace only, so a no-break space or a vertical tab is part
+  // of a token: role="x&nbsp;button" holds no role.
+  function roleTokens(value) {
+    return String(value == null ? '' : value)
+      .split(/[\t\n\f\r ]+/)
+      .filter(Boolean);
+  }
+
   function firstConcreteRole(value) {
-    const raw = trim(value);
-    if (!raw) return '';
-    for (const token of raw.split(/\s+/)) {
-      const t = lower(token);
-      if (t && CONCRETE_ROLES.has(t)) return ROLE_SYNONYMS[t] || t;
+    for (const token of roleTokens(value)) {
+      const t = token.toLowerCase();
+      if (CONCRETE_ROLES.has(t)) return ROLE_SYNONYMS[t] || t;
     }
     return '';
   }
@@ -13207,9 +13214,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
 
   function getAllRoleTokens(el) {
     if (!isElement(el)) return [];
-    const raw = trim(getAttr(el, 'role'));
-    if (!raw) return [];
-    return raw.split(/\s+/).filter(Boolean).map(lower);
+    return roleTokens(getAttr(el, 'role')).map((t) => t.toLowerCase());
   }
 
   function isAbstractRole(role) {
@@ -17255,7 +17260,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (label && HIDDEN_TEXT_RE.test(text)) {
           const forId = dom.getAttribute(label, 'for');
           const labelTag = forId ? `<label for="${forId}">` : '<label>';
-          const role = attr(el, 'role').split(/\s+/)[0];
+          const role = attr(el, 'role').split(/[\t\n\f\r ]+/)[0];
           const control = role ? `${tag} role="${role}"` : tag;
           const labelId = attr(label, 'id');
           const base = `The ${labelTag} "${text}" names nothing here: a <label> only names native form fields (input, select, textarea…), not a <${control}>.`;
@@ -17894,12 +17899,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function roleTypo(el) {
     let raw;
     try {
-      raw = trim(dom.getAttribute(el, 'role'));
+      raw = dom.getAttribute(el, 'role');
     } catch {
       return null;
     }
-    if (!raw) return null;
-    const tokens = raw.split(/\s+/).map(lower);
+    // Split as HTML splits tokens: on ASCII whitespace only.
+    raw = String(raw == null ? '' : raw);
+    const tokens = raw
+      .split(/[\t\n\f\r ]+/)
+      .filter(Boolean)
+      .map((t) => t.toLowerCase());
+    if (!tokens.length) return null;
+    raw = trim(raw);
     if (tokens.some((t) => aria.isKnownRole(t))) return null;
     let suggestion = '';
     for (const t of tokens) {
@@ -22805,7 +22816,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const explicit = aria.getExplicitRole(el);
     if (explicit) {
       if (explicit === 'presentation' || explicit === 'none') flags.push('presentation');
-      if (/\s/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
+      if (/[\t\n\f\r ]/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
       return { role: explicit, source: 'explicit', flags };
     }
 
@@ -82348,7 +82359,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll(CANDIDATE_SELECTOR);
 
   // Every suppressor tested against each element costs rules x elements.
-  // The selectors that parse on their own, and whose text can't run into
+  // In a browser, the selectors that parse on their own, and whose text can't run into
   // the next one's (balanced brackets and quotes, no comment, no trailing
   // escape), are tested as one list first: an element none of them matches
   // is tested against the others only. The rules are read one by one only
@@ -82375,8 +82386,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return depth === 0 && !quote;
   }
   const probe = document ? dom.documentElement(document) : null;
+  // The list and the tree queries run only in a browser (a page with a
+  // layout): there, a call with one of hundreds of selectors costs a parse
+  // each time. jsdom keeps each selector compiled and walks the tree in
+  // script, so a list or one query per selector over the tree costs it more
+  // than testing the elements (measured). jsdom also reports a selector it
+  // cannot read only when matching reaches it, and can answer a list
+  // differently from its selectors one by one.
+  let rendered;
+  try {
+    const box = probe ? dom.getBoundingClientRect(probe) : null;
+    rendered = !!box && (box.width > 0 || box.height > 0);
+  } catch {
+    rendered = false;
+  }
   const listed = new Set();
   for (const s of suppressors) {
+    if (!rendered) break;
     // :scope, & and :host read differently from a tree's querySelectorAll
     // than from the element's matches(): tested element by element.
     if (listed.has(s.base) || !probe || !standsAlone(s.base) || /:scope|&|:host/i.test(s.base))
@@ -82414,22 +82440,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   if (suppressorList) {
     for (const el of candidates) {
-      if (!el || dom.nodeType(el) !== 1 || !matchesSafe(el, suppressorList)) continue;
+      if (!el || dom.nodeType(el) !== 1) continue;
+      let hit;
+      try {
+        hit = dom.matches(el, suppressorList);
+      } catch {
+        hit = true; // the list could not be read here: each selector is tested
+      }
+      if (!hit) continue;
       listHits.add(el);
       const tree = treeOf(el);
       listHitsByTree.set(tree, (listHitsByTree.get(tree) || 0) + 1);
     }
-  }
-  // Only in a browser (a page with a layout): there, a call with one of
-  // hundreds of selectors costs a parse each time. jsdom keeps each one
-  // compiled and walks the tree in script, so one query per selector over
-  // the tree costs it more than testing the elements (measured).
-  let rendered;
-  try {
-    const box = probe ? dom.getBoundingClientRect(probe) : null;
-    rendered = !!box && (box.width > 0 || box.height > 0);
-  } catch {
-    rendered = false;
   }
   const TREE_QUERY_MIN_HITS = rendered ? 8 : Infinity;
   const matchesByTree = new Map();
@@ -147946,12 +147968,19 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // judge role="image" as role="img".
   const ROLE_SYNONYMS = { image: 'img' };
 
+  // A role attribute's tokens. HTML splits a set of space-separated tokens
+  // on ASCII whitespace only, so a no-break space or a vertical tab is part
+  // of a token: role="x&nbsp;button" holds no role.
+  function roleTokens(value) {
+    return String(value == null ? '' : value)
+      .split(/[\t\n\f\r ]+/)
+      .filter(Boolean);
+  }
+
   function firstConcreteRole(value) {
-    const raw = trim(value);
-    if (!raw) return '';
-    for (const token of raw.split(/\s+/)) {
-      const t = lower(token);
-      if (t && CONCRETE_ROLES.has(t)) return ROLE_SYNONYMS[t] || t;
+    for (const token of roleTokens(value)) {
+      const t = token.toLowerCase();
+      if (CONCRETE_ROLES.has(t)) return ROLE_SYNONYMS[t] || t;
     }
     return '';
   }
@@ -147983,9 +148012,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
 
   function getAllRoleTokens(el) {
     if (!isElement(el)) return [];
-    const raw = trim(getAttr(el, 'role'));
-    if (!raw) return [];
-    return raw.split(/\s+/).filter(Boolean).map(lower);
+    return roleTokens(getAttr(el, 'role')).map((t) => t.toLowerCase());
   }
 
   function isAbstractRole(role) {
@@ -152031,7 +152058,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (label && HIDDEN_TEXT_RE.test(text)) {
           const forId = dom.getAttribute(label, 'for');
           const labelTag = forId ? `<label for="${forId}">` : '<label>';
-          const role = attr(el, 'role').split(/\s+/)[0];
+          const role = attr(el, 'role').split(/[\t\n\f\r ]+/)[0];
           const control = role ? `${tag} role="${role}"` : tag;
           const labelId = attr(label, 'id');
           const base = `The ${labelTag} "${text}" names nothing here: a <label> only names native form fields (input, select, textarea…), not a <${control}>.`;
@@ -152670,12 +152697,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function roleTypo(el) {
     let raw;
     try {
-      raw = trim(dom.getAttribute(el, 'role'));
+      raw = dom.getAttribute(el, 'role');
     } catch {
       return null;
     }
-    if (!raw) return null;
-    const tokens = raw.split(/\s+/).map(lower);
+    // Split as HTML splits tokens: on ASCII whitespace only.
+    raw = String(raw == null ? '' : raw);
+    const tokens = raw
+      .split(/[\t\n\f\r ]+/)
+      .filter(Boolean)
+      .map((t) => t.toLowerCase());
+    if (!tokens.length) return null;
+    raw = trim(raw);
     if (tokens.some((t) => aria.isKnownRole(t))) return null;
     let suggestion = '';
     for (const t of tokens) {
@@ -157581,7 +157614,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const explicit = aria.getExplicitRole(el);
     if (explicit) {
       if (explicit === 'presentation' || explicit === 'none') flags.push('presentation');
-      if (/\s/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
+      if (/[\t\n\f\r ]/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
       return { role: explicit, source: 'explicit', flags };
     }
 
