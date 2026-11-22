@@ -1008,7 +1008,7 @@ function runInPage(ctx) {
     : helpers.queryAll(CANDIDATE_SELECTOR);
 
   // Every suppressor tested against each element costs rules x elements.
-  // The selectors that parse on their own, and whose text can't run into
+  // In a browser, the selectors that parse on their own, and whose text can't run into
   // the next one's (balanced brackets and quotes, no comment, no trailing
   // escape), are tested as one list first: an element none of them matches
   // is tested against the others only. The rules are read one by one only
@@ -1035,8 +1035,23 @@ function runInPage(ctx) {
     return depth === 0 && !quote;
   }
   const probe = document ? dom.documentElement(document) : null;
+  // The list and the tree queries run only in a browser (a page with a
+  // layout): there, a call with one of hundreds of selectors costs a parse
+  // each time. jsdom keeps each selector compiled and walks the tree in
+  // script, so a list or one query per selector over the tree costs it more
+  // than testing the elements (measured). jsdom also reports a selector it
+  // cannot read only when matching reaches it, and can answer a list
+  // differently from its selectors one by one.
+  let rendered;
+  try {
+    const box = probe ? dom.getBoundingClientRect(probe) : null;
+    rendered = !!box && (box.width > 0 || box.height > 0);
+  } catch {
+    rendered = false;
+  }
   const listed = new Set();
   for (const s of suppressors) {
+    if (!rendered) break;
     // :scope, & and :host read differently from a tree's querySelectorAll
     // than from the element's matches(): tested element by element.
     if (listed.has(s.base) || !probe || !standsAlone(s.base) || /:scope|&|:host/i.test(s.base))
@@ -1074,22 +1089,18 @@ function runInPage(ctx) {
   }
   if (suppressorList) {
     for (const el of candidates) {
-      if (!el || dom.nodeType(el) !== 1 || !matchesSafe(el, suppressorList)) continue;
+      if (!el || dom.nodeType(el) !== 1) continue;
+      let hit;
+      try {
+        hit = dom.matches(el, suppressorList);
+      } catch {
+        hit = true; // the list could not be read here: each selector is tested
+      }
+      if (!hit) continue;
       listHits.add(el);
       const tree = treeOf(el);
       listHitsByTree.set(tree, (listHitsByTree.get(tree) || 0) + 1);
     }
-  }
-  // Only in a browser (a page with a layout): there, a call with one of
-  // hundreds of selectors costs a parse each time. jsdom keeps each one
-  // compiled and walks the tree in script, so one query per selector over
-  // the tree costs it more than testing the elements (measured).
-  let rendered;
-  try {
-    const box = probe ? dom.getBoundingClientRect(probe) : null;
-    rendered = !!box && (box.width > 0 || box.height > 0);
-  } catch {
-    rendered = false;
   }
   const TREE_QUERY_MIN_HITS = rendered ? 8 : Infinity;
   const matchesByTree = new Map();

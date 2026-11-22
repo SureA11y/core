@@ -6,7 +6,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const {
+  runa11yCoreOnHtml,
+  createDom,
+  runa11yCoreOnDom
+} = require('../../helpers/runDomRulesOnHtml.js');
 
 const RULE_ID = 'css-focus-indicator-suppressed';
 
@@ -542,4 +546,49 @@ test(`${RULE_ID}: says which <style> element the removing rule is in`, () => {
   assert.strictEqual(occ.i18n.summaryKey, 'cssFocusIndicatorSuppressed_summary_cantTell_inStyle');
   assert.deepStrictEqual(occ.i18n.params, { selectors: '*:focus', index: 2 });
   assert.strictEqual(occ.data.details.styleElementIndex, 2);
+});
+
+test(`${RULE_ID}: a selector jsdom cannot read does not hide the other rules (round 11, R11P-1)`, () => {
+  // jsdom throws on :-moz-focusring only when matching reaches it, so it
+  // passes a check against <html> and then fails every button.
+  const html = page(
+    'button:-moz-focusring{outline:none} button:focus{outline:none}',
+    '<main><button type="button" id="b">Save</button></main>'
+  );
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+  assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, ['button:focus']);
+});
+
+test(`${RULE_ID}: jsdom tests each selector on its own, never as a list (round 11, R11P-3, R11P-4)`, () => {
+  // In jsdom a list is slower when most elements match it, and can answer
+  // differently from its selectors one by one (:nth-child(An+B of S)).
+  const rules = Array.from({ length: 20 }, (_, i) => `.c${i} a:focus{outline:none}`).join(' ');
+  const links = Array.from(
+    { length: 20 },
+    (_, i) => `<div class="c${i}"><a href="#${i}" id="a${i}">${i}</a></div>`
+  ).join('');
+  const dom = createDom(
+    `<!doctype html><html><head><style>${rules} button:focus{outline:none} ` +
+      `:nth-child(2 of .x):focus{outline:none}</style></head><body>${links}` +
+      '<div class="x"><a href="h1" class="x">a</a><button id="b">b</button></div></body></html>'
+  );
+  const proto = dom.window.Element.prototype;
+  const matches = proto.matches;
+  const lists = [];
+  proto.matches = function (sel) {
+    if (/\.c\d+ a, \.c\d+ a/.test(sel)) lists.push(sel);
+    return matches.call(this, sel);
+  };
+  const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 21,
+    maxOccurrences: 21
+  });
+  proto.matches = matches;
+  assert.deepStrictEqual(lists, []);
+  for (let i = 0; i < 20; i++) assert.ok(hasOccurrenceForId(rule, `a${i}`), `a${i}`);
+  assert.ok(hasOccurrenceForId(rule, 'b'));
 });
