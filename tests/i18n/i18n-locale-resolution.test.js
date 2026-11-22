@@ -38,6 +38,7 @@ function liftFunction(name) {
 // produce.
 function makeResolveLocale(i18n, knownLocales, leftOut) {
   const source = [
+    'ownValue',
     'getSuppliedMessages',
     'ownDict',
     'lookupDict',
