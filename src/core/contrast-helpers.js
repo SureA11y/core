@@ -1724,7 +1724,7 @@ function createContrastHelpers(opts, shared) {
                 const m = measureGeneratedText(el, pseudo, bgResolveOpts);
                 if (!m || m.same) continue;
                 generated.push(
-                  Object.freeze(Object.assign(Object.create(null), { el, pseudo, textCount: 1 }))
+                  Object.freeze(Object.setPrototypeOf({ el, pseudo, textCount: 1 }, null))
                 );
               }
             }
@@ -1740,9 +1740,7 @@ function createContrastHelpers(opts, shared) {
           // Object.prototype (pseudo) is never read as a record's own
           // (round 12, F12-5).
           elements.map((el) =>
-            Object.freeze(
-              Object.assign(Object.create(null), { el, textCount: elToCount.get(el) || 0 })
-            )
+            Object.freeze(Object.setPrototypeOf({ el, textCount: elToCount.get(el) || 0 }, null))
           )
         ),
         generated: Object.freeze(generated)
@@ -3996,7 +3994,7 @@ function createContrastHelpers(opts, shared) {
     root = root || dom.ownerDocument(el);
     // Answers with no prototype: a value a page's script put on
     // Object.prototype (unknown) is never read as theirs (round 12, F12-5).
-    const answer = (o) => Object.assign(Object.create(null), o);
+    const answer = (o) => Object.setPrototypeOf(o, null);
     const found = __colorRulesOf(root, prop);
     if (found.unreadable) return answer({ unknown: true });
     let best = null;
@@ -9560,7 +9558,7 @@ function createContrastHelpers(opts, shared) {
     }
     // With no prototype: a value a page's script put on Object.prototype
     // (rgba) is never read as the backdrop's own (round 12, F12-5).
-    if (out && typeof out === 'object') out = Object.assign(Object.create(null), out);
+    if (out && typeof out === 'object') out = Object.setPrototypeOf({ ...out }, null);
     __paintBackdropCache.set(el, out);
     return out;
   }
