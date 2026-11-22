@@ -72767,7 +72767,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The children are those of the flat tree, as aria-required-children reads
   // them: unless the scan leaves shadow DOM out, an element's open shadow
   // root stands in for its light children, and a <slot> for the elements
-  // assigned to it (its fallback content is left out).
+  // assigned to it, or for its fallback content when nothing is assigned
+  // (assignedElements with flatten returns that fallback).
   const deepShadow = (ctx.engineOptions || {}).includeShadowDom !== false;
   function openShadowRoot(node) {
     if (!deepShadow) return null;
@@ -83415,7 +83416,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     return out;
   }
-  const scopeOk = (x, el) => !x.scope || treeOf(el) === x.scope;
+  // A sheet styles only the elements in its own tree: a document sheet's
+  // selectors do not reach into a shadow root (CSS Scoping), and a shadow
+  // root's do not reach out of it. (::part() is a pseudo-element, never a
+  // suppressor here, and outline is not inherited.)
+  const scopeOk = (x, el) => treeOf(el) === (x.scope || document);
 
   // A rule whose focus state is on an ancestor of its subject
   // (`main:focus-within a`, `main:has(a:focus) a`), or on the subject as
@@ -83729,22 +83734,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const CANDIDATE_SELECTOR =
     'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
-  const candidates = helpers.queryAllSmart
-    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
-    : helpers.queryAll(CANDIDATE_SELECTOR);
-
-  // The open shadow roots the candidates are in: their style sheets, and
-  // the sheets they adopt, style the elements in them (and only those).
-  const shadowScopes = [];
-  {
-    const seen = new Set();
-    for (const el of candidates) {
-      const tree = el ? treeOf(el) : null;
-      if (!tree || seen.has(tree) || dom.nodeType(tree) !== 11) continue;
-      seen.add(tree);
-      shadowScopes.push(tree);
-    }
-  }
   // A root's style sheets, then those it adopts. jsdom gives a shadow root
   // no styleSheets list: its <style> elements are read instead.
   const sheetsOf = (root) => {
@@ -83776,36 +83765,74 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   let sheetCount = 0;
   let unreadableSheets = 0;
-  try {
-    const scoped = [];
-    for (const sheet of sheetsOf(document)) scoped.push([sheet, null]);
-    for (const root of shadowScopes) for (const sheet of sheetsOf(root)) scoped.push([sheet, root]);
-    for (const [sheet, scope] of scoped) {
-      if (!conditionApplies(sheet)) continue;
-      // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
-      // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
-      // not inspectable.
-      let rules = null;
-      try {
-        rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
-      } catch {
-        unreadableSheets += 1;
-        continue;
+  function readSheets(root, scope) {
+    try {
+      for (const sheet of sheetsOf(root)) {
+        if (!conditionApplies(sheet)) continue;
+        // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
+        // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
+        // not inspectable.
+        let rules = null;
+        try {
+          rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
+        } catch {
+          unreadableSheets += 1;
+          continue;
+        }
+        if (!rules) {
+          unreadableSheets += 1;
+          continue;
+        }
+        sheetCount += 1;
+        currentSheet = sheet;
+        currentScope = scope;
+        walkRules(rules, 0, '');
+        currentSheet = null;
+        currentScope = null;
       }
-      if (!rules) {
-        unreadableSheets += 1;
-        continue;
-      }
-      sheetCount += 1;
-      currentSheet = sheet;
-      currentScope = scope;
-      walkRules(rules, 0, '');
-      currentSheet = null;
-      currentScope = null;
+    } catch {
+      // no-throw: the sheets read so far count
     }
-  } catch {
-    // no-throw: treat as no accessible stylesheets
   }
+  readSheets(document, null);
+
+  // With no removing rule in the document's sheets and no open shadow root
+  // whose sheets could hold one, nothing is checked: the candidates are not
+  // looked for (round 12, R12F-13).
+  if (!suppressors.length) {
+    let hasShadowRoot = false;
+    try {
+      for (const el of dom.querySelectorAll(document, '*')) {
+        if (dom.shadowRoot(el)) {
+          hasShadowRoot = true;
+          break;
+        }
+      }
+    } catch {
+      hasShadowRoot = true;
+    }
+    if (!hasShadowRoot) {
+      return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    }
+  }
+
+  const candidates = helpers.queryAllSmart
+    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
+    : helpers.queryAll(CANDIDATE_SELECTOR);
+
+  // The open shadow roots the candidates are in: their style sheets, and
+  // the sheets they adopt, style the elements in them (and only those).
+  const shadowScopes = [];
+  {
+    const seen = new Set();
+    for (const el of candidates) {
+      const tree = el ? treeOf(el) : null;
+      if (!tree || seen.has(tree) || dom.nodeType(tree) !== 11) continue;
+      seen.add(tree);
+      shadowScopes.push(tree);
+    }
+  }
+  for (const root of shadowScopes) readSheets(root, root);
 
   if (sheetCount === 0 || !suppressors.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
@@ -84111,7 +84138,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   if (suppressorList) {
     for (const el of candidates) {
-      if (!el || dom.nodeType(el) !== 1) continue;
+      // The list holds the document's selectors, which match in its tree only.
+      if (!el || dom.nodeType(el) !== 1 || treeOf(el) !== document) continue;
       let hit;
       try {
         hit = dom.matches(el, suppressorList);
@@ -86698,7 +86726,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // (header): by tag here, by id in reachesMarquee.
   const STOP_CALL = /\.\s*(?:stop|start)\s*\(/;
   const MARQUEE_BY_TAG =
-    /getElementsByTagName\s*\(\s*['"`]marquee['"`]|querySelector(?:All)?\s*\(\s*['"`][^'"`]*\bmarquee\b/i;
+    /getElementsByTagName\s*\(\s*['"`]marquee['"`]|(?:querySelector(?:All)?|\$|jQuery)\s*\(\s*['"`][^'"`]*\bmarquee\b/i;
   // The engine's own script, injected inline by the page (a script tag holding
   // the bundle): what it says about marquees is the engine's, not the page's.
   const isEngineScript = (text) => text.includes('runa11yCoreInPage') && text.includes('a11ycore');
@@ -86778,14 +86806,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return pageEvidence;
   }
 
-  // The event types a script names: addEventListener('type', ...) and
-  // el.ontype = ....
-  const HOVER_TYPES = new Set(['mouseover', 'mouseenter', 'mouseout', 'mouseleave']);
+  // The event types a script names: addEventListener('type', ...),
+  // el.ontype = ..., and jQuery's .on('type', ...), .one(), .bind() and
+  // shorthands such as .hover(...) and .click(...). A DOMContentLoaded or
+  // load listener only runs the code inside it once the page is read: it
+  // wraps the listeners that code adds, and is not counted. A script is
+  // hover-only when every other type it names is the pointer's hover
+  // (round 12, R12F-15). One that names none, or another event (a click, a
+  // key), may stop the marquee another way, and is asked about with no lean.
+  // A method call that only looks like a shorthand (`el.click()`) counts as
+  // another event, which errs toward asking.
+  const HOVER_TYPES = new Set(['mouseover', 'mouseenter', 'mouseout', 'mouseleave', 'hover']);
+  const WRAPPER_TYPES = new Set(['domcontentloaded', 'load']);
+  const JQUERY_SHORTHAND =
+    /\.\s*(hover|mouseover|mouseenter|mouseout|mouseleave|mousedown|mouseup|click|dblclick|contextmenu|keydown|keyup|keypress|focus|blur|focusin|focusout|change|submit|toggle)\s*\(/g;
   function isHoverOnlyScript(text) {
     const types = new Set();
     for (const m of text.matchAll(/addEventListener\s*\(\s*['"`]([A-Za-z]+)['"`]/g))
       types.add(m[1].toLowerCase());
     for (const m of text.matchAll(/\.\s*on([A-Za-z]+)\s*=(?!=)/g)) types.add(m[1].toLowerCase());
+    for (const m of text.matchAll(/\.\s*(?:on|one|bind)\s*\(\s*['"`]([^'"`]*)['"`]/g))
+      for (const t of m[1].split(/\s+/)) if (t) types.add(t.split('.')[0].toLowerCase());
+    for (const m of text.matchAll(JQUERY_SHORTHAND)) types.add(m[1].toLowerCase());
+    for (const t of WRAPPER_TYPES) types.delete(t);
     return types.size > 0 && [...types].every((t) => HOVER_TYPES.has(t));
   }
 
@@ -110518,6 +110561,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'my wordpress website',
     'my wordpress blog',
     'just another wordpress site',
+    'sample page',
     // es
     'sin título',
     'sin titulo',
@@ -110527,6 +110571,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'nueva página',
     'nuevo documento',
     'otro sitio realizado con wordpress',
+    'página de ejemplo',
     // de
     'ohne titel',
     'unbenannt',
@@ -110536,6 +110581,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'neue seite',
     'neues dokument',
     'eine weitere wordpress-website',
+    'beispiel-seite',
     // fr
     'sans titre',
     'document sans titre',
@@ -110543,6 +110589,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'nouvelle page',
     'nouveau document',
     'un site utilisant wordpress',
+    "page d'exemple",
     // ja
     '無題',
     '無題のドキュメント',
@@ -110550,11 +110597,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'タイトルなし',
     'ドキュメント',
     '新しいページ',
-    '新規ページ'
+    '新規ページ',
+    'サンプルページ'
   ]);
-  // A CMS's default site name or tagline is generic as one part of a title
-  // too: "Sample Page – Just another WordPress site".
+  // A CMS's default site name, tagline or page title is generic as one part
+  // of a title too: "Sample Page – Just another WordPress site", "Sample
+  // Page – My Shop". WordPress names its sample page "Sample Page", and in
+  // its Spanish, German, French and Japanese translations "Página de
+  // ejemplo", "Beispiel-Seite", "Page d'exemple" and "サンプルページ"
+  // (round 12, R12F-14; the translations are not verified against
+  // translate.wordpress.org).
   const DEFAULT_TITLE_PARTS = new Set([
+    'sample page',
+    'página de ejemplo',
+    'beispiel-seite',
+    "page d'exemple",
+    'サンプルページ',
     'my wordpress website',
     'my wordpress blog',
     'just another wordpress site',
@@ -110569,7 +110627,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // page's name. Only clear cases count, and they lean fail:
   // - anywhere in the title: a double-brace token ("{{title}}"), a
   //   template literal of one JavaScript name or dotted path ("${title}",
-  //   "${page.title}"), or a format token ("%s", "%d");
+  //   "${page.title}"), a WordPress SEO variable left unreplaced
+  //   ("%%title%% %%sep%% %%sitename%%": any "%%word%%" token, round 12,
+  //   R12F-14), or a format token ("%s", "%d");
   // - as the whole title or one part of it: a value never set
   //   ("undefined", "null", "NaN", "[object Object]"), a single-brace token
   //   ("{title}"), any template literal ("${...}") or a server tag
@@ -110581,7 +110641,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // page's own subject, and is asked about as any other title is.
   const placeholderToken = (() => {
     const m =
-      /\{\{[^{}]*\}\}|\$\{\s*[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\s*\}|(?:^|[^%\w])(%[sd])(?![\w])/.exec(
+      /\{\{[^{}]*\}\}|%%[A-Za-z_]\w*%%|\$\{\s*[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\s*\}|(?:^|[^%\w])(%[sd])(?![\w])/.exec(
         titleText
       );
     if (m) return m[1] || m[0];
@@ -120944,8 +121004,69 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // - for the controls drawn around text (all but the checkbox, radio and
   //   range), the font size browsers give them, 10.5 to 14 px (13.33):
   //   another was set by the author, and changes the size.
+  // - no author declaration on the control itself, in its style attribute
+  //   or a matching rule, of a property that sets its size: width, height,
+  //   their logical forms and min-/max- forms, padding, font-size,
+  //   line-height, zoom or transform (round 12, R12F-11). A text input
+  //   given `height: 20px` lands inside the sizes below, but its size is
+  //   the author's. A declaration of the property's initial value (`width:
+  //   auto`, `transform: none`) or of initial, unset or revert changes
+  //   nothing and is not counted. Where the rules can't be read (another
+  //   origin's sheet), the sizes below decide alone.
   // A control outside these was resized by the author, which the exception
   // doesn't cover.
+  const SIZE_PROPS = [
+    'width',
+    'height',
+    'inline-size',
+    'block-size',
+    'min-width',
+    'min-height',
+    'min-inline-size',
+    'min-block-size',
+    'max-width',
+    'max-height',
+    'max-inline-size',
+    'max-block-size',
+    'padding-top',
+    'padding-right',
+    'padding-bottom',
+    'padding-left',
+    'padding-block-start',
+    'padding-block-end',
+    'padding-inline-start',
+    'padding-inline-end',
+    'font-size',
+    'line-height',
+    'zoom',
+    'transform'
+  ];
+  const KEEPS_SIZE = new Set(['initial', 'unset', 'revert', 'revert-layer']);
+  function keepsSize(prop, value) {
+    const v = String(value || '')
+      .trim()
+      .toLowerCase();
+    if (!v || KEEPS_SIZE.has(v)) return true;
+    if (prop.startsWith('max-') || prop === 'transform') return v === 'none';
+    if (prop === 'line-height') return v === 'normal';
+    if (prop === 'zoom') return v === '1' || v === '100%' || v === 'normal';
+    if (/^(min-)?(width|height|inline-size|block-size)$/.test(prop)) return v === 'auto';
+    return false;
+  }
+  function authorResized(el) {
+    const c = helpers.contrast;
+    if (!c || typeof c.authorDeclarationOf !== 'function') return false;
+    for (const prop of SIZE_PROPS) {
+      let d;
+      try {
+        d = c.authorDeclarationOf(el, prop);
+      } catch {
+        d = null;
+      }
+      if (d && !d.unknown && !keepsSize(prop, d.value)) return true;
+    }
+    return false;
+  }
   const UA_TEXT_INPUT_TYPES = new Set([
     'text',
     'search',
@@ -121017,6 +121138,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       // Zoomed by the author, on the control or an ancestor.
       if (Math.abs(cssZoomOf(el) - 1) > 0.01) return false;
+
+      // Sized by the author's own declaration on it.
+      if (authorResized(el)) return false;
 
       const box = dom.getBoundingClientRect(el);
       const w = box.width;
@@ -123199,8 +123323,69 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // - for the controls drawn around text (all but the checkbox, radio and
   //   range), the font size browsers give them, 10.5 to 14 px (13.33):
   //   another was set by the author, and changes the size.
+  // - no author declaration on the control itself, in its style attribute
+  //   or a matching rule, of a property that sets its size: width, height,
+  //   their logical forms and min-/max- forms, padding, font-size,
+  //   line-height, zoom or transform (round 12, R12F-11). A text input
+  //   given `height: 20px` lands inside the sizes below, but its size is
+  //   the author's. A declaration of the property's initial value (`width:
+  //   auto`, `transform: none`) or of initial, unset or revert changes
+  //   nothing and is not counted. Where the rules can't be read (another
+  //   origin's sheet), the sizes below decide alone.
   // A control outside these was resized by the author, which the exception
   // doesn't cover.
+  const SIZE_PROPS = [
+    'width',
+    'height',
+    'inline-size',
+    'block-size',
+    'min-width',
+    'min-height',
+    'min-inline-size',
+    'min-block-size',
+    'max-width',
+    'max-height',
+    'max-inline-size',
+    'max-block-size',
+    'padding-top',
+    'padding-right',
+    'padding-bottom',
+    'padding-left',
+    'padding-block-start',
+    'padding-block-end',
+    'padding-inline-start',
+    'padding-inline-end',
+    'font-size',
+    'line-height',
+    'zoom',
+    'transform'
+  ];
+  const KEEPS_SIZE = new Set(['initial', 'unset', 'revert', 'revert-layer']);
+  function keepsSize(prop, value) {
+    const v = String(value || '')
+      .trim()
+      .toLowerCase();
+    if (!v || KEEPS_SIZE.has(v)) return true;
+    if (prop.startsWith('max-') || prop === 'transform') return v === 'none';
+    if (prop === 'line-height') return v === 'normal';
+    if (prop === 'zoom') return v === '1' || v === '100%' || v === 'normal';
+    if (/^(min-)?(width|height|inline-size|block-size)$/.test(prop)) return v === 'auto';
+    return false;
+  }
+  function authorResized(el) {
+    const c = helpers.contrast;
+    if (!c || typeof c.authorDeclarationOf !== 'function') return false;
+    for (const prop of SIZE_PROPS) {
+      let d;
+      try {
+        d = c.authorDeclarationOf(el, prop);
+      } catch {
+        d = null;
+      }
+      if (d && !d.unknown && !keepsSize(prop, d.value)) return true;
+    }
+    return false;
+  }
   const UA_TEXT_INPUT_TYPES = new Set([
     'text',
     'search',
@@ -123272,6 +123457,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       // Zoomed by the author, on the control or an ancestor.
       if (Math.abs(cssZoomOf(el) - 1) > 0.01) return false;
+
+      // Sized by the author's own declaration on it.
+      if (authorResized(el)) return false;
 
       const box = dom.getBoundingClientRect(el);
       const w = box.width;

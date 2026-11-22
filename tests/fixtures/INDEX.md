@@ -159,7 +159,7 @@ Total rules: **154**. With fixture: **149**. Without fixture: **5**.
 | table-fake-caption | manual | `tests/fixtures/table-fake-caption-all-scenarios.html` | 6 | 0 | 0 | 1 | 5 |
 | table-headers-attr-valid | automatic | `tests/fixtures/table-headers-attr-valid-all-scenarios.html` | 9 | 2 | 4 | 0 | 3 |
 | table-th-has-data-cells | automatic | `tests/fixtures/table-th-has-data-cells-all-scenarios.html` | 4 | 1 | 2 | 0 | 1 |
-| target-size-minimum | automatic | `tests/fixtures/target-size-all-scenarios.html` | 25 | 8 | 8 | 1 | 8 |
+| target-size-minimum | automatic | `tests/fixtures/target-size-all-scenarios.html` | 26 | 8 | 9 | 1 | 8 |
 | td-has-header | automatic | `tests/fixtures/td-has-header-all-scenarios.html` | 9 | 0 | 1 | 2 | 6 |
 | text-spacing-content-loss | automatic | `tests/fixtures/text-spacing-content-loss-all-scenarios.html` | 5 | 2 | 1 | 2 | 0 |
 | textbox-name-present | automatic | `tests/fixtures/textbox-name-present-all-scenarios.html` | 28 | 7 | 10 | 0 | 11 |

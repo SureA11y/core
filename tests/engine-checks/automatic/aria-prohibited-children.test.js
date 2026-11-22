@@ -717,3 +717,16 @@ test(`${RULE_ID}: judges the children a container's shadow root draws or slots`,
     assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions }), RULE_ID, 'pass');
   }
 });
+
+// A <slot> with nothing assigned is drawn as its fallback content, and that
+// content is judged (round 12, R12F-16).
+test(`${RULE_ID}: judges a slot's fallback content when nothing is assigned to it`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><x-m id="m" role="menu"></x-m></body></html>'
+  );
+  dom.window.document.getElementById('m').attachShadow({ mode: 'open' }).innerHTML =
+    '<div role="menuitem">A</div><slot><button>Fallback</button></slot>';
+  const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'fail');
+  assert.equal(rule.occurrences.length, 1);
+});

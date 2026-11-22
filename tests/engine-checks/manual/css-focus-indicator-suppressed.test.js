@@ -31,6 +31,34 @@ test(`${RULE_ID}: notApplicable when the page has no focus rule at all`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// With no rule that removes an outline, the rule ends before it looks for
+// candidates, whose hidden-content filter reads every one's style (round
+// 12, R12F-13: 3145 ms of CPU on a large page in jsdom, against 59).
+test(`${RULE_ID}: no candidate is read when no rule removes an outline`, () => {
+  const links = Array.from({ length: 200 }, (_, i) => `<a href="/${i}">${i}</a>`).join('');
+  for (const shadow of [false, true]) {
+    const dom = createDom(page('a { color: red }', `${links}<div id="h"></div>`));
+    if (shadow) {
+      const root = dom.window.document.getElementById('h').attachShadow({ mode: 'open' });
+      root.innerHTML = '<button>b</button><style>button{color:red}</style>';
+    }
+    let reads = 0;
+    const read = dom.window.getComputedStyle;
+    dom.window.getComputedStyle = function (...args) {
+      reads += 1;
+      return read.apply(this, args);
+    };
+    assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+    // A page with an open shadow root has its candidates looked for, as the
+    // root's own sheets are read only for the trees they are in.
+    if (shadow) assert.ok(reads > 0);
+    else assert.ok(reads < 10, String(reads));
+  }
+});
+
 test(`${RULE_ID}: cantTell for a global outline reset with no replacement`, () => {
   const result = runa11yCoreOnHtml(page('*:focus{outline:none}', '<a href="/x" id="a">x</a>'), {
     runOnly: [RULE_ID]
@@ -484,6 +512,27 @@ test(`${RULE_ID}: a shadow root's style sheets style its own elements`, () => {
     );
     assert.ok(hasOccurrenceForId(rule, 'b'), String(adopt));
   }
+});
+
+// A document sheet's selectors do not reach into a shadow root (CSS
+// Scoping): its rule removes no outline there (round 12, R12F-12).
+test(`${RULE_ID}: a document sheet does not style a shadow root's elements`, () => {
+  const dom = createDom(
+    '<!doctype html><html><head><style>button:focus, .in button:focus{outline:none}</style></head><body><div id="h" class="in"></div></body></html>'
+  );
+  const root = dom.window.document.getElementById('h').attachShadow({ mode: 'open' });
+  root.innerHTML = '<div class="in"><button id="b">b</button></div>';
+  assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  // The same rule in the shadow root's own sheet does.
+  root.innerHTML += '<style>button:focus{outline:none}</style>';
+  const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, ['button:focus']);
 });
 
 test(`${RULE_ID}: an element outside sequential focus navigation is skipped`, () => {

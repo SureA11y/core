@@ -433,7 +433,14 @@ test(`${RULE_ID}: a default title in any of the engine's languages is generic`, 
     'New page',
     'React App',
     'My WordPress Website',
-    'Sample Page – Just another WordPress site'
+    'Sample Page – Just another WordPress site',
+    // WordPress's sample page, with a site name (round 12, R12F-14).
+    'Sample Page – My Shop',
+    'Sample Page',
+    'Página de ejemplo – Mi tienda',
+    'Beispiel-Seite – Mein Laden',
+    'Page d’exemple – Ma boutique',
+    'サンプルページ – ショップ'
   ]) {
     const rule = assertRule(
       runa11yCoreOnHtml(withTitle(title), { runOnly: [RULE_ID] }),
@@ -464,7 +471,10 @@ test(`${RULE_ID}: a placeholder left in the title is asked about, leaning fail`,
     ['${title} | Acme', '${title}'],
     ['%s - Acme Store', '%s'],
     ['{title} – Acme', '{title}'],
-    ['<%= title %> | Acme', '<%= title %>']
+    ['<%= title %> | Acme', '<%= title %>'],
+    // WordPress SEO variables left unreplaced (round 12, R12F-14).
+    ['%%title%% %%sep%% %%sitename%%', '%%title%%'],
+    ['Acme %%page%%', '%%page%%']
   ]) {
     const rule = assertRule(
       runa11yCoreOnHtml(withTitle(title.replace(/</g, '&lt;')), { runOnly: [RULE_ID] }),

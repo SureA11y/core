@@ -286,7 +286,8 @@ function runInPage(ctx) {
   // The children are those of the flat tree, as aria-required-children reads
   // them: unless the scan leaves shadow DOM out, an element's open shadow
   // root stands in for its light children, and a <slot> for the elements
-  // assigned to it (its fallback content is left out).
+  // assigned to it, or for its fallback content when nothing is assigned
+  // (assignedElements with flatten returns that fallback).
   const deepShadow = (ctx.engineOptions || {}).includeShadowDom !== false;
   function openShadowRoot(node) {
     if (!deepShadow) return null;

@@ -4,8 +4,9 @@
  * css-focus-indicator-suppressed with many focus rules: in a browser, where
  * many elements match the joined list of rules, each rule is run once over
  * the tree instead of once per element (round 11, P11-5). Each element must
- * still be told exactly the rules that match it, in a shadow tree too, and a
- * rule with :scope is still read as matches() reads it.
+ * still be told exactly the rules that match it, and a rule with :scope is
+ * still read as matches() reads it. A document rule does not reach into a
+ * shadow tree; the tree's own sheet does.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -68,7 +69,7 @@ test(`${RULE_ID}: many rules and many matching links, in Chromium`, { skip }, as
       Array.from(
         { length: 10 },
         (_, i) => `<div class="in"><a href="#in${i}">In ${i}</a></div>`
-      ).join('') + '<a href="#out">Out</a>';
+      ).join('') + '<a href="#out">Out</a><style>div.in a:focus{outline:none}</style>';
   });
   await addBundle(p);
   const occ = await p.evaluate((id) => {
@@ -89,9 +90,10 @@ test(`${RULE_ID}: many rules and many matching links, in Chromium`, { skip }, as
   assert.equal(bySelector('a.both:focus').length, 1);
   // :scope is the element itself in matches(), so this rule matches no link.
   assert.equal(bySelector(':scope a.scoped:focus').length, 0);
-  // A document rule's selector read against a shadow tree's links, as
-  // matches() reads it.
-  assert.equal(bySelector('.in a:focus').length, 10);
+  // CSS Scoping: a document rule's selector does not match into a shadow
+  // tree (round 12, R12F-12); the tree's own sheet styles its links.
+  assert.equal(bySelector('.in a:focus').length, 0);
+  assert.equal(bySelector('div.in a:focus').length, 10);
   assert.equal(occ.length, n + 1 + 10);
 });
 

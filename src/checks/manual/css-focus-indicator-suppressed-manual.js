@@ -30,9 +30,11 @@
  *   (`main:has(a:focus) a`). A state on a sibling (`+`, `~`) says nothing
  *   about the element's focus, and `:not(:focus-within)` stops holding once
  *   it has focus: neither counts.
- *   - The page's style sheets and those it adopts are read, and so are
- *     each open shadow root's, adopted ones included, against the elements
- *     in that root only. A rule
+ *   - The page's style sheets and those it adopts are read against the
+ *     elements in the document's own tree: as CSS Scoping has it, their
+ *     selectors do not reach into a shadow root. Each open shadow root's
+ *     sheets, adopted ones included, are read against the elements in
+ *     that root only. A rule
  *   that removes it only under `:not(:focus-visible)` keeps it for keyboard
  *   focus and is not counted; nor is the focus-visible polyfill's form of
  *   it, `:not(.focus-visible)` under `.js-focus-visible`, or
@@ -607,7 +609,11 @@ function runInPage(ctx) {
     }
     return out;
   }
-  const scopeOk = (x, el) => !x.scope || treeOf(el) === x.scope;
+  // A sheet styles only the elements in its own tree: a document sheet's
+  // selectors do not reach into a shadow root (CSS Scoping), and a shadow
+  // root's do not reach out of it. (::part() is a pseudo-element, never a
+  // suppressor here, and outline is not inherited.)
+  const scopeOk = (x, el) => treeOf(el) === (x.scope || document);
 
   // A rule whose focus state is on an ancestor of its subject
   // (`main:focus-within a`, `main:has(a:focus) a`), or on the subject as
@@ -921,22 +927,6 @@ function runInPage(ctx) {
 
   const CANDIDATE_SELECTOR =
     'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
-  const candidates = helpers.queryAllSmart
-    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
-    : helpers.queryAll(CANDIDATE_SELECTOR);
-
-  // The open shadow roots the candidates are in: their style sheets, and
-  // the sheets they adopt, style the elements in them (and only those).
-  const shadowScopes = [];
-  {
-    const seen = new Set();
-    for (const el of candidates) {
-      const tree = el ? treeOf(el) : null;
-      if (!tree || seen.has(tree) || dom.nodeType(tree) !== 11) continue;
-      seen.add(tree);
-      shadowScopes.push(tree);
-    }
-  }
   // A root's style sheets, then those it adopts. jsdom gives a shadow root
   // no styleSheets list: its <style> elements are read instead.
   const sheetsOf = (root) => {
@@ -968,36 +958,74 @@ function runInPage(ctx) {
 
   let sheetCount = 0;
   let unreadableSheets = 0;
-  try {
-    const scoped = [];
-    for (const sheet of sheetsOf(document)) scoped.push([sheet, null]);
-    for (const root of shadowScopes) for (const sheet of sheetsOf(root)) scoped.push([sheet, root]);
-    for (const [sheet, scope] of scoped) {
-      if (!conditionApplies(sheet)) continue;
-      // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
-      // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
-      // not inspectable.
-      let rules = null;
-      try {
-        rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
-      } catch {
-        unreadableSheets += 1;
-        continue;
+  function readSheets(root, scope) {
+    try {
+      for (const sheet of sheetsOf(root)) {
+        if (!conditionApplies(sheet)) continue;
+        // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
+        // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
+        // not inspectable.
+        let rules = null;
+        try {
+          rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
+        } catch {
+          unreadableSheets += 1;
+          continue;
+        }
+        if (!rules) {
+          unreadableSheets += 1;
+          continue;
+        }
+        sheetCount += 1;
+        currentSheet = sheet;
+        currentScope = scope;
+        walkRules(rules, 0, '');
+        currentSheet = null;
+        currentScope = null;
       }
-      if (!rules) {
-        unreadableSheets += 1;
-        continue;
-      }
-      sheetCount += 1;
-      currentSheet = sheet;
-      currentScope = scope;
-      walkRules(rules, 0, '');
-      currentSheet = null;
-      currentScope = null;
+    } catch {
+      // no-throw: the sheets read so far count
     }
-  } catch {
-    // no-throw: treat as no accessible stylesheets
   }
+  readSheets(document, null);
+
+  // With no removing rule in the document's sheets and no open shadow root
+  // whose sheets could hold one, nothing is checked: the candidates are not
+  // looked for (round 12, R12F-13).
+  if (!suppressors.length) {
+    let hasShadowRoot = false;
+    try {
+      for (const el of dom.querySelectorAll(document, '*')) {
+        if (dom.shadowRoot(el)) {
+          hasShadowRoot = true;
+          break;
+        }
+      }
+    } catch {
+      hasShadowRoot = true;
+    }
+    if (!hasShadowRoot) {
+      return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    }
+  }
+
+  const candidates = helpers.queryAllSmart
+    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
+    : helpers.queryAll(CANDIDATE_SELECTOR);
+
+  // The open shadow roots the candidates are in: their style sheets, and
+  // the sheets they adopt, style the elements in them (and only those).
+  const shadowScopes = [];
+  {
+    const seen = new Set();
+    for (const el of candidates) {
+      const tree = el ? treeOf(el) : null;
+      if (!tree || seen.has(tree) || dom.nodeType(tree) !== 11) continue;
+      seen.add(tree);
+      shadowScopes.push(tree);
+    }
+  }
+  for (const root of shadowScopes) readSheets(root, root);
 
   if (sheetCount === 0 || !suppressors.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
@@ -1303,7 +1331,8 @@ function runInPage(ctx) {
   }
   if (suppressorList) {
     for (const el of candidates) {
-      if (!el || dom.nodeType(el) !== 1) continue;
+      // The list holds the document's selectors, which match in its tree only.
+      if (!el || dom.nodeType(el) !== 1 || treeOf(el) !== document) continue;
       let hit;
       try {
         hit = dom.matches(el, suppressorList);

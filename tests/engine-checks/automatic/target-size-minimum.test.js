@@ -512,8 +512,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
   // (see helpers.resolveTieredOutcome's header comment); they're now
   // correctly merged into the result alongside the confident fails. Plus 1
   // more for fail_circle_reaches_neighbor, whose circle reaches a neighbour
-  // whose centre is far away.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
+  // whose centre is far away. Plus 2 for the text inputs the author sized
+  // (round 12, R12F-11).
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 18, maxOccurrences: 18 });
 
   function hasOccurrenceForId(id) {
     return rule.occurrences.some(
@@ -537,7 +538,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     'fail_styled_checkbox_2',
     'canttell_svg_a', // essential/equivalent uncertainty inside svg, merged into the 'fail' result
     'canttell_svg_b',
-    'fail_circle_reaches_neighbor'
+    'fail_circle_reaches_neighbor',
+    'fail_sized_text_input_1',
+    'fail_sized_text_input_2'
   ];
 
   const expectedNoOccIds = [
@@ -613,6 +616,27 @@ test(`${RULE_ID}: runDomRulesInPage (Node/require entry point) agrees with runa1
   assert.ok(inPageCheck && nodeCheck, 'expected a checksResults entry from both entry points');
   assert.strictEqual(nodeCheck.outcome, inPageCheck.outcome);
   assert.strictEqual(nodeCheck.occurrences.length, inPageCheck.occurrences.length);
+});
+
+// WCAG 2.5.8's user-agent exception needs a size the author has not
+// modified: a declaration of the control's size on it, in its style
+// attribute or a rule, takes the exception away even where the box keeps
+// the size browsers draw (round 12, R12F-11).
+test(`${RULE_ID}: a native control the author sized is not sized by the browser`, () => {
+  const boxes = (style, css = '') => `<!doctype html><html><head><style>${css}</style></head><body>
+    <input type="checkbox" id="a" aria-label="a" style="${style}" data-rect="100,100,13,13">
+    <input type="checkbox" id="b" aria-label="b" style="${style}" data-rect="100,115,13,13">
+  </body></html>`;
+  assertRule(run(boxes('')), RULE_ID, 'pass');
+  assertRule(run(boxes('margin:1px')), RULE_ID, 'pass');
+  // A declaration that changes nothing is not counted.
+  assertRule(run(boxes('width:auto;transform:none;line-height:normal')), RULE_ID, 'pass');
+  for (const style of ['width:13px;height:13px', 'padding:0', 'min-height:13px', 'zoom:1.01']) {
+    assertRule(run(boxes(style)), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  }
+  for (const css of ['input { font-size: 12px }', '[type=checkbox] { max-width: 13px }']) {
+    assertRule(run(boxes('', css)), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  }
 });
 
 // patchTargetSizeEnv gives the window a 1000x800 viewport.

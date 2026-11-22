@@ -53,8 +53,9 @@
  *   letter or a digit in it), or user-agent sizing (an unstyled native
  *   form control other than a button: a checkbox, radio, range, color,
  *   file, date or text input, or a drop-down select, with its appearance
- *   not reset to none, no CSS zoom on it or an ancestor, and the size
- *   browsers draw it at). An undersized target too close to a neighbour fails. Where an
+ *   not reset to none, no CSS zoom on it or an ancestor, no author
+ *   width, height, min-*, max-*, padding, font-size, line-height, zoom or
+ *   transform on it, and the size browsers draw it at). An undersized target too close to a neighbour fails. Where an
  *   exception may apply but cannot be confirmed (two inline links crowding
  *   each other between separators alone, as in "Edit | Delete", or a target
  *   inside an SVG, canvas or image map that may be essential), the result is
@@ -192,9 +193,11 @@
  *   (textAround), since the inline exception may cover it.
  * - User Agent Control: an unstyled native form control (a checkbox,
  *   radio, range, color, file, date or text input, or a drop-down select):
- *   `appearance` not reset to `none`, no CSS zoom on it or an ancestor, and
- *   its box, and for a control drawn around text its font size, within
- *   what browsers draw it at (see isUserAgentSizedControl). A button is
+ *   `appearance` not reset to `none`, no CSS zoom on it or an ancestor, no
+ *   author declaration on it of a property that sets its size (width,
+ *   height, min-*, max-*, padding, font-size, line-height, zoom or
+ *   transform), and its box, and for a control drawn around text its font
+ *   size, within what browsers draw it at (see isUserAgentSizedControl). A button is
  *   left out: its size follows the author's text.
  * - Essential/Equivalent: only a narrow, high-confidence subset is asserted
  *   (SVG/canvas/map-embedded controls, see isPlausiblyEssentialOrEquivalent);
@@ -1937,8 +1940,69 @@ function runInPage(ctx) {
   // - for the controls drawn around text (all but the checkbox, radio and
   //   range), the font size browsers give them, 10.5 to 14 px (13.33):
   //   another was set by the author, and changes the size.
+  // - no author declaration on the control itself, in its style attribute
+  //   or a matching rule, of a property that sets its size: width, height,
+  //   their logical forms and min-/max- forms, padding, font-size,
+  //   line-height, zoom or transform (round 12, R12F-11). A text input
+  //   given `height: 20px` lands inside the sizes below, but its size is
+  //   the author's. A declaration of the property's initial value (`width:
+  //   auto`, `transform: none`) or of initial, unset or revert changes
+  //   nothing and is not counted. Where the rules can't be read (another
+  //   origin's sheet), the sizes below decide alone.
   // A control outside these was resized by the author, which the exception
   // doesn't cover.
+  const SIZE_PROPS = [
+    'width',
+    'height',
+    'inline-size',
+    'block-size',
+    'min-width',
+    'min-height',
+    'min-inline-size',
+    'min-block-size',
+    'max-width',
+    'max-height',
+    'max-inline-size',
+    'max-block-size',
+    'padding-top',
+    'padding-right',
+    'padding-bottom',
+    'padding-left',
+    'padding-block-start',
+    'padding-block-end',
+    'padding-inline-start',
+    'padding-inline-end',
+    'font-size',
+    'line-height',
+    'zoom',
+    'transform'
+  ];
+  const KEEPS_SIZE = new Set(['initial', 'unset', 'revert', 'revert-layer']);
+  function keepsSize(prop, value) {
+    const v = String(value || '')
+      .trim()
+      .toLowerCase();
+    if (!v || KEEPS_SIZE.has(v)) return true;
+    if (prop.startsWith('max-') || prop === 'transform') return v === 'none';
+    if (prop === 'line-height') return v === 'normal';
+    if (prop === 'zoom') return v === '1' || v === '100%' || v === 'normal';
+    if (/^(min-)?(width|height|inline-size|block-size)$/.test(prop)) return v === 'auto';
+    return false;
+  }
+  function authorResized(el) {
+    const c = helpers.contrast;
+    if (!c || typeof c.authorDeclarationOf !== 'function') return false;
+    for (const prop of SIZE_PROPS) {
+      let d;
+      try {
+        d = c.authorDeclarationOf(el, prop);
+      } catch {
+        d = null;
+      }
+      if (d && !d.unknown && !keepsSize(prop, d.value)) return true;
+    }
+    return false;
+  }
   const UA_TEXT_INPUT_TYPES = new Set([
     'text',
     'search',
@@ -2010,6 +2074,9 @@ function runInPage(ctx) {
 
       // Zoomed by the author, on the control or an ancestor.
       if (Math.abs(cssZoomOf(el) - 1) > 0.01) return false;
+
+      // Sized by the author's own declaration on it.
+      if (authorResized(el)) return false;
 
       const box = dom.getBoundingClientRect(el);
       const w = box.width;
