@@ -156,3 +156,58 @@ test('probes, the object options, and an empty profile or timestamp are checked 
   );
   assert.deepEqual(said, []);
 });
+
+// runa11yCoreOnHtml and runa11yCoreOnDom say a key of their own misspelt,
+// naming the closest, and refuse it under strictOptions (round 12, A12-14).
+test('the test helpers warn about a key they do not know, naming the closest (round 12, A12-14)', () => {
+  const { createDom, runa11yCoreOnDom } = require('../src/testing.js');
+  const cases = [
+    [
+      { engineOption: { locale: 'de' } },
+      /unknown option "engineOption" \(did you mean engineOptions\?\)/
+    ],
+    [{ runonly: ['page-title-present'] }, /unknown option "runonly" \(did you mean runOnly\?\)/],
+    [
+      { entryPointParty: false },
+      /unknown option "entryPointParty" \(did you mean entryPointParity\?\)/
+    ],
+    [{ whatever: 1 }, /unknown option "whatever" \(it takes url, /]
+  ];
+  for (const [options, said] of cases) {
+    const html = quietly(() => runa11yCoreOnHtml(PAGE, { ...options, entryPointParity: false }));
+    assert.ok(
+      html.said.some((s) => said.test(s)),
+      String(html.said)
+    );
+    const dom = quietly(() =>
+      runa11yCoreOnDom(createDom(PAGE), { ...options, entryPointParity: false })
+    );
+    assert.ok(
+      dom.said.some((s) => said.test(s)),
+      String(dom.said)
+    );
+    assert.throws(
+      () =>
+        quietly(() =>
+          runa11yCoreOnHtml(PAGE, {
+            ...options,
+            engineOptions: { strictOptions: true },
+            entryPointParity: false
+          })
+        ),
+      (err) => err.code === 'INVALID_ENGINE_OPTIONS' && said.test(err.message)
+    );
+  }
+  // Its own keys say nothing.
+  const { said } = quietly(() =>
+    runa11yCoreOnHtml(PAGE, {
+      url: 'https://example.test/',
+      contentType: 'text/html',
+      contextSelector: null,
+      engineOptions: {},
+      runOnly: null,
+      entryPointParity: false
+    })
+  );
+  assert.deepEqual(said, []);
+});

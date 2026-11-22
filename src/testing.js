@@ -112,23 +112,65 @@ function assertEntryPointParity(inPageResult, nodeResult) {
 // The engine options these helpers' options take at the top level, as a
 // convenience; the rest belong under engineOptions.
 const TOP_LEVEL_ENGINE_OPTIONS = new Set(['excludeSelectors', 'includeShadowDom', 'rules']);
+// Every key each helper's options take.
+const HELPER_OPTIONS = {
+  runa11yCoreOnHtml: [
+    'url',
+    'contentType',
+    'contextSelector',
+    'engineOptions',
+    'runOnly',
+    'entryPointParity',
+    ...TOP_LEVEL_ENGINE_OPTIONS
+  ],
+  runa11yCoreOnDom: [
+    'url',
+    'contextSelector',
+    'engineOptions',
+    'runOnly',
+    'entryPointParity',
+    ...TOP_LEVEL_ENGINE_OPTIONS
+  ]
+};
 
 // An engine option given beside engineOptions rather than in it was read as
 // nothing at all: { locale: 'de' } scanned in English. Said once per call,
 // naming each (round 9, A9-15).
 function warnMisplacedEngineOptions(helper, options) {
   if (!options || typeof options !== 'object') return;
-  const { engineOptionSpec } = require('./core/engine-options.js');
+  const { engineOptionSpec, strictOf } = require('./core/engine-options.js');
+  const { closestOptionKey } = require('./core/closest-option-key.js');
   const spec = engineOptionSpec();
-  const misplaced = Object.keys(options).filter(
-    (key) => !TOP_LEVEL_ENGINE_OPTIONS.has(key) && Object.prototype.hasOwnProperty.call(spec, key)
-  );
-  if (!misplaced.length) return;
-  const said = misplaced
-    .map((key) => `${key} is an engine option; pass it as engineOptions.${key}`)
-    .join('; ');
+  const known = HELPER_OPTIONS[helper] || [];
+  const said = [];
+  for (const key of Object.keys(options)) {
+    if (known.includes(key)) continue;
+    if (Object.prototype.hasOwnProperty.call(spec, key)) {
+      said.push(`${key} is an engine option; pass it as engineOptions.${key}`);
+      continue;
+    }
+    // A key of the helper's own misspelt (engineOption, runonly) was
+    // ignored without a word, and the scan ran with defaults (round 12,
+    // A12-14).
+    const suggestion =
+      closestOptionKey(key, known) ||
+      known.find((k) => k.toLowerCase().startsWith(key.toLowerCase().slice(0, 6))) ||
+      null;
+    said.push(
+      `unknown option "${key}"` +
+        (suggestion ? ` (did you mean ${suggestion}?)` : ` (it takes ${known.join(', ')})`)
+    );
+  }
+  if (!said.length) return;
+  // Under engineOptions.strictOptions, refused, as the scan refuses an
+  // engine option it doesn't know.
+  if (strictOf(options.engineOptions)) {
+    const err = new Error(`${helper}: ${said.join('; ')}. (strictOptions)`);
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    throw err;
+  }
   try {
-    console.warn(`[surea11y] ${helper}: ${said}; ignored.`);
+    console.warn(`[surea11y] ${helper}: ${said.join('; ')}; ignored.`);
   } catch {}
 }
 
