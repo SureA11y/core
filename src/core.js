@@ -779,20 +779,20 @@ function isWcagTag(tag) {
 // The level is matched case-insensitively.
 function checkWcagTarget(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + JSON.stringify(value) + '.');
+    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + optionValueText(value) + '.');
   }
   const version = typeof value.version === 'string' ? value.version.trim() : value.version;
   if (!WCAG_TARGET_VERSIONS.includes(version)) {
     throw invalidRunOnly(
       'runOnly.wcag.version must be "2.0", "2.1" or "2.2", ' +
-        (value.version === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.version) + '.')
+        (value.version === undefined ? 'and is missing.' : 'not ' + optionValueText(value.version) + '.')
     );
   }
   const level = typeof value.level === 'string' ? value.level.trim().toUpperCase() : value.level;
   if (!WCAG_TARGET_LEVELS.includes(level)) {
     throw invalidRunOnly(
       'runOnly.wcag.level must be "A", "AA" or "AAA", ' +
-        (value.level === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.level) + '.')
+        (value.level === undefined ? 'and is missing.' : 'not ' + optionValueText(value.level) + '.')
     );
   }
   return { version, level };
@@ -1236,6 +1236,21 @@ function describeWcagLevelTag(tag) {
   return 'WCAG ' + t.version + ' Level ' + t.level + ' ("' + tag + '")';
 }
 
+// A value given for an option, for the message that refuses it: as JSON
+// where it has some, and named otherwise, never throwing. A BigInt threw a
+// bare TypeError from the message itself (round 12, A12-9).
+function optionValueText(value) {
+  if (typeof value === 'bigint') return String(value) + 'n';
+  let shown;
+  try {
+    shown = JSON.stringify(value);
+  } catch {
+    shown = undefined;
+  }
+  if (typeof shown === 'string') return shown;
+  return value !== null && typeof value === 'object' ? 'an object' : 'a ' + typeof value;
+}
+
 function invalidRunOnly(message) {
   const err = new Error(message);
   err.code = 'INVALID_RUN_ONLY';
@@ -1394,6 +1409,39 @@ function warnFiltersBesideRunOnly(eo) {
   } catch {}
 }
 
+// A rule or tag list given empty ([], '', a Set with nothing in it) selects
+// nothing, and every rule runs, as with no runOnly: a list built by a filter
+// that came out empty got a full scan without a word (round 12, A12-12). It
+// is said, and under strictOptions refused.
+function warnEmptyRunOnly(runOnly, eo) {
+  const empty = (v) =>
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'string' && !v.trim()) ||
+    (Object.prototype.toString.call(v) === '[object Set]' && v.size === 0);
+  const named = [];
+  if (Array.isArray(runOnly) || typeof runOnly === 'string') {
+    if (empty(runOnly)) named.push('runOnly');
+  } else if (runOnly && typeof runOnly === 'object') {
+    for (const key of ['values', 'tags', 'includeRuleIds', 'includeTestIds']) {
+      if (Object.prototype.hasOwnProperty.call(runOnly, key) && empty(runOnly[key])) {
+        named.push('runOnly.' + key);
+      }
+    }
+  }
+  if (!named.length) return;
+  const message =
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists') +
+    ': it selects no rule, so every rule runs';
+  if (strictOf(eo)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '.');
+  } catch {}
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   // A number or a boolean, and an object none of whose keys the engine
@@ -1405,6 +1453,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
   if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = [...runOnly];
+  warnEmptyRunOnly(runOnly, eo);
   // Another kind of object (a Map, a Date) has no keys a selection reads,
   // and ran every rule.
   // By its type tag, which holds across realms (a page's object, read by
@@ -1450,7 +1499,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
         : runOnly.values;
     if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
     else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
-    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
+    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + optionValueText(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
   // includeMode is 'and' or 'or'; anything else was read as 'and' without a
@@ -1462,7 +1511,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     if (value === undefined || value === null) continue;
     const mode = typeof value === 'string' ? value.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
     if (mode === 'and' || mode === 'or') continue;
-    const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
+    const message = field + ' must be "and" or "or", not ' + optionValueText(value) + '; read as "and".';
     if (strictOf(eo)) throw invalidRunOnly(message);
     try {
       console.warn('[surea11y] ' + message);
@@ -1472,7 +1521,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     if (runOnly.wcag != null) checkWcagTarget(runOnly.wcag);
     if (runOnly.bestPractices !== undefined && typeof runOnly.bestPractices !== 'boolean') {
       throw invalidRunOnly(
-        'runOnly.bestPractices must be true or false, not ' + JSON.stringify(runOnly.bestPractices) + '.'
+        'runOnly.bestPractices must be true or false, not ' + optionValueText(runOnly.bestPractices) + '.'
       );
     }
   }
@@ -1805,7 +1854,7 @@ function criteriaNamingRule(def, runOnly) {
     .map((t) => WCAG_SC_BY_TAG[t]);
 }
 
-function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
+function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding) {
   if (!policy || typeof policy !== 'object') {
     throw new Error('normalizeRuleResult requires a resolved policy');
   }
@@ -1905,15 +1954,50 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     helpers &&
     (typeof helpers.isOccurrenceExcluded === 'function' || typeof helpers.isExcluded === 'function')
   ) {
+    // An occurrence named only by a selector that matches several elements
+    // is dropped only when every one of them is excluded: read as its first
+    // match, it was dropped whatever element the rule meant. One some of
+    // whose matches are excluded is kept, and said to be ambiguous (round
+    // 12, A12-16).
+    let ambiguous = 0;
+    const matchesOf = (o) => {
+      if (o.__node || typeof o.selector !== 'string' || !o.selector) return null;
+      if (Array.isArray(o.shadowHostSelectors) && o.shadowHostSelectors.length) return null;
+      if (typeof document === 'undefined' || !document) return null;
+      try {
+        const found = [...createSafeDom().querySelectorAll(document, o.selector)];
+        return found.length > 1 ? found : null;
+      } catch {
+        return null;
+      }
+    };
     const kept = out.occurrences.filter((o) => {
       if (!o || typeof o !== 'object') return true;
       try {
-        if (typeof helpers.isOccurrenceExcluded === 'function') return helpers.isOccurrenceExcluded(o) !== true;
+        if (typeof helpers.isOccurrenceExcluded === 'function') {
+          // Looked up only while an area is left out for the rule: a
+          // selector can be slow to match, and every scan has none.
+          const matches = excluding === true ? matchesOf(o) : null;
+          if (matches) {
+            let excluded = 0;
+            for (const el of matches) if (helpers.isOccurrenceExcluded({ __node: el }) === true) excluded++;
+            if (excluded === matches.length) return false;
+            if (excluded) ambiguous++;
+            return true;
+          }
+          return helpers.isOccurrenceExcluded(o) !== true;
+        }
         return !o.__node || helpers.isExcluded(o.__node) !== true;
       } catch {
         return true;
       }
     });
+    if (ambiguous) {
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule reported ' + ambiguous + ' occurrence' + (ambiguous === 1 ? '' : 's') +
+        ' by a selector alone that matches elements both inside and outside the areas left out with excludeSelectors; kept, as which element was meant is ambiguous. Report the element (__node) instead.';
+    }
     const dropped = out.occurrences.length - kept.length;
     if (dropped > 0) {
       const given = out.outcome;
@@ -14138,6 +14222,43 @@ const engineOptionSpec = (function engineOptionSpec() {
   const list = (v) =>
     typeof v === 'string' || (Array.isArray(v) && [...v].every((x) => typeof x === 'string'));
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+  // A plain object, as written in a literal or by JSON.parse, from any
+  // realm: not a Date, a Map, an element or a class instance, which have
+  // keys of their own to give or none (round 12, A12-13).
+  const isPlain = (v) => {
+    try {
+      if (!isObject(v) || Object.prototype.toString.call(v) !== '[object Object]') return false;
+      const proto = Object.getPrototypeOf(v);
+      return proto === null || Object.getPrototypeOf(proto) === null;
+    } catch {
+      return false;
+    }
+  };
+  // JSON-safe data: a plain object at the top (the engine reads probes by
+  // key, and an array there was dropped), and inside
+  // strings, finite numbers, true, false, null, plain objects and arrays,
+  // with no object reached twice along a path (round 12, A12-13).
+  const jsonSafe = (top) => {
+    const path = [];
+    const safe = (v, depth) => {
+      if (v === null || typeof v === 'string' || typeof v === 'boolean') return true;
+      if (typeof v === 'number') return Number.isFinite(v);
+      if (typeof v !== 'object' || depth > 100 || path.includes(v)) return false;
+      if (!Array.isArray(v) && !isPlain(v)) return false;
+      path.push(v);
+      try {
+        const values = Array.isArray(v) ? [...v] : Object.keys(v).map((k) => v[k]);
+        return values.every((x) => safe(x, depth + 1));
+      } finally {
+        path.pop();
+      }
+    };
+    try {
+      return isPlain(top) && safe(top, 0);
+    } catch {
+      return false;
+    }
+  };
   const T = {
     any: { test: () => true, expected: 'any value' },
     // true or false, or how a command line or an environment variable
@@ -14147,11 +14268,14 @@ const engineOptionSpec = (function engineOptionSpec() {
     list: { test: list, expected: 'a string or an array of strings' },
     // A profile, or a list of them. An empty slot, a blank name and a value
     // that is no name are each refused: each was dropped without a word.
+    // An empty one, '' or [], names none (round 12, A12-13).
     profiles: {
       test: (v) =>
-        typeof v === 'string' ||
-        (Array.isArray(v) && [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
-      expected: 'a profile name or an array of them, none blank'
+        (typeof v === 'string' && v.trim() !== '') ||
+        (Array.isArray(v) &&
+          v.length > 0 &&
+          [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
+      expected: 'a profile name or a non-empty array of them, none blank'
     },
     number: {
       test: (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0,
@@ -14168,7 +14292,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     })
   };
   const selection = {
-    test: (v) => list(v) || isObject(v),
+    test: (v) => list(v) || isPlain(v),
     expected: '{ include, exclude }, or the include list itself',
     keys: { include: T.list, exclude: T.list }
   };
@@ -14203,7 +14327,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     mappings: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
-    messages: { test: isObject, expected: '{ [locale]: { key: text } }' },
+    messages: { test: isPlain, expected: '{ [locale]: { key: text } }' },
     includeHiddenElements: T.boolean,
     includeShadowDom: T.boolean,
     fragment: T.boolean,
@@ -14221,13 +14345,14 @@ const engineOptionSpec = (function engineOptionSpec() {
         ),
       expected: '[{ href, text }]'
     },
-    // Blank is a timestamp not given.
+    // Blank is no timestamp: refused, as one that isn't a date and time is
+    // (round 12, A12-13).
     timestamp: {
-      test: (v) => typeof v === 'string' && (!v.trim() || isIsoDateTime(v)),
+      test: (v) => typeof v === 'string' && isIsoDateTime(v),
       expected: 'an ISO 8601 date and time, such as new Date().toISOString()'
     },
     contrast: {
-      test: isObject,
+      test: isPlain,
       expected: '{ mode, rootCanvasFallback }',
       keys: {
         mode: T.oneOf(['strictConformance', 'auditorAssist']),
@@ -14240,13 +14365,13 @@ const engineOptionSpec = (function engineOptionSpec() {
     visibilityMode: T.oneOf(['styleOnly', 'styleAndGeometry']),
     includeMode: T.oneOf(['and', 'or']),
     policyContract: {
-      test: (v) => typeof v === 'string' || isObject(v),
+      test: (v) => typeof v === 'string' || isPlain(v),
       expected: "a contract's name, or a contract object",
       keys: Object.assign({ id: T.string }, policyFields)
     },
-    policy: { test: isObject, expected: 'an object', keys: policyFields },
+    policy: { test: isPlain, expected: 'a plain object', keys: policyFields },
     output: {
-      test: isObject,
+      test: isPlain,
       expected: '{ includeSelector, includeHtml, detail, maxOccurrencesPerRule }',
       keys: {
         includeSelector: T.boolean,
@@ -14272,7 +14397,12 @@ const engineOptionSpec = (function engineOptionSpec() {
     tests: selection,
     customRules: { test: Array.isArray, expected: 'an array of rules' },
     packs: { test: Array.isArray, expected: 'an array of packs' },
-    probes: T.any,
+    // Evidence the host gives, passed to rules: JSON-safe data only (round
+    // 12, A12-13).
+    probes: {
+      test: jsonSafe,
+      expected: 'a plain object of JSON data (no function, Date, BigInt, NaN or circular reference)'
+    },
     perfStats: T.boolean,
     profileRules: T.boolean,
     // Once a scan has spent this long, it starts no more rules; those it
@@ -14309,7 +14439,14 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
       return plain && text.length <= 80 ? text : 'an array';
     }
     if (typeof v === 'string') return JSON.stringify(v.length > 40 ? v.slice(0, 40) + '…' : v);
-    if (typeof v === 'object') return 'an object';
+    if (typeof v === 'object') {
+      // A Date, a Map: named by its kind (round 12, A12-13).
+      let tag = 'Object';
+      try {
+        tag = Object.prototype.toString.call(v).slice(8, -1);
+      } catch {}
+      return tag === 'Object' ? 'an object' : /^[AEIOU]/.test(tag) ? 'an ' + tag : 'a ' + tag;
+    }
     return typeof v === 'number' || typeof v === 'boolean' ? String(v) : 'a ' + typeof v;
   }
 
@@ -14403,7 +14540,15 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   for (const p of problems) {
     if (p.kind === 'unknown' && !p.suggestion) continue;
     if (p.path === 'strictOptions') continue;
-    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(String(p.path).split('.')[0])) continue;
+    // An empty profile or timestamp ('' or []) is read as none without a
+    // word of its own, so it is said here (round 12, A12-13).
+    const top = String(p.path).split('.')[0];
+    const value = engineOptions[top];
+    const empty =
+      (top === 'profile' || top === 'timestamp') &&
+      p.path === top &&
+      ((typeof value === 'string' && !value.trim()) || (Array.isArray(value) && !value.length));
+    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(top) && !empty) continue;
     // A policy list given as an array says what it leaves out itself
     // (resolvePolicy), and keeps the values it knows.
     if (p.kind === 'invalid' && /^policy(Contract)?\.allowed(Outcomes|Confidence)$/.test(p.path)) {
@@ -27484,8 +27629,9 @@ const runCoreSettled = (function runCoreSettled(
   const budgetSpent = !!(
     engineOptions &&
     typeof engineOptions === 'object' &&
-    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent') &&
-    engineOptions.__budgetSpent === true
+    Object.prototype.hasOwnProperty.call(engineOptions, '__budgetSpent') &&
+    engineOptions.__budgetSpent === true &&
+    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent')
   );
   const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
@@ -27834,8 +27980,11 @@ const runCoreSettled = (function runCoreSettled(
 
   let probes;
   try {
+    // JSON-safe data only, as enforceEngineOptions says (round 12, A12-13).
     const rawProbes =
-      engineOptionsResolved && typeof engineOptionsResolved.probes === 'object'
+      engineOptionsResolved &&
+      typeof engineOptionsResolved.probes === 'object' &&
+      engineOptionSpec().probes.test(engineOptionsResolved.probes)
         ? engineOptionsResolved.probes
         : null;
     probes = rawProbes ? sanitizeProbeValue(rawProbes, 6) : null;
@@ -28546,6 +28695,12 @@ const runCoreSettled = (function runCoreSettled(
     if (typeof sharedHelpers.__setActiveRuleExcludeSelectors === 'function') {
       sharedHelpers.__setActiveRuleExcludeSelectors(ruleConfig && ruleConfig.excludeSelectors);
     }
+    // Whether any area is left out for this rule: only then does
+    // normalizeRuleResult look up every element a selector-only occurrence
+    // matches (round 12, A12-16).
+    const excluding =
+      excludeSelectors.length > 0 ||
+      normalizeSelectorList(ruleConfig && ruleConfig.excludeSelectors).length > 0;
 
     const foreign = foreignCode.has(defResolved.ruleId);
     const ctx = {
@@ -28584,7 +28739,8 @@ const runCoreSettled = (function runCoreSettled(
           },
           SCHEMA_VERSION,
           policy,
-          sharedHelpers
+          sharedHelpers,
+          excluding
         )
       );
       if (ruleTimings)
@@ -28612,7 +28768,8 @@ const runCoreSettled = (function runCoreSettled(
           // everywhere: what was meant can't be known, so the rule says so.
           throw new Error(
             'applicability returned ' +
-              describeOptionValue(res) +
+              // "a undefined" read badly (round 12, A12-11).
+              (res === undefined ? 'undefined (no value)' : describeOptionValue(res)) +
               '; it must return true or false (or { applicable: true | false })'
           );
         }
@@ -28627,7 +28784,7 @@ const runCoreSettled = (function runCoreSettled(
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -28644,7 +28801,7 @@ const runCoreSettled = (function runCoreSettled(
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -28817,7 +28974,8 @@ const runCoreSettled = (function runCoreSettled(
         scopeOutcomeToWcagVersion(defResolved, result),
         SCHEMA_VERSION,
         policy,
-        sharedHelpers
+        sharedHelpers,
+        excluding
       )
     );
     if (ruleTimings)
@@ -28890,15 +29048,33 @@ const runCoreSettled = (function runCoreSettled(
     }
   );
   if (notRunRules.length) {
+    // The budget the scan was given, not what was left of it when this
+    // profile or frame started (__scanTimeBudgetMs, set by the engine
+    // only), in whole ms, or tenths below 10 (round 12, A12-5).
+    const flagOf = (key) =>
+      Object.prototype.hasOwnProperty.call(engineOptions, key) &&
+      !Object.prototype.propertyIsEnumerable.call(engineOptions, key)
+        ? engineOptions[key]
+        : undefined;
+    const given =
+      typeof flagOf('__scanTimeBudgetMs') === 'number'
+        ? flagOf('__scanTimeBudgetMs')
+        : timeBudgetMs;
+    const budgetText =
+      typeof given === 'number' && Number.isFinite(given)
+        ? ' of ' + (given >= 10 ? Math.round(given) : Math.round(given * 10) / 10) + ' ms'
+        : '';
     try {
       console.warn(
-        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
-          timeBudgetMs +
+        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget' +
+          budgetText +
           (budgetSpent
-            ? typeof engineOptions.profile === 'string'
-              ? ' ms before profile "' + engineOptions.profile + '" started, so it'
-              : " ms before this frame's scan started, so it"
-            : ' ms and') +
+            ? flagOf('__budgetSpentAt') === 'profile' && typeof engineOptions.profile === 'string'
+              ? ' before profile "' + engineOptions.profile + '" started, so it'
+              : flagOf('__budgetSpentAt') === 'styleSheets'
+                ? " fetching the style sheets the page can't read, before any rule started, so it"
+                : " before this frame's scan started, so it"
+            : ' and') +
           ' did not run ' +
           notRunRules.length +
           ' rule' +
@@ -29393,6 +29569,52 @@ const assertPageBuiltins = (function assertPageBuiltins() {
     throw err;
   }
 });
+const holdObjectPrototypeValues = (function holdObjectPrototypeValues() {
+  const proto = Object.prototype;
+  const own = Object.prototype.hasOwnProperty;
+  const held = [];
+  const release = () => {
+    for (let i = held.length - 1; i >= 0; i--) {
+      const h = held[i];
+      try {
+        if (h.cleared) proto[h.name] = h.descriptor.value;
+        else Object.defineProperty(proto, h.name, h.descriptor);
+      } catch {}
+    }
+    held.length = 0;
+  };
+  const names = Object.getOwnPropertyNames(proto);
+  const refused = [];
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i];
+    if (name === '__proto__') continue;
+    const d = Object.getOwnPropertyDescriptor(proto, name);
+    if (!d) continue;
+    // Own reads: a descriptor is a plain object too.
+    if (own.call(d, 'value') && typeof d.value === 'function') continue;
+    if (d.configurable) {
+      delete proto[name];
+      held[held.length] = { name, descriptor: d, cleared: false };
+    } else if (own.call(d, 'writable') && d.writable) {
+      proto[name] = undefined;
+      held[held.length] = { name, descriptor: d, cleared: true };
+    } else refused[refused.length] = 'Object.prototype.' + name;
+  }
+  if (refused.length) {
+    release();
+    let list = '';
+    for (let i = 0; i < refused.length; i++) list += (i ? ', ' : '') + refused[i];
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (' +
+        list +
+        "), so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = refused;
+    throw err;
+  }
+  return release;
+});
 const assertArrayFromFor = (function assertArrayFromFor(fns) {
   let works;
   /* eslint-disable no-restricted-properties -- the check is of Array.from itself */
@@ -29795,15 +30017,32 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   // A frame's scan that starts with no time budget left (frame-scan.js) is
   // asked to start no rule (__budgetSpent, set by the engine only, not
   // enumerable): each profile's scan is asked the same, so it lists its
-  // selection in notRun.
+  // selection in notRun. The scan's budget (__scanTimeBudgetMs), which the
+  // warnings give, goes with it. Read only as the options' own, never from
+  // Object.prototype (round 12, A12-2).
+  const flagOf = (from, key) =>
+    from &&
+    typeof from === 'object' &&
+    Object.prototype.hasOwnProperty.call(from, key) &&
+    !Object.prototype.propertyIsEnumerable.call(from, key)
+      ? from[key]
+      : undefined;
   const carryBudgetSpent = (from, to) => {
-    if (
-      from &&
-      typeof from === 'object' &&
-      !Object.prototype.propertyIsEnumerable.call(from, '__budgetSpent') &&
-      from.__budgetSpent === true
-    ) {
+    if (flagOf(from, '__budgetSpent') === true) {
       Object.defineProperty(to, '__budgetSpent', { value: true });
+      // Where it was spent, for the warning (round 12, A12-7); a profile the
+      // budget leaves unstarted says its own.
+      const at = flagOf(from, '__budgetSpentAt');
+      if (typeof at === 'string') {
+        Object.defineProperty(to, '__budgetSpentAt', { value: at, configurable: true });
+      }
+    }
+    const scanBudget = flagOf(from, '__scanTimeBudgetMs');
+    if (
+      typeof scanBudget === 'number' &&
+      !Object.prototype.hasOwnProperty.call(to, '__scanTimeBudgetMs')
+    ) {
+      Object.defineProperty(to, '__scanTimeBudgetMs', { value: scanBudget });
     }
     return to;
   };
@@ -29820,6 +30059,15 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
     for (let i = 0; i < asked.length; i++) {
       const p = asked[i];
       if (typeof p !== 'string' || !p.trim()) ignored++;
+    }
+    // An empty list names no profile, and the scan runs as with none
+    // (round 12, A12-13); under strictOptions enforceEngineOptions refuses it.
+    if (!asked.length) {
+      try {
+        console.warn('[surea11y] engineOptions.profile: an empty list names no profile; ignored.');
+      } catch {
+        // no console
+      }
     }
     if (ignored) {
       try {
@@ -29865,23 +30113,51 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
       return Date.now();
     };
     const started = budget === null ? 0 : clock();
+    const spentOnArrival = flagOf(engineOptions, '__budgetSpent') === true;
+    // The scan's budget: this one's, or, in a frame, the whole scan's.
+    const scanBudget =
+      typeof flagOf(engineOptions, '__scanTimeBudgetMs') === 'number'
+        ? flagOf(engineOptions, '__scanTimeBudgetMs')
+        : budget;
+    // What a later profile's scan is given: what is left, and the scan's
+    // budget for its warnings.
+    const withScanBudget = (options) => {
+      if (
+        scanBudget !== null &&
+        !Object.prototype.hasOwnProperty.call(options, '__scanTimeBudgetMs')
+      ) {
+        Object.defineProperty(options, '__scanTimeBudgetMs', { value: scanBudget });
+      }
+      return options;
+    };
     const step = (i) => {
       if (i >= unique.length) {
         const merged = mergeProfileResults(runs, unique, allowFail);
         // The budget the scan was given, not what was left of it for the
         // profile that ran out.
         if (merged && merged.engine && merged.engine.incomplete) {
-          merged.engine.incomplete.timeBudgetMs = budget;
+          merged.engine.incomplete.timeBudgetMs = scanBudget;
         }
         return merged;
       }
       const left = budget === null ? null : budget - (clock() - started);
-      if (left !== null && i > 0 && left <= 0) {
+      // A frame's scan reached with no budget left (spentOnArrival) starts
+      // its first profile only, as a scan whose first profile used it all
+      // does: the others are not run, not run with nothing started (round
+      // 12, A12-4).
+      if (i > 0 && ((left !== null && left <= 0) || spentOnArrival)) {
         // Not run, but its rules are listed in notRun, as a profile's scan
         // that ran out lists those it did not start: its scan is asked to
         // start none (__budgetSpent), which only works out its selection.
-        const dryOptions = Object.assign({}, engineOptions, { profile: unique[i] });
-        Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        const dryOptions = withScanBudget(
+          carryBudgetSpent(engineOptions, Object.assign({}, engineOptions, { profile: unique[i] }))
+        );
+        if (!spentOnArrival) Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        // Its warning names the profile, not a frame.
+        Object.defineProperty(dryOptions, '__budgetSpentAt', {
+          value: 'profile',
+          configurable: true
+        });
         const skippedOf = (dry) => {
           const skipped = {};
           Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
@@ -29900,13 +30176,15 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         return thenable(dry) ? dry.then(skippedOf) : skippedOf(dry);
       }
       const result = run(
-        carryBudgetSpent(
-          engineOptions,
-          Object.assign(
-            {},
+        withScanBudget(
+          carryBudgetSpent(
             engineOptions,
-            { profile: unique[i] },
-            left !== null && i > 0 ? { timeBudgetMs: left } : {}
+            Object.assign(
+              {},
+              engineOptions,
+              { profile: unique[i] },
+              left !== null && i > 0 ? { timeBudgetMs: left } : {}
+            )
           )
         )
       );
@@ -30802,6 +31080,15 @@ function getTestsForRunOnly(runOnly, engineOptions) {
  */
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   assertPageBuiltins();
+  const releaseObjectPrototype = holdObjectPrototypeValues();
+  try {
+    return runDomRulesHeld(pageUrl, contextSelector, engineOptions, runOnly);
+  } finally {
+    releaseObjectPrototype();
+  }
+}
+
+function runDomRulesHeld(pageUrl, contextSelector, engineOptions, runOnly) {
   // Under strictOptions the options are checked before the selection is
   // worked out from them, as they are said to be.
   if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
@@ -45474,6 +45761,7 @@ const RUNTIME_CATALOG = {
       "report_meta_optInRules": "Opt-in-Regeln",
       "report_meta_rulesNotRun": "Regeln nicht ausgeführt",
       "report_incomplete_timeBudget": "Unvollständiger Scan: Sein Zeitbudget von {{budget}} ms war aufgebraucht, bevor alle ausgewählten Regeln gelaufen sind. Nicht ausgeführt ({{count}}): {{rules}}. Sie haben nichts geprüft; nichts in diesem Bericht gilt für sie als bestanden.",
+      "report_incomplete_profilesNotRun": "Nicht gestartete Profile: {{profiles}}.",
       "report_meta_viewport": "Viewport",
       "report_meta_colorScheme": "Farbschema",
       "report_meta_fonts": "Webfonts",
@@ -47320,6 +47608,7 @@ const RUNTIME_CATALOG = {
       "report_meta_optInRules": "opt-in rules",
       "report_meta_rulesNotRun": "rules not run",
       "report_incomplete_timeBudget": "Incomplete scan: its time budget of {{budget}} ms ran out before every rule it selected had run. Not run ({{count}}): {{rules}}. These checked nothing, so nothing in this report passes them.",
+      "report_incomplete_profilesNotRun": "Profiles not started: {{profiles}}.",
       "report_meta_viewport": "viewport",
       "report_meta_colorScheme": "color scheme",
       "report_meta_fonts": "web fonts",
@@ -49166,6 +49455,7 @@ const RUNTIME_CATALOG = {
       "report_meta_optInRules": "reglas activadas explícitamente",
       "report_meta_rulesNotRun": "reglas no ejecutadas",
       "report_incomplete_timeBudget": "Análisis incompleto: su presupuesto de tiempo de {{budget}} ms se agotó antes de que se ejecutaran todas las reglas seleccionadas. No ejecutadas ({{count}}): {{rules}}. No comprobaron nada, así que nada en este informe las da por superadas.",
+      "report_incomplete_profilesNotRun": "Perfiles no iniciados: {{profiles}}.",
       "report_meta_viewport": "área de visualización",
       "report_meta_colorScheme": "esquema de color",
       "report_meta_fonts": "fuentes web",
@@ -51012,6 +51302,7 @@ const RUNTIME_CATALOG = {
       "report_meta_optInRules": "règles activées explicitement",
       "report_meta_rulesNotRun": "règles non exécutées",
       "report_incomplete_timeBudget": "Analyse incomplète : son budget de temps de {{budget}} ms a été épuisé avant que toutes les règles sélectionnées ne s’exécutent. Non exécutées ({{count}}) : {{rules}}. Elles n’ont rien vérifié : rien dans ce rapport ne les donne comme réussies.",
+      "report_incomplete_profilesNotRun": "Profils non démarrés : {{profiles}}.",
       "report_meta_viewport": "zone d’affichage",
       "report_meta_colorScheme": "schéma de couleurs",
       "report_meta_fonts": "polices web",
@@ -52858,6 +53149,7 @@ const RUNTIME_CATALOG = {
       "report_meta_optInRules": "オプトインルール",
       "report_meta_rulesNotRun": "未実行のルール",
       "report_incomplete_timeBudget": "不完全なスキャン: 選択されたすべてのルールが実行される前に、{{budget}} ms の時間予算を使い切りました。実行されなかったもの ({{count}}): {{rules}}。これらは何も検査していないため、このレポートのどの結果もこれらの合格を意味しません。",
+      "report_incomplete_profilesNotRun": "開始されなかったプロファイル: {{profiles}}。",
       "report_meta_viewport": "ビューポート",
       "report_meta_colorScheme": "カラースキーム",
       "report_meta_fonts": "Web フォント",
@@ -53516,6 +53808,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 });
   assertPageBuiltinsFirst();
+  // The scan reads only what its objects hold (see holdObjectPrototypeValues).
+  const holdObjectPrototypeValuesFirst = (function holdObjectPrototypeValues() {
+  const proto = Object.prototype;
+  const own = Object.prototype.hasOwnProperty;
+  const held = [];
+  const release = () => {
+    for (let i = held.length - 1; i >= 0; i--) {
+      const h = held[i];
+      try {
+        if (h.cleared) proto[h.name] = h.descriptor.value;
+        else Object.defineProperty(proto, h.name, h.descriptor);
+      } catch {}
+    }
+    held.length = 0;
+  };
+  const names = Object.getOwnPropertyNames(proto);
+  const refused = [];
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i];
+    if (name === '__proto__') continue;
+    const d = Object.getOwnPropertyDescriptor(proto, name);
+    if (!d) continue;
+    // Own reads: a descriptor is a plain object too.
+    if (own.call(d, 'value') && typeof d.value === 'function') continue;
+    if (d.configurable) {
+      delete proto[name];
+      held[held.length] = { name, descriptor: d, cleared: false };
+    } else if (own.call(d, 'writable') && d.writable) {
+      proto[name] = undefined;
+      held[held.length] = { name, descriptor: d, cleared: true };
+    } else refused[refused.length] = 'Object.prototype.' + name;
+  }
+  if (refused.length) {
+    release();
+    let list = '';
+    for (let i = 0; i < refused.length; i++) list += (i ? ', ' : '') + refused[i];
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (' +
+        list +
+        "), so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = refused;
+    throw err;
+  }
+  return release;
+});
+  const releaseObjectPrototype = holdObjectPrototypeValuesFirst();
+  try {
+    return runHeld();
+  } finally {
+    releaseObjectPrototype();
+  }
+  function runHeld() {
   const ENGINE_TAG = "a11ycore";
   const SCHEMA_VERSION = "1.0.0";
   const ENGINE_VERSION = "1.17.0";
@@ -127055,6 +127401,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_optInRules": "Opt-in-Regeln",
       "report_meta_rulesNotRun": "Regeln nicht ausgeführt",
       "report_incomplete_timeBudget": "Unvollständiger Scan: Sein Zeitbudget von {{budget}} ms war aufgebraucht, bevor alle ausgewählten Regeln gelaufen sind. Nicht ausgeführt ({{count}}): {{rules}}. Sie haben nichts geprüft; nichts in diesem Bericht gilt für sie als bestanden.",
+      "report_incomplete_profilesNotRun": "Nicht gestartete Profile: {{profiles}}.",
       "report_meta_viewport": "Viewport",
       "report_meta_colorScheme": "Farbschema",
       "report_meta_fonts": "Webfonts",
@@ -128901,6 +129248,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_optInRules": "opt-in rules",
       "report_meta_rulesNotRun": "rules not run",
       "report_incomplete_timeBudget": "Incomplete scan: its time budget of {{budget}} ms ran out before every rule it selected had run. Not run ({{count}}): {{rules}}. These checked nothing, so nothing in this report passes them.",
+      "report_incomplete_profilesNotRun": "Profiles not started: {{profiles}}.",
       "report_meta_viewport": "viewport",
       "report_meta_colorScheme": "color scheme",
       "report_meta_fonts": "web fonts",
@@ -130747,6 +131095,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_optInRules": "reglas activadas explícitamente",
       "report_meta_rulesNotRun": "reglas no ejecutadas",
       "report_incomplete_timeBudget": "Análisis incompleto: su presupuesto de tiempo de {{budget}} ms se agotó antes de que se ejecutaran todas las reglas seleccionadas. No ejecutadas ({{count}}): {{rules}}. No comprobaron nada, así que nada en este informe las da por superadas.",
+      "report_incomplete_profilesNotRun": "Perfiles no iniciados: {{profiles}}.",
       "report_meta_viewport": "área de visualización",
       "report_meta_colorScheme": "esquema de color",
       "report_meta_fonts": "fuentes web",
@@ -132593,6 +132942,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_optInRules": "règles activées explicitement",
       "report_meta_rulesNotRun": "règles non exécutées",
       "report_incomplete_timeBudget": "Analyse incomplète : son budget de temps de {{budget}} ms a été épuisé avant que toutes les règles sélectionnées ne s’exécutent. Non exécutées ({{count}}) : {{rules}}. Elles n’ont rien vérifié : rien dans ce rapport ne les donne comme réussies.",
+      "report_incomplete_profilesNotRun": "Profils non démarrés : {{profiles}}.",
       "report_meta_viewport": "zone d’affichage",
       "report_meta_colorScheme": "schéma de couleurs",
       "report_meta_fonts": "polices web",
@@ -134439,6 +134789,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_optInRules": "オプトインルール",
       "report_meta_rulesNotRun": "未実行のルール",
       "report_incomplete_timeBudget": "不完全なスキャン: 選択されたすべてのルールが実行される前に、{{budget}} ms の時間予算を使い切りました。実行されなかったもの ({{count}}): {{rules}}。これらは何も検査していないため、このレポートのどの結果もこれらの合格を意味しません。",
+      "report_incomplete_profilesNotRun": "開始されなかったプロファイル: {{profiles}}。",
       "report_meta_viewport": "ビューポート",
       "report_meta_colorScheme": "カラースキーム",
       "report_meta_fonts": "Web フォント",
@@ -135577,20 +135928,20 @@ function isWcagTag(tag) {
 // The level is matched case-insensitively.
 function checkWcagTarget(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + JSON.stringify(value) + '.');
+    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + optionValueText(value) + '.');
   }
   const version = typeof value.version === 'string' ? value.version.trim() : value.version;
   if (!WCAG_TARGET_VERSIONS.includes(version)) {
     throw invalidRunOnly(
       'runOnly.wcag.version must be "2.0", "2.1" or "2.2", ' +
-        (value.version === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.version) + '.')
+        (value.version === undefined ? 'and is missing.' : 'not ' + optionValueText(value.version) + '.')
     );
   }
   const level = typeof value.level === 'string' ? value.level.trim().toUpperCase() : value.level;
   if (!WCAG_TARGET_LEVELS.includes(level)) {
     throw invalidRunOnly(
       'runOnly.wcag.level must be "A", "AA" or "AAA", ' +
-        (value.level === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.level) + '.')
+        (value.level === undefined ? 'and is missing.' : 'not ' + optionValueText(value.level) + '.')
     );
   }
   return { version, level };
@@ -136034,6 +136385,21 @@ function describeWcagLevelTag(tag) {
   return 'WCAG ' + t.version + ' Level ' + t.level + ' ("' + tag + '")';
 }
 
+// A value given for an option, for the message that refuses it: as JSON
+// where it has some, and named otherwise, never throwing. A BigInt threw a
+// bare TypeError from the message itself (round 12, A12-9).
+function optionValueText(value) {
+  if (typeof value === 'bigint') return String(value) + 'n';
+  let shown;
+  try {
+    shown = JSON.stringify(value);
+  } catch {
+    shown = undefined;
+  }
+  if (typeof shown === 'string') return shown;
+  return value !== null && typeof value === 'object' ? 'an object' : 'a ' + typeof value;
+}
+
 function invalidRunOnly(message) {
   const err = new Error(message);
   err.code = 'INVALID_RUN_ONLY';
@@ -136192,6 +136558,39 @@ function warnFiltersBesideRunOnly(eo) {
   } catch {}
 }
 
+// A rule or tag list given empty ([], '', a Set with nothing in it) selects
+// nothing, and every rule runs, as with no runOnly: a list built by a filter
+// that came out empty got a full scan without a word (round 12, A12-12). It
+// is said, and under strictOptions refused.
+function warnEmptyRunOnly(runOnly, eo) {
+  const empty = (v) =>
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'string' && !v.trim()) ||
+    (Object.prototype.toString.call(v) === '[object Set]' && v.size === 0);
+  const named = [];
+  if (Array.isArray(runOnly) || typeof runOnly === 'string') {
+    if (empty(runOnly)) named.push('runOnly');
+  } else if (runOnly && typeof runOnly === 'object') {
+    for (const key of ['values', 'tags', 'includeRuleIds', 'includeTestIds']) {
+      if (Object.prototype.hasOwnProperty.call(runOnly, key) && empty(runOnly[key])) {
+        named.push('runOnly.' + key);
+      }
+    }
+  }
+  if (!named.length) return;
+  const message =
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists') +
+    ': it selects no rule, so every rule runs';
+  if (strictOf(eo)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '.');
+  } catch {}
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   // A number or a boolean, and an object none of whose keys the engine
@@ -136203,6 +136602,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
   if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = [...runOnly];
+  warnEmptyRunOnly(runOnly, eo);
   // Another kind of object (a Map, a Date) has no keys a selection reads,
   // and ran every rule.
   // By its type tag, which holds across realms (a page's object, read by
@@ -136248,7 +136648,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
         : runOnly.values;
     if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
     else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
-    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
+    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + optionValueText(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
   // includeMode is 'and' or 'or'; anything else was read as 'and' without a
@@ -136260,7 +136660,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     if (value === undefined || value === null) continue;
     const mode = typeof value === 'string' ? value.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
     if (mode === 'and' || mode === 'or') continue;
-    const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
+    const message = field + ' must be "and" or "or", not ' + optionValueText(value) + '; read as "and".';
     if (strictOf(eo)) throw invalidRunOnly(message);
     try {
       console.warn('[surea11y] ' + message);
@@ -136270,7 +136670,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     if (runOnly.wcag != null) checkWcagTarget(runOnly.wcag);
     if (runOnly.bestPractices !== undefined && typeof runOnly.bestPractices !== 'boolean') {
       throw invalidRunOnly(
-        'runOnly.bestPractices must be true or false, not ' + JSON.stringify(runOnly.bestPractices) + '.'
+        'runOnly.bestPractices must be true or false, not ' + optionValueText(runOnly.bestPractices) + '.'
       );
     }
   }
@@ -136603,7 +137003,7 @@ function criteriaNamingRule(def, runOnly) {
     .map((t) => WCAG_SC_BY_TAG[t]);
 }
 
-function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
+function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding) {
   if (!policy || typeof policy !== 'object') {
     throw new Error('normalizeRuleResult requires a resolved policy');
   }
@@ -136703,15 +137103,50 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     helpers &&
     (typeof helpers.isOccurrenceExcluded === 'function' || typeof helpers.isExcluded === 'function')
   ) {
+    // An occurrence named only by a selector that matches several elements
+    // is dropped only when every one of them is excluded: read as its first
+    // match, it was dropped whatever element the rule meant. One some of
+    // whose matches are excluded is kept, and said to be ambiguous (round
+    // 12, A12-16).
+    let ambiguous = 0;
+    const matchesOf = (o) => {
+      if (o.__node || typeof o.selector !== 'string' || !o.selector) return null;
+      if (Array.isArray(o.shadowHostSelectors) && o.shadowHostSelectors.length) return null;
+      if (typeof document === 'undefined' || !document) return null;
+      try {
+        const found = [...createSafeDom().querySelectorAll(document, o.selector)];
+        return found.length > 1 ? found : null;
+      } catch {
+        return null;
+      }
+    };
     const kept = out.occurrences.filter((o) => {
       if (!o || typeof o !== 'object') return true;
       try {
-        if (typeof helpers.isOccurrenceExcluded === 'function') return helpers.isOccurrenceExcluded(o) !== true;
+        if (typeof helpers.isOccurrenceExcluded === 'function') {
+          // Looked up only while an area is left out for the rule: a
+          // selector can be slow to match, and every scan has none.
+          const matches = excluding === true ? matchesOf(o) : null;
+          if (matches) {
+            let excluded = 0;
+            for (const el of matches) if (helpers.isOccurrenceExcluded({ __node: el }) === true) excluded++;
+            if (excluded === matches.length) return false;
+            if (excluded) ambiguous++;
+            return true;
+          }
+          return helpers.isOccurrenceExcluded(o) !== true;
+        }
         return !o.__node || helpers.isExcluded(o.__node) !== true;
       } catch {
         return true;
       }
     });
+    if (ambiguous) {
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule reported ' + ambiguous + ' occurrence' + (ambiguous === 1 ? '' : 's') +
+        ' by a selector alone that matches elements both inside and outside the areas left out with excludeSelectors; kept, as which element was meant is ambiguous. Report the element (__node) instead.';
+    }
     const dropped = out.occurrences.length - kept.length;
     if (dropped > 0) {
       const given = out.outcome;
@@ -148936,6 +149371,43 @@ const engineOptionSpec = (function engineOptionSpec() {
   const list = (v) =>
     typeof v === 'string' || (Array.isArray(v) && [...v].every((x) => typeof x === 'string'));
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+  // A plain object, as written in a literal or by JSON.parse, from any
+  // realm: not a Date, a Map, an element or a class instance, which have
+  // keys of their own to give or none (round 12, A12-13).
+  const isPlain = (v) => {
+    try {
+      if (!isObject(v) || Object.prototype.toString.call(v) !== '[object Object]') return false;
+      const proto = Object.getPrototypeOf(v);
+      return proto === null || Object.getPrototypeOf(proto) === null;
+    } catch {
+      return false;
+    }
+  };
+  // JSON-safe data: a plain object at the top (the engine reads probes by
+  // key, and an array there was dropped), and inside
+  // strings, finite numbers, true, false, null, plain objects and arrays,
+  // with no object reached twice along a path (round 12, A12-13).
+  const jsonSafe = (top) => {
+    const path = [];
+    const safe = (v, depth) => {
+      if (v === null || typeof v === 'string' || typeof v === 'boolean') return true;
+      if (typeof v === 'number') return Number.isFinite(v);
+      if (typeof v !== 'object' || depth > 100 || path.includes(v)) return false;
+      if (!Array.isArray(v) && !isPlain(v)) return false;
+      path.push(v);
+      try {
+        const values = Array.isArray(v) ? [...v] : Object.keys(v).map((k) => v[k]);
+        return values.every((x) => safe(x, depth + 1));
+      } finally {
+        path.pop();
+      }
+    };
+    try {
+      return isPlain(top) && safe(top, 0);
+    } catch {
+      return false;
+    }
+  };
   const T = {
     any: { test: () => true, expected: 'any value' },
     // true or false, or how a command line or an environment variable
@@ -148945,11 +149417,14 @@ const engineOptionSpec = (function engineOptionSpec() {
     list: { test: list, expected: 'a string or an array of strings' },
     // A profile, or a list of them. An empty slot, a blank name and a value
     // that is no name are each refused: each was dropped without a word.
+    // An empty one, '' or [], names none (round 12, A12-13).
     profiles: {
       test: (v) =>
-        typeof v === 'string' ||
-        (Array.isArray(v) && [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
-      expected: 'a profile name or an array of them, none blank'
+        (typeof v === 'string' && v.trim() !== '') ||
+        (Array.isArray(v) &&
+          v.length > 0 &&
+          [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
+      expected: 'a profile name or a non-empty array of them, none blank'
     },
     number: {
       test: (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0,
@@ -148966,7 +149441,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     })
   };
   const selection = {
-    test: (v) => list(v) || isObject(v),
+    test: (v) => list(v) || isPlain(v),
     expected: '{ include, exclude }, or the include list itself',
     keys: { include: T.list, exclude: T.list }
   };
@@ -149001,7 +149476,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     mappings: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
-    messages: { test: isObject, expected: '{ [locale]: { key: text } }' },
+    messages: { test: isPlain, expected: '{ [locale]: { key: text } }' },
     includeHiddenElements: T.boolean,
     includeShadowDom: T.boolean,
     fragment: T.boolean,
@@ -149019,13 +149494,14 @@ const engineOptionSpec = (function engineOptionSpec() {
         ),
       expected: '[{ href, text }]'
     },
-    // Blank is a timestamp not given.
+    // Blank is no timestamp: refused, as one that isn't a date and time is
+    // (round 12, A12-13).
     timestamp: {
-      test: (v) => typeof v === 'string' && (!v.trim() || isIsoDateTime(v)),
+      test: (v) => typeof v === 'string' && isIsoDateTime(v),
       expected: 'an ISO 8601 date and time, such as new Date().toISOString()'
     },
     contrast: {
-      test: isObject,
+      test: isPlain,
       expected: '{ mode, rootCanvasFallback }',
       keys: {
         mode: T.oneOf(['strictConformance', 'auditorAssist']),
@@ -149038,13 +149514,13 @@ const engineOptionSpec = (function engineOptionSpec() {
     visibilityMode: T.oneOf(['styleOnly', 'styleAndGeometry']),
     includeMode: T.oneOf(['and', 'or']),
     policyContract: {
-      test: (v) => typeof v === 'string' || isObject(v),
+      test: (v) => typeof v === 'string' || isPlain(v),
       expected: "a contract's name, or a contract object",
       keys: Object.assign({ id: T.string }, policyFields)
     },
-    policy: { test: isObject, expected: 'an object', keys: policyFields },
+    policy: { test: isPlain, expected: 'a plain object', keys: policyFields },
     output: {
-      test: isObject,
+      test: isPlain,
       expected: '{ includeSelector, includeHtml, detail, maxOccurrencesPerRule }',
       keys: {
         includeSelector: T.boolean,
@@ -149070,7 +149546,12 @@ const engineOptionSpec = (function engineOptionSpec() {
     tests: selection,
     customRules: { test: Array.isArray, expected: 'an array of rules' },
     packs: { test: Array.isArray, expected: 'an array of packs' },
-    probes: T.any,
+    // Evidence the host gives, passed to rules: JSON-safe data only (round
+    // 12, A12-13).
+    probes: {
+      test: jsonSafe,
+      expected: 'a plain object of JSON data (no function, Date, BigInt, NaN or circular reference)'
+    },
     perfStats: T.boolean,
     profileRules: T.boolean,
     // Once a scan has spent this long, it starts no more rules; those it
@@ -149107,7 +149588,14 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
       return plain && text.length <= 80 ? text : 'an array';
     }
     if (typeof v === 'string') return JSON.stringify(v.length > 40 ? v.slice(0, 40) + '…' : v);
-    if (typeof v === 'object') return 'an object';
+    if (typeof v === 'object') {
+      // A Date, a Map: named by its kind (round 12, A12-13).
+      let tag = 'Object';
+      try {
+        tag = Object.prototype.toString.call(v).slice(8, -1);
+      } catch {}
+      return tag === 'Object' ? 'an object' : /^[AEIOU]/.test(tag) ? 'an ' + tag : 'a ' + tag;
+    }
     return typeof v === 'number' || typeof v === 'boolean' ? String(v) : 'a ' + typeof v;
   }
 
@@ -149201,7 +149689,15 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   for (const p of problems) {
     if (p.kind === 'unknown' && !p.suggestion) continue;
     if (p.path === 'strictOptions') continue;
-    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(String(p.path).split('.')[0])) continue;
+    // An empty profile or timestamp ('' or []) is read as none without a
+    // word of its own, so it is said here (round 12, A12-13).
+    const top = String(p.path).split('.')[0];
+    const value = engineOptions[top];
+    const empty =
+      (top === 'profile' || top === 'timestamp') &&
+      p.path === top &&
+      ((typeof value === 'string' && !value.trim()) || (Array.isArray(value) && !value.length));
+    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(top) && !empty) continue;
     // A policy list given as an array says what it leaves out itself
     // (resolvePolicy), and keeps the values it knows.
     if (p.kind === 'invalid' && /^policy(Contract)?\.allowed(Outcomes|Confidence)$/.test(p.path)) {
@@ -162282,8 +162778,9 @@ const runCoreSettled = (function runCoreSettled(
   const budgetSpent = !!(
     engineOptions &&
     typeof engineOptions === 'object' &&
-    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent') &&
-    engineOptions.__budgetSpent === true
+    Object.prototype.hasOwnProperty.call(engineOptions, '__budgetSpent') &&
+    engineOptions.__budgetSpent === true &&
+    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent')
   );
   const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
@@ -162632,8 +163129,11 @@ const runCoreSettled = (function runCoreSettled(
 
   let probes;
   try {
+    // JSON-safe data only, as enforceEngineOptions says (round 12, A12-13).
     const rawProbes =
-      engineOptionsResolved && typeof engineOptionsResolved.probes === 'object'
+      engineOptionsResolved &&
+      typeof engineOptionsResolved.probes === 'object' &&
+      engineOptionSpec().probes.test(engineOptionsResolved.probes)
         ? engineOptionsResolved.probes
         : null;
     probes = rawProbes ? sanitizeProbeValue(rawProbes, 6) : null;
@@ -163344,6 +163844,12 @@ const runCoreSettled = (function runCoreSettled(
     if (typeof sharedHelpers.__setActiveRuleExcludeSelectors === 'function') {
       sharedHelpers.__setActiveRuleExcludeSelectors(ruleConfig && ruleConfig.excludeSelectors);
     }
+    // Whether any area is left out for this rule: only then does
+    // normalizeRuleResult look up every element a selector-only occurrence
+    // matches (round 12, A12-16).
+    const excluding =
+      excludeSelectors.length > 0 ||
+      normalizeSelectorList(ruleConfig && ruleConfig.excludeSelectors).length > 0;
 
     const foreign = foreignCode.has(defResolved.ruleId);
     const ctx = {
@@ -163382,7 +163888,8 @@ const runCoreSettled = (function runCoreSettled(
           },
           SCHEMA_VERSION,
           policy,
-          sharedHelpers
+          sharedHelpers,
+          excluding
         )
       );
       if (ruleTimings)
@@ -163410,7 +163917,8 @@ const runCoreSettled = (function runCoreSettled(
           // everywhere: what was meant can't be known, so the rule says so.
           throw new Error(
             'applicability returned ' +
-              describeOptionValue(res) +
+              // "a undefined" read badly (round 12, A12-11).
+              (res === undefined ? 'undefined (no value)' : describeOptionValue(res)) +
               '; it must return true or false (or { applicable: true | false })'
           );
         }
@@ -163425,7 +163933,7 @@ const runCoreSettled = (function runCoreSettled(
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -163442,7 +163950,7 @@ const runCoreSettled = (function runCoreSettled(
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -163615,7 +164123,8 @@ const runCoreSettled = (function runCoreSettled(
         scopeOutcomeToWcagVersion(defResolved, result),
         SCHEMA_VERSION,
         policy,
-        sharedHelpers
+        sharedHelpers,
+        excluding
       )
     );
     if (ruleTimings)
@@ -163688,15 +164197,33 @@ const runCoreSettled = (function runCoreSettled(
     }
   );
   if (notRunRules.length) {
+    // The budget the scan was given, not what was left of it when this
+    // profile or frame started (__scanTimeBudgetMs, set by the engine
+    // only), in whole ms, or tenths below 10 (round 12, A12-5).
+    const flagOf = (key) =>
+      Object.prototype.hasOwnProperty.call(engineOptions, key) &&
+      !Object.prototype.propertyIsEnumerable.call(engineOptions, key)
+        ? engineOptions[key]
+        : undefined;
+    const given =
+      typeof flagOf('__scanTimeBudgetMs') === 'number'
+        ? flagOf('__scanTimeBudgetMs')
+        : timeBudgetMs;
+    const budgetText =
+      typeof given === 'number' && Number.isFinite(given)
+        ? ' of ' + (given >= 10 ? Math.round(given) : Math.round(given * 10) / 10) + ' ms'
+        : '';
     try {
       console.warn(
-        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
-          timeBudgetMs +
+        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget' +
+          budgetText +
           (budgetSpent
-            ? typeof engineOptions.profile === 'string'
-              ? ' ms before profile "' + engineOptions.profile + '" started, so it'
-              : " ms before this frame's scan started, so it"
-            : ' ms and') +
+            ? flagOf('__budgetSpentAt') === 'profile' && typeof engineOptions.profile === 'string'
+              ? ' before profile "' + engineOptions.profile + '" started, so it'
+              : flagOf('__budgetSpentAt') === 'styleSheets'
+                ? " fetching the style sheets the page can't read, before any rule started, so it"
+                : " before this frame's scan started, so it"
+            : ' and') +
           ' did not run ' +
           notRunRules.length +
           ' rule' +
@@ -164191,6 +164718,52 @@ const assertPageBuiltins = (function assertPageBuiltins() {
     throw err;
   }
 });
+const holdObjectPrototypeValues = (function holdObjectPrototypeValues() {
+  const proto = Object.prototype;
+  const own = Object.prototype.hasOwnProperty;
+  const held = [];
+  const release = () => {
+    for (let i = held.length - 1; i >= 0; i--) {
+      const h = held[i];
+      try {
+        if (h.cleared) proto[h.name] = h.descriptor.value;
+        else Object.defineProperty(proto, h.name, h.descriptor);
+      } catch {}
+    }
+    held.length = 0;
+  };
+  const names = Object.getOwnPropertyNames(proto);
+  const refused = [];
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i];
+    if (name === '__proto__') continue;
+    const d = Object.getOwnPropertyDescriptor(proto, name);
+    if (!d) continue;
+    // Own reads: a descriptor is a plain object too.
+    if (own.call(d, 'value') && typeof d.value === 'function') continue;
+    if (d.configurable) {
+      delete proto[name];
+      held[held.length] = { name, descriptor: d, cleared: false };
+    } else if (own.call(d, 'writable') && d.writable) {
+      proto[name] = undefined;
+      held[held.length] = { name, descriptor: d, cleared: true };
+    } else refused[refused.length] = 'Object.prototype.' + name;
+  }
+  if (refused.length) {
+    release();
+    let list = '';
+    for (let i = 0; i < refused.length; i++) list += (i ? ', ' : '') + refused[i];
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (' +
+        list +
+        "), so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = refused;
+    throw err;
+  }
+  return release;
+});
 const assertArrayFromFor = (function assertArrayFromFor(fns) {
   let works;
   /* eslint-disable no-restricted-properties -- the check is of Array.from itself */
@@ -164593,15 +165166,32 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   // A frame's scan that starts with no time budget left (frame-scan.js) is
   // asked to start no rule (__budgetSpent, set by the engine only, not
   // enumerable): each profile's scan is asked the same, so it lists its
-  // selection in notRun.
+  // selection in notRun. The scan's budget (__scanTimeBudgetMs), which the
+  // warnings give, goes with it. Read only as the options' own, never from
+  // Object.prototype (round 12, A12-2).
+  const flagOf = (from, key) =>
+    from &&
+    typeof from === 'object' &&
+    Object.prototype.hasOwnProperty.call(from, key) &&
+    !Object.prototype.propertyIsEnumerable.call(from, key)
+      ? from[key]
+      : undefined;
   const carryBudgetSpent = (from, to) => {
-    if (
-      from &&
-      typeof from === 'object' &&
-      !Object.prototype.propertyIsEnumerable.call(from, '__budgetSpent') &&
-      from.__budgetSpent === true
-    ) {
+    if (flagOf(from, '__budgetSpent') === true) {
       Object.defineProperty(to, '__budgetSpent', { value: true });
+      // Where it was spent, for the warning (round 12, A12-7); a profile the
+      // budget leaves unstarted says its own.
+      const at = flagOf(from, '__budgetSpentAt');
+      if (typeof at === 'string') {
+        Object.defineProperty(to, '__budgetSpentAt', { value: at, configurable: true });
+      }
+    }
+    const scanBudget = flagOf(from, '__scanTimeBudgetMs');
+    if (
+      typeof scanBudget === 'number' &&
+      !Object.prototype.hasOwnProperty.call(to, '__scanTimeBudgetMs')
+    ) {
+      Object.defineProperty(to, '__scanTimeBudgetMs', { value: scanBudget });
     }
     return to;
   };
@@ -164618,6 +165208,15 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
     for (let i = 0; i < asked.length; i++) {
       const p = asked[i];
       if (typeof p !== 'string' || !p.trim()) ignored++;
+    }
+    // An empty list names no profile, and the scan runs as with none
+    // (round 12, A12-13); under strictOptions enforceEngineOptions refuses it.
+    if (!asked.length) {
+      try {
+        console.warn('[surea11y] engineOptions.profile: an empty list names no profile; ignored.');
+      } catch {
+        // no console
+      }
     }
     if (ignored) {
       try {
@@ -164663,23 +165262,51 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
       return Date.now();
     };
     const started = budget === null ? 0 : clock();
+    const spentOnArrival = flagOf(engineOptions, '__budgetSpent') === true;
+    // The scan's budget: this one's, or, in a frame, the whole scan's.
+    const scanBudget =
+      typeof flagOf(engineOptions, '__scanTimeBudgetMs') === 'number'
+        ? flagOf(engineOptions, '__scanTimeBudgetMs')
+        : budget;
+    // What a later profile's scan is given: what is left, and the scan's
+    // budget for its warnings.
+    const withScanBudget = (options) => {
+      if (
+        scanBudget !== null &&
+        !Object.prototype.hasOwnProperty.call(options, '__scanTimeBudgetMs')
+      ) {
+        Object.defineProperty(options, '__scanTimeBudgetMs', { value: scanBudget });
+      }
+      return options;
+    };
     const step = (i) => {
       if (i >= unique.length) {
         const merged = mergeProfileResults(runs, unique, allowFail);
         // The budget the scan was given, not what was left of it for the
         // profile that ran out.
         if (merged && merged.engine && merged.engine.incomplete) {
-          merged.engine.incomplete.timeBudgetMs = budget;
+          merged.engine.incomplete.timeBudgetMs = scanBudget;
         }
         return merged;
       }
       const left = budget === null ? null : budget - (clock() - started);
-      if (left !== null && i > 0 && left <= 0) {
+      // A frame's scan reached with no budget left (spentOnArrival) starts
+      // its first profile only, as a scan whose first profile used it all
+      // does: the others are not run, not run with nothing started (round
+      // 12, A12-4).
+      if (i > 0 && ((left !== null && left <= 0) || spentOnArrival)) {
         // Not run, but its rules are listed in notRun, as a profile's scan
         // that ran out lists those it did not start: its scan is asked to
         // start none (__budgetSpent), which only works out its selection.
-        const dryOptions = Object.assign({}, engineOptions, { profile: unique[i] });
-        Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        const dryOptions = withScanBudget(
+          carryBudgetSpent(engineOptions, Object.assign({}, engineOptions, { profile: unique[i] }))
+        );
+        if (!spentOnArrival) Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        // Its warning names the profile, not a frame.
+        Object.defineProperty(dryOptions, '__budgetSpentAt', {
+          value: 'profile',
+          configurable: true
+        });
         const skippedOf = (dry) => {
           const skipped = {};
           Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
@@ -164698,13 +165325,15 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         return thenable(dry) ? dry.then(skippedOf) : skippedOf(dry);
       }
       const result = run(
-        carryBudgetSpent(
-          engineOptions,
-          Object.assign(
-            {},
+        withScanBudget(
+          carryBudgetSpent(
             engineOptions,
-            { profile: unique[i] },
-            left !== null && i > 0 ? { timeBudgetMs: left } : {}
+            Object.assign(
+              {},
+              engineOptions,
+              { profile: unique[i] },
+              left !== null && i > 0 ? { timeBudgetMs: left } : {}
+            )
           )
         )
       );
@@ -165408,6 +166037,7 @@ const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
     return out;
   };
   return isThenable(result) ? result.then(stamp) : stamp(result);
+  }
 }
 
 // =======================
@@ -166701,21 +167331,26 @@ function getFrameElementUrl(el) {
 }
 
 function frameTimeBudgetOf(eo) {
-  return typeof eo.timeBudgetMs === 'number' &&
-    Number.isFinite(eo.timeBudgetMs) &&
-    eo.timeBudgetMs > 0
-    ? eo.timeBudgetMs
-    : null;
+  const ms = frameOptionOf(eo, 'timeBudgetMs');
+  return typeof ms === 'number' && Number.isFinite(ms) && ms > 0 ? ms : null;
+}
+
+function frameOptionOf(eo, key) {
+  return eo && typeof eo === 'object' && Object.prototype.hasOwnProperty.call(eo, key)
+    ? eo[key]
+    : undefined;
 }
 
 function budgetedOptions(engineOptions, eo, budget, scanStartedAt) {
   if (budget === null || scanStartedAt === null) return engineOptions;
   const left = budget - (Date.now() - scanStartedAt);
   if (left >= budget) return engineOptions;
-  if (left > 0) return Object.assign({}, eo, { timeBudgetMs: left });
-  const spent = Object.assign({}, eo);
-  Object.defineProperty(spent, '__budgetSpent', { value: true });
-  return spent;
+  const out = Object.assign({}, eo, left > 0 ? { timeBudgetMs: left } : {});
+  if (left <= 0) Object.defineProperty(out, '__budgetSpent', { value: true });
+  // The scan's budget, which the warnings give, not what is left of it
+  // (round 12, A12-5). Set by the engine only, not enumerable.
+  Object.defineProperty(out, '__scanTimeBudgetMs', { value: budget });
+  return out;
 }
 
 function withScanBudget(result, budget) {
@@ -166758,14 +167393,17 @@ function scanAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly, star
     return Promise.reject(err);
   }
 
-  const pingWaitTime = typeof eo.pingWaitTime === 'number' ? eo.pingWaitTime : undefined;
-  const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
+  const pingWaitTime =
+    typeof frameOptionOf(eo, 'pingWaitTime') === 'number' ? eo.pingWaitTime : undefined;
+  const frameWaitTime =
+    typeof frameOptionOf(eo, 'frameWaitTime') === 'number' ? eo.frameWaitTime : undefined;
 
   const { roots } = resolveContextRoots(document, contextSelector);
-  const frameElements = findChildFrameElements(roots, eo.includeShadowDom).filter(
+  const frameElements = findChildFrameElements(roots, frameOptionOf(eo, 'includeShadowDom')).filter(
     (el) =>
-      (eo.includeHiddenElements === true || (isFrameShown(el) && !isFrameBehindModal(el))) &&
-      !isFrameExcluded(el, eo.excludeSelectors)
+      (frameOptionOf(eo, 'includeHiddenElements') === true ||
+        (isFrameShown(el) && !isFrameBehindModal(el))) &&
+      !isFrameExcluded(el, frameOptionOf(eo, 'excludeSelectors'))
   );
 
   const framePromises = frameElements.map(function (el) {
@@ -167051,7 +167689,15 @@ async function preloadStyleSheets(options) {
       ? opts.timeoutMs
       : 5000;
   const fetchFn = typeof fetch === 'function' ? fetch : null;
-  if (!doc || !fetchFn) return [];
+  const deadline =
+    typeof opts.deadline === 'number' && Number.isFinite(opts.deadline) ? opts.deadline : null;
+  // The sheets the deadline left unread, on the list resolved with.
+  const notRead = [];
+  const done = (list) => {
+    Object.defineProperty(list, 'notRead', { value: notRead });
+    return list;
+  };
+  if (!doc || !fetchFn) return done([]);
 
   // The sheets that can't be read, by their absolute URL: linked ones, and
   // those an @import in a readable sheet brings in.
@@ -167082,12 +167728,21 @@ async function preloadStyleSheets(options) {
     const list = getter && getter.get ? getter.get.call(doc) : [];
     for (const sheet of [...(list || [])]) visit(sheet, 0);
   } catch {
-    return [];
+    return done([]);
   }
 
-  function withTimeout(promise) {
+  // Each fetch waits timeoutMs, and never past the deadline; one the
+  // deadline cut short is named in notRead.
+  function withTimeout(promise, href) {
     return new Promise((resolve) => {
-      const timer = setTimeout(() => resolve(null), timeoutMs);
+      const wait = deadline === null ? timeoutMs : Math.min(timeoutMs, deadline - Date.now());
+      const timer = setTimeout(
+        () => {
+          if (deadline !== null && wait < timeoutMs) notRead.push(href);
+          resolve(null);
+        },
+        Math.max(0, wait)
+      );
       promise.then(
         (v) => {
           clearTimeout(timer);
@@ -167102,10 +167757,15 @@ async function preloadStyleSheets(options) {
   }
 
   function fetchText(href) {
+    if (deadline !== null && Date.now() >= deadline) {
+      notRead.push(href);
+      return Promise.resolve(null);
+    }
     return withTimeout(
       fetchFn(href, { mode: 'cors', credentials: 'omit' }).then((res) =>
         res && res.ok ? res.text().then((text) => ({ href, text })) : null
-      )
+      ),
+      href
     );
   }
 
@@ -167144,7 +167804,7 @@ async function preloadStyleSheets(options) {
       }
     }
   }
-  return out;
+  return done(out);
 }
 
 // Every margin in a scan result, for tools that read them (src/core/margin.js).
