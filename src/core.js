@@ -45102,6 +45102,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "Scrollbare Bereiche ohne fokussierbaren Inhalt sollten per Tastatur fokussierbar sein",
       "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
       "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Ob sein Inhalt überläuft, ließ sich nicht messen: Die Seite wurde ohne Layout geprüft. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
       "scrollableRegionFocusable_hint_cantTell": "Wenn sein Inhalt tatsächlich überläuft, fügen Sie tabindex=\"0\" und einen Namen hinzu, damit Tastaturnutzende es fokussieren und mit den Pfeiltasten scrollen können.",
       "scrollableRegionFocusable_lean_why_overflows": "Sein Inhalt läuft über den Kasten hinaus, und nichts darin kann den Tastaturfokus erhalten, um ihn zu scrollen.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium ab Version 130 und Firefox machen einen scrollbaren Kasten trotzdem per Tastatur erreichbar; Safari nicht.",
@@ -46951,6 +46952,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
       "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
       "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Whether its content overflows could not be measured: the page was checked without a layout. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
       "scrollableRegionFocusable_hint_cantTell": "If its content does overflow, add tabindex=\"0\" and a name, so keyboard users can focus it and scroll with the arrow keys.",
       "scrollableRegionFocusable_lean_why_overflows": "Its content overflows the box, and nothing in it can take keyboard focus to scroll it.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.",
@@ -48800,6 +48802,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "Las regiones desplazables sin contenido enfocable deberían ser enfocables por teclado",
       "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
       "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. No se pudo medir si su contenido desborda: la página se comprobó sin maquetación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
       "scrollableRegionFocusable_hint_cantTell": "Si su contenido se desborda de verdad, agregar tabindex=\"0\" y un nombre, para que con el teclado se pueda enfocar y desplazar con las flechas.",
       "scrollableRegionFocusable_lean_why_overflows": "Su contenido desborda la caja, y nada en ella puede recibir el foco del teclado para desplazarla.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 y posteriores, y Firefox, permiten igualmente llegar con el teclado a una caja que se desplaza; Safari no.",
@@ -50649,6 +50652,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "Les régions défilantes sans contenu focalisable devraient être focalisables au clavier",
       "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une vérification manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
       "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Son débordement n’a pas pu être mesuré : la page a été vérifiée sans mise en page. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
       "scrollableRegionFocusable_hint_cantTell": "Si son contenu déborde réellement, ajoutez tabindex=\"0\" et un nom, pour qu’on puisse le focaliser au clavier et le faire défiler avec les flèches.",
       "scrollableRegionFocusable_lean_why_overflows": "Son contenu déborde de la boîte, et rien à l’intérieur ne peut recevoir le focus clavier pour la faire défiler.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 et versions ultérieures, ainsi que Firefox, permettent quand même d’atteindre au clavier une boîte qui défile ; Safari non.",
@@ -52498,6 +52502,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "フォーカス可能なコンテンツのないスクロール領域は、キーボードでフォーカスできることが望ましい",
       "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
       "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。ページがレイアウトなしで検査されたため、コンテンツがはみ出すかは測定できませんでした。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
       "scrollableRegionFocusable_hint_cantTell": "内容が実際にはみ出す場合は、tabindex=\"0\" と名前を付け、キーボードでフォーカスして矢印キーでスクロールできるようにしてください。",
       "scrollableRegionFocusable_lean_why_overflows": "内容がボックスからはみ出しており、スクロールするためにキーボードフォーカスを受けられるものが中にありません。",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 以降と Firefox では、スクロールするボックスにキーボードで到達できます。Safari ではできません。",
@@ -113270,11 +113275,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const baseOccurrence = {
       selector: stableSelector,
       html,
-      summary:
-        'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.',
+      // Without a layout (jsdom), the message says the overflow could not
+      // be measured.
+      summary: geometry
+        ? 'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.'
+        : 'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Whether its content overflows could not be measured: the page was checked without a layout. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.',
       hint: 'If this region’s content actually overflows, add tabindex="0" (and a suitable label) so keyboard users can focus it and scroll with the arrow keys.',
       i18n: {
-        summaryKey: 'scrollableRegionFocusable_summary_cantTell',
+        summaryKey: geometry
+          ? 'scrollableRegionFocusable_summary_cantTell'
+          : 'scrollableRegionFocusable_summary_cantTell_unmeasured',
         hintKey: 'scrollableRegionFocusable_hint_cantTell',
         params: { element: tag }
       },
@@ -126859,6 +126869,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "Scrollbare Bereiche ohne fokussierbaren Inhalt sollten per Tastatur fokussierbar sein",
       "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
       "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Ob sein Inhalt überläuft, ließ sich nicht messen: Die Seite wurde ohne Layout geprüft. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
       "scrollableRegionFocusable_hint_cantTell": "Wenn sein Inhalt tatsächlich überläuft, fügen Sie tabindex=\"0\" und einen Namen hinzu, damit Tastaturnutzende es fokussieren und mit den Pfeiltasten scrollen können.",
       "scrollableRegionFocusable_lean_why_overflows": "Sein Inhalt läuft über den Kasten hinaus, und nichts darin kann den Tastaturfokus erhalten, um ihn zu scrollen.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium ab Version 130 und Firefox machen einen scrollbaren Kasten trotzdem per Tastatur erreichbar; Safari nicht.",
@@ -128708,6 +128719,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
       "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
       "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Whether its content overflows could not be measured: the page was checked without a layout. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
       "scrollableRegionFocusable_hint_cantTell": "If its content does overflow, add tabindex=\"0\" and a name, so keyboard users can focus it and scroll with the arrow keys.",
       "scrollableRegionFocusable_lean_why_overflows": "Its content overflows the box, and nothing in it can take keyboard focus to scroll it.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.",
@@ -130557,6 +130569,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "Las regiones desplazables sin contenido enfocable deberían ser enfocables por teclado",
       "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
       "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. No se pudo medir si su contenido desborda: la página se comprobó sin maquetación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
       "scrollableRegionFocusable_hint_cantTell": "Si su contenido se desborda de verdad, agregar tabindex=\"0\" y un nombre, para que con el teclado se pueda enfocar y desplazar con las flechas.",
       "scrollableRegionFocusable_lean_why_overflows": "Su contenido desborda la caja, y nada en ella puede recibir el foco del teclado para desplazarla.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 y posteriores, y Firefox, permiten igualmente llegar con el teclado a una caja que se desplaza; Safari no.",
@@ -132406,6 +132419,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "Les régions défilantes sans contenu focalisable devraient être focalisables au clavier",
       "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une vérification manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
       "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Son débordement n’a pas pu être mesuré : la page a été vérifiée sans mise en page. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
       "scrollableRegionFocusable_hint_cantTell": "Si son contenu déborde réellement, ajoutez tabindex=\"0\" et un nom, pour qu’on puisse le focaliser au clavier et le faire défiler avec les flèches.",
       "scrollableRegionFocusable_lean_why_overflows": "Son contenu déborde de la boîte, et rien à l’intérieur ne peut recevoir le focus clavier pour la faire défiler.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 et versions ultérieures, ainsi que Firefox, permettent quand même d’atteindre au clavier une boîte qui défile ; Safari non.",
@@ -134255,6 +134269,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "フォーカス可能なコンテンツのないスクロール領域は、キーボードでフォーカスできることが望ましい",
       "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
       "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。ページがレイアウトなしで検査されたため、コンテンツがはみ出すかは測定できませんでした。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
       "scrollableRegionFocusable_hint_cantTell": "内容が実際にはみ出す場合は、tabindex=\"0\" と名前を付け、キーボードでフォーカスして矢印キーでスクロールできるようにしてください。",
       "scrollableRegionFocusable_lean_why_overflows": "内容がボックスからはみ出しており、スクロールするためにキーボードフォーカスを受けられるものが中にありません。",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 以降と Firefox では、スクロールするボックスにキーボードで到達できます。Safari ではできません。",

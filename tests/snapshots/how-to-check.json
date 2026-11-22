@@ -2404,13 +2404,13 @@
       "pt": "82c40d8fa482bff2"
     },
     "scrollable-region-focusable SCROLLABLE_OVERFLOW_NOT_FOCUSABLE": {
-      "en": "785135c8f84e36cb",
-      "de": "d447f56744bb2682",
-      "es": "dd4597c927d134b8",
-      "fr": "c783ea3fd8ce2ceb",
-      "ja": "5b956381278feea0",
-      "fr-CA": "c783ea3fd8ce2ceb",
-      "pt": "785135c8f84e36cb"
+      "en": "13b7447c6a6499f9",
+      "de": "a843a214041937b8",
+      "es": "534524b614fa90cf",
+      "fr": "a98dca5d2d85124a",
+      "ja": "8d29aa9ce489ed4e",
+      "fr-CA": "a98dca5d2d85124a",
+      "pt": "13b7447c6a6499f9"
     },
     "skip-link SKIP_LINK_TARGET_MISSING": {
       "en": "4e3b912ab9de8750",
@@ -2909,7 +2909,7 @@
     "presentation-role-conflict": "e565499a522bc1ff",
     "region": "797b1622e124fa2a",
     "scope-attr-valid": "bff1f4406a634cc3",
-    "scrollable-region-focusable": "1de4c25cd8590418",
+    "scrollable-region-focusable": "6dfd8451edd98b8f",
     "skip-link": "345c9ad8c4bcb6fa",
     "svg-text-alternative-quality": "954dbcffa14b8f05",
     "tabindex": "843abf76bc816291",
@@ -2921,10 +2921,10 @@
     "symbol-graphic-contrast": "cc944d054342fe60"
   },
   "dictionaries": {
-    "de": "39ca4783c0a8807768e55ea041d8b11cb0047f501e1ffdb3568e472f4c9b95a6",
-    "en": "14060e127a2eb36cb9782cc0afe2493ed886a7cae220cae5b2a51965177de653",
-    "es": "6d7dc7e34a4fe23c6f1f965f35af50636f888add2f63affad19d2021c611ea07",
-    "fr": "d17bd6941acb4b3eafa55cadf2202d985a45625410d8461a649cec4d26dc8eb8",
-    "ja": "90cf73bdd9f703acd925e7503b98d58166b617d72247e7447f5f34e7d31cd08c"
+    "de": "ba6f3cb02c06b6d22feb3afeaf837c4f323bb30c62e8479bd0bc518375f9310a",
+    "en": "8a1ec14c802c0ec1d59dc7ae290b355e0c33a31f5e5e0f0b8568b4d14ec5a456",
+    "es": "62e42a92c19ef9ad9573f3048e71551c91007f9a39a8fdb8dcf3772dfd0ea787",
+    "fr": "0db1d0884f10caeb1e955aad74ce9eabd9839ae575d4249e70d73c132cdd6402",
+    "ja": "da3e7f93a9a3d1ad532c84e720e07608d13dbab8390305802efd0c5ce3090766"
   }
 }

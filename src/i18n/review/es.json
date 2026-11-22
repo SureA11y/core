@@ -1267,7 +1267,7 @@
   "scopeAttrValid_review_SCOPE_ATTR_INVALID_step3": "Comprobar que scope es exactamente row, col, rowgroup o colgroup, sin espacios adicionales ni otras palabras.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_fail": "Parte del contenido oculto solo se puede hacer visible con el ratón o con el tacto, lo que incumple WCAG 2.1.1.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_pass": "El elemento no desborda, o todo lo oculto en él se puede hacer visible solo con el teclado, desplazándolo o con otra forma que ofrece la página.",
-  "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step1": "Localizar el elemento que indica el informe y comprobar, en los tamaños en que se usa la página, si su contenido desborda (aparece una barra de desplazamiento o el contenido queda cortado).",
+  "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step1": "Localizar el elemento que indica el informe y comprobar, en los tamaños en que se usa la página, si su contenido desborda (aparece una barra de desplazamiento o el contenido queda cortado). Si la comprobación se hizo sin maquetación (como en jsdom), el informe no pudo medirlo.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step2": "Si no desborda, cumple.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step3": "Si desborda, hacer clic justo antes de él y pulsar Tab hasta que el foco llegue a él.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step4": "Con el foco en él, pulsar las teclas de flecha, Av Pág y Espacio, y comprobar que el contenido se desplaza.",

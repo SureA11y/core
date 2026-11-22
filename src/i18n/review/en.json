@@ -1267,7 +1267,7 @@
   "scopeAttrValid_review_SCOPE_ATTR_INVALID_step3": "Check that scope is exactly row, col, rowgroup or colgroup, with no extra spaces or other words.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_fail": "Some hidden content can only be brought into view with a mouse or touch, which fails WCAG 2.1.1.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_pass": "The element does not overflow, or everything hidden in it can be brought into view with the keyboard alone, by scrolling it or by another way the page offers.",
-  "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step1": "Find the element the report names and check, at the sizes the page is used at, whether its content overflows (a scrollbar appears or content is cut off).",
+  "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step1": "Find the element the report names and check, at the sizes the page is used at, whether its content overflows (a scrollbar appears or content is cut off). Where the scan ran without a layout (as in jsdom), the report could not measure this.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step2": "If it does not overflow, it passes.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step3": "If it does, click just before it and press Tab until focus reaches it.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step4": "With focus on it, press the arrow keys, Page Down and Space, and check that the content scrolls.",

@@ -1267,7 +1267,7 @@
   "scopeAttrValid_review_SCOPE_ATTR_INVALID_step3": "Vérifiez que scope vaut exactement row, col, rowgroup ou colgroup, sans espace superflu ni autre mot.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_fail": "Une partie du contenu masqué ne peut être affichée qu’à la souris ou au toucher, ce qui ne respecte pas le critère WCAG 2.1.1.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_pass": "L’élément ne déborde pas, ou tout ce qui y est masqué peut être affiché au clavier seul, en le faisant défiler ou par un autre moyen proposé par la page.",
-  "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step1": "Repérez l’élément indiqué par le rapport et vérifiez, aux tailles auxquelles la page est utilisée, si son contenu déborde (une barre de défilement apparaît ou du contenu est coupé).",
+  "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step1": "Repérez l’élément indiqué par le rapport et vérifiez, aux tailles auxquelles la page est utilisée, si son contenu déborde (une barre de défilement apparaît ou du contenu est coupé). Si l’analyse s’est faite sans mise en page (comme dans jsdom), le rapport n’a pas pu le mesurer.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step2": "S’il ne déborde pas, la vérification est réussie.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step3": "S’il déborde, cliquez juste avant lui et appuyez sur Tab jusqu’à ce que le focus l’atteigne.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step4": "Une fois le focus sur lui, appuyez sur les touches fléchées, Page suivante et Espace, et vérifiez que le contenu défile.",

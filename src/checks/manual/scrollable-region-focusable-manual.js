@@ -42,7 +42,8 @@
  *     Where the page is laid out, it leans fail when the content overflows
  *     the box by more than 2px on an axis the CSS lets scroll, and pass
  *     when it fits there but overflows on an axis that does not scroll
- *     (`overflow: hidden`); in jsdom, no lean.
+ *     (`overflow: hidden`); in jsdom, no lean, and the message says the
+ *     overflow could not be measured without a layout.
  *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled);
  *     ACT 0ssw9k.
  * @implementation-notes
@@ -264,11 +265,16 @@ function runInPage(ctx) {
     const baseOccurrence = {
       selector: stableSelector,
       html,
-      summary:
-        'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.',
+      // Without a layout (jsdom), the message says the overflow could not
+      // be measured.
+      summary: geometry
+        ? 'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.'
+        : 'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Whether its content overflows could not be measured: the page was checked without a layout. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.',
       hint: 'If this region’s content actually overflows, add tabindex="0" (and a suitable label) so keyboard users can focus it and scroll with the arrow keys.',
       i18n: {
-        summaryKey: 'scrollableRegionFocusable_summary_cantTell',
+        summaryKey: geometry
+          ? 'scrollableRegionFocusable_summary_cantTell'
+          : 'scrollableRegionFocusable_summary_cantTell_unmeasured',
         hintKey: 'scrollableRegionFocusable_hint_cantTell',
         params: { element: tag }
       },

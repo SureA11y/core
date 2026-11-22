@@ -1267,7 +1267,7 @@
   "scopeAttrValid_review_SCOPE_ATTR_INVALID_step3": "Prüfen Sie, ob scope genau row, col, rowgroup oder colgroup ist, ohne zusätzliche Leerzeichen oder andere Wörter.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_fail": "Ein Teil des verborgenen Inhalts lässt sich nur mit Maus oder Touch sichtbar machen; das verstößt gegen WCAG 2.1.1.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_pass": "Das Element läuft nicht über, oder alles darin Verborgene lässt sich allein mit der Tastatur sichtbar machen, durch Scrollen oder auf einem anderen Weg, den die Seite bietet.",
-  "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step1": "Suchen Sie das im Bericht genannte Element und prüfen Sie bei den Größen, in denen die Seite genutzt wird, ob sein Inhalt überläuft (eine Bildlaufleiste erscheint oder Inhalt wird abgeschnitten).",
+  "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step1": "Suchen Sie das im Bericht genannte Element und prüfen Sie bei den Größen, in denen die Seite genutzt wird, ob sein Inhalt überläuft (eine Bildlaufleiste erscheint oder Inhalt wird abgeschnitten). Lief die Prüfung ohne Layout (wie in jsdom), konnte der Bericht das nicht messen.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step2": "Läuft er nicht über, ist die Prüfung bestanden.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step3": "Läuft er über, klicken Sie direkt davor und drücken Sie Tab, bis der Fokus ihn erreicht.",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step4": "Drücken Sie bei fokussiertem Element die Pfeiltasten, Bild ab und die Leertaste und prüfen Sie, ob der Inhalt scrollt.",

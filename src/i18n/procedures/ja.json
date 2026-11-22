@@ -1267,7 +1267,7 @@
   "scopeAttrValid_review_SCOPE_ATTR_INVALID_step3": "scope が余分な空白やほかの言葉を含まず、正確に row、col、rowgroup、または colgroup であることを確認してください。",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_fail": "隠れた内容の一部はマウスやタッチでしか表示できないため、WCAG 2.1.1 を満たしません。",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_pass": "要素ははみ出さないか、隠れた内容のすべてを、スクロールするかページが提供する別の方法で、キーボードだけで表示できます。",
-  "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step1": "レポートに示された要素を見つけ、ページが使われるサイズで、そのコンテンツがはみ出すか (スクロールバーが現れるか、コンテンツが切れるか) 確認してください。",
+  "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step1": "レポートに示された要素を見つけ、ページが使われるサイズで、そのコンテンツがはみ出すか (スクロールバーが現れるか、コンテンツが切れるか) 確認してください。レイアウトなしで検査した場合 (jsdom など)、レポートはこれを測定できていません。",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step2": "はみ出さない場合は合格です。",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step3": "はみ出す場合は、そのすぐ手前をクリックし、フォーカスが届くまで Tab キーを押してください。",
   "scrollableRegionFocusable_review_SCROLLABLE_OVERFLOW_NOT_FOCUSABLE_step4": "フォーカスがある状態で矢印キー、Page Down キー、Space を押し、コンテンツがスクロールすることを確認してください。",
