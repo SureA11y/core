@@ -411,12 +411,79 @@ test(`${RULE_ID}: a rule firing on an ancestor's focus is not the element's own 
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: :focus-within is not treated as a focus rule for the element itself`, () => {
-  const result = runa11yCoreOnHtml(
-    page('a:focus-within{outline:none}', '<a href="/x" id="a">x</a>'),
-    { runOnly: [RULE_ID] }
+// :focus-within and :has(:focus) are focus rules: they hold on the focused
+// element's ancestors, and :focus-within on the element itself, while it has
+// focus (round 12, U12-16).
+test(`${RULE_ID}: :focus-within and :has(:focus) are read as focus rules`, () => {
+  const run = (css, body = '<main><a href="/x" id="a">x</a></main>') =>
+    runa11yCoreOnHtml(page(css, body), { runOnly: [RULE_ID] });
+  for (const css of [
+    'a:focus-within{outline:none}',
+    'main:focus-within a{outline:none}',
+    'main:focus-within > a:focus{outline:none}',
+    'main:has(a:focus) a{outline:none}',
+    'main:has(:focus-visible) a{outline:none}'
+  ]) {
+    const rule = assertRule(run(css), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.ok(hasOccurrenceForId(rule, 'a'), css);
+  }
+  for (const css of [
+    // The :has() names another element than the one focused.
+    'main:has(button:focus) a{outline:none}',
+    // A sibling's focus-within says nothing about the link's focus.
+    '.x:focus-within + main a{outline:none}',
+    // Excluded: the outline stays while the ancestor has focus within.
+    'main:not(:focus-within) a{outline:none}'
+  ]) {
+    assertRule(
+      run(css, '<div class="x"></div><main><a href="/x" id="a">x</a></main>'),
+      RULE_ID,
+      'notApplicable',
+      { minOccurrences: 0, maxOccurrences: 0 }
+    );
+  }
+  // A :has(:focus) rule that draws a change around the element takes the
+  // lean away, as a :focus-within one does.
+  const drawn = assertRule(
+    run('a:focus{outline:none} main:has(a:focus){background:#ff0}'),
+    RULE_ID,
+    'cantTell'
   );
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assert.equal(drawn.occurrences[0].lean, undefined);
+});
+
+// An open shadow root's style sheets, adopted ones included, are read
+// against the elements in that root, and only those (round 12, U12-16).
+test(`${RULE_ID}: a shadow root's style sheets style its own elements`, () => {
+  const build = (adopt) => {
+    const dom = createDom(
+      '<!doctype html><html><body><a href="/d" id="doc">doc</a><div id="h"></div></body></html>'
+    );
+    const root = dom.window.document.getElementById('h').attachShadow({ mode: 'open' });
+    root.innerHTML = '<button id="b">b</button>';
+    const css = 'button:focus, a:focus{outline:none}';
+    if (adopt) {
+      const sheet = new dom.window.CSSStyleSheet();
+      sheet.replaceSync(css);
+      root.adoptedStyleSheets = [sheet];
+    } else root.innerHTML += `<style>${css}</style>`;
+    return dom;
+  };
+  for (const adopt of [false, true]) {
+    const rule = assertRule(
+      runa11yCoreOnDom(build(adopt), { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell',
+      {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      }
+    );
+    assert.ok(hasOccurrenceForId(rule, 'b'), String(adopt));
+  }
 });
 
 test(`${RULE_ID}: an element outside sequential focus navigation is skipped`, () => {
@@ -502,7 +569,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 10, maxOccurrences: 10 });
 
   const expectedIds = [
     'cfis_case_01',
@@ -511,7 +578,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
     'cfis_case_04',
     'cfis_case_05',
     'cfis_case_13',
-    'cfis_case_17'
+    'cfis_case_17',
+    'cfis_case_11',
+    'cfis_case_18',
+    'cfis_case_19'
   ];
   const expectedNoOccIds = [
     'cfis_case_06',
@@ -519,8 +589,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
     'cfis_case_08',
     'cfis_case_09',
     'cfis_case_10',
-    'cfis_case_11',
     'cfis_case_12',
+    'cfis_case_20',
     'cfis_case_14',
     'cfis_case_15',
     'cfis_case_16'

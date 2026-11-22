@@ -40,9 +40,14 @@
     [data-js-focus-visible] .fv-attr:focus:not([data-focus-visible-added]) { outline: none; }
     .fv-unscoped:focus:not(.focus-visible) { outline: none; }
 
+    /* Focus states on the element's ancestors, as they hold while it has focus. */
+    .within-only:focus-within { outline: none; }
+    .menu-within:focus-within a { outline: none; }
+    .card-has:has(a:focus) a { outline: none; }
+    .sibling-within:focus-within + .after a { outline: none; }
+
     /* Not a suppression of the element's own indicator. */
     .parent-focus:focus .child-link { outline: none; }
-    .within-only:focus-within { outline: none; }
   </style>
 </head>
 <body>
@@ -136,6 +141,21 @@
     <a class="fv-unscoped" id="cfis_case_17" href="/contact">Contact</a>
   </div>
 
+  <div class="case" id="case_11">
+    <div class="case-title">11 — CANTTELL: :focus-within on the element itself holds while it has focus, so it removes its outline</div>
+    <a class="within-only" id="cfis_case_11" href="/blog">Blog</a>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — CANTTELL: :focus-within on an ancestor holds while the link inside has focus</div>
+    <nav class="menu-within"><a id="cfis_case_18" href="/menu">Menu</a></nav>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — CANTTELL: :has(a:focus) on an ancestor holds while the link inside has focus</div>
+    <div class="card-has"><a id="cfis_case_19" href="/card">Card</a></div>
+  </div>
+
   <h2>C. Not this rule's concern</h2>
 
   <div class="case" id="case_10">
@@ -145,9 +165,10 @@
     </div>
   </div>
 
-  <div class="case" id="case_11">
-    <div class="case-title">11 — NEUTRAL: :focus-within is an ancestor selector, not a focus indicator for this element</div>
-    <a class="within-only" id="cfis_case_11" href="/blog">Blog</a>
+  <div class="case" id="case_20">
+    <div class="case-title">20 — NEUTRAL: :focus-within on a sibling says nothing about this element's focus</div>
+    <div class="sibling-within"></div>
+    <div class="after"><a id="cfis_case_20" href="/after">After</a></div>
   </div>
 
   <div class="case" id="case_12">
