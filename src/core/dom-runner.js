@@ -20,6 +20,7 @@
  *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
  *   describeOptionValue (src/core/dom-helpers.js -- names a value of the wrong type),
  *   enforceEngineOptions (src/core/engine-options.js -- unknown or invalid options),
+ *   engineOptionSpec (src/core/engine-options.js -- what probes may hold),
  *   rollupInProfileVersion (a standard's rollups under one of its profiles),
  *   profileStandardOf (ctx.standard: the standard a profile targets),
  *   ENGINE_VERSION (the package version, baked in at build time),
@@ -45,7 +46,7 @@ const { readLiveRegionHook } = require('./live-region-hook');
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    warnDeprecatedStandards, warnDeprecatedProfile, RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
-   profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, strictOf,
+   profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, engineOptionSpec, strictOf,
    STANDARD_REPORTS, t, PROFILE_SEVERITY, PROFILE_WCAG_VERSIONS, CATALOG, switchOf,
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
    criteriaNamingRule, optInTagsOf, ruleIdMatches,
@@ -2875,8 +2876,11 @@ function runCoreSettled(
 
   let probes;
   try {
+    // JSON-safe data only, as enforceEngineOptions says (round 12, A12-13).
     const rawProbes =
-      engineOptionsResolved && typeof engineOptionsResolved.probes === 'object'
+      engineOptionsResolved &&
+      typeof engineOptionsResolved.probes === 'object' &&
+      engineOptionSpec().probes.test(engineOptionsResolved.probes)
         ? engineOptionsResolved.probes
         : null;
     probes = rawProbes ? sanitizeProbeValue(rawProbes, 6) : null;

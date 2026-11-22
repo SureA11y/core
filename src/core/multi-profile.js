@@ -231,6 +231,15 @@ function runProfilesUncapped(engineOptions, run) {
           '[surea11y] engineOptions.profile: ignoring ' +
             ignored +
             ' item(s) that are not a profile name (a string that is not blank).'
+    // An empty list names no profile, and the scan runs as with none
+    // (round 12, A12-13); under strictOptions enforceEngineOptions refuses it.
+    if (!asked.length) {
+      try {
+        console.warn('[surea11y] engineOptions.profile: an empty list names no profile; ignored.');
+      } catch {
+        // no console
+      }
+    }
         );
       } catch {
         // no console

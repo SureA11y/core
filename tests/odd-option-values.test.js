@@ -79,3 +79,80 @@ test('the reporters refuse a BigInt or a bare object option with a message namin
   // A title that is a string still works, and none gives the default.
   assert.match(renderHtmlReport(result, { title: 'Mine' }), /<title>Mine/);
 });
+
+// What strict mode promises it checks: probes as JSON-safe data, the object
+// options as plain objects, and a profile or timestamp that names something.
+// Each warns without strictOptions, and throws under it (round 12, A12-13).
+test('probes, the object options, and an empty profile or timestamp are checked (round 12, A12-13)', () => {
+  const circular = {};
+  circular.self = circular;
+  const refused = [
+    ['probes', () => 1],
+    ['probes', Symbol('s')],
+    ['probes', 10n],
+    ['probes', 'text'],
+    ['probes', 5],
+    ['probes', [1, 2]],
+    ['probes', { when: new Date() }],
+    ['probes', { n: Number.NaN }],
+    ['probes', circular],
+    [
+      'probes',
+      new Proxy(
+        {},
+        {
+          ownKeys() {
+            throw new Error('no keys');
+          }
+        }
+      )
+    ],
+    ...['contrast', 'output', 'policy', 'policyContract', 'rules', 'tags', 'tests', 'messages'].map(
+      (key) => [key, new Date()]
+    ),
+    ['profile', ''],
+    ['profile', []],
+    ['timestamp', ''],
+    ['timestamp', '  ']
+  ];
+  for (const [key, value] of refused) {
+    const label = `${key}: ${typeof value === 'symbol' ? 'Symbol' : Object.prototype.toString.call(value)}`;
+    const { said } = quietly(() =>
+      runa11yCoreOnHtml(PAGE, { engineOptions: { [key]: value }, entryPointParity: false })
+    );
+    assert.ok(
+      said.some(
+        (s) => s.includes(`engineOptions${key === 'profile' ? '' : ':'}`) && s.includes(key)
+      ),
+      `${label}: ${said}`
+    );
+    assert.throws(
+      () =>
+        quietly(() =>
+          runa11yCoreOnHtml(PAGE, {
+            engineOptions: { [key]: value, strictOptions: true },
+            entryPointParity: false
+          })
+        ),
+      (err) => err.code === 'INVALID_ENGINE_OPTIONS',
+      label
+    );
+  }
+  // What is meant still works without a word.
+  const fine = {
+    probes: { 'crawl.pageTitles': { pages: [{ url: 'https://example.test/', title: 't' }] } },
+    contrast: { mode: 'auditorAssist' },
+    output: Object.assign(Object.create(null), { includeHtml: false }),
+    policy: JSON.parse('{"coerceManualFailToCantTell": true}'),
+    rules: { exclude: ['img-alt-present'] },
+    profile: ['wcag22-aa'],
+    timestamp: '2026-01-01T00:00:00Z'
+  };
+  const { said } = quietly(() =>
+    runa11yCoreOnHtml(PAGE, {
+      engineOptions: { ...fine, strictOptions: true },
+      entryPointParity: false
+    })
+  );
+  assert.deepEqual(said, []);
+});
