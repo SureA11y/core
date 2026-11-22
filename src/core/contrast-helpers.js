@@ -655,10 +655,9 @@ function createContrastHelpers(opts, shared) {
   // "〒100-0001"), even when markup gives it an element of its own: it is
   // read, so it is text, held to 1.4.3, not a graphic. "Next to" is the
   // nearest visible character before or after it, not past a block
-  // boundary (a block, a flex or grid item, a float, an absolutely
-  // positioned box, a line break) and not counting text that is not
-  // drawn (display:none, visibility:hidden, visually hidden), nor the text
-  // of a link beside it, unless the link's nearest character is a digit
+  // boundary (an element whose computed display is not inline, or a line
+  // break) and not counting text that is not drawn (display:none,
+  // visibility:hidden, visually hidden), nor the text of a link beside it, unless the link's nearest character is a digit
   // (an amount). A sign alone between links, or a separator such as ">",
   // is not this: it stays a graphic.
   const __RUN_SIGN = /[\p{Sc}〒]/u;
@@ -672,24 +671,12 @@ function createContrastHelpers(opts, shared) {
     return __RUN_SIGN.test(s) && __RUN_SIGN_ONLY.test(s);
   }
 
+  // A browser computes the display of a float, an absolutely positioned
+  // box and a flex or grid item as a block; jsdom doesn't, so there such a
+  // sign is read with its neighbour as one run (docs/LIMITATIONS.md).
   function __inlineDisplay(cs) {
     const d = String((cs && cs.display) || 'inline');
     return d === 'contents' || d.startsWith('inline') || d.startsWith('ruby');
-  }
-
-  // Whether el's box is a block whatever its display says: a float, an
-  // absolutely positioned box, or an item of a flex or grid container
-  // (CSS Display 3, blockification). A browser computes such a display as
-  // a block already; jsdom doesn't, so it is read here, and both agree
-  // (round 12, C12-1).
-  function __runBlockified(el, cs) {
-    if (!cs) return false;
-    if (trim(cs.cssFloat || cs.float) && trim(cs.cssFloat || cs.float) !== 'none') return true;
-    if (cs.position === 'absolute' || cs.position === 'fixed') return true;
-    const parent = composedParent(el);
-    if (!parent || dom.nodeType(parent) !== 1) return false;
-    const d = String(__contrastComputedStyle(parent).display || '');
-    return /(^|\s|-)(flex|grid)\b/.test(d);
   }
 
   function __runHidden(el, cs) {
@@ -758,7 +745,7 @@ function createContrastHelpers(opts, shared) {
       if (!__computedStyleCache.has(n) && total.left-- <= 0) return '';
       const cs = __contrastComputedStyle(n);
       if (__runHidden(n, cs)) return link ? '' : null;
-      if (!__inlineDisplay(cs) || __runBlockified(n, cs)) return '';
+      if (!__inlineDisplay(cs)) return '';
       for (
         let c = forward ? dom.firstChild(n) : dom.lastChild(n);
         c;
@@ -794,7 +781,7 @@ function createContrastHelpers(opts, shared) {
         let block = dom.parentElement(t);
         for (let guard = 0; block && guard < 200; guard++) {
           const bcs = __contrastComputedStyle(block);
-          if (!__inlineDisplay(bcs) || __runBlockified(block, bcs)) break;
+          if (!__inlineDisplay(bcs)) break;
           block = dom.parentElement(block);
         }
         if (block) {
@@ -7663,7 +7650,8 @@ function createContrastHelpers(opts, shared) {
           blockerSelector: overlap.selector,
           blockerElement: overlap.element || '',
           blockerProperty: overlap.property,
-          blockerValue: overlap.value
+          blockerValue: overlap.value,
+          ...(overlap.noLayout ? { blockerNoLayout: true } : {})
         }
       : {
           ok: true,
@@ -8648,7 +8636,12 @@ function createContrastHelpers(opts, shared) {
     try {
       if (!el || dom.nodeType(el) !== 1 || !chain.length) return null;
       const index = __getOverlapIndex();
-      if (!index) return __svgShapeMaybeBehind(el) || __noLayoutPseudoUnder(el, chain);
+      if (!index) {
+        // Without a layout nothing is placed: what may paint under the
+        // text is asked about, and the question says why.
+        const maybe = __svgShapeMaybeBehind(el) || __noLayoutPseudoUnder(el, chain);
+        return maybe ? Object.assign(maybe, { noLayout: true }) : null;
+      }
       const opaque = chain[chain.length - 1];
       const ancestors = new Set(chain);
       // Painters near el's box at all, before measuring its text, which
@@ -8774,9 +8767,13 @@ function createContrastHelpers(opts, shared) {
   // white text over a dark one was measured against the white page and
   // dropped as invisible (round 12, C12-18). Read from the style sheets
   // instead: a ::before or ::after their rules give content, a position of
-  // absolute or fixed and a background, on el or an ancestor in `chain`,
-  // is paint in the way, and the text is asked about. A sheet that can't
-  // be read is taken as giving none.
+  // absolute or fixed and a background, and do not hide (display: none,
+  // visibility: hidden), is paint that may lie under the text, and the
+  // text is asked about. Where it lies needs a layout, so no size or offset
+  // is read. Only el's own pseudo-elements and those of the element that
+  // gives el its background (the last in `chain`) count: a badge on some
+  // other ancestor between them doesn't make all the text in it a
+  // question. A sheet that can't be read is taken as giving none.
   const __noLayoutPseudosByRoot = new WeakMap();
   function __noLayoutPseudos(root) {
     if (__noLayoutPseudosByRoot.has(root)) return __noLayoutPseudosByRoot.get(root);
@@ -8810,6 +8807,8 @@ function createContrastHelpers(opts, shared) {
           const color = get('background-color');
           const image = get('background-image');
           const shorthand = get('background');
+          const display = get('display');
+          const visibility = get('visibility');
           for (const part of __splitTopLevel(text)) {
             const m = /::?(before|after)\b/i.exec(part);
             if (!m) continue;
@@ -8819,15 +8818,9 @@ function createContrastHelpers(opts, shared) {
             const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
             if (content) at.content = content !== 'none' && content !== 'normal';
             if (position) at.positioned = position === 'absolute' || position === 'fixed';
-            // Drawn at all, and where, as far as the rules say (F12-2).
-            const display = get('display');
+            // Drawn at all, as far as the rules say (F12-2): style, not layout.
             if (display) at.displayNone = display === 'none';
-            const visibility = get('visibility');
             if (visibility) at.hidden = visibility === 'hidden' || visibility === 'collapse';
-            for (const prop of ['width', 'height', 'top', 'right', 'bottom', 'left']) {
-              const v = get(prop);
-              if (v) at[prop] = v;
-            }
             const paint = [color, image, shorthand].find(
               (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
             );
@@ -8846,40 +8839,11 @@ function createContrastHelpers(opts, shared) {
     __noLayoutPseudosByRoot.set(root, out);
     return out;
   }
-  // Whether a ::before or ::after the rules position could lie under a
-  // line of el's text, from the size and offsets they give it (round 12,
-  // F12-2): a box narrower or shorter than a line of the text (a 4px corner
-  // badge) is no background to it, and one moved wholly off its host (an
-  // offset of 100% or more, or far off the page) doesn't reach it. A size or
-  // offset in any other unit is taken as possibly covering the text.
-  function __noLayoutPseudoMayCover(p, el) {
-    const px = (v) => {
-      const m = /^(-?\d*\.?\d+)px$/.exec(String(v || ''));
-      return m ? Number(m[1]) : null;
-    };
-    const pct = (v) => {
-      const m = /^(-?\d*\.?\d+)%$/.exec(String(v || ''));
-      return m ? Number(m[1]) : null;
-    };
-    let fontPx = 16;
-    try {
-      const f = px(trim((computedStyle(el) || {}).fontSize || ''));
-      if (f && f > 0) fontPx = f;
-    } catch {}
-    const w = px(p.width);
-    const h = px(p.height);
-    if ((w !== null && w < fontPx) || (h !== null && h < fontPx)) return false;
-    for (const side of ['top', 'right', 'bottom', 'left']) {
-      const v = p[side];
-      const percent = pct(v);
-      if (percent !== null && Math.abs(percent) >= 100) return false;
-      const length = px(v);
-      if (length !== null && length <= -1000) return false;
-    }
-    return true;
-  }
   function __noLayoutPseudoUnder(el, chain) {
-    for (const host of chain) {
+    const hosts = [el];
+    const last = chain[chain.length - 1];
+    if (last && last !== el) hosts.push(last);
+    for (const host of hosts) {
       let root;
       try {
         root = dom.getRootNode(host);
@@ -8894,7 +8858,7 @@ function createContrastHelpers(opts, shared) {
         } catch {
           matched = false;
         }
-        if (!matched || !__noLayoutPseudoMayCover(p, el)) continue;
+        if (!matched) continue;
         return {
           selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
           element: describeElement(host) + p.pseudo,
@@ -8909,9 +8873,10 @@ function createContrastHelpers(opts, shared) {
   // Without a layout (jsdom), where an SVG shape paints can't be told. A
   // shape painted before SVG text in the same <svg> may lie behind it, and
   // then the text's background can't be told either: the shape, as paint
-  // in the way, or null. A shape certainly under all of the text is its
-  // background (__svgNoLayoutScan); only one painted after the last such
-  // shape is in the way. With a layout, __svgBackdropOf measures it.
+  // in the way, or null. No geometry is guessed: the text is asked about.
+  // A shape that is not drawn (display none, visibility hidden, in CSS or
+  // as an attribute) is style, not layout, and doesn't count. With a
+  // layout, __svgBackdropOf measures it.
   const __SVG_PAINT_TAGS =
     'rect, circle, ellipse, line, path, polygon, polyline, image, use, foreignObject';
   const __SVG_UNPAINTED_TAGS = new Set([
@@ -8926,37 +8891,11 @@ function createContrastHelpers(opts, shared) {
     'filter'
   ]);
   function __svgShapeMaybeBehind(el) {
-    const scan = __svgNoLayoutScan(el);
-    return scan ? scan.blocker : null;
-  }
-
-  // Without a layout, the simple, certain case is measured (round 11, D11):
-  // a <rect>, <circle> or <ellipse> painted before the text with an opaque
-  // solid fill, no transform, opacity, filter, mask or clip on it or its
-  // ancestors in the <svg>, whose geometry certainly covers the text's
-  // area. The last such shape is the text's background; a shape painted
-  // after it that may lie behind the text (any other) keeps the text
-  // asked about. { certain: { el, rgba } | null, blocker: {...} | null },
-  // or null where nothing applies (with a layout, or not SVG text).
-  const __svgNoLayoutCache = new WeakMap();
-  function __svgNoLayoutScan(el) {
     if (!__isSvgTextElement(el)) return null;
     const doc = dom.ownerDocument(el);
     if (!doc) return null;
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (__layoutByDoc.get(doc)) return null;
-    if (__svgNoLayoutCache.has(el)) return __svgNoLayoutCache.get(el);
-    let out;
-    try {
-      out = __computeSvgNoLayoutScan(el);
-    } catch {
-      out = null;
-    }
-    __svgNoLayoutCache.set(el, out);
-    return out;
-  }
-
-  function __computeSvgNoLayoutScan(el) {
     let svg = composedParent(el);
     for (
       let guard = 0;
@@ -8971,13 +8910,6 @@ function createContrastHelpers(opts, shared) {
     } catch {
       return null;
     }
-    let area;
-    const textArea = () => {
-      if (area === undefined) area = __svgTextArea(el, svg);
-      return area;
-    };
-    let certain = null;
-    let blocker = null;
     for (const shape of shapes) {
       // Painted after el (or el's own ancestor): not behind it.
       if (!(dom.compareDocumentPosition(shape, el) & 4) || __isComposedInside(el, shape)) break;
@@ -9006,23 +8938,14 @@ function createContrastHelpers(opts, shared) {
       const tag = __lname(shape);
       const shapeOnly = tag !== 'image' && tag !== 'use' && tag !== 'foreignobject';
       if (shapeOnly && !paints(fill) && !paints(stroke)) continue;
-      const rgba = __svgCertainCover(shape, cs, svg, paints(stroke), textArea);
-      if (rgba) {
-        // Opaque, over all of the text: what lies under it doesn't show.
-        certain = { el: shape, rgba };
-        blocker = null;
-        continue;
-      }
-      if (!blocker) {
-        blocker = {
-          selector: __getSimpleSelectorCached(shape, tag),
-          element: describeElement(shape),
-          property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
-          value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
-        };
-      }
+      return {
+        selector: __getSimpleSelectorCached(shape, tag),
+        element: describeElement(shape),
+        property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
+        value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
+      };
     }
-    return { certain, blocker };
+    return null;
   }
 
   // Whether an SVG shape is not drawn, without a layout (round 12, C12-4):
@@ -9053,284 +8976,6 @@ function createContrastHelpers(opts, shared) {
     return false;
   }
 
-  // An SVG length in user units: a number, px, or a percentage of `full`
-  // (NaN where `full` is unknown). NaN for anything else.
-  function __svgLength(value, full) {
-    const v = trim(value);
-    if (!v) return NaN;
-    let m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(px)?$/i.exec(v);
-    if (m) return Number.parseFloat(m[1]);
-    m = /^([+-]?(?:\d+\.?\d*|\.\d+))%$/.exec(v);
-    if (m) return Number.isFinite(full) ? (Number.parseFloat(m[1]) / 100) * full : NaN;
-    return NaN;
-  }
-
-  // The svg's viewport in user units: its viewBox, or its own width and
-  // height where it has none. { x, y, w, h }, a side NaN where unknown.
-  function __svgViewport(svg) {
-    const vb = trim(dom.getAttribute(svg, 'viewBox'));
-    if (vb) {
-      const n = vb.split(/[\s,]+/).map(Number);
-      if (n.length === 4 && n.every(Number.isFinite) && n[2] > 0 && n[3] > 0)
-        return { x: n[0], y: n[1], w: n[2], h: n[3], viewBox: true };
-      return { x: 0, y: 0, w: NaN, h: NaN, viewBox: true };
-    }
-    return {
-      x: 0,
-      y: 0,
-      w: __svgLength(dom.getAttribute(svg, 'width'), NaN),
-      h: __svgLength(dom.getAttribute(svg, 'height'), NaN),
-      viewBox: false
-    };
-  }
-
-  const __SVG_GROUP_ATTRS = ['transform', 'filter', 'mask', 'clip-path'];
-  // Whether node draws as a group or moves: a transform, opacity, a filter,
-  // a mask or a clip, as an attribute, in its style or computed.
-  function __svgGroupedOrMoved(node) {
-    for (const a of __SVG_GROUP_ATTRS) {
-      const v = trim(dom.getAttribute(node, a)).toLowerCase();
-      if (v && v !== 'none') return true;
-    }
-    const op = trim(dom.getAttribute(node, 'opacity'));
-    if (op && !(Number.parseFloat(op) >= 1)) return true;
-    if (
-      /(^|;)\s*(transform|opacity|filter|mask|clip|clip-path)\s*:/i.test(
-        String(dom.getAttribute(node, 'style') || '')
-      )
-    )
-      return true;
-    const cs = __contrastComputedStyle(node);
-    if (!cs) return false;
-    if (opacityOf(cs) < 1) return true;
-    const set = (v) => !!trim(v) && trim(v) !== 'none';
-    return (
-      set(cs.transform) ||
-      set(cs.filter) ||
-      set(cs.clipPath) ||
-      set(cs.maskImage) ||
-      set(cs.mask) ||
-      (!!cs.mixBlendMode && trim(cs.mixBlendMode) !== 'normal')
-    );
-  }
-
-  // Emoji, and characters of East Asian Width W or F (Unicode UAX #11),
-  // drawn up to two em wide.
-  const __WIDE_CHAR =
-    /[\p{Extended_Pictographic}\u1100-\u115F\u231A\u231B\u2329\u232A\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uA960-\uA97F\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6\u{16FE0}-\u{18AFF}\u{1B000}-\u{1B2FF}\u{1F000}-\u{1FAFF}\u{20000}-\u{3FFFD}]/u;
-  // The area SVG text certainly lies in, in the svg's user units, without a
-  // layout: from its x and y, its font size and its characters, each at
-  // most 1.1em wide (2em if wide), from 1.2em above the baseline to 0.4em
-  // below.
-  // null where that isn't simple: a transform, positions per character,
-  // a textLength, spacing, a vertical writing mode or a text path.
-  function __svgTextArea(el, svg) {
-    let text = el;
-    while (text && text !== svg && __lname(text) !== 'text') text = dom.parentElement(text);
-    if (!text || text === svg) return null;
-    for (let n = text; n && n !== svg; n = dom.parentElement(n)) {
-      if (__svgGroupedOrMoved(n) && n !== text) return null;
-      const t = trim(dom.getAttribute(n, 'transform'));
-      if (t && t !== 'none') return null;
-      const ncs = __contrastComputedStyle(n);
-      if (ncs && trim(ncs.transform) && trim(ncs.transform) !== 'none') return null;
-    }
-    const parts = [text, ...dom.querySelectorAll(text, '*')];
-    for (const n of parts) {
-      const name = __lname(n);
-      if (name === 'textpath') return null;
-      for (const a of ['dx', 'dy', 'rotate', 'textLength', 'letter-spacing', 'word-spacing'])
-        if (dom.hasAttribute(n, a)) return null;
-      if (n !== text && (dom.hasAttribute(n, 'x') || dom.hasAttribute(n, 'y'))) return null;
-      if (
-        /(^|;)\s*(letter-spacing|word-spacing|writing-mode|font-size)\s*:/i.test(
-          String(dom.getAttribute(n, 'style') || '')
-        ) &&
-        n !== text
-      )
-        return null;
-    }
-    const tcs = __contrastComputedStyle(text) || {};
-    if (
-      /^(vertical|tb|sideways)/.test(trim(tcs.writingMode)) ||
-      dom.hasAttribute(text, 'writing-mode')
-    )
-      return null;
-    const spacing = (v) => !trim(v) || trim(v) === 'normal' || Number.parseFloat(v) === 0;
-    if (!spacing(tcs.letterSpacing) || !spacing(tcs.wordSpacing)) return null;
-    const vp = __svgViewport(svg);
-    const x = dom.hasAttribute(text, 'x') ? __svgLength(dom.getAttribute(text, 'x'), vp.w) : 0;
-    const y = dom.hasAttribute(text, 'y') ? __svgLength(dom.getAttribute(text, 'y'), vp.h) : 0;
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
-    // The font size: the larger of the computed one and the nearest
-    // font-size attribute, which jsdom doesn't apply.
-    let fs = parsePx(tcs.fontSize);
-    if (!/^\s*[\d.]+px\s*$/.test(String(tcs.fontSize || ''))) fs = NaN;
-    const host = dom.closest(text, '[font-size]');
-    if (host && __isComposedInside(host, svg)) {
-      const a = __svgLength(dom.getAttribute(host, 'font-size'), NaN);
-      if (!Number.isFinite(a)) return null;
-      fs = Number.isFinite(fs) ? Math.max(fs, a) : a;
-    }
-    if (!Number.isFinite(fs)) fs = 16;
-    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')];
-    if (!chars.length) return null;
-    // An upper bound on the width (round 12, C12-8): 1.1em a character,
-    // above the widest Latin glyphs of common fonts (@ is about 1.02em in
-    // Arial), and 2em for emoji and wide East Asian characters. Text that
-    // fits by a clear margin is measured; text close to the edge is asked
-    // about.
-    const w = chars.reduce((sum, ch) => sum + (__WIDE_CHAR.test(ch) ? 2 : 1.1), 0) * fs;
-    const anchorHost = dom.closest(text, '[text-anchor]');
-    let anchor = trim(tcs.textAnchor) || 'start';
-    if (anchorHost && __isComposedInside(anchorHost, svg))
-      anchor = trim(dom.getAttribute(anchorHost, 'text-anchor')).toLowerCase();
-    const rtl = trim(tcs.direction) === 'rtl' || !!dom.closest(text, '[direction="rtl"]');
-    let left;
-    let right;
-    if (rtl || !/^(start|middle|end)$/.test(anchor)) {
-      left = x - w;
-      right = x + w;
-    } else if (anchor === 'middle') {
-      left = x - w / 2;
-      right = x + w / 2;
-    } else if (anchor === 'end') {
-      left = x - w;
-      right = x;
-    } else {
-      left = x;
-      right = x + w;
-    }
-    // A baseline set as an attribute, or in CSS on the text or a part of it
-    // (round 12, C12-5): jsdom computes CSS ones, and passes
-    // dominant-baseline down, but applies no attribute.
-    const baselineSet =
-      ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
-        (a) => !!dom.closest(text, '[' + a + ']')
-      ) ||
-      parts.some((n) => {
-        const ncs = n === text ? tcs : __contrastComputedStyle(n);
-        if (!ncs || typeof ncs.getPropertyValue !== 'function') return false;
-        const db = trim(ncs.getPropertyValue('dominant-baseline')).toLowerCase();
-        const ab = trim(ncs.getPropertyValue('alignment-baseline')).toLowerCase();
-        const bs = trim(ncs.getPropertyValue('baseline-shift')).toLowerCase();
-        return (
-          !/^(|auto|alphabetic)$/.test(db) ||
-          !/^(|auto|baseline|alphabetic)$/.test(ab) ||
-          !/^(|0|0px|baseline)$/.test(bs)
-        );
-      });
-    const above = baselineSet ? 1.3 * fs : 1.2 * fs;
-    const below = baselineSet ? 1.3 * fs : 0.4 * fs;
-    return { left, right, top: y - above, bottom: y + below };
-  }
-
-  const __SVG_GEOMETRY_PROPS = ['x', 'y', 'width', 'height', 'rx', 'ry', 'r', 'cx', 'cy'];
-  // The opaque color a <rect>, <circle> or <ellipse> certainly paints
-  // under all of el's text, without a layout, or null.
-  function __svgCertainCover(shape, cs, svg, stroked, textArea) {
-    const tag = __lname(shape);
-    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
-    // Its own <svg>: not in a nested one, a <switch> or a link's group.
-    for (let p = dom.parentElement(shape); p !== svg; p = dom.parentElement(p)) {
-      if (!p) return null;
-      const name = __lname(p);
-      if (name !== 'g' && name !== 'a') return null;
-      if (__svgGroupedOrMoved(p)) return null;
-    }
-    if (__svgGroupedOrMoved(shape)) return null;
-    const fill = parseCssColorToRgba(cs.fill);
-    if (!fill || fill.a < 1) return null;
-    const fo = trim(dom.getAttribute(shape, 'fill-opacity')) || trim(cs.fillOpacity);
-    if (fo && !(Number.parseFloat(fo) >= 1)) return null;
-    if (
-      /(^|;)\s*(fill-opacity|x|y|width|height|rx|ry|r|cx|cy)\s*:/i.test(
-        String(dom.getAttribute(shape, 'style') || '')
-      )
-    )
-      return null;
-    // Geometry set in CSS overrides the attributes (SVG 2), and jsdom
-    // places nothing by it: a style sheet that sets any is not read, and the
-    // text is asked about (round 12, C12-6).
-    for (const prop of __SVG_GEOMETRY_PROPS) {
-      const decl = __authorColorDeclsOf(shape, prop);
-      if (decl.unknown || decl.values.length) return null;
-    }
-    const vp = __svgViewport(svg);
-    const attr = (a, full, dflt) =>
-      dom.hasAttribute(shape, a) ? __svgLength(dom.getAttribute(shape, a), full) : dflt;
-    let half = 0;
-    if (stroked) {
-      const sw = dom.hasAttribute(shape, 'stroke-width')
-        ? __svgLength(dom.getAttribute(shape, 'stroke-width'), NaN)
-        : parsePx(cs.strokeWidth) || 1;
-      if (!Number.isFinite(sw)) return null;
-      half = Math.max(0, sw) / 2;
-    }
-    const rgb = { r: fill.r, g: fill.g, b: fill.b, a: 1 };
-    if (tag === 'rect') {
-      const x = attr('x', vp.w, 0);
-      const y = attr('y', vp.h, 0);
-      const w = attr('width', vp.w, NaN);
-      const h = attr('height', vp.h, NaN);
-      if (![x, y, w, h].every(Number.isFinite) || !(w > 0) || !(h > 0)) return null;
-      let rx = attr('rx', vp.w, NaN);
-      let ry = attr('ry', vp.h, NaN);
-      const rxSet = dom.hasAttribute(shape, 'rx');
-      const rySet = dom.hasAttribute(shape, 'ry');
-      if ((rxSet && !Number.isFinite(rx)) || (rySet && !Number.isFinite(ry))) return null;
-      if (!rxSet) rx = rySet ? ry : 0;
-      if (!rySet) ry = rx;
-      rx = Math.min(Math.max(rx, 0), w / 2);
-      ry = Math.min(Math.max(ry, 0), h / 2);
-      // The whole svg: covers any text in it.
-      const whole = (v, full, raw) => trim(raw) === '100%' || (Number.isFinite(full) && v === full);
-      if (
-        !rx &&
-        !ry &&
-        x === vp.x &&
-        y === vp.y &&
-        whole(w, vp.w, dom.getAttribute(shape, 'width')) &&
-        whole(h, vp.h, dom.getAttribute(shape, 'height'))
-      )
-        return rgb;
-      const area = textArea();
-      if (!area) return null;
-      const ix = Math.max(rx, half);
-      const iy = Math.max(ry, half);
-      return area.left >= x + ix &&
-        area.right <= x + w - ix &&
-        area.top >= y + iy &&
-        area.bottom <= y + h - iy
-        ? rgb
-        : null;
-    }
-    const cx = attr('cx', NaN, 0);
-    const cy = attr('cy', NaN, 0);
-    let rx;
-    let ry;
-    if (tag === 'circle') {
-      rx = attr('r', NaN, NaN);
-      ry = rx;
-    } else {
-      rx = attr('rx', NaN, NaN);
-      ry = attr('ry', NaN, NaN);
-    }
-    if (![cx, cy, rx, ry].every(Number.isFinite)) return null;
-    rx -= half;
-    ry -= half;
-    if (!(rx > 0) || !(ry > 0)) return null;
-    const area = textArea();
-    if (!area) return null;
-    const inside = (px, py) => ((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2 <= 1;
-    return inside(area.left, area.top) &&
-      inside(area.right, area.top) &&
-      inside(area.left, area.bottom) &&
-      inside(area.right, area.bottom)
-      ? rgb
-      : null;
-  }
-
   // -------- SVG shapes behind SVG text (#96) --------
   //
   // SVG paints in document order, so a shape earlier than a text element and
@@ -9340,8 +8985,8 @@ function createContrastHelpers(opts, shared) {
   // all of the text clear of its rounded corners and stroke, with nothing
   // between it and the text that groups it (opacity, a filter, a mask or a
   // clip). Several such shapes stack. Any other shape under or over the text
-  // is left to the paint-overlap check, which reports it. With a layout;
-  // without one, __svgNoLayoutScan measures the same shapes.
+  // is left to the paint-overlap check, which reports it. With a layout
+  // only: without one, the text is asked about (__svgShapeMaybeBehind).
   const __svgBackdropCache = new WeakMap();
 
   function __svgBackdropOf(el) {
@@ -9359,14 +9004,8 @@ function createContrastHelpers(opts, shared) {
 
   function __computeSvgBackdrop(el) {
     const index = __getOverlapIndex();
-    if (!index) {
-      // Without a layout: the last shape certainly under all of the text,
-      // with nothing uncertain painted after it (__svgNoLayoutScan).
-      const scan = __svgNoLayoutScan(el);
-      return scan && scan.certain && !scan.blocker
-        ? { layers: [scan.certain], blocked: false }
-        : null;
-    }
+    // Without a layout, nothing is measured (__svgShapeMaybeBehind asks).
+    if (!index) return null;
     let svg = composedParent(el);
     let guard = 0;
     while (

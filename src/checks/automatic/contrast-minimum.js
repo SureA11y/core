@@ -14,10 +14,18 @@
  *   foreground are actually computable. Eligible text that is not computable
  *   leaves this rule notApplicable rather than cantTell: reporting that
  *   uncertainty belongs to contrast-computable, so the two never report the
- *   same text twice. A currency sign or 〒 beside letters or digits on its
- *   line ("€" in <span>€</span>45,00) is text here, at the text ratio, and
- *   a failure on it says that it is read with the price beside it;
- *   symbol-graphic-contrast leaves it out.
+ *   same text twice. Without a layout (jsdom), text whose background
+ *   needs one to place (SVG text after a drawn shape in its <svg>, text
+ *   under a positioned ::before or ::after that paints) is not computable,
+ *   and is left to contrast-computable: no geometry is guessed. A currency
+ *   sign or 〒 beside letters or digits on its line ("€" in
+ *   <span>€</span>45,00) is text here, at the text ratio, and a failure on
+ *   it says that it is read with the price beside it;
+ *   symbol-graphic-contrast leaves it out. Where the sign and its
+ *   neighbour are separate flex or grid items, or one floats or is
+ *   absolutely positioned, a browser computes a block boundary between
+ *   them and the sign is a graphic; jsdom computes no such display, and
+ *   reads them as one run.
  * @expectation
  *   Every computable text node reaches the ratio SC 1.4.3 requires for its
  *   size: 3:1 for large text, 4.5:1 for everything else. Text is large at
