@@ -239,8 +239,9 @@ test(`${RULE_ID}: a focus pseudo inside :is() or :where() is a focus rule (round
     );
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
     assert.ok(hasOccurrenceForId(rule, 'a'), css);
+    // Quoted as Chromium serializes it: a space after each comma (F12-9).
     assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, [
-      css.slice(0, css.indexOf('{'))
+      css.slice(0, css.indexOf('{')).replace(/,(?! )/g, ', ')
     ]);
   }
   // Another argument the link does not meet, or a replacement written the same way.
@@ -854,5 +855,22 @@ test(`${RULE_ID}: ::part(), ::slotted() and :host rules that remove the outline`
       flagged === 'button' ? html.startsWith('<button') : html.includes(`id="${flagged}"`),
       label
     );
+  }
+});
+
+// The selector is quoted as Chromium serializes it, so jsdom and a browser
+// give the same message (round 12, F12-9).
+test(`${RULE_ID}: quotes the selector as Chromium serializes it`, () => {
+  const cases = [
+    ['a:where(:focus,:hover)', 'a:where(:focus, :hover)'],
+    ['main>a:focus', 'main > a:focus'],
+    ['main  a:is( .x , :focus )', 'main a:is(.x, :focus)'],
+    ['a[href=x]:focus', 'a[href="x"]:focus'],
+    ['*:focus', ':focus']
+  ];
+  for (const [css, quoted] of cases) {
+    const html = page(`${css}{outline:none}`, '<main><a class="x" href="x">x</a></main>');
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+    assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, [quoted], css);
   }
 });

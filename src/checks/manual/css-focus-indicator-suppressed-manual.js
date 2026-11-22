@@ -127,8 +127,10 @@
  *   one selector that can't be parsed (`button:-moz-focusring,
  *   button:focus`) is invalid as a whole, and a browser drops the rule; in
  *   jsdom, which keeps it, the list is tested with a query and the rule
- *   skipped when it throws. Selectors are quoted as browsers
- *   serialize them: `*:focus` reads `:focus`.
+ *   skipped when it throws. Selectors are quoted as Chromium serializes
+ *   them, in jsdom too: `*:focus` reads `:focus`, `a:where(:focus,:hover)`
+ *   reads `a:where(:focus, :hover)`, `a>b` reads `a > b` and
+ *   `[type=text]` reads `[type="text"]`.
  */
 
 const id = 'css-focus-indicator-suppressed';
@@ -791,11 +793,93 @@ function runInPage(ctx) {
     validLists.set(selectorText, valid);
     return valid;
   }
-  // The selector as quoted in the message, serialized as browsers do: a
-  // universal selector before another simple selector is left out
-  // (`*:focus` reads `:focus`), as Chromium already gives it.
+  // The selector as quoted in the message, serialized as Chromium gives it,
+  // so jsdom quotes it the same (round 12, U12-16, F12-9): a universal
+  // selector before another simple selector is left out (`*:focus` reads
+  // `:focus`), white space is one space, a combinator has a space on each
+  // side, a comma in a selector argument (`:is()`, `:where()`, `:not()`,
+  // `:has()`) one after it, and an attribute's value is quoted
+  // (`[type="text"]`). An argument that is not a selector (`:nth-child()`,
+  // `::part()`) is only trimmed.
+  const SELECTOR_ARGS = /:(is|where|not|has|matches|-webkit-any|host|host-context|slotted)\($/i;
+  function serializedAttribute(text) {
+    const m =
+      /^\[\s*([^\s~|^$*=\]]+)\s*([~|^$*]?=)\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s"'\]]+)\s*([is])?\s*\]$/i.exec(
+        text
+      );
+    if (!m) return text.replace(/^\[\s*/, '[').replace(/\s*\]$/, ']');
+    let value = m[3];
+    if (value[0] === "'")
+      value = '"' + value.slice(1, -1).replace(/\\'/g, "'").replace(/"/g, '\\"') + '"';
+    else if (value[0] !== '"') value = '"' + value + '"';
+    return `[${m[1]}${m[2]}${value}${m[4] ? ' ' + m[4].toLowerCase() : ''}]`;
+  }
   function quotedSelector(part) {
-    return trim(part).replace(/(^|[\s>+~(,])\*(?=[:.#[])/g, '$1');
+    const text = trim(part);
+    let out = '';
+    const stack = []; // per open parenthesis: whether it holds a selector
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '\\') {
+        out += ch + (text[i + 1] || '');
+        i += 1;
+        continue;
+      }
+      if (ch === '"' || ch === "'") {
+        let j = i + 1;
+        while (j < text.length && text[j] !== ch) j += text[j] === '\\' ? 2 : 1;
+        out += text.slice(i, j + 1);
+        i = j;
+        continue;
+      }
+      if (ch === '[') {
+        let j = i + 1;
+        let quote = '';
+        for (; j < text.length; j++) {
+          if (quote) {
+            if (text[j] === '\\') j += 1;
+            else if (text[j] === quote) quote = '';
+          } else if (text[j] === '"' || text[j] === "'") quote = text[j];
+          else if (text[j] === ']') break;
+        }
+        out += serializedAttribute(text.slice(i, j + 1));
+        i = j;
+        continue;
+      }
+      const inSelector = !stack.length || stack[stack.length - 1];
+      if (ch === '(') {
+        stack.push(SELECTOR_ARGS.test(out + ch));
+        out += ch;
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      if (ch === ')') {
+        stack.pop();
+        out = out.replace(/ +$/, '') + ch;
+        continue;
+      }
+      if (/\s/.test(ch)) {
+        if (!/[\s(]$/.test(out)) out += ' ';
+        continue;
+      }
+      if (!inSelector) {
+        out += ch;
+        continue;
+      }
+      if (ch === ',') {
+        out = out.replace(/ +$/, '') + ', ';
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      if (ch === '>' || ch === '+' || ch === '~') {
+        out = out.replace(/ +$/, '');
+        out += (/\($/.test(out) || !out ? '' : ' ') + ch + ' ';
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      out += ch;
+    }
+    return trim(out).replace(/(^|[\s>+~(,])\*(?=[:.#[])/g, '$1');
   }
 
   // Rules that reach across a shadow tree's edge (round 12, F12-8), read

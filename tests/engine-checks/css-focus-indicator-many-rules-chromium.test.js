@@ -125,6 +125,15 @@ test(
       []
     ]);
     assert.deepEqual(await run('*:focus{outline:none}'), ['cantTell', [[':focus']]]);
+    // The quote jsdom gives too (round 12, F12-9).
+    for (const [css, quoted] of [
+      ['button:where(:focus,:hover)', 'button:where(:focus, :hover)'],
+      ['main>button:focus', 'main > button:focus'],
+      ['main  button:is( .x , :focus )', 'main button:is(.x, :focus)'],
+      ['button:not([type=reset]):focus', 'button:not([type="reset"]):focus']
+    ]) {
+      assert.deepEqual(await run(`${css}{outline:none}`), ['cantTell', [[quoted]]], css);
+    }
   }
 );
 
