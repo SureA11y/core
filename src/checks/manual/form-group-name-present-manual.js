@@ -45,6 +45,9 @@
  *   seen, nor are options split between two named groups.
  * - The name of a group comes from the accessible name helper, with a
  *   fieldset's first <legend> as a fallback.
+ * - A group contains the options in the flat tree, as the accessibility
+ *   tree nests them: options slotted into a shadow <fieldset>, or in a
+ *   shadow root inside a light one, are in that fieldset.
  */
 
 const id = 'form-group-name-present';
@@ -133,15 +136,27 @@ function runInPage(ctx) {
     return false;
   }
 
-  // Whether an element that contains every option is a named group.
-  function inNamedGroup(members) {
-    const first = members[0];
+  // The element's ancestors in the flat tree: across a slot into the
+  // shadow tree it is drawn in, and out of a shadow root to its host, as
+  // the accessibility tree nests them.
+  function flatAncestors(el) {
+    const out = new Set();
     for (
-      let a = helpers.flatParentElement(first), i = 0;
+      let a = helpers.flatParentElement(el), i = 0;
       a && i < 200;
       a = helpers.flatParentElement(a), i++
     ) {
-      if (!members.every((m) => dom.contains(a, m))) continue;
+      out.add(a);
+    }
+    return out;
+  }
+
+  // Whether an element that contains every option, in the flat tree, is a
+  // named group.
+  function inNamedGroup(members) {
+    const rest = members.slice(1).map(flatAncestors);
+    for (const a of flatAncestors(members[0])) {
+      if (!rest.every((s) => s.has(a))) continue;
       if (isNamedGroup(a)) return true;
     }
     return false;

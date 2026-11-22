@@ -98,6 +98,33 @@ test(`${RULE_ID}: a single checkbox, options without a shared name, and hidden o
   assertRule(twoForms, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: a named group made through shadow DOM contains the options in the flat tree`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  const R2 =
+    '<label><input type="radio" name="s"> S</label><label><input type="radio" name="s"> M</label>';
+  const cases = [
+    // light radios slotted into a shadow <fieldset>
+    [`<x-group id="h">${R2}</x-group>`, '<fieldset><legend>Size</legend><slot></slot></fieldset>'],
+    // radios in a shadow root inside a light <fieldset>
+    ['<fieldset><legend>Size</legend><x-r id="h"></x-r></fieldset>', R2],
+    // a named radiogroup in the shadow root, radios slotted
+    [
+      `<x-g id="h">${R2}</x-g>`,
+      '<p id="q">Size</p><div role="radiogroup" aria-labelledby="q"><slot></slot></div>'
+    ]
+  ];
+  for (const [light, shadow] of cases) {
+    const dom = createDom(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${light}</main></body></html>`
+    );
+    dom.window.document.getElementById('h').attachShadow({ mode: 'open' }).innerHTML = shadow;
+    assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+});
+
 test(`${RULE_ID}: the summary names the group in every locale`, () => {
   const occ = run(`<p>Versand</p>${RADIOS}`, { locale: 'de' }).checksResults.find(
     (r) => r.ruleId === RULE_ID
