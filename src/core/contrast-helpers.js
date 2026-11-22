@@ -8732,9 +8732,14 @@ function createContrastHelpers(opts, shared) {
     );
   }
 
+  // Emoji, and characters of East Asian Width W or F (Unicode UAX #11),
+  // drawn up to two em wide.
+  const __WIDE_CHAR =
+    /[\p{Extended_Pictographic}\u1100-\u115F\u231A\u231B\u2329\u232A\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uA960-\uA97F\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6\u{16FE0}-\u{18AFF}\u{1B000}-\u{1B2FF}\u{1F000}-\u{1FAFF}\u{20000}-\u{3FFFD}]/u;
   // The area SVG text certainly lies in, in the svg's user units, without a
-  // layout: from its x and y, its font size and its number of characters,
-  // each at most one em wide, from 1.2em above the baseline to 0.4em below.
+  // layout: from its x and y, its font size and its characters, each at
+  // most 1.1em wide (2em if wide), from 1.2em above the baseline to 0.4em
+  // below.
   // null where that isn't simple: a transform, positions per character,
   // a textLength, spacing, a vertical writing mode or a text path.
   function __svgTextArea(el, svg) {
@@ -8786,9 +8791,14 @@ function createContrastHelpers(opts, shared) {
       fs = Number.isFinite(fs) ? Math.max(fs, a) : a;
     }
     if (!Number.isFinite(fs)) fs = 16;
-    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')].length;
-    if (!chars) return null;
-    const w = chars * fs;
+    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')];
+    if (!chars.length) return null;
+    // An upper bound on the width (round 12, C12-8): 1.1em a character,
+    // above the widest Latin glyphs of common fonts (@ is about 1.02em in
+    // Arial), and 2em for emoji and wide East Asian characters. Text that
+    // fits by a clear margin is measured; text close to the edge is asked
+    // about.
+    const w = chars.reduce((sum, ch) => sum + (__WIDE_CHAR.test(ch) ? 2 : 1.1), 0) * fs;
     const anchorHost = dom.closest(text, '[text-anchor]');
     let anchor = trim(tcs.textAnchor) || 'start';
     if (anchorHost && __isComposedInside(anchorHost, svg))

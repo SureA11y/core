@@ -116,3 +116,20 @@ test('SVG geometry set in CSS keeps text over the shape asked about, without a l
   );
   assert.equal(plain.outcome, 'pass');
 });
+
+test('the width SVG text may take is a real upper bound, without a layout (C12-8)', () => {
+  const bar = (w, label) =>
+    svgPage(
+      `<rect width="${w}" height="40" fill="#000"/><text x="4" y="27" font-size="16" fill="#fff">${label}</text>`
+    );
+  const outcome = (html) => check(html, 'contrast-computable').outcome;
+  // Fits by a clear margin: measured.
+  assert.equal(outcome(bar(130, 'Sales')), 'pass');
+  // 10 × 16px is 160px, and some glyphs are wider than 1em: asked about at 170px.
+  assert.equal(outcome(bar(170, 'MMMMMMMMMM')), 'cantTell');
+  assert.equal(outcome(bar(190, 'MMMMMMMMMM')), 'pass');
+  // Emoji and wide East Asian characters take up to 2em.
+  assert.equal(outcome(bar(40, '😀A')), 'cantTell');
+  assert.equal(outcome(bar(60, '売上')), 'cantTell');
+  assert.equal(outcome(bar(72, '売上')), 'pass');
+});
