@@ -93,3 +93,41 @@ test(`${RULE_ID}: a style or CSS rule wins over a presentational hint under jsdo
     pass
   );
 });
+
+// Without a layout, where an SVG shape paints can't be told: text painted
+// after a shape in its <svg> is asked about, not measured against white
+// (round 11, R11F-1).
+test(`${RULE_ID}: SVG text after a painted SVG shape is asked about under jsdom`, () => {
+  const svgPage = (inner) =>
+    `<!doctype html><html lang="en"><head><title>Hints</title></head><body><main><svg width="200" height="40">${inner}</svg></main></body></html>`;
+  const outcomes = (inner) => {
+    const r = runa11yCoreOnHtml(svgPage(inner), {
+      runOnly: [RULE_ID, 'contrast-computable']
+    }).checksResults;
+    const of = (id) => r.find((c) => c.ruleId === id);
+    return [
+      of(RULE_ID).outcome,
+      of('contrast-computable').outcome,
+      of('contrast-computable')
+        .occurrences.map((o) => o.reasonCode || '')
+        .join()
+    ];
+  };
+  const text = (attrs) => `<text x="10" y="25" ${attrs}>Revenue 2026</text>`;
+  for (const inner of [
+    `<rect width="200" height="40" fill="#000"/>${text('fill="#aaaaaa"')}`,
+    `<rect width="200" height="40" style="fill:#000"/>${text('style="fill:#aaaaaa"')}`,
+    `<g><circle cx="60" cy="20" r="60" fill="#333"/></g>${text('fill="#aaaaaa"')}`,
+    `<rect width="200" height="40" fill="none" stroke="#000"/>${text('fill="#aaaaaa"')}`
+  ]) {
+    assert.deepStrictEqual(outcomes(inner).slice(0, 2), ['notApplicable', 'cantTell'], inner);
+  }
+  // Nothing painted before the text: measured as before.
+  for (const inner of [
+    `${text('fill="#eeeeee"')}<rect width="200" height="40" fill="#000"/>`,
+    `<defs><rect id="r" width="200" height="40" fill="#000"/></defs>${text('fill="#eeeeee"')}`,
+    `<rect width="200" height="40" fill="none"/>${text('fill="#eeeeee"')}`
+  ]) {
+    assert.deepStrictEqual(outcomes(inner).slice(0, 2), ['fail', 'pass'], inner);
+  }
+});

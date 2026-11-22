@@ -7938,7 +7938,7 @@ function createContrastHelpers(opts, shared) {
     try {
       if (!el || dom.nodeType(el) !== 1 || !chain.length) return null;
       const index = __getOverlapIndex();
-      if (!index) return null;
+      if (!index) return __svgShapeMaybeBehind(el);
       const opaque = chain[chain.length - 1];
       const ancestors = new Set(chain);
       // Painters near el's box at all, before measuring its text, which
@@ -8056,6 +8056,81 @@ function createContrastHelpers(opts, shared) {
     } catch {
       return null;
     }
+  }
+
+  // Without a layout (jsdom), where an SVG shape paints can't be told. A
+  // shape painted before SVG text in the same <svg> may lie behind it, and
+  // then the text's background can't be told either: the shape, as paint
+  // in the way, or null. With a layout, __svgBackdropOf measures it.
+  const __SVG_PAINT_TAGS =
+    'rect, circle, ellipse, line, path, polygon, polyline, image, use, foreignObject';
+  const __SVG_UNPAINTED_TAGS = new Set([
+    'defs',
+    'clippath',
+    'mask',
+    'pattern',
+    'symbol',
+    'marker',
+    'lineargradient',
+    'radialgradient',
+    'filter'
+  ]);
+  function __svgShapeMaybeBehind(el) {
+    if (!__isSvgTextElement(el)) return null;
+    const doc = dom.ownerDocument(el);
+    if (!doc) return null;
+    if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+    if (__layoutByDoc.get(doc)) return null;
+    let svg = composedParent(el);
+    for (
+      let guard = 0;
+      svg && guard < 1000 && !(dom.namespaceURI(svg) === __SVG_NS && __lname(svg) === 'svg');
+      guard++
+    )
+      svg = composedParent(svg);
+    if (!svg) return null;
+    let shapes;
+    try {
+      shapes = dom.querySelectorAll(svg, __SVG_PAINT_TAGS);
+    } catch {
+      return null;
+    }
+    for (const shape of shapes) {
+      // Painted after el (or el's own ancestor): not behind it.
+      if (!(dom.compareDocumentPosition(shape, el) & 4) || __isComposedInside(el, shape)) break;
+      if (dom.namespaceURI(shape) !== __SVG_NS) continue;
+      let unpainted = false;
+      for (let p = dom.parentElement(shape); p && p !== svg; p = dom.parentElement(p)) {
+        if (__SVG_UNPAINTED_TAGS.has(__lname(p))) {
+          unpainted = true;
+          break;
+        }
+      }
+      if (unpainted) continue;
+      const cs = __contrastComputedStyle(shape);
+      if (!cs || trim(cs.display) === 'none' || trim(cs.visibility) === 'hidden') continue;
+      const paints = (v) => {
+        if (!v || v === 'none') return false;
+        const c = parseCssColorToRgba(v);
+        return !c || c.a > 0;
+      };
+      const fill = trim(cs.fill);
+      // jsdom reads no stroke attribute: where it is set, the shape may
+      // paint it (asking about the text either way is safe).
+      let stroke = trim(cs.stroke);
+      if (!paints(stroke) && dom.hasAttribute(shape, 'stroke'))
+        stroke = trim(dom.getAttribute(shape, 'stroke')).toLowerCase();
+      const tag = __lname(shape);
+      const shapeOnly = tag !== 'image' && tag !== 'use' && tag !== 'foreignobject';
+      if (shapeOnly && !paints(fill) && !paints(stroke)) continue;
+      return {
+        selector: __getSimpleSelectorCached(shape, tag),
+        element: describeElement(shape),
+        property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
+        value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
+      };
+    }
+    return null;
   }
 
   // -------- SVG shapes behind SVG text (#96) --------
