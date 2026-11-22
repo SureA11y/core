@@ -76,7 +76,7 @@ Total rules: **154**. With fixture: **149**. Without fixture: **5**.
 | form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 43 | 13 | 12 | 0 | 18 |
 | form-control-programmatic-label-quality | manual | `tests/fixtures/form-control-programmatic-label-quality-manual-all-scenarios.html` | 18 | 0 | 0 | 0 | 18 |
 | form-control-single-label | automatic | `tests/fixtures/form-control-single-label-all-scenarios.html` | 9 | 5 | 0 | 3 | 1 |
-| form-group-name-present | manual | `tests/fixtures/form-group-name-present-all-scenarios.html` | 11 | 3 | 0 | 5 | 3 |
+| form-group-name-present | manual | `tests/fixtures/form-group-name-present-all-scenarios.html` | 12 | 3 | 0 | 6 | 3 |
 | heading-order | manual | `tests/fixtures/heading-order-all-scenarios.html` | 4 | 0 | 0 | 3 | 1 |
 | heading-quality | manual | `tests/fixtures/heading-quality-all-scenarios.html` | 12 | 4 | 0 | 6 | 2 |
 | html-lang-attr-present | automatic | `tests/fixtures/language-page-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
