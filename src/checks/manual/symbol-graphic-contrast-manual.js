@@ -207,7 +207,38 @@ function runInPage(ctx) {
   // the element's own text is its, as the text-contrast rules report text:
   // <span>★<b>★★</b></span> gives “★” on the span and “★★” on the <b>,
   // each measured in its own colour, so no symbol is reported twice.
+  // The parents of the text nodes holding a symbol other than a separator,
+  // found with one walk over the text of each tree (document or shadow
+  // root): an element no such text node is a child of has no symbol text,
+  // so its children are not read one by one (round 12, P12-2).
+  const symbolParents = new Set();
+  // Each tree: true once walked, false where the walk failed.
+  const walkedTrees = new Map();
+  function mayHaveSymbolText(el) {
+    let tree;
+    try {
+      tree = dom.getRootNode(el);
+    } catch {
+      return true;
+    }
+    if (!walkedTrees.has(tree)) {
+      let ok = true;
+      try {
+        const walker = dom.createTreeWalker(dom.ownerDocument(el) || tree, tree, 4);
+        for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+          const v = String(dom.nodeValue(t) || '');
+          if (SYMBOL.test(v.replace(SEPARATORS, ''))) symbolParents.add(dom.parentNode(t));
+        }
+      } catch {
+        ok = false;
+      }
+      walkedTrees.set(tree, ok);
+    }
+    return !walkedTrees.get(tree) || symbolParents.has(el);
+  }
+
   function symbolTextOf(el) {
+    if (!mayHaveSymbolText(el)) return '';
     let own = '';
     for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
       if (dom.nodeType(n) === 3) own += String(dom.nodeValue(n) || '');
