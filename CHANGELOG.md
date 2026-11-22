@@ -24,6 +24,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Changed
 
+- **Two reason codes are split by cause, and a 1.17 baseline still matches the moved findings** ([`BASELINE.md`](docs/BASELINE.md#upgrading), `src/baseline-moves.json`). `deprecated-elements-not-used`: a `<marquee>` that stops only while the pointer is over it moves from `MARQUEE_PAUSE_MECHANISM_UNKNOWN` to `MARQUEE_STOPS_ONLY_ON_HOVER`; other marquees keep the old code. `page-title-patterns`: a placeholder left in the title, such as `undefined` or `{{title}}`, moves from `titleReview` to `placeholderTitle`; other titles keep the old code.
 - **`css-focus-indicator-suppressed` reports outlines removed by `::part()`, `::slotted()` and `:host` rules** on the elements those rules style (round 12, F12-8).
 - **`target-size-minimum` and `target-size-enhanced` exempt a native control as sized by the browser only when the author sets none of these on it**: width, height, their logical and min-/max- forms, padding, font-size, line-height, zoom or transform. A text input given `height: 20px` is judged as a target again (round 12, R12F-11).
 - **`page-title-patterns` reads unreplaced WordPress SEO variables** (`%%title%% %%sep%% %%sitename%%`) as a placeholder that leans fail, and WordPress's "Sample Page" and its Spanish, German, French and Japanese translations as a default title (round 12, R12F-14).

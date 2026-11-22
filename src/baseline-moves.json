@@ -1,4 +1,23 @@
 {
   "$comment": "The findings whose reason code changed in a minor release while the finding stayed the same (a rule that gave none now gives one, or a code split by cause): a baseline entry written under the old code still matches the finding under the new one, with the same rule, markup and frame (src/baseline.js, docs/BASELINE.md \"Upgrading\"). `since` is the minor release the finding moved in; `stillGiven` marks a split, whose old code the rule still gives for other findings. scripts/freeze-finding-ids.js drops a move at the release after the one it shipped in, so a move applies to baselines from the one minor release before it.",
-  "moves": []
+  "moves": [
+    {
+      "ruleId": "deprecated-elements-not-used",
+      "from": "MARQUEE_PAUSE_MECHANISM_UNKNOWN",
+      "to": [
+        "MARQUEE_STOPS_ONLY_ON_HOVER"
+      ],
+      "stillGiven": true,
+      "since": "1.18"
+    },
+    {
+      "ruleId": "page-title-patterns",
+      "from": "titleReview",
+      "to": [
+        "placeholderTitle"
+      ],
+      "stillGiven": true,
+      "since": "1.18"
+    }
+  ]
 }
