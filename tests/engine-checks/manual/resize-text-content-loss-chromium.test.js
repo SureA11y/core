@@ -334,6 +334,23 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.doesNotMatch(o.summary, /200% zoom/);
   });
 
+  // The CSS quoted is the CSS the author wrote: content-visibility, which
+  // Chromium computes into contain (round 12, U12-3).
+  await t.test('a box clipped by content-visibility: auto quotes it', async () => {
+    const cv = await scan(
+      page(
+        '.box{content-visibility:auto;width:200px;height:30px}',
+        `<div class="box">${LONG}</div>`
+      )
+    );
+    assert.equal(cv.outcome, 'cantTell');
+    assert.equal(cv.occurrences[0].data.details.clipCss, 'height: 30px; content-visibility: auto');
+    const paint = await scan(
+      page('.box{contain:paint;width:200px;height:30px}', `<div class="box">${LONG}</div>`)
+    );
+    assert.equal(paint.occurrences[0].data.details.clipCss, 'height: 30px; contain: paint');
+  });
+
   await t.test('in a frame not named as the page, notApplicable', async () => {
     const p = await browser.newPage(ZOOMED);
     try {

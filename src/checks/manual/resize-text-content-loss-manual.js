@@ -76,7 +76,8 @@
  *   - `clipCss` (where it can be read): the CSS that cuts the text off, as
  *     declarations: what fixes the box's size on that axis
  *     (`white-space: nowrap`, `width`, `height`, `max-height`, a clamp) and
- *     what hides the overflow, as `height: 48px; overflow: hidden`.
+ *     what hides the overflow, as `height: 48px; overflow: hidden`, or
+ *     `content-visibility: auto` where that is what clips.
  *   - `container.widthPx`, `container.heightPx`: the size of the clipping
  *     box.
  *   - `viewport.width`, `viewport.height`: the viewport the page was laid
@@ -683,6 +684,10 @@ function runInPage(ctx) {
       const own = axis === 'x' ? ox : oy;
       if (own && own !== 'visible')
         parts.push(ox === oy ? `overflow: ${own}` : `overflow-${axis}: ${own}`);
+      // A box the scan lays out in place of content-visibility: auto holds
+      // paint containment instead (contain: content): name what the author
+      // wrote.
+      else if (cvClips(c.el)) parts.push('content-visibility: auto');
       else if (cs.contain && cs.contain !== 'none') parts.push(`contain: ${cs.contain}`);
       else if (c.shape && cs.clipPath && cs.clipPath !== 'none')
         parts.push(`clip-path: ${cs.clipPath}`);
