@@ -332,7 +332,11 @@ function t(key, fallback, params, engineOptions) {
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
-  return applyI18nParams(base, params);
+  // Decimals read as the message's language writes them ("1,36:1" in
+  // French): the locale asked for where its string was found, English
+  // otherwise. The params themselves keep plain numbers.
+  const numberLocale = v ? normalizeLocale(engineOptions && engineOptions.locale) : 'en';
+  return applyI18nParams(base, localizeNumberParams(params, numberLocale));
 }
 
 function resolveRuleDefI18n(def, engineOptions) {
@@ -26079,6 +26083,49 @@ const normalizeLean = (function normalizeLean(input) {
   return out;
 });
 
+// Inlined from src/core/number-format.js -- t() writes a message's decimals
+// as its language does.
+const formatLocaleDecimal = (function formatLocaleDecimal(value, locale) {
+  let text;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return value;
+    text = String(value);
+  } else if (typeof value === 'string') {
+    text = value;
+  } else {
+    return value;
+  }
+  const m = /^(-?\d+)\.(\d+)$/.exec(text);
+  if (!m || !locale) return value;
+  // The separator, worked out once per locale. A locale Intl does not know,
+  // or one that writes other digits, keeps the point.
+  const key = String(locale);
+  const cache = formatLocaleDecimal.separators || (formatLocaleDecimal.separators = {});
+  if (!Object.prototype.hasOwnProperty.call(cache, key)) {
+    let sep = '.';
+    try {
+      const shown = new Intl.NumberFormat(key, { useGrouping: false }).format(1.5);
+      if (/^1[^0-9]5$/.test(shown)) sep = shown.charAt(1);
+    } catch {
+      sep = '.';
+    }
+    cache[key] = sep;
+  }
+  return cache[key] === '.' ? value : `${m[1]}${cache[key]}${m[2]}`;
+});
+const localizeNumberParams = (function localizeNumberParams(params, locale) {
+  if (!params || typeof params !== 'object' || Array.isArray(params) || !locale) return params;
+  let out = params;
+  for (const key of Object.keys(params)) {
+    if (!/(?:ratio|threshold|Px)$/i.test(key)) continue;
+    const v = formatLocaleDecimal(params[key], locale);
+    if (v === params[key]) continue;
+    if (out === params) out = { ...params };
+    out[key] = v;
+  }
+  return out;
+});
+
 // Inlined from src/core/margin.js -- normalizeRuleResult turns a rule's
 // margin candidates into the result's margin in-page.
 const resolveMargin = (function resolveMargin(declaration, candidates, measuredCount, helpers, options) {
@@ -45562,7 +45609,7 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Prüfen Sie, ob die Liste etwas sagt, das der Inhalt nicht anders sagt: ihre Einträge, deren Anzahl oder Reihenfolge. Wenn ja, behalten Sie die Liste und verschieben Sie role=\"{{parentRole}}\" vom <{{parentElement}}> auf ein Element darum herum (bei einer Navigation <nav><{{parentElement}}>). Wenn nicht, entfernen Sie die Elemente <{{parentElement}}> und <li>.",
       "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "Der Eintrag wird mit Aufzählungszeichen oder Nummer gezeichnet, als Eintrag einer Liste, die das Markup nicht mehr bereitstellt.",
@@ -47416,7 +47463,7 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Check whether the list tells something the content doesn't say otherwise: its items, their number or their order. If it does, keep the list and move role=\"{{parentRole}}\" from the <{{parentElement}}> to an element around it (for a navigation, <nav><{{parentElement}}>). If it doesn't, remove the <{{parentElement}}> and <li> elements.",
       "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.",
@@ -48660,11 +48707,11 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_firstLetterColor": "El contraste no se puede calcular porque {{blockerSelector}} dibuja la primera letra con un valor propio de {{blockerProperty}} ({{blockerValue}}). No se pudo saber si esa letra, o texto posterior a ella, forma parte de este texto.",
       "contrastComputable_cantTell_selectOption": "El contraste no se puede calcular porque esta opción de una lista desplegable tiene un valor propio de {{blockerProperty}} ({{blockerValue}}) y solo se muestra al abrirse la lista, dibujada como la dibuje la plataforma, con esos colores o con los suyos.",
       "contrastComputable_cantTell_generatedText": "El contraste no se puede calcular para el texto que genera el {{pseudo}} de este elemento ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
-      "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
-      "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
+      "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA).",
+      "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Ningún elemento detrás de este texto, hasta la raíz, tiene un fondo completamente opaco, por lo que el color sobre el que se muestra depende de dónde se visualice la página. Definir un color de fondo opaco en html o body, o medir el contraste frente al fondo sobre el que realmente se muestra la página.",
-      "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
-      "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
+      "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
+      "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
       "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
       "contrast_hint_drawnSize": "Su font-size es {{declaredFontSizePx}}px, pero {{scaledBy}} lo dibuja a {{drawnFontSizePx}}px, y el texto se juzga por el tamaño al que se dibuja: {{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto que no es grande{{/isLargeText}}, que necesita {{threshold}}:1. Cambiar el color del texto, el del fondo o ambos para que la relación lo alcance.",
@@ -48677,7 +48724,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_colorScheme_dark": "En el esquema de color oscuro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrast_hint_colorScheme_light": "En el esquema de color claro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
-      "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
+      "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4,5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}",
       "contrastMinimum_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
@@ -48695,7 +48742,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_hint_cantTell_pseudoElementColor": "Cambiar el tamaño de la ventana para ver qué palabras dibuja {{pseudoElement}} y comprobar que cada color alcanza allí su relación; si uno no la alcanza, cambiarlo.",
       "contrastMinimum_hint_cantTell_outline": "Ampliar y medir frente al fondo el color que forma la mayor parte de cada letra; necesita {{threshold}}:1.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
-      "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
+      "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4,5:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}",
       "contrastEnhanced_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
@@ -49270,7 +49317,7 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Comprobar si la lista dice algo que el contenido no dice de otro modo: sus elementos, su número o su orden. Si lo dice, mantener la lista y mover role=\"{{parentRole}}\" del <{{parentElement}}> a un elemento que lo envuelva (para una navegación, <nav><{{parentElement}}>). Si no, quitar los elementos <{{parentElement}}> y <li>.",
       "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "El elemento se dibuja con viñeta o número, como elemento de una lista que el marcado ya no expone.",
@@ -51124,7 +51171,7 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Vérifiez si la liste dit quelque chose que le contenu ne dit pas autrement : ses éléments, leur nombre ou leur ordre. Si oui, gardez la liste et déplacez role=\"{{parentRole}}\" du <{{parentElement}}> vers un élément qui l’entoure (pour une navigation, <nav><{{parentElement}}>). Sinon, retirez les éléments <{{parentElement}}> et <li>.",
       "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "L’élément est dessiné avec une puce ou un numéro, comme élément d’une liste que le balisage n’expose plus.",
@@ -52978,7 +53025,7 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "リストが、内容だけでは伝わらない情報 (項目、項目数、順序) を伝えているか確認してください。伝えている場合は、リストを残し、role=\"{{parentRole}}\" を <{{parentElement}}> から、それを囲む要素に移してください (ナビゲーションなら <nav><{{parentElement}}>)。伝えていない場合は、<{{parentElement}}> と <li> の要素を取り除いてください。",
       "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
       "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
       "listitemParentValid_lean_why_listRoleOverridden": "この項目は行頭記号や番号付きで、マークアップがもう公開していないリストの項目として描画されています。",
@@ -104768,7 +104815,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               }
             : {}),
           summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
-          hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
+          hint: `Check whether the list tells something the content doesn't say otherwise: its items, their number or their order. If it does, keep the list and move role="${explicitRole}" from the <${parentTag}> to an element around it (for a navigation, <nav><${parentTag}>). If it doesn't, remove the <${parentTag}> and <li> elements.`,
           i18n: {
             summaryKey: 'listitemParentValid_summary_cantTell_listRoleOverridden',
             hintKey: 'listitemParentValid_hint_cantTell_listRoleOverridden',
@@ -127618,7 +127665,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Prüfen Sie, ob die Liste etwas sagt, das der Inhalt nicht anders sagt: ihre Einträge, deren Anzahl oder Reihenfolge. Wenn ja, behalten Sie die Liste und verschieben Sie role=\"{{parentRole}}\" vom <{{parentElement}}> auf ein Element darum herum (bei einer Navigation <nav><{{parentElement}}>). Wenn nicht, entfernen Sie die Elemente <{{parentElement}}> und <li>.",
       "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "Der Eintrag wird mit Aufzählungszeichen oder Nummer gezeichnet, als Eintrag einer Liste, die das Markup nicht mehr bereitstellt.",
@@ -129472,7 +129519,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Check whether the list tells something the content doesn't say otherwise: its items, their number or their order. If it does, keep the list and move role=\"{{parentRole}}\" from the <{{parentElement}}> to an element around it (for a navigation, <nav><{{parentElement}}>). If it doesn't, remove the <{{parentElement}}> and <li> elements.",
       "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.",
@@ -130716,11 +130763,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_firstLetterColor": "El contraste no se puede calcular porque {{blockerSelector}} dibuja la primera letra con un valor propio de {{blockerProperty}} ({{blockerValue}}). No se pudo saber si esa letra, o texto posterior a ella, forma parte de este texto.",
       "contrastComputable_cantTell_selectOption": "El contraste no se puede calcular porque esta opción de una lista desplegable tiene un valor propio de {{blockerProperty}} ({{blockerValue}}) y solo se muestra al abrirse la lista, dibujada como la dibuje la plataforma, con esos colores o con los suyos.",
       "contrastComputable_cantTell_generatedText": "El contraste no se puede calcular para el texto que genera el {{pseudo}} de este elemento ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
-      "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
-      "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
+      "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA).",
+      "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Ningún elemento detrás de este texto, hasta la raíz, tiene un fondo completamente opaco, por lo que el color sobre el que se muestra depende de dónde se visualice la página. Definir un color de fondo opaco en html o body, o medir el contraste frente al fondo sobre el que realmente se muestra la página.",
-      "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
-      "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
+      "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
+      "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
       "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
       "contrast_hint_drawnSize": "Su font-size es {{declaredFontSizePx}}px, pero {{scaledBy}} lo dibuja a {{drawnFontSizePx}}px, y el texto se juzga por el tamaño al que se dibuja: {{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto que no es grande{{/isLargeText}}, que necesita {{threshold}}:1. Cambiar el color del texto, el del fondo o ambos para que la relación lo alcance.",
@@ -130733,7 +130780,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_colorScheme_dark": "En el esquema de color oscuro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrast_hint_colorScheme_light": "En el esquema de color claro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
-      "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
+      "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4,5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}",
       "contrastMinimum_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
@@ -130751,7 +130798,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_hint_cantTell_pseudoElementColor": "Cambiar el tamaño de la ventana para ver qué palabras dibuja {{pseudoElement}} y comprobar que cada color alcanza allí su relación; si uno no la alcanza, cambiarlo.",
       "contrastMinimum_hint_cantTell_outline": "Ampliar y medir frente al fondo el color que forma la mayor parte de cada letra; necesita {{threshold}}:1.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
-      "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
+      "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4,5:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}",
       "contrastEnhanced_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
@@ -131326,7 +131373,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Comprobar si la lista dice algo que el contenido no dice de otro modo: sus elementos, su número o su orden. Si lo dice, mantener la lista y mover role=\"{{parentRole}}\" del <{{parentElement}}> a un elemento que lo envuelva (para una navegación, <nav><{{parentElement}}>). Si no, quitar los elementos <{{parentElement}}> y <li>.",
       "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "El elemento se dibuja con viñeta o número, como elemento de una lista que el marcado ya no expone.",
@@ -133180,7 +133227,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Vérifiez si la liste dit quelque chose que le contenu ne dit pas autrement : ses éléments, leur nombre ou leur ordre. Si oui, gardez la liste et déplacez role=\"{{parentRole}}\" du <{{parentElement}}> vers un élément qui l’entoure (pour une navigation, <nav><{{parentElement}}>). Sinon, retirez les éléments <{{parentElement}}> et <li>.",
       "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "L’élément est dessiné avec une puce ou un numéro, comme élément d’une liste que le balisage n’expose plus.",
@@ -135034,7 +135081,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "リストが、内容だけでは伝わらない情報 (項目、項目数、順序) を伝えているか確認してください。伝えている場合は、リストを残し、role=\"{{parentRole}}\" を <{{parentElement}}> から、それを囲む要素に移してください (ナビゲーションなら <nav><{{parentElement}}>)。伝えていない場合は、<{{parentElement}}> と <li> の要素を取り除いてください。",
       "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
       "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
       "listitemParentValid_lean_why_listRoleOverridden": "この項目は行頭記号や番号付きで、マークアップがもう公開していないリストの項目として描画されています。",
@@ -136542,7 +136589,11 @@ function t(key, fallback, params, engineOptions) {
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
-  return applyI18nParams(base, params);
+  // Decimals read as the message's language writes them ("1,36:1" in
+  // French): the locale asked for where its string was found, English
+  // otherwise. The params themselves keep plain numbers.
+  const numberLocale = v ? normalizeLocale(engineOptions && engineOptions.locale) : 'en';
+  return applyI18nParams(base, localizeNumberParams(params, numberLocale));
 }
 
 function resolveRuleDefI18n(def, engineOptions) {
@@ -162285,6 +162336,49 @@ const normalizeLean = (function normalizeLean(input) {
     if (i.params && typeof i.params === 'object' && !Array.isArray(i.params))
       ii.params = { ...i.params };
     if (ii.whyKey || ii.cautionKey) out.i18n = ii;
+  }
+  return out;
+});
+
+// Inlined from src/core/number-format.js -- t() writes a message's decimals
+// as its language does.
+const formatLocaleDecimal = (function formatLocaleDecimal(value, locale) {
+  let text;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return value;
+    text = String(value);
+  } else if (typeof value === 'string') {
+    text = value;
+  } else {
+    return value;
+  }
+  const m = /^(-?\d+)\.(\d+)$/.exec(text);
+  if (!m || !locale) return value;
+  // The separator, worked out once per locale. A locale Intl does not know,
+  // or one that writes other digits, keeps the point.
+  const key = String(locale);
+  const cache = formatLocaleDecimal.separators || (formatLocaleDecimal.separators = {});
+  if (!Object.prototype.hasOwnProperty.call(cache, key)) {
+    let sep = '.';
+    try {
+      const shown = new Intl.NumberFormat(key, { useGrouping: false }).format(1.5);
+      if (/^1[^0-9]5$/.test(shown)) sep = shown.charAt(1);
+    } catch {
+      sep = '.';
+    }
+    cache[key] = sep;
+  }
+  return cache[key] === '.' ? value : `${m[1]}${cache[key]}${m[2]}`;
+});
+const localizeNumberParams = (function localizeNumberParams(params, locale) {
+  if (!params || typeof params !== 'object' || Array.isArray(params) || !locale) return params;
+  let out = params;
+  for (const key of Object.keys(params)) {
+    if (!/(?:ratio|threshold|Px)$/i.test(key)) continue;
+    const v = formatLocaleDecimal(params[key], locale);
+    if (v === params[key]) continue;
+    if (out === params) out = { ...params };
+    out[key] = v;
   }
   return out;
 });

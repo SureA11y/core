@@ -892,7 +892,7 @@
   "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
   "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
   "listitemParentValid_summary_cantTell_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
-  "listitemParentValid_hint_cantTell_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+  "listitemParentValid_hint_cantTell_listRoleOverridden": "Vérifiez si la liste dit quelque chose que le contenu ne dit pas autrement : ses éléments, leur nombre ou leur ordre. Si oui, gardez la liste et déplacez role=\"{{parentRole}}\" du <{{parentElement}}> vers un élément qui l’entoure (pour une navigation, <nav><{{parentElement}}>). Sinon, retirez les éléments <{{parentElement}}> et <li>.",
   "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
   "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
   "listitemParentValid_lean_why_listRoleOverridden": "L’élément est dessiné avec une puce ou un numéro, comme élément d’une liste que le balisage n’expose plus.",
