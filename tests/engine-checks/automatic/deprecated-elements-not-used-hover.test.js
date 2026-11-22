@@ -61,6 +61,56 @@ const CASES = [
     UNKNOWN,
     null
   ],
+  // Hover-only listeners added once the page is read, or with jQuery
+  // (round 12, R12F-15).
+  [
+    'a hover-only script inside a DOMContentLoaded listener',
+    '<marquee id="m">Sale</marquee><script>document.addEventListener("DOMContentLoaded", function () { var m = document.getElementById("m"); m.addEventListener("mouseover", function () { m.stop(); }); m.addEventListener("mouseout", function () { m.start(); }); });</script>',
+    HOVER,
+    'fail'
+  ],
+  [
+    'a hover-only script inside a load listener',
+    '<marquee id="m">Sale</marquee><script>window.onload = function () { var m = document.getElementById("m"); m.onmouseenter = function () { m.stop(); }; };</script>',
+    HOVER,
+    'fail'
+  ],
+  [
+    "jQuery's .hover()",
+    '<marquee id="m">Sale</marquee><script>window.$ && $("#m").hover(function () { this.stop(); }, function () { this.start(); });</script>',
+    HOVER,
+    'fail'
+  ],
+  [
+    "jQuery's .on('mouseenter') on every marquee, when the page is ready",
+    '<marquee>Sale</marquee><script>window.$ && $(function () { $("marquee").on("mouseenter.news mouseleave", function (e) { e.type === "mouseenter" ? this.stop() : this.start(); }); });</script>',
+    HOVER,
+    'fail'
+  ],
+  [
+    "jQuery's .on('mouseover') inside a load listener",
+    '<marquee id="m">Sale</marquee><script>window.addEventListener("load", function () { window.$ && $("#m").on("mouseover", function () { this.stop(); }); });</script>',
+    HOVER,
+    'fail'
+  ],
+  [
+    'a jQuery click handler besides the hover one',
+    '<marquee id="m">Sale</marquee><script>window.$ && $("#m").hover(function () { this.stop(); }).click(function () { this.stop(); });</script>',
+    UNKNOWN,
+    null
+  ],
+  [
+    'a click listener added inside a DOMContentLoaded listener',
+    '<marquee id="m">Sale</marquee><button id="b">||</button><script>document.addEventListener("DOMContentLoaded", function () { document.getElementById("b").addEventListener("click", function () { document.getElementById("m").stop(); }); });</script>',
+    UNKNOWN,
+    null
+  ],
+  [
+    'a script whose event cannot be read',
+    '<marquee id="m">Sale</marquee><script>function pauseNews() { document.getElementById("m").stop(); }</script>',
+    UNKNOWN,
+    null
+  ],
   ['no handler at all', '<marquee>Sale</marquee>', UNKNOWN, 'fail'],
   [
     'a hover handler that does not stop it',

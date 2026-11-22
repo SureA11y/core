@@ -30,9 +30,12 @@
  *   - `MARQUEE_STOPS_ONLY_ON_HOVER` (cantTell): a <marquee> scrolls its
  *     content and stops only while the pointer is over it (its own
  *     onmouseover or onmouseenter calls this.stop(), or a handler or inline
- *     script listening only for hover stops it), which keyboard and touch
- *     users cannot do; whether the page offers another way to pause, stop or
- *     hide it is for a person to check. Given in place of
+ *     script listening only for hover stops it: addEventListener, an
+ *     onmouseover property, or jQuery's .hover(), .on('mouseenter') or
+ *     .on('mouseover'), also when added inside a DOMContentLoaded or load
+ *     listener), which keyboard and touch users cannot do; whether the page
+ *     offers another way to pause, stop or hide it is for a person to
+ *     check. Given in place of
  *     `MARQUEE_PAUSE_MECHANISM_UNKNOWN` when that code would lean fail. It
  *     leans fail.
  *     Basis: WCAG 2.2.2 (not settled); F16.
@@ -103,7 +106,7 @@ function runInPage(ctx) {
   // (header): by tag here, by id in reachesMarquee.
   const STOP_CALL = /\.\s*(?:stop|start)\s*\(/;
   const MARQUEE_BY_TAG =
-    /getElementsByTagName\s*\(\s*['"`]marquee['"`]|querySelector(?:All)?\s*\(\s*['"`][^'"`]*\bmarquee\b/i;
+    /getElementsByTagName\s*\(\s*['"`]marquee['"`]|(?:querySelector(?:All)?|\$|jQuery)\s*\(\s*['"`][^'"`]*\bmarquee\b/i;
   // The engine's own script, injected inline by the page (a script tag holding
   // the bundle): what it says about marquees is the engine's, not the page's.
   const isEngineScript = (text) => text.includes('runa11yCoreInPage') && text.includes('a11ycore');
@@ -183,14 +186,29 @@ function runInPage(ctx) {
     return pageEvidence;
   }
 
-  // The event types a script names: addEventListener('type', ...) and
-  // el.ontype = ....
-  const HOVER_TYPES = new Set(['mouseover', 'mouseenter', 'mouseout', 'mouseleave']);
+  // The event types a script names: addEventListener('type', ...),
+  // el.ontype = ..., and jQuery's .on('type', ...), .one(), .bind() and
+  // shorthands such as .hover(...) and .click(...). A DOMContentLoaded or
+  // load listener only runs the code inside it once the page is read: it
+  // wraps the listeners that code adds, and is not counted. A script is
+  // hover-only when every other type it names is the pointer's hover
+  // (round 12, R12F-15). One that names none, or another event (a click, a
+  // key), may stop the marquee another way, and is asked about with no lean.
+  // A method call that only looks like a shorthand (`el.click()`) counts as
+  // another event, which errs toward asking.
+  const HOVER_TYPES = new Set(['mouseover', 'mouseenter', 'mouseout', 'mouseleave', 'hover']);
+  const WRAPPER_TYPES = new Set(['domcontentloaded', 'load']);
+  const JQUERY_SHORTHAND =
+    /\.\s*(hover|mouseover|mouseenter|mouseout|mouseleave|mousedown|mouseup|click|dblclick|contextmenu|keydown|keyup|keypress|focus|blur|focusin|focusout|change|submit|toggle)\s*\(/g;
   function isHoverOnlyScript(text) {
     const types = new Set();
     for (const m of text.matchAll(/addEventListener\s*\(\s*['"`]([A-Za-z]+)['"`]/g))
       types.add(m[1].toLowerCase());
     for (const m of text.matchAll(/\.\s*on([A-Za-z]+)\s*=(?!=)/g)) types.add(m[1].toLowerCase());
+    for (const m of text.matchAll(/\.\s*(?:on|one|bind)\s*\(\s*['"`]([^'"`]*)['"`]/g))
+      for (const t of m[1].split(/\s+/)) if (t) types.add(t.split('.')[0].toLowerCase());
+    for (const m of text.matchAll(JQUERY_SHORTHAND)) types.add(m[1].toLowerCase());
+    for (const t of WRAPPER_TYPES) types.delete(t);
     return types.size > 0 && [...types].every((t) => HOVER_TYPES.has(t));
   }
 
