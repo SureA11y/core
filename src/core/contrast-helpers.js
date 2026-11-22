@@ -8609,7 +8609,7 @@ function createContrastHelpers(opts, shared) {
       }
       if (unpainted) continue;
       const cs = __contrastComputedStyle(shape);
-      if (!cs || trim(cs.display) === 'none' || trim(cs.visibility) === 'hidden') continue;
+      if (!cs || __svgHiddenNoLayout(shape, cs, svg)) continue;
       const paints = (v) => {
         if (!v || v === 'none') return false;
         const c = parseCssColorToRgba(v);
@@ -8641,6 +8641,34 @@ function createContrastHelpers(opts, shared) {
       }
     }
     return { certain, blocker };
+  }
+
+  // Whether an SVG shape is not drawn, without a layout (round 12, C12-4):
+  // display none on it or a group around it, or visibility hidden on it or
+  // inherited, set in CSS or as a presentation attribute, which jsdom
+  // doesn't apply.
+  function __svgHiddenNoLayout(shape, cs, svg) {
+    if (trim(cs.display) === 'none') return true;
+    const vis = trim(cs.visibility);
+    if (vis === 'hidden' || vis === 'collapse') return true;
+    let visKnown = false;
+    for (let n = shape; n && n !== svg; n = dom.parentElement(n)) {
+      if (trim(dom.getAttribute(n, 'display')).toLowerCase() === 'none') return true;
+      if (n !== shape) {
+        const ncs = __contrastComputedStyle(n);
+        if (ncs && trim(ncs.display) === 'none') return true;
+      }
+      if (!visKnown && dom.hasAttribute(n, 'visibility')) {
+        visKnown = true;
+        const v = trim(dom.getAttribute(n, 'visibility')).toLowerCase();
+        if (v === 'hidden' || v === 'collapse') return true;
+      }
+    }
+    if (!visKnown && svg && dom.hasAttribute(svg, 'visibility')) {
+      const v = trim(dom.getAttribute(svg, 'visibility')).toLowerCase();
+      if (v === 'hidden' || v === 'collapse') return true;
+    }
+    return false;
   }
 
   // An SVG length in user units: a number, px, or a percentage of `full`

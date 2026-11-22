@@ -38,3 +38,35 @@ test('text placed straight into a shadow host takes its slot’s color and backg
   const dark = run('<div style="background:#000;color:#fff"><slot></slot></div>');
   assert.equal(dark.outcome, 'pass');
 });
+
+const svgPage = (inner, head = '') => page(`<svg width="300" height="100">${inner}</svg>`, head);
+
+test('an SVG shape its display or visibility hides is no background, without a layout (C12-4)', () => {
+  const label = '<text x="10" y="50" fill="#fff">Sales</text>';
+  for (const rect of [
+    '<rect display="none" width="300" height="100" fill="#000"/>',
+    '<rect visibility="hidden" width="300" height="100" fill="#000"/>',
+    '<g display="none"><rect width="300" height="100" fill="#000"/></g>',
+    '<g visibility="hidden"><rect width="300" height="100" fill="#000"/></g>',
+    '<rect class="bg" width="300" height="100" fill="#000"/>'
+  ]) {
+    const head = rect.includes('class="bg"') ? '<style>.bg{display:none}</style>' : '';
+    // White on the white page behind it: not drawn, as Chromium has it.
+    assert.equal(
+      check(svgPage(rect + label, head), 'contrast-minimum').outcome,
+      'notApplicable',
+      rect
+    );
+    assert.notEqual(
+      check(svgPage(rect + label, head), 'contrast-computable').outcome,
+      'pass',
+      rect
+    );
+  }
+  // Drawn, the rect is measured against.
+  assert.equal(
+    check(svgPage('<rect width="300" height="100" fill="#000"/>' + label), 'contrast-minimum')
+      .outcome,
+    'pass'
+  );
+});
