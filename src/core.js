@@ -344,10 +344,14 @@ function t(key, fallback, params, engineOptions) {
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
-  // Decimals read as the message's language writes them ("1,36:1" in
-  // French): the locale asked for where its string was found, English
-  // otherwise. The params themselves keep plain numbers.
-  const numberLocale = v ? normalizeLocale(ownValue(engineOptions, 'locale')) : 'en';
+  // Decimals read as the language of the text written ("1,36:1" in French):
+  // the language of the locale asked for where its string was found, English
+  // otherwise. The language, not the region: en-ZA reads English text, so it
+  // writes "2.85:1", as the text's own decimals do, and fr-CA "2,85:1". The
+  // params themselves keep plain numbers.
+  const numberLocale = v
+    ? normalizeLocale(ownValue(engineOptions, 'locale')).split('-')[0].toLowerCase()
+    : 'en';
   return applyI18nParams(base, localizeNumberParams(params, numberLocale));
 }
 
@@ -139026,10 +139030,14 @@ function t(key, fallback, params, engineOptions) {
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
-  // Decimals read as the message's language writes them ("1,36:1" in
-  // French): the locale asked for where its string was found, English
-  // otherwise. The params themselves keep plain numbers.
-  const numberLocale = v ? normalizeLocale(ownValue(engineOptions, 'locale')) : 'en';
+  // Decimals read as the language of the text written ("1,36:1" in French):
+  // the language of the locale asked for where its string was found, English
+  // otherwise. The language, not the region: en-ZA reads English text, so it
+  // writes "2.85:1", as the text's own decimals do, and fr-CA "2,85:1". The
+  // params themselves keep plain numbers.
+  const numberLocale = v
+    ? normalizeLocale(ownValue(engineOptions, 'locale')).split('-')[0].toLowerCase()
+    : 'en';
   return applyI18nParams(base, localizeNumberParams(params, numberLocale));
 }
 

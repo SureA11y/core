@@ -5,8 +5,10 @@
 /**
  * Numbers in human messages, written as the message's language writes them:
  * a contrast ratio of 1.36 reads "1,36:1" in French, German and Spanish, and
- * "1.36:1" in English and Japanese. Only the text people read changes: a
- * finding's data, details, metrics and i18n.params keep plain numbers.
+ * "1.36:1" in English and Japanese. The caller passes the language of the
+ * text written (en for en-ZA), not the region. Only the text people read
+ * changes: a finding's data, details and metrics keep numbers, and its
+ * i18n.params each value unformatted, with a point.
  *
  * Inlined into generated core.js (scripts/build-core.js), so every function
  * here is self-contained: no references to anything outside its own body.

@@ -1,7 +1,7 @@
 'use strict';
 
 // Messages write decimals as their language does: "2,85:1" in French,
-// German and Spanish, "2.85:1" in English and Japanese. The machine-readable
+// German and Spanish, "2.85:1" in English and Japanese, whatever the region. The machine-readable
 // fields keep plain numbers (round 12, K12-5).
 
 const test = require('node:test');
@@ -66,7 +66,14 @@ for (const [locale, ratio, threshold] of [
   ['ja', '2.85:1', '4.5:1'],
   ['fr', '2,85:1', '4,5:1'],
   ['de', '2,85:1', '4,5:1'],
-  ['es', '2,85:1', '4,5:1']
+  ['es', '2,85:1', '4,5:1'],
+  // The language of the text written decides, not the region: en-ZA reads
+  // English, which writes a point, though South Africa writes a comma;
+  // es-419 reads Spanish, as its dictionaries' own "4,5:1" does.
+  ['en-ZA', '2.85:1', '4.5:1'],
+  ['fr-CA', '2,85:1', '4,5:1'],
+  ['de-AT', '2,85:1', '4,5:1'],
+  ['es-419', '2,85:1', '4,5:1']
 ]) {
   test(`a contrast finding writes its ratios as ${locale} does, and keeps plain numbers in its data`, () => {
     const result = runa11yCoreOnHtml(LOW_CONTRAST, {
