@@ -88,6 +88,8 @@ test(`${RULE_ID}: a single checkbox, options without a shared name, and hidden o
     '<label><input type="radio" name="a"> A</label><label><input type="radio" name="b"> B</label>',
     '<label><input type="radio"> A</label><label><input type="radio"> B</label>',
     '<label><input type="radio" name="g"> A</label><label hidden><input type="radio" name="g"> B</label>',
+    // under aria-hidden: out of the accessibility tree (B11-8)
+    '<div aria-hidden="true"><label><input type="radio" name="h"> A</label><label><input type="radio" name="h"> B</label></div>',
     // a radio and a checkbox sharing a name are not one group
     '<label><input type="radio" name="x"> A</label><label><input type="checkbox" name="x"> B</label>'
   ]) {

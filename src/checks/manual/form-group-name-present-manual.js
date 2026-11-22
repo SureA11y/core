@@ -91,9 +91,13 @@ function runInPage(ctx) {
     return String(dom.localName(el) || '').toLowerCase();
   }
 
+  // In the accessibility tree: an option under aria-hidden is left out,
+  // focusable or not (helpers.isIncludedInAccessibilityTree).
   function isEligible(node) {
-    if (typeof helpers.isAccTreeEligible !== 'function') return true;
     try {
+      if (typeof helpers.isIncludedInAccessibilityTree === 'function')
+        return !!helpers.isIncludedInAccessibilityTree(node, ctx);
+      if (typeof helpers.isAccTreeEligible !== 'function') return true;
       const r = helpers.isAccTreeEligible(node, ctx);
       return !!(r && r.eligible);
     } catch {
