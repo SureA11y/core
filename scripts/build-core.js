@@ -140,6 +140,7 @@ const LEAN_MEASURES = (() => {
   }
 })();
 const { resolveMargin, getMargins } = require('../src/core/margin');
+const { formatLocaleDecimal, localizeNumberParams } = require('../src/core/number-format');
 const {
   FRAME_RPC_CHANNEL,
   getFrameRpcRegistry,
@@ -711,7 +712,11 @@ function t(key, fallback, params, engineOptions) {
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
-  return applyI18nParams(base, params);
+  // Decimals read as the message's language writes them ("1,36:1" in
+  // French): the locale asked for where its string was found, English
+  // otherwise. The params themselves keep plain numbers.
+  const numberLocale = v ? normalizeLocale(engineOptions && engineOptions.locale) : 'en';
+  return applyI18nParams(base, localizeNumberParams(params, numberLocale));
 }
 
 function resolveRuleDefI18n(def, engineOptions) {
@@ -2598,6 +2603,11 @@ const LEAN_MEASURES = ${jsStringify(LEAN_MEASURES)};
 const SIGNAL_NAME = ${SIGNAL_NAME.toString()};
 ${inlineConstFunction('signalValue', signalValue)}
 ${inlineConstFunction('normalizeLean', normalizeLean)}
+
+// Inlined from src/core/number-format.js -- t() writes a message's decimals
+// as its language does.
+${inlineConstFunction('formatLocaleDecimal', formatLocaleDecimal)}
+${inlineConstFunction('localizeNumberParams', localizeNumberParams)}
 
 // Inlined from src/core/margin.js -- normalizeRuleResult turns a rule's
 // margin candidates into the result's margin in-page.
