@@ -46177,8 +46177,11 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_title": "Optionsfelder und Kontrollkästchen mit gleichem Namen sollten in einer benannten Gruppe stehen",
       "formGroupNamePresent_description": "Fragt nach Optionsfeldern oder Kontrollkästchen, die einen Namen teilen, aber in keinem <fieldset> mit <legend> und keiner group oder radiogroup mit zugänglichem Namen stehen, sodass die Frage, die sie beantworten, mit keinem von ihnen verknüpft sein kann.",
       "formGroupNamePresent_summary_cantTell_radio": "Diese {{count}} Optionsfelder mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"radiogroup\" oder role=\"group\" und zugänglichem Namen.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Einige dieser {{count}} Optionsfelder mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen (kein <fieldset> mit <legend> und kein Element mit role=\"radiogroup\" oder role=\"group\" und zugänglichem Namen); die anderen stehen in einer.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "Diese {{count}} Optionsfelder mit dem Namen „{{name}}“ haben denselben Namen, sodass der Browser sie zu einer Auswahl macht, stehen aber in verschiedenen Gruppen mit Namen ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Diese {{count}} Kontrollkästchen mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"group\" und zugänglichem Namen.",
       "formGroupNamePresent_hint_cantTell": "Wenn die Optionen eine Frage beantworten, setzen Sie sie in ein <fieldset>, dessen <legend> sie nennt, oder in ein Element mit role=\"radiogroup\" (role=\"group\" für Kontrollkästchen), das mit aria-labelledby auf die Frage benannt ist.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Prüfen Sie, ob sie Optionen einer einzigen Auswahl sind. Wenn ja, setzen Sie sie in eine Gruppe, deren Name sagt, was ausgewählt wird; wenn es getrennte Auswahlen sind, geben Sie jeder einen eigenen Namen.",
       "formGroupNamePresent_lean_why_radio": "Optionsfelder mit gleichem Namen sind eine einzige Auswahl, und nichts gibt dieser Auswahl einen Namen.",
       "formGroupNamePresent_lean_caution_radio": "Die Beschriftung jeder Option kann die ganze Frage schon selbst sagen.",
       "symbolGraphicContrast_title": "Als Grafik verwendete Symbole sollten einen Kontrast von mindestens 3:1 haben",
@@ -48028,8 +48031,11 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_title": "Radio buttons and checkboxes that share a name should be in a named group",
       "formGroupNamePresent_description": "Asks about radio buttons, or checkboxes, that share a name but sit in no <fieldset> with a <legend> and no group or radiogroup with an accessible name, so the question they answer may be tied to none of them.",
       "formGroupNamePresent_summary_cantTell_radio": "These {{count}} radio buttons named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"radiogroup\" or role=\"group\" and an accessible name.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Some of these {{count}} radio buttons named “{{name}}” are in no group with a name (no <fieldset> with a <legend>, and no element with role=\"radiogroup\" or role=\"group\" and an accessible name); the others are in one.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "These {{count}} radio buttons named “{{name}}” share a name, so a browser makes them one choice, but sit in different groups with names ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "These {{count}} checkboxes named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"group\" and an accessible name.",
       "formGroupNamePresent_hint_cantTell": "If the options answer one question, put them in a <fieldset> whose <legend> says it, or in an element with role=\"radiogroup\" (role=\"group\" for checkboxes) named with aria-labelledby pointing to the question.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Check whether they are options of one choice. If they are, put them in one group whose name says what is chosen; if they are separate choices, give each its own name.",
       "formGroupNamePresent_lean_why_radio": "Radio buttons that share a name are one choice a person makes, and nothing gives that choice a name.",
       "formGroupNamePresent_lean_caution_radio": "Each option’s own label may say the whole question.",
       "symbolGraphicContrast_title": "Symbols used as a graphic should have a contrast of at least 3:1",
@@ -49879,8 +49885,11 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_title": "Los botones de opción y las casillas que comparten nombre deberían estar en un grupo con nombre",
       "formGroupNamePresent_description": "Pregunta por botones de opción, o casillas de verificación, que comparten nombre pero no están en ningún <fieldset> con <legend> ni en ningún grupo o radiogroup con nombre accesible, así que la pregunta a la que responden puede no estar ligada a ninguno.",
       "formGroupNamePresent_summary_cantTell_radio": "Estos {{count}} botones de opción con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"radiogroup\" o role=\"group\" y nombre accesible.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Algunos de estos {{count}} botones de opción con el nombre «{{name}}» no están en ningún grupo con nombre (ningún <fieldset> con <legend> ni ningún elemento con role=\"radiogroup\" o role=\"group\" y nombre accesible); los demás sí lo están.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "Estos {{count}} botones de opción con el nombre «{{name}}» comparten nombre, así que el navegador los trata como una sola elección, pero están en grupos con nombre distintos ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Estas {{count}} casillas de verificación con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"group\" y nombre accesible.",
       "formGroupNamePresent_hint_cantTell": "Si las opciones responden a una sola pregunta, ponerlas en un <fieldset> cuyo <legend> la diga, o en un elemento con role=\"radiogroup\" (role=\"group\" para casillas) nombrado con aria-labelledby apuntando a la pregunta.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Comprobar si son opciones de una sola elección. Si lo son, ponerlas en un solo grupo cuyo nombre diga qué se elige; si son elecciones distintas, dar a cada una su propio nombre.",
       "formGroupNamePresent_lean_why_radio": "Los botones de opción que comparten nombre son una sola elección, y nada le da nombre a esa elección.",
       "formGroupNamePresent_lean_caution_radio": "La etiqueta de cada opción puede decir por sí sola la pregunta entera.",
       "symbolGraphicContrast_title": "Los símbolos usados como gráfico deberían tener un contraste de al menos 3:1",
@@ -51730,8 +51739,11 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_title": "Les boutons radio et les cases à cocher qui partagent un nom devraient être dans un groupe nommé",
       "formGroupNamePresent_description": "Signale les boutons radio, ou les cases à cocher, qui partagent un nom mais ne sont dans aucun <fieldset> avec <legend> ni dans aucun group ou radiogroup avec un nom accessible, si bien que la question à laquelle ils répondent peut n’être liée à aucun d’eux.",
       "formGroupNamePresent_summary_cantTell_radio": "Ces {{count}} boutons radio nommés « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"radiogroup\" ou role=\"group\" et un nom accessible.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Certains de ces {{count}} boutons radio nommés « {{name}} » ne sont dans aucun groupe nommé (aucun <fieldset> avec <legend>, ni aucun élément avec role=\"radiogroup\" ou role=\"group\" et un nom accessible) ; les autres le sont.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "Ces {{count}} boutons radio nommés « {{name}} » partagent un nom, ce qui en fait un seul choix pour le navigateur, mais sont dans des groupes nommés différents ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Ces {{count}} cases à cocher nommées « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"group\" et un nom accessible.",
       "formGroupNamePresent_hint_cantTell": "Si les options répondent à une seule question, placez-les dans un <fieldset> dont la <legend> la formule, ou dans un élément avec role=\"radiogroup\" (role=\"group\" pour des cases à cocher) nommé par aria-labelledby pointant vers la question.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Vérifiez s’ils sont les options d’un seul choix. Si oui, placez-les dans un seul groupe dont le nom dit ce qui est choisi ; si ce sont des choix distincts, donnez à chacun son propre nom.",
       "formGroupNamePresent_lean_why_radio": "Des boutons radio qui partagent un nom sont un seul choix, et rien ne donne de nom à ce choix.",
       "formGroupNamePresent_lean_caution_radio": "L’étiquette de chaque option peut formuler à elle seule toute la question.",
       "symbolGraphicContrast_title": "Les symboles utilisés comme graphique devraient avoir un contraste d’au moins 3:1",
@@ -53581,8 +53593,11 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_title": "同じ name を持つラジオボタンやチェックボックスは、名前のあるグループに入れるべきです",
       "formGroupNamePresent_description": "同じ name を持つのに、<legend> のある <fieldset> にも、アクセシブルな名前のある group や radiogroup にも入っていないラジオボタンやチェックボックスについて確認を求めます。それらが答える質問が、どれにも関連付けられていない可能性があります。",
       "formGroupNamePresent_summary_cantTell_radio": "name が「{{name}}」の {{count}} 個のラジオボタンは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"radiogroup\" や role=\"group\" の要素もありません。",
+      "formGroupNamePresent_summary_cantTell_radio_some": "name が「{{name}}」の {{count}} 個のラジオボタンのうち一部は、名前のあるグループに入っていません (<legend> のある <fieldset> も、アクセシブルな名前のある role=\"radiogroup\" や role=\"group\" の要素もありません)。残りは名前のあるグループに入っています。",
+      "formGroupNamePresent_summary_cantTell_radio_split": "name が「{{name}}」の {{count}} 個のラジオボタンは同じ name を持つため、ブラウザーは一つの選択として扱いますが、名前の異なるグループ ({{groups}}) に分かれています。",
       "formGroupNamePresent_summary_cantTell_checkbox": "name が「{{name}}」の {{count}} 個のチェックボックスは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"group\" の要素もありません。",
       "formGroupNamePresent_hint_cantTell": "選択肢が一つの質問に答えるものなら、その質問を <legend> に書いた <fieldset> に入れるか、質問を指す aria-labelledby で名前を付けた role=\"radiogroup\" (チェックボックスなら role=\"group\") の要素に入れてください。",
+      "formGroupNamePresent_hint_cantTell_radio_split": "一つの選択の選択肢かどうかを確認してください。そうであれば、何を選ぶのかを名前で伝える一つのグループに入れてください。別々の選択であれば、それぞれに別の name を付けてください。",
       "formGroupNamePresent_lean_why_radio": "同じ name を持つラジオボタンは一つの選択であり、その選択に名前を付けているものがありません。",
       "formGroupNamePresent_lean_caution_radio": "各選択肢のラベルだけで質問全体を伝えている場合もあります。",
       "symbolGraphicContrast_title": "グラフィックとして使われる記号は、少なくとも 3:1 のコントラストを持つべきです",
@@ -92492,40 +92507,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return n;
   }
 
-  // An element that groups options and gives the group a name: a fieldset
-  // (its role left as group) or an element with role group or radiogroup,
-  // named by its legend, aria-label, aria-labelledby or title.
-  function isNamedGroup(el) {
+  // The name of an element that groups options: a fieldset (its role left
+  // as group) or an element with role group or radiogroup, named by its
+  // legend, aria-label, aria-labelledby or title. '' when it is no such
+  // element or has no name.
+  function groupName(el) {
     const role = helpers.aria && helpers.aria.getExplicitRole(el);
     const tag = tagOf(el);
     const groupRole = role === 'group' || role === 'radiogroup';
-    if (!groupRole && !(tag === 'fieldset' && !role)) return false;
+    if (!groupRole && !(tag === 'fieldset' && !role)) return '';
     try {
       if (typeof helpers.getAccessibleNameInfo === 'function') {
         const info = helpers.getAccessibleNameInfo(el, ctx, { maxRefs: 8 });
-        if (info && info.present && trim(info.value)) return true;
+        if (info && info.present && trim(info.value)) return trim(info.value);
       }
     } catch {}
-    if (trim(dom.getAttribute(el, 'aria-label')) || trim(dom.getAttribute(el, 'title'))) {
-      return true;
-    }
+    const attr = trim(dom.getAttribute(el, 'aria-label')) || trim(dom.getAttribute(el, 'title'));
+    if (attr) return attr;
     if (tag === 'fieldset') {
       for (let c = dom.firstElementChild(el); c; c = dom.nextElementSibling(c)) {
         if (tagOf(c) !== 'legend') continue;
         // A legend out of the accessibility tree (hidden) names nothing.
-        if (!isEligible(c)) return false;
+        if (!isEligible(c)) return '';
         // The legend's name from its content, as accname computes it: an
         // <img alt> inside it names the group too.
         if (typeof helpers.getNameFromContentInfo === 'function') {
           try {
             const info = helpers.getNameFromContentInfo(c, ctx);
-            return !!(info && info.present && trim(info.value));
+            return info && info.present ? trim(info.value) : '';
           } catch {}
         }
-        return !!trim(dom.textContent(c));
+        return trim(dom.textContent(c));
       }
     }
-    return false;
+    return '';
   }
 
   // The element's ancestors in the flat tree: across a slot into the
@@ -92549,9 +92564,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const rest = members.slice(1).map(flatAncestors);
     for (const a of flatAncestors(members[0])) {
       if (!rest.every((s) => s.has(a))) continue;
-      if (isNamedGroup(a)) return true;
+      if (groupName(a)) return true;
     }
     return false;
+  }
+
+  // The innermost named group an option is in, in the flat tree, or null.
+  function nearestNamedGroup(el) {
+    for (
+      let a = helpers.flatParentElement(el), i = 0;
+      a && i < 200;
+      a = helpers.flatParentElement(a), i++
+    ) {
+      const name = groupName(a);
+      if (name) return { el: a, name };
+    }
+    return null;
+  }
+
+  function shorten(v, max) {
+    const t = trim(v).replace(/\s+/g, ' ');
+    return t.length > max ? `${t.slice(0, max - 1)}…` : t;
   }
 
   const inputs = helpers.queryAllSmart
@@ -92589,15 +92622,72 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const radio = group.type === 'radio';
       const count = group.members.length;
       const shownName = group.name.length > 60 ? `${group.name.slice(0, 59)}…` : group.name;
+
+      // Radio buttons each in a named group, but not all in the same one:
+      // one choice split over groups, or two choices sharing a name by
+      // mistake. Checkboxes are left as they were: fields a script names
+      // alike often sit in different groups on purpose.
+      let anchor = group.members[0];
+      let some = false;
+      if (radio) {
+        const found = group.members.map(nearestNamedGroup);
+        const unnamed = group.members.filter((_, i) => !found[i]);
+        if (!unnamed.length) {
+          const seen = new Set();
+          const names = [];
+          for (const g of found) {
+            if (seen.has(g.el)) continue;
+            seen.add(g.el);
+            names.push(shorten(g.name, 40));
+          }
+          const shownGroups = names.length > 5 ? [...names.slice(0, 5), '…'] : names;
+          const groupsText = shownGroups.join(', ');
+          const splitOcc = {
+            summary: `These ${count} radio buttons named “${shownName}” share a name, so a browser makes them one choice, but sit in different groups with names (${groupsText}).`,
+            hint: 'Check whether they are options of one choice. If they are, put them in one group whose name says what is chosen; if they are separate choices, give each its own name.',
+            i18n: {
+              summaryKey: 'formGroupNamePresent_summary_cantTell_radio_split',
+              hintKey: 'formGroupNamePresent_hint_cantTell_radio_split',
+              params: { name: shownName, count, groups: groupsText }
+            },
+            data: {
+              details: {
+                reasonCode: 'RADIO_GROUP_SPLIT',
+                name: shownName,
+                count,
+                inputType: group.type,
+                groups: names
+              }
+            }
+          };
+          occurrences.push(
+            typeof helpers.reportOccurrence === 'function'
+              ? helpers.reportOccurrence(anchor, splitOcc)
+              : splitOcc
+          );
+          continue;
+        }
+        // Some options in a named group and some in none: asked about as
+        // options in no named group, pointing at the first of those.
+        if (unnamed.length < count) {
+          anchor = unnamed[0];
+          some = true;
+        }
+      }
+
       const occ = {
-        summary: radio
-          ? `These ${count} radio buttons named “${shownName}” are in no group with a name: no <fieldset> with a <legend>, and no element with role="radiogroup" or role="group" and an accessible name.`
-          : `These ${count} checkboxes named “${shownName}” are in no group with a name: no <fieldset> with a <legend>, and no element with role="group" and an accessible name.`,
+        summary: some
+          ? `Some of these ${count} radio buttons named “${shownName}” are in no group with a name (no <fieldset> with a <legend>, and no element with role="radiogroup" or role="group" and an accessible name); the others are in one.`
+          : radio
+            ? `These ${count} radio buttons named “${shownName}” are in no group with a name: no <fieldset> with a <legend>, and no element with role="radiogroup" or role="group" and an accessible name.`
+            : `These ${count} checkboxes named “${shownName}” are in no group with a name: no <fieldset> with a <legend>, and no element with role="group" and an accessible name.`,
         hint: 'If the options answer one question, put them in a <fieldset> whose <legend> says it, or in an element with role="radiogroup" (role="group" for checkboxes) named with aria-labelledby pointing to the question.',
         i18n: {
-          summaryKey: radio
-            ? 'formGroupNamePresent_summary_cantTell_radio'
-            : 'formGroupNamePresent_summary_cantTell_checkbox',
+          summaryKey: some
+            ? 'formGroupNamePresent_summary_cantTell_radio_some'
+            : radio
+              ? 'formGroupNamePresent_summary_cantTell_radio'
+              : 'formGroupNamePresent_summary_cantTell_checkbox',
           hintKey: 'formGroupNamePresent_hint_cantTell',
           params: { name: shownName, count }
         },
@@ -92629,9 +92719,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       };
       occurrences.push(
-        typeof helpers.reportOccurrence === 'function'
-          ? helpers.reportOccurrence(group.members[0], occ)
-          : occ
+        typeof helpers.reportOccurrence === 'function' ? helpers.reportOccurrence(anchor, occ) : occ
       );
     }
   }
@@ -108753,12 +108841,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const blockWeight = Math.min(weightOf(el), parentEl ? weightOf(parentEl) : 400);
     const headingLike = [];
     const others = [];
+    // In a <p>, a colon after the bold text, with only spaces around it
+    // ("<strong>Ingredients</strong>:"), leaves the line all bold, as an
+    // editor who bolds only the word makes a label (round 12, U12-15).
+    // Held back until the text ends: anything after it makes it plain text.
+    const isParagraph = String(dom.localName(el) || '').toLowerCase() === 'p';
+    let colonHolder = null;
     const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       const raw = String(dom.nodeValue(node) || '');
       const holder = dom.parentElement(node);
       if (!holder || !trim(raw)) continue;
+      if (colonHolder) {
+        if (others[others.length - 1] !== colonHolder) others.push(colonHolder);
+        colonHolder = null;
+      }
       const style = boldStyleOf(holder, blockWeight);
+      if (!style && isParagraph && headingLike.length && TRAILING_COLON.test(raw)) {
+        colonHolder = holder;
+        continue;
+      }
       if (style) {
         headingLike.push({
           holder,
@@ -108790,6 +108892,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (others.some(isSeen)) return null;
     return headingLike.filter((piece) => isSeen(piece.holder));
   }
+
+  // Only a colon (ASCII or fullwidth) and spaces.
+  const TRAILING_COLON = /^[\s:：]*[:：][\s:：]*$/u;
 
   // Large text a title: 18px or more, and bold, or semibold (600) heavier
   // than the text around it, as design systems set their titles.
@@ -108917,6 +109022,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !!cs && !isBoldWeight(cs) && pxOf(cs) < fontSizePx;
   }
 
+  // A bold line at body size is a title only when it is short: about 8
+  // words, or 60 characters in a script written without spaces between
+  // words (Chinese, Japanese, Thai, Lao, Khmer, Myanmar, Tibetan), where
+  // words can't be counted (round 12, U12-15). A 13-word bold line ending
+  // in a colon is a lead-in sentence more often than a title.
+  const MAX_BODY_TITLE_WORDS = 8;
+  const MAX_BODY_TITLE_CHARS_UNSPACED = 60;
+  const UNSPACED_SCRIPT =
+    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}\p{Script=Tibetan}]/u;
+  function isShortLine(text) {
+    if (UNSPACED_SCRIPT.test(text)) return text.length <= MAX_BODY_TITLE_CHARS_UNSPACED;
+    return text.split(' ').filter((w) => /[\p{L}\p{N}]/u.test(w)).length <= MAX_BODY_TITLE_WORDS;
+  }
+
   // Sentence punctuation at the end reads as a sentence, not a title: past
   // closing quotes and brackets ("Stay home."), and in other scripts (Arabic
   // and Urdu, Devanagari, Armenian, Ethiopic, CJK full-width). A colon is no
@@ -109002,6 +109121,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // asked about as bold body text either.
       if (fontSizePx >= MIN_FONT_SIZE_PX) return;
       if (!isParagraph || kindCode || endsAsSentenceOf(shown)) return;
+      if (!isShortLine(shown)) return;
       const titleWeight = Math.min(...pieces.map((piece) => piece.weight));
       if (!hasPlainText(nextShown(el), titleWeight)) return;
       // The last of a run of bold lines (an address, a list of names): the
@@ -128113,8 +128233,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_title": "Optionsfelder und Kontrollkästchen mit gleichem Namen sollten in einer benannten Gruppe stehen",
       "formGroupNamePresent_description": "Fragt nach Optionsfeldern oder Kontrollkästchen, die einen Namen teilen, aber in keinem <fieldset> mit <legend> und keiner group oder radiogroup mit zugänglichem Namen stehen, sodass die Frage, die sie beantworten, mit keinem von ihnen verknüpft sein kann.",
       "formGroupNamePresent_summary_cantTell_radio": "Diese {{count}} Optionsfelder mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"radiogroup\" oder role=\"group\" und zugänglichem Namen.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Einige dieser {{count}} Optionsfelder mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen (kein <fieldset> mit <legend> und kein Element mit role=\"radiogroup\" oder role=\"group\" und zugänglichem Namen); die anderen stehen in einer.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "Diese {{count}} Optionsfelder mit dem Namen „{{name}}“ haben denselben Namen, sodass der Browser sie zu einer Auswahl macht, stehen aber in verschiedenen Gruppen mit Namen ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Diese {{count}} Kontrollkästchen mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"group\" und zugänglichem Namen.",
       "formGroupNamePresent_hint_cantTell": "Wenn die Optionen eine Frage beantworten, setzen Sie sie in ein <fieldset>, dessen <legend> sie nennt, oder in ein Element mit role=\"radiogroup\" (role=\"group\" für Kontrollkästchen), das mit aria-labelledby auf die Frage benannt ist.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Prüfen Sie, ob sie Optionen einer einzigen Auswahl sind. Wenn ja, setzen Sie sie in eine Gruppe, deren Name sagt, was ausgewählt wird; wenn es getrennte Auswahlen sind, geben Sie jeder einen eigenen Namen.",
       "formGroupNamePresent_lean_why_radio": "Optionsfelder mit gleichem Namen sind eine einzige Auswahl, und nichts gibt dieser Auswahl einen Namen.",
       "formGroupNamePresent_lean_caution_radio": "Die Beschriftung jeder Option kann die ganze Frage schon selbst sagen.",
       "symbolGraphicContrast_title": "Als Grafik verwendete Symbole sollten einen Kontrast von mindestens 3:1 haben",
@@ -129964,8 +130087,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_title": "Radio buttons and checkboxes that share a name should be in a named group",
       "formGroupNamePresent_description": "Asks about radio buttons, or checkboxes, that share a name but sit in no <fieldset> with a <legend> and no group or radiogroup with an accessible name, so the question they answer may be tied to none of them.",
       "formGroupNamePresent_summary_cantTell_radio": "These {{count}} radio buttons named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"radiogroup\" or role=\"group\" and an accessible name.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Some of these {{count}} radio buttons named “{{name}}” are in no group with a name (no <fieldset> with a <legend>, and no element with role=\"radiogroup\" or role=\"group\" and an accessible name); the others are in one.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "These {{count}} radio buttons named “{{name}}” share a name, so a browser makes them one choice, but sit in different groups with names ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "These {{count}} checkboxes named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"group\" and an accessible name.",
       "formGroupNamePresent_hint_cantTell": "If the options answer one question, put them in a <fieldset> whose <legend> says it, or in an element with role=\"radiogroup\" (role=\"group\" for checkboxes) named with aria-labelledby pointing to the question.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Check whether they are options of one choice. If they are, put them in one group whose name says what is chosen; if they are separate choices, give each its own name.",
       "formGroupNamePresent_lean_why_radio": "Radio buttons that share a name are one choice a person makes, and nothing gives that choice a name.",
       "formGroupNamePresent_lean_caution_radio": "Each option’s own label may say the whole question.",
       "symbolGraphicContrast_title": "Symbols used as a graphic should have a contrast of at least 3:1",
@@ -131815,8 +131941,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_title": "Los botones de opción y las casillas que comparten nombre deberían estar en un grupo con nombre",
       "formGroupNamePresent_description": "Pregunta por botones de opción, o casillas de verificación, que comparten nombre pero no están en ningún <fieldset> con <legend> ni en ningún grupo o radiogroup con nombre accesible, así que la pregunta a la que responden puede no estar ligada a ninguno.",
       "formGroupNamePresent_summary_cantTell_radio": "Estos {{count}} botones de opción con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"radiogroup\" o role=\"group\" y nombre accesible.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Algunos de estos {{count}} botones de opción con el nombre «{{name}}» no están en ningún grupo con nombre (ningún <fieldset> con <legend> ni ningún elemento con role=\"radiogroup\" o role=\"group\" y nombre accesible); los demás sí lo están.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "Estos {{count}} botones de opción con el nombre «{{name}}» comparten nombre, así que el navegador los trata como una sola elección, pero están en grupos con nombre distintos ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Estas {{count}} casillas de verificación con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"group\" y nombre accesible.",
       "formGroupNamePresent_hint_cantTell": "Si las opciones responden a una sola pregunta, ponerlas en un <fieldset> cuyo <legend> la diga, o en un elemento con role=\"radiogroup\" (role=\"group\" para casillas) nombrado con aria-labelledby apuntando a la pregunta.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Comprobar si son opciones de una sola elección. Si lo son, ponerlas en un solo grupo cuyo nombre diga qué se elige; si son elecciones distintas, dar a cada una su propio nombre.",
       "formGroupNamePresent_lean_why_radio": "Los botones de opción que comparten nombre son una sola elección, y nada le da nombre a esa elección.",
       "formGroupNamePresent_lean_caution_radio": "La etiqueta de cada opción puede decir por sí sola la pregunta entera.",
       "symbolGraphicContrast_title": "Los símbolos usados como gráfico deberían tener un contraste de al menos 3:1",
@@ -133666,8 +133795,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_title": "Les boutons radio et les cases à cocher qui partagent un nom devraient être dans un groupe nommé",
       "formGroupNamePresent_description": "Signale les boutons radio, ou les cases à cocher, qui partagent un nom mais ne sont dans aucun <fieldset> avec <legend> ni dans aucun group ou radiogroup avec un nom accessible, si bien que la question à laquelle ils répondent peut n’être liée à aucun d’eux.",
       "formGroupNamePresent_summary_cantTell_radio": "Ces {{count}} boutons radio nommés « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"radiogroup\" ou role=\"group\" et un nom accessible.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Certains de ces {{count}} boutons radio nommés « {{name}} » ne sont dans aucun groupe nommé (aucun <fieldset> avec <legend>, ni aucun élément avec role=\"radiogroup\" ou role=\"group\" et un nom accessible) ; les autres le sont.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "Ces {{count}} boutons radio nommés « {{name}} » partagent un nom, ce qui en fait un seul choix pour le navigateur, mais sont dans des groupes nommés différents ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Ces {{count}} cases à cocher nommées « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"group\" et un nom accessible.",
       "formGroupNamePresent_hint_cantTell": "Si les options répondent à une seule question, placez-les dans un <fieldset> dont la <legend> la formule, ou dans un élément avec role=\"radiogroup\" (role=\"group\" pour des cases à cocher) nommé par aria-labelledby pointant vers la question.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Vérifiez s’ils sont les options d’un seul choix. Si oui, placez-les dans un seul groupe dont le nom dit ce qui est choisi ; si ce sont des choix distincts, donnez à chacun son propre nom.",
       "formGroupNamePresent_lean_why_radio": "Des boutons radio qui partagent un nom sont un seul choix, et rien ne donne de nom à ce choix.",
       "formGroupNamePresent_lean_caution_radio": "L’étiquette de chaque option peut formuler à elle seule toute la question.",
       "symbolGraphicContrast_title": "Les symboles utilisés comme graphique devraient avoir un contraste d’au moins 3:1",
@@ -135517,8 +135649,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_title": "同じ name を持つラジオボタンやチェックボックスは、名前のあるグループに入れるべきです",
       "formGroupNamePresent_description": "同じ name を持つのに、<legend> のある <fieldset> にも、アクセシブルな名前のある group や radiogroup にも入っていないラジオボタンやチェックボックスについて確認を求めます。それらが答える質問が、どれにも関連付けられていない可能性があります。",
       "formGroupNamePresent_summary_cantTell_radio": "name が「{{name}}」の {{count}} 個のラジオボタンは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"radiogroup\" や role=\"group\" の要素もありません。",
+      "formGroupNamePresent_summary_cantTell_radio_some": "name が「{{name}}」の {{count}} 個のラジオボタンのうち一部は、名前のあるグループに入っていません (<legend> のある <fieldset> も、アクセシブルな名前のある role=\"radiogroup\" や role=\"group\" の要素もありません)。残りは名前のあるグループに入っています。",
+      "formGroupNamePresent_summary_cantTell_radio_split": "name が「{{name}}」の {{count}} 個のラジオボタンは同じ name を持つため、ブラウザーは一つの選択として扱いますが、名前の異なるグループ ({{groups}}) に分かれています。",
       "formGroupNamePresent_summary_cantTell_checkbox": "name が「{{name}}」の {{count}} 個のチェックボックスは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"group\" の要素もありません。",
       "formGroupNamePresent_hint_cantTell": "選択肢が一つの質問に答えるものなら、その質問を <legend> に書いた <fieldset> に入れるか、質問を指す aria-labelledby で名前を付けた role=\"radiogroup\" (チェックボックスなら role=\"group\") の要素に入れてください。",
+      "formGroupNamePresent_hint_cantTell_radio_split": "一つの選択の選択肢かどうかを確認してください。そうであれば、何を選ぶのかを名前で伝える一つのグループに入れてください。別々の選択であれば、それぞれに別の name を付けてください。",
       "formGroupNamePresent_lean_why_radio": "同じ name を持つラジオボタンは一つの選択であり、その選択に名前を付けているものがありません。",
       "formGroupNamePresent_lean_caution_radio": "各選択肢のラベルだけで質問全体を伝えている場合もあります。",
       "symbolGraphicContrast_title": "グラフィックとして使われる記号は、少なくとも 3:1 のコントラストを持つべきです",

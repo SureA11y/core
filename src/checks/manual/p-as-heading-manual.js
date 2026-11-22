@@ -17,13 +17,20 @@
  *   than the text around it, as design systems set titles, and rendered at
  *   >=18px.
  *   Visible text is the text that is rendered (not display:none, [hidden]
- *   or visibility:hidden) and not screen-reader-only. Text that is all
- *   inside controls (a widget's or a <label>'s own text) is left out.
+ *   or visibility:hidden) and not screen-reader-only. In a `<p>`, a colon
+ *   (`:` or `：`) after the bold text, with only spaces around it and
+ *   nothing after it, leaves the text all bold, so
+ *   `<strong>Ingredients</strong>:` is read as
+ *   `<strong>Ingredients:</strong>` is. Text that is all inside controls
+ *   (a widget's or a <label>'s own text) is left out.
  *   A `<p>` whose visible text is all bold, or all heavier than the text
  *   around it (the paragraph's own, or its parent's where the paragraph
  *   itself is set heavier), at body size (smaller than 18px) applies too,
- *   when the text doesn't end as a sentence (past closing quotes and
- *   brackets, and in any script's punctuation; a final colon, as in
+ *   when the text is short (8 words or fewer, or 60 characters or fewer
+ *   in a script written without spaces between words, such as Chinese,
+ *   Japanese or Thai, instead of the 120 characters of large text), when
+ *   the text doesn't end as a sentence (past closing quotes and brackets,
+ *   and in any script's punctuation; a final colon, as in
  *   "Ingredients:" or "Step 1:", ends none, so such a label is asked about
  *   as a line with no final punctuation is), the next element shown
  *   holds text lighter than it, and the element before it is no bold line
@@ -74,7 +81,8 @@
  *     and digits of any script count ("٢٠٢٤", "２０２４"); text with no letter or digit at all (a star rating, a scene
  *     break, an emoji) is not asked about at any size.
  *     Basis: WCAG 1.3.1 (not settled); H42; F2.
- *   - `BOLD_SHORT_PARAGRAPH` (cantTell): a short p whose visible text is
+ *   - `BOLD_SHORT_PARAGRAPH` (cantTell): a short p (8 words, or 60
+ *     characters in a script written without spaces) whose visible text is
  *     all bold, or all heavier than the paragraph's own text, at body size,
  *     doesn't end as a sentence and is followed by lighter text, may be a
  *     heading shown only by its style.
@@ -92,7 +100,10 @@
  *   text is far more often emphasis than a title: a bold warning ends as a
  *   sentence, and a run of bold lines such as an address is followed by
  *   more bold text. A `<div>` at body size is more often a label, a badge
- *   or a price, and is left out.
+ *   or a price, and is left out. A bold line of more than about 8 words is
+ *   more often a lead-in sentence ("Here is what you need to know about
+ *   the new store hours this week:") than a title; words are counted as
+ *   runs between spaces holding a letter or digit.
  * - Uses an absolute 18px size threshold rather than comparing against
  *   surrounding text (unlike `link-in-text-block`); it's simpler on
  *   purpose, since "looks like a heading" is closer to an absolute
@@ -487,12 +498,26 @@ function runInPage(ctx) {
     const blockWeight = Math.min(weightOf(el), parentEl ? weightOf(parentEl) : 400);
     const headingLike = [];
     const others = [];
+    // In a <p>, a colon after the bold text, with only spaces around it
+    // ("<strong>Ingredients</strong>:"), leaves the line all bold, as an
+    // editor who bolds only the word makes a label (round 12, U12-15).
+    // Held back until the text ends: anything after it makes it plain text.
+    const isParagraph = String(dom.localName(el) || '').toLowerCase() === 'p';
+    let colonHolder = null;
     const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       const raw = String(dom.nodeValue(node) || '');
       const holder = dom.parentElement(node);
       if (!holder || !trim(raw)) continue;
+      if (colonHolder) {
+        if (others[others.length - 1] !== colonHolder) others.push(colonHolder);
+        colonHolder = null;
+      }
       const style = boldStyleOf(holder, blockWeight);
+      if (!style && isParagraph && headingLike.length && TRAILING_COLON.test(raw)) {
+        colonHolder = holder;
+        continue;
+      }
       if (style) {
         headingLike.push({
           holder,
@@ -524,6 +549,9 @@ function runInPage(ctx) {
     if (others.some(isSeen)) return null;
     return headingLike.filter((piece) => isSeen(piece.holder));
   }
+
+  // Only a colon (ASCII or fullwidth) and spaces.
+  const TRAILING_COLON = /^[\s:：]*[:：][\s:：]*$/u;
 
   // Large text a title: 18px or more, and bold, or semibold (600) heavier
   // than the text around it, as design systems set their titles.
@@ -651,6 +679,20 @@ function runInPage(ctx) {
     return !!cs && !isBoldWeight(cs) && pxOf(cs) < fontSizePx;
   }
 
+  // A bold line at body size is a title only when it is short: about 8
+  // words, or 60 characters in a script written without spaces between
+  // words (Chinese, Japanese, Thai, Lao, Khmer, Myanmar, Tibetan), where
+  // words can't be counted (round 12, U12-15). A 13-word bold line ending
+  // in a colon is a lead-in sentence more often than a title.
+  const MAX_BODY_TITLE_WORDS = 8;
+  const MAX_BODY_TITLE_CHARS_UNSPACED = 60;
+  const UNSPACED_SCRIPT =
+    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}\p{Script=Tibetan}]/u;
+  function isShortLine(text) {
+    if (UNSPACED_SCRIPT.test(text)) return text.length <= MAX_BODY_TITLE_CHARS_UNSPACED;
+    return text.split(' ').filter((w) => /[\p{L}\p{N}]/u.test(w)).length <= MAX_BODY_TITLE_WORDS;
+  }
+
   // Sentence punctuation at the end reads as a sentence, not a title: past
   // closing quotes and brackets ("Stay home."), and in other scripts (Arabic
   // and Urdu, Devanagari, Armenian, Ethiopic, CJK full-width). A colon is no
@@ -736,6 +778,7 @@ function runInPage(ctx) {
       // asked about as bold body text either.
       if (fontSizePx >= MIN_FONT_SIZE_PX) return;
       if (!isParagraph || kindCode || endsAsSentenceOf(shown)) return;
+      if (!isShortLine(shown)) return;
       const titleWeight = Math.min(...pieces.map((piece) => piece.weight));
       if (!hasPlainText(nextShown(el), titleWeight)) return;
       // The last of a run of bold lines (an address, a list of names): the

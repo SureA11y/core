@@ -58,7 +58,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/p-as-heading-all-scenarios.ht
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 13, maxOccurrences: 13 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 14, maxOccurrences: 14 });
 
   const expectedFlaggedIds = [
     'pah_case_01',
@@ -73,7 +73,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/p-as-heading-all-scenarios.ht
     'pah_case_19',
     'pah_case_20',
     'pah_case_21',
-    'pah_case_22'
+    'pah_case_22',
+    'pah_case_27'
   ];
   const expectedNoOccIds = [
     'pah_case_02',
@@ -88,7 +89,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/p-as-heading-all-scenarios.ht
     'pah_case_23',
     'pah_case_24',
     'pah_case_25',
-    'pah_case_26'
+    'pah_case_26',
+    'pah_case_28'
   ];
 
   for (const id of expectedFlaggedIds) {
@@ -418,7 +420,14 @@ test(`${RULE_ID}: a bold line at body size over plain text is asked about`, () =
     '<p id="x"><strong>Ingredients:</strong></p><ul><li>Flour</li><li>Water</li></ul>',
     '<p id="x"><strong>Step 1:</strong></p><p>Mix the flour and the water.</p>',
     '<p id="x"><strong>Note:</strong></p><p>Prices include tax.</p>',
-    '<p id="x"><strong>材料：</strong></p><p>小麦粉と水。</p>'
+    '<p id="x"><strong>材料：</strong></p><p>小麦粉と水。</p>',
+    // the colon left outside the bold, with spaces only (round 12, U12-15)
+    '<p id="x"><strong>Ingredients</strong>:</p><p>eggs</p>',
+    '<p id="x"><b>Step 1</b> : </p><p>Mix the flour and the water.</p>',
+    '<p id="x"><strong>材料</strong>：</p><p>小麦粉と水。</p>',
+    // short: 8 words, or 60 characters in a script without spaces
+    '<p id="x"><b>What you need to know about store hours:</b></p><p>Monday closed.</p>',
+    '<p id="x"><b>今週の新しい営業時間について知っておくべきことをまとめました：</b></p><p>月曜休み。</p>'
   ];
   for (const body of asked) {
     const rule = assertRule(
@@ -453,7 +462,15 @@ test(`${RULE_ID}: a bold line at body size over plain text is asked about`, () =
     '<p><strong>29,99 €</strong></p><p>Hand-made ceramic mug.</p>',
     '<p><strong>45%</strong></p><p>Of our customers come back.</p>',
     '<p><b>★★★★☆</b></p><p>A great product for the price.</p>',
-    '<p><strong>* * *</strong></p><p>The next morning she left.</p>'
+    '<p><strong>* * *</strong></p><p>The next morning she left.</p>',
+    // longer than about 8 words, or 60 characters without spaces: a lead-in
+    // sentence, not a title (round 12, U12-15)
+    '<p><b>Here is what you need to know about the new store hours this week:</b></p><p>Monday closed.</p>',
+    `<p><b>${'今週の新しい営業時間について知っておくべきことをまとめました'.repeat(3)}：</b></p><p>月曜休み。</p>`,
+    // more than a colon outside the bold
+    '<p><strong>Material</strong>: cotton</p><p>Machine wash.</p>',
+    '<p><strong>Ingredients</strong>: <strong>eggs</strong></p><p>Mix well.</p>',
+    '<p><strong>Ingredients</strong>; </p><p>Mix well.</p>'
   ];
   for (const body of notAsked) {
     const result = runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] });
