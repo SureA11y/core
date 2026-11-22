@@ -515,6 +515,15 @@ test(`${RULE_ID}: the work grows linearly with fields sharing a label, with the 
       work++;
       return compare.apply(this, args);
     };
+    // Each element a search finds is work too.
+    for (const owner of [proto, dom.window.Document.prototype]) {
+      const qsa = owner.querySelectorAll;
+      owner.querySelectorAll = function (...args) {
+        const found = qsa.apply(this, args);
+        work += found.length;
+        return found;
+      };
+    }
     const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
     return { rule: result.checksResults.find((c) => c.ruleId === RULE_ID), work };
   };
@@ -524,6 +533,10 @@ test(`${RULE_ID}: the work grows linearly with fields sharing a label, with the 
       `<form>${repeat(n, (i) => `<label for="f${i}">Name</label><input id="f${i}" name="f${i}"> `)}</form>`,
     checkboxes: (n) =>
       `<form><p>Choose</p>${repeat(n, () => '<label><input type="checkbox" name="c"> Option</label>')}</form>`,
+    // Each checkbox a group of its own: its question was looked for by
+    // searching each of its ancestors for other fields (round 11, P11-4).
+    ownNames: (n) =>
+      `<form><p>Choose</p>${repeat(n, (i) => `<div><label for="c${i}">Option</label><input type="checkbox" id="c${i}" name="c${i}"></div>`)}</form>`,
     headed: (n) =>
       `<form>${repeat(
         n / 2,
@@ -544,7 +557,11 @@ test(`${RULE_ID}: the work grows linearly with fields sharing a label, with the 
     // Under its own heading each field shares its label with one other.
     assert.deepEqual(new Set(shared), new Set([name === 'headed' ? 1 : 199]), name);
     const toward = new Set(large.rule.occurrences.map((o) => (o.lean ? o.lean.toward : null)));
-    assert.deepEqual(toward, new Set([name === 'checkboxes' ? null : 'fail']), name);
+    assert.deepEqual(
+      toward,
+      new Set([name === 'checkboxes' || name === 'ownNames' ? null : 'fail']),
+      name
+    );
   }
 });
 
