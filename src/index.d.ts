@@ -480,6 +480,9 @@ export interface RuleHelpers {
   isIso639LanguageCode: RuleHelper;
   getImagesUsingMap: RuleHelper;
   parseHtmlInteger: RuleHelper;
+  parseHtmlNonNegativeInteger: RuleHelper;
+  selectSizeOf: RuleHelper;
+  tableCellSpanOf: RuleHelper;
   hasSkipLinkWording: RuleHelper;
   getSamePageFragment: RuleHelper;
   getLinkKind: RuleHelper;

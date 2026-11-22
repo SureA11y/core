@@ -360,7 +360,8 @@
       "DL_NO_DT_DD"
     ],
     "deprecated-elements-not-used": [
-      "MARQUEE_PAUSE_MECHANISM_UNKNOWN"
+      "MARQUEE_PAUSE_MECHANISM_UNKNOWN",
+      "MARQUEE_STOPS_ONLY_ON_HOVER"
     ],
     "dialog-name-present": [
       "name_internals",

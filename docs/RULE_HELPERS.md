@@ -946,7 +946,32 @@ An integer read as HTML's rules for parsing integers read it, as browsers read
 them ignored. So `"-1x"` is -1 and `"1.5"` is 1; `null` when there are no digits
 (`"x"`, `""`, or a value starting with a no-break space). Use it for `tabindex` and
 any other integer attribute rather than `Number()`, which rejects `"-1x"` and
-accepts `"\u00a03"`.
+accepts `"\u00a03"`. A value outside the 32-bit range (above 2147483647 or below
+-2147483648) is `null`, as a reflected `long` such as `tabIndex` ignores it: Chromium
+leaves `tabindex="2147483648"` unfocusable, as if it were missing.
+
+### `parseHtmlNonNegativeInteger(value)` → `number | null`
+
+An integer read as HTML's rules for parsing non-negative integers read it: as
+`parseHtmlInteger`, but `null` for a negative value (`"-0"` is 0), and with no range
+limit, which each attribute applies its own way: a `<select>`'s `size`
+(`selectSizeOf`), and `colspan` and `rowspan` (`tableCellSpanOf`).
+
+### `selectSizeOf(select)` → `number | null`
+
+A `<select>`'s `size` as Chromium draws it: a non-negative integer up to 4294967295
+(an unsigned `long`), `null` where it is missing, not a non-negative integer, or
+larger. Chromium draws `size="2147483648"` as a list box, though its `size` property
+reads 0, and `size="4294967296"` as a drop-down. A size above 1, or `multiple`, makes
+the element a list box rather than a combobox.
+
+### `tableCellSpanOf(cell, attr)` → `number`
+
+A table cell's `colspan` or `rowspan` (`attr`) as HTML's table model and Chromium
+read it. `colspan` is 1 where it is missing, not a non-negative integer, or 0, and at
+most 1000; `rowspan` is 1 where it is missing or not a non-negative integer, 0 to
+span to the end of its row group, and at most 65534. A larger value is clamped to the
+limit, not ignored: Chromium spans `colspan="4294967296"` over 1000 columns.
 
 ### `hasSkipLinkWording(text)` → `boolean`
 

@@ -159,10 +159,7 @@ function runInPage(ctx) {
     // A lone cell spanning the table's full width, used once at the top, is
     // the visual-caption pattern; full-width rows further down group rows
     // instead, and a cell narrower than the table is no title bar.
-    const colSpan = (cell) => {
-      const n = Number.parseInt(dom.getAttribute(cell, 'colspan') || '1', 10);
-      return Number.isFinite(n) && n > 0 ? n : 1;
-    };
+    const colSpan = (cell) => helpers.tableCellSpanOf(cell, 'colspan');
     const laterRows = rows.slice(1).map((r) => [...(r.cells || [])].filter(isEligible));
     const width = laterRows.reduce(
       (m, cells) =>

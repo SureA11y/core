@@ -613,7 +613,10 @@ const PROCEDURES = {
       'deprecated-non-stoppable-elements-absent': {
         coveredBy: 'auto-moving-content-pausable',
         variants: {
-          'deprecated-elements-not-used': ['MARQUEE_PAUSE_MECHANISM_UNKNOWN']
+          'deprecated-elements-not-used': [
+            'MARQUEE_PAUSE_MECHANISM_UNKNOWN',
+            'MARQUEE_STOPS_ONLY_ON_HOVER'
+          ]
         }
       },
       'auto-moving-content-pausable': {

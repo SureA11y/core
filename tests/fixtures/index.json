@@ -774,11 +774,11 @@
       "testFile": "tests/engine-checks/automatic/deprecated-elements-not-used.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/deprecated-elements-not-used-all-scenarios.html",
-      "totalCases": 4,
+      "totalCases": 5,
       "caseCounts": {
         "PASS": 1,
         "FAIL": 0,
-        "CANTTELL": 2,
+        "CANTTELL": 3,
         "OTHER": 1
       }
     },
@@ -1013,9 +1013,9 @@
       "testFile": "tests/engine-checks/manual/form-control-label-quality.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-control-label-quality-all-scenarios.html",
-      "totalCases": 14,
+      "totalCases": 15,
       "caseCounts": {
-        "PASS": 7,
+        "PASS": 8,
         "FAIL": 0,
         "CANTTELL": 6,
         "OTHER": 1
@@ -1663,9 +1663,9 @@
       "testFile": "tests/engine-checks/automatic/link-in-text-block.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-in-text-block-all-scenarios.html",
-      "totalCases": 13,
+      "totalCases": 14,
       "caseCounts": {
-        "PASS": 4,
+        "PASS": 5,
         "FAIL": 4,
         "CANTTELL": 2,
         "OTHER": 3

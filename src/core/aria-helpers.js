@@ -1401,8 +1401,13 @@ function createAriaHelpers(opts, shared) {
       try {
         isMultiSelect = !!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'multiple'));
         if (!isMultiSelect) {
-          const sizeAttr = getAttr(el, 'size');
-          const size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
+          // Read as Chromium draws it (selectSizeOf in dom-helpers).
+          let size;
+          if (shared && typeof shared.selectSizeOf === 'function') size = shared.selectSizeOf(el);
+          else {
+            const sizeAttr = getAttr(el, 'size');
+            size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
+          }
           isMultiSelect = Number.isFinite(size) && size > 1;
         }
       } catch {

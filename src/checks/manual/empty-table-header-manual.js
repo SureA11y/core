@@ -222,8 +222,7 @@ function runInPage(ctx) {
     const spans = rows.some((cells) =>
       cells.some(
         (x) =>
-          Number.parseInt(dom.getAttribute(x, 'colspan') || '1', 10) > 1 ||
-          Number.parseInt(dom.getAttribute(x, 'rowspan') || '1', 10) !== 1
+          helpers.tableCellSpanOf(x, 'colspan') > 1 || helpers.tableCellSpanOf(x, 'rowspan') !== 1
       )
     );
     if (spans) return null;

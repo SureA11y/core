@@ -14080,8 +14080,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       try {
         isMultiSelect = !!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'multiple'));
         if (!isMultiSelect) {
-          const sizeAttr = getAttr(el, 'size');
-          const size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
+          // Read as Chromium draws it (selectSizeOf in dom-helpers).
+          let size;
+          if (shared && typeof shared.selectSizeOf === 'function') size = shared.selectSizeOf(el);
+          else {
+            const sizeAttr = getAttr(el, 'size');
+            size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
+          }
           isMultiSelect = Number.isFinite(size) && size > 1;
         }
       } catch {
@@ -15806,7 +15811,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (x === 'visible') x = 'auto';
         if (y === 'visible') y = 'auto';
       } else if (html && tag === 'select') {
-        const size = parseHtmlInteger(dom.getAttribute(el, 'size'));
+        const size = selectSizeOf(el);
         if (!dom.hasAttribute(el, 'multiple') && !(size !== null && size > 1)) {
           x = 'clip';
           y = 'clip';
@@ -16605,6 +16610,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // range, as if the attribute were missing (HTML, Reflecting content
     // attributes in IDL attributes).
     return v < -2147483648 || v > 2147483647 ? null : v;
+  }
+
+  // HTML's rules for parsing non-negative integers, as browsers read a
+  // <select>'s size and a cell's colspan and rowspan: parseHtmlInteger's
+  // reading, null for a negative value, and no range limit, which each
+  // attribute applies its own way (selectSizeOf, tableCellSpanOf).
+  function parseHtmlNonNegativeInteger(raw) {
+    const m = /^[\t\n\f\r ]*([+-]?)([0-9]+)/.exec(String(raw == null ? '' : raw));
+    if (!m) return null;
+    const n = parseInt(m[2], 10);
+    if (m[1] === '-' && n !== 0) return null;
+    return n;
+  }
+
+  // A <select>'s size as Chromium draws it: a value up to 4294967295 (an
+  // unsigned long), a larger one ignored as if missing. Chromium draws
+  // size="2147483648" as a list box, though the size property reads 0.
+  function selectSizeOf(el) {
+    const n = parseHtmlNonNegativeInteger(getAttr(el, 'size'));
+    return n !== null && n <= 4294967295 ? n : null;
+  }
+
+  // A table cell's colspan or rowspan as HTML (forming a table) and
+  // Chromium read them: colspan 1 where it is missing, not a non-negative
+  // integer, or 0, and at most 1000; rowspan 1 where it is missing or not a
+  // non-negative integer, 0 to span to the end of its row group, and at
+  // most 65534. A larger value is clamped, not ignored.
+  function tableCellSpanOf(el, attr) {
+    const n = parseHtmlNonNegativeInteger(getAttr(el, attr));
+    if (attr === 'rowspan') return n === null ? 1 : Math.min(n, 65534);
+    return n === null || n === 0 ? 1 : Math.min(n, 1000);
   }
 
   function parseTabIndex(el) {
@@ -21484,7 +21520,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       else if (type === 'range') nativeRole = 'slider';
     } else if (tag === 'textarea') nativeRole = 'textbox';
     else if (isSelect) {
-      const size = parseHtmlInteger(getAttr(node, 'size'));
+      const size = selectSizeOf(node);
       nativeRole =
         dom.hasAttribute(node, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
     } else if (tag === 'progress') nativeRole = 'progressbar';
@@ -23390,7 +23426,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     else if (tag === 'summary') role = 'button';
     else if (tag === 'input') role = aria.getInputRole(el);
     else if (tag === 'select') {
-      const size = parseHtmlInteger(getAttr(el, 'size'));
+      const size = selectSizeOf(el);
       role =
         dom.hasAttribute(el, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
     } else if (tag === 'textarea') role = 'textbox';
@@ -25334,7 +25370,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl, getCustomElementInternals, flatParentElement }
+    { trim, getLabelControl, getCustomElementInternals, flatParentElement, selectSizeOf }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -25537,6 +25573,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isIso639LanguageCode,
     getImagesUsingMap,
     parseHtmlInteger,
+    parseHtmlNonNegativeInteger,
+    selectSizeOf,
+    tableCellSpanOf,
 
     // Existing query/snippet utilities
     queryAll,
@@ -45142,6 +45181,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "Prüfen Sie, ob das Bedienelement auf dieses marquee wirkt und per Tastatur erreichbar ist.",
       "deprecatedElements_lean_why_noMechanism": "Kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden, und kein Skript der Seite stoppt das marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Ein aus einer Datei geladenes Skript kann ein Bedienelement über seine id verknüpfen, etwa eine Symbolschaltfläche.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Dieses <{{element}}> scrollt seinen Inhalt und hält nur an, solange der Mauszeiger darüber ist; das können Nutzer mit Tastatur oder Touchscreen nicht.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Prüfen Sie, ob die Seite eine andere Möglichkeit bietet, diesen Inhalt anzuhalten, zu stoppen oder auszublenden, die auch mit der Tastatur funktioniert. Besser: Ersetzen Sie ihn durch statischen Inhalt oder durch eine Animation mit einer Pause-/Stopp-Steuerung.",
+      "deprecatedElements_lean_why_hoverOnly": "Das marquee hält nur an, solange der Mauszeiger darüber ist, was Nutzer mit Tastatur oder Touchscreen nicht können, und kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden.",
       "iframeNamePresent_title": "Frames haben einen zugänglichen Namen",
       "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
       "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
@@ -45648,6 +45690,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "Scrollbare Bereiche ohne fokussierbaren Inhalt sollten per Tastatur fokussierbar sein",
       "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
       "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Ob sein Inhalt überläuft, ließ sich nicht messen: Die Seite wurde ohne Layout geprüft. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
       "scrollableRegionFocusable_hint_cantTell": "Wenn sein Inhalt tatsächlich überläuft, fügen Sie tabindex=\"0\" und einen Namen hinzu, damit Tastaturnutzende es fokussieren und mit den Pfeiltasten scrollen können.",
       "scrollableRegionFocusable_lean_why_overflows": "Sein Inhalt läuft über den Kasten hinaus, und nichts darin kann den Tastaturfokus erhalten, um ihn zu scrollen.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium ab Version 130 und Firefox machen einen scrollbaren Kasten trotzdem per Tastatur erreichbar; Safari nicht.",
@@ -46988,6 +47031,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "Check that the control acts on this marquee and can be reached with the keyboard.",
       "deprecatedElements_lean_why_noMechanism": "No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.",
       "deprecatedElements_lean_caution_noMechanism": "A script loaded from a file may wire a control by its id, such as an icon button.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "This <{{element}}> scrolls its content and stops only while the pointer is over it, which keyboard and touch users cannot do.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Check that the page offers another way to pause, stop, or hide this content, one that works with the keyboard. Better: replace it with static content, or with an animation that has a pause/stop control.",
+      "deprecatedElements_lean_why_hoverOnly": "The marquee stops only while the pointer is over it, which keyboard and touch users cannot do, and no control on the page is named for pausing, stopping or hiding.",
       "iframeNamePresent_title": "Frames have an accessible name",
       "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
       "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
@@ -47494,6 +47540,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
       "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
       "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Whether its content overflows could not be measured: the page was checked without a layout. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
       "scrollableRegionFocusable_hint_cantTell": "If its content does overflow, add tabindex=\"0\" and a name, so keyboard users can focus it and scroll with the arrow keys.",
       "scrollableRegionFocusable_lean_why_overflows": "Its content overflows the box, and nothing in it can take keyboard focus to scroll it.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.",
@@ -48834,6 +48881,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "Comprobar que el control actúa sobre este marquee y que se puede alcanzar con el teclado.",
       "deprecatedElements_lean_why_noMechanism": "Ningún control de la página indica en su nombre pausar, detener u ocultar, y ningún script de la página detiene el marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script cargado desde un archivo puede vincular un control por su id, como un botón de icono.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Este <{{element}}> desplaza su contenido y solo se detiene mientras el puntero está sobre él, algo que no pueden hacer quienes usan el teclado o una pantalla táctil.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Comprobar que la página ofrece otra forma de pausar, detener u ocultar este contenido, que funcione con el teclado. Mejor: sustituirlo por contenido estático, o por una animación con un control de pausa/detención.",
+      "deprecatedElements_lean_why_hoverOnly": "El marquee solo se detiene mientras el puntero está sobre él, algo que no pueden hacer quienes usan el teclado o una pantalla táctil, y ningún control de la página indica en su nombre pausar, detener u ocultar.",
       "iframeNamePresent_title": "Los marcos tienen un nombre accesible",
       "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
       "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
@@ -49340,6 +49390,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "Las regiones desplazables sin contenido enfocable deberían ser enfocables por teclado",
       "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
       "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. No se pudo medir si su contenido desborda: la página se comprobó sin maquetación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
       "scrollableRegionFocusable_hint_cantTell": "Si su contenido se desborda de verdad, agregar tabindex=\"0\" y un nombre, para que con el teclado se pueda enfocar y desplazar con las flechas.",
       "scrollableRegionFocusable_lean_why_overflows": "Su contenido desborda la caja, y nada en ella puede recibir el foco del teclado para desplazarla.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 y posteriores, y Firefox, permiten igualmente llegar con el teclado a una caja que se desplaza; Safari no.",
@@ -50680,6 +50731,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "Vérifiez que la commande agit sur ce marquee et qu’on peut l’atteindre au clavier.",
       "deprecatedElements_lean_why_noMechanism": "Aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque, et aucun script de la page n’arrête le marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script chargé depuis un fichier peut relier une commande par son id, comme un bouton icône.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Ce <{{element}}> fait défiler son contenu et ne s’arrête que tant que le pointeur le survole, ce que les utilisateurs du clavier ou d’un écran tactile ne peuvent pas faire.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Vérifiez que la page offre un autre moyen, utilisable au clavier, de mettre en pause, d’arrêter ou de masquer ce contenu. Mieux : remplacez-le par un contenu statique, ou par une animation dotée d’un contrôle de pause/arrêt.",
+      "deprecatedElements_lean_why_hoverOnly": "Le marquee ne s’arrête que tant que le pointeur le survole, ce que les utilisateurs du clavier ou d’un écran tactile ne peuvent pas faire, et aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque.",
       "iframeNamePresent_title": "Les cadres ont un nom accessible",
       "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
       "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
@@ -51186,6 +51240,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "Les régions défilantes sans contenu focalisable devraient être focalisables au clavier",
       "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une vérification manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
       "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Son débordement n’a pas pu être mesuré : la page a été vérifiée sans mise en page. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
       "scrollableRegionFocusable_hint_cantTell": "Si son contenu déborde réellement, ajoutez tabindex=\"0\" et un nom, pour qu’on puisse le focaliser au clavier et le faire défiler avec les flèches.",
       "scrollableRegionFocusable_lean_why_overflows": "Son contenu déborde de la boîte, et rien à l’intérieur ne peut recevoir le focus clavier pour la faire défiler.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 et versions ultérieures, ainsi que Firefox, permettent quand même d’atteindre au clavier une boîte qui défile ; Safari non.",
@@ -52526,6 +52581,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "そのコントロールがこの marquee に作用し、キーボードで操作できることを確認してください。",
       "deprecatedElements_lean_why_noMechanism": "ページには一時停止、停止、非表示を名前に示すコントロールがなく、marquee を止めるページ内のスクリプトもありません。",
       "deprecatedElements_lean_caution_noMechanism": "ファイルから読み込まれるスクリプトが、アイコンボタンなどのコントロールを id で結び付けている場合があります。",
+      "deprecatedElements_summary_cantTell_hoverOnly": "この <{{element}}> はコンテンツをスクロールさせ、ポインターが上にある間だけ止まります。キーボードやタッチ操作の利用者にはそれができません。",
+      "deprecatedElements_hint_cantTell_hoverOnly": "このコンテンツを一時停止、停止、非表示にする別の手段で、キーボードでも使えるものがページにあるかを確認してください。より良い方法: 静的なコンテンツか、一時停止/停止のコントロールを備えたアニメーションに置き換えてください。",
+      "deprecatedElements_lean_why_hoverOnly": "marquee はポインターが上にある間だけ止まり、キーボードやタッチ操作の利用者にはそれができません。また、ページには一時停止、停止、非表示を名前に示すコントロールがありません。",
       "iframeNamePresent_title": "フレームにアクセシブルな名前があること",
       "iframeNamePresent_description": "<iframe>/<frame> 要素が、aria-label、aria-labelledby、または title 属性によって空でないアクセシブルな名前を公開しているかを確認します。",
       "iframeNamePresent_summary_fail": "この <{{element}}> にはアクセシブルな名前がありません。",
@@ -53032,6 +53090,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "フォーカス可能なコンテンツのないスクロール領域は、キーボードでフォーカスできることが望ましい",
       "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
       "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。ページがレイアウトなしで検査されたため、コンテンツがはみ出すかは測定できませんでした。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
       "scrollableRegionFocusable_hint_cantTell": "内容が実際にはみ出す場合は、tabindex=\"0\" と名前を付け、キーボードでフォーカスして矢印キーでスクロールできるようにしてください。",
       "scrollableRegionFocusable_lean_why_overflows": "内容がボックスからはみ出しており、スクロールするためにキーボードフォーカスを受けられるものが中にありません。",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 以降と Firefox では、スクロールするボックスにキーボードで到達できます。Safari ではできません。",
@@ -68391,8 +68450,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return alt === '' && !named ? { roleless: true } : { role: 'img' };
     }
     if (tag === 'select') {
-      const size = parseInt(String(dom.getAttribute(el, 'size') || ''), 10);
-      if (dom.hasAttribute(el, 'multiple') || size > 1) return { role: 'listbox' };
+      const size = helpers.selectSizeOf(el);
+      if (dom.hasAttribute(el, 'multiple') || (size !== null && size > 1))
+        return { role: 'listbox' };
       return { role: 'combobox', also: 'menu' };
     }
     if (tag === 'input') {
@@ -85564,19 +85624,68 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         break;
       }
     }
-    if (!stopCall) {
-      const doc = dom.ownerDocument(nodes[0]) || ctx.document;
-      for (const sc of dom.querySelectorAll(doc, 'script:not([src])') || []) {
-        const text = String(dom.textContent(sc) || '');
-        if (isEngineScript(text)) continue;
-        if (STOP_CALL.test(text) && reachesMarquee(text)) {
-          stopCall = true;
-          break;
-        }
+    // Inline scripts that stop a marquee. One whose only events are the
+    // pointer's hover (mouseover, mouseenter and their ends) stops it only
+    // while the pointer is over it: kept apart in hoverScripts.
+    const hoverScripts = [];
+    const doc = dom.ownerDocument(nodes[0]) || ctx.document;
+    for (const sc of dom.querySelectorAll(doc, 'script:not([src])') || []) {
+      const text = String(dom.textContent(sc) || '');
+      if (isEngineScript(text)) continue;
+      if (!STOP_CALL.test(text) || !reachesMarquee(text)) continue;
+      if (isHoverOnlyScript(text)) {
+        hoverScripts.push(text);
+      } else {
+        stopCall = true;
       }
     }
-    pageEvidence = { pauseControl, stopCall };
+    pageEvidence = { pauseControl, stopCall, hoverScripts };
     return pageEvidence;
+  }
+
+  // The event types a script names: addEventListener('type', ...) and
+  // el.ontype = ....
+  const HOVER_TYPES = new Set(['mouseover', 'mouseenter', 'mouseout', 'mouseleave']);
+  function isHoverOnlyScript(text) {
+    const types = new Set();
+    for (const m of text.matchAll(/addEventListener\s*\(\s*['"`]([A-Za-z]+)['"`]/g))
+      types.add(m[1].toLowerCase());
+    for (const m of text.matchAll(/\.\s*on([A-Za-z]+)\s*=(?!=)/g)) types.add(m[1].toLowerCase());
+    return types.size > 0 && [...types].every((t) => HOVER_TYPES.has(t));
+  }
+
+  // Whether `text` reaches this marquee: by tag, or by its id.
+  function reachesThis(el, text) {
+    if (MARQUEE_BY_TAG.test(text)) return true;
+    const mid = String(dom.getAttribute(el, 'id') || '').trim();
+    if (!mid) return false;
+    const q = mid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('[\'"`#]' + q + '[\'"`]|(?:^|[^\\w$.-])' + q + '\\s*\\.\\s*stop\\s*\\(').test(
+      text
+    );
+  }
+
+  // Whether the marquee stops when the pointer is over it: its own
+  // onmouseover or onmouseenter calls this.stop(), another element's such
+  // handler stops it, or an inline script listening only for hover does.
+  const HOVER_ATTRS = ['onmouseover', 'onmouseenter'];
+  const STOP_ONLY = /\.\s*stop\s*\(/;
+  let hoverHandlers = null;
+  function stopsOnHover(el) {
+    for (const a of HOVER_ATTRS) {
+      const text = String(dom.getAttribute(el, a) || '');
+      if (/\bthis\s*\.\s*stop\s*\(/.test(text)) return true;
+    }
+    if (!hoverHandlers) hoverHandlers = helpers.queryAll('[onmouseover], [onmouseenter]') || [];
+    for (const h of hoverHandlers) {
+      for (const a of HOVER_ATTRS) {
+        const text = String(dom.getAttribute(h, a) || '');
+        if (STOP_ONLY.test(text) && reachesThis(el, text)) return true;
+      }
+    }
+    return readPageEvidence().hoverScripts.some(
+      (text) => STOP_ONLY.test(text) && reachesThis(el, text)
+    );
   }
 
   // A marquee with scrollamount="0" does not move, and a control named for
@@ -85619,6 +85728,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .toLowerCase();
     const scrollsOnce = (loop !== '' && parseInt(loop, 10) > 0) || behavior === 'slide';
     if (stopCall || scrollsOnce) return null;
+    if (stopsOnHover(el)) {
+      return {
+        toward: 'fail',
+        why: 'The marquee stops only while the pointer is over it, which keyboard and touch users cannot do, and no control on the page is named for pausing, stopping or hiding.',
+        signals: [
+          { signal: 'pause-control', value: null },
+          { signal: 'stop-call', value: false },
+          { signal: 'stops-on-hover', value: true },
+          { signal: 'scrollamount-zero', value: false }
+        ],
+        caution:
+          'A script loaded from a file may wire a control by its id, such as an icon button.',
+        i18n: {
+          whyKey: 'deprecatedElements_lean_why_hoverOnly',
+          cautionKey: 'deprecatedElements_lean_caution_noMechanism'
+        }
+      };
+    }
     return {
       toward: 'fail',
       why: 'No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.',
@@ -85639,27 +85766,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el || !dom.tagName(el)) continue;
 
     const tag = dom.tagName(el).toLowerCase();
+    const lean = marqueeLean(el);
+    // It stops only while the pointer is over it: the question is whether
+    // there is another way to pause it.
+    const hoverOnly = !!(
+      lean && lean.signals.some((x) => x.signal === 'stops-on-hover' && x.value)
+    );
+    const reasonCode = hoverOnly
+      ? 'MARQUEE_STOPS_ONLY_ON_HOVER'
+      : 'MARQUEE_PAUSE_MECHANISM_UNKNOWN';
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary:
-          'This <marquee> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.',
-        hint: 'Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.',
+        summary: hoverOnly
+          ? 'This <marquee> scrolls its content and stops only while the pointer is over it, which keyboard and touch users cannot do.'
+          : 'This <marquee> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.',
+        hint: hoverOnly
+          ? 'Check that the page offers another way to pause, stop, or hide this content, one that works with the keyboard. Better: replace it with static content, or with an animation that has a pause/stop control.'
+          : 'Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.',
         occurrenceOutcome: 'cantTell',
-        ...withLean(marqueeLean(el)),
+        ...withLean(lean),
         i18n: {
-          summaryKey: 'deprecatedElements_summary_cantTell',
-          hintKey: 'deprecatedElements_hint_cantTell',
+          summaryKey: hoverOnly
+            ? 'deprecatedElements_summary_cantTell_hoverOnly'
+            : 'deprecatedElements_summary_cantTell',
+          hintKey: hoverOnly
+            ? 'deprecatedElements_hint_cantTell_hoverOnly'
+            : 'deprecatedElements_hint_cantTell',
           params: { element: tag }
         },
         uncertainty: {
           code: 'runtime-dependent',
-          needed:
-            'Whether the page provides a control that pauses, stops, or hides the scrolling content.',
+          needed: hoverOnly
+            ? 'Whether the page offers another way, one that works with the keyboard, to pause, stop, or hide the scrolling content.'
+            : 'Whether the page provides a control that pauses, stops, or hides the scrolling content.',
           evidence: { element: tag }
         },
         data: {
-          details: { reasonCode: 'MARQUEE_PAUSE_MECHANISM_UNKNOWN', element: tag }
+          details: { reasonCode, element: tag }
         }
       })
     );
@@ -87231,8 +87375,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const spans = rows.some((cells) =>
       cells.some(
         (x) =>
-          Number.parseInt(dom.getAttribute(x, 'colspan') || '1', 10) > 1 ||
-          Number.parseInt(dom.getAttribute(x, 'rowspan') || '1', 10) !== 1
+          helpers.tableCellSpanOf(x, 'colspan') > 1 || helpers.tableCellSpanOf(x, 'rowspan') !== 1
       )
     );
     if (spans) return null;
@@ -90804,6 +90947,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return null;
   }
 
+  // A combobox and its own popup (a listbox, tree, grid or dialog it
+  // controls or owns, or that names the combobox in its own aria-controls
+  // or aria-owns) are one field: the authoring practices label both with
+  // the same element, and a person sees one control. They are never each
+  // other's duplicate.
+  const POPUP_ROLES = ['listbox', 'tree', 'grid', 'dialog'];
+  function idrefTargets(el, name) {
+    try {
+      const value = dom.getAttribute(el, name);
+      if (!value) return [];
+      return helpers.resolveIdRefs(value, ctx, {}, el).refs || [];
+    } catch {
+      return [];
+    }
+  }
+  function roleOf(el) {
+    try {
+      return helpers.aria.getAuthorRole(el) || '';
+    } catch {
+      return '';
+    }
+  }
+  // Each combobox field's popup fields, both ways round, worked out once:
+  // only fields with one of these roles take part.
+  const popupPartners = new Map();
+  function pair(x, y) {
+    if (!popupPartners.has(x)) popupPartners.set(x, new Set());
+    popupPartners.get(x).add(y);
+  }
+  {
+    const fieldEls = new Set(fields.map((f) => f.el));
+    for (const field of fields) {
+      const role = roleOf(field.el);
+      const isCombo = role === 'combobox';
+      if (!isCombo && !POPUP_ROLES.includes(role)) continue;
+      for (const target of [
+        ...idrefTargets(field.el, 'aria-controls'),
+        ...idrefTargets(field.el, 'aria-owns')
+      ]) {
+        if (target === field.el || !fieldEls.has(target)) continue;
+        const targetRole = roleOf(target);
+        if (isCombo ? POPUP_ROLES.includes(targetRole) : targetRole === 'combobox') {
+          pair(field.el, target);
+          pair(target, field.el);
+        }
+      }
+    }
+  }
+
   const occurrences = [];
   const fieldNames = new Map();
   function describeField(f) {
@@ -90822,7 +91014,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       field.normalized,
       primaryLangOf(field.el)
     );
-    const shared = byKey.get(field.key) || [];
+    const bucket = byKey.get(field.key) || [];
+    const partners = popupPartners.get(field.el);
+    const shared =
+      partners && bucket.length > 1 ? bucket.filter((f) => !partners.has(f.el)) : bucket;
     // A label of punctuation alone ("*", ":") has no words to share: the
     // trailing marks normalize drops leave it empty, so "*" and ":" read as
     // one label. Whatever it lacks, it is not another field's label.
@@ -97531,8 +97726,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function dropDownSelectedText(node) {
     if (String(dom.localName(node) || '').toLowerCase() !== 'select') return null;
     if (dom.hasAttribute(node, 'multiple')) return null;
-    const size = Number.parseInt(String(dom.getAttribute(node, 'size') || ''), 10);
-    if (size > 1) return null;
+    const size = helpers.selectSizeOf(node);
+    if (size !== null && size > 1) return null;
     for (const opt of [...dom.querySelectorAll(node, 'option')]) {
       let selected;
       try {
@@ -99400,7 +99595,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // A declaration wins if it is the last one, in (rank, order), whose
-  // selector matches (see rankOf). Besides whether it underlines: whether
+  // selector matches (see cascadeWins). Besides whether it underlines: whether
   // it can't be read here (a var(), inherit), whether it reverts to the
   // browser's style, and the line's color it sets, if any (the shorthand
   // sets currentcolor where it names none).
@@ -99440,13 +99635,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return tag === 'u' || tag === 'ins';
   }
 
-  // A declaration's place in the cascade, highest wins: important ones over
-  // normal ones, and among each, a layer's below (normal) or above
-  // (important) those in no layer; the style attribute above the rules of
-  // its importance in no layer; then specificity.
-  function rankOf(decl, specificity, layered, inline) {
-    if (decl.important) return (layered ? 3e9 : inline ? 2e9 : 1e9) + specificity;
-    return (layered ? -1e8 : inline ? 5e8 : 0) + specificity;
+  // Whether declaration a wins over b in the cascade, each { decl, inline,
+  // layer, specificity, order }: !important over normal; then the style
+  // attribute over every rule of its importance; then cascade layers, which
+  // rank in the order they are first named (a nested layer under its
+  // parent's own declarations), with declarations in no layer over every
+  // layer for normal ones, and !important reversing both; then specificity
+  // and order.
+  function cascadeWins(a, b) {
+    if (a.decl.important !== b.decl.important) return a.decl.important;
+    if (a.inline !== b.inline) return a.inline;
+    const la = a.layer;
+    const lb = b.layer;
+    let layerCmp = 0;
+    for (let i = 0; i < Math.max(la.length, lb.length) && !layerCmp; i++) {
+      if (i >= la.length) layerCmp = 1;
+      else if (i >= lb.length) layerCmp = -1;
+      else if (la[i] !== lb[i]) layerCmp = la[i] > lb[i] ? 1 : -1;
+    }
+    if (layerCmp) return a.decl.important ? layerCmp < 0 : layerCmp > 0;
+    if (a.specificity !== b.specificity) return a.specificity > b.specificity;
+    return a.order >= b.order;
   }
 
   // The user agent underlines `a[href]`; an element with role="link" has no
@@ -99479,11 +99688,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // The style rule parts that set an underline on an element at rest, in
   // the sheets' order, found once per run: { parts, unreadableSheet,
-  // broken }. Each part is { part, rank, underlined }.
+  // broken }. Each part is { part, decl, layer, specificity, order }, layer
+  // the path of the part's cascade layer: each layer's place among its
+  // siblings, in the order they are first named (by @layer a, b;, a block,
+  // or @import ... layer(a)), from the outermost; [] in no layer.
   const underlineRulesByDoc = new Map();
   function underlineRulesOf(doc) {
     if (underlineRulesByDoc.has(doc)) return underlineRulesByDoc.get(doc);
-    const found = { parts: [], unreadableSheet: false, broken: false };
+    const found = { parts: [], unreadableSheet: false, broken: false, anyLayered: false };
+    let order = 0;
+
+    // Layers by their full name, dotted from the outermost; an anonymous
+    // layer is one of its own each time.
+    const layers = new Map();
+    let anonymous = 0;
+    const NO_LAYER = { path: [], name: '' };
+    function childLayer(parent, name) {
+      const full = name ? (parent.name ? parent.name + '.' + name : name) : null;
+      const key = full || '\u0000anonymous' + anonymous++;
+      if (!layers.has(key)) {
+        let siblings = 0;
+        for (const l of layers.values()) if (l.parent === parent.name) siblings += 1;
+        layers.set(key, { path: parent.path.concat(siblings), name: key, parent: parent.name });
+      }
+      return layers.get(key);
+    }
+    // A layer name may be dotted (a.b): each part is a layer in the one
+    // before it.
+    function layerNamed(parent, name) {
+      const parts = String(name || '')
+        .split('.')
+        .map((x) => x.trim())
+        .filter(Boolean);
+      if (!parts.length) return childLayer(parent, '');
+      let l = parent;
+      for (const part of parts) l = childLayer(l, part);
+      return l;
+    }
 
     function consider(cssRule, layer) {
       const decl = underlineFromDeclaration(cssRule.style);
@@ -99497,8 +99738,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
           continue;
         }
-        const rank = rankOf(decl, specificityOf(part), !!layer, false);
-        found.parts.push({ part, rank, decl, layer });
+        if (layer.path.length) found.anyLayered = true;
+        found.parts.push({
+          part,
+          decl,
+          layer: layer.path,
+          specificity: specificityOf(part),
+          order: order++
+        });
       }
     }
 
@@ -99510,14 +99757,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           consider(cssRule, layer);
           continue;
         }
+        const kind = (cssRule.constructor && cssRule.constructor.name) || '';
+        if (kind === 'CSSLayerStatementRule') {
+          for (const name of cssRule.nameList || []) layerNamed(layer, String(name));
+          continue;
+        }
+        if (kind === 'CSSImportRule' || cssRule.type === 3) {
+          const name = typeof cssRule.layerName === 'string' ? cssRule.layerName : null;
+          const inner = name === null ? layer : layerNamed(layer, name);
+          let imported = null;
+          try {
+            imported =
+              cssRule.styleSheet && cssConditionApplies(cssRule.styleSheet)
+                ? cssRule.styleSheet.cssRules
+                : null;
+          } catch {
+            found.unreadableSheet = true;
+          }
+          if (imported) walk(imported, depth + 1, inner);
+          continue;
+        }
         let nested;
         try {
           nested = cssRule.cssRules || null;
         } catch {
           nested = null;
         }
-        const isLayer = !!cssRule.constructor && cssRule.constructor.name === 'CSSLayerBlockRule';
-        if (nested) walk(nested, depth + 1, isLayer ? cssRule : layer);
+        if (!nested) continue;
+        walk(
+          nested,
+          depth + 1,
+          kind === 'CSSLayerBlockRule' ? layerNamed(layer, String(cssRule.name || '')) : layer
+        );
       }
     }
 
@@ -99531,7 +99802,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           found.unreadableSheet = true; // cross-origin, not inspectable
           continue;
         }
-        if (rules) walk(rules, 0, null);
+        if (rules) walk(rules, 0, NO_LAYER);
       }
     } catch {
       found.broken = true;
@@ -99540,22 +99811,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return found;
   }
 
-  // Whether the style sheets underline el at rest (see rankOf for which
-  // declaration wins): { underlined, resolved, color }, color being the
-  // line's color the winning declaration sets, or null.
+  // Whether the style sheets underline el at rest (see cascadeWins for
+  // which declaration wins): { underlined, resolved, color, layered },
+  // color being the line's color the winning declaration sets, or null, and
+  // layered whether a declaration in a cascade layer matched el.
   function resolveUnderlineFromCssom(el) {
-    const unknown = { underlined: false, resolved: false, color: null };
+    const unknown = { underlined: false, resolved: false, color: null, layered: false };
     const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
     if (!doc || typeof dom.get(el, 'matches') !== 'function') return unknown;
 
     const found = underlineRulesOf(doc);
     if (found.broken) return unknown;
-    let best = null; // { rank, decl, layer }
+    let best = null; // { decl, inline, layer, specificity, order }
     let unparsableSelector = false;
-    // Declarations in layers, which disagree where the order of the layers
-    // decides, which isn't read here.
-    const layered = [];
-    for (const { part, rank, decl, layer } of candidatePartsOf(found, el, 'part')) {
+    let layered = false;
+    for (const { part, decl, layer, specificity, order } of candidatePartsOf(found, el, 'part')) {
       let matched;
       try {
         matched = dom.matches(el, part);
@@ -99564,36 +99834,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         continue;
       }
       if (!matched) continue;
-      if (layer) layered.push({ decl, layer });
-      if (!best || rank >= best.rank) best = { rank, decl, layer };
+      if (layer.length) layered = true;
+      const cand = { decl, inline: false, layer, specificity, order };
+      if (!best || cascadeWins(cand, best)) best = cand;
     }
 
     const inline = underlineFromDeclaration(dom.get(el, 'style'));
     if (inline) {
-      const rank = rankOf(inline, 0, false, true);
-      if (!best || rank >= best.rank) best = { rank, decl: inline, layer: null };
+      const cand = { decl: inline, inline: true, layer: [], specificity: 0, order: Infinity };
+      if (!best || cascadeWins(cand, best)) best = cand;
     }
 
     if (best) {
       const decl = best.decl;
-      const layersDisagree =
-        !!best.layer &&
-        layered.some(
-          (o) =>
-            o.layer !== best.layer &&
-            o.decl.important === decl.important &&
-            o.decl.underlined !== decl.underlined
-        );
-      if (layersDisagree || decl.unresolved) return unknown;
-      if (decl.revert) return { underlined: uaDefaultUnderline(el), resolved: true, color: null };
-      return { underlined: decl.underlined, resolved: true, color: decl.color };
+      if (decl.unresolved) return { ...unknown, layered };
+      if (decl.revert)
+        return { underlined: uaDefaultUnderline(el), resolved: true, color: null, layered };
+      return { underlined: decl.underlined, resolved: true, color: decl.color, layered };
     }
 
     // No author declaration reached this element. If a sheet or selector was
     // unreadable, one of them might have, so the answer is unknown; otherwise
     // the browser's style stands: for a link, <u> or <ins>, an underline.
     if (found.unreadableSheet || unparsableSelector) return unknown;
-    return { underlined: uaDefaultUnderline(el), resolved: true, color: null };
+    return { underlined: uaDefaultUnderline(el), resolved: true, color: null, layered: false };
+  }
+
+  // Whether el is underlined at rest, and in which color: { known,
+  // underlined, color }. From its computed style where that can be trusted,
+  // else from the style sheets. jsdom cascades no layered rule, so where a
+  // declaration in a cascade layer matches el, its computed style is not
+  // trusted there: the style sheets say.
+  function restingUnderline(el, cs) {
+    const deco = decorationInfo(cs);
+    let fromCssom = null;
+    const doc = el ? dom.ownerDocument(el) : null;
+    if (!hasLayout() && doc && underlineRulesOf(doc).anyLayered) {
+      fromCssom = resolveUnderlineFromCssom(el);
+      if (!fromCssom.layered) fromCssom = null;
+    }
+    if (!fromCssom && deco.trustworthy)
+      return { known: true, underlined: deco.underlined, color: cs && cs.textDecorationColor };
+    if (!fromCssom) fromCssom = resolveUnderlineFromCssom(el);
+    if (!fromCssom.resolved) return { known: false, underlined: false, color: null };
+    return {
+      known: true,
+      underlined: fromCssom.underlined,
+      color: fromCssom.color || (cs && cs.textDecorationColor)
+    };
   }
 
   // ---- Non-color cues on the link itself ----
@@ -100871,11 +101159,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // cascades no text-decoration, and the color it gives is the text's).
   // null where neither can tell.
   function underlinedAtRest(el, cs, shows) {
-    const deco = decorationInfo(cs);
-    if (deco.trustworthy) return deco.underlined && shows(cs.textDecorationColor);
-    const fromCssom = resolveUnderlineFromCssom(el);
-    if (!fromCssom.resolved) return null;
-    return fromCssom.underlined && shows(fromCssom.color || cs.textDecorationColor);
+    const at = restingUnderline(el, cs);
+    if (!at.known) return null;
+    return at.underlined && shows(at.color);
   }
 
   const notTransparent = (color) => !isTransparentColor(color);
@@ -101128,20 +101414,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return;
     }
 
-    // An underline the computed style vouches for settles the link before
-    // the costlier marks are looked for (what a ::before or ::after draws).
-    const shown = decorationInfo(linkCs);
+    // An underline the computed style vouches for (or, under jsdom with
+    // layered rules, the style sheets) settles the link before the costlier
+    // marks are looked for (what a ::before or ::after draws).
+    const resting = restingUnderline(el, linkCs);
     let textUnderlined = null;
     const aroundUnderlined = () => {
       if (textUnderlined === null) textUnderlined = surroundingUnderlined(textEl);
       return textUnderlined;
     };
-    if (
-      shown.trustworthy &&
-      shown.underlined &&
-      !unseen(el, linkCs && linkCs.textDecorationColor) &&
-      !aroundUnderlined()
-    ) {
+    if (resting.known && resting.underlined && !unseen(el, resting.color) && !aroundUnderlined()) {
       decidedCount += 1;
       return;
     }
@@ -101166,19 +101448,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // on a page whose background cannot be computed (no background set,
     // which strict mode does not assume is white) was left undecided, while
     // a bold one passed. null: this environment cannot tell.
+    // An underline drawn in a transparent color, or in the color behind
+    // the link, shows nothing.
     let underlined = null;
-    const decoration = decorationInfo(linkCs);
-    if (decoration.trustworthy) {
-      // An underline drawn in a transparent color, or in the color behind
-      // the link, shows nothing.
-      underlined = decoration.underlined && !unseen(el, linkCs && linkCs.textDecorationColor);
-    } else {
-      const fromCssom = resolveUnderlineFromCssom(el);
-      if (fromCssom.resolved)
-        underlined =
-          fromCssom.underlined &&
-          !unseen(el, fromCssom.color || (linkCs && linkCs.textDecorationColor));
-    }
+    if (resting.known) underlined = resting.underlined && !unseen(el, resting.color);
     // The surrounding text underlined too: the underline is no cue.
     if (underlined === true && aroundUnderlined()) underlined = false;
     // An underline on the link's content that can't be read may set it apart.
@@ -109043,18 +109316,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const titleParts = titleNorm.split(TITLE_SEPARATOR).filter(Boolean);
 
   // A placeholder a template or a script left in the title instead of the
-  // page's name: a value never set ("undefined", "null", "NaN", "[object
-  // Object]") as the whole title or one part of it, or a template token
-  // ("{{title}}", "${title}", "%s", "{title}", "<%= title %>"). It names
-  // nothing, so it leans fail.
+  // page's name. Only clear cases count, and they lean fail:
+  // - anywhere in the title: a double-brace token ("{{title}}"), a
+  //   template literal of one JavaScript name or dotted path ("${title}",
+  //   "${page.title}"), or a format token ("%s", "%d");
+  // - as the whole title or one part of it: a value never set
+  //   ("undefined", "null", "NaN", "[object Object]"), a single-brace token
+  //   ("{title}"), any template literal ("${...}") or a server tag
+  //   ("<%= title %>");
+  // - as the whole title: a bracketed name ("[title]"), which as one part
+  //   of a title is often a real tag ("[Draft] - Acme").
+  // A single-brace word or an odd template literal among other words ("{Fancy}
+  // Brackets: a CSS guide", "Template literals ${...} explained") may be the
+  // page's own subject, and is asked about as any other title is.
   const placeholderToken = (() => {
     const m =
-      /\{\{[^{}]*\}\}|\$\{[^{}]*\}|<%=?[^%]*%>|\[object [A-Za-z]+\]|\{[A-Za-z_][\w.-]*\}|(?:^|[^%\w])(%[sd])(?![\w])/.exec(
+      /\{\{[^{}]*\}\}|\$\{\s*[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\s*\}|(?:^|[^%\w])(%[sd])(?![\w])/.exec(
         titleText
       );
     if (m) return m[1] || m[0];
-    const raw = titleText.split(TITLE_SEPARATOR).filter(Boolean);
-    return raw.find((part) => part === 'undefined' || part === 'null' || part === 'NaN') || '';
+    const whole = titleText.trim();
+    if (/^\[[A-Za-z_][\w.-]*\]$/.test(whole)) return whole;
+    const raw = titleText
+      .split(TITLE_SEPARATOR)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    return (
+      raw.find(
+        (part) =>
+          part === 'undefined' ||
+          part === 'null' ||
+          part === 'NaN' ||
+          /^\[object [A-Za-z]+\]$/.test(part) ||
+          /^\{[A-Za-z_][\w.-]*\}$/.test(part) ||
+          /^\$\{[^{}]*\}$/.test(part) ||
+          /^<%=?[^%]*%>$/.test(part)
+      ) || ''
+    );
   })();
 
   // Conservative signals:
@@ -113643,11 +113941,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const baseOccurrence = {
       selector: stableSelector,
       html,
-      summary:
-        'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.',
+      // Without a layout (jsdom), the message says the overflow could not
+      // be measured.
+      summary: geometry
+        ? 'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.'
+        : 'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Whether its content overflows could not be measured: the page was checked without a layout. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.',
       hint: 'If this region’s content actually overflows, add tabindex="0" (and a suitable label) so keyboard users can focus it and scroll with the arrow keys.',
       i18n: {
-        summaryKey: 'scrollableRegionFocusable_summary_cantTell',
+        summaryKey: geometry
+          ? 'scrollableRegionFocusable_summary_cantTell'
+          : 'scrollableRegionFocusable_summary_cantTell_unmeasured',
         hintKey: 'scrollableRegionFocusable_hint_cantTell',
         params: { element: tag }
       },
@@ -116848,10 +117151,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // A lone cell spanning the table's full width, used once at the top, is
     // the visual-caption pattern; full-width rows further down group rows
     // instead, and a cell narrower than the table is no title bar.
-    const colSpan = (cell) => {
-      const n = Number.parseInt(dom.getAttribute(cell, 'colspan') || '1', 10);
-      return Number.isFinite(n) && n > 0 ? n : 1;
-    };
+    const colSpan = (cell) => helpers.tableCellSpanOf(cell, 'colspan');
     const laterRows = rows.slice(1).map((r) => [...(r.cells || [])].filter(isEligible));
     const width = laterRows.reduce(
       (m, cells) =>
@@ -117207,7 +117507,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const DATA_ROLES = ['cell', 'gridcell'];
   const HEADER_ROLES = ['columnheader', 'rowheader'];
 
+  // colspan and rowspan as HTML reads them (helpers.tableCellSpanOf);
+  // aria-colspan and aria-rowspan as integers, 1 where there is none.
   function spanOf(cell, attr) {
+    if (attr === 'colspan' || attr === 'rowspan') return helpers.tableCellSpanOf(cell, attr);
     const n = Number.parseInt(dom.getAttribute(cell, attr) || '1', 10);
     return Number.isFinite(n) ? n : 1;
   }
@@ -122104,15 +122407,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (shownRows.length < MIN_SIZE || usedColumns.size < MIN_SIZE) continue;
 
     // A rowspan of 0 spans too: the cell grows down to the end of its row
-    // group (HTML, forming a table). A colspan of 0 is 1. parseInt reads
-    // the values as HTML's rules for parsing non-negative integers do:
-    // leading space and trailing junk allowed (" 0 ", "0x").
+    // group (HTML, forming a table). A colspan of 0 is 1. The values are
+    // read as HTML reads them (helpers.tableCellSpanOf): leading space and
+    // trailing junk allowed (" 0 ", "0x"), a negative one is 1, a large
+    // one clamped.
     const hasSpan = rowCells.some((cells) =>
-      cells.some((c) => {
-        const cs = Number.parseInt(dom.getAttribute(c, 'colspan') || '1', 10);
-        const rs = Number.parseInt(dom.getAttribute(c, 'rowspan') || '1', 10);
-        return (Number.isFinite(cs) && cs > 1) || (Number.isFinite(rs) && (rs > 1 || rs === 0));
-      })
+      cells.some(
+        (c) =>
+          helpers.tableCellSpanOf(c, 'colspan') > 1 || helpers.tableCellSpanOf(c, 'rowspan') !== 1
+      )
     );
     if (hasSpan) continue;
 
@@ -126755,6 +127058,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "Prüfen Sie, ob das Bedienelement auf dieses marquee wirkt und per Tastatur erreichbar ist.",
       "deprecatedElements_lean_why_noMechanism": "Kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden, und kein Skript der Seite stoppt das marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Ein aus einer Datei geladenes Skript kann ein Bedienelement über seine id verknüpfen, etwa eine Symbolschaltfläche.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Dieses <{{element}}> scrollt seinen Inhalt und hält nur an, solange der Mauszeiger darüber ist; das können Nutzer mit Tastatur oder Touchscreen nicht.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Prüfen Sie, ob die Seite eine andere Möglichkeit bietet, diesen Inhalt anzuhalten, zu stoppen oder auszublenden, die auch mit der Tastatur funktioniert. Besser: Ersetzen Sie ihn durch statischen Inhalt oder durch eine Animation mit einer Pause-/Stopp-Steuerung.",
+      "deprecatedElements_lean_why_hoverOnly": "Das marquee hält nur an, solange der Mauszeiger darüber ist, was Nutzer mit Tastatur oder Touchscreen nicht können, und kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden.",
       "iframeNamePresent_title": "Frames haben einen zugänglichen Namen",
       "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
       "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
@@ -127261,6 +127567,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "Scrollbare Bereiche ohne fokussierbaren Inhalt sollten per Tastatur fokussierbar sein",
       "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
       "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Ob sein Inhalt überläuft, ließ sich nicht messen: Die Seite wurde ohne Layout geprüft. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
       "scrollableRegionFocusable_hint_cantTell": "Wenn sein Inhalt tatsächlich überläuft, fügen Sie tabindex=\"0\" und einen Namen hinzu, damit Tastaturnutzende es fokussieren und mit den Pfeiltasten scrollen können.",
       "scrollableRegionFocusable_lean_why_overflows": "Sein Inhalt läuft über den Kasten hinaus, und nichts darin kann den Tastaturfokus erhalten, um ihn zu scrollen.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium ab Version 130 und Firefox machen einen scrollbaren Kasten trotzdem per Tastatur erreichbar; Safari nicht.",
@@ -128601,6 +128908,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "Check that the control acts on this marquee and can be reached with the keyboard.",
       "deprecatedElements_lean_why_noMechanism": "No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.",
       "deprecatedElements_lean_caution_noMechanism": "A script loaded from a file may wire a control by its id, such as an icon button.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "This <{{element}}> scrolls its content and stops only while the pointer is over it, which keyboard and touch users cannot do.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Check that the page offers another way to pause, stop, or hide this content, one that works with the keyboard. Better: replace it with static content, or with an animation that has a pause/stop control.",
+      "deprecatedElements_lean_why_hoverOnly": "The marquee stops only while the pointer is over it, which keyboard and touch users cannot do, and no control on the page is named for pausing, stopping or hiding.",
       "iframeNamePresent_title": "Frames have an accessible name",
       "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
       "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
@@ -129107,6 +129417,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
       "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
       "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Whether its content overflows could not be measured: the page was checked without a layout. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
       "scrollableRegionFocusable_hint_cantTell": "If its content does overflow, add tabindex=\"0\" and a name, so keyboard users can focus it and scroll with the arrow keys.",
       "scrollableRegionFocusable_lean_why_overflows": "Its content overflows the box, and nothing in it can take keyboard focus to scroll it.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.",
@@ -130447,6 +130758,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "Comprobar que el control actúa sobre este marquee y que se puede alcanzar con el teclado.",
       "deprecatedElements_lean_why_noMechanism": "Ningún control de la página indica en su nombre pausar, detener u ocultar, y ningún script de la página detiene el marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script cargado desde un archivo puede vincular un control por su id, como un botón de icono.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Este <{{element}}> desplaza su contenido y solo se detiene mientras el puntero está sobre él, algo que no pueden hacer quienes usan el teclado o una pantalla táctil.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Comprobar que la página ofrece otra forma de pausar, detener u ocultar este contenido, que funcione con el teclado. Mejor: sustituirlo por contenido estático, o por una animación con un control de pausa/detención.",
+      "deprecatedElements_lean_why_hoverOnly": "El marquee solo se detiene mientras el puntero está sobre él, algo que no pueden hacer quienes usan el teclado o una pantalla táctil, y ningún control de la página indica en su nombre pausar, detener u ocultar.",
       "iframeNamePresent_title": "Los marcos tienen un nombre accesible",
       "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
       "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
@@ -130953,6 +131267,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "Las regiones desplazables sin contenido enfocable deberían ser enfocables por teclado",
       "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
       "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. No se pudo medir si su contenido desborda: la página se comprobó sin maquetación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
       "scrollableRegionFocusable_hint_cantTell": "Si su contenido se desborda de verdad, agregar tabindex=\"0\" y un nombre, para que con el teclado se pueda enfocar y desplazar con las flechas.",
       "scrollableRegionFocusable_lean_why_overflows": "Su contenido desborda la caja, y nada en ella puede recibir el foco del teclado para desplazarla.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 y posteriores, y Firefox, permiten igualmente llegar con el teclado a una caja que se desplaza; Safari no.",
@@ -132293,6 +132608,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "Vérifiez que la commande agit sur ce marquee et qu’on peut l’atteindre au clavier.",
       "deprecatedElements_lean_why_noMechanism": "Aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque, et aucun script de la page n’arrête le marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script chargé depuis un fichier peut relier une commande par son id, comme un bouton icône.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Ce <{{element}}> fait défiler son contenu et ne s’arrête que tant que le pointeur le survole, ce que les utilisateurs du clavier ou d’un écran tactile ne peuvent pas faire.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Vérifiez que la page offre un autre moyen, utilisable au clavier, de mettre en pause, d’arrêter ou de masquer ce contenu. Mieux : remplacez-le par un contenu statique, ou par une animation dotée d’un contrôle de pause/arrêt.",
+      "deprecatedElements_lean_why_hoverOnly": "Le marquee ne s’arrête que tant que le pointeur le survole, ce que les utilisateurs du clavier ou d’un écran tactile ne peuvent pas faire, et aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque.",
       "iframeNamePresent_title": "Les cadres ont un nom accessible",
       "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
       "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
@@ -132799,6 +133117,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "Les régions défilantes sans contenu focalisable devraient être focalisables au clavier",
       "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une vérification manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
       "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Son débordement n’a pas pu être mesuré : la page a été vérifiée sans mise en page. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
       "scrollableRegionFocusable_hint_cantTell": "Si son contenu déborde réellement, ajoutez tabindex=\"0\" et un nom, pour qu’on puisse le focaliser au clavier et le faire défiler avec les flèches.",
       "scrollableRegionFocusable_lean_why_overflows": "Son contenu déborde de la boîte, et rien à l’intérieur ne peut recevoir le focus clavier pour la faire défiler.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 et versions ultérieures, ainsi que Firefox, permettent quand même d’atteindre au clavier une boîte qui défile ; Safari non.",
@@ -134139,6 +134458,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "そのコントロールがこの marquee に作用し、キーボードで操作できることを確認してください。",
       "deprecatedElements_lean_why_noMechanism": "ページには一時停止、停止、非表示を名前に示すコントロールがなく、marquee を止めるページ内のスクリプトもありません。",
       "deprecatedElements_lean_caution_noMechanism": "ファイルから読み込まれるスクリプトが、アイコンボタンなどのコントロールを id で結び付けている場合があります。",
+      "deprecatedElements_summary_cantTell_hoverOnly": "この <{{element}}> はコンテンツをスクロールさせ、ポインターが上にある間だけ止まります。キーボードやタッチ操作の利用者にはそれができません。",
+      "deprecatedElements_hint_cantTell_hoverOnly": "このコンテンツを一時停止、停止、非表示にする別の手段で、キーボードでも使えるものがページにあるかを確認してください。より良い方法: 静的なコンテンツか、一時停止/停止のコントロールを備えたアニメーションに置き換えてください。",
+      "deprecatedElements_lean_why_hoverOnly": "marquee はポインターが上にある間だけ止まり、キーボードやタッチ操作の利用者にはそれができません。また、ページには一時停止、停止、非表示を名前に示すコントロールがありません。",
       "iframeNamePresent_title": "フレームにアクセシブルな名前があること",
       "iframeNamePresent_description": "<iframe>/<frame> 要素が、aria-label、aria-labelledby、または title 属性によって空でないアクセシブルな名前を公開しているかを確認します。",
       "iframeNamePresent_summary_fail": "この <{{element}}> にはアクセシブルな名前がありません。",
@@ -134645,6 +134967,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "フォーカス可能なコンテンツのないスクロール領域は、キーボードでフォーカスできることが望ましい",
       "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
       "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。ページがレイアウトなしで検査されたため、コンテンツがはみ出すかは測定できませんでした。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
       "scrollableRegionFocusable_hint_cantTell": "内容が実際にはみ出す場合は、tabindex=\"0\" と名前を付け、キーボードでフォーカスして矢印キーでスクロールできるようにしてください。",
       "scrollableRegionFocusable_lean_why_overflows": "内容がボックスからはみ出しており、スクロールするためにキーボードフォーカスを受けられるものが中にありません。",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 以降と Firefox では、スクロールするボックスにキーボードで到達できます。Safari ではできません。",
@@ -149459,8 +149782,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       try {
         isMultiSelect = !!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'multiple'));
         if (!isMultiSelect) {
-          const sizeAttr = getAttr(el, 'size');
-          const size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
+          // Read as Chromium draws it (selectSizeOf in dom-helpers).
+          let size;
+          if (shared && typeof shared.selectSizeOf === 'function') size = shared.selectSizeOf(el);
+          else {
+            const sizeAttr = getAttr(el, 'size');
+            size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
+          }
           isMultiSelect = Number.isFinite(size) && size > 1;
         }
       } catch {
@@ -151185,7 +151513,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (x === 'visible') x = 'auto';
         if (y === 'visible') y = 'auto';
       } else if (html && tag === 'select') {
-        const size = parseHtmlInteger(dom.getAttribute(el, 'size'));
+        const size = selectSizeOf(el);
         if (!dom.hasAttribute(el, 'multiple') && !(size !== null && size > 1)) {
           x = 'clip';
           y = 'clip';
@@ -151984,6 +152312,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // range, as if the attribute were missing (HTML, Reflecting content
     // attributes in IDL attributes).
     return v < -2147483648 || v > 2147483647 ? null : v;
+  }
+
+  // HTML's rules for parsing non-negative integers, as browsers read a
+  // <select>'s size and a cell's colspan and rowspan: parseHtmlInteger's
+  // reading, null for a negative value, and no range limit, which each
+  // attribute applies its own way (selectSizeOf, tableCellSpanOf).
+  function parseHtmlNonNegativeInteger(raw) {
+    const m = /^[\t\n\f\r ]*([+-]?)([0-9]+)/.exec(String(raw == null ? '' : raw));
+    if (!m) return null;
+    const n = parseInt(m[2], 10);
+    if (m[1] === '-' && n !== 0) return null;
+    return n;
+  }
+
+  // A <select>'s size as Chromium draws it: a value up to 4294967295 (an
+  // unsigned long), a larger one ignored as if missing. Chromium draws
+  // size="2147483648" as a list box, though the size property reads 0.
+  function selectSizeOf(el) {
+    const n = parseHtmlNonNegativeInteger(getAttr(el, 'size'));
+    return n !== null && n <= 4294967295 ? n : null;
+  }
+
+  // A table cell's colspan or rowspan as HTML (forming a table) and
+  // Chromium read them: colspan 1 where it is missing, not a non-negative
+  // integer, or 0, and at most 1000; rowspan 1 where it is missing or not a
+  // non-negative integer, 0 to span to the end of its row group, and at
+  // most 65534. A larger value is clamped, not ignored.
+  function tableCellSpanOf(el, attr) {
+    const n = parseHtmlNonNegativeInteger(getAttr(el, attr));
+    if (attr === 'rowspan') return n === null ? 1 : Math.min(n, 65534);
+    return n === null || n === 0 ? 1 : Math.min(n, 1000);
   }
 
   function parseTabIndex(el) {
@@ -156863,7 +157222,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       else if (type === 'range') nativeRole = 'slider';
     } else if (tag === 'textarea') nativeRole = 'textbox';
     else if (isSelect) {
-      const size = parseHtmlInteger(getAttr(node, 'size'));
+      const size = selectSizeOf(node);
       nativeRole =
         dom.hasAttribute(node, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
     } else if (tag === 'progress') nativeRole = 'progressbar';
@@ -158769,7 +159128,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     else if (tag === 'summary') role = 'button';
     else if (tag === 'input') role = aria.getInputRole(el);
     else if (tag === 'select') {
-      const size = parseHtmlInteger(getAttr(el, 'size'));
+      const size = selectSizeOf(el);
       role =
         dom.hasAttribute(el, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
     } else if (tag === 'textarea') role = 'textbox';
@@ -160713,7 +161072,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl, getCustomElementInternals, flatParentElement }
+    { trim, getLabelControl, getCustomElementInternals, flatParentElement, selectSizeOf }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -160916,6 +161275,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isIso639LanguageCode,
     getImagesUsingMap,
     parseHtmlInteger,
+    parseHtmlNonNegativeInteger,
+    selectSizeOf,
+    tableCellSpanOf,
 
     // Existing query/snippet utilities
     queryAll,

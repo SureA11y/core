@@ -60,7 +60,7 @@ Total rules: **154**. With fixture: **149**. Without fixture: **5**.
 | css-hidden-focus | manual | `tests/fixtures/css-hidden-focus-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | css-orientation-lock | automatic | `tests/fixtures/css-orientation-lock-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | definition-list-children-valid | automatic | `tests/fixtures/definition-list-children-valid-all-scenarios.html` | 14 | 6 | 0 | 7 | 1 |
-| deprecated-elements-not-used | automatic | `tests/fixtures/deprecated-elements-not-used-all-scenarios.html` | 4 | 1 | 0 | 2 | 1 |
+| deprecated-elements-not-used | automatic | `tests/fixtures/deprecated-elements-not-used-all-scenarios.html` | 5 | 1 | 0 | 3 | 1 |
 | dialog-name-present | automatic | `tests/fixtures/dialog-name-present-all-scenarios.html` | 25 | 5 | 0 | 8 | 12 |
 | dlitem-parent-valid | automatic | `tests/fixtures/dlitem-parent-valid-all-scenarios.html` | 5 | 2 | 0 | 3 | 0 |
 | duplicate-id | automatic | `tests/fixtures/duplicate-id-all-scenarios.html` | 7 | 2 | 0 | 3 | 2 |
@@ -72,7 +72,7 @@ Total rules: **154**. With fixture: **149**. Without fixture: **5**.
 | focus-not-obscured-minimum | manual | `tests/fixtures/focus-not-obscured-all-scenarios.html` | 5 | 2 | 0 | 3 | 0 |
 | focus-not-removed-by-script | automatic | `tests/fixtures/focus-not-removed-by-script-all-scenarios.html` | 7 | 0 | 2 | 2 | 3 |
 | focus-order-semantics | manual | `tests/fixtures/focus-order-semantics-all-scenarios.html` | 6 | 0 | 0 | 2 | 4 |
-| form-control-label-quality | manual | `tests/fixtures/form-control-label-quality-all-scenarios.html` | 14 | 7 | 0 | 6 | 1 |
+| form-control-label-quality | manual | `tests/fixtures/form-control-label-quality-all-scenarios.html` | 15 | 8 | 0 | 6 | 1 |
 | form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 43 | 13 | 12 | 0 | 18 |
 | form-control-programmatic-label-quality | manual | `tests/fixtures/form-control-programmatic-label-quality-manual-all-scenarios.html` | 18 | 0 | 0 | 0 | 18 |
 | form-control-single-label | automatic | `tests/fixtures/form-control-single-label-all-scenarios.html` | 9 | 5 | 0 | 3 | 1 |
@@ -106,7 +106,7 @@ Total rules: **154**. With fixture: **149**. Without fixture: **5**.
 | landmark-one-main | manual | `tests/fixtures/landmark-one-main-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | landmark-role-name-present | automatic | `tests/fixtures/landmark-role-name-present-all-scenarios.html` | 14 | 3 | 0 | 6 | 5 |
 | landmark-unique | manual | `tests/fixtures/landmark-unique-all-scenarios.html` | 14 | 3 | 0 | 8 | 3 |
-| link-in-text-block | automatic | `tests/fixtures/link-in-text-block-all-scenarios.html` | 13 | 4 | 4 | 2 | 3 |
+| link-in-text-block | automatic | `tests/fixtures/link-in-text-block-all-scenarios.html` | 14 | 5 | 4 | 2 | 3 |
 | link-name-present | automatic | `tests/fixtures/link-name-present-all-scenarios.html` | 21 | 12 | 5 | 0 | 4 |
 | link-name-quality | manual | `tests/fixtures/link-name-quality-all-scenarios.html` | 14 | 0 | 0 | 8 | 6 |
 | link-name-quality-link-only | manual | `tests/fixtures/link-name-quality-link-only-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |

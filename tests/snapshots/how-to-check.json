@@ -2404,13 +2404,13 @@
       "pt": "82c40d8fa482bff2"
     },
     "scrollable-region-focusable SCROLLABLE_OVERFLOW_NOT_FOCUSABLE": {
-      "en": "785135c8f84e36cb",
-      "de": "d447f56744bb2682",
-      "es": "dd4597c927d134b8",
-      "fr": "c783ea3fd8ce2ceb",
-      "ja": "5b956381278feea0",
-      "fr-CA": "c783ea3fd8ce2ceb",
-      "pt": "785135c8f84e36cb"
+      "en": "13b7447c6a6499f9",
+      "de": "a843a214041937b8",
+      "es": "534524b614fa90cf",
+      "fr": "a98dca5d2d85124a",
+      "ja": "8d29aa9ce489ed4e",
+      "fr-CA": "a98dca5d2d85124a",
+      "pt": "13b7447c6a6499f9"
     },
     "skip-link SKIP_LINK_TARGET_MISSING": {
       "en": "4e3b912ab9de8750",
@@ -2753,6 +2753,15 @@
       "ja": "90b624a54f61706a",
       "fr-CA": "6f3d255540092a04",
       "pt": "83fb2275072780ac"
+    },
+    "deprecated-elements-not-used MARQUEE_STOPS_ONLY_ON_HOVER": {
+      "en": "3f4bb2db533712d7",
+      "de": "7080924cd00c66bb",
+      "es": "27a786c39128359e",
+      "fr": "7eddb536ce932acb",
+      "ja": "d2f8c6cef7b09764",
+      "fr-CA": "7eddb536ce932acb",
+      "pt": "3f4bb2db533712d7"
     }
   },
   "reviews": {
@@ -2786,7 +2795,7 @@
     "contrast-minimum": "6c39c364ecea644b",
     "css-orientation-lock": "e7320ee9b2d2bb9b",
     "definition-list-children-valid": "9149b2ebde2ab04b",
-    "deprecated-elements-not-used": "1d21f3a37bbe5cb3",
+    "deprecated-elements-not-used": "a8c46243e8b9f213",
     "dialog-name-present": "b700575af232eb41",
     "dlitem-parent-valid": "79f6715ce18ea81c",
     "duplicate-id-aria": "7fed56bfe512e9fb",
@@ -2900,7 +2909,7 @@
     "presentation-role-conflict": "e565499a522bc1ff",
     "region": "797b1622e124fa2a",
     "scope-attr-valid": "bff1f4406a634cc3",
-    "scrollable-region-focusable": "1de4c25cd8590418",
+    "scrollable-region-focusable": "6dfd8451edd98b8f",
     "skip-link": "345c9ad8c4bcb6fa",
     "svg-text-alternative-quality": "954dbcffa14b8f05",
     "tabindex": "843abf76bc816291",
@@ -2912,10 +2921,10 @@
     "symbol-graphic-contrast": "cc944d054342fe60"
   },
   "dictionaries": {
-    "de": "166442d15461b069244e0ee1efa5bffb9ba3096ffdf8df13ce8815db90a794de",
-    "en": "a43d4e6a0deb0b463307d8eb1665d987ef5fd8a7e5a6e67955aad4ccb36bd3df",
-    "es": "e7a0c03afff4e6b282a704c4be96b3b4b5b98b71b8c70f7be869ee7000063574",
-    "fr": "6e9d5f188df4709b2827585e8173a73d761dd75f73a1d227f248618023a4438a",
-    "ja": "855c7effe3dde85e0fcb8b6071e755a18e7b83376e90e47cac3257d313bcdf3d"
+    "de": "ba6f3cb02c06b6d22feb3afeaf837c4f323bb30c62e8479bd0bc518375f9310a",
+    "en": "8a1ec14c802c0ec1d59dc7ae290b355e0c33a31f5e5e0f0b8568b4d14ec5a456",
+    "es": "62e42a92c19ef9ad9573f3048e71551c91007f9a39a8fdb8dcf3772dfd0ea787",
+    "fr": "0db1d0884f10caeb1e955aad74ce9eabd9839ae575d4249e70d73c132cdd6402",
+    "ja": "da3e7f93a9a3d1ad532c84e720e07608d13dbab8390305802efd0c5ce3090766"
   }
 }
