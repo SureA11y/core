@@ -278,6 +278,104 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // -------- Costly paint a page uses at all (round 12, F12-6) --------
+  //
+  // A blend mode, a filter or backdrop-filter, a mask, an inset shadow and
+  // a transform (or the scale or rotate property) are each read of every
+  // box above every text, yet most pages use few of them or none. A box's
+  // computed value of one is other than its initial value only where a
+  // declaration gives it one: in a style sheet (its rules, nested, imported
+  // and keyframes among them), a style attribute (where a script's
+  // element.style writes too), an SVG presentation attribute, or a script's
+  // animation. So once per document and run, the text of all of these is
+  // read, and a feature named nowhere in it is used by no box: its reads
+  // are left out, with the answer they would give. Anything that can't be
+  // ruled out keeps every feature: a sheet that can't be read (another
+  // origin, still loading), a running animation, a shadow root (whose
+  // sheets style its host and slotted content), or a custom element, which
+  // may hold a closed one.
+  const __PAGE_FEATURE_NAMES = {
+    blend: /mix-blend-mode/i,
+    filter: /filter/i,
+    mask: /mask/i,
+    insetShadow: /box-shadow/i,
+    transform: /transform|scale|rotate/i
+  };
+  const __PAGE_FEATURES_ALL = Object.freeze({
+    blend: true,
+    filter: true,
+    mask: true,
+    insetShadow: true,
+    transform: true
+  });
+  const __localPageFeatures = new WeakMap();
+  function __pageFeaturesOf(node) {
+    let doc;
+    try {
+      doc = node && dom.nodeType(node) === 9 ? node : dom.ownerDocument(node);
+    } catch {
+      doc = null;
+    }
+    if (!doc || typeof doc !== 'object') return __PAGE_FEATURES_ALL;
+    const cache = __getSharedWeakMapCache('__pageFeaturesCache') || __localPageFeatures;
+    let out = cache.get(doc);
+    if (!out) {
+      out = __readPageFeatures(doc);
+      cache.set(doc, out);
+    }
+    return out;
+  }
+  function __readPageFeatures(doc) {
+    try {
+      if (typeof dom.get(doc, 'getAnimations') === 'function') {
+        const running = dom.call(doc, 'getAnimations');
+        if (!running || running.length) return __PAGE_FEATURES_ALL;
+      }
+      for (const el of dom.querySelectorAll(doc, '*')) {
+        if (dom.shadowRoot(el) || String(dom.localName(el) || '').includes('-'))
+          return __PAGE_FEATURES_ALL;
+      }
+      if (
+        dom.querySelector(
+          doc,
+          '[filter], [mask], [transform], [gradientTransform], [patternTransform]'
+        )
+      )
+        return __PAGE_FEATURES_ALL;
+      const parts = [];
+      for (const el of dom.querySelectorAll(doc, '[style]')) {
+        parts.push(String(dom.getAttribute(el, 'style') || ''));
+      }
+      const sheets = [...(dom.get(doc, 'styleSheets') || [])].concat([
+        ...(dom.get(doc, 'adoptedStyleSheets') || [])
+      ]);
+      const seen = new Set();
+      while (sheets.length) {
+        const sheet = sheets.pop();
+        if (!sheet || seen.has(sheet)) continue;
+        seen.add(sheet);
+        // Throws for a sheet of another origin, or one still loading.
+        const rules = sheet.cssRules;
+        if (!rules) return __PAGE_FEATURES_ALL;
+        for (let i = 0; i < rules.length; i++) {
+          const rule = rules[i];
+          parts.push(String(rule.cssText));
+          // @import: the imported sheet's rules aren't in its text.
+          if (rule.styleSheet) sheets.push(rule.styleSheet);
+          else if (/^\s*@import/i.test(String(rule.cssText))) return __PAGE_FEATURES_ALL;
+        }
+      }
+      const text = parts.join('\n');
+      const out = {};
+      for (const key of Object.keys(__PAGE_FEATURE_NAMES)) {
+        out[key] = __PAGE_FEATURE_NAMES[key].test(text);
+      }
+      return Object.freeze(out);
+    } catch {
+      return __PAGE_FEATURES_ALL;
+    }
+  }
+
   function __asEligibilityBool(v) {
     if (typeof v === 'boolean') return v;
     if (v && typeof v === 'object' && typeof v.eligible === 'boolean') return v.eligible;
@@ -2139,6 +2237,8 @@ function createContrastHelpers(opts, shared) {
     const doc = dom.ownerDocument(el);
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (!__layoutByDoc.get(doc)) return 1;
+    // No box of a page that sets no transform, scale or rotate has one.
+    if (!__pageFeaturesOf(doc).transform) return 1;
     const chain = [];
     let known = 1;
     let guard = 0;
@@ -3322,6 +3422,7 @@ function createContrastHelpers(opts, shared) {
   function __hasBlendModeEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
+      if (!__pageFeaturesOf(el).blend) return false;
       if (__hasBlendModeCache.has(el)) return __hasBlendModeCache.get(el);
       const v = hasBlendMode(cs);
       __hasBlendModeCache.set(el, v);
@@ -3334,6 +3435,7 @@ function createContrastHelpers(opts, shared) {
   function __hasFilterEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasFilter(cs);
+      if (!__pageFeaturesOf(el).filter) return false;
       if (__hasFilterCache.has(el)) return __hasFilterCache.get(el);
       const v = hasFilter(cs);
       __hasFilterCache.set(el, v);
@@ -6986,14 +7088,16 @@ function createContrastHelpers(opts, shared) {
     let rec = __ancestorEffectsCache.get(cur);
     if (rec) return rec;
     const cs = __contrastComputedStyle(cur);
-    const boxShadow = trim(cs && cs.boxShadow);
+    // What the page uses no box of at all is not read (__pageFeaturesOf).
+    const uses = __pageFeaturesOf(cur);
+    const boxShadow = uses.insetShadow ? trim(cs && cs.boxShadow) : '';
     const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
     const position = cs && cs.position;
     rec = {
       cs,
       blend: __hasBlendModeEl(cur, cs),
       filter: __hasFilterEl(cur, cs),
-      mask: maskOf(cs),
+      mask: uses.mask ? maskOf(cs) : '',
       // __insetShadowUnder paints nothing without an inset shadow.
       insetShadow: !!boxShadow && boxShadow !== 'none' && /\binset\b/i.test(boxShadow),
       bgImage: __hasBackgroundImageOrGradientEl(cur, cs),
