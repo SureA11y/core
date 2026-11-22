@@ -69,8 +69,13 @@
  *   within its reach as the page scrolls (its circle reaching one's region,
  *   or their centres under 24px apart): for a fixed one, any the page's
  *   scroll range can bring there, for a sticky one, any in the box that
- *   holds it, which it moves through. On a page whose root doesn't scroll,
- *   nothing moves, and every target is the page's.
+ *   holds it, which it moves through on the axes it has an inset on (`top`
+ *   or `bottom` down the page, `left` or `right` across). A page target counts only at scroll
+ *   positions where it is not wholly under the background the pinned box
+ *   paints around the target (the bar's background hides it there, a
+ *   question for focus-not-obscured); a bar that paints none shows it. On a
+ *   page whose root doesn't scroll, nothing moves, and every target is the
+ *   page's.
  *   Settings, for a variant: `minSizePx`, the size needed (24), and
  *   `spacingException`, `'none'` to drop the spacing exception, so that
  *   every target under the size that no other exception covers fails
@@ -130,8 +135,11 @@
  *   - `undersized-pinned-over-page` (cantTell): an undersized target in a
  *     fixed or sticky box, clear of the targets that move with it, over a
  *     page whose undersized targets pass within its reach as the page
- *     scrolls; whether one comes too close where both are shown depends on
- *     the scroll position, and is for a person to check.
+ *     scrolls, at a scroll position where they are not wholly under the
+ *     background the pinned box paints around it; whether one comes too
+ *     close where both are shown depends on the scroll position, and is for
+ *     a person to check. A page target within reach only while it passes
+ *     under that background is hidden, which focus-not-obscured asks about.
  *     Basis: WCAG 2.5.8 (exception: spacing).
  *   - `undersized-plausibly-essential` (cantTell): an undersized target too
  *     close to another (or, under `spacingException: 'none'`, any
@@ -1701,11 +1709,17 @@ function runInPage(ctx) {
     if (!box) return { l: c.x, r: c.x, t: c.y, b: c.y };
     const hw = (e.extent.r - e.extent.l) / 2;
     const hh = (e.extent.b - e.extent.t) / 2;
+    // A sticky box moves only on an axis it has an inset on: `top: 0`
+    // holds it down the page, never across.
+    const cs = getStyle(layer) || {};
+    const inset = (side) => !!cs[side] && cs[side] !== 'auto';
+    const acrossX = inset('left') || inset('right');
+    const acrossY = inset('top') || inset('bottom');
     return {
-      l: Math.min(c.x, box.left + hw),
-      r: Math.max(c.x, box.right - hw),
-      t: Math.min(c.y, box.top + hh),
-      b: Math.max(c.y, box.bottom - hh)
+      l: acrossX ? Math.min(c.x, box.left + hw) : c.x,
+      r: acrossX ? Math.max(c.x, box.right - hw) : c.x,
+      t: acrossY ? Math.min(c.y, box.top + hh) : c.y,
+      b: acrossY ? Math.max(c.y, box.bottom - hh) : c.y
     };
   }
   const spaced = entries.filter((e) => !e.exempt);
@@ -2197,8 +2211,38 @@ function runInPage(ctx) {
   // An undersized page target that a pinned target's circle can reach at
   // some scroll position, the target's own centre path being worked out
   // from its extent's (pinnedPath): the region within 12px, or the centre
-  // within 24px. The first found, or null.
+  // within 24px. A page target that is within reach only while it passes
+  // under the pinned box, behind the background the box paints around the
+  // target, is hidden there (focus-not-obscured's concern), not too close.
+  // The first found, or null.
   const entryOf = new Map(entries.map((e) => [e.el, e]));
+  // Whether an element paints a background that hides what passes under it.
+  function paintsBackground(el) {
+    const cs = getStyle(el);
+    if (!cs) return false;
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+    const c = helpers.contrast;
+    const bg =
+      c && typeof c.parseCssColorToRgba === 'function'
+        ? c.parseCssColorToRgba(cs.backgroundColor)
+        : null;
+    return !!bg && bg.a > 0.5;
+  }
+  // The pinned box's background around a target, as a rectangle now: the
+  // outermost element from the target up to its fixed or sticky box that
+  // paints one; null where none does (a transparent bar shows the page).
+  function coverOf(el) {
+    let found = null;
+    for (let a = helpers.flatParentElement(el), i = 0; a && i < 10000; i++) {
+      const cs = getStyle(a);
+      if (paintsBackground(a)) found = a;
+      if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) break;
+      a = helpers.flatParentElement(a);
+    }
+    if (!found) return null;
+    const r = dom.getBoundingClientRect(found);
+    return r ? { l: r.left, t: r.top, r: r.right, b: r.bottom } : null;
+  }
   function pageTargetInPath(it) {
     const e = entryOf.get(it.el);
     if (!e || !e.pageNear || !e.pageNear.length) return null;
@@ -2210,13 +2254,47 @@ function runInPage(ctx) {
       t: e.pagePath.t + dy,
       b: e.pagePath.b + dy
     };
+    let cover;
     for (const f of e.pageNear) {
       if (f.item === undefined) f.item = measure(f.el);
       const o = f.item;
       if (!o || !isUndersized(o)) continue;
       const region = { l: o.rect.left, t: o.rect.top, r: o.rect.right, b: o.rect.bottom };
       const centre = { l: o.center.cx, r: o.center.cx, t: o.center.cy, b: o.center.cy };
-      if (gap(path, region) < RADIUS - EPS || gap(path, centre) < SPACING - EPS) return o.el;
+      const reaches = (q) => gap(q, region) < RADIUS - EPS || gap(q, centre) < SPACING - EPS;
+      if (!reaches(path)) continue;
+      if (cover === undefined) cover = coverOf(it.el);
+      if (!cover) return o.el;
+      // The centre positions along the path within reach of the target,
+      // sampled on a grid of at most about 2,500 points, edges included:
+      // one where the target is not wholly under the cover shows it close.
+      const L = Math.max(path.l, region.l - SPACING);
+      const R = Math.min(path.r, region.r + SPACING);
+      const T = Math.max(path.t, region.t - SPACING);
+      const B = Math.min(path.b, region.b + SPACING);
+      if (L > R + EPS || T > B + EPS) continue;
+      const step = Math.max(1, Math.sqrt(((R - L + 1) * (B - T + 1)) / 2500));
+      const along = (lo, hi) => {
+        const out = [];
+        for (let v = lo; v < hi; v += step) out.push(v);
+        out.push(hi);
+        return out;
+      };
+      const xs = along(L, R);
+      const ys = along(T, B);
+      for (const x of xs) {
+        for (const y of ys) {
+          if (!reaches({ l: x, r: x, t: y, b: y })) continue;
+          const vx = x - it.center.cx;
+          const vy = y - it.center.cy;
+          const under =
+            region.l >= cover.l + vx - EPS &&
+            region.r <= cover.r + vx + EPS &&
+            region.t >= cover.t + vy - EPS &&
+            region.b <= cover.b + vy + EPS;
+          if (!under) return o.el;
+        }
+      }
     }
     return null;
   }
