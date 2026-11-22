@@ -182,3 +182,34 @@ test('the search for a sign’s neighbours has a budget for the whole scan (C12-
   prices += '</ul>';
   assert.equal(check(page(prices), 'symbol-graphic-contrast').outcome, 'notApplicable');
 });
+
+test('a failing sign read with its price says why it needs the text ratio, in every locale (C12-17)', () => {
+  const html = page(
+    '<p>45,00 <span style="color:#aaa">€</span></p><p style="color:#aaa">Plain text</p>'
+  );
+  const said = {
+    'contrast-minimum': {
+      en: 'This sign is read with the price beside it, so it is text and needs the text ratio.',
+      de: 'Dieses Zeichen wird mit dem Preis daneben gelesen; es ist also Text und braucht das Kontrastverhältnis für Text.',
+      es: 'Este signo se lee con el precio que tiene al lado, así que es texto y necesita la relación de contraste del texto.',
+      fr: 'Ce signe se lit avec le prix à côté de lui : c’est donc du texte, qui doit atteindre le rapport de contraste du texte.',
+      ja: 'この記号は隣の価格と一緒に読まれるため、テキストであり、テキストのコントラスト比が必要です。'
+    },
+    'contrast-enhanced': {
+      en: 'This sign is read with the price beside it, so it is text and needs the enhanced text ratio.',
+      de: 'Dieses Zeichen wird mit dem Preis daneben gelesen; es ist also Text und braucht das erhöhte Kontrastverhältnis für Text.',
+      es: 'Este signo se lee con el precio que tiene al lado, así que es texto y necesita la relación de contraste mejorada del texto.',
+      fr: 'Ce signe se lit avec le prix à côté de lui : c’est donc du texte, qui doit atteindre le rapport de contraste renforcé du texte.',
+      ja: 'この記号は隣の価格と一緒に読まれるため、テキストであり、テキストの強化されたコントラスト比が必要です。'
+    }
+  };
+  for (const [ruleId, byLocale] of Object.entries(said)) {
+    for (const [locale, sentence] of Object.entries(byLocale)) {
+      const r = runa11yCoreOnHtml(html, { runOnly: [ruleId], engineOptions: { locale } });
+      const [sign, plain] = r.checksResults.find((c) => c.ruleId === ruleId).occurrences;
+      assert.equal(sign.data.details.reasonCode, 'BELOW_THRESHOLD');
+      assert.ok(sign.summary.endsWith(sentence), `${ruleId} ${locale}: ${sign.summary}`);
+      assert.ok(!plain.summary.includes(sentence), `${ruleId} ${locale}`);
+    }
+  }
+});
