@@ -3830,6 +3830,70 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
         return box;
       };
+      // The clip of node and the boxes above it, up to the first that stops
+      // the walk (or the root), as one rectangle: an axis no box clips is
+      // open. Cutting the text's box by it is cutting it by each box in
+      // turn, as isUndrawn does, since an intersection only shrinks. len:
+      // how many boxes it spans, for the walk's depth limit.
+      const clipUpCache = new Map();
+      const clipUpOf = (node) => {
+        const hit = clipUpCache.get(node);
+        if (hit) return hit;
+        const path = [];
+        let base = null;
+        let cur = node;
+        while (cur && dom.nodeType(cur) === 1 && path.length < 101) {
+          const known = clipUpCache.get(cur);
+          if (known) {
+            base = known;
+            break;
+          }
+          path.push(cur);
+          if (clipBoxOf(cur).stops) break;
+          cur = composedParent(cur);
+        }
+        // A walk cut short by the depth limit leaves the rest unknown: too
+        // long, and isUndrawn walks it box by box.
+        const cut = !base && path.length >= 101;
+        let up = base || {
+          clips: false,
+          left: -Infinity,
+          top: -Infinity,
+          right: Infinity,
+          bottom: Infinity,
+          len: cut ? Infinity : 0
+        };
+        for (let i = path.length - 1; i >= 0; i--) {
+          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(path[i]);
+          const above = stops ? null : up;
+          up = {
+            clips: clipsX || clipsY || (!!above && above.clips),
+            left: clipsX
+              ? Math.max(a.left, above ? above.left : -Infinity)
+              : above
+                ? above.left
+                : -Infinity,
+            top: clipsY
+              ? Math.max(a.top, above ? above.top : -Infinity)
+              : above
+                ? above.top
+                : -Infinity,
+            right: clipsX
+              ? Math.min(a.right, above ? above.right : Infinity)
+              : above
+                ? above.right
+                : Infinity,
+            bottom: clipsY
+              ? Math.min(a.bottom, above ? above.bottom : Infinity)
+              : above
+                ? above.bottom
+                : Infinity,
+            len: 1 + (above ? above.len : 0)
+          };
+          clipUpCache.set(path[i], up);
+        }
+        return up;
+      };
 
       // Whether the element's text lies left of the page: its own text's
       // lines where it has any, else (text from ::before or ::after) the
@@ -3941,6 +4005,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         let bottom = r.bottom;
         // Inside a marquee, only the boxes around the marquee clip.
         let cur = composedParent(marquee || el);
+        const up = cur && dom.nodeType(cur) === 1 ? clipUpOf(cur) : null;
+        if (up && up.len <= 100) {
+          if (!up.clips) return false;
+          left = Math.max(left, up.left);
+          right = Math.min(right, up.right);
+          top = Math.max(top, up.top);
+          bottom = Math.min(bottom, up.bottom);
+          return right - left <= 1 || bottom - top <= 1;
+        }
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
@@ -5236,8 +5309,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         v = '';
       }
       // A layer paints a mask when it has an image (url(), a gradient,
-      // image-set()); `none` and the shorthand's other keywords don't.
-      if (v && __splitTopLevel(v).some((layer) => layer.includes('('))) return v;
+      // image-set()); `none` and the shorthand's other keywords don't. Some
+      // layer has a "(" exactly when the whole value has one.
+      if (v && v.includes('(')) return v;
     }
     return '';
   }
@@ -7768,7 +7842,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
 
       // Inset shadows filling its padding box, over its background.
-      const shadows = __insetShadowUnder(cur, cs, el);
+      const own = __ancestorEffectsOf(cur);
+      const shadows = own.insetShadow ? __insetShadowUnder(cur, cs, el) : null;
       if (shadows && shadows.colors) {
         for (const c of shadows.colors) {
           if (collectStack) {
@@ -7839,7 +7914,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
       // A box in the top layer is painted over its ::backdrop, which is
       // painted over the rest of the page (a lightbox's dimmed page).
-      const top = acc.a < 1 ? __topLayerOf(cur) : null;
+      const top = acc.a < 1 && own.placed ? __topLayerOf(cur) : null;
       if (top && top.color) {
         if (collectStack) {
           stack.push({
@@ -9410,6 +9485,40 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // What an element's own style does to the text under it, whatever that
+  // text is: read once per scan for each element, since every text walks
+  // all its ancestors and siblings share them. What depends on the text
+  // (where an inset shadow or a background layer falls, a drop shadow over
+  // opaque content) is worked out in the walk.
+  const __localAncestorEffectsCache = new WeakMap();
+  const __ancestorEffectsCache =
+    __getSharedWeakMapCache('__ancestorEffectsCache') || __localAncestorEffectsCache;
+  function __ancestorEffectsOf(cur) {
+    let rec = __ancestorEffectsCache.get(cur);
+    if (rec) return rec;
+    const cs = __contrastComputedStyle(cur);
+    const boxShadow = trim(cs && cs.boxShadow);
+    const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
+    const position = cs && cs.position;
+    rec = {
+      cs,
+      blend: __hasBlendModeEl(cur, cs),
+      filter: __hasFilterEl(cur, cs),
+      mask: maskOf(cs),
+      // __insetShadowUnder paints nothing without an inset shadow.
+      insetShadow: !!boxShadow && boxShadow !== 'none' && /\binset\b/i.test(boxShadow),
+      bgImage: __hasBackgroundImageOrGradientEl(cur, cs),
+      opacity: opacityOf(cs),
+      ownBgOpaque: !!ownBg && clamp01(ownBg.a) >= 1,
+      // __topLayerOf asks only boxes placed absolute or fixed.
+      placed: position === 'fixed' || position === 'absolute'
+    };
+    try {
+      __ancestorEffectsCache.set(cur, rec);
+    } catch {}
+    return rec;
+  }
+
   // The walk behind getComputabilityBlocker. skipPseudo: the
   // ::first-line/::first-letter check is left out, to see what else
   // stands in the way.
@@ -9508,9 +9617,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
     for (const cur of ancestorsOf(el)) {
       if (dom.nodeType(cur) !== 1) continue;
-      const cs = __contrastComputedStyle(cur);
+      const own = __ancestorEffectsOf(cur);
+      const cs = own.cs;
 
-      if (__hasBlendModeEl(cur, cs)) {
+      if (own.blend) {
         const out = {
           ok: false,
           reasonCode: 'MIX_BLEND_MODE',
@@ -9529,7 +9639,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return out;
       }
 
-      if (__hasFilterEl(cur, cs)) {
+      if (own.filter) {
         const isFilter = cs && cs.filter && String(cs.filter).trim().toLowerCase() !== 'none';
         // __hasFilterEl's OR means: if it's not plain `filter`, it must be
         // `backdrop-filter` that's set. Unlike `filter` (unconditional
@@ -9571,7 +9681,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // A mask fades cur and all it holds, text and background together,
       // by amounts that vary across it, over what is behind: like a filter,
       // a closer opaque background does not shield the text from it.
-      const mask = maskOf(cs);
+      const mask = own.mask;
       if (mask) {
         const out = {
           ok: false,
@@ -9731,7 +9841,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // fills the whole padding box is a color like the background's, one
       // that paints under part of the text stops the measurement as an
       // image would (see __insetShadowUnder).
-      const shadowUnder = paintOccluded ? null : __insetShadowUnder(cur, cs, el);
+      const shadowUnder =
+        paintOccluded || !own.insetShadow ? null : __insetShadowUnder(cur, cs, el);
       if (shadowUnder && shadowUnder.blocked) {
         const out = {
           ok: false,
@@ -9756,9 +9867,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // Layers that paint nothing under the text (an underline) or one
       // solid color don't stop the measurement (see __bgLayerKinds).
       const layersUnder =
-        !paintOccluded && !shadowOpaque && __hasBackgroundImageOrGradientEl(cur, cs)
-          ? __bgLayersUnder(cur, cs, el)
-          : null;
+        !paintOccluded && !shadowOpaque && own.bgImage ? __bgLayersUnder(cur, cs, el) : null;
       if (layersUnder && layersUnder.blocked) {
         const bgImg = (cs && cs.backgroundImage) || '';
         const out = {
@@ -9831,7 +9940,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // produce for the general case. (el's own opacity is handled just
       // above.)
       if (cur !== el) {
-        const ancestorOpacity = opacityOf(cs);
+        const ancestorOpacity = own.opacity;
         if (ancestorOpacity < 1 && resolveGroupOpacityColors(el)) {
           const out = {
             ok: true,
@@ -9873,10 +9982,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // this point (see the paintOccluded comment above the loop).
       if (!paintOccluded) {
         chain.push(cur);
-        const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
         if (
           shadowOpaque ||
-          (ownBg && clamp01(ownBg.a) >= 1) ||
+          own.ownBgOpaque ||
           (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
         ) {
           paintOccluded = true;
@@ -9887,7 +9995,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // The ::backdrop under a box in the top layer: an image, a gradient
       // or a filter there stops the measurement as one on an ancestor
       // would, and an opaque one hides the rest of the page.
-      const top = paintOccluded ? null : __topLayerOf(cur);
+      const top = paintOccluded || !own.placed ? null : __topLayerOf(cur);
       if (top && top.blocker) {
         const out = {
           ok: false,
@@ -14393,15 +14501,26 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // closure state because rule execution is synchronous and single-rule-
   // at-a-time: exactly one rule's excludes are ever "active" at once.
   var __activeRuleExcludeSelectors = [];
+  // The effective list and its cache key, computed once per change of the
+  // active rule's excludes rather than on every isExcluded() call: sorting
+  // and joining the list per element made each exclude selector add about
+  // 40% to a scan.
+  var __effectiveExcludeSelectors = null;
+  var __selectorOptsKey = null;
 
   function __getEffectiveExcludeSelectors() {
-    return __activeRuleExcludeSelectors.length
-      ? excludeSelectors.concat(__activeRuleExcludeSelectors)
-      : excludeSelectors;
+    if (__effectiveExcludeSelectors === null) {
+      __effectiveExcludeSelectors = __activeRuleExcludeSelectors.length
+        ? excludeSelectors.concat(__activeRuleExcludeSelectors)
+        : excludeSelectors;
+    }
+    return __effectiveExcludeSelectors;
   }
 
   function __setActiveRuleExcludeSelectors(list) {
     __activeRuleExcludeSelectors = normalizeSelectorList(list);
+    __effectiveExcludeSelectors = null;
+    __selectorOptsKey = null;
   }
 
   // Selector-related caches (selector uniqueness index, per-element built
@@ -14411,14 +14530,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // calls on the same window/document (see __domSharedCache below), so a
   // run -- or a rule with its own rule-scoped excludes -- must not
   // read/write another run/rule's cached selectors. This key partitions
-  // those caches per effective option set; recomputed per call (not a
-  // constant) since the effective list changes as the active rule changes.
+  // those caches per effective option set; recomputed whenever the active
+  // rule's excludes change (__setActiveRuleExcludeSelectors), not a constant.
   function __getSelectorOptsKey() {
-    return (
-      (includeShadowDom ? 'sd1' : 'sd0') +
-      '|' +
-      __getEffectiveExcludeSelectors().slice().sort().join(',')
-    );
+    if (__selectorOptsKey === null) {
+      __selectorOptsKey =
+        (includeShadowDom ? 'sd1' : 'sd0') +
+        '|' +
+        __getEffectiveExcludeSelectors().slice().sort().join(',');
+    }
+    return __selectorOptsKey;
   }
 
   // -------------------------------------------------------------------------
@@ -14437,6 +14558,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   var __idRefReverseIndexByScope = null; // WeakMap<object, Map<string, Set<Element>>>
   var __uniqIndexByScope = null; // WeakMap<object, object> (selector uniqueness index per scope)
   var __shadowRootsByRoot = null; // WeakMap<object, Array<object>> (cached open shadow roots per root)
+  var __shadowRootsByOpts = null; // Map<optsKey, WeakMap<object, Array<object>>> (the same, with excludes)
   var __excludedCache = null; // Map<optsKey, WeakMap<Element, boolean>> (isExcluded results)
 
   // Shared recursion-depth guard across the mutually-recursive naming
@@ -18013,12 +18135,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!scope || !dom.get(scope, 'querySelectorAll')) return [];
 
       // Cache shadow root discovery per root to avoid repeated querySelectorAll('*') walks.
-      // IMPORTANT: do not cache when the effective exclude list (global
-      // ∪ active rule-scoped excludes) is non-empty -- different rules
-      // may have different effective lists and must not share results.
-      if (!__getEffectiveExcludeSelectors().length && __shadowRootsByRoot) {
+      // With an exclude list (global ∪ active rule-scoped excludes), the
+      // roots under excluded hosts are left out, so the cache is
+      // partitioned by that list's key: rules with different effective
+      // lists never share results.
+      const cache = __getShadowRootsCache(keepExcluded);
+      if (cache) {
         try {
-          const cached = __shadowRootsByRoot.get(scope);
+          const cached = cache.get(scope);
           if (cached) {
             __perfInc('shadowRoots.hit');
             return cached;
@@ -18035,12 +18159,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
           const roots = [];
           for (const el of hosts) {
             if (!el || dom.nodeType(el) !== 1) continue;
+            if (out(el)) continue;
             const sr = dom.shadowRoot(el);
             if (sr) roots.push(sr);
           }
 
           try {
-            __shadowRootsByRoot.set(scope, roots);
+            cache.set(scope, roots);
           } catch {
             __perfInc('shadowRoots.nocache');
           }
@@ -18491,15 +18616,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __uniqIndexByScope = null;
   }
 
-  // Shadow root discovery cache (per root) within a run.
-  // Only used when excludeSelectors is empty to avoid cross-helper bleed.
+  // Shadow root discovery cache (per root) within a run. Without excludes it
+  // is one WeakMap; with them, one per effective exclude list (and per
+  // keepExcluded), since the roots under excluded hosts are left out.
   try {
     __shadowRootsByRoot =
       __domSharedCache.shadowRootsByRoot instanceof WeakMap
         ? __domSharedCache.shadowRootsByRoot
         : (__domSharedCache.shadowRootsByRoot = new WeakMap());
+    __shadowRootsByOpts =
+      __domSharedCache.shadowRootsByOpts instanceof Map
+        ? __domSharedCache.shadowRootsByOpts
+        : (__domSharedCache.shadowRootsByOpts = new Map());
   } catch {
     __shadowRootsByRoot = null;
+    __shadowRootsByOpts = null;
+  }
+
+  function __getShadowRootsCache(keepExcluded) {
+    if (!__getEffectiveExcludeSelectors().length || keepExcluded) return __shadowRootsByRoot;
+    if (!__shadowRootsByOpts) return null;
+    try {
+      const key = __getSelectorOptsKey();
+      let wm = __shadowRootsByOpts.get(key);
+      if (!(wm instanceof WeakMap)) {
+        wm = new WeakMap();
+        __shadowRootsByOpts.set(key, wm);
+      }
+      return wm;
+    } catch {
+      return null;
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -81607,6 +81754,110 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
     : helpers.queryAll(CANDIDATE_SELECTOR);
 
+  // Every suppressor tested against each element costs rules x elements.
+  // The selectors that parse on their own, and whose text can't run into
+  // the next one's (balanced brackets and quotes, no comment, no trailing
+  // escape), are tested as one list first: an element none of them matches
+  // is tested against the others only. The rules are read one by one only
+  // on a hit.
+  function standsAlone(sel) {
+    if (!sel || sel.includes('/*') || /\\$/.test(sel)) return false;
+    let depth = 0;
+    let quote = '';
+    for (let i = 0; i < sel.length; i++) {
+      const ch = sel[i];
+      if (ch === '\\') {
+        i += 1;
+        continue;
+      }
+      if (quote) {
+        if (ch === quote) quote = '';
+      } else if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === '(' || ch === '[') depth += 1;
+      else if (ch === ')' || ch === ']') {
+        depth -= 1;
+        if (depth < 0) return false;
+      }
+    }
+    return depth === 0 && !quote;
+  }
+  const probe = document ? dom.documentElement(document) : null;
+  const listed = new Set();
+  for (const s of suppressors) {
+    // :scope, & and :host read differently from a tree's querySelectorAll
+    // than from the element's matches(): tested element by element.
+    if (listed.has(s.base) || !probe || !standsAlone(s.base) || /:scope|&|:host/i.test(s.base))
+      continue;
+    try {
+      dom.matches(probe, s.base);
+      listed.add(s.base);
+    } catch {
+      // Unparseable: matchesSafe reads it as matching nothing.
+    }
+  }
+  let suppressorList = listed.size ? [...listed].join(', ') : '';
+  if (suppressorList && probe) {
+    try {
+      dom.matches(probe, suppressorList);
+    } catch {
+      suppressorList = '';
+      listed.clear();
+    }
+  }
+  const unlisted = suppressors.filter((s) => !listed.has(s.base));
+
+  // Which candidates the list matches, and how many in each tree. Where
+  // many do, each listed selector is run once over the tree
+  // (querySelectorAll) rather than once per element, which a browser has
+  // to parse again for each of hundreds of selectors.
+  const listHits = new Set();
+  const listHitsByTree = new Map();
+  function treeOf(el) {
+    try {
+      return dom.getRootNode(el);
+    } catch {
+      return null;
+    }
+  }
+  if (suppressorList) {
+    for (const el of candidates) {
+      if (!el || dom.nodeType(el) !== 1 || !matchesSafe(el, suppressorList)) continue;
+      listHits.add(el);
+      const tree = treeOf(el);
+      listHitsByTree.set(tree, (listHitsByTree.get(tree) || 0) + 1);
+    }
+  }
+  // Only in a browser (a page with a layout): there, a call with one of
+  // hundreds of selectors costs a parse each time. jsdom keeps each one
+  // compiled and walks the tree in script, so one query per selector over
+  // the tree costs it more than testing the elements (measured).
+  let rendered;
+  try {
+    const box = probe ? dom.getBoundingClientRect(probe) : null;
+    rendered = !!box && (box.width > 0 || box.height > 0);
+  } catch {
+    rendered = false;
+  }
+  const TREE_QUERY_MIN_HITS = rendered ? 8 : Infinity;
+  const matchesByTree = new Map();
+  function listedMatchesIn(tree) {
+    if (matchesByTree.has(tree)) return matchesByTree.get(tree);
+    let byBase = null;
+    const type = tree ? dom.nodeType(tree) : 0;
+    if ((type === 9 || type === 11) && listHitsByTree.get(tree) >= TREE_QUERY_MIN_HITS) {
+      byBase = new Map();
+      for (const base of listed) {
+        try {
+          byBase.set(base, new Set(dom.querySelectorAll(tree, base)));
+        } catch {
+          // Tested element by element instead.
+        }
+      }
+    }
+    matchesByTree.set(tree, byBase);
+    return byBase;
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -81617,7 +81868,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const suppressing = suppressors.filter((s) => matchesSafe(el, s.base));
+    // Many rules share a selector (a framework's reset repeated): each one
+    // is tested once per element.
+    const listHit = listHits.has(el);
+    const byBase = listHit ? listedMatchesIn(treeOf(el)) : null;
+    const matched = new Map();
+    const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
+      let hit = matched.get(s.base);
+      if (hit === undefined) {
+        const found = byBase && byBase.get(s.base);
+        hit = found ? found.has(el) : matchesSafe(el, s.base);
+        matched.set(s.base, hit);
+      }
+      return hit;
+    });
     if (!suppressing.length) continue;
 
     const killed = new Set();
@@ -89143,25 +89407,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return normalizeWs(parts.join(' '));
   }
 
+  // How many fields (FIELD_SELECTOR and isField) each element holds, as
+  // querySelectorAll finds them under it: in its own tree, itself left
+  // out. Counted once per tree, so a page of many single checkboxes does
+  // not search the whole form again for each of them.
+  const fieldCountsByTree = new Map();
+  function fieldCountsIn(node) {
+    const tree = dom.getRootNode(node);
+    let counts = fieldCountsByTree.get(tree);
+    if (counts) return counts;
+    counts = new Map();
+    for (const f of dom.querySelectorAll(tree, FIELD_SELECTOR)) {
+      if (!isField(f)) continue;
+      for (let a = dom.parentElement(f); a; a = dom.parentElement(a)) {
+        counts.set(a, (counts.get(a) || 0) + 1);
+      }
+    }
+    fieldCountsByTree.set(tree, counts);
+    return counts;
+  }
+
   const groupQuestionCache = new Map();
   function choiceGroupContainerText(members) {
     if (groupQuestionCache.has(members)) return groupQuestionCache.get(members);
     let text = '';
     try {
-      const memberSet = new Set(members);
       const skip = new Set(members);
       for (const m of members) {
         for (const label of getReferencedElements(m, 'aria-labelledby')) skip.add(label);
         for (const label of getNativeLabels(m)) skip.add(label);
       }
+      // The members a field search under an ancestor of them all finds.
+      const memberFields = new Set(
+        members.filter((m) => {
+          try {
+            return dom.matches(m, FIELD_SELECTOR) && isField(m);
+          } catch {
+            return false;
+          }
+        })
+      );
       let cur = dom.parentElement(members[0]);
+      const counts = cur ? fieldCountsIn(cur) : null;
       // Bounded as a safety net only: a walk up a real tree always ends.
       for (let steps = 0; cur && steps < 100000; steps++) {
         if (members.every((m) => dom.contains(cur, m))) {
-          const others = Array.prototype.some.call(
-            dom.querySelectorAll(cur, FIELD_SELECTOR),
-            (f) => !memberSet.has(f) && isField(f)
-          );
+          // A field under cur other than the members (cur holds them all).
+          const others =
+            (counts.get(cur) || 0) > memberFields.size - (memberFields.has(cur) ? 1 : 0);
           if (others) break;
           // An element holding nothing but the options says nothing more:
           // the question is in the next one up.
@@ -95632,11 +95925,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return v.replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
-  // The scripts written without spaces between words (see tokenize).
-  const NO_SPACE_CHARS =
-    '\\p{scx=Han}\\p{scx=Hira}\\p{scx=Kana}\\p{scx=Thai}\\p{scx=Laoo}\\p{scx=Khmr}\\p{scx=Mymr}';
-  const NO_SPACE_RUN = new RegExp(`[${NO_SPACE_CHARS}][${NO_SPACE_CHARS}\\p{M}]*`, 'gu');
-  const NO_SPACE_CHAR = new RegExp(`^[${NO_SPACE_CHARS}]`, 'u');
+  // The scripts written without spaces between words (see tokenize). Their
+  // expressions take milliseconds to build, so they are built only for text
+  // that may hold such a character: none is ASCII (some below U+0E00 are,
+  // by their Script_Extensions: U+00B7, U+02BC, U+0303...).
+  let noSpace = null;
+  function noSpaceRegExps() {
+    if (!noSpace) {
+      const chars =
+        '\\p{scx=Han}\\p{scx=Hira}\\p{scx=Kana}\\p{scx=Thai}\\p{scx=Laoo}\\p{scx=Khmr}\\p{scx=Mymr}';
+      noSpace = {
+        run: new RegExp(`[${chars}][${chars}\\p{M}]*`, 'gu'),
+        char: new RegExp(`^[${chars}]`, 'u')
+      };
+    }
+    return noSpace;
+  }
+  function notAscii(s) {
+    for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) > 0x7f) return true;
+    return false;
+  }
+  // Whether `w` starts with a character of those scripts.
+  function startsNoSpace(w) {
+    return notAscii(w) && noSpaceRegExps().char.test(w);
+  }
 
   // WCAG 2.5.3's label-in-name comparison is over words, not characters: drop
   // parenthesised text, case-fold and NFKC-normalise, then reduce every
@@ -95665,12 +95977,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // their characters is a word of its own instead, which compares such
     // text by characters: the label's characters must be in the name,
     // together and in order, as a substring is.
+    v = v.replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ');
+    if (!notAscii(v)) return v.split(' ').filter(Boolean);
     return v
-      .replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ')
-      .replace(NO_SPACE_RUN, ' $& ')
+      .replace(noSpaceRegExps().run, ' $& ')
       .split(' ')
       .filter(Boolean)
-      .flatMap((w) => (NO_SPACE_CHAR.test(w) ? [...w] : [w]));
+      .flatMap((w) => (startsNoSpace(w) ? [...w] : [w]));
   }
 
   // Words as a message shows them: the characters of a run written without
@@ -95679,7 +95992,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const out = [];
     let run = false;
     for (const t of tokens) {
-      const inRun = NO_SPACE_CHAR.test(t);
+      const inRun = startsNoSpace(t);
       if (inRun && run) out[out.length - 1] += t;
       else out.push(t);
       run = inRun;
@@ -95690,7 +96003,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Whether text split by tokenize shows `word`: as a word, or, for a run
   // written without spaces, inside one.
   function showsWord(tokens, word) {
-    const runWord = NO_SPACE_CHAR.test(word);
+    const runWord = startsNoSpace(word);
     return wordsOf(tokens).some((w) => w === word || (runWord && w.indexOf(word) !== -1));
   }
 
@@ -117192,12 +117505,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'textbox',
     'treeitem'
   ]);
-  // role~= matches the token anywhere in the fallback list, so the resolved
-  // role is checked below (role="tooltip button" is a tooltip, not a target).
-  const CANDIDATE_SELECTOR = [
-    NATIVE_CANDIDATE_SELECTOR,
-    ...[...TARGET_ROLES].map((role) => `[role~="${role}" i]`)
-  ].join(', ');
+  // Any element with a role, and the resolved role is checked below
+  // (role="tooltip button" is a tooltip, not a target). One [role] costs a
+  // selector engine far less than a [role~="x" i] for each target role,
+  // which made jsdom match every element against each of them.
+  const CANDIDATE_SELECTOR = NATIVE_CANDIDATE_SELECTOR + ', [role]';
 
   function isCandidate(el) {
     try {
@@ -119322,12 +119634,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'textbox',
     'treeitem'
   ]);
-  // role~= matches the token anywhere in the fallback list, so the resolved
-  // role is checked below (role="tooltip button" is a tooltip, not a target).
-  const CANDIDATE_SELECTOR = [
-    NATIVE_CANDIDATE_SELECTOR,
-    ...[...TARGET_ROLES].map((role) => `[role~="${role}" i]`)
-  ].join(', ');
+  // Any element with a role, and the resolved role is checked below
+  // (role="tooltip button" is a tooltip, not a target). One [role] costs a
+  // selector engine far less than a [role~="x" i] for each target role,
+  // which made jsdom match every element against each of them.
+  const CANDIDATE_SELECTOR = NATIVE_CANDIDATE_SELECTOR + ', [role]';
 
   function isCandidate(el) {
     try {
@@ -137592,6 +137903,70 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
         return box;
       };
+      // The clip of node and the boxes above it, up to the first that stops
+      // the walk (or the root), as one rectangle: an axis no box clips is
+      // open. Cutting the text's box by it is cutting it by each box in
+      // turn, as isUndrawn does, since an intersection only shrinks. len:
+      // how many boxes it spans, for the walk's depth limit.
+      const clipUpCache = new Map();
+      const clipUpOf = (node) => {
+        const hit = clipUpCache.get(node);
+        if (hit) return hit;
+        const path = [];
+        let base = null;
+        let cur = node;
+        while (cur && dom.nodeType(cur) === 1 && path.length < 101) {
+          const known = clipUpCache.get(cur);
+          if (known) {
+            base = known;
+            break;
+          }
+          path.push(cur);
+          if (clipBoxOf(cur).stops) break;
+          cur = composedParent(cur);
+        }
+        // A walk cut short by the depth limit leaves the rest unknown: too
+        // long, and isUndrawn walks it box by box.
+        const cut = !base && path.length >= 101;
+        let up = base || {
+          clips: false,
+          left: -Infinity,
+          top: -Infinity,
+          right: Infinity,
+          bottom: Infinity,
+          len: cut ? Infinity : 0
+        };
+        for (let i = path.length - 1; i >= 0; i--) {
+          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(path[i]);
+          const above = stops ? null : up;
+          up = {
+            clips: clipsX || clipsY || (!!above && above.clips),
+            left: clipsX
+              ? Math.max(a.left, above ? above.left : -Infinity)
+              : above
+                ? above.left
+                : -Infinity,
+            top: clipsY
+              ? Math.max(a.top, above ? above.top : -Infinity)
+              : above
+                ? above.top
+                : -Infinity,
+            right: clipsX
+              ? Math.min(a.right, above ? above.right : Infinity)
+              : above
+                ? above.right
+                : Infinity,
+            bottom: clipsY
+              ? Math.min(a.bottom, above ? above.bottom : Infinity)
+              : above
+                ? above.bottom
+                : Infinity,
+            len: 1 + (above ? above.len : 0)
+          };
+          clipUpCache.set(path[i], up);
+        }
+        return up;
+      };
 
       // Whether the element's text lies left of the page: its own text's
       // lines where it has any, else (text from ::before or ::after) the
@@ -137703,6 +138078,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         let bottom = r.bottom;
         // Inside a marquee, only the boxes around the marquee clip.
         let cur = composedParent(marquee || el);
+        const up = cur && dom.nodeType(cur) === 1 ? clipUpOf(cur) : null;
+        if (up && up.len <= 100) {
+          if (!up.clips) return false;
+          left = Math.max(left, up.left);
+          right = Math.min(right, up.right);
+          top = Math.max(top, up.top);
+          bottom = Math.min(bottom, up.bottom);
+          return right - left <= 1 || bottom - top <= 1;
+        }
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
@@ -138998,8 +139382,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         v = '';
       }
       // A layer paints a mask when it has an image (url(), a gradient,
-      // image-set()); `none` and the shorthand's other keywords don't.
-      if (v && __splitTopLevel(v).some((layer) => layer.includes('('))) return v;
+      // image-set()); `none` and the shorthand's other keywords don't. Some
+      // layer has a "(" exactly when the whole value has one.
+      if (v && v.includes('(')) return v;
     }
     return '';
   }
@@ -141530,7 +141915,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
 
       // Inset shadows filling its padding box, over its background.
-      const shadows = __insetShadowUnder(cur, cs, el);
+      const own = __ancestorEffectsOf(cur);
+      const shadows = own.insetShadow ? __insetShadowUnder(cur, cs, el) : null;
       if (shadows && shadows.colors) {
         for (const c of shadows.colors) {
           if (collectStack) {
@@ -141601,7 +141987,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
       // A box in the top layer is painted over its ::backdrop, which is
       // painted over the rest of the page (a lightbox's dimmed page).
-      const top = acc.a < 1 ? __topLayerOf(cur) : null;
+      const top = acc.a < 1 && own.placed ? __topLayerOf(cur) : null;
       if (top && top.color) {
         if (collectStack) {
           stack.push({
@@ -143172,6 +143558,40 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // What an element's own style does to the text under it, whatever that
+  // text is: read once per scan for each element, since every text walks
+  // all its ancestors and siblings share them. What depends on the text
+  // (where an inset shadow or a background layer falls, a drop shadow over
+  // opaque content) is worked out in the walk.
+  const __localAncestorEffectsCache = new WeakMap();
+  const __ancestorEffectsCache =
+    __getSharedWeakMapCache('__ancestorEffectsCache') || __localAncestorEffectsCache;
+  function __ancestorEffectsOf(cur) {
+    let rec = __ancestorEffectsCache.get(cur);
+    if (rec) return rec;
+    const cs = __contrastComputedStyle(cur);
+    const boxShadow = trim(cs && cs.boxShadow);
+    const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
+    const position = cs && cs.position;
+    rec = {
+      cs,
+      blend: __hasBlendModeEl(cur, cs),
+      filter: __hasFilterEl(cur, cs),
+      mask: maskOf(cs),
+      // __insetShadowUnder paints nothing without an inset shadow.
+      insetShadow: !!boxShadow && boxShadow !== 'none' && /\binset\b/i.test(boxShadow),
+      bgImage: __hasBackgroundImageOrGradientEl(cur, cs),
+      opacity: opacityOf(cs),
+      ownBgOpaque: !!ownBg && clamp01(ownBg.a) >= 1,
+      // __topLayerOf asks only boxes placed absolute or fixed.
+      placed: position === 'fixed' || position === 'absolute'
+    };
+    try {
+      __ancestorEffectsCache.set(cur, rec);
+    } catch {}
+    return rec;
+  }
+
   // The walk behind getComputabilityBlocker. skipPseudo: the
   // ::first-line/::first-letter check is left out, to see what else
   // stands in the way.
@@ -143270,9 +143690,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
     for (const cur of ancestorsOf(el)) {
       if (dom.nodeType(cur) !== 1) continue;
-      const cs = __contrastComputedStyle(cur);
+      const own = __ancestorEffectsOf(cur);
+      const cs = own.cs;
 
-      if (__hasBlendModeEl(cur, cs)) {
+      if (own.blend) {
         const out = {
           ok: false,
           reasonCode: 'MIX_BLEND_MODE',
@@ -143291,7 +143712,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return out;
       }
 
-      if (__hasFilterEl(cur, cs)) {
+      if (own.filter) {
         const isFilter = cs && cs.filter && String(cs.filter).trim().toLowerCase() !== 'none';
         // __hasFilterEl's OR means: if it's not plain `filter`, it must be
         // `backdrop-filter` that's set. Unlike `filter` (unconditional
@@ -143333,7 +143754,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // A mask fades cur and all it holds, text and background together,
       // by amounts that vary across it, over what is behind: like a filter,
       // a closer opaque background does not shield the text from it.
-      const mask = maskOf(cs);
+      const mask = own.mask;
       if (mask) {
         const out = {
           ok: false,
@@ -143493,7 +143914,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // fills the whole padding box is a color like the background's, one
       // that paints under part of the text stops the measurement as an
       // image would (see __insetShadowUnder).
-      const shadowUnder = paintOccluded ? null : __insetShadowUnder(cur, cs, el);
+      const shadowUnder =
+        paintOccluded || !own.insetShadow ? null : __insetShadowUnder(cur, cs, el);
       if (shadowUnder && shadowUnder.blocked) {
         const out = {
           ok: false,
@@ -143518,9 +143940,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // Layers that paint nothing under the text (an underline) or one
       // solid color don't stop the measurement (see __bgLayerKinds).
       const layersUnder =
-        !paintOccluded && !shadowOpaque && __hasBackgroundImageOrGradientEl(cur, cs)
-          ? __bgLayersUnder(cur, cs, el)
-          : null;
+        !paintOccluded && !shadowOpaque && own.bgImage ? __bgLayersUnder(cur, cs, el) : null;
       if (layersUnder && layersUnder.blocked) {
         const bgImg = (cs && cs.backgroundImage) || '';
         const out = {
@@ -143593,7 +144013,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // produce for the general case. (el's own opacity is handled just
       // above.)
       if (cur !== el) {
-        const ancestorOpacity = opacityOf(cs);
+        const ancestorOpacity = own.opacity;
         if (ancestorOpacity < 1 && resolveGroupOpacityColors(el)) {
           const out = {
             ok: true,
@@ -143635,10 +144055,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // this point (see the paintOccluded comment above the loop).
       if (!paintOccluded) {
         chain.push(cur);
-        const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
         if (
           shadowOpaque ||
-          (ownBg && clamp01(ownBg.a) >= 1) ||
+          own.ownBgOpaque ||
           (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
         ) {
           paintOccluded = true;
@@ -143649,7 +144068,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // The ::backdrop under a box in the top layer: an image, a gradient
       // or a filter there stops the measurement as one on an ancestor
       // would, and an opaque one hides the rest of the page.
-      const top = paintOccluded ? null : __topLayerOf(cur);
+      const top = paintOccluded || !own.placed ? null : __topLayerOf(cur);
       if (top && top.blocker) {
         const out = {
           ok: false,
@@ -148155,15 +148574,26 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // closure state because rule execution is synchronous and single-rule-
   // at-a-time: exactly one rule's excludes are ever "active" at once.
   var __activeRuleExcludeSelectors = [];
+  // The effective list and its cache key, computed once per change of the
+  // active rule's excludes rather than on every isExcluded() call: sorting
+  // and joining the list per element made each exclude selector add about
+  // 40% to a scan.
+  var __effectiveExcludeSelectors = null;
+  var __selectorOptsKey = null;
 
   function __getEffectiveExcludeSelectors() {
-    return __activeRuleExcludeSelectors.length
-      ? excludeSelectors.concat(__activeRuleExcludeSelectors)
-      : excludeSelectors;
+    if (__effectiveExcludeSelectors === null) {
+      __effectiveExcludeSelectors = __activeRuleExcludeSelectors.length
+        ? excludeSelectors.concat(__activeRuleExcludeSelectors)
+        : excludeSelectors;
+    }
+    return __effectiveExcludeSelectors;
   }
 
   function __setActiveRuleExcludeSelectors(list) {
     __activeRuleExcludeSelectors = normalizeSelectorList(list);
+    __effectiveExcludeSelectors = null;
+    __selectorOptsKey = null;
   }
 
   // Selector-related caches (selector uniqueness index, per-element built
@@ -148173,14 +148603,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // calls on the same window/document (see __domSharedCache below), so a
   // run -- or a rule with its own rule-scoped excludes -- must not
   // read/write another run/rule's cached selectors. This key partitions
-  // those caches per effective option set; recomputed per call (not a
-  // constant) since the effective list changes as the active rule changes.
+  // those caches per effective option set; recomputed whenever the active
+  // rule's excludes change (__setActiveRuleExcludeSelectors), not a constant.
   function __getSelectorOptsKey() {
-    return (
-      (includeShadowDom ? 'sd1' : 'sd0') +
-      '|' +
-      __getEffectiveExcludeSelectors().slice().sort().join(',')
-    );
+    if (__selectorOptsKey === null) {
+      __selectorOptsKey =
+        (includeShadowDom ? 'sd1' : 'sd0') +
+        '|' +
+        __getEffectiveExcludeSelectors().slice().sort().join(',');
+    }
+    return __selectorOptsKey;
   }
 
   // -------------------------------------------------------------------------
@@ -148199,6 +148631,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   var __idRefReverseIndexByScope = null; // WeakMap<object, Map<string, Set<Element>>>
   var __uniqIndexByScope = null; // WeakMap<object, object> (selector uniqueness index per scope)
   var __shadowRootsByRoot = null; // WeakMap<object, Array<object>> (cached open shadow roots per root)
+  var __shadowRootsByOpts = null; // Map<optsKey, WeakMap<object, Array<object>>> (the same, with excludes)
   var __excludedCache = null; // Map<optsKey, WeakMap<Element, boolean>> (isExcluded results)
 
   // Shared recursion-depth guard across the mutually-recursive naming
@@ -151775,12 +152208,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!scope || !dom.get(scope, 'querySelectorAll')) return [];
 
       // Cache shadow root discovery per root to avoid repeated querySelectorAll('*') walks.
-      // IMPORTANT: do not cache when the effective exclude list (global
-      // ∪ active rule-scoped excludes) is non-empty -- different rules
-      // may have different effective lists and must not share results.
-      if (!__getEffectiveExcludeSelectors().length && __shadowRootsByRoot) {
+      // With an exclude list (global ∪ active rule-scoped excludes), the
+      // roots under excluded hosts are left out, so the cache is
+      // partitioned by that list's key: rules with different effective
+      // lists never share results.
+      const cache = __getShadowRootsCache(keepExcluded);
+      if (cache) {
         try {
-          const cached = __shadowRootsByRoot.get(scope);
+          const cached = cache.get(scope);
           if (cached) {
             __perfInc('shadowRoots.hit');
             return cached;
@@ -151797,12 +152232,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
           const roots = [];
           for (const el of hosts) {
             if (!el || dom.nodeType(el) !== 1) continue;
+            if (out(el)) continue;
             const sr = dom.shadowRoot(el);
             if (sr) roots.push(sr);
           }
 
           try {
-            __shadowRootsByRoot.set(scope, roots);
+            cache.set(scope, roots);
           } catch {
             __perfInc('shadowRoots.nocache');
           }
@@ -152253,15 +152689,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __uniqIndexByScope = null;
   }
 
-  // Shadow root discovery cache (per root) within a run.
-  // Only used when excludeSelectors is empty to avoid cross-helper bleed.
+  // Shadow root discovery cache (per root) within a run. Without excludes it
+  // is one WeakMap; with them, one per effective exclude list (and per
+  // keepExcluded), since the roots under excluded hosts are left out.
   try {
     __shadowRootsByRoot =
       __domSharedCache.shadowRootsByRoot instanceof WeakMap
         ? __domSharedCache.shadowRootsByRoot
         : (__domSharedCache.shadowRootsByRoot = new WeakMap());
+    __shadowRootsByOpts =
+      __domSharedCache.shadowRootsByOpts instanceof Map
+        ? __domSharedCache.shadowRootsByOpts
+        : (__domSharedCache.shadowRootsByOpts = new Map());
   } catch {
     __shadowRootsByRoot = null;
+    __shadowRootsByOpts = null;
+  }
+
+  function __getShadowRootsCache(keepExcluded) {
+    if (!__getEffectiveExcludeSelectors().length || keepExcluded) return __shadowRootsByRoot;
+    if (!__shadowRootsByOpts) return null;
+    try {
+      const key = __getSelectorOptsKey();
+      let wm = __shadowRootsByOpts.get(key);
+      if (!(wm instanceof WeakMap)) {
+        wm = new WeakMap();
+        __shadowRootsByOpts.set(key, wm);
+      }
+      return wm;
+    } catch {
+      return null;
+    }
   }
 
   // -------------------------------------------------------------------------
