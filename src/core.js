@@ -31027,7 +31027,7 @@ const pingFrame = (function pingFrame(win, targetWindow, pingWaitTime) {
   installFrameRpcListener(win, FRAME_RPC_CHANNEL);
   const registry = getFrameRpcRegistry(win);
   const requestId = nextFrameRpcRequestId(win);
-  const waitMs = typeof pingWaitTime === 'number' ? pingWaitTime : 500;
+  const waitMs = typeof pingWaitTime === 'number' ? pingWaitTime : 2000;
 
   return new Promise(function (resolve) {
     let settled = false;
@@ -169374,7 +169374,7 @@ const pingFrame = (function pingFrame(win, targetWindow, pingWaitTime) {
   installFrameRpcListener(win, FRAME_RPC_CHANNEL);
   const registry = getFrameRpcRegistry(win);
   const requestId = nextFrameRpcRequestId(win);
-  const waitMs = typeof pingWaitTime === 'number' ? pingWaitTime : 500;
+  const waitMs = typeof pingWaitTime === 'number' ? pingWaitTime : 2000;
 
   return new Promise(function (resolve) {
     let settled = false;
@@ -171240,7 +171240,7 @@ const pingFrame = (function pingFrame(win, targetWindow, pingWaitTime) {
   installFrameRpcListener(win, FRAME_RPC_CHANNEL);
   const registry = getFrameRpcRegistry(win);
   const requestId = nextFrameRpcRequestId(win);
-  const waitMs = typeof pingWaitTime === 'number' ? pingWaitTime : 500;
+  const waitMs = typeof pingWaitTime === 'number' ? pingWaitTime : 2000;
 
   return new Promise(function (resolve) {
     let settled = false;

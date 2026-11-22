@@ -374,7 +374,7 @@ const engineOptions = {
 
   // Only read by runa11yCoreAcrossFrames -- see INTEGRATION.md's "Cross-frame
   // scanning" section. Ignored by runDomRulesInPage/runa11yCoreInPage.
-  pingWaitTime: 500,               // ms to wait for a child frame to answer a ping before treating it as unreachable
+  pingWaitTime: 2000,              // ms to wait for a child frame to answer a ping before treating it as unreachable
   frameWaitTime: 60000             // ms to wait for a child frame's full scan result before timing out
 };
 ```
@@ -413,7 +413,7 @@ const engineOptions = {
 | `probes` | An optional, JSON-safe evidence object your host application supplies: a plain object whose values are strings, finite numbers, `true`, `false`, `null`, arrays and plain objects. Anything else (a function, a `Date`, an array at the top, a `BigInt`, a circular reference) is ignored with a `console.warn`, and throws `INVALID_ENGINE_OPTIONS` under `strictOptions`. It is for what a scan of one page cannot see, such as the site's other pages. The engine caps it before rules read it (`ctx.inputs.probes`): six levels deep, 200 items per array, 50 keys per object, 2,000 characters per string. `crawl.pageTitles` (`{ pages: [{ url, title }] }`) is read by `page-title-patterns`, to look for generic and templated titles across a site. A profile's rules may read probes of their own, which its documentation describes. |
 | `perfStats` / `profileRules` | Debug-only. `perfStats: true` returns internal counters on the result's `perfStats` field; `profileRules: true` **additionally** adds a per-rule timing breakdown there. `profileRules` on its own does nothing — `perfStats` is what creates the object the breakdown lives in. Shape is not part of the stable output contract — don't build on it. Note also that `profileRules` is the one option that makes output non-deterministic: counters are stable across identical runs, wall-clock timings are not. Leave it off if you diff results between runs. With `profileRules`, the shared caches (computed styles and accessibility-tree eligibility for every element in scope) are filled before the first rule and timed apart as `perfStats.warmUpMs`, so their cost isn't charged to whichever rule walks the page first. |
 | `timeBudgetMs` | Off by default. A number of milliseconds above 0 (`Infinity` is no limit, as leaving it out): once the scan has spent that long, it starts no more rules. See ["A time budget"](#a-time-budget-timebudgetms) below. |
-| `pingWaitTime` / `frameWaitTime` | Only read by `runa11yCoreAcrossFrames` (see [`INTEGRATION.md`](./INTEGRATION.md#cross-frame-scanning-including-cross-origin)) — how long to wait for a child frame to answer a ping (default `500`ms) and a full run request (default `60000`ms) before treating it as unreachable. Ignored by `runDomRulesInPage`/`runa11yCoreInPage`. |
+| `pingWaitTime` / `frameWaitTime` | Only read by `runa11yCoreAcrossFrames` (see [`INTEGRATION.md`](./INTEGRATION.md#cross-frame-scanning-including-cross-origin)) — how long to wait for a child frame to answer a ping (default `2000`ms) and a full run request (default `60000`ms) before treating it as unreachable. Ignored by `runDomRulesInPage`/`runa11yCoreInPage`. |
 
 ### A time budget (`timeBudgetMs`)
 
