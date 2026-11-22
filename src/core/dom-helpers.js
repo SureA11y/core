@@ -10464,6 +10464,9 @@ function createDomHelpers(opts) {
     getInternalsStateInfo,
     cssRulesOf,
     selectorIndex,
+    isVisuallyHidden,
+    getRoleInfo: (el) => getRoleInfo(el),
+    getFocusableInfo: (el) => getFocusableInfo(el),
     __contrastSharedCache
   };
 

@@ -109,12 +109,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/symbol-graphic-contrast-all-s
     'utf8'
   );
   const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
-    minOccurrences: 3,
-    maxOccurrences: 3
+    minOccurrences: 6,
+    maxOccurrences: 6
   });
   assert.deepEqual(
     rule.occurrences.map((o) => /id="(sgc_case_\d+)"/.exec(o.html)[1]),
-    ['sgc_case_01', 'sgc_case_02', 'sgc_case_03']
+    ['sgc_case_01', 'sgc_case_02', 'sgc_case_03', 'sgc_case_11', 'sgc_case_12', 'sgc_case_13']
   );
 });
 
@@ -165,6 +165,104 @@ test(`${RULE_ID}: a control in a disabled fieldset's first legend is active (rou
   for (const body of [
     `<fieldset disabled><legend>A</legend><legend><button ${B}>★</button></legend></fieldset>`,
     `<fieldset disabled><legend>A</legend><button ${B}>★</button></fieldset>`
+  ]) {
+    assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+// A currency sign or 〒 beside letters or digits on its line is text, which
+// contrast-minimum judges at 4.5:1 (3:1 if large); a separator between
+// links stays a graphic (round 11, B11-9).
+test(`${RULE_ID}: a currency sign in a run of text is text, judged by contrast-minimum (round 11, B11-9)`, () => {
+  const both = (body) => {
+    const r = runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body style="background:#fff;color:#111">${body}</body></html>`,
+      { runOnly: [RULE_ID, 'contrast-minimum'] }
+    ).checksResults;
+    const of = (id) => r.find((c) => c.ruleId === id);
+    return {
+      symbol: of(RULE_ID).outcome,
+      text: of('contrast-minimum')
+        .occurrences.map((o) => /id="(\w+)"/.exec(o.html || ''))
+        .filter(Boolean)
+        .map((m) => m[1])
+    };
+  };
+  for (const body of [
+    '<span style="color:#999"><bdi><span id="s">€</span>45,00</bdi></span>',
+    '<p>Price: <span id="s" style="color:#999">$</span>45.00 per item</p>',
+    '<p>Total 45,00 <span id="s" style="color:#999">€</span></p>',
+    '<p lang="ja"><span id="s" style="color:#aaa">〒</span>100-0001 東京都</p>',
+    '<p><span id="s" style="color:#999;display:inline-block">£</span><b>12</b></p>'
+  ]) {
+    const got = both(body);
+    assert.equal(got.symbol, 'notApplicable', body);
+    assert.ok(got.text.includes('s'), body);
+  }
+  // Large text needs 3:1: #949494 on white, 3.03:1, passes as large text.
+  const large = both(
+    '<p style="font-size:24px"><span id="s" style="color:#949494">€</span><span style="color:#000">45</span></p>'
+  );
+  assert.equal(large.symbol, 'notApplicable');
+  assert.ok(!large.text.includes('s'));
+  // Not in a run: a separator, a sign between links, alone in its block,
+  // or beside text that is not drawn.
+  for (const body of [
+    '<nav><a href="/">Home</a> <span id="s" style="color:#ccc">&gt;</span> <a href="/s">Shop</a></nav>',
+    '<p><a href="/u">USD</a> <span id="s" style="color:#ccc">$</span> <a href="/e">EUR</a></p>',
+    '<div id="s" style="color:#ccc">€</div><div>45</div>',
+    '<p><span id="s" style="color:#ccc">€</span><br>45</p>',
+    '<p><span id="s" style="color:#ccc">€</span><span style="display:none">45</span></p>',
+    '<p><span id="s" style="color:#ccc">€</span><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">45</span></p>'
+  ]) {
+    const got = both(body);
+    assert.equal(got.symbol, 'cantTell', body);
+    assert.ok(!got.text.includes('s'), body);
+  }
+});
+
+// Only visible text counts: a screen-reader-only label beside the symbols
+// gives them no letter or digit a reader sees (round 11, B11-10).
+test(`${RULE_ID}: symbols with only hidden text beside them are asked about (round 11, B11-10)`, () => {
+  const SR = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)';
+  for (const body of [
+    `<span style="color:#ccc">★★★★☆<span style="${SR}">4 of 5</span></span>`,
+    `<style>.sr-only{${SR}}</style><span style="color:#ccc">★★★★☆<span class="sr-only">4 of 5</span></span>`,
+    '<span style="color:#ccc">★★★★☆<span style="clip-path:inset(50%);position:absolute">4 of 5</span></span>',
+    '<span style="color:#ccc">★★★★☆<span style="display:none">4 of 5</span></span>',
+    '<span style="color:#ccc">★★★★☆<span style="visibility:hidden">4 of 5</span></span>'
+  ]) {
+    const rule = assertRule(run(body), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.equal(rule.occurrences[0].data.details.symbols, '★★★★☆', body);
+    assert.equal(rule.occurrences[0].lean.toward, 'fail');
+  }
+  // Visible text with a digit, aria-hidden or not, is text.
+  for (const body of [
+    '<span style="color:#ccc">★★★★☆<span>4 of 5</span></span>',
+    '<span style="color:#ccc">★★★★☆<span aria-hidden="true">4 of 5</span></span>'
+  ]) {
+    assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+// aria-disabled exempts only a user interface component's content, as
+// contrast-minimum's text (round 11, D6).
+test(`${RULE_ID}: aria-disabled exempts symbols only in a user interface component (round 11, D6)`, () => {
+  const B = 'style="color:#ccc;background:#fff"';
+  for (const body of [
+    `<span aria-disabled="true" ${B}>★★★</span>`,
+    `<div aria-disabled="true"><p><span ${B}>★★★</span></p></div>`
+  ]) {
+    assertRule(run(body), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+  for (const body of [
+    `<div role="button" aria-disabled="true" ${B}>×</div>`,
+    `<div role="toolbar" aria-label="t" aria-disabled="true"><button ${B}>★</button></div>`,
+    `<span tabindex="0" aria-disabled="true" ${B}>★</span>`,
+    `<div aria-disabled="true"><button ${B}>+</button></div>`
   ]) {
     assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
   }

@@ -10,7 +10,13 @@
  * @sc 1.4.3
  * @sc 1.4.6
  * @applicability
- *   Applies to every visible text node in scope, plus the label of <input
+ *   Applies to every visible text node in scope that holds a letter or a
+ *   digit (ACT afw4f7), or that holds only currency signs (Unicode Sc, such
+ *   as € $ £ ¥) or 〒, with punctuation and spaces, where the nearest
+ *   visible character beside it on its line, not past a block boundary, a
+ *   line break or a link's text, is a letter or a digit: "€" in
+ *   <span>€</span>45,00 is read with its price, so it is text. Plus the
+ *   label of <input
  *   type="button">/[type="submit"]/[type="reset"], which is rendered from
  *   the value attribute and so is invisible to a text-node walk, and the
  *   text a form field shows: the current value of a <textarea> or of an
@@ -32,7 +38,12 @@
  *   a clip-path polygon of no area among them), is drawn at all in a
  *   browser (not in a box clipping its overflow to a pixel or less, nor
  *   shrunk by a transform below a pixel), and belongs neither to a disabled control nor to the label of one,
- *   WCAG's inactive-user-interface-component exception. Subtrees excluded
+ *   WCAG's inactive-user-interface-component exception. aria-disabled="true"
+ *   (as an attribute or through ElementInternals) counts only on a user
+ *   interface component (an element whose role is a widget role, a native
+ *   control, or a focusable element) or on an ancestor of the one the text
+ *   is in: on a plain <span> or <div> with no control it exempts nothing.
+ *   Subtrees excluded
  *   via engineOptions.excludeSelectors are skipped, and open shadow roots
  *   are walked as roots in their own right.
  * @expectation
@@ -134,7 +145,15 @@
  *     with no opaque background between the text and that box, inclusive,
  *     so what lies under it changes with the scroll position
  *     (`blockerProperty` `position`). It is asked about whatever the scroll
- *     position is when the page is scanned.
+ *     position is when the page is scanned. For SVG text, a shape painted
+ *     before it in its <svg> is the paint: with a layout, a solid <rect>
+ *     covering all of the text is measured as its background. Without one
+ *     (jsdom), so is a <rect>, <circle> or <ellipse> with an opaque solid
+ *     fill and no transform, opacity, filter, mask or clip on it or its
+ *     ancestors in the <svg>, that certainly covers the text's area (its x
+ *     and y, its font size and its number of characters at an em each), or
+ *     a rect covering the whole <svg>: the last such shape is the
+ *     background, and only a shape painted after it is reported here.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_NOT_COMPUTABLE` (cantTell): the background behind the text
  *     could not be worked out.
