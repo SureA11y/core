@@ -384,15 +384,37 @@ function createContrastHelpers(opts, shared) {
     return false;
   }
 
+  // Whether child is the first <legend> child of fieldset, whose content a
+  // disabled fieldset leaves enabled (HTML, the fieldset element).
+  function __isFirstLegendOf(child, fieldset) {
+    if (String(dom.localName(fieldset) || '').toLowerCase() !== 'fieldset') return false;
+    if (String(dom.localName(child) || '').toLowerCase() !== 'legend') return false;
+    for (let c = dom.firstElementChild(fieldset); c; c = dom.nextElementSibling(c)) {
+      if (String(dom.localName(c) || '').toLowerCase() === 'legend') return c === child;
+    }
+    return false;
+  }
+
   function isInactiveUiComponent(el) {
     let node = el;
+    let prev = null;
     let depth = 0;
     let labelAncestor = null;
     while (node && dom.nodeType(node) === 1 && depth++ < 100) {
-      if (isDisabledWidget(node)) return true;
+      // A disabled fieldset disables nothing in its first legend: only an
+      // aria-disabled on it counts there.
+      if (prev && __isFirstLegendOf(prev, node)) {
+        if (
+          String(dom.getAttribute(node, 'aria-disabled') || '')
+            .trim()
+            .toLowerCase() === 'true'
+        )
+          return true;
+      } else if (isDisabledWidget(node)) return true;
       if (!labelAncestor && String(dom.tagName(node) || '').toLowerCase() === 'label') {
         labelAncestor = node;
       }
+      prev = node;
       node = dom.parentElement(node);
     }
 

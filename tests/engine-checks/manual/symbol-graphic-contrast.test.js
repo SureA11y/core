@@ -149,3 +149,23 @@ test(`${RULE_ID}: nested symbol elements report each symbol once, on the element
     ]
   );
 });
+
+test(`${RULE_ID}: a control in a disabled fieldset's first legend is active (round 11, R11F-10)`, () => {
+  const B = 'style="color:#ccc;background:#fff;border:1px solid #ccc"';
+  // HTML leaves it enabled (:disabled is false), as Chromium does.
+  assertRule(
+    run(
+      `<fieldset disabled><legend><button ${B}>★</button></legend><input aria-label="x"></fieldset>`
+    ),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  // In a second legend, or out of a legend, it is disabled.
+  for (const body of [
+    `<fieldset disabled><legend>A</legend><legend><button ${B}>★</button></legend></fieldset>`,
+    `<fieldset disabled><legend>A</legend><button ${B}>★</button></fieldset>`
+  ]) {
+    assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
