@@ -575,10 +575,15 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   // U12-4).
   await t.test('a vertical excerpt that shows fewer columns is asked about', async () => {
     const result = await scan(
+      // Monospaced Latin letters, sideways in vertical lines, so the column
+      // count does not depend on which CJK font the machine has: about 12
+      // letters fit a 120px column (10 with the spacing), so 48 letters take
+      // 4 columns of 19.2px (5 of 24px with the spacing), and 60px shows 3
+      // of them before and 2 after.
       page(
-        'body{font:16px/1.2 sans-serif} #box{writing-mode:vertical-rl;height:120px;width:60px;overflow:hidden}',
-        '<div id="box" lang="ja">日本語の長いテキストが入ります日本語の長いテキスト</div>'
-      ).replace('lang="en"', 'lang="ja"')
+        'body{font:16px/1.2 monospace} #box{writing-mode:vertical-rl;word-break:break-all;height:120px;width:60px;overflow:hidden}',
+        '<div id="box">' + 'M'.repeat(48) + '</div>'
+      )
     );
     assert.deepEqual(findings(result), [['box', 'cantTell', 'TEXT_CLIPPED_FURTHER']]);
     const occ = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
