@@ -274,3 +274,34 @@ test('text over a positioned ::before that paints is asked about, without a layo
     assert.equal(ok.outcome, 'pass', css);
   }
 });
+
+// A ::before that is not drawn (display: none, visibility: hidden), or one
+// too small or too far off to lie under the text (a 4px corner badge, a box
+// moved off its host), is no background: the text is measured, and light
+// grey on white fails. One that covers its host is still asked about
+// (round 12, F12-2).
+test('a hidden, small or moved-off ::before leaves the text measured, without a layout (F12-2)', () => {
+  const base = '.h{position:relative;color:#eee}';
+  for (const pseudo of [
+    'content:"";display:none;position:absolute;inset:0;background:#000;z-index:-1',
+    'content:"";visibility:hidden;position:absolute;inset:0;background:#000;z-index:-1',
+    'content:"";position:absolute;top:0;right:0;width:4px;height:4px;background:#000',
+    'content:"";position:absolute;top:100%;left:0;width:100%;height:20px;background:#000',
+    'content:"";position:absolute;left:-9999px;top:0;width:200px;height:40px;background:#000'
+  ]) {
+    const css = `<style>${base}.h::before{${pseudo}}</style>`;
+    const body = '<div class="h">Light on white</div>';
+    assert.equal(check(page(body, css), 'contrast-computable').outcome, 'pass', pseudo);
+    assert.equal(check(page(body, css), 'contrast-minimum').outcome, 'fail', pseudo);
+  }
+  for (const pseudo of [
+    'content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:#000;z-index:-1',
+    'content:"";position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:-1',
+    'content:"";position:absolute;top:0;left:0;width:300px;height:40px;background:#000;z-index:-1'
+  ]) {
+    const css = `<style>${base}.h::before{${pseudo}}</style>`;
+    const r = check(page('<div class="h">Light on white</div>', css), 'contrast-computable');
+    assert.equal(r.outcome, 'cantTell', pseudo);
+    assert.equal(r.occurrences[0].data.details.reasonCode, 'BACKGROUND_OVERLAP', pseudo);
+  }
+});

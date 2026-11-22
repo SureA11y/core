@@ -8651,6 +8651,15 @@ function createContrastHelpers(opts, shared) {
             const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
             if (content) at.content = content !== 'none' && content !== 'normal';
             if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            // Drawn at all, and where, as far as the rules say (F12-2).
+            const display = get('display');
+            if (display) at.displayNone = display === 'none';
+            const visibility = get('visibility');
+            if (visibility) at.hidden = visibility === 'hidden' || visibility === 'collapse';
+            for (const prop of ['width', 'height', 'top', 'right', 'bottom', 'left']) {
+              const v = get(prop);
+              if (v) at[prop] = v;
+            }
             const paint = [color, image, shorthand].find(
               (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
             );
@@ -8663,9 +8672,43 @@ function createContrastHelpers(opts, shared) {
         }
       }
     } catch {}
-    const out = [...byKey.values()].filter((p) => p.content && p.positioned && p.paint);
+    const out = [...byKey.values()].filter(
+      (p) => p.content && p.positioned && p.paint && !p.displayNone && !p.hidden
+    );
     __noLayoutPseudosByRoot.set(root, out);
     return out;
+  }
+  // Whether a ::before or ::after the rules position could lie under a
+  // line of el's text, from the size and offsets they give it (round 12,
+  // F12-2): a box narrower or shorter than a line of the text (a 4px corner
+  // badge) is no background to it, and one moved wholly off its host (an
+  // offset of 100% or more, or far off the page) doesn't reach it. A size or
+  // offset in any other unit is taken as possibly covering the text.
+  function __noLayoutPseudoMayCover(p, el) {
+    const px = (v) => {
+      const m = /^(-?\d*\.?\d+)px$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    const pct = (v) => {
+      const m = /^(-?\d*\.?\d+)%$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    let fontPx = 16;
+    try {
+      const f = px(trim((computedStyle(el) || {}).fontSize || ''));
+      if (f && f > 0) fontPx = f;
+    } catch {}
+    const w = px(p.width);
+    const h = px(p.height);
+    if ((w !== null && w < fontPx) || (h !== null && h < fontPx)) return false;
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      const v = p[side];
+      const percent = pct(v);
+      if (percent !== null && Math.abs(percent) >= 100) return false;
+      const length = px(v);
+      if (length !== null && length <= -1000) return false;
+    }
+    return true;
   }
   function __noLayoutPseudoUnder(el, chain) {
     for (const host of chain) {
@@ -8683,7 +8726,7 @@ function createContrastHelpers(opts, shared) {
         } catch {
           matched = false;
         }
-        if (!matched) continue;
+        if (!matched || !__noLayoutPseudoMayCover(p, el)) continue;
         return {
           selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
           element: describeElement(host) + p.pseudo,
