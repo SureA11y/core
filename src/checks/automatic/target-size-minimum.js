@@ -51,8 +51,9 @@
  *   written into the text (the stretch of its block
  *   container between line breaks holds text outside any target with a
  *   letter or a digit in it), or user-agent sizing (an unstyled native
- *   checkbox or radio, detected by appearance not having been reset to
- *   none). An undersized target too close to a neighbour fails. Where an
+ *   form control other than a button: a checkbox, radio, range, color,
+ *   file, date or text input, or a drop-down select, with its appearance
+ *   not reset to none, and the size browsers draw it at). An undersized target too close to a neighbour fails. Where an
  *   exception may apply but cannot be confirmed (two inline links crowding
  *   each other between separators alone, as in "Edit | Delete", or a target
  *   inside an SVG, canvas or image map that may be essential), the result is
@@ -180,10 +181,11 @@
  *   inline link whose only spacing conflict is another inline link of a
  *   stretch with separators but no words is reported as cantTell
  *   (textAround), since the inline exception may cover it.
- * - User Agent Control: an unstyled native checkbox/radio, detected via
- *   `appearance` not being reset to `none` (see isUserAgentSizedControl).
- *   Scoped narrowly to checkbox/radio specifically, not every form control,
- *   since those are the only types with unambiguous native rendering.
+ * - User Agent Control: an unstyled native form control (a checkbox,
+ *   radio, range, color, file, date or text input, or a drop-down select):
+ *   `appearance` not reset to `none`, and its box, and for a control drawn around text its font size, within
+ *   what browsers draw it at (see isUserAgentSizedControl). A button is
+ *   left out: its size follows the author's text.
  * - Essential/Equivalent: only a narrow, high-confidence subset is asserted
  *   (SVG/canvas/map-embedded controls, see isPlausiblyEssentialOrEquivalent);
  *   anything else defers to cantTell rather than guessing "essential" from a
@@ -1896,35 +1898,66 @@ function runInPage(ctx) {
 
   // WCAG 2.5.8 "User Agent Control" exception: the target's size requirement
   // does not apply at all when its size is determined by the user agent and
-  // not modified by the author. The canonical example is an unstyled native
-  // checkbox/radio (browsers render these well under 24px by default, and
-  // that's not the author's choice). Scoped narrowly to
-  // input[type=checkbox]/[type=radio] specifically, the only form-control
-  // types with a universally-recognized, unambiguous native rendering, and
-  // not extended to select/range/color/file, whose "default" sizing varies
-  // enough across browsers/OSes that a wrong exemption there risks masking a
-  // real author-introduced undersized target.
+  // not modified by the author. It covers a native form control the browser
+  // draws at its own size: a checkbox or radio (browsers draw these well
+  // under 24px), a range, color, file, date or text input, or a drop-down
+  // <select>. A button is left out: its size follows the text the author
+  // wrote in it.
   //
-  // Detection signal: `appearance` (or the legacy `-webkit-appearance`)
-  // computed as `none` is the near-universal first step of custom
-  // checkbox/radio styling across every CSS framework/design system. If the
-  // author hasn't reset it, the browser is still rendering its own default
-  // control chrome, so the size is UA-determined rather than authored.
-  // A checkbox or radio sized outside the 12 to 16 CSS px browsers draw it at
-  // was resized by the author, so it isn't ("not modified by the author").
+  // Unstyled, as the exception needs, means:
+  // - `appearance` (or the legacy `-webkit-appearance`) not reset to `none`,
+  //   the near-universal first step of styling a control (a file input,
+  //   which Chromium computes as `none` by default, aside);
+  // - the box within the sizes browsers draw the control at, by type
+  //   (Chromium's in brackets, checked in a scan; the ranges leave room
+  //   for other browsers, not verified): a checkbox or radio 12 to 16 px
+  //   (13 by 13), a range 100 to 180 wide and 12 to 26 high (129 by 16), a
+  //   color input 40 to 70 by 20 to 34 (50 by 27), and a file, date or
+  //   text input or a drop-down <select> 18 to 26 high (21, 19 for a
+  //   select), its width following its text;
+  // - for the controls drawn around text (all but the checkbox, radio and
+  //   range), the font size browsers give them, 10.5 to 14 px (13.33):
+  //   another was set by the author, and changes the size.
+  // A control outside these was resized by the author, which the exception
+  // doesn't cover.
+  const UA_TEXT_INPUT_TYPES = new Set([
+    'text',
+    'search',
+    'email',
+    'url',
+    'tel',
+    'password',
+    'number',
+    'date',
+    'time',
+    'datetime-local',
+    'month',
+    'week',
+    'file'
+  ]);
   function isUserAgentSizedControl(el) {
     try {
       if (!el || dom.nodeType(el) !== 1) return false;
       const tag = (dom.tagName(el) || '').toLowerCase();
-      if (tag !== 'input') return false;
-
-      const type =
-        (dom.get(el, 'getAttribute') &&
-          String(dom.getAttribute(el, 'type') || '')
-            .trim()
-            .toLowerCase()) ||
-        '';
-      if (type !== 'checkbox' && type !== 'radio') return false;
+      let kind = '';
+      if (tag === 'select') {
+        // A list box (multiple, or more than one row) is not a drop-down.
+        if (dom.hasAttribute(el, 'multiple')) return false;
+        const rows = helpers.parseHtmlInteger
+          ? helpers.parseHtmlInteger(String(dom.getAttribute(el, 'size') || ''))
+          : null;
+        if (typeof rows === 'number' && rows > 1) return false;
+        kind = 'text';
+      } else if (tag === 'input') {
+        const type = String(dom.getAttribute(el, 'type') || 'text')
+          .trim()
+          .toLowerCase();
+        if (type === 'checkbox' || type === 'radio') kind = 'box';
+        else if (type === 'range' || type === 'color') kind = type;
+        else if (UA_TEXT_INPUT_TYPES.has(type)) kind = type === 'file' ? 'file' : 'text';
+        else if (!dom.hasAttribute(el, 'type') || type === '') kind = 'text';
+        else return false;
+      } else return false;
 
       const cs = getStyle(el);
       let appearance = '';
@@ -1940,19 +1973,19 @@ function runInPage(ctx) {
 
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
-      if (appearance === 'none') return false;
+      if (appearance === 'none' && kind !== 'file') return false;
 
-      // Resized by the author: browsers draw an unstyled checkbox or radio
-      // at 12 to 16 CSS px (13 in Chromium and Firefox, 14 to 16 in Safari).
-      // A size outside that was set by the author, which the exception
-      // doesn't cover ("not modified by the author").
       const box = dom.getBoundingClientRect(el);
       const zoom = Number.parseFloat((cs && cs.zoom) || '1') || 1;
       const w = box.width / zoom;
       const h = box.height / zoom;
-      if (w < 12 - EPS || h < 12 - EPS || w > 16 + EPS || h > 16 + EPS) return false;
-
-      return true;
+      const within = (v, lo, hi) => v >= lo - EPS && v <= hi + EPS;
+      if (kind === 'box') return within(w, 12, 16) && within(h, 12, 16);
+      if (kind === 'range') return within(w, 100, 180) && within(h, 12, 26);
+      const fontSize = Number.parseFloat((cs && cs.fontSize) || '');
+      if (!within(fontSize, 10.5, 14)) return false;
+      if (kind === 'color') return within(w, 40, 70) && within(h, 20, 34);
+      return w >= 20 - EPS && within(h, 18, 26);
     } catch {
       return false;
     }
@@ -2167,6 +2200,12 @@ function runInPage(ctx) {
     return null;
   }
 
+  // The controls sized by the browser, read for all targets at once: the
+  // spacing checks below can leave the style to be recomputed, and a style
+  // read between them would wait for that each time.
+  const userAgentSized = new Set();
+  for (const it of undersized) if (isUserAgentSizedControl(it.el)) userAgentSized.add(it.el);
+
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
     if (isInlineTextExceptionTarget(it.el)) {
@@ -2177,7 +2216,7 @@ function runInPage(ctx) {
     // size requirement (and therefore any spacing conflict stemming from
     // it) doesn't apply at all. Skip straight to pass, no need to even
     // evaluate spacing.
-    if (isUserAgentSizedControl(it.el)) {
+    if (userAgentSized.has(it.el)) {
       continue;
     }
 

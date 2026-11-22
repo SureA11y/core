@@ -321,6 +321,47 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal((await scan(boxes('width:10px;height:10px;')))[0], 'fail');
   });
 
+  // Both rules, on one page: the selectors of the targets each reports.
+  async function reportedBy(ruleId, body) {
+    const p = await browser.newPage({ viewport: { width: 390, height: 900 } });
+    try {
+      await p.setContent(
+        `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`
+      );
+      await addBundle(p);
+      return await p.evaluate((id) => {
+        const r = window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null);
+        return r.checksResults.find((c) => c.ruleId === id).occurrences.map((o) => o.selector);
+      }, ruleId);
+    } finally {
+      await p.close();
+    }
+  }
+
+  // The user-agent exception covers every native control the browser draws
+  // at its own size, not only checkboxes and radios (round 12, U12-8).
+  await t.test('unstyled native controls are sized by the browser', async () => {
+    const controls =
+      '<input type="range" aria-label="a"><br><input type="range" aria-label="b"><br>' +
+      '<select aria-label="c"><option>One</option></select><br>' +
+      '<input type="file" aria-label="d"><br><input type="color" aria-label="e"><br>' +
+      '<input aria-label="f"><br><input type="date" aria-label="g">';
+    for (const id of ['target-size-minimum', 'target-size-enhanced']) {
+      assert.deepEqual(await reportedBy(id, controls), [], id);
+    }
+    // Resized by the author: a range made narrow, a select given the page's
+    // font, a button, whose size follows its text.
+    const styled =
+      '<input type="range" aria-label="a" style="width:60px"><br>' +
+      '<select aria-label="c" style="font:inherit;font-size:16px"><option>One</option></select><br>' +
+      '<button>Go</button>';
+    assert.deepEqual(await reportedBy('target-size-enhanced', styled), [
+      'input[aria-label="a"]',
+      'select[aria-label="c"]',
+      'html > body > button'
+    ]);
+  });
+
   await t.test('the hint asks for the larger of the two distances the spacing needs', async () => {
     const p = await browser.newPage({ viewport: { width: 390, height: 900 } });
     try {
