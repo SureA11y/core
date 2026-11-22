@@ -59,6 +59,9 @@ test('an applicability that returns neither true nor false is an error, not run 
     const c = value.checksResults.find((x) => x.ruleId === 'org-x');
     assert.equal(c.outcome, 'cantTell', String(v));
     assert.match(c.error, /applicability returned .*; it must return true or false/, String(v));
+    // No "a undefined" (round 12, A12-11).
+    assert.doesNotMatch(c.error, /\ba undefined\b/, String(v));
+    if (v === undefined) assert.match(c.error, /^applicability returned undefined \(no value\);/);
   }
 });
 

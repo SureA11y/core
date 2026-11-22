@@ -3653,7 +3653,8 @@ function runCoreSettled(
           // everywhere: what was meant can't be known, so the rule says so.
           throw new Error(
             'applicability returned ' +
-              describeOptionValue(res) +
+              // "a undefined" read badly (round 12, A12-11).
+              (res === undefined ? 'undefined (no value)' : describeOptionValue(res)) +
               '; it must return true or false (or { applicable: true | false })'
           );
         }
