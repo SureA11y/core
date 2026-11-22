@@ -154,3 +154,14 @@ test(`${RULE_ID}: a tabindex outside the 32-bit range is ignored (round 11, R11F
   assert.strictEqual(read('button', '99999999999'), 'notApplicable');
   assert.strictEqual(read('div', '2147483647'), 'cantTell');
 });
+
+test(`${RULE_ID}: the summary quotes the attribute as written (round 11)`, () => {
+  const occ = runa11yCoreOnHtml(
+    `<!doctype html><html><body><a href="/a">A</a><button tabindex="1.5">B</button></body></html>`,
+    { runOnly: [RULE_ID] }
+  )
+    .checksResults.find((c) => c.ruleId === RULE_ID)
+    .occurrences.find((o) => o.data.details.value === 1);
+  assert.match(occ.summary, /tabindex="1\.5"/);
+  assert.strictEqual(occ.i18n.params.value, '1.5');
+});

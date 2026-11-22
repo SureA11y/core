@@ -126,7 +126,8 @@ function runInPage(ctx) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     // Read as HTML's rules for parsing integers read it, as a browser
     // does: "1.5" is 1, "2abc" is 2, "0x1" is 0, "1e3" is 1.
-    const n = helpers.parseHtmlInteger(dom.getAttribute(el, 'tabindex'));
+    const raw = String(dom.getAttribute(el, 'tabindex'));
+    const n = helpers.parseHtmlInteger(raw);
     if (n === null) continue;
 
     applicableCount += 1;
@@ -172,15 +173,16 @@ function runInPage(ctx) {
       helpers.reportOccurrence(el, {
         ...(lean ? { lean } : {}),
         summary: skipped.length
-          ? `This element has tabindex="${n}", so Tab reaches it before earlier tab stops in the page (${skipped.length}, starting with ${first}).`
-          : `This element has tabindex="${n}", overriding the natural tab order.`,
+          ? `This element has tabindex="${raw}", so Tab reaches it before earlier tab stops in the page (${skipped.length}, starting with ${first}).`
+          : `This element has tabindex="${raw}", overriding the natural tab order.`,
         hint: 'Use tabindex="0" to add the element to the tab order, or a negative value to take it out. If the tab order needs to change, change the order of the content instead.',
         i18n: {
           summaryKey: skipped.length
             ? 'tabindex_summary_cantTell_jumpsAhead'
             : 'tabindex_summary_cantTell_value',
           hintKey: 'tabindex_hint_cantTell',
-          params: { value: String(n), skippedCount: String(skipped.length), first }
+          // The attribute as written; details.value is the number read.
+          params: { value: raw, skippedCount: String(skipped.length), first }
         },
         data: {
           details: {
