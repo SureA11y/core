@@ -90255,6 +90255,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return null;
   }
 
+  // A combobox and its own popup (a listbox, tree, grid or dialog it
+  // controls or owns, or that names the combobox in its own aria-controls
+  // or aria-owns) are one field: the authoring practices label both with
+  // the same element, and a person sees one control. They are never each
+  // other's duplicate.
+  const POPUP_ROLES = ['listbox', 'tree', 'grid', 'dialog'];
+  function idrefTargets(el, name) {
+    try {
+      const value = dom.getAttribute(el, name);
+      if (!value) return [];
+      return helpers.resolveIdRefs(value, ctx, {}, el).refs || [];
+    } catch {
+      return [];
+    }
+  }
+  function roleOf(el) {
+    try {
+      return helpers.aria.getAuthorRole(el) || '';
+    } catch {
+      return '';
+    }
+  }
+  // Each combobox field's popup fields, both ways round, worked out once:
+  // only fields with one of these roles take part.
+  const popupPartners = new Map();
+  function pair(x, y) {
+    if (!popupPartners.has(x)) popupPartners.set(x, new Set());
+    popupPartners.get(x).add(y);
+  }
+  {
+    const fieldEls = new Set(fields.map((f) => f.el));
+    for (const field of fields) {
+      const role = roleOf(field.el);
+      const isCombo = role === 'combobox';
+      if (!isCombo && !POPUP_ROLES.includes(role)) continue;
+      for (const target of [
+        ...idrefTargets(field.el, 'aria-controls'),
+        ...idrefTargets(field.el, 'aria-owns')
+      ]) {
+        if (target === field.el || !fieldEls.has(target)) continue;
+        const targetRole = roleOf(target);
+        if (isCombo ? POPUP_ROLES.includes(targetRole) : targetRole === 'combobox') {
+          pair(field.el, target);
+          pair(target, field.el);
+        }
+      }
+    }
+  }
+
   const occurrences = [];
   const fieldNames = new Map();
   function describeField(f) {
@@ -90273,7 +90322,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       field.normalized,
       primaryLangOf(field.el)
     );
-    const shared = byKey.get(field.key) || [];
+    const bucket = byKey.get(field.key) || [];
+    const partners = popupPartners.get(field.el);
+    const shared =
+      partners && bucket.length > 1 ? bucket.filter((f) => !partners.has(f.el)) : bucket;
     // A label of punctuation alone ("*", ":") has no words to share: the
     // trailing marks normalize drops leave it empty, so "*" and ":" read as
     // one label. Whatever it lacks, it is not another field's label.
