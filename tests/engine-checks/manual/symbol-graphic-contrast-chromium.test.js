@@ -52,7 +52,8 @@ test(`${RULE_ID}: the fixture in Chromium`, { skip }, async (t) => {
     'sgc_case_02',
     'sgc_case_03',
     'sgc_case_11',
-    'sgc_case_12'
+    'sgc_case_12',
+    'sgc_case_13'
   ]);
   assert.ok(got.ratios.every((r) => r < 3));
   assert.equal(got.ratios[0], 1.42);

@@ -38,7 +38,12 @@
  *   a clip-path polygon of no area among them), is drawn at all in a
  *   browser (not in a box clipping its overflow to a pixel or less, nor
  *   shrunk by a transform below a pixel), and belongs neither to a disabled control nor to the label of one,
- *   WCAG's inactive-user-interface-component exception. Subtrees excluded
+ *   WCAG's inactive-user-interface-component exception. aria-disabled="true"
+ *   (as an attribute or through ElementInternals) counts only on a user
+ *   interface component (an element whose role is a widget role, a native
+ *   control, or a focusable element) or on an ancestor of the one the text
+ *   is in: on a plain <span> or <div> with no control it exempts nothing.
+ *   Subtrees excluded
  *   via engineOptions.excludeSelectors are skipped, and open shadow roots
  *   are walked as roots in their own right.
  * @expectation

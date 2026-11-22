@@ -469,12 +469,38 @@ test('isInactiveUiComponent: a disabled ancestor button marks nested text as ina
   assert.strictEqual(helpers.isInactiveUiComponent(b), true);
 });
 
-test('isInactiveUiComponent: aria-disabled="true" on an ancestor marks nested text as inactive', () => {
+// aria-disabled makes content inactive only on a user interface component,
+// or on an ancestor whose content belongs to one (round 11, D6).
+test('isInactiveUiComponent: aria-disabled="true" on an ancestor marks the text of a control in it as inactive', () => {
   const { document, helpers } = makeHelpers(
-    '<div id="a" aria-disabled="true"><span id="b">t</span></div>'
+    '<div id="a" aria-disabled="true"><button><span id="b">t</span></button></div>'
   );
   const b = document.getElementById('b');
   assert.strictEqual(helpers.isInactiveUiComponent(b), true);
+});
+
+test('isInactiveUiComponent: aria-disabled="true" on a widget, a composite or a focusable element marks its text as inactive (round 11, D6)', () => {
+  for (const html of [
+    '<div role="button" aria-disabled="true"><span id="b">t</span></div>',
+    '<div role="toolbar" aria-disabled="true"><span id="b">t</span><button>x</button></div>',
+    '<div role="toolbar" aria-disabled="true"><button id="b">x</button></div>',
+    '<span tabindex="0" aria-disabled="true"><b id="b">t</b></span>',
+    '<button aria-disabled="true"><span id="b">t</span></button>'
+  ]) {
+    const { document, helpers } = makeHelpers(html);
+    assert.strictEqual(helpers.isInactiveUiComponent(document.getElementById('b')), true, html);
+  }
+});
+
+test('isInactiveUiComponent: aria-disabled="true" with no user interface component is not inactive (round 11, D6)', () => {
+  for (const html of [
+    '<span id="b" aria-disabled="true">t</span>',
+    '<div id="a" aria-disabled="true"><span id="b">t</span></div>',
+    '<div aria-disabled="true"><p><span id="b">t</span></p><button>x</button></div>'
+  ]) {
+    const { document, helpers } = makeHelpers(html);
+    assert.strictEqual(helpers.isInactiveUiComponent(document.getElementById('b')), false, html);
+  }
 });
 
 test('isInactiveUiComponent: an ordinary enabled element is not inactive', () => {

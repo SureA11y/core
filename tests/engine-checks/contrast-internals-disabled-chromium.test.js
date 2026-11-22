@@ -9,6 +9,8 @@
  * exemption now reads the internals' aria-disabled where the element has
  * no attribute of its own, whether the engine finds them on the element
  * (this._internals) or through the internals hook. Round 8, LY-14.
+ * aria-disabled, set either way, exempts only a user interface component's
+ * content: round 11, D6.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -71,6 +73,32 @@ const CASES = [
     component('x-send', 'true', { keep: false }),
     true,
     'notApplicable'
+  ],
+  // aria-disabled exempts only a user interface component's content
+  // (round 11, D6).
+  [
+    'aria-disabled=true on a span that is no control is held to the ratio',
+    '<span aria-disabled="true" style="color:#949494">Send</span>',
+    false,
+    'fail'
+  ],
+  [
+    'aria-disabled=true on a div around a button exempts the button',
+    '<div aria-disabled="true"><button style="color:#949494;background:#fff">Send</button></div>',
+    false,
+    'notApplicable'
+  ],
+  [
+    'aria-disabled=true on a toolbar exempts its text',
+    '<div role="toolbar" aria-label="Edit" aria-disabled="true" style="color:#949494"><span>Send</span><button style="color:#949494;background:#fff">Bold</button></div>',
+    false,
+    'notApplicable'
+  ],
+  [
+    'internals.ariaDisabled = true with no role is held to the ratio',
+    "<x-plain>Send</x-plain><script>customElements.define('x-plain', class extends HTMLElement { constructor() { super(); this._internals = this.attachInternals(); this._internals.ariaDisabled = 'true'; } }); document.querySelector('x-plain').style.color = '#949494';</script>",
+    false,
+    'fail'
   ],
   [
     'internals.ariaDisabled = false is held to the ratio',

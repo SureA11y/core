@@ -298,21 +298,30 @@ function createContrastHelpers(opts, shared) {
   // text element asks it of each of its ancestors, and under jsdom matching
   // :disabled walks the ancestors again, so a deep page cost elements x
   // depth x depth.
-  function isDisabledWidget(node) {
-    const cache = __getSharedWeakMapCache('__disabledWidgetCache');
+  //
+  // aria-disabled="true" (or ElementInternals' ariaDisabled) makes content
+  // inactive only on a user interface component, or on an ancestor whose
+  // content belongs to one (round 11, D6): WCAG exempts inactive user
+  // interface components, and aria-disabled on a plain <span> or <div>
+  // with no control disables nothing. A disabled control (:disabled, a
+  // disabled fieldset among them) is one already.
+  // The bits: 1 for :disabled, 2 for aria-disabled true.
+  function __disabledBits(node) {
+    const cache = __getSharedWeakMapCache('__disabledBitsCache');
     if (cache && node && typeof node === 'object') {
       const known = cache.get(node);
       if (known !== undefined) return known;
-      const out = isDisabledWidgetUncached(node);
+      const out = __disabledBitsUncached(node);
       cache.set(node, out);
       return out;
     }
-    return isDisabledWidgetUncached(node);
+    return __disabledBitsUncached(node);
   }
-  function isDisabledWidgetUncached(node) {
+  function __disabledBitsUncached(node) {
+    let bits = 0;
     try {
       if (typeof dom.get(node, 'matches') === 'function' && dom.matches(node, ':disabled'))
-        return true;
+        bits |= 1;
     } catch {}
     try {
       const ad = dom.get(node, 'getAttribute')
@@ -320,16 +329,107 @@ function createContrastHelpers(opts, shared) {
             .trim()
             .toLowerCase()
         : '';
-      if (ad === 'true') return true;
+      if (ad === 'true') bits |= 2;
       // A custom element disabled through its ElementInternals
       // (internals.ariaDisabled = 'true'), where it has no aria-disabled
       // attribute of its own, is disabled as the attribute would make it.
-      if (!ad && typeof shared.getInternalsStateInfo === 'function') {
+      else if (!ad && typeof shared.getInternalsStateInfo === 'function') {
         const info = shared.getInternalsStateInfo(node, 'aria-disabled');
-        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') return true;
+        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') bits |= 2;
       }
     } catch {}
-    return false;
+    return bits;
+  }
+
+  // Widget roles (WAI-ARIA 1.2, the widget and composite roles), and
+  // toolbar, a group of controls.
+  const __WIDGET_ROLES = new Set([
+    'button',
+    'checkbox',
+    'combobox',
+    'grid',
+    'gridcell',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'radiogroup',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'toolbar',
+    'tree',
+    'treegrid',
+    'treeitem'
+  ]);
+  const __NATIVE_CONTROLS = new Set([
+    'button',
+    'input',
+    'select',
+    'textarea',
+    'option',
+    'optgroup'
+  ]);
+
+  // Whether node is a user interface component: an element whose resolved
+  // role is a widget role, a native control, or a focusable element.
+  function __isUiComponent(node) {
+    const cache = __getSharedWeakMapCache('__uiComponentCache');
+    if (cache && node && typeof node === 'object' && cache.has(node)) return cache.get(node);
+    let out = false;
+    try {
+      const tag = String(dom.localName(node) || '').toLowerCase();
+      if (__NATIVE_CONTROLS.has(tag) && dom.namespaceURI(node) !== __SVG_NS) {
+        out = !(
+          tag === 'input' &&
+          String(dom.getAttribute(node, 'type') || '')
+            .trim()
+            .toLowerCase() === 'hidden'
+        );
+      }
+      if (!out) {
+        let role = '';
+        if (typeof shared.getRoleInfo === 'function') {
+          const info = shared.getRoleInfo(node);
+          role = info && info.role ? String(info.role) : '';
+        } else {
+          role = String(dom.getAttribute(node, 'role') || '')
+            .trim()
+            .toLowerCase()
+            .split(/\s+/)[0];
+        }
+        out = __WIDGET_ROLES.has(role);
+      }
+      if (!out) {
+        if (typeof shared.getFocusableInfo === 'function') {
+          const f = shared.getFocusableInfo(node);
+          out = !!(f && f.focusable);
+        } else {
+          out = /^\s*[+-]?\d+\s*$/.test(String(dom.getAttribute(node, 'tabindex') || ''));
+        }
+      }
+    } catch {
+      out = false;
+    }
+    if (cache && node && typeof node === 'object') cache.set(node, out);
+    return out;
+  }
+
+  // A disabled control, as a label's control or a widget naming itself by
+  // a label: disabled, or aria-disabled on a user interface component.
+  function isDisabledWidget(node) {
+    const bits = __disabledBits(node);
+    return !!(bits & 1) || (!!(bits & 2) && __isUiComponent(node));
   }
 
   // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
@@ -400,17 +500,24 @@ function createContrastHelpers(opts, shared) {
     let prev = null;
     let depth = 0;
     let labelAncestor = null;
+    // Whether el or an ancestor met so far is a user interface component:
+    // aria-disabled from there up disables the content of one. Asked only
+    // once an aria-disabled is met, of the elements not asked yet.
+    let inComponent = false;
+    const unasked = [];
     while (node && dom.nodeType(node) === 1 && depth++ < 100) {
+      const bits = __disabledBits(node);
+      if (!inComponent) unasked.push(node);
+      if (bits & 2 && !inComponent) {
+        inComponent = unasked.some((n) => __isUiComponent(n));
+        unasked.length = 0;
+      }
+      const aria = !!(bits & 2) && inComponent;
       // A disabled fieldset disables nothing in its first legend: only an
       // aria-disabled on it counts there.
       if (prev && __isFirstLegendOf(prev, node)) {
-        if (
-          String(dom.getAttribute(node, 'aria-disabled') || '')
-            .trim()
-            .toLowerCase() === 'true'
-        )
-          return true;
-      } else if (isDisabledWidget(node)) return true;
+        if (aria) return true;
+      } else if (bits & 1 || aria) return true;
       if (!labelAncestor && String(dom.tagName(node) || '').toLowerCase() === 'label') {
         labelAncestor = node;
       }

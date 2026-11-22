@@ -34,7 +34,10 @@
  *   - symbols in an inactive user interface component (a disabled
  *     control, one in a disabled fieldset, or one with aria-disabled,
  *     set as an attribute or through ElementInternals), which 1.4.11
- *     exempts, as contrast-minimum leaves its text out;
+ *     exempts, as contrast-minimum leaves its text out. aria-disabled
+ *     counts only on a user interface component (a widget role, a native
+ *     control, a focusable element) or an ancestor of one the symbols are
+ *     in: on a plain <span> with no control it exempts nothing;
  *   - text in `<svg>`, `<math>`, form controls (`<select>`, `<option>`,
  *     `<textarea>`) and elements that are not drawn (`<script>`, `<style>`,
  *     `<template>`, `<title>`), and text whose colours can't be measured

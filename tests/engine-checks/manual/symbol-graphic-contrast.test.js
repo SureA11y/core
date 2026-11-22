@@ -109,12 +109,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/symbol-graphic-contrast-all-s
     'utf8'
   );
   const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
-    minOccurrences: 5,
-    maxOccurrences: 5
+    minOccurrences: 6,
+    maxOccurrences: 6
   });
   assert.deepEqual(
     rule.occurrences.map((o) => /id="(sgc_case_\d+)"/.exec(o.html)[1]),
-    ['sgc_case_01', 'sgc_case_02', 'sgc_case_03', 'sgc_case_11', 'sgc_case_12']
+    ['sgc_case_01', 'sgc_case_02', 'sgc_case_03', 'sgc_case_11', 'sgc_case_12', 'sgc_case_13']
   );
 });
 
@@ -243,6 +243,26 @@ test(`${RULE_ID}: symbols with only hidden text beside them are asked about (rou
   for (const body of [
     '<span style="color:#ccc">★★★★☆<span>4 of 5</span></span>',
     '<span style="color:#ccc">★★★★☆<span aria-hidden="true">4 of 5</span></span>'
+  ]) {
+    assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+// aria-disabled exempts only a user interface component's content, as
+// contrast-minimum's text (round 11, D6).
+test(`${RULE_ID}: aria-disabled exempts symbols only in a user interface component (round 11, D6)`, () => {
+  const B = 'style="color:#ccc;background:#fff"';
+  for (const body of [
+    `<span aria-disabled="true" ${B}>★★★</span>`,
+    `<div aria-disabled="true"><p><span ${B}>★★★</span></p></div>`
+  ]) {
+    assertRule(run(body), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+  for (const body of [
+    `<div role="button" aria-disabled="true" ${B}>×</div>`,
+    `<div role="toolbar" aria-label="t" aria-disabled="true"><button ${B}>★</button></div>`,
+    `<span tabindex="0" aria-disabled="true" ${B}>★</span>`,
+    `<div aria-disabled="true"><button ${B}>+</button></div>`
   ]) {
     assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
   }
