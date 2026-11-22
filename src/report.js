@@ -26,7 +26,8 @@ const {
   notRunOf,
   timeBudgetOf,
   packsOf,
-  omittedOf
+  omittedOf,
+  describeValue
 } = require('./scan-result.js');
 const { esc, jsonForScript } = require('./html-text.js');
 
@@ -194,7 +195,7 @@ function isWcagCriterion(m) {
 // What the scan was tested against, and any opt-in rules it added. A result
 // from an engine older than the WCAG-version target carries none of these
 // fields and gets no chips.
-function renderTargetChips(engine, ui, profileResults) {
+function renderTargetChips(engine, ui, profileResults, result) {
   if (!engine) return '';
   const chips = [];
   if (engine.wcagVersion)
@@ -247,10 +248,29 @@ function renderTargetChips(engine, ui, profileResults) {
     chips.push(
       `<div><b>${esc(notRun.join(', '))}</b>${esc(ui.tr('report_meta_profileNotRun'))}</div>`
     );
-  // Rules the scan's time budget left unstarted (result.notRun).
-  if (engine.incomplete && Number.isFinite(engine.incomplete.rulesNotRun))
+  // Rules the scan's time budget left unstarted (result.notRun), each
+  // counted once: a scan of several profiles lists a rule once for each
+  // profile it did not run in, and engine.incomplete.rulesNotRun counts
+  // those entries (round 12, A12-6).
+  // No chip for none: a scan whose every rule ran is incomplete only for
+  // the style sheets it did not read (R12F-8).
+  if (engine.incomplete && Number.isFinite(engine.incomplete.rulesNotRun)) {
+    const ids = new Set(notRunOf(result).map((n) => n.ruleId));
+    if (ids.size)
+      chips.push(
+        `<div><b>${esc(ui.num(ids.size))}</b>${esc(ui.tr('report_meta_rulesNotRun'))}</div>`
+      );
+  }
+  // The style sheets runa11yCoreInPageAsync had not fetched when its share
+  // of the time budget ran out (engine.incomplete.styleSheetsNotRead): the
+  // rules ran without them (round 12, R12F-8).
+  const sheetsNotRead =
+    engine.incomplete && Array.isArray(engine.incomplete.styleSheetsNotRead)
+      ? engine.incomplete.styleSheetsNotRead.filter((u) => typeof u === 'string')
+      : [];
+  if (sheetsNotRead.length)
     chips.push(
-      `<div><b>${esc(ui.num(engine.incomplete.rulesNotRun))}</b>${esc(ui.tr('report_meta_rulesNotRun'))}</div>`
+      `<div><b>${esc(ui.num(sheetsNotRead.length))}</b>${esc(ui.tr('report_meta_styleSheetsNotRead'))}</div>`
     );
   // Rules beyond the targeted standard ran (engineOptions.optInRules).
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
@@ -289,11 +309,16 @@ function renderIncomplete(results, ui) {
   ];
   if (!ids.length && !profiles.length) return '';
   const budget = list.map(timeBudgetOf).find((b) => b !== null);
-  const text = ui.tr('report_incomplete_timeBudget', {
+  // The rules, each once, and apart from them the profiles the budget left
+  // unstarted, whose rules are among them: a profile is no rule (round 12,
+  // A12-6).
+  let text = ui.tr('report_incomplete_timeBudget', {
     budget: budget !== undefined ? ui.num(budget) : '?',
-    count: ui.num(ids.length + profiles.length),
-    rules: ids.concat(profiles).join(', ')
+    count: ui.num(ids.length),
+    rules: ids.join(', ')
   });
+  if (profiles.length)
+    text += ' ' + ui.tr('report_incomplete_profilesNotRun', { profiles: profiles.join(', ') });
   return `<p class="incomplete" role="note">${esc(text)}</p>`;
 }
 
@@ -1138,7 +1163,7 @@ function renderHtmlReport(input, given) {
   const manualChecks = options ? options.manualChecks : undefined;
   if (manualChecks != null && typeof manualChecks !== 'boolean') {
     throw new TypeError(
-      `renderHtmlReport: manualChecks must be true or false, not ${JSON.stringify(manualChecks)}`
+      `renderHtmlReport: manualChecks must be true or false, not ${describeValue(manualChecks)}`
     );
   }
   const lefts =
@@ -1163,7 +1188,15 @@ function renderHtmlReport(input, given) {
   } catch {
     generatedAtLabel = when.toLocaleString('en-US', dateFormat);
   }
-  const title = (options && options.title) || ui.tr('report_title_default');
+  // title is a string; anything else but null was written as it converted,
+  // and an object with no prototype threw a bare TypeError (round 12, A12-9).
+  const givenTitle = options ? options.title : undefined;
+  if (givenTitle != null && typeof givenTitle !== 'string') {
+    throw new TypeError(
+      `renderHtmlReport: title must be a string, not ${describeValue(givenTitle)}`
+    );
+  }
+  const title = givenTitle || ui.tr('report_title_default');
 
   const defaultOnList = OUTCOME_ORDER.filter((c) => OUTCOME_INFO[c].defaultOn);
   const rows = flattenOccurrences(checksResults, ui);
@@ -1310,7 +1343,7 @@ function renderHtmlReport(input, given) {
   <div><b>${esc((engine && engine.tag) || '?')}</b>${esc(ui.tr('report_meta_engine'))}</div>
   <div><b>${esc((engine && engine.schemaVersion) || '?')}</b>${esc(ui.tr('report_meta_schemaVersion'))}</div>
   ${renderPacksChip(result, ui)}
-  ${renderTargetChips(engine, ui, result && result.profiles)}
+  ${renderTargetChips(engine, ui, result && result.profiles, result)}
   ${renderEnvironmentChips(engine, ui)}
   ${renderLocaleChip(engine, ui)}
 </div>

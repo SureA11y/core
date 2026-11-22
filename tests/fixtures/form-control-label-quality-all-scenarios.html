@@ -161,6 +161,18 @@
     </form>
   </div>
 
+  <h2>F. A combobox and its own popup</h2>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — PASS: a combobox and the listbox it controls share one label; they are one field</div>
+    <span id="fclq_l15">Favourite fruit</span>
+    <div id="fclq_case_15" role="combobox" aria-expanded="true" aria-labelledby="fclq_l15" aria-controls="fclq_case_15b" tabindex="0">Apple</div>
+    <div id="fclq_case_15b" role="listbox" aria-labelledby="fclq_l15" tabindex="-1">
+      <div role="option" aria-selected="true">Apple</div>
+      <div role="option">Pear</div>
+    </div>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

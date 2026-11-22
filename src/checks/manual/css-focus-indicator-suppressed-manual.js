@@ -22,11 +22,36 @@
  *   `:focus`/`:focus-visible` rule, or a rule with no state at all
  *   (`a { outline: none }`, `* { outline: 0 }`): an author declaration
  *   outranks the user agent's focus outline whatever its specificity, so
- *   it removes the indicator in the focused state too (WCAG F78). A rule
- *   that removes it only under `:not(:focus-visible)` keeps it for keyboard
- *   focus and is not counted; nor is the focus-visible polyfill's form of
- *   it, `:not(.focus-visible)` under `.js-focus-visible`, or
- *   `:not([data-focus-visible-added])` under `[data-js-focus-visible]`.
+ *   it removes the indicator in the focused state too (WCAG F78). A
+ *   `:focus-within` or `:has(:focus)` state is read the same way, as it
+ *   holds while the element has focus: `:focus-within` on the element
+ *   itself or on an ancestor (`main:focus-within a`), and `:has()` of a
+ *   focus state on an ancestor where the element matches its argument
+ *   (`main:has(a:focus) a`). A state on a sibling (`+`, `~`) says nothing
+ *   about the element's focus, and `:not(:focus-within)` stops holding once
+ *   it has focus: neither counts.
+ *   - The page's style sheets and those it adopts are read against the
+ *     elements in the document's own tree: as CSS Scoping has it, their
+ *     selectors do not reach into a shadow root. Each open shadow root's
+ *     sheets, adopted ones included, are read against the elements in
+ *     that root only. Every open shadow root's sheets are read before the
+ *     candidates are looked for, so a page with no removing rule in any
+ *     of them ends there.
+ *   - Rules that reach across a shadow tree's edge are read on the element
+ *     they style (CSS Scoping): `::part(x)` in a sheet of the tree a host
+ *     is in, on the elements of the host's shadow tree whose `part` names
+ *     x; `::slotted(sel)` in a shadow root's sheet, on the light elements
+ *     assigned to its slots; `:host` and `:host(sel)` alone in a shadow
+ *     root's sheet, on its host. Each removes the outline in the focused
+ *     state where it names that element's focus (`::part(x):focus`,
+ *     `::slotted(button:focus)`, `:host(:focus)`) or names no state, and
+ *     draws a replacement where it names the focus. A part reached
+ *     through `exportparts`, and a state other than focus, are not read.
+ *   - A rule that removes it only under `:not(:focus-visible)` keeps it
+ *     for keyboard focus and is not counted; nor is the focus-visible
+ *     polyfill's form of it, `:not(.focus-visible)` under
+ *     `.js-focus-visible`, or `:not([data-focus-visible-added])` under
+ *     `[data-js-focus-visible]`.
  * @reports
  *   - `suppressingSelectors`: the selector of each style sheet rule that
  *     removes the element's outline, one item per selector.
@@ -38,7 +63,7 @@
  *     element's focus outline and no focus rule draws a replacement; whether
  *     the page shows focus another way is for a person to check.
  *     It leans fail when every style sheet could be read, no :focus-within
- *     rule around the element draws a change, no inline focus or blur
+ *     or :has(:focus) rule around the element draws a change, no inline focus or blur
  *     handler is on it or an ancestor, the removing rule doesn't name
  *     focus-visible, and the listener hook, when it ran, saw no focus
  *     listener for it.
@@ -97,8 +122,15 @@
  *   stripped out of the selector. A focus pseudo inside `:is()`,
  *   `:where()` or `:matches()` counts too: `a:is(:focus, :hover)` is met
  *   by the focused link, so the whole `:is()` goes. A selector the engine cannot parse
- *   (vendor pseudo-elements, `:host`, unsupported `:is()` forms) throws
- *   there and is skipped rather than guessed at.
+ *   (vendor pseudo-elements, `:host` before another compound, unsupported `:is()` forms) throws
+ *   there and is skipped rather than guessed at. A selector list holding
+ *   one selector that can't be parsed (`button:-moz-focusring,
+ *   button:focus`) is invalid as a whole, and a browser drops the rule; in
+ *   jsdom, which keeps it, the list is tested with a query and the rule
+ *   skipped when it throws. Selectors are quoted as Chromium serializes
+ *   them, in jsdom too: `*:focus` reads `:focus`, `a:where(:focus,:hover)`
+ *   reads `a:where(:focus, :hover)`, `a>b` reads `a > b` and
+ *   `[type=text]` reads `[type="text"]`.
  */
 
 const id = 'css-focus-indicator-suppressed';
@@ -436,9 +468,8 @@ function runInPage(ctx) {
     return parts.map(trim).filter(Boolean);
   }
 
-  // :focus and :focus-visible, but never :focus-within: that one fires on
-  // an ancestor of the focused element and says nothing about whether the
-  // element itself is indicated.
+  // :focus and :focus-visible. :focus-within holds on the focused element's
+  // ancestors as well, and is read apart (ancestorFocusForm).
   const FOCUS_PSEUDO = /:focus(-visible)?(?![-\w])/g;
 
   function hasFocusPseudo(part) {
@@ -557,14 +588,85 @@ function runInPage(ctx) {
     }
   }
 
-  const suppressors = []; // { selector, base, sheet }
+  const suppressors = []; // { selector, base, also, sheet, kills, scope }
   // The style sheet being read, for the message to say where a rule is.
   let currentSheet = null;
-  const providers = []; // { base, subject }
-  // :focus-within rules that draw something: the compound holding the
-  // pseudo, without it. Read only for the lean, never to pass an element.
-  const withinProviders = [];
+  // The open shadow root whose style sheet is being read, or null for the
+  // document's: a shadow root's sheets style only the elements in it.
+  let currentScope = null;
+  const providers = []; // { base, subject, own, decls, scope }
+  // :focus-within and :has(:focus) rules that draw something: the compound
+  // holding the pseudo, without it. Read only for the lean, never to pass
+  // an element.
+  const withinProviders = []; // { base, scope }
   const FOCUS_WITHIN = /:focus-within(?![-\w])/g;
+  const HAS_START = /:has\(/gi;
+
+  // The :has() pseudo-classes in a compound whose argument names a focus
+  // state (`:has(:focus)`, `:has(> a:focus-visible)`), each as
+  // { text, arg }, where arg is the argument as written.
+  function focusHasOf(compound) {
+    const out = [];
+    HAS_START.lastIndex = 0;
+    let m;
+    while ((m = HAS_START.exec(compound))) {
+      const start = m.index + m[0].length;
+      let depth = 1;
+      let j = start;
+      for (; j < compound.length && depth; j++) {
+        if (compound[j] === '(') depth += 1;
+        else if (compound[j] === ')') depth -= 1;
+      }
+      const arg = compound.slice(start, depth ? j : j - 1);
+      if (hasFocusPseudo(arg) || /:focus-within(?![-\w])/.test(arg))
+        out.push({ text: compound.slice(m.index, j), arg });
+      HAS_START.lastIndex = j;
+    }
+    return out;
+  }
+  // A sheet styles only the elements in its own tree: a document sheet's
+  // selectors do not reach into a shadow root (CSS Scoping), and a shadow
+  // root's do not reach out of it, but through ::part(), ::slotted() and
+  // :host (crossTreeForm). Outline is not inherited.
+  const scopeOk = (x, el) => treeOf(el) === (x.scope || document);
+
+  // A rule whose focus state is on an ancestor of its subject
+  // (`main:focus-within a`, `main:has(a:focus) a`), or on the subject as
+  // :focus-within, read as it applies while the subject has focus: the
+  // ancestors the subject is inside are in the focus-within state, and a
+  // :has() of a focus state holds when the subject matches its argument.
+  // Returns { base, also } (the selector without those states, and the
+  // arguments the subject must match), or null. Only states reached
+  // through descendant and child combinators are read: a sibling's
+  // :focus-within says nothing of the subject's focus.
+  function ancestorFocusForm(part) {
+    if (!/:focus-within(?![-\w])|:has\(/i.test(part)) return null;
+    const pieces = splitWithCombinators(part);
+    const also = [];
+    let changed = false;
+    for (let i = 0; i < pieces.length; i++) {
+      let compound = pieces[i].compound;
+      const within = /:focus-within(?![-\w])/.test(compound);
+      const has = i < pieces.length - 1 ? focusHasOf(compound) : [];
+      if (!within && !has.length) continue;
+      if (/:not\([^)]*:focus-within/i.test(compound)) return null;
+      for (let k = i + 1; k < pieces.length; k++) {
+        if (!/^[\s>]+$/.test(pieces[k].comb)) return null;
+      }
+      FOCUS_WITHIN.lastIndex = 0;
+      compound = compound.replace(FOCUS_WITHIN, '');
+      for (const h of has) {
+        const arg = trim(dropFocus(h.arg).replace(FOCUS_WITHIN, ''));
+        if (/^[+~]/.test(arg) || splitArgs(h.arg).length > 1) return null;
+        also.push(trim(arg.replace(/^>\s*/, '')) || '*');
+        compound = compound.replace(h.text, '');
+      }
+      pieces[i].compound = trim(compound) || '*';
+      changed = true;
+    }
+    if (!changed) return null;
+    return { base: dropFocus(pieces.map((p) => p.comb + p.compound).join('')), also };
+  }
 
   // The focus-visible polyfill (WICG) marks keyboard focus with a class,
   // `.focus-visible`, and the scope it runs in with `.js-focus-visible`
@@ -640,7 +742,14 @@ function runInPage(ctx) {
     if (!suppresses && !provides) return;
     const kills = suppresses ? outlineParts(style).kills : null;
 
-    for (const part of splitSelectorList(selectorText)) {
+    const parts = splitSelectorList(selectorText);
+    // A selector list with one selector the browser can't parse is invalid
+    // as a whole, and a browser drops the rule (`button:-moz-focusring,
+    // button:focus` in Chromium). jsdom keeps it in its style sheets: test
+    // the list as the browser parsed it.
+    if (parts.length > 1 && !validSelectorList(selectorText)) return;
+
+    for (const part of parts) {
       // The polyfill's form is read as native :not(:focus-visible) for the
       // outline it removes; what the same rule draws is read as written.
       const asNative = suppresses ? polyfillAsNative(part) : part;
@@ -653,15 +762,310 @@ function runInPage(ctx) {
     }
   }
 
+  // A browser has already dropped a rule whose selector list it can't
+  // parse, so only a DOM without CSS.supports (jsdom) is tested, by a query
+  // that compiles the whole list: jsdom's matches() can return before it
+  // reaches the selector it can't parse.
+  const validLists = new Map();
+  const parsedByBrowser = (() => {
+    try {
+      const v = dom.defaultView(document);
+      // Read directly: an element named CSS can shadow it, which only
+      // costs the query below.
+      const css = v ? v.CSS : null;
+      return !!css && typeof css.supports === 'function';
+    } catch {
+      return false;
+    }
+  })();
+  function validSelectorList(selectorText) {
+    // Only a vendor-prefixed pseudo-class or pseudo-element (`:-moz-…`,
+    // `::-webkit-…`) is parsed by one and not the other: a list without one
+    // is not queried, which in jsdom walks the whole document.
+    if (parsedByBrowser || !/::?-/.test(selectorText)) return true;
+    if (validLists.has(selectorText)) return validLists.get(selectorText);
+    let valid = true;
+    try {
+      dom.querySelector(document, selectorText);
+    } catch {
+      valid = false;
+    }
+    validLists.set(selectorText, valid);
+    return valid;
+  }
+  // The selector as quoted in the message, serialized as Chromium gives it,
+  // so jsdom quotes it the same (round 12, U12-16, F12-9): a universal
+  // selector before another simple selector is left out (`*:focus` reads
+  // `:focus`), white space is one space, a combinator has a space on each
+  // side, a comma in a selector argument (`:is()`, `:where()`, `:not()`,
+  // `:has()`) one after it, and an attribute's value is quoted
+  // (`[type="text"]`). An argument that is not a selector (`:nth-child()`,
+  // `::part()`) is only trimmed.
+  const SELECTOR_ARGS = /:(is|where|not|has|matches|-webkit-any|host|host-context|slotted)\($/i;
+  // The body of a single-quoted CSS string as Chromium writes it double
+  // quoted: each escape gives its character (a hex escape, with one white
+  // space after it, its code point), then a double quote or a backslash is
+  // escaped.
+  function doubleQuotedBody(body) {
+    let out = '';
+    for (let i = 0; i < body.length; i++) {
+      let ch = body[i];
+      if (ch === '\\' && i + 1 < body.length) {
+        const hex = /^[0-9a-f]{1,6}/i.exec(body.slice(i + 1));
+        if (hex) {
+          const code = parseInt(hex[0], 16);
+          ch = code === 0 || code > 0x10ffff ? '\ufffd' : String.fromCodePoint(code);
+          i += hex[0].length;
+          if (/\s/.test(body[i + 1] || '')) i += 1;
+        } else {
+          i += 1;
+          ch = body[i];
+        }
+      }
+      out += ch === '"' || ch === '\\' ? '\\' + ch : ch;
+    }
+    return out;
+  }
+  function serializedAttribute(text) {
+    const m =
+      /^\[\s*([^\s~|^$*=\]]+)\s*([~|^$*]?=)\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s"'\]]+)\s*([is])?\s*\]$/i.exec(
+        text
+      );
+    if (!m) return text.replace(/^\[\s*/, '[').replace(/\s*\]$/, ']');
+    let value = m[3];
+    if (value[0] === "'") value = '"' + doubleQuotedBody(value.slice(1, -1)) + '"';
+    else if (value[0] !== '"') value = '"' + value + '"';
+    return `[${m[1]}${m[2]}${value}${m[4] ? ' ' + m[4].toLowerCase() : ''}]`;
+  }
+  function quotedSelector(part) {
+    const text = trim(part);
+    let out = '';
+    const stack = []; // per open parenthesis: whether it holds a selector
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '\\') {
+        out += ch + (text[i + 1] || '');
+        i += 1;
+        continue;
+      }
+      if (ch === '"' || ch === "'") {
+        let j = i + 1;
+        while (j < text.length && text[j] !== ch) j += text[j] === '\\' ? 2 : 1;
+        out += text.slice(i, j + 1);
+        i = j;
+        continue;
+      }
+      if (ch === '[') {
+        let j = i + 1;
+        let quote = '';
+        for (; j < text.length; j++) {
+          if (quote) {
+            if (text[j] === '\\') j += 1;
+            else if (text[j] === quote) quote = '';
+          } else if (text[j] === '"' || text[j] === "'") quote = text[j];
+          else if (text[j] === ']') break;
+        }
+        out += serializedAttribute(text.slice(i, j + 1));
+        i = j;
+        continue;
+      }
+      const inSelector = !stack.length || stack[stack.length - 1];
+      if (ch === '(') {
+        stack.push(SELECTOR_ARGS.test(out + ch));
+        out += ch;
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      if (ch === ')') {
+        stack.pop();
+        out = out.replace(/ +$/, '') + ch;
+        continue;
+      }
+      if (/\s/.test(ch)) {
+        if (!/[\s(]$/.test(out)) out += ' ';
+        continue;
+      }
+      if (!inSelector) {
+        out += ch;
+        continue;
+      }
+      if (ch === ',') {
+        out = out.replace(/ +$/, '') + ', ';
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      if (ch === '>' || ch === '+' || ch === '~') {
+        out = out.replace(/ +$/, '');
+        out += (/\($/.test(out) || !out ? '' : ' ') + ch + ' ';
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      out += ch;
+    }
+    return trim(out).replace(/(^|[\s>+~(,])\*(?=[:.#[])/g, '$1');
+  }
+
+  // Rules that reach across a shadow tree's edge (round 12, F12-8), read
+  // as CSS Scoping has them: `::part()` in a sheet of the tree a host is
+  // in styles the elements of the host's shadow tree with that part name;
+  // `::slotted()` in a shadow root's sheet styles the light elements
+  // assigned to its slots; `:host` and `:host()` alone in a shadow root's
+  // sheet style its host. Each is a focus rule on the element it styles
+  // where its focus state is that element's (`::part(x):focus`,
+  // `::slotted(button:focus)`, `:host(:focus)`), and a rule with no state
+  // otherwise. Returns { kind, focused, pseudo, ... }, null for a selector
+  // with none of them, or 'skip' for one of them in a form not read (a
+  // state other than focus, a part reached through exportparts).
+  function closeParen(text, open) {
+    let depth = 1;
+    for (let j = open; j < text.length; j++) {
+      if (text[j] === '(') depth += 1;
+      else if (text[j] === ')' && --depth === 0) return j;
+    }
+    return -1;
+  }
+  // What follows a pseudo-element: its focus state and a ::before or
+  // ::after, or null where it holds anything else.
+  function restOf(rest) {
+    const pseudo = /::?(before|after)$/i.test(trim(rest));
+    const left = trim(dropFocus(trim(rest).replace(/::?(before|after)$/i, '')));
+    return left ? null : { focused: hasFocusPseudo(rest), pseudo };
+  }
+  function crossTreeForm(part) {
+    if (!/::part\(|::slotted\(|:host(?![-\w])/i.test(part)) return null;
+    const partAt = part.search(/::part\(/i);
+    if (partAt !== -1) {
+      const close = closeParen(part, partAt + 7);
+      if (close === -1) return 'skip';
+      const prefix = part.slice(0, partAt);
+      const names = trim(part.slice(partAt + 7, close))
+        .split(/\s+/)
+        .filter(Boolean);
+      const rest = restOf(part.slice(close + 1));
+      if (!rest || !names.length || hasFocusPseudo(prefix) || /:host/i.test(prefix)) return 'skip';
+      const host = trim(prefix) ? trim(prefix) + (/[\s>+~]$/.test(prefix) ? ' *' : '') : '*';
+      return { kind: 'part', hostSel: host, names, ...rest };
+    }
+    const slottedAt = part.search(/::slotted\(/i);
+    if (slottedAt !== -1) {
+      const close = closeParen(part, slottedAt + 10);
+      if (close === -1 || !currentScope) return 'skip';
+      const prefix = part.slice(0, slottedAt);
+      const arg = part.slice(slottedAt + 10, close);
+      const rest = restOf(part.slice(close + 1));
+      if (!rest || rest.focused || hasFocusPseudo(prefix)) return 'skip';
+      // The slot: any (`::slotted()`, `:host ::slotted()`), one the selector
+      // before it names (`slot[name=a]::slotted()`), or one under a host
+      // that matches (`:host(.x) ::slotted()`).
+      let slot = trim(prefix) || '*';
+      let hostSel = '*';
+      const hm = /^:host(?:\(([^()]*)\))?(\s+|$)/i.exec(trim(prefix));
+      if (hm) {
+        if (trim(prefix).length !== hm[0].length) return 'skip';
+        hostSel = trim(hm[1] || '') || '*';
+        slot = '*';
+      } else if (/:host|[\s>+~]$/i.test(prefix)) return 'skip';
+      return {
+        kind: 'slotted',
+        slot,
+        hostSel,
+        inner: stripFocusPseudo(arg),
+        focused: hasFocusPseudo(arg),
+        pseudo: rest.pseudo
+      };
+    }
+    const hm = /^:host(?:\((.*)\))?((?:::?(?:before|after))?)$/i.exec(trim(part));
+    if (!hm) return null;
+    if (!currentScope) return 'skip';
+    const arg = hm[1] || '';
+    return {
+      kind: 'host',
+      inner: arg ? stripFocusPseudo(arg) : '*',
+      focused: hasFocusPseudo(arg),
+      pseudo: !!hm[2]
+    };
+  }
+  // Whether a rule read by crossTreeForm styles el.
+  function crossTreeStyles(x, el) {
+    try {
+      if (x.kind === 'host') return dom.host(x.scope) === el && matchesSafe(el, x.inner);
+      if (x.kind === 'slotted') {
+        const slot = dom.assignedSlot(el);
+        if (!slot || treeOf(slot) !== x.scope) return false;
+        if (x.hostSel !== '*' && !matchesSafe(dom.host(x.scope), x.hostSel)) return false;
+        return matchesSafe(slot, x.slot) && matchesSafe(el, x.inner);
+      }
+      const tree = treeOf(el);
+      if (!tree || dom.nodeType(tree) !== 11) return false;
+      const host = dom.host(tree);
+      if (!host || treeOf(host) !== (x.scope || document)) return false;
+      const names = String(dom.getAttribute(el, 'part') || '').split(/[ \t\n\f\r]+/);
+      return x.names.every((n) => names.includes(n)) && matchesSafe(host, x.hostSel);
+    } catch {
+      return false;
+    }
+  }
+
   function collectFromPart(part, suppresses, provides, kills) {
     // `:not(:focus-visible)` leaves the outline on keyboard focus: what such
     // a rule removes is only the mouse's focus ring, so it is never a
     // suppressor.
     if (suppresses && /:not\(\s*:focus-visible\s*\)/.test(part)) suppresses = false;
-    if (provides && /:focus-within(?![-\w])/.test(part)) {
+    // `:not(:focus-within)` no longer holds once the element inside has
+    // focus: the rule removes nothing then.
+    if (suppresses && /:not\(\s*:focus-within\s*\)/.test(part)) suppresses = false;
+    const cross = crossTreeForm(part);
+    if (cross === 'skip') return;
+    if (cross) {
+      if (suppresses && !cross.pseudo) {
+        suppressors.push({
+          ...cross,
+          selector: quotedSelector(part),
+          base: null,
+          sheet: currentSheet,
+          kills,
+          scope: currentScope
+        });
+      }
+      if (provides && cross.focused) {
+        providers.push({
+          ...cross,
+          base: null,
+          subject: true,
+          own: !cross.pseudo,
+          decls: provides,
+          scope: currentScope
+        });
+      }
+      return;
+    }
+    if (provides && /:focus-within(?![-\w])|:has\(/i.test(part)) {
       for (const compound of splitCompounds(part)) {
-        if (!/:focus-within(?![-\w])/.test(compound)) continue;
-        withinProviders.push(trim(compound.replace(FOCUS_WITHIN, '')) || '*');
+        let base = compound;
+        const has = focusHasOf(compound);
+        if (!/:focus-within(?![-\w])/.test(compound) && !has.length) continue;
+        for (const h of has) base = base.replace(h.text, '');
+        FOCUS_WITHIN.lastIndex = 0;
+        withinProviders.push({
+          base: trim(base.replace(FOCUS_WITHIN, '')) || '*',
+          scope: currentScope
+        });
+      }
+    }
+    // A focus state on an ancestor (or :focus-within on the subject) that
+    // removes the subject's outline while it has focus.
+    if (suppresses && !hasPseudoElement(part)) {
+      const form = ancestorFocusForm(part);
+      if (form) {
+        suppressors.push({
+          selector: quotedSelector(part),
+          base: form.base,
+          also: form.also,
+          sheet: currentSheet,
+          kills,
+          scope: currentScope
+        });
+        suppresses = false;
       }
     }
     if (!hasFocusPseudo(part)) {
@@ -670,7 +1074,13 @@ function runInPage(ctx) {
       // outline. Other states (:hover, :active) never match the static
       // element, so el.matches() leaves them out below.
       if (suppresses && !hasPseudoElement(part)) {
-        suppressors.push({ selector: trim(part), base: trim(part), sheet: currentSheet, kills });
+        suppressors.push({
+          selector: quotedSelector(part),
+          base: trim(part),
+          sheet: currentSheet,
+          kills,
+          scope: currentScope
+        });
       }
       return;
     }
@@ -690,10 +1100,11 @@ function runInPage(ctx) {
 
     if (suppresses && isSubject && !hasPseudoElement(part)) {
       suppressors.push({
-        selector: trim(part),
+        selector: quotedSelector(part),
         base: stripFocusPseudo(part),
         sheet: currentSheet,
-        kills
+        kills,
+        scope: currentScope
       });
     }
 
@@ -706,7 +1117,8 @@ function runInPage(ctx) {
         base: focusedBase,
         subject: isSubject,
         own: isSubject && !hasPseudoElement(part),
-        decls: provides
+        decls: provides,
+        scope: currentScope
       });
     }
   }
@@ -759,38 +1171,107 @@ function runInPage(ctx) {
     }
   }
 
+  const CANDIDATE_SELECTOR =
+    'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
+  // A root's style sheets, then those it adopts. jsdom gives a shadow root
+  // no styleSheets list: its <style> elements are read instead.
+  const sheetsOf = (root) => {
+    const out = [];
+    try {
+      const list = root === document ? dom.styleSheets(document) : dom.get(root, 'styleSheets');
+      if (list) for (const sheet of list) out.push(sheet);
+      else
+        for (const style of dom.querySelectorAll(root, 'style')) {
+          let sheet = style.sheet;
+          // Nor does it parse a shadow root's <style> into a sheet: its text
+          // is parsed into a constructed one.
+          if (!sheet) {
+            const view = dom.defaultView(document);
+            const Sheet = view ? view.CSSStyleSheet : null;
+            if (typeof Sheet === 'function') {
+              sheet = new Sheet();
+              sheet.replaceSync(String(dom.textContent(style) || ''));
+            }
+          }
+          if (sheet) out.push(sheet);
+        }
+    } catch {}
+    try {
+      for (const sheet of dom.get(root, 'adoptedStyleSheets') || []) out.push(sheet);
+    } catch {}
+    return out;
+  };
+
   let sheetCount = 0;
   let unreadableSheets = 0;
-  try {
-    const sheets = dom.styleSheets(document) || [];
-    for (const sheet of sheets) {
-      if (!conditionApplies(sheet)) continue;
-      // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
-      // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
-      // not inspectable.
-      let rules = null;
-      try {
-        rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
-      } catch {
-        unreadableSheets += 1;
-        continue;
+  function readSheets(root, scope) {
+    try {
+      for (const sheet of sheetsOf(root)) {
+        if (!conditionApplies(sheet)) continue;
+        // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
+        // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
+        // not inspectable.
+        let rules = null;
+        try {
+          rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
+        } catch {
+          unreadableSheets += 1;
+          continue;
+        }
+        if (!rules) {
+          unreadableSheets += 1;
+          continue;
+        }
+        sheetCount += 1;
+        currentSheet = sheet;
+        currentScope = scope;
+        walkRules(rules, 0, '');
+        currentSheet = null;
+        currentScope = null;
       }
-      if (!rules) {
-        unreadableSheets += 1;
-        continue;
-      }
-      sheetCount += 1;
-      currentSheet = sheet;
-      walkRules(rules, 0, '');
-      currentSheet = null;
+    } catch {
+      // no-throw: the sheets read so far count
     }
-  } catch {
-    // no-throw: treat as no accessible stylesheets
   }
+  readSheets(document, null);
+
+  // Every open shadow root, nested ones too, in tree order. Their style
+  // sheets, and the sheets they adopt, are read before the candidates are
+  // looked for: with no removing rule in any sheet, nothing is checked, on
+  // a page with shadow roots as on one without (round 12, R12F-13, F12-3).
+  const shadowRoots = [];
+  {
+    const queue = [document];
+    for (let i = 0; i < queue.length; i++) {
+      let all;
+      try {
+        all = dom.querySelectorAll(queue[i], '*');
+      } catch {
+        all = [];
+      }
+      for (const el of all) {
+        let sr;
+        try {
+          sr = dom.shadowRoot(el);
+        } catch {
+          sr = null;
+        }
+        if (sr) {
+          queue.push(sr);
+          shadowRoots.push(sr);
+        }
+      }
+    }
+  }
+  for (const root of shadowRoots) readSheets(root, root);
 
   if (sheetCount === 0 || !suppressors.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
+
+  const candidates = helpers.queryAllSmart
+    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
+    : helpers.queryAll(CANDIDATE_SELECTOR);
 
   // Where a sheet is, for the message: { href } for a linked or imported
   // sheet, { index } for the page's nth <style> element, or null. Read once
@@ -1001,12 +1482,6 @@ function runInPage(ctx) {
     return decls.some((d) => !sameAsUnfocused(cs, d.prop, d.value));
   }
 
-  const CANDIDATE_SELECTOR =
-    'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
-  const candidates = helpers.queryAllSmart
-    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
-    : helpers.queryAll(CANDIDATE_SELECTOR);
-
   // Every suppressor tested against each element costs rules x elements.
   // In a browser, the selectors that parse on their own, and whose text can't run into
   // the next one's (balanced brackets and quotes, no comment, no trailing
@@ -1054,7 +1529,15 @@ function runInPage(ctx) {
     if (!rendered) break;
     // :scope, & and :host read differently from a tree's querySelectorAll
     // than from the element's matches(): tested element by element.
-    if (listed.has(s.base) || !probe || !standsAlone(s.base) || /:scope|&|:host/i.test(s.base))
+    if (
+      s.kind ||
+      listed.has(s.base) ||
+      !probe ||
+      s.scope ||
+      (s.also && s.also.length) ||
+      !standsAlone(s.base) ||
+      /:scope|&|:host/i.test(s.base)
+    )
       continue;
     try {
       dom.matches(probe, s.base);
@@ -1072,7 +1555,9 @@ function runInPage(ctx) {
       listed.clear();
     }
   }
-  const unlisted = suppressors.filter((s) => !listed.has(s.base));
+  const unlisted = suppressors.filter(
+    (s) => s.kind || !listed.has(s.base) || s.scope || (s.also && s.also.length)
+  );
 
   // Which candidates the list matches, and how many in each tree. Where
   // many do, each listed selector is run once over the tree
@@ -1089,7 +1574,8 @@ function runInPage(ctx) {
   }
   if (suppressorList) {
     for (const el of candidates) {
-      if (!el || dom.nodeType(el) !== 1) continue;
+      // The list holds the document's selectors, which match in its tree only.
+      if (!el || dom.nodeType(el) !== 1 || treeOf(el) !== document) continue;
       let hit;
       try {
         hit = dom.matches(el, suppressorList);
@@ -1122,6 +1608,75 @@ function runInPage(ctx) {
     return byBase;
   }
 
+  // An element matches a selector only through elements of its own tree
+  // (a shadow root's sheets are only read against their own tree). A
+  // selector that needs a class or id that no element in that tree carries
+  // matches nothing there, so it is not tested. Only names outside
+  // brackets, parentheses and quotes count: a name inside :is(), :where(),
+  // :not() or :has() may not be needed. A selector with an escape, a
+  // comment, :host, ::slotted, ::part, :scope or & is always tested, and so
+  // is one whose name the scan cannot read to its end. Names are compared
+  // in lower case, which also covers a quirks-mode page.
+  const namesBySel = new Map();
+  function requiredNames(sel) {
+    if (namesBySel.has(sel)) return namesBySel.get(sel);
+    let names = null;
+    if (!/\\|\/[*]|:host|::slotted|::part|:scope|&/i.test(sel)) {
+      names = [];
+      let depth = 0;
+      let quote = '';
+      for (let i = 0; i < sel.length; i++) {
+        const ch = sel[i];
+        if (quote) {
+          if (ch === quote) quote = '';
+        } else if (ch === '"' || ch === "'") quote = ch;
+        else if (ch === '(' || ch === '[') depth += 1;
+        else if (ch === ')' || ch === ']') depth -= 1;
+        else if (!depth && (ch === '.' || ch === '#')) {
+          // The group keeps `*` from a slash: scripts/validate-rule.js reads
+          // that pair as the end of a comment.
+          const m = /^-?[_a-zA-Z\u0080-\uffff](?:[-\w\u0080-\uffff]*)/.exec(sel.slice(i + 1));
+          const next = m ? sel[i + 1 + m[0].length] : '';
+          if (!m || (next && !/[\s.#[:>+~,)*|]/.test(next))) {
+            names = null;
+            break;
+          }
+          names.push((ch === '.' ? 'c:' : 'i:') + m[0].toLowerCase());
+        }
+      }
+    }
+    namesBySel.set(sel, names);
+    return names;
+  }
+  const namesByTree = new Map();
+  function namesIn(tree) {
+    if (namesByTree.has(tree)) return namesByTree.get(tree);
+    let found = null;
+    try {
+      const type = tree ? dom.nodeType(tree) : 0;
+      if (type === 9 || type === 11) {
+        found = new Set();
+        for (const n of dom.querySelectorAll(tree, '[class], [id]')) {
+          const cls = dom.getAttribute(n, 'class');
+          if (cls)
+            for (const c of cls.split(/[ \t\n\f\r]+/)) if (c) found.add('c:' + c.toLowerCase());
+          const ident = dom.getAttribute(n, 'id');
+          if (ident) found.add('i:' + ident.toLowerCase());
+        }
+      }
+    } catch {
+      found = null;
+    }
+    namesByTree.set(tree, found);
+    return found;
+  }
+  function mayMatchIn(tree, sel) {
+    const names = requiredNames(sel);
+    if (!names || !names.length) return true;
+    const found = namesIn(tree);
+    return !found || names.every((n) => found.has(n));
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -1135,13 +1690,17 @@ function runInPage(ctx) {
     // Many rules share a selector (a framework's reset repeated): each one
     // is tested once per element.
     const listHit = listHits.has(el);
-    const byBase = listHit ? listedMatchesIn(treeOf(el)) : null;
+    const tree = treeOf(el);
+    const byBase = listHit ? listedMatchesIn(tree) : null;
     const matched = new Map();
     const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
+      if (s.kind) return crossTreeStyles(s, el);
+      if (!scopeOk(s, el)) return false;
+      if (Object.hasOwn(s, 'also') && !s.also.every((a) => matchesSafe(el, a))) return false;
       let hit = matched.get(s.base);
       if (hit === undefined) {
         const found = byBase && byBase.get(s.base);
-        hit = found ? found.has(el) : matchesSafe(el, s.base);
+        hit = found ? found.has(el) : mayMatchIn(tree, s.base) && matchesSafe(el, s.base);
         matched.set(s.base, hit);
       }
       return hit;
@@ -1151,10 +1710,17 @@ function runInPage(ctx) {
     const killed = new Set();
     for (const s of suppressing) for (const k of s.kills || ['style']) killed.add(k);
     const indicated = providers.some((p) => {
-      if (
-        !(p.subject ? matchesSafe(el, p.base) : matchesSafe(el, p.base) || closestSafe(el, p.base))
-      )
-        return false;
+      if (p.kind) {
+        if (!crossTreeStyles(p, el)) return false;
+      } else {
+        if (!scopeOk(p, el)) return false;
+        if (
+          !(p.subject
+            ? matchesSafe(el, p.base)
+            : matchesSafe(el, p.base) || closestSafe(el, p.base))
+        )
+          return false;
+      }
       const decls = drawingDecls(el, p, killed);
       return decls.length > 0 && (!p.own || changesElement(el, decls));
     });
@@ -1176,7 +1742,7 @@ function runInPage(ctx) {
 
     // The lean: nothing the scan can read draws focus another way.
     const inlineHandler = closestSafe(el, INLINE_FOCUS_HANDLERS);
-    const focusWithin = withinProviders.some((b) => closestSafe(el, b));
+    const focusWithin = withinProviders.some((w) => scopeOk(w, el) && closestSafe(el, w.base));
     const namesFocusVisible = selectors.some((sel) => /focus-visible/i.test(sel));
     const scriptListener = scriptFocusListener(el);
     const leans =

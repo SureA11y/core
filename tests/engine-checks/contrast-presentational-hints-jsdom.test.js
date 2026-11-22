@@ -96,7 +96,8 @@ test(`${RULE_ID}: a style or CSS rule wins over a presentational hint under jsdo
 
 // Without a layout, where an SVG shape paints can't be told: text painted
 // after a shape in its <svg> is asked about, not measured against white
-// (round 11, R11F-1).
+// (round 11, R11F-1), unless the shape certainly covers it (round 11, D11,
+// below).
 test(`${RULE_ID}: SVG text after a painted SVG shape is asked about under jsdom`, () => {
   const svgPage = (inner) =>
     `<!doctype html><html lang="en"><head><title>Hints</title></head><body><main><svg width="200" height="40">${inner}</svg></main></body></html>`;
@@ -115,8 +116,6 @@ test(`${RULE_ID}: SVG text after a painted SVG shape is asked about under jsdom`
   };
   const text = (attrs) => `<text x="10" y="25" ${attrs}>Revenue 2026</text>`;
   for (const inner of [
-    `<rect width="200" height="40" fill="#000"/>${text('fill="#aaaaaa"')}`,
-    `<rect width="200" height="40" style="fill:#000"/>${text('style="fill:#aaaaaa"')}`,
     `<g><circle cx="60" cy="20" r="60" fill="#333"/></g>${text('fill="#aaaaaa"')}`,
     `<rect width="200" height="40" fill="none" stroke="#000"/>${text('fill="#aaaaaa"')}`
   ]) {
@@ -129,5 +128,71 @@ test(`${RULE_ID}: SVG text after a painted SVG shape is asked about under jsdom`
     `<rect width="200" height="40" fill="none"/>${text('fill="#eeeeee"')}`
   ]) {
     assert.deepStrictEqual(outcomes(inner).slice(0, 2), ['fail', 'pass'], inner);
+  }
+});
+
+// Without a layout, the simple, certain case is measured: an opaque <rect>,
+// <circle> or <ellipse>, with no transform, opacity, filter, mask or clip,
+// whose geometry covers the text's area, is its background. The last such
+// shape counts; an uncertain shape painted after it keeps the text asked
+// about (round 11, D11).
+test(`${RULE_ID}: SVG text over a shape that certainly covers it is measured under jsdom (round 11, D11)`, () => {
+  const svgPage = (inner, attrs = 'width="200" height="40"') =>
+    `<!doctype html><html lang="en"><head><title>Hints</title></head><body><main><svg ${attrs}>${inner}</svg></main></body></html>`;
+  const outcomes = (inner, attrs) => {
+    const r = runa11yCoreOnHtml(svgPage(inner, attrs), {
+      runOnly: [RULE_ID, 'contrast-computable']
+    }).checksResults;
+    const of = (id) => r.find((c) => c.ruleId === id);
+    const occ = of(RULE_ID).occurrences[0];
+    return [
+      of(RULE_ID).outcome,
+      of('contrast-computable').outcome,
+      occ && occ.data && occ.data.details ? occ.data.details.colors.backgroundHex : null
+    ];
+  };
+  const text = (attrs) => `<text x="10" y="25" ${attrs}>Revenue 2026</text>`;
+  // Measured: black under the text, so #333 fails and #aaa passes.
+  for (const [inner, attrs] of [
+    [`<rect width="200" height="40" fill="#000"/>${text('fill="#333"')}`],
+    [`<rect width="200" height="40" style="fill:#000"/>${text('style="fill:#333"')}`],
+    [`<rect width="100%" height="100%" fill="#000"/>${text('fill="#333"')}`],
+    [`<rect width="100" height="20" fill="#000"/>${text('fill="#333"')}`, 'viewBox="0 0 100 20"'],
+    [
+      `<rect x="5" y="5" width="190" height="30" fill="#000"/>${text('fill="#333" font-size="12"')}`
+    ],
+    [`<g><rect width="200" height="40" fill="#000"/></g>${text('fill="#333"')}`],
+    [
+      `<circle cx="100" cy="100" r="200" fill="#000"/>${text('fill="#333" font-size="10"')}`,
+      'width="400" height="400"'
+    ],
+    [`<ellipse cx="60" cy="20" rx="100" ry="40" fill="#000"/>${text('fill="#333" font-size="8"')}`],
+    // An uncertain shape under the certain one is hidden by it.
+    [
+      `<circle cx="5" cy="5" r="3" fill="#fff"/><rect width="200" height="40" fill="#000"/>${text('fill="#333"')}`
+    ],
+    // The last certain shape is the background.
+    [
+      `<rect width="200" height="40" fill="#fff"/><rect width="200" height="40" fill="#000"/>${text('fill="#333"')}`
+    ]
+  ]) {
+    assert.deepStrictEqual(outcomes(inner, attrs), ['fail', 'pass', '#000000'], inner);
+  }
+  // Asked about: not certain, or an uncertain shape painted after the
+  // certain one.
+  for (const inner of [
+    `<rect x="5" y="5" width="100" height="30" fill="#000"/>${text('fill="#333" font-size="12"')}`,
+    `<rect width="200" height="40" fill="#000" transform="rotate(5)"/>${text('fill="#333"')}`,
+    `<rect width="200" height="40" fill="#000" opacity=".5"/>${text('fill="#333"')}`,
+    `<rect width="200" height="40" fill="#000" fill-opacity=".5"/>${text('fill="#333"')}`,
+    `<rect width="200" height="40" fill="rgba(0,0,0,.5)"/>${text('fill="#333"')}`,
+    `<g opacity=".5"><rect width="200" height="40" fill="#000"/></g>${text('fill="#333"')}`,
+    `<g filter="url(#f)"><rect width="200" height="40" fill="#000"/></g>${text('fill="#333"')}`,
+    `<rect width="200" height="40" rx="20" fill="#000"/>${text('fill="#333"')}`,
+    `<rect x="5" y="5" width="190" height="30" fill="#000"/>${text('fill="#333" font-size="12" dx="3"')}`,
+    `<rect width="200" height="40" fill="#000"/><circle cx="5" cy="5" r="3" fill="#fff"/>${text('fill="#333"')}`,
+    `<rect width="200" height="40" fill="#000"/><path d="M0 0h10v10z" fill="#fff"/>${text('fill="#333"')}`
+  ]) {
+    assert.deepStrictEqual(outcomes(inner).slice(0, 2), ['notApplicable', 'cantTell'], inner);
   }
 });

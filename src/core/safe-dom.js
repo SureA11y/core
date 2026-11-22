@@ -133,6 +133,7 @@ const SAFE_DOM_OTHER_NAMES = [
   'URL',
   'customElements',
   'adoptedStyleSheets',
+  'attachShadow',
   'ariaActiveDescendantElement',
   'ariaControlsElements',
   'ariaDescribedByElements',
@@ -160,6 +161,7 @@ const SAFE_DOM_OTHER_NAMES = [
   'implementation',
   'innerHeight',
   'innerWidth',
+  'label',
   'multiple',
   'muted',
   'nextNode',
@@ -193,7 +195,11 @@ const SAFE_DOM_OTHER_NAMES = [
 function createSafeDom() {
   // One instance per realm of this script: the lookups depend only on the
   // prototypes they are given, so sharing it across scans is safe.
-  if (createSafeDom.__instance) return createSafeDom.__instance;
+  // Own only, and defined, not assigned: a value of that name on
+  // Object.prototype is neither read nor refuses it (round 12, F12-4).
+  if (Object.prototype.hasOwnProperty.call(createSafeDom, '__instance')) {
+    return createSafeDom.__instance;
+  }
 
   // Captured once, so a page that later replaces them doesn't change how
   // the engine reads its own DOM.
@@ -725,7 +731,12 @@ function createSafeDom() {
         : o.setAttribute(a, b, c, d)
   };
 
-  createSafeDom.__instance = Object.freeze(dom);
+  Object.defineProperty(createSafeDom, '__instance', {
+    value: Object.freeze(dom),
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   return createSafeDom.__instance;
 }
 

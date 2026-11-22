@@ -77,6 +77,9 @@ test(`${RULE_ID} in Chromium: measured overflow leans`, { skip }, async (t) => {
     assert.equal(occ.lean.toward, 'fail');
     assert.equal(occ.lean.i18n.whyKey, 'scrollableRegionFocusable_lean_why_overflows');
     assert.ok(occ.lean.signals[0].value > 2);
+    // Measured: the message doesn't say it could not be (round 11, D7).
+    assert.equal(occ.i18n.summaryKey, 'scrollableRegionFocusable_summary_cantTell');
+    assert.doesNotMatch(occ.summary, /could not be measured/);
   });
 
   await t.test('content that fits on both axes is not applicable (ACT 0ssw9k)', async () => {
@@ -109,4 +112,31 @@ test(`${RULE_ID} in jsdom: no layout, no lean`, () => {
   const r = runa11yCoreOnHtml(page(box), { runOnly: [RULE_ID] }).checksResults[0];
   assert.equal(r.outcome, 'cantTell');
   assert.equal(r.occurrences[0].lean, undefined);
+});
+
+test(`${RULE_ID} in jsdom: the message and the review steps say the overflow could not be measured (round 11, D7)`, () => {
+  const box = OVERFLOWS.replace('overflow:auto', 'overflow-y:auto');
+  for (const locale of ['en', 'de', 'es', 'fr', 'ja']) {
+    const occ = runa11yCoreOnHtml(page(box), {
+      runOnly: [RULE_ID],
+      engineOptions: { locale }
+    }).checksResults[0].occurrences[0];
+    assert.equal(occ.i18n.summaryKey, 'scrollableRegionFocusable_summary_cantTell_unmeasured');
+    assert.match(
+      occ.summary,
+      {
+        en: /could not be measured/,
+        de: /nicht messen/,
+        es: /No se pudo medir/,
+        fr: /pas pu être mesuré/,
+        ja: /測定できません/
+      }[locale],
+      locale
+    );
+  }
+  const { howToCheckFor } = require('../../../src/index.js');
+  for (const locale of ['en', 'de', 'es', 'fr', 'ja']) {
+    const steps = howToCheckFor(RULE_ID, 'SCROLLABLE_OVERFLOW_NOT_FOCUSABLE', locale).steps;
+    assert.match(steps[0], /jsdom/, locale);
+  }
 });

@@ -4,9 +4,10 @@
  * SVG text is measured against the SVG shapes painted behind it (#96).
  *
  * SVG paints in document order, so a shape earlier than a text element and
- * under it is the text's background, which no CSS background shows. A <rect>
- * with a solid fill that covers all of the text is measured against; any
- * other shape under or over the text makes it not computable
+ * under it is the text's background, which no CSS background shows. A
+ * <rect>, <circle> or <ellipse> with a solid fill that covers all of the
+ * text is measured against; any other shape under or over the text makes
+ * it not computable
  * (BACKGROUND_OVERLAP). This needs a layout, which jsdom doesn't have, so
  * these tests run in Chromium.
  *
@@ -87,8 +88,15 @@ const CASES = [
     15.46
   ],
   [
-    'a circle behind the text',
+    // Measured since round 12 (C12-7), as without a layout.
+    'a circle covering the text',
     svg(`<circle cx="60" cy="20" r="60" fill="#000"/>${LABEL}`),
+    'pass',
+    15.46
+  ],
+  [
+    'a circle under part of the text',
+    svg(`<circle cx="20" cy="20" r="15" fill="#000"/>${LABEL}`),
     'notApplicable',
     'BACKGROUND_OVERLAP'
   ],
@@ -164,3 +172,45 @@ test('SVG text against the SVG shapes behind it, in Chromium', { skip }, async (
     });
   }
 });
+
+// The shapes jsdom now measures without a layout (round 11, D11) are
+// measured the same way in Chromium, which has one: the same outcome and
+// background.
+test(
+  'SVG text over a shape that certainly covers it: Chromium agrees with jsdom (round 11, D11)',
+  { skip },
+  async (t) => {
+    const { runa11yCoreOnHtml } = require('../helpers/runa11yCoreOnHtml');
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    const text = '<text x="10" y="25" fill="#333">Revenue 2026</text>';
+    for (const inner of [
+      `<rect width="200" height="40" fill="#000"/>${text}`,
+      `<rect width="100%" height="100%" fill="#000"/>${text}`,
+      `<rect width="200" height="40" fill="#fff"/><rect width="200" height="40" fill="#000"/>${text}`,
+      `<circle cx="5" cy="5" r="3" fill="#fff"/><rect width="200" height="40" fill="#000"/>${text}`
+    ]) {
+      const html = `<!doctype html><html lang="en"><head><title>SVG</title></head><body><main>${svg(inner)}</main></body></html>`;
+      const pick = (r) => {
+        const c = r.checksResults.find((x) => x.ruleId === 'contrast-minimum');
+        const o = c.occurrences[0];
+        return [c.outcome, o && o.data ? o.data.details.colors.backgroundHex : null];
+      };
+      const jsdom = pick(runa11yCoreOnHtml(html, { runOnly: ['contrast-minimum'] }));
+      const page = await browser.newPage();
+      try {
+        await page.setContent(html);
+        await page.evaluate(BUNDLE);
+        const chrome = pick(
+          await page.evaluate(() =>
+            window.a11ycore.runa11yCoreInPage(null, null, {}, ['contrast-minimum'])
+          )
+        );
+        assert.deepEqual(chrome, ['fail', '#000000'], inner);
+        assert.deepEqual(jsdom, chrome, inner);
+      } finally {
+        await page.close();
+      }
+    }
+  }
+);

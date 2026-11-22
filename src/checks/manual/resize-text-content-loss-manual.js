@@ -16,7 +16,7 @@
  *   at 200% zoom (ACT 59br37). The width is the layout viewport's (the
  *   root's clientWidth), as reflow-horizontal-scroll reads it. Within such a
  *   page, it applies to visible text (rendered, not hidden by opacity or
- *   visibility, and with part of it showing in every box that clips it) in
+ *   visibility) in
  *   a box that hides what overflows it: `overflow: hidden` or `clip` on an
  *   axis, paint containment (`contain: paint`, `content` or `strict`,
  *   `content-visibility: auto`), a `clip-path: inset()` or a `clip: rect()`,
@@ -24,10 +24,16 @@
  *   found along the text's containing block chain in the flat tree. A box
  *   that scrolls on an axis (`overflow: auto` or `scroll`) keeps what is in
  *   it reachable, so boxes past it don't clip on that axis; a box fixed to
- *   the viewport ends the walk. Left out: text a box hides entirely (off
- *   canvas, a closed panel), visually hidden text (a box a pixel wide or
- *   high), text inside a <marquee> or moved by an animation that repeats for
- *   ever, and the viewport's own overflow. At a wider viewport, in a
+ *   the viewport ends the walk. Text a box hides entirely is judged where
+ *   the box shows some of its other text and the text flowed out of it (a
+ *   fixed-height card whose later lines, paragraphs or `<br>` lines drop
+ *   out, an inline-block pushed past a `nowrap` box). Left out: text a box
+ *   hides entirely where the box shows none of its text (a collapsed panel)
+ *   or where the text was placed outside it (absolutely positioned, fixed
+ *   or transformed, as an off-canvas menu or a carousel's next slide),
+ *   visually hidden text (a box a pixel wide or high), text inside a
+ *   <marquee> or moved by an animation that repeats for ever, and the
+ *   viewport's own overflow. At a wider viewport, in a
  *   document shown in a frame, and without a layout (jsdom), the rule is
  *   notApplicable, with `data.reason` `viewportWider`, `noLayout` or
  *   `frameset`; with no text in a box that can clip it, notApplicable.
@@ -52,6 +58,10 @@
  *     on the box's inline axis (y), the line clamp on its block axis (x),
  *     and a line is half outside by half an em down or half its width
  *     across.
+ *   - Below 600 pixels wide, the page is laid out narrower than a 1280
+ *     pixel window at 200% zoom, and a cut there may appear only at a
+ *     larger zoom, which 1.4.4 doesn't ask for: both codes are asked
+ *     without a lean.
  *   - Text that every box clipping it shows in full passes.
  *   Each box is reported once, for the first text it cuts most. Whether the
  *   full text is offered another way (a control that opens the box, the
@@ -76,21 +86,27 @@
  *   - `clipCss` (where it can be read): the CSS that cuts the text off, as
  *     declarations: what fixes the box's size on that axis
  *     (`white-space: nowrap`, `width`, `height`, `max-height`, a clamp) and
- *     what hides the overflow, as `height: 48px; overflow: hidden`.
+ *     what hides the overflow, as `height: 48px; overflow: hidden`, or
+ *     `content-visibility: auto` where that is what clips.
  *   - `container.widthPx`, `container.heightPx`: the size of the clipping
  *     box.
  *   - `viewport.width`, `viewport.height`: the viewport the page was laid
  *     out in, in CSS pixels.
+ *   The message names the zoom at which a 1280 pixel window is laid out at
+ *   the scanned width (`zoomPercent`): 200% at 640, 213% at 600. Below 600
+ *   pixels it says the width is narrower than that window at 200% zoom
+ *   (`narrower`).
  * @reason-codes
  *   - `TEXT_CLIPPED_AT_640` (cantTell): at 640 CSS pixels wide or less, a
- *     box that hides its overflow cuts off part of this text. It leans fail
- *     when a line is at least half outside the box; a line cut by less gets
- *     no lean.
+ *     box that hides its overflow cuts off part of this text, or all of it
+ *     while showing other text. It leans fail when a line is at least half
+ *     outside the box; a line cut by less, or any cut below 600 pixels
+ *     wide, gets no lean.
  *     Basis: WCAG 1.4.4 (not settled); ACT 59br37; F69 (not settled).
  *   - `TEXT_TRUNCATED_AT_640` (cantTell): at 640 CSS pixels wide or less, a
  *     box shortens this text with an ellipsis or a line clamp. It leans
- *     fail: part of the text is not shown, unless the full text is offered
- *     another way.
+ *     fail, from 600 pixels wide: part of the text is not shown, unless the
+ *     full text is offered another way.
  *     Basis: WCAG 1.4.4 (not settled); ACT 59br37.
  * @implementation-notes
  *   The rule doesn't change the viewport or zoom the page: a script in the
@@ -146,6 +162,7 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
   const view = dom.defaultView(document) || null;
   const ZOOM_WIDTH = 640;
+  const LEAN_MIN_WIDTH = 600;
   const MAX_TEXT_NODES = 3000;
   const MAX_PER_CODE = 50;
   // A line more than this far outside its box is cut off at all.
@@ -681,6 +698,10 @@ function runInPage(ctx) {
       const own = axis === 'x' ? ox : oy;
       if (own && own !== 'visible')
         parts.push(ox === oy ? `overflow: ${own}` : `overflow-${axis}: ${own}`);
+      // A box the scan lays out in place of content-visibility: auto holds
+      // paint containment instead (contain: content): name what the author
+      // wrote.
+      else if (cvClips(c.el)) parts.push('content-visibility: auto');
       else if (cs.contain && cs.contain !== 'none') parts.push(`contain: ${cs.contain}`);
       else if (c.shape && cs.clipPath && cs.clipPath !== 'none')
         parts.push(`clip-path: ${cs.clipPath}`);
@@ -694,6 +715,38 @@ function runInPage(ctx) {
   }
 
   // ---- Measure ----
+
+  // Whether a box between the text and its clipping box was placed out of
+  // the flow (absolutely positioned or fixed) or moved by a transform: text
+  // it holds was put outside the clipping box, not pushed out by its size.
+  function placedOutside(textEl, clipEl) {
+    for (let a = textEl, i = 0; a && a !== clipEl && i < 1000; a = upOf(a), i++) {
+      const cs = styleOf(a);
+      if (!cs) continue;
+      if (cs.position === 'absolute' || cs.position === 'fixed') return true;
+      if (cs.transform && cs.transform !== 'none') return true;
+    }
+    return false;
+  }
+  // Whether a clipping box shows any of the text in it: a collapsed panel
+  // shows none. Kept per box; at most 200 texts are read in each.
+  const showsTextOf = new Map();
+  function showsSomeText(c) {
+    if (showsTextOf.has(c.el)) return showsTextOf.get(c.el);
+    let shows = false;
+    try {
+      const b = clipBoxOf(c);
+      const walker = dom.createTreeWalker(document, c.el, 4);
+      let read = 0;
+      for (let t = walker.nextNode(); t && !shows && read < 200; t = walker.nextNode()) {
+        if (!/\S/.test(dom.nodeValue(t) || '')) continue;
+        read += 1;
+        shows = linesOf(t).some((l) => showsIn(l, b, c));
+      }
+    } catch {}
+    showsTextOf.set(c.el, shows);
+    return shows;
+  }
 
   // Per clipping box, the finding it gives: the first text it cuts, or a
   // text it cuts for certain over one it cuts by less.
@@ -718,17 +771,27 @@ function runInPage(ctx) {
     ) {
       lines = glyphLinesOf(n, verticalOf(textEl)) || lines;
     }
-    // Visible text: some of it shows in every box that clips it. A box a
-    // pixel wide or high is visually hidden text, not a cut.
-    let visible = true;
+    // A box a pixel wide or high is visually hidden text, not a cut. Text a
+    // box hides entirely is left out where the box shows none of its text
+    // (a collapsed panel), or where the text was placed out of it (an
+    // off-canvas menu, a carousel's next slide): it is hidden on purpose.
+    // Where the box shows other text, and the text only flowed out of it (a
+    // fixed-height card whose later lines or paragraphs drop out), it is
+    // cut off, and asked about as any cut text is.
+    let skip = false;
     for (const c of clippers) {
       const b = clipBoxOf(c);
-      if (b.right - b.left <= 1 || b.bottom - b.top <= 1 || !lines.some((l) => showsIn(l, b, c))) {
-        visible = false;
+      if (b.right - b.left <= 1 || b.bottom - b.top <= 1) {
+        skip = true;
+        break;
+      }
+      if (lines.some((l) => showsIn(l, b, c))) continue;
+      if (placedOutside(textEl, c.el) || !showsSomeText(c)) {
+        skip = true;
         break;
       }
     }
-    if (!visible) continue;
+    if (skip) continue;
     measured += 1;
     const fontSize = px(styleOf(textEl) && styleOf(textEl).fontSize) || 16;
     // Half an em along the line, and half the line's thickness across it:
@@ -827,12 +890,15 @@ function runInPage(ctx) {
       }
     }
   };
+  // Below this width the page is laid out narrower than a 1280 pixel window
+  // at 200% zoom: what is cut there may be cut only at a larger zoom.
+  const narrower = viewport.width < LEAN_MIN_WIDTH;
   const EDGE_WORDS = { top: 'top ', right: 'right ', bottom: 'bottom ', left: 'left ' };
   const MESSAGES = {
     TEXT_CLIPPED_AT_640: {
       key: 'clipped',
       summary: (p, edge) =>
-        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element cuts off the text "${p.text}" (${p.overflowPx} pixels past its ${EDGE_WORDS[edge] || ''}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
+        `At ${p.viewportWidth} pixels wide, ${p.narrower ? 'narrower than a 1280 pixel window at 200% zoom' : `as a 1280 pixel window shows the page at ${p.zoomPercent}% zoom`}, this element cuts off the text "${p.text}" (${p.overflowPx} pixels past its ${EDGE_WORDS[edge] || ''}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
       hint: (p) =>
         p.clipCss
           ? `Let the box grow with its text when the page is zoomed: change ${p.clipCss}, or let it scroll.`
@@ -841,7 +907,7 @@ function runInPage(ctx) {
     TEXT_TRUNCATED_AT_640: {
       key: 'truncated',
       summary: (p) =>
-        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element shortens the text "${p.text}" with an ellipsis or a line clamp, so part of it is not shown.${p.clipCss ? ` The CSS that shortens it: ${p.clipCss}.` : ''}`,
+        `At ${p.viewportWidth} pixels wide, ${p.narrower ? 'narrower than a 1280 pixel window at 200% zoom' : `as a 1280 pixel window shows the page at ${p.zoomPercent}% zoom`}, this element shortens the text "${p.text}" with an ellipsis or a line clamp, so part of it is not shown.${p.clipCss ? ` The CSS that shortens it: ${p.clipCss}.` : ''}`,
       hint: () =>
         'Let the text wrap and the box show all of it when the page is zoomed, or offer the full text another way that works with the keyboard, such as a "read more" link.'
     }
@@ -858,11 +924,22 @@ function runInPage(ctx) {
       text: f.text,
       overflowPx: String(Math.round(f.metrics.overflowPx)),
       viewportWidth: String(viewport.width),
+      // The zoom at which a 1280 pixel window lays the page out this wide:
+      // 200% at 640, 400% at 320.
+      zoomPercent: String(Math.round((1280 * 100) / (viewport.width || ZOOM_WIDTH))),
+      ...(narrower ? { narrower: true } : {}),
       ...(edgeKey ? { [edgeKey]: true } : {}),
       ...(f.clipCss ? { clipCss: f.clipCss } : {})
     };
-    const lean =
-      f.code === 'TEXT_TRUNCATED_AT_640' ? LEANS.truncated : f.lost ? LEANS.clipped : null;
+    // Narrower than 200% zoom of a 1280 pixel window gives, the cut may
+    // appear only at a zoom 1.4.4 doesn't ask for: asked without a lean.
+    const lean = narrower
+      ? null
+      : f.code === 'TEXT_TRUNCATED_AT_640'
+        ? LEANS.truncated
+        : f.lost
+          ? LEANS.clipped
+          : null;
     questions.push(
       helpers.reportOccurrence(f.el, {
         ...(lean ? { lean } : {}),

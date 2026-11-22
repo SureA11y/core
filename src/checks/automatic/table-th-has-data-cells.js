@@ -207,7 +207,10 @@ function runInPage(ctx) {
   const DATA_ROLES = ['cell', 'gridcell'];
   const HEADER_ROLES = ['columnheader', 'rowheader'];
 
+  // colspan and rowspan as HTML reads them (helpers.tableCellSpanOf);
+  // aria-colspan and aria-rowspan as integers, 1 where there is none.
   function spanOf(cell, attr) {
+    if (attr === 'colspan' || attr === 'rowspan') return helpers.tableCellSpanOf(cell, attr);
     const n = Number.parseInt(dom.getAttribute(cell, attr) || '1', 10);
     return Number.isFinite(n) ? n : 1;
   }

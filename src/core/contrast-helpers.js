@@ -5,8 +5,34 @@
 const { createSafeDom } = require('./safe-dom');
 
 function createContrastHelpers(opts, shared) {
+  // An option's own value, or undefined. The engine builds option objects
+  // without every key (colorScheme, rootCanvasFallbackSet), and a value a
+  // page's script put on Object.prototype is never read as one (round 12,
+  // R12F-6).
+  function __own(o, k) {
+    return o &&
+      (typeof o === 'object' || typeof o === 'function') &&
+      Object.prototype.hasOwnProperty.call(o, k)
+      ? o[k]
+      : undefined;
+  }
+  // Own keys along a path: __ownAt(o, 'options', 'engineOptions').
+  function __ownAt(o, ...keys) {
+    let v = o;
+    for (let i = 0; i < keys.length && v !== undefined; i++) v = __own(v, keys[i]);
+    return v;
+  }
+  // A <select> drawn as a list box (a size above 1), read as Chromium reads
+  // its size attribute (selectSizeOf in dom-helpers).
+  function __selectDrawnAsListBox(select) {
+    if (shared && typeof shared.selectSizeOf === 'function') {
+      const n = shared.selectSizeOf(select);
+      return n !== null && n > 1;
+    }
+    return Number(dom.getAttribute(select, 'size')) > 1;
+  }
   const dom = createSafeDom();
-  const window = opts && opts.window ? opts.window : null;
+  const window = __own(opts, 'window') || null;
 
   const trim = shared.trim;
   const computedStyle = shared.computedStyle;
@@ -178,10 +204,8 @@ function createContrastHelpers(opts, shared) {
   // -------- Visibility mode resolution for getTextScan --------
 
   function __getVisibilityMode(engineOptions) {
-    const m =
-      engineOptions && typeof engineOptions.visibilityMode === 'string'
-        ? engineOptions.visibilityMode
-        : '';
+    const v = __own(engineOptions, 'visibilityMode');
+    const m = typeof v === 'string' ? v : '';
     return m || 'styleOnly';
   }
 
@@ -193,79 +217,49 @@ function createContrastHelpers(opts, shared) {
       engineOptions,
 
       // common shapes
-      ctx && ctx.engineOptions,
-      ctx && ctx.options && ctx.options.engineOptions,
-      ctx && ctx.options,
-      ctx && ctx.opts && ctx.opts.engineOptions,
-      ctx && ctx.opts,
+      __ownAt(ctx, 'engineOptions'),
+      __ownAt(ctx, 'options', 'engineOptions'),
+      __ownAt(ctx, 'options'),
+      __ownAt(ctx, 'opts', 'engineOptions'),
+      __ownAt(ctx, 'opts'),
 
       // policy layering shapes
-      ctx && ctx.policyOverrides && ctx.policyOverrides.engineOptions,
-      ctx && ctx.policyOverrides,
-      ctx && ctx.policy && ctx.policy.engineOptions,
-      ctx && ctx.policy,
+      __ownAt(ctx, 'policyOverrides', 'engineOptions'),
+      __ownAt(ctx, 'policyOverrides'),
+      __ownAt(ctx, 'policy', 'engineOptions'),
+      __ownAt(ctx, 'policy'),
 
       // sometimes hoisted
       ctx,
 
       // opts passed into createContrastHelpers
-      opts && opts.engineOptions,
-      opts && opts.options && opts.options.engineOptions,
-      opts && opts.options,
-      opts && opts.opts && opts.opts.engineOptions,
-      opts && opts.opts,
+      __ownAt(opts, 'engineOptions'),
+      __ownAt(opts, 'options', 'engineOptions'),
+      __ownAt(opts, 'options'),
+      __ownAt(opts, 'opts', 'engineOptions'),
+      __ownAt(opts, 'opts'),
 
-      opts && opts.policyOverrides && opts.policyOverrides.engineOptions,
-      opts && opts.policyOverrides,
-      opts && opts.policy && opts.policy.engineOptions,
-      opts && opts.policy,
+      __ownAt(opts, 'policyOverrides', 'engineOptions'),
+      __ownAt(opts, 'policyOverrides'),
+      __ownAt(opts, 'policy', 'engineOptions'),
+      __ownAt(opts, 'policy'),
 
       // globals sometimes used by runners
-      w && w.__a11ycoreEngineOptions,
-      d && d.__a11ycoreEngineOptions
+      __ownAt(w, '__a11ycoreEngineOptions'),
+      __ownAt(d, '__a11ycoreEngineOptions')
     ];
 
     for (const c of candidates) {
       if (!c || typeof c !== 'object') continue;
-
-      if (typeof c.visibilityMode === 'string') return c.visibilityMode;
-
-      if (
-        c.engineOptions &&
-        typeof c.engineOptions === 'object' &&
-        typeof c.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.options &&
-        typeof c.options === 'object' &&
-        c.options.engineOptions &&
-        typeof c.options.engineOptions === 'object' &&
-        typeof c.options.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.options.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policy &&
-        typeof c.policy === 'object' &&
-        c.policy.engineOptions &&
-        typeof c.policy.engineOptions === 'object' &&
-        typeof c.policy.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policy.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policyOverrides &&
-        typeof c.policyOverrides === 'object' &&
-        c.policyOverrides.engineOptions &&
-        typeof c.policyOverrides.engineOptions === 'object' &&
-        typeof c.policyOverrides.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policyOverrides.engineOptions.visibilityMode;
+      for (const path of [
+        [],
+        ['engineOptions'],
+        ['options', 'engineOptions'],
+        ['policy', 'engineOptions'],
+        ['policyOverrides', 'engineOptions']
+      ]) {
+        const mode = __ownAt(c, ...path, 'visibilityMode');
+        if (typeof mode === 'string') return mode;
       }
     }
 
@@ -284,6 +278,104 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // -------- Costly paint a page uses at all (round 12, F12-6) --------
+  //
+  // A blend mode, a filter or backdrop-filter, a mask, an inset shadow and
+  // a transform (or the scale or rotate property) are each read of every
+  // box above every text, yet most pages use few of them or none. A box's
+  // computed value of one is other than its initial value only where a
+  // declaration gives it one: in a style sheet (its rules, nested, imported
+  // and keyframes among them), a style attribute (where a script's
+  // element.style writes too), an SVG presentation attribute, or a script's
+  // animation. So once per document and run, the text of all of these is
+  // read, and a feature named nowhere in it is used by no box: its reads
+  // are left out, with the answer they would give. Anything that can't be
+  // ruled out keeps every feature: a sheet that can't be read (another
+  // origin, still loading), a running animation, a shadow root (whose
+  // sheets style its host and slotted content), or a custom element, which
+  // may hold a closed one.
+  const __PAGE_FEATURE_NAMES = {
+    blend: /mix-blend-mode/i,
+    filter: /filter/i,
+    mask: /mask/i,
+    insetShadow: /box-shadow/i,
+    transform: /transform|scale|rotate/i
+  };
+  const __PAGE_FEATURES_ALL = Object.freeze({
+    blend: true,
+    filter: true,
+    mask: true,
+    insetShadow: true,
+    transform: true
+  });
+  const __localPageFeatures = new WeakMap();
+  function __pageFeaturesOf(node) {
+    let doc;
+    try {
+      doc = node && dom.nodeType(node) === 9 ? node : dom.ownerDocument(node);
+    } catch {
+      doc = null;
+    }
+    if (!doc || typeof doc !== 'object') return __PAGE_FEATURES_ALL;
+    const cache = __getSharedWeakMapCache('__pageFeaturesCache') || __localPageFeatures;
+    let out = cache.get(doc);
+    if (!out) {
+      out = __readPageFeatures(doc);
+      cache.set(doc, out);
+    }
+    return out;
+  }
+  function __readPageFeatures(doc) {
+    try {
+      if (typeof dom.get(doc, 'getAnimations') === 'function') {
+        const running = dom.call(doc, 'getAnimations');
+        if (!running || running.length) return __PAGE_FEATURES_ALL;
+      }
+      for (const el of dom.querySelectorAll(doc, '*')) {
+        if (dom.shadowRoot(el) || String(dom.localName(el) || '').includes('-'))
+          return __PAGE_FEATURES_ALL;
+      }
+      if (
+        dom.querySelector(
+          doc,
+          '[filter], [mask], [transform], [gradientTransform], [patternTransform]'
+        )
+      )
+        return __PAGE_FEATURES_ALL;
+      const parts = [];
+      for (const el of dom.querySelectorAll(doc, '[style]')) {
+        parts.push(String(dom.getAttribute(el, 'style') || ''));
+      }
+      const sheets = [...(dom.get(doc, 'styleSheets') || [])].concat([
+        ...(dom.get(doc, 'adoptedStyleSheets') || [])
+      ]);
+      const seen = new Set();
+      while (sheets.length) {
+        const sheet = sheets.pop();
+        if (!sheet || seen.has(sheet)) continue;
+        seen.add(sheet);
+        // Throws for a sheet of another origin, or one still loading.
+        const rules = sheet.cssRules;
+        if (!rules) return __PAGE_FEATURES_ALL;
+        for (let i = 0; i < rules.length; i++) {
+          const rule = rules[i];
+          parts.push(String(rule.cssText));
+          // @import: the imported sheet's rules aren't in its text.
+          if (rule.styleSheet) sheets.push(rule.styleSheet);
+          else if (/^\s*@import/i.test(String(rule.cssText))) return __PAGE_FEATURES_ALL;
+        }
+      }
+      const text = parts.join('\n');
+      const out = {};
+      for (const key of Object.keys(__PAGE_FEATURE_NAMES)) {
+        out[key] = __PAGE_FEATURE_NAMES[key].test(text);
+      }
+      return Object.freeze(out);
+    } catch {
+      return __PAGE_FEATURES_ALL;
+    }
+  }
+
   function __asEligibilityBool(v) {
     if (typeof v === 'boolean') return v;
     if (v && typeof v === 'object' && typeof v.eligible === 'boolean') return v.eligible;
@@ -298,21 +390,30 @@ function createContrastHelpers(opts, shared) {
   // text element asks it of each of its ancestors, and under jsdom matching
   // :disabled walks the ancestors again, so a deep page cost elements x
   // depth x depth.
-  function isDisabledWidget(node) {
-    const cache = __getSharedWeakMapCache('__disabledWidgetCache');
+  //
+  // aria-disabled="true" (or ElementInternals' ariaDisabled) makes content
+  // inactive only on a user interface component, or on an ancestor whose
+  // content belongs to one (round 11, D6): WCAG exempts inactive user
+  // interface components, and aria-disabled on a plain <span> or <div>
+  // with no control disables nothing. A disabled control (:disabled, a
+  // disabled fieldset among them) is one already.
+  // The bits: 1 for :disabled, 2 for aria-disabled true.
+  function __disabledBits(node) {
+    const cache = __getSharedWeakMapCache('__disabledBitsCache');
     if (cache && node && typeof node === 'object') {
       const known = cache.get(node);
       if (known !== undefined) return known;
-      const out = isDisabledWidgetUncached(node);
+      const out = __disabledBitsUncached(node);
       cache.set(node, out);
       return out;
     }
-    return isDisabledWidgetUncached(node);
+    return __disabledBitsUncached(node);
   }
-  function isDisabledWidgetUncached(node) {
+  function __disabledBitsUncached(node) {
+    let bits = 0;
     try {
       if (typeof dom.get(node, 'matches') === 'function' && dom.matches(node, ':disabled'))
-        return true;
+        bits |= 1;
     } catch {}
     try {
       const ad = dom.get(node, 'getAttribute')
@@ -320,16 +421,116 @@ function createContrastHelpers(opts, shared) {
             .trim()
             .toLowerCase()
         : '';
-      if (ad === 'true') return true;
+      if (ad === 'true') bits |= 2;
       // A custom element disabled through its ElementInternals
       // (internals.ariaDisabled = 'true'), where it has no aria-disabled
       // attribute of its own, is disabled as the attribute would make it.
-      if (!ad && typeof shared.getInternalsStateInfo === 'function') {
+      else if (!ad && typeof shared.getInternalsStateInfo === 'function') {
         const info = shared.getInternalsStateInfo(node, 'aria-disabled');
-        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') return true;
+        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') bits |= 2;
       }
     } catch {}
-    return false;
+    return bits;
+  }
+
+  // Widget roles (WAI-ARIA 1.2, the widget and composite roles), and
+  // toolbar, a group of controls.
+  const __WIDGET_ROLES = new Set([
+    'button',
+    'checkbox',
+    'combobox',
+    'grid',
+    'gridcell',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'radiogroup',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'toolbar',
+    'tree',
+    'treegrid',
+    'treeitem'
+  ]);
+  const __NATIVE_CONTROLS = new Set([
+    'button',
+    'input',
+    'select',
+    'textarea',
+    'option',
+    'optgroup'
+  ]);
+
+  // Whether node is a user interface component: an element whose resolved
+  // role is a widget role, a native control, or a focusable element.
+  function __isUiComponent(node) {
+    const cache = __getSharedWeakMapCache('__uiComponentCache');
+    if (cache && node && typeof node === 'object' && cache.has(node)) return cache.get(node);
+    let out = false;
+    try {
+      const tag = String(dom.localName(node) || '').toLowerCase();
+      if (__NATIVE_CONTROLS.has(tag) && dom.namespaceURI(node) !== __SVG_NS) {
+        out = !(
+          tag === 'input' &&
+          String(dom.getAttribute(node, 'type') || '')
+            .trim()
+            .toLowerCase() === 'hidden'
+        );
+      }
+      if (!out) {
+        let role = '';
+        if (typeof shared.getRoleInfo === 'function') {
+          const info = shared.getRoleInfo(node);
+          role = info && info.role ? String(info.role) : '';
+        } else {
+          role = String(dom.getAttribute(node, 'role') || '')
+            .trim()
+            .toLowerCase()
+            .split(/\s+/)[0];
+        }
+        out = __WIDGET_ROLES.has(role);
+      }
+      if (!out) {
+        if (typeof shared.getFocusableInfo === 'function') {
+          const f = shared.getFocusableInfo(node);
+          out = !!(f && f.focusable);
+        } else {
+          out = /^\s*[+-]?\d+\s*$/.test(String(dom.getAttribute(node, 'tabindex') || ''));
+        }
+      }
+    } catch {
+      out = false;
+    }
+    if (cache && node && typeof node === 'object') cache.set(node, out);
+    return out;
+  }
+
+  // A disabled control, as a label's control or a widget naming itself by
+  // a label: disabled, or aria-disabled on a user interface component.
+  function isDisabledWidget(node) {
+    const bits = __disabledBits(node);
+    return !!(bits & 1) || (!!(bits & 2) && __isUiComponent(node));
+  }
+
+  // Whether a control a label names is inactive: disabled itself, or a user
+  // interface component inside an element that disables it, such as a
+  // role="group" with aria-disabled="true" around the label and its input
+  // (ACT afw4f7, inapplicable example 9; round 11, D6).
+  function __namedControlInactive(control) {
+    if (isDisabledWidget(control)) return true;
+    return __isUiComponent(control) && isInactiveUiComponent(control);
   }
 
   // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
@@ -348,6 +549,9 @@ function createContrastHelpers(opts, shared) {
   function labelNamesDisabled(labelAncestor) {
     if (__labelNamesDisabledCache.has(labelAncestor))
       return __labelNamesDisabledCache.get(labelAncestor);
+    // Set first: the control a label names may sit inside the label, and
+    // asking whether that control is inactive walks back up to it.
+    __labelNamesDisabledCache.set(labelAncestor, false);
     const disabled = findLabelNamesDisabled(labelAncestor);
     __labelNamesDisabledCache.set(labelAncestor, disabled);
     return disabled;
@@ -359,7 +563,7 @@ function createContrastHelpers(opts, shared) {
       const control = shared.getLabelControl
         ? shared.getLabelControl(labelAncestor)
         : labelAncestor.control || null;
-      if (control && isDisabledWidget(control)) return true;
+      if (control && __namedControlInactive(control)) return true;
     } catch {}
 
     try {
@@ -377,7 +581,7 @@ function createContrastHelpers(opts, shared) {
           '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
         );
         for (const ref of referrers) {
-          if (isDisabledWidget(ref)) return true;
+          if (__namedControlInactive(ref)) return true;
         }
       }
     } catch {}
@@ -396,26 +600,43 @@ function createContrastHelpers(opts, shared) {
   }
 
   function isInactiveUiComponent(el) {
+    // The flat tree (round 12, C12-10): text in a shadow root is the
+    // content of its host, and a slotted node of its slot, so an
+    // aria-disabled host with role=button disables the text it draws. The
+    // chain of ancestors is kept for the run.
+    const chain = ancestorsOf(el);
+    let at = 0;
+    const next = () => {
+      while (++at < chain.length && dom.nodeType(chain[at]) === 11);
+      return chain[at] || null;
+    };
     let node = el;
     let prev = null;
     let depth = 0;
     let labelAncestor = null;
+    // Whether el or an ancestor met so far is a user interface component:
+    // aria-disabled from there up disables the content of one. Asked only
+    // once an aria-disabled is met, of the elements not asked yet.
+    let inComponent = false;
+    const unasked = [];
     while (node && dom.nodeType(node) === 1 && depth++ < 100) {
+      const bits = __disabledBits(node);
+      if (!inComponent) unasked.push(node);
+      if (bits & 2 && !inComponent) {
+        inComponent = unasked.some((n) => __isUiComponent(n));
+        unasked.length = 0;
+      }
+      const aria = !!(bits & 2) && inComponent;
       // A disabled fieldset disables nothing in its first legend: only an
       // aria-disabled on it counts there.
       if (prev && __isFirstLegendOf(prev, node)) {
-        if (
-          String(dom.getAttribute(node, 'aria-disabled') || '')
-            .trim()
-            .toLowerCase() === 'true'
-        )
-          return true;
-      } else if (isDisabledWidget(node)) return true;
+        if (aria) return true;
+      } else if (bits & 1 || aria) return true;
       if (!labelAncestor && String(dom.tagName(node) || '').toLowerCase() === 'label') {
         labelAncestor = node;
       }
       prev = node;
-      node = dom.parentElement(node);
+      node = next();
     }
 
     // WCAG 1.4.3/1.4.6 "disabled label" exception: see labelNamesDisabled.
@@ -425,6 +646,191 @@ function createContrastHelpers(opts, shared) {
     if (labelAncestor && labelNamesDisabled(labelAncestor)) return true;
 
     return false;
+  }
+
+  // -------- A currency sign in a run of text (round 11, B11-9) --------
+  //
+  // A currency sign (Unicode Sc: € $ £ ¥ …) or the postal mark 〒 next to
+  // letters or digits on the same line is part of that text ("€45,00",
+  // "〒100-0001"), even when markup gives it an element of its own: it is
+  // read, so it is text, held to 1.4.3, not a graphic. "Next to" is the
+  // nearest visible character before or after it, not past a block
+  // boundary (a block, a flex or grid item, a float, an absolutely
+  // positioned box, a line break) and not counting text that is not
+  // drawn (display:none, visibility:hidden, visually hidden), nor the text
+  // of a link beside it, unless the link's nearest character is a digit
+  // (an amount). A sign alone between links, or a separator such as ">",
+  // is not this: it stays a graphic.
+  const __RUN_SIGN = /[\p{Sc}〒]/u;
+  const __RUN_SIGN_ONLY = /^[\s\p{Sc}〒\p{P}]*$/u;
+  const __RUN_TEXT = /[\p{L}\p{N}]/u;
+  // Text nodes are kept only for the run; the shared cache is per engine run.
+  const __localSignRunCache = new WeakMap();
+
+  function __isSignText(text) {
+    const s = String(text == null ? '' : text);
+    return __RUN_SIGN.test(s) && __RUN_SIGN_ONLY.test(s);
+  }
+
+  function __inlineDisplay(cs) {
+    const d = String((cs && cs.display) || 'inline');
+    return d === 'contents' || d.startsWith('inline') || d.startsWith('ruby');
+  }
+
+  // Whether el's box is a block whatever its display says: a float, an
+  // absolutely positioned box, or an item of a flex or grid container
+  // (CSS Display 3, blockification). A browser computes such a display as
+  // a block already; jsdom doesn't, so it is read here, and both agree
+  // (round 12, C12-1).
+  function __runBlockified(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.cssFloat || cs.float) && trim(cs.cssFloat || cs.float) !== 'none') return true;
+    if (cs.position === 'absolute' || cs.position === 'fixed') return true;
+    const parent = composedParent(el);
+    if (!parent || dom.nodeType(parent) !== 1) return false;
+    const d = String(__contrastComputedStyle(parent).display || '');
+    return /(^|\s|-)(flex|grid)\b/.test(d);
+  }
+
+  function __runHidden(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.display) === 'none') return true;
+    try {
+      if (typeof shared.isVisuallyHidden === 'function' && shared.isVisuallyHidden(el)) return true;
+    } catch {}
+    return false;
+  }
+
+  // The nearest visible character beside node in its block, in the given
+  // direction: a character, '' at a boundary or where none is found within
+  // the budget.
+  // Styles of elements no one has read yet that the search below may read
+  // in one run, over all its signs (round 12, C12-13): each sign walks its
+  // own neighbours, and a page of signs each beside hundreds of empty
+  // inline elements read a style for every one. Past it, a sign is a
+  // graphic, as it was before signs were read with their text. A real
+  // page's signs sit a node or two from digits whose styles the scan has
+  // read already: a catalogue of 3,000 WooCommerce prices reads none.
+  const __SIGN_RUN_BUDGET = 2000;
+  const __localSignRunBudget = { left: __SIGN_RUN_BUDGET };
+  function __signRunBudget() {
+    try {
+      const sc = shared && shared.__contrastSharedCache ? shared.__contrastSharedCache : null;
+      if (sc) {
+        if (!sc.__signRunBudget) sc.__signRunBudget = { left: __SIGN_RUN_BUDGET };
+        return sc.__signRunBudget;
+      }
+    } catch {}
+    return __localSignRunBudget;
+  }
+
+  function __runNeighbour(node, block, forward) {
+    let budget = 400;
+    const total = __signRunBudget();
+    const into = (n, inLink) => {
+      if (budget-- <= 0) return '';
+      const type = dom.nodeType(n);
+      if (type === 3) {
+        const parent = dom.parentElement(n);
+        const pcs = parent ? __contrastComputedStyle(parent) : null;
+        if (pcs && trim(pcs.visibility) && trim(pcs.visibility) !== 'visible') return null;
+        const s = String(dom.nodeValue(n) || '').replace(/\s+/g, '');
+        if (!s) return null;
+        const chars = [...s];
+        return forward ? chars[0] : chars[chars.length - 1];
+      }
+      if (type !== 1) return null;
+      const name = __lname(n);
+      if (name === 'br') return '';
+      if (/^(script|style|template|noscript|title)$/.test(name)) return null;
+      // A link's text is its own: a sign between links separates them,
+      // as a breadcrumb's ">" does. A link whose nearest character is a
+      // digit is the amount of a price, "$" in <span>$</span><a>45</a>,
+      // and the sign is read with it (round 12, C12-12).
+      const link =
+        !inLink &&
+        (((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) ||
+          String(dom.getAttribute(n, 'role') || '')
+            .trim()
+            .split(/\s+/)[0] === 'link');
+      // A style the scan has not read already counts against the run's
+      // budget: the text around a sign has been read, empty padding not.
+      if (!__computedStyleCache.has(n) && total.left-- <= 0) return '';
+      const cs = __contrastComputedStyle(n);
+      if (__runHidden(n, cs)) return link ? '' : null;
+      if (!__inlineDisplay(cs) || __runBlockified(n, cs)) return '';
+      for (
+        let c = forward ? dom.firstChild(n) : dom.lastChild(n);
+        c;
+        c = forward ? dom.nextSibling(c) : dom.previousSibling(c)
+      ) {
+        const found = into(c, inLink || link);
+        if (found !== null) return link && !/\p{Nd}/u.test(found) ? '' : found;
+      }
+      return link ? '' : null;
+    };
+    let cur = node;
+    while (cur && budget > 0) {
+      let sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
+      while (!sib) {
+        const parent = dom.parentNode(cur);
+        if (!parent || parent === block || dom.nodeType(parent) !== 1) return '';
+        cur = parent;
+        sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
+      }
+      cur = sib;
+      const found = into(cur, false);
+      if (found !== null) return found;
+    }
+    return '';
+  }
+
+  function __signTextNodeInRun(t) {
+    const cache = __getSharedWeakMapCache('__signRunCache') || __localSignRunCache;
+    if (cache.has(t)) return cache.get(t);
+    let out = false;
+    try {
+      if (__isSignText(dom.nodeValue(t))) {
+        let block = dom.parentElement(t);
+        for (let guard = 0; block && guard < 200; guard++) {
+          const bcs = __contrastComputedStyle(block);
+          if (!__inlineDisplay(bcs) || __runBlockified(block, bcs)) break;
+          block = dom.parentElement(block);
+        }
+        if (block) {
+          out =
+            __RUN_TEXT.test(__runNeighbour(t, block, false) || '') ||
+            __RUN_TEXT.test(__runNeighbour(t, block, true) || '');
+        }
+      }
+    } catch {
+      out = false;
+    }
+    cache.set(t, out);
+    return out;
+  }
+
+  // Whether node (a text node, or an element by its own text nodes) is a
+  // currency sign or 〒 in a run of text: its text is only such signs,
+  // punctuation and spaces, and a letter or digit is the nearest visible
+  // character beside it on its line.
+  function isSignInTextRun(node) {
+    try {
+      if (!node) return false;
+      if (dom.nodeType(node) === 3) return __signTextNodeInRun(node);
+      if (dom.nodeType(node) !== 1) return false;
+      let own = '';
+      const texts = [];
+      for (let n = dom.firstChild(node); n; n = dom.nextSibling(n)) {
+        if (dom.nodeType(n) !== 3) continue;
+        own += String(dom.nodeValue(n) || '');
+        if (/\S/.test(dom.nodeValue(n) || '')) texts.push(n);
+      }
+      if (!__isSignText(own)) return false;
+      return texts.some((t) => __signTextNodeInRun(t));
+    } catch {
+      return false;
+    }
   }
 
   // -------- Text shown in a form field (#103) --------
@@ -512,11 +918,40 @@ function createContrastHelpers(opts, shared) {
   }
 
   // The computed style that sets the color and font of el's text: the
-  // ::placeholder style while a field shows its placeholder, el's own
+  // ::placeholder style while a field shows its placeholder, the slot's
+  // where el's own text is slotted into its shadow tree, el's own
   // otherwise.
   function textStyleOf(el) {
     const field = __fieldText(el);
-    return field && field.placeholder ? field.style : __contrastComputedStyle(el);
+    return field && field.placeholder
+      ? field.style
+      : __contrastComputedStyle(__ownTextSlot(el) || el);
+  }
+
+  // The <slot> a shadow host's own text is drawn in, or null (round 12,
+  // C12-2). Text placed straight into a host is rendered where its shadow
+  // tree's slot puts it, and inherits from that slot in the flat tree (CSS
+  // Scoping, 3.1), not from the host: a host with color: black whose slot
+  // sits in a grey <div> draws its text grey. The first text with
+  // something other than spaces decides.
+  const __ownTextSlotCache = new WeakMap();
+  function __ownTextSlot(el) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    if (__ownTextSlotCache.has(el)) return __ownTextSlotCache.get(el);
+    let out = null;
+    try {
+      if (dom.shadowRoot(el)) {
+        for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
+          if (dom.nodeType(n) !== 3 || !trim(dom.nodeValue(n))) continue;
+          out = dom.assignedSlot(n) || null;
+          break;
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __ownTextSlotCache.set(el, out);
+    return out;
   }
 
   // -------- The options of a drop-down <select> (#219) --------
@@ -560,7 +995,7 @@ function createContrastHelpers(opts, shared) {
         select &&
         selectCs &&
         !dom.get(select, 'multiple') &&
-        !(Number(dom.get(select, 'size')) > 1) &&
+        !__selectDrawnAsListBox(select) &&
         !ownButton
       ) {
         const index = Number(dom.get(select, 'selectedIndex'));
@@ -631,9 +1066,9 @@ function createContrastHelpers(opts, shared) {
 
   function getTextScan(ctx, helpers, engineOptions) {
     try {
-      const d = (ctx && ctx.document) || (opts && opts.document) || null;
+      const d = __own(ctx, 'document') || __own(opts, 'document') || null;
 
-      const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
+      const w = __own(ctx, 'window') || (d && dom.defaultView(d)) || window || null;
 
       // Unset, the text a reader can see is decided from the layout where
       // there is one (#99): text off the page or clipped away is drawn
@@ -654,7 +1089,7 @@ function createContrastHelpers(opts, shared) {
       // Default on, opt out with includeShadowDom: false -- same contract as
       // helpers.queryAllSmart. Part of the cache key: a scan that skipped
       // shadow roots must not be reused by one that should not.
-      const includeShadowDom = !(engineOptions && engineOptions.includeShadowDom === false);
+      const includeShadowDom = __own(engineOptions, 'includeShadowDom') !== false;
 
       const cache = __getSharedTextScanCache();
       const cacheKey = `visibilityMode=${visibilityMode}|sd=${includeShadowDom ? 1 : 0}`;
@@ -708,6 +1143,28 @@ function createContrastHelpers(opts, shared) {
       }
 
       const walkRoots = withShadowRoots(lightRoots);
+      // Whether any text walked can be left out of the flat tree
+      // (outOfFlatTree below): only where there is an open shadow root, under
+      // a root of the walk, around one, or holding one. A page with none skips
+      // the walk up from each text (round 12, F12-6).
+      let mayLeaveFlatTree = false;
+      if (includeShadowDom) {
+        mayLeaveFlatTree = walkRoots.some((r) => dom.nodeType(r) === 11);
+        for (const root of lightRoots) {
+          if (mayLeaveFlatTree) break;
+          try {
+            const top = dom.getRootNode(root);
+            if (!top || dom.nodeType(top) !== 9) mayLeaveFlatTree = true;
+            for (let cur = dom.parentNode(root), depth = 0; cur && !mayLeaveFlatTree; depth++) {
+              if (depth > 256 || (dom.nodeType(cur) === 1 && dom.shadowRoot(cur)))
+                mayLeaveFlatTree = true;
+              cur = dom.parentNode(cur);
+            }
+          } catch {
+            mayLeaveFlatTree = true;
+          }
+        }
+      }
 
       const SHOW_TEXT =
         w && w.NodeFilter && typeof w.NodeFilter.SHOW_TEXT === 'number'
@@ -841,11 +1298,34 @@ function createContrastHelpers(opts, shared) {
             clipsX,
             clipsY,
             rect: clipsX || clipsY ? dom.getBoundingClientRect(node) : null,
-            stops: !!acs && (acs.position === 'fixed' || acs.position === 'absolute')
+            stops: !!acs && acs.position === 'fixed',
+            // An absolutely positioned box is clipped by its containing
+            // block and the boxes around that, not by the boxes between
+            // (round 12, C12-3).
+            absolute: !!acs && acs.position === 'absolute'
           };
           clipBoxCache.set(node, box);
         }
         return box;
+      };
+      // The box whose overflow clips next after node: its parent, or for an
+      // absolutely positioned node the nearest positioned ancestor (its
+      // containing block), or null at the root.
+      const clipParentOf = (node) => {
+        let cur = composedParent(node);
+        if (!clipBoxOf(node).absolute) return cur;
+        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 1000; depth++) {
+          const pcs = __contrastComputedStyle(cur);
+          if (
+            !pcs ||
+            (pcs.position && pcs.position !== 'static') ||
+            (trim(pcs.transform) && trim(pcs.transform) !== 'none') ||
+            __lname(cur) === 'html'
+          )
+            return cur;
+          cur = composedParent(cur);
+        }
+        return cur;
       };
       // The clip of node and the boxes above it, up to the first that stops
       // the walk (or the root), as one rectangle: an axis no box clips is
@@ -867,7 +1347,7 @@ function createContrastHelpers(opts, shared) {
           }
           path.push(cur);
           if (clipBoxOf(cur).stops) break;
-          cur = composedParent(cur);
+          cur = clipParentOf(cur);
         }
         // A walk cut short by the depth limit leaves the rest unknown: too
         // long, and isUndrawn walks it box by box.
@@ -1016,41 +1496,49 @@ function createContrastHelpers(opts, shared) {
           )
             return true;
         }
-        let left = r.left;
-        let top = r.top;
-        let right = r.right;
-        let bottom = r.bottom;
         // Inside a marquee, only the boxes around the marquee clip.
-        let cur = composedParent(marquee || el);
+        const start = marquee || el;
+        let cur = clipParentOf(start);
+        let cl = -Infinity;
+        let ct = -Infinity;
+        let cr = Infinity;
+        let cb = Infinity;
         const up = cur && dom.nodeType(cur) === 1 ? clipUpOf(cur) : null;
         if (up && up.len <= 100) {
           if (!up.clips) return false;
-          left = Math.max(left, up.left);
-          right = Math.min(right, up.right);
-          top = Math.max(top, up.top);
-          bottom = Math.min(bottom, up.bottom);
-          return right - left <= 1 || bottom - top <= 1;
-        }
-        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
-          // hidden and clip cut content off; auto and scroll let a reader
-          // scroll to it.
-          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
-          if (clipsX || clipsY) {
+          cl = up.left;
+          cr = up.right;
+          ct = up.top;
+          cb = up.bottom;
+        } else {
+          for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
+            // hidden and clip cut content off; auto and scroll let a reader
+            // scroll to it.
+            const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
             if (clipsX) {
-              left = Math.max(left, a.left);
-              right = Math.min(right, a.right);
+              cl = Math.max(cl, a.left);
+              cr = Math.min(cr, a.right);
             }
             if (clipsY) {
-              top = Math.max(top, a.top);
-              bottom = Math.min(bottom, a.bottom);
+              ct = Math.max(ct, a.top);
+              cb = Math.min(cb, a.bottom);
             }
-            // A pixel or less: the 1px box of visually hidden text.
-            if (right - left <= 1 || bottom - top <= 1) return true;
+            if (stops) break;
+            cur = clipParentOf(cur);
           }
-          if (stops) break;
-          cur = composedParent(cur);
         }
-        return false;
+        // A pixel or less: the 1px box of visually hidden text.
+        const cut = (b) =>
+          Math.min(b.right, cr) - Math.max(b.left, cl) <= 1 ||
+          Math.min(b.bottom, cb) - Math.max(b.top, ct) <= 1;
+        if (cut(r)) return true;
+        if (marquee || (cl === -Infinity && ct === -Infinity && cr === Infinity && cb === Infinity))
+          return false;
+        // The box shows, but its own text may lie in the part cut off, as
+        // padding pushes it there (round 12, C12-3): a screen-reader text
+        // pushed below a 1em box of rating stars. Its lines decide.
+        const lines = __ownTextRects(el);
+        return lines.length > 0 && lines.every(cut);
       };
 
       // An <option> has no layout box of its own, yet it is drawn: the
@@ -1111,18 +1599,14 @@ function createContrastHelpers(opts, shared) {
       // intent: it only fires when both colors are cleanly computable, and
       // leaves any gradient/image/partial-opacity background (which
       // contrast-computable already reports as cantTell) untouched.
-      const contrastOptsForBg =
-        engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
-          ? engineOptions.contrast
-          : {};
+      const contrastOptsForBg = __own(engineOptions, 'contrast');
+      const bgMode = __own(contrastOptsForBg, 'mode');
+      const bgFallback = __own(contrastOptsForBg, 'rootCanvasFallback');
       const bgResolveOpts = {
         contrast: {
-          mode: contrastOptsForBg.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
+          mode: bgMode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
           rootCanvasFallback:
-            typeof contrastOptsForBg.rootCanvasFallback === 'string' &&
-            contrastOptsForBg.rootCanvasFallback.trim()
-              ? contrastOptsForBg.rootCanvasFallback.trim()
-              : '#ffffff'
+            typeof bgFallback === 'string' && bgFallback.trim() ? bgFallback.trim() : '#ffffff'
         },
         collectStack: false
       };
@@ -1165,6 +1649,46 @@ function createContrastHelpers(opts, shared) {
       // walker per root could otherwise walk the same subtree twice).
       const visitedTextNodes = new Set();
 
+      // Text the flat tree leaves out is not rendered (CSS Scoping 1): a
+      // light child of a shadow host that no slot takes, and the fallback
+      // content of a slot that has nodes assigned (round 12, F12-7). Only
+      // hosts with an open shadow root can be told; kept per parent.
+      const outOfFlatTreeCache = new WeakMap();
+      const outOfFlatTree = (start) => {
+        const seen = [];
+        let cur = start;
+        let out = false;
+        for (let depth = 0; cur && depth < 256; depth++) {
+          const parent = dom.parentNode(cur);
+          if (!parent || dom.nodeType(parent) !== 1) break;
+          if (dom.nodeType(cur) === 1 && outOfFlatTreeCache.has(cur)) {
+            out = outOfFlatTreeCache.get(cur);
+            break;
+          }
+          if (dom.nodeType(cur) === 1) seen.push(cur);
+          if (dom.shadowRoot(parent) && !dom.assignedSlot(cur)) {
+            out = true;
+            break;
+          }
+          if (String(dom.localName(parent) || '').toLowerCase() === 'slot') {
+            const root = dom.getRootNode(parent);
+            if (root && dom.nodeType(root) === 11) {
+              let assigned = [];
+              try {
+                assigned = dom.assignedNodes(parent) || [];
+              } catch {}
+              if (assigned.length) {
+                out = true;
+                break;
+              }
+            }
+          }
+          cur = parent;
+        }
+        for (const el of seen) outOfFlatTreeCache.set(el, out);
+        return out;
+      };
+
       for (const walkRoot of walkRoots) {
         if (guard >= 500000) break;
         let walker;
@@ -1179,7 +1703,9 @@ function createContrastHelpers(opts, shared) {
           visitedTextNodes.add(node);
 
           const text = node && dom.nodeValue(node);
-          if (!isNonEmptyText(text)) continue;
+          // A currency sign beside letters or digits is part of their text
+          // (isSignInTextRun), though it has none of its own.
+          if (!isNonEmptyText(text) && !(__isSignText(text) && isSignInTextRun(node))) continue;
 
           const parentNode = dom.parentNode(node);
           // Text assigned straight to a shadow root has no parent element, but
@@ -1195,6 +1721,7 @@ function createContrastHelpers(opts, shared) {
           // A <textarea>'s text nodes are its default value; what it shows is
           // its current value, read with the other fields below.
           if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
+          if (mayLeaveFlatTree && outOfFlatTree(node)) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
@@ -1316,7 +1843,9 @@ function createContrastHelpers(opts, shared) {
                 if (!isVisibleEligible(el) || isInactive(el)) break;
                 const m = measureGeneratedText(el, pseudo, bgResolveOpts);
                 if (!m || m.same) continue;
-                generated.push(Object.freeze({ el, pseudo, textCount: 1 }));
+                generated.push(
+                  Object.freeze(Object.setPrototypeOf({ el, pseudo, textCount: 1 }, null))
+                );
               }
             }
           }
@@ -1327,7 +1856,12 @@ function createContrastHelpers(opts, shared) {
         eligibleTextCount,
         visibilityMode,
         elements: Object.freeze(
-          elements.map((el) => Object.freeze({ el, textCount: elToCount.get(el) || 0 }))
+          // Records with no prototype: a value a page's script put on
+          // Object.prototype (pseudo) is never read as a record's own
+          // (round 12, F12-5).
+          elements.map((el) =>
+            Object.freeze(Object.setPrototypeOf({ el, textCount: elToCount.get(el) || 0 }, null))
+          )
         ),
         generated: Object.freeze(generated)
       });
@@ -1703,6 +2237,8 @@ function createContrastHelpers(opts, shared) {
     const doc = dom.ownerDocument(el);
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (!__layoutByDoc.get(doc)) return 1;
+    // No box of a page that sets no transform, scale or rotate has one.
+    if (!__pageFeaturesOf(doc).transform) return 1;
     const chain = [];
     let known = 1;
     let guard = 0;
@@ -2886,6 +3422,7 @@ function createContrastHelpers(opts, shared) {
   function __hasBlendModeEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
+      if (!__pageFeaturesOf(el).blend) return false;
       if (__hasBlendModeCache.has(el)) return __hasBlendModeCache.get(el);
       const v = hasBlendMode(cs);
       __hasBlendModeCache.set(el, v);
@@ -2898,6 +3435,7 @@ function createContrastHelpers(opts, shared) {
   function __hasFilterEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasFilter(cs);
+      if (!__pageFeaturesOf(el).filter) return false;
       if (__hasFilterCache.has(el)) return __hasFilterCache.get(el);
       const v = hasFilter(cs);
       __hasFilterCache.set(el, v);
@@ -3544,7 +4082,9 @@ function createContrastHelpers(opts, shared) {
   // elements x the rules that could apply, not elements x rules. Each entry
   // is { rule, part }; a pseudo-element's part is left out.
   function __colorPartsFor(found, el) {
-    if (!found.index) {
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
       const entries = [];
       for (const rule of found.rules) {
         for (const part of rule.parts) {
@@ -3554,7 +4094,12 @@ function createContrastHelpers(opts, shared) {
           entries.push({ rule, part });
         }
       }
-      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+      Object.defineProperty(found, 'index', {
+        value: { entries, index: selectorIndex(entries.map((e) => e.part)) },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const { entries, index } = found.index;
     return index.candidates(el).map((i) => entries[i]);
@@ -3571,8 +4116,11 @@ function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
+    // Answers with no prototype: a value a page's script put on
+    // Object.prototype (unknown) is never read as theirs (round 12, F12-5).
+    const answer = (o) => Object.setPrototypeOf(o, null);
     const found = __colorRulesOf(root, prop);
-    if (found.unreadable) return { unknown: true };
+    if (found.unreadable) return answer({ unknown: true });
     let best = null;
     let unknown = false;
     for (const { rule, part } of __colorPartsFor(found, el)) {
@@ -3601,8 +4149,8 @@ function createContrastHelpers(opts, shared) {
         if (!best || rank > best.rank) best = { rank, value };
       }
     } catch {}
-    if (unknown) return { unknown: true };
-    return best ? { value: best.value } : null;
+    if (unknown) return answer({ unknown: true });
+    return best ? answer({ value: best.value }) : null;
   }
 
   // Every author declaration of prop (`color` by default) that matches el,
@@ -3710,6 +4258,12 @@ function createContrastHelpers(opts, shared) {
     }
     const value = decl.value.toLowerCase();
     if (__CSS_INHERITING.has(value)) return inherited();
+    // revert takes the browser's own value: a link's link color, as an
+    // unstyled link has it, and for an element in a link (whose color the
+    // browser's sheet doesn't set, but for a <mark>) its parent's (round
+    // 12, C12-14).
+    if (value === 'revert' && __isLink(el)) return __SCHEME_COLORS.light.link;
+    if (value === 'revert' && __lname(el) !== 'mark') return inherited();
     // A custom property jsdom doesn't substitute, or a keyword taking the
     // browser's own value.
     if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
@@ -3825,7 +4379,7 @@ function createContrastHelpers(opts, shared) {
   // computes the light scheme's colors). Null where the color computed
   // now is the one, or it can't be told (colorSchemeUnread).
   function __schemeTextOverride(el, opts) {
-    const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
+    const asked = __ownAt(opts, 'contrast', 'colorScheme');
     const scheme = asked === 'light' || asked === 'dark' ? asked : null;
     if (!scheme) {
       // A browser computes the colors of the scheme it draws.
@@ -3847,7 +4401,7 @@ function createContrastHelpers(opts, shared) {
   // page's canvas (__schemeTextColor), where it isn't the one computed now.
   function computeEffectiveForeground(el, opts) {
     const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
-    if (opts && opts.contrast && opts.contrast.colorScheme) {
+    if (__ownAt(opts, 'contrast', 'colorScheme')) {
       const out = computeEffectiveForeground(el);
       if (!schemeOverride || !out || !out.rgba) return out;
       const op = Number.isFinite(out.opacityProduct) ? out.opacityProduct : 1;
@@ -3883,7 +4437,9 @@ function createContrastHelpers(opts, shared) {
     // its own opacity as well as the field's.
     const field = __fieldText(el);
     const placeholder = field && field.placeholder ? field.style : null;
-    const cs = placeholder || __contrastComputedStyle(el);
+    // A host's own text slotted into its shadow tree takes the slot's color.
+    const slot = placeholder ? null : __ownTextSlot(el);
+    const cs = placeholder || __contrastComputedStyle(slot || el);
     // SVG text is painted with `fill`, not `color` (which only feeds
     // currentColor): <text fill="#000" style="color:#eee"> is black. A fill
     // of none (outline-only text) or a paint server (url(#gradient)) does
@@ -3892,7 +4448,7 @@ function createContrastHelpers(opts, shared) {
     // Text in a link, under jsdom, whose color jsdom ranks below its own
     // link color, is read from the page's rules (__htmlTextFillOf).
     const fillValue =
-      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
+      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(slot || el, cs));
     let c = parseCssColorToRgba(fillValue);
     // On the canvas of a page drawn only in dark, in an emulator: the dark
     // scheme's color where the text takes it from the scheme.
@@ -3924,7 +4480,7 @@ function createContrastHelpers(opts, shared) {
       return out;
     }
 
-    let op = computeOpacityProduct(el);
+    let op = computeOpacityProduct(slot || el);
     if (placeholder) {
       const own = Number.parseFloat(placeholder.opacity);
       if (Number.isFinite(own)) op *= clamp01(own);
@@ -3945,19 +4501,16 @@ function createContrastHelpers(opts, shared) {
     __getSharedWeakMapCache('__effectiveBackgroundCache') || __localEffectiveBackgroundCache;
 
   function __bgCacheKey(opts2) {
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const named = contrast.rootCanvasFallbackSet === true ? 'named' : '';
-    const scheme =
-      contrast.colorScheme === 'light' || contrast.colorScheme === 'dark'
-        ? contrast.colorScheme
-        : '';
+    const named = __own(contrast, 'rootCanvasFallbackSet') === true ? 'named' : '';
+    const asked = __own(contrast, 'colorScheme');
+    const scheme = asked === 'light' || asked === 'dark' ? asked : '';
 
     // Cache key must include any input that can affect computed background.
     // Note: we only cache when collectStack is false.
@@ -4021,7 +4574,9 @@ function createContrastHelpers(opts, shared) {
       const doc = window && window.document;
       const root = doc && dom.documentElement(doc);
       if (!root || typeof window.getComputedStyle !== 'function') return null;
-      const rootScheme = String(window.getComputedStyle(root).colorScheme || '');
+      const rootScheme = String(
+        window.getComputedStyle(root).getPropertyValue('color-scheme') || ''
+      );
       const meta = dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]');
       const metaScheme = meta ? String(dom.getAttribute(meta, 'content') || '') : '';
       if (!/\bdark\b/i.test(rootScheme) && !/\bdark\b/i.test(metaScheme)) return null;
@@ -4139,9 +4694,7 @@ function createContrastHelpers(opts, shared) {
         return null;
       }
       const rootCs = window.getComputedStyle(root);
-      const rootValue = String(
-        (rootCs && (rootCs.colorScheme || rootCs.getPropertyValue('color-scheme'))) || ''
-      ).trim();
+      const rootValue = String((rootCs && rootCs.getPropertyValue('color-scheme')) || '').trim();
       let supported = __schemesNamed(rootValue);
       // The meta element speaks for a root whose color-scheme is normal:
       // the first one naming a scheme (HTML, "the page's supported color
@@ -4193,8 +4746,11 @@ function createContrastHelpers(opts, shared) {
             const c = parseCssColorToRgba(value);
             return c && c.a === 1 ? { r: c.r, g: c.g, b: c.b, a: 1 } : null;
           };
+          // color-scheme by its CSS name: Chromium reads a camelCase
+          // style property a page's script put on Object.prototype ahead of
+          // its own (round 12, R12F-6).
           const readScheme = (scheme) => {
-            probe.style.colorScheme = scheme;
+            probe.style.setProperty('color-scheme', scheme);
             probe.style.backgroundColor = 'Canvas';
             probe.style.color = 'CanvasText';
             const cs = window.getComputedStyle(probe);
@@ -4250,9 +4806,9 @@ function createContrastHelpers(opts, shared) {
     __runCanvas = rgba && rgba.a === 1 ? { color: color.trim(), rgba: { ...rgba, a: 1 } } : null;
   }
   function __namedCanvas(contrast) {
-    if (contrast && contrast.rootCanvasFallbackSet === true) {
-      const value =
-        typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+    if (__own(contrast, 'rootCanvasFallbackSet') === true) {
+      const given = __own(contrast, 'rootCanvasFallback');
+      const value = typeof given === 'string' ? given.trim() : '';
       const rgba = value ? parseCssColorToRgba(value) : null;
       if (rgba && rgba.a === 1) return { color: value, rgba: { ...rgba, a: 1 } };
     }
@@ -4667,7 +5223,7 @@ function createContrastHelpers(opts, shared) {
       if (window.self !== window.top) return null;
       const info = __pageSchemes();
       if (!info) return null;
-      const asked = contrast && contrast.colorScheme;
+      const asked = __own(contrast, 'colorScheme');
       const scheme = asked === 'light' || asked === 'dark' ? asked : info.current;
       const named = __namedCanvas(contrast);
       if (named && scheme !== info.current) return null;
@@ -4772,7 +5328,7 @@ function createContrastHelpers(opts, shared) {
     } catch {}
 
     const __bgKey = __bgCacheKey(opts2);
-    const __collectStack = !!(opts2 && opts2.collectStack);
+    const __collectStack = !!__own(opts2, 'collectStack');
 
     // Only cache when stack collection is off
     if (!__collectStack) {
@@ -4784,15 +5340,14 @@ function createContrastHelpers(opts, shared) {
       } catch {}
     }
 
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const collectStack = !!(opts2 && opts2.collectStack);
+    const collectStack = !!__own(opts2, 'collectStack');
     const stack = collectStack ? [] : null;
 
     let acc = { r: 0, g: 0, b: 0, a: 0 };
@@ -4804,7 +5359,7 @@ function createContrastHelpers(opts, shared) {
         const layer = svgBackdrop.layers[i];
         if (collectStack) {
           stack.push({
-            selector: __getSimpleSelectorCached(layer.el, 'rect'),
+            selector: __getSimpleSelectorCached(layer.el, __lname(layer.el)),
             bg: { r: layer.rgba.r, g: layer.rgba.g, b: layer.rgba.b, a: layer.rgba.a },
             opacity: 1
           });
@@ -4836,7 +5391,10 @@ function createContrastHelpers(opts, shared) {
     // text): that background is the text's color, not behind it.
     const clipOwner = __clipTextOwner(el);
 
-    for (const cur of ancestorsOf(el)) {
+    // A host's own text slotted into its shadow tree is drawn there, over
+    // the backgrounds of the slot's flat-tree ancestors, the host's among
+    // them.
+    for (const cur of ancestorsOf(__ownTextSlot(el) || el)) {
       if (dom.nodeType(cur) !== 1) continue;
       if (cur === clipOwner) {
         const ocs = __contrastComputedStyle(cur);
@@ -5956,7 +6514,7 @@ function createContrastHelpers(opts, shared) {
           const body = fdoc && dom.body(fdoc);
           if (body) body.textContent = '';
           if (froot) {
-            froot.style.colorScheme = '';
+            froot.style.removeProperty('color-scheme');
             froot.style.forcedColorAdjust = '';
           }
         } catch {
@@ -5985,7 +6543,7 @@ function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         // Under forced colors the scan holds the page in its own colors
         // (forced-color-adjust: none); the blank frame is held so too, or
         // the browser's placeholder color read there is the forced palette's
@@ -6024,7 +6582,12 @@ function createContrastHelpers(opts, shared) {
       const own = view.getComputedStyle(el);
       const tag = String(dom.localName(el) || '').toLowerCase();
       const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
-      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      const ref = __readPlaceholderDefaults(
+        doc,
+        tag,
+        type,
+        String(own.getPropertyValue('color-scheme') || '')
+      );
       if (!ref) return '';
       const ph = field.style;
       const same =
@@ -6095,12 +6658,12 @@ function createContrastHelpers(opts, shared) {
     if (!__forcedColorsMedia()) return null;
     try {
       if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
-      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      if (dom.hasAttribute(el, 'multiple') || __selectDrawnAsListBox(el)) return null;
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
       const doc = dom.ownerDocument(el);
       if (!__hasLayout(doc)) return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || !ref.measured || String(cs.backgroundColor) !== ref.background) return null;
       return ref.measured;
     } catch {
@@ -6115,7 +6678,7 @@ function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         froot.style.forcedColorAdjust = 'none';
         const host = dom.body(fdoc) || froot;
         const select = dom.createElement(fdoc, 'select');
@@ -6151,7 +6714,7 @@ function createContrastHelpers(opts, shared) {
   function nativeSelectField(el) {
     try {
       if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
-      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      if (dom.hasAttribute(el, 'multiple') || __selectDrawnAsListBox(el)) return null;
       const doc = dom.ownerDocument(el);
       if (!__hasLayout(doc)) return null;
       const view = doc && dom.defaultView(doc);
@@ -6159,7 +6722,7 @@ function createContrastHelpers(opts, shared) {
       const cs = view.getComputedStyle(el);
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || ref.field === (ref.measured || ref.background)) return null;
       if (String(cs.backgroundColor) !== ref.background) return null;
       if (hasBackgroundImageOrGradient(cs)) return null;
@@ -6362,14 +6925,20 @@ function createContrastHelpers(opts, shared) {
       return blocked;
     }
     const out = __computabilityBlockerOf(el, false);
-    if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
+    const ownPseudo = !!out && Object.prototype.hasOwnProperty.call(out, '__pseudo');
+    if (
+      ownPseudo &&
+      out.ok === false &&
+      out.reasonCode === 'PSEUDO_ELEMENT_COLOR' &&
+      out.__pseudo
+    ) {
       const pseudo = out.__pseudo;
       delete out.__pseudo;
       // The rest of the walk, past the pseudo-element: its colors are
       // carried only where nothing else blocks the measurement.
       const rest = __computabilityBlockerOf(el, true);
       if (rest && rest.ok === true) out.pseudoColors = pseudo;
-    } else if (out && out.__pseudo) {
+    } else if (ownPseudo) {
       delete out.__pseudo;
     }
     try {
@@ -6519,14 +7088,16 @@ function createContrastHelpers(opts, shared) {
     let rec = __ancestorEffectsCache.get(cur);
     if (rec) return rec;
     const cs = __contrastComputedStyle(cur);
-    const boxShadow = trim(cs && cs.boxShadow);
+    // What the page uses no box of at all is not read (__pageFeaturesOf).
+    const uses = __pageFeaturesOf(cur);
+    const boxShadow = uses.insetShadow ? trim(cs && cs.boxShadow) : '';
     const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
     const position = cs && cs.position;
     rec = {
       cs,
       blend: __hasBlendModeEl(cur, cs),
       filter: __hasFilterEl(cur, cs),
-      mask: maskOf(cs),
+      mask: uses.mask ? maskOf(cs) : '',
       // __insetShadowUnder paints nothing without an inset shadow.
       insetShadow: !!boxShadow && boxShadow !== 'none' && /\binset\b/i.test(boxShadow),
       bgImage: __hasBackgroundImageOrGradientEl(cur, cs),
@@ -6812,7 +7383,16 @@ function createContrastHelpers(opts, shared) {
           }
           if (out) {
             const colors = __pseudoColorsOf(differing);
-            if (colors) out.__pseudo = colors;
+            // Defined, not assigned: a read-only __pseudo on Object.prototype
+            // refuses none (round 12, R12F-6).
+            if (colors) {
+              Object.defineProperty(out, '__pseudo', {
+                value: colors,
+                writable: true,
+                enumerable: true,
+                configurable: true
+              });
+            }
             try {
               if (el) __computabilityBlockerCache.set(el, out);
             } catch {}
@@ -8068,7 +8648,7 @@ function createContrastHelpers(opts, shared) {
     try {
       if (!el || dom.nodeType(el) !== 1 || !chain.length) return null;
       const index = __getOverlapIndex();
-      if (!index) return __svgShapeMaybeBehind(el);
+      if (!index) return __svgShapeMaybeBehind(el) || __noLayoutPseudoUnder(el, chain);
       const opaque = chain[chain.length - 1];
       const ancestors = new Set(chain);
       // Painters near el's box at all, before measuring its text, which
@@ -8188,10 +8768,150 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Without a layout (jsdom), no pseudo-element's style is computed, so a
+  // positioned ::before or ::after painting a color or an image under the
+  // text (the overlay pattern, z-index: -1 among them) was never seen, and
+  // white text over a dark one was measured against the white page and
+  // dropped as invisible (round 12, C12-18). Read from the style sheets
+  // instead: a ::before or ::after their rules give content, a position of
+  // absolute or fixed and a background, on el or an ancestor in `chain`,
+  // is paint in the way, and the text is asked about. A sheet that can't
+  // be read is taken as giving none.
+  const __noLayoutPseudosByRoot = new WeakMap();
+  function __noLayoutPseudos(root) {
+    if (__noLayoutPseudosByRoot.has(root)) return __noLayoutPseudosByRoot.get(root);
+    const byKey = new Map();
+    try {
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
+      const stack = [];
+      for (const sheet of sheets) {
+        try {
+          stack.push(sheet.cssRules || []);
+        } catch {}
+      }
+      while (stack.length) {
+        const list = stack.pop();
+        const n = (list && list.length) || 0;
+        for (let i = 0; i < n; i++) {
+          const rule = list[i];
+          if (!rule) continue;
+          if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+          const text = rule.selectorText;
+          const style = rule.style;
+          if (typeof text !== 'string' || !style || !__beforeOrAfterRe.test(text)) continue;
+          const get = (prop) =>
+            trim(
+              typeof style.getPropertyValue === 'function' ? style.getPropertyValue(prop) : ''
+            ).toLowerCase();
+          const content = get('content');
+          const position = get('position');
+          const color = get('background-color');
+          const image = get('background-image');
+          const shorthand = get('background');
+          for (const part of __splitTopLevel(text)) {
+            const m = /::?(before|after)\b/i.exec(part);
+            if (!m) continue;
+            let base = part.slice(0, m.index).trim();
+            if (!base || /[>+~]$/.test(base)) base += '*';
+            const key = base + '::' + m[1].toLowerCase();
+            const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
+            if (content) at.content = content !== 'none' && content !== 'normal';
+            if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            // Drawn at all, and where, as far as the rules say (F12-2).
+            const display = get('display');
+            if (display) at.displayNone = display === 'none';
+            const visibility = get('visibility');
+            if (visibility) at.hidden = visibility === 'hidden' || visibility === 'collapse';
+            for (const prop of ['width', 'height', 'top', 'right', 'bottom', 'left']) {
+              const v = get(prop);
+              if (v) at[prop] = v;
+            }
+            const paint = [color, image, shorthand].find(
+              (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
+            );
+            if (paint) {
+              const c = parseCssColorToRgba(paint);
+              if (!c || c.a > 0) at.paint = paint;
+            }
+            byKey.set(key, at);
+          }
+        }
+      }
+    } catch {}
+    const out = [...byKey.values()].filter(
+      (p) => p.content && p.positioned && p.paint && !p.displayNone && !p.hidden
+    );
+    __noLayoutPseudosByRoot.set(root, out);
+    return out;
+  }
+  // Whether a ::before or ::after the rules position could lie under a
+  // line of el's text, from the size and offsets they give it (round 12,
+  // F12-2): a box narrower or shorter than a line of the text (a 4px corner
+  // badge) is no background to it, and one moved wholly off its host (an
+  // offset of 100% or more, or far off the page) doesn't reach it. A size or
+  // offset in any other unit is taken as possibly covering the text.
+  function __noLayoutPseudoMayCover(p, el) {
+    const px = (v) => {
+      const m = /^(-?\d*\.?\d+)px$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    const pct = (v) => {
+      const m = /^(-?\d*\.?\d+)%$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    let fontPx = 16;
+    try {
+      const f = px(trim((computedStyle(el) || {}).fontSize || ''));
+      if (f && f > 0) fontPx = f;
+    } catch {}
+    const w = px(p.width);
+    const h = px(p.height);
+    if ((w !== null && w < fontPx) || (h !== null && h < fontPx)) return false;
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      const v = p[side];
+      const percent = pct(v);
+      if (percent !== null && Math.abs(percent) >= 100) return false;
+      const length = px(v);
+      if (length !== null && length <= -1000) return false;
+    }
+    return true;
+  }
+  function __noLayoutPseudoUnder(el, chain) {
+    for (const host of chain) {
+      let root;
+      try {
+        root = dom.getRootNode(host);
+      } catch {
+        root = null;
+      }
+      if (!root) continue;
+      for (const p of __noLayoutPseudos(root)) {
+        let matched;
+        try {
+          matched = dom.matches(host, p.base);
+        } catch {
+          matched = false;
+        }
+        if (!matched || !__noLayoutPseudoMayCover(p, el)) continue;
+        return {
+          selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
+          element: describeElement(host) + p.pseudo,
+          property: 'background',
+          value: p.paint
+        };
+      }
+    }
+    return null;
+  }
+
   // Without a layout (jsdom), where an SVG shape paints can't be told. A
   // shape painted before SVG text in the same <svg> may lie behind it, and
   // then the text's background can't be told either: the shape, as paint
-  // in the way, or null. With a layout, __svgBackdropOf measures it.
+  // in the way, or null. A shape certainly under all of the text is its
+  // background (__svgNoLayoutScan); only one painted after the last such
+  // shape is in the way. With a layout, __svgBackdropOf measures it.
   const __SVG_PAINT_TAGS =
     'rect, circle, ellipse, line, path, polygon, polyline, image, use, foreignObject';
   const __SVG_UNPAINTED_TAGS = new Set([
@@ -8206,11 +8926,37 @@ function createContrastHelpers(opts, shared) {
     'filter'
   ]);
   function __svgShapeMaybeBehind(el) {
+    const scan = __svgNoLayoutScan(el);
+    return scan ? scan.blocker : null;
+  }
+
+  // Without a layout, the simple, certain case is measured (round 11, D11):
+  // a <rect>, <circle> or <ellipse> painted before the text with an opaque
+  // solid fill, no transform, opacity, filter, mask or clip on it or its
+  // ancestors in the <svg>, whose geometry certainly covers the text's
+  // area. The last such shape is the text's background; a shape painted
+  // after it that may lie behind the text (any other) keeps the text
+  // asked about. { certain: { el, rgba } | null, blocker: {...} | null },
+  // or null where nothing applies (with a layout, or not SVG text).
+  const __svgNoLayoutCache = new WeakMap();
+  function __svgNoLayoutScan(el) {
     if (!__isSvgTextElement(el)) return null;
     const doc = dom.ownerDocument(el);
     if (!doc) return null;
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (__layoutByDoc.get(doc)) return null;
+    if (__svgNoLayoutCache.has(el)) return __svgNoLayoutCache.get(el);
+    let out;
+    try {
+      out = __computeSvgNoLayoutScan(el);
+    } catch {
+      out = null;
+    }
+    __svgNoLayoutCache.set(el, out);
+    return out;
+  }
+
+  function __computeSvgNoLayoutScan(el) {
     let svg = composedParent(el);
     for (
       let guard = 0;
@@ -8225,6 +8971,13 @@ function createContrastHelpers(opts, shared) {
     } catch {
       return null;
     }
+    let area;
+    const textArea = () => {
+      if (area === undefined) area = __svgTextArea(el, svg);
+      return area;
+    };
+    let certain = null;
+    let blocker = null;
     for (const shape of shapes) {
       // Painted after el (or el's own ancestor): not behind it.
       if (!(dom.compareDocumentPosition(shape, el) & 4) || __isComposedInside(el, shape)) break;
@@ -8238,7 +8991,7 @@ function createContrastHelpers(opts, shared) {
       }
       if (unpainted) continue;
       const cs = __contrastComputedStyle(shape);
-      if (!cs || trim(cs.display) === 'none' || trim(cs.visibility) === 'hidden') continue;
+      if (!cs || __svgHiddenNoLayout(shape, cs, svg)) continue;
       const paints = (v) => {
         if (!v || v === 'none') return false;
         const c = parseCssColorToRgba(v);
@@ -8253,26 +9006,342 @@ function createContrastHelpers(opts, shared) {
       const tag = __lname(shape);
       const shapeOnly = tag !== 'image' && tag !== 'use' && tag !== 'foreignobject';
       if (shapeOnly && !paints(fill) && !paints(stroke)) continue;
-      return {
-        selector: __getSimpleSelectorCached(shape, tag),
-        element: describeElement(shape),
-        property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
-        value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
-      };
+      const rgba = __svgCertainCover(shape, cs, svg, paints(stroke), textArea);
+      if (rgba) {
+        // Opaque, over all of the text: what lies under it doesn't show.
+        certain = { el: shape, rgba };
+        blocker = null;
+        continue;
+      }
+      if (!blocker) {
+        blocker = {
+          selector: __getSimpleSelectorCached(shape, tag),
+          element: describeElement(shape),
+          property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
+          value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
+        };
+      }
     }
-    return null;
+    return { certain, blocker };
+  }
+
+  // Whether an SVG shape is not drawn, without a layout (round 12, C12-4):
+  // display none on it or a group around it, or visibility hidden on it or
+  // inherited, set in CSS or as a presentation attribute, which jsdom
+  // doesn't apply.
+  function __svgHiddenNoLayout(shape, cs, svg) {
+    if (trim(cs.display) === 'none') return true;
+    const vis = trim(cs.visibility);
+    if (vis === 'hidden' || vis === 'collapse') return true;
+    let visKnown = false;
+    for (let n = shape; n && n !== svg; n = dom.parentElement(n)) {
+      if (trim(dom.getAttribute(n, 'display')).toLowerCase() === 'none') return true;
+      if (n !== shape) {
+        const ncs = __contrastComputedStyle(n);
+        if (ncs && trim(ncs.display) === 'none') return true;
+      }
+      if (!visKnown && dom.hasAttribute(n, 'visibility')) {
+        visKnown = true;
+        const v = trim(dom.getAttribute(n, 'visibility')).toLowerCase();
+        if (v === 'hidden' || v === 'collapse') return true;
+      }
+    }
+    if (!visKnown && svg && dom.hasAttribute(svg, 'visibility')) {
+      const v = trim(dom.getAttribute(svg, 'visibility')).toLowerCase();
+      if (v === 'hidden' || v === 'collapse') return true;
+    }
+    return false;
+  }
+
+  // An SVG length in user units: a number, px, or a percentage of `full`
+  // (NaN where `full` is unknown). NaN for anything else.
+  function __svgLength(value, full) {
+    const v = trim(value);
+    if (!v) return NaN;
+    let m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(px)?$/i.exec(v);
+    if (m) return Number.parseFloat(m[1]);
+    m = /^([+-]?(?:\d+\.?\d*|\.\d+))%$/.exec(v);
+    if (m) return Number.isFinite(full) ? (Number.parseFloat(m[1]) / 100) * full : NaN;
+    return NaN;
+  }
+
+  // The svg's viewport in user units: its viewBox, or its own width and
+  // height where it has none. { x, y, w, h }, a side NaN where unknown.
+  function __svgViewport(svg) {
+    const vb = trim(dom.getAttribute(svg, 'viewBox'));
+    if (vb) {
+      const n = vb.split(/[\s,]+/).map(Number);
+      if (n.length === 4 && n.every(Number.isFinite) && n[2] > 0 && n[3] > 0)
+        return { x: n[0], y: n[1], w: n[2], h: n[3], viewBox: true };
+      return { x: 0, y: 0, w: NaN, h: NaN, viewBox: true };
+    }
+    return {
+      x: 0,
+      y: 0,
+      w: __svgLength(dom.getAttribute(svg, 'width'), NaN),
+      h: __svgLength(dom.getAttribute(svg, 'height'), NaN),
+      viewBox: false
+    };
+  }
+
+  const __SVG_GROUP_ATTRS = ['transform', 'filter', 'mask', 'clip-path'];
+  // Whether node draws as a group or moves: a transform, opacity, a filter,
+  // a mask or a clip, as an attribute, in its style or computed.
+  function __svgGroupedOrMoved(node) {
+    for (const a of __SVG_GROUP_ATTRS) {
+      const v = trim(dom.getAttribute(node, a)).toLowerCase();
+      if (v && v !== 'none') return true;
+    }
+    const op = trim(dom.getAttribute(node, 'opacity'));
+    if (op && !(Number.parseFloat(op) >= 1)) return true;
+    if (
+      /(^|;)\s*(transform|opacity|filter|mask|clip|clip-path)\s*:/i.test(
+        String(dom.getAttribute(node, 'style') || '')
+      )
+    )
+      return true;
+    const cs = __contrastComputedStyle(node);
+    if (!cs) return false;
+    if (opacityOf(cs) < 1) return true;
+    const set = (v) => !!trim(v) && trim(v) !== 'none';
+    return (
+      set(cs.transform) ||
+      set(cs.filter) ||
+      set(cs.clipPath) ||
+      set(cs.maskImage) ||
+      set(cs.mask) ||
+      (!!cs.mixBlendMode && trim(cs.mixBlendMode) !== 'normal')
+    );
+  }
+
+  // Emoji, and characters of East Asian Width W or F (Unicode UAX #11),
+  // drawn up to two em wide.
+  const __WIDE_CHAR =
+    /[\p{Extended_Pictographic}\u1100-\u115F\u231A\u231B\u2329\u232A\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uA960-\uA97F\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6\u{16FE0}-\u{18AFF}\u{1B000}-\u{1B2FF}\u{1F000}-\u{1FAFF}\u{20000}-\u{3FFFD}]/u;
+  // The area SVG text certainly lies in, in the svg's user units, without a
+  // layout: from its x and y, its font size and its characters, each at
+  // most 1.1em wide (2em if wide), from 1.2em above the baseline to 0.4em
+  // below.
+  // null where that isn't simple: a transform, positions per character,
+  // a textLength, spacing, a vertical writing mode or a text path.
+  function __svgTextArea(el, svg) {
+    let text = el;
+    while (text && text !== svg && __lname(text) !== 'text') text = dom.parentElement(text);
+    if (!text || text === svg) return null;
+    for (let n = text; n && n !== svg; n = dom.parentElement(n)) {
+      if (__svgGroupedOrMoved(n) && n !== text) return null;
+      const t = trim(dom.getAttribute(n, 'transform'));
+      if (t && t !== 'none') return null;
+      const ncs = __contrastComputedStyle(n);
+      if (ncs && trim(ncs.transform) && trim(ncs.transform) !== 'none') return null;
+    }
+    const parts = [text, ...dom.querySelectorAll(text, '*')];
+    for (const n of parts) {
+      const name = __lname(n);
+      if (name === 'textpath') return null;
+      for (const a of ['dx', 'dy', 'rotate', 'textLength', 'letter-spacing', 'word-spacing'])
+        if (dom.hasAttribute(n, a)) return null;
+      if (n !== text && (dom.hasAttribute(n, 'x') || dom.hasAttribute(n, 'y'))) return null;
+      if (
+        /(^|;)\s*(letter-spacing|word-spacing|writing-mode|font-size)\s*:/i.test(
+          String(dom.getAttribute(n, 'style') || '')
+        ) &&
+        n !== text
+      )
+        return null;
+    }
+    const tcs = __contrastComputedStyle(text) || {};
+    if (
+      /^(vertical|tb|sideways)/.test(trim(tcs.writingMode)) ||
+      dom.hasAttribute(text, 'writing-mode')
+    )
+      return null;
+    const spacing = (v) => !trim(v) || trim(v) === 'normal' || Number.parseFloat(v) === 0;
+    if (!spacing(tcs.letterSpacing) || !spacing(tcs.wordSpacing)) return null;
+    const vp = __svgViewport(svg);
+    const x = dom.hasAttribute(text, 'x') ? __svgLength(dom.getAttribute(text, 'x'), vp.w) : 0;
+    const y = dom.hasAttribute(text, 'y') ? __svgLength(dom.getAttribute(text, 'y'), vp.h) : 0;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    // The font size: the larger of the computed one and the nearest
+    // font-size attribute, which jsdom doesn't apply.
+    let fs = parsePx(tcs.fontSize);
+    if (!/^\s*[\d.]+px\s*$/.test(String(tcs.fontSize || ''))) fs = NaN;
+    const host = dom.closest(text, '[font-size]');
+    if (host && __isComposedInside(host, svg)) {
+      const a = __svgLength(dom.getAttribute(host, 'font-size'), NaN);
+      if (!Number.isFinite(a)) return null;
+      fs = Number.isFinite(fs) ? Math.max(fs, a) : a;
+    }
+    if (!Number.isFinite(fs)) fs = 16;
+    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')];
+    if (!chars.length) return null;
+    // An upper bound on the width (round 12, C12-8): 1.1em a character,
+    // above the widest Latin glyphs of common fonts (@ is about 1.02em in
+    // Arial), and 2em for emoji and wide East Asian characters. Text that
+    // fits by a clear margin is measured; text close to the edge is asked
+    // about.
+    const w = chars.reduce((sum, ch) => sum + (__WIDE_CHAR.test(ch) ? 2 : 1.1), 0) * fs;
+    const anchorHost = dom.closest(text, '[text-anchor]');
+    let anchor = trim(tcs.textAnchor) || 'start';
+    if (anchorHost && __isComposedInside(anchorHost, svg))
+      anchor = trim(dom.getAttribute(anchorHost, 'text-anchor')).toLowerCase();
+    const rtl = trim(tcs.direction) === 'rtl' || !!dom.closest(text, '[direction="rtl"]');
+    let left;
+    let right;
+    if (rtl || !/^(start|middle|end)$/.test(anchor)) {
+      left = x - w;
+      right = x + w;
+    } else if (anchor === 'middle') {
+      left = x - w / 2;
+      right = x + w / 2;
+    } else if (anchor === 'end') {
+      left = x - w;
+      right = x;
+    } else {
+      left = x;
+      right = x + w;
+    }
+    // A baseline set as an attribute, or in CSS on the text or a part of it
+    // (round 12, C12-5): jsdom computes CSS ones, and passes
+    // dominant-baseline down, but applies no attribute.
+    const baselineSet =
+      ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
+        (a) => !!dom.closest(text, '[' + a + ']')
+      ) ||
+      parts.some((n) => {
+        const ncs = n === text ? tcs : __contrastComputedStyle(n);
+        if (!ncs || typeof ncs.getPropertyValue !== 'function') return false;
+        const db = trim(ncs.getPropertyValue('dominant-baseline')).toLowerCase();
+        const ab = trim(ncs.getPropertyValue('alignment-baseline')).toLowerCase();
+        const bs = trim(ncs.getPropertyValue('baseline-shift')).toLowerCase();
+        return (
+          !/^(|auto|alphabetic)$/.test(db) ||
+          !/^(|auto|baseline|alphabetic)$/.test(ab) ||
+          !/^(|0|0px|baseline)$/.test(bs)
+        );
+      });
+    const above = baselineSet ? 1.3 * fs : 1.2 * fs;
+    const below = baselineSet ? 1.3 * fs : 0.4 * fs;
+    return { left, right, top: y - above, bottom: y + below };
+  }
+
+  const __SVG_GEOMETRY_PROPS = ['x', 'y', 'width', 'height', 'rx', 'ry', 'r', 'cx', 'cy'];
+  // The opaque color a <rect>, <circle> or <ellipse> certainly paints
+  // under all of el's text, without a layout, or null.
+  function __svgCertainCover(shape, cs, svg, stroked, textArea) {
+    const tag = __lname(shape);
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
+    // Its own <svg>: not in a nested one, a <switch> or a link's group.
+    for (let p = dom.parentElement(shape); p !== svg; p = dom.parentElement(p)) {
+      if (!p) return null;
+      const name = __lname(p);
+      if (name !== 'g' && name !== 'a') return null;
+      if (__svgGroupedOrMoved(p)) return null;
+    }
+    if (__svgGroupedOrMoved(shape)) return null;
+    const fill = parseCssColorToRgba(cs.fill);
+    if (!fill || fill.a < 1) return null;
+    const fo = trim(dom.getAttribute(shape, 'fill-opacity')) || trim(cs.fillOpacity);
+    if (fo && !(Number.parseFloat(fo) >= 1)) return null;
+    if (
+      /(^|;)\s*(fill-opacity|x|y|width|height|rx|ry|r|cx|cy)\s*:/i.test(
+        String(dom.getAttribute(shape, 'style') || '')
+      )
+    )
+      return null;
+    // Geometry set in CSS overrides the attributes (SVG 2), and jsdom
+    // places nothing by it: a style sheet that sets any is not read, and the
+    // text is asked about (round 12, C12-6).
+    for (const prop of __SVG_GEOMETRY_PROPS) {
+      const decl = __authorColorDeclsOf(shape, prop);
+      if (decl.unknown || decl.values.length) return null;
+    }
+    const vp = __svgViewport(svg);
+    const attr = (a, full, dflt) =>
+      dom.hasAttribute(shape, a) ? __svgLength(dom.getAttribute(shape, a), full) : dflt;
+    let half = 0;
+    if (stroked) {
+      const sw = dom.hasAttribute(shape, 'stroke-width')
+        ? __svgLength(dom.getAttribute(shape, 'stroke-width'), NaN)
+        : parsePx(cs.strokeWidth) || 1;
+      if (!Number.isFinite(sw)) return null;
+      half = Math.max(0, sw) / 2;
+    }
+    const rgb = { r: fill.r, g: fill.g, b: fill.b, a: 1 };
+    if (tag === 'rect') {
+      const x = attr('x', vp.w, 0);
+      const y = attr('y', vp.h, 0);
+      const w = attr('width', vp.w, NaN);
+      const h = attr('height', vp.h, NaN);
+      if (![x, y, w, h].every(Number.isFinite) || !(w > 0) || !(h > 0)) return null;
+      let rx = attr('rx', vp.w, NaN);
+      let ry = attr('ry', vp.h, NaN);
+      const rxSet = dom.hasAttribute(shape, 'rx');
+      const rySet = dom.hasAttribute(shape, 'ry');
+      if ((rxSet && !Number.isFinite(rx)) || (rySet && !Number.isFinite(ry))) return null;
+      if (!rxSet) rx = rySet ? ry : 0;
+      if (!rySet) ry = rx;
+      rx = Math.min(Math.max(rx, 0), w / 2);
+      ry = Math.min(Math.max(ry, 0), h / 2);
+      // The whole svg: covers any text in it.
+      const whole = (v, full, raw) => trim(raw) === '100%' || (Number.isFinite(full) && v === full);
+      if (
+        !rx &&
+        !ry &&
+        x === vp.x &&
+        y === vp.y &&
+        whole(w, vp.w, dom.getAttribute(shape, 'width')) &&
+        whole(h, vp.h, dom.getAttribute(shape, 'height'))
+      )
+        return rgb;
+      const area = textArea();
+      if (!area) return null;
+      const ix = Math.max(rx, half);
+      const iy = Math.max(ry, half);
+      return area.left >= x + ix &&
+        area.right <= x + w - ix &&
+        area.top >= y + iy &&
+        area.bottom <= y + h - iy
+        ? rgb
+        : null;
+    }
+    const cx = attr('cx', NaN, 0);
+    const cy = attr('cy', NaN, 0);
+    let rx;
+    let ry;
+    if (tag === 'circle') {
+      rx = attr('r', NaN, NaN);
+      ry = rx;
+    } else {
+      rx = attr('rx', NaN, NaN);
+      ry = attr('ry', NaN, NaN);
+    }
+    if (![cx, cy, rx, ry].every(Number.isFinite)) return null;
+    rx -= half;
+    ry -= half;
+    if (!(rx > 0) || !(ry > 0)) return null;
+    const area = textArea();
+    if (!area) return null;
+    const inside = (px, py) => ((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2 <= 1;
+    return inside(area.left, area.top) &&
+      inside(area.right, area.top) &&
+      inside(area.left, area.bottom) &&
+      inside(area.right, area.bottom)
+      ? rgb
+      : null;
   }
 
   // -------- SVG shapes behind SVG text (#96) --------
   //
   // SVG paints in document order, so a shape earlier than a text element and
   // under it is the text's background, which no CSS background shows. The
-  // simple case is measured: a <rect> with a solid fill, painted before the
-  // text, not rotated, covering all of the text clear of its rounded corners
-  // and stroke, with nothing between it and the text that groups it (opacity,
-  // a filter, a mask or a clip). Several such rects stack. Any other shape
-  // under or over the text is left to the paint-overlap check, which reports
-  // it. Needs a layout; without one nothing is found and nothing changes.
+  // simple case is measured: a <rect>, <circle> or <ellipse> (round 12,
+  // C12-7) with a solid fill, painted before the text, not rotated, covering
+  // all of the text clear of its rounded corners and stroke, with nothing
+  // between it and the text that groups it (opacity, a filter, a mask or a
+  // clip). Several such shapes stack. Any other shape under or over the text
+  // is left to the paint-overlap check, which reports it. With a layout;
+  // without one, __svgNoLayoutScan measures the same shapes.
   const __svgBackdropCache = new WeakMap();
 
   function __svgBackdropOf(el) {
@@ -8290,7 +9359,14 @@ function createContrastHelpers(opts, shared) {
 
   function __computeSvgBackdrop(el) {
     const index = __getOverlapIndex();
-    if (!index) return null;
+    if (!index) {
+      // Without a layout: the last shape certainly under all of the text,
+      // with nothing uncertain painted after it (__svgNoLayoutScan).
+      const scan = __svgNoLayoutScan(el);
+      return scan && scan.certain && !scan.blocker
+        ? { layers: [scan.certain], blocked: false }
+        : null;
+    }
     let svg = composedParent(el);
     let guard = 0;
     while (
@@ -8333,7 +9409,10 @@ function createContrastHelpers(opts, shared) {
   // The color a <rect> paints behind all of el's text, or null when it isn't
   // that simple case.
   function __svgRectLayer(shape, box, el, textRects) {
-    if (String(dom.localName(shape)) !== 'rect') return null;
+    const tag = String(dom.localName(shape));
+    // A <circle> or <ellipse> too (round 12, C12-7): its box is its
+    // bounding box, so its center and radii are known.
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
     // Painted before el: el follows it in document order.
     if (!(dom.compareDocumentPosition(shape, el) & 4)) return null;
     const cs = __contrastComputedStyle(shape);
@@ -8368,19 +9447,36 @@ function createContrastHelpers(opts, shared) {
       const n = parsePx(v);
       return Number.isFinite(n) && n > 0 ? n : 0;
     };
-    let rx = len(cs.rx);
-    let ry = len(cs.ry);
-    if (!rx) rx = ry;
-    if (!ry) ry = rx;
     const stroke = trim(cs.stroke);
     const halfStroke = stroke && stroke !== 'none' ? len(cs.strokeWidth) / 2 : 0;
-    const ix = Math.max(rx, halfStroke) * ctm.a;
-    const iy = Math.max(ry, halfStroke) * ctm.d;
-    const inside = (r) =>
-      r.left >= box.left + ix - 0.5 &&
-      r.right <= box.right - ix + 0.5 &&
-      r.top >= box.top + iy - 0.5 &&
-      r.bottom <= box.bottom - iy + 0.5;
+    let inside;
+    if (tag === 'rect') {
+      let rx = len(cs.rx);
+      let ry = len(cs.ry);
+      if (!rx) rx = ry;
+      if (!ry) ry = rx;
+      const ix = Math.max(rx, halfStroke) * ctm.a;
+      const iy = Math.max(ry, halfStroke) * ctm.d;
+      inside = (r) =>
+        r.left >= box.left + ix - 0.5 &&
+        r.right <= box.right - ix + 0.5 &&
+        r.top >= box.top + iy - 0.5 &&
+        r.bottom <= box.bottom - iy + 0.5;
+    } else {
+      // Every corner of each line of text inside the ellipse, clear of the
+      // inner half of its stroke.
+      const cx = (box.left + box.right) / 2;
+      const cy = (box.top + box.bottom) / 2;
+      const ex = (box.right - box.left) / 2 - halfStroke * ctm.a;
+      const ey = (box.bottom - box.top) / 2 - halfStroke * ctm.d;
+      if (!(ex > 0) || !(ey > 0)) return null;
+      const within = (x, y) => ((x - cx) / ex) ** 2 + ((y - cy) / ey) ** 2 <= 1;
+      inside = (r) =>
+        within(r.left, r.top) &&
+        within(r.right, r.top) &&
+        within(r.left, r.bottom) &&
+        within(r.right, r.bottom);
+    }
     if (!textRects.every(inside)) return null;
     const fillOpacity = Number.parseFloat(cs.fillOpacity);
     const opacity = Number.parseFloat(cs.opacity);
@@ -8586,6 +9682,9 @@ function createContrastHelpers(opts, shared) {
     } catch {
       out = { fallback: true };
     }
+    // With no prototype: a value a page's script put on Object.prototype
+    // (rgba) is never read as the backdrop's own (round 12, F12-5).
+    if (out && typeof out === 'object') out = Object.setPrototypeOf({ ...out }, null);
     __paintBackdropCache.set(el, out);
     return out;
   }
@@ -9147,6 +10246,7 @@ function createContrastHelpers(opts, shared) {
     looksLikeLogo,
     contrastSwitchName,
     isInactiveUiComponent,
+    isSignInTextRun,
     // The author's declaration of a property that applies to an element:
     // { value }, null where none does, { unknown: true } where it can't be
     // told.

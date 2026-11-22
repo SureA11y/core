@@ -51,8 +51,12 @@
  *   written into the text (the stretch of its block
  *   container between line breaks holds text outside any target with a
  *   letter or a digit in it), or user-agent sizing (an unstyled native
- *   checkbox or radio, detected by appearance not having been reset to
- *   none). An undersized target too close to a neighbour fails. Where an
+ *   form control other than a button: a checkbox, radio, range, color,
+ *   file, date or text input, or a drop-down select, with its appearance
+ *   not reset to none, no CSS zoom on it or an ancestor, and drawn at the
+ *   size the browser draws it at unstyled: the author's declarations count
+ *   only where they change that size). An undersized target too close to
+ *   a neighbour fails. Where an
  *   exception may apply but cannot be confirmed (two inline links crowding
  *   each other between separators alone, as in "Edit | Delete", or a target
  *   inside an SVG, canvas or image map that may be essential), the result is
@@ -67,8 +71,13 @@
  *   within its reach as the page scrolls (its circle reaching one's region,
  *   or their centres under 24px apart): for a fixed one, any the page's
  *   scroll range can bring there, for a sticky one, any in the box that
- *   holds it, which it moves through. On a page whose root doesn't scroll,
- *   nothing moves, and every target is the page's.
+ *   holds it, which it moves through on the axes it has an inset on (`top`
+ *   or `bottom` down the page, `left` or `right` across). A page target counts only at scroll
+ *   positions where it is not wholly under the background the pinned box
+ *   paints around the target (the bar's background hides it there, a
+ *   question for focus-not-obscured); a bar that paints none shows it. On a
+ *   page whose root doesn't scroll, nothing moves, and every target is the
+ *   page's.
  *   Settings, for a variant: `minSizePx`, the size needed (24), and
  *   `spacingException`, `'none'` to drop the spacing exception, so that
  *   every target under the size that no other exception covers fails
@@ -128,8 +137,11 @@
  *   - `undersized-pinned-over-page` (cantTell): an undersized target in a
  *     fixed or sticky box, clear of the targets that move with it, over a
  *     page whose undersized targets pass within its reach as the page
- *     scrolls; whether one comes too close where both are shown depends on
- *     the scroll position, and is for a person to check.
+ *     scrolls, at a scroll position where they are not wholly under the
+ *     background the pinned box paints around it; whether one comes too
+ *     close where both are shown depends on the scroll position, and is for
+ *     a person to check. A page target within reach only while it passes
+ *     under that background is hidden, which focus-not-obscured asks about.
  *     Basis: WCAG 2.5.8 (exception: spacing).
  *   - `undersized-plausibly-essential` (cantTell): an undersized target too
  *     close to another (or, under `spacingException: 'none'`, any
@@ -180,10 +192,18 @@
  *   inline link whose only spacing conflict is another inline link of a
  *   stretch with separators but no words is reported as cantTell
  *   (textAround), since the inline exception may cover it.
- * - User Agent Control: an unstyled native checkbox/radio, detected via
- *   `appearance` not being reset to `none` (see isUserAgentSizedControl).
- *   Scoped narrowly to checkbox/radio specifically, not every form control,
- *   since those are the only types with unambiguous native rendering.
+ * - User Agent Control: an unstyled native form control (a checkbox,
+ *   radio, range, color, file, date or text input, or a drop-down select):
+ *   `appearance` not reset to `none`, no CSS zoom on it or an ancestor,
+ *   its box, and for a control drawn around text its font size, within
+ *   what browsers draw it at, and a size the author has not modified. Where
+ *   the page is laid out, the box is compared with an unstyled twin of the
+ *   control drawn in the same document, out of the page's styles, so a
+ *   reset that leaves the size alone (normalize.css, `* { padding: 0 }`)
+ *   keeps the exception. Without a layout, the author's declarations of
+ *   the size on the control are read instead, less those that can't
+ *   change a checkbox's or radio's size (see userAgentSizedControls). A
+ *   button is left out: its size follows the author's text.
  * - Essential/Equivalent: only a narrow, high-confidence subset is asserted
  *   (SVG/canvas/map-embedded controls, see isPlausiblyEssentialOrEquivalent);
  *   anything else defers to cantTell rather than guessing "essential" from a
@@ -574,9 +594,10 @@ function runInPage(ctx) {
   // per undersized target it's compared against, via
   // isInlineTextExceptionTarget/isInlineTextTarget -- so with U undersized
   // targets and N total candidates this was an uncached O(U * N)
-  // getComputedStyle call count. The DOM is read-only for the rest of this
-  // rule's run (no writes between reads), so caching per element here is
-  // safe -- style cannot change mid-run.
+  // getComputedStyle call count. The page's DOM is read-only for the rest
+  // of this rule's run (the one write, the twins of userAgentSizedControls,
+  // is in a closed shadow root and taken out at once), so caching per
+  // element here is safe -- style cannot change mid-run.
   const __styleCache = new WeakMap();
   function getStyle(el) {
     if (__styleCache.has(el)) return __styleCache.get(el);
@@ -1697,11 +1718,17 @@ function runInPage(ctx) {
     if (!box) return { l: c.x, r: c.x, t: c.y, b: c.y };
     const hw = (e.extent.r - e.extent.l) / 2;
     const hh = (e.extent.b - e.extent.t) / 2;
+    // A sticky box moves only on an axis it has an inset on: `top: 0`
+    // holds it down the page, never across.
+    const cs = getStyle(layer) || {};
+    const inset = (side) => !!cs[side] && cs[side] !== 'auto';
+    const acrossX = inset('left') || inset('right');
+    const acrossY = inset('top') || inset('bottom');
     return {
-      l: Math.min(c.x, box.left + hw),
-      r: Math.max(c.x, box.right - hw),
-      t: Math.min(c.y, box.top + hh),
-      b: Math.max(c.y, box.bottom - hh)
+      l: acrossX ? Math.min(c.x, box.left + hw) : c.x,
+      r: acrossX ? Math.max(c.x, box.right - hw) : c.x,
+      t: acrossY ? Math.min(c.y, box.top + hh) : c.y,
+      b: acrossY ? Math.max(c.y, box.bottom - hh) : c.y
     };
   }
   const spaced = entries.filter((e) => !e.exempt);
@@ -1896,35 +1923,169 @@ function runInPage(ctx) {
 
   // WCAG 2.5.8 "User Agent Control" exception: the target's size requirement
   // does not apply at all when its size is determined by the user agent and
-  // not modified by the author. The canonical example is an unstyled native
-  // checkbox/radio (browsers render these well under 24px by default, and
-  // that's not the author's choice). Scoped narrowly to
-  // input[type=checkbox]/[type=radio] specifically, the only form-control
-  // types with a universally-recognized, unambiguous native rendering, and
-  // not extended to select/range/color/file, whose "default" sizing varies
-  // enough across browsers/OSes that a wrong exemption there risks masking a
-  // real author-introduced undersized target.
+  // not modified by the author. It covers a native form control the browser
+  // draws at its own size: a checkbox or radio (browsers draw these well
+  // under 24px), a range, color, file, date or text input, or a drop-down
+  // <select>. A button is left out: its size follows the text the author
+  // wrote in it.
   //
-  // Detection signal: `appearance` (or the legacy `-webkit-appearance`)
-  // computed as `none` is the near-universal first step of custom
-  // checkbox/radio styling across every CSS framework/design system. If the
-  // author hasn't reset it, the browser is still rendering its own default
-  // control chrome, so the size is UA-determined rather than authored.
-  // A checkbox or radio sized outside the 12 to 16 CSS px browsers draw it at
-  // was resized by the author, so it isn't ("not modified by the author").
-  function isUserAgentSizedControl(el) {
+  // Unstyled, as the exception needs, means:
+  // - `appearance` (or the legacy `-webkit-appearance`) not reset to `none`,
+  //   the near-universal first step of styling a control (a file input,
+  //   which Chromium computes as `none` by default, aside);
+  // - no CSS zoom on the control or an ancestor: zoom is the author's
+  //   change of size, as a transform is (a transform shows in the box, and
+  //   so takes it out of the sizes below);
+  // - the box within the sizes browsers draw the control at, by type
+  //   (Chromium's in brackets, checked in a scan; the ranges leave room
+  //   for other browsers, not verified): a checkbox or radio 12 to 16 px
+  //   (13 by 13), a range 100 to 180 wide and 12 to 26 high (129 by 16), a
+  //   color input 40 to 70 by 20 to 34 (50 by 27), and a file, date or
+  //   text input or a drop-down <select> 18 to 26 high (21, 19 for a
+  //   select), its width following its text;
+  // - for the controls drawn around text (all but the checkbox, radio and
+  //   range), the font size browsers give them, 10.5 to 14 px (13.33):
+  //   another was set by the author, and changes the size.
+  // - its size not modified by the author (round 12, R12F-11 and F12-1).
+  //   The exception is about the size the control is drawn at, so a
+  //   declaration counts only where it changes that size:
+  //   - where the page is laid out, the control's box is compared with
+  //     the box of an unstyled twin of the same kind (same type, size and
+  //     multiple attributes, a select's options), drawn in the same
+  //     document inside a closed shadow root, where no page style reaches
+  //     it. Any difference is the author's: a text input given `height:
+  //     20px`, a checkbox given `width: 16px`. A reset that leaves the size
+  //     alone (normalize.css's `font-size: 100%; line-height: 1.15` on a
+  //     checkbox, `* { padding: 0 }`, `max-width: 100%`, `width: 13px`, a
+  //     translate) doesn't count. The twins are drawn once a scan, all
+  //     together, and taken out at once.
+  //   - where there is no layout (jsdom), the declarations on the control
+  //     itself, in its style attribute or a matching rule, of a property
+  //     that sets its size: width, height, their logical forms and min-/
+  //     max- forms, padding, font-size, line-height, zoom or transform.
+  //     Padding, font-size and line-height don't change the drawn size of
+  //     a checkbox or radio button and are not read for them, and a value
+  //     of the property's initial value (`width: auto`, `transform: none`)
+  //     or of inherit, initial, unset or revert is not counted. Where the
+  //     rules can't be read (another origin's sheet), the sizes above
+  //     decide alone.
+  // A control outside these was resized by the author, which the exception
+  // doesn't cover. The sizes are checked first: a control they rule out
+  // needs neither a twin nor a declaration read.
+  const SIZE_PROPS = [
+    'width',
+    'height',
+    'inline-size',
+    'block-size',
+    'min-width',
+    'min-height',
+    'min-inline-size',
+    'min-block-size',
+    'max-width',
+    'max-height',
+    'max-inline-size',
+    'max-block-size',
+    'zoom',
+    'transform'
+  ];
+  // Read for every control but a checkbox or radio button.
+  const TEXT_SIZE_PROPS = [
+    'padding-top',
+    'padding-right',
+    'padding-bottom',
+    'padding-left',
+    'padding-block-start',
+    'padding-block-end',
+    'padding-inline-start',
+    'padding-inline-end',
+    'font-size',
+    'line-height'
+  ];
+  const KEEPS_SIZE = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer']);
+  function keepsSize(prop, value) {
+    const v = String(value || '')
+      .trim()
+      .toLowerCase();
+    if (!v || KEEPS_SIZE.has(v)) return true;
+    if (prop.startsWith('max-') || prop === 'transform') return v === 'none';
+    if (prop === 'line-height') return v === 'normal';
+    if (prop === 'zoom') return v === '1' || v === '100%' || v === 'normal';
+    if (/^(min-)?(width|height|inline-size|block-size)$/.test(prop)) return v === 'auto';
+    return false;
+  }
+  function declaredResized(el, kind) {
+    const c = helpers.contrast;
+    if (!c || typeof c.authorDeclarationOf !== 'function') return false;
+    const props = kind === 'box' ? SIZE_PROPS : SIZE_PROPS.concat(TEXT_SIZE_PROPS);
+    for (const prop of props) {
+      let d;
+      try {
+        d = c.authorDeclarationOf(el, prop);
+      } catch {
+        d = null;
+      }
+      if (d && !d.unknown && !keepsSize(prop, d.value)) return true;
+    }
+    return false;
+  }
+  const UA_TEXT_INPUT_TYPES = new Set([
+    'text',
+    'search',
+    'email',
+    'url',
+    'tel',
+    'password',
+    'number',
+    'date',
+    'time',
+    'datetime-local',
+    'month',
+    'week',
+    'file'
+  ]);
+  const upOf = (a) =>
+    typeof helpers.flatParentElement === 'function'
+      ? helpers.flatParentElement(a)
+      : dom.parentElement(a);
+  function cssZoomOf(el) {
+    const own = Number(dom.get(el, 'currentCSSZoom'));
+    if (Number.isFinite(own) && own > 0) return own;
+    let zoom = 1;
+    for (let a = el, i = 0; a && dom.nodeType(a) === 1 && i < 1000; a = upOf(a), i++) {
+      const z = Number.parseFloat((getStyle(a) || {}).zoom || '1');
+      if (Number.isFinite(z) && z > 0) zoom *= z;
+    }
+    return zoom;
+  }
+  // What a native control is, and whether its box, its appearance and its
+  // zoom leave it as the browser draws it: { kind, type, box } for one
+  // that may be sized by the browser, or null (see above).
+  function userAgentShape(el) {
     try {
-      if (!el || dom.nodeType(el) !== 1) return false;
+      if (!el || dom.nodeType(el) !== 1) return null;
       const tag = (dom.tagName(el) || '').toLowerCase();
-      if (tag !== 'input') return false;
-
-      const type =
-        (dom.get(el, 'getAttribute') &&
-          String(dom.getAttribute(el, 'type') || '')
-            .trim()
-            .toLowerCase()) ||
-        '';
-      if (type !== 'checkbox' && type !== 'radio') return false;
+      let kind = '';
+      let type = '';
+      if (tag === 'select') {
+        // A list box (multiple, or more than one row) is not a drop-down.
+        if (dom.hasAttribute(el, 'multiple')) return null;
+        const rows = helpers.parseHtmlInteger
+          ? helpers.parseHtmlInteger(String(dom.getAttribute(el, 'size') || ''))
+          : null;
+        if (typeof rows === 'number' && rows > 1) return null;
+        kind = 'text';
+      } else if (tag === 'input') {
+        type = String(dom.getAttribute(el, 'type') || 'text')
+          .trim()
+          .toLowerCase();
+        if (type === 'checkbox' || type === 'radio') kind = 'box';
+        else if (type === 'range' || type === 'color') kind = type;
+        else if (UA_TEXT_INPUT_TYPES.has(type)) kind = type === 'file' ? 'file' : 'text';
+        else if (!dom.hasAttribute(el, 'type') || type === '') {
+          kind = 'text';
+          type = 'text';
+        } else return null;
+      } else return null;
 
       const cs = getStyle(el);
       let appearance = '';
@@ -1940,22 +2101,133 @@ function runInPage(ctx) {
 
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
-      if (appearance === 'none') return false;
+      if (appearance === 'none' && kind !== 'file') return null;
 
-      // Resized by the author: browsers draw an unstyled checkbox or radio
-      // at 12 to 16 CSS px (13 in Chromium and Firefox, 14 to 16 in Safari).
-      // A size outside that was set by the author, which the exception
-      // doesn't cover ("not modified by the author").
+      // Zoomed by the author, on the control or an ancestor.
+      if (Math.abs(cssZoomOf(el) - 1) > 0.01) return null;
+
       const box = dom.getBoundingClientRect(el);
-      const zoom = Number.parseFloat((cs && cs.zoom) || '1') || 1;
-      const w = box.width / zoom;
-      const h = box.height / zoom;
-      if (w < 12 - EPS || h < 12 - EPS || w > 16 + EPS || h > 16 + EPS) return false;
-
-      return true;
+      const w = box.width;
+      const h = box.height;
+      const within = (v, lo, hi) => v >= lo - EPS && v <= hi + EPS;
+      let fits;
+      if (kind === 'box') fits = within(w, 12, 16) && within(h, 12, 16);
+      else if (kind === 'range') fits = within(w, 100, 180) && within(h, 12, 26);
+      else {
+        const fontSize = Number.parseFloat((cs && cs.fontSize) || '');
+        if (!within(fontSize, 10.5, 14)) return null;
+        if (kind === 'color') fits = within(w, 40, 70) && within(h, 20, 34);
+        else fits = w >= 20 - EPS && within(h, 18, 26);
+      }
+      return fits ? { tag, kind, type, w, h } : null;
     } catch {
-      return false;
+      return null;
     }
+  }
+
+  // The unstyled twin of a control: the same element and type, with the
+  // attributes that set its drawn size (a text input's size, a file
+  // input's multiple, a select's options), and nothing else.
+  function twinSpecOf(el, shape) {
+    if (shape.tag === 'select') {
+      const labels = [];
+      for (const o of qsaIn(el, 'option')) labels.push(String(dom.get(o, 'label') || ''));
+      return { key: 'select\n' + labels.join('\n'), tag: 'select', labels };
+    }
+    const attrs = [['type', shape.type]];
+    for (const name of ['size', 'multiple']) {
+      if (dom.hasAttribute(el, name)) attrs.push([name, String(dom.getAttribute(el, name))]);
+    }
+    return { key: 'input\n' + JSON.stringify(attrs), tag: 'input', attrs };
+  }
+  function qsaIn(el, sel) {
+    try {
+      return [...dom.querySelectorAll(el, sel)];
+    } catch {
+      return [];
+    }
+  }
+  // The size each twin is drawn at, by key, for the document (kept for the
+  // scan, so target-size-enhanced reads it): { w, h }, or null where the
+  // twin has no box (no layout, as in jsdom). The twins are drawn all at
+  // once in one host: a closed shadow root keeps the page's styles out,
+  // and the host's own inline !important declarations keep its rules off
+  // the host.
+  const twinMemo = memoOf('twins');
+  function measureTwins(doc, specs) {
+    let sizes = twinMemo.get(doc);
+    if (!sizes) {
+      sizes = new Map();
+      twinMemo.set(doc, sizes);
+    }
+    const todo = specs.filter((s) => !sizes.has(s.key));
+    if (!todo.length) return sizes;
+    let host = null;
+    try {
+      const html = dom.documentElement(doc);
+      host = dom.createElement(doc, 'surea11y-probe');
+      dom.setAttribute(
+        host,
+        'style',
+        'all:initial!important;display:block!important;position:absolute!important;' +
+          'left:0!important;top:0!important;visibility:hidden!important;' +
+          'zoom:1!important;pointer-events:none!important'
+      );
+      const root = dom.call(host, 'attachShadow', { mode: 'closed' });
+      const twins = [];
+      for (const s of todo) {
+        const twin = dom.createElement(doc, s.tag);
+        if (s.tag === 'select') {
+          for (const label of s.labels) {
+            const o = dom.createElement(doc, 'option');
+            o.textContent = label;
+            dom.appendChild(twin, o);
+          }
+        } else {
+          for (const [name, value] of s.attrs) dom.setAttribute(twin, name, value);
+        }
+        dom.appendChild(root, twin);
+        twins.push(twin);
+      }
+      dom.appendChild(html, host);
+      todo.forEach((s, i) => {
+        const r = dom.getBoundingClientRect(twins[i]);
+        sizes.set(s.key, r && r.width > 0 && r.height > 0 ? { w: r.width, h: r.height } : null);
+      });
+    } catch {
+      for (const s of todo) if (!sizes.has(s.key)) sizes.set(s.key, null);
+    }
+    try {
+      if (host && dom.parentNode(host)) dom.removeChild(dom.parentNode(host), host);
+    } catch {}
+    return sizes;
+  }
+
+  // The controls among els sized by the browser (see above), decided for
+  // all at once.
+  function userAgentSizedControls(els) {
+    const out = new Set();
+    const found = [];
+    for (const el of els) {
+      const shape = userAgentShape(el);
+      if (shape) found.push({ el, shape, spec: twinSpecOf(el, shape) });
+    }
+    const byDoc = new Map();
+    for (const f of found) {
+      const doc = dom.ownerDocument(f.el);
+      if (!byDoc.has(doc)) byDoc.set(doc, []);
+      byDoc.get(doc).push(f.spec);
+    }
+    const sizesOf = new Map();
+    for (const [doc, specs] of byDoc) sizesOf.set(doc, measureTwins(doc, specs));
+    const SAME = 0.05;
+    for (const { el, shape, spec } of found) {
+      const twin = sizesOf.get(dom.ownerDocument(el)).get(spec.key);
+      if (twin) {
+        if (Math.abs(shape.w - twin.w) <= SAME && Math.abs(shape.h - twin.h) <= SAME) out.add(el);
+      } else if (!declaredResized(el, shape.kind)) out.add(el);
+    }
+    return out;
   }
 
   function isPlausiblyEssentialOrEquivalent(el) {
@@ -2143,8 +2415,38 @@ function runInPage(ctx) {
   // An undersized page target that a pinned target's circle can reach at
   // some scroll position, the target's own centre path being worked out
   // from its extent's (pinnedPath): the region within 12px, or the centre
-  // within 24px. The first found, or null.
+  // within 24px. A page target that is within reach only while it passes
+  // under the pinned box, behind the background the box paints around the
+  // target, is hidden there (focus-not-obscured's concern), not too close.
+  // The first found, or null.
   const entryOf = new Map(entries.map((e) => [e.el, e]));
+  // Whether an element paints a background that hides what passes under it.
+  function paintsBackground(el) {
+    const cs = getStyle(el);
+    if (!cs) return false;
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+    const c = helpers.contrast;
+    const bg =
+      c && typeof c.parseCssColorToRgba === 'function'
+        ? c.parseCssColorToRgba(cs.backgroundColor)
+        : null;
+    return !!bg && bg.a > 0.5;
+  }
+  // The pinned box's background around a target, as a rectangle now: the
+  // outermost element from the target up to its fixed or sticky box that
+  // paints one; null where none does (a transparent bar shows the page).
+  function coverOf(el) {
+    let found = null;
+    for (let a = helpers.flatParentElement(el), i = 0; a && i < 10000; i++) {
+      const cs = getStyle(a);
+      if (paintsBackground(a)) found = a;
+      if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) break;
+      a = helpers.flatParentElement(a);
+    }
+    if (!found) return null;
+    const r = dom.getBoundingClientRect(found);
+    return r ? { l: r.left, t: r.top, r: r.right, b: r.bottom } : null;
+  }
   function pageTargetInPath(it) {
     const e = entryOf.get(it.el);
     if (!e || !e.pageNear || !e.pageNear.length) return null;
@@ -2156,16 +2458,57 @@ function runInPage(ctx) {
       t: e.pagePath.t + dy,
       b: e.pagePath.b + dy
     };
+    let cover;
     for (const f of e.pageNear) {
       if (f.item === undefined) f.item = measure(f.el);
       const o = f.item;
       if (!o || !isUndersized(o)) continue;
       const region = { l: o.rect.left, t: o.rect.top, r: o.rect.right, b: o.rect.bottom };
       const centre = { l: o.center.cx, r: o.center.cx, t: o.center.cy, b: o.center.cy };
-      if (gap(path, region) < RADIUS - EPS || gap(path, centre) < SPACING - EPS) return o.el;
+      const reaches = (q) => gap(q, region) < RADIUS - EPS || gap(q, centre) < SPACING - EPS;
+      if (!reaches(path)) continue;
+      if (cover === undefined) cover = coverOf(it.el);
+      if (!cover) return o.el;
+      // The centre positions along the path within reach of the target,
+      // sampled on a grid of at most about 2,500 points, edges included:
+      // one where the target is not wholly under the cover shows it close.
+      const L = Math.max(path.l, region.l - SPACING);
+      const R = Math.min(path.r, region.r + SPACING);
+      const T = Math.max(path.t, region.t - SPACING);
+      const B = Math.min(path.b, region.b + SPACING);
+      if (L > R + EPS || T > B + EPS) continue;
+      const step = Math.max(1, Math.sqrt(((R - L + 1) * (B - T + 1)) / 2500));
+      const along = (lo, hi) => {
+        const out = [];
+        for (let v = lo; v < hi; v += step) out.push(v);
+        out.push(hi);
+        return out;
+      };
+      const xs = along(L, R);
+      const ys = along(T, B);
+      for (const x of xs) {
+        for (const y of ys) {
+          if (!reaches({ l: x, r: x, t: y, b: y })) continue;
+          const vx = x - it.center.cx;
+          const vy = y - it.center.cy;
+          const under =
+            region.l >= cover.l + vx - EPS &&
+            region.r <= cover.r + vx + EPS &&
+            region.t >= cover.t + vy - EPS &&
+            region.b <= cover.b + vy + EPS;
+          if (!under) return o.el;
+        }
+      }
     }
     return null;
   }
+
+  // The controls sized by the browser, read for all targets at once: the
+  // spacing checks below can leave the style to be recomputed, and a style
+  // read between them would wait for that each time. The browser's own
+  // sizes are read here too, from twins drawn and taken out before any
+  // hit test.
+  const userAgentSized = userAgentSizedControls(undersized.map((it) => it.el));
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
@@ -2177,7 +2520,7 @@ function runInPage(ctx) {
     // size requirement (and therefore any spacing conflict stemming from
     // it) doesn't apply at all. Skip straight to pass, no need to even
     // evaluate spacing.
-    if (isUserAgentSizedControl(it.el)) {
+    if (userAgentSized.has(it.el)) {
       continue;
     }
 

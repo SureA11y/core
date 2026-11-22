@@ -680,3 +680,53 @@ test(`${RULE_ID}: fail when a list with a real listitem also owns a tab; pass wh
   );
   assertRule(pass, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// The owned children are read from the flat tree, as aria-required-children
+// reads them: a host's open shadow root stands in for its light children and
+// a <slot> for what is assigned to it. A closed shadow root, or a scan that
+// leaves shadow DOM out, is not gone into (round 12, U12-7).
+test(`${RULE_ID}: judges the children a container's shadow root draws or slots`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  const build = (mode) => {
+    const dom = createDom(`<!doctype html><html lang="en"><head><title>t</title></head><body>
+      <x-tl id="slotted" role="tablist"><div role="tab">A</div></x-tl>
+      <x-tl id="drawn" role="tablist"></x-tl>
+      <div id="wrapped" role="tablist"><x-w><div role="tab">A</div></x-w></div>
+    </body></html>`);
+    const doc = dom.window.document;
+    doc.getElementById('slotted').attachShadow({ mode }).innerHTML =
+      '<slot></slot><button>+</button>';
+    doc.getElementById('drawn').attachShadow({ mode }).innerHTML =
+      '<div><div role="tab">A</div><div role="button" tabindex="0">+</div></div>';
+    doc.querySelector('x-w').attachShadow({ mode }).innerHTML =
+      '<slot></slot><span role="button" tabindex="0">+</span>';
+    return dom;
+  };
+  const rule = assertRule(runa11yCoreOnDom(build('open'), { runOnly: [RULE_ID] }), RULE_ID, 'fail');
+  for (const id of ['slotted', 'drawn', 'wrapped']) {
+    assert.ok(
+      rule.occurrences.some((o) => o.data.details.containerSelector.includes(id)),
+      id
+    );
+  }
+  assert.equal(rule.occurrences.length, 3);
+  for (const [dom, engineOptions] of [
+    [build('closed'), {}],
+    [build('open'), { includeShadowDom: false }]
+  ]) {
+    assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions }), RULE_ID, 'pass');
+  }
+});
+
+// A <slot> with nothing assigned is drawn as its fallback content, and that
+// content is judged (round 12, R12F-16).
+test(`${RULE_ID}: judges a slot's fallback content when nothing is assigned to it`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><x-m id="m" role="menu"></x-m></body></html>'
+  );
+  dom.window.document.getElementById('m').attachShadow({ mode: 'open' }).innerHTML =
+    '<div role="menuitem">A</div><slot><button>Fallback</button></slot>';
+  const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'fail');
+  assert.equal(rule.occurrences.length, 1);
+});

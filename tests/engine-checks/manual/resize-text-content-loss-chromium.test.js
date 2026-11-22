@@ -93,10 +93,11 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       ['rtcl_case_04', 'cantTell', 'TEXT_CLIPPED_AT_640', 'fail'],
       ['rtcl_case_05', 'cantTell', 'TEXT_CLIPPED_AT_640', 'fail'],
       ['rtcl_case_06', 'cantTell', 'TEXT_CLIPPED_AT_640', null],
+      ['rtcl_case_13', 'cantTell', 'TEXT_CLIPPED_AT_640', 'fail'],
       ['rtcl_case_07', 'cantTell', 'TEXT_TRUNCATED_AT_640', 'fail'],
       ['rtcl_case_08', 'cantTell', 'TEXT_TRUNCATED_AT_640', 'fail']
     ]);
-    const [height, nowrap, inset, , ellipsis, clamp] = check.occurrences;
+    const [height, nowrap, inset, , , ellipsis, clamp] = check.occurrences;
     assert.equal(height.data.details.edge, 'bottom');
     assert.equal(height.data.details.clipCss, 'height: 40px; overflow: hidden');
     assert.equal(height.i18n.summaryKey, 'resizeTextContentLoss_summary_clipped');
@@ -314,6 +315,94 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       }
     }
   );
+
+  // The message names the zoom that lays a 1280 pixel window out at the
+  // width the page was scanned at, not 200% at any width (round 12, U12-2).
+  // Below 600 pixels, narrower than that window at 200% zoom, a cut is asked
+  // about without a lean, and the message says the width is narrower.
+  await t.test('the message states the zoom; below 600 pixels, no lean', async () => {
+    const html = page(
+      '.box{width:200px;height:20px;overflow:hidden}',
+      `<div class="box">${LONG}</div>`
+    );
+    const at = async (width) =>
+      (await scan(html, { pageOptions: { viewport: { width, height: 800 } } })).occurrences[0];
+    const wide = await at(620);
+    const zoom = String(Math.round(128000 / wide.data.details.viewport.width));
+    assert.equal(wide.i18n.params.zoomPercent, zoom);
+    assert.ok(wide.summary.includes(`as a 1280 pixel window shows the page at ${zoom}% zoom`));
+    assert.equal(wide.lean.toward, 'fail');
+    for (const width of [320, 590]) {
+      const o = await at(width);
+      assert.equal(o.data.details.reasonCode, 'TEXT_CLIPPED_AT_640');
+      assert.equal(o.lean, undefined, String(width));
+      assert.equal(o.i18n.params.narrower, true);
+      assert.match(
+        o.summary,
+        /^At \d+ pixels wide, narrower than a 1280 pixel window at 200% zoom,/
+      );
+    }
+    const truncated = (
+      await scan(
+        page(
+          '.box{width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+          `<div class="box">${LONG}</div>`
+        ),
+        {
+          pageOptions: { viewport: { width: 320, height: 800 } }
+        }
+      )
+    ).occurrences[0];
+    assert.equal(truncated.data.details.reasonCode, 'TEXT_TRUNCATED_AT_640');
+    assert.equal(truncated.lean, undefined);
+  });
+
+  // The CSS quoted is the CSS the author wrote: content-visibility, which
+  // Chromium computes into contain (round 12, U12-3).
+  await t.test('a box clipped by content-visibility: auto quotes it', async () => {
+    const cv = await scan(
+      page(
+        '.box{content-visibility:auto;width:200px;height:30px}',
+        `<div class="box">${LONG}</div>`
+      )
+    );
+    assert.equal(cv.outcome, 'cantTell');
+    assert.equal(cv.occurrences[0].data.details.clipCss, 'height: 30px; content-visibility: auto');
+    const paint = await scan(
+      page('.box{contain:paint;width:200px;height:30px}', `<div class="box">${LONG}</div>`)
+    );
+    assert.equal(paint.occurrences[0].data.details.clipCss, 'height: 30px; contain: paint');
+  });
+
+  // Text a box hides entirely is cut off where the box shows its other text
+  // and the text flowed out of it; it is left out where the box shows none
+  // of its text, or where it was placed outside (round 12, U12-1).
+  await t.test('text a box hides wholly while showing other text is asked about', async () => {
+    const one = async (body) => {
+      const check = await scan(page('', body));
+      return [check.outcome, findings(check)];
+    };
+    for (const body of [
+      '<div id="a" style="overflow:hidden;height:24px;width:300px">First line<br>Second line that is wholly hidden</div>',
+      '<div id="a" style="height:20px;overflow:hidden;width:300px"><p style="margin:0">Card title</p><p style="margin:0">Excerpt of the article</p></div>',
+      '<div id="a" style="width:150px;white-space:nowrap;overflow:hidden"><span style="display:inline-block;width:150px">One</span><span style="display:inline-block">Two</span></div>'
+    ]) {
+      assert.deepEqual(
+        await one(body),
+        ['cantTell', [['a', 'cantTell', 'TEXT_CLIPPED_AT_640', 'fail']]],
+        body
+      );
+    }
+    for (const body of [
+      // A collapsed panel shows none of its text.
+      '<div id="a" style="height:0;overflow:hidden"><p>Closed panel</p></div>',
+      // An off-canvas menu and a carousel's next slide were placed outside.
+      '<div id="a" style="position:relative;overflow:hidden;height:40px;width:200px">Shown<p style="position:absolute;left:100%;top:0;margin:0">Off canvas</p></div>',
+      '<div id="a" style="overflow:hidden;width:200px"><div style="display:flex;transform:translateX(0)"><div style="flex:0 0 200px">Slide one</div><div style="flex:0 0 200px">Slide two</div></div></div>'
+    ]) {
+      assert.deepEqual((await one(body))[1], [], body);
+    }
+  });
 
   await t.test('in a frame not named as the page, notApplicable', async () => {
     const p = await browser.newPage(ZOOMED);

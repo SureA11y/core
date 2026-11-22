@@ -1158,6 +1158,34 @@ function createAriaHelpers(opts, shared) {
     'aria-rowspan': 0
   };
 
+  // The tables above are looked up by a role, an element or an attribute
+  // the page names. With no prototype, a value a page's script put on
+  // Object.prototype (button, navigation) is never read as an entry
+  // (round 12, F12-5).
+  const __noPrototype = (o, depth) => {
+    if (!o || typeof o !== 'object' || Array.isArray(o) || depth > 4) return;
+    if (Object.getPrototypeOf(o) === Object.prototype) Object.setPrototypeOf(o, null);
+    for (const k of Object.keys(o)) __noPrototype(o[k], depth + 1);
+  };
+  for (const table of [
+    DEPRECATED_ROLE_GUIDANCE,
+    DEFAULT_DEPRECATED_ROLE_GUIDANCE,
+    ATTR_VALUE_TYPES,
+    ATTR_TOKEN_SETS,
+    REQUIRED_PROPS_BY_ROLE,
+    REQUIRED_PROP_IMPLICIT_VALUES,
+    REQUIRED_OWNED_ROLES,
+    REQUIRED_CONTEXT_ROLE,
+    ALLOWED_ROLES_BY_ELEMENT,
+    NATIVE_ROLE_BY_ELEMENT_KEY,
+    NATIVE_CONTAINMENT_ROLE_BY_ELEMENT,
+    NATIVE_CONTAINMENT_CONTEXT,
+    ROLE_SYNONYMS,
+    INTEGER_ATTR_MIN
+  ]) {
+    __noPrototype(table, 0);
+  }
+
   function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
     if (!type) return { valid: true, reason: 'unknown-attr-skip' };
@@ -1401,8 +1429,13 @@ function createAriaHelpers(opts, shared) {
       try {
         isMultiSelect = !!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'multiple'));
         if (!isMultiSelect) {
-          const sizeAttr = getAttr(el, 'size');
-          const size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
+          // Read as Chromium draws it (selectSizeOf in dom-helpers).
+          let size;
+          if (shared && typeof shared.selectSizeOf === 'function') size = shared.selectSizeOf(el);
+          else {
+            const sizeAttr = getAttr(el, 'size');
+            size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
+          }
           isMultiSelect = Number.isFinite(size) && size > 1;
         }
       } catch {

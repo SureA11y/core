@@ -4,8 +4,9 @@
  * css-focus-indicator-suppressed with many focus rules: in a browser, where
  * many elements match the joined list of rules, each rule is run once over
  * the tree instead of once per element (round 11, P11-5). Each element must
- * still be told exactly the rules that match it, in a shadow tree too, and a
- * rule with :scope is still read as matches() reads it.
+ * still be told exactly the rules that match it, and a rule with :scope is
+ * still read as matches() reads it. A document rule does not reach into a
+ * shadow tree; the tree's own sheet does.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -68,7 +69,7 @@ test(`${RULE_ID}: many rules and many matching links, in Chromium`, { skip }, as
       Array.from(
         { length: 10 },
         (_, i) => `<div class="in"><a href="#in${i}">In ${i}</a></div>`
-      ).join('') + '<a href="#out">Out</a>';
+      ).join('') + '<a href="#out">Out</a><style>div.in a:focus{outline:none}</style>';
   });
   await addBundle(p);
   const occ = await p.evaluate((id) => {
@@ -89,8 +90,223 @@ test(`${RULE_ID}: many rules and many matching links, in Chromium`, { skip }, as
   assert.equal(bySelector('a.both:focus').length, 1);
   // :scope is the element itself in matches(), so this rule matches no link.
   assert.equal(bySelector(':scope a.scoped:focus').length, 0);
-  // A document rule's selector read against a shadow tree's links, as
-  // matches() reads it.
-  assert.equal(bySelector('.in a:focus').length, 10);
+  // CSS Scoping: a document rule's selector does not match into a shadow
+  // tree (round 12, R12F-12); the tree's own sheet styles its links.
+  assert.equal(bySelector('.in a:focus').length, 0);
+  assert.equal(bySelector('div.in a:focus').length, 10);
   assert.equal(occ.length, n + 1 + 10);
+});
+
+// The same verdict and quote as in jsdom: Chromium drops a list with an
+// invalid selector, and serializes `*:focus` as `:focus` (round 12, U12-16).
+test(
+  `${RULE_ID}: an invalid selector list and a universal selector, in Chromium`,
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    async function run(css) {
+      const p = await browser.newPage();
+      try {
+        await p.setContent(
+          `<!doctype html><html lang="en"><head><title>t</title><style>${css}</style></head><body><main><button>Go</button></main></body></html>`
+        );
+        await addBundle(p);
+        return await p.evaluate((id) => {
+          const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0];
+          return [r.outcome, r.occurrences.map((o) => o.data.details.suppressingSelectors)];
+        }, RULE_ID);
+      } finally {
+        await p.close();
+      }
+    }
+    assert.deepEqual(await run('button:-moz-focusring, button:focus{outline:none}'), [
+      'notApplicable',
+      []
+    ]);
+    assert.deepEqual(await run('*:focus{outline:none}'), ['cantTell', [[':focus']]]);
+    // The quote jsdom gives too (round 12, F12-9).
+    for (const [css, quoted] of [
+      ['button:where(:focus,:hover)', 'button:where(:focus, :hover)'],
+      ['main>button:focus', 'main > button:focus'],
+      ['main  button:is( .x , :focus )', 'main button:is(.x, :focus)'],
+      ['button:not([type=reset]):focus', 'button:not([type="reset"]):focus']
+    ]) {
+      assert.deepEqual(await run(`${css}{outline:none}`), ['cantTell', [[quoted]]], css);
+    }
+  }
+);
+
+// :focus-within and :has(:focus) as focus rules, and an open shadow root's
+// own and adopted style sheets read against its elements (round 12,
+// U12-16).
+test(
+  `${RULE_ID}: ancestor focus states and shadow root sheets, in Chromium`,
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    async function run(css, body, shadow) {
+      const p = await browser.newPage();
+      try {
+        await p.setContent(
+          `<!doctype html><html lang="en"><head><title>t</title><style>${css}</style></head><body><main>${body}</main></body></html>`
+        );
+        if (shadow) {
+          await p.evaluate(([html, adopt]) => {
+            const root = document.getElementById('h').attachShadow({ mode: 'open' });
+            root.innerHTML = html;
+            if (adopt) {
+              const sheet = new CSSStyleSheet();
+              sheet.replaceSync(adopt);
+              root.adoptedStyleSheets = [sheet];
+            }
+          }, shadow);
+        }
+        await addBundle(p);
+        return await p.evaluate((id) => {
+          const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0];
+          return [r.outcome, r.occurrences.map((o) => o.data.details.suppressingSelectors)];
+        }, RULE_ID);
+      } finally {
+        await p.close();
+      }
+    }
+    const link = '<a href="#x">x</a>';
+    assert.deepEqual(await run('main:focus-within a{outline:none}', link), [
+      'cantTell',
+      [['main:focus-within a']]
+    ]);
+    assert.deepEqual(await run('main:has(a:focus) a{outline:none}', link), [
+      'cantTell',
+      [['main:has(a:focus) a']]
+    ]);
+    assert.deepEqual(await run('main:has(button:focus) a{outline:none}', link), [
+      'notApplicable',
+      []
+    ]);
+    const host = '<a href="#d">doc</a><div id="h"></div>';
+    for (const shadow of [
+      ['<style>button:focus, a:focus{outline:none}</style><button>b</button>', ''],
+      ['<button>b</button>', 'button:focus, a:focus{outline:none}']
+    ]) {
+      // The shadow root's rule removes its button's outline, not the
+      // document's link's.
+      assert.deepEqual(await run('', host, shadow), ['cantTell', [['button:focus']]]);
+    }
+  }
+);
+
+// With no rule that removes an outline in any sheet, a shadow root's
+// included, the candidates are not looked for (round 12, F12-3).
+test(
+  `${RULE_ID}: no candidate is looked for on a page with a shadow root, in Chromium`,
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    async function run(shadowCss) {
+      const p = await browser.newPage();
+      try {
+        const links = Array.from({ length: 50 }, (_, i) => `<a href="#${i}">${i}</a>`).join('');
+        await p.setContent(
+          `<!doctype html><html lang="en"><head><title>t</title><style>a{color:#00e}</style></head><body><main>${links}<div id="h"></div></main></body></html>`
+        );
+        await p.evaluate((css) => {
+          const root = document.getElementById('h').attachShadow({ mode: 'open' });
+          root.innerHTML = `<button>b</button><style>${css}</style>`;
+          window.__candidateQueries = 0;
+          for (const proto of [Document.prototype, Element.prototype, DocumentFragment.prototype]) {
+            const query = proto.querySelectorAll;
+            proto.querySelectorAll = function (sel) {
+              if (String(sel).includes('area[href]')) window.__candidateQueries += 1;
+              return query.call(this, sel);
+            };
+          }
+        }, shadowCss);
+        await addBundle(p);
+        return await p.evaluate((id) => {
+          const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0];
+          return [r.outcome, window.__candidateQueries];
+        }, RULE_ID);
+      } finally {
+        await p.close();
+      }
+    }
+    assert.deepEqual(await run('button{color:red}'), ['notApplicable', 0]);
+    const [outcome, queries] = await run('button{outline:none}');
+    assert.equal(outcome, 'cantTell');
+    assert.ok(queries > 0);
+  }
+);
+
+// ::part(), ::slotted() and :host rules remove the outline of the element
+// they style, as the browser draws it once focused from the keyboard (round
+// 12, F12-8).
+test(`${RULE_ID}: ::part(), ::slotted() and :host rules, in Chromium`, { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const define = (tpl) =>
+    `<script>customElements.define('x-w', class extends HTMLElement { constructor() { super(); this.attachShadow({ mode: 'open' }).innerHTML = ${JSON.stringify(tpl)}; } });</script>`;
+  const part = '<button part="btn">Go</button>';
+  async function run(css, tpl, body, target) {
+    const p = await browser.newPage();
+    try {
+      await p.setContent(
+        `<!doctype html><html lang="en"><head><title>t</title><style>${css}</style>${define(tpl)}</head><body><main><a href="#x">first</a>${body}</main></body></html>`
+      );
+      await addBundle(p);
+      const outcome = await p.evaluate(
+        (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0].outcome,
+        RULE_ID
+      );
+      let outline = null;
+      for (let i = 0; i < 4 && !outline; i++) {
+        await p.keyboard.press('Tab');
+        outline = await p.evaluate((sel) => {
+          const el =
+            sel === 'part'
+              ? document.querySelector('x-w').shadowRoot.querySelector('button')
+              : document.querySelector(sel);
+          let a = document.activeElement;
+          while (a && a.shadowRoot && a.shadowRoot.activeElement) a = a.shadowRoot.activeElement;
+          return a === el ? getComputedStyle(el).outlineStyle : null;
+        }, target);
+      }
+      return [outcome, outline];
+    } finally {
+      await p.close();
+    }
+  }
+  const removed = ['cantTell', 'none'];
+  const kept = ['notApplicable', 'auto'];
+  const slot = '<x-w><button id="t">S</button></x-w>';
+  const host = '<x-w id="t" tabindex="0"></x-w>';
+  assert.deepEqual(
+    await run('x-w::part(btn):focus{outline:none}', part, '<x-w></x-w>', 'part'),
+    removed
+  );
+  assert.deepEqual(await run('::part(btn){outline:none}', part, '<x-w></x-w>', 'part'), removed);
+  assert.deepEqual(
+    await run('x-w::part(other):focus{outline:none}', part, '<x-w></x-w>', 'part'),
+    kept
+  );
+  const shadowCss = (css) => `<style>${css}</style><slot></slot>`;
+  assert.deepEqual(
+    await run('', shadowCss('::slotted(button:focus){outline:none}'), slot, '#t'),
+    removed
+  );
+  assert.deepEqual(await run('', shadowCss('::slotted(a:focus){outline:none}'), slot, '#t'), kept);
+  assert.deepEqual(await run('', shadowCss(':host(:focus){outline:none}'), host, '#t'), removed);
+  assert.deepEqual(await run('', shadowCss(':host(.q:focus){outline:none}'), host, '#t'), kept);
+  // A rule of the host's tree outranks the shadow root's.
+  assert.deepEqual(
+    await run(
+      'x-w:focus{outline:2px solid red}',
+      shadowCss(':host(:focus){outline:none}'),
+      host,
+      '#t'
+    ),
+    ['notApplicable', 'solid']
+  );
 });

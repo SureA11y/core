@@ -355,11 +355,13 @@ test('a custom rule whose wcagSc names no criterion is skipped, as definePack re
   assert.ok(!r.checksResults.some((c) => c.ruleId === 'org-r'));
 });
 
-test('a pack passed as a plain object is frozen on its first use (PK-10)', () => {
+test('a pack passed as a plain object runs from a frozen copy, and the caller’s objects stay as they were (PK-10, round 12, A12-15)', () => {
   const page = '<html lang="en"><head><title>t</title></head><body><p>x</p></body></html>';
   const run = function () {
     return { outcome: 'pass', occurrences: [] };
   };
+  // The caller's own object, reached through the pack's metadata.
+  const config = { level: 1 };
   const pack = {
     name: 'acme-pack',
     version: '1.0.0',
@@ -368,20 +370,58 @@ test('a pack passed as a plain object is frozen on its first use (PK-10)', () =>
     rules: [
       {
         id: 'acme-r',
-        meta: { title: 'T', description: 'd', tags: ['wcag2a', 'wcag111'], wcagSc: ['1.1.1'] },
+        meta: {
+          title: 'T',
+          description: 'd',
+          tags: ['wcag2a', 'wcag111'],
+          wcagSc: ['1.1.1'],
+          extra: config
+        },
         runInPage: run
       }
     ]
   };
   const r = runa11yCoreOnHtml(page, { engineOptions: { packs: [pack] }, runOnly: ['acme-r'] });
   assert.equal(r.checksResults[0].outcome, 'pass');
-  assert.ok(
-    Object.isFrozen(pack) && Object.isFrozen(pack.rules) && Object.isFrozen(pack.rules[0].meta)
+  // Nothing of the caller's is frozen.
+  for (const o of [pack, pack.rules, pack.rules[0], pack.rules[0].meta, config, run]) {
+    assert.ok(!Object.isFrozen(o));
+  }
+  config.level = 2;
+  // A change to the pack is seen by the next scan, not run as it was.
+  pack.rules[0].runInPage = function () {
+    return { outcome: 'fail', occurrences: [] };
+  };
+  const again = runa11yCoreOnHtml(page, { engineOptions: { packs: [pack] }, runOnly: ['acme-r'] });
+  assert.equal(again.checksResults[0].outcome, 'fail');
+  // A pack from definePack is still frozen, as documented.
+  const { definePack } = require('../src/pack.js');
+  const defined = definePack({
+    ...pack,
+    rules: [{ ...pack.rules[0], meta: { ...pack.rules[0].meta, extra: undefined } }]
+  });
+  assert.ok(Object.isFrozen(defined) && Object.isFrozen(defined.rules[0].meta));
+});
+
+test('a plain-object pack made in another realm runs from a copy too, so a later change is seen (round 12, R12F-9)', () => {
+  const vm = require('node:vm');
+  const page = '<html lang="en"><head><title>t</title></head><body><p>x</p></body></html>';
+  // Made in a vm context: its objects have that realm's Object.prototype.
+  const pack = vm.runInContext(
+    "({ name: 'acme-realm', version: '1.0.0', namespace: 'acme', core: '*', rules: [{ id: 'acme-realm-r', meta: { title: 'T', description: 'd', tags: ['wcag2a', 'wcag111'], wcagSc: ['1.1.1'] } }] })",
+    vm.createContext({})
   );
-  // Its functions are left as they are.
-  assert.ok(!Object.isFrozen(run));
-  assert.throws(() => {
-    pack.rules[0].runInPage = () => ({ outcome: 'fail' });
-  }, TypeError);
-  assert.throws(() => pack.rules.push({ id: 'acme-s' }), TypeError);
+  assert.notEqual(Object.getPrototypeOf(pack), Object.prototype);
+  pack.rules[0].runInPage = function () {
+    return { outcome: 'pass', occurrences: [] };
+  };
+  const scan = () =>
+    runa11yCoreOnHtml(page, { engineOptions: { packs: [pack] }, runOnly: ['acme-realm-r'] })
+      .checksResults[0].outcome;
+  assert.equal(scan(), 'pass');
+  assert.ok(!Object.isFrozen(pack) && !Object.isFrozen(pack.rules[0]));
+  pack.rules[0].runInPage = function () {
+    return { outcome: 'fail', occurrences: [] };
+  };
+  assert.equal(scan(), 'fail');
 });

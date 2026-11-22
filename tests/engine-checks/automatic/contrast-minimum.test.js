@@ -601,6 +601,22 @@ test(`${RULE_ID}: text forming the accessible name of a disabled widget via a <l
   });
 });
 
+test(`${RULE_ID}: a label of an input inside an aria-disabled group is left out (ACT afw4f7, round 11, D6)`, () => {
+  // ACT afw4f7, inapplicable example 9: aria-disabled on a role="group"
+  // disables the input in it, so the label naming that input has no
+  // contrast requirement. A plain div with aria-disabled and no control in
+  // it still exempts nothing (D6).
+  const groupHtml = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <div role="group" aria-disabled="true" style="color:#888; background: white;">
+    <label>My name <input /></label>
+  </div></body></html>`;
+  assertRule(run(groupHtml), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const plainHtml = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <div aria-disabled="true" style="color:#888; background: white;"><span>Plain text</span></div>
+  </body></html>`;
+  assertRule(run(plainHtml), RULE_ID, 'fail');
+});
+
 test(`${RULE_ID}: ANCESTOR opacity < 1 over a flat resolvable backdrop is computable (and here fails)`, () => {
   // Group opacity over a flat, fully-resolvable backdrop is computable
   // (see contrast-computable) -- black text at 50% group opacity over

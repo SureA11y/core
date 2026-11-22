@@ -20,6 +20,7 @@
  *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
  *   describeOptionValue (src/core/dom-helpers.js -- names a value of the wrong type),
  *   enforceEngineOptions (src/core/engine-options.js -- unknown or invalid options),
+ *   engineOptionSpec (src/core/engine-options.js -- what probes may hold),
  *   rollupInProfileVersion (a standard's rollups under one of its profiles),
  *   profileStandardOf (ctx.standard: the standard a profile targets),
  *   ENGINE_VERSION (the package version, baked in at build time),
@@ -45,14 +46,26 @@ const { readLiveRegionHook } = require('./live-region-hook');
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    warnDeprecatedStandards, warnDeprecatedProfile, RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
-   profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, strictOf,
+   profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, engineOptionSpec, strictOf,
    STANDARD_REPORTS, t, PROFILE_SEVERITY, PROFILE_WCAG_VERSIONS, CATALOG, switchOf,
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
    criteriaNamingRule, optInTagsOf, ruleIdMatches,
    criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES, COMPLETE_APPLICABILITY_SCS,
-   COMPLETE_CHECK_SCS, WCAG_LEVELS_BY_SC, isIsoDateTime */
+   COMPLETE_CHECK_SCS, WCAG_LEVELS_BY_SC, isIsoDateTime, ownOptions, plainOptions */
 
 // A WCAG conformance level as the engine names it ('aa' is 'AA'), or null.
+// A key the engine sets on its own objects and functions, defined rather
+// than assigned, and read as their own: a value of that name a page's
+// script put on Object.prototype, read-only or not, is neither read nor
+// refuses the key (round 12, F12-4).
+function setOwnKey(o, key, value) {
+  Object.defineProperty(o, key, { value, writable: true, enumerable: true, configurable: true });
+  return value;
+}
+function ownKeyOf(o, key) {
+  return o != null && Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+}
+
 function normalizeWcagLevel(v) {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
   return s === 'A' || s === 'AA' || s === 'AAA' ? s : null;
@@ -516,6 +529,8 @@ function rollupCompositeResults(
   const rulesResults = [];
   try {
     const composites = Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : [];
+    // What each rollup echoes: the options as plain objects (plainOptions).
+    const echoedOptions = plainOptions(engineOptionsResolved || {});
 
     const LEVEL_RANK = { A: 1, AA: 2, AAA: 3 };
 
@@ -599,10 +614,13 @@ function rollupCompositeResults(
       const ruleId = isNonEmptyString(entry.id) ? entry.id.trim() : String(entry.id || '').trim();
       if (!ruleId) return null;
 
-      const metaIn =
+      // Its own keys only (round 12, R12F-1 to R12F-6).
+      const metaIn = Object.assign(
+        Object.create(null),
         entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)
           ? entry.meta
-          : {};
+          : null
+      );
 
       const titleKey =
         typeof metaIn.titleKey === 'string' && metaIn.titleKey.trim() ? metaIn.titleKey.trim() : '';
@@ -706,7 +724,7 @@ function rollupCompositeResults(
             .filter(Boolean)
         : [];
 
-      return {
+      return Object.assign(Object.create(null), {
         ruleId,
         title: metaIn.title || ruleId,
         description: metaIn.description || '',
@@ -773,7 +791,7 @@ function rollupCompositeResults(
         // A standard's requirement its rules don't check in full
         // (ruleMappedStandard requirements' partial).
         __partial: !!ownStandard && metaIn.partial === true
-      };
+      });
     }
 
     // Whether a finding's data.details has every value `when` gives, each
@@ -1075,7 +1093,9 @@ function rollupCompositeResults(
         reasonCode = 'composite.rollup.cantTell.partialCheck';
       }
 
-      const raw = {
+      // With no prototype, so no key set below is refused by a read-only
+      // value on Object.prototype (round 12, R12F-6).
+      const raw = Object.assign(Object.create(null), {
         outcome,
         occurrences: [],
 
@@ -1117,10 +1137,10 @@ function rollupCompositeResults(
         },
 
         engineOptions: {
-          ...(engineOptionsResolved || {}),
+          ...echoedOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
-      };
+      });
 
       // Promote composite severity based on contributors (deterministic).
       // - If composite fails: use max severity among failing children.
@@ -1264,7 +1284,10 @@ function readRenderingEnvironment(win, doc) {
   // whether it was installed before the page's scripts: what the name rules
   // could read of custom elements' internals. Left out without one.
   const hook = readInternalsHook(win);
-  const internalsHook = hook ? { internalsHook: hook.early ? 'early' : 'late' } : {};
+  // Filled with no prototype, so a read-only value on Object.prototype
+  // refuses no key; handed back plain (round 12, R12F-6).
+  const internalsHook = Object.create(null);
+  if (hook) internalsHook.internalsHook = hook.early ? 'early' : 'late';
   // The same for the listener hook (listenerHookScript): which event
   // listeners added from script the keyboard rules could see.
   const listeners = readListenerHook(win);
@@ -1275,7 +1298,8 @@ function readRenderingEnvironment(win, doc) {
   if (liveRegions) internalsHook.liveRegionHook = liveRegions.early ? 'early' : 'late';
   if (!layout) return { layout: false, ...internalsHook };
 
-  const env = { layout: true };
+  const env = Object.create(null);
+  env.layout = true;
   const width = Number(win.innerWidth);
   const height = Number(win.innerHeight);
   if (Number.isFinite(width) && Number.isFinite(height)) env.viewport = { width, height };
@@ -1336,7 +1360,7 @@ function readRenderingEnvironment(win, doc) {
       env.images = loading ? 'loading' : 'loaded';
     }
   } catch {}
-  return Object.assign(env, internalsHook);
+  return { ...env, ...internalsHook };
 }
 
 /**
@@ -2367,13 +2391,13 @@ function runCore(
     );
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null, shadowDom);
     // The animations as they were before settling, for helpers.animationsAtScanStart.
-    settleAnimations.atScanStart = settled.running;
+    setOwnKey(settleAnimations, 'atScanStart', settled.running);
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     // Content content-visibility: auto skips, laid out as a reader sees it.
     const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
     // For helpers.paintContainedByContentVisibility.
-    layOutSkippedContent.paintContained = laidOut.paintContained;
+    setOwnKey(layOutSkippedContent, 'paintContained', laidOut.paintContained);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -2396,10 +2420,10 @@ function runCore(
       return result;
     } finally {
       laidOut.restore();
-      layOutSkippedContent.paintContained = null;
+      setOwnKey(layOutSkippedContent, 'paintContained', null);
       colorsHeld.restore();
       settled.restore();
-      settleAnimations.atScanStart = [];
+      setOwnKey(settleAnimations, 'atScanStart', []);
     }
   } finally {
     restoreDomProtection();
@@ -2417,8 +2441,9 @@ function runCore(
             : null;
       // The contrast helpers' blank frames, kept for the run
       // (__openProbeFrame), go with it.
-      const shared = w && w.__a11ycoreSharedCache;
-      const frames = shared && shared.contrast && shared.contrast.probeFrames;
+      const own = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      const shared = own(w, '__a11ycoreSharedCache');
+      const frames = own(own(shared, 'contrast'), 'probeFrames');
       if (Array.isArray(frames)) {
         for (const entry of frames) {
           try {
@@ -2427,7 +2452,7 @@ function runCore(
           } catch {}
         }
       }
-      if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
+      if (shared) delete w.__a11ycoreSharedCache;
     } catch {}
   }
 }
@@ -2444,6 +2469,9 @@ function runCoreSettled(
   COMPOSITE_RULES
 ) {
   const dom = createSafeDom();
+  // The options' own keys only, with no prototype, so a value a page's
+  // script put on Object.prototype is never read as an option (ownOptions).
+  engineOptions = ownOptions(engineOptions);
   // engineOptions.timeBudgetMs: once the scan has spent this long, it starts
   // no more rules, and lists those it didn't start (notRun). Read only when
   // it is a number above 0; enforceEngineOptions says anything else.
@@ -2464,8 +2492,9 @@ function runCoreSettled(
   const budgetSpent = !!(
     engineOptions &&
     typeof engineOptions === 'object' &&
-    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent') &&
-    engineOptions.__budgetSpent === true
+    Object.prototype.hasOwnProperty.call(engineOptions, '__budgetSpent') &&
+    engineOptions.__budgetSpent === true &&
+    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent')
   );
   const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
@@ -2493,15 +2522,21 @@ function runCoreSettled(
   }
   // Normalize contrast options without mutating caller-provided engineOptions.
   function __normalizeContrastOptions(engineOptions2) {
-    const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
-    const c = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : {};
+    const eo =
+      engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : Object.create(null);
+    const c = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : Object.create(null);
     const mode = c.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
     const rootCanvasFallback =
       typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim()
         ? c.rootCanvasFallback.trim()
         : '#ffffff';
-    // Set below, once the color is known to be usable.
-    return { mode, rootCanvasFallback, rootCanvasFallbackSet: false };
+    // Set below, once the color is known to be usable. With no prototype,
+    // as the options it comes from.
+    return Object.assign(Object.create(null), {
+      mode,
+      rootCanvasFallback,
+      rootCanvasFallbackSet: false
+    });
   }
 
   // Whether the caller gave contrast.rootCanvasFallback, rather than the
@@ -2521,10 +2556,11 @@ function runCoreSettled(
     );
   }
 
-  const engineOptionsResolved =
-    engineOptions && typeof engineOptions === 'object'
-      ? { ...engineOptions, contrast: __normalizeContrastOptions(engineOptions) }
-      : { contrast: __normalizeContrastOptions(null) };
+  const engineOptionsResolved = Object.assign(
+    Object.create(null),
+    engineOptions && typeof engineOptions === 'object' ? engineOptions : null,
+    { contrast: __normalizeContrastOptions(engineOptions) }
+  );
 
   const policy = resolvePolicy(POLICY_CONTRACTS, engineOptionsResolved, strictOf(engineOptions));
 
@@ -2669,7 +2705,10 @@ function runCoreSettled(
   // the same window. Clearing at the start of every run keeps sharing scoped
   // to "this run" as intended, without leaking across runs.
   try {
-    if (window && window.__a11ycoreSharedCache) window.__a11ycoreSharedCache = {};
+    if (window && Object.prototype.hasOwnProperty.call(window, '__a11ycoreSharedCache')) {
+      // The window's own key: set as it is, never through Object.prototype.
+      window.__a11ycoreSharedCache = Object.create(null);
+    }
   } catch {}
 
   const sharedHelpers = createDomHelpers({
@@ -2696,19 +2735,19 @@ function runCoreSettled(
   // The animations running when the scan started, before they were settled:
   // [] where there are none or no getAnimations (jsdom).
   {
-    const startedWith = Array.isArray(settleAnimations.atScanStart)
+    const startedWith = Array.isArray(ownKeyOf(settleAnimations, 'atScanStart'))
       ? settleAnimations.atScanStart
       : [];
-    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+    setOwnKey(sharedHelpers, 'animationsAtScanStart', () => startedWith.map((a) => ({ ...a })));
   }
   // The elements whose box clips its content only for content-visibility:
   // auto, as the scan lays them out (layOutSkippedContent).
   {
     const paintContained =
-      layOutSkippedContent.paintContained instanceof Set
+      ownKeyOf(layOutSkippedContent, 'paintContained') instanceof Set
         ? layOutSkippedContent.paintContained
         : new Set();
-    sharedHelpers.paintContainedByContentVisibility = (el) => paintContained.has(el);
+    setOwnKey(sharedHelpers, 'paintContainedByContentVisibility', (el) => paintContained.has(el));
   }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
@@ -2796,7 +2835,9 @@ function runCoreSettled(
     }
 
     if (t === 'object') {
-      const out = {};
+      // Filled with no prototype, so no key is refused by a read-only value
+      // on Object.prototype; handed back plain.
+      const out = Object.create(null);
       const keys = Object.keys(v).sort();
       // cap object keys
       const n = Math.min(keys.length, 50);
@@ -2806,7 +2847,7 @@ function runCoreSettled(
         if (typeof k !== 'string') continue;
         out[k] = sanitizeProbeValue(v[k], depth - 1);
       }
-      return out;
+      return { ...out };
     }
 
     return null;
@@ -2814,8 +2855,11 @@ function runCoreSettled(
 
   let probes;
   try {
+    // JSON-safe data only, as enforceEngineOptions says (round 12, A12-13).
     const rawProbes =
-      engineOptionsResolved && typeof engineOptionsResolved.probes === 'object'
+      engineOptionsResolved &&
+      typeof engineOptionsResolved.probes === 'object' &&
+      engineOptionSpec().probes.test(engineOptionsResolved.probes)
         ? engineOptionsResolved.probes
         : null;
     probes = rawProbes ? sanitizeProbeValue(rawProbes, 6) : null;
@@ -3074,10 +3118,15 @@ function runCoreSettled(
     const occurrences = Array.isArray(result.occurrences)
       ? result.occurrences.map((occ) => {
           if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
-          const next =
-            occ.occurrenceOutcome === 'fail'
-              ? { ...occ, occurrenceOutcome: 'cantTell' }
-              : { ...occ };
+          // With no prototype, as the result (round 12, R12F-1 to R12F-6).
+          const next = Object.assign(
+            Object.create(null),
+            occ,
+            Object.prototype.hasOwnProperty.call(occ, 'occurrenceOutcome') &&
+              occ.occurrenceOutcome === 'fail'
+              ? { occurrenceOutcome: 'cantTell' }
+              : null
+          );
           if (!next.uncertainty) {
             next.uncertainty = {
               code: 'out-of-scope',
@@ -3116,8 +3165,7 @@ function runCoreSettled(
 
     // Deliberately NOT reported through `error`: nothing went wrong here,
     // and consumers read a non-empty `error` as "this rule threw".
-    return {
-      ...result,
+    return Object.assign(Object.create(null), result, {
       outcome: 'cantTell',
       occurrences,
       wcagVersionScope: {
@@ -3126,7 +3174,7 @@ function runCoreSettled(
         coercedFrom: 'fail',
         ...(why === 'errata' ? { by: 'errata' } : {})
       }
-    };
+    });
   }
 
   const checksResults = [];
@@ -3283,15 +3331,24 @@ function runCoreSettled(
       }
       if (kind === '[object Set]') return [...v.values()].map((x) => plainData(x, path));
       if (typeof v.toJSON === 'function') return plainData(v.toJSON(), path);
+      // Each key defined, not assigned: a read-only value of that name on
+      // Object.prototype (__node) refuses none (round 12, R12F-6).
       const out = {};
+      const put = (key, value) =>
+        Object.defineProperty(out, key, {
+          value,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
       for (const key of Object.keys(v)) {
         const x = v[key];
         if (key === '__node') {
-          out[key] = x;
+          put(key, x);
           continue;
         }
         const plain = plainData(x, path);
-        if (plain !== undefined) out[key] = plain;
+        if (plain !== undefined) put(key, plain);
       }
       return out;
     } finally {
@@ -3434,7 +3491,11 @@ function runCoreSettled(
   }
   const readOnlyViews = new WeakMap();
   const ruleEngineOptions =
-    engineOptionsResolved && typeof engineOptionsResolved === 'object' ? engineOptionsResolved : {};
+    engineOptionsResolved && typeof engineOptionsResolved === 'object'
+      ? engineOptionsResolved
+      : Object.create(null);
+  // What each result echoes: the same options, as plain objects.
+  const echoedEngineOptions = plainOptions(ruleEngineOptions);
   // Changes a pack's or caller's rule made to the page, by rule id.
   const pageChangedBy = [];
   for (const def of runOrder) {
@@ -3511,12 +3572,16 @@ function runCoreSettled(
     const settingNames = Array.isArray(defResolved.settings) ? defResolved.settings : [];
     let ruleConfig = callerConfig;
     if (ruleConfig && settingNames.length) {
-      ruleConfig = { ...ruleConfig };
+      ruleConfig = Object.assign(Object.create(null), ruleConfig);
       for (const name of settingNames) delete ruleConfig[name];
     }
     const variant =
       defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
-    if (variant && variant.config) ruleConfig = { ...(ruleConfig || {}), ...variant.config };
+    // With no prototype, as the caller's settings are (ownOptions): a
+    // variant's config never reads excludeSelectors from Object.prototype.
+    if (variant && variant.config) {
+      ruleConfig = Object.assign(Object.create(null), ruleConfig, variant.config);
+    }
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -3526,6 +3591,12 @@ function runCoreSettled(
     if (typeof sharedHelpers.__setActiveRuleExcludeSelectors === 'function') {
       sharedHelpers.__setActiveRuleExcludeSelectors(ruleConfig && ruleConfig.excludeSelectors);
     }
+    // Whether any area is left out for this rule: only then does
+    // normalizeRuleResult look up every element a selector-only occurrence
+    // matches (round 12, A12-16).
+    const excluding =
+      excludeSelectors.length > 0 ||
+      normalizeSelectorList(ruleConfig && ruleConfig.excludeSelectors).length > 0;
 
     const foreign = foreignCode.has(defResolved.ruleId);
     const ctx = {
@@ -3558,13 +3629,14 @@ function runCoreSettled(
             outcome: 'notApplicable',
             occurrences: [],
             engineOptions: {
-              ...ruleEngineOptions,
+              ...echoedEngineOptions,
               locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
             }
           },
           SCHEMA_VERSION,
           policy,
-          sharedHelpers
+          sharedHelpers,
+          excluding
         )
       );
       if (ruleTimings)
@@ -3592,7 +3664,8 @@ function runCoreSettled(
           // everywhere: what was meant can't be known, so the rule says so.
           throw new Error(
             'applicability returned ' +
-              describeOptionValue(res) +
+              // "a undefined" read badly (round 12, A12-11).
+              (res === undefined ? 'undefined (no value)' : describeOptionValue(res)) +
               '; it must return true or false (or { applicable: true | false })'
           );
         }
@@ -3602,12 +3675,12 @@ function runCoreSettled(
           occurrences: [],
           error: describeThrown(err),
           engineOptions: {
-            ...ruleEngineOptions,
+            ...echoedEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -3619,12 +3692,12 @@ function runCoreSettled(
           outcome: 'notApplicable',
           occurrences: [],
           engineOptions: {
-            ...ruleEngineOptions,
+            ...echoedEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -3644,7 +3717,7 @@ function runCoreSettled(
         occurrences: [],
         error: describeThrown(err),
         engineOptions: {
-          ...ruleEngineOptions,
+          ...echoedEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
       };
@@ -3655,6 +3728,11 @@ function runCoreSettled(
       if (changes) pageChangedBy.push({ ruleId: defResolved.ruleId, changes });
     }
     if (foreign) result = plainRuleOutput(result);
+    // Read with no prototype from here: a field the rule left out is never
+    // read from Object.prototype (round 12, R12F-1 to R12F-6).
+    if (result && typeof result === 'object' && !isThenable(result)) {
+      result = Object.assign(Object.create(null), result);
+    }
 
     // A rule that returned nothing usable is reported, not dropped: a
     // missing result would read as a rule that never existed.
@@ -3672,7 +3750,7 @@ function runCoreSettled(
         occurrences: [],
         error: unusable,
         engineOptions: {
-          ...ruleEngineOptions,
+          ...echoedEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
       };
@@ -3681,7 +3759,7 @@ function runCoreSettled(
     // neither how it is judged nor what the result says, and is noted.
     if (result && Object.prototype.hasOwnProperty.call(result, 'type')) {
       const returnedType = result.type;
-      result = { ...result };
+      result = Object.assign(Object.create(null), result);
       delete result.type;
       if (returnedType !== undefined && returnedType !== defResolved.type) {
         result.error =
@@ -3705,8 +3783,7 @@ function runCoreSettled(
         else dropped += 1;
       }
       if (dropped) {
-        result = {
-          ...result,
+        result = Object.assign(Object.create(null), result, {
           occurrences: kept,
           error:
             (result.error ? String(result.error) + ' | ' : '') +
@@ -3714,7 +3791,7 @@ function runCoreSettled(
             dropped +
             (dropped === 1 ? ' occurrence that is' : ' occurrences that are') +
             ' not an object; left out.'
-        };
+        });
       }
     }
 
@@ -3725,7 +3802,7 @@ function runCoreSettled(
         Object.prototype.hasOwnProperty.call(result, key)
       );
       if (owned.length) {
-        result = { ...result };
+        result = Object.assign(Object.create(null), result);
         for (const key of owned) delete result[key];
         result.error =
           (result.error ? String(result.error) + ' | ' : '') +
@@ -3743,8 +3820,7 @@ function runCoreSettled(
       result.outcome === 'fail' &&
       !(Array.isArray(result.occurrences) && result.occurrences.length)
     ) {
-      result = {
-        ...result,
+      result = Object.assign(Object.create(null), result, {
         occurrences: [
           {
             __node: dom.documentElement(document),
@@ -3757,7 +3833,7 @@ function runCoreSettled(
             data: { details: { reasonCode: 'FAIL_WITHOUT_OCCURRENCE' } }
           }
         ]
-      };
+      });
     }
 
     // A variant reports in its own words: a message key of its base rule's
@@ -3783,13 +3859,12 @@ function runCoreSettled(
     // The scan's options and the WCAG scope are the engine's to state: an
     // engineOptions or wcagVersionScope in a rule's return is not taken (a
     // returned engineOptions.output could switch off the rule's selectors).
-    result = {
-      ...result,
+    result = Object.assign(Object.create(null), result, {
       engineOptions: {
-        ...ruleEngineOptions,
+        ...echoedEngineOptions,
         locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
       }
-    };
+    });
     delete result.wcagVersionScope;
     checksResults.push(
       normalizeRuleResult(
@@ -3797,7 +3872,8 @@ function runCoreSettled(
         scopeOutcomeToWcagVersion(defResolved, result),
         SCHEMA_VERSION,
         policy,
-        sharedHelpers
+        sharedHelpers,
+        excluding
       )
     );
     if (ruleTimings)
@@ -3870,15 +3946,33 @@ function runCoreSettled(
     }
   );
   if (notRunRules.length) {
+    // The budget the scan was given, not what was left of it when this
+    // profile or frame started (__scanTimeBudgetMs, set by the engine
+    // only), in whole ms, or tenths below 10 (round 12, A12-5).
+    const flagOf = (key) =>
+      Object.prototype.hasOwnProperty.call(engineOptions, key) &&
+      !Object.prototype.propertyIsEnumerable.call(engineOptions, key)
+        ? engineOptions[key]
+        : undefined;
+    const given =
+      typeof flagOf('__scanTimeBudgetMs') === 'number'
+        ? flagOf('__scanTimeBudgetMs')
+        : timeBudgetMs;
+    const budgetText =
+      typeof given === 'number' && Number.isFinite(given)
+        ? ' of ' + (given >= 10 ? Math.round(given) : Math.round(given * 10) / 10) + ' ms'
+        : '';
     try {
       console.warn(
-        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
-          timeBudgetMs +
+        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget' +
+          budgetText +
           (budgetSpent
-            ? typeof engineOptions.profile === 'string'
-              ? ' ms before profile "' + engineOptions.profile + '" started, so it'
-              : " ms before this frame's scan started, so it"
-            : ' ms and') +
+            ? flagOf('__budgetSpentAt') === 'profile' && typeof engineOptions.profile === 'string'
+              ? ' before profile "' + engineOptions.profile + '" started, so it'
+              : flagOf('__budgetSpentAt') === 'styleSheets'
+                ? " fetching the style sheets the page can't read, before any rule started, so it"
+                : " before this frame's scan started, so it"
+            : ' and') +
           ' did not run ' +
           notRunRules.length +
           ' rule' +
@@ -3928,19 +4022,16 @@ function runCoreSettled(
   for (const r of checksResults.concat(rulesResults)) {
     if (!r || !r.engineOptions || typeof r.engineOptions !== 'object') continue;
     const eo = r.engineOptions;
-    if (
-      !('messages' in eo) &&
-      !('probes' in eo) &&
-      !('customRules' in eo) &&
-      !('styleSheetTexts' in eo)
-    ) {
+    // Its own keys, not ones on Object.prototype.
+    const has = (key) => Object.prototype.hasOwnProperty.call(eo, key);
+    if (!has('messages') && !has('probes') && !has('customRules') && !has('styleSheetTexts')) {
       continue;
     }
     const echoed = { ...eo };
     delete echoed.messages;
-    if ('probes' in echoed) echoed.probes = probes;
-    if ('customRules' in echoed) echoed.customRules = echoedCustomRules;
-    if ('styleSheetTexts' in echoed) echoed.styleSheetTexts = echoedStyleSheets;
+    if (has('probes')) echoed.probes = probes;
+    if (has('customRules')) echoed.customRules = echoedCustomRules;
+    if (has('styleSheetTexts')) echoed.styleSheetTexts = echoedStyleSheets;
     r.engineOptions = echoed;
   }
 
@@ -3956,7 +4047,8 @@ function runCoreSettled(
     for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
   }
   for (const r of checksResults) {
-    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
+    if (r && typeof r === 'object')
+      setOwnKey(r, 'rollupIds', (rollupIdsByRule[r.ruleId] || []).slice());
   }
 
   // Optional perf counters passthrough (only when enabled). Deterministic.
@@ -4076,8 +4168,8 @@ function runCoreSettled(
     Array.isArray(CATALOG.packs) &&
     CATALOG.packs.length > 0;
   let coreWording = null;
-  if ('messages' in engineOptionsResolved) {
-    coreWording = { ...engineOptionsResolved };
+  if (Object.prototype.hasOwnProperty.call(engineOptionsResolved, 'messages')) {
+    coreWording = Object.assign(Object.create(null), engineOptionsResolved);
     delete coreWording.messages;
   }
   const restorable = (c) => {
@@ -4152,6 +4244,8 @@ function runCoreSettled(
 }
 
 module.exports = {
+  setOwnKey,
+  ownKeyOf,
   isThenable,
   assertPageBuiltins,
   assertArrayFromFor,

@@ -165,3 +165,25 @@ test(`${RULE_ID}: the summary quotes the attribute as written (round 11)`, () =>
   assert.match(occ.summary, /tabindex="1\.5"/);
   assert.strictEqual(occ.i18n.params.value, '1.5');
 });
+
+// The attribute is quoted as written, but capped as other page text in a
+// message is: a 200 KB tabindex gave a 200 KB summary (round 12, U12-6).
+test(`${RULE_ID}: a very long tabindex is quoted capped`, () => {
+  const value = `1${'x'.repeat(200000)}`;
+  const html = `<!doctype html><html><body><button id="p" tabindex="${value}">a</button></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occ = rule.occurrences.find((o) => o.html.includes('id="p"'));
+  assert.equal(occ.i18n.params.value.length, 120);
+  assert.ok(occ.i18n.params.value.endsWith('…'));
+  assert.ok(occ.summary.length < 400, String(occ.summary.length));
+  // A short value is still quoted as written.
+  const short = assertRule(
+    runa11yCoreOnHtml(
+      '<!doctype html><html><body><button id="p" tabindex="  3  ">a</button></body></html>',
+      { runOnly: [RULE_ID] }
+    ),
+    RULE_ID,
+    'cantTell'
+  );
+  assert.equal(short.occurrences[0].i18n.params.value, '  3  ');
+});

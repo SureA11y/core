@@ -63,7 +63,9 @@ const {
   reporterOptions,
   notRunOf,
   timeBudgetOf,
-  omittedOf
+  omittedOf,
+  describeValue,
+  lowerOption
 } = require('./scan-result.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -581,10 +583,10 @@ function renderJunitReport(result, given) {
   const cantTellAs =
     options.cantTellAs === undefined || options.cantTellAs === null
       ? 'skipped'
-      : String(options.cantTellAs).trim().toLowerCase();
+      : lowerOption(options.cantTellAs);
   if (cantTellAs !== 'skipped' && cantTellAs !== 'failure') {
     throw new TypeError(
-      `renderJunitReport: cantTellAs must be 'skipped' or 'failure', not ${JSON.stringify(options.cantTellAs)}`
+      `renderJunitReport: cantTellAs must be 'skipped' or 'failure', not ${describeValue(options.cantTellAs)}`
     );
   }
   // leanFailAs is 'skipped' (the default) or 'failure': an undecided
@@ -592,10 +594,10 @@ function renderJunitReport(result, given) {
   const leanFailAs =
     options.leanFailAs === undefined || options.leanFailAs === null
       ? 'skipped'
-      : String(options.leanFailAs).trim().toLowerCase();
+      : lowerOption(options.leanFailAs);
   if (leanFailAs !== 'skipped' && leanFailAs !== 'failure') {
     throw new TypeError(
-      `renderJunitReport: leanFailAs must be 'skipped' or 'failure', not ${JSON.stringify(options.leanFailAs)}`
+      `renderJunitReport: leanFailAs must be 'skipped' or 'failure', not ${describeValue(options.leanFailAs)}`
     );
   }
   // leanFailWcagOnly: true gates only on the leans of rules mapped to a WCAG
@@ -604,7 +606,7 @@ function renderJunitReport(result, given) {
   const leanFailWcagOnly = options.leanFailWcagOnly;
   if (leanFailWcagOnly != null && typeof leanFailWcagOnly !== 'boolean') {
     throw new TypeError(
-      `renderJunitReport: leanFailWcagOnly must be true or false, not ${JSON.stringify(leanFailWcagOnly)}`
+      `renderJunitReport: leanFailWcagOnly must be true or false, not ${describeValue(leanFailWcagOnly)}`
     );
   }
   // includeNotApplicable: true adds the notApplicable rules as skipped
@@ -613,7 +615,7 @@ function renderJunitReport(result, given) {
   const includeNotApplicable = options.includeNotApplicable;
   if (includeNotApplicable != null && typeof includeNotApplicable !== 'boolean') {
     throw new TypeError(
-      `renderJunitReport: includeNotApplicable must be true or false, not ${JSON.stringify(includeNotApplicable)}`
+      `renderJunitReport: includeNotApplicable must be true or false, not ${describeValue(includeNotApplicable)}`
     );
   }
   // allowProfilesNotRun: true accepts a scan of several profiles that ran
@@ -621,7 +623,7 @@ function renderJunitReport(result, given) {
   const allowProfilesNotRun = options.allowProfilesNotRun;
   if (allowProfilesNotRun != null && typeof allowProfilesNotRun !== 'boolean') {
     throw new TypeError(
-      `renderJunitReport: allowProfilesNotRun must be true or false, not ${JSON.stringify(allowProfilesNotRun)}`
+      `renderJunitReport: allowProfilesNotRun must be true or false, not ${describeValue(allowProfilesNotRun)}`
     );
   }
   const opts = {

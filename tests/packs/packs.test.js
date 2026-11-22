@@ -1391,7 +1391,8 @@ test("a variant's messages its pack doesn't define read the base rule's", () => 
       optInRules: ['quiet']
     });
     assert.equal(outcome, 'fail', locale);
-    assert.match(summary, /4\.54:1/, locale);
+    // French writes a decimal comma (round 12, K12-5).
+    assert.match(summary, locale === 'fr' ? /4,54:1/ : /4\.54:1/, locale);
   }
   new Function(packScript([quiet]))();
   try {

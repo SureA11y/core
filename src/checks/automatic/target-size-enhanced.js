@@ -22,7 +22,7 @@
  *   largest square aligned to the page that fits in it), or meets one of
  *   the SC 2.5.5 exceptions this rule can establish: the inline exception
  *   for a target in a sentence, or user-agent sizing (an unstyled native
- *   checkbox or radio). 2.5.5 has no spacing exception, so a target under
+ *   form control other than a button, as target-size-minimum reads it). 2.5.5 has no spacing exception, so a target under
  *   44 fails however far it is from others. Where an exception may apply
  *   but cannot be confirmed (two inline links side by side between
  *   separators alone, as in "Edit | Delete", or a target inside an SVG,

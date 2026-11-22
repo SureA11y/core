@@ -279,12 +279,15 @@
      WCAG 2.5.8 "User Agent Control" exception — size is browser-default, not
      the author's choice, so the size requirement (and any spacing conflict
      stemming from it) doesn't apply at all, even though they sit close
-     together the way real checkbox lists usually do. -->
+     together the way real checkbox lists usually do. The checkboxes opt out
+     of the sizing script (data-rect-mode="test-only"): a width and height it
+     set on them would be the author's size, which the exception does not
+     cover. -->
 <label class="candidate" style="position:absolute; left:10px; top:920px;">
-  <input type="checkbox" id="pass_ua_checkbox_1" data-rect="10,920,13,13"> Option A
+  <input type="checkbox" id="pass_ua_checkbox_1" data-rect="10,920,13,13" data-rect-mode="test-only"> Option A
 </label>
 <label class="candidate" style="position:absolute; left:10px; top:940px;">
-  <input type="checkbox" id="pass_ua_checkbox_2" data-rect="10,940,13,13"> Option B
+  <input type="checkbox" id="pass_ua_checkbox_2" data-rect="10,940,13,13" data-rect-mode="test-only"> Option B
 </label>
 </div>
 
@@ -305,6 +308,32 @@
      undersized (14px high), passes: its own circle reaches nothing. -->
 <button id="fail_circle_reaches_neighbor" class="candidate" data-rect="90,1111,18,18">Target</button>
 <button id="long_neighbor" class="candidate" data-rect="108,1113,292,14">Neighbor</button>
+</div>
+
+<div class="case" id="case_26">
+  <div class="case-title">26 — FAIL: text inputs the author sized, stacked too close</div>
+<!-- FAIL: each text input is given height:20px by the author. That lands
+     within the height a browser draws a text input at, but the size is the
+     author's: the User Agent Control exception needs a size the author has
+     not modified, so the pair is evaluated as any other undersized-and-close
+     pair. -->
+<input id="fail_sized_text_input_1" class="candidate" aria-label="First" style="position:absolute; left:10px; top:1160px; box-sizing:border-box; width:150px; height:20px;" data-rect="10,1160,150,20">
+<input id="fail_sized_text_input_2" class="candidate" aria-label="Second" style="position:absolute; left:10px; top:1181px; box-sizing:border-box; width:150px; height:20px;" data-rect="10,1181,150,20">
+</div>
+
+<div class="case" id="case_27">
+  <div class="case-title">27 — PASS: unstyled checkboxes under a reset that leaves their size alone</div>
+<!-- PASS: the reset normalize.css gives form controls (font-size 100%,
+     line-height 1.15, no margin) and a padding reset don't change the size
+     a browser draws a checkbox at, so the User Agent Control exception
+     still applies. -->
+<style>.ua-reset{font-family:inherit;font-size:100%;line-height:1.15;margin:0;padding:0}</style>
+<label class="candidate" style="position:absolute; left:10px; top:1220px;">
+  <input type="checkbox" class="ua-reset" id="pass_reset_checkbox_1" data-rect="10,1220,13,13" data-rect-mode="test-only"> Option A
+</label>
+<label class="candidate" style="position:absolute; left:10px; top:1238px;">
+  <input type="checkbox" class="ua-reset" id="pass_reset_checkbox_2" data-rect="10,1238,13,13" data-rect-mode="test-only"> Option B
+</label>
 </div>
 
 </body>

@@ -24,14 +24,29 @@
  * globals: the browser bundle includes it by its source.
  */
 async function preloadStyleSheets(options) {
-  const opts = options && typeof options === 'object' ? options : {};
-  const doc = opts.document || (typeof document !== 'undefined' ? document : null);
+  // The options' own keys only: a value a page's script put on
+  // Object.prototype (deadline: 0) is never read as one (round 12, R12F-7).
+  const option = (key) =>
+    options && typeof options === 'object' && Object.prototype.hasOwnProperty.call(options, key)
+      ? options[key]
+      : undefined;
+  const doc = option('document') || (typeof document !== 'undefined' ? document : null);
+  const givenTimeout = option('timeoutMs');
   const timeoutMs =
-    typeof opts.timeoutMs === 'number' && Number.isFinite(opts.timeoutMs) && opts.timeoutMs >= 0
-      ? opts.timeoutMs
+    typeof givenTimeout === 'number' && Number.isFinite(givenTimeout) && givenTimeout >= 0
+      ? givenTimeout
       : 5000;
   const fetchFn = typeof fetch === 'function' ? fetch : null;
-  if (!doc || !fetchFn) return [];
+  const givenDeadline = option('deadline');
+  const deadline =
+    typeof givenDeadline === 'number' && Number.isFinite(givenDeadline) ? givenDeadline : null;
+  // The sheets the deadline left unread, on the list resolved with.
+  const notRead = [];
+  const done = (list) => {
+    Object.defineProperty(list, 'notRead', { value: notRead });
+    return list;
+  };
+  if (!doc || !fetchFn) return done([]);
 
   // The sheets that can't be read, by their absolute URL: linked ones, and
   // those an @import in a readable sheet brings in.
@@ -62,12 +77,21 @@ async function preloadStyleSheets(options) {
     const list = getter && getter.get ? getter.get.call(doc) : [];
     for (const sheet of [...(list || [])]) visit(sheet, 0);
   } catch {
-    return [];
+    return done([]);
   }
 
-  function withTimeout(promise) {
+  // Each fetch waits timeoutMs, and never past the deadline; one the
+  // deadline cut short is named in notRead.
+  function withTimeout(promise, href) {
     return new Promise((resolve) => {
-      const timer = setTimeout(() => resolve(null), timeoutMs);
+      const wait = deadline === null ? timeoutMs : Math.min(timeoutMs, deadline - Date.now());
+      const timer = setTimeout(
+        () => {
+          if (deadline !== null && wait < timeoutMs) notRead.push(href);
+          resolve(null);
+        },
+        Math.max(0, wait)
+      );
       promise.then(
         (v) => {
           clearTimeout(timer);
@@ -82,10 +106,15 @@ async function preloadStyleSheets(options) {
   }
 
   function fetchText(href) {
+    if (deadline !== null && Date.now() >= deadline) {
+      notRead.push(href);
+      return Promise.resolve(null);
+    }
     return withTimeout(
       fetchFn(href, { mode: 'cors', credentials: 'omit' }).then((res) =>
         res && res.ok ? res.text().then((text) => ({ href, text })) : null
-      )
+      ),
+      href
     );
   }
 
@@ -124,7 +153,7 @@ async function preloadStyleSheets(options) {
       }
     }
   }
-  return out;
+  return done(out);
 }
 
 module.exports = { preloadStyleSheets };

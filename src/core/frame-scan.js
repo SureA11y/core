@@ -81,7 +81,7 @@ function findChildFrameElements(roots, includeShadowDom) {
 // source, which the frame turns back into functions (as a binding passes
 // them). Without this every child frame failed with a DataCloneError.
 function engineOptionsForFrames(eo) {
-  if (!Array.isArray(eo.customRules)) return eo;
+  if (!Array.isArray(frameOptionOf(eo, 'customRules'))) return eo;
   const toSource = (v) => (typeof v === 'function' ? v.toString() : v);
   return {
     ...eo,
@@ -346,11 +346,17 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
 // engineOptions.timeBudgetMs, read as the scan reads it: a finite number
 // above 0, else null (no budget).
 function frameTimeBudgetOf(eo) {
-  return typeof eo.timeBudgetMs === 'number' &&
-    Number.isFinite(eo.timeBudgetMs) &&
-    eo.timeBudgetMs > 0
-    ? eo.timeBudgetMs
-    : null;
+  const ms = frameOptionOf(eo, 'timeBudgetMs');
+  return typeof ms === 'number' && Number.isFinite(ms) && ms > 0 ? ms : null;
+}
+
+// An option the caller gave: a key of the options' own, never one a page's
+// script put on Object.prototype (round 12, A12-2). The scan itself reads a
+// copy of the options with no prototype (ownOptions).
+function frameOptionOf(eo, key) {
+  return eo && typeof eo === 'object' && Object.prototype.hasOwnProperty.call(eo, key)
+    ? eo[key]
+    : undefined;
 }
 
 // The engineOptions this document's own scan runs with, under a time budget
@@ -363,10 +369,14 @@ function budgetedOptions(engineOptions, eo, budget, scanStartedAt) {
   if (budget === null || scanStartedAt === null) return engineOptions;
   const left = budget - (Date.now() - scanStartedAt);
   if (left >= budget) return engineOptions;
-  if (left > 0) return Object.assign({}, eo, { timeBudgetMs: left });
-  const spent = Object.assign({}, eo);
-  Object.defineProperty(spent, '__budgetSpent', { value: true });
-  return spent;
+  // With no prototype: a read-only value on Object.prototype can't refuse
+  // a key, and none is read from it (round 12, R12F-6).
+  const out = Object.assign(Object.create(null), eo, left > 0 ? { timeBudgetMs: left } : {});
+  if (left <= 0) Object.defineProperty(out, '__budgetSpent', { value: true });
+  // The scan's budget, which the warnings give, not what is left of it
+  // (round 12, A12-5). Set by the engine only, not enumerable.
+  Object.defineProperty(out, '__scanTimeBudgetMs', { value: budget });
+  return out;
 }
 
 // The budget a frame's result says it was given is the scan's, not what was
@@ -411,14 +421,17 @@ function scanAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly, star
     return Promise.reject(err);
   }
 
-  const pingWaitTime = typeof eo.pingWaitTime === 'number' ? eo.pingWaitTime : undefined;
-  const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
+  const pingWaitTime =
+    typeof frameOptionOf(eo, 'pingWaitTime') === 'number' ? eo.pingWaitTime : undefined;
+  const frameWaitTime =
+    typeof frameOptionOf(eo, 'frameWaitTime') === 'number' ? eo.frameWaitTime : undefined;
 
   const { roots } = resolveContextRoots(document, contextSelector);
-  const frameElements = findChildFrameElements(roots, eo.includeShadowDom).filter(
+  const frameElements = findChildFrameElements(roots, frameOptionOf(eo, 'includeShadowDom')).filter(
     (el) =>
-      (eo.includeHiddenElements === true || (isFrameShown(el) && !isFrameBehindModal(el))) &&
-      !isFrameExcluded(el, eo.excludeSelectors)
+      (frameOptionOf(eo, 'includeHiddenElements') === true ||
+        (isFrameShown(el) && !isFrameBehindModal(el))) &&
+      !isFrameExcluded(el, frameOptionOf(eo, 'excludeSelectors'))
   );
 
   const framePromises = frameElements.map(function (el) {
@@ -518,12 +531,18 @@ function scanAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly, star
  */
 function a11yCoreEnableFrameResponder() {
   return enableFrameRpcResponder(window, function (payload) {
+    // The command's own fields, never ones on Object.prototype.
+    const field = (key, fallback) =>
+      payload && typeof payload === 'object' && Object.prototype.hasOwnProperty.call(payload, key)
+        ? payload[key]
+        : fallback;
+    const startedAt = field('scanStartedAt', null);
     return scanAcrossFrames(
-      payload ? payload.pageUrl : null,
-      payload ? payload.contextSelector : null,
-      payload ? payload.engineOptions : {},
-      payload ? payload.runOnly : null,
-      payload && typeof payload.scanStartedAt === 'number' ? payload.scanStartedAt : null
+      field('pageUrl', null),
+      field('contextSelector', null),
+      field('engineOptions', {}),
+      field('runOnly', null),
+      typeof startedAt === 'number' ? startedAt : null
     );
   });
 }
@@ -541,6 +560,7 @@ module.exports = {
   describeFrameElement,
   getFrameElementUrl,
   frameTimeBudgetOf,
+  frameOptionOf,
   budgetedOptions,
   withScanBudget,
   scanAcrossFrames,

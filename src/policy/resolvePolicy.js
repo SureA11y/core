@@ -6,6 +6,10 @@
 // that doesn't exist then throws INVALID_ENGINE_OPTIONS, as other options'
 // values outside their set do, where otherwise it is warned about.
 function resolvePolicy(POLICY_CONTRACTS, engineOptions, strict) {
+  // The caller's own keys only, never ones a page's script put on
+  // Object.prototype (round 12, R12F-1 to R12F-6).
+  const own = (o, k) =>
+    o && typeof o === 'object' && Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined;
   function normalizePolicyContract(POLICY_CONTRACTS, contract, fallbackId) {
     const fallback = POLICY_CONTRACTS[fallbackId] || POLICY_CONTRACTS.a11y;
     if (typeof contract === 'string') {
@@ -48,27 +52,27 @@ function resolvePolicy(POLICY_CONTRACTS, engineOptions, strict) {
       // no gate could fail.
       const allowedOutcomes =
         knownValues(
-          contract.allowedOutcomes,
+          own(contract, 'allowedOutcomes'),
           ['fail', 'pass', 'cantTell', 'notApplicable'],
           'policyContract.allowedOutcomes'
         ) || fallback.allowedOutcomes.slice();
 
       const allowedConfidence =
         knownValues(
-          contract.allowedConfidence,
+          own(contract, 'allowedConfidence'),
           ['high', 'medium', 'low'],
           'policyContract.allowedConfidence'
         ) || fallback.allowedConfidence.slice();
 
       return {
         id:
-          typeof contract.id === 'string' && contract.id.trim()
+          typeof own(contract, 'id') === 'string' && contract.id.trim()
             ? contract.id.trim()
             : fallback.id || fallbackId || 'custom',
         allowedOutcomes,
         allowedConfidence,
         coerceManualFailToCantTell:
-          typeof contract.coerceManualFailToCantTell === 'boolean'
+          typeof own(contract, 'coerceManualFailToCantTell') === 'boolean'
             ? contract.coerceManualFailToCantTell
             : !!fallback.coerceManualFailToCantTell
       };
@@ -105,26 +109,31 @@ function resolvePolicy(POLICY_CONTRACTS, engineOptions, strict) {
   }
 
   function normalizePolicyOverrides(policy) {
-    const p = policy && typeof policy === 'object' ? policy : {};
+    const p = policy && typeof policy === 'object' ? policy : null;
     return {
       allowedOutcomes: knownValues(
-        p.allowedOutcomes,
+        own(p, 'allowedOutcomes'),
         ['fail', 'pass', 'cantTell', 'notApplicable'],
         'policy.allowedOutcomes'
       ),
       allowedConfidence: knownValues(
-        p.allowedConfidence,
+        own(p, 'allowedConfidence'),
         ['high', 'medium', 'low'],
         'policy.allowedConfidence'
       ),
       coerceManualFailToCantTell:
-        typeof p.coerceManualFailToCantTell === 'boolean' ? p.coerceManualFailToCantTell : null
+        typeof own(p, 'coerceManualFailToCantTell') === 'boolean'
+          ? p.coerceManualFailToCantTell
+          : null
     };
   }
 
-  const opts = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
-  const contract = normalizePolicyContract(POLICY_CONTRACTS, opts.policyContract, 'a11y');
-  const ov = normalizePolicyOverrides(opts.policy);
+  const contract = normalizePolicyContract(
+    POLICY_CONTRACTS,
+    own(engineOptions, 'policyContract'),
+    'a11y'
+  );
+  const ov = normalizePolicyOverrides(own(engineOptions, 'policy'));
 
   return {
     contractId: contract.id,

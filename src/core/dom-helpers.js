@@ -350,7 +350,7 @@ function createDomHelpers(opts) {
   // Stored on the realm window when possible so multiple helper instances
   // within the same run share caches deterministically.
   // -------------------------------------------------------------------------
-  var __domSharedCache = {};
+  var __domSharedCache = Object.create(null);
   var __selectorCache = null;
   var __outerHtmlCache = null;
   var __siblingIndexCache = null; // WeakMap<Element, {first, last, info, tagCounts}>
@@ -952,7 +952,7 @@ function createDomHelpers(opts) {
         if (x === 'visible') x = 'auto';
         if (y === 'visible') y = 'auto';
       } else if (html && tag === 'select') {
-        const size = parseHtmlInteger(dom.getAttribute(el, 'size'));
+        const size = selectSizeOf(el);
         if (!dom.hasAttribute(el, 'multiple') && !(size !== null && size > 1)) {
           x = 'clip';
           y = 'clip';
@@ -1599,7 +1599,14 @@ function createDomHelpers(opts) {
       return false;
     }
   }
-  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
+  // Defined, not assigned, as each key the engine sets on its functions
+  // (round 12, F12-4).
+  Object.defineProperty(hasTruncatedAncestorWalk, 'limit', {
+    value: ANCESTOR_WALK_LIMIT,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   function getClosestMap(el) {
     try {
@@ -1751,6 +1758,37 @@ function createDomHelpers(opts) {
     // range, as if the attribute were missing (HTML, Reflecting content
     // attributes in IDL attributes).
     return v < -2147483648 || v > 2147483647 ? null : v;
+  }
+
+  // HTML's rules for parsing non-negative integers, as browsers read a
+  // <select>'s size and a cell's colspan and rowspan: parseHtmlInteger's
+  // reading, null for a negative value, and no range limit, which each
+  // attribute applies its own way (selectSizeOf, tableCellSpanOf).
+  function parseHtmlNonNegativeInteger(raw) {
+    const m = /^[\t\n\f\r ]*([+-]?)([0-9]+)/.exec(String(raw == null ? '' : raw));
+    if (!m) return null;
+    const n = parseInt(m[2], 10);
+    if (m[1] === '-' && n !== 0) return null;
+    return n;
+  }
+
+  // A <select>'s size as Chromium draws it: a value up to 4294967295 (an
+  // unsigned long), a larger one ignored as if missing. Chromium draws
+  // size="2147483648" as a list box, though the size property reads 0.
+  function selectSizeOf(el) {
+    const n = parseHtmlNonNegativeInteger(getAttr(el, 'size'));
+    return n !== null && n <= 4294967295 ? n : null;
+  }
+
+  // A table cell's colspan or rowspan as HTML (forming a table) and
+  // Chromium read them: colspan 1 where it is missing, not a non-negative
+  // integer, or 0, and at most 1000; rowspan 1 where it is missing or not a
+  // non-negative integer, 0 to span to the end of its row group, and at
+  // most 65534. A larger value is clamped, not ignored.
+  function tableCellSpanOf(el, attr) {
+    const n = parseHtmlNonNegativeInteger(getAttr(el, attr));
+    if (attr === 'rowspan') return n === null ? 1 : Math.min(n, 65534);
+    return n === null || n === 0 ? 1 : Math.min(n, 1000);
   }
 
   function parseTabIndex(el) {
@@ -4291,7 +4329,7 @@ function createDomHelpers(opts) {
   // from the frame element up to the scanned document.
   function isOccurrenceExcluded(occ) {
     if (!__getEffectiveExcludeSelectors().length || !occ || typeof occ !== 'object') return false;
-    let node = occ.__node || null;
+    let node = (Object.prototype.hasOwnProperty.call(occ, '__node') && occ.__node) || null;
     if (!node) {
       const selector = occ.selector;
       if (!selector || typeof selector !== 'string' || !document) return false;
@@ -4770,12 +4808,32 @@ function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      if (!w.__a11ycoreSharedCache) w.__a11ycoreSharedCache = {};
-      if (!w.__a11ycoreSharedCache.dom) w.__a11ycoreSharedCache.dom = {};
-      __domSharedCache = w.__a11ycoreSharedCache.dom;
+      // The window's own cache, with no prototype: a value a page's script
+      // put on Object.prototype is never read as one (round 12, R12F-1 to
+      // R12F-6).
+      const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype refuses none (round 12, R12F-6).
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
+      if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
+      const shared = w.__a11ycoreSharedCache;
+      if (!ownKey(shared, 'dom')) shared.dom = Object.create(null);
+      __domSharedCache = shared.dom;
     }
   } catch {
-    __domSharedCache = {};
+    __domSharedCache = Object.create(null);
   }
 
   // Selector cache (per element), partitioned by __selectorOptsKey since
@@ -6630,7 +6688,7 @@ function createDomHelpers(opts) {
       else if (type === 'range') nativeRole = 'slider';
     } else if (tag === 'textarea') nativeRole = 'textbox';
     else if (isSelect) {
-      const size = parseHtmlInteger(getAttr(node, 'size'));
+      const size = selectSizeOf(node);
       nativeRole =
         dom.hasAttribute(node, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
     } else if (tag === 'progress') nativeRole = 'progressbar';
@@ -7976,7 +8034,14 @@ function createDomHelpers(opts) {
       while (i < n && isSep(s[i]) && s[i] !== ',') i++;
       const v0 = i;
       while (i < n && !isSep(s[i])) i++;
-      values[key] = s.slice(v0, i);
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype (width) refuses none (round 12, F12-4).
+      Object.defineProperty(values, key, {
+        value: s.slice(v0, i),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const number = (v) => {
       if (v === 'yes') return 1;
@@ -8536,7 +8601,7 @@ function createDomHelpers(opts) {
     else if (tag === 'summary') role = 'button';
     else if (tag === 'input') role = aria.getInputRole(el);
     else if (tag === 'select') {
-      const size = parseHtmlInteger(getAttr(el, 'size'));
+      const size = selectSizeOf(el);
       role =
         dom.hasAttribute(el, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
     } else if (tag === 'textarea') role = 'textbox';
@@ -9393,9 +9458,24 @@ function createDomHelpers(opts) {
       const hv = cs.height != null ? String(cs.height).trim() : '';
       const ov = cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
 
-      metrics.width = wv || null;
-      metrics.height = hv || null;
-      metrics.overflow = ov || null;
+      Object.defineProperty(metrics, 'width', {
+        value: wv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'height', {
+        value: hv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'overflow', {
+        value: ov || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
 
       const isZeroW = wv === '0px' || wv === '0';
       const isZeroH = hv === '0px' || hv === '0';
@@ -10381,7 +10461,14 @@ function createDomHelpers(opts) {
     const o =
       partial && typeof partial === 'object' && !Array.isArray(partial) ? { ...partial } : {};
     // Attach the node for engine-side finalization. This must be removed later before returning results.
-    o.__node = node || null;
+    // Defined, not assigned: a read-only __node a page's script put on
+    // Object.prototype refuses no occurrence (round 12, R12F-6).
+    Object.defineProperty(o, '__node', {
+      value: node || null,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
     return o;
   }
 
@@ -10433,7 +10520,7 @@ function createDomHelpers(opts) {
     return { outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  let __contrastSharedCache = {};
+  let __contrastSharedCache = Object.create(null);
   try {
     // In Node/JSDOM checks, the harness sets global.window/global.document.
     // The engine may instantiate helpers per rule without passing opts.window,
@@ -10444,12 +10531,28 @@ function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      if (!w.__a11ycoreSharedCache) w.__a11ycoreSharedCache = {};
-      if (!w.__a11ycoreSharedCache.contrast) w.__a11ycoreSharedCache.contrast = {};
-      __contrastSharedCache = w.__a11ycoreSharedCache.contrast;
+      // Own keys only, and defined, as for the DOM helpers' cache above.
+      const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
+      if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
+      const shared = w.__a11ycoreSharedCache;
+      if (!ownKey(shared, 'contrast')) shared.contrast = Object.create(null);
+      __contrastSharedCache = shared.contrast;
     }
   } catch {
-    __contrastSharedCache = {};
+    __contrastSharedCache = Object.create(null);
   }
 
   const __contrastShared = {
@@ -10464,20 +10567,37 @@ function createDomHelpers(opts) {
     getInternalsStateInfo,
     cssRulesOf,
     selectorIndex,
+    isVisuallyHidden,
+    getRoleInfo: (el) => getRoleInfo(el),
+    getFocusableInfo: (el) => getFocusableInfo(el),
+    selectSizeOf,
     __contrastSharedCache
   };
 
+  // With no prototype: a key it is not given (contrast) is never read from
+  // Object.prototype (round 12, R12F-1 to R12F-6).
   const contrast = createContrastHelpers(
-    { window: realmWindow || window, document, root: roots, includeShadowDom, excludeSelectors },
+    Object.assign(Object.create(null), {
+      window: realmWindow || window,
+      document,
+      root: roots,
+      includeShadowDom,
+      excludeSelectors
+    }),
     __contrastShared
   );
 
   // Expose shared cache to checks (deterministic, in-memory only)
-  contrast.sharedCache = __contrastShared.__contrastSharedCache;
+  Object.defineProperty(contrast, 'sharedCache', {
+    value: __contrastShared.__contrastSharedCache,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl, getCustomElementInternals, flatParentElement }
+    { trim, getLabelControl, getCustomElementInternals, flatParentElement, selectSizeOf }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -10680,6 +10800,9 @@ function createDomHelpers(opts) {
     isIso639LanguageCode,
     getImagesUsingMap,
     parseHtmlInteger,
+    parseHtmlNonNegativeInteger,
+    selectSizeOf,
+    tableCellSpanOf,
 
     // Existing query/snippet utilities
     queryAll,

@@ -24,7 +24,12 @@ function normalizeLean(input) {
   if (LEAN_DIRECTIONS.indexOf(input.toward) === -1) return null;
   if (typeof input.why !== 'string' || !input.why.trim()) return null;
 
-  const out = { toward: input.toward, why: input.why.trim() };
+  // Built with no prototype, and handed back as a plain copy: a read-only
+  // value a page's script put on Object.prototype (signals, i18n, whyKey)
+  // refuses no key (round 12, F12-4).
+  const out = Object.create(null);
+  out.toward = input.toward;
+  out.why = input.why.trim();
 
   const signals = [];
   for (const s of Array.isArray(input.signals) ? input.signals : []) {
@@ -48,22 +53,24 @@ function normalizeLean(input) {
     m.agreed >= 0 &&
     m.agreed <= m.cases
   ) {
-    out.measured = { agreed: m.agreed, cases: m.cases };
-    if (typeof m.corpus === 'string' && m.corpus) out.measured.corpus = m.corpus;
-    if (typeof m.coreVersion === 'string' && m.coreVersion)
-      out.measured.coreVersion = m.coreVersion;
+    out.measured = {
+      agreed: m.agreed,
+      cases: m.cases,
+      ...(typeof m.corpus === 'string' && m.corpus ? { corpus: m.corpus } : {}),
+      ...(typeof m.coreVersion === 'string' && m.coreVersion ? { coreVersion: m.coreVersion } : {})
+    };
   }
 
   const i = input.i18n;
   if (i && typeof i === 'object' && !Array.isArray(i)) {
-    const ii = {};
+    const ii = Object.create(null);
     if (typeof i.whyKey === 'string' && i.whyKey) ii.whyKey = i.whyKey;
     if (typeof i.cautionKey === 'string' && i.cautionKey) ii.cautionKey = i.cautionKey;
     if (i.params && typeof i.params === 'object' && !Array.isArray(i.params))
       ii.params = { ...i.params };
-    if (ii.whyKey || ii.cautionKey) out.i18n = ii;
+    if (ii.whyKey || ii.cautionKey) out.i18n = { ...ii };
   }
-  return out;
+  return { ...out };
 }
 
 module.exports = { LEAN_DIRECTIONS, SIGNAL_NAME, signalValue, normalizeLean };

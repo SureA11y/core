@@ -89,9 +89,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/deprecated-elements-not-used-
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
 
-  const expectedCantTellIds = ['dep_case_02', 'dep_case_04'];
+  const expectedCantTellIds = ['dep_case_02', 'dep_case_04', 'dep_case_05'];
   const expectedNoOccIds = ['dep_case_01', 'dep_case_03'];
 
   for (const id of expectedCantTellIds) {

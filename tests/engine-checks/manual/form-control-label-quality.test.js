@@ -431,7 +431,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-label-quality-al
     'fclq_case_13',
     'fclq_case_13b',
     'fclq_case_13c',
-    'fclq_case_13d'
+    'fclq_case_13d',
+    'fclq_case_15',
+    'fclq_case_15b'
   ];
 
   for (const id of expectedIds) {

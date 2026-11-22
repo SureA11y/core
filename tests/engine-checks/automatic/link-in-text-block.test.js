@@ -542,7 +542,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
     'litb_case_06',
     'litb_case_08',
     'litb_case_10',
-    'litb_case_13'
+    'litb_case_13',
+    'litb_case_14'
   ];
 
   for (const id of expectedFailIds) {

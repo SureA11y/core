@@ -698,11 +698,11 @@
       "testFile": "tests/engine-checks/manual/css-focus-indicator-suppressed.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html",
-      "totalCases": 17,
+      "totalCases": 20,
       "caseCounts": {
         "PASS": 7,
         "FAIL": 0,
-        "CANTTELL": 7,
+        "CANTTELL": 10,
         "OTHER": 3
       }
     },
@@ -774,11 +774,11 @@
       "testFile": "tests/engine-checks/automatic/deprecated-elements-not-used.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/deprecated-elements-not-used-all-scenarios.html",
-      "totalCases": 4,
+      "totalCases": 5,
       "caseCounts": {
         "PASS": 1,
         "FAIL": 0,
-        "CANTTELL": 2,
+        "CANTTELL": 3,
         "OTHER": 1
       }
     },
@@ -1013,9 +1013,9 @@
       "testFile": "tests/engine-checks/manual/form-control-label-quality.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-control-label-quality-all-scenarios.html",
-      "totalCases": 14,
+      "totalCases": 15,
       "caseCounts": {
-        "PASS": 7,
+        "PASS": 8,
         "FAIL": 0,
         "CANTTELL": 6,
         "OTHER": 1
@@ -1091,11 +1091,11 @@
       "testFile": "tests/engine-checks/manual/form-group-name-present-chromium.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-group-name-present-all-scenarios.html",
-      "totalCases": 10,
+      "totalCases": 12,
       "caseCounts": {
         "PASS": 3,
         "FAIL": 0,
-        "CANTTELL": 4,
+        "CANTTELL": 6,
         "OTHER": 3
       }
     },
@@ -1663,9 +1663,9 @@
       "testFile": "tests/engine-checks/automatic/link-in-text-block.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-in-text-block-all-scenarios.html",
-      "totalCases": 13,
+      "totalCases": 14,
       "caseCounts": {
-        "PASS": 4,
+        "PASS": 5,
         "FAIL": 4,
         "CANTTELL": 2,
         "OTHER": 3
@@ -2098,12 +2098,12 @@
       "testFile": "tests/engine-checks/manual/p-as-heading.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/p-as-heading-all-scenarios.html",
-      "totalCases": 26,
+      "totalCases": 28,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 13,
-        "OTHER": 13
+        "CANTTELL": 14,
+        "OTHER": 14
       }
     },
     {
@@ -2299,11 +2299,11 @@
       "testFile": "tests/engine-checks/manual/resize-text-content-loss-chromium.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/resize-text-content-loss-all-scenarios.html",
-      "totalCases": 12,
+      "totalCases": 13,
       "caseCounts": {
         "PASS": 2,
         "FAIL": 0,
-        "CANTTELL": 6,
+        "CANTTELL": 7,
         "OTHER": 4
       }
     },
@@ -2544,12 +2544,12 @@
       "testFile": "tests/engine-checks/manual/symbol-graphic-contrast-chromium.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/symbol-graphic-contrast-all-scenarios.html",
-      "totalCases": 9,
+      "totalCases": 14,
       "caseCounts": {
         "PASS": 2,
         "FAIL": 0,
-        "CANTTELL": 3,
-        "OTHER": 4
+        "CANTTELL": 6,
+        "OTHER": 6
       }
     },
     {
@@ -2687,10 +2687,10 @@
       "testFile": "tests/engine-checks/automatic/target-size-minimum.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/target-size-all-scenarios.html",
-      "totalCases": 25,
+      "totalCases": 27,
       "caseCounts": {
-        "PASS": 8,
-        "FAIL": 8,
+        "PASS": 9,
+        "FAIL": 9,
         "CANTTELL": 1,
         "OTHER": 8
       }

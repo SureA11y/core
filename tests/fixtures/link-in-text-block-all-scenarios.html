@@ -26,6 +26,11 @@
     .colorOnly { color: #2a2a2a; } /* vs #222222 parent text: ~1.1:1, well under 3:1 */
     .bgImage { background-image: linear-gradient(90deg, #ffffff, #000000); }
     .sameColor { color: #222222; }
+    /* Case 14: cascade layers rank in the order they are first named, so
+       litb-b's underline wins over litb-a's none. */
+    @layer litb-a, litb-b;
+    @layer litb-b { .layerUnderline { text-decoration: underline; } }
+    @layer litb-a { .layerUnderline { text-decoration: none; } }
     .bordered { border-bottom: 1px solid #222222; }
   </style>
 </head>
@@ -141,6 +146,11 @@
     <div class="case-title">13 — NEUTRAL: a link alone on its line after a &lt;br&gt;; the text of the lines above is not around it</div>
     <p>+41 44 445 30 55 (Fon)<br>
     <a href="#" id="litb_case_13" class="nodeco sameColor">contact@example.com</a></p>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: drawn in the text&rsquo;s own color, its content underlined by the later of two cascade layers that disagree</div>
+    <p>Read the <a href="#" id="litb_case_14" class="nodeco sameColor"><span class="layerUnderline">guide</span></a> before you start.</p>
   </div>
 
   <p class="note">End of fixture.</p>

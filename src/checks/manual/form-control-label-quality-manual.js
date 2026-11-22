@@ -46,7 +46,10 @@
  *     as another field's, with no visible legend, heading or row text telling
  *     them apart, nor, for radio buttons and checkboxes, the question their
  *     group answers. A label of punctuation alone ("*", ":") has no words
- *     to share, and is never another field's.
+ *     to share, and is never another field's. A combobox and its own popup
+ *     (a listbox it references through aria-controls or aria-owns, or that
+ *     references the combobox so) are one field, and never each other's
+ *     duplicate.
  *     It leans pass when each field is in a form of its own with the same
  *     name, type and action (copies of one widget), and fail when they are
  *     fields of one form with different names (not radio buttons or
@@ -105,6 +108,13 @@
  *   Groups placed straight in one container, with no element of their
  *   own, are still asked about: which text belongs to which group is
  *   then a matter of layout, which a person reads and markup doesn't say.
+ * - A combobox and its popup listbox share a label in the ARIA Authoring
+ *   Practices patterns (both aria-labelledby the same element), and a
+ *   person sees one control. When either references the other through
+ *   aria-controls or aria-owns, they are left out of each other's
+ *   duplicates; a third field with the same label is still a duplicate of
+ *   both. A tree, grid or dialog popup is not a field here, so only a
+ *   listbox can be the other half.
  * - Two fields conflict only when their label text AND their context are
  *   both identical. Same label under two different visible headings is
  *   ACT's passed example 5 and is not reported.
@@ -965,7 +975,14 @@ function runInPage(ctx) {
   // same-named fields apart.
   const byKey = new Map();
   for (const field of fields) {
-    field.key = `${field.normalized}||${contextKey(field.el, field.labelText)}`;
+    // Defined, not assigned: a read-only key on Object.prototype refuses
+    // none (round 12, F12-4).
+    Object.defineProperty(field, 'key', {
+      value: `${field.normalized}||${contextKey(field.el, field.labelText)}`,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
     const bucket = byKey.get(field.key);
     if (bucket) bucket.push(field);
     else byKey.set(field.key, [field]);
@@ -1029,6 +1046,55 @@ function runInPage(ctx) {
     return null;
   }
 
+  // A combobox and its own popup (a listbox, tree, grid or dialog it
+  // controls or owns, or that names the combobox in its own aria-controls
+  // or aria-owns) are one field: the authoring practices label both with
+  // the same element, and a person sees one control. They are never each
+  // other's duplicate.
+  const POPUP_ROLES = ['listbox', 'tree', 'grid', 'dialog'];
+  function idrefTargets(el, name) {
+    try {
+      const value = dom.getAttribute(el, name);
+      if (!value) return [];
+      return helpers.resolveIdRefs(value, ctx, {}, el).refs || [];
+    } catch {
+      return [];
+    }
+  }
+  function roleOf(el) {
+    try {
+      return helpers.aria.getAuthorRole(el) || '';
+    } catch {
+      return '';
+    }
+  }
+  // Each combobox field's popup fields, both ways round, worked out once:
+  // only fields with one of these roles take part.
+  const popupPartners = new Map();
+  function pair(x, y) {
+    if (!popupPartners.has(x)) popupPartners.set(x, new Set());
+    popupPartners.get(x).add(y);
+  }
+  {
+    const fieldEls = new Set(fields.map((f) => f.el));
+    for (const field of fields) {
+      const role = roleOf(field.el);
+      const isCombo = role === 'combobox';
+      if (!isCombo && !POPUP_ROLES.includes(role)) continue;
+      for (const target of [
+        ...idrefTargets(field.el, 'aria-controls'),
+        ...idrefTargets(field.el, 'aria-owns')
+      ]) {
+        if (target === field.el || !fieldEls.has(target)) continue;
+        const targetRole = roleOf(target);
+        if (isCombo ? POPUP_ROLES.includes(targetRole) : targetRole === 'combobox') {
+          pair(field.el, target);
+          pair(target, field.el);
+        }
+      }
+    }
+  }
+
   const occurrences = [];
   const fieldNames = new Map();
   function describeField(f) {
@@ -1047,7 +1113,10 @@ function runInPage(ctx) {
       field.normalized,
       primaryLangOf(field.el)
     );
-    const shared = byKey.get(field.key) || [];
+    const bucket = byKey.get(field.key) || [];
+    const partners = popupPartners.get(field.el);
+    const shared =
+      partners && bucket.length > 1 ? bucket.filter((f) => !partners.has(f.el)) : bucket;
     // A label of punctuation alone ("*", ":") has no words to share: the
     // trailing marks normalize drops leave it empty, so "*" and ":" read as
     // one label. Whatever it lacks, it is not another field's label.

@@ -14,7 +14,10 @@ const ENGINE_VERSION = "1.17.0";
  * prepared with more rules and standards (src/core/prepare-catalog.js) gets
  * an engine of its own the same way.
  */
-function createRuntime(CATALOG) {
+function createRuntime(catalog) {
+// Its own keys only: a catalog without packs has no packCodeRuleIds, and
+// one on Object.prototype is never read (round 12, R12F-1 to R12F-6).
+const CATALOG = Object.assign(Object.create(null), catalog);
 // Rule catalog (data only)
 const CHECK_DEFS = CATALOG.checkDefs;
 
@@ -45,6 +48,15 @@ const I18N_LEFT_OUT = CATALOG.i18nLeftOut;
 // Lets an absent dictionary be told apart from a language that does not exist.
 const KNOWN_LOCALES = CATALOG.knownLocales;
 
+// A key of an object's own, never one a page's script put on
+// Object.prototype (round 12, R12F-1 to R12F-6): the options a result
+// echoes, a rule's result and its occurrences are plain objects.
+function ownValue(object, key) {
+  return object && typeof object === 'object' && Object.prototype.hasOwnProperty.call(object, key)
+    ? object[key]
+    : undefined;
+}
+
 function normalizeLocale(locale) {
   if (typeof locale !== 'string') return 'en';
   const s = locale.trim();
@@ -54,7 +66,7 @@ function normalizeLocale(locale) {
 // Dictionaries supplied by the caller. This function is serialized into the
 // page, so a table that was not compiled in can only arrive as data.
 function getSuppliedMessages(engineOptions) {
-  const supplied = engineOptions && engineOptions.messages;
+  const supplied = ownValue(engineOptions, 'messages');
   return (supplied && typeof supplied === 'object' && !Array.isArray(supplied)) ? supplied : null;
 }
 
@@ -115,7 +127,7 @@ function matchLocale(requested, engineOptions) {
 }
 
 function getLocaleDict(engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const matched = matchLocale(requested, engineOptions);
 
   return matched
@@ -152,7 +164,7 @@ function messageIn(locale, key, engineOptions) {
 // keeps the rest of the German, the caller's de and then the built-in de,
 // before English (round 9, A9-4). An exact hit returns before any allocation.
 function localeMessage(key, engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const direct = messageIn(requested, key, engineOptions);
   if (direct) return direct;
 
@@ -171,7 +183,7 @@ function isKnownLocale(locale) {
 // is visible in the result rather than only in the wording. Shares matchLocale
 // with getLocaleDict, so the reported locale and the strings cannot disagree.
 function resolveLocale(engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const matched = matchLocale(requested, engineOptions);
 
   if (!matched) {
@@ -332,12 +344,18 @@ function t(key, fallback, params, engineOptions) {
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
-  return applyI18nParams(base, params);
+  // Decimals read as the message's language writes them ("1,36:1" in
+  // French): the locale asked for where its string was found, English
+  // otherwise. The params themselves keep plain numbers.
+  const numberLocale = v ? normalizeLocale(ownValue(engineOptions, 'locale')) : 'en';
+  return applyI18nParams(base, localizeNumberParams(params, numberLocale));
 }
 
 function resolveRuleDefI18n(def, engineOptions) {
   if (!def || typeof def !== 'object') return def;
-  const out = { ...def };
+  // With no prototype: a field a rule doesn't declare (variant, settings,
+  // margin) is never read from Object.prototype.
+  const out = Object.assign(Object.create(null), def);
   if (out.i18n && typeof out.i18n === 'object') {
     out.title = t(out.i18n.titleKey, out.title, null, engineOptions);
     out.description = t(out.i18n.descriptionKey, out.description, null, engineOptions);
@@ -380,6 +398,10 @@ const POLICY_CONTRACTS = {
 
 // This is the single source of truth, inlined from src/policy/resolvePolicy.js
 const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions, strict) {
+  // The caller's own keys only, never ones a page's script put on
+  // Object.prototype (round 12, R12F-1 to R12F-6).
+  const own = (o, k) =>
+    o && typeof o === 'object' && Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined;
   function normalizePolicyContract(POLICY_CONTRACTS, contract, fallbackId) {
     const fallback = POLICY_CONTRACTS[fallbackId] || POLICY_CONTRACTS.a11y;
     if (typeof contract === 'string') {
@@ -422,27 +444,27 @@ const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions, s
       // no gate could fail.
       const allowedOutcomes =
         knownValues(
-          contract.allowedOutcomes,
+          own(contract, 'allowedOutcomes'),
           ['fail', 'pass', 'cantTell', 'notApplicable'],
           'policyContract.allowedOutcomes'
         ) || fallback.allowedOutcomes.slice();
 
       const allowedConfidence =
         knownValues(
-          contract.allowedConfidence,
+          own(contract, 'allowedConfidence'),
           ['high', 'medium', 'low'],
           'policyContract.allowedConfidence'
         ) || fallback.allowedConfidence.slice();
 
       return {
         id:
-          typeof contract.id === 'string' && contract.id.trim()
+          typeof own(contract, 'id') === 'string' && contract.id.trim()
             ? contract.id.trim()
             : fallback.id || fallbackId || 'custom',
         allowedOutcomes,
         allowedConfidence,
         coerceManualFailToCantTell:
-          typeof contract.coerceManualFailToCantTell === 'boolean'
+          typeof own(contract, 'coerceManualFailToCantTell') === 'boolean'
             ? contract.coerceManualFailToCantTell
             : !!fallback.coerceManualFailToCantTell
       };
@@ -479,26 +501,31 @@ const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions, s
   }
 
   function normalizePolicyOverrides(policy) {
-    const p = policy && typeof policy === 'object' ? policy : {};
+    const p = policy && typeof policy === 'object' ? policy : null;
     return {
       allowedOutcomes: knownValues(
-        p.allowedOutcomes,
+        own(p, 'allowedOutcomes'),
         ['fail', 'pass', 'cantTell', 'notApplicable'],
         'policy.allowedOutcomes'
       ),
       allowedConfidence: knownValues(
-        p.allowedConfidence,
+        own(p, 'allowedConfidence'),
         ['high', 'medium', 'low'],
         'policy.allowedConfidence'
       ),
       coerceManualFailToCantTell:
-        typeof p.coerceManualFailToCantTell === 'boolean' ? p.coerceManualFailToCantTell : null
+        typeof own(p, 'coerceManualFailToCantTell') === 'boolean'
+          ? p.coerceManualFailToCantTell
+          : null
     };
   }
 
-  const opts = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
-  const contract = normalizePolicyContract(POLICY_CONTRACTS, opts.policyContract, 'a11y');
-  const ov = normalizePolicyOverrides(opts.policy);
+  const contract = normalizePolicyContract(
+    POLICY_CONTRACTS,
+    own(engineOptions, 'policyContract'),
+    'a11y'
+  );
+  const ov = normalizePolicyOverrides(own(engineOptions, 'policy'));
 
   return {
     contractId: contract.id,
@@ -602,7 +629,11 @@ function hasAnyRunOnlyKeys(runOnly) {
  * { includeMode, tags, excludeTags, includeRuleIds, excludeRuleIds, includeTestIds, excludeTestIds }
  */
 function normalizeRunOnly(runOnly) {
-  const out = {
+  // With no prototype, and read from a copy with none (ownOptions): no
+  // value on Object.prototype is read as part of a selection (round 12,
+  // R12F-1 to R12F-6).
+  runOnly = ownOptions(runOnly);
+  const out = Object.assign(Object.create(null), {
     includeMode: 'and',
     tags: [],
     excludeTags: [],
@@ -616,7 +647,7 @@ function normalizeRunOnly(runOnly) {
     standardRuleIds: [],
     wcag: null,
     bestPractices: false
-  };
+  });
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   // A WCAG conformance target, { version, level }, checked by
@@ -779,20 +810,20 @@ function isWcagTag(tag) {
 // The level is matched case-insensitively.
 function checkWcagTarget(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + JSON.stringify(value) + '.');
+    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + optionValueText(value) + '.');
   }
   const version = typeof value.version === 'string' ? value.version.trim() : value.version;
   if (!WCAG_TARGET_VERSIONS.includes(version)) {
     throw invalidRunOnly(
       'runOnly.wcag.version must be "2.0", "2.1" or "2.2", ' +
-        (value.version === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.version) + '.')
+        (value.version === undefined ? 'and is missing.' : 'not ' + optionValueText(value.version) + '.')
     );
   }
   const level = typeof value.level === 'string' ? value.level.trim().toUpperCase() : value.level;
   if (!WCAG_TARGET_LEVELS.includes(level)) {
     throw invalidRunOnly(
       'runOnly.wcag.level must be "A", "AA" or "AAA", ' +
-        (value.level === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.level) + '.')
+        (value.level === undefined ? 'and is missing.' : 'not ' + optionValueText(value.level) + '.')
     );
   }
   return { version, level };
@@ -1236,6 +1267,21 @@ function describeWcagLevelTag(tag) {
   return 'WCAG ' + t.version + ' Level ' + t.level + ' ("' + tag + '")';
 }
 
+// A value given for an option, for the message that refuses it: as JSON
+// where it has some, and named otherwise, never throwing. A BigInt threw a
+// bare TypeError from the message itself (round 12, A12-9).
+function optionValueText(value) {
+  if (typeof value === 'bigint') return String(value) + 'n';
+  let shown;
+  try {
+    shown = JSON.stringify(value);
+  } catch {
+    shown = undefined;
+  }
+  if (typeof shown === 'string') return shown;
+  return value !== null && typeof value === 'object' ? 'an object' : 'a ' + typeof value;
+}
+
 function invalidRunOnly(message) {
   const err = new Error(message);
   err.code = 'INVALID_RUN_ONLY';
@@ -1358,8 +1404,8 @@ function enforceKnownProfile(selection, eo) {
 // when the option is not a filter.
 function includeExcludeOf(v) {
   return Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-    ? { include: typeof v === 'string' ? [v] : [...v] }
-    : (v && typeof v === 'object' ? v : null);
+    ? Object.assign(Object.create(null), { include: typeof v === 'string' ? [v] : [...v] })
+    : (v && typeof v === 'object' ? ownOptions(v) : null);
 }
 
 // runOnly with a filter wins over engineOptions' rules, tags and tests
@@ -1394,8 +1440,92 @@ function warnFiltersBesideRunOnly(eo) {
   } catch {}
 }
 
+// A rule or tag list given empty ([], '', a Set with nothing in it) selects
+// nothing, and every rule runs, as with no runOnly: a list built by a filter
+// that came out empty got a full scan without a word (round 12, A12-12). It
+// is said, and under strictOptions refused.
+function warnEmptyRunOnly(runOnly, eo) {
+  const empty = (v) =>
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'string' && !v.trim()) ||
+    (Object.prototype.toString.call(v) === '[object Set]' && v.size === 0);
+  const named = [];
+  if (Array.isArray(runOnly) || typeof runOnly === 'string') {
+    if (empty(runOnly)) named.push('runOnly');
+  } else if (runOnly && typeof runOnly === 'object') {
+    for (const key of ['values', 'tags', 'includeRuleIds', 'includeTestIds']) {
+      if (Object.prototype.hasOwnProperty.call(runOnly, key) && empty(runOnly[key])) {
+        named.push('runOnly.' + key);
+      }
+    }
+    // { type } with no values names no rule or tag, and {} names nothing
+    // (round 12, R12F-10).
+    const keys = Object.keys(runOnly);
+    if (!keys.length) {
+      emptyRunOnlyWarning('runOnly is an empty object', eo);
+      return;
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(runOnly, 'type') &&
+      !Object.prototype.hasOwnProperty.call(runOnly, 'values') &&
+      keys.every((k) => k === 'type' || k === 'includeMode')
+    ) {
+      emptyRunOnlyWarning('runOnly.type has no values', eo);
+      return;
+    }
+  }
+  if (!named.length) return;
+  emptyRunOnlyWarning(
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists'),
+    eo
+  );
+}
+
+// An include list of engineOptions.rules, .tags or .tests given empty
+// ([], '', { include: [] }) selects nothing, and every rule runs, as with no
+// filter: said, and under strictOptions refused, as for runOnly (round 12,
+// R12F-10). Read only where runOnly has no filter, which wins over them.
+function warnEmptyOptionFilters(eo) {
+  const empty = (v) =>
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'string' && !v.trim()) ||
+    (Object.prototype.toString.call(v) === '[object Set]' && v.size === 0);
+  const named = [];
+  for (const name of ['rules', 'tags', 'tests']) {
+    const v = Object.prototype.hasOwnProperty.call(eo, name) ? eo[name] : undefined;
+    if (empty(v)) named.push('engineOptions.' + name);
+    else if (
+      v &&
+      typeof v === 'object' &&
+      Object.prototype.hasOwnProperty.call(v, 'include') &&
+      empty(v.include)
+    ) {
+      named.push('engineOptions.' + name + '.include');
+    }
+  }
+  if (!named.length) return;
+  emptyRunOnlyWarning(
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists'),
+    eo
+  );
+}
+
+function emptyRunOnlyWarning(what, eo) {
+  const message = what + ': it selects no rule, so every rule runs';
+  if (strictOf(eo)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '.');
+  } catch {}
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
-  const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+  // The options' and runOnly's own keys only (ownOptions).
+  const eo = (engineOptions && typeof engineOptions === 'object') ? ownOptions(engineOptions) : Object.create(null);
+  runOnly = ownOptions(runOnly);
   // A number or a boolean, and an object none of whose keys the engine
   // reads ({ includeRuleId: [...] }), used to run every rule, as no runOnly
   // does: a typo that looks like a full scan.
@@ -1405,6 +1535,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
   if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = [...runOnly];
+  warnEmptyRunOnly(runOnly, eo);
   // Another kind of object (a Map, a Date) has no keys a selection reads,
   // and ran every rule.
   // By its type tag, which holds across realms (a page's object, read by
@@ -1439,7 +1570,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // excludeRuleIds...) still apply.
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
     const kind = String(runOnly.type).trim().replace(/[A-Z]/g, asciiLowerChar);
-    const rest = { ...runOnly };
+    const rest = Object.assign(Object.create(null), runOnly);
     delete rest.type;
     delete rest.values;
     // A Set of names is read as the list it holds; passed on as it is, the
@@ -1448,11 +1579,11 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       runOnly.values && typeof runOnly.values === 'object' && Object.prototype.toString.call(runOnly.values) === '[object Set]'
         ? [...runOnly.values]
         : runOnly.values;
-    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
-    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
-    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
+    if (kind === 'rule' || kind === 'rules') runOnly = Object.assign(rest, { includeRuleIds: values });
+    else if (kind === 'tag' || kind === 'tags') runOnly = Object.assign(rest, { tags: values });
+    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + optionValueText(runOnly.type) + '.');
   }
-  runOnly = expandRunOnlyShorthand(runOnly, eo);
+  runOnly = ownOptions(expandRunOnlyShorthand(runOnly, eo));
   // includeMode is 'and' or 'or'; anything else was read as 'and' without a
   // word, which can select nothing.
   for (const [field, value] of [
@@ -1462,7 +1593,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     if (value === undefined || value === null) continue;
     const mode = typeof value === 'string' ? value.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
     if (mode === 'and' || mode === 'or') continue;
-    const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
+    const message = field + ' must be "and" or "or", not ' + optionValueText(value) + '; read as "and".';
     if (strictOf(eo)) throw invalidRunOnly(message);
     try {
       console.warn('[surea11y] ' + message);
@@ -1472,7 +1603,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     if (runOnly.wcag != null) checkWcagTarget(runOnly.wcag);
     if (runOnly.bestPractices !== undefined && typeof runOnly.bestPractices !== 'boolean') {
       throw invalidRunOnly(
-        'runOnly.bestPractices must be true or false, not ' + JSON.stringify(runOnly.bestPractices) + '.'
+        'runOnly.bestPractices must be true or false, not ' + optionValueText(runOnly.bestPractices) + '.'
       );
     }
   }
@@ -1504,6 +1635,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     return applyOptInRules(enforceKnownProfile(applyProfile(selection, requestedProfile), eo), eo.optInRules);
   }
 
+  warnEmptyOptionFilters(eo);
   const mode = normalizeIncludeMode(eo.includeMode);
 
   // { include, exclude }; a bare list or string is the include list, as
@@ -1522,7 +1654,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const includeTestIds = parseCommaList(tests && tests.include, { lower: false });
   const excludeTestIds = parseCommaList(tests && tests.exclude, { lower: false });
 
-  const out = {
+  const out = Object.assign(Object.create(null), {
     includeMode: mode,
     tags: includeTags,
     excludeTags,
@@ -1530,7 +1662,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeRuleIds,
     includeTestIds,
     excludeTestIds
-  };
+  });
   canonicalizeRuleIds(out, eo);
   checkSelectionNames(
     [
@@ -1805,12 +1937,22 @@ function criteriaNamingRule(def, runOnly) {
     .map((t) => WCAG_SC_BY_TAG[t]);
 }
 
-function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
+function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding) {
   if (!policy || typeof policy !== 'object') {
     throw new Error('normalizeRuleResult requires a resolved policy');
   }
   const pol = policy;
-  const out = raw && typeof raw === 'object' ? { ...raw } : {};
+  // The rule's result and its occurrences are worked on as copies with no
+  // prototype, so a field the rule left out is never read from, nor refused
+  // by, Object.prototype (round 12, R12F-1 to R12F-6); they are handed back
+  // as plain objects.
+  const bare = (x) => Object.assign(Object.create(null), x);
+  const out = bare(raw && typeof raw === 'object' ? raw : null);
+  if (Array.isArray(out.occurrences)) {
+    out.occurrences = out.occurrences.map((o) =>
+      o && typeof o === 'object' && !Array.isArray(o) ? bare(o) : o
+    );
+  }
   out.ruleId = def.ruleId;
   
   // NOTE: title and description are included here (already localized)
@@ -1847,7 +1989,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       const key = typeof given === 'string' ? given.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
       const tier = Object.prototype.hasOwnProperty.call(TIERS, key) ? TIERS[key] : null;
       if (tier === given) return o;
-      const next = { ...o };
+      const next = bare(o);
       if (tier) next.occurrenceOutcome = tier;
       else {
         delete next.occurrenceOutcome;
@@ -1905,15 +2047,50 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     helpers &&
     (typeof helpers.isOccurrenceExcluded === 'function' || typeof helpers.isExcluded === 'function')
   ) {
+    // An occurrence named only by a selector that matches several elements
+    // is dropped only when every one of them is excluded: read as its first
+    // match, it was dropped whatever element the rule meant. One some of
+    // whose matches are excluded is kept, and said to be ambiguous (round
+    // 12, A12-16).
+    let ambiguous = 0;
+    const matchesOf = (o) => {
+      if (o.__node || typeof o.selector !== 'string' || !o.selector) return null;
+      if (Array.isArray(o.shadowHostSelectors) && o.shadowHostSelectors.length) return null;
+      if (typeof document === 'undefined' || !document) return null;
+      try {
+        const found = [...createSafeDom().querySelectorAll(document, o.selector)];
+        return found.length > 1 ? found : null;
+      } catch {
+        return null;
+      }
+    };
     const kept = out.occurrences.filter((o) => {
       if (!o || typeof o !== 'object') return true;
       try {
-        if (typeof helpers.isOccurrenceExcluded === 'function') return helpers.isOccurrenceExcluded(o) !== true;
+        if (typeof helpers.isOccurrenceExcluded === 'function') {
+          // Looked up only while an area is left out for the rule: a
+          // selector can be slow to match, and every scan has none.
+          const matches = excluding === true ? matchesOf(o) : null;
+          if (matches) {
+            let excluded = 0;
+            for (const el of matches) if (helpers.isOccurrenceExcluded({ __node: el }) === true) excluded++;
+            if (excluded === matches.length) return false;
+            if (excluded) ambiguous++;
+            return true;
+          }
+          return helpers.isOccurrenceExcluded(o) !== true;
+        }
         return !o.__node || helpers.isExcluded(o.__node) !== true;
       } catch {
         return true;
       }
     });
+    if (ambiguous) {
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule reported ' + ambiguous + ' occurrence' + (ambiguous === 1 ? '' : 's') +
+        ' by a selector alone that matches elements both inside and outside the areas left out with excludeSelectors; kept, as which element was meant is ambiguous. Report the element (__node) instead.';
+    }
     const dropped = out.occurrences.length - kept.length;
     if (dropped > 0) {
       const given = out.outcome;
@@ -1977,7 +2154,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       out.policyOutcome = 'fail';
       out.outcome = 'cantTell';
       if (Array.isArray(out.occurrences)) out.occurrences = out.occurrences.map((o) =>
-        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? Object.assign(bare(o), { occurrenceOutcome: 'cantTell' }) : o
       );
     }
   }
@@ -1985,12 +2162,11 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   out.outcomeNormalized =
     out.outcome === 'notApplicable' ? 'inapplicable' : out.outcome;
     
-    const output = (out.engineOptions && out.engineOptions.output && typeof out.engineOptions.output === 'object')
-    ? out.engineOptions.output
-    : null;
+    const echoedOutput = ownValue(out.engineOptions, 'output');
+    const output = (echoedOutput && typeof echoedOutput === 'object') ? echoedOutput : null;
 
-  const includeSelector = !(output && switchOf(output.includeSelector) === false);
-  const includeHtml = !(output && switchOf(output.includeHtml) === false);
+  const includeSelector = !(output && switchOf(ownValue(output, 'includeSelector')) === false);
+  const includeHtml = !(output && switchOf(ownValue(output, 'includeHtml')) === false);
 
   const needsDetails = (out.outcome === 'fail' || out.outcome === 'cantTell');
 
@@ -2002,7 +2178,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     // would still count a failure.
     if (Array.isArray(out.occurrences)) {
       out.occurrences = out.occurrences.map((o) =>
-        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? Object.assign(bare(o), { occurrenceOutcome: 'cantTell' }) : o
       );
     }
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
@@ -2015,7 +2191,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   }
   out.severity = out.severity || def.defaultSeverity;
 
-  let conf = raw && raw.confidence;
+  let conf = out.confidence;
   if (!pol.allowedConfidence.includes(conf)) conf = def.defaultConfidence;
   out.confidence = conf;
 
@@ -2068,7 +2244,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   // Uncertainty codes outside the closed set, dropped and noted in error.
   const __invalidUncertaintyCodes = [];
   out.occurrences = occ.map((item) => {
-    const o = item && typeof item === 'object' ? { ...item } : {};
+    const o = bare(item && typeof item === 'object' ? item : null);
 
     // Engine-side finalization (only if rule reported a node)
     const node = o.__node || null;
@@ -2219,7 +2395,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       o.i18n = null;
     }
 
-    return o;
+    return { ...o };
   });
 
   // Said beside the result, not in error: the rule completed. The result is
@@ -2244,7 +2420,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   // neither replaces the other.
   if (out.error != null && typeof out.error !== 'string') out.error = String(out.error);
 
-  return out;
+  return { ...out };
 }
 
 // The standards a catalog entry names for these options, chosen exactly as for
@@ -2413,6 +2589,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "URL",
   "customElements",
   "adoptedStyleSheets",
+  "attachShadow",
   "ariaActiveDescendantElement",
   "ariaControlsElements",
   "ariaDescribedByElements",
@@ -2440,6 +2617,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "implementation",
   "innerHeight",
   "innerWidth",
+  "label",
   "multiple",
   "muted",
   "nextNode",
@@ -2472,7 +2650,11 @@ const SAFE_DOM_OTHER_NAMES = [
 const createSafeDom = (function createSafeDom() {
   // One instance per realm of this script: the lookups depend only on the
   // prototypes they are given, so sharing it across scans is safe.
-  if (createSafeDom.__instance) return createSafeDom.__instance;
+  // Own only, and defined, not assigned: a value of that name on
+  // Object.prototype is neither read nor refuses it (round 12, F12-4).
+  if (Object.prototype.hasOwnProperty.call(createSafeDom, '__instance')) {
+    return createSafeDom.__instance;
+  }
 
   // Captured once, so a page that later replaces them doesn't change how
   // the engine reads its own DOM.
@@ -3004,14 +3186,45 @@ const createSafeDom = (function createSafeDom() {
         : o.setAttribute(a, b, c, d)
   };
 
-  createSafeDom.__instance = Object.freeze(dom);
+  Object.defineProperty(createSafeDom, '__instance', {
+    value: Object.freeze(dom),
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   return createSafeDom.__instance;
 });
 
 // Inlined from src/core/contrast-helpers.js
 const createContrastHelpers = (function createContrastHelpers(opts, shared) {
+  // An option's own value, or undefined. The engine builds option objects
+  // without every key (colorScheme, rootCanvasFallbackSet), and a value a
+  // page's script put on Object.prototype is never read as one (round 12,
+  // R12F-6).
+  function __own(o, k) {
+    return o &&
+      (typeof o === 'object' || typeof o === 'function') &&
+      Object.prototype.hasOwnProperty.call(o, k)
+      ? o[k]
+      : undefined;
+  }
+  // Own keys along a path: __ownAt(o, 'options', 'engineOptions').
+  function __ownAt(o, ...keys) {
+    let v = o;
+    for (let i = 0; i < keys.length && v !== undefined; i++) v = __own(v, keys[i]);
+    return v;
+  }
+  // A <select> drawn as a list box (a size above 1), read as Chromium reads
+  // its size attribute (selectSizeOf in dom-helpers).
+  function __selectDrawnAsListBox(select) {
+    if (shared && typeof shared.selectSizeOf === 'function') {
+      const n = shared.selectSizeOf(select);
+      return n !== null && n > 1;
+    }
+    return Number(dom.getAttribute(select, 'size')) > 1;
+  }
   const dom = createSafeDom();
-  const window = opts && opts.window ? opts.window : null;
+  const window = __own(opts, 'window') || null;
 
   const trim = shared.trim;
   const computedStyle = shared.computedStyle;
@@ -3183,10 +3396,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // -------- Visibility mode resolution for getTextScan --------
 
   function __getVisibilityMode(engineOptions) {
-    const m =
-      engineOptions && typeof engineOptions.visibilityMode === 'string'
-        ? engineOptions.visibilityMode
-        : '';
+    const v = __own(engineOptions, 'visibilityMode');
+    const m = typeof v === 'string' ? v : '';
     return m || 'styleOnly';
   }
 
@@ -3198,79 +3409,49 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       engineOptions,
 
       // common shapes
-      ctx && ctx.engineOptions,
-      ctx && ctx.options && ctx.options.engineOptions,
-      ctx && ctx.options,
-      ctx && ctx.opts && ctx.opts.engineOptions,
-      ctx && ctx.opts,
+      __ownAt(ctx, 'engineOptions'),
+      __ownAt(ctx, 'options', 'engineOptions'),
+      __ownAt(ctx, 'options'),
+      __ownAt(ctx, 'opts', 'engineOptions'),
+      __ownAt(ctx, 'opts'),
 
       // policy layering shapes
-      ctx && ctx.policyOverrides && ctx.policyOverrides.engineOptions,
-      ctx && ctx.policyOverrides,
-      ctx && ctx.policy && ctx.policy.engineOptions,
-      ctx && ctx.policy,
+      __ownAt(ctx, 'policyOverrides', 'engineOptions'),
+      __ownAt(ctx, 'policyOverrides'),
+      __ownAt(ctx, 'policy', 'engineOptions'),
+      __ownAt(ctx, 'policy'),
 
       // sometimes hoisted
       ctx,
 
       // opts passed into createContrastHelpers
-      opts && opts.engineOptions,
-      opts && opts.options && opts.options.engineOptions,
-      opts && opts.options,
-      opts && opts.opts && opts.opts.engineOptions,
-      opts && opts.opts,
+      __ownAt(opts, 'engineOptions'),
+      __ownAt(opts, 'options', 'engineOptions'),
+      __ownAt(opts, 'options'),
+      __ownAt(opts, 'opts', 'engineOptions'),
+      __ownAt(opts, 'opts'),
 
-      opts && opts.policyOverrides && opts.policyOverrides.engineOptions,
-      opts && opts.policyOverrides,
-      opts && opts.policy && opts.policy.engineOptions,
-      opts && opts.policy,
+      __ownAt(opts, 'policyOverrides', 'engineOptions'),
+      __ownAt(opts, 'policyOverrides'),
+      __ownAt(opts, 'policy', 'engineOptions'),
+      __ownAt(opts, 'policy'),
 
       // globals sometimes used by runners
-      w && w.__a11ycoreEngineOptions,
-      d && d.__a11ycoreEngineOptions
+      __ownAt(w, '__a11ycoreEngineOptions'),
+      __ownAt(d, '__a11ycoreEngineOptions')
     ];
 
     for (const c of candidates) {
       if (!c || typeof c !== 'object') continue;
-
-      if (typeof c.visibilityMode === 'string') return c.visibilityMode;
-
-      if (
-        c.engineOptions &&
-        typeof c.engineOptions === 'object' &&
-        typeof c.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.options &&
-        typeof c.options === 'object' &&
-        c.options.engineOptions &&
-        typeof c.options.engineOptions === 'object' &&
-        typeof c.options.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.options.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policy &&
-        typeof c.policy === 'object' &&
-        c.policy.engineOptions &&
-        typeof c.policy.engineOptions === 'object' &&
-        typeof c.policy.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policy.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policyOverrides &&
-        typeof c.policyOverrides === 'object' &&
-        c.policyOverrides.engineOptions &&
-        typeof c.policyOverrides.engineOptions === 'object' &&
-        typeof c.policyOverrides.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policyOverrides.engineOptions.visibilityMode;
+      for (const path of [
+        [],
+        ['engineOptions'],
+        ['options', 'engineOptions'],
+        ['policy', 'engineOptions'],
+        ['policyOverrides', 'engineOptions']
+      ]) {
+        const mode = __ownAt(c, ...path, 'visibilityMode');
+        if (typeof mode === 'string') return mode;
       }
     }
 
@@ -3289,6 +3470,104 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // -------- Costly paint a page uses at all (round 12, F12-6) --------
+  //
+  // A blend mode, a filter or backdrop-filter, a mask, an inset shadow and
+  // a transform (or the scale or rotate property) are each read of every
+  // box above every text, yet most pages use few of them or none. A box's
+  // computed value of one is other than its initial value only where a
+  // declaration gives it one: in a style sheet (its rules, nested, imported
+  // and keyframes among them), a style attribute (where a script's
+  // element.style writes too), an SVG presentation attribute, or a script's
+  // animation. So once per document and run, the text of all of these is
+  // read, and a feature named nowhere in it is used by no box: its reads
+  // are left out, with the answer they would give. Anything that can't be
+  // ruled out keeps every feature: a sheet that can't be read (another
+  // origin, still loading), a running animation, a shadow root (whose
+  // sheets style its host and slotted content), or a custom element, which
+  // may hold a closed one.
+  const __PAGE_FEATURE_NAMES = {
+    blend: /mix-blend-mode/i,
+    filter: /filter/i,
+    mask: /mask/i,
+    insetShadow: /box-shadow/i,
+    transform: /transform|scale|rotate/i
+  };
+  const __PAGE_FEATURES_ALL = Object.freeze({
+    blend: true,
+    filter: true,
+    mask: true,
+    insetShadow: true,
+    transform: true
+  });
+  const __localPageFeatures = new WeakMap();
+  function __pageFeaturesOf(node) {
+    let doc;
+    try {
+      doc = node && dom.nodeType(node) === 9 ? node : dom.ownerDocument(node);
+    } catch {
+      doc = null;
+    }
+    if (!doc || typeof doc !== 'object') return __PAGE_FEATURES_ALL;
+    const cache = __getSharedWeakMapCache('__pageFeaturesCache') || __localPageFeatures;
+    let out = cache.get(doc);
+    if (!out) {
+      out = __readPageFeatures(doc);
+      cache.set(doc, out);
+    }
+    return out;
+  }
+  function __readPageFeatures(doc) {
+    try {
+      if (typeof dom.get(doc, 'getAnimations') === 'function') {
+        const running = dom.call(doc, 'getAnimations');
+        if (!running || running.length) return __PAGE_FEATURES_ALL;
+      }
+      for (const el of dom.querySelectorAll(doc, '*')) {
+        if (dom.shadowRoot(el) || String(dom.localName(el) || '').includes('-'))
+          return __PAGE_FEATURES_ALL;
+      }
+      if (
+        dom.querySelector(
+          doc,
+          '[filter], [mask], [transform], [gradientTransform], [patternTransform]'
+        )
+      )
+        return __PAGE_FEATURES_ALL;
+      const parts = [];
+      for (const el of dom.querySelectorAll(doc, '[style]')) {
+        parts.push(String(dom.getAttribute(el, 'style') || ''));
+      }
+      const sheets = [...(dom.get(doc, 'styleSheets') || [])].concat([
+        ...(dom.get(doc, 'adoptedStyleSheets') || [])
+      ]);
+      const seen = new Set();
+      while (sheets.length) {
+        const sheet = sheets.pop();
+        if (!sheet || seen.has(sheet)) continue;
+        seen.add(sheet);
+        // Throws for a sheet of another origin, or one still loading.
+        const rules = sheet.cssRules;
+        if (!rules) return __PAGE_FEATURES_ALL;
+        for (let i = 0; i < rules.length; i++) {
+          const rule = rules[i];
+          parts.push(String(rule.cssText));
+          // @import: the imported sheet's rules aren't in its text.
+          if (rule.styleSheet) sheets.push(rule.styleSheet);
+          else if (/^\s*@import/i.test(String(rule.cssText))) return __PAGE_FEATURES_ALL;
+        }
+      }
+      const text = parts.join('\n');
+      const out = {};
+      for (const key of Object.keys(__PAGE_FEATURE_NAMES)) {
+        out[key] = __PAGE_FEATURE_NAMES[key].test(text);
+      }
+      return Object.freeze(out);
+    } catch {
+      return __PAGE_FEATURES_ALL;
+    }
+  }
+
   function __asEligibilityBool(v) {
     if (typeof v === 'boolean') return v;
     if (v && typeof v === 'object' && typeof v.eligible === 'boolean') return v.eligible;
@@ -3303,21 +3582,30 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // text element asks it of each of its ancestors, and under jsdom matching
   // :disabled walks the ancestors again, so a deep page cost elements x
   // depth x depth.
-  function isDisabledWidget(node) {
-    const cache = __getSharedWeakMapCache('__disabledWidgetCache');
+  //
+  // aria-disabled="true" (or ElementInternals' ariaDisabled) makes content
+  // inactive only on a user interface component, or on an ancestor whose
+  // content belongs to one (round 11, D6): WCAG exempts inactive user
+  // interface components, and aria-disabled on a plain <span> or <div>
+  // with no control disables nothing. A disabled control (:disabled, a
+  // disabled fieldset among them) is one already.
+  // The bits: 1 for :disabled, 2 for aria-disabled true.
+  function __disabledBits(node) {
+    const cache = __getSharedWeakMapCache('__disabledBitsCache');
     if (cache && node && typeof node === 'object') {
       const known = cache.get(node);
       if (known !== undefined) return known;
-      const out = isDisabledWidgetUncached(node);
+      const out = __disabledBitsUncached(node);
       cache.set(node, out);
       return out;
     }
-    return isDisabledWidgetUncached(node);
+    return __disabledBitsUncached(node);
   }
-  function isDisabledWidgetUncached(node) {
+  function __disabledBitsUncached(node) {
+    let bits = 0;
     try {
       if (typeof dom.get(node, 'matches') === 'function' && dom.matches(node, ':disabled'))
-        return true;
+        bits |= 1;
     } catch {}
     try {
       const ad = dom.get(node, 'getAttribute')
@@ -3325,16 +3613,116 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             .trim()
             .toLowerCase()
         : '';
-      if (ad === 'true') return true;
+      if (ad === 'true') bits |= 2;
       // A custom element disabled through its ElementInternals
       // (internals.ariaDisabled = 'true'), where it has no aria-disabled
       // attribute of its own, is disabled as the attribute would make it.
-      if (!ad && typeof shared.getInternalsStateInfo === 'function') {
+      else if (!ad && typeof shared.getInternalsStateInfo === 'function') {
         const info = shared.getInternalsStateInfo(node, 'aria-disabled');
-        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') return true;
+        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') bits |= 2;
       }
     } catch {}
-    return false;
+    return bits;
+  }
+
+  // Widget roles (WAI-ARIA 1.2, the widget and composite roles), and
+  // toolbar, a group of controls.
+  const __WIDGET_ROLES = new Set([
+    'button',
+    'checkbox',
+    'combobox',
+    'grid',
+    'gridcell',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'radiogroup',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'toolbar',
+    'tree',
+    'treegrid',
+    'treeitem'
+  ]);
+  const __NATIVE_CONTROLS = new Set([
+    'button',
+    'input',
+    'select',
+    'textarea',
+    'option',
+    'optgroup'
+  ]);
+
+  // Whether node is a user interface component: an element whose resolved
+  // role is a widget role, a native control, or a focusable element.
+  function __isUiComponent(node) {
+    const cache = __getSharedWeakMapCache('__uiComponentCache');
+    if (cache && node && typeof node === 'object' && cache.has(node)) return cache.get(node);
+    let out = false;
+    try {
+      const tag = String(dom.localName(node) || '').toLowerCase();
+      if (__NATIVE_CONTROLS.has(tag) && dom.namespaceURI(node) !== __SVG_NS) {
+        out = !(
+          tag === 'input' &&
+          String(dom.getAttribute(node, 'type') || '')
+            .trim()
+            .toLowerCase() === 'hidden'
+        );
+      }
+      if (!out) {
+        let role = '';
+        if (typeof shared.getRoleInfo === 'function') {
+          const info = shared.getRoleInfo(node);
+          role = info && info.role ? String(info.role) : '';
+        } else {
+          role = String(dom.getAttribute(node, 'role') || '')
+            .trim()
+            .toLowerCase()
+            .split(/\s+/)[0];
+        }
+        out = __WIDGET_ROLES.has(role);
+      }
+      if (!out) {
+        if (typeof shared.getFocusableInfo === 'function') {
+          const f = shared.getFocusableInfo(node);
+          out = !!(f && f.focusable);
+        } else {
+          out = /^\s*[+-]?\d+\s*$/.test(String(dom.getAttribute(node, 'tabindex') || ''));
+        }
+      }
+    } catch {
+      out = false;
+    }
+    if (cache && node && typeof node === 'object') cache.set(node, out);
+    return out;
+  }
+
+  // A disabled control, as a label's control or a widget naming itself by
+  // a label: disabled, or aria-disabled on a user interface component.
+  function isDisabledWidget(node) {
+    const bits = __disabledBits(node);
+    return !!(bits & 1) || (!!(bits & 2) && __isUiComponent(node));
+  }
+
+  // Whether a control a label names is inactive: disabled itself, or a user
+  // interface component inside an element that disables it, such as a
+  // role="group" with aria-disabled="true" around the label and its input
+  // (ACT afw4f7, inapplicable example 9; round 11, D6).
+  function __namedControlInactive(control) {
+    if (isDisabledWidget(control)) return true;
+    return __isUiComponent(control) && isInactiveUiComponent(control);
   }
 
   // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
@@ -3353,6 +3741,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function labelNamesDisabled(labelAncestor) {
     if (__labelNamesDisabledCache.has(labelAncestor))
       return __labelNamesDisabledCache.get(labelAncestor);
+    // Set first: the control a label names may sit inside the label, and
+    // asking whether that control is inactive walks back up to it.
+    __labelNamesDisabledCache.set(labelAncestor, false);
     const disabled = findLabelNamesDisabled(labelAncestor);
     __labelNamesDisabledCache.set(labelAncestor, disabled);
     return disabled;
@@ -3364,7 +3755,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const control = shared.getLabelControl
         ? shared.getLabelControl(labelAncestor)
         : labelAncestor.control || null;
-      if (control && isDisabledWidget(control)) return true;
+      if (control && __namedControlInactive(control)) return true;
     } catch {}
 
     try {
@@ -3382,7 +3773,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
         );
         for (const ref of referrers) {
-          if (isDisabledWidget(ref)) return true;
+          if (__namedControlInactive(ref)) return true;
         }
       }
     } catch {}
@@ -3401,26 +3792,43 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   function isInactiveUiComponent(el) {
+    // The flat tree (round 12, C12-10): text in a shadow root is the
+    // content of its host, and a slotted node of its slot, so an
+    // aria-disabled host with role=button disables the text it draws. The
+    // chain of ancestors is kept for the run.
+    const chain = ancestorsOf(el);
+    let at = 0;
+    const next = () => {
+      while (++at < chain.length && dom.nodeType(chain[at]) === 11);
+      return chain[at] || null;
+    };
     let node = el;
     let prev = null;
     let depth = 0;
     let labelAncestor = null;
+    // Whether el or an ancestor met so far is a user interface component:
+    // aria-disabled from there up disables the content of one. Asked only
+    // once an aria-disabled is met, of the elements not asked yet.
+    let inComponent = false;
+    const unasked = [];
     while (node && dom.nodeType(node) === 1 && depth++ < 100) {
+      const bits = __disabledBits(node);
+      if (!inComponent) unasked.push(node);
+      if (bits & 2 && !inComponent) {
+        inComponent = unasked.some((n) => __isUiComponent(n));
+        unasked.length = 0;
+      }
+      const aria = !!(bits & 2) && inComponent;
       // A disabled fieldset disables nothing in its first legend: only an
       // aria-disabled on it counts there.
       if (prev && __isFirstLegendOf(prev, node)) {
-        if (
-          String(dom.getAttribute(node, 'aria-disabled') || '')
-            .trim()
-            .toLowerCase() === 'true'
-        )
-          return true;
-      } else if (isDisabledWidget(node)) return true;
+        if (aria) return true;
+      } else if (bits & 1 || aria) return true;
       if (!labelAncestor && String(dom.tagName(node) || '').toLowerCase() === 'label') {
         labelAncestor = node;
       }
       prev = node;
-      node = dom.parentElement(node);
+      node = next();
     }
 
     // WCAG 1.4.3/1.4.6 "disabled label" exception: see labelNamesDisabled.
@@ -3430,6 +3838,191 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     if (labelAncestor && labelNamesDisabled(labelAncestor)) return true;
 
     return false;
+  }
+
+  // -------- A currency sign in a run of text (round 11, B11-9) --------
+  //
+  // A currency sign (Unicode Sc: € $ £ ¥ …) or the postal mark 〒 next to
+  // letters or digits on the same line is part of that text ("€45,00",
+  // "〒100-0001"), even when markup gives it an element of its own: it is
+  // read, so it is text, held to 1.4.3, not a graphic. "Next to" is the
+  // nearest visible character before or after it, not past a block
+  // boundary (a block, a flex or grid item, a float, an absolutely
+  // positioned box, a line break) and not counting text that is not
+  // drawn (display:none, visibility:hidden, visually hidden), nor the text
+  // of a link beside it, unless the link's nearest character is a digit
+  // (an amount). A sign alone between links, or a separator such as ">",
+  // is not this: it stays a graphic.
+  const __RUN_SIGN = /[\p{Sc}〒]/u;
+  const __RUN_SIGN_ONLY = /^[\s\p{Sc}〒\p{P}]*$/u;
+  const __RUN_TEXT = /[\p{L}\p{N}]/u;
+  // Text nodes are kept only for the run; the shared cache is per engine run.
+  const __localSignRunCache = new WeakMap();
+
+  function __isSignText(text) {
+    const s = String(text == null ? '' : text);
+    return __RUN_SIGN.test(s) && __RUN_SIGN_ONLY.test(s);
+  }
+
+  function __inlineDisplay(cs) {
+    const d = String((cs && cs.display) || 'inline');
+    return d === 'contents' || d.startsWith('inline') || d.startsWith('ruby');
+  }
+
+  // Whether el's box is a block whatever its display says: a float, an
+  // absolutely positioned box, or an item of a flex or grid container
+  // (CSS Display 3, blockification). A browser computes such a display as
+  // a block already; jsdom doesn't, so it is read here, and both agree
+  // (round 12, C12-1).
+  function __runBlockified(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.cssFloat || cs.float) && trim(cs.cssFloat || cs.float) !== 'none') return true;
+    if (cs.position === 'absolute' || cs.position === 'fixed') return true;
+    const parent = composedParent(el);
+    if (!parent || dom.nodeType(parent) !== 1) return false;
+    const d = String(__contrastComputedStyle(parent).display || '');
+    return /(^|\s|-)(flex|grid)\b/.test(d);
+  }
+
+  function __runHidden(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.display) === 'none') return true;
+    try {
+      if (typeof shared.isVisuallyHidden === 'function' && shared.isVisuallyHidden(el)) return true;
+    } catch {}
+    return false;
+  }
+
+  // The nearest visible character beside node in its block, in the given
+  // direction: a character, '' at a boundary or where none is found within
+  // the budget.
+  // Styles of elements no one has read yet that the search below may read
+  // in one run, over all its signs (round 12, C12-13): each sign walks its
+  // own neighbours, and a page of signs each beside hundreds of empty
+  // inline elements read a style for every one. Past it, a sign is a
+  // graphic, as it was before signs were read with their text. A real
+  // page's signs sit a node or two from digits whose styles the scan has
+  // read already: a catalogue of 3,000 WooCommerce prices reads none.
+  const __SIGN_RUN_BUDGET = 2000;
+  const __localSignRunBudget = { left: __SIGN_RUN_BUDGET };
+  function __signRunBudget() {
+    try {
+      const sc = shared && shared.__contrastSharedCache ? shared.__contrastSharedCache : null;
+      if (sc) {
+        if (!sc.__signRunBudget) sc.__signRunBudget = { left: __SIGN_RUN_BUDGET };
+        return sc.__signRunBudget;
+      }
+    } catch {}
+    return __localSignRunBudget;
+  }
+
+  function __runNeighbour(node, block, forward) {
+    let budget = 400;
+    const total = __signRunBudget();
+    const into = (n, inLink) => {
+      if (budget-- <= 0) return '';
+      const type = dom.nodeType(n);
+      if (type === 3) {
+        const parent = dom.parentElement(n);
+        const pcs = parent ? __contrastComputedStyle(parent) : null;
+        if (pcs && trim(pcs.visibility) && trim(pcs.visibility) !== 'visible') return null;
+        const s = String(dom.nodeValue(n) || '').replace(/\s+/g, '');
+        if (!s) return null;
+        const chars = [...s];
+        return forward ? chars[0] : chars[chars.length - 1];
+      }
+      if (type !== 1) return null;
+      const name = __lname(n);
+      if (name === 'br') return '';
+      if (/^(script|style|template|noscript|title)$/.test(name)) return null;
+      // A link's text is its own: a sign between links separates them,
+      // as a breadcrumb's ">" does. A link whose nearest character is a
+      // digit is the amount of a price, "$" in <span>$</span><a>45</a>,
+      // and the sign is read with it (round 12, C12-12).
+      const link =
+        !inLink &&
+        (((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) ||
+          String(dom.getAttribute(n, 'role') || '')
+            .trim()
+            .split(/\s+/)[0] === 'link');
+      // A style the scan has not read already counts against the run's
+      // budget: the text around a sign has been read, empty padding not.
+      if (!__computedStyleCache.has(n) && total.left-- <= 0) return '';
+      const cs = __contrastComputedStyle(n);
+      if (__runHidden(n, cs)) return link ? '' : null;
+      if (!__inlineDisplay(cs) || __runBlockified(n, cs)) return '';
+      for (
+        let c = forward ? dom.firstChild(n) : dom.lastChild(n);
+        c;
+        c = forward ? dom.nextSibling(c) : dom.previousSibling(c)
+      ) {
+        const found = into(c, inLink || link);
+        if (found !== null) return link && !/\p{Nd}/u.test(found) ? '' : found;
+      }
+      return link ? '' : null;
+    };
+    let cur = node;
+    while (cur && budget > 0) {
+      let sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
+      while (!sib) {
+        const parent = dom.parentNode(cur);
+        if (!parent || parent === block || dom.nodeType(parent) !== 1) return '';
+        cur = parent;
+        sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
+      }
+      cur = sib;
+      const found = into(cur, false);
+      if (found !== null) return found;
+    }
+    return '';
+  }
+
+  function __signTextNodeInRun(t) {
+    const cache = __getSharedWeakMapCache('__signRunCache') || __localSignRunCache;
+    if (cache.has(t)) return cache.get(t);
+    let out = false;
+    try {
+      if (__isSignText(dom.nodeValue(t))) {
+        let block = dom.parentElement(t);
+        for (let guard = 0; block && guard < 200; guard++) {
+          const bcs = __contrastComputedStyle(block);
+          if (!__inlineDisplay(bcs) || __runBlockified(block, bcs)) break;
+          block = dom.parentElement(block);
+        }
+        if (block) {
+          out =
+            __RUN_TEXT.test(__runNeighbour(t, block, false) || '') ||
+            __RUN_TEXT.test(__runNeighbour(t, block, true) || '');
+        }
+      }
+    } catch {
+      out = false;
+    }
+    cache.set(t, out);
+    return out;
+  }
+
+  // Whether node (a text node, or an element by its own text nodes) is a
+  // currency sign or 〒 in a run of text: its text is only such signs,
+  // punctuation and spaces, and a letter or digit is the nearest visible
+  // character beside it on its line.
+  function isSignInTextRun(node) {
+    try {
+      if (!node) return false;
+      if (dom.nodeType(node) === 3) return __signTextNodeInRun(node);
+      if (dom.nodeType(node) !== 1) return false;
+      let own = '';
+      const texts = [];
+      for (let n = dom.firstChild(node); n; n = dom.nextSibling(n)) {
+        if (dom.nodeType(n) !== 3) continue;
+        own += String(dom.nodeValue(n) || '');
+        if (/\S/.test(dom.nodeValue(n) || '')) texts.push(n);
+      }
+      if (!__isSignText(own)) return false;
+      return texts.some((t) => __signTextNodeInRun(t));
+    } catch {
+      return false;
+    }
   }
 
   // -------- Text shown in a form field (#103) --------
@@ -3517,11 +4110,40 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // The computed style that sets the color and font of el's text: the
-  // ::placeholder style while a field shows its placeholder, el's own
+  // ::placeholder style while a field shows its placeholder, the slot's
+  // where el's own text is slotted into its shadow tree, el's own
   // otherwise.
   function textStyleOf(el) {
     const field = __fieldText(el);
-    return field && field.placeholder ? field.style : __contrastComputedStyle(el);
+    return field && field.placeholder
+      ? field.style
+      : __contrastComputedStyle(__ownTextSlot(el) || el);
+  }
+
+  // The <slot> a shadow host's own text is drawn in, or null (round 12,
+  // C12-2). Text placed straight into a host is rendered where its shadow
+  // tree's slot puts it, and inherits from that slot in the flat tree (CSS
+  // Scoping, 3.1), not from the host: a host with color: black whose slot
+  // sits in a grey <div> draws its text grey. The first text with
+  // something other than spaces decides.
+  const __ownTextSlotCache = new WeakMap();
+  function __ownTextSlot(el) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    if (__ownTextSlotCache.has(el)) return __ownTextSlotCache.get(el);
+    let out = null;
+    try {
+      if (dom.shadowRoot(el)) {
+        for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
+          if (dom.nodeType(n) !== 3 || !trim(dom.nodeValue(n))) continue;
+          out = dom.assignedSlot(n) || null;
+          break;
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __ownTextSlotCache.set(el, out);
+    return out;
   }
 
   // -------- The options of a drop-down <select> (#219) --------
@@ -3565,7 +4187,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         select &&
         selectCs &&
         !dom.get(select, 'multiple') &&
-        !(Number(dom.get(select, 'size')) > 1) &&
+        !__selectDrawnAsListBox(select) &&
         !ownButton
       ) {
         const index = Number(dom.get(select, 'selectedIndex'));
@@ -3636,9 +4258,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function getTextScan(ctx, helpers, engineOptions) {
     try {
-      const d = (ctx && ctx.document) || (opts && opts.document) || null;
+      const d = __own(ctx, 'document') || __own(opts, 'document') || null;
 
-      const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
+      const w = __own(ctx, 'window') || (d && dom.defaultView(d)) || window || null;
 
       // Unset, the text a reader can see is decided from the layout where
       // there is one (#99): text off the page or clipped away is drawn
@@ -3659,7 +4281,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // Default on, opt out with includeShadowDom: false -- same contract as
       // helpers.queryAllSmart. Part of the cache key: a scan that skipped
       // shadow roots must not be reused by one that should not.
-      const includeShadowDom = !(engineOptions && engineOptions.includeShadowDom === false);
+      const includeShadowDom = __own(engineOptions, 'includeShadowDom') !== false;
 
       const cache = __getSharedTextScanCache();
       const cacheKey = `visibilityMode=${visibilityMode}|sd=${includeShadowDom ? 1 : 0}`;
@@ -3713,6 +4335,28 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
 
       const walkRoots = withShadowRoots(lightRoots);
+      // Whether any text walked can be left out of the flat tree
+      // (outOfFlatTree below): only where there is an open shadow root, under
+      // a root of the walk, around one, or holding one. A page with none skips
+      // the walk up from each text (round 12, F12-6).
+      let mayLeaveFlatTree = false;
+      if (includeShadowDom) {
+        mayLeaveFlatTree = walkRoots.some((r) => dom.nodeType(r) === 11);
+        for (const root of lightRoots) {
+          if (mayLeaveFlatTree) break;
+          try {
+            const top = dom.getRootNode(root);
+            if (!top || dom.nodeType(top) !== 9) mayLeaveFlatTree = true;
+            for (let cur = dom.parentNode(root), depth = 0; cur && !mayLeaveFlatTree; depth++) {
+              if (depth > 256 || (dom.nodeType(cur) === 1 && dom.shadowRoot(cur)))
+                mayLeaveFlatTree = true;
+              cur = dom.parentNode(cur);
+            }
+          } catch {
+            mayLeaveFlatTree = true;
+          }
+        }
+      }
 
       const SHOW_TEXT =
         w && w.NodeFilter && typeof w.NodeFilter.SHOW_TEXT === 'number'
@@ -3846,11 +4490,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             clipsX,
             clipsY,
             rect: clipsX || clipsY ? dom.getBoundingClientRect(node) : null,
-            stops: !!acs && (acs.position === 'fixed' || acs.position === 'absolute')
+            stops: !!acs && acs.position === 'fixed',
+            // An absolutely positioned box is clipped by its containing
+            // block and the boxes around that, not by the boxes between
+            // (round 12, C12-3).
+            absolute: !!acs && acs.position === 'absolute'
           };
           clipBoxCache.set(node, box);
         }
         return box;
+      };
+      // The box whose overflow clips next after node: its parent, or for an
+      // absolutely positioned node the nearest positioned ancestor (its
+      // containing block), or null at the root.
+      const clipParentOf = (node) => {
+        let cur = composedParent(node);
+        if (!clipBoxOf(node).absolute) return cur;
+        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 1000; depth++) {
+          const pcs = __contrastComputedStyle(cur);
+          if (
+            !pcs ||
+            (pcs.position && pcs.position !== 'static') ||
+            (trim(pcs.transform) && trim(pcs.transform) !== 'none') ||
+            __lname(cur) === 'html'
+          )
+            return cur;
+          cur = composedParent(cur);
+        }
+        return cur;
       };
       // The clip of node and the boxes above it, up to the first that stops
       // the walk (or the root), as one rectangle: an axis no box clips is
@@ -3872,7 +4539,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           }
           path.push(cur);
           if (clipBoxOf(cur).stops) break;
-          cur = composedParent(cur);
+          cur = clipParentOf(cur);
         }
         // A walk cut short by the depth limit leaves the rest unknown: too
         // long, and isUndrawn walks it box by box.
@@ -4021,41 +4688,49 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           )
             return true;
         }
-        let left = r.left;
-        let top = r.top;
-        let right = r.right;
-        let bottom = r.bottom;
         // Inside a marquee, only the boxes around the marquee clip.
-        let cur = composedParent(marquee || el);
+        const start = marquee || el;
+        let cur = clipParentOf(start);
+        let cl = -Infinity;
+        let ct = -Infinity;
+        let cr = Infinity;
+        let cb = Infinity;
         const up = cur && dom.nodeType(cur) === 1 ? clipUpOf(cur) : null;
         if (up && up.len <= 100) {
           if (!up.clips) return false;
-          left = Math.max(left, up.left);
-          right = Math.min(right, up.right);
-          top = Math.max(top, up.top);
-          bottom = Math.min(bottom, up.bottom);
-          return right - left <= 1 || bottom - top <= 1;
-        }
-        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
-          // hidden and clip cut content off; auto and scroll let a reader
-          // scroll to it.
-          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
-          if (clipsX || clipsY) {
+          cl = up.left;
+          cr = up.right;
+          ct = up.top;
+          cb = up.bottom;
+        } else {
+          for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
+            // hidden and clip cut content off; auto and scroll let a reader
+            // scroll to it.
+            const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
             if (clipsX) {
-              left = Math.max(left, a.left);
-              right = Math.min(right, a.right);
+              cl = Math.max(cl, a.left);
+              cr = Math.min(cr, a.right);
             }
             if (clipsY) {
-              top = Math.max(top, a.top);
-              bottom = Math.min(bottom, a.bottom);
+              ct = Math.max(ct, a.top);
+              cb = Math.min(cb, a.bottom);
             }
-            // A pixel or less: the 1px box of visually hidden text.
-            if (right - left <= 1 || bottom - top <= 1) return true;
+            if (stops) break;
+            cur = clipParentOf(cur);
           }
-          if (stops) break;
-          cur = composedParent(cur);
         }
-        return false;
+        // A pixel or less: the 1px box of visually hidden text.
+        const cut = (b) =>
+          Math.min(b.right, cr) - Math.max(b.left, cl) <= 1 ||
+          Math.min(b.bottom, cb) - Math.max(b.top, ct) <= 1;
+        if (cut(r)) return true;
+        if (marquee || (cl === -Infinity && ct === -Infinity && cr === Infinity && cb === Infinity))
+          return false;
+        // The box shows, but its own text may lie in the part cut off, as
+        // padding pushes it there (round 12, C12-3): a screen-reader text
+        // pushed below a 1em box of rating stars. Its lines decide.
+        const lines = __ownTextRects(el);
+        return lines.length > 0 && lines.every(cut);
       };
 
       // An <option> has no layout box of its own, yet it is drawn: the
@@ -4116,18 +4791,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // intent: it only fires when both colors are cleanly computable, and
       // leaves any gradient/image/partial-opacity background (which
       // contrast-computable already reports as cantTell) untouched.
-      const contrastOptsForBg =
-        engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
-          ? engineOptions.contrast
-          : {};
+      const contrastOptsForBg = __own(engineOptions, 'contrast');
+      const bgMode = __own(contrastOptsForBg, 'mode');
+      const bgFallback = __own(contrastOptsForBg, 'rootCanvasFallback');
       const bgResolveOpts = {
         contrast: {
-          mode: contrastOptsForBg.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
+          mode: bgMode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
           rootCanvasFallback:
-            typeof contrastOptsForBg.rootCanvasFallback === 'string' &&
-            contrastOptsForBg.rootCanvasFallback.trim()
-              ? contrastOptsForBg.rootCanvasFallback.trim()
-              : '#ffffff'
+            typeof bgFallback === 'string' && bgFallback.trim() ? bgFallback.trim() : '#ffffff'
         },
         collectStack: false
       };
@@ -4170,6 +4841,46 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // walker per root could otherwise walk the same subtree twice).
       const visitedTextNodes = new Set();
 
+      // Text the flat tree leaves out is not rendered (CSS Scoping 1): a
+      // light child of a shadow host that no slot takes, and the fallback
+      // content of a slot that has nodes assigned (round 12, F12-7). Only
+      // hosts with an open shadow root can be told; kept per parent.
+      const outOfFlatTreeCache = new WeakMap();
+      const outOfFlatTree = (start) => {
+        const seen = [];
+        let cur = start;
+        let out = false;
+        for (let depth = 0; cur && depth < 256; depth++) {
+          const parent = dom.parentNode(cur);
+          if (!parent || dom.nodeType(parent) !== 1) break;
+          if (dom.nodeType(cur) === 1 && outOfFlatTreeCache.has(cur)) {
+            out = outOfFlatTreeCache.get(cur);
+            break;
+          }
+          if (dom.nodeType(cur) === 1) seen.push(cur);
+          if (dom.shadowRoot(parent) && !dom.assignedSlot(cur)) {
+            out = true;
+            break;
+          }
+          if (String(dom.localName(parent) || '').toLowerCase() === 'slot') {
+            const root = dom.getRootNode(parent);
+            if (root && dom.nodeType(root) === 11) {
+              let assigned = [];
+              try {
+                assigned = dom.assignedNodes(parent) || [];
+              } catch {}
+              if (assigned.length) {
+                out = true;
+                break;
+              }
+            }
+          }
+          cur = parent;
+        }
+        for (const el of seen) outOfFlatTreeCache.set(el, out);
+        return out;
+      };
+
       for (const walkRoot of walkRoots) {
         if (guard >= 500000) break;
         let walker;
@@ -4184,7 +4895,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           visitedTextNodes.add(node);
 
           const text = node && dom.nodeValue(node);
-          if (!isNonEmptyText(text)) continue;
+          // A currency sign beside letters or digits is part of their text
+          // (isSignInTextRun), though it has none of its own.
+          if (!isNonEmptyText(text) && !(__isSignText(text) && isSignInTextRun(node))) continue;
 
           const parentNode = dom.parentNode(node);
           // Text assigned straight to a shadow root has no parent element, but
@@ -4200,6 +4913,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           // A <textarea>'s text nodes are its default value; what it shows is
           // its current value, read with the other fields below.
           if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
+          if (mayLeaveFlatTree && outOfFlatTree(node)) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
@@ -4321,7 +5035,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 if (!isVisibleEligible(el) || isInactive(el)) break;
                 const m = measureGeneratedText(el, pseudo, bgResolveOpts);
                 if (!m || m.same) continue;
-                generated.push(Object.freeze({ el, pseudo, textCount: 1 }));
+                generated.push(
+                  Object.freeze(Object.setPrototypeOf({ el, pseudo, textCount: 1 }, null))
+                );
               }
             }
           }
@@ -4332,7 +5048,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         eligibleTextCount,
         visibilityMode,
         elements: Object.freeze(
-          elements.map((el) => Object.freeze({ el, textCount: elToCount.get(el) || 0 }))
+          // Records with no prototype: a value a page's script put on
+          // Object.prototype (pseudo) is never read as a record's own
+          // (round 12, F12-5).
+          elements.map((el) =>
+            Object.freeze(Object.setPrototypeOf({ el, textCount: elToCount.get(el) || 0 }, null))
+          )
         ),
         generated: Object.freeze(generated)
       });
@@ -4708,6 +5429,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const doc = dom.ownerDocument(el);
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (!__layoutByDoc.get(doc)) return 1;
+    // No box of a page that sets no transform, scale or rotate has one.
+    if (!__pageFeaturesOf(doc).transform) return 1;
     const chain = [];
     let known = 1;
     let guard = 0;
@@ -5891,6 +6614,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function __hasBlendModeEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
+      if (!__pageFeaturesOf(el).blend) return false;
       if (__hasBlendModeCache.has(el)) return __hasBlendModeCache.get(el);
       const v = hasBlendMode(cs);
       __hasBlendModeCache.set(el, v);
@@ -5903,6 +6627,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function __hasFilterEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasFilter(cs);
+      if (!__pageFeaturesOf(el).filter) return false;
       if (__hasFilterCache.has(el)) return __hasFilterCache.get(el);
       const v = hasFilter(cs);
       __hasFilterCache.set(el, v);
@@ -6549,7 +7274,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // elements x the rules that could apply, not elements x rules. Each entry
   // is { rule, part }; a pseudo-element's part is left out.
   function __colorPartsFor(found, el) {
-    if (!found.index) {
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
       const entries = [];
       for (const rule of found.rules) {
         for (const part of rule.parts) {
@@ -6559,7 +7286,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           entries.push({ rule, part });
         }
       }
-      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+      Object.defineProperty(found, 'index', {
+        value: { entries, index: selectorIndex(entries.map((e) => e.part)) },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const { entries, index } = found.index;
     return index.candidates(el).map((i) => entries[i]);
@@ -6576,8 +7308,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
+    // Answers with no prototype: a value a page's script put on
+    // Object.prototype (unknown) is never read as theirs (round 12, F12-5).
+    const answer = (o) => Object.setPrototypeOf(o, null);
     const found = __colorRulesOf(root, prop);
-    if (found.unreadable) return { unknown: true };
+    if (found.unreadable) return answer({ unknown: true });
     let best = null;
     let unknown = false;
     for (const { rule, part } of __colorPartsFor(found, el)) {
@@ -6606,8 +7341,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (!best || rank > best.rank) best = { rank, value };
       }
     } catch {}
-    if (unknown) return { unknown: true };
-    return best ? { value: best.value } : null;
+    if (unknown) return answer({ unknown: true });
+    return best ? answer({ value: best.value }) : null;
   }
 
   // Every author declaration of prop (`color` by default) that matches el,
@@ -6715,6 +7450,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
     const value = decl.value.toLowerCase();
     if (__CSS_INHERITING.has(value)) return inherited();
+    // revert takes the browser's own value: a link's link color, as an
+    // unstyled link has it, and for an element in a link (whose color the
+    // browser's sheet doesn't set, but for a <mark>) its parent's (round
+    // 12, C12-14).
+    if (value === 'revert' && __isLink(el)) return __SCHEME_COLORS.light.link;
+    if (value === 'revert' && __lname(el) !== 'mark') return inherited();
     // A custom property jsdom doesn't substitute, or a keyword taking the
     // browser's own value.
     if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
@@ -6830,7 +7571,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // computes the light scheme's colors). Null where the color computed
   // now is the one, or it can't be told (colorSchemeUnread).
   function __schemeTextOverride(el, opts) {
-    const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
+    const asked = __ownAt(opts, 'contrast', 'colorScheme');
     const scheme = asked === 'light' || asked === 'dark' ? asked : null;
     if (!scheme) {
       // A browser computes the colors of the scheme it draws.
@@ -6852,7 +7593,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // page's canvas (__schemeTextColor), where it isn't the one computed now.
   function computeEffectiveForeground(el, opts) {
     const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
-    if (opts && opts.contrast && opts.contrast.colorScheme) {
+    if (__ownAt(opts, 'contrast', 'colorScheme')) {
       const out = computeEffectiveForeground(el);
       if (!schemeOverride || !out || !out.rgba) return out;
       const op = Number.isFinite(out.opacityProduct) ? out.opacityProduct : 1;
@@ -6888,7 +7629,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // its own opacity as well as the field's.
     const field = __fieldText(el);
     const placeholder = field && field.placeholder ? field.style : null;
-    const cs = placeholder || __contrastComputedStyle(el);
+    // A host's own text slotted into its shadow tree takes the slot's color.
+    const slot = placeholder ? null : __ownTextSlot(el);
+    const cs = placeholder || __contrastComputedStyle(slot || el);
     // SVG text is painted with `fill`, not `color` (which only feeds
     // currentColor): <text fill="#000" style="color:#eee"> is black. A fill
     // of none (outline-only text) or a paint server (url(#gradient)) does
@@ -6897,7 +7640,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // Text in a link, under jsdom, whose color jsdom ranks below its own
     // link color, is read from the page's rules (__htmlTextFillOf).
     const fillValue =
-      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
+      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(slot || el, cs));
     let c = parseCssColorToRgba(fillValue);
     // On the canvas of a page drawn only in dark, in an emulator: the dark
     // scheme's color where the text takes it from the scheme.
@@ -6929,7 +7672,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return out;
     }
 
-    let op = computeOpacityProduct(el);
+    let op = computeOpacityProduct(slot || el);
     if (placeholder) {
       const own = Number.parseFloat(placeholder.opacity);
       if (Number.isFinite(own)) op *= clamp01(own);
@@ -6950,19 +7693,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     __getSharedWeakMapCache('__effectiveBackgroundCache') || __localEffectiveBackgroundCache;
 
   function __bgCacheKey(opts2) {
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const named = contrast.rootCanvasFallbackSet === true ? 'named' : '';
-    const scheme =
-      contrast.colorScheme === 'light' || contrast.colorScheme === 'dark'
-        ? contrast.colorScheme
-        : '';
+    const named = __own(contrast, 'rootCanvasFallbackSet') === true ? 'named' : '';
+    const asked = __own(contrast, 'colorScheme');
+    const scheme = asked === 'light' || asked === 'dark' ? asked : '';
 
     // Cache key must include any input that can affect computed background.
     // Note: we only cache when collectStack is false.
@@ -7026,7 +7766,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const doc = window && window.document;
       const root = doc && dom.documentElement(doc);
       if (!root || typeof window.getComputedStyle !== 'function') return null;
-      const rootScheme = String(window.getComputedStyle(root).colorScheme || '');
+      const rootScheme = String(
+        window.getComputedStyle(root).getPropertyValue('color-scheme') || ''
+      );
       const meta = dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]');
       const metaScheme = meta ? String(dom.getAttribute(meta, 'content') || '') : '';
       if (!/\bdark\b/i.test(rootScheme) && !/\bdark\b/i.test(metaScheme)) return null;
@@ -7144,9 +7886,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return null;
       }
       const rootCs = window.getComputedStyle(root);
-      const rootValue = String(
-        (rootCs && (rootCs.colorScheme || rootCs.getPropertyValue('color-scheme'))) || ''
-      ).trim();
+      const rootValue = String((rootCs && rootCs.getPropertyValue('color-scheme')) || '').trim();
       let supported = __schemesNamed(rootValue);
       // The meta element speaks for a root whose color-scheme is normal:
       // the first one naming a scheme (HTML, "the page's supported color
@@ -7198,8 +7938,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             const c = parseCssColorToRgba(value);
             return c && c.a === 1 ? { r: c.r, g: c.g, b: c.b, a: 1 } : null;
           };
+          // color-scheme by its CSS name: Chromium reads a camelCase
+          // style property a page's script put on Object.prototype ahead of
+          // its own (round 12, R12F-6).
           const readScheme = (scheme) => {
-            probe.style.colorScheme = scheme;
+            probe.style.setProperty('color-scheme', scheme);
             probe.style.backgroundColor = 'Canvas';
             probe.style.color = 'CanvasText';
             const cs = window.getComputedStyle(probe);
@@ -7255,9 +7998,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     __runCanvas = rgba && rgba.a === 1 ? { color: color.trim(), rgba: { ...rgba, a: 1 } } : null;
   }
   function __namedCanvas(contrast) {
-    if (contrast && contrast.rootCanvasFallbackSet === true) {
-      const value =
-        typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+    if (__own(contrast, 'rootCanvasFallbackSet') === true) {
+      const given = __own(contrast, 'rootCanvasFallback');
+      const value = typeof given === 'string' ? given.trim() : '';
       const rgba = value ? parseCssColorToRgba(value) : null;
       if (rgba && rgba.a === 1) return { color: value, rgba: { ...rgba, a: 1 } };
     }
@@ -7672,7 +8415,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (window.self !== window.top) return null;
       const info = __pageSchemes();
       if (!info) return null;
-      const asked = contrast && contrast.colorScheme;
+      const asked = __own(contrast, 'colorScheme');
       const scheme = asked === 'light' || asked === 'dark' ? asked : info.current;
       const named = __namedCanvas(contrast);
       if (named && scheme !== info.current) return null;
@@ -7777,7 +8520,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {}
 
     const __bgKey = __bgCacheKey(opts2);
-    const __collectStack = !!(opts2 && opts2.collectStack);
+    const __collectStack = !!__own(opts2, 'collectStack');
 
     // Only cache when stack collection is off
     if (!__collectStack) {
@@ -7789,15 +8532,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       } catch {}
     }
 
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const collectStack = !!(opts2 && opts2.collectStack);
+    const collectStack = !!__own(opts2, 'collectStack');
     const stack = collectStack ? [] : null;
 
     let acc = { r: 0, g: 0, b: 0, a: 0 };
@@ -7809,7 +8551,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const layer = svgBackdrop.layers[i];
         if (collectStack) {
           stack.push({
-            selector: __getSimpleSelectorCached(layer.el, 'rect'),
+            selector: __getSimpleSelectorCached(layer.el, __lname(layer.el)),
             bg: { r: layer.rgba.r, g: layer.rgba.g, b: layer.rgba.b, a: layer.rgba.a },
             opacity: 1
           });
@@ -7841,7 +8583,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // text): that background is the text's color, not behind it.
     const clipOwner = __clipTextOwner(el);
 
-    for (const cur of ancestorsOf(el)) {
+    // A host's own text slotted into its shadow tree is drawn there, over
+    // the backgrounds of the slot's flat-tree ancestors, the host's among
+    // them.
+    for (const cur of ancestorsOf(__ownTextSlot(el) || el)) {
       if (dom.nodeType(cur) !== 1) continue;
       if (cur === clipOwner) {
         const ocs = __contrastComputedStyle(cur);
@@ -8961,7 +9706,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           const body = fdoc && dom.body(fdoc);
           if (body) body.textContent = '';
           if (froot) {
-            froot.style.colorScheme = '';
+            froot.style.removeProperty('color-scheme');
             froot.style.forcedColorAdjust = '';
           }
         } catch {
@@ -8990,7 +9735,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         // Under forced colors the scan holds the page in its own colors
         // (forced-color-adjust: none); the blank frame is held so too, or
         // the browser's placeholder color read there is the forced palette's
@@ -9029,7 +9774,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const own = view.getComputedStyle(el);
       const tag = String(dom.localName(el) || '').toLowerCase();
       const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
-      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      const ref = __readPlaceholderDefaults(
+        doc,
+        tag,
+        type,
+        String(own.getPropertyValue('color-scheme') || '')
+      );
       if (!ref) return '';
       const ph = field.style;
       const same =
@@ -9100,12 +9850,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     if (!__forcedColorsMedia()) return null;
     try {
       if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
-      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      if (dom.hasAttribute(el, 'multiple') || __selectDrawnAsListBox(el)) return null;
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
       const doc = dom.ownerDocument(el);
       if (!__hasLayout(doc)) return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || !ref.measured || String(cs.backgroundColor) !== ref.background) return null;
       return ref.measured;
     } catch {
@@ -9120,7 +9870,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         froot.style.forcedColorAdjust = 'none';
         const host = dom.body(fdoc) || froot;
         const select = dom.createElement(fdoc, 'select');
@@ -9156,7 +9906,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function nativeSelectField(el) {
     try {
       if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
-      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      if (dom.hasAttribute(el, 'multiple') || __selectDrawnAsListBox(el)) return null;
       const doc = dom.ownerDocument(el);
       if (!__hasLayout(doc)) return null;
       const view = doc && dom.defaultView(doc);
@@ -9164,7 +9914,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const cs = view.getComputedStyle(el);
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || ref.field === (ref.measured || ref.background)) return null;
       if (String(cs.backgroundColor) !== ref.background) return null;
       if (hasBackgroundImageOrGradient(cs)) return null;
@@ -9367,14 +10117,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return blocked;
     }
     const out = __computabilityBlockerOf(el, false);
-    if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
+    const ownPseudo = !!out && Object.prototype.hasOwnProperty.call(out, '__pseudo');
+    if (
+      ownPseudo &&
+      out.ok === false &&
+      out.reasonCode === 'PSEUDO_ELEMENT_COLOR' &&
+      out.__pseudo
+    ) {
       const pseudo = out.__pseudo;
       delete out.__pseudo;
       // The rest of the walk, past the pseudo-element: its colors are
       // carried only where nothing else blocks the measurement.
       const rest = __computabilityBlockerOf(el, true);
       if (rest && rest.ok === true) out.pseudoColors = pseudo;
-    } else if (out && out.__pseudo) {
+    } else if (ownPseudo) {
       delete out.__pseudo;
     }
     try {
@@ -9524,14 +10280,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let rec = __ancestorEffectsCache.get(cur);
     if (rec) return rec;
     const cs = __contrastComputedStyle(cur);
-    const boxShadow = trim(cs && cs.boxShadow);
+    // What the page uses no box of at all is not read (__pageFeaturesOf).
+    const uses = __pageFeaturesOf(cur);
+    const boxShadow = uses.insetShadow ? trim(cs && cs.boxShadow) : '';
     const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
     const position = cs && cs.position;
     rec = {
       cs,
       blend: __hasBlendModeEl(cur, cs),
       filter: __hasFilterEl(cur, cs),
-      mask: maskOf(cs),
+      mask: uses.mask ? maskOf(cs) : '',
       // __insetShadowUnder paints nothing without an inset shadow.
       insetShadow: !!boxShadow && boxShadow !== 'none' && /\binset\b/i.test(boxShadow),
       bgImage: __hasBackgroundImageOrGradientEl(cur, cs),
@@ -9817,7 +10575,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           }
           if (out) {
             const colors = __pseudoColorsOf(differing);
-            if (colors) out.__pseudo = colors;
+            // Defined, not assigned: a read-only __pseudo on Object.prototype
+            // refuses none (round 12, R12F-6).
+            if (colors) {
+              Object.defineProperty(out, '__pseudo', {
+                value: colors,
+                writable: true,
+                enumerable: true,
+                configurable: true
+              });
+            }
             try {
               if (el) __computabilityBlockerCache.set(el, out);
             } catch {}
@@ -11073,7 +11840,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     try {
       if (!el || dom.nodeType(el) !== 1 || !chain.length) return null;
       const index = __getOverlapIndex();
-      if (!index) return __svgShapeMaybeBehind(el);
+      if (!index) return __svgShapeMaybeBehind(el) || __noLayoutPseudoUnder(el, chain);
       const opaque = chain[chain.length - 1];
       const ancestors = new Set(chain);
       // Painters near el's box at all, before measuring its text, which
@@ -11193,10 +11960,150 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Without a layout (jsdom), no pseudo-element's style is computed, so a
+  // positioned ::before or ::after painting a color or an image under the
+  // text (the overlay pattern, z-index: -1 among them) was never seen, and
+  // white text over a dark one was measured against the white page and
+  // dropped as invisible (round 12, C12-18). Read from the style sheets
+  // instead: a ::before or ::after their rules give content, a position of
+  // absolute or fixed and a background, on el or an ancestor in `chain`,
+  // is paint in the way, and the text is asked about. A sheet that can't
+  // be read is taken as giving none.
+  const __noLayoutPseudosByRoot = new WeakMap();
+  function __noLayoutPseudos(root) {
+    if (__noLayoutPseudosByRoot.has(root)) return __noLayoutPseudosByRoot.get(root);
+    const byKey = new Map();
+    try {
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
+      const stack = [];
+      for (const sheet of sheets) {
+        try {
+          stack.push(sheet.cssRules || []);
+        } catch {}
+      }
+      while (stack.length) {
+        const list = stack.pop();
+        const n = (list && list.length) || 0;
+        for (let i = 0; i < n; i++) {
+          const rule = list[i];
+          if (!rule) continue;
+          if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+          const text = rule.selectorText;
+          const style = rule.style;
+          if (typeof text !== 'string' || !style || !__beforeOrAfterRe.test(text)) continue;
+          const get = (prop) =>
+            trim(
+              typeof style.getPropertyValue === 'function' ? style.getPropertyValue(prop) : ''
+            ).toLowerCase();
+          const content = get('content');
+          const position = get('position');
+          const color = get('background-color');
+          const image = get('background-image');
+          const shorthand = get('background');
+          for (const part of __splitTopLevel(text)) {
+            const m = /::?(before|after)\b/i.exec(part);
+            if (!m) continue;
+            let base = part.slice(0, m.index).trim();
+            if (!base || /[>+~]$/.test(base)) base += '*';
+            const key = base + '::' + m[1].toLowerCase();
+            const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
+            if (content) at.content = content !== 'none' && content !== 'normal';
+            if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            // Drawn at all, and where, as far as the rules say (F12-2).
+            const display = get('display');
+            if (display) at.displayNone = display === 'none';
+            const visibility = get('visibility');
+            if (visibility) at.hidden = visibility === 'hidden' || visibility === 'collapse';
+            for (const prop of ['width', 'height', 'top', 'right', 'bottom', 'left']) {
+              const v = get(prop);
+              if (v) at[prop] = v;
+            }
+            const paint = [color, image, shorthand].find(
+              (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
+            );
+            if (paint) {
+              const c = parseCssColorToRgba(paint);
+              if (!c || c.a > 0) at.paint = paint;
+            }
+            byKey.set(key, at);
+          }
+        }
+      }
+    } catch {}
+    const out = [...byKey.values()].filter(
+      (p) => p.content && p.positioned && p.paint && !p.displayNone && !p.hidden
+    );
+    __noLayoutPseudosByRoot.set(root, out);
+    return out;
+  }
+  // Whether a ::before or ::after the rules position could lie under a
+  // line of el's text, from the size and offsets they give it (round 12,
+  // F12-2): a box narrower or shorter than a line of the text (a 4px corner
+  // badge) is no background to it, and one moved wholly off its host (an
+  // offset of 100% or more, or far off the page) doesn't reach it. A size or
+  // offset in any other unit is taken as possibly covering the text.
+  function __noLayoutPseudoMayCover(p, el) {
+    const px = (v) => {
+      const m = /^(-?\d*\.?\d+)px$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    const pct = (v) => {
+      const m = /^(-?\d*\.?\d+)%$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    let fontPx = 16;
+    try {
+      const f = px(trim((computedStyle(el) || {}).fontSize || ''));
+      if (f && f > 0) fontPx = f;
+    } catch {}
+    const w = px(p.width);
+    const h = px(p.height);
+    if ((w !== null && w < fontPx) || (h !== null && h < fontPx)) return false;
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      const v = p[side];
+      const percent = pct(v);
+      if (percent !== null && Math.abs(percent) >= 100) return false;
+      const length = px(v);
+      if (length !== null && length <= -1000) return false;
+    }
+    return true;
+  }
+  function __noLayoutPseudoUnder(el, chain) {
+    for (const host of chain) {
+      let root;
+      try {
+        root = dom.getRootNode(host);
+      } catch {
+        root = null;
+      }
+      if (!root) continue;
+      for (const p of __noLayoutPseudos(root)) {
+        let matched;
+        try {
+          matched = dom.matches(host, p.base);
+        } catch {
+          matched = false;
+        }
+        if (!matched || !__noLayoutPseudoMayCover(p, el)) continue;
+        return {
+          selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
+          element: describeElement(host) + p.pseudo,
+          property: 'background',
+          value: p.paint
+        };
+      }
+    }
+    return null;
+  }
+
   // Without a layout (jsdom), where an SVG shape paints can't be told. A
   // shape painted before SVG text in the same <svg> may lie behind it, and
   // then the text's background can't be told either: the shape, as paint
-  // in the way, or null. With a layout, __svgBackdropOf measures it.
+  // in the way, or null. A shape certainly under all of the text is its
+  // background (__svgNoLayoutScan); only one painted after the last such
+  // shape is in the way. With a layout, __svgBackdropOf measures it.
   const __SVG_PAINT_TAGS =
     'rect, circle, ellipse, line, path, polygon, polyline, image, use, foreignObject';
   const __SVG_UNPAINTED_TAGS = new Set([
@@ -11211,11 +12118,37 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     'filter'
   ]);
   function __svgShapeMaybeBehind(el) {
+    const scan = __svgNoLayoutScan(el);
+    return scan ? scan.blocker : null;
+  }
+
+  // Without a layout, the simple, certain case is measured (round 11, D11):
+  // a <rect>, <circle> or <ellipse> painted before the text with an opaque
+  // solid fill, no transform, opacity, filter, mask or clip on it or its
+  // ancestors in the <svg>, whose geometry certainly covers the text's
+  // area. The last such shape is the text's background; a shape painted
+  // after it that may lie behind the text (any other) keeps the text
+  // asked about. { certain: { el, rgba } | null, blocker: {...} | null },
+  // or null where nothing applies (with a layout, or not SVG text).
+  const __svgNoLayoutCache = new WeakMap();
+  function __svgNoLayoutScan(el) {
     if (!__isSvgTextElement(el)) return null;
     const doc = dom.ownerDocument(el);
     if (!doc) return null;
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (__layoutByDoc.get(doc)) return null;
+    if (__svgNoLayoutCache.has(el)) return __svgNoLayoutCache.get(el);
+    let out;
+    try {
+      out = __computeSvgNoLayoutScan(el);
+    } catch {
+      out = null;
+    }
+    __svgNoLayoutCache.set(el, out);
+    return out;
+  }
+
+  function __computeSvgNoLayoutScan(el) {
     let svg = composedParent(el);
     for (
       let guard = 0;
@@ -11230,6 +12163,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       return null;
     }
+    let area;
+    const textArea = () => {
+      if (area === undefined) area = __svgTextArea(el, svg);
+      return area;
+    };
+    let certain = null;
+    let blocker = null;
     for (const shape of shapes) {
       // Painted after el (or el's own ancestor): not behind it.
       if (!(dom.compareDocumentPosition(shape, el) & 4) || __isComposedInside(el, shape)) break;
@@ -11243,7 +12183,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
       if (unpainted) continue;
       const cs = __contrastComputedStyle(shape);
-      if (!cs || trim(cs.display) === 'none' || trim(cs.visibility) === 'hidden') continue;
+      if (!cs || __svgHiddenNoLayout(shape, cs, svg)) continue;
       const paints = (v) => {
         if (!v || v === 'none') return false;
         const c = parseCssColorToRgba(v);
@@ -11258,26 +12198,342 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const tag = __lname(shape);
       const shapeOnly = tag !== 'image' && tag !== 'use' && tag !== 'foreignobject';
       if (shapeOnly && !paints(fill) && !paints(stroke)) continue;
-      return {
-        selector: __getSimpleSelectorCached(shape, tag),
-        element: describeElement(shape),
-        property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
-        value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
-      };
+      const rgba = __svgCertainCover(shape, cs, svg, paints(stroke), textArea);
+      if (rgba) {
+        // Opaque, over all of the text: what lies under it doesn't show.
+        certain = { el: shape, rgba };
+        blocker = null;
+        continue;
+      }
+      if (!blocker) {
+        blocker = {
+          selector: __getSimpleSelectorCached(shape, tag),
+          element: describeElement(shape),
+          property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
+          value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
+        };
+      }
     }
-    return null;
+    return { certain, blocker };
+  }
+
+  // Whether an SVG shape is not drawn, without a layout (round 12, C12-4):
+  // display none on it or a group around it, or visibility hidden on it or
+  // inherited, set in CSS or as a presentation attribute, which jsdom
+  // doesn't apply.
+  function __svgHiddenNoLayout(shape, cs, svg) {
+    if (trim(cs.display) === 'none') return true;
+    const vis = trim(cs.visibility);
+    if (vis === 'hidden' || vis === 'collapse') return true;
+    let visKnown = false;
+    for (let n = shape; n && n !== svg; n = dom.parentElement(n)) {
+      if (trim(dom.getAttribute(n, 'display')).toLowerCase() === 'none') return true;
+      if (n !== shape) {
+        const ncs = __contrastComputedStyle(n);
+        if (ncs && trim(ncs.display) === 'none') return true;
+      }
+      if (!visKnown && dom.hasAttribute(n, 'visibility')) {
+        visKnown = true;
+        const v = trim(dom.getAttribute(n, 'visibility')).toLowerCase();
+        if (v === 'hidden' || v === 'collapse') return true;
+      }
+    }
+    if (!visKnown && svg && dom.hasAttribute(svg, 'visibility')) {
+      const v = trim(dom.getAttribute(svg, 'visibility')).toLowerCase();
+      if (v === 'hidden' || v === 'collapse') return true;
+    }
+    return false;
+  }
+
+  // An SVG length in user units: a number, px, or a percentage of `full`
+  // (NaN where `full` is unknown). NaN for anything else.
+  function __svgLength(value, full) {
+    const v = trim(value);
+    if (!v) return NaN;
+    let m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(px)?$/i.exec(v);
+    if (m) return Number.parseFloat(m[1]);
+    m = /^([+-]?(?:\d+\.?\d*|\.\d+))%$/.exec(v);
+    if (m) return Number.isFinite(full) ? (Number.parseFloat(m[1]) / 100) * full : NaN;
+    return NaN;
+  }
+
+  // The svg's viewport in user units: its viewBox, or its own width and
+  // height where it has none. { x, y, w, h }, a side NaN where unknown.
+  function __svgViewport(svg) {
+    const vb = trim(dom.getAttribute(svg, 'viewBox'));
+    if (vb) {
+      const n = vb.split(/[\s,]+/).map(Number);
+      if (n.length === 4 && n.every(Number.isFinite) && n[2] > 0 && n[3] > 0)
+        return { x: n[0], y: n[1], w: n[2], h: n[3], viewBox: true };
+      return { x: 0, y: 0, w: NaN, h: NaN, viewBox: true };
+    }
+    return {
+      x: 0,
+      y: 0,
+      w: __svgLength(dom.getAttribute(svg, 'width'), NaN),
+      h: __svgLength(dom.getAttribute(svg, 'height'), NaN),
+      viewBox: false
+    };
+  }
+
+  const __SVG_GROUP_ATTRS = ['transform', 'filter', 'mask', 'clip-path'];
+  // Whether node draws as a group or moves: a transform, opacity, a filter,
+  // a mask or a clip, as an attribute, in its style or computed.
+  function __svgGroupedOrMoved(node) {
+    for (const a of __SVG_GROUP_ATTRS) {
+      const v = trim(dom.getAttribute(node, a)).toLowerCase();
+      if (v && v !== 'none') return true;
+    }
+    const op = trim(dom.getAttribute(node, 'opacity'));
+    if (op && !(Number.parseFloat(op) >= 1)) return true;
+    if (
+      /(^|;)\s*(transform|opacity|filter|mask|clip|clip-path)\s*:/i.test(
+        String(dom.getAttribute(node, 'style') || '')
+      )
+    )
+      return true;
+    const cs = __contrastComputedStyle(node);
+    if (!cs) return false;
+    if (opacityOf(cs) < 1) return true;
+    const set = (v) => !!trim(v) && trim(v) !== 'none';
+    return (
+      set(cs.transform) ||
+      set(cs.filter) ||
+      set(cs.clipPath) ||
+      set(cs.maskImage) ||
+      set(cs.mask) ||
+      (!!cs.mixBlendMode && trim(cs.mixBlendMode) !== 'normal')
+    );
+  }
+
+  // Emoji, and characters of East Asian Width W or F (Unicode UAX #11),
+  // drawn up to two em wide.
+  const __WIDE_CHAR =
+    /[\p{Extended_Pictographic}\u1100-\u115F\u231A\u231B\u2329\u232A\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uA960-\uA97F\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6\u{16FE0}-\u{18AFF}\u{1B000}-\u{1B2FF}\u{1F000}-\u{1FAFF}\u{20000}-\u{3FFFD}]/u;
+  // The area SVG text certainly lies in, in the svg's user units, without a
+  // layout: from its x and y, its font size and its characters, each at
+  // most 1.1em wide (2em if wide), from 1.2em above the baseline to 0.4em
+  // below.
+  // null where that isn't simple: a transform, positions per character,
+  // a textLength, spacing, a vertical writing mode or a text path.
+  function __svgTextArea(el, svg) {
+    let text = el;
+    while (text && text !== svg && __lname(text) !== 'text') text = dom.parentElement(text);
+    if (!text || text === svg) return null;
+    for (let n = text; n && n !== svg; n = dom.parentElement(n)) {
+      if (__svgGroupedOrMoved(n) && n !== text) return null;
+      const t = trim(dom.getAttribute(n, 'transform'));
+      if (t && t !== 'none') return null;
+      const ncs = __contrastComputedStyle(n);
+      if (ncs && trim(ncs.transform) && trim(ncs.transform) !== 'none') return null;
+    }
+    const parts = [text, ...dom.querySelectorAll(text, '*')];
+    for (const n of parts) {
+      const name = __lname(n);
+      if (name === 'textpath') return null;
+      for (const a of ['dx', 'dy', 'rotate', 'textLength', 'letter-spacing', 'word-spacing'])
+        if (dom.hasAttribute(n, a)) return null;
+      if (n !== text && (dom.hasAttribute(n, 'x') || dom.hasAttribute(n, 'y'))) return null;
+      if (
+        /(^|;)\s*(letter-spacing|word-spacing|writing-mode|font-size)\s*:/i.test(
+          String(dom.getAttribute(n, 'style') || '')
+        ) &&
+        n !== text
+      )
+        return null;
+    }
+    const tcs = __contrastComputedStyle(text) || {};
+    if (
+      /^(vertical|tb|sideways)/.test(trim(tcs.writingMode)) ||
+      dom.hasAttribute(text, 'writing-mode')
+    )
+      return null;
+    const spacing = (v) => !trim(v) || trim(v) === 'normal' || Number.parseFloat(v) === 0;
+    if (!spacing(tcs.letterSpacing) || !spacing(tcs.wordSpacing)) return null;
+    const vp = __svgViewport(svg);
+    const x = dom.hasAttribute(text, 'x') ? __svgLength(dom.getAttribute(text, 'x'), vp.w) : 0;
+    const y = dom.hasAttribute(text, 'y') ? __svgLength(dom.getAttribute(text, 'y'), vp.h) : 0;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    // The font size: the larger of the computed one and the nearest
+    // font-size attribute, which jsdom doesn't apply.
+    let fs = parsePx(tcs.fontSize);
+    if (!/^\s*[\d.]+px\s*$/.test(String(tcs.fontSize || ''))) fs = NaN;
+    const host = dom.closest(text, '[font-size]');
+    if (host && __isComposedInside(host, svg)) {
+      const a = __svgLength(dom.getAttribute(host, 'font-size'), NaN);
+      if (!Number.isFinite(a)) return null;
+      fs = Number.isFinite(fs) ? Math.max(fs, a) : a;
+    }
+    if (!Number.isFinite(fs)) fs = 16;
+    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')];
+    if (!chars.length) return null;
+    // An upper bound on the width (round 12, C12-8): 1.1em a character,
+    // above the widest Latin glyphs of common fonts (@ is about 1.02em in
+    // Arial), and 2em for emoji and wide East Asian characters. Text that
+    // fits by a clear margin is measured; text close to the edge is asked
+    // about.
+    const w = chars.reduce((sum, ch) => sum + (__WIDE_CHAR.test(ch) ? 2 : 1.1), 0) * fs;
+    const anchorHost = dom.closest(text, '[text-anchor]');
+    let anchor = trim(tcs.textAnchor) || 'start';
+    if (anchorHost && __isComposedInside(anchorHost, svg))
+      anchor = trim(dom.getAttribute(anchorHost, 'text-anchor')).toLowerCase();
+    const rtl = trim(tcs.direction) === 'rtl' || !!dom.closest(text, '[direction="rtl"]');
+    let left;
+    let right;
+    if (rtl || !/^(start|middle|end)$/.test(anchor)) {
+      left = x - w;
+      right = x + w;
+    } else if (anchor === 'middle') {
+      left = x - w / 2;
+      right = x + w / 2;
+    } else if (anchor === 'end') {
+      left = x - w;
+      right = x;
+    } else {
+      left = x;
+      right = x + w;
+    }
+    // A baseline set as an attribute, or in CSS on the text or a part of it
+    // (round 12, C12-5): jsdom computes CSS ones, and passes
+    // dominant-baseline down, but applies no attribute.
+    const baselineSet =
+      ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
+        (a) => !!dom.closest(text, '[' + a + ']')
+      ) ||
+      parts.some((n) => {
+        const ncs = n === text ? tcs : __contrastComputedStyle(n);
+        if (!ncs || typeof ncs.getPropertyValue !== 'function') return false;
+        const db = trim(ncs.getPropertyValue('dominant-baseline')).toLowerCase();
+        const ab = trim(ncs.getPropertyValue('alignment-baseline')).toLowerCase();
+        const bs = trim(ncs.getPropertyValue('baseline-shift')).toLowerCase();
+        return (
+          !/^(|auto|alphabetic)$/.test(db) ||
+          !/^(|auto|baseline|alphabetic)$/.test(ab) ||
+          !/^(|0|0px|baseline)$/.test(bs)
+        );
+      });
+    const above = baselineSet ? 1.3 * fs : 1.2 * fs;
+    const below = baselineSet ? 1.3 * fs : 0.4 * fs;
+    return { left, right, top: y - above, bottom: y + below };
+  }
+
+  const __SVG_GEOMETRY_PROPS = ['x', 'y', 'width', 'height', 'rx', 'ry', 'r', 'cx', 'cy'];
+  // The opaque color a <rect>, <circle> or <ellipse> certainly paints
+  // under all of el's text, without a layout, or null.
+  function __svgCertainCover(shape, cs, svg, stroked, textArea) {
+    const tag = __lname(shape);
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
+    // Its own <svg>: not in a nested one, a <switch> or a link's group.
+    for (let p = dom.parentElement(shape); p !== svg; p = dom.parentElement(p)) {
+      if (!p) return null;
+      const name = __lname(p);
+      if (name !== 'g' && name !== 'a') return null;
+      if (__svgGroupedOrMoved(p)) return null;
+    }
+    if (__svgGroupedOrMoved(shape)) return null;
+    const fill = parseCssColorToRgba(cs.fill);
+    if (!fill || fill.a < 1) return null;
+    const fo = trim(dom.getAttribute(shape, 'fill-opacity')) || trim(cs.fillOpacity);
+    if (fo && !(Number.parseFloat(fo) >= 1)) return null;
+    if (
+      /(^|;)\s*(fill-opacity|x|y|width|height|rx|ry|r|cx|cy)\s*:/i.test(
+        String(dom.getAttribute(shape, 'style') || '')
+      )
+    )
+      return null;
+    // Geometry set in CSS overrides the attributes (SVG 2), and jsdom
+    // places nothing by it: a style sheet that sets any is not read, and the
+    // text is asked about (round 12, C12-6).
+    for (const prop of __SVG_GEOMETRY_PROPS) {
+      const decl = __authorColorDeclsOf(shape, prop);
+      if (decl.unknown || decl.values.length) return null;
+    }
+    const vp = __svgViewport(svg);
+    const attr = (a, full, dflt) =>
+      dom.hasAttribute(shape, a) ? __svgLength(dom.getAttribute(shape, a), full) : dflt;
+    let half = 0;
+    if (stroked) {
+      const sw = dom.hasAttribute(shape, 'stroke-width')
+        ? __svgLength(dom.getAttribute(shape, 'stroke-width'), NaN)
+        : parsePx(cs.strokeWidth) || 1;
+      if (!Number.isFinite(sw)) return null;
+      half = Math.max(0, sw) / 2;
+    }
+    const rgb = { r: fill.r, g: fill.g, b: fill.b, a: 1 };
+    if (tag === 'rect') {
+      const x = attr('x', vp.w, 0);
+      const y = attr('y', vp.h, 0);
+      const w = attr('width', vp.w, NaN);
+      const h = attr('height', vp.h, NaN);
+      if (![x, y, w, h].every(Number.isFinite) || !(w > 0) || !(h > 0)) return null;
+      let rx = attr('rx', vp.w, NaN);
+      let ry = attr('ry', vp.h, NaN);
+      const rxSet = dom.hasAttribute(shape, 'rx');
+      const rySet = dom.hasAttribute(shape, 'ry');
+      if ((rxSet && !Number.isFinite(rx)) || (rySet && !Number.isFinite(ry))) return null;
+      if (!rxSet) rx = rySet ? ry : 0;
+      if (!rySet) ry = rx;
+      rx = Math.min(Math.max(rx, 0), w / 2);
+      ry = Math.min(Math.max(ry, 0), h / 2);
+      // The whole svg: covers any text in it.
+      const whole = (v, full, raw) => trim(raw) === '100%' || (Number.isFinite(full) && v === full);
+      if (
+        !rx &&
+        !ry &&
+        x === vp.x &&
+        y === vp.y &&
+        whole(w, vp.w, dom.getAttribute(shape, 'width')) &&
+        whole(h, vp.h, dom.getAttribute(shape, 'height'))
+      )
+        return rgb;
+      const area = textArea();
+      if (!area) return null;
+      const ix = Math.max(rx, half);
+      const iy = Math.max(ry, half);
+      return area.left >= x + ix &&
+        area.right <= x + w - ix &&
+        area.top >= y + iy &&
+        area.bottom <= y + h - iy
+        ? rgb
+        : null;
+    }
+    const cx = attr('cx', NaN, 0);
+    const cy = attr('cy', NaN, 0);
+    let rx;
+    let ry;
+    if (tag === 'circle') {
+      rx = attr('r', NaN, NaN);
+      ry = rx;
+    } else {
+      rx = attr('rx', NaN, NaN);
+      ry = attr('ry', NaN, NaN);
+    }
+    if (![cx, cy, rx, ry].every(Number.isFinite)) return null;
+    rx -= half;
+    ry -= half;
+    if (!(rx > 0) || !(ry > 0)) return null;
+    const area = textArea();
+    if (!area) return null;
+    const inside = (px, py) => ((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2 <= 1;
+    return inside(area.left, area.top) &&
+      inside(area.right, area.top) &&
+      inside(area.left, area.bottom) &&
+      inside(area.right, area.bottom)
+      ? rgb
+      : null;
   }
 
   // -------- SVG shapes behind SVG text (#96) --------
   //
   // SVG paints in document order, so a shape earlier than a text element and
   // under it is the text's background, which no CSS background shows. The
-  // simple case is measured: a <rect> with a solid fill, painted before the
-  // text, not rotated, covering all of the text clear of its rounded corners
-  // and stroke, with nothing between it and the text that groups it (opacity,
-  // a filter, a mask or a clip). Several such rects stack. Any other shape
-  // under or over the text is left to the paint-overlap check, which reports
-  // it. Needs a layout; without one nothing is found and nothing changes.
+  // simple case is measured: a <rect>, <circle> or <ellipse> (round 12,
+  // C12-7) with a solid fill, painted before the text, not rotated, covering
+  // all of the text clear of its rounded corners and stroke, with nothing
+  // between it and the text that groups it (opacity, a filter, a mask or a
+  // clip). Several such shapes stack. Any other shape under or over the text
+  // is left to the paint-overlap check, which reports it. With a layout;
+  // without one, __svgNoLayoutScan measures the same shapes.
   const __svgBackdropCache = new WeakMap();
 
   function __svgBackdropOf(el) {
@@ -11295,7 +12551,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __computeSvgBackdrop(el) {
     const index = __getOverlapIndex();
-    if (!index) return null;
+    if (!index) {
+      // Without a layout: the last shape certainly under all of the text,
+      // with nothing uncertain painted after it (__svgNoLayoutScan).
+      const scan = __svgNoLayoutScan(el);
+      return scan && scan.certain && !scan.blocker
+        ? { layers: [scan.certain], blocked: false }
+        : null;
+    }
     let svg = composedParent(el);
     let guard = 0;
     while (
@@ -11338,7 +12601,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // The color a <rect> paints behind all of el's text, or null when it isn't
   // that simple case.
   function __svgRectLayer(shape, box, el, textRects) {
-    if (String(dom.localName(shape)) !== 'rect') return null;
+    const tag = String(dom.localName(shape));
+    // A <circle> or <ellipse> too (round 12, C12-7): its box is its
+    // bounding box, so its center and radii are known.
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
     // Painted before el: el follows it in document order.
     if (!(dom.compareDocumentPosition(shape, el) & 4)) return null;
     const cs = __contrastComputedStyle(shape);
@@ -11373,19 +12639,36 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const n = parsePx(v);
       return Number.isFinite(n) && n > 0 ? n : 0;
     };
-    let rx = len(cs.rx);
-    let ry = len(cs.ry);
-    if (!rx) rx = ry;
-    if (!ry) ry = rx;
     const stroke = trim(cs.stroke);
     const halfStroke = stroke && stroke !== 'none' ? len(cs.strokeWidth) / 2 : 0;
-    const ix = Math.max(rx, halfStroke) * ctm.a;
-    const iy = Math.max(ry, halfStroke) * ctm.d;
-    const inside = (r) =>
-      r.left >= box.left + ix - 0.5 &&
-      r.right <= box.right - ix + 0.5 &&
-      r.top >= box.top + iy - 0.5 &&
-      r.bottom <= box.bottom - iy + 0.5;
+    let inside;
+    if (tag === 'rect') {
+      let rx = len(cs.rx);
+      let ry = len(cs.ry);
+      if (!rx) rx = ry;
+      if (!ry) ry = rx;
+      const ix = Math.max(rx, halfStroke) * ctm.a;
+      const iy = Math.max(ry, halfStroke) * ctm.d;
+      inside = (r) =>
+        r.left >= box.left + ix - 0.5 &&
+        r.right <= box.right - ix + 0.5 &&
+        r.top >= box.top + iy - 0.5 &&
+        r.bottom <= box.bottom - iy + 0.5;
+    } else {
+      // Every corner of each line of text inside the ellipse, clear of the
+      // inner half of its stroke.
+      const cx = (box.left + box.right) / 2;
+      const cy = (box.top + box.bottom) / 2;
+      const ex = (box.right - box.left) / 2 - halfStroke * ctm.a;
+      const ey = (box.bottom - box.top) / 2 - halfStroke * ctm.d;
+      if (!(ex > 0) || !(ey > 0)) return null;
+      const within = (x, y) => ((x - cx) / ex) ** 2 + ((y - cy) / ey) ** 2 <= 1;
+      inside = (r) =>
+        within(r.left, r.top) &&
+        within(r.right, r.top) &&
+        within(r.left, r.bottom) &&
+        within(r.right, r.bottom);
+    }
     if (!textRects.every(inside)) return null;
     const fillOpacity = Number.parseFloat(cs.fillOpacity);
     const opacity = Number.parseFloat(cs.opacity);
@@ -11591,6 +12874,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       out = { fallback: true };
     }
+    // With no prototype: a value a page's script put on Object.prototype
+    // (rgba) is never read as the backdrop's own (round 12, F12-5).
+    if (out && typeof out === 'object') out = Object.setPrototypeOf({ ...out }, null);
     __paintBackdropCache.set(el, out);
     return out;
   }
@@ -12152,6 +13438,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     looksLikeLogo,
     contrastSwitchName,
     isInactiveUiComponent,
+    isSignInTextRun,
     // The author's declaration of a property that applies to an element:
     // { value }, null where none does, { unknown: true } where it can't be
     // told.
@@ -13291,6 +14578,34 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'aria-rowspan': 0
   };
 
+  // The tables above are looked up by a role, an element or an attribute
+  // the page names. With no prototype, a value a page's script put on
+  // Object.prototype (button, navigation) is never read as an entry
+  // (round 12, F12-5).
+  const __noPrototype = (o, depth) => {
+    if (!o || typeof o !== 'object' || Array.isArray(o) || depth > 4) return;
+    if (Object.getPrototypeOf(o) === Object.prototype) Object.setPrototypeOf(o, null);
+    for (const k of Object.keys(o)) __noPrototype(o[k], depth + 1);
+  };
+  for (const table of [
+    DEPRECATED_ROLE_GUIDANCE,
+    DEFAULT_DEPRECATED_ROLE_GUIDANCE,
+    ATTR_VALUE_TYPES,
+    ATTR_TOKEN_SETS,
+    REQUIRED_PROPS_BY_ROLE,
+    REQUIRED_PROP_IMPLICIT_VALUES,
+    REQUIRED_OWNED_ROLES,
+    REQUIRED_CONTEXT_ROLE,
+    ALLOWED_ROLES_BY_ELEMENT,
+    NATIVE_ROLE_BY_ELEMENT_KEY,
+    NATIVE_CONTAINMENT_ROLE_BY_ELEMENT,
+    NATIVE_CONTAINMENT_CONTEXT,
+    ROLE_SYNONYMS,
+    INTEGER_ATTR_MIN
+  ]) {
+    __noPrototype(table, 0);
+  }
+
   function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
     if (!type) return { valid: true, reason: 'unknown-attr-skip' };
@@ -13534,8 +14849,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       try {
         isMultiSelect = !!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'multiple'));
         if (!isMultiSelect) {
-          const sizeAttr = getAttr(el, 'size');
-          const size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
+          // Read as Chromium draws it (selectSizeOf in dom-helpers).
+          let size;
+          if (shared && typeof shared.selectSizeOf === 'function') size = shared.selectSizeOf(el);
+          else {
+            const sizeAttr = getAttr(el, 'size');
+            size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
+          }
           isMultiSelect = Number.isFinite(size) && size > 1;
         }
       } catch {
@@ -14138,6 +15458,43 @@ const engineOptionSpec = (function engineOptionSpec() {
   const list = (v) =>
     typeof v === 'string' || (Array.isArray(v) && [...v].every((x) => typeof x === 'string'));
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+  // A plain object, as written in a literal or by JSON.parse, from any
+  // realm: not a Date, a Map, an element or a class instance, which have
+  // keys of their own to give or none (round 12, A12-13).
+  const isPlain = (v) => {
+    try {
+      if (!isObject(v) || Object.prototype.toString.call(v) !== '[object Object]') return false;
+      const proto = Object.getPrototypeOf(v);
+      return proto === null || Object.getPrototypeOf(proto) === null;
+    } catch {
+      return false;
+    }
+  };
+  // JSON-safe data: a plain object at the top (the engine reads probes by
+  // key, and an array there was dropped), and inside
+  // strings, finite numbers, true, false, null, plain objects and arrays,
+  // with no object reached twice along a path (round 12, A12-13).
+  const jsonSafe = (top) => {
+    const path = [];
+    const safe = (v, depth) => {
+      if (v === null || typeof v === 'string' || typeof v === 'boolean') return true;
+      if (typeof v === 'number') return Number.isFinite(v);
+      if (typeof v !== 'object' || depth > 100 || path.includes(v)) return false;
+      if (!Array.isArray(v) && !isPlain(v)) return false;
+      path.push(v);
+      try {
+        const values = Array.isArray(v) ? [...v] : Object.keys(v).map((k) => v[k]);
+        return values.every((x) => safe(x, depth + 1));
+      } finally {
+        path.pop();
+      }
+    };
+    try {
+      return isPlain(top) && safe(top, 0);
+    } catch {
+      return false;
+    }
+  };
   const T = {
     any: { test: () => true, expected: 'any value' },
     // true or false, or how a command line or an environment variable
@@ -14147,11 +15504,14 @@ const engineOptionSpec = (function engineOptionSpec() {
     list: { test: list, expected: 'a string or an array of strings' },
     // A profile, or a list of them. An empty slot, a blank name and a value
     // that is no name are each refused: each was dropped without a word.
+    // An empty one, '' or [], names none (round 12, A12-13).
     profiles: {
       test: (v) =>
-        typeof v === 'string' ||
-        (Array.isArray(v) && [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
-      expected: 'a profile name or an array of them, none blank'
+        (typeof v === 'string' && v.trim() !== '') ||
+        (Array.isArray(v) &&
+          v.length > 0 &&
+          [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
+      expected: 'a profile name or a non-empty array of them, none blank'
     },
     number: {
       test: (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0,
@@ -14168,7 +15528,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     })
   };
   const selection = {
-    test: (v) => list(v) || isObject(v),
+    test: (v) => list(v) || isPlain(v),
     expected: '{ include, exclude }, or the include list itself',
     keys: { include: T.list, exclude: T.list }
   };
@@ -14203,7 +15563,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     mappings: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
-    messages: { test: isObject, expected: '{ [locale]: { key: text } }' },
+    messages: { test: isPlain, expected: '{ [locale]: { key: text } }' },
     includeHiddenElements: T.boolean,
     includeShadowDom: T.boolean,
     fragment: T.boolean,
@@ -14221,13 +15581,14 @@ const engineOptionSpec = (function engineOptionSpec() {
         ),
       expected: '[{ href, text }]'
     },
-    // Blank is a timestamp not given.
+    // Blank is no timestamp: refused, as one that isn't a date and time is
+    // (round 12, A12-13).
     timestamp: {
-      test: (v) => typeof v === 'string' && (!v.trim() || isIsoDateTime(v)),
+      test: (v) => typeof v === 'string' && isIsoDateTime(v),
       expected: 'an ISO 8601 date and time, such as new Date().toISOString()'
     },
     contrast: {
-      test: isObject,
+      test: isPlain,
       expected: '{ mode, rootCanvasFallback }',
       keys: {
         mode: T.oneOf(['strictConformance', 'auditorAssist']),
@@ -14240,13 +15601,13 @@ const engineOptionSpec = (function engineOptionSpec() {
     visibilityMode: T.oneOf(['styleOnly', 'styleAndGeometry']),
     includeMode: T.oneOf(['and', 'or']),
     policyContract: {
-      test: (v) => typeof v === 'string' || isObject(v),
+      test: (v) => typeof v === 'string' || isPlain(v),
       expected: "a contract's name, or a contract object",
-      keys: Object.assign({ id: T.string }, policyFields)
+      keys: { id: T.string, ...policyFields }
     },
-    policy: { test: isObject, expected: 'an object', keys: policyFields },
+    policy: { test: isPlain, expected: 'a plain object', keys: policyFields },
     output: {
-      test: isObject,
+      test: isPlain,
       expected: '{ includeSelector, includeHtml, detail, maxOccurrencesPerRule }',
       keys: {
         includeSelector: T.boolean,
@@ -14272,7 +15633,12 @@ const engineOptionSpec = (function engineOptionSpec() {
     tests: selection,
     customRules: { test: Array.isArray, expected: 'an array of rules' },
     packs: { test: Array.isArray, expected: 'an array of packs' },
-    probes: T.any,
+    // Evidence the host gives, passed to rules: JSON-safe data only (round
+    // 12, A12-13).
+    probes: {
+      test: jsonSafe,
+      expected: 'a plain object of JSON data (no function, Date, BigInt, NaN or circular reference)'
+    },
     perfStats: T.boolean,
     profileRules: T.boolean,
     // Once a scan has spent this long, it starts no more rules; those it
@@ -14309,7 +15675,14 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
       return plain && text.length <= 80 ? text : 'an array';
     }
     if (typeof v === 'string') return JSON.stringify(v.length > 40 ? v.slice(0, 40) + '…' : v);
-    if (typeof v === 'object') return 'an object';
+    if (typeof v === 'object') {
+      // A Date, a Map: named by its kind (round 12, A12-13).
+      let tag = 'Object';
+      try {
+        tag = Object.prototype.toString.call(v).slice(8, -1);
+      } catch {}
+      return tag === 'Object' ? 'an object' : /^[AEIOU]/.test(tag) ? 'an ' + tag : 'a ' + tag;
+    }
     return typeof v === 'number' || typeof v === 'boolean' ? String(v) : 'a ' + typeof v;
   }
 
@@ -14403,7 +15776,15 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   for (const p of problems) {
     if (p.kind === 'unknown' && !p.suggestion) continue;
     if (p.path === 'strictOptions') continue;
-    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(String(p.path).split('.')[0])) continue;
+    // An empty profile or timestamp ('' or []) is read as none without a
+    // word of its own, so it is said here (round 12, A12-13).
+    const top = String(p.path).split('.')[0];
+    const value = engineOptions[top];
+    const empty =
+      (top === 'profile' || top === 'timestamp') &&
+      p.path === top &&
+      ((typeof value === 'string' && !value.trim()) || (Array.isArray(value) && !value.length));
+    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(top) && !empty) continue;
     // A policy list given as an array says what it leaves out itself
     // (resolvePolicy), and keeps the values it knows.
     if (p.kind === 'invalid' && /^policy(Contract)?\.allowed(Outcomes|Confidence)$/.test(p.path)) {
@@ -14416,10 +15797,77 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   }
 });
 const strictOf = (function strictOf(engineOptions) {
+  // The options' own, never one on Object.prototype (round 12, R12F-1 to
+  // R12F-6).
   const v =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : undefined;
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    Object.prototype.hasOwnProperty.call(engineOptions, 'strictOptions')
+      ? engineOptions.strictOptions
+      : undefined;
   if (v === true || v === 1) return true;
   return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
+});
+const ownOptions = (function ownOptions(options) {
+  if (!options || typeof options !== 'object' || Array.isArray(options)) return options;
+  // A Set, a Map or a Date is no table of options: kept, for the checks
+  // that say so.
+  if (Object.prototype.toString.call(options) !== '[object Object]') return options;
+  const isPlain = (v) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+    if (Object.prototype.toString.call(v) !== '[object Object]') return false;
+    const proto = Object.getPrototypeOf(v);
+    // Another realm's Object.prototype too (a frame's, a vm context's).
+    return proto === null || Object.getPrototypeOf(proto) === null;
+  };
+  const copied = new Map();
+  const copy = (from, depth) => {
+    if (copied.has(from)) return copied.get(from);
+    const to = Object.create(null);
+    copied.set(from, to);
+    const keys = Object.keys(from);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const v = from[key];
+      to[key] =
+        depth < 8 && isPlain(v) && !(depth === 0 && (key === 'probes' || key === 'messages'))
+          ? copy(v, depth + 1)
+          : v;
+    }
+    return to;
+  };
+  const out = copy(options, 0);
+  const flags = ['__budgetSpent', '__budgetSpentAt', '__scanTimeBudgetMs'];
+  for (let i = 0; i < flags.length; i++) {
+    const d = Object.getOwnPropertyDescriptor(options, flags[i]);
+    if (d && !d.enumerable && Object.prototype.hasOwnProperty.call(d, 'value')) {
+      Object.defineProperty(out, flags[i], { value: d.value, configurable: true });
+    }
+  }
+  return out;
+});
+const plainOptions = (function plainOptions(options) {
+  const copied = new Map();
+  const copy = (v, depth) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v) || Object.getPrototypeOf(v) !== null) {
+      return v;
+    }
+    if (copied.has(v)) return copied.get(v);
+    // Spread defines each key, so a read-only value on Object.prototype
+    // refuses none.
+    const out = { ...v };
+    copied.set(v, out);
+    if (depth < 8) {
+      const keys = Object.keys(out);
+      for (let i = 0; i < keys.length; i++) {
+        const x = out[keys[i]];
+        const c = copy(x, depth + 1);
+        if (c !== x) out[keys[i]] = c;
+      }
+    }
+    return out;
+  };
+  return copy(options, 0);
 });
 const switchOf = (function switchOf(v) {
   if (v === true || v === 1) return true;
@@ -14658,7 +16106,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Stored on the realm window when possible so multiple helper instances
   // within the same run share caches deterministically.
   // -------------------------------------------------------------------------
-  var __domSharedCache = {};
+  var __domSharedCache = Object.create(null);
   var __selectorCache = null;
   var __outerHtmlCache = null;
   var __siblingIndexCache = null; // WeakMap<Element, {first, last, info, tagCounts}>
@@ -15260,7 +16708,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (x === 'visible') x = 'auto';
         if (y === 'visible') y = 'auto';
       } else if (html && tag === 'select') {
-        const size = parseHtmlInteger(dom.getAttribute(el, 'size'));
+        const size = selectSizeOf(el);
         if (!dom.hasAttribute(el, 'multiple') && !(size !== null && size > 1)) {
           x = 'clip';
           y = 'clip';
@@ -15907,7 +17355,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return false;
     }
   }
-  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
+  // Defined, not assigned, as each key the engine sets on its functions
+  // (round 12, F12-4).
+  Object.defineProperty(hasTruncatedAncestorWalk, 'limit', {
+    value: ANCESTOR_WALK_LIMIT,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   function getClosestMap(el) {
     try {
@@ -16059,6 +17514,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // range, as if the attribute were missing (HTML, Reflecting content
     // attributes in IDL attributes).
     return v < -2147483648 || v > 2147483647 ? null : v;
+  }
+
+  // HTML's rules for parsing non-negative integers, as browsers read a
+  // <select>'s size and a cell's colspan and rowspan: parseHtmlInteger's
+  // reading, null for a negative value, and no range limit, which each
+  // attribute applies its own way (selectSizeOf, tableCellSpanOf).
+  function parseHtmlNonNegativeInteger(raw) {
+    const m = /^[\t\n\f\r ]*([+-]?)([0-9]+)/.exec(String(raw == null ? '' : raw));
+    if (!m) return null;
+    const n = parseInt(m[2], 10);
+    if (m[1] === '-' && n !== 0) return null;
+    return n;
+  }
+
+  // A <select>'s size as Chromium draws it: a value up to 4294967295 (an
+  // unsigned long), a larger one ignored as if missing. Chromium draws
+  // size="2147483648" as a list box, though the size property reads 0.
+  function selectSizeOf(el) {
+    const n = parseHtmlNonNegativeInteger(getAttr(el, 'size'));
+    return n !== null && n <= 4294967295 ? n : null;
+  }
+
+  // A table cell's colspan or rowspan as HTML (forming a table) and
+  // Chromium read them: colspan 1 where it is missing, not a non-negative
+  // integer, or 0, and at most 1000; rowspan 1 where it is missing or not a
+  // non-negative integer, 0 to span to the end of its row group, and at
+  // most 65534. A larger value is clamped, not ignored.
+  function tableCellSpanOf(el, attr) {
+    const n = parseHtmlNonNegativeInteger(getAttr(el, attr));
+    if (attr === 'rowspan') return n === null ? 1 : Math.min(n, 65534);
+    return n === null || n === 0 ? 1 : Math.min(n, 1000);
   }
 
   function parseTabIndex(el) {
@@ -18599,7 +20085,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // from the frame element up to the scanned document.
   function isOccurrenceExcluded(occ) {
     if (!__getEffectiveExcludeSelectors().length || !occ || typeof occ !== 'object') return false;
-    let node = occ.__node || null;
+    let node = (Object.prototype.hasOwnProperty.call(occ, '__node') && occ.__node) || null;
     if (!node) {
       const selector = occ.selector;
       if (!selector || typeof selector !== 'string' || !document) return false;
@@ -19078,12 +20564,32 @@ const createDomHelpers = (function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      if (!w.__a11ycoreSharedCache) w.__a11ycoreSharedCache = {};
-      if (!w.__a11ycoreSharedCache.dom) w.__a11ycoreSharedCache.dom = {};
-      __domSharedCache = w.__a11ycoreSharedCache.dom;
+      // The window's own cache, with no prototype: a value a page's script
+      // put on Object.prototype is never read as one (round 12, R12F-1 to
+      // R12F-6).
+      const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype refuses none (round 12, R12F-6).
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
+      if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
+      const shared = w.__a11ycoreSharedCache;
+      if (!ownKey(shared, 'dom')) shared.dom = Object.create(null);
+      __domSharedCache = shared.dom;
     }
   } catch {
-    __domSharedCache = {};
+    __domSharedCache = Object.create(null);
   }
 
   // Selector cache (per element), partitioned by __selectorOptsKey since
@@ -20938,7 +22444,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       else if (type === 'range') nativeRole = 'slider';
     } else if (tag === 'textarea') nativeRole = 'textbox';
     else if (isSelect) {
-      const size = parseHtmlInteger(getAttr(node, 'size'));
+      const size = selectSizeOf(node);
       nativeRole =
         dom.hasAttribute(node, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
     } else if (tag === 'progress') nativeRole = 'progressbar';
@@ -22284,7 +23790,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       while (i < n && isSep(s[i]) && s[i] !== ',') i++;
       const v0 = i;
       while (i < n && !isSep(s[i])) i++;
-      values[key] = s.slice(v0, i);
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype (width) refuses none (round 12, F12-4).
+      Object.defineProperty(values, key, {
+        value: s.slice(v0, i),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const number = (v) => {
       if (v === 'yes') return 1;
@@ -22844,7 +24357,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     else if (tag === 'summary') role = 'button';
     else if (tag === 'input') role = aria.getInputRole(el);
     else if (tag === 'select') {
-      const size = parseHtmlInteger(getAttr(el, 'size'));
+      const size = selectSizeOf(el);
       role =
         dom.hasAttribute(el, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
     } else if (tag === 'textarea') role = 'textbox';
@@ -23701,9 +25214,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const hv = cs.height != null ? String(cs.height).trim() : '';
       const ov = cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
 
-      metrics.width = wv || null;
-      metrics.height = hv || null;
-      metrics.overflow = ov || null;
+      Object.defineProperty(metrics, 'width', {
+        value: wv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'height', {
+        value: hv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'overflow', {
+        value: ov || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
 
       const isZeroW = wv === '0px' || wv === '0';
       const isZeroH = hv === '0px' || hv === '0';
@@ -24689,7 +26217,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const o =
       partial && typeof partial === 'object' && !Array.isArray(partial) ? { ...partial } : {};
     // Attach the node for engine-side finalization. This must be removed later before returning results.
-    o.__node = node || null;
+    // Defined, not assigned: a read-only __node a page's script put on
+    // Object.prototype refuses no occurrence (round 12, R12F-6).
+    Object.defineProperty(o, '__node', {
+      value: node || null,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
     return o;
   }
 
@@ -24741,7 +26276,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  let __contrastSharedCache = {};
+  let __contrastSharedCache = Object.create(null);
   try {
     // In Node/JSDOM checks, the harness sets global.window/global.document.
     // The engine may instantiate helpers per rule without passing opts.window,
@@ -24752,12 +26287,28 @@ const createDomHelpers = (function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      if (!w.__a11ycoreSharedCache) w.__a11ycoreSharedCache = {};
-      if (!w.__a11ycoreSharedCache.contrast) w.__a11ycoreSharedCache.contrast = {};
-      __contrastSharedCache = w.__a11ycoreSharedCache.contrast;
+      // Own keys only, and defined, as for the DOM helpers' cache above.
+      const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
+      if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
+      const shared = w.__a11ycoreSharedCache;
+      if (!ownKey(shared, 'contrast')) shared.contrast = Object.create(null);
+      __contrastSharedCache = shared.contrast;
     }
   } catch {
-    __contrastSharedCache = {};
+    __contrastSharedCache = Object.create(null);
   }
 
   const __contrastShared = {
@@ -24772,20 +26323,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getInternalsStateInfo,
     cssRulesOf,
     selectorIndex,
+    isVisuallyHidden,
+    getRoleInfo: (el) => getRoleInfo(el),
+    getFocusableInfo: (el) => getFocusableInfo(el),
+    selectSizeOf,
     __contrastSharedCache
   };
 
+  // With no prototype: a key it is not given (contrast) is never read from
+  // Object.prototype (round 12, R12F-1 to R12F-6).
   const contrast = createContrastHelpers(
-    { window: realmWindow || window, document, root: roots, includeShadowDom, excludeSelectors },
+    Object.assign(Object.create(null), {
+      window: realmWindow || window,
+      document,
+      root: roots,
+      includeShadowDom,
+      excludeSelectors
+    }),
     __contrastShared
   );
 
   // Expose shared cache to checks (deterministic, in-memory only)
-  contrast.sharedCache = __contrastShared.__contrastSharedCache;
+  Object.defineProperty(contrast, 'sharedCache', {
+    value: __contrastShared.__contrastSharedCache,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl, getCustomElementInternals, flatParentElement }
+    { trim, getLabelControl, getCustomElementInternals, flatParentElement, selectSizeOf }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -24988,6 +26556,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isIso639LanguageCode,
     getImagesUsingMap,
     parseHtmlInteger,
+    parseHtmlNonNegativeInteger,
+    selectSizeOf,
+    tableCellSpanOf,
 
     // Existing query/snippet utilities
     queryAll,
@@ -25282,7 +26853,12 @@ const normalizeLean = (function normalizeLean(input) {
   if (LEAN_DIRECTIONS.indexOf(input.toward) === -1) return null;
   if (typeof input.why !== 'string' || !input.why.trim()) return null;
 
-  const out = { toward: input.toward, why: input.why.trim() };
+  // Built with no prototype, and handed back as a plain copy: a read-only
+  // value a page's script put on Object.prototype (signals, i18n, whyKey)
+  // refuses no key (round 12, F12-4).
+  const out = Object.create(null);
+  out.toward = input.toward;
+  out.why = input.why.trim();
 
   const signals = [];
   for (const s of Array.isArray(input.signals) ? input.signals : []) {
@@ -25306,20 +26882,79 @@ const normalizeLean = (function normalizeLean(input) {
     m.agreed >= 0 &&
     m.agreed <= m.cases
   ) {
-    out.measured = { agreed: m.agreed, cases: m.cases };
-    if (typeof m.corpus === 'string' && m.corpus) out.measured.corpus = m.corpus;
-    if (typeof m.coreVersion === 'string' && m.coreVersion)
-      out.measured.coreVersion = m.coreVersion;
+    out.measured = {
+      agreed: m.agreed,
+      cases: m.cases,
+      ...(typeof m.corpus === 'string' && m.corpus ? { corpus: m.corpus } : {}),
+      ...(typeof m.coreVersion === 'string' && m.coreVersion ? { coreVersion: m.coreVersion } : {})
+    };
   }
 
   const i = input.i18n;
   if (i && typeof i === 'object' && !Array.isArray(i)) {
-    const ii = {};
+    const ii = Object.create(null);
     if (typeof i.whyKey === 'string' && i.whyKey) ii.whyKey = i.whyKey;
     if (typeof i.cautionKey === 'string' && i.cautionKey) ii.cautionKey = i.cautionKey;
     if (i.params && typeof i.params === 'object' && !Array.isArray(i.params))
       ii.params = { ...i.params };
-    if (ii.whyKey || ii.cautionKey) out.i18n = ii;
+    if (ii.whyKey || ii.cautionKey) out.i18n = { ...ii };
+  }
+  return { ...out };
+});
+
+// Inlined from src/core/number-format.js -- t() writes a message's decimals
+// as its language does.
+const formatLocaleDecimal = (function formatLocaleDecimal(value, locale) {
+  let text;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return value;
+    text = String(value);
+  } else if (typeof value === 'string') {
+    text = value;
+  } else {
+    return value;
+  }
+  const m = /^(-?\d+)\.(\d+)$/.exec(text);
+  if (!m || !locale) return value;
+  // The separator, worked out once per locale. A locale Intl does not know,
+  // or one that writes other digits, keeps the point.
+  const key = String(locale);
+  // Own, with no prototype, and defined, not assigned (round 12, F12-4).
+  if (!Object.prototype.hasOwnProperty.call(formatLocaleDecimal, 'separators')) {
+    Object.defineProperty(formatLocaleDecimal, 'separators', {
+      value: Object.create(null),
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
+  }
+  const cache = formatLocaleDecimal.separators;
+  if (!Object.prototype.hasOwnProperty.call(cache, key)) {
+    let sep = '.';
+    // English and Japanese write a point. Building a formatter costs a page
+    // about 10 ms the first time, as the browser loads the locale's data, so
+    // none is built for them (round 12, F12-6).
+    if (key !== 'en' && key !== 'ja') {
+      try {
+        const shown = new Intl.NumberFormat(key, { useGrouping: false }).format(1.5);
+        if (/^1[^0-9]5$/.test(shown)) sep = shown.charAt(1);
+      } catch {
+        sep = '.';
+      }
+    }
+    cache[key] = sep;
+  }
+  return cache[key] === '.' ? value : `${m[1]}${cache[key]}${m[2]}`;
+});
+const localizeNumberParams = (function localizeNumberParams(params, locale) {
+  if (!params || typeof params !== 'object' || Array.isArray(params) || !locale) return params;
+  let out = params;
+  for (const key of Object.keys(params)) {
+    if (!/(?:ratio|threshold|Px)$/i.test(key)) continue;
+    const v = formatLocaleDecimal(params[key], locale);
+    if (v === params[key]) continue;
+    if (out === params) out = { ...params };
+    out[key] = v;
   }
   return out;
 });
@@ -25404,7 +27039,9 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
 
   const round = declaration.unit === 'px' ? (n) => Math.round(n * 10) / 10 : (n) => n;
   const counted = Number(measuredCount);
-  const margin = {
+  // Filled with no prototype, so a read-only value on Object.prototype
+  // refuses no key; handed back plain (round 12, R12F-6).
+  const margin = Object.assign(Object.create(null), {
     measure: declaration.measure,
     unit: declaration.unit,
     limit: declaration.limit,
@@ -25415,9 +27052,13 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
       Number.isFinite(counted) && counted >= candidates.length
         ? Math.floor(counted)
         : candidates.length
-  };
+  });
 
-  const includeSelector = !(options && options.includeSelector === false);
+  const includeSelector = !(
+    options &&
+    Object.prototype.hasOwnProperty.call(options, 'includeSelector') &&
+    options.includeSelector === false
+  );
   if (best.el && helpers) {
     let selector = '';
     if (includeSelector && typeof helpers.buildSelector === 'function') {
@@ -25444,7 +27085,7 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
   if (best.context && typeof best.context === 'object' && !Array.isArray(best.context)) {
     margin.context = { ...best.context };
   }
-  return margin;
+  return { ...margin };
 });
 
 // Inlined from src/core/rule-meta.js (also used at build time by loadRuleModules
@@ -25662,6 +27303,13 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
 });
 
 // Inlined from src/core/dom-runner.js
+const setOwnKey = (function setOwnKey(o, key, value) {
+  Object.defineProperty(o, key, { value, writable: true, enumerable: true, configurable: true });
+  return value;
+});
+const ownKeyOf = (function ownKeyOf(o, key) {
+  return o != null && Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+});
 const normalizeWcagLevel = (function normalizeWcagLevel(v) {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
   return s === 'A' || s === 'AA' || s === 'AAA' ? s : null;
@@ -25806,6 +27454,8 @@ const rollupCompositeResults = (function rollupCompositeResults(
   const rulesResults = [];
   try {
     const composites = Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : [];
+    // What each rollup echoes: the options as plain objects (plainOptions).
+    const echoedOptions = plainOptions(engineOptionsResolved || {});
 
     const LEVEL_RANK = { A: 1, AA: 2, AAA: 3 };
 
@@ -25889,10 +27539,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const ruleId = isNonEmptyString(entry.id) ? entry.id.trim() : String(entry.id || '').trim();
       if (!ruleId) return null;
 
-      const metaIn =
+      // Its own keys only (round 12, R12F-1 to R12F-6).
+      const metaIn = Object.assign(
+        Object.create(null),
         entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)
           ? entry.meta
-          : {};
+          : null
+      );
 
       const titleKey =
         typeof metaIn.titleKey === 'string' && metaIn.titleKey.trim() ? metaIn.titleKey.trim() : '';
@@ -25996,7 +27649,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
             .filter(Boolean)
         : [];
 
-      return {
+      return Object.assign(Object.create(null), {
         ruleId,
         title: metaIn.title || ruleId,
         description: metaIn.description || '',
@@ -26063,7 +27716,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
         // A standard's requirement its rules don't check in full
         // (ruleMappedStandard requirements' partial).
         __partial: !!ownStandard && metaIn.partial === true
-      };
+      });
     }
 
     // Whether a finding's data.details has every value `when` gives, each
@@ -26365,7 +28018,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
         reasonCode = 'composite.rollup.cantTell.partialCheck';
       }
 
-      const raw = {
+      // With no prototype, so no key set below is refused by a read-only
+      // value on Object.prototype (round 12, R12F-6).
+      const raw = Object.assign(Object.create(null), {
         outcome,
         occurrences: [],
 
@@ -26407,10 +28062,10 @@ const rollupCompositeResults = (function rollupCompositeResults(
         },
 
         engineOptions: {
-          ...(engineOptionsResolved || {}),
+          ...echoedOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
-      };
+      });
 
       // Promote composite severity based on contributors (deterministic).
       // - If composite fails: use max severity among failing children.
@@ -26750,7 +28405,10 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // whether it was installed before the page's scripts: what the name rules
   // could read of custom elements' internals. Left out without one.
   const hook = readInternalsHook(win);
-  const internalsHook = hook ? { internalsHook: hook.early ? 'early' : 'late' } : {};
+  // Filled with no prototype, so a read-only value on Object.prototype
+  // refuses no key; handed back plain (round 12, R12F-6).
+  const internalsHook = Object.create(null);
+  if (hook) internalsHook.internalsHook = hook.early ? 'early' : 'late';
   // The same for the listener hook (listenerHookScript): which event
   // listeners added from script the keyboard rules could see.
   const listeners = readListenerHook(win);
@@ -26761,7 +28419,8 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   if (liveRegions) internalsHook.liveRegionHook = liveRegions.early ? 'early' : 'late';
   if (!layout) return { layout: false, ...internalsHook };
 
-  const env = { layout: true };
+  const env = Object.create(null);
+  env.layout = true;
   const width = Number(win.innerWidth);
   const height = Number(win.innerHeight);
   if (Number.isFinite(width) && Number.isFinite(height)) env.viewport = { width, height };
@@ -26822,7 +28481,7 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
       env.images = loading ? 'loading' : 'loaded';
     }
   } catch {}
-  return Object.assign(env, internalsHook);
+  return { ...env, ...internalsHook };
 });
 
 const settleAnimations = (function settleAnimations(doc, includeShadowDom) {
@@ -27464,6 +29123,9 @@ const runCoreSettled = (function runCoreSettled(
   COMPOSITE_RULES
 ) {
   const dom = createSafeDom();
+  // The options' own keys only, with no prototype, so a value a page's
+  // script put on Object.prototype is never read as an option (ownOptions).
+  engineOptions = ownOptions(engineOptions);
   // engineOptions.timeBudgetMs: once the scan has spent this long, it starts
   // no more rules, and lists those it didn't start (notRun). Read only when
   // it is a number above 0; enforceEngineOptions says anything else.
@@ -27484,8 +29146,9 @@ const runCoreSettled = (function runCoreSettled(
   const budgetSpent = !!(
     engineOptions &&
     typeof engineOptions === 'object' &&
-    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent') &&
-    engineOptions.__budgetSpent === true
+    Object.prototype.hasOwnProperty.call(engineOptions, '__budgetSpent') &&
+    engineOptions.__budgetSpent === true &&
+    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent')
   );
   const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
@@ -27513,15 +29176,21 @@ const runCoreSettled = (function runCoreSettled(
   }
   // Normalize contrast options without mutating caller-provided engineOptions.
   function __normalizeContrastOptions(engineOptions2) {
-    const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
-    const c = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : {};
+    const eo =
+      engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : Object.create(null);
+    const c = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : Object.create(null);
     const mode = c.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
     const rootCanvasFallback =
       typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim()
         ? c.rootCanvasFallback.trim()
         : '#ffffff';
-    // Set below, once the color is known to be usable.
-    return { mode, rootCanvasFallback, rootCanvasFallbackSet: false };
+    // Set below, once the color is known to be usable. With no prototype,
+    // as the options it comes from.
+    return Object.assign(Object.create(null), {
+      mode,
+      rootCanvasFallback,
+      rootCanvasFallbackSet: false
+    });
   }
 
   // Whether the caller gave contrast.rootCanvasFallback, rather than the
@@ -27541,10 +29210,11 @@ const runCoreSettled = (function runCoreSettled(
     );
   }
 
-  const engineOptionsResolved =
-    engineOptions && typeof engineOptions === 'object'
-      ? { ...engineOptions, contrast: __normalizeContrastOptions(engineOptions) }
-      : { contrast: __normalizeContrastOptions(null) };
+  const engineOptionsResolved = Object.assign(
+    Object.create(null),
+    engineOptions && typeof engineOptions === 'object' ? engineOptions : null,
+    { contrast: __normalizeContrastOptions(engineOptions) }
+  );
 
   const policy = resolvePolicy(POLICY_CONTRACTS, engineOptionsResolved, strictOf(engineOptions));
 
@@ -27689,7 +29359,10 @@ const runCoreSettled = (function runCoreSettled(
   // the same window. Clearing at the start of every run keeps sharing scoped
   // to "this run" as intended, without leaking across runs.
   try {
-    if (window && window.__a11ycoreSharedCache) window.__a11ycoreSharedCache = {};
+    if (window && Object.prototype.hasOwnProperty.call(window, '__a11ycoreSharedCache')) {
+      // The window's own key: set as it is, never through Object.prototype.
+      window.__a11ycoreSharedCache = Object.create(null);
+    }
   } catch {}
 
   const sharedHelpers = createDomHelpers({
@@ -27716,19 +29389,19 @@ const runCoreSettled = (function runCoreSettled(
   // The animations running when the scan started, before they were settled:
   // [] where there are none or no getAnimations (jsdom).
   {
-    const startedWith = Array.isArray(settleAnimations.atScanStart)
+    const startedWith = Array.isArray(ownKeyOf(settleAnimations, 'atScanStart'))
       ? settleAnimations.atScanStart
       : [];
-    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+    setOwnKey(sharedHelpers, 'animationsAtScanStart', () => startedWith.map((a) => ({ ...a })));
   }
   // The elements whose box clips its content only for content-visibility:
   // auto, as the scan lays them out (layOutSkippedContent).
   {
     const paintContained =
-      layOutSkippedContent.paintContained instanceof Set
+      ownKeyOf(layOutSkippedContent, 'paintContained') instanceof Set
         ? layOutSkippedContent.paintContained
         : new Set();
-    sharedHelpers.paintContainedByContentVisibility = (el) => paintContained.has(el);
+    setOwnKey(sharedHelpers, 'paintContainedByContentVisibility', (el) => paintContained.has(el));
   }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
@@ -27816,7 +29489,9 @@ const runCoreSettled = (function runCoreSettled(
     }
 
     if (t === 'object') {
-      const out = {};
+      // Filled with no prototype, so no key is refused by a read-only value
+      // on Object.prototype; handed back plain.
+      const out = Object.create(null);
       const keys = Object.keys(v).sort();
       // cap object keys
       const n = Math.min(keys.length, 50);
@@ -27826,7 +29501,7 @@ const runCoreSettled = (function runCoreSettled(
         if (typeof k !== 'string') continue;
         out[k] = sanitizeProbeValue(v[k], depth - 1);
       }
-      return out;
+      return { ...out };
     }
 
     return null;
@@ -27834,8 +29509,11 @@ const runCoreSettled = (function runCoreSettled(
 
   let probes;
   try {
+    // JSON-safe data only, as enforceEngineOptions says (round 12, A12-13).
     const rawProbes =
-      engineOptionsResolved && typeof engineOptionsResolved.probes === 'object'
+      engineOptionsResolved &&
+      typeof engineOptionsResolved.probes === 'object' &&
+      engineOptionSpec().probes.test(engineOptionsResolved.probes)
         ? engineOptionsResolved.probes
         : null;
     probes = rawProbes ? sanitizeProbeValue(rawProbes, 6) : null;
@@ -28094,10 +29772,15 @@ const runCoreSettled = (function runCoreSettled(
     const occurrences = Array.isArray(result.occurrences)
       ? result.occurrences.map((occ) => {
           if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
-          const next =
-            occ.occurrenceOutcome === 'fail'
-              ? { ...occ, occurrenceOutcome: 'cantTell' }
-              : { ...occ };
+          // With no prototype, as the result (round 12, R12F-1 to R12F-6).
+          const next = Object.assign(
+            Object.create(null),
+            occ,
+            Object.prototype.hasOwnProperty.call(occ, 'occurrenceOutcome') &&
+              occ.occurrenceOutcome === 'fail'
+              ? { occurrenceOutcome: 'cantTell' }
+              : null
+          );
           if (!next.uncertainty) {
             next.uncertainty = {
               code: 'out-of-scope',
@@ -28136,8 +29819,7 @@ const runCoreSettled = (function runCoreSettled(
 
     // Deliberately NOT reported through `error`: nothing went wrong here,
     // and consumers read a non-empty `error` as "this rule threw".
-    return {
-      ...result,
+    return Object.assign(Object.create(null), result, {
       outcome: 'cantTell',
       occurrences,
       wcagVersionScope: {
@@ -28146,7 +29828,7 @@ const runCoreSettled = (function runCoreSettled(
         coercedFrom: 'fail',
         ...(why === 'errata' ? { by: 'errata' } : {})
       }
-    };
+    });
   }
 
   const checksResults = [];
@@ -28303,15 +29985,24 @@ const runCoreSettled = (function runCoreSettled(
       }
       if (kind === '[object Set]') return [...v.values()].map((x) => plainData(x, path));
       if (typeof v.toJSON === 'function') return plainData(v.toJSON(), path);
+      // Each key defined, not assigned: a read-only value of that name on
+      // Object.prototype (__node) refuses none (round 12, R12F-6).
       const out = {};
+      const put = (key, value) =>
+        Object.defineProperty(out, key, {
+          value,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
       for (const key of Object.keys(v)) {
         const x = v[key];
         if (key === '__node') {
-          out[key] = x;
+          put(key, x);
           continue;
         }
         const plain = plainData(x, path);
-        if (plain !== undefined) out[key] = plain;
+        if (plain !== undefined) put(key, plain);
       }
       return out;
     } finally {
@@ -28454,7 +30145,11 @@ const runCoreSettled = (function runCoreSettled(
   }
   const readOnlyViews = new WeakMap();
   const ruleEngineOptions =
-    engineOptionsResolved && typeof engineOptionsResolved === 'object' ? engineOptionsResolved : {};
+    engineOptionsResolved && typeof engineOptionsResolved === 'object'
+      ? engineOptionsResolved
+      : Object.create(null);
+  // What each result echoes: the same options, as plain objects.
+  const echoedEngineOptions = plainOptions(ruleEngineOptions);
   // Changes a pack's or caller's rule made to the page, by rule id.
   const pageChangedBy = [];
   for (const def of runOrder) {
@@ -28531,12 +30226,16 @@ const runCoreSettled = (function runCoreSettled(
     const settingNames = Array.isArray(defResolved.settings) ? defResolved.settings : [];
     let ruleConfig = callerConfig;
     if (ruleConfig && settingNames.length) {
-      ruleConfig = { ...ruleConfig };
+      ruleConfig = Object.assign(Object.create(null), ruleConfig);
       for (const name of settingNames) delete ruleConfig[name];
     }
     const variant =
       defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
-    if (variant && variant.config) ruleConfig = { ...(ruleConfig || {}), ...variant.config };
+    // With no prototype, as the caller's settings are (ownOptions): a
+    // variant's config never reads excludeSelectors from Object.prototype.
+    if (variant && variant.config) {
+      ruleConfig = Object.assign(Object.create(null), ruleConfig, variant.config);
+    }
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -28546,6 +30245,12 @@ const runCoreSettled = (function runCoreSettled(
     if (typeof sharedHelpers.__setActiveRuleExcludeSelectors === 'function') {
       sharedHelpers.__setActiveRuleExcludeSelectors(ruleConfig && ruleConfig.excludeSelectors);
     }
+    // Whether any area is left out for this rule: only then does
+    // normalizeRuleResult look up every element a selector-only occurrence
+    // matches (round 12, A12-16).
+    const excluding =
+      excludeSelectors.length > 0 ||
+      normalizeSelectorList(ruleConfig && ruleConfig.excludeSelectors).length > 0;
 
     const foreign = foreignCode.has(defResolved.ruleId);
     const ctx = {
@@ -28578,13 +30283,14 @@ const runCoreSettled = (function runCoreSettled(
             outcome: 'notApplicable',
             occurrences: [],
             engineOptions: {
-              ...ruleEngineOptions,
+              ...echoedEngineOptions,
               locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
             }
           },
           SCHEMA_VERSION,
           policy,
-          sharedHelpers
+          sharedHelpers,
+          excluding
         )
       );
       if (ruleTimings)
@@ -28612,7 +30318,8 @@ const runCoreSettled = (function runCoreSettled(
           // everywhere: what was meant can't be known, so the rule says so.
           throw new Error(
             'applicability returned ' +
-              describeOptionValue(res) +
+              // "a undefined" read badly (round 12, A12-11).
+              (res === undefined ? 'undefined (no value)' : describeOptionValue(res)) +
               '; it must return true or false (or { applicable: true | false })'
           );
         }
@@ -28622,12 +30329,12 @@ const runCoreSettled = (function runCoreSettled(
           occurrences: [],
           error: describeThrown(err),
           engineOptions: {
-            ...ruleEngineOptions,
+            ...echoedEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -28639,12 +30346,12 @@ const runCoreSettled = (function runCoreSettled(
           outcome: 'notApplicable',
           occurrences: [],
           engineOptions: {
-            ...ruleEngineOptions,
+            ...echoedEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -28664,7 +30371,7 @@ const runCoreSettled = (function runCoreSettled(
         occurrences: [],
         error: describeThrown(err),
         engineOptions: {
-          ...ruleEngineOptions,
+          ...echoedEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
       };
@@ -28675,6 +30382,11 @@ const runCoreSettled = (function runCoreSettled(
       if (changes) pageChangedBy.push({ ruleId: defResolved.ruleId, changes });
     }
     if (foreign) result = plainRuleOutput(result);
+    // Read with no prototype from here: a field the rule left out is never
+    // read from Object.prototype (round 12, R12F-1 to R12F-6).
+    if (result && typeof result === 'object' && !isThenable(result)) {
+      result = Object.assign(Object.create(null), result);
+    }
 
     // A rule that returned nothing usable is reported, not dropped: a
     // missing result would read as a rule that never existed.
@@ -28692,7 +30404,7 @@ const runCoreSettled = (function runCoreSettled(
         occurrences: [],
         error: unusable,
         engineOptions: {
-          ...ruleEngineOptions,
+          ...echoedEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
       };
@@ -28701,7 +30413,7 @@ const runCoreSettled = (function runCoreSettled(
     // neither how it is judged nor what the result says, and is noted.
     if (result && Object.prototype.hasOwnProperty.call(result, 'type')) {
       const returnedType = result.type;
-      result = { ...result };
+      result = Object.assign(Object.create(null), result);
       delete result.type;
       if (returnedType !== undefined && returnedType !== defResolved.type) {
         result.error =
@@ -28725,8 +30437,7 @@ const runCoreSettled = (function runCoreSettled(
         else dropped += 1;
       }
       if (dropped) {
-        result = {
-          ...result,
+        result = Object.assign(Object.create(null), result, {
           occurrences: kept,
           error:
             (result.error ? String(result.error) + ' | ' : '') +
@@ -28734,7 +30445,7 @@ const runCoreSettled = (function runCoreSettled(
             dropped +
             (dropped === 1 ? ' occurrence that is' : ' occurrences that are') +
             ' not an object; left out.'
-        };
+        });
       }
     }
 
@@ -28745,7 +30456,7 @@ const runCoreSettled = (function runCoreSettled(
         Object.prototype.hasOwnProperty.call(result, key)
       );
       if (owned.length) {
-        result = { ...result };
+        result = Object.assign(Object.create(null), result);
         for (const key of owned) delete result[key];
         result.error =
           (result.error ? String(result.error) + ' | ' : '') +
@@ -28763,8 +30474,7 @@ const runCoreSettled = (function runCoreSettled(
       result.outcome === 'fail' &&
       !(Array.isArray(result.occurrences) && result.occurrences.length)
     ) {
-      result = {
-        ...result,
+      result = Object.assign(Object.create(null), result, {
         occurrences: [
           {
             __node: dom.documentElement(document),
@@ -28777,7 +30487,7 @@ const runCoreSettled = (function runCoreSettled(
             data: { details: { reasonCode: 'FAIL_WITHOUT_OCCURRENCE' } }
           }
         ]
-      };
+      });
     }
 
     // A variant reports in its own words: a message key of its base rule's
@@ -28803,13 +30513,12 @@ const runCoreSettled = (function runCoreSettled(
     // The scan's options and the WCAG scope are the engine's to state: an
     // engineOptions or wcagVersionScope in a rule's return is not taken (a
     // returned engineOptions.output could switch off the rule's selectors).
-    result = {
-      ...result,
+    result = Object.assign(Object.create(null), result, {
       engineOptions: {
-        ...ruleEngineOptions,
+        ...echoedEngineOptions,
         locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
       }
-    };
+    });
     delete result.wcagVersionScope;
     checksResults.push(
       normalizeRuleResult(
@@ -28817,7 +30526,8 @@ const runCoreSettled = (function runCoreSettled(
         scopeOutcomeToWcagVersion(defResolved, result),
         SCHEMA_VERSION,
         policy,
-        sharedHelpers
+        sharedHelpers,
+        excluding
       )
     );
     if (ruleTimings)
@@ -28890,15 +30600,33 @@ const runCoreSettled = (function runCoreSettled(
     }
   );
   if (notRunRules.length) {
+    // The budget the scan was given, not what was left of it when this
+    // profile or frame started (__scanTimeBudgetMs, set by the engine
+    // only), in whole ms, or tenths below 10 (round 12, A12-5).
+    const flagOf = (key) =>
+      Object.prototype.hasOwnProperty.call(engineOptions, key) &&
+      !Object.prototype.propertyIsEnumerable.call(engineOptions, key)
+        ? engineOptions[key]
+        : undefined;
+    const given =
+      typeof flagOf('__scanTimeBudgetMs') === 'number'
+        ? flagOf('__scanTimeBudgetMs')
+        : timeBudgetMs;
+    const budgetText =
+      typeof given === 'number' && Number.isFinite(given)
+        ? ' of ' + (given >= 10 ? Math.round(given) : Math.round(given * 10) / 10) + ' ms'
+        : '';
     try {
       console.warn(
-        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
-          timeBudgetMs +
+        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget' +
+          budgetText +
           (budgetSpent
-            ? typeof engineOptions.profile === 'string'
-              ? ' ms before profile "' + engineOptions.profile + '" started, so it'
-              : " ms before this frame's scan started, so it"
-            : ' ms and') +
+            ? flagOf('__budgetSpentAt') === 'profile' && typeof engineOptions.profile === 'string'
+              ? ' before profile "' + engineOptions.profile + '" started, so it'
+              : flagOf('__budgetSpentAt') === 'styleSheets'
+                ? " fetching the style sheets the page can't read, before any rule started, so it"
+                : " before this frame's scan started, so it"
+            : ' and') +
           ' did not run ' +
           notRunRules.length +
           ' rule' +
@@ -28948,19 +30676,16 @@ const runCoreSettled = (function runCoreSettled(
   for (const r of checksResults.concat(rulesResults)) {
     if (!r || !r.engineOptions || typeof r.engineOptions !== 'object') continue;
     const eo = r.engineOptions;
-    if (
-      !('messages' in eo) &&
-      !('probes' in eo) &&
-      !('customRules' in eo) &&
-      !('styleSheetTexts' in eo)
-    ) {
+    // Its own keys, not ones on Object.prototype.
+    const has = (key) => Object.prototype.hasOwnProperty.call(eo, key);
+    if (!has('messages') && !has('probes') && !has('customRules') && !has('styleSheetTexts')) {
       continue;
     }
     const echoed = { ...eo };
     delete echoed.messages;
-    if ('probes' in echoed) echoed.probes = probes;
-    if ('customRules' in echoed) echoed.customRules = echoedCustomRules;
-    if ('styleSheetTexts' in echoed) echoed.styleSheetTexts = echoedStyleSheets;
+    if (has('probes')) echoed.probes = probes;
+    if (has('customRules')) echoed.customRules = echoedCustomRules;
+    if (has('styleSheetTexts')) echoed.styleSheetTexts = echoedStyleSheets;
     r.engineOptions = echoed;
   }
 
@@ -28976,7 +30701,8 @@ const runCoreSettled = (function runCoreSettled(
     for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
   }
   for (const r of checksResults) {
-    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
+    if (r && typeof r === 'object')
+      setOwnKey(r, 'rollupIds', (rollupIdsByRule[r.ruleId] || []).slice());
   }
 
   // Optional perf counters passthrough (only when enabled). Deterministic.
@@ -29096,8 +30822,8 @@ const runCoreSettled = (function runCoreSettled(
     Array.isArray(CATALOG.packs) &&
     CATALOG.packs.length > 0;
   let coreWording = null;
-  if ('messages' in engineOptionsResolved) {
-    coreWording = { ...engineOptionsResolved };
+  if (Object.prototype.hasOwnProperty.call(engineOptionsResolved, 'messages')) {
+    coreWording = Object.assign(Object.create(null), engineOptionsResolved);
     delete coreWording.messages;
   }
   const restorable = (c) => {
@@ -29452,13 +31178,13 @@ const runCore = (function runCore(
     );
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null, shadowDom);
     // The animations as they were before settling, for helpers.animationsAtScanStart.
-    settleAnimations.atScanStart = settled.running;
+    setOwnKey(settleAnimations, 'atScanStart', settled.running);
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     // Content content-visibility: auto skips, laid out as a reader sees it.
     const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
     // For helpers.paintContainedByContentVisibility.
-    layOutSkippedContent.paintContained = laidOut.paintContained;
+    setOwnKey(layOutSkippedContent, 'paintContained', laidOut.paintContained);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -29481,10 +31207,10 @@ const runCore = (function runCore(
       return result;
     } finally {
       laidOut.restore();
-      layOutSkippedContent.paintContained = null;
+      setOwnKey(layOutSkippedContent, 'paintContained', null);
       colorsHeld.restore();
       settled.restore();
-      settleAnimations.atScanStart = [];
+      setOwnKey(settleAnimations, 'atScanStart', []);
     }
   } finally {
     restoreDomProtection();
@@ -29502,8 +31228,9 @@ const runCore = (function runCore(
             : null;
       // The contrast helpers' blank frames, kept for the run
       // (__openProbeFrame), go with it.
-      const shared = w && w.__a11ycoreSharedCache;
-      const frames = shared && shared.contrast && shared.contrast.probeFrames;
+      const own = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      const shared = own(w, '__a11ycoreSharedCache');
+      const frames = own(own(shared, 'contrast'), 'probeFrames');
       if (Array.isArray(frames)) {
         for (const entry of frames) {
           try {
@@ -29512,7 +31239,7 @@ const runCore = (function runCore(
           } catch {}
         }
       }
-      if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
+      if (shared) delete w.__a11ycoreSharedCache;
     } catch {}
   }
 });
@@ -29522,13 +31249,13 @@ const runCore = (function runCore(
 // cross-frame scanning for the "plain script injection" consumption mode).
 const FRAME_RPC_CHANNEL = "__frame_rpc_v1__";
 const getFrameRpcRegistry = (function getFrameRpcRegistry(win) {
-  if (!win.__a11yCoreFrameRpc__) {
-    win.__a11yCoreFrameRpc__ = {
-      pending: new Map(),
-      seq: 0,
-      responder: null,
-      listening: false
-    };
+  if (!Object.prototype.hasOwnProperty.call(win, '__a11yCoreFrameRpc__')) {
+    const registry = Object.create(null);
+    registry.pending = new Map();
+    registry.seq = 0;
+    registry.responder = null;
+    registry.listening = false;
+    win.__a11yCoreFrameRpc__ = registry;
   }
   return win.__a11yCoreFrameRpc__;
 });
@@ -29538,8 +31265,14 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
   if (registry.listening) return registry;
 
   dom.addEventListener(win, 'message', function a11yCoreFrameRpcListener(event) {
-    const data = event && event.data;
-    if (!data || data.__a11ycore !== true || data.channel !== channel) return;
+    // A message's fields are read as its own, never from Object.prototype.
+    const message = event && event.data;
+    if (!message || typeof message !== 'object') return;
+    const data = Object.create(null);
+    for (const key of ['__a11ycore', 'channel', 'type', 'requestId', 'payload']) {
+      if (Object.prototype.hasOwnProperty.call(message, key)) data[key] = message[key];
+    }
+    if (data.__a11ycore !== true || data.channel !== channel) return;
 
     if (data.type === 'ping') {
       try {
@@ -29755,8 +31488,10 @@ const profileOptionsOf = (function profileOptionsOf(engineOptions) {
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
   if (!Array.isArray(asked)) return [engineOptions];
   const unique = profileNamesOf(asked);
-  if (!unique.length) return [Object.assign({}, engineOptions, { profile: undefined })];
-  return unique.map((p) => Object.assign({}, engineOptions, { profile: p }));
+  // With no prototype, as ownOptions copies them.
+  if (!unique.length)
+    return [Object.assign(Object.create(null), engineOptions, { profile: undefined })];
+  return unique.map((p) => Object.assign(Object.create(null), engineOptions, { profile: p }));
 });
 const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packNames, declared) {
   const name = typeof profile === 'string' ? lowerAscii(profile.trim()) : '';
@@ -29784,8 +31519,10 @@ const runProfiles = (function runProfiles(engineOptions, run) {
   // page may put then on Object.prototype, and every plain result then has
   // one.
   const result = runProfilesUncapped(engineOptions, run);
-  const out = engineOptions && engineOptions.output;
-  if (!out || typeof out !== 'object' || out.maxOccurrencesPerRule === undefined) return result;
+  const out = ownField(engineOptions, 'output');
+  if (!out || typeof out !== 'object' || ownField(out, 'maxOccurrencesPerRule') === undefined) {
+    return result;
+  }
   return Object.prototype.toString.call(result) === '[object Promise]'
     ? result.then((x) => capOccurrences(x, engineOptions))
     : capOccurrences(result, engineOptions);
@@ -29795,21 +31532,37 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   // A frame's scan that starts with no time budget left (frame-scan.js) is
   // asked to start no rule (__budgetSpent, set by the engine only, not
   // enumerable): each profile's scan is asked the same, so it lists its
-  // selection in notRun.
+  // selection in notRun. The scan's budget (__scanTimeBudgetMs), which the
+  // warnings give, goes with it. Read only as the options' own, never from
+  // Object.prototype (round 12, A12-2).
+  const flagOf = (from, key) =>
+    from &&
+    typeof from === 'object' &&
+    Object.prototype.hasOwnProperty.call(from, key) &&
+    !Object.prototype.propertyIsEnumerable.call(from, key)
+      ? from[key]
+      : undefined;
   const carryBudgetSpent = (from, to) => {
-    if (
-      from &&
-      typeof from === 'object' &&
-      !Object.prototype.propertyIsEnumerable.call(from, '__budgetSpent') &&
-      from.__budgetSpent === true
-    ) {
+    if (flagOf(from, '__budgetSpent') === true) {
       Object.defineProperty(to, '__budgetSpent', { value: true });
+      // Where it was spent, for the warning (round 12, A12-7); a profile the
+      // budget leaves unstarted says its own.
+      const at = flagOf(from, '__budgetSpentAt');
+      if (typeof at === 'string') {
+        Object.defineProperty(to, '__budgetSpentAt', { value: at, configurable: true });
+      }
+    }
+    const scanBudget = flagOf(from, '__scanTimeBudgetMs');
+    if (
+      typeof scanBudget === 'number' &&
+      !Object.prototype.hasOwnProperty.call(to, '__scanTimeBudgetMs')
+    ) {
+      Object.defineProperty(to, '__scanTimeBudgetMs', { value: scanBudget });
     }
     return to;
   };
   const allowFail = policyAllowsFail(engineOptions);
-  const asked =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
+  const asked = ownField(engineOptions, 'profile');
   if (Array.isArray(asked)) {
     // Names are matched without case, as a single profile's are: one asked
     // twice in two cases runs once.
@@ -29820,6 +31573,15 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
     for (let i = 0; i < asked.length; i++) {
       const p = asked[i];
       if (typeof p !== 'string' || !p.trim()) ignored++;
+    }
+    // An empty list names no profile, and the scan runs as with none
+    // (round 12, A12-13); under strictOptions enforceEngineOptions refuses it.
+    if (!asked.length) {
+      try {
+        console.warn('[surea11y] engineOptions.profile: an empty list names no profile; ignored.');
+      } catch {
+        // no console
+      }
     }
     if (ignored) {
       try {
@@ -29837,7 +31599,9 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         run(
           carryBudgetSpent(
             engineOptions,
-            Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+            Object.assign(Object.create(null), engineOptions, {
+              profile: unique.length ? unique[0] : undefined
+            })
           )
         ),
         allowFail
@@ -29847,12 +31611,10 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
     // engineOptions.timeBudgetMs is the whole scan's: each profile after the
     // first gets what is left of it, and one that would start with none left
     // is not run (engine.profilesNotRun, reason timeBudget).
+    const givenBudget = ownField(engineOptions, 'timeBudgetMs');
     const budget =
-      engineOptions &&
-      typeof engineOptions.timeBudgetMs === 'number' &&
-      Number.isFinite(engineOptions.timeBudgetMs) &&
-      engineOptions.timeBudgetMs > 0
-        ? engineOptions.timeBudgetMs
+      typeof givenBudget === 'number' && Number.isFinite(givenBudget) && givenBudget > 0
+        ? givenBudget
         : null;
     const clock = () => {
       try {
@@ -29865,31 +31627,61 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
       return Date.now();
     };
     const started = budget === null ? 0 : clock();
+    const spentOnArrival = flagOf(engineOptions, '__budgetSpent') === true;
+    // The scan's budget: this one's, or, in a frame, the whole scan's.
+    const scanBudget =
+      typeof flagOf(engineOptions, '__scanTimeBudgetMs') === 'number'
+        ? flagOf(engineOptions, '__scanTimeBudgetMs')
+        : budget;
+    // What a later profile's scan is given: what is left, and the scan's
+    // budget for its warnings.
+    const withScanBudget = (options) => {
+      if (
+        scanBudget !== null &&
+        !Object.prototype.hasOwnProperty.call(options, '__scanTimeBudgetMs')
+      ) {
+        Object.defineProperty(options, '__scanTimeBudgetMs', { value: scanBudget });
+      }
+      return options;
+    };
     const step = (i) => {
       if (i >= unique.length) {
         const merged = mergeProfileResults(runs, unique, allowFail);
         // The budget the scan was given, not what was left of it for the
         // profile that ran out.
-        if (merged && merged.engine && merged.engine.incomplete) {
-          merged.engine.incomplete.timeBudgetMs = budget;
-        }
+        const incomplete = ownField(ownField(merged, 'engine'), 'incomplete');
+        if (incomplete && typeof incomplete === 'object') incomplete.timeBudgetMs = scanBudget;
         return merged;
       }
       const left = budget === null ? null : budget - (clock() - started);
-      if (left !== null && i > 0 && left <= 0) {
+      // A frame's scan reached with no budget left (spentOnArrival) starts
+      // its first profile only, as a scan whose first profile used it all
+      // does: the others are not run, not run with nothing started (round
+      // 12, A12-4).
+      if (i > 0 && ((left !== null && left <= 0) || spentOnArrival)) {
         // Not run, but its rules are listed in notRun, as a profile's scan
         // that ran out lists those it did not start: its scan is asked to
         // start none (__budgetSpent), which only works out its selection.
-        const dryOptions = Object.assign({}, engineOptions, { profile: unique[i] });
-        Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        const dryOptions = withScanBudget(
+          carryBudgetSpent(
+            engineOptions,
+            Object.assign(Object.create(null), engineOptions, { profile: unique[i] })
+          )
+        );
+        if (!spentOnArrival) Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        // Its warning names the profile, not a frame.
+        Object.defineProperty(dryOptions, '__budgetSpentAt', {
+          value: 'profile',
+          configurable: true
+        });
         const skippedOf = (dry) => {
-          const skipped = {};
+          const skipped = Object.create(null);
           Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
-          const applied = dry && dry.engine ? dry.engine.profile : undefined;
+          const applied = ownField(ownField(dry, 'engine'), 'profile');
           const ids =
             typeof applied === 'string' &&
             lowerAscii(applied) === lowerAscii(unique[i]) &&
-            Array.isArray(dry.notRun)
+            Array.isArray(ownField(dry, 'notRun'))
               ? dry.notRun.filter((n) => n && n.ruleId).map((n) => n.ruleId)
               : [];
           Object.defineProperty(skipped, '__rulesNotRun', { value: ids });
@@ -29900,13 +31692,15 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         return thenable(dry) ? dry.then(skippedOf) : skippedOf(dry);
       }
       const result = run(
-        carryBudgetSpent(
-          engineOptions,
-          Object.assign(
-            {},
+        withScanBudget(
+          carryBudgetSpent(
             engineOptions,
-            { profile: unique[i] },
-            left !== null && i > 0 ? { timeBudgetMs: left } : {}
+            Object.assign(
+              Object.create(null),
+              engineOptions,
+              { profile: unique[i] },
+              left !== null && i > 0 ? { timeBudgetMs: left } : {}
+            )
           )
         )
       );
@@ -29924,13 +31718,12 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   return withOwnVerdicts(run(engineOptions), allowFail);
 });
 const capOccurrences = (function capOccurrences(result, engineOptions) {
-  const output =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.output : undefined;
-  const max = output && typeof output === 'object' ? output.maxOccurrencesPerRule : undefined;
+  const output = ownField(engineOptions, 'output');
+  const max = ownField(output, 'maxOccurrencesPerRule');
   if (typeof max !== 'number' || !Number.isInteger(max) || max < 1) return result;
   if (!result || typeof result !== 'object' || !Array.isArray(result.checksResults)) return result;
   const tierOf = (check, o) => {
-    const own = o && typeof o === 'object' ? o.occurrenceOutcome || o.outcome : undefined;
+    const own = ownField(o, 'occurrenceOutcome') || ownField(o, 'outcome');
     if (own === 'fail' || own === 'cantTell' || own === 'pass') return own;
     return check.outcome === 'fail' || check.outcome === 'cantTell' || check.outcome === 'pass'
       ? check.outcome
@@ -29939,7 +31732,7 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
   const rankOf = (check, o) => {
     const tier = tierOf(check, o);
     if (tier === 'fail') return 0;
-    if (tier === 'cantTell') return o && o.lean && o.lean.toward === 'fail' ? 1 : 2;
+    if (tier === 'cantTell') return ownField(ownField(o, 'lean'), 'toward') === 'fail' ? 1 : 2;
     return 3;
   };
   const keptByRule = new Map();
@@ -29966,16 +31759,14 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
     keptByRule.set(check.ruleId, { kept, total: list.length });
     // The undecided ones that lean fail, which a lean-fail gate counts, are
     // counted apart from the other undecided ones.
-    return Object.assign(
-      {},
-      check,
-      {
-        occurrences: kept.map((i) => list[i]),
-        occurrencesOmitted: omitted,
-        occurrencesOmittedByOutcome: byOutcome
-      },
-      leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {}
-    );
+    // Spread, so a read-only value on Object.prototype refuses no key.
+    return {
+      ...check,
+      occurrences: kept.map((i) => list[i]),
+      occurrencesOmitted: omitted,
+      occurrencesOmittedByOutcome: byOutcome,
+      ...(leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {})
+    };
   });
   if (!omittedTotal) return result;
   // A rollup's record of what it made of each finding follows the findings
@@ -29991,31 +31782,27 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
           if (!cap || !Array.isArray(c.findingOutcomes) || c.findingOutcomes.length !== cap.total)
             return c;
           touched = true;
-          return Object.assign({}, c, {
-            findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i])
-          });
+          return { ...c, findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i]) };
         });
         if (!touched) return rollup;
-        return Object.assign({}, rollup, {
-          data: Object.assign({}, rollup.data, {
-            details: Object.assign({}, details, { contributors: next })
-          })
-        });
+        return { ...rollup, data: { ...rollup.data, details: { ...details, contributors: next } } };
       })
     : result.rulesResults;
-  const out = Object.assign({}, result, {
-    engine: Object.assign({}, result.engine, {
+  const out = {
+    ...result,
+    engine: {
+      ...result.engine,
       occurrenceCap: {
         maxOccurrencesPerRule: max,
         occurrencesOmitted: omittedTotal,
         rulesCapped: keptByRule.size
       }
-    }),
+    },
     checksResults,
     rulesResults
-  });
+  };
   // A mark the merge of several profiles reads stays with the result.
-  if (result.__profileNotApplied) {
+  if (ownField(result, '__profileNotApplied')) {
     try {
       Object.defineProperty(out, '__profileNotApplied', {
         value: result.__profileNotApplied,
@@ -30030,7 +31817,11 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
 const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
   // A result first: a page may add then to Object.prototype, which makes
   // any object look like a promise.
-  if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
+  if (
+    result &&
+    !Array.isArray(ownField(result, 'checksResults')) &&
+    typeof result.then === 'function'
+  ) {
     return result.then((r) => withOwnVerdicts(r, allowFail));
   }
   if (!result || !Array.isArray(result.checksResults)) return result;
@@ -30044,16 +31835,14 @@ const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
       const contributors =
         details && Array.isArray(details.contributors) ? details.contributors : [];
       const c = contributors.find((x) => x && x.testId === check.ruleId);
-      if (!c || !c.byReasonCode || !Array.isArray(c.findingOutcomes)) continue;
+      if (!c || !ownField(c, 'byReasonCode') || !Array.isArray(c.findingOutcomes)) continue;
       occurrences.forEach((o, i) => {
         if (c.findingOutcomes[i] === 'fail') fails[i] = true;
       });
     }
     if (!fails.some(Boolean)) continue;
     check.occurrences = occurrences.map((o, i) =>
-      fails[i] && o && typeof o === 'object'
-        ? Object.assign({}, o, { occurrenceOutcome: 'fail' })
-        : o
+      fails[i] && o && typeof o === 'object' ? { ...o, occurrenceOutcome: 'fail' } : o
     );
     check.outcome = 'fail';
     check.outcomeNormalized = 'fail';
@@ -30064,13 +31853,19 @@ const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
 const lowerAscii = (function lowerAscii(value) {
   return String(value).replace(/[A-Z]/g, (c) => c.toLowerCase());
 });
+const ownField = (function ownField(object, key) {
+  return object && typeof object === 'object' && Object.prototype.hasOwnProperty.call(object, key)
+    ? object[key]
+    : undefined;
+});
 const policyAllowsFail = (function policyAllowsFail(engineOptions) {
   try {
-    const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
-    for (const source of [eo.policy, eo.policyContract]) {
-      if (source && typeof source === 'object' && Array.isArray(source.allowedOutcomes)) {
-        return source.allowedOutcomes.includes('fail');
-      }
+    for (const source of [
+      ownField(engineOptions, 'policy'),
+      ownField(engineOptions, 'policyContract')
+    ]) {
+      const allowed = ownField(source, 'allowedOutcomes');
+      if (Array.isArray(allowed)) return allowed.includes('fail');
     }
   } catch {
     // unreadable options: the scan's own reading decides
@@ -30079,14 +31874,18 @@ const policyAllowsFail = (function policyAllowsFail(engineOptions) {
 });
 const capToPolicy = (function capToPolicy(check, allowFail) {
   if (allowFail || !check || check.outcome !== 'fail') return check;
-  check.policyOutcome = 'fail';
+  // Defined, so a read-only value on Object.prototype refuses it not.
+  Object.defineProperty(check, 'policyOutcome', {
+    value: 'fail',
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   check.outcome = 'cantTell';
   check.outcomeNormalized = 'cantTell';
   if (Array.isArray(check.occurrences)) {
     check.occurrences = check.occurrences.map((o) =>
-      o && typeof o === 'object' && o.occurrenceOutcome === 'fail'
-        ? Object.assign({}, o, { occurrenceOutcome: 'cantTell' })
-        : o
+      ownField(o, 'occurrenceOutcome') === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
     );
   }
   return check;
@@ -30123,30 +31922,30 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   };
   const unionList = (a, b) =>
     unionBy([a, b], (x) => (typeof x === 'string' ? x : JSON.stringify(x)));
+  const own = ownField;
+  const detailsOf = (o) => own(own(o, 'data'), 'details');
   const reasonCodeOf = (o) =>
-    o && o.data && o.data.details && typeof o.data.details.reasonCode === 'string'
-      ? o.data.details.reasonCode
-      : '';
+    typeof own(detailsOf(o), 'reasonCode') === 'string' ? own(detailsOf(o), 'reasonCode') : '';
   // An element's finding, as each profile's scan of the same page finds it:
   // where it is and why. Two findings of one rule on one element for the
   // same reason (two attributes it doesn't allow) differ by what else they
   // say, and else by their order, which each scan of the page shares.
   const baseKeyOf = (o) =>
     JSON.stringify([
-      (o && o.frameUrl) || '',
-      (o && o.selector) || '',
-      (o && o.structuralPath) || '',
+      own(o, 'frameUrl') || '',
+      own(o, 'selector') || '',
+      own(o, 'structuralPath') || '',
       reasonCodeOf(o),
-      (o && o.html) || '',
-      (o && o.summary) || '',
-      (o && o.data && o.data.details && JSON.stringify(o.data.details)) || ''
+      own(o, 'html') || '',
+      own(o, 'summary') || '',
+      (detailsOf(o) && JSON.stringify(detailsOf(o))) || ''
     ]);
   const normalizedOf = (o) => (o === 'notApplicable' ? 'inapplicable' : o);
 
   const ran = [];
   const notRun = [];
   for (const r of runs) {
-    const applied = r.result && r.result.engine ? r.result.engine.profile : undefined;
+    const applied = own(own(r.result, 'engine'), 'profile');
     const same =
       typeof applied === 'string' && lowerAscii(applied) === lowerAscii(String(r.profile));
     if (r.result && typeof r.result === 'object' && same) ran.push(r);
@@ -30154,7 +31953,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       // A name no profile has is unknown-profile, unless the scan marked it
       // as one a pack it skipped may have: a list with a typo beside a
       // skipped pack's profile names the typo as such.
-      const why = r.result && r.result.__profileNotApplied;
+      const why = own(r.result, '__profileNotApplied');
       notRun.push({
         profile: r.profile,
         reason:
@@ -30171,9 +31970,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   const first = (ran[0] || runs[0] || {}).result;
   if (!first || typeof first !== 'object') return first;
   if (!ran.length) {
-    return Object.assign({}, first, {
-      engine: Object.assign({}, first.engine, { profiles: [], profilesNotRun: notRun })
-    });
+    return { ...first, engine: { ...first.engine, profiles: [], profilesNotRun: notRun } };
   }
 
   // What a profile's rollups make of each finding of a check: by reason code
@@ -30182,7 +31979,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   // profile names the check.
   function verdictsByRollups(result, check) {
     const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
-    const tier = (o) => (o && o.occurrenceOutcome) || check.outcome;
+    const tier = (o) => own(o, 'occurrenceOutcome') || check.outcome;
     let seen = false;
     const out = occurrences.map(() => []);
     for (const rollup of Array.isArray(result.rulesResults) ? result.rulesResults : []) {
@@ -30193,7 +31990,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       if (!c) continue;
       seen = true;
       occurrences.forEach((o, i) => {
-        if (c.byReasonCode && Array.isArray(c.findingOutcomes)) {
+        if (own(c, 'byReasonCode') && Array.isArray(c.findingOutcomes)) {
           out[i].push(c.findingOutcomes[i] || 'notApplicable');
         } else out[i].push(tier(o));
       });
@@ -30207,7 +32004,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   // The WCAG version the result reports, the highest of the profiles'.
   const WCAG_ORDER = ['2.0', '2.1', '2.2'];
   let reportedWcag;
-  const targetingRuns = ran.filter((r) => r.result.engine && r.result.engine.wcagLevel);
+  const targetingRuns = ran.filter((r) => own(r.result.engine, 'wcagLevel'));
   for (const r of targetingRuns.length ? targetingRuns : ran) {
     const v = r.result.engine && r.result.engine.wcagVersion;
     if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
@@ -30220,7 +32017,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       if (!check || !check.ruleId) continue;
       let merged = checks.get(check.ruleId);
       if (!merged) {
-        merged = Object.assign({}, check, {
+        // Worked on with no prototype, and handed back plain below.
+        merged = Object.assign(Object.create(null), check, {
           verdicts: {},
           occurrences: [],
           ownOutcomes: [],
@@ -30237,7 +32035,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       // The severity this profile gives the rule (a profile's own, or the
       // rule's), and the rule's own.
       merged.severities[r.profile] = check.severity;
-      if (check.ruleSeverity && !merged.ownSeverity) merged.ownSeverity = check.ruleSeverity;
+      if (own(check, 'ruleSeverity') && !merged.ownSeverity)
+        merged.ownSeverity = check.ruleSeverity;
       const verdicts = isTier(check.outcome) ? verdictsByRollups(r.result, check) : [];
       const byKey = occurrenceMaps.get(check.ruleId);
       const seenHere = new Map(); // base key -> how many so far in this scan
@@ -30249,7 +32048,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         const ofReported = !!r.result.engine && r.result.engine.wcagVersion === reportedWcag;
         let m = byKey.get(key);
         if (!m) {
-          m = Object.assign({}, o, { verdicts: {} });
+          m = Object.assign(Object.create(null), o, { verdicts: {} });
           byKey.set(key, m);
           merged.occurrences.push(m);
           if (ofReported) textOfReported.add(m);
@@ -30260,7 +32059,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
           // order the profiles were listed in.
           const replace = ofReported && !textOfReported.has(m);
           for (const field of ['uncertainty', 'lean', 'howToCheck', 'hint']) {
-            if (o[field] === undefined) continue;
+            if (own(o, field) === undefined) continue;
             if (m[field] === undefined || replace) m[field] = o[field];
           }
           if (ofReported) textOfReported.add(m);
@@ -30271,21 +32070,25 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         // What each profile's scan says of the rule, all of it: the
         // rollups it feeds and the requirements it maps to, whichever
         // profile was listed first.
-        if (Array.isArray(check.rollupIds)) {
-          merged.rollupIds = unionList(merged.rollupIds, check.rollupIds);
-        }
-        const mappings =
-          check.meta && Array.isArray(check.meta.normativeMappings)
-            ? check.meta.normativeMappings
-            : null;
-        if (mappings) {
-          const had =
-            merged.meta && Array.isArray(merged.meta.normativeMappings)
-              ? merged.meta.normativeMappings
-              : [];
-          merged.meta = Object.assign({}, merged.meta, {
-            normativeMappings: unionBy([had, mappings], (x) => JSON.stringify(x))
+        if (Array.isArray(own(check, 'rollupIds'))) {
+          Object.defineProperty(merged, 'rollupIds', {
+            value: unionList(own(merged, 'rollupIds'), check.rollupIds),
+            writable: true,
+            enumerable: true,
+            configurable: true
           });
+        }
+        const mappings = Array.isArray(own(own(check, 'meta'), 'normativeMappings'))
+          ? check.meta.normativeMappings
+          : null;
+        if (mappings) {
+          const had = Array.isArray(own(merged.meta, 'normativeMappings'))
+            ? merged.meta.normativeMappings
+            : [];
+          merged.meta = {
+            ...merged.meta,
+            normativeMappings: unionBy([had, mappings], (x) => JSON.stringify(x))
+          };
         }
       }
       // A check whose findings the profile counts nowhere keeps the outcome
@@ -30316,7 +32119,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     // own stays as ruleSeverity where that differs.
     const severities = merged.severities;
     delete merged.severities;
-    const own = merged.ownSeverity || merged.ruleSeverity || merged.severity;
+    const ruleOwn = merged.ownSeverity || merged.ruleSeverity || merged.severity;
     delete merged.ownSeverity;
     const judging = Object.keys(severities).filter((p) => isTier(merged.verdicts[p]));
     const severity = highestSeverity(
@@ -30324,7 +32127,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     );
     if (severity) {
       merged.severity = severity;
-      if (own && own !== severity) merged.ruleSeverity = own;
+      if (ruleOwn && ruleOwn !== severity) merged.ruleSeverity = ruleOwn;
       else delete merged.ruleSeverity;
     }
     const outcome = worst(Object.values(merged.verdicts)) || merged.outcome;
@@ -30332,11 +32135,9 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       const tier = worst(Object.values(m.verdicts));
       if (isTier(tier) && (m.occurrenceOutcome || tier !== outcome)) m.occurrenceOutcome = tier;
     }
+    merged.occurrences = merged.occurrences.map((m) => ({ ...m }));
     checksResults.push(
-      capToPolicy(
-        Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) }),
-        allowFail
-      )
+      capToPolicy({ ...merged, outcome, outcomeNormalized: normalizedOf(outcome) }, allowFail)
     );
   }
 
@@ -30348,45 +32149,45 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       if (!rollup || !rollup.ruleId) continue;
       outcomes[rollup.ruleId] = rollup.outcome;
       const had = rollups.get(rollup.ruleId);
-      if (!had) rollups.set(rollup.ruleId, Object.assign({}, rollup, { profiles: [r.profile] }));
+      if (!had) rollups.set(rollup.ruleId, { ...rollup, profiles: [r.profile] });
       else {
         had.profiles.push(r.profile);
         if (rank(rollup.outcome) > rank(had.outcome)) {
-          rollups.set(rollup.ruleId, Object.assign({}, rollup, { profiles: had.profiles }));
+          rollups.set(rollup.ruleId, { ...rollup, profiles: had.profiles });
         }
       }
     }
-    const standards = Array.isArray(r.result.standards) ? r.result.standards : [];
-    const engine = r.result.engine || {};
+    const standards = Array.isArray(own(r.result, 'standards')) ? r.result.standards : [];
+    const engine = own(r.result, 'engine') || {};
     // wcagLevel only for a profile that targets WCAG: one that doesn't
     // (WAI-ARIA's) carries core's default version, which judges nothing.
-    profiles[r.profile] = Object.assign(
-      { wcagVersion: engine.wcagVersion },
-      engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
-      engine.law ? { law: engine.law } : {},
-      standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
-      { rulesResults: outcomes },
+    profiles[r.profile] = {
+      wcagVersion: own(engine, 'wcagVersion'),
+      ...(own(engine, 'wcagLevel') ? { wcagLevel: engine.wcagLevel } : {}),
+      ...(own(engine, 'law') ? { law: engine.law } : {}),
+      ...(standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {}),
+      rulesResults: outcomes,
       // Each profile's own timings, where they were asked for: the result's
       // perfStats are the first profile's.
-      r.result.perfStats ? { perfStats: r.result.perfStats } : {}
-    );
+      ...(own(r.result, 'perfStats') ? { perfStats: r.result.perfStats } : {})
+    };
   }
 
   const results = ran.map((r) => r.result);
   const packs = unionBy(
-    results.map((x) => x.engine && x.engine.packs),
+    results.map((x) => own(own(x, 'engine'), 'packs')),
     (x) => x
   ).sort();
   const skippedPacks = unionBy(
-    runs.map((r) => r.result && r.result.skippedPacks),
+    runs.map((r) => own(r.result, 'skippedPacks')),
     (x) => (x && x.name) || JSON.stringify(x)
   );
   const standards = unionBy(
-    results.map((x) => x.standards),
+    results.map((x) => own(x, 'standards')),
     (x) => (x && (x.key || x.standard)) || JSON.stringify(x)
   );
   const overridden = unionBy(
-    results.map((x) => x.overriddenBuiltinIds),
+    results.map((x) => own(x, 'overriddenBuiltinIds')),
     (x) => x
   ).sort();
 
@@ -30401,7 +32202,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         out = v;
     return out;
   };
-  const engines = results.map((x) => x.engine || {});
+  // Each scan's engine, read as its own keys only.
+  const engines = results.map((x) => Object.assign(Object.create(null), own(x, 'engine')));
   // A profile with no WCAG target of its own (a standard that maps no WCAG
   // level, as WAI-ARIA's) carries core's default version: the version is
   // that of the profiles that target WCAG, where any does.
@@ -30423,7 +32225,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   // own is in profiles[name].law.
   const laws = engines.map((e) => (e.law && typeof e.law.id === 'string' ? e.law.id : null));
   const oneLaw = laws.length && laws[0] !== null && laws.every((id) => id === laws[0]);
-  const engine = Object.assign({}, first.engine, {
+  const engine = {
+    ...first.engine,
     ...(wcagVersion ? { wcagVersion } : {}),
     ...(wcagLevel ? { wcagLevel } : {}),
     ...(mappings.length ? { mappings } : {}),
@@ -30431,7 +32234,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     profiles: ran.map((r) => r.profile),
     ...(notRun.length ? { profilesNotRun: notRun } : {}),
     ...(packs.length ? { packs } : {})
-  });
+  };
   if (!oneLaw) delete engine.law;
   // The rules a profile's scan did not start, and the profiles not started,
   // for the time budget: the merged scan is incomplete.
@@ -30439,10 +32242,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   const rulesNotRun = [];
   for (const r of runs) {
     if (ran.includes(r)) {
-      for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
-        if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+      for (const n of Array.isArray(own(r.result, 'notRun')) ? r.result.notRun : []) {
+        if (n && n.ruleId) rulesNotRun.push({ ...n, profile: r.profile });
       }
-    } else if (r.result && Array.isArray(r.result.__rulesNotRun)) {
+    } else if (Array.isArray(own(r.result, '__rulesNotRun'))) {
       for (const ruleId of r.result.__rulesNotRun) {
         rulesNotRun.push({ ruleId, reason: 'timeBudget', profile: r.profile });
       }
@@ -30451,30 +32254,33 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   const budgetProfiles = notRun.filter((n) => n.reason === 'timeBudget');
   const incomplete = engines.find((e) => e.incomplete);
   if (incomplete || budgetProfiles.length) {
-    engine.incomplete = Object.assign(
-      { reason: 'timeBudget' },
-      incomplete ? incomplete.incomplete : {},
-      { rulesNotRun: rulesNotRun.length },
-      budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {}
-    );
+    engine.incomplete = {
+      reason: 'timeBudget',
+      ...(incomplete ? incomplete.incomplete : {}),
+      rulesNotRun: rulesNotRun.length,
+      ...(budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {})
+    };
   } else delete engine.incomplete;
   void asked;
-  const out = Object.assign({}, first, {
+  // Its keys defined, so a read-only value on Object.prototype refuses none.
+  const out = {
+    ...first,
     engine,
     checksResults,
     rulesResults: [...rollups.values()],
-    profiles
-  });
-  if (standards.length) out.standards = standards;
-  if (overridden.length || Array.isArray(first.overriddenBuiltinIds))
-    out.overriddenBuiltinIds = overridden;
-  if (skippedPacks.length) out.skippedPacks = skippedPacks;
-  if (rulesNotRun.length) out.notRun = rulesNotRun;
-  else delete out.notRun;
+    profiles,
+    ...(standards.length ? { standards } : {}),
+    ...(overridden.length || Array.isArray(own(first, 'overriddenBuiltinIds'))
+      ? { overriddenBuiltinIds: overridden }
+      : {}),
+    ...(skippedPacks.length ? { skippedPacks } : {}),
+    ...(rulesNotRun.length ? { notRun: rulesNotRun } : {})
+  };
+  if (!rulesNotRun.length) delete out.notRun;
   // A custom rule skipped is one no profile ran: one profile's selection
   // can leave out a rule another runs.
   const skippedLists = ran.map((r) =>
-    Array.isArray(r.result.skippedCustomRules) ? r.result.skippedCustomRules : []
+    Array.isArray(own(r.result, 'skippedCustomRules')) ? r.result.skippedCustomRules : []
   );
   if (skippedLists.length && skippedLists.some((list) => list.length)) {
     const idOf = (x) => (x && typeof x.id === 'string' ? x.id : JSON.stringify(x));
@@ -30802,6 +32608,8 @@ function getTestsForRunOnly(runOnly, engineOptions) {
  */
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   assertPageBuiltins();
+  // The options' own keys only, with no prototype (ownOptions).
+  engineOptions = ownOptions(engineOptions);
   // Under strictOptions the options are checked before the selection is
   // worked out from them, as they are said to be.
   if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
@@ -44073,7 +45881,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_colorScheme_light": "Im hellen Farbschema der Seite hat dieser Text ein Kontrastverhältnis von {{ratio}}:1 zu {{backgroundHex}}, unter {{threshold}}:1. Ändern Sie seine Farben in diesem Farbschema, sodass das Verhältnis diesen Wert erreicht.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
       "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
-      "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}{{#signWithPrice}} Dieses Zeichen wird mit dem Preis daneben gelesen; es ist also Text und braucht das Kontrastverhältnis für Text.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
@@ -44091,7 +45899,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_hint_cantTell_outline": "Zoomen Sie hinein und messen Sie die Farbe, die den Großteil jedes Buchstabens bildet, gegen den Hintergrund; sie braucht {{threshold}}:1.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
-      "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}{{#signWithPrice}} Dieses Zeichen wird mit dem Preis daneben gelesen; es ist also Text und braucht das erhöhte Kontrastverhältnis für Text.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
@@ -44593,6 +46401,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "Prüfen Sie, ob das Bedienelement auf dieses marquee wirkt und per Tastatur erreichbar ist.",
       "deprecatedElements_lean_why_noMechanism": "Kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden, und kein Skript der Seite stoppt das marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Ein aus einer Datei geladenes Skript kann ein Bedienelement über seine id verknüpfen, etwa eine Symbolschaltfläche.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Dieses <{{element}}> scrollt seinen Inhalt und hält nur an, solange der Mauszeiger darüber ist; das können Nutzer mit Tastatur oder Touchscreen nicht.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Prüfen Sie, ob die Seite eine andere Möglichkeit bietet, diesen Inhalt anzuhalten, zu stoppen oder auszublenden, die auch mit der Tastatur funktioniert. Besser: Ersetzen Sie ihn durch statischen Inhalt oder durch eine Animation mit einer Pause-/Stopp-Steuerung.",
+      "deprecatedElements_lean_why_hoverOnly": "Das marquee hält nur an, solange der Mauszeiger darüber ist, was Nutzer mit Tastatur oder Touchscreen nicht können, und kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden.",
       "iframeNamePresent_title": "Frames haben einen zugänglichen Namen",
       "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
       "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
@@ -44662,7 +46473,7 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Prüfen Sie, ob die Liste etwas sagt, das der Inhalt nicht anders sagt: ihre Einträge, deren Anzahl oder Reihenfolge. Wenn ja, behalten Sie die Liste und verschieben Sie role=\"{{parentRole}}\" vom <{{parentElement}}> auf ein Element darum herum (bei einer Navigation <nav><{{parentElement}}>). Wenn nicht, entfernen Sie die Elemente <{{parentElement}}> und <li>.",
       "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "Der Eintrag wird mit Aufzählungszeichen oder Nummer gezeichnet, als Eintrag einer Liste, die das Markup nicht mehr bereitstellt.",
@@ -45099,6 +46910,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "Scrollbare Bereiche ohne fokussierbaren Inhalt sollten per Tastatur fokussierbar sein",
       "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
       "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Ob sein Inhalt überläuft, ließ sich nicht messen: Die Seite wurde ohne Layout geprüft. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
       "scrollableRegionFocusable_hint_cantTell": "Wenn sein Inhalt tatsächlich überläuft, fügen Sie tabindex=\"0\" und einen Namen hinzu, damit Tastaturnutzende es fokussieren und mit den Pfeiltasten scrollen können.",
       "scrollableRegionFocusable_lean_why_overflows": "Sein Inhalt läuft über den Kasten hinaus, und nichts darin kann den Tastaturfokus erhalten, um ihn zu scrollen.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium ab Version 130 und Firefox machen einen scrollbaren Kasten trotzdem per Tastatur erreichbar; Safari nicht.",
@@ -45276,8 +47088,13 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_title": "Optionsfelder und Kontrollkästchen mit gleichem Namen sollten in einer benannten Gruppe stehen",
       "formGroupNamePresent_description": "Fragt nach Optionsfeldern oder Kontrollkästchen, die einen Namen teilen, aber in keinem <fieldset> mit <legend> und keiner group oder radiogroup mit zugänglichem Namen stehen, sodass die Frage, die sie beantworten, mit keinem von ihnen verknüpft sein kann.",
       "formGroupNamePresent_summary_cantTell_radio": "Diese {{count}} Optionsfelder mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"radiogroup\" oder role=\"group\" und zugänglichem Namen.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Einige dieser {{count}} Optionsfelder mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen (kein <fieldset> mit <legend> und kein Element mit role=\"radiogroup\" oder role=\"group\" und zugänglichem Namen); die anderen stehen in einer.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "Diese {{count}} Optionsfelder mit dem Namen „{{name}}“ haben denselben Namen, sodass der Browser sie zu einer Auswahl macht, stehen aber in verschiedenen Gruppen mit Namen ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Diese {{count}} Kontrollkästchen mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"group\" und zugänglichem Namen.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "Diese {{count}} Kontrollkästchen mit dem Namen „{{name}}“ haben denselben Namen, stehen aber in verschiedenen Gruppen mit Namen ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "Wenn die Optionen eine Frage beantworten, setzen Sie sie in ein <fieldset>, dessen <legend> sie nennt, oder in ein Element mit role=\"radiogroup\" (role=\"group\" für Kontrollkästchen), das mit aria-labelledby auf die Frage benannt ist.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Prüfen Sie, ob sie Optionen einer einzigen Auswahl sind. Wenn ja, setzen Sie sie in eine Gruppe, deren Name sagt, was ausgewählt wird; wenn es getrennte Auswahlen sind, geben Sie jeder einen eigenen Namen.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Prüfen Sie, ob sie eine einzige Frage beantworten. Wenn ja, setzen Sie sie in eine Gruppe, deren Name die Frage nennt; beantworten sie getrennte Fragen, können die Gruppen bleiben.",
       "formGroupNamePresent_lean_why_radio": "Optionsfelder mit gleichem Namen sind eine einzige Auswahl, und nichts gibt dieser Auswahl einen Namen.",
       "formGroupNamePresent_lean_caution_radio": "Die Beschriftung jeder Option kann die ganze Frage schon selbst sagen.",
       "symbolGraphicContrast_title": "Als Grafik verwendete Symbole sollten einen Kontrast von mindestens 3:1 haben",
@@ -45377,7 +47194,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Ein vor den Skripten der Seite installierter Hook hat weder am Element noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten- oder Fokus-Listener gesehen; Eingabe und Leertaste bewirken daher wahrscheinlich nichts.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Ein Vorfahre behält den Fokus für seine Elemente (aria-activedescendant oder ein fokussierbares zusammengesetztes Widget); so bedient ein solches Widget ein Element, ohne es zu fokussieren.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "Das Element zeigt einen Zeiger-Cursor und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "Das Element ist wie eine Schaltfläche gestaltet, ein kurzer Text in einem Kasten mit eigenem Hintergrund oder Rahmen, und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "Das Element ist wie ein Bedienelement gestaltet, ein kurzer Text in einem Kasten mit eigenem Rahmen oder Schatten oder ein Schließen- oder Menüsymbol, und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "Dieselbe Aktion kann ein anderes Bedienelement der Seite anbieten, etwa ein Link neben einer anklickbaren Zeile.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert (Eingabe und Leertaste sowie die Pfeiltasten seines Widgets), dasselbe bewirken wie ein Klick.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
@@ -45450,9 +47267,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_unattributed": "Es ließ sich kein Element benennen: Der Überlauf kann von einem Rand, generierten Inhalten oder einem geschlossenen Shadow Root stammen. Prüfen Sie, ob seitliches Scrollen Inhalte zeigt.",
       "resizeTextContentLoss_title": "Text wird bei 640 CSS-Pixeln Breite (200 % Zoom) nicht abgeschnitten",
       "resizeTextContentLoss_description": "Misst bei einem Viewport von höchstens 640 CSS-Pixeln Breite, wie ein 1280 Pixel breites Fenster eine Seite bei 200 % Zoom zeigt, jeden Text in einem Kasten, der seinen Überlauf verbirgt, und fragt nach Text, den der Kasten abschneidet oder mit Auslassungspunkten oder einer Zeilenbegrenzung kürzt, zur manuellen Prüfung, ob Inhalte verloren gehen.",
-      "resizeTextContentLoss_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite, wie ein 1280 Pixel breites Fenster die Seite bei 200 % Zoom zeigt, schneidet dieses Element den Text „{{text}}“ ab ({{overflowPx}} Pixel über seinen {{#edgeTop}}oberen {{/edgeTop}}{{#edgeRight}}rechten {{/edgeRight}}{{#edgeBottom}}unteren {{/edgeBottom}}{{#edgeLeft}}linken {{/edgeLeft}}Rand hinaus).{{#clipCss}} Das CSS, das ihn abschneidet: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite, {{#narrower}}schmaler als ein 1280 Pixel breites Fenster bei 200 % Zoom{{/narrower}}{{^narrower}}wie ein 1280 Pixel breites Fenster die Seite bei {{zoomPercent}} % Zoom zeigt{{/narrower}}, schneidet dieses Element den Text „{{text}}“ ab ({{overflowPx}} Pixel über seinen {{#edgeTop}}oberen {{/edgeTop}}{{#edgeRight}}rechten {{/edgeRight}}{{#edgeBottom}}unteren {{/edgeBottom}}{{#edgeLeft}}linken {{/edgeLeft}}Rand hinaus).{{#clipCss}} Das CSS, das ihn abschneidet: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Lassen Sie den Kasten mit seinem Text wachsen, wenn die Seite vergrößert wird: {{#clipCss}}Ändern Sie {{clipCss}}{{/clipCss}}{{^clipCss}}Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text{{/clipCss}}, oder lassen Sie ihn scrollen.",
-      "resizeTextContentLoss_summary_truncated": "Bei {{viewportWidth}} Pixeln Breite, wie ein 1280 Pixel breites Fenster die Seite bei 200 % Zoom zeigt, kürzt dieses Element den Text „{{text}}“ mit Auslassungspunkten oder einer Zeilenbegrenzung, sodass ein Teil davon nicht angezeigt wird.{{#clipCss}} Das CSS, das ihn kürzt: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "Bei {{viewportWidth}} Pixeln Breite, {{#narrower}}schmaler als ein 1280 Pixel breites Fenster bei 200 % Zoom{{/narrower}}{{^narrower}}wie ein 1280 Pixel breites Fenster die Seite bei {{zoomPercent}} % Zoom zeigt{{/narrower}}, kürzt dieses Element den Text „{{text}}“ mit Auslassungspunkten oder einer Zeilenbegrenzung, sodass ein Teil davon nicht angezeigt wird.{{#clipCss}} Das CSS, das ihn kürzt: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Lassen Sie den Text umbrechen und den Kasten ihn ganz zeigen, wenn die Seite vergrößert wird, oder bieten Sie den vollständigen Text auf einem anderen Weg an, der mit der Tastatur funktioniert, etwa über einen Link „Weiterlesen“.",
       "resizeTextContentLoss_lean_why_clipped": "Mindestens eine halbe Zeile des Textes liegt jenseits des Rands des Kastens, der sie verbirgt und nicht scrollt.",
       "resizeTextContentLoss_lean_caution_clipped": "Der vollständige Text kann auf andere Weise angezeigt werden, etwa über ein Bedienelement, das den Kasten öffnet.",
@@ -45473,7 +47290,9 @@ const RUNTIME_CATALOG = {
       "report_meta_profileNotRun": "nicht ausgeführt",
       "report_meta_optInRules": "Opt-in-Regeln",
       "report_meta_rulesNotRun": "Regeln nicht ausgeführt",
+      "report_meta_styleSheetsNotRead": "Stylesheets nicht gelesen",
       "report_incomplete_timeBudget": "Unvollständiger Scan: Sein Zeitbudget von {{budget}} ms war aufgebraucht, bevor alle ausgewählten Regeln gelaufen sind. Nicht ausgeführt ({{count}}): {{rules}}. Sie haben nichts geprüft; nichts in diesem Bericht gilt für sie als bestanden.",
+      "report_incomplete_profilesNotRun": "Nicht gestartete Profile: {{profiles}}.",
       "report_meta_viewport": "Viewport",
       "report_meta_colorScheme": "Farbschema",
       "report_meta_fonts": "Webfonts",
@@ -45919,7 +47738,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_colorScheme_light": "In the page's light color scheme, this text has a contrast ratio of {{ratio}}:1 against {{backgroundHex}}, below {{threshold}}:1. Change its colors in that scheme so the ratio reaches it.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
       "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
-      "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}{{#signWithPrice}} This sign is read with the price beside it, so it is text and needs the text ratio.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
@@ -45937,7 +47756,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_hint_cantTell_outline": "Zoom in and measure the color that forms most of each letter against the background; it needs {{threshold}}:1.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
-      "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}{{#signWithPrice}} This sign is read with the price beside it, so it is text and needs the enhanced text ratio.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
@@ -46439,6 +48258,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "Check that the control acts on this marquee and can be reached with the keyboard.",
       "deprecatedElements_lean_why_noMechanism": "No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.",
       "deprecatedElements_lean_caution_noMechanism": "A script loaded from a file may wire a control by its id, such as an icon button.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "This <{{element}}> scrolls its content and stops only while the pointer is over it, which keyboard and touch users cannot do.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Check that the page offers another way to pause, stop, or hide this content, one that works with the keyboard. Better: replace it with static content, or with an animation that has a pause/stop control.",
+      "deprecatedElements_lean_why_hoverOnly": "The marquee stops only while the pointer is over it, which keyboard and touch users cannot do, and no control on the page is named for pausing, stopping or hiding.",
       "iframeNamePresent_title": "Frames have an accessible name",
       "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
       "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
@@ -46508,7 +48330,7 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Check whether the list tells something the content doesn't say otherwise: its items, their number or their order. If it does, keep the list and move role=\"{{parentRole}}\" from the <{{parentElement}}> to an element around it (for a navigation, <nav><{{parentElement}}>). If it doesn't, remove the <{{parentElement}}> and <li> elements.",
       "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.",
@@ -46945,6 +48767,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
       "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
       "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Whether its content overflows could not be measured: the page was checked without a layout. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
       "scrollableRegionFocusable_hint_cantTell": "If its content does overflow, add tabindex=\"0\" and a name, so keyboard users can focus it and scroll with the arrow keys.",
       "scrollableRegionFocusable_lean_why_overflows": "Its content overflows the box, and nothing in it can take keyboard focus to scroll it.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.",
@@ -47122,8 +48945,13 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_title": "Radio buttons and checkboxes that share a name should be in a named group",
       "formGroupNamePresent_description": "Asks about radio buttons, or checkboxes, that share a name but sit in no <fieldset> with a <legend> and no group or radiogroup with an accessible name, so the question they answer may be tied to none of them.",
       "formGroupNamePresent_summary_cantTell_radio": "These {{count}} radio buttons named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"radiogroup\" or role=\"group\" and an accessible name.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Some of these {{count}} radio buttons named “{{name}}” are in no group with a name (no <fieldset> with a <legend>, and no element with role=\"radiogroup\" or role=\"group\" and an accessible name); the others are in one.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "These {{count}} radio buttons named “{{name}}” share a name, so a browser makes them one choice, but sit in different groups with names ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "These {{count}} checkboxes named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"group\" and an accessible name.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "These {{count}} checkboxes named “{{name}}” share a name, but sit in different groups with names ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "If the options answer one question, put them in a <fieldset> whose <legend> says it, or in an element with role=\"radiogroup\" (role=\"group\" for checkboxes) named with aria-labelledby pointing to the question.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Check whether they are options of one choice. If they are, put them in one group whose name says what is chosen; if they are separate choices, give each its own name.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Check whether they answer one question. If they do, put them in one group whose name says the question; if they answer separate questions, the groups they are in can stay.",
       "formGroupNamePresent_lean_why_radio": "Radio buttons that share a name are one choice a person makes, and nothing gives that choice a name.",
       "formGroupNamePresent_lean_caution_radio": "Each option’s own label may say the whole question.",
       "symbolGraphicContrast_title": "Symbols used as a graphic should have a contrast of at least 3:1",
@@ -47223,7 +49051,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "A hook installed before the page’s scripts saw no key or focus listener on the element, its ancestors, the document or the window, so Enter and Space probably do nothing.",
       "clickHandlerKeyboardOperable_lean_why_managed": "An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "The element is drawn as a button, a short label in a box with a background or a border of its own, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "The element is drawn as a control, a short label in a box with a border or a shadow of its own, or a close or menu symbol, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "The same action may be offered by another control of the page, such as a link next to a clickable row.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Handle keydown so that the keys a {{role}} answers to (Enter and Space, and the arrow keys of its widget) do what a click does.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
@@ -47296,9 +49124,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_unattributed": "No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.",
       "resizeTextContentLoss_title": "Text is not cut off at 640 CSS pixels wide (200% zoom)",
       "resizeTextContentLoss_description": "At a viewport 640 CSS pixels wide or less, as a 1280 pixel window shows a page at 200% zoom, measures each text in a box that hides its overflow, and asks about text the box cuts off or shortens with an ellipsis or a line clamp, for manual review of whether content is lost.",
-      "resizeTextContentLoss_summary_clipped": "At {{viewportWidth}} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element cuts off the text \"{{text}}\" ({{overflowPx}} pixels past its {{#edgeTop}}top {{/edgeTop}}{{#edgeRight}}right {{/edgeRight}}{{#edgeBottom}}bottom {{/edgeBottom}}{{#edgeLeft}}left {{/edgeLeft}}edge).{{#clipCss}} The CSS that cuts it off: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "At {{viewportWidth}} pixels wide, {{#narrower}}narrower than a 1280 pixel window at 200% zoom{{/narrower}}{{^narrower}}as a 1280 pixel window shows the page at {{zoomPercent}}% zoom{{/narrower}}, this element cuts off the text \"{{text}}\" ({{overflowPx}} pixels past its {{#edgeTop}}top {{/edgeTop}}{{#edgeRight}}right {{/edgeRight}}{{#edgeBottom}}bottom {{/edgeBottom}}{{#edgeLeft}}left {{/edgeLeft}}edge).{{#clipCss}} The CSS that cuts it off: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Let the box grow with its text when the page is zoomed: {{#clipCss}}change {{clipCss}}{{/clipCss}}{{^clipCss}}avoid fixed heights and widths with overflow: hidden on text{{/clipCss}}, or let it scroll.",
-      "resizeTextContentLoss_summary_truncated": "At {{viewportWidth}} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element shortens the text \"{{text}}\" with an ellipsis or a line clamp, so part of it is not shown.{{#clipCss}} The CSS that shortens it: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "At {{viewportWidth}} pixels wide, {{#narrower}}narrower than a 1280 pixel window at 200% zoom{{/narrower}}{{^narrower}}as a 1280 pixel window shows the page at {{zoomPercent}}% zoom{{/narrower}}, this element shortens the text \"{{text}}\" with an ellipsis or a line clamp, so part of it is not shown.{{#clipCss}} The CSS that shortens it: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Let the text wrap and the box show all of it when the page is zoomed, or offer the full text another way that works with the keyboard, such as a \"read more\" link.",
       "resizeTextContentLoss_lean_why_clipped": "At least half a line of the text lies past the edge of the box, which hides it and does not scroll.",
       "resizeTextContentLoss_lean_caution_clipped": "The full text may be shown another way, such as a control that opens the box.",
@@ -47319,7 +49147,9 @@ const RUNTIME_CATALOG = {
       "report_meta_profileNotRun": "not run",
       "report_meta_optInRules": "opt-in rules",
       "report_meta_rulesNotRun": "rules not run",
+      "report_meta_styleSheetsNotRead": "style sheets not read",
       "report_incomplete_timeBudget": "Incomplete scan: its time budget of {{budget}} ms ran out before every rule it selected had run. Not run ({{count}}): {{rules}}. These checked nothing, so nothing in this report passes them.",
+      "report_incomplete_profilesNotRun": "Profiles not started: {{profiles}}.",
       "report_meta_viewport": "viewport",
       "report_meta_colorScheme": "color scheme",
       "report_meta_fonts": "web fonts",
@@ -47747,11 +49577,11 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_firstLetterColor": "El contraste no se puede calcular porque {{blockerSelector}} dibuja la primera letra con un valor propio de {{blockerProperty}} ({{blockerValue}}). No se pudo saber si esa letra, o texto posterior a ella, forma parte de este texto.",
       "contrastComputable_cantTell_selectOption": "El contraste no se puede calcular porque esta opción de una lista desplegable tiene un valor propio de {{blockerProperty}} ({{blockerValue}}) y solo se muestra al abrirse la lista, dibujada como la dibuje la plataforma, con esos colores o con los suyos.",
       "contrastComputable_cantTell_generatedText": "El contraste no se puede calcular para el texto que genera el {{pseudo}} de este elemento ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
-      "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
-      "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
+      "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA).",
+      "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Ningún elemento detrás de este texto, hasta la raíz, tiene un fondo completamente opaco, por lo que el color sobre el que se muestra depende de dónde se visualice la página. Definir un color de fondo opaco en html o body, o medir el contraste frente al fondo sobre el que realmente se muestra la página.",
-      "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
-      "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
+      "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
+      "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
       "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
       "contrast_hint_drawnSize": "Su font-size es {{declaredFontSizePx}}px, pero {{scaledBy}} lo dibuja a {{drawnFontSizePx}}px, y el texto se juzga por el tamaño al que se dibuja: {{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto que no es grande{{/isLargeText}}, que necesita {{threshold}}:1. Cambiar el color del texto, el del fondo o ambos para que la relación lo alcance.",
@@ -47764,8 +49594,8 @@ const RUNTIME_CATALOG = {
       "contrast_hint_colorScheme_dark": "En el esquema de color oscuro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrast_hint_colorScheme_light": "En el esquema de color claro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
-      "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
-      "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}",
+      "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4,5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
+      "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}{{#signWithPrice}} Este signo se lee con el precio que tiene al lado, así que es texto y necesita la relación de contraste del texto.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
@@ -47782,8 +49612,8 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_hint_cantTell_pseudoElementColor": "Cambiar el tamaño de la ventana para ver qué palabras dibuja {{pseudoElement}} y comprobar que cada color alcanza allí su relación; si uno no la alcanza, cambiarlo.",
       "contrastMinimum_hint_cantTell_outline": "Ampliar y medir frente al fondo el color que forma la mayor parte de cada letra; necesita {{threshold}}:1.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
-      "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
-      "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}",
+      "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4,5:1 (grande), cuando el contraste es computable a partir de CSS.",
+      "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}{{#signWithPrice}} Este signo se lee con el precio que tiene al lado, así que es texto y necesita la relación de contraste mejorada del texto.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
@@ -48285,6 +50115,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "Comprobar que el control actúa sobre este marquee y que se puede alcanzar con el teclado.",
       "deprecatedElements_lean_why_noMechanism": "Ningún control de la página indica en su nombre pausar, detener u ocultar, y ningún script de la página detiene el marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script cargado desde un archivo puede vincular un control por su id, como un botón de icono.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Este <{{element}}> desplaza su contenido y solo se detiene mientras el puntero está sobre él, algo que no pueden hacer quienes usan el teclado o una pantalla táctil.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Comprobar que la página ofrece otra forma de pausar, detener u ocultar este contenido, que funcione con el teclado. Mejor: sustituirlo por contenido estático, o por una animación con un control de pausa/detención.",
+      "deprecatedElements_lean_why_hoverOnly": "El marquee solo se detiene mientras el puntero está sobre él, algo que no pueden hacer quienes usan el teclado o una pantalla táctil, y ningún control de la página indica en su nombre pausar, detener u ocultar.",
       "iframeNamePresent_title": "Los marcos tienen un nombre accesible",
       "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
       "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
@@ -48354,7 +50187,7 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Comprobar si la lista dice algo que el contenido no dice de otro modo: sus elementos, su número o su orden. Si lo dice, mantener la lista y mover role=\"{{parentRole}}\" del <{{parentElement}}> a un elemento que lo envuelva (para una navegación, <nav><{{parentElement}}>). Si no, quitar los elementos <{{parentElement}}> y <li>.",
       "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "El elemento se dibuja con viñeta o número, como elemento de una lista que el marcado ya no expone.",
@@ -48791,6 +50624,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "Las regiones desplazables sin contenido enfocable deberían ser enfocables por teclado",
       "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
       "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. No se pudo medir si su contenido desborda: la página se comprobó sin maquetación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
       "scrollableRegionFocusable_hint_cantTell": "Si su contenido se desborda de verdad, agregar tabindex=\"0\" y un nombre, para que con el teclado se pueda enfocar y desplazar con las flechas.",
       "scrollableRegionFocusable_lean_why_overflows": "Su contenido desborda la caja, y nada en ella puede recibir el foco del teclado para desplazarla.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 y posteriores, y Firefox, permiten igualmente llegar con el teclado a una caja que se desplaza; Safari no.",
@@ -48968,8 +50802,13 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_title": "Los botones de opción y las casillas que comparten nombre deberían estar en un grupo con nombre",
       "formGroupNamePresent_description": "Pregunta por botones de opción, o casillas de verificación, que comparten nombre pero no están en ningún <fieldset> con <legend> ni en ningún grupo o radiogroup con nombre accesible, así que la pregunta a la que responden puede no estar ligada a ninguno.",
       "formGroupNamePresent_summary_cantTell_radio": "Estos {{count}} botones de opción con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"radiogroup\" o role=\"group\" y nombre accesible.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Algunos de estos {{count}} botones de opción con el nombre «{{name}}» no están en ningún grupo con nombre (ningún <fieldset> con <legend> ni ningún elemento con role=\"radiogroup\" o role=\"group\" y nombre accesible); los demás sí lo están.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "Estos {{count}} botones de opción con el nombre «{{name}}» comparten nombre, así que el navegador los trata como una sola elección, pero están en grupos con nombre distintos ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Estas {{count}} casillas de verificación con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"group\" y nombre accesible.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "Estas {{count}} casillas de verificación con el nombre «{{name}}» comparten nombre, pero están en grupos con nombre distintos ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "Si las opciones responden a una sola pregunta, ponerlas en un <fieldset> cuyo <legend> la diga, o en un elemento con role=\"radiogroup\" (role=\"group\" para casillas) nombrado con aria-labelledby apuntando a la pregunta.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Comprobar si son opciones de una sola elección. Si lo son, ponerlas en un solo grupo cuyo nombre diga qué se elige; si son elecciones distintas, dar a cada una su propio nombre.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Comprobar si responden a una sola pregunta. Si es así, ponerlas en un solo grupo cuyo nombre diga la pregunta; si responden a preguntas distintas, pueden quedarse en sus grupos.",
       "formGroupNamePresent_lean_why_radio": "Los botones de opción que comparten nombre son una sola elección, y nada le da nombre a esa elección.",
       "formGroupNamePresent_lean_caution_radio": "La etiqueta de cada opción puede decir por sí sola la pregunta entera.",
       "symbolGraphicContrast_title": "Los símbolos usados como gráfico deberían tener un contraste de al menos 3:1",
@@ -49069,7 +50908,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook instalado antes de los scripts de la página no vio ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio probablemente no hacen nada.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "El elemento se dibuja como un botón, un texto corto en una caja con fondo o borde propios, y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "El elemento se dibuja como un control, un texto corto en una caja con borde o sombra propios, o un símbolo de cerrar o de menú, y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gestionar keydown para que las teclas a las que responde un {{role}} (Intro y Espacio, y las flechas de su widget) hagan lo mismo que un clic.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
@@ -49142,9 +50981,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_unattributed": "No se pudo nombrar ningún elemento: el desbordamiento puede venir de un margen, de contenido generado o de un shadow root cerrado. Comprobar que el desplazamiento lateral muestra contenido.",
       "resizeTextContentLoss_title": "El texto no se recorta a 640 píxeles CSS de ancho (zoom al 200 %)",
       "resizeTextContentLoss_description": "En una ventana de 640 píxeles CSS de ancho o menos, como una ventana de 1280 píxeles muestra una página con zoom al 200 %, mide cada texto dentro de una caja que oculta su desbordamiento y pregunta por el texto que la caja recorta o acorta con puntos suspensivos o un límite de líneas, para revisar manualmente si se pierde contenido.",
-      "resizeTextContentLoss_summary_clipped": "A {{viewportWidth}} píxeles de ancho, como una ventana de 1280 píxeles muestra la página con zoom al 200 %, este elemento recorta el texto «{{text}}» ({{overflowPx}} píxeles más allá de su borde{{#edgeTop}} superior{{/edgeTop}}{{#edgeRight}} derecho{{/edgeRight}}{{#edgeBottom}} inferior{{/edgeBottom}}{{#edgeLeft}} izquierdo{{/edgeLeft}}).{{#clipCss}} El CSS que lo recorta: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "A {{viewportWidth}} píxeles de ancho, {{#narrower}}más estrecho que una ventana de 1280 píxeles con zoom al 200 %{{/narrower}}{{^narrower}}como una ventana de 1280 píxeles muestra la página con zoom al {{zoomPercent}} %{{/narrower}}, este elemento recorta el texto «{{text}}» ({{overflowPx}} píxeles más allá de su borde{{#edgeTop}} superior{{/edgeTop}}{{#edgeRight}} derecho{{/edgeRight}}{{#edgeBottom}} inferior{{/edgeBottom}}{{#edgeLeft}} izquierdo{{/edgeLeft}}).{{#clipCss}} El CSS que lo recorta: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Dejar que la caja crezca con su texto al ampliar la página: {{#clipCss}}cambiar {{clipCss}}{{/clipCss}}{{^clipCss}}evitar alturas y anchuras fijas con overflow: hidden en texto{{/clipCss}}, o permitir que se desplace.",
-      "resizeTextContentLoss_summary_truncated": "A {{viewportWidth}} píxeles de ancho, como una ventana de 1280 píxeles muestra la página con zoom al 200 %, este elemento acorta el texto «{{text}}» con puntos suspensivos o un límite de líneas, así que parte de él no se muestra.{{#clipCss}} El CSS que lo acorta: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "A {{viewportWidth}} píxeles de ancho, {{#narrower}}más estrecho que una ventana de 1280 píxeles con zoom al 200 %{{/narrower}}{{^narrower}}como una ventana de 1280 píxeles muestra la página con zoom al {{zoomPercent}} %{{/narrower}}, este elemento acorta el texto «{{text}}» con puntos suspensivos o un límite de líneas, así que parte de él no se muestra.{{#clipCss}} El CSS que lo acorta: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Dejar que el texto se ajuste y que la caja lo muestre entero al ampliar la página, u ofrecer el texto completo de otra forma que funcione con el teclado, como un enlace «leer más».",
       "resizeTextContentLoss_lean_why_clipped": "Al menos media línea del texto queda más allá del borde de la caja, que la oculta y no se desplaza.",
       "resizeTextContentLoss_lean_caution_clipped": "El texto completo puede mostrarse de otra forma, como un control que abre la caja.",
@@ -49165,7 +51004,9 @@ const RUNTIME_CATALOG = {
       "report_meta_profileNotRun": "no ejecutado",
       "report_meta_optInRules": "reglas activadas explícitamente",
       "report_meta_rulesNotRun": "reglas no ejecutadas",
+      "report_meta_styleSheetsNotRead": "hojas de estilo no leídas",
       "report_incomplete_timeBudget": "Análisis incompleto: su presupuesto de tiempo de {{budget}} ms se agotó antes de que se ejecutaran todas las reglas seleccionadas. No ejecutadas ({{count}}): {{rules}}. No comprobaron nada, así que nada en este informe las da por superadas.",
+      "report_incomplete_profilesNotRun": "Perfiles no iniciados: {{profiles}}.",
       "report_meta_viewport": "área de visualización",
       "report_meta_colorScheme": "esquema de color",
       "report_meta_fonts": "fuentes web",
@@ -49611,7 +51452,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_colorScheme_light": "Dans le jeu de couleurs clair de la page, ce texte a un ratio de contraste de {{ratio}}:1 sur {{backgroundHex}}, inférieur à {{threshold}}:1. Modifiez ses couleurs dans ce jeu de couleurs pour que le ratio l’atteigne.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
       "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
-      "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}{{#signWithPrice}} Ce signe se lit avec le prix à côté de lui : c’est donc du texte, qui doit atteindre le rapport de contraste du texte.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
@@ -49629,7 +51470,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_hint_cantTell_outline": "Zoomez et mesurez la couleur qui forme l’essentiel de chaque lettre par rapport à l’arrière-plan ; elle doit atteindre {{threshold}}:1.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
-      "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}{{#signWithPrice}} Ce signe se lit avec le prix à côté de lui : c’est donc du texte, qui doit atteindre le rapport de contraste renforcé du texte.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
@@ -50131,6 +51972,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "Vérifiez que la commande agit sur ce marquee et qu’on peut l’atteindre au clavier.",
       "deprecatedElements_lean_why_noMechanism": "Aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque, et aucun script de la page n’arrête le marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script chargé depuis un fichier peut relier une commande par son id, comme un bouton icône.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Ce <{{element}}> fait défiler son contenu et ne s’arrête que tant que le pointeur le survole, ce que les utilisateurs du clavier ou d’un écran tactile ne peuvent pas faire.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Vérifiez que la page offre un autre moyen, utilisable au clavier, de mettre en pause, d’arrêter ou de masquer ce contenu. Mieux : remplacez-le par un contenu statique, ou par une animation dotée d’un contrôle de pause/arrêt.",
+      "deprecatedElements_lean_why_hoverOnly": "Le marquee ne s’arrête que tant que le pointeur le survole, ce que les utilisateurs du clavier ou d’un écran tactile ne peuvent pas faire, et aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque.",
       "iframeNamePresent_title": "Les cadres ont un nom accessible",
       "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
       "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
@@ -50200,7 +52044,7 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Vérifiez si la liste dit quelque chose que le contenu ne dit pas autrement : ses éléments, leur nombre ou leur ordre. Si oui, gardez la liste et déplacez role=\"{{parentRole}}\" du <{{parentElement}}> vers un élément qui l’entoure (pour une navigation, <nav><{{parentElement}}>). Sinon, retirez les éléments <{{parentElement}}> et <li>.",
       "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "L’élément est dessiné avec une puce ou un numéro, comme élément d’une liste que le balisage n’expose plus.",
@@ -50637,6 +52481,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "Les régions défilantes sans contenu focalisable devraient être focalisables au clavier",
       "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une vérification manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
       "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Son débordement n’a pas pu être mesuré : la page a été vérifiée sans mise en page. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
       "scrollableRegionFocusable_hint_cantTell": "Si son contenu déborde réellement, ajoutez tabindex=\"0\" et un nom, pour qu’on puisse le focaliser au clavier et le faire défiler avec les flèches.",
       "scrollableRegionFocusable_lean_why_overflows": "Son contenu déborde de la boîte, et rien à l’intérieur ne peut recevoir le focus clavier pour la faire défiler.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 et versions ultérieures, ainsi que Firefox, permettent quand même d’atteindre au clavier une boîte qui défile ; Safari non.",
@@ -50814,8 +52659,13 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_title": "Les boutons radio et les cases à cocher qui partagent un nom devraient être dans un groupe nommé",
       "formGroupNamePresent_description": "Signale les boutons radio, ou les cases à cocher, qui partagent un nom mais ne sont dans aucun <fieldset> avec <legend> ni dans aucun group ou radiogroup avec un nom accessible, si bien que la question à laquelle ils répondent peut n’être liée à aucun d’eux.",
       "formGroupNamePresent_summary_cantTell_radio": "Ces {{count}} boutons radio nommés « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"radiogroup\" ou role=\"group\" et un nom accessible.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Certains de ces {{count}} boutons radio nommés « {{name}} » ne sont dans aucun groupe nommé (aucun <fieldset> avec <legend>, ni aucun élément avec role=\"radiogroup\" ou role=\"group\" et un nom accessible) ; les autres le sont.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "Ces {{count}} boutons radio nommés « {{name}} » partagent un nom, ce qui en fait un seul choix pour le navigateur, mais sont dans des groupes nommés différents ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Ces {{count}} cases à cocher nommées « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"group\" et un nom accessible.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "Ces {{count}} cases à cocher nommées « {{name}} » partagent un nom, mais sont dans des groupes nommés différents ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "Si les options répondent à une seule question, placez-les dans un <fieldset> dont la <legend> la formule, ou dans un élément avec role=\"radiogroup\" (role=\"group\" pour des cases à cocher) nommé par aria-labelledby pointant vers la question.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Vérifiez s’ils sont les options d’un seul choix. Si oui, placez-les dans un seul groupe dont le nom dit ce qui est choisi ; si ce sont des choix distincts, donnez à chacun son propre nom.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Vérifiez si elles répondent à une seule question. Si oui, placez-les dans un seul groupe dont le nom dit la question ; si elles répondent à des questions distinctes, leurs groupes peuvent rester.",
       "formGroupNamePresent_lean_why_radio": "Des boutons radio qui partagent un nom sont un seul choix, et rien ne donne de nom à ce choix.",
       "formGroupNamePresent_lean_caution_radio": "L’étiquette de chaque option peut formuler à elle seule toute la question.",
       "symbolGraphicContrast_title": "Les symboles utilisés comme graphique devraient avoir un contraste d’au moins 3:1",
@@ -50915,7 +52765,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook installé avant les scripts de la page n’a vu aucun écouteur de touches ni de focus sur l’élément, ses ancêtres, le document ni la fenêtre : Entrée et Espace ne font sans doute rien.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Un ancêtre garde le focus pour ses éléments (aria-activedescendant, ou un composant composite focalisable) : c’est ainsi qu’un tel composant actionne un élément sans lui donner le focus.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "L’élément affiche un curseur en forme de main et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "L’élément est dessiné comme un bouton, un texte court dans une boîte avec un fond ou une bordure à elle, et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "L’élément est dessiné comme une commande, un texte court dans une boîte avec une bordure ou une ombre à elle, ou un symbole de fermeture ou de menu, et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La même action peut être offerte par une autre commande de la page, comme un lien à côté d’une ligne cliquable.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gérez keydown pour que les touches auxquelles répond un {{role}} (Entrée et Espace, et les flèches de son composant) fassent ce que fait un clic.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
@@ -50988,9 +52838,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_unattributed": "Aucun élément n’a pu être nommé : le débordement peut venir d’une marge, d’un contenu généré ou d’un shadow root fermé. Vérifiez que le défilement horizontal montre du contenu.",
       "resizeTextContentLoss_title": "Le texte n’est pas rogné à 640 pixels CSS de large (zoom à 200 %)",
       "resizeTextContentLoss_description": "Dans une zone d’affichage de 640 pixels CSS de large ou moins, comme une fenêtre de 1280 pixels affiche une page zoomée à 200 %, mesure chaque texte placé dans une boîte qui masque son débordement, et pose la question pour le texte que la boîte rogne ou raccourcit par des points de suspension ou une limite de lignes, pour une vérification manuelle de la perte de contenu.",
-      "resizeTextContentLoss_summary_clipped": "À {{viewportWidth}} pixels de large, comme une fenêtre de 1280 pixels affiche la page zoomée à 200 %, cet élément rogne le texte « {{text}} » ({{overflowPx}} pixels au-delà de son bord{{#edgeTop}} supérieur{{/edgeTop}}{{#edgeRight}} droit{{/edgeRight}}{{#edgeBottom}} inférieur{{/edgeBottom}}{{#edgeLeft}} gauche{{/edgeLeft}}).{{#clipCss}} Le CSS qui le rogne : {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "À {{viewportWidth}} pixels de large, {{#narrower}}moins large qu’une fenêtre de 1280 pixels zoomée à 200 %{{/narrower}}{{^narrower}}comme une fenêtre de 1280 pixels affiche la page zoomée à {{zoomPercent}} %{{/narrower}}, cet élément rogne le texte « {{text}} » ({{overflowPx}} pixels au-delà de son bord{{#edgeTop}} supérieur{{/edgeTop}}{{#edgeRight}} droit{{/edgeRight}}{{#edgeBottom}} inférieur{{/edgeBottom}}{{#edgeLeft}} gauche{{/edgeLeft}}).{{#clipCss}} Le CSS qui le rogne : {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Laissez la boîte s’agrandir avec son texte quand la page est zoomée : {{#clipCss}}modifiez {{clipCss}}{{/clipCss}}{{^clipCss}}évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte{{/clipCss}}, ou laissez-la défiler.",
-      "resizeTextContentLoss_summary_truncated": "À {{viewportWidth}} pixels de large, comme une fenêtre de 1280 pixels affiche la page zoomée à 200 %, cet élément raccourcit le texte « {{text}} » par des points de suspension ou une limite de lignes, si bien qu’une partie n’est pas affichée.{{#clipCss}} Le CSS qui le raccourcit : {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "À {{viewportWidth}} pixels de large, {{#narrower}}moins large qu’une fenêtre de 1280 pixels zoomée à 200 %{{/narrower}}{{^narrower}}comme une fenêtre de 1280 pixels affiche la page zoomée à {{zoomPercent}} %{{/narrower}}, cet élément raccourcit le texte « {{text}} » par des points de suspension ou une limite de lignes, si bien qu’une partie n’est pas affichée.{{#clipCss}} Le CSS qui le raccourcit : {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Laissez le texte passer à la ligne et la boîte l’afficher en entier quand la page est zoomée, ou proposez le texte complet d’une autre façon utilisable au clavier, comme un lien « lire la suite ».",
       "resizeTextContentLoss_lean_why_clipped": "Au moins une demi-ligne du texte se trouve au-delà du bord de la boîte, qui la masque et ne défile pas.",
       "resizeTextContentLoss_lean_caution_clipped": "Le texte complet peut être affiché autrement, par exemple par une commande qui ouvre la boîte.",
@@ -51011,7 +52861,9 @@ const RUNTIME_CATALOG = {
       "report_meta_profileNotRun": "non exécuté",
       "report_meta_optInRules": "règles activées explicitement",
       "report_meta_rulesNotRun": "règles non exécutées",
+      "report_meta_styleSheetsNotRead": "feuilles de style non lues",
       "report_incomplete_timeBudget": "Analyse incomplète : son budget de temps de {{budget}} ms a été épuisé avant que toutes les règles sélectionnées ne s’exécutent. Non exécutées ({{count}}) : {{rules}}. Elles n’ont rien vérifié : rien dans ce rapport ne les donne comme réussies.",
+      "report_incomplete_profilesNotRun": "Profils non démarrés : {{profiles}}.",
       "report_meta_viewport": "zone d’affichage",
       "report_meta_colorScheme": "schéma de couleurs",
       "report_meta_fonts": "polices web",
@@ -51457,7 +53309,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_colorScheme_light": "ページのライトな配色では、このテキストの {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で、{{threshold}}:1 を下回ります。比がこの値に達するよう、その配色でのテキストの色を変更してください。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
       "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
-      "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}{{#signWithPrice}}この記号は隣の価格と一緒に読まれるため、テキストであり、テキストのコントラスト比が必要です。{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastMinimum_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastMinimum_pass_allAboveThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
@@ -51475,7 +53327,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_hint_cantTell_outline": "拡大して、各文字の大部分を形作っている色を背景に対して測定してください。{{threshold}}:1 が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
-      "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}{{#signWithPrice}}この記号は隣の価格と一緒に読まれるため、テキストであり、テキストの強化されたコントラスト比が必要です。{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastEnhanced_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastEnhanced_pass_allAboveThreshold": "計算できたすべてのテキストが、高度なコントラスト (AAA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
@@ -51977,6 +53829,9 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_lean_caution_pauseControl": "そのコントロールがこの marquee に作用し、キーボードで操作できることを確認してください。",
       "deprecatedElements_lean_why_noMechanism": "ページには一時停止、停止、非表示を名前に示すコントロールがなく、marquee を止めるページ内のスクリプトもありません。",
       "deprecatedElements_lean_caution_noMechanism": "ファイルから読み込まれるスクリプトが、アイコンボタンなどのコントロールを id で結び付けている場合があります。",
+      "deprecatedElements_summary_cantTell_hoverOnly": "この <{{element}}> はコンテンツをスクロールさせ、ポインターが上にある間だけ止まります。キーボードやタッチ操作の利用者にはそれができません。",
+      "deprecatedElements_hint_cantTell_hoverOnly": "このコンテンツを一時停止、停止、非表示にする別の手段で、キーボードでも使えるものがページにあるかを確認してください。より良い方法: 静的なコンテンツか、一時停止/停止のコントロールを備えたアニメーションに置き換えてください。",
+      "deprecatedElements_lean_why_hoverOnly": "marquee はポインターが上にある間だけ止まり、キーボードやタッチ操作の利用者にはそれができません。また、ページには一時停止、停止、非表示を名前に示すコントロールがありません。",
       "iframeNamePresent_title": "フレームにアクセシブルな名前があること",
       "iframeNamePresent_description": "<iframe>/<frame> 要素が、aria-label、aria-labelledby、または title 属性によって空でないアクセシブルな名前を公開しているかを確認します。",
       "iframeNamePresent_summary_fail": "この <{{element}}> にはアクセシブルな名前がありません。",
@@ -52046,7 +53901,7 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "リストが、内容だけでは伝わらない情報 (項目、項目数、順序) を伝えているか確認してください。伝えている場合は、リストを残し、role=\"{{parentRole}}\" を <{{parentElement}}> から、それを囲む要素に移してください (ナビゲーションなら <nav><{{parentElement}}>)。伝えていない場合は、<{{parentElement}}> と <li> の要素を取り除いてください。",
       "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
       "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
       "listitemParentValid_lean_why_listRoleOverridden": "この項目は行頭記号や番号付きで、マークアップがもう公開していないリストの項目として描画されています。",
@@ -52483,6 +54338,7 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_title": "フォーカス可能なコンテンツのないスクロール領域は、キーボードでフォーカスできることが望ましい",
       "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
       "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。ページがレイアウトなしで検査されたため、コンテンツがはみ出すかは測定できませんでした。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
       "scrollableRegionFocusable_hint_cantTell": "内容が実際にはみ出す場合は、tabindex=\"0\" と名前を付け、キーボードでフォーカスして矢印キーでスクロールできるようにしてください。",
       "scrollableRegionFocusable_lean_why_overflows": "内容がボックスからはみ出しており、スクロールするためにキーボードフォーカスを受けられるものが中にありません。",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 以降と Firefox では、スクロールするボックスにキーボードで到達できます。Safari ではできません。",
@@ -52660,8 +54516,13 @@ const RUNTIME_CATALOG = {
       "formGroupNamePresent_title": "同じ name を持つラジオボタンやチェックボックスは、名前のあるグループに入れるべきです",
       "formGroupNamePresent_description": "同じ name を持つのに、<legend> のある <fieldset> にも、アクセシブルな名前のある group や radiogroup にも入っていないラジオボタンやチェックボックスについて確認を求めます。それらが答える質問が、どれにも関連付けられていない可能性があります。",
       "formGroupNamePresent_summary_cantTell_radio": "name が「{{name}}」の {{count}} 個のラジオボタンは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"radiogroup\" や role=\"group\" の要素もありません。",
+      "formGroupNamePresent_summary_cantTell_radio_some": "name が「{{name}}」の {{count}} 個のラジオボタンのうち一部は、名前のあるグループに入っていません (<legend> のある <fieldset> も、アクセシブルな名前のある role=\"radiogroup\" や role=\"group\" の要素もありません)。残りは名前のあるグループに入っています。",
+      "formGroupNamePresent_summary_cantTell_radio_split": "name が「{{name}}」の {{count}} 個のラジオボタンは同じ name を持つため、ブラウザーは一つの選択として扱いますが、名前の異なるグループ ({{groups}}) に分かれています。",
       "formGroupNamePresent_summary_cantTell_checkbox": "name が「{{name}}」の {{count}} 個のチェックボックスは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"group\" の要素もありません。",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "name が「{{name}}」の {{count}} 個のチェックボックスは同じ name を持ちますが、名前の異なるグループ ({{groups}}) に分かれています。",
       "formGroupNamePresent_hint_cantTell": "選択肢が一つの質問に答えるものなら、その質問を <legend> に書いた <fieldset> に入れるか、質問を指す aria-labelledby で名前を付けた role=\"radiogroup\" (チェックボックスなら role=\"group\") の要素に入れてください。",
+      "formGroupNamePresent_hint_cantTell_radio_split": "一つの選択の選択肢かどうかを確認してください。そうであれば、何を選ぶのかを名前で伝える一つのグループに入れてください。別々の選択であれば、それぞれに別の name を付けてください。",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "一つの質問に答えるものかどうかを確認してください。そうであれば、その質問を名前で伝える一つのグループに入れてください。別々の質問に答えるものであれば、今のグループのままで構いません。",
       "formGroupNamePresent_lean_why_radio": "同じ name を持つラジオボタンは一つの選択であり、その選択に名前を付けているものがありません。",
       "formGroupNamePresent_lean_caution_radio": "各選択肢のラベルだけで質問全体を伝えている場合もあります。",
       "symbolGraphicContrast_title": "グラフィックとして使われる記号は、少なくとも 3:1 のコントラストを持つべきです",
@@ -52761,7 +54622,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーを見つけませんでした。Enter や Space ではおそらく何も起きません。",
       "clickHandlerKeyboardOperable_lean_why_managed": "祖先が項目のためにフォーカスを保持しています(aria-activedescendant、またはフォーカス可能な複合ウィジェット)。このようなウィジェットは、項目にフォーカスを移さずに操作します。",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "この要素はポインター カーソルを表示してクリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "この要素は、独自の背景または枠線を持つボックスに短いラベルを置いたボタンのような見た目で、クリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "この要素は、独自の枠線または影を持つボックスに短いラベルを置いたもの、または閉じるやメニューの記号だけのもので、コントロールのような見た目をしており、クリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "同じ操作をページ内の別のコントロール(クリックできる行の横のリンクなど)が提供している場合があります。",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "keydown を処理して、{{role}} が応答するキー (Enter と Space、そのウィジェットの矢印キー) でクリックと同じことが起きるようにしてください。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
@@ -52834,9 +54695,9 @@ const RUNTIME_CATALOG = {
       "reflowHorizontalScroll_lean_caution_unattributed": "要素を特定できませんでした。はみ出しはマージン、生成コンテンツ、または閉じたシャドウ ルートによる可能性があります。横スクロールでコンテンツが表示されるかを確認してください。",
       "resizeTextContentLoss_title": "幅 640 CSS ピクセル（200% ズーム）でテキストが切り取られない",
       "resizeTextContentLoss_description": "幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ、幅 640 CSS ピクセル以下のビューポートで、はみ出しを隠すボックス内の各テキストを測定し、ボックスが切り取るテキストや、省略記号または行数制限で短くするテキストについて、コンテンツが失われていないかを手動で確認するよう求めます。",
-      "resizeTextContentLoss_summary_clipped": "幅 {{viewportWidth}} ピクセル（幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ）で、この要素はテキスト「{{text}}」を切り取ります（{{#edgeTop}}上{{/edgeTop}}{{#edgeRight}}右{{/edgeRight}}{{#edgeBottom}}下{{/edgeBottom}}{{#edgeLeft}}左{{/edgeLeft}}端から {{overflowPx}} ピクセルはみ出します）。{{#clipCss}}切り取っている CSS: {{clipCss}}。{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "幅 {{viewportWidth}} ピクセル（{{#narrower}}幅 1280 ピクセルのウィンドウでページを 200% にズームしたときより狭い{{/narrower}}{{^narrower}}幅 1280 ピクセルのウィンドウでページを {{zoomPercent}}% にズームしたときと同じ{{/narrower}}）で、この要素はテキスト「{{text}}」を切り取ります（{{#edgeTop}}上{{/edgeTop}}{{#edgeRight}}右{{/edgeRight}}{{#edgeBottom}}下{{/edgeBottom}}{{#edgeLeft}}左{{/edgeLeft}}端から {{overflowPx}} ピクセルはみ出します）。{{#clipCss}}切り取っている CSS: {{clipCss}}。{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "ページをズームしたときにボックスがテキストに合わせて広がるようにしてください。{{#clipCss}}{{clipCss}} を変更するか{{/clipCss}}{{^clipCss}}テキストに overflow: hidden と固定の高さや幅を組み合わせないか{{/clipCss}}、スクロールできるようにしてください。",
-      "resizeTextContentLoss_summary_truncated": "幅 {{viewportWidth}} ピクセル（幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ）で、この要素はテキスト「{{text}}」を省略記号または行数制限で短くするため、一部が表示されません。{{#clipCss}}短くしている CSS: {{clipCss}}。{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "幅 {{viewportWidth}} ピクセル（{{#narrower}}幅 1280 ピクセルのウィンドウでページを 200% にズームしたときより狭い{{/narrower}}{{^narrower}}幅 1280 ピクセルのウィンドウでページを {{zoomPercent}}% にズームしたときと同じ{{/narrower}}）で、この要素はテキスト「{{text}}」を省略記号または行数制限で短くするため、一部が表示されません。{{#clipCss}}短くしている CSS: {{clipCss}}。{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "ページをズームしたときにテキストが折り返され、ボックスが全体を表示するようにするか、「続きを読む」リンクなど、キーボードで使える別の方法で全文を提供してください。",
       "resizeTextContentLoss_lean_why_clipped": "テキストの少なくとも半行分がボックスの端の外側にあり、ボックスはそれを隠してスクロールしません。",
       "resizeTextContentLoss_lean_caution_clipped": "ボックスを開くコントロールなど、別の方法で全文が表示される場合があります。",
@@ -52857,7 +54718,9 @@ const RUNTIME_CATALOG = {
       "report_meta_profileNotRun": "未実行",
       "report_meta_optInRules": "オプトインルール",
       "report_meta_rulesNotRun": "未実行のルール",
+      "report_meta_styleSheetsNotRead": "読み込めなかったスタイルシート",
       "report_incomplete_timeBudget": "不完全なスキャン: 選択されたすべてのルールが実行される前に、{{budget}} ms の時間予算を使い切りました。実行されなかったもの ({{count}}): {{rules}}。これらは何も検査していないため、このレポートのどの結果もこれらの合格を意味しません。",
+      "report_incomplete_profilesNotRun": "開始されなかったプロファイル: {{profiles}}。",
       "report_meta_viewport": "ビューポート",
       "report_meta_colorScheme": "カラースキーム",
       "report_meta_fonts": "Web フォント",
@@ -53516,6 +55379,47 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 });
   assertPageBuiltinsFirst();
+  // The options' own keys only, with no prototype, before anything reads
+  // them (ownOptions).
+  const ownOptionsFirst = (function ownOptions(options) {
+  if (!options || typeof options !== 'object' || Array.isArray(options)) return options;
+  // A Set, a Map or a Date is no table of options: kept, for the checks
+  // that say so.
+  if (Object.prototype.toString.call(options) !== '[object Object]') return options;
+  const isPlain = (v) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+    if (Object.prototype.toString.call(v) !== '[object Object]') return false;
+    const proto = Object.getPrototypeOf(v);
+    // Another realm's Object.prototype too (a frame's, a vm context's).
+    return proto === null || Object.getPrototypeOf(proto) === null;
+  };
+  const copied = new Map();
+  const copy = (from, depth) => {
+    if (copied.has(from)) return copied.get(from);
+    const to = Object.create(null);
+    copied.set(from, to);
+    const keys = Object.keys(from);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const v = from[key];
+      to[key] =
+        depth < 8 && isPlain(v) && !(depth === 0 && (key === 'probes' || key === 'messages'))
+          ? copy(v, depth + 1)
+          : v;
+    }
+    return to;
+  };
+  const out = copy(options, 0);
+  const flags = ['__budgetSpent', '__budgetSpentAt', '__scanTimeBudgetMs'];
+  for (let i = 0; i < flags.length; i++) {
+    const d = Object.getOwnPropertyDescriptor(options, flags[i]);
+    if (d && !d.enumerable && Object.prototype.hasOwnProperty.call(d, 'value')) {
+      Object.defineProperty(out, flags[i], { value: d.value, configurable: true });
+    }
+  }
+  return out;
+});
+  engineOptions = ownOptionsFirst(engineOptions);
   const ENGINE_TAG = "a11ycore";
   const SCHEMA_VERSION = "1.0.0";
   const ENGINE_VERSION = "1.17.0";
@@ -67842,8 +69746,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return alt === '' && !named ? { roleless: true } : { role: 'img' };
     }
     if (tag === 'select') {
-      const size = parseInt(String(dom.getAttribute(el, 'size') || ''), 10);
-      if (dom.hasAttribute(el, 'multiple') || size > 1) return { role: 'listbox' };
+      const size = helpers.selectSizeOf(el);
+      if (dom.hasAttribute(el, 'multiple') || (size !== null && size > 1))
+        return { role: 'listbox' };
       return { role: 'combobox', also: 'menu' };
     }
     if (tag === 'input') {
@@ -71411,10 +73316,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // An element's child elements by sibling links, not el.children: in jsdom
   // that collection stays live once read, and each later change under a
   // large parent (a list of thousands of items) rebuilds it.
+  //
+  // The children are those of the flat tree, as aria-required-children reads
+  // them: unless the scan leaves shadow DOM out, an element's open shadow
+  // root stands in for its light children, and a <slot> for the elements
+  // assigned to it, or for its fallback content when nothing is assigned
+  // (assignedElements with flatten returns that fallback).
+  const deepShadow = (ctx.engineOptions || {}).includeShadowDom !== false;
+  function openShadowRoot(node) {
+    if (!deepShadow) return null;
+    try {
+      return dom.nodeType(node) === 1 ? dom.shadowRoot(node) || null : null;
+    } catch {
+      return null;
+    }
+  }
   function childElementsOf(el) {
     const out = [];
-    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c))
+    const from = el ? openShadowRoot(el) || el : null;
+    for (let c = from ? dom.firstElementChild(from) : null; c; c = dom.nextElementSibling(c)) {
+      if (
+        (dom.tagName(c) || '').toLowerCase() === 'slot' &&
+        typeof dom.get(c, 'assignedElements') === 'function'
+      ) {
+        let assigned;
+        try {
+          assigned = dom.assignedElements(c, { flatten: true }) || [];
+        } catch {
+          assigned = [];
+        }
+        for (const a of assigned) out.push(a);
+        continue;
+      }
       out.push(c);
+    }
     return out;
   }
 
@@ -77164,23 +79099,61 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Styled like a control though the cursor stays the default one: a short
-  // visible label ("Add to cart") in a box set apart by a background of its
-  // own or a border, with padding around the text, as a button is drawn.
+  // visible label ("Add to cart") in a box set apart by a background, a
+  // border or a shadow of its own, with padding around the text, as a
+  // button is drawn, or a close or menu symbol alone.
   // The visual styling and the action's wording are what tell a sighted
   // user it is clickable (round 10, C10-4). A large wrapper, with long text
   // or block content, is not one: its handler is more often delegated or a
   // click tracker.
   const BLOCK_CONTENT =
     'address,article,aside,blockquote,div,dl,fieldset,figure,footer,form,h1,h2,h3,h4,h5,h6,header,hr,li,main,nav,ol,p,pre,section,table,ul';
-  function looksLikeControl(el) {
+  // The text a sighted user sees in the element: its text without what is
+  // hidden (display: none, visibility) or visually hidden (a screen-reader
+  // only span, helpers.isVisuallyHidden). Read up to a little past the
+  // longest label that counts as short.
+  function visibleTextOf(el) {
+    let out = '';
+    let budget = 500;
+    const walk = (node) => {
+      for (const n of dom.childNodes(node) || []) {
+        if (budget-- <= 0 || out.length > 200) return;
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          const cs = helpers.computedStyle(node);
+          const visibility = trim(cs && cs.visibility).toLowerCase();
+          if (visibility !== 'hidden' && visibility !== 'collapse')
+            out += String(dom.nodeValue(n) || '');
+          continue;
+        }
+        if (type !== 1 || !shown(n)) continue;
+        if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(n)) continue;
+        walk(n);
+      }
+    };
+    walk(el);
+    return out;
+  }
+  // The close and menu symbols a control drawn as a glyph shows alone.
+  const CONTROL_GLYPHS = /^[\u2715\u2716\u00d7\u2a2f\u2630\u2261]$/u;
+  // The cue that draws the element as a control, or '' for none:
+  // - 'glyph': a close or menu symbol alone (✕, ×, ☰);
+  // - 'border', 'shadow': short visible text with padding in a box with a
+  //   border, or a box-shadow drawing an outline, of its own;
+  // - 'background': the same in a box set apart by a background colour or
+  //   a gradient of its own (`background-image`, with a transparent colour).
+  // A border, a shadow or a glyph is drawn as controls are; a background
+  // alone is also how a badge or a tag is drawn.
+  function controlCueOf(el) {
     try {
       const c = helpers.contrast;
       const cs = helpers.computedStyle(el);
-      if (!c || !cs) return false;
-      const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
-      if (!text || text.length > 40 || text.split(' ').length > 6) return false;
-      if (!/[\p{L}\p{N}]/u.test(text)) return false;
-      if (dom.querySelectorAll(el, BLOCK_CONTENT).length) return false;
+      if (!c || !cs) return '';
+      const text = trim(visibleTextOf(el)).replace(/\s+/g, ' ');
+      if (CONTROL_GLYPHS.test(text)) return 'glyph';
+      if (!text || text.length > 40 || text.split(' ').length > 6) return '';
+      if (!/[\p{L}\p{N}]/u.test(text)) return '';
+      if (dom.querySelectorAll(el, BLOCK_CONTENT).length) return '';
       const px = (v) => {
         const n = c.parsePx(v);
         return typeof n === 'number' && Number.isFinite(n) ? n : 0;
@@ -77188,7 +79161,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const padded = ['top', 'right', 'bottom', 'left'].some(
         (side) => px(cs.getPropertyValue('padding-' + side)) > 0
       );
-      if (!padded) return false;
+      if (!padded) return '';
       const bordered = ['top', 'right', 'bottom', 'left'].some((side) => {
         const style = trim(cs.getPropertyValue('border-' + side + '-style')).toLowerCase();
         const color = c.parseCssColorToRgba(cs.getPropertyValue('border-' + side + '-color'));
@@ -77201,17 +79174,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           color.a > 0
         );
       });
-      if (bordered) return true;
+      if (bordered) return 'border';
+      if (drawsShadow(trim(cs.getPropertyValue('box-shadow')))) return 'shadow';
+      if (/gradient\(/i.test(cs.getPropertyValue('background-image') || '')) return 'background';
       const bg = c.parseCssColorToRgba(cs.getPropertyValue('background-color'));
-      if (!bg || !(bg.a > 0.05)) return false;
+      if (!bg || !(bg.a > 0.05)) return '';
       // A background the same as what is behind it sets nothing apart.
       const parent = helpers.flatParentElement(el);
       const under = parent ? c.computeEffectiveBackground(parent) : null;
-      if (!under || !under.ok || !under.rgba) return true;
-      return c.contrastRatio(c.compositeRgba(bg, under.rgba), under.rgba) >= 1.1;
+      if (!under || !under.ok || !under.rgba) return 'background';
+      return c.contrastRatio(c.compositeRgba(bg, under.rgba), under.rgba) >= 1.1
+        ? 'background'
+        : '';
     } catch {
-      return false;
+      return '';
     }
+  }
+  // Whether a computed box-shadow draws something: a layer in a colour that
+  // isn't transparent, with a blur, a spread or an offset.
+  function drawsShadow(value) {
+    if (!value || value === 'none') return false;
+    const c = helpers.contrast;
+    return value.split(/,(?![^(]*\))/).some((layer) => {
+      if (/\btransparent\b/i.test(layer)) return false;
+      const color = (layer.match(/(rgba?|hsla?)\([^)]*\)|#[0-9a-f]{3,8}\b/i) || [])[0];
+      const rgba = color ? c.parseCssColorToRgba(color) : null;
+      if (color && (!rgba || !(rgba.a > 0))) return false;
+      const lengths = layer.replace(/(rgba?|hsla?)\([^)]*\)/gi, '').match(/-?[\d.]+px/g) || [];
+      return lengths.some((l) => Math.abs(Number.parseFloat(l)) > 0);
+    });
   }
 
   // The item roles each composite widget handles the keys of, for a lean:
@@ -77572,7 +79563,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const isWidget = WIDGET_ROLES.has(role);
     const pointer = !isWidget && hasPointerCursor(el);
-    const styledControl = !isWidget && !pointer && looksLikeControl(el);
+    // Drawn inside a native control the keyboard operates (a <span> styled
+    // in a <button>): it is part of that control's look, and the control is
+    // what a keyboard user operates. Browsers draw a button's own
+    // background, which jsdom doesn't, so this keeps the two alike.
+    const inNativeControl =
+      !isWidget && !pointer && ancestorList.some((a) => firesClickFromKeyboard(a, focusOf(a)));
+    const cue = !isWidget && !pointer && !inNativeControl ? controlCueOf(el) : '';
+    const styledControl = !!cue;
     if (!isWidget && !pointer && !styledControl) continue;
     applicableCount += 1;
 
@@ -77631,15 +79629,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } else if (
       !managedFromAbove &&
       styledControl &&
+      cue !== 'background' &&
       !ancestorList.some((a) => focusOf(a).focusable)
     ) {
       notFocusableLean = {
         toward: 'fail',
-        why: 'The element is drawn as a button, a short label in a box with a background or a border of its own, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.',
+        why: 'The element is drawn as a control, a short label in a box with a border or a shadow of its own, or a close or menu symbol, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.',
         signals: [
           { signal: 'managed-from-above', value: false },
           { signal: 'pointer-cursor', value: false },
           { signal: 'styled-as-control', value: true },
+          { signal: 'control-cue', value: cue },
           { signal: 'widget-role', value: false },
           { signal: 'focusable-ancestor', value: false }
         ],
@@ -77693,7 +79693,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             reasonCode: 'CLICK_HANDLER_NOT_FOCUSABLE',
             role,
             focusable: false,
-            ...(styledControl ? { styledAsControl: true } : {}),
+            ...(styledControl ? { styledAsControl: true, controlCue: cue } : {}),
             ...(noHref ? { noHref: true } : {})
           }
         }
@@ -78903,15 +80903,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
       const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum);
 
-      const out = {
-        fontSizePx: sizePx,
-        fontSizePt: helpers.contrast.pxToPt(sizePx),
-        fontWeightNum,
-        fontWeight: helpers.contrast.fontWeightLabel(fontWeightNum),
-        isBold,
-        isLarge,
-        isLargeText: isLarge
-      };
+      // With no prototype: a value a page's script put on Object.prototype
+      // (sizeScaledBy) is never read as the font's own (round 12, F12-5). Set
+      // to null rather than built on Object.create(null), which V8 keeps in
+      // slow dictionary mode (round 12, F12-6).
+      const out = Object.setPrototypeOf(
+        {
+          fontSizePx: sizePx,
+          fontSizePt: helpers.contrast.pxToPt(sizePx),
+          fontWeightNum,
+          fontWeight: helpers.contrast.fontWeightLabel(fontWeightNum),
+          isBold,
+          isLarge,
+          isLargeText: isLarge
+        },
+        null
+      );
       // What the page drew it at, where that isn't its font-size.
       if (drawn.by.length && Number.isFinite(fontSizePx)) {
         out.declaredFontSizePx = fontSizePx;
@@ -79143,6 +81150,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           character: symbol
         };
       }
+      // A currency sign or 〒 judged as text with the price beside it (round
+      // 11, B11-9): the message says why it needs the text ratio (round 12,
+      // C12-17).
+      if (!placeholder && !symbol && !pseudo) {
+        try {
+          if (
+            helpers.contrast &&
+            typeof helpers.contrast.isSignInTextRun === 'function' &&
+            helpers.contrast.isSignInTextRun(el)
+          )
+            params = { ...(params || {}), signWithPrice: true };
+        } catch {}
+      }
 
       // Every reason code here describes a ratio the rule computed: text
       // whose colors can't be worked out is left to contrast-computable.
@@ -79216,6 +81236,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Text that falls short in one of the two color schemes the page
       // supports, on its canvas: the hint names the scheme.
       if (
+        Object.prototype.hasOwnProperty.call(det, 'colorScheme') &&
         det.colorScheme &&
         !placeholder &&
         !symbol &&
@@ -79681,10 +81702,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // the page is drawn in, naming none); it passes where it passes in each,
   // by the ratio closest to its threshold.
   // colorSchemesChecked lists the schemes measured where one wasn't.
+  // The analysis comes back with no prototype: a value a page's script put
+  // on Object.prototype (colorScheme) is never read as its own (round 12,
+  // R12F-6).
   function acrossSchemes(el, analysis, measureIn) {
+    // A copy with its prototype set to null, not built on Object.create(null):
+    // V8 keeps such an object's properties fast to read (round 12, F12-6).
+    const own = (a) => (a && typeof a === 'object' ? Object.setPrototypeOf({ ...a }, null) : a);
     const canvas = analysis && analysis.computable === true ? analysis.canvas : null;
-    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return analysis;
-    if (canvas.supported.length < 2) return analysis;
+    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return own(analysis);
+    if (canvas.supported.length < 2) return own(analysis);
     const measured = [{ scheme: canvas.scheme, a: analysis }];
     for (const scheme of canvas.supported) {
       if (scheme === canvas.scheme || !measureIn) continue;
@@ -79703,11 +81730,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : (failing.length ? failing : measured).reduce((best, m) =>
             share(m) < share(best) ? m : best
           );
-    const out = { ...pick.a };
-    if (failing.length && failing.length < measured.length) out.colorScheme = failing[0].scheme;
     const checked = canvas.supported.filter((s) => measured.some((m) => m.scheme === s));
-    if (checked.length < canvas.supported.length) out.colorSchemesChecked = checked;
-    return out;
+    // Spread, not assigned: a read-only value a page's script put on
+    // Object.prototype refuses no key (round 12, R12F-6).
+    return own({
+      ...pick.a,
+      ...(failing.length && failing.length < measured.length
+        ? { colorScheme: failing[0].scheme }
+        : {}),
+      ...(checked.length < canvas.supported.length ? { colorSchemesChecked: checked } : {})
+    });
   }
 
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
@@ -80168,15 +82200,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           : helpers.contrast.isLargeText(px, fontWeightNum, BOLD_LARGE_MIN_PX);
       const isLarge = largeAt(sizePx);
 
-      const out = {
-        fontSizePx: sizePx,
-        fontSizePt: helpers.contrast.pxToPt(sizePx),
-        fontWeightNum,
-        fontWeight: helpers.contrast.fontWeightLabel(fontWeightNum),
-        isBold,
-        isLarge,
-        isLargeText: isLarge
-      };
+      // With no prototype: a value a page's script put on Object.prototype
+      // (sizeScaledBy) is never read as the font's own (round 12, F12-5). Set
+      // to null rather than built on Object.create(null), which V8 keeps in
+      // slow dictionary mode (round 12, F12-6).
+      const out = Object.setPrototypeOf(
+        {
+          fontSizePx: sizePx,
+          fontSizePt: helpers.contrast.pxToPt(sizePx),
+          fontWeightNum,
+          fontWeight: helpers.contrast.fontWeightLabel(fontWeightNum),
+          isBold,
+          isLarge,
+          isLargeText: isLarge
+        },
+        null
+      );
       // What the page drew it at, where that isn't its font-size.
       if (drawn.by.length && Number.isFinite(fontSizePx)) {
         out.declaredFontSizePx = fontSizePx;
@@ -80448,6 +82487,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           character: symbol
         };
       }
+      // A currency sign or 〒 judged as text with the price beside it (round
+      // 11, B11-9): the message says why it needs the text ratio (round 12,
+      // C12-17).
+      if (!placeholder && !symbol && !pseudo) {
+        try {
+          if (
+            helpers.contrast &&
+            typeof helpers.contrast.isSignInTextRun === 'function' &&
+            helpers.contrast.isSignInTextRun(el)
+          )
+            params = { ...(params || {}), signWithPrice: true };
+        } catch {}
+      }
 
       // Every reason code here describes a ratio the rule computed: text
       // whose colors can't be worked out is left to contrast-computable.
@@ -80513,6 +82565,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Text that falls short in one of the two color schemes the page
       // supports, on its canvas: the hint names the scheme.
       if (
+        Object.prototype.hasOwnProperty.call(det, 'colorScheme') &&
         det.colorScheme &&
         !placeholder &&
         !symbol &&
@@ -81004,10 +83057,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // the page is drawn in, naming none); it passes where it passes in each,
   // by the ratio closest to its threshold.
   // colorSchemesChecked lists the schemes measured where one wasn't.
+  // The analysis comes back with no prototype: a value a page's script put
+  // on Object.prototype (colorScheme) is never read as its own (round 12,
+  // R12F-6).
   function acrossSchemes(el, analysis, measureIn) {
+    // A copy with its prototype set to null, not built on Object.create(null):
+    // V8 keeps such an object's properties fast to read (round 12, F12-6).
+    const own = (a) => (a && typeof a === 'object' ? Object.setPrototypeOf({ ...a }, null) : a);
     const canvas = analysis && analysis.computable === true ? analysis.canvas : null;
-    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return analysis;
-    if (canvas.supported.length < 2) return analysis;
+    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return own(analysis);
+    if (canvas.supported.length < 2) return own(analysis);
     const measured = [{ scheme: canvas.scheme, a: analysis }];
     for (const scheme of canvas.supported) {
       if (scheme === canvas.scheme || !measureIn) continue;
@@ -81026,11 +83085,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : (failing.length ? failing : measured).reduce((best, m) =>
             share(m) < share(best) ? m : best
           );
-    const out = { ...pick.a };
-    if (failing.length && failing.length < measured.length) out.colorScheme = failing[0].scheme;
     const checked = canvas.supported.filter((s) => measured.some((m) => m.scheme === s));
-    if (checked.length < canvas.supported.length) out.colorSchemesChecked = checked;
-    return out;
+    // Spread, not assigned: a read-only value a page's script put on
+    // Object.prototype refuses no key (round 12, R12F-6).
+    return own({
+      ...pick.a,
+      ...(failing.length && failing.length < measured.length
+        ? { colorScheme: failing[0].scheme }
+        : {}),
+      ...(checked.length < canvas.supported.length ? { colorSchemesChecked: checked } : {})
+    });
   }
 
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
@@ -81787,9 +83851,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return parts.map(trim).filter(Boolean);
   }
 
-  // :focus and :focus-visible, but never :focus-within: that one fires on
-  // an ancestor of the focused element and says nothing about whether the
-  // element itself is indicated.
+  // :focus and :focus-visible. :focus-within holds on the focused element's
+  // ancestors as well, and is read apart (ancestorFocusForm).
   const FOCUS_PSEUDO = /:focus(-visible)?(?![-\w])/g;
 
   function hasFocusPseudo(part) {
@@ -81908,14 +83971,85 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  const suppressors = []; // { selector, base, sheet }
+  const suppressors = []; // { selector, base, also, sheet, kills, scope }
   // The style sheet being read, for the message to say where a rule is.
   let currentSheet = null;
-  const providers = []; // { base, subject }
-  // :focus-within rules that draw something: the compound holding the
-  // pseudo, without it. Read only for the lean, never to pass an element.
-  const withinProviders = [];
+  // The open shadow root whose style sheet is being read, or null for the
+  // document's: a shadow root's sheets style only the elements in it.
+  let currentScope = null;
+  const providers = []; // { base, subject, own, decls, scope }
+  // :focus-within and :has(:focus) rules that draw something: the compound
+  // holding the pseudo, without it. Read only for the lean, never to pass
+  // an element.
+  const withinProviders = []; // { base, scope }
   const FOCUS_WITHIN = /:focus-within(?![-\w])/g;
+  const HAS_START = /:has\(/gi;
+
+  // The :has() pseudo-classes in a compound whose argument names a focus
+  // state (`:has(:focus)`, `:has(> a:focus-visible)`), each as
+  // { text, arg }, where arg is the argument as written.
+  function focusHasOf(compound) {
+    const out = [];
+    HAS_START.lastIndex = 0;
+    let m;
+    while ((m = HAS_START.exec(compound))) {
+      const start = m.index + m[0].length;
+      let depth = 1;
+      let j = start;
+      for (; j < compound.length && depth; j++) {
+        if (compound[j] === '(') depth += 1;
+        else if (compound[j] === ')') depth -= 1;
+      }
+      const arg = compound.slice(start, depth ? j : j - 1);
+      if (hasFocusPseudo(arg) || /:focus-within(?![-\w])/.test(arg))
+        out.push({ text: compound.slice(m.index, j), arg });
+      HAS_START.lastIndex = j;
+    }
+    return out;
+  }
+  // A sheet styles only the elements in its own tree: a document sheet's
+  // selectors do not reach into a shadow root (CSS Scoping), and a shadow
+  // root's do not reach out of it, but through ::part(), ::slotted() and
+  // :host (crossTreeForm). Outline is not inherited.
+  const scopeOk = (x, el) => treeOf(el) === (x.scope || document);
+
+  // A rule whose focus state is on an ancestor of its subject
+  // (`main:focus-within a`, `main:has(a:focus) a`), or on the subject as
+  // :focus-within, read as it applies while the subject has focus: the
+  // ancestors the subject is inside are in the focus-within state, and a
+  // :has() of a focus state holds when the subject matches its argument.
+  // Returns { base, also } (the selector without those states, and the
+  // arguments the subject must match), or null. Only states reached
+  // through descendant and child combinators are read: a sibling's
+  // :focus-within says nothing of the subject's focus.
+  function ancestorFocusForm(part) {
+    if (!/:focus-within(?![-\w])|:has\(/i.test(part)) return null;
+    const pieces = splitWithCombinators(part);
+    const also = [];
+    let changed = false;
+    for (let i = 0; i < pieces.length; i++) {
+      let compound = pieces[i].compound;
+      const within = /:focus-within(?![-\w])/.test(compound);
+      const has = i < pieces.length - 1 ? focusHasOf(compound) : [];
+      if (!within && !has.length) continue;
+      if (/:not\([^)]*:focus-within/i.test(compound)) return null;
+      for (let k = i + 1; k < pieces.length; k++) {
+        if (!/^[\s>]+$/.test(pieces[k].comb)) return null;
+      }
+      FOCUS_WITHIN.lastIndex = 0;
+      compound = compound.replace(FOCUS_WITHIN, '');
+      for (const h of has) {
+        const arg = trim(dropFocus(h.arg).replace(FOCUS_WITHIN, ''));
+        if (/^[+~]/.test(arg) || splitArgs(h.arg).length > 1) return null;
+        also.push(trim(arg.replace(/^>\s*/, '')) || '*');
+        compound = compound.replace(h.text, '');
+      }
+      pieces[i].compound = trim(compound) || '*';
+      changed = true;
+    }
+    if (!changed) return null;
+    return { base: dropFocus(pieces.map((p) => p.comb + p.compound).join('')), also };
+  }
 
   // The focus-visible polyfill (WICG) marks keyboard focus with a class,
   // `.focus-visible`, and the scope it runs in with `.js-focus-visible`
@@ -81991,7 +84125,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!suppresses && !provides) return;
     const kills = suppresses ? outlineParts(style).kills : null;
 
-    for (const part of splitSelectorList(selectorText)) {
+    const parts = splitSelectorList(selectorText);
+    // A selector list with one selector the browser can't parse is invalid
+    // as a whole, and a browser drops the rule (`button:-moz-focusring,
+    // button:focus` in Chromium). jsdom keeps it in its style sheets: test
+    // the list as the browser parsed it.
+    if (parts.length > 1 && !validSelectorList(selectorText)) return;
+
+    for (const part of parts) {
       // The polyfill's form is read as native :not(:focus-visible) for the
       // outline it removes; what the same rule draws is read as written.
       const asNative = suppresses ? polyfillAsNative(part) : part;
@@ -82004,15 +84145,310 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // A browser has already dropped a rule whose selector list it can't
+  // parse, so only a DOM without CSS.supports (jsdom) is tested, by a query
+  // that compiles the whole list: jsdom's matches() can return before it
+  // reaches the selector it can't parse.
+  const validLists = new Map();
+  const parsedByBrowser = (() => {
+    try {
+      const v = dom.defaultView(document);
+      // Read directly: an element named CSS can shadow it, which only
+      // costs the query below.
+      const css = v ? v.CSS : null;
+      return !!css && typeof css.supports === 'function';
+    } catch {
+      return false;
+    }
+  })();
+  function validSelectorList(selectorText) {
+    // Only a vendor-prefixed pseudo-class or pseudo-element (`:-moz-…`,
+    // `::-webkit-…`) is parsed by one and not the other: a list without one
+    // is not queried, which in jsdom walks the whole document.
+    if (parsedByBrowser || !/::?-/.test(selectorText)) return true;
+    if (validLists.has(selectorText)) return validLists.get(selectorText);
+    let valid = true;
+    try {
+      dom.querySelector(document, selectorText);
+    } catch {
+      valid = false;
+    }
+    validLists.set(selectorText, valid);
+    return valid;
+  }
+  // The selector as quoted in the message, serialized as Chromium gives it,
+  // so jsdom quotes it the same (round 12, U12-16, F12-9): a universal
+  // selector before another simple selector is left out (`*:focus` reads
+  // `:focus`), white space is one space, a combinator has a space on each
+  // side, a comma in a selector argument (`:is()`, `:where()`, `:not()`,
+  // `:has()`) one after it, and an attribute's value is quoted
+  // (`[type="text"]`). An argument that is not a selector (`:nth-child()`,
+  // `::part()`) is only trimmed.
+  const SELECTOR_ARGS = /:(is|where|not|has|matches|-webkit-any|host|host-context|slotted)\($/i;
+  // The body of a single-quoted CSS string as Chromium writes it double
+  // quoted: each escape gives its character (a hex escape, with one white
+  // space after it, its code point), then a double quote or a backslash is
+  // escaped.
+  function doubleQuotedBody(body) {
+    let out = '';
+    for (let i = 0; i < body.length; i++) {
+      let ch = body[i];
+      if (ch === '\\' && i + 1 < body.length) {
+        const hex = /^[0-9a-f]{1,6}/i.exec(body.slice(i + 1));
+        if (hex) {
+          const code = parseInt(hex[0], 16);
+          ch = code === 0 || code > 0x10ffff ? '\ufffd' : String.fromCodePoint(code);
+          i += hex[0].length;
+          if (/\s/.test(body[i + 1] || '')) i += 1;
+        } else {
+          i += 1;
+          ch = body[i];
+        }
+      }
+      out += ch === '"' || ch === '\\' ? '\\' + ch : ch;
+    }
+    return out;
+  }
+  function serializedAttribute(text) {
+    const m =
+      /^\[\s*([^\s~|^$*=\]]+)\s*([~|^$*]?=)\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s"'\]]+)\s*([is])?\s*\]$/i.exec(
+        text
+      );
+    if (!m) return text.replace(/^\[\s*/, '[').replace(/\s*\]$/, ']');
+    let value = m[3];
+    if (value[0] === "'") value = '"' + doubleQuotedBody(value.slice(1, -1)) + '"';
+    else if (value[0] !== '"') value = '"' + value + '"';
+    return `[${m[1]}${m[2]}${value}${m[4] ? ' ' + m[4].toLowerCase() : ''}]`;
+  }
+  function quotedSelector(part) {
+    const text = trim(part);
+    let out = '';
+    const stack = []; // per open parenthesis: whether it holds a selector
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '\\') {
+        out += ch + (text[i + 1] || '');
+        i += 1;
+        continue;
+      }
+      if (ch === '"' || ch === "'") {
+        let j = i + 1;
+        while (j < text.length && text[j] !== ch) j += text[j] === '\\' ? 2 : 1;
+        out += text.slice(i, j + 1);
+        i = j;
+        continue;
+      }
+      if (ch === '[') {
+        let j = i + 1;
+        let quote = '';
+        for (; j < text.length; j++) {
+          if (quote) {
+            if (text[j] === '\\') j += 1;
+            else if (text[j] === quote) quote = '';
+          } else if (text[j] === '"' || text[j] === "'") quote = text[j];
+          else if (text[j] === ']') break;
+        }
+        out += serializedAttribute(text.slice(i, j + 1));
+        i = j;
+        continue;
+      }
+      const inSelector = !stack.length || stack[stack.length - 1];
+      if (ch === '(') {
+        stack.push(SELECTOR_ARGS.test(out + ch));
+        out += ch;
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      if (ch === ')') {
+        stack.pop();
+        out = out.replace(/ +$/, '') + ch;
+        continue;
+      }
+      if (/\s/.test(ch)) {
+        if (!/[\s(]$/.test(out)) out += ' ';
+        continue;
+      }
+      if (!inSelector) {
+        out += ch;
+        continue;
+      }
+      if (ch === ',') {
+        out = out.replace(/ +$/, '') + ', ';
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      if (ch === '>' || ch === '+' || ch === '~') {
+        out = out.replace(/ +$/, '');
+        out += (/\($/.test(out) || !out ? '' : ' ') + ch + ' ';
+        while (/\s/.test(text[i + 1] || '')) i += 1;
+        continue;
+      }
+      out += ch;
+    }
+    return trim(out).replace(/(^|[\s>+~(,])\*(?=[:.#[])/g, '$1');
+  }
+
+  // Rules that reach across a shadow tree's edge (round 12, F12-8), read
+  // as CSS Scoping has them: `::part()` in a sheet of the tree a host is
+  // in styles the elements of the host's shadow tree with that part name;
+  // `::slotted()` in a shadow root's sheet styles the light elements
+  // assigned to its slots; `:host` and `:host()` alone in a shadow root's
+  // sheet style its host. Each is a focus rule on the element it styles
+  // where its focus state is that element's (`::part(x):focus`,
+  // `::slotted(button:focus)`, `:host(:focus)`), and a rule with no state
+  // otherwise. Returns { kind, focused, pseudo, ... }, null for a selector
+  // with none of them, or 'skip' for one of them in a form not read (a
+  // state other than focus, a part reached through exportparts).
+  function closeParen(text, open) {
+    let depth = 1;
+    for (let j = open; j < text.length; j++) {
+      if (text[j] === '(') depth += 1;
+      else if (text[j] === ')' && --depth === 0) return j;
+    }
+    return -1;
+  }
+  // What follows a pseudo-element: its focus state and a ::before or
+  // ::after, or null where it holds anything else.
+  function restOf(rest) {
+    const pseudo = /::?(before|after)$/i.test(trim(rest));
+    const left = trim(dropFocus(trim(rest).replace(/::?(before|after)$/i, '')));
+    return left ? null : { focused: hasFocusPseudo(rest), pseudo };
+  }
+  function crossTreeForm(part) {
+    if (!/::part\(|::slotted\(|:host(?![-\w])/i.test(part)) return null;
+    const partAt = part.search(/::part\(/i);
+    if (partAt !== -1) {
+      const close = closeParen(part, partAt + 7);
+      if (close === -1) return 'skip';
+      const prefix = part.slice(0, partAt);
+      const names = trim(part.slice(partAt + 7, close))
+        .split(/\s+/)
+        .filter(Boolean);
+      const rest = restOf(part.slice(close + 1));
+      if (!rest || !names.length || hasFocusPseudo(prefix) || /:host/i.test(prefix)) return 'skip';
+      const host = trim(prefix) ? trim(prefix) + (/[\s>+~]$/.test(prefix) ? ' *' : '') : '*';
+      return { kind: 'part', hostSel: host, names, ...rest };
+    }
+    const slottedAt = part.search(/::slotted\(/i);
+    if (slottedAt !== -1) {
+      const close = closeParen(part, slottedAt + 10);
+      if (close === -1 || !currentScope) return 'skip';
+      const prefix = part.slice(0, slottedAt);
+      const arg = part.slice(slottedAt + 10, close);
+      const rest = restOf(part.slice(close + 1));
+      if (!rest || rest.focused || hasFocusPseudo(prefix)) return 'skip';
+      // The slot: any (`::slotted()`, `:host ::slotted()`), one the selector
+      // before it names (`slot[name=a]::slotted()`), or one under a host
+      // that matches (`:host(.x) ::slotted()`).
+      let slot = trim(prefix) || '*';
+      let hostSel = '*';
+      const hm = /^:host(?:\(([^()]*)\))?(\s+|$)/i.exec(trim(prefix));
+      if (hm) {
+        if (trim(prefix).length !== hm[0].length) return 'skip';
+        hostSel = trim(hm[1] || '') || '*';
+        slot = '*';
+      } else if (/:host|[\s>+~]$/i.test(prefix)) return 'skip';
+      return {
+        kind: 'slotted',
+        slot,
+        hostSel,
+        inner: stripFocusPseudo(arg),
+        focused: hasFocusPseudo(arg),
+        pseudo: rest.pseudo
+      };
+    }
+    const hm = /^:host(?:\((.*)\))?((?:::?(?:before|after))?)$/i.exec(trim(part));
+    if (!hm) return null;
+    if (!currentScope) return 'skip';
+    const arg = hm[1] || '';
+    return {
+      kind: 'host',
+      inner: arg ? stripFocusPseudo(arg) : '*',
+      focused: hasFocusPseudo(arg),
+      pseudo: !!hm[2]
+    };
+  }
+  // Whether a rule read by crossTreeForm styles el.
+  function crossTreeStyles(x, el) {
+    try {
+      if (x.kind === 'host') return dom.host(x.scope) === el && matchesSafe(el, x.inner);
+      if (x.kind === 'slotted') {
+        const slot = dom.assignedSlot(el);
+        if (!slot || treeOf(slot) !== x.scope) return false;
+        if (x.hostSel !== '*' && !matchesSafe(dom.host(x.scope), x.hostSel)) return false;
+        return matchesSafe(slot, x.slot) && matchesSafe(el, x.inner);
+      }
+      const tree = treeOf(el);
+      if (!tree || dom.nodeType(tree) !== 11) return false;
+      const host = dom.host(tree);
+      if (!host || treeOf(host) !== (x.scope || document)) return false;
+      const names = String(dom.getAttribute(el, 'part') || '').split(/[ \t\n\f\r]+/);
+      return x.names.every((n) => names.includes(n)) && matchesSafe(host, x.hostSel);
+    } catch {
+      return false;
+    }
+  }
+
   function collectFromPart(part, suppresses, provides, kills) {
     // `:not(:focus-visible)` leaves the outline on keyboard focus: what such
     // a rule removes is only the mouse's focus ring, so it is never a
     // suppressor.
     if (suppresses && /:not\(\s*:focus-visible\s*\)/.test(part)) suppresses = false;
-    if (provides && /:focus-within(?![-\w])/.test(part)) {
+    // `:not(:focus-within)` no longer holds once the element inside has
+    // focus: the rule removes nothing then.
+    if (suppresses && /:not\(\s*:focus-within\s*\)/.test(part)) suppresses = false;
+    const cross = crossTreeForm(part);
+    if (cross === 'skip') return;
+    if (cross) {
+      if (suppresses && !cross.pseudo) {
+        suppressors.push({
+          ...cross,
+          selector: quotedSelector(part),
+          base: null,
+          sheet: currentSheet,
+          kills,
+          scope: currentScope
+        });
+      }
+      if (provides && cross.focused) {
+        providers.push({
+          ...cross,
+          base: null,
+          subject: true,
+          own: !cross.pseudo,
+          decls: provides,
+          scope: currentScope
+        });
+      }
+      return;
+    }
+    if (provides && /:focus-within(?![-\w])|:has\(/i.test(part)) {
       for (const compound of splitCompounds(part)) {
-        if (!/:focus-within(?![-\w])/.test(compound)) continue;
-        withinProviders.push(trim(compound.replace(FOCUS_WITHIN, '')) || '*');
+        let base = compound;
+        const has = focusHasOf(compound);
+        if (!/:focus-within(?![-\w])/.test(compound) && !has.length) continue;
+        for (const h of has) base = base.replace(h.text, '');
+        FOCUS_WITHIN.lastIndex = 0;
+        withinProviders.push({
+          base: trim(base.replace(FOCUS_WITHIN, '')) || '*',
+          scope: currentScope
+        });
+      }
+    }
+    // A focus state on an ancestor (or :focus-within on the subject) that
+    // removes the subject's outline while it has focus.
+    if (suppresses && !hasPseudoElement(part)) {
+      const form = ancestorFocusForm(part);
+      if (form) {
+        suppressors.push({
+          selector: quotedSelector(part),
+          base: form.base,
+          also: form.also,
+          sheet: currentSheet,
+          kills,
+          scope: currentScope
+        });
+        suppresses = false;
       }
     }
     if (!hasFocusPseudo(part)) {
@@ -82021,7 +84457,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // outline. Other states (:hover, :active) never match the static
       // element, so el.matches() leaves them out below.
       if (suppresses && !hasPseudoElement(part)) {
-        suppressors.push({ selector: trim(part), base: trim(part), sheet: currentSheet, kills });
+        suppressors.push({
+          selector: quotedSelector(part),
+          base: trim(part),
+          sheet: currentSheet,
+          kills,
+          scope: currentScope
+        });
       }
       return;
     }
@@ -82041,10 +84483,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (suppresses && isSubject && !hasPseudoElement(part)) {
       suppressors.push({
-        selector: trim(part),
+        selector: quotedSelector(part),
         base: stripFocusPseudo(part),
         sheet: currentSheet,
-        kills
+        kills,
+        scope: currentScope
       });
     }
 
@@ -82057,7 +84500,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         base: focusedBase,
         subject: isSubject,
         own: isSubject && !hasPseudoElement(part),
-        decls: provides
+        decls: provides,
+        scope: currentScope
       });
     }
   }
@@ -82110,38 +84554,107 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  const CANDIDATE_SELECTOR =
+    'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
+  // A root's style sheets, then those it adopts. jsdom gives a shadow root
+  // no styleSheets list: its <style> elements are read instead.
+  const sheetsOf = (root) => {
+    const out = [];
+    try {
+      const list = root === document ? dom.styleSheets(document) : dom.get(root, 'styleSheets');
+      if (list) for (const sheet of list) out.push(sheet);
+      else
+        for (const style of dom.querySelectorAll(root, 'style')) {
+          let sheet = style.sheet;
+          // Nor does it parse a shadow root's <style> into a sheet: its text
+          // is parsed into a constructed one.
+          if (!sheet) {
+            const view = dom.defaultView(document);
+            const Sheet = view ? view.CSSStyleSheet : null;
+            if (typeof Sheet === 'function') {
+              sheet = new Sheet();
+              sheet.replaceSync(String(dom.textContent(style) || ''));
+            }
+          }
+          if (sheet) out.push(sheet);
+        }
+    } catch {}
+    try {
+      for (const sheet of dom.get(root, 'adoptedStyleSheets') || []) out.push(sheet);
+    } catch {}
+    return out;
+  };
+
   let sheetCount = 0;
   let unreadableSheets = 0;
-  try {
-    const sheets = dom.styleSheets(document) || [];
-    for (const sheet of sheets) {
-      if (!conditionApplies(sheet)) continue;
-      // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
-      // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
-      // not inspectable.
-      let rules = null;
-      try {
-        rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
-      } catch {
-        unreadableSheets += 1;
-        continue;
+  function readSheets(root, scope) {
+    try {
+      for (const sheet of sheetsOf(root)) {
+        if (!conditionApplies(sheet)) continue;
+        // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
+        // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
+        // not inspectable.
+        let rules = null;
+        try {
+          rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
+        } catch {
+          unreadableSheets += 1;
+          continue;
+        }
+        if (!rules) {
+          unreadableSheets += 1;
+          continue;
+        }
+        sheetCount += 1;
+        currentSheet = sheet;
+        currentScope = scope;
+        walkRules(rules, 0, '');
+        currentSheet = null;
+        currentScope = null;
       }
-      if (!rules) {
-        unreadableSheets += 1;
-        continue;
-      }
-      sheetCount += 1;
-      currentSheet = sheet;
-      walkRules(rules, 0, '');
-      currentSheet = null;
+    } catch {
+      // no-throw: the sheets read so far count
     }
-  } catch {
-    // no-throw: treat as no accessible stylesheets
   }
+  readSheets(document, null);
+
+  // Every open shadow root, nested ones too, in tree order. Their style
+  // sheets, and the sheets they adopt, are read before the candidates are
+  // looked for: with no removing rule in any sheet, nothing is checked, on
+  // a page with shadow roots as on one without (round 12, R12F-13, F12-3).
+  const shadowRoots = [];
+  {
+    const queue = [document];
+    for (let i = 0; i < queue.length; i++) {
+      let all;
+      try {
+        all = dom.querySelectorAll(queue[i], '*');
+      } catch {
+        all = [];
+      }
+      for (const el of all) {
+        let sr;
+        try {
+          sr = dom.shadowRoot(el);
+        } catch {
+          sr = null;
+        }
+        if (sr) {
+          queue.push(sr);
+          shadowRoots.push(sr);
+        }
+      }
+    }
+  }
+  for (const root of shadowRoots) readSheets(root, root);
 
   if (sheetCount === 0 || !suppressors.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
+
+  const candidates = helpers.queryAllSmart
+    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
+    : helpers.queryAll(CANDIDATE_SELECTOR);
 
   // Where a sheet is, for the message: { href } for a linked or imported
   // sheet, { index } for the page's nth <style> element, or null. Read once
@@ -82352,12 +84865,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return decls.some((d) => !sameAsUnfocused(cs, d.prop, d.value));
   }
 
-  const CANDIDATE_SELECTOR =
-    'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
-  const candidates = helpers.queryAllSmart
-    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
-    : helpers.queryAll(CANDIDATE_SELECTOR);
-
   // Every suppressor tested against each element costs rules x elements.
   // In a browser, the selectors that parse on their own, and whose text can't run into
   // the next one's (balanced brackets and quotes, no comment, no trailing
@@ -82405,7 +84912,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!rendered) break;
     // :scope, & and :host read differently from a tree's querySelectorAll
     // than from the element's matches(): tested element by element.
-    if (listed.has(s.base) || !probe || !standsAlone(s.base) || /:scope|&|:host/i.test(s.base))
+    if (
+      s.kind ||
+      listed.has(s.base) ||
+      !probe ||
+      s.scope ||
+      (s.also && s.also.length) ||
+      !standsAlone(s.base) ||
+      /:scope|&|:host/i.test(s.base)
+    )
       continue;
     try {
       dom.matches(probe, s.base);
@@ -82423,7 +84938,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       listed.clear();
     }
   }
-  const unlisted = suppressors.filter((s) => !listed.has(s.base));
+  const unlisted = suppressors.filter(
+    (s) => s.kind || !listed.has(s.base) || s.scope || (s.also && s.also.length)
+  );
 
   // Which candidates the list matches, and how many in each tree. Where
   // many do, each listed selector is run once over the tree
@@ -82440,7 +84957,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   if (suppressorList) {
     for (const el of candidates) {
-      if (!el || dom.nodeType(el) !== 1) continue;
+      // The list holds the document's selectors, which match in its tree only.
+      if (!el || dom.nodeType(el) !== 1 || treeOf(el) !== document) continue;
       let hit;
       try {
         hit = dom.matches(el, suppressorList);
@@ -82473,6 +84991,75 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return byBase;
   }
 
+  // An element matches a selector only through elements of its own tree
+  // (a shadow root's sheets are only read against their own tree). A
+  // selector that needs a class or id that no element in that tree carries
+  // matches nothing there, so it is not tested. Only names outside
+  // brackets, parentheses and quotes count: a name inside :is(), :where(),
+  // :not() or :has() may not be needed. A selector with an escape, a
+  // comment, :host, ::slotted, ::part, :scope or & is always tested, and so
+  // is one whose name the scan cannot read to its end. Names are compared
+  // in lower case, which also covers a quirks-mode page.
+  const namesBySel = new Map();
+  function requiredNames(sel) {
+    if (namesBySel.has(sel)) return namesBySel.get(sel);
+    let names = null;
+    if (!/\\|\/[*]|:host|::slotted|::part|:scope|&/i.test(sel)) {
+      names = [];
+      let depth = 0;
+      let quote = '';
+      for (let i = 0; i < sel.length; i++) {
+        const ch = sel[i];
+        if (quote) {
+          if (ch === quote) quote = '';
+        } else if (ch === '"' || ch === "'") quote = ch;
+        else if (ch === '(' || ch === '[') depth += 1;
+        else if (ch === ')' || ch === ']') depth -= 1;
+        else if (!depth && (ch === '.' || ch === '#')) {
+          // The group keeps `*` from a slash: scripts/validate-rule.js reads
+          // that pair as the end of a comment.
+          const m = /^-?[_a-zA-Z\u0080-\uffff](?:[-\w\u0080-\uffff]*)/.exec(sel.slice(i + 1));
+          const next = m ? sel[i + 1 + m[0].length] : '';
+          if (!m || (next && !/[\s.#[:>+~,)*|]/.test(next))) {
+            names = null;
+            break;
+          }
+          names.push((ch === '.' ? 'c:' : 'i:') + m[0].toLowerCase());
+        }
+      }
+    }
+    namesBySel.set(sel, names);
+    return names;
+  }
+  const namesByTree = new Map();
+  function namesIn(tree) {
+    if (namesByTree.has(tree)) return namesByTree.get(tree);
+    let found = null;
+    try {
+      const type = tree ? dom.nodeType(tree) : 0;
+      if (type === 9 || type === 11) {
+        found = new Set();
+        for (const n of dom.querySelectorAll(tree, '[class], [id]')) {
+          const cls = dom.getAttribute(n, 'class');
+          if (cls)
+            for (const c of cls.split(/[ \t\n\f\r]+/)) if (c) found.add('c:' + c.toLowerCase());
+          const ident = dom.getAttribute(n, 'id');
+          if (ident) found.add('i:' + ident.toLowerCase());
+        }
+      }
+    } catch {
+      found = null;
+    }
+    namesByTree.set(tree, found);
+    return found;
+  }
+  function mayMatchIn(tree, sel) {
+    const names = requiredNames(sel);
+    if (!names || !names.length) return true;
+    const found = namesIn(tree);
+    return !found || names.every((n) => found.has(n));
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -82486,13 +85073,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Many rules share a selector (a framework's reset repeated): each one
     // is tested once per element.
     const listHit = listHits.has(el);
-    const byBase = listHit ? listedMatchesIn(treeOf(el)) : null;
+    const tree = treeOf(el);
+    const byBase = listHit ? listedMatchesIn(tree) : null;
     const matched = new Map();
     const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
+      if (s.kind) return crossTreeStyles(s, el);
+      if (!scopeOk(s, el)) return false;
+      if (Object.hasOwn(s, 'also') && !s.also.every((a) => matchesSafe(el, a))) return false;
       let hit = matched.get(s.base);
       if (hit === undefined) {
         const found = byBase && byBase.get(s.base);
-        hit = found ? found.has(el) : matchesSafe(el, s.base);
+        hit = found ? found.has(el) : mayMatchIn(tree, s.base) && matchesSafe(el, s.base);
         matched.set(s.base, hit);
       }
       return hit;
@@ -82502,10 +85093,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const killed = new Set();
     for (const s of suppressing) for (const k of s.kills || ['style']) killed.add(k);
     const indicated = providers.some((p) => {
-      if (
-        !(p.subject ? matchesSafe(el, p.base) : matchesSafe(el, p.base) || closestSafe(el, p.base))
-      )
-        return false;
+      if (p.kind) {
+        if (!crossTreeStyles(p, el)) return false;
+      } else {
+        if (!scopeOk(p, el)) return false;
+        if (
+          !(p.subject
+            ? matchesSafe(el, p.base)
+            : matchesSafe(el, p.base) || closestSafe(el, p.base))
+        )
+          return false;
+      }
       const decls = drawingDecls(el, p, killed);
       return decls.length > 0 && (!p.own || changesElement(el, decls));
     });
@@ -82527,7 +85125,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // The lean: nothing the scan can read draws focus another way.
     const inlineHandler = closestSafe(el, INLINE_FOCUS_HANDLERS);
-    const focusWithin = withinProviders.some((b) => closestSafe(el, b));
+    const focusWithin = withinProviders.some((w) => scopeOk(w, el) && closestSafe(el, w.base));
     const namesFocusVisible = selectors.some((sel) => /focus-visible/i.test(sel));
     const scriptListener = scriptFocusListener(el);
     const leans =
@@ -84954,7 +87552,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // (header): by tag here, by id in reachesMarquee.
   const STOP_CALL = /\.\s*(?:stop|start)\s*\(/;
   const MARQUEE_BY_TAG =
-    /getElementsByTagName\s*\(\s*['"`]marquee['"`]|querySelector(?:All)?\s*\(\s*['"`][^'"`]*\bmarquee\b/i;
+    /getElementsByTagName\s*\(\s*['"`]marquee['"`]|(?:querySelector(?:All)?|\$|jQuery)\s*\(\s*['"`][^'"`]*\bmarquee\b/i;
   // The engine's own script, injected inline by the page (a script tag holding
   // the bundle): what it says about marquees is the engine's, not the page's.
   const isEngineScript = (text) => text.includes('runa11yCoreInPage') && text.includes('a11ycore');
@@ -85015,19 +87613,83 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         break;
       }
     }
-    if (!stopCall) {
-      const doc = dom.ownerDocument(nodes[0]) || ctx.document;
-      for (const sc of dom.querySelectorAll(doc, 'script:not([src])') || []) {
-        const text = String(dom.textContent(sc) || '');
-        if (isEngineScript(text)) continue;
-        if (STOP_CALL.test(text) && reachesMarquee(text)) {
-          stopCall = true;
-          break;
-        }
+    // Inline scripts that stop a marquee. One whose only events are the
+    // pointer's hover (mouseover, mouseenter and their ends) stops it only
+    // while the pointer is over it: kept apart in hoverScripts.
+    const hoverScripts = [];
+    const doc = dom.ownerDocument(nodes[0]) || ctx.document;
+    for (const sc of dom.querySelectorAll(doc, 'script:not([src])') || []) {
+      const text = String(dom.textContent(sc) || '');
+      if (isEngineScript(text)) continue;
+      if (!STOP_CALL.test(text) || !reachesMarquee(text)) continue;
+      if (isHoverOnlyScript(text)) {
+        hoverScripts.push(text);
+      } else {
+        stopCall = true;
       }
     }
-    pageEvidence = { pauseControl, stopCall };
+    pageEvidence = { pauseControl, stopCall, hoverScripts };
     return pageEvidence;
+  }
+
+  // The event types a script names: addEventListener('type', ...),
+  // el.ontype = ..., and jQuery's .on('type', ...), .one(), .bind() and
+  // shorthands such as .hover(...) and .click(...). A DOMContentLoaded or
+  // load listener only runs the code inside it once the page is read: it
+  // wraps the listeners that code adds, and is not counted. A script is
+  // hover-only when every other type it names is the pointer's hover
+  // (round 12, R12F-15). One that names none, or another event (a click, a
+  // key), may stop the marquee another way, and is asked about with no lean.
+  // A method call that only looks like a shorthand (`el.click()`) counts as
+  // another event, which errs toward asking.
+  const HOVER_TYPES = new Set(['mouseover', 'mouseenter', 'mouseout', 'mouseleave', 'hover']);
+  const WRAPPER_TYPES = new Set(['domcontentloaded', 'load']);
+  const JQUERY_SHORTHAND =
+    /\.\s*(hover|mouseover|mouseenter|mouseout|mouseleave|mousedown|mouseup|click|dblclick|contextmenu|keydown|keyup|keypress|focus|blur|focusin|focusout|change|submit|toggle)\s*\(/g;
+  function isHoverOnlyScript(text) {
+    const types = new Set();
+    for (const m of text.matchAll(/addEventListener\s*\(\s*['"`]([A-Za-z]+)['"`]/g))
+      types.add(m[1].toLowerCase());
+    for (const m of text.matchAll(/\.\s*on([A-Za-z]+)\s*=(?!=)/g)) types.add(m[1].toLowerCase());
+    for (const m of text.matchAll(/\.\s*(?:on|one|bind)\s*\(\s*['"`]([^'"`]*)['"`]/g))
+      for (const t of m[1].split(/\s+/)) if (t) types.add(t.split('.')[0].toLowerCase());
+    for (const m of text.matchAll(JQUERY_SHORTHAND)) types.add(m[1].toLowerCase());
+    for (const t of WRAPPER_TYPES) types.delete(t);
+    return types.size > 0 && [...types].every((t) => HOVER_TYPES.has(t));
+  }
+
+  // Whether `text` reaches this marquee: by tag, or by its id.
+  function reachesThis(el, text) {
+    if (MARQUEE_BY_TAG.test(text)) return true;
+    const mid = String(dom.getAttribute(el, 'id') || '').trim();
+    if (!mid) return false;
+    const q = mid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('[\'"`#]' + q + '[\'"`]|(?:^|[^\\w$.-])' + q + '\\s*\\.\\s*stop\\s*\\(').test(
+      text
+    );
+  }
+
+  // Whether the marquee stops when the pointer is over it: its own
+  // onmouseover or onmouseenter calls this.stop(), another element's such
+  // handler stops it, or an inline script listening only for hover does.
+  const HOVER_ATTRS = ['onmouseover', 'onmouseenter'];
+  const STOP_ONLY = /\.\s*stop\s*\(/;
+  let hoverHandlers = null;
+  function stopsOnHover(el) {
+    for (const a of HOVER_ATTRS) {
+      const text = String(dom.getAttribute(el, a) || '');
+      if (/\bthis\s*\.\s*stop\s*\(/.test(text)) return true;
+    }
+    if (!hoverHandlers) hoverHandlers = helpers.queryAll('[onmouseover], [onmouseenter]') || [];
+    for (const h of hoverHandlers) {
+      for (const a of HOVER_ATTRS) {
+        const text = String(dom.getAttribute(h, a) || '');
+        if (STOP_ONLY.test(text) && reachesThis(el, text)) return true;
+      }
+    }
+    return readPageEvidence().hoverScripts.some(
+      (text) => STOP_ONLY.test(text) && reachesThis(el, text)
+    );
   }
 
   // A marquee with scrollamount="0" does not move, and a control named for
@@ -85070,6 +87732,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .toLowerCase();
     const scrollsOnce = (loop !== '' && parseInt(loop, 10) > 0) || behavior === 'slide';
     if (stopCall || scrollsOnce) return null;
+    if (stopsOnHover(el)) {
+      return {
+        toward: 'fail',
+        why: 'The marquee stops only while the pointer is over it, which keyboard and touch users cannot do, and no control on the page is named for pausing, stopping or hiding.',
+        signals: [
+          { signal: 'pause-control', value: null },
+          { signal: 'stop-call', value: false },
+          { signal: 'stops-on-hover', value: true },
+          { signal: 'scrollamount-zero', value: false }
+        ],
+        caution:
+          'A script loaded from a file may wire a control by its id, such as an icon button.',
+        i18n: {
+          whyKey: 'deprecatedElements_lean_why_hoverOnly',
+          cautionKey: 'deprecatedElements_lean_caution_noMechanism'
+        }
+      };
+    }
     return {
       toward: 'fail',
       why: 'No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.',
@@ -85090,27 +87770,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el || !dom.tagName(el)) continue;
 
     const tag = dom.tagName(el).toLowerCase();
+    const lean = marqueeLean(el);
+    // It stops only while the pointer is over it: the question is whether
+    // there is another way to pause it.
+    const hoverOnly = !!(
+      lean && lean.signals.some((x) => x.signal === 'stops-on-hover' && x.value)
+    );
+    const reasonCode = hoverOnly
+      ? 'MARQUEE_STOPS_ONLY_ON_HOVER'
+      : 'MARQUEE_PAUSE_MECHANISM_UNKNOWN';
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary:
-          'This <marquee> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.',
-        hint: 'Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.',
+        summary: hoverOnly
+          ? 'This <marquee> scrolls its content and stops only while the pointer is over it, which keyboard and touch users cannot do.'
+          : 'This <marquee> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.',
+        hint: hoverOnly
+          ? 'Check that the page offers another way to pause, stop, or hide this content, one that works with the keyboard. Better: replace it with static content, or with an animation that has a pause/stop control.'
+          : 'Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.',
         occurrenceOutcome: 'cantTell',
-        ...withLean(marqueeLean(el)),
+        ...withLean(lean),
         i18n: {
-          summaryKey: 'deprecatedElements_summary_cantTell',
-          hintKey: 'deprecatedElements_hint_cantTell',
+          summaryKey: hoverOnly
+            ? 'deprecatedElements_summary_cantTell_hoverOnly'
+            : 'deprecatedElements_summary_cantTell',
+          hintKey: hoverOnly
+            ? 'deprecatedElements_hint_cantTell_hoverOnly'
+            : 'deprecatedElements_hint_cantTell',
           params: { element: tag }
         },
         uncertainty: {
           code: 'runtime-dependent',
-          needed:
-            'Whether the page provides a control that pauses, stops, or hides the scrolling content.',
+          needed: hoverOnly
+            ? 'Whether the page offers another way, one that works with the keyboard, to pause, stop, or hide the scrolling content.'
+            : 'Whether the page provides a control that pauses, stops, or hides the scrolling content.',
           evidence: { element: tag }
         },
         data: {
-          details: { reasonCode: 'MARQUEE_PAUSE_MECHANISM_UNKNOWN', element: tag }
+          details: { reasonCode, element: tag }
         }
       })
     );
@@ -86682,8 +89379,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const spans = rows.some((cells) =>
       cells.some(
         (x) =>
-          Number.parseInt(dom.getAttribute(x, 'colspan') || '1', 10) > 1 ||
-          Number.parseInt(dom.getAttribute(x, 'rowspan') || '1', 10) !== 1
+          helpers.tableCellSpanOf(x, 'colspan') > 1 || helpers.tableCellSpanOf(x, 'rowspan') !== 1
       )
     );
     if (spans) return null;
@@ -90191,7 +92887,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // same-named fields apart.
   const byKey = new Map();
   for (const field of fields) {
-    field.key = `${field.normalized}||${contextKey(field.el, field.labelText)}`;
+    // Defined, not assigned: a read-only key on Object.prototype refuses
+    // none (round 12, F12-4).
+    Object.defineProperty(field, 'key', {
+      value: `${field.normalized}||${contextKey(field.el, field.labelText)}`,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
     const bucket = byKey.get(field.key);
     if (bucket) bucket.push(field);
     else byKey.set(field.key, [field]);
@@ -90255,6 +92958,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return null;
   }
 
+  // A combobox and its own popup (a listbox, tree, grid or dialog it
+  // controls or owns, or that names the combobox in its own aria-controls
+  // or aria-owns) are one field: the authoring practices label both with
+  // the same element, and a person sees one control. They are never each
+  // other's duplicate.
+  const POPUP_ROLES = ['listbox', 'tree', 'grid', 'dialog'];
+  function idrefTargets(el, name) {
+    try {
+      const value = dom.getAttribute(el, name);
+      if (!value) return [];
+      return helpers.resolveIdRefs(value, ctx, {}, el).refs || [];
+    } catch {
+      return [];
+    }
+  }
+  function roleOf(el) {
+    try {
+      return helpers.aria.getAuthorRole(el) || '';
+    } catch {
+      return '';
+    }
+  }
+  // Each combobox field's popup fields, both ways round, worked out once:
+  // only fields with one of these roles take part.
+  const popupPartners = new Map();
+  function pair(x, y) {
+    if (!popupPartners.has(x)) popupPartners.set(x, new Set());
+    popupPartners.get(x).add(y);
+  }
+  {
+    const fieldEls = new Set(fields.map((f) => f.el));
+    for (const field of fields) {
+      const role = roleOf(field.el);
+      const isCombo = role === 'combobox';
+      if (!isCombo && !POPUP_ROLES.includes(role)) continue;
+      for (const target of [
+        ...idrefTargets(field.el, 'aria-controls'),
+        ...idrefTargets(field.el, 'aria-owns')
+      ]) {
+        if (target === field.el || !fieldEls.has(target)) continue;
+        const targetRole = roleOf(target);
+        if (isCombo ? POPUP_ROLES.includes(targetRole) : targetRole === 'combobox') {
+          pair(field.el, target);
+          pair(target, field.el);
+        }
+      }
+    }
+  }
+
   const occurrences = [];
   const fieldNames = new Map();
   function describeField(f) {
@@ -90273,7 +93025,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       field.normalized,
       primaryLangOf(field.el)
     );
-    const shared = byKey.get(field.key) || [];
+    const bucket = byKey.get(field.key) || [];
+    const partners = popupPartners.get(field.el);
+    const shared =
+      partners && bucket.length > 1 ? bucket.filter((f) => !partners.has(f.el)) : bucket;
     // A label of punctuation alone ("*", ":") has no words to share: the
     // trailing marks normalize drops leave it empty, so "*" and ":" read as
     // one label. Whatever it lacks, it is not another field's label.
@@ -91380,40 +94135,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return n;
   }
 
-  // An element that groups options and gives the group a name: a fieldset
-  // (its role left as group) or an element with role group or radiogroup,
-  // named by its legend, aria-label, aria-labelledby or title.
-  function isNamedGroup(el) {
+  // The name of an element that groups options: a fieldset (its role left
+  // as group) or an element with role group or radiogroup, named by its
+  // legend, aria-label, aria-labelledby or title. '' when it is no such
+  // element or has no name.
+  function groupName(el) {
     const role = helpers.aria && helpers.aria.getExplicitRole(el);
     const tag = tagOf(el);
     const groupRole = role === 'group' || role === 'radiogroup';
-    if (!groupRole && !(tag === 'fieldset' && !role)) return false;
+    if (!groupRole && !(tag === 'fieldset' && !role)) return '';
     try {
       if (typeof helpers.getAccessibleNameInfo === 'function') {
         const info = helpers.getAccessibleNameInfo(el, ctx, { maxRefs: 8 });
-        if (info && info.present && trim(info.value)) return true;
+        if (info && info.present && trim(info.value)) return trim(info.value);
       }
     } catch {}
-    if (trim(dom.getAttribute(el, 'aria-label')) || trim(dom.getAttribute(el, 'title'))) {
-      return true;
-    }
+    const attr = trim(dom.getAttribute(el, 'aria-label')) || trim(dom.getAttribute(el, 'title'));
+    if (attr) return attr;
     if (tag === 'fieldset') {
       for (let c = dom.firstElementChild(el); c; c = dom.nextElementSibling(c)) {
         if (tagOf(c) !== 'legend') continue;
         // A legend out of the accessibility tree (hidden) names nothing.
-        if (!isEligible(c)) return false;
+        if (!isEligible(c)) return '';
         // The legend's name from its content, as accname computes it: an
         // <img alt> inside it names the group too.
         if (typeof helpers.getNameFromContentInfo === 'function') {
           try {
             const info = helpers.getNameFromContentInfo(c, ctx);
-            return !!(info && info.present && trim(info.value));
+            return info && info.present ? trim(info.value) : '';
           } catch {}
         }
-        return !!trim(dom.textContent(c));
+        return trim(dom.textContent(c));
       }
     }
-    return false;
+    return '';
   }
 
   // The element's ancestors in the flat tree: across a slot into the
@@ -91437,9 +94192,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const rest = members.slice(1).map(flatAncestors);
     for (const a of flatAncestors(members[0])) {
       if (!rest.every((s) => s.has(a))) continue;
-      if (isNamedGroup(a)) return true;
+      if (groupName(a)) return true;
     }
     return false;
+  }
+
+  // The innermost named group an option is in, in the flat tree, or null.
+  function nearestNamedGroup(el) {
+    for (
+      let a = helpers.flatParentElement(el), i = 0;
+      a && i < 200;
+      a = helpers.flatParentElement(a), i++
+    ) {
+      const name = groupName(a);
+      if (name) return { el: a, name };
+    }
+    return null;
+  }
+
+  function shorten(v, max) {
+    const t = trim(v).replace(/\s+/g, ' ');
+    return t.length > max ? `${t.slice(0, max - 1)}…` : t;
   }
 
   const inputs = helpers.queryAllSmart
@@ -91477,15 +94250,80 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const radio = group.type === 'radio';
       const count = group.members.length;
       const shownName = group.name.length > 60 ? `${group.name.slice(0, 59)}…` : group.name;
+
+      // Options each in a named group, but not all in the same one: one
+      // choice split over groups, or two choices sharing a name by mistake.
+      // Neither leans: checkboxes a script names alike often sit in
+      // different groups on purpose, and so may radio buttons.
+      let anchor = group.members[0];
+      let some = false;
+      const found = group.members.map(nearestNamedGroup);
+      const unnamed = group.members.filter((_, i) => !found[i]);
+      if (!unnamed.length) {
+        const seen = new Set();
+        const names = [];
+        for (const g of found) {
+          if (seen.has(g.el)) continue;
+          seen.add(g.el);
+          names.push(shorten(g.name, 40));
+        }
+        const shownGroups = names.length > 5 ? [...names.slice(0, 5), '…'] : names;
+        const groupsText = shownGroups.join(', ');
+        const splitOcc = {
+          summary: radio
+            ? `These ${count} radio buttons named “${shownName}” share a name, so a browser makes them one choice, but sit in different groups with names (${groupsText}).`
+            : `These ${count} checkboxes named “${shownName}” share a name, but sit in different groups with names (${groupsText}).`,
+          hint: radio
+            ? 'Check whether they are options of one choice. If they are, put them in one group whose name says what is chosen; if they are separate choices, give each its own name.'
+            : 'Check whether they answer one question. If they do, put them in one group whose name says the question; if they answer separate questions, the groups they are in can stay.',
+          i18n: {
+            summaryKey: radio
+              ? 'formGroupNamePresent_summary_cantTell_radio_split'
+              : 'formGroupNamePresent_summary_cantTell_checkbox_split',
+            hintKey: radio
+              ? 'formGroupNamePresent_hint_cantTell_radio_split'
+              : 'formGroupNamePresent_hint_cantTell_checkbox_split',
+            params: { name: shownName, count, groups: groupsText }
+          },
+          data: {
+            details: {
+              reasonCode: radio ? 'RADIO_GROUP_SPLIT' : 'CHECKBOX_GROUP_SPLIT',
+              name: shownName,
+              count,
+              inputType: group.type,
+              groups: names
+            }
+          }
+        };
+        occurrences.push(
+          typeof helpers.reportOccurrence === 'function'
+            ? helpers.reportOccurrence(anchor, splitOcc)
+            : splitOcc
+        );
+        continue;
+      }
+      if (radio) {
+        // Some options in a named group and some in none: asked about as
+        // options in no named group, pointing at the first of those.
+        if (unnamed.length < count) {
+          anchor = unnamed[0];
+          some = true;
+        }
+      }
+
       const occ = {
-        summary: radio
-          ? `These ${count} radio buttons named “${shownName}” are in no group with a name: no <fieldset> with a <legend>, and no element with role="radiogroup" or role="group" and an accessible name.`
-          : `These ${count} checkboxes named “${shownName}” are in no group with a name: no <fieldset> with a <legend>, and no element with role="group" and an accessible name.`,
+        summary: some
+          ? `Some of these ${count} radio buttons named “${shownName}” are in no group with a name (no <fieldset> with a <legend>, and no element with role="radiogroup" or role="group" and an accessible name); the others are in one.`
+          : radio
+            ? `These ${count} radio buttons named “${shownName}” are in no group with a name: no <fieldset> with a <legend>, and no element with role="radiogroup" or role="group" and an accessible name.`
+            : `These ${count} checkboxes named “${shownName}” are in no group with a name: no <fieldset> with a <legend>, and no element with role="group" and an accessible name.`,
         hint: 'If the options answer one question, put them in a <fieldset> whose <legend> says it, or in an element with role="radiogroup" (role="group" for checkboxes) named with aria-labelledby pointing to the question.',
         i18n: {
-          summaryKey: radio
-            ? 'formGroupNamePresent_summary_cantTell_radio'
-            : 'formGroupNamePresent_summary_cantTell_checkbox',
+          summaryKey: some
+            ? 'formGroupNamePresent_summary_cantTell_radio_some'
+            : radio
+              ? 'formGroupNamePresent_summary_cantTell_radio'
+              : 'formGroupNamePresent_summary_cantTell_checkbox',
           hintKey: 'formGroupNamePresent_hint_cantTell',
           params: { name: shownName, count }
         },
@@ -91517,9 +94355,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       };
       occurrences.push(
-        typeof helpers.reportOccurrence === 'function'
-          ? helpers.reportOccurrence(group.members[0], occ)
-          : occ
+        typeof helpers.reportOccurrence === 'function' ? helpers.reportOccurrence(anchor, occ) : occ
       );
     }
   }
@@ -96982,8 +99818,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function dropDownSelectedText(node) {
     if (String(dom.localName(node) || '').toLowerCase() !== 'select') return null;
     if (dom.hasAttribute(node, 'multiple')) return null;
-    const size = Number.parseInt(String(dom.getAttribute(node, 'size') || ''), 10);
-    if (size > 1) return null;
+    const size = helpers.selectSizeOf(node);
+    if (size !== null && size > 1) return null;
     for (const opt of [...dom.querySelectorAll(node, 'option')]) {
       let selected;
       try {
@@ -98851,7 +101687,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // A declaration wins if it is the last one, in (rank, order), whose
-  // selector matches (see rankOf). Besides whether it underlines: whether
+  // selector matches (see cascadeWins). Besides whether it underlines: whether
   // it can't be read here (a var(), inherit), whether it reverts to the
   // browser's style, and the line's color it sets, if any (the shorthand
   // sets currentcolor where it names none).
@@ -98891,13 +101727,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return tag === 'u' || tag === 'ins';
   }
 
-  // A declaration's place in the cascade, highest wins: important ones over
-  // normal ones, and among each, a layer's below (normal) or above
-  // (important) those in no layer; the style attribute above the rules of
-  // its importance in no layer; then specificity.
-  function rankOf(decl, specificity, layered, inline) {
-    if (decl.important) return (layered ? 3e9 : inline ? 2e9 : 1e9) + specificity;
-    return (layered ? -1e8 : inline ? 5e8 : 0) + specificity;
+  // Whether declaration a wins over b in the cascade, each { decl, inline,
+  // layer, specificity, order }: !important over normal; then the style
+  // attribute over every rule of its importance; then cascade layers, which
+  // rank in the order they are first named (a nested layer under its
+  // parent's own declarations), with declarations in no layer over every
+  // layer for normal ones, and !important reversing both; then specificity
+  // and order.
+  function cascadeWins(a, b) {
+    if (a.decl.important !== b.decl.important) return a.decl.important;
+    if (a.inline !== b.inline) return a.inline;
+    const la = a.layer;
+    const lb = b.layer;
+    let layerCmp = 0;
+    for (let i = 0; i < Math.max(la.length, lb.length) && !layerCmp; i++) {
+      if (i >= la.length) layerCmp = 1;
+      else if (i >= lb.length) layerCmp = -1;
+      else if (la[i] !== lb[i]) layerCmp = la[i] > lb[i] ? 1 : -1;
+    }
+    if (layerCmp) return a.decl.important ? layerCmp < 0 : layerCmp > 0;
+    if (a.specificity !== b.specificity) return a.specificity > b.specificity;
+    return a.order >= b.order;
   }
 
   // The user agent underlines `a[href]`; an element with role="link" has no
@@ -98924,17 +101774,58 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // rules costs links x the rules that could apply. The index is made once.
   function candidatePartsOf(found, el, field) {
     if (typeof helpers.selectorIndex !== 'function') return found.parts;
-    if (!found.index) found.index = helpers.selectorIndex(found.parts.map((p) => p[field]));
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
+      Object.defineProperty(found, 'index', {
+        value: helpers.selectorIndex(found.parts.map((p) => p[field])),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    }
     return found.index.candidates(el).map((i) => found.parts[i]);
   }
 
   // The style rule parts that set an underline on an element at rest, in
   // the sheets' order, found once per run: { parts, unreadableSheet,
-  // broken }. Each part is { part, rank, underlined }.
+  // broken }. Each part is { part, decl, layer, specificity, order }, layer
+  // the path of the part's cascade layer: each layer's place among its
+  // siblings, in the order they are first named (by @layer a, b;, a block,
+  // or @import ... layer(a)), from the outermost; [] in no layer.
   const underlineRulesByDoc = new Map();
   function underlineRulesOf(doc) {
     if (underlineRulesByDoc.has(doc)) return underlineRulesByDoc.get(doc);
-    const found = { parts: [], unreadableSheet: false, broken: false };
+    const found = { parts: [], unreadableSheet: false, broken: false, anyLayered: false };
+    let order = 0;
+
+    // Layers by their full name, dotted from the outermost; an anonymous
+    // layer is one of its own each time.
+    const layers = new Map();
+    let anonymous = 0;
+    const NO_LAYER = { path: [], name: '' };
+    function childLayer(parent, name) {
+      const full = name ? (parent.name ? parent.name + '.' + name : name) : null;
+      const key = full || '\u0000anonymous' + anonymous++;
+      if (!layers.has(key)) {
+        let siblings = 0;
+        for (const l of layers.values()) if (l.parent === parent.name) siblings += 1;
+        layers.set(key, { path: parent.path.concat(siblings), name: key, parent: parent.name });
+      }
+      return layers.get(key);
+    }
+    // A layer name may be dotted (a.b): each part is a layer in the one
+    // before it.
+    function layerNamed(parent, name) {
+      const parts = String(name || '')
+        .split('.')
+        .map((x) => x.trim())
+        .filter(Boolean);
+      if (!parts.length) return childLayer(parent, '');
+      let l = parent;
+      for (const part of parts) l = childLayer(l, part);
+      return l;
+    }
 
     function consider(cssRule, layer) {
       const decl = underlineFromDeclaration(cssRule.style);
@@ -98948,8 +101839,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
           continue;
         }
-        const rank = rankOf(decl, specificityOf(part), !!layer, false);
-        found.parts.push({ part, rank, decl, layer });
+        if (layer.path.length) found.anyLayered = true;
+        found.parts.push({
+          part,
+          decl,
+          layer: layer.path,
+          specificity: specificityOf(part),
+          order: order++
+        });
       }
     }
 
@@ -98961,14 +101858,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           consider(cssRule, layer);
           continue;
         }
+        const kind = (cssRule.constructor && cssRule.constructor.name) || '';
+        if (kind === 'CSSLayerStatementRule') {
+          for (const name of cssRule.nameList || []) layerNamed(layer, String(name));
+          continue;
+        }
+        if (kind === 'CSSImportRule' || cssRule.type === 3) {
+          const name = typeof cssRule.layerName === 'string' ? cssRule.layerName : null;
+          const inner = name === null ? layer : layerNamed(layer, name);
+          let imported = null;
+          try {
+            imported =
+              cssRule.styleSheet && cssConditionApplies(cssRule.styleSheet)
+                ? cssRule.styleSheet.cssRules
+                : null;
+          } catch {
+            found.unreadableSheet = true;
+          }
+          if (imported) walk(imported, depth + 1, inner);
+          continue;
+        }
         let nested;
         try {
           nested = cssRule.cssRules || null;
         } catch {
           nested = null;
         }
-        const isLayer = !!cssRule.constructor && cssRule.constructor.name === 'CSSLayerBlockRule';
-        if (nested) walk(nested, depth + 1, isLayer ? cssRule : layer);
+        if (!nested) continue;
+        walk(
+          nested,
+          depth + 1,
+          kind === 'CSSLayerBlockRule' ? layerNamed(layer, String(cssRule.name || '')) : layer
+        );
       }
     }
 
@@ -98982,7 +101903,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           found.unreadableSheet = true; // cross-origin, not inspectable
           continue;
         }
-        if (rules) walk(rules, 0, null);
+        if (rules) walk(rules, 0, NO_LAYER);
       }
     } catch {
       found.broken = true;
@@ -98991,22 +101912,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return found;
   }
 
-  // Whether the style sheets underline el at rest (see rankOf for which
-  // declaration wins): { underlined, resolved, color }, color being the
-  // line's color the winning declaration sets, or null.
+  // Whether the style sheets underline el at rest (see cascadeWins for
+  // which declaration wins): { underlined, resolved, color, layered },
+  // color being the line's color the winning declaration sets, or null, and
+  // layered whether a declaration in a cascade layer matched el.
   function resolveUnderlineFromCssom(el) {
-    const unknown = { underlined: false, resolved: false, color: null };
+    const unknown = { underlined: false, resolved: false, color: null, layered: false };
     const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
     if (!doc || typeof dom.get(el, 'matches') !== 'function') return unknown;
 
     const found = underlineRulesOf(doc);
     if (found.broken) return unknown;
-    let best = null; // { rank, decl, layer }
+    let best = null; // { decl, inline, layer, specificity, order }
     let unparsableSelector = false;
-    // Declarations in layers, which disagree where the order of the layers
-    // decides, which isn't read here.
-    const layered = [];
-    for (const { part, rank, decl, layer } of candidatePartsOf(found, el, 'part')) {
+    let layered = false;
+    for (const { part, decl, layer, specificity, order } of candidatePartsOf(found, el, 'part')) {
       let matched;
       try {
         matched = dom.matches(el, part);
@@ -99015,36 +101935,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         continue;
       }
       if (!matched) continue;
-      if (layer) layered.push({ decl, layer });
-      if (!best || rank >= best.rank) best = { rank, decl, layer };
+      if (layer.length) layered = true;
+      const cand = { decl, inline: false, layer, specificity, order };
+      if (!best || cascadeWins(cand, best)) best = cand;
     }
 
     const inline = underlineFromDeclaration(dom.get(el, 'style'));
     if (inline) {
-      const rank = rankOf(inline, 0, false, true);
-      if (!best || rank >= best.rank) best = { rank, decl: inline, layer: null };
+      const cand = { decl: inline, inline: true, layer: [], specificity: 0, order: Infinity };
+      if (!best || cascadeWins(cand, best)) best = cand;
     }
 
     if (best) {
       const decl = best.decl;
-      const layersDisagree =
-        !!best.layer &&
-        layered.some(
-          (o) =>
-            o.layer !== best.layer &&
-            o.decl.important === decl.important &&
-            o.decl.underlined !== decl.underlined
-        );
-      if (layersDisagree || decl.unresolved) return unknown;
-      if (decl.revert) return { underlined: uaDefaultUnderline(el), resolved: true, color: null };
-      return { underlined: decl.underlined, resolved: true, color: decl.color };
+      if (decl.unresolved) return { ...unknown, layered };
+      if (decl.revert)
+        return { underlined: uaDefaultUnderline(el), resolved: true, color: null, layered };
+      return { underlined: decl.underlined, resolved: true, color: decl.color, layered };
     }
 
     // No author declaration reached this element. If a sheet or selector was
     // unreadable, one of them might have, so the answer is unknown; otherwise
     // the browser's style stands: for a link, <u> or <ins>, an underline.
     if (found.unreadableSheet || unparsableSelector) return unknown;
-    return { underlined: uaDefaultUnderline(el), resolved: true, color: null };
+    return { underlined: uaDefaultUnderline(el), resolved: true, color: null, layered: false };
+  }
+
+  // Whether el is underlined at rest, and in which color: { known,
+  // underlined, color }. From its computed style where that can be trusted,
+  // else from the style sheets. jsdom cascades no layered rule, so where a
+  // declaration in a cascade layer matches el, its computed style is not
+  // trusted there: the style sheets say.
+  function restingUnderline(el, cs) {
+    const deco = decorationInfo(cs);
+    let fromCssom = null;
+    const doc = el ? dom.ownerDocument(el) : null;
+    if (!hasLayout() && doc && underlineRulesOf(doc).anyLayered) {
+      fromCssom = resolveUnderlineFromCssom(el);
+      if (!fromCssom.layered) fromCssom = null;
+    }
+    if (!fromCssom && deco.trustworthy)
+      return { known: true, underlined: deco.underlined, color: cs && cs.textDecorationColor };
+    if (!fromCssom) fromCssom = resolveUnderlineFromCssom(el);
+    if (!fromCssom.resolved) return { known: false, underlined: false, color: null };
+    return {
+      known: true,
+      underlined: fromCssom.underlined,
+      color: fromCssom.color || (cs && cs.textDecorationColor)
+    };
   }
 
   // ---- Non-color cues on the link itself ----
@@ -100073,10 +103011,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const asks = all.filter((r) => verdict(r) === 'ask');
     const short = fails.length ? fails : asks;
     const pick = short.length ? short[0] : all[0];
-    const detail = {};
-    if (short.length && short.length < all.length) detail.colorScheme = short[0].scheme;
     const checked = canvas.supported.filter((s) => all.some((r) => r.scheme === s));
-    if (checked.length < canvas.supported.length) detail.colorSchemesChecked = checked;
+    // Spread, not assigned: a read-only value a page's script put on
+    // Object.prototype refuses no key (round 12, R12F-6).
+    const detail = {
+      ...(short.length && short.length < all.length ? { colorScheme: short[0].scheme } : {}),
+      ...(checked.length < canvas.supported.length ? { colorSchemesChecked: checked } : {})
+    };
     return {
       differs: !short.length,
       ratio: pick.ratio,
@@ -100322,11 +103263,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // cascades no text-decoration, and the color it gives is the text's).
   // null where neither can tell.
   function underlinedAtRest(el, cs, shows) {
-    const deco = decorationInfo(cs);
-    if (deco.trustworthy) return deco.underlined && shows(cs.textDecorationColor);
-    const fromCssom = resolveUnderlineFromCssom(el);
-    if (!fromCssom.resolved) return null;
-    return fromCssom.underlined && shows(fromCssom.color || cs.textDecorationColor);
+    const at = restingUnderline(el, cs);
+    if (!at.known) return null;
+    return at.underlined && shows(at.color);
   }
 
   const notTransparent = (color) => !isTransparentColor(color);
@@ -100422,7 +103361,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (hasBorder(cs, node)) return true;
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
       if (hasBackgroundImage(cs, node) || ownBackground(node, cs)) return true;
-      const underlined = underlinedAtRest(node, cs, notTransparent);
+      // An underline drawn in the color behind it shows nothing, as the
+      // link's own is read (round 12, C12-15).
+      const underlined = underlinedAtRest(node, cs, (color) => !unseen(node, color));
       if (underlined === false || (aroundUnderlined && aroundUnderlined())) return false;
       if (underlined === null) {
         unreadUnderline = true;
@@ -100579,20 +103520,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return;
     }
 
-    // An underline the computed style vouches for settles the link before
-    // the costlier marks are looked for (what a ::before or ::after draws).
-    const shown = decorationInfo(linkCs);
+    // An underline the computed style vouches for (or, under jsdom with
+    // layered rules, the style sheets) settles the link before the costlier
+    // marks are looked for (what a ::before or ::after draws).
+    const resting = restingUnderline(el, linkCs);
     let textUnderlined = null;
     const aroundUnderlined = () => {
       if (textUnderlined === null) textUnderlined = surroundingUnderlined(textEl);
       return textUnderlined;
     };
-    if (
-      shown.trustworthy &&
-      shown.underlined &&
-      !unseen(el, linkCs && linkCs.textDecorationColor) &&
-      !aroundUnderlined()
-    ) {
+    if (resting.known && resting.underlined && !unseen(el, resting.color) && !aroundUnderlined()) {
       decidedCount += 1;
       return;
     }
@@ -100617,19 +103554,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // on a page whose background cannot be computed (no background set,
     // which strict mode does not assume is white) was left undecided, while
     // a bold one passed. null: this environment cannot tell.
+    // An underline drawn in a transparent color, or in the color behind
+    // the link, shows nothing.
     let underlined = null;
-    const decoration = decorationInfo(linkCs);
-    if (decoration.trustworthy) {
-      // An underline drawn in a transparent color, or in the color behind
-      // the link, shows nothing.
-      underlined = decoration.underlined && !unseen(el, linkCs && linkCs.textDecorationColor);
-    } else {
-      const fromCssom = resolveUnderlineFromCssom(el);
-      if (fromCssom.resolved)
-        underlined =
-          fromCssom.underlined &&
-          !unseen(el, fromCssom.color || (linkCs && linkCs.textDecorationColor));
-    }
+    if (resting.known) underlined = resting.underlined && !unseen(el, resting.color);
     // The surrounding text underlined too: the underline is no cue.
     if (underlined === true && aroundUnderlined()) underlined = false;
     // An underline on the link's content that can't be read may set it apart.
@@ -103490,7 +106418,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               }
             : {}),
           summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
-          hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
+          hint: `Check whether the list tells something the content doesn't say otherwise: its items, their number or their order. If it does, keep the list and move role="${explicitRole}" from the <${parentTag}> to an element around it (for a navigation, <nav><${parentTag}>). If it doesn't, remove the <${parentTag}> and <li> elements.`,
           i18n: {
             summaryKey: 'listitemParentValid_summary_cantTell_listRoleOverridden',
             hintKey: 'listitemParentValid_hint_cantTell_listRoleOverridden',
@@ -107563,12 +110491,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const blockWeight = Math.min(weightOf(el), parentEl ? weightOf(parentEl) : 400);
     const headingLike = [];
     const others = [];
+    // In a <p>, a colon after the bold text, with only spaces around it
+    // ("<strong>Ingredients</strong>:"), leaves the line all bold, as an
+    // editor who bolds only the word makes a label (round 12, U12-15).
+    // Held back until the text ends: anything after it makes it plain text.
+    const isParagraph = String(dom.localName(el) || '').toLowerCase() === 'p';
+    let colonHolder = null;
     const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       const raw = String(dom.nodeValue(node) || '');
       const holder = dom.parentElement(node);
       if (!holder || !trim(raw)) continue;
+      if (colonHolder) {
+        if (others[others.length - 1] !== colonHolder) others.push(colonHolder);
+        colonHolder = null;
+      }
       const style = boldStyleOf(holder, blockWeight);
+      if (!style && isParagraph && headingLike.length && TRAILING_COLON.test(raw)) {
+        colonHolder = holder;
+        continue;
+      }
       if (style) {
         headingLike.push({
           holder,
@@ -107600,6 +110542,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (others.some(isSeen)) return null;
     return headingLike.filter((piece) => isSeen(piece.holder));
   }
+
+  // Only a colon (ASCII or fullwidth) and spaces.
+  const TRAILING_COLON = /^[\s:：]*[:：][\s:：]*$/u;
 
   // Large text a title: 18px or more, and bold, or semibold (600) heavier
   // than the text around it, as design systems set their titles.
@@ -107727,6 +110672,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !!cs && !isBoldWeight(cs) && pxOf(cs) < fontSizePx;
   }
 
+  // A bold line at body size is a title only when it is short: about 8
+  // words, or 60 characters in a script written without spaces between
+  // words (Chinese, Japanese, Thai, Lao, Khmer, Myanmar, Tibetan), where
+  // words can't be counted (round 12, U12-15). A 13-word bold line ending
+  // in a colon is a lead-in sentence more often than a title.
+  const MAX_BODY_TITLE_WORDS = 8;
+  const MAX_BODY_TITLE_CHARS_UNSPACED = 60;
+  const UNSPACED_SCRIPT =
+    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}\p{Script=Tibetan}]/u;
+  function isShortLine(text) {
+    if (UNSPACED_SCRIPT.test(text)) return text.length <= MAX_BODY_TITLE_CHARS_UNSPACED;
+    return text.split(' ').filter((w) => /[\p{L}\p{N}]/u.test(w)).length <= MAX_BODY_TITLE_WORDS;
+  }
+
   // Sentence punctuation at the end reads as a sentence, not a title: past
   // closing quotes and brackets ("Stay home."), and in other scripts (Arabic
   // and Urdu, Devanagari, Armenian, Ethiopic, CJK full-width). A colon is no
@@ -107812,6 +110771,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // asked about as bold body text either.
       if (fontSizePx >= MIN_FONT_SIZE_PX) return;
       if (!isParagraph || kindCode || endsAsSentenceOf(shown)) return;
+      if (!isShortLine(shown)) return;
       const titleWeight = Math.min(...pieces.map((piece) => piece.weight));
       if (!hasPlainText(nextShown(el), titleWeight)) return;
       // The last of a run of bold lines (an address, a list of names): the
@@ -108446,6 +111406,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'my wordpress website',
     'my wordpress blog',
     'just another wordpress site',
+    'sample page',
     // es
     'sin título',
     'sin titulo',
@@ -108455,6 +111416,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'nueva página',
     'nuevo documento',
     'otro sitio realizado con wordpress',
+    'página de ejemplo',
     // de
     'ohne titel',
     'unbenannt',
@@ -108464,6 +111426,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'neue seite',
     'neues dokument',
     'eine weitere wordpress-website',
+    'beispiel-seite',
     // fr
     'sans titre',
     'document sans titre',
@@ -108471,6 +111434,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'nouvelle page',
     'nouveau document',
     'un site utilisant wordpress',
+    "page d'exemple",
     // ja
     '無題',
     '無題のドキュメント',
@@ -108478,11 +111442,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'タイトルなし',
     'ドキュメント',
     '新しいページ',
-    '新規ページ'
+    '新規ページ',
+    'サンプルページ'
   ]);
-  // A CMS's default site name or tagline is generic as one part of a title
-  // too: "Sample Page – Just another WordPress site".
+  // A CMS's default site name, tagline or page title is generic as one part
+  // of a title too: "Sample Page – Just another WordPress site", "Sample
+  // Page – My Shop". WordPress names its sample page "Sample Page", and in
+  // its Spanish, German, French and Japanese translations "Página de
+  // ejemplo", "Beispiel-Seite", "Page d'exemple" and "サンプルページ"
+  // (round 12, R12F-14; the translations are not verified against
+  // translate.wordpress.org).
   const DEFAULT_TITLE_PARTS = new Set([
+    'sample page',
+    'página de ejemplo',
+    'beispiel-seite',
+    "page d'exemple",
+    'サンプルページ',
     'my wordpress website',
     'my wordpress blog',
     'just another wordpress site',
@@ -108494,18 +111469,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const titleParts = titleNorm.split(TITLE_SEPARATOR).filter(Boolean);
 
   // A placeholder a template or a script left in the title instead of the
-  // page's name: a value never set ("undefined", "null", "NaN", "[object
-  // Object]") as the whole title or one part of it, or a template token
-  // ("{{title}}", "${title}", "%s", "{title}", "<%= title %>"). It names
-  // nothing, so it leans fail.
+  // page's name. Only clear cases count, and they lean fail:
+  // - anywhere in the title: a double-brace token ("{{title}}"), a
+  //   template literal of one JavaScript name or dotted path ("${title}",
+  //   "${page.title}"), a WordPress SEO variable left unreplaced
+  //   ("%%title%% %%sep%% %%sitename%%": any "%%word%%" token, round 12,
+  //   R12F-14), or a format token ("%s", "%d");
+  // - as the whole title or one part of it: a value never set
+  //   ("undefined", "null", "NaN", "[object Object]"), a single-brace token
+  //   ("{title}"), any template literal ("${...}") or a server tag
+  //   ("<%= title %>");
+  // - as the whole title: a bracketed name ("[title]"), which as one part
+  //   of a title is often a real tag ("[Draft] - Acme").
+  // A single-brace word or an odd template literal among other words ("{Fancy}
+  // Brackets: a CSS guide", "Template literals ${...} explained") may be the
+  // page's own subject, and is asked about as any other title is.
   const placeholderToken = (() => {
     const m =
-      /\{\{[^{}]*\}\}|\$\{[^{}]*\}|<%=?[^%]*%>|\[object [A-Za-z]+\]|\{[A-Za-z_][\w.-]*\}|(?:^|[^%\w])(%[sd])(?![\w])/.exec(
+      /\{\{[^{}]*\}\}|%%[A-Za-z_]\w*%%|\$\{\s*[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\s*\}|(?:^|[^%\w])(%[sd])(?![\w])/.exec(
         titleText
       );
     if (m) return m[1] || m[0];
-    const raw = titleText.split(TITLE_SEPARATOR).filter(Boolean);
-    return raw.find((part) => part === 'undefined' || part === 'null' || part === 'NaN') || '';
+    const whole = titleText.trim();
+    if (/^\[[A-Za-z_][\w.-]*\]$/.test(whole)) return whole;
+    const raw = titleText
+      .split(TITLE_SEPARATOR)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    return (
+      raw.find(
+        (part) =>
+          part === 'undefined' ||
+          part === 'null' ||
+          part === 'NaN' ||
+          /^\[object [A-Za-z]+\]$/.test(part) ||
+          /^\{[A-Za-z_][\w.-]*\}$/.test(part) ||
+          /^\$\{[^{}]*\}$/.test(part) ||
+          /^<%=?[^%]*%>$/.test(part)
+      ) || ''
+    );
   })();
 
   // Conservative signals:
@@ -111741,6 +114743,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { document, helpers, rule } = ctx;
   const view = dom.defaultView(document) || null;
   const ZOOM_WIDTH = 640;
+  const LEAN_MIN_WIDTH = 600;
   const MAX_TEXT_NODES = 3000;
   const MAX_PER_CODE = 50;
   // A line more than this far outside its box is cut off at all.
@@ -112276,6 +115279,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const own = axis === 'x' ? ox : oy;
       if (own && own !== 'visible')
         parts.push(ox === oy ? `overflow: ${own}` : `overflow-${axis}: ${own}`);
+      // A box the scan lays out in place of content-visibility: auto holds
+      // paint containment instead (contain: content): name what the author
+      // wrote.
+      else if (cvClips(c.el)) parts.push('content-visibility: auto');
       else if (cs.contain && cs.contain !== 'none') parts.push(`contain: ${cs.contain}`);
       else if (c.shape && cs.clipPath && cs.clipPath !== 'none')
         parts.push(`clip-path: ${cs.clipPath}`);
@@ -112289,6 +115296,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // ---- Measure ----
+
+  // Whether a box between the text and its clipping box was placed out of
+  // the flow (absolutely positioned or fixed) or moved by a transform: text
+  // it holds was put outside the clipping box, not pushed out by its size.
+  function placedOutside(textEl, clipEl) {
+    for (let a = textEl, i = 0; a && a !== clipEl && i < 1000; a = upOf(a), i++) {
+      const cs = styleOf(a);
+      if (!cs) continue;
+      if (cs.position === 'absolute' || cs.position === 'fixed') return true;
+      if (cs.transform && cs.transform !== 'none') return true;
+    }
+    return false;
+  }
+  // Whether a clipping box shows any of the text in it: a collapsed panel
+  // shows none. Kept per box; at most 200 texts are read in each.
+  const showsTextOf = new Map();
+  function showsSomeText(c) {
+    if (showsTextOf.has(c.el)) return showsTextOf.get(c.el);
+    let shows = false;
+    try {
+      const b = clipBoxOf(c);
+      const walker = dom.createTreeWalker(document, c.el, 4);
+      let read = 0;
+      for (let t = walker.nextNode(); t && !shows && read < 200; t = walker.nextNode()) {
+        if (!/\S/.test(dom.nodeValue(t) || '')) continue;
+        read += 1;
+        shows = linesOf(t).some((l) => showsIn(l, b, c));
+      }
+    } catch {}
+    showsTextOf.set(c.el, shows);
+    return shows;
+  }
 
   // Per clipping box, the finding it gives: the first text it cuts, or a
   // text it cuts for certain over one it cuts by less.
@@ -112313,17 +115352,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ) {
       lines = glyphLinesOf(n, verticalOf(textEl)) || lines;
     }
-    // Visible text: some of it shows in every box that clips it. A box a
-    // pixel wide or high is visually hidden text, not a cut.
-    let visible = true;
+    // A box a pixel wide or high is visually hidden text, not a cut. Text a
+    // box hides entirely is left out where the box shows none of its text
+    // (a collapsed panel), or where the text was placed out of it (an
+    // off-canvas menu, a carousel's next slide): it is hidden on purpose.
+    // Where the box shows other text, and the text only flowed out of it (a
+    // fixed-height card whose later lines or paragraphs drop out), it is
+    // cut off, and asked about as any cut text is.
+    let skip = false;
     for (const c of clippers) {
       const b = clipBoxOf(c);
-      if (b.right - b.left <= 1 || b.bottom - b.top <= 1 || !lines.some((l) => showsIn(l, b, c))) {
-        visible = false;
+      if (b.right - b.left <= 1 || b.bottom - b.top <= 1) {
+        skip = true;
+        break;
+      }
+      if (lines.some((l) => showsIn(l, b, c))) continue;
+      if (placedOutside(textEl, c.el) || !showsSomeText(c)) {
+        skip = true;
         break;
       }
     }
-    if (!visible) continue;
+    if (skip) continue;
     measured += 1;
     const fontSize = px(styleOf(textEl) && styleOf(textEl).fontSize) || 16;
     // Half an em along the line, and half the line's thickness across it:
@@ -112422,12 +115471,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
   };
+  // Below this width the page is laid out narrower than a 1280 pixel window
+  // at 200% zoom: what is cut there may be cut only at a larger zoom.
+  const narrower = viewport.width < LEAN_MIN_WIDTH;
   const EDGE_WORDS = { top: 'top ', right: 'right ', bottom: 'bottom ', left: 'left ' };
   const MESSAGES = {
     TEXT_CLIPPED_AT_640: {
       key: 'clipped',
       summary: (p, edge) =>
-        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element cuts off the text "${p.text}" (${p.overflowPx} pixels past its ${EDGE_WORDS[edge] || ''}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
+        `At ${p.viewportWidth} pixels wide, ${p.narrower ? 'narrower than a 1280 pixel window at 200% zoom' : `as a 1280 pixel window shows the page at ${p.zoomPercent}% zoom`}, this element cuts off the text "${p.text}" (${p.overflowPx} pixels past its ${EDGE_WORDS[edge] || ''}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
       hint: (p) =>
         p.clipCss
           ? `Let the box grow with its text when the page is zoomed: change ${p.clipCss}, or let it scroll.`
@@ -112436,7 +115488,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     TEXT_TRUNCATED_AT_640: {
       key: 'truncated',
       summary: (p) =>
-        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element shortens the text "${p.text}" with an ellipsis or a line clamp, so part of it is not shown.${p.clipCss ? ` The CSS that shortens it: ${p.clipCss}.` : ''}`,
+        `At ${p.viewportWidth} pixels wide, ${p.narrower ? 'narrower than a 1280 pixel window at 200% zoom' : `as a 1280 pixel window shows the page at ${p.zoomPercent}% zoom`}, this element shortens the text "${p.text}" with an ellipsis or a line clamp, so part of it is not shown.${p.clipCss ? ` The CSS that shortens it: ${p.clipCss}.` : ''}`,
       hint: () =>
         'Let the text wrap and the box show all of it when the page is zoomed, or offer the full text another way that works with the keyboard, such as a "read more" link.'
     }
@@ -112453,11 +115505,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       text: f.text,
       overflowPx: String(Math.round(f.metrics.overflowPx)),
       viewportWidth: String(viewport.width),
+      // The zoom at which a 1280 pixel window lays the page out this wide:
+      // 200% at 640, 400% at 320.
+      zoomPercent: String(Math.round((1280 * 100) / (viewport.width || ZOOM_WIDTH))),
+      ...(narrower ? { narrower: true } : {}),
       ...(edgeKey ? { [edgeKey]: true } : {}),
       ...(f.clipCss ? { clipCss: f.clipCss } : {})
     };
-    const lean =
-      f.code === 'TEXT_TRUNCATED_AT_640' ? LEANS.truncated : f.lost ? LEANS.clipped : null;
+    // Narrower than 200% zoom of a 1280 pixel window gives, the cut may
+    // appear only at a zoom 1.4.4 doesn't ask for: asked without a lean.
+    const lean = narrower
+      ? null
+      : f.code === 'TEXT_TRUNCATED_AT_640'
+        ? LEANS.truncated
+        : f.lost
+          ? LEANS.clipped
+          : null;
     questions.push(
       helpers.reportOccurrence(f.el, {
         ...(lean ? { lean } : {}),
@@ -113094,11 +116157,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const baseOccurrence = {
       selector: stableSelector,
       html,
-      summary:
-        'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.',
+      // Without a layout (jsdom), the message says the overflow could not
+      // be measured.
+      summary: geometry
+        ? 'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.'
+        : 'This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Whether its content overflows could not be measured: the page was checked without a layout. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.',
       hint: 'If this region’s content actually overflows, add tabindex="0" (and a suitable label) so keyboard users can focus it and scroll with the arrow keys.',
       i18n: {
-        summaryKey: 'scrollableRegionFocusable_summary_cantTell',
+        summaryKey: geometry
+          ? 'scrollableRegionFocusable_summary_cantTell'
+          : 'scrollableRegionFocusable_summary_cantTell_unmeasured',
         hintKey: 'scrollableRegionFocusable_hint_cantTell',
         params: { element: tag }
       },
@@ -115603,19 +118671,108 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return true;
   }
 
+  // An element whose content is not seen though it is drawn (round 12,
+  // C12-11): fully transparent (opacity: 0), or a box of no width that
+  // hides its overflow (width: 0; overflow: hidden, with text-indent:
+  // -9999px or not).
+  function unseen(n) {
+    let cs = null;
+    try {
+      cs = helpers.computedStyle ? helpers.computedStyle(n) : null;
+    } catch {}
+    if (!cs) return false;
+    if (trim(cs.opacity) && Number.parseFloat(cs.opacity) === 0) return true;
+    const clips = /^(hidden|clip)$/.test(trim(cs.overflowX || cs.overflow));
+    const inline = trim(cs.display) === 'inline' || trim(cs.display) === 'contents';
+    return clips && !inline && Number.parseFloat(cs.width) === 0;
+  }
+
+  // The text el shows: its text nodes, less those in an element that is not
+  // drawn (display:none, a closed <details>), not seen (unseen, or a font
+  // size of 0), hidden (visibility:hidden) or
+  // visually hidden (a screen-reader-only clip or 1px box). aria-hidden
+  // doesn't matter to sight. Read through at most 400 nodes.
+  // Null as soon as the text holds a letter, a digit or an emoji: the
+  // whole of it would too, and symbolTextOf leaves such text out, so the
+  // rest is not read (round 12, F12-6).
+  function visibleTextOf(el) {
+    let out = '';
+    let budget = 400;
+    let worded = false;
+    const walk = (node) => {
+      for (let n = dom.firstChild(node); n && budget > 0 && !worded; n = dom.nextSibling(n)) {
+        budget -= 1;
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          let cs = null;
+          try {
+            cs = helpers.computedStyle ? helpers.computedStyle(node) : null;
+          } catch {}
+          const vis = trim(cs && cs.visibility);
+          // Text at a font size of 0 draws nothing (round 12, C12-11).
+          const drawn = !cs || !cs.fontSize || Number.parseFloat(cs.fontSize) !== 0;
+          if ((!vis || vis === 'visible') && drawn) {
+            const piece = String(dom.nodeValue(n) || '');
+            out += piece;
+            if (LETTER_OR_DIGIT.test(piece) || EMOJI.test(piece)) worded = true;
+          }
+        } else if (type === 1 && shown(n) && !unseen(n)) {
+          walk(n);
+        }
+      }
+    };
+    walk(el);
+    return worded ? null : out;
+  }
+
   // The element's own symbol text: its direct text children, holding a
   // symbol, with the whole of its text free of letters and digits. Only
   // the element's own text is its, as the text-contrast rules report text:
   // <span>★<b>★★</b></span> gives “★” on the span and “★★” on the <b>,
   // each measured in its own colour, so no symbol is reported twice.
+  // The parents of the text nodes holding a symbol other than a separator,
+  // found with one walk over the text of each tree (document or shadow
+  // root): an element no such text node is a child of has no symbol text,
+  // so its children are not read one by one (round 12, P12-2).
+  const symbolParents = new Set();
+  // Each tree: true once walked, false where the walk failed.
+  const walkedTrees = new Map();
+  function mayHaveSymbolText(el) {
+    let tree;
+    try {
+      tree = dom.getRootNode(el);
+    } catch {
+      return true;
+    }
+    if (!walkedTrees.has(tree)) {
+      let ok = true;
+      try {
+        const walker = dom.createTreeWalker(dom.ownerDocument(el) || tree, tree, 4);
+        for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+          const v = String(dom.nodeValue(t) || '');
+          // Text with no symbol at all, most of it, is not copied.
+          if (SYMBOL.test(v) && SYMBOL.test(v.replace(SEPARATORS, '')))
+            symbolParents.add(dom.parentNode(t));
+        }
+      } catch {
+        ok = false;
+      }
+      walkedTrees.set(tree, ok);
+    }
+    return !walkedTrees.get(tree) || symbolParents.has(el);
+  }
+
   function symbolTextOf(el) {
+    if (!mayHaveSymbolText(el)) return '';
     let own = '';
     for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
       if (dom.nodeType(n) === 3) own += String(dom.nodeValue(n) || '');
     }
     own = trim(own).replace(/\s+/g, ' ');
     if (!own || !SYMBOL.test(own.replace(SEPARATORS, ''))) return '';
-    const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
+    const seen = visibleTextOf(el);
+    if (seen === null) return '';
+    const text = trim(seen).replace(/\s+/g, ' ');
     if (!text || [...text].length > 40) return '';
     if (LETTER_OR_DIGIT.test(text) || EMOJI.test(text)) return '';
     if (!SYMBOL.test(text.replace(SEPARATORS, ''))) return '';
@@ -115637,6 +118794,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
     if (!shown(el)) continue;
+    // A currency sign or 〒 beside letters or digits on its line ("€45,00")
+    // is part of that text: contrast-minimum judges it, at the text ratio.
+    try {
+      if (typeof c.isSignInTextRun === 'function' && c.isSignInTextRun(el)) continue;
+    } catch {}
     // Part of an inactive user interface component (disabled, in a
     // disabled fieldset, aria-disabled, or disabled through its
     // ElementInternals): 1.4.11 asks nothing of it, as contrast-minimum
@@ -116074,20 +119236,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // The tab stops it jumps ahead of, the first named, for the message.
     const skipped = jumps === true ? skippedBy(el) : [];
     const first = skipped.length ? helpers.describeElement(skipped[0], { text: true }) : '';
+    // The attribute as written, capped as page text quoted in a message is.
+    const quoted = helpers.quoteText(raw);
     occurrences.push(
       helpers.reportOccurrence(el, {
         ...(lean ? { lean } : {}),
         summary: skipped.length
-          ? `This element has tabindex="${raw}", so Tab reaches it before earlier tab stops in the page (${skipped.length}, starting with ${first}).`
-          : `This element has tabindex="${raw}", overriding the natural tab order.`,
+          ? `This element has tabindex="${quoted}", so Tab reaches it before earlier tab stops in the page (${skipped.length}, starting with ${first}).`
+          : `This element has tabindex="${quoted}", overriding the natural tab order.`,
         hint: 'Use tabindex="0" to add the element to the tab order, or a negative value to take it out. If the tab order needs to change, change the order of the content instead.',
         i18n: {
           summaryKey: skipped.length
             ? 'tabindex_summary_cantTell_jumpsAhead'
             : 'tabindex_summary_cantTell_value',
           hintKey: 'tabindex_hint_cantTell',
-          // The attribute as written; details.value is the number read.
-          params: { value: raw, skippedCount: String(skipped.length), first }
+          // The attribute as written, capped; details.value is the number read.
+          params: { value: quoted, skippedCount: String(skipped.length), first }
         },
         data: {
           details: {
@@ -116267,10 +119431,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // A lone cell spanning the table's full width, used once at the top, is
     // the visual-caption pattern; full-width rows further down group rows
     // instead, and a cell narrower than the table is no title bar.
-    const colSpan = (cell) => {
-      const n = Number.parseInt(dom.getAttribute(cell, 'colspan') || '1', 10);
-      return Number.isFinite(n) && n > 0 ? n : 1;
-    };
+    const colSpan = (cell) => helpers.tableCellSpanOf(cell, 'colspan');
     const laterRows = rows.slice(1).map((r) => [...(r.cells || [])].filter(isEligible));
     const width = laterRows.reduce(
       (m, cells) =>
@@ -116626,7 +119787,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const DATA_ROLES = ['cell', 'gridcell'];
   const HEADER_ROLES = ['columnheader', 'rowheader'];
 
+  // colspan and rowspan as HTML reads them (helpers.tableCellSpanOf);
+  // aria-colspan and aria-rowspan as integers, 1 where there is none.
   function spanOf(cell, attr) {
+    if (attr === 'colspan' || attr === 'rowspan') return helpers.tableCellSpanOf(cell, attr);
     const n = Number.parseInt(dom.getAttribute(cell, attr) || '1', 10);
     return Number.isFinite(n) ? n : 1;
   }
@@ -117346,9 +120510,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // per undersized target it's compared against, via
   // isInlineTextExceptionTarget/isInlineTextTarget -- so with U undersized
   // targets and N total candidates this was an uncached O(U * N)
-  // getComputedStyle call count. The DOM is read-only for the rest of this
-  // rule's run (no writes between reads), so caching per element here is
-  // safe -- style cannot change mid-run.
+  // getComputedStyle call count. The page's DOM is read-only for the rest
+  // of this rule's run (the one write, the twins of userAgentSizedControls,
+  // is in a closed shadow root and taken out at once), so caching per
+  // element here is safe -- style cannot change mid-run.
   const __styleCache = new WeakMap();
   function getStyle(el) {
     if (__styleCache.has(el)) return __styleCache.get(el);
@@ -118469,11 +121634,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!box) return { l: c.x, r: c.x, t: c.y, b: c.y };
     const hw = (e.extent.r - e.extent.l) / 2;
     const hh = (e.extent.b - e.extent.t) / 2;
+    // A sticky box moves only on an axis it has an inset on: `top: 0`
+    // holds it down the page, never across.
+    const cs = getStyle(layer) || {};
+    const inset = (side) => !!cs[side] && cs[side] !== 'auto';
+    const acrossX = inset('left') || inset('right');
+    const acrossY = inset('top') || inset('bottom');
     return {
-      l: Math.min(c.x, box.left + hw),
-      r: Math.max(c.x, box.right - hw),
-      t: Math.min(c.y, box.top + hh),
-      b: Math.max(c.y, box.bottom - hh)
+      l: acrossX ? Math.min(c.x, box.left + hw) : c.x,
+      r: acrossX ? Math.max(c.x, box.right - hw) : c.x,
+      t: acrossY ? Math.min(c.y, box.top + hh) : c.y,
+      b: acrossY ? Math.max(c.y, box.bottom - hh) : c.y
     };
   }
   const spaced = entries.filter((e) => !e.exempt);
@@ -118668,35 +121839,169 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // WCAG 2.5.8 "User Agent Control" exception: the target's size requirement
   // does not apply at all when its size is determined by the user agent and
-  // not modified by the author. The canonical example is an unstyled native
-  // checkbox/radio (browsers render these well under 24px by default, and
-  // that's not the author's choice). Scoped narrowly to
-  // input[type=checkbox]/[type=radio] specifically, the only form-control
-  // types with a universally-recognized, unambiguous native rendering, and
-  // not extended to select/range/color/file, whose "default" sizing varies
-  // enough across browsers/OSes that a wrong exemption there risks masking a
-  // real author-introduced undersized target.
+  // not modified by the author. It covers a native form control the browser
+  // draws at its own size: a checkbox or radio (browsers draw these well
+  // under 24px), a range, color, file, date or text input, or a drop-down
+  // <select>. A button is left out: its size follows the text the author
+  // wrote in it.
   //
-  // Detection signal: `appearance` (or the legacy `-webkit-appearance`)
-  // computed as `none` is the near-universal first step of custom
-  // checkbox/radio styling across every CSS framework/design system. If the
-  // author hasn't reset it, the browser is still rendering its own default
-  // control chrome, so the size is UA-determined rather than authored.
-  // A checkbox or radio sized outside the 12 to 16 CSS px browsers draw it at
-  // was resized by the author, so it isn't ("not modified by the author").
-  function isUserAgentSizedControl(el) {
+  // Unstyled, as the exception needs, means:
+  // - `appearance` (or the legacy `-webkit-appearance`) not reset to `none`,
+  //   the near-universal first step of styling a control (a file input,
+  //   which Chromium computes as `none` by default, aside);
+  // - no CSS zoom on the control or an ancestor: zoom is the author's
+  //   change of size, as a transform is (a transform shows in the box, and
+  //   so takes it out of the sizes below);
+  // - the box within the sizes browsers draw the control at, by type
+  //   (Chromium's in brackets, checked in a scan; the ranges leave room
+  //   for other browsers, not verified): a checkbox or radio 12 to 16 px
+  //   (13 by 13), a range 100 to 180 wide and 12 to 26 high (129 by 16), a
+  //   color input 40 to 70 by 20 to 34 (50 by 27), and a file, date or
+  //   text input or a drop-down <select> 18 to 26 high (21, 19 for a
+  //   select), its width following its text;
+  // - for the controls drawn around text (all but the checkbox, radio and
+  //   range), the font size browsers give them, 10.5 to 14 px (13.33):
+  //   another was set by the author, and changes the size.
+  // - its size not modified by the author (round 12, R12F-11 and F12-1).
+  //   The exception is about the size the control is drawn at, so a
+  //   declaration counts only where it changes that size:
+  //   - where the page is laid out, the control's box is compared with
+  //     the box of an unstyled twin of the same kind (same type, size and
+  //     multiple attributes, a select's options), drawn in the same
+  //     document inside a closed shadow root, where no page style reaches
+  //     it. Any difference is the author's: a text input given `height:
+  //     20px`, a checkbox given `width: 16px`. A reset that leaves the size
+  //     alone (normalize.css's `font-size: 100%; line-height: 1.15` on a
+  //     checkbox, `* { padding: 0 }`, `max-width: 100%`, `width: 13px`, a
+  //     translate) doesn't count. The twins are drawn once a scan, all
+  //     together, and taken out at once.
+  //   - where there is no layout (jsdom), the declarations on the control
+  //     itself, in its style attribute or a matching rule, of a property
+  //     that sets its size: width, height, their logical forms and min-/
+  //     max- forms, padding, font-size, line-height, zoom or transform.
+  //     Padding, font-size and line-height don't change the drawn size of
+  //     a checkbox or radio button and are not read for them, and a value
+  //     of the property's initial value (`width: auto`, `transform: none`)
+  //     or of inherit, initial, unset or revert is not counted. Where the
+  //     rules can't be read (another origin's sheet), the sizes above
+  //     decide alone.
+  // A control outside these was resized by the author, which the exception
+  // doesn't cover. The sizes are checked first: a control they rule out
+  // needs neither a twin nor a declaration read.
+  const SIZE_PROPS = [
+    'width',
+    'height',
+    'inline-size',
+    'block-size',
+    'min-width',
+    'min-height',
+    'min-inline-size',
+    'min-block-size',
+    'max-width',
+    'max-height',
+    'max-inline-size',
+    'max-block-size',
+    'zoom',
+    'transform'
+  ];
+  // Read for every control but a checkbox or radio button.
+  const TEXT_SIZE_PROPS = [
+    'padding-top',
+    'padding-right',
+    'padding-bottom',
+    'padding-left',
+    'padding-block-start',
+    'padding-block-end',
+    'padding-inline-start',
+    'padding-inline-end',
+    'font-size',
+    'line-height'
+  ];
+  const KEEPS_SIZE = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer']);
+  function keepsSize(prop, value) {
+    const v = String(value || '')
+      .trim()
+      .toLowerCase();
+    if (!v || KEEPS_SIZE.has(v)) return true;
+    if (prop.startsWith('max-') || prop === 'transform') return v === 'none';
+    if (prop === 'line-height') return v === 'normal';
+    if (prop === 'zoom') return v === '1' || v === '100%' || v === 'normal';
+    if (/^(min-)?(width|height|inline-size|block-size)$/.test(prop)) return v === 'auto';
+    return false;
+  }
+  function declaredResized(el, kind) {
+    const c = helpers.contrast;
+    if (!c || typeof c.authorDeclarationOf !== 'function') return false;
+    const props = kind === 'box' ? SIZE_PROPS : SIZE_PROPS.concat(TEXT_SIZE_PROPS);
+    for (const prop of props) {
+      let d;
+      try {
+        d = c.authorDeclarationOf(el, prop);
+      } catch {
+        d = null;
+      }
+      if (d && !d.unknown && !keepsSize(prop, d.value)) return true;
+    }
+    return false;
+  }
+  const UA_TEXT_INPUT_TYPES = new Set([
+    'text',
+    'search',
+    'email',
+    'url',
+    'tel',
+    'password',
+    'number',
+    'date',
+    'time',
+    'datetime-local',
+    'month',
+    'week',
+    'file'
+  ]);
+  const upOf = (a) =>
+    typeof helpers.flatParentElement === 'function'
+      ? helpers.flatParentElement(a)
+      : dom.parentElement(a);
+  function cssZoomOf(el) {
+    const own = Number(dom.get(el, 'currentCSSZoom'));
+    if (Number.isFinite(own) && own > 0) return own;
+    let zoom = 1;
+    for (let a = el, i = 0; a && dom.nodeType(a) === 1 && i < 1000; a = upOf(a), i++) {
+      const z = Number.parseFloat((getStyle(a) || {}).zoom || '1');
+      if (Number.isFinite(z) && z > 0) zoom *= z;
+    }
+    return zoom;
+  }
+  // What a native control is, and whether its box, its appearance and its
+  // zoom leave it as the browser draws it: { kind, type, box } for one
+  // that may be sized by the browser, or null (see above).
+  function userAgentShape(el) {
     try {
-      if (!el || dom.nodeType(el) !== 1) return false;
+      if (!el || dom.nodeType(el) !== 1) return null;
       const tag = (dom.tagName(el) || '').toLowerCase();
-      if (tag !== 'input') return false;
-
-      const type =
-        (dom.get(el, 'getAttribute') &&
-          String(dom.getAttribute(el, 'type') || '')
-            .trim()
-            .toLowerCase()) ||
-        '';
-      if (type !== 'checkbox' && type !== 'radio') return false;
+      let kind = '';
+      let type = '';
+      if (tag === 'select') {
+        // A list box (multiple, or more than one row) is not a drop-down.
+        if (dom.hasAttribute(el, 'multiple')) return null;
+        const rows = helpers.parseHtmlInteger
+          ? helpers.parseHtmlInteger(String(dom.getAttribute(el, 'size') || ''))
+          : null;
+        if (typeof rows === 'number' && rows > 1) return null;
+        kind = 'text';
+      } else if (tag === 'input') {
+        type = String(dom.getAttribute(el, 'type') || 'text')
+          .trim()
+          .toLowerCase();
+        if (type === 'checkbox' || type === 'radio') kind = 'box';
+        else if (type === 'range' || type === 'color') kind = type;
+        else if (UA_TEXT_INPUT_TYPES.has(type)) kind = type === 'file' ? 'file' : 'text';
+        else if (!dom.hasAttribute(el, 'type') || type === '') {
+          kind = 'text';
+          type = 'text';
+        } else return null;
+      } else return null;
 
       const cs = getStyle(el);
       let appearance = '';
@@ -118712,22 +122017,133 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
-      if (appearance === 'none') return false;
+      if (appearance === 'none' && kind !== 'file') return null;
 
-      // Resized by the author: browsers draw an unstyled checkbox or radio
-      // at 12 to 16 CSS px (13 in Chromium and Firefox, 14 to 16 in Safari).
-      // A size outside that was set by the author, which the exception
-      // doesn't cover ("not modified by the author").
+      // Zoomed by the author, on the control or an ancestor.
+      if (Math.abs(cssZoomOf(el) - 1) > 0.01) return null;
+
       const box = dom.getBoundingClientRect(el);
-      const zoom = Number.parseFloat((cs && cs.zoom) || '1') || 1;
-      const w = box.width / zoom;
-      const h = box.height / zoom;
-      if (w < 12 - EPS || h < 12 - EPS || w > 16 + EPS || h > 16 + EPS) return false;
-
-      return true;
+      const w = box.width;
+      const h = box.height;
+      const within = (v, lo, hi) => v >= lo - EPS && v <= hi + EPS;
+      let fits;
+      if (kind === 'box') fits = within(w, 12, 16) && within(h, 12, 16);
+      else if (kind === 'range') fits = within(w, 100, 180) && within(h, 12, 26);
+      else {
+        const fontSize = Number.parseFloat((cs && cs.fontSize) || '');
+        if (!within(fontSize, 10.5, 14)) return null;
+        if (kind === 'color') fits = within(w, 40, 70) && within(h, 20, 34);
+        else fits = w >= 20 - EPS && within(h, 18, 26);
+      }
+      return fits ? { tag, kind, type, w, h } : null;
     } catch {
-      return false;
+      return null;
     }
+  }
+
+  // The unstyled twin of a control: the same element and type, with the
+  // attributes that set its drawn size (a text input's size, a file
+  // input's multiple, a select's options), and nothing else.
+  function twinSpecOf(el, shape) {
+    if (shape.tag === 'select') {
+      const labels = [];
+      for (const o of qsaIn(el, 'option')) labels.push(String(dom.get(o, 'label') || ''));
+      return { key: 'select\n' + labels.join('\n'), tag: 'select', labels };
+    }
+    const attrs = [['type', shape.type]];
+    for (const name of ['size', 'multiple']) {
+      if (dom.hasAttribute(el, name)) attrs.push([name, String(dom.getAttribute(el, name))]);
+    }
+    return { key: 'input\n' + JSON.stringify(attrs), tag: 'input', attrs };
+  }
+  function qsaIn(el, sel) {
+    try {
+      return [...dom.querySelectorAll(el, sel)];
+    } catch {
+      return [];
+    }
+  }
+  // The size each twin is drawn at, by key, for the document (kept for the
+  // scan, so target-size-enhanced reads it): { w, h }, or null where the
+  // twin has no box (no layout, as in jsdom). The twins are drawn all at
+  // once in one host: a closed shadow root keeps the page's styles out,
+  // and the host's own inline !important declarations keep its rules off
+  // the host.
+  const twinMemo = memoOf('twins');
+  function measureTwins(doc, specs) {
+    let sizes = twinMemo.get(doc);
+    if (!sizes) {
+      sizes = new Map();
+      twinMemo.set(doc, sizes);
+    }
+    const todo = specs.filter((s) => !sizes.has(s.key));
+    if (!todo.length) return sizes;
+    let host = null;
+    try {
+      const html = dom.documentElement(doc);
+      host = dom.createElement(doc, 'surea11y-probe');
+      dom.setAttribute(
+        host,
+        'style',
+        'all:initial!important;display:block!important;position:absolute!important;' +
+          'left:0!important;top:0!important;visibility:hidden!important;' +
+          'zoom:1!important;pointer-events:none!important'
+      );
+      const root = dom.call(host, 'attachShadow', { mode: 'closed' });
+      const twins = [];
+      for (const s of todo) {
+        const twin = dom.createElement(doc, s.tag);
+        if (s.tag === 'select') {
+          for (const label of s.labels) {
+            const o = dom.createElement(doc, 'option');
+            o.textContent = label;
+            dom.appendChild(twin, o);
+          }
+        } else {
+          for (const [name, value] of s.attrs) dom.setAttribute(twin, name, value);
+        }
+        dom.appendChild(root, twin);
+        twins.push(twin);
+      }
+      dom.appendChild(html, host);
+      todo.forEach((s, i) => {
+        const r = dom.getBoundingClientRect(twins[i]);
+        sizes.set(s.key, r && r.width > 0 && r.height > 0 ? { w: r.width, h: r.height } : null);
+      });
+    } catch {
+      for (const s of todo) if (!sizes.has(s.key)) sizes.set(s.key, null);
+    }
+    try {
+      if (host && dom.parentNode(host)) dom.removeChild(dom.parentNode(host), host);
+    } catch {}
+    return sizes;
+  }
+
+  // The controls among els sized by the browser (see above), decided for
+  // all at once.
+  function userAgentSizedControls(els) {
+    const out = new Set();
+    const found = [];
+    for (const el of els) {
+      const shape = userAgentShape(el);
+      if (shape) found.push({ el, shape, spec: twinSpecOf(el, shape) });
+    }
+    const byDoc = new Map();
+    for (const f of found) {
+      const doc = dom.ownerDocument(f.el);
+      if (!byDoc.has(doc)) byDoc.set(doc, []);
+      byDoc.get(doc).push(f.spec);
+    }
+    const sizesOf = new Map();
+    for (const [doc, specs] of byDoc) sizesOf.set(doc, measureTwins(doc, specs));
+    const SAME = 0.05;
+    for (const { el, shape, spec } of found) {
+      const twin = sizesOf.get(dom.ownerDocument(el)).get(spec.key);
+      if (twin) {
+        if (Math.abs(shape.w - twin.w) <= SAME && Math.abs(shape.h - twin.h) <= SAME) out.add(el);
+      } else if (!declaredResized(el, shape.kind)) out.add(el);
+    }
+    return out;
   }
 
   function isPlausiblyEssentialOrEquivalent(el) {
@@ -118915,8 +122331,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // An undersized page target that a pinned target's circle can reach at
   // some scroll position, the target's own centre path being worked out
   // from its extent's (pinnedPath): the region within 12px, or the centre
-  // within 24px. The first found, or null.
+  // within 24px. A page target that is within reach only while it passes
+  // under the pinned box, behind the background the box paints around the
+  // target, is hidden there (focus-not-obscured's concern), not too close.
+  // The first found, or null.
   const entryOf = new Map(entries.map((e) => [e.el, e]));
+  // Whether an element paints a background that hides what passes under it.
+  function paintsBackground(el) {
+    const cs = getStyle(el);
+    if (!cs) return false;
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+    const c = helpers.contrast;
+    const bg =
+      c && typeof c.parseCssColorToRgba === 'function'
+        ? c.parseCssColorToRgba(cs.backgroundColor)
+        : null;
+    return !!bg && bg.a > 0.5;
+  }
+  // The pinned box's background around a target, as a rectangle now: the
+  // outermost element from the target up to its fixed or sticky box that
+  // paints one; null where none does (a transparent bar shows the page).
+  function coverOf(el) {
+    let found = null;
+    for (let a = helpers.flatParentElement(el), i = 0; a && i < 10000; i++) {
+      const cs = getStyle(a);
+      if (paintsBackground(a)) found = a;
+      if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) break;
+      a = helpers.flatParentElement(a);
+    }
+    if (!found) return null;
+    const r = dom.getBoundingClientRect(found);
+    return r ? { l: r.left, t: r.top, r: r.right, b: r.bottom } : null;
+  }
   function pageTargetInPath(it) {
     const e = entryOf.get(it.el);
     if (!e || !e.pageNear || !e.pageNear.length) return null;
@@ -118928,16 +122374,57 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       t: e.pagePath.t + dy,
       b: e.pagePath.b + dy
     };
+    let cover;
     for (const f of e.pageNear) {
       if (f.item === undefined) f.item = measure(f.el);
       const o = f.item;
       if (!o || !isUndersized(o)) continue;
       const region = { l: o.rect.left, t: o.rect.top, r: o.rect.right, b: o.rect.bottom };
       const centre = { l: o.center.cx, r: o.center.cx, t: o.center.cy, b: o.center.cy };
-      if (gap(path, region) < RADIUS - EPS || gap(path, centre) < SPACING - EPS) return o.el;
+      const reaches = (q) => gap(q, region) < RADIUS - EPS || gap(q, centre) < SPACING - EPS;
+      if (!reaches(path)) continue;
+      if (cover === undefined) cover = coverOf(it.el);
+      if (!cover) return o.el;
+      // The centre positions along the path within reach of the target,
+      // sampled on a grid of at most about 2,500 points, edges included:
+      // one where the target is not wholly under the cover shows it close.
+      const L = Math.max(path.l, region.l - SPACING);
+      const R = Math.min(path.r, region.r + SPACING);
+      const T = Math.max(path.t, region.t - SPACING);
+      const B = Math.min(path.b, region.b + SPACING);
+      if (L > R + EPS || T > B + EPS) continue;
+      const step = Math.max(1, Math.sqrt(((R - L + 1) * (B - T + 1)) / 2500));
+      const along = (lo, hi) => {
+        const out = [];
+        for (let v = lo; v < hi; v += step) out.push(v);
+        out.push(hi);
+        return out;
+      };
+      const xs = along(L, R);
+      const ys = along(T, B);
+      for (const x of xs) {
+        for (const y of ys) {
+          if (!reaches({ l: x, r: x, t: y, b: y })) continue;
+          const vx = x - it.center.cx;
+          const vy = y - it.center.cy;
+          const under =
+            region.l >= cover.l + vx - EPS &&
+            region.r <= cover.r + vx + EPS &&
+            region.t >= cover.t + vy - EPS &&
+            region.b <= cover.b + vy + EPS;
+          if (!under) return o.el;
+        }
+      }
     }
     return null;
   }
+
+  // The controls sized by the browser, read for all targets at once: the
+  // spacing checks below can leave the style to be recomputed, and a style
+  // read between them would wait for that each time. The browser's own
+  // sizes are read here too, from twins drawn and taken out before any
+  // hit test.
+  const userAgentSized = userAgentSizedControls(undersized.map((it) => it.el));
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
@@ -118949,7 +122436,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // size requirement (and therefore any spacing conflict stemming from
     // it) doesn't apply at all. Skip straight to pass, no need to even
     // evaluate spacing.
-    if (isUserAgentSizedControl(it.el)) {
+    if (userAgentSized.has(it.el)) {
       continue;
     }
 
@@ -119475,9 +122962,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // per undersized target it's compared against, via
   // isInlineTextExceptionTarget/isInlineTextTarget -- so with U undersized
   // targets and N total candidates this was an uncached O(U * N)
-  // getComputedStyle call count. The DOM is read-only for the rest of this
-  // rule's run (no writes between reads), so caching per element here is
-  // safe -- style cannot change mid-run.
+  // getComputedStyle call count. The page's DOM is read-only for the rest
+  // of this rule's run (the one write, the twins of userAgentSizedControls,
+  // is in a closed shadow root and taken out at once), so caching per
+  // element here is safe -- style cannot change mid-run.
   const __styleCache = new WeakMap();
   function getStyle(el) {
     if (__styleCache.has(el)) return __styleCache.get(el);
@@ -120598,11 +124086,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!box) return { l: c.x, r: c.x, t: c.y, b: c.y };
     const hw = (e.extent.r - e.extent.l) / 2;
     const hh = (e.extent.b - e.extent.t) / 2;
+    // A sticky box moves only on an axis it has an inset on: `top: 0`
+    // holds it down the page, never across.
+    const cs = getStyle(layer) || {};
+    const inset = (side) => !!cs[side] && cs[side] !== 'auto';
+    const acrossX = inset('left') || inset('right');
+    const acrossY = inset('top') || inset('bottom');
     return {
-      l: Math.min(c.x, box.left + hw),
-      r: Math.max(c.x, box.right - hw),
-      t: Math.min(c.y, box.top + hh),
-      b: Math.max(c.y, box.bottom - hh)
+      l: acrossX ? Math.min(c.x, box.left + hw) : c.x,
+      r: acrossX ? Math.max(c.x, box.right - hw) : c.x,
+      t: acrossY ? Math.min(c.y, box.top + hh) : c.y,
+      b: acrossY ? Math.max(c.y, box.bottom - hh) : c.y
     };
   }
   const spaced = entries.filter((e) => !e.exempt);
@@ -120797,35 +124291,169 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // WCAG 2.5.8 "User Agent Control" exception: the target's size requirement
   // does not apply at all when its size is determined by the user agent and
-  // not modified by the author. The canonical example is an unstyled native
-  // checkbox/radio (browsers render these well under 24px by default, and
-  // that's not the author's choice). Scoped narrowly to
-  // input[type=checkbox]/[type=radio] specifically, the only form-control
-  // types with a universally-recognized, unambiguous native rendering, and
-  // not extended to select/range/color/file, whose "default" sizing varies
-  // enough across browsers/OSes that a wrong exemption there risks masking a
-  // real author-introduced undersized target.
+  // not modified by the author. It covers a native form control the browser
+  // draws at its own size: a checkbox or radio (browsers draw these well
+  // under 24px), a range, color, file, date or text input, or a drop-down
+  // <select>. A button is left out: its size follows the text the author
+  // wrote in it.
   //
-  // Detection signal: `appearance` (or the legacy `-webkit-appearance`)
-  // computed as `none` is the near-universal first step of custom
-  // checkbox/radio styling across every CSS framework/design system. If the
-  // author hasn't reset it, the browser is still rendering its own default
-  // control chrome, so the size is UA-determined rather than authored.
-  // A checkbox or radio sized outside the 12 to 16 CSS px browsers draw it at
-  // was resized by the author, so it isn't ("not modified by the author").
-  function isUserAgentSizedControl(el) {
+  // Unstyled, as the exception needs, means:
+  // - `appearance` (or the legacy `-webkit-appearance`) not reset to `none`,
+  //   the near-universal first step of styling a control (a file input,
+  //   which Chromium computes as `none` by default, aside);
+  // - no CSS zoom on the control or an ancestor: zoom is the author's
+  //   change of size, as a transform is (a transform shows in the box, and
+  //   so takes it out of the sizes below);
+  // - the box within the sizes browsers draw the control at, by type
+  //   (Chromium's in brackets, checked in a scan; the ranges leave room
+  //   for other browsers, not verified): a checkbox or radio 12 to 16 px
+  //   (13 by 13), a range 100 to 180 wide and 12 to 26 high (129 by 16), a
+  //   color input 40 to 70 by 20 to 34 (50 by 27), and a file, date or
+  //   text input or a drop-down <select> 18 to 26 high (21, 19 for a
+  //   select), its width following its text;
+  // - for the controls drawn around text (all but the checkbox, radio and
+  //   range), the font size browsers give them, 10.5 to 14 px (13.33):
+  //   another was set by the author, and changes the size.
+  // - its size not modified by the author (round 12, R12F-11 and F12-1).
+  //   The exception is about the size the control is drawn at, so a
+  //   declaration counts only where it changes that size:
+  //   - where the page is laid out, the control's box is compared with
+  //     the box of an unstyled twin of the same kind (same type, size and
+  //     multiple attributes, a select's options), drawn in the same
+  //     document inside a closed shadow root, where no page style reaches
+  //     it. Any difference is the author's: a text input given `height:
+  //     20px`, a checkbox given `width: 16px`. A reset that leaves the size
+  //     alone (normalize.css's `font-size: 100%; line-height: 1.15` on a
+  //     checkbox, `* { padding: 0 }`, `max-width: 100%`, `width: 13px`, a
+  //     translate) doesn't count. The twins are drawn once a scan, all
+  //     together, and taken out at once.
+  //   - where there is no layout (jsdom), the declarations on the control
+  //     itself, in its style attribute or a matching rule, of a property
+  //     that sets its size: width, height, their logical forms and min-/
+  //     max- forms, padding, font-size, line-height, zoom or transform.
+  //     Padding, font-size and line-height don't change the drawn size of
+  //     a checkbox or radio button and are not read for them, and a value
+  //     of the property's initial value (`width: auto`, `transform: none`)
+  //     or of inherit, initial, unset or revert is not counted. Where the
+  //     rules can't be read (another origin's sheet), the sizes above
+  //     decide alone.
+  // A control outside these was resized by the author, which the exception
+  // doesn't cover. The sizes are checked first: a control they rule out
+  // needs neither a twin nor a declaration read.
+  const SIZE_PROPS = [
+    'width',
+    'height',
+    'inline-size',
+    'block-size',
+    'min-width',
+    'min-height',
+    'min-inline-size',
+    'min-block-size',
+    'max-width',
+    'max-height',
+    'max-inline-size',
+    'max-block-size',
+    'zoom',
+    'transform'
+  ];
+  // Read for every control but a checkbox or radio button.
+  const TEXT_SIZE_PROPS = [
+    'padding-top',
+    'padding-right',
+    'padding-bottom',
+    'padding-left',
+    'padding-block-start',
+    'padding-block-end',
+    'padding-inline-start',
+    'padding-inline-end',
+    'font-size',
+    'line-height'
+  ];
+  const KEEPS_SIZE = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer']);
+  function keepsSize(prop, value) {
+    const v = String(value || '')
+      .trim()
+      .toLowerCase();
+    if (!v || KEEPS_SIZE.has(v)) return true;
+    if (prop.startsWith('max-') || prop === 'transform') return v === 'none';
+    if (prop === 'line-height') return v === 'normal';
+    if (prop === 'zoom') return v === '1' || v === '100%' || v === 'normal';
+    if (/^(min-)?(width|height|inline-size|block-size)$/.test(prop)) return v === 'auto';
+    return false;
+  }
+  function declaredResized(el, kind) {
+    const c = helpers.contrast;
+    if (!c || typeof c.authorDeclarationOf !== 'function') return false;
+    const props = kind === 'box' ? SIZE_PROPS : SIZE_PROPS.concat(TEXT_SIZE_PROPS);
+    for (const prop of props) {
+      let d;
+      try {
+        d = c.authorDeclarationOf(el, prop);
+      } catch {
+        d = null;
+      }
+      if (d && !d.unknown && !keepsSize(prop, d.value)) return true;
+    }
+    return false;
+  }
+  const UA_TEXT_INPUT_TYPES = new Set([
+    'text',
+    'search',
+    'email',
+    'url',
+    'tel',
+    'password',
+    'number',
+    'date',
+    'time',
+    'datetime-local',
+    'month',
+    'week',
+    'file'
+  ]);
+  const upOf = (a) =>
+    typeof helpers.flatParentElement === 'function'
+      ? helpers.flatParentElement(a)
+      : dom.parentElement(a);
+  function cssZoomOf(el) {
+    const own = Number(dom.get(el, 'currentCSSZoom'));
+    if (Number.isFinite(own) && own > 0) return own;
+    let zoom = 1;
+    for (let a = el, i = 0; a && dom.nodeType(a) === 1 && i < 1000; a = upOf(a), i++) {
+      const z = Number.parseFloat((getStyle(a) || {}).zoom || '1');
+      if (Number.isFinite(z) && z > 0) zoom *= z;
+    }
+    return zoom;
+  }
+  // What a native control is, and whether its box, its appearance and its
+  // zoom leave it as the browser draws it: { kind, type, box } for one
+  // that may be sized by the browser, or null (see above).
+  function userAgentShape(el) {
     try {
-      if (!el || dom.nodeType(el) !== 1) return false;
+      if (!el || dom.nodeType(el) !== 1) return null;
       const tag = (dom.tagName(el) || '').toLowerCase();
-      if (tag !== 'input') return false;
-
-      const type =
-        (dom.get(el, 'getAttribute') &&
-          String(dom.getAttribute(el, 'type') || '')
-            .trim()
-            .toLowerCase()) ||
-        '';
-      if (type !== 'checkbox' && type !== 'radio') return false;
+      let kind = '';
+      let type = '';
+      if (tag === 'select') {
+        // A list box (multiple, or more than one row) is not a drop-down.
+        if (dom.hasAttribute(el, 'multiple')) return null;
+        const rows = helpers.parseHtmlInteger
+          ? helpers.parseHtmlInteger(String(dom.getAttribute(el, 'size') || ''))
+          : null;
+        if (typeof rows === 'number' && rows > 1) return null;
+        kind = 'text';
+      } else if (tag === 'input') {
+        type = String(dom.getAttribute(el, 'type') || 'text')
+          .trim()
+          .toLowerCase();
+        if (type === 'checkbox' || type === 'radio') kind = 'box';
+        else if (type === 'range' || type === 'color') kind = type;
+        else if (UA_TEXT_INPUT_TYPES.has(type)) kind = type === 'file' ? 'file' : 'text';
+        else if (!dom.hasAttribute(el, 'type') || type === '') {
+          kind = 'text';
+          type = 'text';
+        } else return null;
+      } else return null;
 
       const cs = getStyle(el);
       let appearance = '';
@@ -120841,22 +124469,133 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       // Author has reset the native chrome => size is now author-controlled;
       // the exception no longer applies, evaluate normally.
-      if (appearance === 'none') return false;
+      if (appearance === 'none' && kind !== 'file') return null;
 
-      // Resized by the author: browsers draw an unstyled checkbox or radio
-      // at 12 to 16 CSS px (13 in Chromium and Firefox, 14 to 16 in Safari).
-      // A size outside that was set by the author, which the exception
-      // doesn't cover ("not modified by the author").
+      // Zoomed by the author, on the control or an ancestor.
+      if (Math.abs(cssZoomOf(el) - 1) > 0.01) return null;
+
       const box = dom.getBoundingClientRect(el);
-      const zoom = Number.parseFloat((cs && cs.zoom) || '1') || 1;
-      const w = box.width / zoom;
-      const h = box.height / zoom;
-      if (w < 12 - EPS || h < 12 - EPS || w > 16 + EPS || h > 16 + EPS) return false;
-
-      return true;
+      const w = box.width;
+      const h = box.height;
+      const within = (v, lo, hi) => v >= lo - EPS && v <= hi + EPS;
+      let fits;
+      if (kind === 'box') fits = within(w, 12, 16) && within(h, 12, 16);
+      else if (kind === 'range') fits = within(w, 100, 180) && within(h, 12, 26);
+      else {
+        const fontSize = Number.parseFloat((cs && cs.fontSize) || '');
+        if (!within(fontSize, 10.5, 14)) return null;
+        if (kind === 'color') fits = within(w, 40, 70) && within(h, 20, 34);
+        else fits = w >= 20 - EPS && within(h, 18, 26);
+      }
+      return fits ? { tag, kind, type, w, h } : null;
     } catch {
-      return false;
+      return null;
     }
+  }
+
+  // The unstyled twin of a control: the same element and type, with the
+  // attributes that set its drawn size (a text input's size, a file
+  // input's multiple, a select's options), and nothing else.
+  function twinSpecOf(el, shape) {
+    if (shape.tag === 'select') {
+      const labels = [];
+      for (const o of qsaIn(el, 'option')) labels.push(String(dom.get(o, 'label') || ''));
+      return { key: 'select\n' + labels.join('\n'), tag: 'select', labels };
+    }
+    const attrs = [['type', shape.type]];
+    for (const name of ['size', 'multiple']) {
+      if (dom.hasAttribute(el, name)) attrs.push([name, String(dom.getAttribute(el, name))]);
+    }
+    return { key: 'input\n' + JSON.stringify(attrs), tag: 'input', attrs };
+  }
+  function qsaIn(el, sel) {
+    try {
+      return [...dom.querySelectorAll(el, sel)];
+    } catch {
+      return [];
+    }
+  }
+  // The size each twin is drawn at, by key, for the document (kept for the
+  // scan, so target-size-enhanced reads it): { w, h }, or null where the
+  // twin has no box (no layout, as in jsdom). The twins are drawn all at
+  // once in one host: a closed shadow root keeps the page's styles out,
+  // and the host's own inline !important declarations keep its rules off
+  // the host.
+  const twinMemo = memoOf('twins');
+  function measureTwins(doc, specs) {
+    let sizes = twinMemo.get(doc);
+    if (!sizes) {
+      sizes = new Map();
+      twinMemo.set(doc, sizes);
+    }
+    const todo = specs.filter((s) => !sizes.has(s.key));
+    if (!todo.length) return sizes;
+    let host = null;
+    try {
+      const html = dom.documentElement(doc);
+      host = dom.createElement(doc, 'surea11y-probe');
+      dom.setAttribute(
+        host,
+        'style',
+        'all:initial!important;display:block!important;position:absolute!important;' +
+          'left:0!important;top:0!important;visibility:hidden!important;' +
+          'zoom:1!important;pointer-events:none!important'
+      );
+      const root = dom.call(host, 'attachShadow', { mode: 'closed' });
+      const twins = [];
+      for (const s of todo) {
+        const twin = dom.createElement(doc, s.tag);
+        if (s.tag === 'select') {
+          for (const label of s.labels) {
+            const o = dom.createElement(doc, 'option');
+            o.textContent = label;
+            dom.appendChild(twin, o);
+          }
+        } else {
+          for (const [name, value] of s.attrs) dom.setAttribute(twin, name, value);
+        }
+        dom.appendChild(root, twin);
+        twins.push(twin);
+      }
+      dom.appendChild(html, host);
+      todo.forEach((s, i) => {
+        const r = dom.getBoundingClientRect(twins[i]);
+        sizes.set(s.key, r && r.width > 0 && r.height > 0 ? { w: r.width, h: r.height } : null);
+      });
+    } catch {
+      for (const s of todo) if (!sizes.has(s.key)) sizes.set(s.key, null);
+    }
+    try {
+      if (host && dom.parentNode(host)) dom.removeChild(dom.parentNode(host), host);
+    } catch {}
+    return sizes;
+  }
+
+  // The controls among els sized by the browser (see above), decided for
+  // all at once.
+  function userAgentSizedControls(els) {
+    const out = new Set();
+    const found = [];
+    for (const el of els) {
+      const shape = userAgentShape(el);
+      if (shape) found.push({ el, shape, spec: twinSpecOf(el, shape) });
+    }
+    const byDoc = new Map();
+    for (const f of found) {
+      const doc = dom.ownerDocument(f.el);
+      if (!byDoc.has(doc)) byDoc.set(doc, []);
+      byDoc.get(doc).push(f.spec);
+    }
+    const sizesOf = new Map();
+    for (const [doc, specs] of byDoc) sizesOf.set(doc, measureTwins(doc, specs));
+    const SAME = 0.05;
+    for (const { el, shape, spec } of found) {
+      const twin = sizesOf.get(dom.ownerDocument(el)).get(spec.key);
+      if (twin) {
+        if (Math.abs(shape.w - twin.w) <= SAME && Math.abs(shape.h - twin.h) <= SAME) out.add(el);
+      } else if (!declaredResized(el, shape.kind)) out.add(el);
+    }
+    return out;
   }
 
   function isPlausiblyEssentialOrEquivalent(el) {
@@ -121044,8 +124783,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // An undersized page target that a pinned target's circle can reach at
   // some scroll position, the target's own centre path being worked out
   // from its extent's (pinnedPath): the region within 12px, or the centre
-  // within 24px. The first found, or null.
+  // within 24px. A page target that is within reach only while it passes
+  // under the pinned box, behind the background the box paints around the
+  // target, is hidden there (focus-not-obscured's concern), not too close.
+  // The first found, or null.
   const entryOf = new Map(entries.map((e) => [e.el, e]));
+  // Whether an element paints a background that hides what passes under it.
+  function paintsBackground(el) {
+    const cs = getStyle(el);
+    if (!cs) return false;
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+    const c = helpers.contrast;
+    const bg =
+      c && typeof c.parseCssColorToRgba === 'function'
+        ? c.parseCssColorToRgba(cs.backgroundColor)
+        : null;
+    return !!bg && bg.a > 0.5;
+  }
+  // The pinned box's background around a target, as a rectangle now: the
+  // outermost element from the target up to its fixed or sticky box that
+  // paints one; null where none does (a transparent bar shows the page).
+  function coverOf(el) {
+    let found = null;
+    for (let a = helpers.flatParentElement(el), i = 0; a && i < 10000; i++) {
+      const cs = getStyle(a);
+      if (paintsBackground(a)) found = a;
+      if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) break;
+      a = helpers.flatParentElement(a);
+    }
+    if (!found) return null;
+    const r = dom.getBoundingClientRect(found);
+    return r ? { l: r.left, t: r.top, r: r.right, b: r.bottom } : null;
+  }
   function pageTargetInPath(it) {
     const e = entryOf.get(it.el);
     if (!e || !e.pageNear || !e.pageNear.length) return null;
@@ -121057,16 +124826,57 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       t: e.pagePath.t + dy,
       b: e.pagePath.b + dy
     };
+    let cover;
     for (const f of e.pageNear) {
       if (f.item === undefined) f.item = measure(f.el);
       const o = f.item;
       if (!o || !isUndersized(o)) continue;
       const region = { l: o.rect.left, t: o.rect.top, r: o.rect.right, b: o.rect.bottom };
       const centre = { l: o.center.cx, r: o.center.cx, t: o.center.cy, b: o.center.cy };
-      if (gap(path, region) < RADIUS - EPS || gap(path, centre) < SPACING - EPS) return o.el;
+      const reaches = (q) => gap(q, region) < RADIUS - EPS || gap(q, centre) < SPACING - EPS;
+      if (!reaches(path)) continue;
+      if (cover === undefined) cover = coverOf(it.el);
+      if (!cover) return o.el;
+      // The centre positions along the path within reach of the target,
+      // sampled on a grid of at most about 2,500 points, edges included:
+      // one where the target is not wholly under the cover shows it close.
+      const L = Math.max(path.l, region.l - SPACING);
+      const R = Math.min(path.r, region.r + SPACING);
+      const T = Math.max(path.t, region.t - SPACING);
+      const B = Math.min(path.b, region.b + SPACING);
+      if (L > R + EPS || T > B + EPS) continue;
+      const step = Math.max(1, Math.sqrt(((R - L + 1) * (B - T + 1)) / 2500));
+      const along = (lo, hi) => {
+        const out = [];
+        for (let v = lo; v < hi; v += step) out.push(v);
+        out.push(hi);
+        return out;
+      };
+      const xs = along(L, R);
+      const ys = along(T, B);
+      for (const x of xs) {
+        for (const y of ys) {
+          if (!reaches({ l: x, r: x, t: y, b: y })) continue;
+          const vx = x - it.center.cx;
+          const vy = y - it.center.cy;
+          const under =
+            region.l >= cover.l + vx - EPS &&
+            region.r <= cover.r + vx + EPS &&
+            region.t >= cover.t + vy - EPS &&
+            region.b <= cover.b + vy + EPS;
+          if (!under) return o.el;
+        }
+      }
     }
     return null;
   }
+
+  // The controls sized by the browser, read for all targets at once: the
+  // spacing checks below can leave the style to be recomputed, and a style
+  // read between them would wait for that each time. The browser's own
+  // sizes are read here too, from twins drawn and taken out before any
+  // hit test.
+  const userAgentSized = userAgentSizedControls(undersized.map((it) => it.el));
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
@@ -121078,7 +124888,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // size requirement (and therefore any spacing conflict stemming from
     // it) doesn't apply at all. Skip straight to pass, no need to even
     // evaluate spacing.
-    if (isUserAgentSizedControl(it.el)) {
+    if (userAgentSized.has(it.el)) {
       continue;
     }
 
@@ -121523,15 +125333,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (shownRows.length < MIN_SIZE || usedColumns.size < MIN_SIZE) continue;
 
     // A rowspan of 0 spans too: the cell grows down to the end of its row
-    // group (HTML, forming a table). A colspan of 0 is 1. parseInt reads
-    // the values as HTML's rules for parsing non-negative integers do:
-    // leading space and trailing junk allowed (" 0 ", "0x").
+    // group (HTML, forming a table). A colspan of 0 is 1. The values are
+    // read as HTML reads them (helpers.tableCellSpanOf): leading space and
+    // trailing junk allowed (" 0 ", "0x"), a negative one is 1, a large
+    // one clamped.
     const hasSpan = rowCells.some((cells) =>
-      cells.some((c) => {
-        const cs = Number.parseInt(dom.getAttribute(c, 'colspan') || '1', 10);
-        const rs = Number.parseInt(dom.getAttribute(c, 'rowspan') || '1', 10);
-        return (Number.isFinite(cs) && cs > 1) || (Number.isFinite(rs) && (rs > 1 || rs === 0));
-      })
+      cells.some(
+        (c) =>
+          helpers.tableCellSpanOf(c, 'colspan') > 1 || helpers.tableCellSpanOf(c, 'rowspan') !== 1
+      )
     );
     if (hasSpan) continue;
 
@@ -123121,15 +126931,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const o = outside(l, box, c);
         return o.dx <= 1 && o.dy <= 1;
       };
+      // Text partly shown before is visible text the rule measures: the page
+      // has some, even when the spacing cuts no more of it. A line counts
+      // when more than a pixel of it shows in every box that clips it, so
+      // visually hidden text, cut by a 1px box of its own, doesn't.
+      const partlyShown = (l) =>
+        clippers.every((c) => {
+          const box = before.boxes.get(c.el);
+          if (!box) return false;
+          const o = outside(l, box, c);
+          return o.dx < l.right - l.left - 1 && o.dy < l.bottom - l.top - 1;
+        });
+      if (linesBefore.some(partlyShown)) textCount += 1;
       // Counted by rows: under a clamp, the text after the ellipsis is laid
-      // out beside the last row shown, and isn't shown.
+      // out beside the last row shown, and isn't shown. Vertical lines are
+      // columns side by side, counted by where each starts across.
+      const horizontal = growth(textEl(n)).horizontal;
       const shownIn = (lines, boxes) => {
-        const tops = [];
+        const starts = [];
         for (const l of lines) {
           if (!clippers.every((c) => keeps(l, boxes, c))) continue;
-          if (!tops.some((t) => Math.abs(t - l.top) < 1)) tops.push(l.top);
+          const at = horizontal ? l.top : l.left;
+          if (!starts.some((t) => Math.abs(t - at) < 1)) starts.push(at);
         }
-        return tops.length;
+        return starts.length;
       };
       const shownBefore = shownIn(linesBefore, before.boxes);
       if (!shownBefore || shownIn(linesAfter, after.boxes) >= shownBefore) continue;
@@ -125654,7 +129479,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_colorScheme_light": "Im hellen Farbschema der Seite hat dieser Text ein Kontrastverhältnis von {{ratio}}:1 zu {{backgroundHex}}, unter {{threshold}}:1. Ändern Sie seine Farben in diesem Farbschema, sodass das Verhältnis diesen Wert erreicht.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
       "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
-      "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}{{#signWithPrice}} Dieses Zeichen wird mit dem Preis daneben gelesen; es ist also Text und braucht das Kontrastverhältnis für Text.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
@@ -125672,7 +129497,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_hint_cantTell_outline": "Zoomen Sie hinein und messen Sie die Farbe, die den Großteil jedes Buchstabens bildet, gegen den Hintergrund; sie braucht {{threshold}}:1.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
-      "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).{{#backgroundFrom}} Der Hintergrund {{backgroundHex}} wird von seinem Vorfahren {{backgroundFrom}} gezeichnet.{{/backgroundFrom}}{{#fadedBy}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedBy}} opacity: {{fadedOpacity}} hat.{{/fadedBy}}{{#fadedByMany}} Seine Farbe {{declaredColor}} wird als {{foregroundHex}} dargestellt, weil {{fadedByMany}} Deckkraftwerte haben, die multipliziert {{fadedOpacity}} ergeben.{{/fadedByMany}}{{#alphaColor}} Seine Farbe {{declaredColor}} ist halbtransparent und erscheint über dem Hintergrund als {{foregroundHex}}.{{/alphaColor}}{{#signWithPrice}} Dieses Zeichen wird mit dem Preis daneben gelesen; es ist also Text und braucht das erhöhte Kontrastverhältnis für Text.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
@@ -126174,6 +129999,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "Prüfen Sie, ob das Bedienelement auf dieses marquee wirkt und per Tastatur erreichbar ist.",
       "deprecatedElements_lean_why_noMechanism": "Kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden, und kein Skript der Seite stoppt das marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Ein aus einer Datei geladenes Skript kann ein Bedienelement über seine id verknüpfen, etwa eine Symbolschaltfläche.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Dieses <{{element}}> scrollt seinen Inhalt und hält nur an, solange der Mauszeiger darüber ist; das können Nutzer mit Tastatur oder Touchscreen nicht.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Prüfen Sie, ob die Seite eine andere Möglichkeit bietet, diesen Inhalt anzuhalten, zu stoppen oder auszublenden, die auch mit der Tastatur funktioniert. Besser: Ersetzen Sie ihn durch statischen Inhalt oder durch eine Animation mit einer Pause-/Stopp-Steuerung.",
+      "deprecatedElements_lean_why_hoverOnly": "Das marquee hält nur an, solange der Mauszeiger darüber ist, was Nutzer mit Tastatur oder Touchscreen nicht können, und kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden.",
       "iframeNamePresent_title": "Frames haben einen zugänglichen Namen",
       "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
       "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
@@ -126243,7 +130071,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Prüfen Sie, ob die Liste etwas sagt, das der Inhalt nicht anders sagt: ihre Einträge, deren Anzahl oder Reihenfolge. Wenn ja, behalten Sie die Liste und verschieben Sie role=\"{{parentRole}}\" vom <{{parentElement}}> auf ein Element darum herum (bei einer Navigation <nav><{{parentElement}}>). Wenn nicht, entfernen Sie die Elemente <{{parentElement}}> und <li>.",
       "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "Der Eintrag wird mit Aufzählungszeichen oder Nummer gezeichnet, als Eintrag einer Liste, die das Markup nicht mehr bereitstellt.",
@@ -126680,6 +130508,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "Scrollbare Bereiche ohne fokussierbaren Inhalt sollten per Tastatur fokussierbar sein",
       "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
       "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Dieses Element kann scrollen (overflow: auto oder scroll), hat aber kein tabindex und enthält nichts in der Tab-Reihenfolge. Ob sein Inhalt überläuft, ließ sich nicht messen: Die Seite wurde ohne Layout geprüft. Chromium und Firefox machen einen scrollenden Bereich trotzdem zu einem Tab-Stopp, Safari nicht.",
       "scrollableRegionFocusable_hint_cantTell": "Wenn sein Inhalt tatsächlich überläuft, fügen Sie tabindex=\"0\" und einen Namen hinzu, damit Tastaturnutzende es fokussieren und mit den Pfeiltasten scrollen können.",
       "scrollableRegionFocusable_lean_why_overflows": "Sein Inhalt läuft über den Kasten hinaus, und nichts darin kann den Tastaturfokus erhalten, um ihn zu scrollen.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium ab Version 130 und Firefox machen einen scrollbaren Kasten trotzdem per Tastatur erreichbar; Safari nicht.",
@@ -126857,8 +130686,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_title": "Optionsfelder und Kontrollkästchen mit gleichem Namen sollten in einer benannten Gruppe stehen",
       "formGroupNamePresent_description": "Fragt nach Optionsfeldern oder Kontrollkästchen, die einen Namen teilen, aber in keinem <fieldset> mit <legend> und keiner group oder radiogroup mit zugänglichem Namen stehen, sodass die Frage, die sie beantworten, mit keinem von ihnen verknüpft sein kann.",
       "formGroupNamePresent_summary_cantTell_radio": "Diese {{count}} Optionsfelder mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"radiogroup\" oder role=\"group\" und zugänglichem Namen.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Einige dieser {{count}} Optionsfelder mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen (kein <fieldset> mit <legend> und kein Element mit role=\"radiogroup\" oder role=\"group\" und zugänglichem Namen); die anderen stehen in einer.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "Diese {{count}} Optionsfelder mit dem Namen „{{name}}“ haben denselben Namen, sodass der Browser sie zu einer Auswahl macht, stehen aber in verschiedenen Gruppen mit Namen ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Diese {{count}} Kontrollkästchen mit dem Namen „{{name}}“ stehen in keiner Gruppe mit Namen: kein <fieldset> mit <legend> und kein Element mit role=\"group\" und zugänglichem Namen.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "Diese {{count}} Kontrollkästchen mit dem Namen „{{name}}“ haben denselben Namen, stehen aber in verschiedenen Gruppen mit Namen ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "Wenn die Optionen eine Frage beantworten, setzen Sie sie in ein <fieldset>, dessen <legend> sie nennt, oder in ein Element mit role=\"radiogroup\" (role=\"group\" für Kontrollkästchen), das mit aria-labelledby auf die Frage benannt ist.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Prüfen Sie, ob sie Optionen einer einzigen Auswahl sind. Wenn ja, setzen Sie sie in eine Gruppe, deren Name sagt, was ausgewählt wird; wenn es getrennte Auswahlen sind, geben Sie jeder einen eigenen Namen.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Prüfen Sie, ob sie eine einzige Frage beantworten. Wenn ja, setzen Sie sie in eine Gruppe, deren Name die Frage nennt; beantworten sie getrennte Fragen, können die Gruppen bleiben.",
       "formGroupNamePresent_lean_why_radio": "Optionsfelder mit gleichem Namen sind eine einzige Auswahl, und nichts gibt dieser Auswahl einen Namen.",
       "formGroupNamePresent_lean_caution_radio": "Die Beschriftung jeder Option kann die ganze Frage schon selbst sagen.",
       "symbolGraphicContrast_title": "Als Grafik verwendete Symbole sollten einen Kontrast von mindestens 3:1 haben",
@@ -126958,7 +130792,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Ein vor den Skripten der Seite installierter Hook hat weder am Element noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten- oder Fokus-Listener gesehen; Eingabe und Leertaste bewirken daher wahrscheinlich nichts.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Ein Vorfahre behält den Fokus für seine Elemente (aria-activedescendant oder ein fokussierbares zusammengesetztes Widget); so bedient ein solches Widget ein Element, ohne es zu fokussieren.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "Das Element zeigt einen Zeiger-Cursor und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "Das Element ist wie eine Schaltfläche gestaltet, ein kurzer Text in einem Kasten mit eigenem Hintergrund oder Rahmen, und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "Das Element ist wie ein Bedienelement gestaltet, ein kurzer Text in einem Kasten mit eigenem Rahmen oder Schatten oder ein Schließen- oder Menüsymbol, und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "Dieselbe Aktion kann ein anderes Bedienelement der Seite anbieten, etwa ein Link neben einer anklickbaren Zeile.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert (Eingabe und Leertaste sowie die Pfeiltasten seines Widgets), dasselbe bewirken wie ein Klick.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
@@ -127031,9 +130865,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_unattributed": "Es ließ sich kein Element benennen: Der Überlauf kann von einem Rand, generierten Inhalten oder einem geschlossenen Shadow Root stammen. Prüfen Sie, ob seitliches Scrollen Inhalte zeigt.",
       "resizeTextContentLoss_title": "Text wird bei 640 CSS-Pixeln Breite (200 % Zoom) nicht abgeschnitten",
       "resizeTextContentLoss_description": "Misst bei einem Viewport von höchstens 640 CSS-Pixeln Breite, wie ein 1280 Pixel breites Fenster eine Seite bei 200 % Zoom zeigt, jeden Text in einem Kasten, der seinen Überlauf verbirgt, und fragt nach Text, den der Kasten abschneidet oder mit Auslassungspunkten oder einer Zeilenbegrenzung kürzt, zur manuellen Prüfung, ob Inhalte verloren gehen.",
-      "resizeTextContentLoss_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite, wie ein 1280 Pixel breites Fenster die Seite bei 200 % Zoom zeigt, schneidet dieses Element den Text „{{text}}“ ab ({{overflowPx}} Pixel über seinen {{#edgeTop}}oberen {{/edgeTop}}{{#edgeRight}}rechten {{/edgeRight}}{{#edgeBottom}}unteren {{/edgeBottom}}{{#edgeLeft}}linken {{/edgeLeft}}Rand hinaus).{{#clipCss}} Das CSS, das ihn abschneidet: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "Bei {{viewportWidth}} Pixeln Breite, {{#narrower}}schmaler als ein 1280 Pixel breites Fenster bei 200 % Zoom{{/narrower}}{{^narrower}}wie ein 1280 Pixel breites Fenster die Seite bei {{zoomPercent}} % Zoom zeigt{{/narrower}}, schneidet dieses Element den Text „{{text}}“ ab ({{overflowPx}} Pixel über seinen {{#edgeTop}}oberen {{/edgeTop}}{{#edgeRight}}rechten {{/edgeRight}}{{#edgeBottom}}unteren {{/edgeBottom}}{{#edgeLeft}}linken {{/edgeLeft}}Rand hinaus).{{#clipCss}} Das CSS, das ihn abschneidet: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Lassen Sie den Kasten mit seinem Text wachsen, wenn die Seite vergrößert wird: {{#clipCss}}Ändern Sie {{clipCss}}{{/clipCss}}{{^clipCss}}Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text{{/clipCss}}, oder lassen Sie ihn scrollen.",
-      "resizeTextContentLoss_summary_truncated": "Bei {{viewportWidth}} Pixeln Breite, wie ein 1280 Pixel breites Fenster die Seite bei 200 % Zoom zeigt, kürzt dieses Element den Text „{{text}}“ mit Auslassungspunkten oder einer Zeilenbegrenzung, sodass ein Teil davon nicht angezeigt wird.{{#clipCss}} Das CSS, das ihn kürzt: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "Bei {{viewportWidth}} Pixeln Breite, {{#narrower}}schmaler als ein 1280 Pixel breites Fenster bei 200 % Zoom{{/narrower}}{{^narrower}}wie ein 1280 Pixel breites Fenster die Seite bei {{zoomPercent}} % Zoom zeigt{{/narrower}}, kürzt dieses Element den Text „{{text}}“ mit Auslassungspunkten oder einer Zeilenbegrenzung, sodass ein Teil davon nicht angezeigt wird.{{#clipCss}} Das CSS, das ihn kürzt: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Lassen Sie den Text umbrechen und den Kasten ihn ganz zeigen, wenn die Seite vergrößert wird, oder bieten Sie den vollständigen Text auf einem anderen Weg an, der mit der Tastatur funktioniert, etwa über einen Link „Weiterlesen“.",
       "resizeTextContentLoss_lean_why_clipped": "Mindestens eine halbe Zeile des Textes liegt jenseits des Rands des Kastens, der sie verbirgt und nicht scrollt.",
       "resizeTextContentLoss_lean_caution_clipped": "Der vollständige Text kann auf andere Weise angezeigt werden, etwa über ein Bedienelement, das den Kasten öffnet.",
@@ -127054,7 +130888,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_profileNotRun": "nicht ausgeführt",
       "report_meta_optInRules": "Opt-in-Regeln",
       "report_meta_rulesNotRun": "Regeln nicht ausgeführt",
+      "report_meta_styleSheetsNotRead": "Stylesheets nicht gelesen",
       "report_incomplete_timeBudget": "Unvollständiger Scan: Sein Zeitbudget von {{budget}} ms war aufgebraucht, bevor alle ausgewählten Regeln gelaufen sind. Nicht ausgeführt ({{count}}): {{rules}}. Sie haben nichts geprüft; nichts in diesem Bericht gilt für sie als bestanden.",
+      "report_incomplete_profilesNotRun": "Nicht gestartete Profile: {{profiles}}.",
       "report_meta_viewport": "Viewport",
       "report_meta_colorScheme": "Farbschema",
       "report_meta_fonts": "Webfonts",
@@ -127500,7 +131336,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_colorScheme_light": "In the page's light color scheme, this text has a contrast ratio of {{ratio}}:1 against {{backgroundHex}}, below {{threshold}}:1. Change its colors in that scheme so the ratio reaches it.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
       "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
-      "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}{{#signWithPrice}} This sign is read with the price beside it, so it is text and needs the text ratio.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
@@ -127518,7 +131354,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_hint_cantTell_outline": "Zoom in and measure the color that forms most of each letter against the background; it needs {{threshold}}:1.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
-      "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).{{#backgroundFrom}} The background {{backgroundHex}} is painted by its ancestor {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedBy}} has opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Its color {{declaredColor}} is drawn as {{foregroundHex}} because {{fadedByMany}} have opacities that multiply to {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Its color {{declaredColor}} is semi-transparent, which shows as {{foregroundHex}} over the background.{{/alphaColor}}{{#signWithPrice}} This sign is read with the price beside it, so it is text and needs the enhanced text ratio.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
@@ -128020,6 +131856,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "Check that the control acts on this marquee and can be reached with the keyboard.",
       "deprecatedElements_lean_why_noMechanism": "No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.",
       "deprecatedElements_lean_caution_noMechanism": "A script loaded from a file may wire a control by its id, such as an icon button.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "This <{{element}}> scrolls its content and stops only while the pointer is over it, which keyboard and touch users cannot do.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Check that the page offers another way to pause, stop, or hide this content, one that works with the keyboard. Better: replace it with static content, or with an animation that has a pause/stop control.",
+      "deprecatedElements_lean_why_hoverOnly": "The marquee stops only while the pointer is over it, which keyboard and touch users cannot do, and no control on the page is named for pausing, stopping or hiding.",
       "iframeNamePresent_title": "Frames have an accessible name",
       "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
       "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
@@ -128089,7 +131928,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Check whether the list tells something the content doesn't say otherwise: its items, their number or their order. If it does, keep the list and move role=\"{{parentRole}}\" from the <{{parentElement}}> to an element around it (for a navigation, <nav><{{parentElement}}>). If it doesn't, remove the <{{parentElement}}> and <li> elements.",
       "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.",
@@ -128526,6 +132365,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
       "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
       "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "This element can scroll (overflow: auto or scroll), but it has no tabindex and holds nothing in the tab order. Whether its content overflows could not be measured: the page was checked without a layout. Chromium and Firefox still make a scrolling box a tab stop; Safari does not.",
       "scrollableRegionFocusable_hint_cantTell": "If its content does overflow, add tabindex=\"0\" and a name, so keyboard users can focus it and scroll with the arrow keys.",
       "scrollableRegionFocusable_lean_why_overflows": "Its content overflows the box, and nothing in it can take keyboard focus to scroll it.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.",
@@ -128703,8 +132543,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_title": "Radio buttons and checkboxes that share a name should be in a named group",
       "formGroupNamePresent_description": "Asks about radio buttons, or checkboxes, that share a name but sit in no <fieldset> with a <legend> and no group or radiogroup with an accessible name, so the question they answer may be tied to none of them.",
       "formGroupNamePresent_summary_cantTell_radio": "These {{count}} radio buttons named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"radiogroup\" or role=\"group\" and an accessible name.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Some of these {{count}} radio buttons named “{{name}}” are in no group with a name (no <fieldset> with a <legend>, and no element with role=\"radiogroup\" or role=\"group\" and an accessible name); the others are in one.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "These {{count}} radio buttons named “{{name}}” share a name, so a browser makes them one choice, but sit in different groups with names ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "These {{count}} checkboxes named “{{name}}” are in no group with a name: no <fieldset> with a <legend>, and no element with role=\"group\" and an accessible name.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "These {{count}} checkboxes named “{{name}}” share a name, but sit in different groups with names ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "If the options answer one question, put them in a <fieldset> whose <legend> says it, or in an element with role=\"radiogroup\" (role=\"group\" for checkboxes) named with aria-labelledby pointing to the question.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Check whether they are options of one choice. If they are, put them in one group whose name says what is chosen; if they are separate choices, give each its own name.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Check whether they answer one question. If they do, put them in one group whose name says the question; if they answer separate questions, the groups they are in can stay.",
       "formGroupNamePresent_lean_why_radio": "Radio buttons that share a name are one choice a person makes, and nothing gives that choice a name.",
       "formGroupNamePresent_lean_caution_radio": "Each option’s own label may say the whole question.",
       "symbolGraphicContrast_title": "Symbols used as a graphic should have a contrast of at least 3:1",
@@ -128804,7 +132649,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "A hook installed before the page’s scripts saw no key or focus listener on the element, its ancestors, the document or the window, so Enter and Space probably do nothing.",
       "clickHandlerKeyboardOperable_lean_why_managed": "An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "The element is drawn as a button, a short label in a box with a background or a border of its own, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "The element is drawn as a control, a short label in a box with a border or a shadow of its own, or a close or menu symbol, and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "The same action may be offered by another control of the page, such as a link next to a clickable row.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Handle keydown so that the keys a {{role}} answers to (Enter and Space, and the arrow keys of its widget) do what a click does.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
@@ -128877,9 +132722,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_unattributed": "No element could be named: the overflow may come from a margin, generated content or a closed shadow root. Check that scrolling sideways shows content.",
       "resizeTextContentLoss_title": "Text is not cut off at 640 CSS pixels wide (200% zoom)",
       "resizeTextContentLoss_description": "At a viewport 640 CSS pixels wide or less, as a 1280 pixel window shows a page at 200% zoom, measures each text in a box that hides its overflow, and asks about text the box cuts off or shortens with an ellipsis or a line clamp, for manual review of whether content is lost.",
-      "resizeTextContentLoss_summary_clipped": "At {{viewportWidth}} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element cuts off the text \"{{text}}\" ({{overflowPx}} pixels past its {{#edgeTop}}top {{/edgeTop}}{{#edgeRight}}right {{/edgeRight}}{{#edgeBottom}}bottom {{/edgeBottom}}{{#edgeLeft}}left {{/edgeLeft}}edge).{{#clipCss}} The CSS that cuts it off: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "At {{viewportWidth}} pixels wide, {{#narrower}}narrower than a 1280 pixel window at 200% zoom{{/narrower}}{{^narrower}}as a 1280 pixel window shows the page at {{zoomPercent}}% zoom{{/narrower}}, this element cuts off the text \"{{text}}\" ({{overflowPx}} pixels past its {{#edgeTop}}top {{/edgeTop}}{{#edgeRight}}right {{/edgeRight}}{{#edgeBottom}}bottom {{/edgeBottom}}{{#edgeLeft}}left {{/edgeLeft}}edge).{{#clipCss}} The CSS that cuts it off: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Let the box grow with its text when the page is zoomed: {{#clipCss}}change {{clipCss}}{{/clipCss}}{{^clipCss}}avoid fixed heights and widths with overflow: hidden on text{{/clipCss}}, or let it scroll.",
-      "resizeTextContentLoss_summary_truncated": "At {{viewportWidth}} pixels wide, as a 1280 pixel window shows the page at 200% zoom, this element shortens the text \"{{text}}\" with an ellipsis or a line clamp, so part of it is not shown.{{#clipCss}} The CSS that shortens it: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "At {{viewportWidth}} pixels wide, {{#narrower}}narrower than a 1280 pixel window at 200% zoom{{/narrower}}{{^narrower}}as a 1280 pixel window shows the page at {{zoomPercent}}% zoom{{/narrower}}, this element shortens the text \"{{text}}\" with an ellipsis or a line clamp, so part of it is not shown.{{#clipCss}} The CSS that shortens it: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Let the text wrap and the box show all of it when the page is zoomed, or offer the full text another way that works with the keyboard, such as a \"read more\" link.",
       "resizeTextContentLoss_lean_why_clipped": "At least half a line of the text lies past the edge of the box, which hides it and does not scroll.",
       "resizeTextContentLoss_lean_caution_clipped": "The full text may be shown another way, such as a control that opens the box.",
@@ -128900,7 +132745,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_profileNotRun": "not run",
       "report_meta_optInRules": "opt-in rules",
       "report_meta_rulesNotRun": "rules not run",
+      "report_meta_styleSheetsNotRead": "style sheets not read",
       "report_incomplete_timeBudget": "Incomplete scan: its time budget of {{budget}} ms ran out before every rule it selected had run. Not run ({{count}}): {{rules}}. These checked nothing, so nothing in this report passes them.",
+      "report_incomplete_profilesNotRun": "Profiles not started: {{profiles}}.",
       "report_meta_viewport": "viewport",
       "report_meta_colorScheme": "color scheme",
       "report_meta_fonts": "web fonts",
@@ -129328,11 +133175,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_firstLetterColor": "El contraste no se puede calcular porque {{blockerSelector}} dibuja la primera letra con un valor propio de {{blockerProperty}} ({{blockerValue}}). No se pudo saber si esa letra, o texto posterior a ella, forma parte de este texto.",
       "contrastComputable_cantTell_selectOption": "El contraste no se puede calcular porque esta opción de una lista desplegable tiene un valor propio de {{blockerProperty}} ({{blockerValue}}) y solo se muestra al abrirse la lista, dibujada como la dibuje la plataforma, con esos colores o con los suyos.",
       "contrastComputable_cantTell_generatedText": "El contraste no se puede calcular para el texto que genera el {{pseudo}} de este elemento ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
-      "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
-      "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
+      "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA).",
+      "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Ningún elemento detrás de este texto, hasta la raíz, tiene un fondo completamente opaco, por lo que el color sobre el que se muestra depende de dónde se visualice la página. Definir un color de fondo opaco en html o body, o medir el contraste frente al fondo sobre el que realmente se muestra la página.",
-      "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
-      "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
+      "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
+      "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4,5:1 y el texto grande 3:1 (7:1 y 4,5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
       "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
       "contrast_hint_drawnSize": "Su font-size es {{declaredFontSizePx}}px, pero {{scaledBy}} lo dibuja a {{drawnFontSizePx}}px, y el texto se juzga por el tamaño al que se dibuja: {{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto que no es grande{{/isLargeText}}, que necesita {{threshold}}:1. Cambiar el color del texto, el del fondo o ambos para que la relación lo alcance.",
@@ -129345,8 +133192,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_colorScheme_dark": "En el esquema de color oscuro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrast_hint_colorScheme_light": "En el esquema de color claro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
-      "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
-      "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}",
+      "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4,5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
+      "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}{{#signWithPrice}} Este signo se lee con el precio que tiene al lado, así que es texto y necesita la relación de contraste del texto.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
@@ -129363,8 +133210,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_hint_cantTell_pseudoElementColor": "Cambiar el tamaño de la ventana para ver qué palabras dibuja {{pseudoElement}} y comprobar que cada color alcanza allí su relación; si uno no la alcanza, cambiarlo.",
       "contrastMinimum_hint_cantTell_outline": "Ampliar y medir frente al fondo el color que forma la mayor parte de cada letra; necesita {{threshold}}:1.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
-      "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
-      "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}",
+      "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4,5:1 (grande), cuando el contraste es computable a partir de CSS.",
+      "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).{{#backgroundFrom}} El fondo {{backgroundHex}} lo pinta su ancestro {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedBy}} tiene opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Su color {{declaredColor}} se dibuja como {{foregroundHex}} porque {{fadedByMany}} tienen opacidades que, multiplicadas, dan {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Su color {{declaredColor}} es semitransparente y se ve como {{foregroundHex}} sobre el fondo.{{/alphaColor}}{{#signWithPrice}} Este signo se lee con el precio que tiene al lado, así que es texto y necesita la relación de contraste mejorada del texto.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
@@ -129866,6 +133713,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "Comprobar que el control actúa sobre este marquee y que se puede alcanzar con el teclado.",
       "deprecatedElements_lean_why_noMechanism": "Ningún control de la página indica en su nombre pausar, detener u ocultar, y ningún script de la página detiene el marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script cargado desde un archivo puede vincular un control por su id, como un botón de icono.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Este <{{element}}> desplaza su contenido y solo se detiene mientras el puntero está sobre él, algo que no pueden hacer quienes usan el teclado o una pantalla táctil.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Comprobar que la página ofrece otra forma de pausar, detener u ocultar este contenido, que funcione con el teclado. Mejor: sustituirlo por contenido estático, o por una animación con un control de pausa/detención.",
+      "deprecatedElements_lean_why_hoverOnly": "El marquee solo se detiene mientras el puntero está sobre él, algo que no pueden hacer quienes usan el teclado o una pantalla táctil, y ningún control de la página indica en su nombre pausar, detener u ocultar.",
       "iframeNamePresent_title": "Los marcos tienen un nombre accesible",
       "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
       "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
@@ -129935,7 +133785,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Comprobar si la lista dice algo que el contenido no dice de otro modo: sus elementos, su número o su orden. Si lo dice, mantener la lista y mover role=\"{{parentRole}}\" del <{{parentElement}}> a un elemento que lo envuelva (para una navegación, <nav><{{parentElement}}>). Si no, quitar los elementos <{{parentElement}}> y <li>.",
       "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "El elemento se dibuja con viñeta o número, como elemento de una lista que el marcado ya no expone.",
@@ -130372,6 +134222,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "Las regiones desplazables sin contenido enfocable deberían ser enfocables por teclado",
       "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
       "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Este elemento puede desplazarse (overflow: auto o scroll), pero no tiene tabindex y no contiene nada en el orden de tabulación. No se pudo medir si su contenido desborda: la página se comprobó sin maquetación. Chromium y Firefox hacen igualmente de una caja desplazable una parada de tabulación; Safari no.",
       "scrollableRegionFocusable_hint_cantTell": "Si su contenido se desborda de verdad, agregar tabindex=\"0\" y un nombre, para que con el teclado se pueda enfocar y desplazar con las flechas.",
       "scrollableRegionFocusable_lean_why_overflows": "Su contenido desborda la caja, y nada en ella puede recibir el foco del teclado para desplazarla.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 y posteriores, y Firefox, permiten igualmente llegar con el teclado a una caja que se desplaza; Safari no.",
@@ -130549,8 +134400,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_title": "Los botones de opción y las casillas que comparten nombre deberían estar en un grupo con nombre",
       "formGroupNamePresent_description": "Pregunta por botones de opción, o casillas de verificación, que comparten nombre pero no están en ningún <fieldset> con <legend> ni en ningún grupo o radiogroup con nombre accesible, así que la pregunta a la que responden puede no estar ligada a ninguno.",
       "formGroupNamePresent_summary_cantTell_radio": "Estos {{count}} botones de opción con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"radiogroup\" o role=\"group\" y nombre accesible.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Algunos de estos {{count}} botones de opción con el nombre «{{name}}» no están en ningún grupo con nombre (ningún <fieldset> con <legend> ni ningún elemento con role=\"radiogroup\" o role=\"group\" y nombre accesible); los demás sí lo están.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "Estos {{count}} botones de opción con el nombre «{{name}}» comparten nombre, así que el navegador los trata como una sola elección, pero están en grupos con nombre distintos ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Estas {{count}} casillas de verificación con el nombre «{{name}}» no están en ningún grupo con nombre: ningún <fieldset> con <legend> ni ningún elemento con role=\"group\" y nombre accesible.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "Estas {{count}} casillas de verificación con el nombre «{{name}}» comparten nombre, pero están en grupos con nombre distintos ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "Si las opciones responden a una sola pregunta, ponerlas en un <fieldset> cuyo <legend> la diga, o en un elemento con role=\"radiogroup\" (role=\"group\" para casillas) nombrado con aria-labelledby apuntando a la pregunta.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Comprobar si son opciones de una sola elección. Si lo son, ponerlas en un solo grupo cuyo nombre diga qué se elige; si son elecciones distintas, dar a cada una su propio nombre.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Comprobar si responden a una sola pregunta. Si es así, ponerlas en un solo grupo cuyo nombre diga la pregunta; si responden a preguntas distintas, pueden quedarse en sus grupos.",
       "formGroupNamePresent_lean_why_radio": "Los botones de opción que comparten nombre son una sola elección, y nada le da nombre a esa elección.",
       "formGroupNamePresent_lean_caution_radio": "La etiqueta de cada opción puede decir por sí sola la pregunta entera.",
       "symbolGraphicContrast_title": "Los símbolos usados como gráfico deberían tener un contraste de al menos 3:1",
@@ -130650,7 +134506,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook instalado antes de los scripts de la página no vio ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio probablemente no hacen nada.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "El elemento se dibuja como un botón, un texto corto en una caja con fondo o borde propios, y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "El elemento se dibuja como un control, un texto corto en una caja con borde o sombra propios, o un símbolo de cerrar o de menú, y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gestionar keydown para que las teclas a las que responde un {{role}} (Intro y Espacio, y las flechas de su widget) hagan lo mismo que un clic.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
@@ -130723,9 +134579,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_unattributed": "No se pudo nombrar ningún elemento: el desbordamiento puede venir de un margen, de contenido generado o de un shadow root cerrado. Comprobar que el desplazamiento lateral muestra contenido.",
       "resizeTextContentLoss_title": "El texto no se recorta a 640 píxeles CSS de ancho (zoom al 200 %)",
       "resizeTextContentLoss_description": "En una ventana de 640 píxeles CSS de ancho o menos, como una ventana de 1280 píxeles muestra una página con zoom al 200 %, mide cada texto dentro de una caja que oculta su desbordamiento y pregunta por el texto que la caja recorta o acorta con puntos suspensivos o un límite de líneas, para revisar manualmente si se pierde contenido.",
-      "resizeTextContentLoss_summary_clipped": "A {{viewportWidth}} píxeles de ancho, como una ventana de 1280 píxeles muestra la página con zoom al 200 %, este elemento recorta el texto «{{text}}» ({{overflowPx}} píxeles más allá de su borde{{#edgeTop}} superior{{/edgeTop}}{{#edgeRight}} derecho{{/edgeRight}}{{#edgeBottom}} inferior{{/edgeBottom}}{{#edgeLeft}} izquierdo{{/edgeLeft}}).{{#clipCss}} El CSS que lo recorta: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "A {{viewportWidth}} píxeles de ancho, {{#narrower}}más estrecho que una ventana de 1280 píxeles con zoom al 200 %{{/narrower}}{{^narrower}}como una ventana de 1280 píxeles muestra la página con zoom al {{zoomPercent}} %{{/narrower}}, este elemento recorta el texto «{{text}}» ({{overflowPx}} píxeles más allá de su borde{{#edgeTop}} superior{{/edgeTop}}{{#edgeRight}} derecho{{/edgeRight}}{{#edgeBottom}} inferior{{/edgeBottom}}{{#edgeLeft}} izquierdo{{/edgeLeft}}).{{#clipCss}} El CSS que lo recorta: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Dejar que la caja crezca con su texto al ampliar la página: {{#clipCss}}cambiar {{clipCss}}{{/clipCss}}{{^clipCss}}evitar alturas y anchuras fijas con overflow: hidden en texto{{/clipCss}}, o permitir que se desplace.",
-      "resizeTextContentLoss_summary_truncated": "A {{viewportWidth}} píxeles de ancho, como una ventana de 1280 píxeles muestra la página con zoom al 200 %, este elemento acorta el texto «{{text}}» con puntos suspensivos o un límite de líneas, así que parte de él no se muestra.{{#clipCss}} El CSS que lo acorta: {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "A {{viewportWidth}} píxeles de ancho, {{#narrower}}más estrecho que una ventana de 1280 píxeles con zoom al 200 %{{/narrower}}{{^narrower}}como una ventana de 1280 píxeles muestra la página con zoom al {{zoomPercent}} %{{/narrower}}, este elemento acorta el texto «{{text}}» con puntos suspensivos o un límite de líneas, así que parte de él no se muestra.{{#clipCss}} El CSS que lo acorta: {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Dejar que el texto se ajuste y que la caja lo muestre entero al ampliar la página, u ofrecer el texto completo de otra forma que funcione con el teclado, como un enlace «leer más».",
       "resizeTextContentLoss_lean_why_clipped": "Al menos media línea del texto queda más allá del borde de la caja, que la oculta y no se desplaza.",
       "resizeTextContentLoss_lean_caution_clipped": "El texto completo puede mostrarse de otra forma, como un control que abre la caja.",
@@ -130746,7 +134602,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_profileNotRun": "no ejecutado",
       "report_meta_optInRules": "reglas activadas explícitamente",
       "report_meta_rulesNotRun": "reglas no ejecutadas",
+      "report_meta_styleSheetsNotRead": "hojas de estilo no leídas",
       "report_incomplete_timeBudget": "Análisis incompleto: su presupuesto de tiempo de {{budget}} ms se agotó antes de que se ejecutaran todas las reglas seleccionadas. No ejecutadas ({{count}}): {{rules}}. No comprobaron nada, así que nada en este informe las da por superadas.",
+      "report_incomplete_profilesNotRun": "Perfiles no iniciados: {{profiles}}.",
       "report_meta_viewport": "área de visualización",
       "report_meta_colorScheme": "esquema de color",
       "report_meta_fonts": "fuentes web",
@@ -131192,7 +135050,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_colorScheme_light": "Dans le jeu de couleurs clair de la page, ce texte a un ratio de contraste de {{ratio}}:1 sur {{backgroundHex}}, inférieur à {{threshold}}:1. Modifiez ses couleurs dans ce jeu de couleurs pour que le ratio l’atteigne.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
       "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
-      "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}{{#signWithPrice}} Ce signe se lit avec le prix à côté de lui : c’est donc du texte, qui doit atteindre le rapport de contraste du texte.{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
@@ -131210,7 +135068,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_hint_cantTell_outline": "Zoomez et mesurez la couleur qui forme l’essentiel de chaque lettre par rapport à l’arrière-plan ; elle doit atteindre {{threshold}}:1.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
-      "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).{{#backgroundFrom}} L’arrière-plan {{backgroundHex}} est peint par son ancêtre {{backgroundFrom}}.{{/backgroundFrom}}{{#fadedBy}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedBy}} a opacity: {{fadedOpacity}}.{{/fadedBy}}{{#fadedByMany}} Sa couleur {{declaredColor}} est rendue en {{foregroundHex}} parce que {{fadedByMany}} ont des opacités dont le produit vaut {{fadedOpacity}}.{{/fadedByMany}}{{#alphaColor}} Sa couleur {{declaredColor}} est semi-transparente et apparaît en {{foregroundHex}} sur l’arrière-plan.{{/alphaColor}}{{#signWithPrice}} Ce signe se lit avec le prix à côté de lui : c’est donc du texte, qui doit atteindre le rapport de contraste renforcé du texte.{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
@@ -131712,6 +135570,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "Vérifiez que la commande agit sur ce marquee et qu’on peut l’atteindre au clavier.",
       "deprecatedElements_lean_why_noMechanism": "Aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque, et aucun script de la page n’arrête le marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script chargé depuis un fichier peut relier une commande par son id, comme un bouton icône.",
+      "deprecatedElements_summary_cantTell_hoverOnly": "Ce <{{element}}> fait défiler son contenu et ne s’arrête que tant que le pointeur le survole, ce que les utilisateurs du clavier ou d’un écran tactile ne peuvent pas faire.",
+      "deprecatedElements_hint_cantTell_hoverOnly": "Vérifiez que la page offre un autre moyen, utilisable au clavier, de mettre en pause, d’arrêter ou de masquer ce contenu. Mieux : remplacez-le par un contenu statique, ou par une animation dotée d’un contrôle de pause/arrêt.",
+      "deprecatedElements_lean_why_hoverOnly": "Le marquee ne s’arrête que tant que le pointeur le survole, ce que les utilisateurs du clavier ou d’un écran tactile ne peuvent pas faire, et aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque.",
       "iframeNamePresent_title": "Les cadres ont un nom accessible",
       "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
       "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
@@ -131781,7 +135642,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "Vérifiez si la liste dit quelque chose que le contenu ne dit pas autrement : ses éléments, leur nombre ou leur ordre. Si oui, gardez la liste et déplacez role=\"{{parentRole}}\" du <{{parentElement}}> vers un élément qui l’entoure (pour une navigation, <nav><{{parentElement}}>). Sinon, retirez les éléments <{{parentElement}}> et <li>.",
       "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
       "listitemParentValid_lean_why_listRoleOverridden": "L’élément est dessiné avec une puce ou un numéro, comme élément d’une liste que le balisage n’expose plus.",
@@ -132218,6 +136079,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "Les régions défilantes sans contenu focalisable devraient être focalisables au clavier",
       "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une vérification manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
       "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "Cet élément peut défiler (overflow: auto ou scroll), mais il n’a pas de tabindex et ne contient rien dans l’ordre de tabulation. Son débordement n’a pas pu être mesuré : la page a été vérifiée sans mise en page. Chromium et Firefox font tout de même d’une zone qui défile un arrêt de tabulation ; Safari non.",
       "scrollableRegionFocusable_hint_cantTell": "Si son contenu déborde réellement, ajoutez tabindex=\"0\" et un nom, pour qu’on puisse le focaliser au clavier et le faire défiler avec les flèches.",
       "scrollableRegionFocusable_lean_why_overflows": "Son contenu déborde de la boîte, et rien à l’intérieur ne peut recevoir le focus clavier pour la faire défiler.",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 et versions ultérieures, ainsi que Firefox, permettent quand même d’atteindre au clavier une boîte qui défile ; Safari non.",
@@ -132395,8 +136257,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_title": "Les boutons radio et les cases à cocher qui partagent un nom devraient être dans un groupe nommé",
       "formGroupNamePresent_description": "Signale les boutons radio, ou les cases à cocher, qui partagent un nom mais ne sont dans aucun <fieldset> avec <legend> ni dans aucun group ou radiogroup avec un nom accessible, si bien que la question à laquelle ils répondent peut n’être liée à aucun d’eux.",
       "formGroupNamePresent_summary_cantTell_radio": "Ces {{count}} boutons radio nommés « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"radiogroup\" ou role=\"group\" et un nom accessible.",
+      "formGroupNamePresent_summary_cantTell_radio_some": "Certains de ces {{count}} boutons radio nommés « {{name}} » ne sont dans aucun groupe nommé (aucun <fieldset> avec <legend>, ni aucun élément avec role=\"radiogroup\" ou role=\"group\" et un nom accessible) ; les autres le sont.",
+      "formGroupNamePresent_summary_cantTell_radio_split": "Ces {{count}} boutons radio nommés « {{name}} » partagent un nom, ce qui en fait un seul choix pour le navigateur, mais sont dans des groupes nommés différents ({{groups}}).",
       "formGroupNamePresent_summary_cantTell_checkbox": "Ces {{count}} cases à cocher nommées « {{name}} » ne sont dans aucun groupe nommé : aucun <fieldset> avec <legend>, ni aucun élément avec role=\"group\" et un nom accessible.",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "Ces {{count}} cases à cocher nommées « {{name}} » partagent un nom, mais sont dans des groupes nommés différents ({{groups}}).",
       "formGroupNamePresent_hint_cantTell": "Si les options répondent à une seule question, placez-les dans un <fieldset> dont la <legend> la formule, ou dans un élément avec role=\"radiogroup\" (role=\"group\" pour des cases à cocher) nommé par aria-labelledby pointant vers la question.",
+      "formGroupNamePresent_hint_cantTell_radio_split": "Vérifiez s’ils sont les options d’un seul choix. Si oui, placez-les dans un seul groupe dont le nom dit ce qui est choisi ; si ce sont des choix distincts, donnez à chacun son propre nom.",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "Vérifiez si elles répondent à une seule question. Si oui, placez-les dans un seul groupe dont le nom dit la question ; si elles répondent à des questions distinctes, leurs groupes peuvent rester.",
       "formGroupNamePresent_lean_why_radio": "Des boutons radio qui partagent un nom sont un seul choix, et rien ne donne de nom à ce choix.",
       "formGroupNamePresent_lean_caution_radio": "L’étiquette de chaque option peut formuler à elle seule toute la question.",
       "symbolGraphicContrast_title": "Les symboles utilisés comme graphique devraient avoir un contraste d’au moins 3:1",
@@ -132496,7 +136363,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook installé avant les scripts de la page n’a vu aucun écouteur de touches ni de focus sur l’élément, ses ancêtres, le document ni la fenêtre : Entrée et Espace ne font sans doute rien.",
       "clickHandlerKeyboardOperable_lean_why_managed": "Un ancêtre garde le focus pour ses éléments (aria-activedescendant, ou un composant composite focalisable) : c’est ainsi qu’un tel composant actionne un élément sans lui donner le focus.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "L’élément affiche un curseur en forme de main et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "L’élément est dessiné comme un bouton, un texte court dans une boîte avec un fond ou une bordure à elle, et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "L’élément est dessiné comme une commande, un texte court dans une boîte avec une bordure ou une ombre à elle, ou un symbole de fermeture ou de menu, et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La même action peut être offerte par une autre commande de la page, comme un lien à côté d’une ligne cliquable.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gérez keydown pour que les touches auxquelles répond un {{role}} (Entrée et Espace, et les flèches de son composant) fassent ce que fait un clic.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
@@ -132569,9 +136436,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_unattributed": "Aucun élément n’a pu être nommé : le débordement peut venir d’une marge, d’un contenu généré ou d’un shadow root fermé. Vérifiez que le défilement horizontal montre du contenu.",
       "resizeTextContentLoss_title": "Le texte n’est pas rogné à 640 pixels CSS de large (zoom à 200 %)",
       "resizeTextContentLoss_description": "Dans une zone d’affichage de 640 pixels CSS de large ou moins, comme une fenêtre de 1280 pixels affiche une page zoomée à 200 %, mesure chaque texte placé dans une boîte qui masque son débordement, et pose la question pour le texte que la boîte rogne ou raccourcit par des points de suspension ou une limite de lignes, pour une vérification manuelle de la perte de contenu.",
-      "resizeTextContentLoss_summary_clipped": "À {{viewportWidth}} pixels de large, comme une fenêtre de 1280 pixels affiche la page zoomée à 200 %, cet élément rogne le texte « {{text}} » ({{overflowPx}} pixels au-delà de son bord{{#edgeTop}} supérieur{{/edgeTop}}{{#edgeRight}} droit{{/edgeRight}}{{#edgeBottom}} inférieur{{/edgeBottom}}{{#edgeLeft}} gauche{{/edgeLeft}}).{{#clipCss}} Le CSS qui le rogne : {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "À {{viewportWidth}} pixels de large, {{#narrower}}moins large qu’une fenêtre de 1280 pixels zoomée à 200 %{{/narrower}}{{^narrower}}comme une fenêtre de 1280 pixels affiche la page zoomée à {{zoomPercent}} %{{/narrower}}, cet élément rogne le texte « {{text}} » ({{overflowPx}} pixels au-delà de son bord{{#edgeTop}} supérieur{{/edgeTop}}{{#edgeRight}} droit{{/edgeRight}}{{#edgeBottom}} inférieur{{/edgeBottom}}{{#edgeLeft}} gauche{{/edgeLeft}}).{{#clipCss}} Le CSS qui le rogne : {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "Laissez la boîte s’agrandir avec son texte quand la page est zoomée : {{#clipCss}}modifiez {{clipCss}}{{/clipCss}}{{^clipCss}}évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte{{/clipCss}}, ou laissez-la défiler.",
-      "resizeTextContentLoss_summary_truncated": "À {{viewportWidth}} pixels de large, comme une fenêtre de 1280 pixels affiche la page zoomée à 200 %, cet élément raccourcit le texte « {{text}} » par des points de suspension ou une limite de lignes, si bien qu’une partie n’est pas affichée.{{#clipCss}} Le CSS qui le raccourcit : {{clipCss}}.{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "À {{viewportWidth}} pixels de large, {{#narrower}}moins large qu’une fenêtre de 1280 pixels zoomée à 200 %{{/narrower}}{{^narrower}}comme une fenêtre de 1280 pixels affiche la page zoomée à {{zoomPercent}} %{{/narrower}}, cet élément raccourcit le texte « {{text}} » par des points de suspension ou une limite de lignes, si bien qu’une partie n’est pas affichée.{{#clipCss}} Le CSS qui le raccourcit : {{clipCss}}.{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "Laissez le texte passer à la ligne et la boîte l’afficher en entier quand la page est zoomée, ou proposez le texte complet d’une autre façon utilisable au clavier, comme un lien « lire la suite ».",
       "resizeTextContentLoss_lean_why_clipped": "Au moins une demi-ligne du texte se trouve au-delà du bord de la boîte, qui la masque et ne défile pas.",
       "resizeTextContentLoss_lean_caution_clipped": "Le texte complet peut être affiché autrement, par exemple par une commande qui ouvre la boîte.",
@@ -132592,7 +136459,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_profileNotRun": "non exécuté",
       "report_meta_optInRules": "règles activées explicitement",
       "report_meta_rulesNotRun": "règles non exécutées",
+      "report_meta_styleSheetsNotRead": "feuilles de style non lues",
       "report_incomplete_timeBudget": "Analyse incomplète : son budget de temps de {{budget}} ms a été épuisé avant que toutes les règles sélectionnées ne s’exécutent. Non exécutées ({{count}}) : {{rules}}. Elles n’ont rien vérifié : rien dans ce rapport ne les donne comme réussies.",
+      "report_incomplete_profilesNotRun": "Profils non démarrés : {{profiles}}.",
       "report_meta_viewport": "zone d’affichage",
       "report_meta_colorScheme": "schéma de couleurs",
       "report_meta_fonts": "polices web",
@@ -133038,7 +136907,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_colorScheme_light": "ページのライトな配色では、このテキストの {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で、{{threshold}}:1 を下回ります。比がこの値に達するよう、その配色でのテキストの色を変更してください。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
       "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
-      "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}",
+      "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}{{#signWithPrice}}この記号は隣の価格と一緒に読まれるため、テキストであり、テキストのコントラスト比が必要です。{{/signWithPrice}}",
       "contrastMinimum_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastMinimum_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastMinimum_pass_allAboveThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
@@ -133056,7 +136925,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_hint_cantTell_outline": "拡大して、各文字の大部分を形作っている色を背景に対して測定してください。{{threshold}}:1 が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
-      "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}",
+      "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。{{#backgroundFrom}}背景 {{backgroundHex}} は祖先要素 {{backgroundFrom}} が描画しています。{{/backgroundFrom}}{{#fadedBy}}{{fadedBy}} に opacity: {{fadedOpacity}} が指定されているため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedBy}}{{#fadedByMany}}{{fadedByMany}} の不透明度を掛け合わせると {{fadedOpacity}} になるため、文字色 {{declaredColor}} は {{foregroundHex}} として描画されます。{{/fadedByMany}}{{#alphaColor}}文字色 {{declaredColor}} は半透明のため、背景の上では {{foregroundHex}} に見えます。{{/alphaColor}}{{#signWithPrice}}この記号は隣の価格と一緒に読まれるため、テキストであり、テキストの強化されたコントラスト比が必要です。{{/signWithPrice}}",
       "contrastEnhanced_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastEnhanced_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastEnhanced_pass_allAboveThreshold": "計算できたすべてのテキストが、高度なコントラスト (AAA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
@@ -133558,6 +137427,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_lean_caution_pauseControl": "そのコントロールがこの marquee に作用し、キーボードで操作できることを確認してください。",
       "deprecatedElements_lean_why_noMechanism": "ページには一時停止、停止、非表示を名前に示すコントロールがなく、marquee を止めるページ内のスクリプトもありません。",
       "deprecatedElements_lean_caution_noMechanism": "ファイルから読み込まれるスクリプトが、アイコンボタンなどのコントロールを id で結び付けている場合があります。",
+      "deprecatedElements_summary_cantTell_hoverOnly": "この <{{element}}> はコンテンツをスクロールさせ、ポインターが上にある間だけ止まります。キーボードやタッチ操作の利用者にはそれができません。",
+      "deprecatedElements_hint_cantTell_hoverOnly": "このコンテンツを一時停止、停止、非表示にする別の手段で、キーボードでも使えるものがページにあるかを確認してください。より良い方法: 静的なコンテンツか、一時停止/停止のコントロールを備えたアニメーションに置き換えてください。",
+      "deprecatedElements_lean_why_hoverOnly": "marquee はポインターが上にある間だけ止まり、キーボードやタッチ操作の利用者にはそれができません。また、ページには一時停止、停止、非表示を名前に示すコントロールがありません。",
       "iframeNamePresent_title": "フレームにアクセシブルな名前があること",
       "iframeNamePresent_description": "<iframe>/<frame> 要素が、aria-label、aria-labelledby、または title 属性によって空でないアクセシブルな名前を公開しているかを確認します。",
       "iframeNamePresent_summary_fail": "この <{{element}}> にはアクセシブルな名前がありません。",
@@ -133627,7 +137499,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
       "listitemParentValid_summary_cantTell_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
-      "listitemParentValid_hint_cantTell_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "listitemParentValid_hint_cantTell_listRoleOverridden": "リストが、内容だけでは伝わらない情報 (項目、項目数、順序) を伝えているか確認してください。伝えている場合は、リストを残し、role=\"{{parentRole}}\" を <{{parentElement}}> から、それを囲む要素に移してください (ナビゲーションなら <nav><{{parentElement}}>)。伝えていない場合は、<{{parentElement}}> と <li> の要素を取り除いてください。",
       "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
       "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
       "listitemParentValid_lean_why_listRoleOverridden": "この項目は行頭記号や番号付きで、マークアップがもう公開していないリストの項目として描画されています。",
@@ -134064,6 +137936,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_title": "フォーカス可能なコンテンツのないスクロール領域は、キーボードでフォーカスできることが望ましい",
       "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
       "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
+      "scrollableRegionFocusable_summary_cantTell_unmeasured": "この要素はスクロールできます (overflow: auto または scroll) が、tabindex がなく、タブ順序に入るものも含んでいません。ページがレイアウトなしで検査されたため、コンテンツがはみ出すかは測定できませんでした。Chromium と Firefox はスクロールする領域をそれでもタブで止まる場所にしますが、Safari はしません。",
       "scrollableRegionFocusable_hint_cantTell": "内容が実際にはみ出す場合は、tabindex=\"0\" と名前を付け、キーボードでフォーカスして矢印キーでスクロールできるようにしてください。",
       "scrollableRegionFocusable_lean_why_overflows": "内容がボックスからはみ出しており、スクロールするためにキーボードフォーカスを受けられるものが中にありません。",
       "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 以降と Firefox では、スクロールするボックスにキーボードで到達できます。Safari ではできません。",
@@ -134241,8 +138114,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formGroupNamePresent_title": "同じ name を持つラジオボタンやチェックボックスは、名前のあるグループに入れるべきです",
       "formGroupNamePresent_description": "同じ name を持つのに、<legend> のある <fieldset> にも、アクセシブルな名前のある group や radiogroup にも入っていないラジオボタンやチェックボックスについて確認を求めます。それらが答える質問が、どれにも関連付けられていない可能性があります。",
       "formGroupNamePresent_summary_cantTell_radio": "name が「{{name}}」の {{count}} 個のラジオボタンは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"radiogroup\" や role=\"group\" の要素もありません。",
+      "formGroupNamePresent_summary_cantTell_radio_some": "name が「{{name}}」の {{count}} 個のラジオボタンのうち一部は、名前のあるグループに入っていません (<legend> のある <fieldset> も、アクセシブルな名前のある role=\"radiogroup\" や role=\"group\" の要素もありません)。残りは名前のあるグループに入っています。",
+      "formGroupNamePresent_summary_cantTell_radio_split": "name が「{{name}}」の {{count}} 個のラジオボタンは同じ name を持つため、ブラウザーは一つの選択として扱いますが、名前の異なるグループ ({{groups}}) に分かれています。",
       "formGroupNamePresent_summary_cantTell_checkbox": "name が「{{name}}」の {{count}} 個のチェックボックスは、名前のあるグループに入っていません。<legend> のある <fieldset> も、アクセシブルな名前のある role=\"group\" の要素もありません。",
+      "formGroupNamePresent_summary_cantTell_checkbox_split": "name が「{{name}}」の {{count}} 個のチェックボックスは同じ name を持ちますが、名前の異なるグループ ({{groups}}) に分かれています。",
       "formGroupNamePresent_hint_cantTell": "選択肢が一つの質問に答えるものなら、その質問を <legend> に書いた <fieldset> に入れるか、質問を指す aria-labelledby で名前を付けた role=\"radiogroup\" (チェックボックスなら role=\"group\") の要素に入れてください。",
+      "formGroupNamePresent_hint_cantTell_radio_split": "一つの選択の選択肢かどうかを確認してください。そうであれば、何を選ぶのかを名前で伝える一つのグループに入れてください。別々の選択であれば、それぞれに別の name を付けてください。",
+      "formGroupNamePresent_hint_cantTell_checkbox_split": "一つの質問に答えるものかどうかを確認してください。そうであれば、その質問を名前で伝える一つのグループに入れてください。別々の質問に答えるものであれば、今のグループのままで構いません。",
       "formGroupNamePresent_lean_why_radio": "同じ name を持つラジオボタンは一つの選択であり、その選択に名前を付けているものがありません。",
       "formGroupNamePresent_lean_caution_radio": "各選択肢のラベルだけで質問全体を伝えている場合もあります。",
       "symbolGraphicContrast_title": "グラフィックとして使われる記号は、少なくとも 3:1 のコントラストを持つべきです",
@@ -134342,7 +138220,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_noKeyListener": "ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーを見つけませんでした。Enter や Space ではおそらく何も起きません。",
       "clickHandlerKeyboardOperable_lean_why_managed": "祖先が項目のためにフォーカスを保持しています(aria-activedescendant、またはフォーカス可能な複合ウィジェット)。このようなウィジェットは、項目にフォーカスを移さずに操作します。",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "この要素はポインター カーソルを表示してクリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
-      "clickHandlerKeyboardOperable_lean_why_styledControl": "この要素は、独自の背景または枠線を持つボックスに短いラベルを置いたボタンのような見た目で、クリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
+      "clickHandlerKeyboardOperable_lean_why_styledControl": "この要素は、独自の枠線または影を持つボックスに短いラベルを置いたもの、または閉じるやメニューの記号だけのもので、コントロールのような見た目をしており、クリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "同じ操作をページ内の別のコントロール(クリックできる行の横のリンクなど)が提供している場合があります。",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "keydown を処理して、{{role}} が応答するキー (Enter と Space、そのウィジェットの矢印キー) でクリックと同じことが起きるようにしてください。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
@@ -134415,9 +138293,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "reflowHorizontalScroll_lean_caution_unattributed": "要素を特定できませんでした。はみ出しはマージン、生成コンテンツ、または閉じたシャドウ ルートによる可能性があります。横スクロールでコンテンツが表示されるかを確認してください。",
       "resizeTextContentLoss_title": "幅 640 CSS ピクセル（200% ズーム）でテキストが切り取られない",
       "resizeTextContentLoss_description": "幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ、幅 640 CSS ピクセル以下のビューポートで、はみ出しを隠すボックス内の各テキストを測定し、ボックスが切り取るテキストや、省略記号または行数制限で短くするテキストについて、コンテンツが失われていないかを手動で確認するよう求めます。",
-      "resizeTextContentLoss_summary_clipped": "幅 {{viewportWidth}} ピクセル（幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ）で、この要素はテキスト「{{text}}」を切り取ります（{{#edgeTop}}上{{/edgeTop}}{{#edgeRight}}右{{/edgeRight}}{{#edgeBottom}}下{{/edgeBottom}}{{#edgeLeft}}左{{/edgeLeft}}端から {{overflowPx}} ピクセルはみ出します）。{{#clipCss}}切り取っている CSS: {{clipCss}}。{{/clipCss}}",
+      "resizeTextContentLoss_summary_clipped": "幅 {{viewportWidth}} ピクセル（{{#narrower}}幅 1280 ピクセルのウィンドウでページを 200% にズームしたときより狭い{{/narrower}}{{^narrower}}幅 1280 ピクセルのウィンドウでページを {{zoomPercent}}% にズームしたときと同じ{{/narrower}}）で、この要素はテキスト「{{text}}」を切り取ります（{{#edgeTop}}上{{/edgeTop}}{{#edgeRight}}右{{/edgeRight}}{{#edgeBottom}}下{{/edgeBottom}}{{#edgeLeft}}左{{/edgeLeft}}端から {{overflowPx}} ピクセルはみ出します）。{{#clipCss}}切り取っている CSS: {{clipCss}}。{{/clipCss}}",
       "resizeTextContentLoss_hint_clipped": "ページをズームしたときにボックスがテキストに合わせて広がるようにしてください。{{#clipCss}}{{clipCss}} を変更するか{{/clipCss}}{{^clipCss}}テキストに overflow: hidden と固定の高さや幅を組み合わせないか{{/clipCss}}、スクロールできるようにしてください。",
-      "resizeTextContentLoss_summary_truncated": "幅 {{viewportWidth}} ピクセル（幅 1280 ピクセルのウィンドウでページを 200% にズームしたときと同じ）で、この要素はテキスト「{{text}}」を省略記号または行数制限で短くするため、一部が表示されません。{{#clipCss}}短くしている CSS: {{clipCss}}。{{/clipCss}}",
+      "resizeTextContentLoss_summary_truncated": "幅 {{viewportWidth}} ピクセル（{{#narrower}}幅 1280 ピクセルのウィンドウでページを 200% にズームしたときより狭い{{/narrower}}{{^narrower}}幅 1280 ピクセルのウィンドウでページを {{zoomPercent}}% にズームしたときと同じ{{/narrower}}）で、この要素はテキスト「{{text}}」を省略記号または行数制限で短くするため、一部が表示されません。{{#clipCss}}短くしている CSS: {{clipCss}}。{{/clipCss}}",
       "resizeTextContentLoss_hint_truncated": "ページをズームしたときにテキストが折り返され、ボックスが全体を表示するようにするか、「続きを読む」リンクなど、キーボードで使える別の方法で全文を提供してください。",
       "resizeTextContentLoss_lean_why_clipped": "テキストの少なくとも半行分がボックスの端の外側にあり、ボックスはそれを隠してスクロールしません。",
       "resizeTextContentLoss_lean_caution_clipped": "ボックスを開くコントロールなど、別の方法で全文が表示される場合があります。",
@@ -134438,7 +138316,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_profileNotRun": "未実行",
       "report_meta_optInRules": "オプトインルール",
       "report_meta_rulesNotRun": "未実行のルール",
+      "report_meta_styleSheetsNotRead": "読み込めなかったスタイルシート",
       "report_incomplete_timeBudget": "不完全なスキャン: 選択されたすべてのルールが実行される前に、{{budget}} ms の時間予算を使い切りました。実行されなかったもの ({{count}}): {{rules}}。これらは何も検査していないため、このレポートのどの結果もこれらの合格を意味しません。",
+      "report_incomplete_profilesNotRun": "開始されなかったプロファイル: {{profiles}}。",
       "report_meta_viewport": "ビューポート",
       "report_meta_colorScheme": "カラースキーム",
       "report_meta_fonts": "Web フォント",
@@ -134724,11 +138604,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       impls[id] = typeof impl === 'string' ? builtIn.impls[impl] : impl;
     }
     const i18n = {};
-    for (const locale of Object.keys(builtIn.i18n)) i18n[locale] = Object.assign({}, builtIn.i18n[locale]);
+    for (const locale of Object.keys(builtIn.i18n)) i18n[locale] = { ...builtIn.i18n[locale] };
     for (const locale of Object.keys(entry.i18n || {})) {
-      i18n[locale] = Object.assign(i18n[locale] || {}, entry.i18n[locale]);
+      i18n[locale] = { ...i18n[locale], ...entry.i18n[locale] };
     }
-    return Object.assign({}, entry, { impls, i18n });
+    return { ...entry, impls, i18n };
   }
   // In a page a pack is named (name@version): beside names, an item of the
   // list that is no name is left out, with a warning, and the named packs
@@ -134751,7 +138631,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           ' not a pack name (name@version) and left out; in a page, packs are named as packScript registered them.'
       );
     } catch {}
-    engineOptions = Object.assign({}, engineOptions, {
+    engineOptions = Object.assign(Object.create(null), engineOptions, {
       packs: engineOptions.packs.filter((p) => typeof p === 'string')
     });
   }
@@ -134776,9 +138656,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const registry = packRegistry && typeof packRegistry === 'object' ? packRegistry : null;
     const key = packNames.join(',');
     // Its own key only: "__proto__" or "toString" names no registered set.
+    // Read as its own keys only, with no prototype: a page's value on
+    // Object.prototype (overrides, impls) is never read as part of a set of
+    // packs (round 12, R12F-1 to R12F-6).
     const entry =
       registry && Object.prototype.hasOwnProperty.call(registry, key) && registry[key]
-        ? registry[key]
+        ? Object.assign(Object.create(null), registry[key])
         : null;
     // A name given twice is one pack named twice, as it is in Node.
     const twice = packNames.find((name, i) => i > 0 && packNames[i - 1] === name);
@@ -134812,7 +138695,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  const CATALOG = PACK_ENTRY ? packCatalog(BUILT_IN_CATALOG, PACK_ENTRY) : BUILT_IN_CATALOG;
+  // Its own keys only (createRuntime).
+  const CATALOG = Object.assign(
+    Object.create(null),
+    PACK_ENTRY ? packCatalog(BUILT_IN_CATALOG, PACK_ENTRY) : BUILT_IN_CATALOG
+  );
 
   // Rule catalog (data only)
   const CHECK_DEFS = CATALOG.checkDefs;
@@ -134843,6 +138730,15 @@ const I18N_LEFT_OUT = CATALOG.i18nLeftOut;
 // Lets an absent dictionary be told apart from a language that does not exist.
 const KNOWN_LOCALES = CATALOG.knownLocales;
 
+// A key of an object's own, never one a page's script put on
+// Object.prototype (round 12, R12F-1 to R12F-6): the options a result
+// echoes, a rule's result and its occurrences are plain objects.
+function ownValue(object, key) {
+  return object && typeof object === 'object' && Object.prototype.hasOwnProperty.call(object, key)
+    ? object[key]
+    : undefined;
+}
+
 function normalizeLocale(locale) {
   if (typeof locale !== 'string') return 'en';
   const s = locale.trim();
@@ -134852,7 +138748,7 @@ function normalizeLocale(locale) {
 // Dictionaries supplied by the caller. This function is serialized into the
 // page, so a table that was not compiled in can only arrive as data.
 function getSuppliedMessages(engineOptions) {
-  const supplied = engineOptions && engineOptions.messages;
+  const supplied = ownValue(engineOptions, 'messages');
   return (supplied && typeof supplied === 'object' && !Array.isArray(supplied)) ? supplied : null;
 }
 
@@ -134913,7 +138809,7 @@ function matchLocale(requested, engineOptions) {
 }
 
 function getLocaleDict(engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const matched = matchLocale(requested, engineOptions);
 
   return matched
@@ -134950,7 +138846,7 @@ function messageIn(locale, key, engineOptions) {
 // keeps the rest of the German, the caller's de and then the built-in de,
 // before English (round 9, A9-4). An exact hit returns before any allocation.
 function localeMessage(key, engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const direct = messageIn(requested, key, engineOptions);
   if (direct) return direct;
 
@@ -134969,7 +138865,7 @@ function isKnownLocale(locale) {
 // is visible in the result rather than only in the wording. Shares matchLocale
 // with getLocaleDict, so the reported locale and the strings cannot disagree.
 function resolveLocale(engineOptions) {
-  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const requested = normalizeLocale(ownValue(engineOptions, 'locale'));
   const matched = matchLocale(requested, engineOptions);
 
   if (!matched) {
@@ -135130,12 +139026,18 @@ function t(key, fallback, params, engineOptions) {
 
   const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
-  return applyI18nParams(base, params);
+  // Decimals read as the message's language writes them ("1,36:1" in
+  // French): the locale asked for where its string was found, English
+  // otherwise. The params themselves keep plain numbers.
+  const numberLocale = v ? normalizeLocale(ownValue(engineOptions, 'locale')) : 'en';
+  return applyI18nParams(base, localizeNumberParams(params, numberLocale));
 }
 
 function resolveRuleDefI18n(def, engineOptions) {
   if (!def || typeof def !== 'object') return def;
-  const out = { ...def };
+  // With no prototype: a field a rule doesn't declare (variant, settings,
+  // margin) is never read from Object.prototype.
+  const out = Object.assign(Object.create(null), def);
   if (out.i18n && typeof out.i18n === 'object') {
     out.title = t(out.i18n.titleKey, out.title, null, engineOptions);
     out.description = t(out.i18n.descriptionKey, out.description, null, engineOptions);
@@ -135178,6 +139080,10 @@ const POLICY_CONTRACTS = {
 
 // This is the single source of truth, inlined from src/policy/resolvePolicy.js
 const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions, strict) {
+  // The caller's own keys only, never ones a page's script put on
+  // Object.prototype (round 12, R12F-1 to R12F-6).
+  const own = (o, k) =>
+    o && typeof o === 'object' && Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined;
   function normalizePolicyContract(POLICY_CONTRACTS, contract, fallbackId) {
     const fallback = POLICY_CONTRACTS[fallbackId] || POLICY_CONTRACTS.a11y;
     if (typeof contract === 'string') {
@@ -135220,27 +139126,27 @@ const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions, s
       // no gate could fail.
       const allowedOutcomes =
         knownValues(
-          contract.allowedOutcomes,
+          own(contract, 'allowedOutcomes'),
           ['fail', 'pass', 'cantTell', 'notApplicable'],
           'policyContract.allowedOutcomes'
         ) || fallback.allowedOutcomes.slice();
 
       const allowedConfidence =
         knownValues(
-          contract.allowedConfidence,
+          own(contract, 'allowedConfidence'),
           ['high', 'medium', 'low'],
           'policyContract.allowedConfidence'
         ) || fallback.allowedConfidence.slice();
 
       return {
         id:
-          typeof contract.id === 'string' && contract.id.trim()
+          typeof own(contract, 'id') === 'string' && contract.id.trim()
             ? contract.id.trim()
             : fallback.id || fallbackId || 'custom',
         allowedOutcomes,
         allowedConfidence,
         coerceManualFailToCantTell:
-          typeof contract.coerceManualFailToCantTell === 'boolean'
+          typeof own(contract, 'coerceManualFailToCantTell') === 'boolean'
             ? contract.coerceManualFailToCantTell
             : !!fallback.coerceManualFailToCantTell
       };
@@ -135277,26 +139183,31 @@ const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions, s
   }
 
   function normalizePolicyOverrides(policy) {
-    const p = policy && typeof policy === 'object' ? policy : {};
+    const p = policy && typeof policy === 'object' ? policy : null;
     return {
       allowedOutcomes: knownValues(
-        p.allowedOutcomes,
+        own(p, 'allowedOutcomes'),
         ['fail', 'pass', 'cantTell', 'notApplicable'],
         'policy.allowedOutcomes'
       ),
       allowedConfidence: knownValues(
-        p.allowedConfidence,
+        own(p, 'allowedConfidence'),
         ['high', 'medium', 'low'],
         'policy.allowedConfidence'
       ),
       coerceManualFailToCantTell:
-        typeof p.coerceManualFailToCantTell === 'boolean' ? p.coerceManualFailToCantTell : null
+        typeof own(p, 'coerceManualFailToCantTell') === 'boolean'
+          ? p.coerceManualFailToCantTell
+          : null
     };
   }
 
-  const opts = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
-  const contract = normalizePolicyContract(POLICY_CONTRACTS, opts.policyContract, 'a11y');
-  const ov = normalizePolicyOverrides(opts.policy);
+  const contract = normalizePolicyContract(
+    POLICY_CONTRACTS,
+    own(engineOptions, 'policyContract'),
+    'a11y'
+  );
+  const ov = normalizePolicyOverrides(own(engineOptions, 'policy'));
 
   return {
     contractId: contract.id,
@@ -135400,7 +139311,11 @@ function hasAnyRunOnlyKeys(runOnly) {
  * { includeMode, tags, excludeTags, includeRuleIds, excludeRuleIds, includeTestIds, excludeTestIds }
  */
 function normalizeRunOnly(runOnly) {
-  const out = {
+  // With no prototype, and read from a copy with none (ownOptions): no
+  // value on Object.prototype is read as part of a selection (round 12,
+  // R12F-1 to R12F-6).
+  runOnly = ownOptions(runOnly);
+  const out = Object.assign(Object.create(null), {
     includeMode: 'and',
     tags: [],
     excludeTags: [],
@@ -135414,7 +139329,7 @@ function normalizeRunOnly(runOnly) {
     standardRuleIds: [],
     wcag: null,
     bestPractices: false
-  };
+  });
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   // A WCAG conformance target, { version, level }, checked by
@@ -135577,20 +139492,20 @@ function isWcagTag(tag) {
 // The level is matched case-insensitively.
 function checkWcagTarget(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + JSON.stringify(value) + '.');
+    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + optionValueText(value) + '.');
   }
   const version = typeof value.version === 'string' ? value.version.trim() : value.version;
   if (!WCAG_TARGET_VERSIONS.includes(version)) {
     throw invalidRunOnly(
       'runOnly.wcag.version must be "2.0", "2.1" or "2.2", ' +
-        (value.version === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.version) + '.')
+        (value.version === undefined ? 'and is missing.' : 'not ' + optionValueText(value.version) + '.')
     );
   }
   const level = typeof value.level === 'string' ? value.level.trim().toUpperCase() : value.level;
   if (!WCAG_TARGET_LEVELS.includes(level)) {
     throw invalidRunOnly(
       'runOnly.wcag.level must be "A", "AA" or "AAA", ' +
-        (value.level === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.level) + '.')
+        (value.level === undefined ? 'and is missing.' : 'not ' + optionValueText(value.level) + '.')
     );
   }
   return { version, level };
@@ -136034,6 +139949,21 @@ function describeWcagLevelTag(tag) {
   return 'WCAG ' + t.version + ' Level ' + t.level + ' ("' + tag + '")';
 }
 
+// A value given for an option, for the message that refuses it: as JSON
+// where it has some, and named otherwise, never throwing. A BigInt threw a
+// bare TypeError from the message itself (round 12, A12-9).
+function optionValueText(value) {
+  if (typeof value === 'bigint') return String(value) + 'n';
+  let shown;
+  try {
+    shown = JSON.stringify(value);
+  } catch {
+    shown = undefined;
+  }
+  if (typeof shown === 'string') return shown;
+  return value !== null && typeof value === 'object' ? 'an object' : 'a ' + typeof value;
+}
+
 function invalidRunOnly(message) {
   const err = new Error(message);
   err.code = 'INVALID_RUN_ONLY';
@@ -136156,8 +140086,8 @@ function enforceKnownProfile(selection, eo) {
 // when the option is not a filter.
 function includeExcludeOf(v) {
   return Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-    ? { include: typeof v === 'string' ? [v] : [...v] }
-    : (v && typeof v === 'object' ? v : null);
+    ? Object.assign(Object.create(null), { include: typeof v === 'string' ? [v] : [...v] })
+    : (v && typeof v === 'object' ? ownOptions(v) : null);
 }
 
 // runOnly with a filter wins over engineOptions' rules, tags and tests
@@ -136192,8 +140122,92 @@ function warnFiltersBesideRunOnly(eo) {
   } catch {}
 }
 
+// A rule or tag list given empty ([], '', a Set with nothing in it) selects
+// nothing, and every rule runs, as with no runOnly: a list built by a filter
+// that came out empty got a full scan without a word (round 12, A12-12). It
+// is said, and under strictOptions refused.
+function warnEmptyRunOnly(runOnly, eo) {
+  const empty = (v) =>
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'string' && !v.trim()) ||
+    (Object.prototype.toString.call(v) === '[object Set]' && v.size === 0);
+  const named = [];
+  if (Array.isArray(runOnly) || typeof runOnly === 'string') {
+    if (empty(runOnly)) named.push('runOnly');
+  } else if (runOnly && typeof runOnly === 'object') {
+    for (const key of ['values', 'tags', 'includeRuleIds', 'includeTestIds']) {
+      if (Object.prototype.hasOwnProperty.call(runOnly, key) && empty(runOnly[key])) {
+        named.push('runOnly.' + key);
+      }
+    }
+    // { type } with no values names no rule or tag, and {} names nothing
+    // (round 12, R12F-10).
+    const keys = Object.keys(runOnly);
+    if (!keys.length) {
+      emptyRunOnlyWarning('runOnly is an empty object', eo);
+      return;
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(runOnly, 'type') &&
+      !Object.prototype.hasOwnProperty.call(runOnly, 'values') &&
+      keys.every((k) => k === 'type' || k === 'includeMode')
+    ) {
+      emptyRunOnlyWarning('runOnly.type has no values', eo);
+      return;
+    }
+  }
+  if (!named.length) return;
+  emptyRunOnlyWarning(
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists'),
+    eo
+  );
+}
+
+// An include list of engineOptions.rules, .tags or .tests given empty
+// ([], '', { include: [] }) selects nothing, and every rule runs, as with no
+// filter: said, and under strictOptions refused, as for runOnly (round 12,
+// R12F-10). Read only where runOnly has no filter, which wins over them.
+function warnEmptyOptionFilters(eo) {
+  const empty = (v) =>
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'string' && !v.trim()) ||
+    (Object.prototype.toString.call(v) === '[object Set]' && v.size === 0);
+  const named = [];
+  for (const name of ['rules', 'tags', 'tests']) {
+    const v = Object.prototype.hasOwnProperty.call(eo, name) ? eo[name] : undefined;
+    if (empty(v)) named.push('engineOptions.' + name);
+    else if (
+      v &&
+      typeof v === 'object' &&
+      Object.prototype.hasOwnProperty.call(v, 'include') &&
+      empty(v.include)
+    ) {
+      named.push('engineOptions.' + name + '.include');
+    }
+  }
+  if (!named.length) return;
+  emptyRunOnlyWarning(
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists'),
+    eo
+  );
+}
+
+function emptyRunOnlyWarning(what, eo) {
+  const message = what + ': it selects no rule, so every rule runs';
+  if (strictOf(eo)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '.');
+  } catch {}
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
-  const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+  // The options' and runOnly's own keys only (ownOptions).
+  const eo = (engineOptions && typeof engineOptions === 'object') ? ownOptions(engineOptions) : Object.create(null);
+  runOnly = ownOptions(runOnly);
   // A number or a boolean, and an object none of whose keys the engine
   // reads ({ includeRuleId: [...] }), used to run every rule, as no runOnly
   // does: a typo that looks like a full scan.
@@ -136203,6 +140217,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
   if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = [...runOnly];
+  warnEmptyRunOnly(runOnly, eo);
   // Another kind of object (a Map, a Date) has no keys a selection reads,
   // and ran every rule.
   // By its type tag, which holds across realms (a page's object, read by
@@ -136237,7 +140252,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // excludeRuleIds...) still apply.
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
     const kind = String(runOnly.type).trim().replace(/[A-Z]/g, asciiLowerChar);
-    const rest = { ...runOnly };
+    const rest = Object.assign(Object.create(null), runOnly);
     delete rest.type;
     delete rest.values;
     // A Set of names is read as the list it holds; passed on as it is, the
@@ -136246,11 +140261,11 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       runOnly.values && typeof runOnly.values === 'object' && Object.prototype.toString.call(runOnly.values) === '[object Set]'
         ? [...runOnly.values]
         : runOnly.values;
-    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
-    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
-    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
+    if (kind === 'rule' || kind === 'rules') runOnly = Object.assign(rest, { includeRuleIds: values });
+    else if (kind === 'tag' || kind === 'tags') runOnly = Object.assign(rest, { tags: values });
+    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + optionValueText(runOnly.type) + '.');
   }
-  runOnly = expandRunOnlyShorthand(runOnly, eo);
+  runOnly = ownOptions(expandRunOnlyShorthand(runOnly, eo));
   // includeMode is 'and' or 'or'; anything else was read as 'and' without a
   // word, which can select nothing.
   for (const [field, value] of [
@@ -136260,7 +140275,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     if (value === undefined || value === null) continue;
     const mode = typeof value === 'string' ? value.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
     if (mode === 'and' || mode === 'or') continue;
-    const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
+    const message = field + ' must be "and" or "or", not ' + optionValueText(value) + '; read as "and".';
     if (strictOf(eo)) throw invalidRunOnly(message);
     try {
       console.warn('[surea11y] ' + message);
@@ -136270,7 +140285,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     if (runOnly.wcag != null) checkWcagTarget(runOnly.wcag);
     if (runOnly.bestPractices !== undefined && typeof runOnly.bestPractices !== 'boolean') {
       throw invalidRunOnly(
-        'runOnly.bestPractices must be true or false, not ' + JSON.stringify(runOnly.bestPractices) + '.'
+        'runOnly.bestPractices must be true or false, not ' + optionValueText(runOnly.bestPractices) + '.'
       );
     }
   }
@@ -136302,6 +140317,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     return applyOptInRules(enforceKnownProfile(applyProfile(selection, requestedProfile), eo), eo.optInRules);
   }
 
+  warnEmptyOptionFilters(eo);
   const mode = normalizeIncludeMode(eo.includeMode);
 
   // { include, exclude }; a bare list or string is the include list, as
@@ -136320,7 +140336,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const includeTestIds = parseCommaList(tests && tests.include, { lower: false });
   const excludeTestIds = parseCommaList(tests && tests.exclude, { lower: false });
 
-  const out = {
+  const out = Object.assign(Object.create(null), {
     includeMode: mode,
     tags: includeTags,
     excludeTags,
@@ -136328,7 +140344,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeRuleIds,
     includeTestIds,
     excludeTestIds
-  };
+  });
   canonicalizeRuleIds(out, eo);
   checkSelectionNames(
     [
@@ -136603,12 +140619,22 @@ function criteriaNamingRule(def, runOnly) {
     .map((t) => WCAG_SC_BY_TAG[t]);
 }
 
-function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
+function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding) {
   if (!policy || typeof policy !== 'object') {
     throw new Error('normalizeRuleResult requires a resolved policy');
   }
   const pol = policy;
-  const out = raw && typeof raw === 'object' ? { ...raw } : {};
+  // The rule's result and its occurrences are worked on as copies with no
+  // prototype, so a field the rule left out is never read from, nor refused
+  // by, Object.prototype (round 12, R12F-1 to R12F-6); they are handed back
+  // as plain objects.
+  const bare = (x) => Object.assign(Object.create(null), x);
+  const out = bare(raw && typeof raw === 'object' ? raw : null);
+  if (Array.isArray(out.occurrences)) {
+    out.occurrences = out.occurrences.map((o) =>
+      o && typeof o === 'object' && !Array.isArray(o) ? bare(o) : o
+    );
+  }
   out.ruleId = def.ruleId;
   
   // NOTE: title and description are included here (already localized)
@@ -136645,7 +140671,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       const key = typeof given === 'string' ? given.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
       const tier = Object.prototype.hasOwnProperty.call(TIERS, key) ? TIERS[key] : null;
       if (tier === given) return o;
-      const next = { ...o };
+      const next = bare(o);
       if (tier) next.occurrenceOutcome = tier;
       else {
         delete next.occurrenceOutcome;
@@ -136703,15 +140729,50 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     helpers &&
     (typeof helpers.isOccurrenceExcluded === 'function' || typeof helpers.isExcluded === 'function')
   ) {
+    // An occurrence named only by a selector that matches several elements
+    // is dropped only when every one of them is excluded: read as its first
+    // match, it was dropped whatever element the rule meant. One some of
+    // whose matches are excluded is kept, and said to be ambiguous (round
+    // 12, A12-16).
+    let ambiguous = 0;
+    const matchesOf = (o) => {
+      if (o.__node || typeof o.selector !== 'string' || !o.selector) return null;
+      if (Array.isArray(o.shadowHostSelectors) && o.shadowHostSelectors.length) return null;
+      if (typeof document === 'undefined' || !document) return null;
+      try {
+        const found = [...createSafeDom().querySelectorAll(document, o.selector)];
+        return found.length > 1 ? found : null;
+      } catch {
+        return null;
+      }
+    };
     const kept = out.occurrences.filter((o) => {
       if (!o || typeof o !== 'object') return true;
       try {
-        if (typeof helpers.isOccurrenceExcluded === 'function') return helpers.isOccurrenceExcluded(o) !== true;
+        if (typeof helpers.isOccurrenceExcluded === 'function') {
+          // Looked up only while an area is left out for the rule: a
+          // selector can be slow to match, and every scan has none.
+          const matches = excluding === true ? matchesOf(o) : null;
+          if (matches) {
+            let excluded = 0;
+            for (const el of matches) if (helpers.isOccurrenceExcluded({ __node: el }) === true) excluded++;
+            if (excluded === matches.length) return false;
+            if (excluded) ambiguous++;
+            return true;
+          }
+          return helpers.isOccurrenceExcluded(o) !== true;
+        }
         return !o.__node || helpers.isExcluded(o.__node) !== true;
       } catch {
         return true;
       }
     });
+    if (ambiguous) {
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule reported ' + ambiguous + ' occurrence' + (ambiguous === 1 ? '' : 's') +
+        ' by a selector alone that matches elements both inside and outside the areas left out with excludeSelectors; kept, as which element was meant is ambiguous. Report the element (__node) instead.';
+    }
     const dropped = out.occurrences.length - kept.length;
     if (dropped > 0) {
       const given = out.outcome;
@@ -136775,7 +140836,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       out.policyOutcome = 'fail';
       out.outcome = 'cantTell';
       if (Array.isArray(out.occurrences)) out.occurrences = out.occurrences.map((o) =>
-        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? Object.assign(bare(o), { occurrenceOutcome: 'cantTell' }) : o
       );
     }
   }
@@ -136783,12 +140844,11 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   out.outcomeNormalized =
     out.outcome === 'notApplicable' ? 'inapplicable' : out.outcome;
     
-    const output = (out.engineOptions && out.engineOptions.output && typeof out.engineOptions.output === 'object')
-    ? out.engineOptions.output
-    : null;
+    const echoedOutput = ownValue(out.engineOptions, 'output');
+    const output = (echoedOutput && typeof echoedOutput === 'object') ? echoedOutput : null;
 
-  const includeSelector = !(output && switchOf(output.includeSelector) === false);
-  const includeHtml = !(output && switchOf(output.includeHtml) === false);
+  const includeSelector = !(output && switchOf(ownValue(output, 'includeSelector')) === false);
+  const includeHtml = !(output && switchOf(ownValue(output, 'includeHtml')) === false);
 
   const needsDetails = (out.outcome === 'fail' || out.outcome === 'cantTell');
 
@@ -136800,7 +140860,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     // would still count a failure.
     if (Array.isArray(out.occurrences)) {
       out.occurrences = out.occurrences.map((o) =>
-        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? Object.assign(bare(o), { occurrenceOutcome: 'cantTell' }) : o
       );
     }
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
@@ -136813,7 +140873,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   }
   out.severity = out.severity || def.defaultSeverity;
 
-  let conf = raw && raw.confidence;
+  let conf = out.confidence;
   if (!pol.allowedConfidence.includes(conf)) conf = def.defaultConfidence;
   out.confidence = conf;
 
@@ -136866,7 +140926,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   // Uncertainty codes outside the closed set, dropped and noted in error.
   const __invalidUncertaintyCodes = [];
   out.occurrences = occ.map((item) => {
-    const o = item && typeof item === 'object' ? { ...item } : {};
+    const o = bare(item && typeof item === 'object' ? item : null);
 
     // Engine-side finalization (only if rule reported a node)
     const node = o.__node || null;
@@ -137017,7 +141077,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       o.i18n = null;
     }
 
-    return o;
+    return { ...o };
   });
 
   // Said beside the result, not in error: the rule completed. The result is
@@ -137042,7 +141102,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   // neither replaces the other.
   if (out.error != null && typeof out.error !== 'string') out.error = String(out.error);
 
-  return out;
+  return { ...out };
 }
 
 // The standards a catalog entry names for these options, chosen exactly as for
@@ -137211,6 +141271,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "URL",
   "customElements",
   "adoptedStyleSheets",
+  "attachShadow",
   "ariaActiveDescendantElement",
   "ariaControlsElements",
   "ariaDescribedByElements",
@@ -137238,6 +141299,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "implementation",
   "innerHeight",
   "innerWidth",
+  "label",
   "multiple",
   "muted",
   "nextNode",
@@ -137270,7 +141332,11 @@ const SAFE_DOM_OTHER_NAMES = [
 const createSafeDom = (function createSafeDom() {
   // One instance per realm of this script: the lookups depend only on the
   // prototypes they are given, so sharing it across scans is safe.
-  if (createSafeDom.__instance) return createSafeDom.__instance;
+  // Own only, and defined, not assigned: a value of that name on
+  // Object.prototype is neither read nor refuses it (round 12, F12-4).
+  if (Object.prototype.hasOwnProperty.call(createSafeDom, '__instance')) {
+    return createSafeDom.__instance;
+  }
 
   // Captured once, so a page that later replaces them doesn't change how
   // the engine reads its own DOM.
@@ -137802,14 +141868,45 @@ const createSafeDom = (function createSafeDom() {
         : o.setAttribute(a, b, c, d)
   };
 
-  createSafeDom.__instance = Object.freeze(dom);
+  Object.defineProperty(createSafeDom, '__instance', {
+    value: Object.freeze(dom),
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   return createSafeDom.__instance;
 });
 
 // Inlined from src/core/contrast-helpers.js
 const createContrastHelpers = (function createContrastHelpers(opts, shared) {
+  // An option's own value, or undefined. The engine builds option objects
+  // without every key (colorScheme, rootCanvasFallbackSet), and a value a
+  // page's script put on Object.prototype is never read as one (round 12,
+  // R12F-6).
+  function __own(o, k) {
+    return o &&
+      (typeof o === 'object' || typeof o === 'function') &&
+      Object.prototype.hasOwnProperty.call(o, k)
+      ? o[k]
+      : undefined;
+  }
+  // Own keys along a path: __ownAt(o, 'options', 'engineOptions').
+  function __ownAt(o, ...keys) {
+    let v = o;
+    for (let i = 0; i < keys.length && v !== undefined; i++) v = __own(v, keys[i]);
+    return v;
+  }
+  // A <select> drawn as a list box (a size above 1), read as Chromium reads
+  // its size attribute (selectSizeOf in dom-helpers).
+  function __selectDrawnAsListBox(select) {
+    if (shared && typeof shared.selectSizeOf === 'function') {
+      const n = shared.selectSizeOf(select);
+      return n !== null && n > 1;
+    }
+    return Number(dom.getAttribute(select, 'size')) > 1;
+  }
   const dom = createSafeDom();
-  const window = opts && opts.window ? opts.window : null;
+  const window = __own(opts, 'window') || null;
 
   const trim = shared.trim;
   const computedStyle = shared.computedStyle;
@@ -137981,10 +142078,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // -------- Visibility mode resolution for getTextScan --------
 
   function __getVisibilityMode(engineOptions) {
-    const m =
-      engineOptions && typeof engineOptions.visibilityMode === 'string'
-        ? engineOptions.visibilityMode
-        : '';
+    const v = __own(engineOptions, 'visibilityMode');
+    const m = typeof v === 'string' ? v : '';
     return m || 'styleOnly';
   }
 
@@ -137996,79 +142091,49 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       engineOptions,
 
       // common shapes
-      ctx && ctx.engineOptions,
-      ctx && ctx.options && ctx.options.engineOptions,
-      ctx && ctx.options,
-      ctx && ctx.opts && ctx.opts.engineOptions,
-      ctx && ctx.opts,
+      __ownAt(ctx, 'engineOptions'),
+      __ownAt(ctx, 'options', 'engineOptions'),
+      __ownAt(ctx, 'options'),
+      __ownAt(ctx, 'opts', 'engineOptions'),
+      __ownAt(ctx, 'opts'),
 
       // policy layering shapes
-      ctx && ctx.policyOverrides && ctx.policyOverrides.engineOptions,
-      ctx && ctx.policyOverrides,
-      ctx && ctx.policy && ctx.policy.engineOptions,
-      ctx && ctx.policy,
+      __ownAt(ctx, 'policyOverrides', 'engineOptions'),
+      __ownAt(ctx, 'policyOverrides'),
+      __ownAt(ctx, 'policy', 'engineOptions'),
+      __ownAt(ctx, 'policy'),
 
       // sometimes hoisted
       ctx,
 
       // opts passed into createContrastHelpers
-      opts && opts.engineOptions,
-      opts && opts.options && opts.options.engineOptions,
-      opts && opts.options,
-      opts && opts.opts && opts.opts.engineOptions,
-      opts && opts.opts,
+      __ownAt(opts, 'engineOptions'),
+      __ownAt(opts, 'options', 'engineOptions'),
+      __ownAt(opts, 'options'),
+      __ownAt(opts, 'opts', 'engineOptions'),
+      __ownAt(opts, 'opts'),
 
-      opts && opts.policyOverrides && opts.policyOverrides.engineOptions,
-      opts && opts.policyOverrides,
-      opts && opts.policy && opts.policy.engineOptions,
-      opts && opts.policy,
+      __ownAt(opts, 'policyOverrides', 'engineOptions'),
+      __ownAt(opts, 'policyOverrides'),
+      __ownAt(opts, 'policy', 'engineOptions'),
+      __ownAt(opts, 'policy'),
 
       // globals sometimes used by runners
-      w && w.__a11ycoreEngineOptions,
-      d && d.__a11ycoreEngineOptions
+      __ownAt(w, '__a11ycoreEngineOptions'),
+      __ownAt(d, '__a11ycoreEngineOptions')
     ];
 
     for (const c of candidates) {
       if (!c || typeof c !== 'object') continue;
-
-      if (typeof c.visibilityMode === 'string') return c.visibilityMode;
-
-      if (
-        c.engineOptions &&
-        typeof c.engineOptions === 'object' &&
-        typeof c.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.options &&
-        typeof c.options === 'object' &&
-        c.options.engineOptions &&
-        typeof c.options.engineOptions === 'object' &&
-        typeof c.options.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.options.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policy &&
-        typeof c.policy === 'object' &&
-        c.policy.engineOptions &&
-        typeof c.policy.engineOptions === 'object' &&
-        typeof c.policy.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policy.engineOptions.visibilityMode;
-      }
-
-      if (
-        c.policyOverrides &&
-        typeof c.policyOverrides === 'object' &&
-        c.policyOverrides.engineOptions &&
-        typeof c.policyOverrides.engineOptions === 'object' &&
-        typeof c.policyOverrides.engineOptions.visibilityMode === 'string'
-      ) {
-        return c.policyOverrides.engineOptions.visibilityMode;
+      for (const path of [
+        [],
+        ['engineOptions'],
+        ['options', 'engineOptions'],
+        ['policy', 'engineOptions'],
+        ['policyOverrides', 'engineOptions']
+      ]) {
+        const mode = __ownAt(c, ...path, 'visibilityMode');
+        if (typeof mode === 'string') return mode;
       }
     }
 
@@ -138087,6 +142152,104 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // -------- Costly paint a page uses at all (round 12, F12-6) --------
+  //
+  // A blend mode, a filter or backdrop-filter, a mask, an inset shadow and
+  // a transform (or the scale or rotate property) are each read of every
+  // box above every text, yet most pages use few of them or none. A box's
+  // computed value of one is other than its initial value only where a
+  // declaration gives it one: in a style sheet (its rules, nested, imported
+  // and keyframes among them), a style attribute (where a script's
+  // element.style writes too), an SVG presentation attribute, or a script's
+  // animation. So once per document and run, the text of all of these is
+  // read, and a feature named nowhere in it is used by no box: its reads
+  // are left out, with the answer they would give. Anything that can't be
+  // ruled out keeps every feature: a sheet that can't be read (another
+  // origin, still loading), a running animation, a shadow root (whose
+  // sheets style its host and slotted content), or a custom element, which
+  // may hold a closed one.
+  const __PAGE_FEATURE_NAMES = {
+    blend: /mix-blend-mode/i,
+    filter: /filter/i,
+    mask: /mask/i,
+    insetShadow: /box-shadow/i,
+    transform: /transform|scale|rotate/i
+  };
+  const __PAGE_FEATURES_ALL = Object.freeze({
+    blend: true,
+    filter: true,
+    mask: true,
+    insetShadow: true,
+    transform: true
+  });
+  const __localPageFeatures = new WeakMap();
+  function __pageFeaturesOf(node) {
+    let doc;
+    try {
+      doc = node && dom.nodeType(node) === 9 ? node : dom.ownerDocument(node);
+    } catch {
+      doc = null;
+    }
+    if (!doc || typeof doc !== 'object') return __PAGE_FEATURES_ALL;
+    const cache = __getSharedWeakMapCache('__pageFeaturesCache') || __localPageFeatures;
+    let out = cache.get(doc);
+    if (!out) {
+      out = __readPageFeatures(doc);
+      cache.set(doc, out);
+    }
+    return out;
+  }
+  function __readPageFeatures(doc) {
+    try {
+      if (typeof dom.get(doc, 'getAnimations') === 'function') {
+        const running = dom.call(doc, 'getAnimations');
+        if (!running || running.length) return __PAGE_FEATURES_ALL;
+      }
+      for (const el of dom.querySelectorAll(doc, '*')) {
+        if (dom.shadowRoot(el) || String(dom.localName(el) || '').includes('-'))
+          return __PAGE_FEATURES_ALL;
+      }
+      if (
+        dom.querySelector(
+          doc,
+          '[filter], [mask], [transform], [gradientTransform], [patternTransform]'
+        )
+      )
+        return __PAGE_FEATURES_ALL;
+      const parts = [];
+      for (const el of dom.querySelectorAll(doc, '[style]')) {
+        parts.push(String(dom.getAttribute(el, 'style') || ''));
+      }
+      const sheets = [...(dom.get(doc, 'styleSheets') || [])].concat([
+        ...(dom.get(doc, 'adoptedStyleSheets') || [])
+      ]);
+      const seen = new Set();
+      while (sheets.length) {
+        const sheet = sheets.pop();
+        if (!sheet || seen.has(sheet)) continue;
+        seen.add(sheet);
+        // Throws for a sheet of another origin, or one still loading.
+        const rules = sheet.cssRules;
+        if (!rules) return __PAGE_FEATURES_ALL;
+        for (let i = 0; i < rules.length; i++) {
+          const rule = rules[i];
+          parts.push(String(rule.cssText));
+          // @import: the imported sheet's rules aren't in its text.
+          if (rule.styleSheet) sheets.push(rule.styleSheet);
+          else if (/^\s*@import/i.test(String(rule.cssText))) return __PAGE_FEATURES_ALL;
+        }
+      }
+      const text = parts.join('\n');
+      const out = {};
+      for (const key of Object.keys(__PAGE_FEATURE_NAMES)) {
+        out[key] = __PAGE_FEATURE_NAMES[key].test(text);
+      }
+      return Object.freeze(out);
+    } catch {
+      return __PAGE_FEATURES_ALL;
+    }
+  }
+
   function __asEligibilityBool(v) {
     if (typeof v === 'boolean') return v;
     if (v && typeof v === 'object' && typeof v.eligible === 'boolean') return v.eligible;
@@ -138101,21 +142264,30 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // text element asks it of each of its ancestors, and under jsdom matching
   // :disabled walks the ancestors again, so a deep page cost elements x
   // depth x depth.
-  function isDisabledWidget(node) {
-    const cache = __getSharedWeakMapCache('__disabledWidgetCache');
+  //
+  // aria-disabled="true" (or ElementInternals' ariaDisabled) makes content
+  // inactive only on a user interface component, or on an ancestor whose
+  // content belongs to one (round 11, D6): WCAG exempts inactive user
+  // interface components, and aria-disabled on a plain <span> or <div>
+  // with no control disables nothing. A disabled control (:disabled, a
+  // disabled fieldset among them) is one already.
+  // The bits: 1 for :disabled, 2 for aria-disabled true.
+  function __disabledBits(node) {
+    const cache = __getSharedWeakMapCache('__disabledBitsCache');
     if (cache && node && typeof node === 'object') {
       const known = cache.get(node);
       if (known !== undefined) return known;
-      const out = isDisabledWidgetUncached(node);
+      const out = __disabledBitsUncached(node);
       cache.set(node, out);
       return out;
     }
-    return isDisabledWidgetUncached(node);
+    return __disabledBitsUncached(node);
   }
-  function isDisabledWidgetUncached(node) {
+  function __disabledBitsUncached(node) {
+    let bits = 0;
     try {
       if (typeof dom.get(node, 'matches') === 'function' && dom.matches(node, ':disabled'))
-        return true;
+        bits |= 1;
     } catch {}
     try {
       const ad = dom.get(node, 'getAttribute')
@@ -138123,16 +142295,116 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             .trim()
             .toLowerCase()
         : '';
-      if (ad === 'true') return true;
+      if (ad === 'true') bits |= 2;
       // A custom element disabled through its ElementInternals
       // (internals.ariaDisabled = 'true'), where it has no aria-disabled
       // attribute of its own, is disabled as the attribute would make it.
-      if (!ad && typeof shared.getInternalsStateInfo === 'function') {
+      else if (!ad && typeof shared.getInternalsStateInfo === 'function') {
         const info = shared.getInternalsStateInfo(node, 'aria-disabled');
-        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') return true;
+        if (info && info.status === 'set' && trim(info.value).toLowerCase() === 'true') bits |= 2;
       }
     } catch {}
-    return false;
+    return bits;
+  }
+
+  // Widget roles (WAI-ARIA 1.2, the widget and composite roles), and
+  // toolbar, a group of controls.
+  const __WIDGET_ROLES = new Set([
+    'button',
+    'checkbox',
+    'combobox',
+    'grid',
+    'gridcell',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'radiogroup',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'toolbar',
+    'tree',
+    'treegrid',
+    'treeitem'
+  ]);
+  const __NATIVE_CONTROLS = new Set([
+    'button',
+    'input',
+    'select',
+    'textarea',
+    'option',
+    'optgroup'
+  ]);
+
+  // Whether node is a user interface component: an element whose resolved
+  // role is a widget role, a native control, or a focusable element.
+  function __isUiComponent(node) {
+    const cache = __getSharedWeakMapCache('__uiComponentCache');
+    if (cache && node && typeof node === 'object' && cache.has(node)) return cache.get(node);
+    let out = false;
+    try {
+      const tag = String(dom.localName(node) || '').toLowerCase();
+      if (__NATIVE_CONTROLS.has(tag) && dom.namespaceURI(node) !== __SVG_NS) {
+        out = !(
+          tag === 'input' &&
+          String(dom.getAttribute(node, 'type') || '')
+            .trim()
+            .toLowerCase() === 'hidden'
+        );
+      }
+      if (!out) {
+        let role = '';
+        if (typeof shared.getRoleInfo === 'function') {
+          const info = shared.getRoleInfo(node);
+          role = info && info.role ? String(info.role) : '';
+        } else {
+          role = String(dom.getAttribute(node, 'role') || '')
+            .trim()
+            .toLowerCase()
+            .split(/\s+/)[0];
+        }
+        out = __WIDGET_ROLES.has(role);
+      }
+      if (!out) {
+        if (typeof shared.getFocusableInfo === 'function') {
+          const f = shared.getFocusableInfo(node);
+          out = !!(f && f.focusable);
+        } else {
+          out = /^\s*[+-]?\d+\s*$/.test(String(dom.getAttribute(node, 'tabindex') || ''));
+        }
+      }
+    } catch {
+      out = false;
+    }
+    if (cache && node && typeof node === 'object') cache.set(node, out);
+    return out;
+  }
+
+  // A disabled control, as a label's control or a widget naming itself by
+  // a label: disabled, or aria-disabled on a user interface component.
+  function isDisabledWidget(node) {
+    const bits = __disabledBits(node);
+    return !!(bits & 1) || (!!(bits & 2) && __isUiComponent(node));
+  }
+
+  // Whether a control a label names is inactive: disabled itself, or a user
+  // interface component inside an element that disables it, such as a
+  // role="group" with aria-disabled="true" around the label and its input
+  // (ACT afw4f7, inapplicable example 9; round 11, D6).
+  function __namedControlInactive(control) {
+    if (isDisabledWidget(control)) return true;
+    return __isUiComponent(control) && isInactiveUiComponent(control);
   }
 
   // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
@@ -138151,6 +142423,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function labelNamesDisabled(labelAncestor) {
     if (__labelNamesDisabledCache.has(labelAncestor))
       return __labelNamesDisabledCache.get(labelAncestor);
+    // Set first: the control a label names may sit inside the label, and
+    // asking whether that control is inactive walks back up to it.
+    __labelNamesDisabledCache.set(labelAncestor, false);
     const disabled = findLabelNamesDisabled(labelAncestor);
     __labelNamesDisabledCache.set(labelAncestor, disabled);
     return disabled;
@@ -138162,7 +142437,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const control = shared.getLabelControl
         ? shared.getLabelControl(labelAncestor)
         : labelAncestor.control || null;
-      if (control && isDisabledWidget(control)) return true;
+      if (control && __namedControlInactive(control)) return true;
     } catch {}
 
     try {
@@ -138180,7 +142455,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
         );
         for (const ref of referrers) {
-          if (isDisabledWidget(ref)) return true;
+          if (__namedControlInactive(ref)) return true;
         }
       }
     } catch {}
@@ -138199,26 +142474,43 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   function isInactiveUiComponent(el) {
+    // The flat tree (round 12, C12-10): text in a shadow root is the
+    // content of its host, and a slotted node of its slot, so an
+    // aria-disabled host with role=button disables the text it draws. The
+    // chain of ancestors is kept for the run.
+    const chain = ancestorsOf(el);
+    let at = 0;
+    const next = () => {
+      while (++at < chain.length && dom.nodeType(chain[at]) === 11);
+      return chain[at] || null;
+    };
     let node = el;
     let prev = null;
     let depth = 0;
     let labelAncestor = null;
+    // Whether el or an ancestor met so far is a user interface component:
+    // aria-disabled from there up disables the content of one. Asked only
+    // once an aria-disabled is met, of the elements not asked yet.
+    let inComponent = false;
+    const unasked = [];
     while (node && dom.nodeType(node) === 1 && depth++ < 100) {
+      const bits = __disabledBits(node);
+      if (!inComponent) unasked.push(node);
+      if (bits & 2 && !inComponent) {
+        inComponent = unasked.some((n) => __isUiComponent(n));
+        unasked.length = 0;
+      }
+      const aria = !!(bits & 2) && inComponent;
       // A disabled fieldset disables nothing in its first legend: only an
       // aria-disabled on it counts there.
       if (prev && __isFirstLegendOf(prev, node)) {
-        if (
-          String(dom.getAttribute(node, 'aria-disabled') || '')
-            .trim()
-            .toLowerCase() === 'true'
-        )
-          return true;
-      } else if (isDisabledWidget(node)) return true;
+        if (aria) return true;
+      } else if (bits & 1 || aria) return true;
       if (!labelAncestor && String(dom.tagName(node) || '').toLowerCase() === 'label') {
         labelAncestor = node;
       }
       prev = node;
-      node = dom.parentElement(node);
+      node = next();
     }
 
     // WCAG 1.4.3/1.4.6 "disabled label" exception: see labelNamesDisabled.
@@ -138228,6 +142520,191 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     if (labelAncestor && labelNamesDisabled(labelAncestor)) return true;
 
     return false;
+  }
+
+  // -------- A currency sign in a run of text (round 11, B11-9) --------
+  //
+  // A currency sign (Unicode Sc: € $ £ ¥ …) or the postal mark 〒 next to
+  // letters or digits on the same line is part of that text ("€45,00",
+  // "〒100-0001"), even when markup gives it an element of its own: it is
+  // read, so it is text, held to 1.4.3, not a graphic. "Next to" is the
+  // nearest visible character before or after it, not past a block
+  // boundary (a block, a flex or grid item, a float, an absolutely
+  // positioned box, a line break) and not counting text that is not
+  // drawn (display:none, visibility:hidden, visually hidden), nor the text
+  // of a link beside it, unless the link's nearest character is a digit
+  // (an amount). A sign alone between links, or a separator such as ">",
+  // is not this: it stays a graphic.
+  const __RUN_SIGN = /[\p{Sc}〒]/u;
+  const __RUN_SIGN_ONLY = /^[\s\p{Sc}〒\p{P}]*$/u;
+  const __RUN_TEXT = /[\p{L}\p{N}]/u;
+  // Text nodes are kept only for the run; the shared cache is per engine run.
+  const __localSignRunCache = new WeakMap();
+
+  function __isSignText(text) {
+    const s = String(text == null ? '' : text);
+    return __RUN_SIGN.test(s) && __RUN_SIGN_ONLY.test(s);
+  }
+
+  function __inlineDisplay(cs) {
+    const d = String((cs && cs.display) || 'inline');
+    return d === 'contents' || d.startsWith('inline') || d.startsWith('ruby');
+  }
+
+  // Whether el's box is a block whatever its display says: a float, an
+  // absolutely positioned box, or an item of a flex or grid container
+  // (CSS Display 3, blockification). A browser computes such a display as
+  // a block already; jsdom doesn't, so it is read here, and both agree
+  // (round 12, C12-1).
+  function __runBlockified(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.cssFloat || cs.float) && trim(cs.cssFloat || cs.float) !== 'none') return true;
+    if (cs.position === 'absolute' || cs.position === 'fixed') return true;
+    const parent = composedParent(el);
+    if (!parent || dom.nodeType(parent) !== 1) return false;
+    const d = String(__contrastComputedStyle(parent).display || '');
+    return /(^|\s|-)(flex|grid)\b/.test(d);
+  }
+
+  function __runHidden(el, cs) {
+    if (!cs) return false;
+    if (trim(cs.display) === 'none') return true;
+    try {
+      if (typeof shared.isVisuallyHidden === 'function' && shared.isVisuallyHidden(el)) return true;
+    } catch {}
+    return false;
+  }
+
+  // The nearest visible character beside node in its block, in the given
+  // direction: a character, '' at a boundary or where none is found within
+  // the budget.
+  // Styles of elements no one has read yet that the search below may read
+  // in one run, over all its signs (round 12, C12-13): each sign walks its
+  // own neighbours, and a page of signs each beside hundreds of empty
+  // inline elements read a style for every one. Past it, a sign is a
+  // graphic, as it was before signs were read with their text. A real
+  // page's signs sit a node or two from digits whose styles the scan has
+  // read already: a catalogue of 3,000 WooCommerce prices reads none.
+  const __SIGN_RUN_BUDGET = 2000;
+  const __localSignRunBudget = { left: __SIGN_RUN_BUDGET };
+  function __signRunBudget() {
+    try {
+      const sc = shared && shared.__contrastSharedCache ? shared.__contrastSharedCache : null;
+      if (sc) {
+        if (!sc.__signRunBudget) sc.__signRunBudget = { left: __SIGN_RUN_BUDGET };
+        return sc.__signRunBudget;
+      }
+    } catch {}
+    return __localSignRunBudget;
+  }
+
+  function __runNeighbour(node, block, forward) {
+    let budget = 400;
+    const total = __signRunBudget();
+    const into = (n, inLink) => {
+      if (budget-- <= 0) return '';
+      const type = dom.nodeType(n);
+      if (type === 3) {
+        const parent = dom.parentElement(n);
+        const pcs = parent ? __contrastComputedStyle(parent) : null;
+        if (pcs && trim(pcs.visibility) && trim(pcs.visibility) !== 'visible') return null;
+        const s = String(dom.nodeValue(n) || '').replace(/\s+/g, '');
+        if (!s) return null;
+        const chars = [...s];
+        return forward ? chars[0] : chars[chars.length - 1];
+      }
+      if (type !== 1) return null;
+      const name = __lname(n);
+      if (name === 'br') return '';
+      if (/^(script|style|template|noscript|title)$/.test(name)) return null;
+      // A link's text is its own: a sign between links separates them,
+      // as a breadcrumb's ">" does. A link whose nearest character is a
+      // digit is the amount of a price, "$" in <span>$</span><a>45</a>,
+      // and the sign is read with it (round 12, C12-12).
+      const link =
+        !inLink &&
+        (((name === 'a' || name === 'area') && dom.hasAttribute(n, 'href')) ||
+          String(dom.getAttribute(n, 'role') || '')
+            .trim()
+            .split(/\s+/)[0] === 'link');
+      // A style the scan has not read already counts against the run's
+      // budget: the text around a sign has been read, empty padding not.
+      if (!__computedStyleCache.has(n) && total.left-- <= 0) return '';
+      const cs = __contrastComputedStyle(n);
+      if (__runHidden(n, cs)) return link ? '' : null;
+      if (!__inlineDisplay(cs) || __runBlockified(n, cs)) return '';
+      for (
+        let c = forward ? dom.firstChild(n) : dom.lastChild(n);
+        c;
+        c = forward ? dom.nextSibling(c) : dom.previousSibling(c)
+      ) {
+        const found = into(c, inLink || link);
+        if (found !== null) return link && !/\p{Nd}/u.test(found) ? '' : found;
+      }
+      return link ? '' : null;
+    };
+    let cur = node;
+    while (cur && budget > 0) {
+      let sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
+      while (!sib) {
+        const parent = dom.parentNode(cur);
+        if (!parent || parent === block || dom.nodeType(parent) !== 1) return '';
+        cur = parent;
+        sib = forward ? dom.nextSibling(cur) : dom.previousSibling(cur);
+      }
+      cur = sib;
+      const found = into(cur, false);
+      if (found !== null) return found;
+    }
+    return '';
+  }
+
+  function __signTextNodeInRun(t) {
+    const cache = __getSharedWeakMapCache('__signRunCache') || __localSignRunCache;
+    if (cache.has(t)) return cache.get(t);
+    let out = false;
+    try {
+      if (__isSignText(dom.nodeValue(t))) {
+        let block = dom.parentElement(t);
+        for (let guard = 0; block && guard < 200; guard++) {
+          const bcs = __contrastComputedStyle(block);
+          if (!__inlineDisplay(bcs) || __runBlockified(block, bcs)) break;
+          block = dom.parentElement(block);
+        }
+        if (block) {
+          out =
+            __RUN_TEXT.test(__runNeighbour(t, block, false) || '') ||
+            __RUN_TEXT.test(__runNeighbour(t, block, true) || '');
+        }
+      }
+    } catch {
+      out = false;
+    }
+    cache.set(t, out);
+    return out;
+  }
+
+  // Whether node (a text node, or an element by its own text nodes) is a
+  // currency sign or 〒 in a run of text: its text is only such signs,
+  // punctuation and spaces, and a letter or digit is the nearest visible
+  // character beside it on its line.
+  function isSignInTextRun(node) {
+    try {
+      if (!node) return false;
+      if (dom.nodeType(node) === 3) return __signTextNodeInRun(node);
+      if (dom.nodeType(node) !== 1) return false;
+      let own = '';
+      const texts = [];
+      for (let n = dom.firstChild(node); n; n = dom.nextSibling(n)) {
+        if (dom.nodeType(n) !== 3) continue;
+        own += String(dom.nodeValue(n) || '');
+        if (/\S/.test(dom.nodeValue(n) || '')) texts.push(n);
+      }
+      if (!__isSignText(own)) return false;
+      return texts.some((t) => __signTextNodeInRun(t));
+    } catch {
+      return false;
+    }
   }
 
   // -------- Text shown in a form field (#103) --------
@@ -138315,11 +142792,40 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // The computed style that sets the color and font of el's text: the
-  // ::placeholder style while a field shows its placeholder, el's own
+  // ::placeholder style while a field shows its placeholder, the slot's
+  // where el's own text is slotted into its shadow tree, el's own
   // otherwise.
   function textStyleOf(el) {
     const field = __fieldText(el);
-    return field && field.placeholder ? field.style : __contrastComputedStyle(el);
+    return field && field.placeholder
+      ? field.style
+      : __contrastComputedStyle(__ownTextSlot(el) || el);
+  }
+
+  // The <slot> a shadow host's own text is drawn in, or null (round 12,
+  // C12-2). Text placed straight into a host is rendered where its shadow
+  // tree's slot puts it, and inherits from that slot in the flat tree (CSS
+  // Scoping, 3.1), not from the host: a host with color: black whose slot
+  // sits in a grey <div> draws its text grey. The first text with
+  // something other than spaces decides.
+  const __ownTextSlotCache = new WeakMap();
+  function __ownTextSlot(el) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    if (__ownTextSlotCache.has(el)) return __ownTextSlotCache.get(el);
+    let out = null;
+    try {
+      if (dom.shadowRoot(el)) {
+        for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
+          if (dom.nodeType(n) !== 3 || !trim(dom.nodeValue(n))) continue;
+          out = dom.assignedSlot(n) || null;
+          break;
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __ownTextSlotCache.set(el, out);
+    return out;
   }
 
   // -------- The options of a drop-down <select> (#219) --------
@@ -138363,7 +142869,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         select &&
         selectCs &&
         !dom.get(select, 'multiple') &&
-        !(Number(dom.get(select, 'size')) > 1) &&
+        !__selectDrawnAsListBox(select) &&
         !ownButton
       ) {
         const index = Number(dom.get(select, 'selectedIndex'));
@@ -138434,9 +142940,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function getTextScan(ctx, helpers, engineOptions) {
     try {
-      const d = (ctx && ctx.document) || (opts && opts.document) || null;
+      const d = __own(ctx, 'document') || __own(opts, 'document') || null;
 
-      const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
+      const w = __own(ctx, 'window') || (d && dom.defaultView(d)) || window || null;
 
       // Unset, the text a reader can see is decided from the layout where
       // there is one (#99): text off the page or clipped away is drawn
@@ -138457,7 +142963,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // Default on, opt out with includeShadowDom: false -- same contract as
       // helpers.queryAllSmart. Part of the cache key: a scan that skipped
       // shadow roots must not be reused by one that should not.
-      const includeShadowDom = !(engineOptions && engineOptions.includeShadowDom === false);
+      const includeShadowDom = __own(engineOptions, 'includeShadowDom') !== false;
 
       const cache = __getSharedTextScanCache();
       const cacheKey = `visibilityMode=${visibilityMode}|sd=${includeShadowDom ? 1 : 0}`;
@@ -138511,6 +143017,28 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
 
       const walkRoots = withShadowRoots(lightRoots);
+      // Whether any text walked can be left out of the flat tree
+      // (outOfFlatTree below): only where there is an open shadow root, under
+      // a root of the walk, around one, or holding one. A page with none skips
+      // the walk up from each text (round 12, F12-6).
+      let mayLeaveFlatTree = false;
+      if (includeShadowDom) {
+        mayLeaveFlatTree = walkRoots.some((r) => dom.nodeType(r) === 11);
+        for (const root of lightRoots) {
+          if (mayLeaveFlatTree) break;
+          try {
+            const top = dom.getRootNode(root);
+            if (!top || dom.nodeType(top) !== 9) mayLeaveFlatTree = true;
+            for (let cur = dom.parentNode(root), depth = 0; cur && !mayLeaveFlatTree; depth++) {
+              if (depth > 256 || (dom.nodeType(cur) === 1 && dom.shadowRoot(cur)))
+                mayLeaveFlatTree = true;
+              cur = dom.parentNode(cur);
+            }
+          } catch {
+            mayLeaveFlatTree = true;
+          }
+        }
+      }
 
       const SHOW_TEXT =
         w && w.NodeFilter && typeof w.NodeFilter.SHOW_TEXT === 'number'
@@ -138644,11 +143172,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             clipsX,
             clipsY,
             rect: clipsX || clipsY ? dom.getBoundingClientRect(node) : null,
-            stops: !!acs && (acs.position === 'fixed' || acs.position === 'absolute')
+            stops: !!acs && acs.position === 'fixed',
+            // An absolutely positioned box is clipped by its containing
+            // block and the boxes around that, not by the boxes between
+            // (round 12, C12-3).
+            absolute: !!acs && acs.position === 'absolute'
           };
           clipBoxCache.set(node, box);
         }
         return box;
+      };
+      // The box whose overflow clips next after node: its parent, or for an
+      // absolutely positioned node the nearest positioned ancestor (its
+      // containing block), or null at the root.
+      const clipParentOf = (node) => {
+        let cur = composedParent(node);
+        if (!clipBoxOf(node).absolute) return cur;
+        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 1000; depth++) {
+          const pcs = __contrastComputedStyle(cur);
+          if (
+            !pcs ||
+            (pcs.position && pcs.position !== 'static') ||
+            (trim(pcs.transform) && trim(pcs.transform) !== 'none') ||
+            __lname(cur) === 'html'
+          )
+            return cur;
+          cur = composedParent(cur);
+        }
+        return cur;
       };
       // The clip of node and the boxes above it, up to the first that stops
       // the walk (or the root), as one rectangle: an axis no box clips is
@@ -138670,7 +143221,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           }
           path.push(cur);
           if (clipBoxOf(cur).stops) break;
-          cur = composedParent(cur);
+          cur = clipParentOf(cur);
         }
         // A walk cut short by the depth limit leaves the rest unknown: too
         // long, and isUndrawn walks it box by box.
@@ -138819,41 +143370,49 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           )
             return true;
         }
-        let left = r.left;
-        let top = r.top;
-        let right = r.right;
-        let bottom = r.bottom;
         // Inside a marquee, only the boxes around the marquee clip.
-        let cur = composedParent(marquee || el);
+        const start = marquee || el;
+        let cur = clipParentOf(start);
+        let cl = -Infinity;
+        let ct = -Infinity;
+        let cr = Infinity;
+        let cb = Infinity;
         const up = cur && dom.nodeType(cur) === 1 ? clipUpOf(cur) : null;
         if (up && up.len <= 100) {
           if (!up.clips) return false;
-          left = Math.max(left, up.left);
-          right = Math.min(right, up.right);
-          top = Math.max(top, up.top);
-          bottom = Math.min(bottom, up.bottom);
-          return right - left <= 1 || bottom - top <= 1;
-        }
-        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
-          // hidden and clip cut content off; auto and scroll let a reader
-          // scroll to it.
-          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
-          if (clipsX || clipsY) {
+          cl = up.left;
+          cr = up.right;
+          ct = up.top;
+          cb = up.bottom;
+        } else {
+          for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
+            // hidden and clip cut content off; auto and scroll let a reader
+            // scroll to it.
+            const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
             if (clipsX) {
-              left = Math.max(left, a.left);
-              right = Math.min(right, a.right);
+              cl = Math.max(cl, a.left);
+              cr = Math.min(cr, a.right);
             }
             if (clipsY) {
-              top = Math.max(top, a.top);
-              bottom = Math.min(bottom, a.bottom);
+              ct = Math.max(ct, a.top);
+              cb = Math.min(cb, a.bottom);
             }
-            // A pixel or less: the 1px box of visually hidden text.
-            if (right - left <= 1 || bottom - top <= 1) return true;
+            if (stops) break;
+            cur = clipParentOf(cur);
           }
-          if (stops) break;
-          cur = composedParent(cur);
         }
-        return false;
+        // A pixel or less: the 1px box of visually hidden text.
+        const cut = (b) =>
+          Math.min(b.right, cr) - Math.max(b.left, cl) <= 1 ||
+          Math.min(b.bottom, cb) - Math.max(b.top, ct) <= 1;
+        if (cut(r)) return true;
+        if (marquee || (cl === -Infinity && ct === -Infinity && cr === Infinity && cb === Infinity))
+          return false;
+        // The box shows, but its own text may lie in the part cut off, as
+        // padding pushes it there (round 12, C12-3): a screen-reader text
+        // pushed below a 1em box of rating stars. Its lines decide.
+        const lines = __ownTextRects(el);
+        return lines.length > 0 && lines.every(cut);
       };
 
       // An <option> has no layout box of its own, yet it is drawn: the
@@ -138914,18 +143473,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // intent: it only fires when both colors are cleanly computable, and
       // leaves any gradient/image/partial-opacity background (which
       // contrast-computable already reports as cantTell) untouched.
-      const contrastOptsForBg =
-        engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
-          ? engineOptions.contrast
-          : {};
+      const contrastOptsForBg = __own(engineOptions, 'contrast');
+      const bgMode = __own(contrastOptsForBg, 'mode');
+      const bgFallback = __own(contrastOptsForBg, 'rootCanvasFallback');
       const bgResolveOpts = {
         contrast: {
-          mode: contrastOptsForBg.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
+          mode: bgMode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
           rootCanvasFallback:
-            typeof contrastOptsForBg.rootCanvasFallback === 'string' &&
-            contrastOptsForBg.rootCanvasFallback.trim()
-              ? contrastOptsForBg.rootCanvasFallback.trim()
-              : '#ffffff'
+            typeof bgFallback === 'string' && bgFallback.trim() ? bgFallback.trim() : '#ffffff'
         },
         collectStack: false
       };
@@ -138968,6 +143523,46 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // walker per root could otherwise walk the same subtree twice).
       const visitedTextNodes = new Set();
 
+      // Text the flat tree leaves out is not rendered (CSS Scoping 1): a
+      // light child of a shadow host that no slot takes, and the fallback
+      // content of a slot that has nodes assigned (round 12, F12-7). Only
+      // hosts with an open shadow root can be told; kept per parent.
+      const outOfFlatTreeCache = new WeakMap();
+      const outOfFlatTree = (start) => {
+        const seen = [];
+        let cur = start;
+        let out = false;
+        for (let depth = 0; cur && depth < 256; depth++) {
+          const parent = dom.parentNode(cur);
+          if (!parent || dom.nodeType(parent) !== 1) break;
+          if (dom.nodeType(cur) === 1 && outOfFlatTreeCache.has(cur)) {
+            out = outOfFlatTreeCache.get(cur);
+            break;
+          }
+          if (dom.nodeType(cur) === 1) seen.push(cur);
+          if (dom.shadowRoot(parent) && !dom.assignedSlot(cur)) {
+            out = true;
+            break;
+          }
+          if (String(dom.localName(parent) || '').toLowerCase() === 'slot') {
+            const root = dom.getRootNode(parent);
+            if (root && dom.nodeType(root) === 11) {
+              let assigned = [];
+              try {
+                assigned = dom.assignedNodes(parent) || [];
+              } catch {}
+              if (assigned.length) {
+                out = true;
+                break;
+              }
+            }
+          }
+          cur = parent;
+        }
+        for (const el of seen) outOfFlatTreeCache.set(el, out);
+        return out;
+      };
+
       for (const walkRoot of walkRoots) {
         if (guard >= 500000) break;
         let walker;
@@ -138982,7 +143577,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           visitedTextNodes.add(node);
 
           const text = node && dom.nodeValue(node);
-          if (!isNonEmptyText(text)) continue;
+          // A currency sign beside letters or digits is part of their text
+          // (isSignInTextRun), though it has none of its own.
+          if (!isNonEmptyText(text) && !(__isSignText(text) && isSignInTextRun(node))) continue;
 
           const parentNode = dom.parentNode(node);
           // Text assigned straight to a shadow root has no parent element, but
@@ -138998,6 +143595,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           // A <textarea>'s text nodes are its default value; what it shows is
           // its current value, read with the other fields below.
           if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
+          if (mayLeaveFlatTree && outOfFlatTree(node)) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
@@ -139119,7 +143717,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 if (!isVisibleEligible(el) || isInactive(el)) break;
                 const m = measureGeneratedText(el, pseudo, bgResolveOpts);
                 if (!m || m.same) continue;
-                generated.push(Object.freeze({ el, pseudo, textCount: 1 }));
+                generated.push(
+                  Object.freeze(Object.setPrototypeOf({ el, pseudo, textCount: 1 }, null))
+                );
               }
             }
           }
@@ -139130,7 +143730,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         eligibleTextCount,
         visibilityMode,
         elements: Object.freeze(
-          elements.map((el) => Object.freeze({ el, textCount: elToCount.get(el) || 0 }))
+          // Records with no prototype: a value a page's script put on
+          // Object.prototype (pseudo) is never read as a record's own
+          // (round 12, F12-5).
+          elements.map((el) =>
+            Object.freeze(Object.setPrototypeOf({ el, textCount: elToCount.get(el) || 0 }, null))
+          )
         ),
         generated: Object.freeze(generated)
       });
@@ -139506,6 +144111,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const doc = dom.ownerDocument(el);
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (!__layoutByDoc.get(doc)) return 1;
+    // No box of a page that sets no transform, scale or rotate has one.
+    if (!__pageFeaturesOf(doc).transform) return 1;
     const chain = [];
     let known = 1;
     let guard = 0;
@@ -140689,6 +145296,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function __hasBlendModeEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
+      if (!__pageFeaturesOf(el).blend) return false;
       if (__hasBlendModeCache.has(el)) return __hasBlendModeCache.get(el);
       const v = hasBlendMode(cs);
       __hasBlendModeCache.set(el, v);
@@ -140701,6 +145309,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function __hasFilterEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasFilter(cs);
+      if (!__pageFeaturesOf(el).filter) return false;
       if (__hasFilterCache.has(el)) return __hasFilterCache.get(el);
       const v = hasFilter(cs);
       __hasFilterCache.set(el, v);
@@ -141347,7 +145956,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // elements x the rules that could apply, not elements x rules. Each entry
   // is { rule, part }; a pseudo-element's part is left out.
   function __colorPartsFor(found, el) {
-    if (!found.index) {
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
       const entries = [];
       for (const rule of found.rules) {
         for (const part of rule.parts) {
@@ -141357,7 +145968,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           entries.push({ rule, part });
         }
       }
-      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+      Object.defineProperty(found, 'index', {
+        value: { entries, index: selectorIndex(entries.map((e) => e.part)) },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const { entries, index } = found.index;
     return index.candidates(el).map((i) => entries[i]);
@@ -141374,8 +145990,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
+    // Answers with no prototype: a value a page's script put on
+    // Object.prototype (unknown) is never read as theirs (round 12, F12-5).
+    const answer = (o) => Object.setPrototypeOf(o, null);
     const found = __colorRulesOf(root, prop);
-    if (found.unreadable) return { unknown: true };
+    if (found.unreadable) return answer({ unknown: true });
     let best = null;
     let unknown = false;
     for (const { rule, part } of __colorPartsFor(found, el)) {
@@ -141404,8 +146023,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (!best || rank > best.rank) best = { rank, value };
       }
     } catch {}
-    if (unknown) return { unknown: true };
-    return best ? { value: best.value } : null;
+    if (unknown) return answer({ unknown: true });
+    return best ? answer({ value: best.value }) : null;
   }
 
   // Every author declaration of prop (`color` by default) that matches el,
@@ -141513,6 +146132,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
     const value = decl.value.toLowerCase();
     if (__CSS_INHERITING.has(value)) return inherited();
+    // revert takes the browser's own value: a link's link color, as an
+    // unstyled link has it, and for an element in a link (whose color the
+    // browser's sheet doesn't set, but for a <mark>) its parent's (round
+    // 12, C12-14).
+    if (value === 'revert' && __isLink(el)) return __SCHEME_COLORS.light.link;
+    if (value === 'revert' && __lname(el) !== 'mark') return inherited();
     // A custom property jsdom doesn't substitute, or a keyword taking the
     // browser's own value.
     if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
@@ -141628,7 +146253,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // computes the light scheme's colors). Null where the color computed
   // now is the one, or it can't be told (colorSchemeUnread).
   function __schemeTextOverride(el, opts) {
-    const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
+    const asked = __ownAt(opts, 'contrast', 'colorScheme');
     const scheme = asked === 'light' || asked === 'dark' ? asked : null;
     if (!scheme) {
       // A browser computes the colors of the scheme it draws.
@@ -141650,7 +146275,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // page's canvas (__schemeTextColor), where it isn't the one computed now.
   function computeEffectiveForeground(el, opts) {
     const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
-    if (opts && opts.contrast && opts.contrast.colorScheme) {
+    if (__ownAt(opts, 'contrast', 'colorScheme')) {
       const out = computeEffectiveForeground(el);
       if (!schemeOverride || !out || !out.rgba) return out;
       const op = Number.isFinite(out.opacityProduct) ? out.opacityProduct : 1;
@@ -141686,7 +146311,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // its own opacity as well as the field's.
     const field = __fieldText(el);
     const placeholder = field && field.placeholder ? field.style : null;
-    const cs = placeholder || __contrastComputedStyle(el);
+    // A host's own text slotted into its shadow tree takes the slot's color.
+    const slot = placeholder ? null : __ownTextSlot(el);
+    const cs = placeholder || __contrastComputedStyle(slot || el);
     // SVG text is painted with `fill`, not `color` (which only feeds
     // currentColor): <text fill="#000" style="color:#eee"> is black. A fill
     // of none (outline-only text) or a paint server (url(#gradient)) does
@@ -141695,7 +146322,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // Text in a link, under jsdom, whose color jsdom ranks below its own
     // link color, is read from the page's rules (__htmlTextFillOf).
     const fillValue =
-      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
+      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(slot || el, cs));
     let c = parseCssColorToRgba(fillValue);
     // On the canvas of a page drawn only in dark, in an emulator: the dark
     // scheme's color where the text takes it from the scheme.
@@ -141727,7 +146354,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return out;
     }
 
-    let op = computeOpacityProduct(el);
+    let op = computeOpacityProduct(slot || el);
     if (placeholder) {
       const own = Number.parseFloat(placeholder.opacity);
       if (Number.isFinite(own)) op *= clamp01(own);
@@ -141748,19 +146375,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     __getSharedWeakMapCache('__effectiveBackgroundCache') || __localEffectiveBackgroundCache;
 
   function __bgCacheKey(opts2) {
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const named = contrast.rootCanvasFallbackSet === true ? 'named' : '';
-    const scheme =
-      contrast.colorScheme === 'light' || contrast.colorScheme === 'dark'
-        ? contrast.colorScheme
-        : '';
+    const named = __own(contrast, 'rootCanvasFallbackSet') === true ? 'named' : '';
+    const asked = __own(contrast, 'colorScheme');
+    const scheme = asked === 'light' || asked === 'dark' ? asked : '';
 
     // Cache key must include any input that can affect computed background.
     // Note: we only cache when collectStack is false.
@@ -141824,7 +146448,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const doc = window && window.document;
       const root = doc && dom.documentElement(doc);
       if (!root || typeof window.getComputedStyle !== 'function') return null;
-      const rootScheme = String(window.getComputedStyle(root).colorScheme || '');
+      const rootScheme = String(
+        window.getComputedStyle(root).getPropertyValue('color-scheme') || ''
+      );
       const meta = dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]');
       const metaScheme = meta ? String(dom.getAttribute(meta, 'content') || '') : '';
       if (!/\bdark\b/i.test(rootScheme) && !/\bdark\b/i.test(metaScheme)) return null;
@@ -141942,9 +146568,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return null;
       }
       const rootCs = window.getComputedStyle(root);
-      const rootValue = String(
-        (rootCs && (rootCs.colorScheme || rootCs.getPropertyValue('color-scheme'))) || ''
-      ).trim();
+      const rootValue = String((rootCs && rootCs.getPropertyValue('color-scheme')) || '').trim();
       let supported = __schemesNamed(rootValue);
       // The meta element speaks for a root whose color-scheme is normal:
       // the first one naming a scheme (HTML, "the page's supported color
@@ -141996,8 +146620,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             const c = parseCssColorToRgba(value);
             return c && c.a === 1 ? { r: c.r, g: c.g, b: c.b, a: 1 } : null;
           };
+          // color-scheme by its CSS name: Chromium reads a camelCase
+          // style property a page's script put on Object.prototype ahead of
+          // its own (round 12, R12F-6).
           const readScheme = (scheme) => {
-            probe.style.colorScheme = scheme;
+            probe.style.setProperty('color-scheme', scheme);
             probe.style.backgroundColor = 'Canvas';
             probe.style.color = 'CanvasText';
             const cs = window.getComputedStyle(probe);
@@ -142053,9 +146680,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     __runCanvas = rgba && rgba.a === 1 ? { color: color.trim(), rgba: { ...rgba, a: 1 } } : null;
   }
   function __namedCanvas(contrast) {
-    if (contrast && contrast.rootCanvasFallbackSet === true) {
-      const value =
-        typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+    if (__own(contrast, 'rootCanvasFallbackSet') === true) {
+      const given = __own(contrast, 'rootCanvasFallback');
+      const value = typeof given === 'string' ? given.trim() : '';
       const rgba = value ? parseCssColorToRgba(value) : null;
       if (rgba && rgba.a === 1) return { color: value, rgba: { ...rgba, a: 1 } };
     }
@@ -142470,7 +147097,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (window.self !== window.top) return null;
       const info = __pageSchemes();
       if (!info) return null;
-      const asked = contrast && contrast.colorScheme;
+      const asked = __own(contrast, 'colorScheme');
       const scheme = asked === 'light' || asked === 'dark' ? asked : info.current;
       const named = __namedCanvas(contrast);
       if (named && scheme !== info.current) return null;
@@ -142575,7 +147202,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {}
 
     const __bgKey = __bgCacheKey(opts2);
-    const __collectStack = !!(opts2 && opts2.collectStack);
+    const __collectStack = !!__own(opts2, 'collectStack');
 
     // Only cache when stack collection is off
     if (!__collectStack) {
@@ -142587,15 +147214,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       } catch {}
     }
 
-    const contrast =
-      opts2 && opts2.contrast && typeof opts2.contrast === 'object' ? opts2.contrast : {};
-    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const contrast = __own(opts2, 'contrast');
+    const mode =
+      __own(contrast, 'mode') === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+    const fallback = __own(contrast, 'rootCanvasFallback');
     const rootCanvasFallback =
-      typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
-        ? contrast.rootCanvasFallback.trim()
-        : '#ffffff';
+      typeof fallback === 'string' && fallback.trim() ? fallback.trim() : '#ffffff';
 
-    const collectStack = !!(opts2 && opts2.collectStack);
+    const collectStack = !!__own(opts2, 'collectStack');
     const stack = collectStack ? [] : null;
 
     let acc = { r: 0, g: 0, b: 0, a: 0 };
@@ -142607,7 +147233,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const layer = svgBackdrop.layers[i];
         if (collectStack) {
           stack.push({
-            selector: __getSimpleSelectorCached(layer.el, 'rect'),
+            selector: __getSimpleSelectorCached(layer.el, __lname(layer.el)),
             bg: { r: layer.rgba.r, g: layer.rgba.g, b: layer.rgba.b, a: layer.rgba.a },
             opacity: 1
           });
@@ -142639,7 +147265,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // text): that background is the text's color, not behind it.
     const clipOwner = __clipTextOwner(el);
 
-    for (const cur of ancestorsOf(el)) {
+    // A host's own text slotted into its shadow tree is drawn there, over
+    // the backgrounds of the slot's flat-tree ancestors, the host's among
+    // them.
+    for (const cur of ancestorsOf(__ownTextSlot(el) || el)) {
       if (dom.nodeType(cur) !== 1) continue;
       if (cur === clipOwner) {
         const ocs = __contrastComputedStyle(cur);
@@ -143759,7 +148388,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           const body = fdoc && dom.body(fdoc);
           if (body) body.textContent = '';
           if (froot) {
-            froot.style.colorScheme = '';
+            froot.style.removeProperty('color-scheme');
             froot.style.forcedColorAdjust = '';
           }
         } catch {
@@ -143788,7 +148417,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         // Under forced colors the scan holds the page in its own colors
         // (forced-color-adjust: none); the blank frame is held so too, or
         // the browser's placeholder color read there is the forced palette's
@@ -143827,7 +148456,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const own = view.getComputedStyle(el);
       const tag = String(dom.localName(el) || '').toLowerCase();
       const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
-      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      const ref = __readPlaceholderDefaults(
+        doc,
+        tag,
+        type,
+        String(own.getPropertyValue('color-scheme') || '')
+      );
       if (!ref) return '';
       const ph = field.style;
       const same =
@@ -143898,12 +148532,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     if (!__forcedColorsMedia()) return null;
     try {
       if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
-      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      if (dom.hasAttribute(el, 'multiple') || __selectDrawnAsListBox(el)) return null;
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
       const doc = dom.ownerDocument(el);
       if (!__hasLayout(doc)) return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || !ref.measured || String(cs.backgroundColor) !== ref.background) return null;
       return ref.measured;
     } catch {
@@ -143918,7 +148552,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       probe = __openProbeFrame(doc);
       const { fdoc, fview, froot } = probe;
       if (froot && fview && typeof fview.getComputedStyle === 'function') {
-        if (scheme) froot.style.colorScheme = scheme;
+        if (scheme) froot.style.setProperty('color-scheme', scheme);
         froot.style.forcedColorAdjust = 'none';
         const host = dom.body(fdoc) || froot;
         const select = dom.createElement(fdoc, 'select');
@@ -143954,7 +148588,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function nativeSelectField(el) {
     try {
       if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
-      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      if (dom.hasAttribute(el, 'multiple') || __selectDrawnAsListBox(el)) return null;
       const doc = dom.ownerDocument(el);
       if (!__hasLayout(doc)) return null;
       const view = doc && dom.defaultView(doc);
@@ -143962,7 +148596,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const cs = view.getComputedStyle(el);
       const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
       if (appearance === 'none' || appearance === 'base-select') return null;
-      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      const ref = __readSelectFieldDefaults(doc, String(cs.getPropertyValue('color-scheme') || ''));
       if (!ref || ref.field === (ref.measured || ref.background)) return null;
       if (String(cs.backgroundColor) !== ref.background) return null;
       if (hasBackgroundImageOrGradient(cs)) return null;
@@ -144165,14 +148799,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return blocked;
     }
     const out = __computabilityBlockerOf(el, false);
-    if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
+    const ownPseudo = !!out && Object.prototype.hasOwnProperty.call(out, '__pseudo');
+    if (
+      ownPseudo &&
+      out.ok === false &&
+      out.reasonCode === 'PSEUDO_ELEMENT_COLOR' &&
+      out.__pseudo
+    ) {
       const pseudo = out.__pseudo;
       delete out.__pseudo;
       // The rest of the walk, past the pseudo-element: its colors are
       // carried only where nothing else blocks the measurement.
       const rest = __computabilityBlockerOf(el, true);
       if (rest && rest.ok === true) out.pseudoColors = pseudo;
-    } else if (out && out.__pseudo) {
+    } else if (ownPseudo) {
       delete out.__pseudo;
     }
     try {
@@ -144322,14 +148962,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let rec = __ancestorEffectsCache.get(cur);
     if (rec) return rec;
     const cs = __contrastComputedStyle(cur);
-    const boxShadow = trim(cs && cs.boxShadow);
+    // What the page uses no box of at all is not read (__pageFeaturesOf).
+    const uses = __pageFeaturesOf(cur);
+    const boxShadow = uses.insetShadow ? trim(cs && cs.boxShadow) : '';
     const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
     const position = cs && cs.position;
     rec = {
       cs,
       blend: __hasBlendModeEl(cur, cs),
       filter: __hasFilterEl(cur, cs),
-      mask: maskOf(cs),
+      mask: uses.mask ? maskOf(cs) : '',
       // __insetShadowUnder paints nothing without an inset shadow.
       insetShadow: !!boxShadow && boxShadow !== 'none' && /\binset\b/i.test(boxShadow),
       bgImage: __hasBackgroundImageOrGradientEl(cur, cs),
@@ -144615,7 +149257,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           }
           if (out) {
             const colors = __pseudoColorsOf(differing);
-            if (colors) out.__pseudo = colors;
+            // Defined, not assigned: a read-only __pseudo on Object.prototype
+            // refuses none (round 12, R12F-6).
+            if (colors) {
+              Object.defineProperty(out, '__pseudo', {
+                value: colors,
+                writable: true,
+                enumerable: true,
+                configurable: true
+              });
+            }
             try {
               if (el) __computabilityBlockerCache.set(el, out);
             } catch {}
@@ -145871,7 +150522,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     try {
       if (!el || dom.nodeType(el) !== 1 || !chain.length) return null;
       const index = __getOverlapIndex();
-      if (!index) return __svgShapeMaybeBehind(el);
+      if (!index) return __svgShapeMaybeBehind(el) || __noLayoutPseudoUnder(el, chain);
       const opaque = chain[chain.length - 1];
       const ancestors = new Set(chain);
       // Painters near el's box at all, before measuring its text, which
@@ -145991,10 +150642,150 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Without a layout (jsdom), no pseudo-element's style is computed, so a
+  // positioned ::before or ::after painting a color or an image under the
+  // text (the overlay pattern, z-index: -1 among them) was never seen, and
+  // white text over a dark one was measured against the white page and
+  // dropped as invisible (round 12, C12-18). Read from the style sheets
+  // instead: a ::before or ::after their rules give content, a position of
+  // absolute or fixed and a background, on el or an ancestor in `chain`,
+  // is paint in the way, and the text is asked about. A sheet that can't
+  // be read is taken as giving none.
+  const __noLayoutPseudosByRoot = new WeakMap();
+  function __noLayoutPseudos(root) {
+    if (__noLayoutPseudosByRoot.has(root)) return __noLayoutPseudosByRoot.get(root);
+    const byKey = new Map();
+    try {
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
+      const stack = [];
+      for (const sheet of sheets) {
+        try {
+          stack.push(sheet.cssRules || []);
+        } catch {}
+      }
+      while (stack.length) {
+        const list = stack.pop();
+        const n = (list && list.length) || 0;
+        for (let i = 0; i < n; i++) {
+          const rule = list[i];
+          if (!rule) continue;
+          if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+          const text = rule.selectorText;
+          const style = rule.style;
+          if (typeof text !== 'string' || !style || !__beforeOrAfterRe.test(text)) continue;
+          const get = (prop) =>
+            trim(
+              typeof style.getPropertyValue === 'function' ? style.getPropertyValue(prop) : ''
+            ).toLowerCase();
+          const content = get('content');
+          const position = get('position');
+          const color = get('background-color');
+          const image = get('background-image');
+          const shorthand = get('background');
+          for (const part of __splitTopLevel(text)) {
+            const m = /::?(before|after)\b/i.exec(part);
+            if (!m) continue;
+            let base = part.slice(0, m.index).trim();
+            if (!base || /[>+~]$/.test(base)) base += '*';
+            const key = base + '::' + m[1].toLowerCase();
+            const at = byKey.get(key) || { base, pseudo: '::' + m[1].toLowerCase() };
+            if (content) at.content = content !== 'none' && content !== 'normal';
+            if (position) at.positioned = position === 'absolute' || position === 'fixed';
+            // Drawn at all, and where, as far as the rules say (F12-2).
+            const display = get('display');
+            if (display) at.displayNone = display === 'none';
+            const visibility = get('visibility');
+            if (visibility) at.hidden = visibility === 'hidden' || visibility === 'collapse';
+            for (const prop of ['width', 'height', 'top', 'right', 'bottom', 'left']) {
+              const v = get(prop);
+              if (v) at[prop] = v;
+            }
+            const paint = [color, image, shorthand].find(
+              (v) => v && !/^(none|transparent|initial|unset)$/.test(v)
+            );
+            if (paint) {
+              const c = parseCssColorToRgba(paint);
+              if (!c || c.a > 0) at.paint = paint;
+            }
+            byKey.set(key, at);
+          }
+        }
+      }
+    } catch {}
+    const out = [...byKey.values()].filter(
+      (p) => p.content && p.positioned && p.paint && !p.displayNone && !p.hidden
+    );
+    __noLayoutPseudosByRoot.set(root, out);
+    return out;
+  }
+  // Whether a ::before or ::after the rules position could lie under a
+  // line of el's text, from the size and offsets they give it (round 12,
+  // F12-2): a box narrower or shorter than a line of the text (a 4px corner
+  // badge) is no background to it, and one moved wholly off its host (an
+  // offset of 100% or more, or far off the page) doesn't reach it. A size or
+  // offset in any other unit is taken as possibly covering the text.
+  function __noLayoutPseudoMayCover(p, el) {
+    const px = (v) => {
+      const m = /^(-?\d*\.?\d+)px$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    const pct = (v) => {
+      const m = /^(-?\d*\.?\d+)%$/.exec(String(v || ''));
+      return m ? Number(m[1]) : null;
+    };
+    let fontPx = 16;
+    try {
+      const f = px(trim((computedStyle(el) || {}).fontSize || ''));
+      if (f && f > 0) fontPx = f;
+    } catch {}
+    const w = px(p.width);
+    const h = px(p.height);
+    if ((w !== null && w < fontPx) || (h !== null && h < fontPx)) return false;
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      const v = p[side];
+      const percent = pct(v);
+      if (percent !== null && Math.abs(percent) >= 100) return false;
+      const length = px(v);
+      if (length !== null && length <= -1000) return false;
+    }
+    return true;
+  }
+  function __noLayoutPseudoUnder(el, chain) {
+    for (const host of chain) {
+      let root;
+      try {
+        root = dom.getRootNode(host);
+      } catch {
+        root = null;
+      }
+      if (!root) continue;
+      for (const p of __noLayoutPseudos(root)) {
+        let matched;
+        try {
+          matched = dom.matches(host, p.base);
+        } catch {
+          matched = false;
+        }
+        if (!matched || !__noLayoutPseudoMayCover(p, el)) continue;
+        return {
+          selector: __getSimpleSelectorCached(host, __lname(host)) + p.pseudo,
+          element: describeElement(host) + p.pseudo,
+          property: 'background',
+          value: p.paint
+        };
+      }
+    }
+    return null;
+  }
+
   // Without a layout (jsdom), where an SVG shape paints can't be told. A
   // shape painted before SVG text in the same <svg> may lie behind it, and
   // then the text's background can't be told either: the shape, as paint
-  // in the way, or null. With a layout, __svgBackdropOf measures it.
+  // in the way, or null. A shape certainly under all of the text is its
+  // background (__svgNoLayoutScan); only one painted after the last such
+  // shape is in the way. With a layout, __svgBackdropOf measures it.
   const __SVG_PAINT_TAGS =
     'rect, circle, ellipse, line, path, polygon, polyline, image, use, foreignObject';
   const __SVG_UNPAINTED_TAGS = new Set([
@@ -146009,11 +150800,37 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     'filter'
   ]);
   function __svgShapeMaybeBehind(el) {
+    const scan = __svgNoLayoutScan(el);
+    return scan ? scan.blocker : null;
+  }
+
+  // Without a layout, the simple, certain case is measured (round 11, D11):
+  // a <rect>, <circle> or <ellipse> painted before the text with an opaque
+  // solid fill, no transform, opacity, filter, mask or clip on it or its
+  // ancestors in the <svg>, whose geometry certainly covers the text's
+  // area. The last such shape is the text's background; a shape painted
+  // after it that may lie behind the text (any other) keeps the text
+  // asked about. { certain: { el, rgba } | null, blocker: {...} | null },
+  // or null where nothing applies (with a layout, or not SVG text).
+  const __svgNoLayoutCache = new WeakMap();
+  function __svgNoLayoutScan(el) {
     if (!__isSvgTextElement(el)) return null;
     const doc = dom.ownerDocument(el);
     if (!doc) return null;
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (__layoutByDoc.get(doc)) return null;
+    if (__svgNoLayoutCache.has(el)) return __svgNoLayoutCache.get(el);
+    let out;
+    try {
+      out = __computeSvgNoLayoutScan(el);
+    } catch {
+      out = null;
+    }
+    __svgNoLayoutCache.set(el, out);
+    return out;
+  }
+
+  function __computeSvgNoLayoutScan(el) {
     let svg = composedParent(el);
     for (
       let guard = 0;
@@ -146028,6 +150845,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       return null;
     }
+    let area;
+    const textArea = () => {
+      if (area === undefined) area = __svgTextArea(el, svg);
+      return area;
+    };
+    let certain = null;
+    let blocker = null;
     for (const shape of shapes) {
       // Painted after el (or el's own ancestor): not behind it.
       if (!(dom.compareDocumentPosition(shape, el) & 4) || __isComposedInside(el, shape)) break;
@@ -146041,7 +150865,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
       if (unpainted) continue;
       const cs = __contrastComputedStyle(shape);
-      if (!cs || trim(cs.display) === 'none' || trim(cs.visibility) === 'hidden') continue;
+      if (!cs || __svgHiddenNoLayout(shape, cs, svg)) continue;
       const paints = (v) => {
         if (!v || v === 'none') return false;
         const c = parseCssColorToRgba(v);
@@ -146056,26 +150880,342 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const tag = __lname(shape);
       const shapeOnly = tag !== 'image' && tag !== 'use' && tag !== 'foreignobject';
       if (shapeOnly && !paints(fill) && !paints(stroke)) continue;
-      return {
-        selector: __getSimpleSelectorCached(shape, tag),
-        element: describeElement(shape),
-        property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
-        value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
-      };
+      const rgba = __svgCertainCover(shape, cs, svg, paints(stroke), textArea);
+      if (rgba) {
+        // Opaque, over all of the text: what lies under it doesn't show.
+        certain = { el: shape, rgba };
+        blocker = null;
+        continue;
+      }
+      if (!blocker) {
+        blocker = {
+          selector: __getSimpleSelectorCached(shape, tag),
+          element: describeElement(shape),
+          property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
+          value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
+        };
+      }
     }
-    return null;
+    return { certain, blocker };
+  }
+
+  // Whether an SVG shape is not drawn, without a layout (round 12, C12-4):
+  // display none on it or a group around it, or visibility hidden on it or
+  // inherited, set in CSS or as a presentation attribute, which jsdom
+  // doesn't apply.
+  function __svgHiddenNoLayout(shape, cs, svg) {
+    if (trim(cs.display) === 'none') return true;
+    const vis = trim(cs.visibility);
+    if (vis === 'hidden' || vis === 'collapse') return true;
+    let visKnown = false;
+    for (let n = shape; n && n !== svg; n = dom.parentElement(n)) {
+      if (trim(dom.getAttribute(n, 'display')).toLowerCase() === 'none') return true;
+      if (n !== shape) {
+        const ncs = __contrastComputedStyle(n);
+        if (ncs && trim(ncs.display) === 'none') return true;
+      }
+      if (!visKnown && dom.hasAttribute(n, 'visibility')) {
+        visKnown = true;
+        const v = trim(dom.getAttribute(n, 'visibility')).toLowerCase();
+        if (v === 'hidden' || v === 'collapse') return true;
+      }
+    }
+    if (!visKnown && svg && dom.hasAttribute(svg, 'visibility')) {
+      const v = trim(dom.getAttribute(svg, 'visibility')).toLowerCase();
+      if (v === 'hidden' || v === 'collapse') return true;
+    }
+    return false;
+  }
+
+  // An SVG length in user units: a number, px, or a percentage of `full`
+  // (NaN where `full` is unknown). NaN for anything else.
+  function __svgLength(value, full) {
+    const v = trim(value);
+    if (!v) return NaN;
+    let m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(px)?$/i.exec(v);
+    if (m) return Number.parseFloat(m[1]);
+    m = /^([+-]?(?:\d+\.?\d*|\.\d+))%$/.exec(v);
+    if (m) return Number.isFinite(full) ? (Number.parseFloat(m[1]) / 100) * full : NaN;
+    return NaN;
+  }
+
+  // The svg's viewport in user units: its viewBox, or its own width and
+  // height where it has none. { x, y, w, h }, a side NaN where unknown.
+  function __svgViewport(svg) {
+    const vb = trim(dom.getAttribute(svg, 'viewBox'));
+    if (vb) {
+      const n = vb.split(/[\s,]+/).map(Number);
+      if (n.length === 4 && n.every(Number.isFinite) && n[2] > 0 && n[3] > 0)
+        return { x: n[0], y: n[1], w: n[2], h: n[3], viewBox: true };
+      return { x: 0, y: 0, w: NaN, h: NaN, viewBox: true };
+    }
+    return {
+      x: 0,
+      y: 0,
+      w: __svgLength(dom.getAttribute(svg, 'width'), NaN),
+      h: __svgLength(dom.getAttribute(svg, 'height'), NaN),
+      viewBox: false
+    };
+  }
+
+  const __SVG_GROUP_ATTRS = ['transform', 'filter', 'mask', 'clip-path'];
+  // Whether node draws as a group or moves: a transform, opacity, a filter,
+  // a mask or a clip, as an attribute, in its style or computed.
+  function __svgGroupedOrMoved(node) {
+    for (const a of __SVG_GROUP_ATTRS) {
+      const v = trim(dom.getAttribute(node, a)).toLowerCase();
+      if (v && v !== 'none') return true;
+    }
+    const op = trim(dom.getAttribute(node, 'opacity'));
+    if (op && !(Number.parseFloat(op) >= 1)) return true;
+    if (
+      /(^|;)\s*(transform|opacity|filter|mask|clip|clip-path)\s*:/i.test(
+        String(dom.getAttribute(node, 'style') || '')
+      )
+    )
+      return true;
+    const cs = __contrastComputedStyle(node);
+    if (!cs) return false;
+    if (opacityOf(cs) < 1) return true;
+    const set = (v) => !!trim(v) && trim(v) !== 'none';
+    return (
+      set(cs.transform) ||
+      set(cs.filter) ||
+      set(cs.clipPath) ||
+      set(cs.maskImage) ||
+      set(cs.mask) ||
+      (!!cs.mixBlendMode && trim(cs.mixBlendMode) !== 'normal')
+    );
+  }
+
+  // Emoji, and characters of East Asian Width W or F (Unicode UAX #11),
+  // drawn up to two em wide.
+  const __WIDE_CHAR =
+    /[\p{Extended_Pictographic}\u1100-\u115F\u231A\u231B\u2329\u232A\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uA960-\uA97F\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6\u{16FE0}-\u{18AFF}\u{1B000}-\u{1B2FF}\u{1F000}-\u{1FAFF}\u{20000}-\u{3FFFD}]/u;
+  // The area SVG text certainly lies in, in the svg's user units, without a
+  // layout: from its x and y, its font size and its characters, each at
+  // most 1.1em wide (2em if wide), from 1.2em above the baseline to 0.4em
+  // below.
+  // null where that isn't simple: a transform, positions per character,
+  // a textLength, spacing, a vertical writing mode or a text path.
+  function __svgTextArea(el, svg) {
+    let text = el;
+    while (text && text !== svg && __lname(text) !== 'text') text = dom.parentElement(text);
+    if (!text || text === svg) return null;
+    for (let n = text; n && n !== svg; n = dom.parentElement(n)) {
+      if (__svgGroupedOrMoved(n) && n !== text) return null;
+      const t = trim(dom.getAttribute(n, 'transform'));
+      if (t && t !== 'none') return null;
+      const ncs = __contrastComputedStyle(n);
+      if (ncs && trim(ncs.transform) && trim(ncs.transform) !== 'none') return null;
+    }
+    const parts = [text, ...dom.querySelectorAll(text, '*')];
+    for (const n of parts) {
+      const name = __lname(n);
+      if (name === 'textpath') return null;
+      for (const a of ['dx', 'dy', 'rotate', 'textLength', 'letter-spacing', 'word-spacing'])
+        if (dom.hasAttribute(n, a)) return null;
+      if (n !== text && (dom.hasAttribute(n, 'x') || dom.hasAttribute(n, 'y'))) return null;
+      if (
+        /(^|;)\s*(letter-spacing|word-spacing|writing-mode|font-size)\s*:/i.test(
+          String(dom.getAttribute(n, 'style') || '')
+        ) &&
+        n !== text
+      )
+        return null;
+    }
+    const tcs = __contrastComputedStyle(text) || {};
+    if (
+      /^(vertical|tb|sideways)/.test(trim(tcs.writingMode)) ||
+      dom.hasAttribute(text, 'writing-mode')
+    )
+      return null;
+    const spacing = (v) => !trim(v) || trim(v) === 'normal' || Number.parseFloat(v) === 0;
+    if (!spacing(tcs.letterSpacing) || !spacing(tcs.wordSpacing)) return null;
+    const vp = __svgViewport(svg);
+    const x = dom.hasAttribute(text, 'x') ? __svgLength(dom.getAttribute(text, 'x'), vp.w) : 0;
+    const y = dom.hasAttribute(text, 'y') ? __svgLength(dom.getAttribute(text, 'y'), vp.h) : 0;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    // The font size: the larger of the computed one and the nearest
+    // font-size attribute, which jsdom doesn't apply.
+    let fs = parsePx(tcs.fontSize);
+    if (!/^\s*[\d.]+px\s*$/.test(String(tcs.fontSize || ''))) fs = NaN;
+    const host = dom.closest(text, '[font-size]');
+    if (host && __isComposedInside(host, svg)) {
+      const a = __svgLength(dom.getAttribute(host, 'font-size'), NaN);
+      if (!Number.isFinite(a)) return null;
+      fs = Number.isFinite(fs) ? Math.max(fs, a) : a;
+    }
+    if (!Number.isFinite(fs)) fs = 16;
+    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')];
+    if (!chars.length) return null;
+    // An upper bound on the width (round 12, C12-8): 1.1em a character,
+    // above the widest Latin glyphs of common fonts (@ is about 1.02em in
+    // Arial), and 2em for emoji and wide East Asian characters. Text that
+    // fits by a clear margin is measured; text close to the edge is asked
+    // about.
+    const w = chars.reduce((sum, ch) => sum + (__WIDE_CHAR.test(ch) ? 2 : 1.1), 0) * fs;
+    const anchorHost = dom.closest(text, '[text-anchor]');
+    let anchor = trim(tcs.textAnchor) || 'start';
+    if (anchorHost && __isComposedInside(anchorHost, svg))
+      anchor = trim(dom.getAttribute(anchorHost, 'text-anchor')).toLowerCase();
+    const rtl = trim(tcs.direction) === 'rtl' || !!dom.closest(text, '[direction="rtl"]');
+    let left;
+    let right;
+    if (rtl || !/^(start|middle|end)$/.test(anchor)) {
+      left = x - w;
+      right = x + w;
+    } else if (anchor === 'middle') {
+      left = x - w / 2;
+      right = x + w / 2;
+    } else if (anchor === 'end') {
+      left = x - w;
+      right = x;
+    } else {
+      left = x;
+      right = x + w;
+    }
+    // A baseline set as an attribute, or in CSS on the text or a part of it
+    // (round 12, C12-5): jsdom computes CSS ones, and passes
+    // dominant-baseline down, but applies no attribute.
+    const baselineSet =
+      ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
+        (a) => !!dom.closest(text, '[' + a + ']')
+      ) ||
+      parts.some((n) => {
+        const ncs = n === text ? tcs : __contrastComputedStyle(n);
+        if (!ncs || typeof ncs.getPropertyValue !== 'function') return false;
+        const db = trim(ncs.getPropertyValue('dominant-baseline')).toLowerCase();
+        const ab = trim(ncs.getPropertyValue('alignment-baseline')).toLowerCase();
+        const bs = trim(ncs.getPropertyValue('baseline-shift')).toLowerCase();
+        return (
+          !/^(|auto|alphabetic)$/.test(db) ||
+          !/^(|auto|baseline|alphabetic)$/.test(ab) ||
+          !/^(|0|0px|baseline)$/.test(bs)
+        );
+      });
+    const above = baselineSet ? 1.3 * fs : 1.2 * fs;
+    const below = baselineSet ? 1.3 * fs : 0.4 * fs;
+    return { left, right, top: y - above, bottom: y + below };
+  }
+
+  const __SVG_GEOMETRY_PROPS = ['x', 'y', 'width', 'height', 'rx', 'ry', 'r', 'cx', 'cy'];
+  // The opaque color a <rect>, <circle> or <ellipse> certainly paints
+  // under all of el's text, without a layout, or null.
+  function __svgCertainCover(shape, cs, svg, stroked, textArea) {
+    const tag = __lname(shape);
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
+    // Its own <svg>: not in a nested one, a <switch> or a link's group.
+    for (let p = dom.parentElement(shape); p !== svg; p = dom.parentElement(p)) {
+      if (!p) return null;
+      const name = __lname(p);
+      if (name !== 'g' && name !== 'a') return null;
+      if (__svgGroupedOrMoved(p)) return null;
+    }
+    if (__svgGroupedOrMoved(shape)) return null;
+    const fill = parseCssColorToRgba(cs.fill);
+    if (!fill || fill.a < 1) return null;
+    const fo = trim(dom.getAttribute(shape, 'fill-opacity')) || trim(cs.fillOpacity);
+    if (fo && !(Number.parseFloat(fo) >= 1)) return null;
+    if (
+      /(^|;)\s*(fill-opacity|x|y|width|height|rx|ry|r|cx|cy)\s*:/i.test(
+        String(dom.getAttribute(shape, 'style') || '')
+      )
+    )
+      return null;
+    // Geometry set in CSS overrides the attributes (SVG 2), and jsdom
+    // places nothing by it: a style sheet that sets any is not read, and the
+    // text is asked about (round 12, C12-6).
+    for (const prop of __SVG_GEOMETRY_PROPS) {
+      const decl = __authorColorDeclsOf(shape, prop);
+      if (decl.unknown || decl.values.length) return null;
+    }
+    const vp = __svgViewport(svg);
+    const attr = (a, full, dflt) =>
+      dom.hasAttribute(shape, a) ? __svgLength(dom.getAttribute(shape, a), full) : dflt;
+    let half = 0;
+    if (stroked) {
+      const sw = dom.hasAttribute(shape, 'stroke-width')
+        ? __svgLength(dom.getAttribute(shape, 'stroke-width'), NaN)
+        : parsePx(cs.strokeWidth) || 1;
+      if (!Number.isFinite(sw)) return null;
+      half = Math.max(0, sw) / 2;
+    }
+    const rgb = { r: fill.r, g: fill.g, b: fill.b, a: 1 };
+    if (tag === 'rect') {
+      const x = attr('x', vp.w, 0);
+      const y = attr('y', vp.h, 0);
+      const w = attr('width', vp.w, NaN);
+      const h = attr('height', vp.h, NaN);
+      if (![x, y, w, h].every(Number.isFinite) || !(w > 0) || !(h > 0)) return null;
+      let rx = attr('rx', vp.w, NaN);
+      let ry = attr('ry', vp.h, NaN);
+      const rxSet = dom.hasAttribute(shape, 'rx');
+      const rySet = dom.hasAttribute(shape, 'ry');
+      if ((rxSet && !Number.isFinite(rx)) || (rySet && !Number.isFinite(ry))) return null;
+      if (!rxSet) rx = rySet ? ry : 0;
+      if (!rySet) ry = rx;
+      rx = Math.min(Math.max(rx, 0), w / 2);
+      ry = Math.min(Math.max(ry, 0), h / 2);
+      // The whole svg: covers any text in it.
+      const whole = (v, full, raw) => trim(raw) === '100%' || (Number.isFinite(full) && v === full);
+      if (
+        !rx &&
+        !ry &&
+        x === vp.x &&
+        y === vp.y &&
+        whole(w, vp.w, dom.getAttribute(shape, 'width')) &&
+        whole(h, vp.h, dom.getAttribute(shape, 'height'))
+      )
+        return rgb;
+      const area = textArea();
+      if (!area) return null;
+      const ix = Math.max(rx, half);
+      const iy = Math.max(ry, half);
+      return area.left >= x + ix &&
+        area.right <= x + w - ix &&
+        area.top >= y + iy &&
+        area.bottom <= y + h - iy
+        ? rgb
+        : null;
+    }
+    const cx = attr('cx', NaN, 0);
+    const cy = attr('cy', NaN, 0);
+    let rx;
+    let ry;
+    if (tag === 'circle') {
+      rx = attr('r', NaN, NaN);
+      ry = rx;
+    } else {
+      rx = attr('rx', NaN, NaN);
+      ry = attr('ry', NaN, NaN);
+    }
+    if (![cx, cy, rx, ry].every(Number.isFinite)) return null;
+    rx -= half;
+    ry -= half;
+    if (!(rx > 0) || !(ry > 0)) return null;
+    const area = textArea();
+    if (!area) return null;
+    const inside = (px, py) => ((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2 <= 1;
+    return inside(area.left, area.top) &&
+      inside(area.right, area.top) &&
+      inside(area.left, area.bottom) &&
+      inside(area.right, area.bottom)
+      ? rgb
+      : null;
   }
 
   // -------- SVG shapes behind SVG text (#96) --------
   //
   // SVG paints in document order, so a shape earlier than a text element and
   // under it is the text's background, which no CSS background shows. The
-  // simple case is measured: a <rect> with a solid fill, painted before the
-  // text, not rotated, covering all of the text clear of its rounded corners
-  // and stroke, with nothing between it and the text that groups it (opacity,
-  // a filter, a mask or a clip). Several such rects stack. Any other shape
-  // under or over the text is left to the paint-overlap check, which reports
-  // it. Needs a layout; without one nothing is found and nothing changes.
+  // simple case is measured: a <rect>, <circle> or <ellipse> (round 12,
+  // C12-7) with a solid fill, painted before the text, not rotated, covering
+  // all of the text clear of its rounded corners and stroke, with nothing
+  // between it and the text that groups it (opacity, a filter, a mask or a
+  // clip). Several such shapes stack. Any other shape under or over the text
+  // is left to the paint-overlap check, which reports it. With a layout;
+  // without one, __svgNoLayoutScan measures the same shapes.
   const __svgBackdropCache = new WeakMap();
 
   function __svgBackdropOf(el) {
@@ -146093,7 +151233,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __computeSvgBackdrop(el) {
     const index = __getOverlapIndex();
-    if (!index) return null;
+    if (!index) {
+      // Without a layout: the last shape certainly under all of the text,
+      // with nothing uncertain painted after it (__svgNoLayoutScan).
+      const scan = __svgNoLayoutScan(el);
+      return scan && scan.certain && !scan.blocker
+        ? { layers: [scan.certain], blocked: false }
+        : null;
+    }
     let svg = composedParent(el);
     let guard = 0;
     while (
@@ -146136,7 +151283,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // The color a <rect> paints behind all of el's text, or null when it isn't
   // that simple case.
   function __svgRectLayer(shape, box, el, textRects) {
-    if (String(dom.localName(shape)) !== 'rect') return null;
+    const tag = String(dom.localName(shape));
+    // A <circle> or <ellipse> too (round 12, C12-7): its box is its
+    // bounding box, so its center and radii are known.
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
     // Painted before el: el follows it in document order.
     if (!(dom.compareDocumentPosition(shape, el) & 4)) return null;
     const cs = __contrastComputedStyle(shape);
@@ -146171,19 +151321,36 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const n = parsePx(v);
       return Number.isFinite(n) && n > 0 ? n : 0;
     };
-    let rx = len(cs.rx);
-    let ry = len(cs.ry);
-    if (!rx) rx = ry;
-    if (!ry) ry = rx;
     const stroke = trim(cs.stroke);
     const halfStroke = stroke && stroke !== 'none' ? len(cs.strokeWidth) / 2 : 0;
-    const ix = Math.max(rx, halfStroke) * ctm.a;
-    const iy = Math.max(ry, halfStroke) * ctm.d;
-    const inside = (r) =>
-      r.left >= box.left + ix - 0.5 &&
-      r.right <= box.right - ix + 0.5 &&
-      r.top >= box.top + iy - 0.5 &&
-      r.bottom <= box.bottom - iy + 0.5;
+    let inside;
+    if (tag === 'rect') {
+      let rx = len(cs.rx);
+      let ry = len(cs.ry);
+      if (!rx) rx = ry;
+      if (!ry) ry = rx;
+      const ix = Math.max(rx, halfStroke) * ctm.a;
+      const iy = Math.max(ry, halfStroke) * ctm.d;
+      inside = (r) =>
+        r.left >= box.left + ix - 0.5 &&
+        r.right <= box.right - ix + 0.5 &&
+        r.top >= box.top + iy - 0.5 &&
+        r.bottom <= box.bottom - iy + 0.5;
+    } else {
+      // Every corner of each line of text inside the ellipse, clear of the
+      // inner half of its stroke.
+      const cx = (box.left + box.right) / 2;
+      const cy = (box.top + box.bottom) / 2;
+      const ex = (box.right - box.left) / 2 - halfStroke * ctm.a;
+      const ey = (box.bottom - box.top) / 2 - halfStroke * ctm.d;
+      if (!(ex > 0) || !(ey > 0)) return null;
+      const within = (x, y) => ((x - cx) / ex) ** 2 + ((y - cy) / ey) ** 2 <= 1;
+      inside = (r) =>
+        within(r.left, r.top) &&
+        within(r.right, r.top) &&
+        within(r.left, r.bottom) &&
+        within(r.right, r.bottom);
+    }
     if (!textRects.every(inside)) return null;
     const fillOpacity = Number.parseFloat(cs.fillOpacity);
     const opacity = Number.parseFloat(cs.opacity);
@@ -146389,6 +151556,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       out = { fallback: true };
     }
+    // With no prototype: a value a page's script put on Object.prototype
+    // (rgba) is never read as the backdrop's own (round 12, F12-5).
+    if (out && typeof out === 'object') out = Object.setPrototypeOf({ ...out }, null);
     __paintBackdropCache.set(el, out);
     return out;
   }
@@ -146950,6 +152120,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     looksLikeLogo,
     contrastSwitchName,
     isInactiveUiComponent,
+    isSignInTextRun,
     // The author's declaration of a property that applies to an element:
     // { value }, null where none does, { unknown: true } where it can't be
     // told.
@@ -148089,6 +153260,34 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'aria-rowspan': 0
   };
 
+  // The tables above are looked up by a role, an element or an attribute
+  // the page names. With no prototype, a value a page's script put on
+  // Object.prototype (button, navigation) is never read as an entry
+  // (round 12, F12-5).
+  const __noPrototype = (o, depth) => {
+    if (!o || typeof o !== 'object' || Array.isArray(o) || depth > 4) return;
+    if (Object.getPrototypeOf(o) === Object.prototype) Object.setPrototypeOf(o, null);
+    for (const k of Object.keys(o)) __noPrototype(o[k], depth + 1);
+  };
+  for (const table of [
+    DEPRECATED_ROLE_GUIDANCE,
+    DEFAULT_DEPRECATED_ROLE_GUIDANCE,
+    ATTR_VALUE_TYPES,
+    ATTR_TOKEN_SETS,
+    REQUIRED_PROPS_BY_ROLE,
+    REQUIRED_PROP_IMPLICIT_VALUES,
+    REQUIRED_OWNED_ROLES,
+    REQUIRED_CONTEXT_ROLE,
+    ALLOWED_ROLES_BY_ELEMENT,
+    NATIVE_ROLE_BY_ELEMENT_KEY,
+    NATIVE_CONTAINMENT_ROLE_BY_ELEMENT,
+    NATIVE_CONTAINMENT_CONTEXT,
+    ROLE_SYNONYMS,
+    INTEGER_ATTR_MIN
+  ]) {
+    __noPrototype(table, 0);
+  }
+
   function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
     if (!type) return { valid: true, reason: 'unknown-attr-skip' };
@@ -148332,8 +153531,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       try {
         isMultiSelect = !!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'multiple'));
         if (!isMultiSelect) {
-          const sizeAttr = getAttr(el, 'size');
-          const size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
+          // Read as Chromium draws it (selectSizeOf in dom-helpers).
+          let size;
+          if (shared && typeof shared.selectSizeOf === 'function') size = shared.selectSizeOf(el);
+          else {
+            const sizeAttr = getAttr(el, 'size');
+            size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
+          }
           isMultiSelect = Number.isFinite(size) && size > 1;
         }
       } catch {
@@ -148936,6 +154140,43 @@ const engineOptionSpec = (function engineOptionSpec() {
   const list = (v) =>
     typeof v === 'string' || (Array.isArray(v) && [...v].every((x) => typeof x === 'string'));
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+  // A plain object, as written in a literal or by JSON.parse, from any
+  // realm: not a Date, a Map, an element or a class instance, which have
+  // keys of their own to give or none (round 12, A12-13).
+  const isPlain = (v) => {
+    try {
+      if (!isObject(v) || Object.prototype.toString.call(v) !== '[object Object]') return false;
+      const proto = Object.getPrototypeOf(v);
+      return proto === null || Object.getPrototypeOf(proto) === null;
+    } catch {
+      return false;
+    }
+  };
+  // JSON-safe data: a plain object at the top (the engine reads probes by
+  // key, and an array there was dropped), and inside
+  // strings, finite numbers, true, false, null, plain objects and arrays,
+  // with no object reached twice along a path (round 12, A12-13).
+  const jsonSafe = (top) => {
+    const path = [];
+    const safe = (v, depth) => {
+      if (v === null || typeof v === 'string' || typeof v === 'boolean') return true;
+      if (typeof v === 'number') return Number.isFinite(v);
+      if (typeof v !== 'object' || depth > 100 || path.includes(v)) return false;
+      if (!Array.isArray(v) && !isPlain(v)) return false;
+      path.push(v);
+      try {
+        const values = Array.isArray(v) ? [...v] : Object.keys(v).map((k) => v[k]);
+        return values.every((x) => safe(x, depth + 1));
+      } finally {
+        path.pop();
+      }
+    };
+    try {
+      return isPlain(top) && safe(top, 0);
+    } catch {
+      return false;
+    }
+  };
   const T = {
     any: { test: () => true, expected: 'any value' },
     // true or false, or how a command line or an environment variable
@@ -148945,11 +154186,14 @@ const engineOptionSpec = (function engineOptionSpec() {
     list: { test: list, expected: 'a string or an array of strings' },
     // A profile, or a list of them. An empty slot, a blank name and a value
     // that is no name are each refused: each was dropped without a word.
+    // An empty one, '' or [], names none (round 12, A12-13).
     profiles: {
       test: (v) =>
-        typeof v === 'string' ||
-        (Array.isArray(v) && [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
-      expected: 'a profile name or an array of them, none blank'
+        (typeof v === 'string' && v.trim() !== '') ||
+        (Array.isArray(v) &&
+          v.length > 0 &&
+          [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
+      expected: 'a profile name or a non-empty array of them, none blank'
     },
     number: {
       test: (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0,
@@ -148966,7 +154210,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     })
   };
   const selection = {
-    test: (v) => list(v) || isObject(v),
+    test: (v) => list(v) || isPlain(v),
     expected: '{ include, exclude }, or the include list itself',
     keys: { include: T.list, exclude: T.list }
   };
@@ -149001,7 +154245,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     mappings: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
-    messages: { test: isObject, expected: '{ [locale]: { key: text } }' },
+    messages: { test: isPlain, expected: '{ [locale]: { key: text } }' },
     includeHiddenElements: T.boolean,
     includeShadowDom: T.boolean,
     fragment: T.boolean,
@@ -149019,13 +154263,14 @@ const engineOptionSpec = (function engineOptionSpec() {
         ),
       expected: '[{ href, text }]'
     },
-    // Blank is a timestamp not given.
+    // Blank is no timestamp: refused, as one that isn't a date and time is
+    // (round 12, A12-13).
     timestamp: {
-      test: (v) => typeof v === 'string' && (!v.trim() || isIsoDateTime(v)),
+      test: (v) => typeof v === 'string' && isIsoDateTime(v),
       expected: 'an ISO 8601 date and time, such as new Date().toISOString()'
     },
     contrast: {
-      test: isObject,
+      test: isPlain,
       expected: '{ mode, rootCanvasFallback }',
       keys: {
         mode: T.oneOf(['strictConformance', 'auditorAssist']),
@@ -149038,13 +154283,13 @@ const engineOptionSpec = (function engineOptionSpec() {
     visibilityMode: T.oneOf(['styleOnly', 'styleAndGeometry']),
     includeMode: T.oneOf(['and', 'or']),
     policyContract: {
-      test: (v) => typeof v === 'string' || isObject(v),
+      test: (v) => typeof v === 'string' || isPlain(v),
       expected: "a contract's name, or a contract object",
-      keys: Object.assign({ id: T.string }, policyFields)
+      keys: { id: T.string, ...policyFields }
     },
-    policy: { test: isObject, expected: 'an object', keys: policyFields },
+    policy: { test: isPlain, expected: 'a plain object', keys: policyFields },
     output: {
-      test: isObject,
+      test: isPlain,
       expected: '{ includeSelector, includeHtml, detail, maxOccurrencesPerRule }',
       keys: {
         includeSelector: T.boolean,
@@ -149070,7 +154315,12 @@ const engineOptionSpec = (function engineOptionSpec() {
     tests: selection,
     customRules: { test: Array.isArray, expected: 'an array of rules' },
     packs: { test: Array.isArray, expected: 'an array of packs' },
-    probes: T.any,
+    // Evidence the host gives, passed to rules: JSON-safe data only (round
+    // 12, A12-13).
+    probes: {
+      test: jsonSafe,
+      expected: 'a plain object of JSON data (no function, Date, BigInt, NaN or circular reference)'
+    },
     perfStats: T.boolean,
     profileRules: T.boolean,
     // Once a scan has spent this long, it starts no more rules; those it
@@ -149107,7 +154357,14 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
       return plain && text.length <= 80 ? text : 'an array';
     }
     if (typeof v === 'string') return JSON.stringify(v.length > 40 ? v.slice(0, 40) + '…' : v);
-    if (typeof v === 'object') return 'an object';
+    if (typeof v === 'object') {
+      // A Date, a Map: named by its kind (round 12, A12-13).
+      let tag = 'Object';
+      try {
+        tag = Object.prototype.toString.call(v).slice(8, -1);
+      } catch {}
+      return tag === 'Object' ? 'an object' : /^[AEIOU]/.test(tag) ? 'an ' + tag : 'a ' + tag;
+    }
     return typeof v === 'number' || typeof v === 'boolean' ? String(v) : 'a ' + typeof v;
   }
 
@@ -149201,7 +154458,15 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   for (const p of problems) {
     if (p.kind === 'unknown' && !p.suggestion) continue;
     if (p.path === 'strictOptions') continue;
-    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(String(p.path).split('.')[0])) continue;
+    // An empty profile or timestamp ('' or []) is read as none without a
+    // word of its own, so it is said here (round 12, A12-13).
+    const top = String(p.path).split('.')[0];
+    const value = engineOptions[top];
+    const empty =
+      (top === 'profile' || top === 'timestamp') &&
+      p.path === top &&
+      ((typeof value === 'string' && !value.trim()) || (Array.isArray(value) && !value.length));
+    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(top) && !empty) continue;
     // A policy list given as an array says what it leaves out itself
     // (resolvePolicy), and keeps the values it knows.
     if (p.kind === 'invalid' && /^policy(Contract)?\.allowed(Outcomes|Confidence)$/.test(p.path)) {
@@ -149214,10 +154479,77 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   }
 });
 const strictOf = (function strictOf(engineOptions) {
+  // The options' own, never one on Object.prototype (round 12, R12F-1 to
+  // R12F-6).
   const v =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : undefined;
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    Object.prototype.hasOwnProperty.call(engineOptions, 'strictOptions')
+      ? engineOptions.strictOptions
+      : undefined;
   if (v === true || v === 1) return true;
   return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
+});
+const ownOptions = (function ownOptions(options) {
+  if (!options || typeof options !== 'object' || Array.isArray(options)) return options;
+  // A Set, a Map or a Date is no table of options: kept, for the checks
+  // that say so.
+  if (Object.prototype.toString.call(options) !== '[object Object]') return options;
+  const isPlain = (v) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+    if (Object.prototype.toString.call(v) !== '[object Object]') return false;
+    const proto = Object.getPrototypeOf(v);
+    // Another realm's Object.prototype too (a frame's, a vm context's).
+    return proto === null || Object.getPrototypeOf(proto) === null;
+  };
+  const copied = new Map();
+  const copy = (from, depth) => {
+    if (copied.has(from)) return copied.get(from);
+    const to = Object.create(null);
+    copied.set(from, to);
+    const keys = Object.keys(from);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const v = from[key];
+      to[key] =
+        depth < 8 && isPlain(v) && !(depth === 0 && (key === 'probes' || key === 'messages'))
+          ? copy(v, depth + 1)
+          : v;
+    }
+    return to;
+  };
+  const out = copy(options, 0);
+  const flags = ['__budgetSpent', '__budgetSpentAt', '__scanTimeBudgetMs'];
+  for (let i = 0; i < flags.length; i++) {
+    const d = Object.getOwnPropertyDescriptor(options, flags[i]);
+    if (d && !d.enumerable && Object.prototype.hasOwnProperty.call(d, 'value')) {
+      Object.defineProperty(out, flags[i], { value: d.value, configurable: true });
+    }
+  }
+  return out;
+});
+const plainOptions = (function plainOptions(options) {
+  const copied = new Map();
+  const copy = (v, depth) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v) || Object.getPrototypeOf(v) !== null) {
+      return v;
+    }
+    if (copied.has(v)) return copied.get(v);
+    // Spread defines each key, so a read-only value on Object.prototype
+    // refuses none.
+    const out = { ...v };
+    copied.set(v, out);
+    if (depth < 8) {
+      const keys = Object.keys(out);
+      for (let i = 0; i < keys.length; i++) {
+        const x = out[keys[i]];
+        const c = copy(x, depth + 1);
+        if (c !== x) out[keys[i]] = c;
+      }
+    }
+    return out;
+  };
+  return copy(options, 0);
 });
 const switchOf = (function switchOf(v) {
   if (v === true || v === 1) return true;
@@ -149456,7 +154788,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Stored on the realm window when possible so multiple helper instances
   // within the same run share caches deterministically.
   // -------------------------------------------------------------------------
-  var __domSharedCache = {};
+  var __domSharedCache = Object.create(null);
   var __selectorCache = null;
   var __outerHtmlCache = null;
   var __siblingIndexCache = null; // WeakMap<Element, {first, last, info, tagCounts}>
@@ -150058,7 +155390,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (x === 'visible') x = 'auto';
         if (y === 'visible') y = 'auto';
       } else if (html && tag === 'select') {
-        const size = parseHtmlInteger(dom.getAttribute(el, 'size'));
+        const size = selectSizeOf(el);
         if (!dom.hasAttribute(el, 'multiple') && !(size !== null && size > 1)) {
           x = 'clip';
           y = 'clip';
@@ -150705,7 +156037,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return false;
     }
   }
-  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
+  // Defined, not assigned, as each key the engine sets on its functions
+  // (round 12, F12-4).
+  Object.defineProperty(hasTruncatedAncestorWalk, 'limit', {
+    value: ANCESTOR_WALK_LIMIT,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   function getClosestMap(el) {
     try {
@@ -150857,6 +156196,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // range, as if the attribute were missing (HTML, Reflecting content
     // attributes in IDL attributes).
     return v < -2147483648 || v > 2147483647 ? null : v;
+  }
+
+  // HTML's rules for parsing non-negative integers, as browsers read a
+  // <select>'s size and a cell's colspan and rowspan: parseHtmlInteger's
+  // reading, null for a negative value, and no range limit, which each
+  // attribute applies its own way (selectSizeOf, tableCellSpanOf).
+  function parseHtmlNonNegativeInteger(raw) {
+    const m = /^[\t\n\f\r ]*([+-]?)([0-9]+)/.exec(String(raw == null ? '' : raw));
+    if (!m) return null;
+    const n = parseInt(m[2], 10);
+    if (m[1] === '-' && n !== 0) return null;
+    return n;
+  }
+
+  // A <select>'s size as Chromium draws it: a value up to 4294967295 (an
+  // unsigned long), a larger one ignored as if missing. Chromium draws
+  // size="2147483648" as a list box, though the size property reads 0.
+  function selectSizeOf(el) {
+    const n = parseHtmlNonNegativeInteger(getAttr(el, 'size'));
+    return n !== null && n <= 4294967295 ? n : null;
+  }
+
+  // A table cell's colspan or rowspan as HTML (forming a table) and
+  // Chromium read them: colspan 1 where it is missing, not a non-negative
+  // integer, or 0, and at most 1000; rowspan 1 where it is missing or not a
+  // non-negative integer, 0 to span to the end of its row group, and at
+  // most 65534. A larger value is clamped, not ignored.
+  function tableCellSpanOf(el, attr) {
+    const n = parseHtmlNonNegativeInteger(getAttr(el, attr));
+    if (attr === 'rowspan') return n === null ? 1 : Math.min(n, 65534);
+    return n === null || n === 0 ? 1 : Math.min(n, 1000);
   }
 
   function parseTabIndex(el) {
@@ -153397,7 +158767,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // from the frame element up to the scanned document.
   function isOccurrenceExcluded(occ) {
     if (!__getEffectiveExcludeSelectors().length || !occ || typeof occ !== 'object') return false;
-    let node = occ.__node || null;
+    let node = (Object.prototype.hasOwnProperty.call(occ, '__node') && occ.__node) || null;
     if (!node) {
       const selector = occ.selector;
       if (!selector || typeof selector !== 'string' || !document) return false;
@@ -153876,12 +159246,32 @@ const createDomHelpers = (function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      if (!w.__a11ycoreSharedCache) w.__a11ycoreSharedCache = {};
-      if (!w.__a11ycoreSharedCache.dom) w.__a11ycoreSharedCache.dom = {};
-      __domSharedCache = w.__a11ycoreSharedCache.dom;
+      // The window's own cache, with no prototype: a value a page's script
+      // put on Object.prototype is never read as one (round 12, R12F-1 to
+      // R12F-6).
+      const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype refuses none (round 12, R12F-6).
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
+      if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
+      const shared = w.__a11ycoreSharedCache;
+      if (!ownKey(shared, 'dom')) shared.dom = Object.create(null);
+      __domSharedCache = shared.dom;
     }
   } catch {
-    __domSharedCache = {};
+    __domSharedCache = Object.create(null);
   }
 
   // Selector cache (per element), partitioned by __selectorOptsKey since
@@ -155736,7 +161126,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       else if (type === 'range') nativeRole = 'slider';
     } else if (tag === 'textarea') nativeRole = 'textbox';
     else if (isSelect) {
-      const size = parseHtmlInteger(getAttr(node, 'size'));
+      const size = selectSizeOf(node);
       nativeRole =
         dom.hasAttribute(node, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
     } else if (tag === 'progress') nativeRole = 'progressbar';
@@ -157082,7 +162472,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
       while (i < n && isSep(s[i]) && s[i] !== ',') i++;
       const v0 = i;
       while (i < n && !isSep(s[i])) i++;
-      values[key] = s.slice(v0, i);
+      // Defined, not assigned: a read-only value of that name on
+      // Object.prototype (width) refuses none (round 12, F12-4).
+      Object.defineProperty(values, key, {
+        value: s.slice(v0, i),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     const number = (v) => {
       if (v === 'yes') return 1;
@@ -157642,7 +163039,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     else if (tag === 'summary') role = 'button';
     else if (tag === 'input') role = aria.getInputRole(el);
     else if (tag === 'select') {
-      const size = parseHtmlInteger(getAttr(el, 'size'));
+      const size = selectSizeOf(el);
       role =
         dom.hasAttribute(el, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
     } else if (tag === 'textarea') role = 'textbox';
@@ -158499,9 +163896,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const hv = cs.height != null ? String(cs.height).trim() : '';
       const ov = cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
 
-      metrics.width = wv || null;
-      metrics.height = hv || null;
-      metrics.overflow = ov || null;
+      Object.defineProperty(metrics, 'width', {
+        value: wv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'height', {
+        value: hv || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(metrics, 'overflow', {
+        value: ov || null,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
 
       const isZeroW = wv === '0px' || wv === '0';
       const isZeroH = hv === '0px' || hv === '0';
@@ -159487,7 +164899,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const o =
       partial && typeof partial === 'object' && !Array.isArray(partial) ? { ...partial } : {};
     // Attach the node for engine-side finalization. This must be removed later before returning results.
-    o.__node = node || null;
+    // Defined, not assigned: a read-only __node a page's script put on
+    // Object.prototype refuses no occurrence (round 12, R12F-6).
+    Object.defineProperty(o, '__node', {
+      value: node || null,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
     return o;
   }
 
@@ -159539,7 +164958,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  let __contrastSharedCache = {};
+  let __contrastSharedCache = Object.create(null);
   try {
     // In Node/JSDOM checks, the harness sets global.window/global.document.
     // The engine may instantiate helpers per rule without passing opts.window,
@@ -159550,12 +164969,28 @@ const createDomHelpers = (function createDomHelpers(opts) {
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
-      if (!w.__a11ycoreSharedCache) w.__a11ycoreSharedCache = {};
-      if (!w.__a11ycoreSharedCache.contrast) w.__a11ycoreSharedCache.contrast = {};
-      __contrastSharedCache = w.__a11ycoreSharedCache.contrast;
+      // Own keys only, and defined, as for the DOM helpers' cache above.
+      const ownKey = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      // A key the window has already (a setter a test puts there) is set as
+      // it is; only a new one is defined.
+      const defineOwn = (o, k) => {
+        if (Object.prototype.hasOwnProperty.call(o, k)) o[k] = Object.create(null);
+        else {
+          Object.defineProperty(o, k, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      };
+      if (!ownKey(w, '__a11ycoreSharedCache')) defineOwn(w, '__a11ycoreSharedCache');
+      const shared = w.__a11ycoreSharedCache;
+      if (!ownKey(shared, 'contrast')) shared.contrast = Object.create(null);
+      __contrastSharedCache = shared.contrast;
     }
   } catch {
-    __contrastSharedCache = {};
+    __contrastSharedCache = Object.create(null);
   }
 
   const __contrastShared = {
@@ -159570,20 +165005,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getInternalsStateInfo,
     cssRulesOf,
     selectorIndex,
+    isVisuallyHidden,
+    getRoleInfo: (el) => getRoleInfo(el),
+    getFocusableInfo: (el) => getFocusableInfo(el),
+    selectSizeOf,
     __contrastSharedCache
   };
 
+  // With no prototype: a key it is not given (contrast) is never read from
+  // Object.prototype (round 12, R12F-1 to R12F-6).
   const contrast = createContrastHelpers(
-    { window: realmWindow || window, document, root: roots, includeShadowDom, excludeSelectors },
+    Object.assign(Object.create(null), {
+      window: realmWindow || window,
+      document,
+      root: roots,
+      includeShadowDom,
+      excludeSelectors
+    }),
     __contrastShared
   );
 
   // Expose shared cache to checks (deterministic, in-memory only)
-  contrast.sharedCache = __contrastShared.__contrastSharedCache;
+  Object.defineProperty(contrast, 'sharedCache', {
+    value: __contrastShared.__contrastSharedCache,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl, getCustomElementInternals, flatParentElement }
+    { trim, getLabelControl, getCustomElementInternals, flatParentElement, selectSizeOf }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -159786,6 +165238,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isIso639LanguageCode,
     getImagesUsingMap,
     parseHtmlInteger,
+    parseHtmlNonNegativeInteger,
+    selectSizeOf,
+    tableCellSpanOf,
 
     // Existing query/snippet utilities
     queryAll,
@@ -160080,7 +165535,12 @@ const normalizeLean = (function normalizeLean(input) {
   if (LEAN_DIRECTIONS.indexOf(input.toward) === -1) return null;
   if (typeof input.why !== 'string' || !input.why.trim()) return null;
 
-  const out = { toward: input.toward, why: input.why.trim() };
+  // Built with no prototype, and handed back as a plain copy: a read-only
+  // value a page's script put on Object.prototype (signals, i18n, whyKey)
+  // refuses no key (round 12, F12-4).
+  const out = Object.create(null);
+  out.toward = input.toward;
+  out.why = input.why.trim();
 
   const signals = [];
   for (const s of Array.isArray(input.signals) ? input.signals : []) {
@@ -160104,20 +165564,79 @@ const normalizeLean = (function normalizeLean(input) {
     m.agreed >= 0 &&
     m.agreed <= m.cases
   ) {
-    out.measured = { agreed: m.agreed, cases: m.cases };
-    if (typeof m.corpus === 'string' && m.corpus) out.measured.corpus = m.corpus;
-    if (typeof m.coreVersion === 'string' && m.coreVersion)
-      out.measured.coreVersion = m.coreVersion;
+    out.measured = {
+      agreed: m.agreed,
+      cases: m.cases,
+      ...(typeof m.corpus === 'string' && m.corpus ? { corpus: m.corpus } : {}),
+      ...(typeof m.coreVersion === 'string' && m.coreVersion ? { coreVersion: m.coreVersion } : {})
+    };
   }
 
   const i = input.i18n;
   if (i && typeof i === 'object' && !Array.isArray(i)) {
-    const ii = {};
+    const ii = Object.create(null);
     if (typeof i.whyKey === 'string' && i.whyKey) ii.whyKey = i.whyKey;
     if (typeof i.cautionKey === 'string' && i.cautionKey) ii.cautionKey = i.cautionKey;
     if (i.params && typeof i.params === 'object' && !Array.isArray(i.params))
       ii.params = { ...i.params };
-    if (ii.whyKey || ii.cautionKey) out.i18n = ii;
+    if (ii.whyKey || ii.cautionKey) out.i18n = { ...ii };
+  }
+  return { ...out };
+});
+
+// Inlined from src/core/number-format.js -- t() writes a message's decimals
+// as its language does.
+const formatLocaleDecimal = (function formatLocaleDecimal(value, locale) {
+  let text;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return value;
+    text = String(value);
+  } else if (typeof value === 'string') {
+    text = value;
+  } else {
+    return value;
+  }
+  const m = /^(-?\d+)\.(\d+)$/.exec(text);
+  if (!m || !locale) return value;
+  // The separator, worked out once per locale. A locale Intl does not know,
+  // or one that writes other digits, keeps the point.
+  const key = String(locale);
+  // Own, with no prototype, and defined, not assigned (round 12, F12-4).
+  if (!Object.prototype.hasOwnProperty.call(formatLocaleDecimal, 'separators')) {
+    Object.defineProperty(formatLocaleDecimal, 'separators', {
+      value: Object.create(null),
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
+  }
+  const cache = formatLocaleDecimal.separators;
+  if (!Object.prototype.hasOwnProperty.call(cache, key)) {
+    let sep = '.';
+    // English and Japanese write a point. Building a formatter costs a page
+    // about 10 ms the first time, as the browser loads the locale's data, so
+    // none is built for them (round 12, F12-6).
+    if (key !== 'en' && key !== 'ja') {
+      try {
+        const shown = new Intl.NumberFormat(key, { useGrouping: false }).format(1.5);
+        if (/^1[^0-9]5$/.test(shown)) sep = shown.charAt(1);
+      } catch {
+        sep = '.';
+      }
+    }
+    cache[key] = sep;
+  }
+  return cache[key] === '.' ? value : `${m[1]}${cache[key]}${m[2]}`;
+});
+const localizeNumberParams = (function localizeNumberParams(params, locale) {
+  if (!params || typeof params !== 'object' || Array.isArray(params) || !locale) return params;
+  let out = params;
+  for (const key of Object.keys(params)) {
+    if (!/(?:ratio|threshold|Px)$/i.test(key)) continue;
+    const v = formatLocaleDecimal(params[key], locale);
+    if (v === params[key]) continue;
+    if (out === params) out = { ...params };
+    out[key] = v;
   }
   return out;
 });
@@ -160202,7 +165721,9 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
 
   const round = declaration.unit === 'px' ? (n) => Math.round(n * 10) / 10 : (n) => n;
   const counted = Number(measuredCount);
-  const margin = {
+  // Filled with no prototype, so a read-only value on Object.prototype
+  // refuses no key; handed back plain (round 12, R12F-6).
+  const margin = Object.assign(Object.create(null), {
     measure: declaration.measure,
     unit: declaration.unit,
     limit: declaration.limit,
@@ -160213,9 +165734,13 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
       Number.isFinite(counted) && counted >= candidates.length
         ? Math.floor(counted)
         : candidates.length
-  };
+  });
 
-  const includeSelector = !(options && options.includeSelector === false);
+  const includeSelector = !(
+    options &&
+    Object.prototype.hasOwnProperty.call(options, 'includeSelector') &&
+    options.includeSelector === false
+  );
   if (best.el && helpers) {
     let selector = '';
     if (includeSelector && typeof helpers.buildSelector === 'function') {
@@ -160242,7 +165767,7 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
   if (best.context && typeof best.context === 'object' && !Array.isArray(best.context)) {
     margin.context = { ...best.context };
   }
-  return margin;
+  return { ...margin };
 });
 
 // Inlined from src/core/rule-meta.js (also used at build time by loadRuleModules
@@ -160460,6 +165985,13 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
 });
 
 // Inlined from src/core/dom-runner.js
+const setOwnKey = (function setOwnKey(o, key, value) {
+  Object.defineProperty(o, key, { value, writable: true, enumerable: true, configurable: true });
+  return value;
+});
+const ownKeyOf = (function ownKeyOf(o, key) {
+  return o != null && Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+});
 const normalizeWcagLevel = (function normalizeWcagLevel(v) {
   const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
   return s === 'A' || s === 'AA' || s === 'AAA' ? s : null;
@@ -160604,6 +166136,8 @@ const rollupCompositeResults = (function rollupCompositeResults(
   const rulesResults = [];
   try {
     const composites = Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : [];
+    // What each rollup echoes: the options as plain objects (plainOptions).
+    const echoedOptions = plainOptions(engineOptionsResolved || {});
 
     const LEVEL_RANK = { A: 1, AA: 2, AAA: 3 };
 
@@ -160687,10 +166221,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const ruleId = isNonEmptyString(entry.id) ? entry.id.trim() : String(entry.id || '').trim();
       if (!ruleId) return null;
 
-      const metaIn =
+      // Its own keys only (round 12, R12F-1 to R12F-6).
+      const metaIn = Object.assign(
+        Object.create(null),
         entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)
           ? entry.meta
-          : {};
+          : null
+      );
 
       const titleKey =
         typeof metaIn.titleKey === 'string' && metaIn.titleKey.trim() ? metaIn.titleKey.trim() : '';
@@ -160794,7 +166331,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
             .filter(Boolean)
         : [];
 
-      return {
+      return Object.assign(Object.create(null), {
         ruleId,
         title: metaIn.title || ruleId,
         description: metaIn.description || '',
@@ -160861,7 +166398,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
         // A standard's requirement its rules don't check in full
         // (ruleMappedStandard requirements' partial).
         __partial: !!ownStandard && metaIn.partial === true
-      };
+      });
     }
 
     // Whether a finding's data.details has every value `when` gives, each
@@ -161163,7 +166700,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
         reasonCode = 'composite.rollup.cantTell.partialCheck';
       }
 
-      const raw = {
+      // With no prototype, so no key set below is refused by a read-only
+      // value on Object.prototype (round 12, R12F-6).
+      const raw = Object.assign(Object.create(null), {
         outcome,
         occurrences: [],
 
@@ -161205,10 +166744,10 @@ const rollupCompositeResults = (function rollupCompositeResults(
         },
 
         engineOptions: {
-          ...(engineOptionsResolved || {}),
+          ...echoedOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
-      };
+      });
 
       // Promote composite severity based on contributors (deterministic).
       // - If composite fails: use max severity among failing children.
@@ -161548,7 +167087,10 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // whether it was installed before the page's scripts: what the name rules
   // could read of custom elements' internals. Left out without one.
   const hook = readInternalsHook(win);
-  const internalsHook = hook ? { internalsHook: hook.early ? 'early' : 'late' } : {};
+  // Filled with no prototype, so a read-only value on Object.prototype
+  // refuses no key; handed back plain (round 12, R12F-6).
+  const internalsHook = Object.create(null);
+  if (hook) internalsHook.internalsHook = hook.early ? 'early' : 'late';
   // The same for the listener hook (listenerHookScript): which event
   // listeners added from script the keyboard rules could see.
   const listeners = readListenerHook(win);
@@ -161559,7 +167101,8 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   if (liveRegions) internalsHook.liveRegionHook = liveRegions.early ? 'early' : 'late';
   if (!layout) return { layout: false, ...internalsHook };
 
-  const env = { layout: true };
+  const env = Object.create(null);
+  env.layout = true;
   const width = Number(win.innerWidth);
   const height = Number(win.innerHeight);
   if (Number.isFinite(width) && Number.isFinite(height)) env.viewport = { width, height };
@@ -161620,7 +167163,7 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
       env.images = loading ? 'loading' : 'loaded';
     }
   } catch {}
-  return Object.assign(env, internalsHook);
+  return { ...env, ...internalsHook };
 });
 
 const settleAnimations = (function settleAnimations(doc, includeShadowDom) {
@@ -162262,6 +167805,9 @@ const runCoreSettled = (function runCoreSettled(
   COMPOSITE_RULES
 ) {
   const dom = createSafeDom();
+  // The options' own keys only, with no prototype, so a value a page's
+  // script put on Object.prototype is never read as an option (ownOptions).
+  engineOptions = ownOptions(engineOptions);
   // engineOptions.timeBudgetMs: once the scan has spent this long, it starts
   // no more rules, and lists those it didn't start (notRun). Read only when
   // it is a number above 0; enforceEngineOptions says anything else.
@@ -162282,8 +167828,9 @@ const runCoreSettled = (function runCoreSettled(
   const budgetSpent = !!(
     engineOptions &&
     typeof engineOptions === 'object' &&
-    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent') &&
-    engineOptions.__budgetSpent === true
+    Object.prototype.hasOwnProperty.call(engineOptions, '__budgetSpent') &&
+    engineOptions.__budgetSpent === true &&
+    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent')
   );
   const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
@@ -162311,15 +167858,21 @@ const runCoreSettled = (function runCoreSettled(
   }
   // Normalize contrast options without mutating caller-provided engineOptions.
   function __normalizeContrastOptions(engineOptions2) {
-    const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
-    const c = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : {};
+    const eo =
+      engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : Object.create(null);
+    const c = eo.contrast && typeof eo.contrast === 'object' ? eo.contrast : Object.create(null);
     const mode = c.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
     const rootCanvasFallback =
       typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim()
         ? c.rootCanvasFallback.trim()
         : '#ffffff';
-    // Set below, once the color is known to be usable.
-    return { mode, rootCanvasFallback, rootCanvasFallbackSet: false };
+    // Set below, once the color is known to be usable. With no prototype,
+    // as the options it comes from.
+    return Object.assign(Object.create(null), {
+      mode,
+      rootCanvasFallback,
+      rootCanvasFallbackSet: false
+    });
   }
 
   // Whether the caller gave contrast.rootCanvasFallback, rather than the
@@ -162339,10 +167892,11 @@ const runCoreSettled = (function runCoreSettled(
     );
   }
 
-  const engineOptionsResolved =
-    engineOptions && typeof engineOptions === 'object'
-      ? { ...engineOptions, contrast: __normalizeContrastOptions(engineOptions) }
-      : { contrast: __normalizeContrastOptions(null) };
+  const engineOptionsResolved = Object.assign(
+    Object.create(null),
+    engineOptions && typeof engineOptions === 'object' ? engineOptions : null,
+    { contrast: __normalizeContrastOptions(engineOptions) }
+  );
 
   const policy = resolvePolicy(POLICY_CONTRACTS, engineOptionsResolved, strictOf(engineOptions));
 
@@ -162487,7 +168041,10 @@ const runCoreSettled = (function runCoreSettled(
   // the same window. Clearing at the start of every run keeps sharing scoped
   // to "this run" as intended, without leaking across runs.
   try {
-    if (window && window.__a11ycoreSharedCache) window.__a11ycoreSharedCache = {};
+    if (window && Object.prototype.hasOwnProperty.call(window, '__a11ycoreSharedCache')) {
+      // The window's own key: set as it is, never through Object.prototype.
+      window.__a11ycoreSharedCache = Object.create(null);
+    }
   } catch {}
 
   const sharedHelpers = createDomHelpers({
@@ -162514,19 +168071,19 @@ const runCoreSettled = (function runCoreSettled(
   // The animations running when the scan started, before they were settled:
   // [] where there are none or no getAnimations (jsdom).
   {
-    const startedWith = Array.isArray(settleAnimations.atScanStart)
+    const startedWith = Array.isArray(ownKeyOf(settleAnimations, 'atScanStart'))
       ? settleAnimations.atScanStart
       : [];
-    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+    setOwnKey(sharedHelpers, 'animationsAtScanStart', () => startedWith.map((a) => ({ ...a })));
   }
   // The elements whose box clips its content only for content-visibility:
   // auto, as the scan lays them out (layOutSkippedContent).
   {
     const paintContained =
-      layOutSkippedContent.paintContained instanceof Set
+      ownKeyOf(layOutSkippedContent, 'paintContained') instanceof Set
         ? layOutSkippedContent.paintContained
         : new Set();
-    sharedHelpers.paintContainedByContentVisibility = (el) => paintContained.has(el);
+    setOwnKey(sharedHelpers, 'paintContainedByContentVisibility', (el) => paintContained.has(el));
   }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
@@ -162614,7 +168171,9 @@ const runCoreSettled = (function runCoreSettled(
     }
 
     if (t === 'object') {
-      const out = {};
+      // Filled with no prototype, so no key is refused by a read-only value
+      // on Object.prototype; handed back plain.
+      const out = Object.create(null);
       const keys = Object.keys(v).sort();
       // cap object keys
       const n = Math.min(keys.length, 50);
@@ -162624,7 +168183,7 @@ const runCoreSettled = (function runCoreSettled(
         if (typeof k !== 'string') continue;
         out[k] = sanitizeProbeValue(v[k], depth - 1);
       }
-      return out;
+      return { ...out };
     }
 
     return null;
@@ -162632,8 +168191,11 @@ const runCoreSettled = (function runCoreSettled(
 
   let probes;
   try {
+    // JSON-safe data only, as enforceEngineOptions says (round 12, A12-13).
     const rawProbes =
-      engineOptionsResolved && typeof engineOptionsResolved.probes === 'object'
+      engineOptionsResolved &&
+      typeof engineOptionsResolved.probes === 'object' &&
+      engineOptionSpec().probes.test(engineOptionsResolved.probes)
         ? engineOptionsResolved.probes
         : null;
     probes = rawProbes ? sanitizeProbeValue(rawProbes, 6) : null;
@@ -162892,10 +168454,15 @@ const runCoreSettled = (function runCoreSettled(
     const occurrences = Array.isArray(result.occurrences)
       ? result.occurrences.map((occ) => {
           if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
-          const next =
-            occ.occurrenceOutcome === 'fail'
-              ? { ...occ, occurrenceOutcome: 'cantTell' }
-              : { ...occ };
+          // With no prototype, as the result (round 12, R12F-1 to R12F-6).
+          const next = Object.assign(
+            Object.create(null),
+            occ,
+            Object.prototype.hasOwnProperty.call(occ, 'occurrenceOutcome') &&
+              occ.occurrenceOutcome === 'fail'
+              ? { occurrenceOutcome: 'cantTell' }
+              : null
+          );
           if (!next.uncertainty) {
             next.uncertainty = {
               code: 'out-of-scope',
@@ -162934,8 +168501,7 @@ const runCoreSettled = (function runCoreSettled(
 
     // Deliberately NOT reported through `error`: nothing went wrong here,
     // and consumers read a non-empty `error` as "this rule threw".
-    return {
-      ...result,
+    return Object.assign(Object.create(null), result, {
       outcome: 'cantTell',
       occurrences,
       wcagVersionScope: {
@@ -162944,7 +168510,7 @@ const runCoreSettled = (function runCoreSettled(
         coercedFrom: 'fail',
         ...(why === 'errata' ? { by: 'errata' } : {})
       }
-    };
+    });
   }
 
   const checksResults = [];
@@ -163101,15 +168667,24 @@ const runCoreSettled = (function runCoreSettled(
       }
       if (kind === '[object Set]') return [...v.values()].map((x) => plainData(x, path));
       if (typeof v.toJSON === 'function') return plainData(v.toJSON(), path);
+      // Each key defined, not assigned: a read-only value of that name on
+      // Object.prototype (__node) refuses none (round 12, R12F-6).
       const out = {};
+      const put = (key, value) =>
+        Object.defineProperty(out, key, {
+          value,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
       for (const key of Object.keys(v)) {
         const x = v[key];
         if (key === '__node') {
-          out[key] = x;
+          put(key, x);
           continue;
         }
         const plain = plainData(x, path);
-        if (plain !== undefined) out[key] = plain;
+        if (plain !== undefined) put(key, plain);
       }
       return out;
     } finally {
@@ -163252,7 +168827,11 @@ const runCoreSettled = (function runCoreSettled(
   }
   const readOnlyViews = new WeakMap();
   const ruleEngineOptions =
-    engineOptionsResolved && typeof engineOptionsResolved === 'object' ? engineOptionsResolved : {};
+    engineOptionsResolved && typeof engineOptionsResolved === 'object'
+      ? engineOptionsResolved
+      : Object.create(null);
+  // What each result echoes: the same options, as plain objects.
+  const echoedEngineOptions = plainOptions(ruleEngineOptions);
   // Changes a pack's or caller's rule made to the page, by rule id.
   const pageChangedBy = [];
   for (const def of runOrder) {
@@ -163329,12 +168908,16 @@ const runCoreSettled = (function runCoreSettled(
     const settingNames = Array.isArray(defResolved.settings) ? defResolved.settings : [];
     let ruleConfig = callerConfig;
     if (ruleConfig && settingNames.length) {
-      ruleConfig = { ...ruleConfig };
+      ruleConfig = Object.assign(Object.create(null), ruleConfig);
       for (const name of settingNames) delete ruleConfig[name];
     }
     const variant =
       defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
-    if (variant && variant.config) ruleConfig = { ...(ruleConfig || {}), ...variant.config };
+    // With no prototype, as the caller's settings are (ownOptions): a
+    // variant's config never reads excludeSelectors from Object.prototype.
+    if (variant && variant.config) {
+      ruleConfig = Object.assign(Object.create(null), ruleConfig, variant.config);
+    }
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -163344,6 +168927,12 @@ const runCoreSettled = (function runCoreSettled(
     if (typeof sharedHelpers.__setActiveRuleExcludeSelectors === 'function') {
       sharedHelpers.__setActiveRuleExcludeSelectors(ruleConfig && ruleConfig.excludeSelectors);
     }
+    // Whether any area is left out for this rule: only then does
+    // normalizeRuleResult look up every element a selector-only occurrence
+    // matches (round 12, A12-16).
+    const excluding =
+      excludeSelectors.length > 0 ||
+      normalizeSelectorList(ruleConfig && ruleConfig.excludeSelectors).length > 0;
 
     const foreign = foreignCode.has(defResolved.ruleId);
     const ctx = {
@@ -163376,13 +168965,14 @@ const runCoreSettled = (function runCoreSettled(
             outcome: 'notApplicable',
             occurrences: [],
             engineOptions: {
-              ...ruleEngineOptions,
+              ...echoedEngineOptions,
               locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
             }
           },
           SCHEMA_VERSION,
           policy,
-          sharedHelpers
+          sharedHelpers,
+          excluding
         )
       );
       if (ruleTimings)
@@ -163410,7 +169000,8 @@ const runCoreSettled = (function runCoreSettled(
           // everywhere: what was meant can't be known, so the rule says so.
           throw new Error(
             'applicability returned ' +
-              describeOptionValue(res) +
+              // "a undefined" read badly (round 12, A12-11).
+              (res === undefined ? 'undefined (no value)' : describeOptionValue(res)) +
               '; it must return true or false (or { applicable: true | false })'
           );
         }
@@ -163420,12 +169011,12 @@ const runCoreSettled = (function runCoreSettled(
           occurrences: [],
           error: describeThrown(err),
           engineOptions: {
-            ...ruleEngineOptions,
+            ...echoedEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -163437,12 +169028,12 @@ const runCoreSettled = (function runCoreSettled(
           outcome: 'notApplicable',
           occurrences: [],
           engineOptions: {
-            ...ruleEngineOptions,
+            ...echoedEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -163462,7 +169053,7 @@ const runCoreSettled = (function runCoreSettled(
         occurrences: [],
         error: describeThrown(err),
         engineOptions: {
-          ...ruleEngineOptions,
+          ...echoedEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
       };
@@ -163473,6 +169064,11 @@ const runCoreSettled = (function runCoreSettled(
       if (changes) pageChangedBy.push({ ruleId: defResolved.ruleId, changes });
     }
     if (foreign) result = plainRuleOutput(result);
+    // Read with no prototype from here: a field the rule left out is never
+    // read from Object.prototype (round 12, R12F-1 to R12F-6).
+    if (result && typeof result === 'object' && !isThenable(result)) {
+      result = Object.assign(Object.create(null), result);
+    }
 
     // A rule that returned nothing usable is reported, not dropped: a
     // missing result would read as a rule that never existed.
@@ -163490,7 +169086,7 @@ const runCoreSettled = (function runCoreSettled(
         occurrences: [],
         error: unusable,
         engineOptions: {
-          ...ruleEngineOptions,
+          ...echoedEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
       };
@@ -163499,7 +169095,7 @@ const runCoreSettled = (function runCoreSettled(
     // neither how it is judged nor what the result says, and is noted.
     if (result && Object.prototype.hasOwnProperty.call(result, 'type')) {
       const returnedType = result.type;
-      result = { ...result };
+      result = Object.assign(Object.create(null), result);
       delete result.type;
       if (returnedType !== undefined && returnedType !== defResolved.type) {
         result.error =
@@ -163523,8 +169119,7 @@ const runCoreSettled = (function runCoreSettled(
         else dropped += 1;
       }
       if (dropped) {
-        result = {
-          ...result,
+        result = Object.assign(Object.create(null), result, {
           occurrences: kept,
           error:
             (result.error ? String(result.error) + ' | ' : '') +
@@ -163532,7 +169127,7 @@ const runCoreSettled = (function runCoreSettled(
             dropped +
             (dropped === 1 ? ' occurrence that is' : ' occurrences that are') +
             ' not an object; left out.'
-        };
+        });
       }
     }
 
@@ -163543,7 +169138,7 @@ const runCoreSettled = (function runCoreSettled(
         Object.prototype.hasOwnProperty.call(result, key)
       );
       if (owned.length) {
-        result = { ...result };
+        result = Object.assign(Object.create(null), result);
         for (const key of owned) delete result[key];
         result.error =
           (result.error ? String(result.error) + ' | ' : '') +
@@ -163561,8 +169156,7 @@ const runCoreSettled = (function runCoreSettled(
       result.outcome === 'fail' &&
       !(Array.isArray(result.occurrences) && result.occurrences.length)
     ) {
-      result = {
-        ...result,
+      result = Object.assign(Object.create(null), result, {
         occurrences: [
           {
             __node: dom.documentElement(document),
@@ -163575,7 +169169,7 @@ const runCoreSettled = (function runCoreSettled(
             data: { details: { reasonCode: 'FAIL_WITHOUT_OCCURRENCE' } }
           }
         ]
-      };
+      });
     }
 
     // A variant reports in its own words: a message key of its base rule's
@@ -163601,13 +169195,12 @@ const runCoreSettled = (function runCoreSettled(
     // The scan's options and the WCAG scope are the engine's to state: an
     // engineOptions or wcagVersionScope in a rule's return is not taken (a
     // returned engineOptions.output could switch off the rule's selectors).
-    result = {
-      ...result,
+    result = Object.assign(Object.create(null), result, {
       engineOptions: {
-        ...ruleEngineOptions,
+        ...echoedEngineOptions,
         locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
       }
-    };
+    });
     delete result.wcagVersionScope;
     checksResults.push(
       normalizeRuleResult(
@@ -163615,7 +169208,8 @@ const runCoreSettled = (function runCoreSettled(
         scopeOutcomeToWcagVersion(defResolved, result),
         SCHEMA_VERSION,
         policy,
-        sharedHelpers
+        sharedHelpers,
+        excluding
       )
     );
     if (ruleTimings)
@@ -163688,15 +169282,33 @@ const runCoreSettled = (function runCoreSettled(
     }
   );
   if (notRunRules.length) {
+    // The budget the scan was given, not what was left of it when this
+    // profile or frame started (__scanTimeBudgetMs, set by the engine
+    // only), in whole ms, or tenths below 10 (round 12, A12-5).
+    const flagOf = (key) =>
+      Object.prototype.hasOwnProperty.call(engineOptions, key) &&
+      !Object.prototype.propertyIsEnumerable.call(engineOptions, key)
+        ? engineOptions[key]
+        : undefined;
+    const given =
+      typeof flagOf('__scanTimeBudgetMs') === 'number'
+        ? flagOf('__scanTimeBudgetMs')
+        : timeBudgetMs;
+    const budgetText =
+      typeof given === 'number' && Number.isFinite(given)
+        ? ' of ' + (given >= 10 ? Math.round(given) : Math.round(given * 10) / 10) + ' ms'
+        : '';
     try {
       console.warn(
-        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
-          timeBudgetMs +
+        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget' +
+          budgetText +
           (budgetSpent
-            ? typeof engineOptions.profile === 'string'
-              ? ' ms before profile "' + engineOptions.profile + '" started, so it'
-              : " ms before this frame's scan started, so it"
-            : ' ms and') +
+            ? flagOf('__budgetSpentAt') === 'profile' && typeof engineOptions.profile === 'string'
+              ? ' before profile "' + engineOptions.profile + '" started, so it'
+              : flagOf('__budgetSpentAt') === 'styleSheets'
+                ? " fetching the style sheets the page can't read, before any rule started, so it"
+                : " before this frame's scan started, so it"
+            : ' and') +
           ' did not run ' +
           notRunRules.length +
           ' rule' +
@@ -163746,19 +169358,16 @@ const runCoreSettled = (function runCoreSettled(
   for (const r of checksResults.concat(rulesResults)) {
     if (!r || !r.engineOptions || typeof r.engineOptions !== 'object') continue;
     const eo = r.engineOptions;
-    if (
-      !('messages' in eo) &&
-      !('probes' in eo) &&
-      !('customRules' in eo) &&
-      !('styleSheetTexts' in eo)
-    ) {
+    // Its own keys, not ones on Object.prototype.
+    const has = (key) => Object.prototype.hasOwnProperty.call(eo, key);
+    if (!has('messages') && !has('probes') && !has('customRules') && !has('styleSheetTexts')) {
       continue;
     }
     const echoed = { ...eo };
     delete echoed.messages;
-    if ('probes' in echoed) echoed.probes = probes;
-    if ('customRules' in echoed) echoed.customRules = echoedCustomRules;
-    if ('styleSheetTexts' in echoed) echoed.styleSheetTexts = echoedStyleSheets;
+    if (has('probes')) echoed.probes = probes;
+    if (has('customRules')) echoed.customRules = echoedCustomRules;
+    if (has('styleSheetTexts')) echoed.styleSheetTexts = echoedStyleSheets;
     r.engineOptions = echoed;
   }
 
@@ -163774,7 +169383,8 @@ const runCoreSettled = (function runCoreSettled(
     for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
   }
   for (const r of checksResults) {
-    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
+    if (r && typeof r === 'object')
+      setOwnKey(r, 'rollupIds', (rollupIdsByRule[r.ruleId] || []).slice());
   }
 
   // Optional perf counters passthrough (only when enabled). Deterministic.
@@ -163894,8 +169504,8 @@ const runCoreSettled = (function runCoreSettled(
     Array.isArray(CATALOG.packs) &&
     CATALOG.packs.length > 0;
   let coreWording = null;
-  if ('messages' in engineOptionsResolved) {
-    coreWording = { ...engineOptionsResolved };
+  if (Object.prototype.hasOwnProperty.call(engineOptionsResolved, 'messages')) {
+    coreWording = Object.assign(Object.create(null), engineOptionsResolved);
     delete coreWording.messages;
   }
   const restorable = (c) => {
@@ -164250,13 +169860,13 @@ const runCore = (function runCore(
     );
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null, shadowDom);
     // The animations as they were before settling, for helpers.animationsAtScanStart.
-    settleAnimations.atScanStart = settled.running;
+    setOwnKey(settleAnimations, 'atScanStart', settled.running);
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     // Content content-visibility: auto skips, laid out as a reader sees it.
     const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
     // For helpers.paintContainedByContentVisibility.
-    layOutSkippedContent.paintContained = laidOut.paintContained;
+    setOwnKey(layOutSkippedContent, 'paintContained', laidOut.paintContained);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -164279,10 +169889,10 @@ const runCore = (function runCore(
       return result;
     } finally {
       laidOut.restore();
-      layOutSkippedContent.paintContained = null;
+      setOwnKey(layOutSkippedContent, 'paintContained', null);
       colorsHeld.restore();
       settled.restore();
-      settleAnimations.atScanStart = [];
+      setOwnKey(settleAnimations, 'atScanStart', []);
     }
   } finally {
     restoreDomProtection();
@@ -164300,8 +169910,9 @@ const runCore = (function runCore(
             : null;
       // The contrast helpers' blank frames, kept for the run
       // (__openProbeFrame), go with it.
-      const shared = w && w.__a11ycoreSharedCache;
-      const frames = shared && shared.contrast && shared.contrast.probeFrames;
+      const own = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k) && o[k];
+      const shared = own(w, '__a11ycoreSharedCache');
+      const frames = own(own(shared, 'contrast'), 'probeFrames');
       if (Array.isArray(frames)) {
         for (const entry of frames) {
           try {
@@ -164310,7 +169921,7 @@ const runCore = (function runCore(
           } catch {}
         }
       }
-      if (w && w.__a11ycoreSharedCache) delete w.__a11ycoreSharedCache;
+      if (shared) delete w.__a11ycoreSharedCache;
     } catch {}
   }
 });
@@ -164320,13 +169931,13 @@ const runCore = (function runCore(
 // cross-frame scanning for the "plain script injection" consumption mode).
 const FRAME_RPC_CHANNEL = "__frame_rpc_v1__";
 const getFrameRpcRegistry = (function getFrameRpcRegistry(win) {
-  if (!win.__a11yCoreFrameRpc__) {
-    win.__a11yCoreFrameRpc__ = {
-      pending: new Map(),
-      seq: 0,
-      responder: null,
-      listening: false
-    };
+  if (!Object.prototype.hasOwnProperty.call(win, '__a11yCoreFrameRpc__')) {
+    const registry = Object.create(null);
+    registry.pending = new Map();
+    registry.seq = 0;
+    registry.responder = null;
+    registry.listening = false;
+    win.__a11yCoreFrameRpc__ = registry;
   }
   return win.__a11yCoreFrameRpc__;
 });
@@ -164336,8 +169947,14 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
   if (registry.listening) return registry;
 
   dom.addEventListener(win, 'message', function a11yCoreFrameRpcListener(event) {
-    const data = event && event.data;
-    if (!data || data.__a11ycore !== true || data.channel !== channel) return;
+    // A message's fields are read as its own, never from Object.prototype.
+    const message = event && event.data;
+    if (!message || typeof message !== 'object') return;
+    const data = Object.create(null);
+    for (const key of ['__a11ycore', 'channel', 'type', 'requestId', 'payload']) {
+      if (Object.prototype.hasOwnProperty.call(message, key)) data[key] = message[key];
+    }
+    if (data.__a11ycore !== true || data.channel !== channel) return;
 
     if (data.type === 'ping') {
       try {
@@ -164553,8 +170170,10 @@ const profileOptionsOf = (function profileOptionsOf(engineOptions) {
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
   if (!Array.isArray(asked)) return [engineOptions];
   const unique = profileNamesOf(asked);
-  if (!unique.length) return [Object.assign({}, engineOptions, { profile: undefined })];
-  return unique.map((p) => Object.assign({}, engineOptions, { profile: p }));
+  // With no prototype, as ownOptions copies them.
+  if (!unique.length)
+    return [Object.assign(Object.create(null), engineOptions, { profile: undefined })];
+  return unique.map((p) => Object.assign(Object.create(null), engineOptions, { profile: p }));
 });
 const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packNames, declared) {
   const name = typeof profile === 'string' ? lowerAscii(profile.trim()) : '';
@@ -164582,8 +170201,10 @@ const runProfiles = (function runProfiles(engineOptions, run) {
   // page may put then on Object.prototype, and every plain result then has
   // one.
   const result = runProfilesUncapped(engineOptions, run);
-  const out = engineOptions && engineOptions.output;
-  if (!out || typeof out !== 'object' || out.maxOccurrencesPerRule === undefined) return result;
+  const out = ownField(engineOptions, 'output');
+  if (!out || typeof out !== 'object' || ownField(out, 'maxOccurrencesPerRule') === undefined) {
+    return result;
+  }
   return Object.prototype.toString.call(result) === '[object Promise]'
     ? result.then((x) => capOccurrences(x, engineOptions))
     : capOccurrences(result, engineOptions);
@@ -164593,21 +170214,37 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   // A frame's scan that starts with no time budget left (frame-scan.js) is
   // asked to start no rule (__budgetSpent, set by the engine only, not
   // enumerable): each profile's scan is asked the same, so it lists its
-  // selection in notRun.
+  // selection in notRun. The scan's budget (__scanTimeBudgetMs), which the
+  // warnings give, goes with it. Read only as the options' own, never from
+  // Object.prototype (round 12, A12-2).
+  const flagOf = (from, key) =>
+    from &&
+    typeof from === 'object' &&
+    Object.prototype.hasOwnProperty.call(from, key) &&
+    !Object.prototype.propertyIsEnumerable.call(from, key)
+      ? from[key]
+      : undefined;
   const carryBudgetSpent = (from, to) => {
-    if (
-      from &&
-      typeof from === 'object' &&
-      !Object.prototype.propertyIsEnumerable.call(from, '__budgetSpent') &&
-      from.__budgetSpent === true
-    ) {
+    if (flagOf(from, '__budgetSpent') === true) {
       Object.defineProperty(to, '__budgetSpent', { value: true });
+      // Where it was spent, for the warning (round 12, A12-7); a profile the
+      // budget leaves unstarted says its own.
+      const at = flagOf(from, '__budgetSpentAt');
+      if (typeof at === 'string') {
+        Object.defineProperty(to, '__budgetSpentAt', { value: at, configurable: true });
+      }
+    }
+    const scanBudget = flagOf(from, '__scanTimeBudgetMs');
+    if (
+      typeof scanBudget === 'number' &&
+      !Object.prototype.hasOwnProperty.call(to, '__scanTimeBudgetMs')
+    ) {
+      Object.defineProperty(to, '__scanTimeBudgetMs', { value: scanBudget });
     }
     return to;
   };
   const allowFail = policyAllowsFail(engineOptions);
-  const asked =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
+  const asked = ownField(engineOptions, 'profile');
   if (Array.isArray(asked)) {
     // Names are matched without case, as a single profile's are: one asked
     // twice in two cases runs once.
@@ -164618,6 +170255,15 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
     for (let i = 0; i < asked.length; i++) {
       const p = asked[i];
       if (typeof p !== 'string' || !p.trim()) ignored++;
+    }
+    // An empty list names no profile, and the scan runs as with none
+    // (round 12, A12-13); under strictOptions enforceEngineOptions refuses it.
+    if (!asked.length) {
+      try {
+        console.warn('[surea11y] engineOptions.profile: an empty list names no profile; ignored.');
+      } catch {
+        // no console
+      }
     }
     if (ignored) {
       try {
@@ -164635,7 +170281,9 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         run(
           carryBudgetSpent(
             engineOptions,
-            Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
+            Object.assign(Object.create(null), engineOptions, {
+              profile: unique.length ? unique[0] : undefined
+            })
           )
         ),
         allowFail
@@ -164645,12 +170293,10 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
     // engineOptions.timeBudgetMs is the whole scan's: each profile after the
     // first gets what is left of it, and one that would start with none left
     // is not run (engine.profilesNotRun, reason timeBudget).
+    const givenBudget = ownField(engineOptions, 'timeBudgetMs');
     const budget =
-      engineOptions &&
-      typeof engineOptions.timeBudgetMs === 'number' &&
-      Number.isFinite(engineOptions.timeBudgetMs) &&
-      engineOptions.timeBudgetMs > 0
-        ? engineOptions.timeBudgetMs
+      typeof givenBudget === 'number' && Number.isFinite(givenBudget) && givenBudget > 0
+        ? givenBudget
         : null;
     const clock = () => {
       try {
@@ -164663,31 +170309,61 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
       return Date.now();
     };
     const started = budget === null ? 0 : clock();
+    const spentOnArrival = flagOf(engineOptions, '__budgetSpent') === true;
+    // The scan's budget: this one's, or, in a frame, the whole scan's.
+    const scanBudget =
+      typeof flagOf(engineOptions, '__scanTimeBudgetMs') === 'number'
+        ? flagOf(engineOptions, '__scanTimeBudgetMs')
+        : budget;
+    // What a later profile's scan is given: what is left, and the scan's
+    // budget for its warnings.
+    const withScanBudget = (options) => {
+      if (
+        scanBudget !== null &&
+        !Object.prototype.hasOwnProperty.call(options, '__scanTimeBudgetMs')
+      ) {
+        Object.defineProperty(options, '__scanTimeBudgetMs', { value: scanBudget });
+      }
+      return options;
+    };
     const step = (i) => {
       if (i >= unique.length) {
         const merged = mergeProfileResults(runs, unique, allowFail);
         // The budget the scan was given, not what was left of it for the
         // profile that ran out.
-        if (merged && merged.engine && merged.engine.incomplete) {
-          merged.engine.incomplete.timeBudgetMs = budget;
-        }
+        const incomplete = ownField(ownField(merged, 'engine'), 'incomplete');
+        if (incomplete && typeof incomplete === 'object') incomplete.timeBudgetMs = scanBudget;
         return merged;
       }
       const left = budget === null ? null : budget - (clock() - started);
-      if (left !== null && i > 0 && left <= 0) {
+      // A frame's scan reached with no budget left (spentOnArrival) starts
+      // its first profile only, as a scan whose first profile used it all
+      // does: the others are not run, not run with nothing started (round
+      // 12, A12-4).
+      if (i > 0 && ((left !== null && left <= 0) || spentOnArrival)) {
         // Not run, but its rules are listed in notRun, as a profile's scan
         // that ran out lists those it did not start: its scan is asked to
         // start none (__budgetSpent), which only works out its selection.
-        const dryOptions = Object.assign({}, engineOptions, { profile: unique[i] });
-        Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        const dryOptions = withScanBudget(
+          carryBudgetSpent(
+            engineOptions,
+            Object.assign(Object.create(null), engineOptions, { profile: unique[i] })
+          )
+        );
+        if (!spentOnArrival) Object.defineProperty(dryOptions, '__budgetSpent', { value: true });
+        // Its warning names the profile, not a frame.
+        Object.defineProperty(dryOptions, '__budgetSpentAt', {
+          value: 'profile',
+          configurable: true
+        });
         const skippedOf = (dry) => {
-          const skipped = {};
+          const skipped = Object.create(null);
           Object.defineProperty(skipped, '__profileNotApplied', { value: 'timeBudget' });
-          const applied = dry && dry.engine ? dry.engine.profile : undefined;
+          const applied = ownField(ownField(dry, 'engine'), 'profile');
           const ids =
             typeof applied === 'string' &&
             lowerAscii(applied) === lowerAscii(unique[i]) &&
-            Array.isArray(dry.notRun)
+            Array.isArray(ownField(dry, 'notRun'))
               ? dry.notRun.filter((n) => n && n.ruleId).map((n) => n.ruleId)
               : [];
           Object.defineProperty(skipped, '__rulesNotRun', { value: ids });
@@ -164698,13 +170374,15 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
         return thenable(dry) ? dry.then(skippedOf) : skippedOf(dry);
       }
       const result = run(
-        carryBudgetSpent(
-          engineOptions,
-          Object.assign(
-            {},
+        withScanBudget(
+          carryBudgetSpent(
             engineOptions,
-            { profile: unique[i] },
-            left !== null && i > 0 ? { timeBudgetMs: left } : {}
+            Object.assign(
+              Object.create(null),
+              engineOptions,
+              { profile: unique[i] },
+              left !== null && i > 0 ? { timeBudgetMs: left } : {}
+            )
           )
         )
       );
@@ -164722,13 +170400,12 @@ const runProfilesUncapped = (function runProfilesUncapped(engineOptions, run) {
   return withOwnVerdicts(run(engineOptions), allowFail);
 });
 const capOccurrences = (function capOccurrences(result, engineOptions) {
-  const output =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.output : undefined;
-  const max = output && typeof output === 'object' ? output.maxOccurrencesPerRule : undefined;
+  const output = ownField(engineOptions, 'output');
+  const max = ownField(output, 'maxOccurrencesPerRule');
   if (typeof max !== 'number' || !Number.isInteger(max) || max < 1) return result;
   if (!result || typeof result !== 'object' || !Array.isArray(result.checksResults)) return result;
   const tierOf = (check, o) => {
-    const own = o && typeof o === 'object' ? o.occurrenceOutcome || o.outcome : undefined;
+    const own = ownField(o, 'occurrenceOutcome') || ownField(o, 'outcome');
     if (own === 'fail' || own === 'cantTell' || own === 'pass') return own;
     return check.outcome === 'fail' || check.outcome === 'cantTell' || check.outcome === 'pass'
       ? check.outcome
@@ -164737,7 +170414,7 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
   const rankOf = (check, o) => {
     const tier = tierOf(check, o);
     if (tier === 'fail') return 0;
-    if (tier === 'cantTell') return o && o.lean && o.lean.toward === 'fail' ? 1 : 2;
+    if (tier === 'cantTell') return ownField(ownField(o, 'lean'), 'toward') === 'fail' ? 1 : 2;
     return 3;
   };
   const keptByRule = new Map();
@@ -164764,16 +170441,14 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
     keptByRule.set(check.ruleId, { kept, total: list.length });
     // The undecided ones that lean fail, which a lean-fail gate counts, are
     // counted apart from the other undecided ones.
-    return Object.assign(
-      {},
-      check,
-      {
-        occurrences: kept.map((i) => list[i]),
-        occurrencesOmitted: omitted,
-        occurrencesOmittedByOutcome: byOutcome
-      },
-      leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {}
-    );
+    // Spread, so a read-only value on Object.prototype refuses no key.
+    return {
+      ...check,
+      occurrences: kept.map((i) => list[i]),
+      occurrencesOmitted: omitted,
+      occurrencesOmittedByOutcome: byOutcome,
+      ...(leaningFail ? { occurrencesOmittedLeaningFail: leaningFail } : {})
+    };
   });
   if (!omittedTotal) return result;
   // A rollup's record of what it made of each finding follows the findings
@@ -164789,31 +170464,27 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
           if (!cap || !Array.isArray(c.findingOutcomes) || c.findingOutcomes.length !== cap.total)
             return c;
           touched = true;
-          return Object.assign({}, c, {
-            findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i])
-          });
+          return { ...c, findingOutcomes: cap.kept.map((i) => c.findingOutcomes[i]) };
         });
         if (!touched) return rollup;
-        return Object.assign({}, rollup, {
-          data: Object.assign({}, rollup.data, {
-            details: Object.assign({}, details, { contributors: next })
-          })
-        });
+        return { ...rollup, data: { ...rollup.data, details: { ...details, contributors: next } } };
       })
     : result.rulesResults;
-  const out = Object.assign({}, result, {
-    engine: Object.assign({}, result.engine, {
+  const out = {
+    ...result,
+    engine: {
+      ...result.engine,
       occurrenceCap: {
         maxOccurrencesPerRule: max,
         occurrencesOmitted: omittedTotal,
         rulesCapped: keptByRule.size
       }
-    }),
+    },
     checksResults,
     rulesResults
-  });
+  };
   // A mark the merge of several profiles reads stays with the result.
-  if (result.__profileNotApplied) {
+  if (ownField(result, '__profileNotApplied')) {
     try {
       Object.defineProperty(out, '__profileNotApplied', {
         value: result.__profileNotApplied,
@@ -164828,7 +170499,11 @@ const capOccurrences = (function capOccurrences(result, engineOptions) {
 const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
   // A result first: a page may add then to Object.prototype, which makes
   // any object look like a promise.
-  if (result && !Array.isArray(result.checksResults) && typeof result.then === 'function') {
+  if (
+    result &&
+    !Array.isArray(ownField(result, 'checksResults')) &&
+    typeof result.then === 'function'
+  ) {
     return result.then((r) => withOwnVerdicts(r, allowFail));
   }
   if (!result || !Array.isArray(result.checksResults)) return result;
@@ -164842,16 +170517,14 @@ const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
       const contributors =
         details && Array.isArray(details.contributors) ? details.contributors : [];
       const c = contributors.find((x) => x && x.testId === check.ruleId);
-      if (!c || !c.byReasonCode || !Array.isArray(c.findingOutcomes)) continue;
+      if (!c || !ownField(c, 'byReasonCode') || !Array.isArray(c.findingOutcomes)) continue;
       occurrences.forEach((o, i) => {
         if (c.findingOutcomes[i] === 'fail') fails[i] = true;
       });
     }
     if (!fails.some(Boolean)) continue;
     check.occurrences = occurrences.map((o, i) =>
-      fails[i] && o && typeof o === 'object'
-        ? Object.assign({}, o, { occurrenceOutcome: 'fail' })
-        : o
+      fails[i] && o && typeof o === 'object' ? { ...o, occurrenceOutcome: 'fail' } : o
     );
     check.outcome = 'fail';
     check.outcomeNormalized = 'fail';
@@ -164862,13 +170535,19 @@ const withOwnVerdicts = (function withOwnVerdicts(result, allowFail = true) {
 const lowerAscii = (function lowerAscii(value) {
   return String(value).replace(/[A-Z]/g, (c) => c.toLowerCase());
 });
+const ownField = (function ownField(object, key) {
+  return object && typeof object === 'object' && Object.prototype.hasOwnProperty.call(object, key)
+    ? object[key]
+    : undefined;
+});
 const policyAllowsFail = (function policyAllowsFail(engineOptions) {
   try {
-    const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
-    for (const source of [eo.policy, eo.policyContract]) {
-      if (source && typeof source === 'object' && Array.isArray(source.allowedOutcomes)) {
-        return source.allowedOutcomes.includes('fail');
-      }
+    for (const source of [
+      ownField(engineOptions, 'policy'),
+      ownField(engineOptions, 'policyContract')
+    ]) {
+      const allowed = ownField(source, 'allowedOutcomes');
+      if (Array.isArray(allowed)) return allowed.includes('fail');
     }
   } catch {
     // unreadable options: the scan's own reading decides
@@ -164877,14 +170556,18 @@ const policyAllowsFail = (function policyAllowsFail(engineOptions) {
 });
 const capToPolicy = (function capToPolicy(check, allowFail) {
   if (allowFail || !check || check.outcome !== 'fail') return check;
-  check.policyOutcome = 'fail';
+  // Defined, so a read-only value on Object.prototype refuses it not.
+  Object.defineProperty(check, 'policyOutcome', {
+    value: 'fail',
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   check.outcome = 'cantTell';
   check.outcomeNormalized = 'cantTell';
   if (Array.isArray(check.occurrences)) {
     check.occurrences = check.occurrences.map((o) =>
-      o && typeof o === 'object' && o.occurrenceOutcome === 'fail'
-        ? Object.assign({}, o, { occurrenceOutcome: 'cantTell' })
-        : o
+      ownField(o, 'occurrenceOutcome') === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
     );
   }
   return check;
@@ -164921,30 +170604,30 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   };
   const unionList = (a, b) =>
     unionBy([a, b], (x) => (typeof x === 'string' ? x : JSON.stringify(x)));
+  const own = ownField;
+  const detailsOf = (o) => own(own(o, 'data'), 'details');
   const reasonCodeOf = (o) =>
-    o && o.data && o.data.details && typeof o.data.details.reasonCode === 'string'
-      ? o.data.details.reasonCode
-      : '';
+    typeof own(detailsOf(o), 'reasonCode') === 'string' ? own(detailsOf(o), 'reasonCode') : '';
   // An element's finding, as each profile's scan of the same page finds it:
   // where it is and why. Two findings of one rule on one element for the
   // same reason (two attributes it doesn't allow) differ by what else they
   // say, and else by their order, which each scan of the page shares.
   const baseKeyOf = (o) =>
     JSON.stringify([
-      (o && o.frameUrl) || '',
-      (o && o.selector) || '',
-      (o && o.structuralPath) || '',
+      own(o, 'frameUrl') || '',
+      own(o, 'selector') || '',
+      own(o, 'structuralPath') || '',
       reasonCodeOf(o),
-      (o && o.html) || '',
-      (o && o.summary) || '',
-      (o && o.data && o.data.details && JSON.stringify(o.data.details)) || ''
+      own(o, 'html') || '',
+      own(o, 'summary') || '',
+      (detailsOf(o) && JSON.stringify(detailsOf(o))) || ''
     ]);
   const normalizedOf = (o) => (o === 'notApplicable' ? 'inapplicable' : o);
 
   const ran = [];
   const notRun = [];
   for (const r of runs) {
-    const applied = r.result && r.result.engine ? r.result.engine.profile : undefined;
+    const applied = own(own(r.result, 'engine'), 'profile');
     const same =
       typeof applied === 'string' && lowerAscii(applied) === lowerAscii(String(r.profile));
     if (r.result && typeof r.result === 'object' && same) ran.push(r);
@@ -164952,7 +170635,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       // A name no profile has is unknown-profile, unless the scan marked it
       // as one a pack it skipped may have: a list with a typo beside a
       // skipped pack's profile names the typo as such.
-      const why = r.result && r.result.__profileNotApplied;
+      const why = own(r.result, '__profileNotApplied');
       notRun.push({
         profile: r.profile,
         reason:
@@ -164969,9 +170652,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   const first = (ran[0] || runs[0] || {}).result;
   if (!first || typeof first !== 'object') return first;
   if (!ran.length) {
-    return Object.assign({}, first, {
-      engine: Object.assign({}, first.engine, { profiles: [], profilesNotRun: notRun })
-    });
+    return { ...first, engine: { ...first.engine, profiles: [], profilesNotRun: notRun } };
   }
 
   // What a profile's rollups make of each finding of a check: by reason code
@@ -164980,7 +170661,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   // profile names the check.
   function verdictsByRollups(result, check) {
     const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
-    const tier = (o) => (o && o.occurrenceOutcome) || check.outcome;
+    const tier = (o) => own(o, 'occurrenceOutcome') || check.outcome;
     let seen = false;
     const out = occurrences.map(() => []);
     for (const rollup of Array.isArray(result.rulesResults) ? result.rulesResults : []) {
@@ -164991,7 +170672,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       if (!c) continue;
       seen = true;
       occurrences.forEach((o, i) => {
-        if (c.byReasonCode && Array.isArray(c.findingOutcomes)) {
+        if (own(c, 'byReasonCode') && Array.isArray(c.findingOutcomes)) {
           out[i].push(c.findingOutcomes[i] || 'notApplicable');
         } else out[i].push(tier(o));
       });
@@ -165005,7 +170686,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   // The WCAG version the result reports, the highest of the profiles'.
   const WCAG_ORDER = ['2.0', '2.1', '2.2'];
   let reportedWcag;
-  const targetingRuns = ran.filter((r) => r.result.engine && r.result.engine.wcagLevel);
+  const targetingRuns = ran.filter((r) => own(r.result.engine, 'wcagLevel'));
   for (const r of targetingRuns.length ? targetingRuns : ran) {
     const v = r.result.engine && r.result.engine.wcagVersion;
     if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
@@ -165018,7 +170699,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       if (!check || !check.ruleId) continue;
       let merged = checks.get(check.ruleId);
       if (!merged) {
-        merged = Object.assign({}, check, {
+        // Worked on with no prototype, and handed back plain below.
+        merged = Object.assign(Object.create(null), check, {
           verdicts: {},
           occurrences: [],
           ownOutcomes: [],
@@ -165035,7 +170717,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       // The severity this profile gives the rule (a profile's own, or the
       // rule's), and the rule's own.
       merged.severities[r.profile] = check.severity;
-      if (check.ruleSeverity && !merged.ownSeverity) merged.ownSeverity = check.ruleSeverity;
+      if (own(check, 'ruleSeverity') && !merged.ownSeverity)
+        merged.ownSeverity = check.ruleSeverity;
       const verdicts = isTier(check.outcome) ? verdictsByRollups(r.result, check) : [];
       const byKey = occurrenceMaps.get(check.ruleId);
       const seenHere = new Map(); // base key -> how many so far in this scan
@@ -165047,7 +170730,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         const ofReported = !!r.result.engine && r.result.engine.wcagVersion === reportedWcag;
         let m = byKey.get(key);
         if (!m) {
-          m = Object.assign({}, o, { verdicts: {} });
+          m = Object.assign(Object.create(null), o, { verdicts: {} });
           byKey.set(key, m);
           merged.occurrences.push(m);
           if (ofReported) textOfReported.add(m);
@@ -165058,7 +170741,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
           // order the profiles were listed in.
           const replace = ofReported && !textOfReported.has(m);
           for (const field of ['uncertainty', 'lean', 'howToCheck', 'hint']) {
-            if (o[field] === undefined) continue;
+            if (own(o, field) === undefined) continue;
             if (m[field] === undefined || replace) m[field] = o[field];
           }
           if (ofReported) textOfReported.add(m);
@@ -165069,21 +170752,25 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         // What each profile's scan says of the rule, all of it: the
         // rollups it feeds and the requirements it maps to, whichever
         // profile was listed first.
-        if (Array.isArray(check.rollupIds)) {
-          merged.rollupIds = unionList(merged.rollupIds, check.rollupIds);
-        }
-        const mappings =
-          check.meta && Array.isArray(check.meta.normativeMappings)
-            ? check.meta.normativeMappings
-            : null;
-        if (mappings) {
-          const had =
-            merged.meta && Array.isArray(merged.meta.normativeMappings)
-              ? merged.meta.normativeMappings
-              : [];
-          merged.meta = Object.assign({}, merged.meta, {
-            normativeMappings: unionBy([had, mappings], (x) => JSON.stringify(x))
+        if (Array.isArray(own(check, 'rollupIds'))) {
+          Object.defineProperty(merged, 'rollupIds', {
+            value: unionList(own(merged, 'rollupIds'), check.rollupIds),
+            writable: true,
+            enumerable: true,
+            configurable: true
           });
+        }
+        const mappings = Array.isArray(own(own(check, 'meta'), 'normativeMappings'))
+          ? check.meta.normativeMappings
+          : null;
+        if (mappings) {
+          const had = Array.isArray(own(merged.meta, 'normativeMappings'))
+            ? merged.meta.normativeMappings
+            : [];
+          merged.meta = {
+            ...merged.meta,
+            normativeMappings: unionBy([had, mappings], (x) => JSON.stringify(x))
+          };
         }
       }
       // A check whose findings the profile counts nowhere keeps the outcome
@@ -165114,7 +170801,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     // own stays as ruleSeverity where that differs.
     const severities = merged.severities;
     delete merged.severities;
-    const own = merged.ownSeverity || merged.ruleSeverity || merged.severity;
+    const ruleOwn = merged.ownSeverity || merged.ruleSeverity || merged.severity;
     delete merged.ownSeverity;
     const judging = Object.keys(severities).filter((p) => isTier(merged.verdicts[p]));
     const severity = highestSeverity(
@@ -165122,7 +170809,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     );
     if (severity) {
       merged.severity = severity;
-      if (own && own !== severity) merged.ruleSeverity = own;
+      if (ruleOwn && ruleOwn !== severity) merged.ruleSeverity = ruleOwn;
       else delete merged.ruleSeverity;
     }
     const outcome = worst(Object.values(merged.verdicts)) || merged.outcome;
@@ -165130,11 +170817,9 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       const tier = worst(Object.values(m.verdicts));
       if (isTier(tier) && (m.occurrenceOutcome || tier !== outcome)) m.occurrenceOutcome = tier;
     }
+    merged.occurrences = merged.occurrences.map((m) => ({ ...m }));
     checksResults.push(
-      capToPolicy(
-        Object.assign(merged, { outcome, outcomeNormalized: normalizedOf(outcome) }),
-        allowFail
-      )
+      capToPolicy({ ...merged, outcome, outcomeNormalized: normalizedOf(outcome) }, allowFail)
     );
   }
 
@@ -165146,45 +170831,45 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
       if (!rollup || !rollup.ruleId) continue;
       outcomes[rollup.ruleId] = rollup.outcome;
       const had = rollups.get(rollup.ruleId);
-      if (!had) rollups.set(rollup.ruleId, Object.assign({}, rollup, { profiles: [r.profile] }));
+      if (!had) rollups.set(rollup.ruleId, { ...rollup, profiles: [r.profile] });
       else {
         had.profiles.push(r.profile);
         if (rank(rollup.outcome) > rank(had.outcome)) {
-          rollups.set(rollup.ruleId, Object.assign({}, rollup, { profiles: had.profiles }));
+          rollups.set(rollup.ruleId, { ...rollup, profiles: had.profiles });
         }
       }
     }
-    const standards = Array.isArray(r.result.standards) ? r.result.standards : [];
-    const engine = r.result.engine || {};
+    const standards = Array.isArray(own(r.result, 'standards')) ? r.result.standards : [];
+    const engine = own(r.result, 'engine') || {};
     // wcagLevel only for a profile that targets WCAG: one that doesn't
     // (WAI-ARIA's) carries core's default version, which judges nothing.
-    profiles[r.profile] = Object.assign(
-      { wcagVersion: engine.wcagVersion },
-      engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
-      engine.law ? { law: engine.law } : {},
-      standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
-      { rulesResults: outcomes },
+    profiles[r.profile] = {
+      wcagVersion: own(engine, 'wcagVersion'),
+      ...(own(engine, 'wcagLevel') ? { wcagLevel: engine.wcagLevel } : {}),
+      ...(own(engine, 'law') ? { law: engine.law } : {}),
+      ...(standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {}),
+      rulesResults: outcomes,
       // Each profile's own timings, where they were asked for: the result's
       // perfStats are the first profile's.
-      r.result.perfStats ? { perfStats: r.result.perfStats } : {}
-    );
+      ...(own(r.result, 'perfStats') ? { perfStats: r.result.perfStats } : {})
+    };
   }
 
   const results = ran.map((r) => r.result);
   const packs = unionBy(
-    results.map((x) => x.engine && x.engine.packs),
+    results.map((x) => own(own(x, 'engine'), 'packs')),
     (x) => x
   ).sort();
   const skippedPacks = unionBy(
-    runs.map((r) => r.result && r.result.skippedPacks),
+    runs.map((r) => own(r.result, 'skippedPacks')),
     (x) => (x && x.name) || JSON.stringify(x)
   );
   const standards = unionBy(
-    results.map((x) => x.standards),
+    results.map((x) => own(x, 'standards')),
     (x) => (x && (x.key || x.standard)) || JSON.stringify(x)
   );
   const overridden = unionBy(
-    results.map((x) => x.overriddenBuiltinIds),
+    results.map((x) => own(x, 'overriddenBuiltinIds')),
     (x) => x
   ).sort();
 
@@ -165199,7 +170884,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
         out = v;
     return out;
   };
-  const engines = results.map((x) => x.engine || {});
+  // Each scan's engine, read as its own keys only.
+  const engines = results.map((x) => Object.assign(Object.create(null), own(x, 'engine')));
   // A profile with no WCAG target of its own (a standard that maps no WCAG
   // level, as WAI-ARIA's) carries core's default version: the version is
   // that of the profiles that target WCAG, where any does.
@@ -165221,7 +170907,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   // own is in profiles[name].law.
   const laws = engines.map((e) => (e.law && typeof e.law.id === 'string' ? e.law.id : null));
   const oneLaw = laws.length && laws[0] !== null && laws.every((id) => id === laws[0]);
-  const engine = Object.assign({}, first.engine, {
+  const engine = {
+    ...first.engine,
     ...(wcagVersion ? { wcagVersion } : {}),
     ...(wcagLevel ? { wcagLevel } : {}),
     ...(mappings.length ? { mappings } : {}),
@@ -165229,7 +170916,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
     profiles: ran.map((r) => r.profile),
     ...(notRun.length ? { profilesNotRun: notRun } : {}),
     ...(packs.length ? { packs } : {})
-  });
+  };
   if (!oneLaw) delete engine.law;
   // The rules a profile's scan did not start, and the profiles not started,
   // for the time budget: the merged scan is incomplete.
@@ -165237,10 +170924,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   const rulesNotRun = [];
   for (const r of runs) {
     if (ran.includes(r)) {
-      for (const n of Array.isArray(r.result.notRun) ? r.result.notRun : []) {
-        if (n && n.ruleId) rulesNotRun.push(Object.assign({}, n, { profile: r.profile }));
+      for (const n of Array.isArray(own(r.result, 'notRun')) ? r.result.notRun : []) {
+        if (n && n.ruleId) rulesNotRun.push({ ...n, profile: r.profile });
       }
-    } else if (r.result && Array.isArray(r.result.__rulesNotRun)) {
+    } else if (Array.isArray(own(r.result, '__rulesNotRun'))) {
       for (const ruleId of r.result.__rulesNotRun) {
         rulesNotRun.push({ ruleId, reason: 'timeBudget', profile: r.profile });
       }
@@ -165249,30 +170936,33 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked, allowFail
   const budgetProfiles = notRun.filter((n) => n.reason === 'timeBudget');
   const incomplete = engines.find((e) => e.incomplete);
   if (incomplete || budgetProfiles.length) {
-    engine.incomplete = Object.assign(
-      { reason: 'timeBudget' },
-      incomplete ? incomplete.incomplete : {},
-      { rulesNotRun: rulesNotRun.length },
-      budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {}
-    );
+    engine.incomplete = {
+      reason: 'timeBudget',
+      ...(incomplete ? incomplete.incomplete : {}),
+      rulesNotRun: rulesNotRun.length,
+      ...(budgetProfiles.length ? { profilesNotRun: budgetProfiles.length } : {})
+    };
   } else delete engine.incomplete;
   void asked;
-  const out = Object.assign({}, first, {
+  // Its keys defined, so a read-only value on Object.prototype refuses none.
+  const out = {
+    ...first,
     engine,
     checksResults,
     rulesResults: [...rollups.values()],
-    profiles
-  });
-  if (standards.length) out.standards = standards;
-  if (overridden.length || Array.isArray(first.overriddenBuiltinIds))
-    out.overriddenBuiltinIds = overridden;
-  if (skippedPacks.length) out.skippedPacks = skippedPacks;
-  if (rulesNotRun.length) out.notRun = rulesNotRun;
-  else delete out.notRun;
+    profiles,
+    ...(standards.length ? { standards } : {}),
+    ...(overridden.length || Array.isArray(own(first, 'overriddenBuiltinIds'))
+      ? { overriddenBuiltinIds: overridden }
+      : {}),
+    ...(skippedPacks.length ? { skippedPacks } : {}),
+    ...(rulesNotRun.length ? { notRun: rulesNotRun } : {})
+  };
+  if (!rulesNotRun.length) delete out.notRun;
   // A custom rule skipped is one no profile ran: one profile's selection
   // can leave out a rule another runs.
   const skippedLists = ran.map((r) =>
-    Array.isArray(r.result.skippedCustomRules) ? r.result.skippedCustomRules : []
+    Array.isArray(own(r.result, 'skippedCustomRules')) ? r.result.skippedCustomRules : []
   );
   if (skippedLists.length && skippedLists.some((list) => list.length)) {
     const idOf = (x) => (x && typeof x.id === 'string' ? x.id : JSON.stringify(x));
@@ -165328,13 +171018,14 @@ const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
     try {
       console.warn('[surea11y] ' + message + '.');
     } catch {}
-    const withoutPacks = Object.assign({}, engineOptions);
+    const withoutPacks = Object.assign(Object.create(null), engineOptions);
     delete withoutPacks.packs;
     const note = (r) =>
       r && typeof r === 'object'
-        ? Object.assign({}, r, {
+        ? {
+            ...r,
             skippedPacks: named.map((name) => ({ name: name, reason: packProblem }))
-          })
+          }
         : r;
     // The profiles the skipped packs declare, where a packScript in the
     // page registered them in some other set: those not built in, of the
@@ -165345,7 +171036,7 @@ const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
     const declared = [];
     const sets = packRegistry && typeof packRegistry === 'object' ? packRegistry : {};
     for (const key of Object.keys(sets)) {
-      const entry = sets[key];
+      const entry = sets[key] && typeof sets[key] === 'object' ? Object.assign(Object.create(null), sets[key]) : null;
       if (!entry || !Array.isArray(entry.packs) || !entry.packs.some((n) => named.includes(n))) continue;
       const own = Array.isArray(entry.packProfiles)
         ? entry.packProfiles
@@ -165386,7 +171077,7 @@ const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
   }
   // A scan with registered packs: the options without them, and a result
   // that names them and lists the core rules they replace.
-  const scanOptions = Object.assign({}, engineOptions);
+  const scanOptions = Object.assign(Object.create(null), engineOptions);
   delete scanOptions.packs;
   const result = runProfiles(scanOptions, (eo) => {
     const selection = resolveEffectiveRunOnly(eo, runOnly);
@@ -165398,11 +171089,9 @@ const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
   );
   const stamp = (r) => {
     if (!r || typeof r !== 'object') return r;
-    const out = Object.assign({}, r, {
-      engine: Object.assign({}, r.engine, { packs: PACK_ENTRY.packs.slice() })
-    });
+    const out = { ...r, engine: { ...r.engine, packs: PACK_ENTRY.packs.slice() } };
     if (PACK_ENTRY.overrides.length) {
-      const ids = (r.overriddenBuiltinIds || []).concat(PACK_ENTRY.overrides);
+      const ids = (Array.isArray(r.overriddenBuiltinIds) ? r.overriddenBuiltinIds : []).concat(PACK_ENTRY.overrides);
       out.overriddenBuiltinIds = ids.filter((id, i) => ids.indexOf(id) === i).sort();
     }
     return out;
@@ -165502,6 +171191,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "URL",
   "customElements",
   "adoptedStyleSheets",
+  "attachShadow",
   "ariaActiveDescendantElement",
   "ariaControlsElements",
   "ariaDescribedByElements",
@@ -165529,6 +171219,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "implementation",
   "innerHeight",
   "innerWidth",
+  "label",
   "multiple",
   "muted",
   "nextNode",
@@ -165561,7 +171252,11 @@ const SAFE_DOM_OTHER_NAMES = [
 const createSafeDom = (function createSafeDom() {
   // One instance per realm of this script: the lookups depend only on the
   // prototypes they are given, so sharing it across scans is safe.
-  if (createSafeDom.__instance) return createSafeDom.__instance;
+  // Own only, and defined, not assigned: a value of that name on
+  // Object.prototype is neither read nor refuses it (round 12, F12-4).
+  if (Object.prototype.hasOwnProperty.call(createSafeDom, '__instance')) {
+    return createSafeDom.__instance;
+  }
 
   // Captured once, so a page that later replaces them doesn't change how
   // the engine reads its own DOM.
@@ -166093,17 +171788,22 @@ const createSafeDom = (function createSafeDom() {
         : o.setAttribute(a, b, c, d)
   };
 
-  createSafeDom.__instance = Object.freeze(dom);
+  Object.defineProperty(createSafeDom, '__instance', {
+    value: Object.freeze(dom),
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
   return createSafeDom.__instance;
 });
 const getFrameRpcRegistry = (function getFrameRpcRegistry(win) {
-  if (!win.__a11yCoreFrameRpc__) {
-    win.__a11yCoreFrameRpc__ = {
-      pending: new Map(),
-      seq: 0,
-      responder: null,
-      listening: false
-    };
+  if (!Object.prototype.hasOwnProperty.call(win, '__a11yCoreFrameRpc__')) {
+    const registry = Object.create(null);
+    registry.pending = new Map();
+    registry.seq = 0;
+    registry.responder = null;
+    registry.listening = false;
+    win.__a11yCoreFrameRpc__ = registry;
   }
   return win.__a11yCoreFrameRpc__;
 });
@@ -166113,8 +171813,14 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
   if (registry.listening) return registry;
 
   dom.addEventListener(win, 'message', function a11yCoreFrameRpcListener(event) {
-    const data = event && event.data;
-    if (!data || data.__a11ycore !== true || data.channel !== channel) return;
+    // A message's fields are read as its own, never from Object.prototype.
+    const message = event && event.data;
+    if (!message || typeof message !== 'object') return;
+    const data = Object.create(null);
+    for (const key of ['__a11ycore', 'channel', 'type', 'requestId', 'payload']) {
+      if (Object.prototype.hasOwnProperty.call(message, key)) data[key] = message[key];
+    }
+    if (data.__a11ycore !== true || data.channel !== channel) return;
 
     if (data.type === 'ping') {
       try {
@@ -166489,7 +172195,7 @@ function findChildFrameElements(roots, includeShadowDom) {
 }
 
 function engineOptionsForFrames(eo) {
-  if (!Array.isArray(eo.customRules)) return eo;
+  if (!Array.isArray(frameOptionOf(eo, 'customRules'))) return eo;
   const toSource = (v) => (typeof v === 'function' ? v.toString() : v);
   return {
     ...eo,
@@ -166701,21 +172407,28 @@ function getFrameElementUrl(el) {
 }
 
 function frameTimeBudgetOf(eo) {
-  return typeof eo.timeBudgetMs === 'number' &&
-    Number.isFinite(eo.timeBudgetMs) &&
-    eo.timeBudgetMs > 0
-    ? eo.timeBudgetMs
-    : null;
+  const ms = frameOptionOf(eo, 'timeBudgetMs');
+  return typeof ms === 'number' && Number.isFinite(ms) && ms > 0 ? ms : null;
+}
+
+function frameOptionOf(eo, key) {
+  return eo && typeof eo === 'object' && Object.prototype.hasOwnProperty.call(eo, key)
+    ? eo[key]
+    : undefined;
 }
 
 function budgetedOptions(engineOptions, eo, budget, scanStartedAt) {
   if (budget === null || scanStartedAt === null) return engineOptions;
   const left = budget - (Date.now() - scanStartedAt);
   if (left >= budget) return engineOptions;
-  if (left > 0) return Object.assign({}, eo, { timeBudgetMs: left });
-  const spent = Object.assign({}, eo);
-  Object.defineProperty(spent, '__budgetSpent', { value: true });
-  return spent;
+  // With no prototype: a read-only value on Object.prototype can't refuse
+  // a key, and none is read from it (round 12, R12F-6).
+  const out = Object.assign(Object.create(null), eo, left > 0 ? { timeBudgetMs: left } : {});
+  if (left <= 0) Object.defineProperty(out, '__budgetSpent', { value: true });
+  // The scan's budget, which the warnings give, not what is left of it
+  // (round 12, A12-5). Set by the engine only, not enumerable.
+  Object.defineProperty(out, '__scanTimeBudgetMs', { value: budget });
+  return out;
 }
 
 function withScanBudget(result, budget) {
@@ -166758,14 +172471,17 @@ function scanAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly, star
     return Promise.reject(err);
   }
 
-  const pingWaitTime = typeof eo.pingWaitTime === 'number' ? eo.pingWaitTime : undefined;
-  const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
+  const pingWaitTime =
+    typeof frameOptionOf(eo, 'pingWaitTime') === 'number' ? eo.pingWaitTime : undefined;
+  const frameWaitTime =
+    typeof frameOptionOf(eo, 'frameWaitTime') === 'number' ? eo.frameWaitTime : undefined;
 
   const { roots } = resolveContextRoots(document, contextSelector);
-  const frameElements = findChildFrameElements(roots, eo.includeShadowDom).filter(
+  const frameElements = findChildFrameElements(roots, frameOptionOf(eo, 'includeShadowDom')).filter(
     (el) =>
-      (eo.includeHiddenElements === true || (isFrameShown(el) && !isFrameBehindModal(el))) &&
-      !isFrameExcluded(el, eo.excludeSelectors)
+      (frameOptionOf(eo, 'includeHiddenElements') === true ||
+        (isFrameShown(el) && !isFrameBehindModal(el))) &&
+      !isFrameExcluded(el, frameOptionOf(eo, 'excludeSelectors'))
   );
 
   const framePromises = frameElements.map(function (el) {
@@ -166847,12 +172563,18 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
 
 function a11yCoreEnableFrameResponder() {
   return enableFrameRpcResponder(window, function (payload) {
+    // The command's own fields, never ones on Object.prototype.
+    const field = (key, fallback) =>
+      payload && typeof payload === 'object' && Object.prototype.hasOwnProperty.call(payload, key)
+        ? payload[key]
+        : fallback;
+    const startedAt = field('scanStartedAt', null);
     return scanAcrossFrames(
-      payload ? payload.pageUrl : null,
-      payload ? payload.contextSelector : null,
-      payload ? payload.engineOptions : {},
-      payload ? payload.runOnly : null,
-      payload && typeof payload.scanStartedAt === 'number' ? payload.scanStartedAt : null
+      field('pageUrl', null),
+      field('contextSelector', null),
+      field('engineOptions', {}),
+      field('runOnly', null),
+      typeof startedAt === 'number' ? startedAt : null
     );
   });
 }
@@ -167044,14 +172766,29 @@ async function waitForPageReady(options) {
 // Fetches the style sheets a page can't read, for engineOptions.styleSheets
 // (src/core/stylesheet-preload.js).
 async function preloadStyleSheets(options) {
-  const opts = options && typeof options === 'object' ? options : {};
-  const doc = opts.document || (typeof document !== 'undefined' ? document : null);
+  // The options' own keys only: a value a page's script put on
+  // Object.prototype (deadline: 0) is never read as one (round 12, R12F-7).
+  const option = (key) =>
+    options && typeof options === 'object' && Object.prototype.hasOwnProperty.call(options, key)
+      ? options[key]
+      : undefined;
+  const doc = option('document') || (typeof document !== 'undefined' ? document : null);
+  const givenTimeout = option('timeoutMs');
   const timeoutMs =
-    typeof opts.timeoutMs === 'number' && Number.isFinite(opts.timeoutMs) && opts.timeoutMs >= 0
-      ? opts.timeoutMs
+    typeof givenTimeout === 'number' && Number.isFinite(givenTimeout) && givenTimeout >= 0
+      ? givenTimeout
       : 5000;
   const fetchFn = typeof fetch === 'function' ? fetch : null;
-  if (!doc || !fetchFn) return [];
+  const givenDeadline = option('deadline');
+  const deadline =
+    typeof givenDeadline === 'number' && Number.isFinite(givenDeadline) ? givenDeadline : null;
+  // The sheets the deadline left unread, on the list resolved with.
+  const notRead = [];
+  const done = (list) => {
+    Object.defineProperty(list, 'notRead', { value: notRead });
+    return list;
+  };
+  if (!doc || !fetchFn) return done([]);
 
   // The sheets that can't be read, by their absolute URL: linked ones, and
   // those an @import in a readable sheet brings in.
@@ -167082,12 +172819,21 @@ async function preloadStyleSheets(options) {
     const list = getter && getter.get ? getter.get.call(doc) : [];
     for (const sheet of [...(list || [])]) visit(sheet, 0);
   } catch {
-    return [];
+    return done([]);
   }
 
-  function withTimeout(promise) {
+  // Each fetch waits timeoutMs, and never past the deadline; one the
+  // deadline cut short is named in notRead.
+  function withTimeout(promise, href) {
     return new Promise((resolve) => {
-      const timer = setTimeout(() => resolve(null), timeoutMs);
+      const wait = deadline === null ? timeoutMs : Math.min(timeoutMs, deadline - Date.now());
+      const timer = setTimeout(
+        () => {
+          if (deadline !== null && wait < timeoutMs) notRead.push(href);
+          resolve(null);
+        },
+        Math.max(0, wait)
+      );
       promise.then(
         (v) => {
           clearTimeout(timer);
@@ -167102,10 +172848,15 @@ async function preloadStyleSheets(options) {
   }
 
   function fetchText(href) {
+    if (deadline !== null && Date.now() >= deadline) {
+      notRead.push(href);
+      return Promise.resolve(null);
+    }
     return withTimeout(
       fetchFn(href, { mode: 'cors', credentials: 'omit' }).then((res) =>
         res && res.ok ? res.text().then((text) => ({ href, text })) : null
-      )
+      ),
+      href
     );
   }
 
@@ -167144,7 +172895,7 @@ async function preloadStyleSheets(options) {
       }
     }
   }
-  return out;
+  return done(out);
 }
 
 // Every margin in a scan result, for tools that read them (src/core/margin.js).

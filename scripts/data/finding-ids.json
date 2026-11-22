@@ -360,7 +360,8 @@
       "DL_NO_DT_DD"
     ],
     "deprecated-elements-not-used": [
-      "MARQUEE_PAUSE_MECHANISM_UNKNOWN"
+      "MARQUEE_PAUSE_MECHANISM_UNKNOWN",
+      "MARQUEE_STOPS_ONLY_ON_HOVER"
     ],
     "dialog-name-present": [
       "name_internals",
@@ -430,7 +431,9 @@
     ],
     "form-group-name-present": [
       "CHECKBOX_GROUP_NO_NAME",
-      "RADIO_GROUP_NO_NAME"
+      "CHECKBOX_GROUP_SPLIT",
+      "RADIO_GROUP_NO_NAME",
+      "RADIO_GROUP_SPLIT"
     ],
     "heading-order": [
       "HEADING_ORDER_SKIPPED_LEVEL"

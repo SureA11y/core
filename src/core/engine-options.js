@@ -50,6 +50,43 @@ function engineOptionSpec() {
   const list = (v) =>
     typeof v === 'string' || (Array.isArray(v) && [...v].every((x) => typeof x === 'string'));
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+  // A plain object, as written in a literal or by JSON.parse, from any
+  // realm: not a Date, a Map, an element or a class instance, which have
+  // keys of their own to give or none (round 12, A12-13).
+  const isPlain = (v) => {
+    try {
+      if (!isObject(v) || Object.prototype.toString.call(v) !== '[object Object]') return false;
+      const proto = Object.getPrototypeOf(v);
+      return proto === null || Object.getPrototypeOf(proto) === null;
+    } catch {
+      return false;
+    }
+  };
+  // JSON-safe data: a plain object at the top (the engine reads probes by
+  // key, and an array there was dropped), and inside
+  // strings, finite numbers, true, false, null, plain objects and arrays,
+  // with no object reached twice along a path (round 12, A12-13).
+  const jsonSafe = (top) => {
+    const path = [];
+    const safe = (v, depth) => {
+      if (v === null || typeof v === 'string' || typeof v === 'boolean') return true;
+      if (typeof v === 'number') return Number.isFinite(v);
+      if (typeof v !== 'object' || depth > 100 || path.includes(v)) return false;
+      if (!Array.isArray(v) && !isPlain(v)) return false;
+      path.push(v);
+      try {
+        const values = Array.isArray(v) ? [...v] : Object.keys(v).map((k) => v[k]);
+        return values.every((x) => safe(x, depth + 1));
+      } finally {
+        path.pop();
+      }
+    };
+    try {
+      return isPlain(top) && safe(top, 0);
+    } catch {
+      return false;
+    }
+  };
   const T = {
     any: { test: () => true, expected: 'any value' },
     // true or false, or how a command line or an environment variable
@@ -59,11 +96,14 @@ function engineOptionSpec() {
     list: { test: list, expected: 'a string or an array of strings' },
     // A profile, or a list of them. An empty slot, a blank name and a value
     // that is no name are each refused: each was dropped without a word.
+    // An empty one, '' or [], names none (round 12, A12-13).
     profiles: {
       test: (v) =>
-        typeof v === 'string' ||
-        (Array.isArray(v) && [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
-      expected: 'a profile name or an array of them, none blank'
+        (typeof v === 'string' && v.trim() !== '') ||
+        (Array.isArray(v) &&
+          v.length > 0 &&
+          [...v].every((x) => typeof x === 'string' && x.trim() !== '')),
+      expected: 'a profile name or a non-empty array of them, none blank'
     },
     number: {
       test: (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0,
@@ -80,7 +120,7 @@ function engineOptionSpec() {
     })
   };
   const selection = {
-    test: (v) => list(v) || isObject(v),
+    test: (v) => list(v) || isPlain(v),
     expected: '{ include, exclude }, or the include list itself',
     keys: { include: T.list, exclude: T.list }
   };
@@ -115,7 +155,7 @@ function engineOptionSpec() {
     mappings: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
-    messages: { test: isObject, expected: '{ [locale]: { key: text } }' },
+    messages: { test: isPlain, expected: '{ [locale]: { key: text } }' },
     includeHiddenElements: T.boolean,
     includeShadowDom: T.boolean,
     fragment: T.boolean,
@@ -133,13 +173,14 @@ function engineOptionSpec() {
         ),
       expected: '[{ href, text }]'
     },
-    // Blank is a timestamp not given.
+    // Blank is no timestamp: refused, as one that isn't a date and time is
+    // (round 12, A12-13).
     timestamp: {
-      test: (v) => typeof v === 'string' && (!v.trim() || isIsoDateTime(v)),
+      test: (v) => typeof v === 'string' && isIsoDateTime(v),
       expected: 'an ISO 8601 date and time, such as new Date().toISOString()'
     },
     contrast: {
-      test: isObject,
+      test: isPlain,
       expected: '{ mode, rootCanvasFallback }',
       keys: {
         mode: T.oneOf(['strictConformance', 'auditorAssist']),
@@ -152,13 +193,13 @@ function engineOptionSpec() {
     visibilityMode: T.oneOf(['styleOnly', 'styleAndGeometry']),
     includeMode: T.oneOf(['and', 'or']),
     policyContract: {
-      test: (v) => typeof v === 'string' || isObject(v),
+      test: (v) => typeof v === 'string' || isPlain(v),
       expected: "a contract's name, or a contract object",
-      keys: Object.assign({ id: T.string }, policyFields)
+      keys: { id: T.string, ...policyFields }
     },
-    policy: { test: isObject, expected: 'an object', keys: policyFields },
+    policy: { test: isPlain, expected: 'a plain object', keys: policyFields },
     output: {
-      test: isObject,
+      test: isPlain,
       expected: '{ includeSelector, includeHtml, detail, maxOccurrencesPerRule }',
       keys: {
         includeSelector: T.boolean,
@@ -184,7 +225,12 @@ function engineOptionSpec() {
     tests: selection,
     customRules: { test: Array.isArray, expected: 'an array of rules' },
     packs: { test: Array.isArray, expected: 'an array of packs' },
-    probes: T.any,
+    // Evidence the host gives, passed to rules: JSON-safe data only (round
+    // 12, A12-13).
+    probes: {
+      test: jsonSafe,
+      expected: 'a plain object of JSON data (no function, Date, BigInt, NaN or circular reference)'
+    },
     perfStats: T.boolean,
     profileRules: T.boolean,
     // Once a scan has spent this long, it starts no more rules; those it
@@ -210,7 +256,8 @@ function engineOptionSpec() {
  * engine doesn't read, with `suggestion` the known key it is closest to, if
  * any is close; 'invalid' for a value of the wrong type or outside its set.
  * Keys the engine passes on unread are not checked: a rule's settings under
- * rules[ruleId], messages' keys, and probes.
+ * rules[ruleId] and messages' keys. probes is checked as JSON-safe data,
+ * not against keys.
  */
 function checkEngineOptions(engineOptions) {
   const SPEC = engineOptionSpec();
@@ -233,7 +280,14 @@ function checkEngineOptions(engineOptions) {
       return plain && text.length <= 80 ? text : 'an array';
     }
     if (typeof v === 'string') return JSON.stringify(v.length > 40 ? v.slice(0, 40) + '…' : v);
-    if (typeof v === 'object') return 'an object';
+    if (typeof v === 'object') {
+      // A Date, a Map: named by its kind (round 12, A12-13).
+      let tag = 'Object';
+      try {
+        tag = Object.prototype.toString.call(v).slice(8, -1);
+      } catch {}
+      return tag === 'Object' ? 'an object' : /^[AEIOU]/.test(tag) ? 'an ' + tag : 'a ' + tag;
+    }
     return typeof v === 'number' || typeof v === 'boolean' ? String(v) : 'a ' + typeof v;
   }
 
@@ -336,7 +390,15 @@ function enforceEngineOptions(engineOptions) {
   for (const p of problems) {
     if (p.kind === 'unknown' && !p.suggestion) continue;
     if (p.path === 'strictOptions') continue;
-    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(String(p.path).split('.')[0])) continue;
+    // An empty profile or timestamp ('' or []) is read as none without a
+    // word of its own, so it is said here (round 12, A12-13).
+    const top = String(p.path).split('.')[0];
+    const value = engineOptions[top];
+    const empty =
+      (top === 'profile' || top === 'timestamp') &&
+      p.path === top &&
+      ((typeof value === 'string' && !value.trim()) || (Array.isArray(value) && !value.length));
+    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(top) && !empty) continue;
     // A policy list given as an array says what it leaves out itself
     // (resolvePolicy), and keeps the values it knows.
     if (p.kind === 'invalid' && /^policy(Contract)?\.allowed(Outcomes|Confidence)$/.test(p.path)) {
@@ -369,13 +431,98 @@ function switchOf(v) {
  * is neither.
  */
 function strictOf(engineOptions) {
+  // The options' own, never one on Object.prototype (round 12, R12F-1 to
+  // R12F-6).
   const v =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : undefined;
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    Object.prototype.hasOwnProperty.call(engineOptions, 'strictOptions')
+      ? engineOptions.strictOptions
+      : undefined;
   if (v === true || v === 1) return true;
   return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
 }
 
+/**
+ * The caller's options as a scan reads them: a copy with no prototype, of
+ * the options' own keys, and of each plain object they hold, so a value a
+ * page's script put on Object.prototype (excludeSelectors, timeBudgetMs,
+ * output) is never read as an option (round 12, R12F-1 to R12F-6). The
+ * flags only the engine sets (__budgetSpent) stay as they are, not
+ * enumerable. Lists, functions and objects of any other kind are kept as
+ * given, and so are probes and messages, which can be large.
+ */
+function ownOptions(options) {
+  if (!options || typeof options !== 'object' || Array.isArray(options)) return options;
+  // A Set, a Map or a Date is no table of options: kept, for the checks
+  // that say so.
+  if (Object.prototype.toString.call(options) !== '[object Object]') return options;
+  const isPlain = (v) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+    if (Object.prototype.toString.call(v) !== '[object Object]') return false;
+    const proto = Object.getPrototypeOf(v);
+    // Another realm's Object.prototype too (a frame's, a vm context's).
+    return proto === null || Object.getPrototypeOf(proto) === null;
+  };
+  const copied = new Map();
+  const copy = (from, depth) => {
+    if (copied.has(from)) return copied.get(from);
+    const to = Object.create(null);
+    copied.set(from, to);
+    const keys = Object.keys(from);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const v = from[key];
+      to[key] =
+        depth < 8 && isPlain(v) && !(depth === 0 && (key === 'probes' || key === 'messages'))
+          ? copy(v, depth + 1)
+          : v;
+    }
+    return to;
+  };
+  const out = copy(options, 0);
+  const flags = ['__budgetSpent', '__budgetSpentAt', '__scanTimeBudgetMs'];
+  for (let i = 0; i < flags.length; i++) {
+    const d = Object.getOwnPropertyDescriptor(options, flags[i]);
+    if (d && !d.enumerable && Object.prototype.hasOwnProperty.call(d, 'value')) {
+      Object.defineProperty(out, flags[i], { value: d.value, configurable: true });
+    }
+  }
+  return out;
+}
+
+/**
+ * Options copied by ownOptions, as plain objects again, for a result to echo
+ * (checksResults[].engineOptions): what has no prototype is given
+ * Object.prototype back; anything else is kept as it is.
+ */
+function plainOptions(options) {
+  const copied = new Map();
+  const copy = (v, depth) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v) || Object.getPrototypeOf(v) !== null) {
+      return v;
+    }
+    if (copied.has(v)) return copied.get(v);
+    // Spread defines each key, so a read-only value on Object.prototype
+    // refuses none.
+    const out = { ...v };
+    copied.set(v, out);
+    if (depth < 8) {
+      const keys = Object.keys(out);
+      for (let i = 0; i < keys.length; i++) {
+        const x = out[keys[i]];
+        const c = copy(x, depth + 1);
+        if (c !== x) out[keys[i]] = c;
+      }
+    }
+    return out;
+  };
+  return copy(options, 0);
+}
+
 module.exports = {
+  ownOptions,
+  plainOptions,
   isIsoDateTime,
   closestOptionKey,
   engineOptionSpec,

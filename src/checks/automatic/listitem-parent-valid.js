@@ -387,7 +387,7 @@ function runInPage(ctx) {
               }
             : {}),
           summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
-          hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
+          hint: `Check whether the list tells something the content doesn't say otherwise: its items, their number or their order. If it does, keep the list and move role="${explicitRole}" from the <${parentTag}> to an element around it (for a navigation, <nav><${parentTag}>). If it doesn't, remove the <${parentTag}> and <li> elements.`,
           i18n: {
             summaryKey: 'listitemParentValid_summary_cantTell_listRoleOverridden',
             hintKey: 'listitemParentValid_hint_cantTell_listRoleOverridden',

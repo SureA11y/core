@@ -27,6 +27,7 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
   var NativeMap = Map;
   var NativeSet = Set;
   var assign = Object.assign;
+  var hasOwn = Object.prototype.hasOwnProperty;
   // Reads DOM properties through the prototypes, so a page's named form
   // controls and images can't redirect them (#90): the same lookup as
   // src/core/safe-dom.js, repeated because this function travels alone.
@@ -121,10 +122,13 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
       if (c.outcome === 'fail' || c.outcome === 'cantTell') {
         for (var j = 0; j < occurrences.length; j++) {
           var o = occurrences[j] || {};
+          // Its own tier, never one a script put on Object.prototype
+          // (round 12, A12-1).
+          var tier = hasOwn.call(o, 'occurrenceOutcome') ? o.occurrenceOutcome : undefined;
           // A passing occurrence of a failing or undecided rule is no
           // finding: the reports leave it out, and so does the table.
-          if (o.occurrenceOutcome === 'pass') continue;
-          var outcome = o.occurrenceOutcome || c.outcome;
+          if (tier === 'pass') continue;
+          var outcome = tier || c.outcome;
           var toward = o.lean && o.lean.toward;
           rows.push({
             outcome: outcome,
@@ -327,12 +331,13 @@ function consoleHelpers(global, api, scriptSrc, optionKeys, closestOptionKey) {
       var occurrences = Array.isArray(c.occurrences) ? c.occurrences : [];
       for (var j = 0; j < occurrences.length; j++) {
         var o = occurrences[j] || {};
+        var tier = hasOwn.call(o, 'occurrenceOutcome') ? o.occurrenceOutcome : undefined;
         // A passing occurrence is boxed neither red nor amber.
-        if (o.occurrenceOutcome === 'pass') continue;
+        if (tier === 'pass') continue;
         var el = locate(doc, o);
         if (!el) continue;
         var entry = byElement.get(el) || { fail: false, rules: [] };
-        if ((o.occurrenceOutcome || c.outcome) === 'fail') entry.fail = true;
+        if ((tier || c.outcome) === 'fail') entry.fail = true;
         if (entry.rules.indexOf(c.ruleId) === -1) entry.rules.push(c.ruleId);
         byElement.set(el, entry);
       }

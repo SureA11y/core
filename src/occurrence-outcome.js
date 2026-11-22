@@ -8,11 +8,18 @@
  * same way scan-result.js does.
  */
 
+// A field of the occurrence's own, never one a script put on
+// Object.prototype: Object.prototype.occurrenceOutcome = 'pass' read every
+// failure as a pass (round 12, A12-1).
+function ownField(object, key) {
+  return Object.prototype.hasOwnProperty.call(object, key) ? object[key] : undefined;
+}
+
 // An occurrence's tier: occurrenceOutcome, or the outcome an older
 // label-in-name wrote; undefined for none.
 function tierOf(occurrence) {
   if (!occurrence || typeof occurrence !== 'object') return undefined;
-  for (const tier of [occurrence.occurrenceOutcome, occurrence.outcome]) {
+  for (const tier of [ownField(occurrence, 'occurrenceOutcome'), ownField(occurrence, 'outcome')]) {
     if (tier === 'fail' || tier === 'cantTell') return tier;
   }
   return undefined;
@@ -28,9 +35,13 @@ function occurrenceOutcome(check, occurrence) {
   // One marked as passing passes, whatever its check's outcome: SARIF, JUnit,
   // the report and baselines read a pass-tier occurrence of a failing check
   // as a failure otherwise.
-  if (occurrence && typeof occurrence === 'object' && occurrence.occurrenceOutcome === 'pass')
+  if (
+    occurrence &&
+    typeof occurrence === 'object' &&
+    ownField(occurrence, 'occurrenceOutcome') === 'pass'
+  )
     return 'pass';
-  const outcome = check && check.outcome;
+  const outcome = check && typeof check === 'object' ? ownField(check, 'outcome') : undefined;
   return outcome === 'fail' || outcome === 'cantTell' || outcome === 'pass' ? outcome : null;
 }
 
@@ -43,7 +54,8 @@ function reviewGroupOf(check, occurrence) {
   const outcome = occurrenceOutcome(check, occurrence);
   if (outcome === 'pass') return null;
   if (outcome !== 'cantTell') return outcome;
-  const toward = occurrence && occurrence.lean && occurrence.lean.toward;
+  const lean = occurrence && typeof occurrence === 'object' ? ownField(occurrence, 'lean') : null;
+  const toward = lean && typeof lean === 'object' ? ownField(lean, 'toward') : undefined;
   if (toward === 'fail') return 'leanFail';
   if (toward === 'pass') return 'leanPass';
   return 'open';

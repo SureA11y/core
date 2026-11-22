@@ -59,6 +59,9 @@ test('an applicability that returns neither true nor false is an error, not run 
     const c = value.checksResults.find((x) => x.ruleId === 'org-x');
     assert.equal(c.outcome, 'cantTell', String(v));
     assert.match(c.error, /applicability returned .*; it must return true or false/, String(v));
+    // No "a undefined" (round 12, A12-11).
+    assert.doesNotMatch(c.error, /\ba undefined\b/, String(v));
+    if (v === undefined) assert.match(c.error, /^applicability returned undefined \(no value\);/);
   }
 });
 
@@ -220,4 +223,110 @@ test('a profile name with the Kelvin sign is no profile in a list either (round 
   // Plain ASCII case still matches.
   const ascii = scan({ packs: [pack], profile: ['KEYS-1.0', 'wcag22-aa'] }).value;
   assert.ok(ascii.rulesResults.some((r) => r.ruleId.startsWith('keys-')));
+});
+
+// packScript refuses a pack's code only where HTML would leave an inline
+// <script> open: checked here against the HTML parser itself (jsdom's), for
+// "<!-->" and "<!--->" in each script data state (round 12, A12-8).
+test('packScript refuses code only where HTML leaves the script open (round 12, A12-8)', () => {
+  const { JSDOM } = require('jsdom');
+  const notes = [
+    '<!-- <!--> <script>',
+    '<!-- <!---> <script>',
+    '<!-- <script> <!-->',
+    '<!-- <script> <!--->',
+    '<!-- <script> <!--> <script>',
+    '<!-- <script>',
+    '<!-- <SCRIPT\t',
+    '<!-- <script/',
+    '<!-- <script> --!>',
+    '<!-- <script> <!-- -->',
+    '<!--<script>-->'
+  ];
+  for (const note of notes) {
+    const pack = definePack({
+      name: 'note-pack',
+      version: '1.0.0',
+      namespace: 'nt',
+      core: '*',
+      rules: [
+        {
+          id: 'nt-rule',
+          meta: { title: 'T', description: 'd', tags: ['nt'] },
+          runInPage: new Function(`return { outcome: 'pass', note: ${JSON.stringify(note)} };`)
+        }
+      ]
+    });
+    let refused = false;
+    try {
+      packScript([pack]);
+    } catch (e) {
+      assert.match(e.message, /keeps an inline <script> element from ending/);
+      refused = true;
+    }
+    const html = `<script>var s = ${JSON.stringify(note)};</script><p id="after">after</p>`;
+    const open = !new JSDOM(html).window.document.getElementById('after');
+    assert.equal(refused, open, note);
+  }
+});
+
+// An empty rule or tag list selects nothing, and every rule runs: said, and
+// refused under strictOptions (round 12, A12-12).
+test('an empty runOnly rule or tag list warns that every rule runs, and throws under strictOptions (round 12, A12-12)', () => {
+  const empties = [
+    [],
+    '',
+    new Set(),
+    { type: 'rule', values: [] },
+    { type: 'tags', values: '' },
+    { tags: [] },
+    { includeRuleIds: [] }
+  ];
+  const all = scan({}).value.checksResults.length;
+  for (const runOnly of empties) {
+    const loose = scan({}, runOnly);
+    assert.equal(loose.value.checksResults.length, all);
+    assert.ok(
+      loose.warnings.some((w) =>
+        /is an empty list: it selects no rule, so every rule runs/.test(w)
+      ),
+      String(loose.warnings)
+    );
+    const strict = scan({ strictOptions: true }, runOnly);
+    assert.equal(strict.error && strict.error.code, 'INVALID_ENGINE_OPTIONS');
+  }
+  // A list with something in it, and no runOnly at all, say nothing of it.
+  assert.ok(!scan({}, ['page-title-present']).warnings.some((w) => /empty list/.test(w)));
+  assert.ok(!scan({}).warnings.some((w) => /empty list/.test(w)));
+});
+
+// The same through engineOptions' filters, and for a runOnly that names no
+// list at all: each ran every rule without a word, even under strictOptions
+// (round 12, R12F-10).
+test('an empty engineOptions filter, {} or a type with no values warns that every rule runs, and throws under strictOptions (round 12, R12F-10)', () => {
+  const all = scan({}).value.checksResults.length;
+  const cases = [
+    [{ rules: { include: [] } }, null, /engineOptions\.rules\.include is an empty list/],
+    [{ tags: [] }, null, /engineOptions\.tags is an empty list/],
+    [{ tags: { include: [] } }, null, /engineOptions\.tags\.include is an empty list/],
+    [{ rules: [] }, null, /engineOptions\.rules is an empty list/],
+    [{}, {}, /runOnly is an empty object/],
+    [{}, { type: 'tag' }, /runOnly\.type has no values/]
+  ];
+  for (const [engineOptions, runOnly, said] of cases) {
+    const loose = scan(engineOptions, runOnly);
+    assert.equal(loose.value.checksResults.length, all, String(said));
+    assert.ok(
+      loose.warnings.some((w) => said.test(w) && /it selects no rule, so every rule runs/.test(w)),
+      String(loose.warnings)
+    );
+    const strict = scan({ strictOptions: true, ...engineOptions }, runOnly);
+    assert.equal(strict.error && strict.error.code, 'INVALID_ENGINE_OPTIONS', String(said));
+  }
+  // A rule's settings in engineOptions.rules are no filter, and say nothing.
+  assert.ok(
+    !scan({ rules: { 'page-title-present': { enabled: true } } }).warnings.some((w) =>
+      /empty/.test(w)
+    )
+  );
 });

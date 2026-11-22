@@ -120,6 +120,31 @@ test(`${RULE_ID}: an li in a <ul role="navigation"> or <ul role="group"> is aske
   assert.equal(rule.occurrences[0].lean, undefined);
 });
 
+// Navigation has no required children, so the hint can't ask for "the role
+// the navigation expects": it says to keep the list under a wrapper that
+// carries the role, or to drop the list (round 12, K12-4).
+test(`${RULE_ID}: the hint for a <ul role="navigation"> says what to check and do, in every locale (round 12, K12-4)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><ul role="navigation"><li><a href="/a">A</a></li></ul></main></body></html>`;
+  for (const locale of ['en', 'fr', 'de', 'es', 'ja']) {
+    const rule = assertRule(
+      runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { locale } }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    );
+    const o = rule.occurrences[0];
+    assert.equal(o.i18n.hintKey, 'listitemParentValid_hint_cantTell_listRoleOverridden');
+    assert.match(o.hint, /<nav><ul>/, locale);
+    assert.match(o.hint, /role="navigation"/, locale);
+    assert.match(o.hint, /<li>/, locale);
+    assert.doesNotMatch(
+      o.hint,
+      /expects|attend de ses enfants|erwartet|espera de sus hijos|子に求める/,
+      locale
+    );
+  }
+});
+
 // The two need different fixes, so they get different reason codes.
 test(`${RULE_ID}: a list whose role replaces list and an <li> outside any list get different reason codes`, () => {
   const html = `<!doctype html><html><body>

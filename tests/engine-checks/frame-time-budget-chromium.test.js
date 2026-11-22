@@ -28,11 +28,16 @@ test('the time budget is the whole cross-frame scan’s, in Chromium', { skip },
       await page.setContent(
         `<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>Top</h1>${`<iframe title="f" srcdoc="${CHILD}"></iframe>`.repeat(2)}</main></body></html>`
       );
-      await page.waitForFunction(() =>
-        [...document.querySelectorAll('iframe')].every(
-          (f) => f.contentDocument && f.contentDocument.readyState === 'complete'
-        )
-      );
+      // Wait for every frame, the nested ones included: a nested frame not
+      // loaded yet would get no engine script and drop out of the scan.
+      await page.waitForFunction(() => {
+        const all = (doc) =>
+          doc.readyState === 'complete' &&
+          [...doc.querySelectorAll('iframe')].every(
+            (f) => f.contentDocument && all(f.contentDocument)
+          );
+        return all(document);
+      });
       await page.addScriptTag({ content: CHUNK });
       for (const frame of page.frames().slice(1)) {
         await frame.addScriptTag({ content: CHUNK });

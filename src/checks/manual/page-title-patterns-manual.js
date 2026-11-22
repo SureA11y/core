@@ -23,11 +23,15 @@
  *   title an editor, a starter template or a CMS gives an unnamed page in
  *   any of the engine's languages ("Untitled", "Sin título", "Ohne Titel",
  *   "Sans titre", "無題", "Document", "New page", "React App", "My
- *   WordPress Website", or "Just another WordPress site" as one part of the
- *   title); a placeholder left in it ("undefined", "null", "NaN", "[object
- *   Object]" as the title or one part of it, or a template token such as
- *   "{{title}}", "${title}", "%s", "{title}" or "<%= title %>", which
- *   leans fail); fewer than eight characters; or a template shape pairing
+ *   WordPress Website", or WordPress's "Just another WordPress site" or
+ *   "Sample Page", or a translation of one, as one part of the title); a
+ *   placeholder left in it, in clear cases only ("undefined",
+ *   "null", "NaN", "[object Object]", "{title}", "${...}" or "<%= title
+ *   %>" as the title or one part of it, "[title]" as the whole title, or
+ *   anywhere a double-brace token "{{title}}", a template literal of one
+ *   JavaScript name or dotted path "${page.title}", a WordPress SEO
+ *   variable left unreplaced "%%title%%", or "%s" or "%d",
+ *   which leans fail); fewer than eight characters; or a template shape pairing
  *   a generic token with a brand, such as "Home | Brand". When the
  *   crawl.pageTitles probe supplies at least ten pages, cross-page signals
  *   are used instead: one title repeated across distinct URLs, or a prefix
@@ -58,8 +62,12 @@
  *     that use it.
  * @reason-codes
  *   - `placeholderTitle` (cantTell): the page title holds a placeholder a
- *     template or a script left unfilled ("undefined", "{{title}}"). It
- *     leans fail: such a title names nothing about the page.
+ *     template or a script left unfilled ("undefined", "{{title}}",
+ *     "%%title%%"). It
+ *     leans fail: such a title names nothing about the page. Only clear
+ *     cases count: a single-brace word or an odd template literal among
+ *     other words ("{Fancy} Brackets: a CSS guide", "Template literals
+ *     ${...} explained") may be the page's subject, and is `titleReview`.
  *     Basis: WCAG 2.4.2 (not settled); F25 (not settled).
  *   - `genericTitle` (cantTell): the page title is a generic word such as
  *     home, welcome or untitled, or the default title an editor, a starter
@@ -394,6 +402,7 @@ function runInPage(ctx) {
     'my wordpress website',
     'my wordpress blog',
     'just another wordpress site',
+    'sample page',
     // es
     'sin título',
     'sin titulo',
@@ -403,6 +412,7 @@ function runInPage(ctx) {
     'nueva página',
     'nuevo documento',
     'otro sitio realizado con wordpress',
+    'página de ejemplo',
     // de
     'ohne titel',
     'unbenannt',
@@ -412,6 +422,7 @@ function runInPage(ctx) {
     'neue seite',
     'neues dokument',
     'eine weitere wordpress-website',
+    'beispiel-seite',
     // fr
     'sans titre',
     'document sans titre',
@@ -419,6 +430,7 @@ function runInPage(ctx) {
     'nouvelle page',
     'nouveau document',
     'un site utilisant wordpress',
+    "page d'exemple",
     // ja
     '無題',
     '無題のドキュメント',
@@ -426,11 +438,22 @@ function runInPage(ctx) {
     'タイトルなし',
     'ドキュメント',
     '新しいページ',
-    '新規ページ'
+    '新規ページ',
+    'サンプルページ'
   ]);
-  // A CMS's default site name or tagline is generic as one part of a title
-  // too: "Sample Page – Just another WordPress site".
+  // A CMS's default site name, tagline or page title is generic as one part
+  // of a title too: "Sample Page – Just another WordPress site", "Sample
+  // Page – My Shop". WordPress names its sample page "Sample Page", and in
+  // its Spanish, German, French and Japanese translations "Página de
+  // ejemplo", "Beispiel-Seite", "Page d'exemple" and "サンプルページ"
+  // (round 12, R12F-14; the translations are not verified against
+  // translate.wordpress.org).
   const DEFAULT_TITLE_PARTS = new Set([
+    'sample page',
+    'página de ejemplo',
+    'beispiel-seite',
+    "page d'exemple",
+    'サンプルページ',
     'my wordpress website',
     'my wordpress blog',
     'just another wordpress site',
@@ -442,18 +465,45 @@ function runInPage(ctx) {
   const titleParts = titleNorm.split(TITLE_SEPARATOR).filter(Boolean);
 
   // A placeholder a template or a script left in the title instead of the
-  // page's name: a value never set ("undefined", "null", "NaN", "[object
-  // Object]") as the whole title or one part of it, or a template token
-  // ("{{title}}", "${title}", "%s", "{title}", "<%= title %>"). It names
-  // nothing, so it leans fail.
+  // page's name. Only clear cases count, and they lean fail:
+  // - anywhere in the title: a double-brace token ("{{title}}"), a
+  //   template literal of one JavaScript name or dotted path ("${title}",
+  //   "${page.title}"), a WordPress SEO variable left unreplaced
+  //   ("%%title%% %%sep%% %%sitename%%": any "%%word%%" token, round 12,
+  //   R12F-14), or a format token ("%s", "%d");
+  // - as the whole title or one part of it: a value never set
+  //   ("undefined", "null", "NaN", "[object Object]"), a single-brace token
+  //   ("{title}"), any template literal ("${...}") or a server tag
+  //   ("<%= title %>");
+  // - as the whole title: a bracketed name ("[title]"), which as one part
+  //   of a title is often a real tag ("[Draft] - Acme").
+  // A single-brace word or an odd template literal among other words ("{Fancy}
+  // Brackets: a CSS guide", "Template literals ${...} explained") may be the
+  // page's own subject, and is asked about as any other title is.
   const placeholderToken = (() => {
     const m =
-      /\{\{[^{}]*\}\}|\$\{[^{}]*\}|<%=?[^%]*%>|\[object [A-Za-z]+\]|\{[A-Za-z_][\w.-]*\}|(?:^|[^%\w])(%[sd])(?![\w])/.exec(
+      /\{\{[^{}]*\}\}|%%[A-Za-z_]\w*%%|\$\{\s*[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\s*\}|(?:^|[^%\w])(%[sd])(?![\w])/.exec(
         titleText
       );
     if (m) return m[1] || m[0];
-    const raw = titleText.split(TITLE_SEPARATOR).filter(Boolean);
-    return raw.find((part) => part === 'undefined' || part === 'null' || part === 'NaN') || '';
+    const whole = titleText.trim();
+    if (/^\[[A-Za-z_][\w.-]*\]$/.test(whole)) return whole;
+    const raw = titleText
+      .split(TITLE_SEPARATOR)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    return (
+      raw.find(
+        (part) =>
+          part === 'undefined' ||
+          part === 'null' ||
+          part === 'NaN' ||
+          /^\[object [A-Za-z]+\]$/.test(part) ||
+          /^\{[A-Za-z_][\w.-]*\}$/.test(part) ||
+          /^\$\{[^{}]*\}$/.test(part) ||
+          /^<%=?[^%]*%>$/.test(part)
+      ) || ''
+    );
   })();
 
   // Conservative signals:

@@ -71,6 +71,10 @@
         clip: rect(0 0 0 0);
         white-space: nowrap;
       }
+      .card {
+        height: 20px;
+        overflow: hidden;
+      }
       .offcanvas {
         position: relative;
         height: 40px;
@@ -164,6 +168,18 @@
       <div class="t partly" id="rtcl_case_06">
         Opening hours today, nine in the morning to five.
       </div>
+    </div>
+
+    <div
+      class="case"
+      id="case_13"
+      data-outcome-resize-text-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">
+        13 — CANTTELL: a box 20 pixels high shows its first line; the line after a break drops out
+        wholly (leans fail)
+      </div>
+      <div class="t card" id="rtcl_case_13">Opening hours<br />Monday to Friday, nine to five</div>
     </div>
 
     <h2>C. Text the box shortens (asked, leaning fail)</h2>

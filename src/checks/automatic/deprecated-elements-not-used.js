@@ -27,10 +27,27 @@
  *     pausing, stopping or hiding, and fail when there is no such control
  *     and no inline script that could stop it, unless it scrolls only once.
  *     Basis: WCAG 2.2.2 (not settled); F16.
+ *   - `MARQUEE_STOPS_ONLY_ON_HOVER` (cantTell): a <marquee> scrolls its
+ *     content and stops only while the pointer is over it (its own
+ *     onmouseover or onmouseenter calls this.stop(), or a handler or inline
+ *     script listening only for hover stops it: addEventListener, an
+ *     onmouseover property, or jQuery's .hover(), .on('mouseenter') or
+ *     .on('mouseover'), also when added inside a DOMContentLoaded or load
+ *     listener), which keyboard and touch users cannot do; whether the page
+ *     offers another way to pause, stop or hide it is for a person to
+ *     check. Given in place of
+ *     `MARQUEE_PAUSE_MECHANISM_UNKNOWN` when that code would lean fail. It
+ *     leans fail.
+ *     Basis: WCAG 2.2.2 (not settled); F16.
  * @implementation-notes
  * - <blink> is not reported. No current browser makes it blink: it renders
  *   as an unknown inline element, so it holds no blinking content for 2.2.2
  *   to govern.
+ * - Stopping on hover is not a pause mechanism for 2.2.2: a keyboard or
+ *   touch user cannot hold a pointer over the text. A marquee that only
+ *   stops so keeps leaning fail, with a message that says why. Listeners
+ *   the listener hook records are not read: the hook says that an element
+ *   has a mouseover listener, not what it does.
  * - Not rule-gated on isAccTreeEligible: presence in markup is what the rule
  *   asks about, independent of visibility. Engine-level hidden-subtree
  *   filtering still applies unless engineOptions.includeHiddenElements is
@@ -89,7 +106,7 @@ function runInPage(ctx) {
   // (header): by tag here, by id in reachesMarquee.
   const STOP_CALL = /\.\s*(?:stop|start)\s*\(/;
   const MARQUEE_BY_TAG =
-    /getElementsByTagName\s*\(\s*['"`]marquee['"`]|querySelector(?:All)?\s*\(\s*['"`][^'"`]*\bmarquee\b/i;
+    /getElementsByTagName\s*\(\s*['"`]marquee['"`]|(?:querySelector(?:All)?|\$|jQuery)\s*\(\s*['"`][^'"`]*\bmarquee\b/i;
   // The engine's own script, injected inline by the page (a script tag holding
   // the bundle): what it says about marquees is the engine's, not the page's.
   const isEngineScript = (text) => text.includes('runa11yCoreInPage') && text.includes('a11ycore');
@@ -150,19 +167,83 @@ function runInPage(ctx) {
         break;
       }
     }
-    if (!stopCall) {
-      const doc = dom.ownerDocument(nodes[0]) || ctx.document;
-      for (const sc of dom.querySelectorAll(doc, 'script:not([src])') || []) {
-        const text = String(dom.textContent(sc) || '');
-        if (isEngineScript(text)) continue;
-        if (STOP_CALL.test(text) && reachesMarquee(text)) {
-          stopCall = true;
-          break;
-        }
+    // Inline scripts that stop a marquee. One whose only events are the
+    // pointer's hover (mouseover, mouseenter and their ends) stops it only
+    // while the pointer is over it: kept apart in hoverScripts.
+    const hoverScripts = [];
+    const doc = dom.ownerDocument(nodes[0]) || ctx.document;
+    for (const sc of dom.querySelectorAll(doc, 'script:not([src])') || []) {
+      const text = String(dom.textContent(sc) || '');
+      if (isEngineScript(text)) continue;
+      if (!STOP_CALL.test(text) || !reachesMarquee(text)) continue;
+      if (isHoverOnlyScript(text)) {
+        hoverScripts.push(text);
+      } else {
+        stopCall = true;
       }
     }
-    pageEvidence = { pauseControl, stopCall };
+    pageEvidence = { pauseControl, stopCall, hoverScripts };
     return pageEvidence;
+  }
+
+  // The event types a script names: addEventListener('type', ...),
+  // el.ontype = ..., and jQuery's .on('type', ...), .one(), .bind() and
+  // shorthands such as .hover(...) and .click(...). A DOMContentLoaded or
+  // load listener only runs the code inside it once the page is read: it
+  // wraps the listeners that code adds, and is not counted. A script is
+  // hover-only when every other type it names is the pointer's hover
+  // (round 12, R12F-15). One that names none, or another event (a click, a
+  // key), may stop the marquee another way, and is asked about with no lean.
+  // A method call that only looks like a shorthand (`el.click()`) counts as
+  // another event, which errs toward asking.
+  const HOVER_TYPES = new Set(['mouseover', 'mouseenter', 'mouseout', 'mouseleave', 'hover']);
+  const WRAPPER_TYPES = new Set(['domcontentloaded', 'load']);
+  const JQUERY_SHORTHAND =
+    /\.\s*(hover|mouseover|mouseenter|mouseout|mouseleave|mousedown|mouseup|click|dblclick|contextmenu|keydown|keyup|keypress|focus|blur|focusin|focusout|change|submit|toggle)\s*\(/g;
+  function isHoverOnlyScript(text) {
+    const types = new Set();
+    for (const m of text.matchAll(/addEventListener\s*\(\s*['"`]([A-Za-z]+)['"`]/g))
+      types.add(m[1].toLowerCase());
+    for (const m of text.matchAll(/\.\s*on([A-Za-z]+)\s*=(?!=)/g)) types.add(m[1].toLowerCase());
+    for (const m of text.matchAll(/\.\s*(?:on|one|bind)\s*\(\s*['"`]([^'"`]*)['"`]/g))
+      for (const t of m[1].split(/\s+/)) if (t) types.add(t.split('.')[0].toLowerCase());
+    for (const m of text.matchAll(JQUERY_SHORTHAND)) types.add(m[1].toLowerCase());
+    for (const t of WRAPPER_TYPES) types.delete(t);
+    return types.size > 0 && [...types].every((t) => HOVER_TYPES.has(t));
+  }
+
+  // Whether `text` reaches this marquee: by tag, or by its id.
+  function reachesThis(el, text) {
+    if (MARQUEE_BY_TAG.test(text)) return true;
+    const mid = String(dom.getAttribute(el, 'id') || '').trim();
+    if (!mid) return false;
+    const q = mid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('[\'"`#]' + q + '[\'"`]|(?:^|[^\\w$.-])' + q + '\\s*\\.\\s*stop\\s*\\(').test(
+      text
+    );
+  }
+
+  // Whether the marquee stops when the pointer is over it: its own
+  // onmouseover or onmouseenter calls this.stop(), another element's such
+  // handler stops it, or an inline script listening only for hover does.
+  const HOVER_ATTRS = ['onmouseover', 'onmouseenter'];
+  const STOP_ONLY = /\.\s*stop\s*\(/;
+  let hoverHandlers = null;
+  function stopsOnHover(el) {
+    for (const a of HOVER_ATTRS) {
+      const text = String(dom.getAttribute(el, a) || '');
+      if (/\bthis\s*\.\s*stop\s*\(/.test(text)) return true;
+    }
+    if (!hoverHandlers) hoverHandlers = helpers.queryAll('[onmouseover], [onmouseenter]') || [];
+    for (const h of hoverHandlers) {
+      for (const a of HOVER_ATTRS) {
+        const text = String(dom.getAttribute(h, a) || '');
+        if (STOP_ONLY.test(text) && reachesThis(el, text)) return true;
+      }
+    }
+    return readPageEvidence().hoverScripts.some(
+      (text) => STOP_ONLY.test(text) && reachesThis(el, text)
+    );
   }
 
   // A marquee with scrollamount="0" does not move, and a control named for
@@ -205,6 +286,24 @@ function runInPage(ctx) {
       .toLowerCase();
     const scrollsOnce = (loop !== '' && parseInt(loop, 10) > 0) || behavior === 'slide';
     if (stopCall || scrollsOnce) return null;
+    if (stopsOnHover(el)) {
+      return {
+        toward: 'fail',
+        why: 'The marquee stops only while the pointer is over it, which keyboard and touch users cannot do, and no control on the page is named for pausing, stopping or hiding.',
+        signals: [
+          { signal: 'pause-control', value: null },
+          { signal: 'stop-call', value: false },
+          { signal: 'stops-on-hover', value: true },
+          { signal: 'scrollamount-zero', value: false }
+        ],
+        caution:
+          'A script loaded from a file may wire a control by its id, such as an icon button.',
+        i18n: {
+          whyKey: 'deprecatedElements_lean_why_hoverOnly',
+          cautionKey: 'deprecatedElements_lean_caution_noMechanism'
+        }
+      };
+    }
     return {
       toward: 'fail',
       why: 'No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.',
@@ -225,27 +324,44 @@ function runInPage(ctx) {
     if (!el || !dom.tagName(el)) continue;
 
     const tag = dom.tagName(el).toLowerCase();
+    const lean = marqueeLean(el);
+    // It stops only while the pointer is over it: the question is whether
+    // there is another way to pause it.
+    const hoverOnly = !!(
+      lean && lean.signals.some((x) => x.signal === 'stops-on-hover' && x.value)
+    );
+    const reasonCode = hoverOnly
+      ? 'MARQUEE_STOPS_ONLY_ON_HOVER'
+      : 'MARQUEE_PAUSE_MECHANISM_UNKNOWN';
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary:
-          'This <marquee> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.',
-        hint: 'Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.',
+        summary: hoverOnly
+          ? 'This <marquee> scrolls its content and stops only while the pointer is over it, which keyboard and touch users cannot do.'
+          : 'This <marquee> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.',
+        hint: hoverOnly
+          ? 'Check that the page offers another way to pause, stop, or hide this content, one that works with the keyboard. Better: replace it with static content, or with an animation that has a pause/stop control.'
+          : 'Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.',
         occurrenceOutcome: 'cantTell',
-        ...withLean(marqueeLean(el)),
+        ...withLean(lean),
         i18n: {
-          summaryKey: 'deprecatedElements_summary_cantTell',
-          hintKey: 'deprecatedElements_hint_cantTell',
+          summaryKey: hoverOnly
+            ? 'deprecatedElements_summary_cantTell_hoverOnly'
+            : 'deprecatedElements_summary_cantTell',
+          hintKey: hoverOnly
+            ? 'deprecatedElements_hint_cantTell_hoverOnly'
+            : 'deprecatedElements_hint_cantTell',
           params: { element: tag }
         },
         uncertainty: {
           code: 'runtime-dependent',
-          needed:
-            'Whether the page provides a control that pauses, stops, or hides the scrolling content.',
+          needed: hoverOnly
+            ? 'Whether the page offers another way, one that works with the keyboard, to pause, stop, or hide the scrolling content.'
+            : 'Whether the page provides a control that pauses, stops, or hides the scrolling content.',
           evidence: { element: tag }
         },
         data: {
-          details: { reasonCode: 'MARQUEE_PAUSE_MECHANISM_UNKNOWN', element: tag }
+          details: { reasonCode, element: tag }
         }
       })
     );

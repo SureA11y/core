@@ -253,7 +253,12 @@ const PROCEDURES = {
       'form-group-name-evidence': {
         coveredBy: 'form-labels-associated',
         variants: {
-          'form-group-name-present': ['CHECKBOX_GROUP_NO_NAME', 'RADIO_GROUP_NO_NAME']
+          'form-group-name-present': [
+            'CHECKBOX_GROUP_NO_NAME',
+            'CHECKBOX_GROUP_SPLIT',
+            'RADIO_GROUP_NO_NAME',
+            'RADIO_GROUP_SPLIT'
+          ]
         }
       },
       'td-has-header': {
@@ -613,7 +618,10 @@ const PROCEDURES = {
       'deprecated-non-stoppable-elements-absent': {
         coveredBy: 'auto-moving-content-pausable',
         variants: {
-          'deprecated-elements-not-used': ['MARQUEE_PAUSE_MECHANISM_UNKNOWN']
+          'deprecated-elements-not-used': [
+            'MARQUEE_PAUSE_MECHANISM_UNKNOWN',
+            'MARQUEE_STOPS_ONLY_ON_HOVER'
+          ]
         }
       },
       'auto-moving-content-pausable': {

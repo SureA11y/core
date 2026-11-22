@@ -31,6 +31,41 @@ test(`${RULE_ID}: notApplicable when the page has no focus rule at all`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// With no rule that removes an outline, the rule ends before it looks for
+// candidates, whose hidden-content filter reads every one's style (round
+// 12, R12F-13: 3145 ms of CPU on a large page in jsdom, against 59).
+test(`${RULE_ID}: no candidate is read when no rule removes an outline`, () => {
+  const links = Array.from({ length: 200 }, (_, i) => `<a href="/${i}">${i}</a>`).join('');
+  for (const shadow of [false, true]) {
+    const dom = createDom(page('a { color: red }', `${links}<div id="h"></div>`));
+    if (shadow) {
+      const root = dom.window.document.getElementById('h').attachShadow({ mode: 'open' });
+      root.innerHTML = '<button>b</button><style>button{color:red}</style>';
+    }
+    let reads = 0;
+    const read = dom.window.getComputedStyle;
+    dom.window.getComputedStyle = function (...args) {
+      reads += 1;
+      return read.apply(this, args);
+    };
+    assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+    // A page with an open shadow root exits as early: the root's sheets are
+    // read first (round 12, F12-3).
+    assert.ok(reads < 10, String(reads));
+  }
+  // A removing rule in a shadow root's sheet is still read.
+  const dom = createDom(page('a { color: red }', '<div id="h"></div>'));
+  const root = dom.window.document.getElementById('h').attachShadow({ mode: 'open' });
+  root.innerHTML = '<button id="b">b</button><style>button{outline:none}</style>';
+  assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});
+
 test(`${RULE_ID}: cantTell for a global outline reset with no replacement`, () => {
   const result = runa11yCoreOnHtml(page('*:focus{outline:none}', '<a href="/x" id="a">x</a>'), {
     runOnly: [RULE_ID]
@@ -38,7 +73,8 @@ test(`${RULE_ID}: cantTell for a global outline reset with no replacement`, () =
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'FOCUS_INDICATOR_SUPPRESSED');
-  assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, ['*:focus']);
+  // Quoted as browsers serialize it (round 12, U12-16).
+  assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, [':focus']);
 });
 
 test(`${RULE_ID}: an outline removed by a rule with no focus state is asked about (F78)`, () => {
@@ -203,8 +239,9 @@ test(`${RULE_ID}: a focus pseudo inside :is() or :where() is a focus rule (round
     );
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
     assert.ok(hasOccurrenceForId(rule, 'a'), css);
+    // Quoted as Chromium serializes it: a space after each comma (F12-9).
     assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, [
-      css.slice(0, css.indexOf('{'))
+      css.slice(0, css.indexOf('{')).replace(/,(?! )/g, ', ')
     ]);
   }
   // Another argument the link does not meet, or a replacement written the same way.
@@ -410,12 +447,100 @@ test(`${RULE_ID}: a rule firing on an ancestor's focus is not the element's own 
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: :focus-within is not treated as a focus rule for the element itself`, () => {
-  const result = runa11yCoreOnHtml(
-    page('a:focus-within{outline:none}', '<a href="/x" id="a">x</a>'),
-    { runOnly: [RULE_ID] }
+// :focus-within and :has(:focus) are focus rules: they hold on the focused
+// element's ancestors, and :focus-within on the element itself, while it has
+// focus (round 12, U12-16).
+test(`${RULE_ID}: :focus-within and :has(:focus) are read as focus rules`, () => {
+  const run = (css, body = '<main><a href="/x" id="a">x</a></main>') =>
+    runa11yCoreOnHtml(page(css, body), { runOnly: [RULE_ID] });
+  for (const css of [
+    'a:focus-within{outline:none}',
+    'main:focus-within a{outline:none}',
+    'main:focus-within > a:focus{outline:none}',
+    'main:has(a:focus) a{outline:none}',
+    'main:has(:focus-visible) a{outline:none}'
+  ]) {
+    const rule = assertRule(run(css), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.ok(hasOccurrenceForId(rule, 'a'), css);
+  }
+  for (const css of [
+    // The :has() names another element than the one focused.
+    'main:has(button:focus) a{outline:none}',
+    // A sibling's focus-within says nothing about the link's focus.
+    '.x:focus-within + main a{outline:none}',
+    // Excluded: the outline stays while the ancestor has focus within.
+    'main:not(:focus-within) a{outline:none}'
+  ]) {
+    assertRule(
+      run(css, '<div class="x"></div><main><a href="/x" id="a">x</a></main>'),
+      RULE_ID,
+      'notApplicable',
+      { minOccurrences: 0, maxOccurrences: 0 }
+    );
+  }
+  // A :has(:focus) rule that draws a change around the element takes the
+  // lean away, as a :focus-within one does.
+  const drawn = assertRule(
+    run('a:focus{outline:none} main:has(a:focus){background:#ff0}'),
+    RULE_ID,
+    'cantTell'
   );
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assert.equal(drawn.occurrences[0].lean, undefined);
+});
+
+// An open shadow root's style sheets, adopted ones included, are read
+// against the elements in that root, and only those (round 12, U12-16).
+test(`${RULE_ID}: a shadow root's style sheets style its own elements`, () => {
+  const build = (adopt) => {
+    const dom = createDom(
+      '<!doctype html><html><body><a href="/d" id="doc">doc</a><div id="h"></div></body></html>'
+    );
+    const root = dom.window.document.getElementById('h').attachShadow({ mode: 'open' });
+    root.innerHTML = '<button id="b">b</button>';
+    const css = 'button:focus, a:focus{outline:none}';
+    if (adopt) {
+      const sheet = new dom.window.CSSStyleSheet();
+      sheet.replaceSync(css);
+      root.adoptedStyleSheets = [sheet];
+    } else root.innerHTML += `<style>${css}</style>`;
+    return dom;
+  };
+  for (const adopt of [false, true]) {
+    const rule = assertRule(
+      runa11yCoreOnDom(build(adopt), { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell',
+      {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      }
+    );
+    assert.ok(hasOccurrenceForId(rule, 'b'), String(adopt));
+  }
+});
+
+// A document sheet's selectors do not reach into a shadow root (CSS
+// Scoping): its rule removes no outline there (round 12, R12F-12).
+test(`${RULE_ID}: a document sheet does not style a shadow root's elements`, () => {
+  const dom = createDom(
+    '<!doctype html><html><head><style>button:focus, .in button:focus{outline:none}</style></head><body><div id="h" class="in"></div></body></html>'
+  );
+  const root = dom.window.document.getElementById('h').attachShadow({ mode: 'open' });
+  root.innerHTML = '<div class="in"><button id="b">b</button></div>';
+  assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  // The same rule in the shadow root's own sheet does.
+  root.innerHTML += '<style>button:focus{outline:none}</style>';
+  const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, ['button:focus']);
 });
 
 test(`${RULE_ID}: an element outside sequential focus navigation is skipped`, () => {
@@ -499,9 +624,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
     'css-focus-indicator-suppressed-all-scenarios.html'
   );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
+  // Shadow roots, and ::part(), ::slotted() and :host, are not in the
+  // fixture: jsdom builds no shadow root from markup. The tests above attach
+  // them from script.
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 10, maxOccurrences: 10 });
 
   const expectedIds = [
     'cfis_case_01',
@@ -510,7 +638,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
     'cfis_case_04',
     'cfis_case_05',
     'cfis_case_13',
-    'cfis_case_17'
+    'cfis_case_17',
+    'cfis_case_11',
+    'cfis_case_18',
+    'cfis_case_19'
   ];
   const expectedNoOccIds = [
     'cfis_case_06',
@@ -518,8 +649,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
     'cfis_case_08',
     'cfis_case_09',
     'cfis_case_10',
-    'cfis_case_11',
     'cfis_case_12',
+    'cfis_case_20',
     'cfis_case_14',
     'cfis_case_15',
     'cfis_case_16'
@@ -541,10 +672,10 @@ test(`${RULE_ID}: says which <style> element the removing rule is in`, () => {
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'This element takes a tab stop, and "*:focus" in <style> element 2 of the page removes its focus outline with no replacement indicator in any other focus rule matching it.'
+    'This element takes a tab stop, and ":focus" in <style> element 2 of the page removes its focus outline with no replacement indicator in any other focus rule matching it.'
   );
   assert.strictEqual(occ.i18n.summaryKey, 'cssFocusIndicatorSuppressed_summary_cantTell_inStyle');
-  assert.deepStrictEqual(occ.i18n.params, { selectors: '*:focus', index: 2 });
+  assert.deepStrictEqual(occ.i18n.params, { selectors: ':focus', index: 2 });
   assert.strictEqual(occ.data.details.styleElementIndex, 2);
 });
 
@@ -591,4 +722,163 @@ test(`${RULE_ID}: jsdom tests each selector on its own, never as a list (round 1
   assert.deepStrictEqual(lists, []);
   for (let i = 0; i < 20; i++) assert.ok(hasOccurrenceForId(rule, `a${i}`), `a${i}`);
   assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
+// A selector list with one selector the browser can't parse is invalid as a
+// whole: Chromium drops `button:-moz-focusring, button:focus`, and jsdom,
+// which keeps it, now skips it too (round 12, U12-16).
+test(`${RULE_ID}: a rule whose selector list holds an invalid selector is dropped`, () => {
+  const run = (css) =>
+    runa11yCoreOnHtml(page(css, '<button id="b">Go</button>'), { runOnly: [RULE_ID] });
+  assertRule(run('button:-moz-focusring, button:focus{outline:none}'), RULE_ID, 'notApplicable');
+  const valid = assertRule(run('button:hover, button:focus{outline:none}'), RULE_ID, 'cantTell');
+  assert.deepStrictEqual(valid.occurrences[0].data.details.suppressingSelectors, ['button:focus']);
+  // A universal selector before another simple selector is left out.
+  const universal = assertRule(
+    run('main *:focus, *.x:focus, *:focus{outline:none}'),
+    RULE_ID,
+    'cantTell'
+  );
+  assert.deepStrictEqual(universal.occurrences[0].data.details.suppressingSelectors, [':focus']);
+});
+
+// A selector that needs a class or id no element in the element's tree
+// carries is not tested; one whose name is only inside :not(), :is(),
+// :where() or :has() still is (round 12, P12-1).
+test(`${RULE_ID}: a class or id is only required outside functional pseudo-classes`, () => {
+  const selectorsFor = (css, body, quirks = false) => {
+    const html = `${quirks ? '' : '<!doctype html>'}<html><head><style>${css}</style></head><body>${body}</body></html>`;
+    const rule = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults[0];
+    return (rule.occurrences || []).flatMap((o) => o.data.details.suppressingSelectors);
+  };
+  const body = '<main class="m"><a href="/a" class="x" id="a">a</a></main>';
+  assert.deepStrictEqual(
+    selectorsFor(
+      '.nope a:focus, #nope a:focus, .m .nope:focus, a:not(.nope):focus, :is(.nope, .x):focus, :where(main) a:focus{outline:none}',
+      body
+    ),
+    ['a:not(.nope):focus', ':is(.nope, .x):focus', ':where(main) a:focus']
+  );
+  // A quirks-mode page matches class names in any case.
+  assert.deepStrictEqual(selectorsFor('.M .X:focus{outline:none}', body, true), ['.M .X:focus']);
+  // A shadow root's sheet is matched against the names in that root: the
+  // host's class is outside it.
+  const dom = createDom(
+    '<!doctype html><html><body><div class="outer" id="h"></div></body></html>'
+  );
+  const root = dom.window.document.getElementById('h').attachShadow({ mode: 'open' });
+  root.innerHTML =
+    '<button class="inner" id="b">b</button><style>.inner:focus, .outer button:focus{outline:none}</style>';
+  const rule = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }).checksResults[0];
+  assert.deepStrictEqual(
+    rule.occurrences.flatMap((o) => o.data.details.suppressingSelectors),
+    ['.inner:focus']
+  );
+});
+
+// Rules that reach across a shadow tree's edge remove the outline of the
+// element they style: ::part() from the host's tree, ::slotted() and :host
+// from the shadow root's sheet (round 12, F12-8). Each case was checked in
+// Chromium against the outline a focused element is drawn with.
+test(`${RULE_ID}: ::part(), ::slotted() and :host rules that remove the outline`, () => {
+  const cases = [
+    // [document css, shadow html, host attributes, light html, flagged]
+    ['#h::part(btn):focus{outline:none}', '<button part="btn">Go</button>', '', '', 'button'],
+    ['::part(btn){outline:none}', '<button part="btn">Go</button>', '', '', 'button'],
+    ['#h::part(other):focus{outline:none}', '<button part="btn">Go</button>', '', '', ''],
+    [
+      '#h::part(btn):focus{outline:none;box-shadow:0 0 0 3px blue}',
+      '<button part="btn">Go</button>',
+      '',
+      '',
+      ''
+    ],
+    ['#k::part(btn):focus{outline:none}', '<button part="btn">Go</button>', '', '', ''],
+    [
+      '',
+      '<style>::slotted(button:focus){outline:none}</style><slot></slot>',
+      '',
+      '<button id="t">S</button>',
+      't'
+    ],
+    [
+      '',
+      '<style>::slotted(a:focus){outline:none}</style><slot></slot>',
+      '',
+      '<button id="t">S</button>',
+      ''
+    ],
+    [
+      '',
+      '<style>slot[name=x]::slotted(button:focus){outline:none}</style><slot name="x"></slot><slot></slot>',
+      '',
+      '<button id="t">S</button>',
+      ''
+    ],
+    [
+      '',
+      '<style>:host ::slotted(button:focus){outline:none}</style><slot></slot>',
+      '',
+      '<button id="t">S</button>',
+      't'
+    ],
+    [
+      'button:focus{outline:2px solid red}',
+      '<style>::slotted(button:focus){outline:none}</style><slot></slot>',
+      '',
+      '<button id="t">S</button>',
+      ''
+    ],
+    ['', '<style>:host(:focus){outline:none}</style><span>t</span>', 'tabindex="0"', '', 'h'],
+    ['', '<style>:host{outline:none}</style><span>t</span>', 'tabindex="0"', '', 'h'],
+    ['', '<style>:host(.q:focus){outline:none}</style><span>t</span>', 'tabindex="0"', '', ''],
+    [
+      '#h:focus{outline:2px solid red}',
+      '<style>:host(:focus){outline:none}</style>',
+      'tabindex="0"',
+      '',
+      ''
+    ]
+  ];
+  for (const [css, shadow, attrs, light, flagged] of cases) {
+    const dom = createDom(page(css, `<div id="h" ${attrs}>${light}</div>`));
+    dom.window.document.getElementById('h').attachShadow({ mode: 'open' }).innerHTML = shadow;
+    const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+    const label = `${css} ${shadow}`;
+    if (!flagged) {
+      assertRule(result, RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+      continue;
+    }
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    const html = rule.occurrences[0].html || '';
+    assert.ok(
+      flagged === 'button' ? html.startsWith('<button') : html.includes(`id="${flagged}"`),
+      label
+    );
+  }
+});
+
+// The selector is quoted as Chromium serializes it, so jsdom and a browser
+// give the same message (round 12, F12-9).
+test(`${RULE_ID}: quotes the selector as Chromium serializes it`, () => {
+  const cases = [
+    ['a:where(:focus,:hover)', 'a:where(:focus, :hover)'],
+    ['main>a:focus', 'main > a:focus'],
+    ['main  a:is( .x , :focus )', 'main a:is(.x, :focus)'],
+    ['a[href=x]:focus', 'a[href="x"]:focus'],
+    ['*:focus', ':focus'],
+    // A single-quoted value is written double quoted, with its escapes read
+    // and a double quote or backslash escaped, as Chromium writes it.
+    [String.raw`a[title='a"b\\c']:focus`, String.raw`a[title="a\"b\\c"]:focus`, 'a&quot;b\\c'],
+    [String.raw`a[title='it\'s']:focus`, `a[title="it's"]:focus`, "it's"],
+    [String.raw`a[title='\41 b']:focus`, 'a[title="Ab"]:focus', 'Ab']
+  ];
+  for (const [css, quoted, title = ''] of cases) {
+    const html = page(
+      `${css}{outline:none}`,
+      `<main><a class="x" href="x" title="${title}">x</a></main>`
+    );
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+    assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, [quoted], css);
+  }
 });

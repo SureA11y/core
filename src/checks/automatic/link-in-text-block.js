@@ -41,7 +41,8 @@
  *       own other than white space, or an empty or blank box painting a
  *       background, border, outline or shadow, as an underline drawn that
  *       way does), OR
- *     - a mark on all of its content: bold, italic, underlined, bordered,
+ *     - a mark on all of its content: bold, italic, underlined (in a
+ *       color other than transparent or the one behind it), bordered,
  *       a background unlike the surrounding text's (a code chip, <mark>),
  *       or raised or lowered (a footnote's <sup>).
  *   A mark that is a cue only by its color counts only where that color
@@ -258,6 +259,17 @@
  *   stylesheet is not seen.
  * - Only the resting state is evaluated. The :hover, :focus and :visited
  *   states are not.
+ * - Where the style sheets are read for an underline (jsdom, which
+ *   cascades no rule in an @layer), the declaration that wins is the
+ *   cascade's: !important over normal; the style attribute over every rule
+ *   of its importance; then cascade layers, ranked in the order they are
+ *   first named (by an @layer statement, a block, or @import ... layer()),
+ *   a nested layer (`a.b`, or a block inside a block) under its parent's
+ *   own declarations, each anonymous layer one of its own; declarations in
+ *   no layer over every layer for normal ones, and !important reversing
+ *   both; then specificity and order. Where a layered declaration matches
+ *   the element, jsdom's computed style, which leaves it out, is not used.
+ *   A value through var() is still not read (cantTell).
  */
 
 const id = 'link-in-text-block';
@@ -448,7 +460,7 @@ function runInPage(ctx) {
   }
 
   // A declaration wins if it is the last one, in (rank, order), whose
-  // selector matches (see rankOf). Besides whether it underlines: whether
+  // selector matches (see cascadeWins). Besides whether it underlines: whether
   // it can't be read here (a var(), inherit), whether it reverts to the
   // browser's style, and the line's color it sets, if any (the shorthand
   // sets currentcolor where it names none).
@@ -488,13 +500,27 @@ function runInPage(ctx) {
     return tag === 'u' || tag === 'ins';
   }
 
-  // A declaration's place in the cascade, highest wins: important ones over
-  // normal ones, and among each, a layer's below (normal) or above
-  // (important) those in no layer; the style attribute above the rules of
-  // its importance in no layer; then specificity.
-  function rankOf(decl, specificity, layered, inline) {
-    if (decl.important) return (layered ? 3e9 : inline ? 2e9 : 1e9) + specificity;
-    return (layered ? -1e8 : inline ? 5e8 : 0) + specificity;
+  // Whether declaration a wins over b in the cascade, each { decl, inline,
+  // layer, specificity, order }: !important over normal; then the style
+  // attribute over every rule of its importance; then cascade layers, which
+  // rank in the order they are first named (a nested layer under its
+  // parent's own declarations), with declarations in no layer over every
+  // layer for normal ones, and !important reversing both; then specificity
+  // and order.
+  function cascadeWins(a, b) {
+    if (a.decl.important !== b.decl.important) return a.decl.important;
+    if (a.inline !== b.inline) return a.inline;
+    const la = a.layer;
+    const lb = b.layer;
+    let layerCmp = 0;
+    for (let i = 0; i < Math.max(la.length, lb.length) && !layerCmp; i++) {
+      if (i >= la.length) layerCmp = 1;
+      else if (i >= lb.length) layerCmp = -1;
+      else if (la[i] !== lb[i]) layerCmp = la[i] > lb[i] ? 1 : -1;
+    }
+    if (layerCmp) return a.decl.important ? layerCmp < 0 : layerCmp > 0;
+    if (a.specificity !== b.specificity) return a.specificity > b.specificity;
+    return a.order >= b.order;
   }
 
   // The user agent underlines `a[href]`; an element with role="link" has no
@@ -521,17 +547,58 @@ function runInPage(ctx) {
   // rules costs links x the rules that could apply. The index is made once.
   function candidatePartsOf(found, el, field) {
     if (typeof helpers.selectorIndex !== 'function') return found.parts;
-    if (!found.index) found.index = helpers.selectorIndex(found.parts.map((p) => p[field]));
+    // Own, and defined, not assigned: a value of that name on
+    // Object.prototype is neither read nor refuses it (round 12, F12-4).
+    if (!Object.prototype.hasOwnProperty.call(found, 'index')) {
+      Object.defineProperty(found, 'index', {
+        value: helpers.selectorIndex(found.parts.map((p) => p[field])),
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
+    }
     return found.index.candidates(el).map((i) => found.parts[i]);
   }
 
   // The style rule parts that set an underline on an element at rest, in
   // the sheets' order, found once per run: { parts, unreadableSheet,
-  // broken }. Each part is { part, rank, underlined }.
+  // broken }. Each part is { part, decl, layer, specificity, order }, layer
+  // the path of the part's cascade layer: each layer's place among its
+  // siblings, in the order they are first named (by @layer a, b;, a block,
+  // or @import ... layer(a)), from the outermost; [] in no layer.
   const underlineRulesByDoc = new Map();
   function underlineRulesOf(doc) {
     if (underlineRulesByDoc.has(doc)) return underlineRulesByDoc.get(doc);
-    const found = { parts: [], unreadableSheet: false, broken: false };
+    const found = { parts: [], unreadableSheet: false, broken: false, anyLayered: false };
+    let order = 0;
+
+    // Layers by their full name, dotted from the outermost; an anonymous
+    // layer is one of its own each time.
+    const layers = new Map();
+    let anonymous = 0;
+    const NO_LAYER = { path: [], name: '' };
+    function childLayer(parent, name) {
+      const full = name ? (parent.name ? parent.name + '.' + name : name) : null;
+      const key = full || '\u0000anonymous' + anonymous++;
+      if (!layers.has(key)) {
+        let siblings = 0;
+        for (const l of layers.values()) if (l.parent === parent.name) siblings += 1;
+        layers.set(key, { path: parent.path.concat(siblings), name: key, parent: parent.name });
+      }
+      return layers.get(key);
+    }
+    // A layer name may be dotted (a.b): each part is a layer in the one
+    // before it.
+    function layerNamed(parent, name) {
+      const parts = String(name || '')
+        .split('.')
+        .map((x) => x.trim())
+        .filter(Boolean);
+      if (!parts.length) return childLayer(parent, '');
+      let l = parent;
+      for (const part of parts) l = childLayer(l, part);
+      return l;
+    }
 
     function consider(cssRule, layer) {
       const decl = underlineFromDeclaration(cssRule.style);
@@ -545,8 +612,14 @@ function runInPage(ctx) {
         if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
           continue;
         }
-        const rank = rankOf(decl, specificityOf(part), !!layer, false);
-        found.parts.push({ part, rank, decl, layer });
+        if (layer.path.length) found.anyLayered = true;
+        found.parts.push({
+          part,
+          decl,
+          layer: layer.path,
+          specificity: specificityOf(part),
+          order: order++
+        });
       }
     }
 
@@ -558,14 +631,38 @@ function runInPage(ctx) {
           consider(cssRule, layer);
           continue;
         }
+        const kind = (cssRule.constructor && cssRule.constructor.name) || '';
+        if (kind === 'CSSLayerStatementRule') {
+          for (const name of cssRule.nameList || []) layerNamed(layer, String(name));
+          continue;
+        }
+        if (kind === 'CSSImportRule' || cssRule.type === 3) {
+          const name = typeof cssRule.layerName === 'string' ? cssRule.layerName : null;
+          const inner = name === null ? layer : layerNamed(layer, name);
+          let imported = null;
+          try {
+            imported =
+              cssRule.styleSheet && cssConditionApplies(cssRule.styleSheet)
+                ? cssRule.styleSheet.cssRules
+                : null;
+          } catch {
+            found.unreadableSheet = true;
+          }
+          if (imported) walk(imported, depth + 1, inner);
+          continue;
+        }
         let nested;
         try {
           nested = cssRule.cssRules || null;
         } catch {
           nested = null;
         }
-        const isLayer = !!cssRule.constructor && cssRule.constructor.name === 'CSSLayerBlockRule';
-        if (nested) walk(nested, depth + 1, isLayer ? cssRule : layer);
+        if (!nested) continue;
+        walk(
+          nested,
+          depth + 1,
+          kind === 'CSSLayerBlockRule' ? layerNamed(layer, String(cssRule.name || '')) : layer
+        );
       }
     }
 
@@ -579,7 +676,7 @@ function runInPage(ctx) {
           found.unreadableSheet = true; // cross-origin, not inspectable
           continue;
         }
-        if (rules) walk(rules, 0, null);
+        if (rules) walk(rules, 0, NO_LAYER);
       }
     } catch {
       found.broken = true;
@@ -588,22 +685,21 @@ function runInPage(ctx) {
     return found;
   }
 
-  // Whether the style sheets underline el at rest (see rankOf for which
-  // declaration wins): { underlined, resolved, color }, color being the
-  // line's color the winning declaration sets, or null.
+  // Whether the style sheets underline el at rest (see cascadeWins for
+  // which declaration wins): { underlined, resolved, color, layered },
+  // color being the line's color the winning declaration sets, or null, and
+  // layered whether a declaration in a cascade layer matched el.
   function resolveUnderlineFromCssom(el) {
-    const unknown = { underlined: false, resolved: false, color: null };
+    const unknown = { underlined: false, resolved: false, color: null, layered: false };
     const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
     if (!doc || typeof dom.get(el, 'matches') !== 'function') return unknown;
 
     const found = underlineRulesOf(doc);
     if (found.broken) return unknown;
-    let best = null; // { rank, decl, layer }
+    let best = null; // { decl, inline, layer, specificity, order }
     let unparsableSelector = false;
-    // Declarations in layers, which disagree where the order of the layers
-    // decides, which isn't read here.
-    const layered = [];
-    for (const { part, rank, decl, layer } of candidatePartsOf(found, el, 'part')) {
+    let layered = false;
+    for (const { part, decl, layer, specificity, order } of candidatePartsOf(found, el, 'part')) {
       let matched;
       try {
         matched = dom.matches(el, part);
@@ -612,36 +708,54 @@ function runInPage(ctx) {
         continue;
       }
       if (!matched) continue;
-      if (layer) layered.push({ decl, layer });
-      if (!best || rank >= best.rank) best = { rank, decl, layer };
+      if (layer.length) layered = true;
+      const cand = { decl, inline: false, layer, specificity, order };
+      if (!best || cascadeWins(cand, best)) best = cand;
     }
 
     const inline = underlineFromDeclaration(dom.get(el, 'style'));
     if (inline) {
-      const rank = rankOf(inline, 0, false, true);
-      if (!best || rank >= best.rank) best = { rank, decl: inline, layer: null };
+      const cand = { decl: inline, inline: true, layer: [], specificity: 0, order: Infinity };
+      if (!best || cascadeWins(cand, best)) best = cand;
     }
 
     if (best) {
       const decl = best.decl;
-      const layersDisagree =
-        !!best.layer &&
-        layered.some(
-          (o) =>
-            o.layer !== best.layer &&
-            o.decl.important === decl.important &&
-            o.decl.underlined !== decl.underlined
-        );
-      if (layersDisagree || decl.unresolved) return unknown;
-      if (decl.revert) return { underlined: uaDefaultUnderline(el), resolved: true, color: null };
-      return { underlined: decl.underlined, resolved: true, color: decl.color };
+      if (decl.unresolved) return { ...unknown, layered };
+      if (decl.revert)
+        return { underlined: uaDefaultUnderline(el), resolved: true, color: null, layered };
+      return { underlined: decl.underlined, resolved: true, color: decl.color, layered };
     }
 
     // No author declaration reached this element. If a sheet or selector was
     // unreadable, one of them might have, so the answer is unknown; otherwise
     // the browser's style stands: for a link, <u> or <ins>, an underline.
     if (found.unreadableSheet || unparsableSelector) return unknown;
-    return { underlined: uaDefaultUnderline(el), resolved: true, color: null };
+    return { underlined: uaDefaultUnderline(el), resolved: true, color: null, layered: false };
+  }
+
+  // Whether el is underlined at rest, and in which color: { known,
+  // underlined, color }. From its computed style where that can be trusted,
+  // else from the style sheets. jsdom cascades no layered rule, so where a
+  // declaration in a cascade layer matches el, its computed style is not
+  // trusted there: the style sheets say.
+  function restingUnderline(el, cs) {
+    const deco = decorationInfo(cs);
+    let fromCssom = null;
+    const doc = el ? dom.ownerDocument(el) : null;
+    if (!hasLayout() && doc && underlineRulesOf(doc).anyLayered) {
+      fromCssom = resolveUnderlineFromCssom(el);
+      if (!fromCssom.layered) fromCssom = null;
+    }
+    if (!fromCssom && deco.trustworthy)
+      return { known: true, underlined: deco.underlined, color: cs && cs.textDecorationColor };
+    if (!fromCssom) fromCssom = resolveUnderlineFromCssom(el);
+    if (!fromCssom.resolved) return { known: false, underlined: false, color: null };
+    return {
+      known: true,
+      underlined: fromCssom.underlined,
+      color: fromCssom.color || (cs && cs.textDecorationColor)
+    };
   }
 
   // ---- Non-color cues on the link itself ----
@@ -1670,10 +1784,13 @@ function runInPage(ctx) {
     const asks = all.filter((r) => verdict(r) === 'ask');
     const short = fails.length ? fails : asks;
     const pick = short.length ? short[0] : all[0];
-    const detail = {};
-    if (short.length && short.length < all.length) detail.colorScheme = short[0].scheme;
     const checked = canvas.supported.filter((s) => all.some((r) => r.scheme === s));
-    if (checked.length < canvas.supported.length) detail.colorSchemesChecked = checked;
+    // Spread, not assigned: a read-only value a page's script put on
+    // Object.prototype refuses no key (round 12, R12F-6).
+    const detail = {
+      ...(short.length && short.length < all.length ? { colorScheme: short[0].scheme } : {}),
+      ...(checked.length < canvas.supported.length ? { colorSchemesChecked: checked } : {})
+    };
     return {
       differs: !short.length,
       ratio: pick.ratio,
@@ -1919,11 +2036,9 @@ function runInPage(ctx) {
   // cascades no text-decoration, and the color it gives is the text's).
   // null where neither can tell.
   function underlinedAtRest(el, cs, shows) {
-    const deco = decorationInfo(cs);
-    if (deco.trustworthy) return deco.underlined && shows(cs.textDecorationColor);
-    const fromCssom = resolveUnderlineFromCssom(el);
-    if (!fromCssom.resolved) return null;
-    return fromCssom.underlined && shows(fromCssom.color || cs.textDecorationColor);
+    const at = restingUnderline(el, cs);
+    if (!at.known) return null;
+    return at.underlined && shows(at.color);
   }
 
   const notTransparent = (color) => !isTransparentColor(color);
@@ -2019,7 +2134,9 @@ function runInPage(ctx) {
       if (hasBorder(cs, node)) return true;
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
       if (hasBackgroundImage(cs, node) || ownBackground(node, cs)) return true;
-      const underlined = underlinedAtRest(node, cs, notTransparent);
+      // An underline drawn in the color behind it shows nothing, as the
+      // link's own is read (round 12, C12-15).
+      const underlined = underlinedAtRest(node, cs, (color) => !unseen(node, color));
       if (underlined === false || (aroundUnderlined && aroundUnderlined())) return false;
       if (underlined === null) {
         unreadUnderline = true;
@@ -2176,20 +2293,16 @@ function runInPage(ctx) {
       return;
     }
 
-    // An underline the computed style vouches for settles the link before
-    // the costlier marks are looked for (what a ::before or ::after draws).
-    const shown = decorationInfo(linkCs);
+    // An underline the computed style vouches for (or, under jsdom with
+    // layered rules, the style sheets) settles the link before the costlier
+    // marks are looked for (what a ::before or ::after draws).
+    const resting = restingUnderline(el, linkCs);
     let textUnderlined = null;
     const aroundUnderlined = () => {
       if (textUnderlined === null) textUnderlined = surroundingUnderlined(textEl);
       return textUnderlined;
     };
-    if (
-      shown.trustworthy &&
-      shown.underlined &&
-      !unseen(el, linkCs && linkCs.textDecorationColor) &&
-      !aroundUnderlined()
-    ) {
+    if (resting.known && resting.underlined && !unseen(el, resting.color) && !aroundUnderlined()) {
       decidedCount += 1;
       return;
     }
@@ -2214,19 +2327,10 @@ function runInPage(ctx) {
     // on a page whose background cannot be computed (no background set,
     // which strict mode does not assume is white) was left undecided, while
     // a bold one passed. null: this environment cannot tell.
+    // An underline drawn in a transparent color, or in the color behind
+    // the link, shows nothing.
     let underlined = null;
-    const decoration = decorationInfo(linkCs);
-    if (decoration.trustworthy) {
-      // An underline drawn in a transparent color, or in the color behind
-      // the link, shows nothing.
-      underlined = decoration.underlined && !unseen(el, linkCs && linkCs.textDecorationColor);
-    } else {
-      const fromCssom = resolveUnderlineFromCssom(el);
-      if (fromCssom.resolved)
-        underlined =
-          fromCssom.underlined &&
-          !unseen(el, fromCssom.color || (linkCs && linkCs.textDecorationColor));
-    }
+    if (resting.known) underlined = resting.underlined && !unseen(el, resting.color);
     // The surrounding text underlined too: the underline is no cue.
     if (underlined === true && aroundUnderlined()) underlined = false;
     // An underline on the link's content that can't be read may set it apart.
