@@ -93,10 +93,11 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       ['rtcl_case_04', 'cantTell', 'TEXT_CLIPPED_AT_640', 'fail'],
       ['rtcl_case_05', 'cantTell', 'TEXT_CLIPPED_AT_640', 'fail'],
       ['rtcl_case_06', 'cantTell', 'TEXT_CLIPPED_AT_640', null],
+      ['rtcl_case_13', 'cantTell', 'TEXT_CLIPPED_AT_640', 'fail'],
       ['rtcl_case_07', 'cantTell', 'TEXT_TRUNCATED_AT_640', 'fail'],
       ['rtcl_case_08', 'cantTell', 'TEXT_TRUNCATED_AT_640', 'fail']
     ]);
-    const [height, nowrap, inset, , ellipsis, clamp] = check.occurrences;
+    const [height, nowrap, inset, , , ellipsis, clamp] = check.occurrences;
     assert.equal(height.data.details.edge, 'bottom');
     assert.equal(height.data.details.clipCss, 'height: 40px; overflow: hidden');
     assert.equal(height.i18n.summaryKey, 'resizeTextContentLoss_summary_clipped');
@@ -349,6 +350,36 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       page('.box{contain:paint;width:200px;height:30px}', `<div class="box">${LONG}</div>`)
     );
     assert.equal(paint.occurrences[0].data.details.clipCss, 'height: 30px; contain: paint');
+  });
+
+  // Text a box hides entirely is cut off where the box shows its other text
+  // and the text flowed out of it; it is left out where the box shows none
+  // of its text, or where it was placed outside (round 12, U12-1).
+  await t.test('text a box hides wholly while showing other text is asked about', async () => {
+    const one = async (body) => {
+      const check = await scan(page('', body));
+      return [check.outcome, findings(check)];
+    };
+    for (const body of [
+      '<div id="a" style="overflow:hidden;height:24px;width:300px">First line<br>Second line that is wholly hidden</div>',
+      '<div id="a" style="height:20px;overflow:hidden;width:300px"><p style="margin:0">Card title</p><p style="margin:0">Excerpt of the article</p></div>',
+      '<div id="a" style="width:150px;white-space:nowrap;overflow:hidden"><span style="display:inline-block;width:150px">One</span><span style="display:inline-block">Two</span></div>'
+    ]) {
+      assert.deepEqual(
+        await one(body),
+        ['cantTell', [['a', 'cantTell', 'TEXT_CLIPPED_AT_640', 'fail']]],
+        body
+      );
+    }
+    for (const body of [
+      // A collapsed panel shows none of its text.
+      '<div id="a" style="height:0;overflow:hidden"><p>Closed panel</p></div>',
+      // An off-canvas menu and a carousel's next slide were placed outside.
+      '<div id="a" style="position:relative;overflow:hidden;height:40px;width:200px">Shown<p style="position:absolute;left:100%;top:0;margin:0">Off canvas</p></div>',
+      '<div id="a" style="overflow:hidden;width:200px"><div style="display:flex;transform:translateX(0)"><div style="flex:0 0 200px">Slide one</div><div style="flex:0 0 200px">Slide two</div></div></div>'
+    ]) {
+      assert.deepEqual((await one(body))[1], [], body);
+    }
   });
 
   await t.test('in a frame not named as the page, notApplicable', async () => {
