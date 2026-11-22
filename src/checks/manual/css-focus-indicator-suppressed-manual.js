@@ -927,22 +927,6 @@ function runInPage(ctx) {
 
   const CANDIDATE_SELECTOR =
     'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
-  const candidates = helpers.queryAllSmart
-    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
-    : helpers.queryAll(CANDIDATE_SELECTOR);
-
-  // The open shadow roots the candidates are in: their style sheets, and
-  // the sheets they adopt, style the elements in them (and only those).
-  const shadowScopes = [];
-  {
-    const seen = new Set();
-    for (const el of candidates) {
-      const tree = el ? treeOf(el) : null;
-      if (!tree || seen.has(tree) || dom.nodeType(tree) !== 11) continue;
-      seen.add(tree);
-      shadowScopes.push(tree);
-    }
-  }
   // A root's style sheets, then those it adopts. jsdom gives a shadow root
   // no styleSheets list: its <style> elements are read instead.
   const sheetsOf = (root) => {
@@ -974,36 +958,74 @@ function runInPage(ctx) {
 
   let sheetCount = 0;
   let unreadableSheets = 0;
-  try {
-    const scoped = [];
-    for (const sheet of sheetsOf(document)) scoped.push([sheet, null]);
-    for (const root of shadowScopes) for (const sheet of sheetsOf(root)) scoped.push([sheet, root]);
-    for (const [sheet, scope] of scoped) {
-      if (!conditionApplies(sheet)) continue;
-      // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
-      // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
-      // not inspectable.
-      let rules = null;
-      try {
-        rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
-      } catch {
-        unreadableSheets += 1;
-        continue;
+  function readSheets(root, scope) {
+    try {
+      for (const sheet of sheetsOf(root)) {
+        if (!conditionApplies(sheet)) continue;
+        // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
+        // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
+        // not inspectable.
+        let rules = null;
+        try {
+          rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
+        } catch {
+          unreadableSheets += 1;
+          continue;
+        }
+        if (!rules) {
+          unreadableSheets += 1;
+          continue;
+        }
+        sheetCount += 1;
+        currentSheet = sheet;
+        currentScope = scope;
+        walkRules(rules, 0, '');
+        currentSheet = null;
+        currentScope = null;
       }
-      if (!rules) {
-        unreadableSheets += 1;
-        continue;
-      }
-      sheetCount += 1;
-      currentSheet = sheet;
-      currentScope = scope;
-      walkRules(rules, 0, '');
-      currentSheet = null;
-      currentScope = null;
+    } catch {
+      // no-throw: the sheets read so far count
     }
-  } catch {
-    // no-throw: treat as no accessible stylesheets
   }
+  readSheets(document, null);
+
+  // With no removing rule in the document's sheets and no open shadow root
+  // whose sheets could hold one, nothing is checked: the candidates are not
+  // looked for (round 12, R12F-13).
+  if (!suppressors.length) {
+    let hasShadowRoot = false;
+    try {
+      for (const el of dom.querySelectorAll(document, '*')) {
+        if (dom.shadowRoot(el)) {
+          hasShadowRoot = true;
+          break;
+        }
+      }
+    } catch {
+      hasShadowRoot = true;
+    }
+    if (!hasShadowRoot) {
+      return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    }
+  }
+
+  const candidates = helpers.queryAllSmart
+    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
+    : helpers.queryAll(CANDIDATE_SELECTOR);
+
+  // The open shadow roots the candidates are in: their style sheets, and
+  // the sheets they adopt, style the elements in them (and only those).
+  const shadowScopes = [];
+  {
+    const seen = new Set();
+    for (const el of candidates) {
+      const tree = el ? treeOf(el) : null;
+      if (!tree || seen.has(tree) || dom.nodeType(tree) !== 11) continue;
+      seen.add(tree);
+      shadowScopes.push(tree);
+    }
+  }
+  for (const root of shadowScopes) readSheets(root, root);
 
   if (sheetCount === 0 || !suppressors.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
