@@ -568,6 +568,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     'pass_nested_inner_button',
     'pass_ua_checkbox_1', // User Agent Control exception: unstyled native checkbox/radio
     'pass_ua_checkbox_2',
+    'pass_reset_checkbox_1', // the same, under a reset that leaves their size alone
+    'pass_reset_checkbox_2',
     'long_neighbor' // undersized itself (14px high), but its own circle reaches nothing
   ];
 
@@ -631,11 +633,37 @@ test(`${RULE_ID}: a native control the author sized is not sized by the browser`
   assertRule(run(boxes('margin:1px')), RULE_ID, 'pass');
   // A declaration that changes nothing is not counted.
   assertRule(run(boxes('width:auto;transform:none;line-height:normal')), RULE_ID, 'pass');
-  for (const style of ['width:13px;height:13px', 'padding:0', 'min-height:13px', 'zoom:1.01']) {
+  for (const style of ['width:13px;height:13px', 'min-height:13px', 'zoom:1.01']) {
     assertRule(run(boxes(style)), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
   }
-  for (const css of ['input { font-size: 12px }', '[type=checkbox] { max-width: 13px }']) {
-    assertRule(run(boxes('', css)), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assertRule(run(boxes('', '[type=checkbox] { max-width: 13px }')), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+});
+
+// Without a layout, the declarations that can't change the size a checkbox
+// or radio button is drawn at are not read: padding, font-size and
+// line-height, and inherit. Common resets (normalize.css, a universal
+// padding reset, Bootstrap Reboot) leave them sized by the browser (round
+// 12, F12-1).
+test(`${RULE_ID}: a reset that can't change a checkbox's size keeps the exception`, () => {
+  const boxes = (
+    css,
+    type = 'checkbox'
+  ) => `<!doctype html><html><head><style>${css}</style></head><body>
+    <input type="${type}" id="a" aria-label="a" data-rect="100,100,13,13">
+    <input type="${type}" id="b" aria-label="b" data-rect="100,115,13,13">
+  </body></html>`;
+  for (const css of [
+    'button,input,optgroup,select,textarea{font-family:inherit;font-size:100%;line-height:1.15;margin:0}',
+    '*{margin:0;padding:0}',
+    'input{padding:0}',
+    'input{font-size:inherit;line-height:inherit}',
+    'input{width:inherit;max-width:inherit}'
+  ]) {
+    assertRule(run(boxes(css)), RULE_ID, 'pass', { maxOccurrences: 0 });
+    assertRule(run(boxes(css, 'radio')), RULE_ID, 'pass', { maxOccurrences: 0 });
   }
 });
 
