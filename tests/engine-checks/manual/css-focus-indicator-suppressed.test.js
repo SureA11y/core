@@ -623,6 +623,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
     'css-focus-indicator-suppressed-all-scenarios.html'
   );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
+  // Shadow roots, and ::part(), ::slotted() and :host, are not in the
+  // fixture: jsdom builds no shadow root from markup. The tests above attach
+  // them from script.
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 10, maxOccurrences: 10 });
@@ -770,4 +773,86 @@ test(`${RULE_ID}: a class or id is only required outside functional pseudo-class
     rule.occurrences.flatMap((o) => o.data.details.suppressingSelectors),
     ['.inner:focus']
   );
+});
+
+// Rules that reach across a shadow tree's edge remove the outline of the
+// element they style: ::part() from the host's tree, ::slotted() and :host
+// from the shadow root's sheet (round 12, F12-8). Each case was checked in
+// Chromium against the outline a focused element is drawn with.
+test(`${RULE_ID}: ::part(), ::slotted() and :host rules that remove the outline`, () => {
+  const cases = [
+    // [document css, shadow html, host attributes, light html, flagged]
+    ['#h::part(btn):focus{outline:none}', '<button part="btn">Go</button>', '', '', 'button'],
+    ['::part(btn){outline:none}', '<button part="btn">Go</button>', '', '', 'button'],
+    ['#h::part(other):focus{outline:none}', '<button part="btn">Go</button>', '', '', ''],
+    [
+      '#h::part(btn):focus{outline:none;box-shadow:0 0 0 3px blue}',
+      '<button part="btn">Go</button>',
+      '',
+      '',
+      ''
+    ],
+    ['#k::part(btn):focus{outline:none}', '<button part="btn">Go</button>', '', '', ''],
+    [
+      '',
+      '<style>::slotted(button:focus){outline:none}</style><slot></slot>',
+      '',
+      '<button id="t">S</button>',
+      't'
+    ],
+    [
+      '',
+      '<style>::slotted(a:focus){outline:none}</style><slot></slot>',
+      '',
+      '<button id="t">S</button>',
+      ''
+    ],
+    [
+      '',
+      '<style>slot[name=x]::slotted(button:focus){outline:none}</style><slot name="x"></slot><slot></slot>',
+      '',
+      '<button id="t">S</button>',
+      ''
+    ],
+    [
+      '',
+      '<style>:host ::slotted(button:focus){outline:none}</style><slot></slot>',
+      '',
+      '<button id="t">S</button>',
+      't'
+    ],
+    [
+      'button:focus{outline:2px solid red}',
+      '<style>::slotted(button:focus){outline:none}</style><slot></slot>',
+      '',
+      '<button id="t">S</button>',
+      ''
+    ],
+    ['', '<style>:host(:focus){outline:none}</style><span>t</span>', 'tabindex="0"', '', 'h'],
+    ['', '<style>:host{outline:none}</style><span>t</span>', 'tabindex="0"', '', 'h'],
+    ['', '<style>:host(.q:focus){outline:none}</style><span>t</span>', 'tabindex="0"', '', ''],
+    [
+      '#h:focus{outline:2px solid red}',
+      '<style>:host(:focus){outline:none}</style>',
+      'tabindex="0"',
+      '',
+      ''
+    ]
+  ];
+  for (const [css, shadow, attrs, light, flagged] of cases) {
+    const dom = createDom(page(css, `<div id="h" ${attrs}>${light}</div>`));
+    dom.window.document.getElementById('h').attachShadow({ mode: 'open' }).innerHTML = shadow;
+    const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+    const label = `${css} ${shadow}`;
+    if (!flagged) {
+      assertRule(result, RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+      continue;
+    }
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    const html = rule.occurrences[0].html || '';
+    assert.ok(
+      flagged === 'button' ? html.startsWith('<button') : html.includes(`id="${flagged}"`),
+      label
+    );
+  }
 });

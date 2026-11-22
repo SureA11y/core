@@ -230,3 +230,74 @@ test(
     assert.ok(queries > 0);
   }
 );
+
+// ::part(), ::slotted() and :host rules remove the outline of the element
+// they style, as the browser draws it once focused from the keyboard (round
+// 12, F12-8).
+test(`${RULE_ID}: ::part(), ::slotted() and :host rules, in Chromium`, { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const define = (tpl) =>
+    `<script>customElements.define('x-w', class extends HTMLElement { constructor() { super(); this.attachShadow({ mode: 'open' }).innerHTML = ${JSON.stringify(tpl)}; } });</script>`;
+  const part = '<button part="btn">Go</button>';
+  async function run(css, tpl, body, target) {
+    const p = await browser.newPage();
+    try {
+      await p.setContent(
+        `<!doctype html><html lang="en"><head><title>t</title><style>${css}</style>${define(tpl)}</head><body><main><a href="#x">first</a>${body}</main></body></html>`
+      );
+      await addBundle(p);
+      const outcome = await p.evaluate(
+        (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0].outcome,
+        RULE_ID
+      );
+      let outline = null;
+      for (let i = 0; i < 4 && !outline; i++) {
+        await p.keyboard.press('Tab');
+        outline = await p.evaluate((sel) => {
+          const el =
+            sel === 'part'
+              ? document.querySelector('x-w').shadowRoot.querySelector('button')
+              : document.querySelector(sel);
+          let a = document.activeElement;
+          while (a && a.shadowRoot && a.shadowRoot.activeElement) a = a.shadowRoot.activeElement;
+          return a === el ? getComputedStyle(el).outlineStyle : null;
+        }, target);
+      }
+      return [outcome, outline];
+    } finally {
+      await p.close();
+    }
+  }
+  const removed = ['cantTell', 'none'];
+  const kept = ['notApplicable', 'auto'];
+  const slot = '<x-w><button id="t">S</button></x-w>';
+  const host = '<x-w id="t" tabindex="0"></x-w>';
+  assert.deepEqual(
+    await run('x-w::part(btn):focus{outline:none}', part, '<x-w></x-w>', 'part'),
+    removed
+  );
+  assert.deepEqual(await run('::part(btn){outline:none}', part, '<x-w></x-w>', 'part'), removed);
+  assert.deepEqual(
+    await run('x-w::part(other):focus{outline:none}', part, '<x-w></x-w>', 'part'),
+    kept
+  );
+  const shadowCss = (css) => `<style>${css}</style><slot></slot>`;
+  assert.deepEqual(
+    await run('', shadowCss('::slotted(button:focus){outline:none}'), slot, '#t'),
+    removed
+  );
+  assert.deepEqual(await run('', shadowCss('::slotted(a:focus){outline:none}'), slot, '#t'), kept);
+  assert.deepEqual(await run('', shadowCss(':host(:focus){outline:none}'), host, '#t'), removed);
+  assert.deepEqual(await run('', shadowCss(':host(.q:focus){outline:none}'), host, '#t'), kept);
+  // A rule of the host's tree outranks the shadow root's.
+  assert.deepEqual(
+    await run(
+      'x-w:focus{outline:2px solid red}',
+      shadowCss(':host(:focus){outline:none}'),
+      host,
+      '#t'
+    ),
+    ['notApplicable', 'solid']
+  );
+});
