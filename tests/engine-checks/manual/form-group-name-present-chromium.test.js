@@ -37,12 +37,13 @@ test(`${RULE_ID}: the fixture in Chromium`, { skip }, async (t) => {
   }, RULE_ID);
   assert.deepEqual(got, {
     outcome: 'cantTell',
-    ids: ['fgn_case_01', 'fgn_case_02', 'fgn_case_03', 'fgn_case_04'],
+    ids: ['fgn_case_01', 'fgn_case_02', 'fgn_case_03', 'fgn_case_04', 'fgn_case_11'],
     codes: [
       'RADIO_GROUP_NO_NAME',
       'CHECKBOX_GROUP_NO_NAME',
       'RADIO_GROUP_NO_NAME',
-      'RADIO_GROUP_NO_NAME'
+      'RADIO_GROUP_NO_NAME',
+      'RADIO_GROUP_SPLIT'
     ]
   });
   // The groups the rule takes as named are named in Chromium's tree too.
@@ -51,7 +52,7 @@ test(`${RULE_ID}: the fixture in Chromium`, { skip }, async (t) => {
   const named = nodes
     .filter((n) => n.role && ['group', 'radiogroup'].includes(n.role.value))
     .map((n) => (n.name && n.name.value) || '');
-  for (const name of ['Payment', 'Delivery day', 'Newsletters']) {
+  for (const name of ['Payment', 'Delivery day', 'Newsletters', 'Delivery', 'Collection']) {
     assert.ok(named.includes(name), name);
   }
 });

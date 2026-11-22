@@ -253,7 +253,11 @@ const PROCEDURES = {
       'form-group-name-evidence': {
         coveredBy: 'form-labels-associated',
         variants: {
-          'form-group-name-present': ['CHECKBOX_GROUP_NO_NAME', 'RADIO_GROUP_NO_NAME']
+          'form-group-name-present': [
+            'CHECKBOX_GROUP_NO_NAME',
+            'RADIO_GROUP_NO_NAME',
+            'RADIO_GROUP_SPLIT'
+          ]
         }
       },
       'td-has-header': {
