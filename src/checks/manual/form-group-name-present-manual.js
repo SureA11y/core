@@ -45,10 +45,13 @@
  *   seen, nor are options split between two named groups.
  * - The name of a group comes from the accessible name helper, with a
  *   fieldset's first <legend> as a fallback, named from its content as
- *   accname does (an <img alt> in it counts).
+ *   accname does (an <img alt> in it counts); a hidden legend names nothing.
  * - A group contains the options in the flat tree, as the accessibility
  *   tree nests them: options slotted into a shadow <fieldset>, or in a
- *   shadow root inside a light one, are in that fieldset.
+ *   shadow root inside a light one, are in that fieldset. Options the flat
+ *   tree leaves out (a light child no slot takes, a slot's fallback while
+ *   nodes are assigned to it) are not drawn and not counted. What a closed
+ *   shadow root takes can't be read.
  */
 
 const id = 'form-group-name-present';
@@ -105,6 +108,29 @@ function runInPage(ctx) {
     }
   }
 
+  // Whether el is left out of the flat tree, and so not drawn: a light
+  // child of a shadow host that no slot takes, or inside a slot's
+  // fallback content while nodes are assigned to that slot. A closed
+  // shadow root can't be read, so what it takes is not known.
+  function notDrawn(el) {
+    let n = el;
+    for (let i = 0; n && i < 10000; i++) {
+      const p = dom.parentNode(n);
+      if (!p) return false;
+      if (dom.nodeType(p) === 11) {
+        n = dom.host(p);
+        continue;
+      }
+      if (dom.nodeType(p) !== 1) return false;
+      try {
+        if (dom.shadowRoot(p) && !dom.assignedSlot(n)) return true;
+        if (tagOf(p) === 'slot' && dom.assignedNodes(p).length) return true;
+      } catch {}
+      n = p;
+    }
+    return false;
+  }
+
   // The document or shadow root el is in.
   function rootOf(el) {
     let n = el;
@@ -136,6 +162,8 @@ function runInPage(ctx) {
     if (tag === 'fieldset') {
       for (let c = dom.firstElementChild(el); c; c = dom.nextElementSibling(c)) {
         if (tagOf(c) !== 'legend') continue;
+        // A legend out of the accessibility tree (hidden) names nothing.
+        if (!isEligible(c)) return false;
         // The legend's name from its content, as accname computes it: an
         // <img alt> inside it names the group too.
         if (typeof helpers.getNameFromContentInfo === 'function') {
@@ -187,7 +215,7 @@ function runInPage(ctx) {
     const type = trim(dom.getAttribute(el, 'type')).toLowerCase();
     const name = dom.getAttribute(el, 'name');
     if (!name || !trim(name)) continue;
-    if (!isEligible(el)) continue;
+    if (!isEligible(el) || notDrawn(el)) continue;
     const owner = dom.get(el, 'form') || rootOf(el);
     let byOwner = groups.get(owner);
     if (!byOwner) {

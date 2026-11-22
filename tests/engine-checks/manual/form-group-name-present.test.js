@@ -153,3 +153,23 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-group-name-present-all-s
     ['fail', null, 'fail', 'fail']
   );
 });
+
+test(`${RULE_ID}: hidden legends and options the flat tree leaves out (round 11, R11F-11)`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  for (const [
+    label,
+    light,
+    shadow,
+    outcome
+  ] of require('./form-group-name-present-round-11-cases.js')) {
+    const dom = createDom(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${light}</main></body></html>`
+    );
+    if (shadow)
+      dom.window.document.getElementById('h').attachShadow({ mode: 'open' }).innerHTML = shadow;
+    const r = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }).checksResults.find(
+      (c) => c.ruleId === RULE_ID
+    );
+    assert.strictEqual(r.outcome, outcome, label);
+  }
+});
