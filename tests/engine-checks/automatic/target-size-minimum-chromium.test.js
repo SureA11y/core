@@ -362,6 +362,16 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     ]);
   });
 
+  // A size the author set, within what a browser draws: the exception needs
+  // a size the author has not modified (round 12, R12F-11).
+  await t.test('text inputs the author sized are judged as targets', async () => {
+    const inputs = (css) =>
+      `<input aria-label="a" style="${css}"><br><input aria-label="b" style="${css}">`;
+    assert.equal((await scan(inputs('')))[0], 'pass');
+    const [outcome] = await scan(inputs('box-sizing:border-box;height:20px'));
+    assert.equal(outcome, 'fail');
+  });
+
   // CSS zoom is the author's change of size, as a transform is, on the
   // control or an ancestor (round 12, U12-9).
   await t.test('a checkbox shrunk by zoom is not sized by the browser', async () => {
