@@ -362,6 +362,19 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     ]);
   });
 
+  // CSS zoom is the author's change of size, as a transform is, on the
+  // control or an ancestor (round 12, U12-9).
+  await t.test('a checkbox shrunk by zoom is not sized by the browser', async () => {
+    const boxes = (css) =>
+      [1, 2]
+        .map((i) => `<input type="checkbox" aria-label="${i}" style="${css}margin:0">`)
+        .join('');
+    assert.equal((await scan(boxes('')))[0], 'pass');
+    assert.equal((await scan(boxes('transform:scale(.7);')))[0], 'fail');
+    assert.equal((await scan(boxes('zoom:0.7;')))[0], 'fail');
+    assert.equal((await scan(`<div style="zoom:0.7">${boxes('')}</div>`))[0], 'fail');
+  });
+
   await t.test('the hint asks for the larger of the two distances the spacing needs', async () => {
     const p = await browser.newPage({ viewport: { width: 390, height: 900 } });
     try {

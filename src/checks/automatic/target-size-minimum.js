@@ -53,7 +53,8 @@
  *   letter or a digit in it), or user-agent sizing (an unstyled native
  *   form control other than a button: a checkbox, radio, range, color,
  *   file, date or text input, or a drop-down select, with its appearance
- *   not reset to none, and the size browsers draw it at). An undersized target too close to a neighbour fails. Where an
+ *   not reset to none, no CSS zoom on it or an ancestor, and the size
+ *   browsers draw it at). An undersized target too close to a neighbour fails. Where an
  *   exception may apply but cannot be confirmed (two inline links crowding
  *   each other between separators alone, as in "Edit | Delete", or a target
  *   inside an SVG, canvas or image map that may be essential), the result is
@@ -183,7 +184,8 @@
  *   (textAround), since the inline exception may cover it.
  * - User Agent Control: an unstyled native form control (a checkbox,
  *   radio, range, color, file, date or text input, or a drop-down select):
- *   `appearance` not reset to `none`, and its box, and for a control drawn around text its font size, within
+ *   `appearance` not reset to `none`, no CSS zoom on it or an ancestor, and
+ *   its box, and for a control drawn around text its font size, within
  *   what browsers draw it at (see isUserAgentSizedControl). A button is
  *   left out: its size follows the author's text.
  * - Essential/Equivalent: only a narrow, high-confidence subset is asserted
@@ -1908,6 +1910,9 @@ function runInPage(ctx) {
   // - `appearance` (or the legacy `-webkit-appearance`) not reset to `none`,
   //   the near-universal first step of styling a control (a file input,
   //   which Chromium computes as `none` by default, aside);
+  // - no CSS zoom on the control or an ancestor: zoom is the author's
+  //   change of size, as a transform is (a transform shows in the box, and
+  //   so takes it out of the sizes below);
   // - the box within the sizes browsers draw the control at, by type
   //   (Chromium's in brackets, checked in a scan; the ranges leave room
   //   for other browsers, not verified): a checkbox or radio 12 to 16 px
@@ -1935,6 +1940,20 @@ function runInPage(ctx) {
     'week',
     'file'
   ]);
+  const upOf = (a) =>
+    typeof helpers.flatParentElement === 'function'
+      ? helpers.flatParentElement(a)
+      : dom.parentElement(a);
+  function cssZoomOf(el) {
+    const own = Number(dom.get(el, 'currentCSSZoom'));
+    if (Number.isFinite(own) && own > 0) return own;
+    let zoom = 1;
+    for (let a = el, i = 0; a && dom.nodeType(a) === 1 && i < 1000; a = upOf(a), i++) {
+      const z = Number.parseFloat((getStyle(a) || {}).zoom || '1');
+      if (Number.isFinite(z) && z > 0) zoom *= z;
+    }
+    return zoom;
+  }
   function isUserAgentSizedControl(el) {
     try {
       if (!el || dom.nodeType(el) !== 1) return false;
@@ -1975,10 +1994,12 @@ function runInPage(ctx) {
       // the exception no longer applies, evaluate normally.
       if (appearance === 'none' && kind !== 'file') return false;
 
+      // Zoomed by the author, on the control or an ancestor.
+      if (Math.abs(cssZoomOf(el) - 1) > 0.01) return false;
+
       const box = dom.getBoundingClientRect(el);
-      const zoom = Number.parseFloat((cs && cs.zoom) || '1') || 1;
-      const w = box.width / zoom;
-      const h = box.height / zoom;
+      const w = box.width;
+      const h = box.height;
       const within = (v, lo, hi) => v >= lo - EPS && v <= hi + EPS;
       if (kind === 'box') return within(w, 12, 16) && within(h, 12, 16);
       if (kind === 'range') return within(w, 100, 180) && within(h, 12, 26);
