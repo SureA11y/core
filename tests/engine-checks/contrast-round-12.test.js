@@ -18,7 +18,8 @@ const {
 const {
   SIGN_CASES_C12_1,
   SIGN_LINK_CASES_C12_12,
-  SHADOW_DISABLED_CASES_C12_10
+  SHADOW_DISABLED_CASES_C12_10,
+  UNSEEN_TEXT_CASES_C12_11
 } = require('./contrast-round-12-cases.js');
 
 const page = (body, head = '') =>
@@ -227,4 +228,13 @@ test('aria-disabled on a shadow host that is a control exempts the text it draws
     const r = result.checksResults.find((c) => c.ruleId === 'contrast-minimum');
     assert.equal(r.outcome, want, `${attrs} ${shadow}`);
   }
+});
+
+test('symbols beside text that is not seen are judged as symbols (C12-11)', () => {
+  for (const body of UNSEEN_TEXT_CASES_C12_11) {
+    assert.equal(check(page(body), 'symbol-graphic-contrast').outcome, 'cantTell', body);
+  }
+  // Text that is seen makes the element text.
+  const seen = '<span style="color:#ccc">★★★★☆<span>4 of 5</span></span>';
+  assert.equal(check(page(seen), 'symbol-graphic-contrast').outcome, 'notApplicable');
 });

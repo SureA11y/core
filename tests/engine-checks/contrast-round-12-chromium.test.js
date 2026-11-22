@@ -16,7 +16,8 @@ const { addBundle } = require('../helpers/browserBundle');
 const {
   SIGN_CASES_C12_1,
   SIGN_LINK_CASES_C12_12,
-  SHADOW_DISABLED_CASES_C12_10
+  SHADOW_DISABLED_CASES_C12_10,
+  UNSEEN_TEXT_CASES_C12_11
 } = require('./contrast-round-12-cases.js');
 
 const page = (body, head = '') =>
@@ -179,3 +180,12 @@ test(
     }
   }
 );
+
+test('symbols beside text that is not seen are judged as symbols (C12-11)', { skip }, async () => {
+  for (const body of UNSEEN_TEXT_CASES_C12_11) {
+    assert.equal((await run(page(body), 'symbol-graphic-contrast')).outcome, 'cantTell', body);
+  }
+  // Text that is seen makes the element text.
+  const seen = '<span style="color:#ccc">★★★★☆<span>4 of 5</span></span>';
+  assert.equal((await run(page(seen), 'symbol-graphic-contrast')).outcome, 'notApplicable');
+});

@@ -56,3 +56,13 @@ const SHADOW_DISABLED_CASES_C12_10 = [
 ];
 
 module.exports.SHADOW_DISABLED_CASES_C12_10 = SHADOW_DISABLED_CASES_C12_10;
+
+// Stars with text that is not seen: symbol-graphic-contrast asks about
+// them (round 12, C12-11).
+const UNSEEN_TEXT_CASES_C12_11 = [
+  '<span style="color:#ccc">★★★★☆<span style="opacity:0">4 of 5</span></span>',
+  '<span style="color:#ccc">★★★★☆<span style="font-size:0">4 of 5</span></span>',
+  '<span style="color:#ccc">★★★★☆<span style="display:inline-block;text-indent:-9999px;width:0;overflow:hidden">4 of 5</span></span>'
+];
+
+module.exports.UNSEEN_TEXT_CASES_C12_11 = UNSEEN_TEXT_CASES_C12_11;
