@@ -34,6 +34,12 @@ export interface SarifOptions {
    * undecided findings carry the steps of its meta.review.
    */
   packs?: readonly unknown[] | null;
+  /**
+   * true makes an option of the wrong type throw a TypeError. Without it, a
+   * switch given as 'true', 'false', '1', '0', 1 or 0 is read as that, with
+   * a warning (docs/SARIF.md).
+   */
+  strictOptions?: boolean;
 }
 
 /** A SARIF 2.1.0 log, as JSON text. A cross-frame result covers every frame. Throws a TypeError for anything else. */

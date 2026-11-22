@@ -70,8 +70,8 @@ runDomRulesInPage(url, null, {}, { tags: ['wcag2a', 'wcag2aa'] });
 **Level tags do not nest, and this is the easiest thing to get wrong here.** A rule
 carries one level tag per Success Criterion it maps to, and nothing more: a rule
 mapped only to an AA criterion is tagged `wcag2aa` and *not* `wcag2a`. Asking for
-`{ tags: ['wcag2aa'] }` on its own therefore runs the 11 rules mapped to a 2.0 AA
-criterion, not the 105 that make up a 2.0 A + AA target. List every level you mean, or
+`{ tags: ['wcag2aa'] }` on its own therefore runs the 12 rules mapped to a 2.0 AA
+criterion, not the 107 that make up a 2.0 A + AA target. List every level you mean, or
 use `runOnly.wcag`, which does not have the problem. `engineOptions.profile` (`wcag20-aa`, `wcag21-aa`, `wcag22-aa` and the other WCAG versions and levels) does it for you too; see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles).
 
 The same applies across WCAG versions — a criterion introduced in 2.1 or 2.2 carries

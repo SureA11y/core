@@ -118,7 +118,7 @@ test(
 );
 
 test(
-  'SVG text over a circle or ellipse that covers it is measured, as without a layout (C12-7)',
+  'SVG text over a circle or ellipse that covers it is measured from the layout (C12-7)',
   { skip },
   async () => {
     const badge = (shape) =>
@@ -143,7 +143,7 @@ test(
 );
 
 test(
-  'a sign that is a flex or grid item, or beside a float or a positioned box, is a graphic, as under jsdom (C12-1)',
+  'a sign that is a flex or grid item, or beside a float or a positioned box, is a graphic, from its computed display (C12-1)',
   { skip },
   async () => {
     for (const body of SIGN_CASES_C12_1) {

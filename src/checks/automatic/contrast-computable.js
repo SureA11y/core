@@ -13,11 +13,13 @@
  *   Applies to every visible text node in scope that holds a letter or a
  *   digit (ACT afw4f7), or that holds only currency signs (Unicode Sc, such
  *   as € $ £ ¥) or 〒, with punctuation and spaces, where the nearest
- *   visible character beside it on its line, not past a block boundary (a
- *   block, a flex or grid item, a float, an absolutely positioned box), a
- *   line break or a link's text unless that text's nearest character is a
- *   digit, is a letter or a digit: "€" in <span>€</span>45,00, or "$" in
- *   <span>$</span><a href>45</a>, is read with its price, so it is text.
+ *   visible character beside it on its line, not past a block boundary (an
+ *   element whose computed display is not inline: in a browser a flex or
+ *   grid item, a float and an absolutely positioned box too, which jsdom
+ *   computes as inline), a line break or a link's text unless that text's
+ *   nearest character is a digit, is a letter or a digit: "€" in
+ *   <span>€</span>45,00, or "$" in <span>$</span><a href>45</a>, is read
+ *   with its price, so it is text.
  *   Plus the
  *   label of <input
  *   type="button">/[type="submit"]/[type="reset"], which is rendered from
@@ -94,6 +96,9 @@
  *     `opacity`.
  *   - `blockerSelector` (a CSS effect in the way): a selector for the
  *     element that has it, which may be an ancestor of the text.
+ *   - `blockerNoLayout` (`BACKGROUND_OVERLAP` without a layout): true where
+ *     the paint may lie under the text and, with no layout, where it lies
+ *     could not be measured.
  *   - `backgroundFillType` (a background image or gradient): `image`,
  *     `gradient`, `imageAndGradient`, or `unknown`.
  *   - `background`, `backgroundAlpha` (a background that never becomes
@@ -153,19 +158,14 @@
  *     position is when the page is scanned. For SVG text, a shape painted
  *     before it in its <svg> is the paint: with a layout, a solid <rect>,
  *     <circle> or <ellipse> covering all of the text is measured as its
- *     background. Without one (jsdom), so is a <rect>, <circle> or
- *     <ellipse> with an opaque solid fill, drawn (not hidden by display or
- *     visibility, as attributes or in CSS), with no geometry set in CSS and
- *     no transform, opacity, filter, mask or clip on it or its ancestors in
- *     the <svg>, that certainly covers the text's area (its x and y, its
- *     font size, a baseline moved by an attribute or CSS, and its
- *     characters at 1.1em each, 2em for emoji and wide East Asian ones), or
- *     a rect covering the whole <svg>: the last such shape is the
- *     background, and only a shape painted after it is reported here.
- *     Without a layout, a ::before or ::after on the text's element or an
- *     ancestor that the style sheets give content, a position of absolute
- *     or fixed and a background is reported here too: no pseudo-element
- *     style is computed there, and its box can't be placed.
+ *     background. Without a layout (jsdom), no geometry is guessed: SVG
+ *     text after a drawn shape that paints (a fill or a stroke; not hidden
+ *     by display or visibility, as attributes or in CSS) in its <svg>, and
+ *     text whose own element, or the element that gives it its background,
+ *     has a ::before or ::after that the style sheets give content, a
+ *     position of absolute or fixed and a background, and do not hide, are
+ *     asked about here, with `blockerNoLayout` true and a message saying
+ *     that no layout was there to measure where the paint lies.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_NOT_COMPUTABLE` (cantTell): the background behind the text
  *     could not be worked out.
@@ -534,7 +534,9 @@ function runInPage(ctx) {
         summaryKey =
           extraDetails && extraDetails.blockerProperty === 'position'
             ? 'contrastComputable_cantTell_fixedBox'
-            : 'contrastComputable_cantTell_backgroundOverlap';
+            : extraDetails && extraDetails.blockerNoLayout
+              ? 'contrastComputable_cantTell_backgroundOverlapNoLayout'
+              : 'contrastComputable_cantTell_backgroundOverlap';
       else if (rc === 'BACKGROUND_UNPARSABLE')
         summaryKey = 'contrastComputable_cantTell_backgroundUnparsable';
       else if (rc === 'FOREGROUND_UNPARSABLE')
@@ -961,6 +963,7 @@ function runInPage(ctx) {
                     blockerIsAncestor: !!blocker.blockerIsAncestor
                   }
                 : {}),
+              ...(blocker.blockerNoLayout ? { blockerNoLayout: true } : {}),
               backgroundFillType: blocker.backgroundFillType
             },
             leanFor(el, blocker.reasonCode)

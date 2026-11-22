@@ -27,7 +27,9 @@ const {
   timeBudgetOf,
   packsOf,
   omittedOf,
-  describeValue
+  reporterStrict,
+  reporterSwitch,
+  reporterText
 } = require('./scan-result.js');
 const { esc, jsonForScript } = require('./html-text.js');
 
@@ -1107,7 +1109,12 @@ function readableResult(result) {
 }
 
 function renderHtmlReport(input, given) {
-  const options = reporterOptions('renderHtmlReport', given, ['title', 'packs', 'manualChecks']);
+  const options = reporterOptions('renderHtmlReport', given, [
+    'title',
+    'packs',
+    'manualChecks',
+    'strictOptions'
+  ]);
   // A cross-frame result: the page is the top frame's report, and its child
   // frames follow in a section of their own.
   const frames = framesOf(input, 'renderHtmlReport').map((f) =>
@@ -1158,14 +1165,15 @@ function renderHtmlReport(input, given) {
   const OUTCOME_INFO = ui.outcomeInfo;
   // What the scan leaves to a person, in Node, unless asked not to.
   // One part per standard and version a profile of the scan judged by.
-  // manualChecks is true or false, as the reporters' other switches are:
-  // 'false', 'no' or 0 showed the section without a word.
-  const manualChecks = options ? options.manualChecks : undefined;
-  if (manualChecks != null && typeof manualChecks !== 'boolean') {
-    throw new TypeError(
-      `renderHtmlReport: manualChecks must be true or false, not ${describeValue(manualChecks)}`
-    );
-  }
+  // manualChecks is true or false, read as the reporters' other switches
+  // are.
+  const strict = reporterStrict(options);
+  const manualChecks = reporterSwitch(
+    'renderHtmlReport',
+    'manualChecks',
+    options ? options.manualChecks : undefined,
+    strict
+  );
   const lefts =
     manualChecks === false
       ? []
@@ -1188,14 +1196,14 @@ function renderHtmlReport(input, given) {
   } catch {
     generatedAtLabel = when.toLocaleString('en-US', dateFormat);
   }
-  // title is a string; anything else but null was written as it converted,
-  // and an object with no prototype threw a bare TypeError (round 12, A12-9).
-  const givenTitle = options ? options.title : undefined;
-  if (givenTitle != null && typeof givenTitle !== 'string') {
-    throw new TypeError(
-      `renderHtmlReport: title must be a string, not ${describeValue(givenTitle)}`
-    );
-  }
+  // title is a string; a number is written as text, with a warning, as 1.17
+  // wrote it.
+  const givenTitle = reporterText(
+    'renderHtmlReport',
+    'title',
+    options ? options.title : undefined,
+    strict
+  );
   const title = givenTitle || ui.tr('report_title_default');
 
   const defaultOnList = OUTCOME_ORDER.filter((c) => OUTCOME_INFO[c].defaultOn);

@@ -167,7 +167,7 @@ function nextFrameRpcRequestId(win) {
 
 /**
  * Pings a target frame's window; resolves true if a cooperating surea11y
- * responder answers within pingWaitTime (default 500ms), false otherwise.
+ * responder answers within pingWaitTime (default 2000 ms), false otherwise.
  * Never rejects -- "not reachable" is a normal, expected outcome (most
  * iframes on the web have no surea11y loaded at all), not an error.
  */
@@ -175,7 +175,7 @@ function pingFrame(win, targetWindow, pingWaitTime) {
   installFrameRpcListener(win, FRAME_RPC_CHANNEL);
   const registry = getFrameRpcRegistry(win);
   const requestId = nextFrameRpcRequestId(win);
-  const waitMs = typeof pingWaitTime === 'number' ? pingWaitTime : 500;
+  const waitMs = typeof pingWaitTime === 'number' ? pingWaitTime : 2000;
 
   return new Promise(function (resolve) {
     let settled = false;

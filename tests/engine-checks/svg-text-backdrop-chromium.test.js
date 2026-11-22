@@ -88,7 +88,7 @@ const CASES = [
     15.46
   ],
   [
-    // Measured since round 12 (C12-7), as without a layout.
+    // Measured since round 12 (C12-7).
     'a circle covering the text',
     svg(`<circle cx="60" cy="20" r="60" fill="#000"/>${LABEL}`),
     'pass',
@@ -173,11 +173,11 @@ test('SVG text against the SVG shapes behind it, in Chromium', { skip }, async (
   }
 });
 
-// The shapes jsdom now measures without a layout (round 11, D11) are
-// measured the same way in Chromium, which has one: the same outcome and
-// background.
+// Shapes that cover the text are measured in Chromium, which has a layout.
+// jsdom has none and doesn't guess one: it asks about the same text, so
+// contrast-minimum leaves it to contrast-computable.
 test(
-  'SVG text over a shape that certainly covers it: Chromium agrees with jsdom (round 11, D11)',
+  'SVG text over a shape that covers it: measured in Chromium, asked about without a layout',
   { skip },
   async (t) => {
     const { runa11yCoreOnHtml } = require('../helpers/runa11yCoreOnHtml');
@@ -207,7 +207,7 @@ test(
           )
         );
         assert.deepEqual(chrome, ['fail', '#000000'], inner);
-        assert.deepEqual(jsdom, chrome, inner);
+        assert.deepEqual(jsdom, ['notApplicable', null], inner);
       } finally {
         await page.close();
       }

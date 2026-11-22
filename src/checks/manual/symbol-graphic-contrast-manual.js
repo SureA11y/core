@@ -25,11 +25,12 @@
  *     letter-free text is the only text they leave out (ACT afw4f7), so the
  *     two never judge the same text;
  *   - a currency sign (Unicode Sc, such as € $ £ ¥) or 〒 whose nearest
- *     visible character on its line, not past a block boundary (a block,
- *     a flex or grid item, a float, an absolutely positioned box), a line
- *     break or a link's text (unless its nearest character is a digit, a
- *     linked amount), is a letter or a digit ("€" in
- *     <span>€</span>45,00): it is read with that text, and
+ *     visible character on its line, not past a block boundary (an
+ *     element whose computed display is not inline: in a browser a flex or
+ *     grid item, a float and an absolutely positioned box too, which jsdom
+ *     computes as inline), a line break or a link's text (unless its
+ *     nearest character is a digit, a linked amount), is a letter or a
+ *     digit ("€" in <span>€</span>45,00): it is read with that text, and
  *     contrast-minimum judges it as text, at 4.5:1 or 3:1 if large. A
  *     separator between links, such as a breadcrumb's ">", stays here;
  *   - emoji drawn in their own colours, and text that is only separators

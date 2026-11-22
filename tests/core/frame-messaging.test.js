@@ -165,7 +165,7 @@ test('pingFrame resolves false when postMessage to the frame throws', async () =
   assert.strictEqual(getFrameRpcRegistry(parentWin).pending.size, 0);
 });
 
-test('pingFrame defaults to a 500ms wait when none is given', async () => {
+test('pingFrame answers with its default wait when none is given', async () => {
   const parentWin = makeWindow();
   const childWin = makeWindow();
   const { childHandle } = connect(parentWin, childWin);
@@ -173,6 +173,18 @@ test('pingFrame defaults to a 500ms wait when none is given', async () => {
   installFrameRpcListener(childWin, FRAME_RPC_CHANNEL);
 
   assert.strictEqual(await pingFrame(parentWin, childHandle), true);
+});
+
+test('pingFrame waits 2 seconds by default for a frame that does not answer', async () => {
+  // A busy page can delay a cooperating frame's answer, and a frame that
+  // misses the wait is skipped, so the default leaves room for that.
+  const parentWin = makeWindow();
+  const childWin = makeWindow();
+  const { childHandle } = connect(parentWin, childWin);
+  const t0 = Date.now();
+  assert.strictEqual(await pingFrame(parentWin, childHandle), false);
+  const ms = Date.now() - t0;
+  assert.ok(ms >= 1900, `gave up after ${ms} ms`);
 });
 
 test('a late second pong for an already-settled ping is ignored', async () => {

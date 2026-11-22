@@ -3,12 +3,9 @@
 // window.a11ycore).
 
 import type {
-  EngineOptions,
-  StrictEngineOptions,
   ScanResult,
   CompactScanResult,
-  ScanResultFor,
-  CheckedEngineOptions,
+  AnyEngineOptions,
   runa11yCoreInPage as RunInPage,
   waitForPageReady as WaitForPageReady,
   preloadStyleSheets as PreloadStyleSheets,
@@ -41,12 +38,12 @@ declare namespace a11ycore {
    * runa11yCoreInPage, after fetching the style sheets the page can't read
    * (preloadStyleSheets) and adding them to engineOptions.styleSheetTexts.
    */
-  function runa11yCoreInPageAsync<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
+  function runa11yCoreInPageAsync(
     pageUrl?: Parameters<typeof RunInPage>[0],
     contextSelector?: Parameters<typeof RunInPage>[1],
-    engineOptions?: CheckedEngineOptions<T> | null,
+    engineOptions?: AnyEngineOptions | null,
     runOnly?: Parameters<typeof RunInPage>[3]
-  ): Promise<ScanResultFor<T>>;
+  ): Promise<ScanResult>;
 
   /** The engine's version, as published. */
   const version: string;
@@ -75,7 +72,7 @@ declare namespace a11ycore {
    * Rejects options that aren't an object, or that put the selection
    * outside runOnly.
    */
-  function run<T extends RunOptions = RunOptions>(options?: T): Promise<ScanResultFor<T>>;
+  function run(options?: RunOptions): Promise<ScanResult>;
 
   /**
    * One row of table(): an occurrence, a rule the scan's time budget left

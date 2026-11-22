@@ -65,7 +65,9 @@ const {
   timeBudgetOf,
   omittedOf,
   describeValue,
-  lowerOption
+  lowerOption,
+  reporterStrict,
+  reporterSwitch
 } = require('./scan-result.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -572,12 +574,15 @@ const JUNIT_OPTIONS = [
   'includeNotApplicable',
   'baselineEntries',
   'packs',
-  'name'
+  'name',
+  'strictOptions'
 ];
 
 function renderJunitReport(result, given) {
   const options = reporterOptions('renderJunitReport', given, JUNIT_OPTIONS);
   let frames = framesOf(result, 'renderJunitReport');
+  const strict = reporterStrict(options);
+  const onOff = (key) => reporterSwitch('renderJunitReport', key, options[key], strict);
   // cantTellAs is 'skipped' (the default) or 'failure', in any case. Another
   // value is a mistake that would quietly not gate, so it throws.
   const cantTellAs =
@@ -603,29 +608,13 @@ function renderJunitReport(result, given) {
   // leanFailWcagOnly: true gates only on the leans of rules mapped to a WCAG
   // criterion, not on a best-practice rule's, whose stated facts lean fail
   // without condition (docs/LEANS.md).
-  const leanFailWcagOnly = options.leanFailWcagOnly;
-  if (leanFailWcagOnly != null && typeof leanFailWcagOnly !== 'boolean') {
-    throw new TypeError(
-      `renderJunitReport: leanFailWcagOnly must be true or false, not ${describeValue(leanFailWcagOnly)}`
-    );
-  }
+  const leanFailWcagOnly = onOff('leanFailWcagOnly');
   // includeNotApplicable: true adds the notApplicable rules as skipped
-  // tests. Checked as the other switches are: 'true' or 1 read as off
-  // without a word.
-  const includeNotApplicable = options.includeNotApplicable;
-  if (includeNotApplicable != null && typeof includeNotApplicable !== 'boolean') {
-    throw new TypeError(
-      `renderJunitReport: includeNotApplicable must be true or false, not ${describeValue(includeNotApplicable)}`
-    );
-  }
+  // tests.
+  const includeNotApplicable = onOff('includeNotApplicable');
   // allowProfilesNotRun: true accepts a scan of several profiles that ran
   // fewer than it asked for; by default each profile not run is an error.
-  const allowProfilesNotRun = options.allowProfilesNotRun;
-  if (allowProfilesNotRun != null && typeof allowProfilesNotRun !== 'boolean') {
-    throw new TypeError(
-      `renderJunitReport: allowProfilesNotRun must be true or false, not ${describeValue(allowProfilesNotRun)}`
-    );
-  }
+  const allowProfilesNotRun = onOff('allowProfilesNotRun');
   const opts = {
     cantTellAs,
     leanFailAs,

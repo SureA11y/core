@@ -231,7 +231,21 @@ test('SARIF and JUnit treat a profile asked for and not run as an error, unless 
     renderJunitReport(r, { allowProfilesNotRun: true }),
     /<skipped message="Not run: unknown-profile"\/>/
   );
-  assert.throws(() => renderJunitReport(r, { allowProfilesNotRun: 'yes' }), TypeError);
+  // A value it can't read as on or off is ignored with a warning; a BigInt
+  // throws.
+  {
+    const warn = console.warn;
+    console.warn = () => {};
+    try {
+      assert.match(
+        renderJunitReport(r, { allowProfilesNotRun: 'yes' }),
+        /<testsuite name="Profiles" tests="1" failures="0" errors="1"/
+      );
+    } finally {
+      console.warn = warn;
+    }
+  }
+  assert.throws(() => renderJunitReport(r, { allowProfilesNotRun: 1n }), TypeError);
   // A scan of every profile it asked for is no error.
   const ok = JSON.parse(renderSarifReport(scan(BOTH))).runs[0];
   assert.ok(!ok.invocations || ok.invocations[0].executionSuccessful === true);

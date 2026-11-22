@@ -76,3 +76,15 @@ test('a long role token is not measured against every role', () => {
   assert.equal(r.checksResults[0].outcome, 'cantTell');
   assert.ok(ms < 5000, `took ${ms} ms`);
 });
+
+test('duplicate-id-aria finds the copies of a very long id quickly', () => {
+  // The copies of a duplicated id were found through a selector built from
+  // the id, and a selector engine can take time growing with the square of
+  // its length: a 200,000-character id took minutes.
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><div id="${BIG}">a</div><div id="${BIG}">b</div><span aria-labelledby="${BIG}">c</span></main></body></html>`;
+  const t0 = Date.now();
+  const r = runa11yCoreOnHtml(html, { runOnly: ['duplicate-id-aria'] });
+  const ms = Date.now() - t0;
+  assert.equal(r.checksResults[0].occurrences.length > 0, true);
+  assert.ok(ms < 20000, `took ${ms} ms`);
+});

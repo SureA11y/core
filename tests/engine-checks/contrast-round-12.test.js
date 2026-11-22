@@ -3,7 +3,9 @@
 /**
  * Text contrast: what the twelfth stress test found (C12-n), under jsdom.
  * The same cases run in Chromium in contrast-round-12-chromium.test.js,
- * where they apply, and the two agree.
+ * where they apply, and the two agree, except where jsdom, which has no
+ * layout, asks or reads boxes from the markup alone (SVG text over a shape,
+ * a ::before that may lie under text, a sign in a flex or grid item).
  */
 
 const test = require('node:test');
@@ -71,85 +73,51 @@ test('an SVG shape its display or visibility hides is no background, without a l
       rect
     );
   }
-  // Drawn, the rect is measured against.
-  assert.equal(
-    check(svgPage('<rect width="300" height="100" fill="#000"/>' + label), 'contrast-minimum')
-      .outcome,
-    'pass'
-  );
-});
-
-test('a baseline set in CSS keeps SVG text asked about, without a layout (C12-5)', () => {
-  const svg = (head) =>
-    svgPage(
-      '<rect width="300" height="35" fill="#000"/><text x="10" y="25" font-size="20" fill="#fff">Sales<tspan>!</tspan></text>',
-      head
-    );
-  for (const head of [
-    '<style>text{dominant-baseline:hanging}</style>',
-    '<style>svg{dominant-baseline:hanging}</style>',
-    '<style>tspan{alignment-baseline:hanging}</style>',
-    '<style>tspan{baseline-shift:-10px}</style>'
-  ]) {
-    const r = check(svg(head), 'contrast-computable');
-    assert.equal(r.outcome, 'cantTell', head);
-    assert.equal(r.occurrences[0].data.details.reasonCode, 'BACKGROUND_OVERLAP', head);
-  }
-  // Text clear inside the rect on its usual baseline is measured.
-  const tall = svgPage(
-    '<rect width="300" height="60" fill="#000"/><text x="10" y="30" font-size="20" fill="#fff">Sales</text>'
-  );
-  assert.equal(check(tall, 'contrast-computable').outcome, 'pass');
-});
-
-test('SVG geometry set in CSS keeps text over the shape asked about, without a layout (C12-6)', () => {
-  const label = '<text x="100" y="50" fill="#fff">Sales</text>';
-  for (const [head, shape] of [
-    ['<style>.bg{width:20px}</style>', '<rect class="bg" width="300" height="100" fill="#000"/>'],
-    ['<style>rect{x:200px}</style>', '<rect width="300" height="100" fill="#000"/>'],
-    ['<style>circle{r:5px}</style>', '<circle cx="120" cy="45" r="100" fill="#000"/>'],
-    ['<style>circle{cx:0}</style>', '<circle cx="120" cy="45" r="100" fill="#000"/>']
-  ]) {
-    const r = check(svgPage(shape + label, head), 'contrast-computable');
-    assert.equal(r.outcome, 'cantTell', head);
-    assert.equal(r.occurrences[0].data.details.reasonCode, 'BACKGROUND_OVERLAP', head);
-  }
-  // Geometry from attributes alone is read.
-  const plain = check(
-    svgPage(
-      '<rect width="300" height="100" fill="#000"/>' + label,
-      '<style>rect{stroke:none}</style>'
-    ),
+  // Drawn, the rect may lie under the text, and without a layout that
+  // can't be measured: the text is asked about.
+  const drawn = check(
+    svgPage('<rect width="300" height="100" fill="#000"/>' + label),
     'contrast-computable'
   );
-  assert.equal(plain.outcome, 'pass');
+  assert.equal(drawn.outcome, 'cantTell');
+  assert.equal(drawn.occurrences[0].data.details.reasonCode, 'BACKGROUND_OVERLAP');
+  assert.equal(drawn.occurrences[0].data.details.blockerNoLayout, true);
 });
 
-test('the width SVG text may take is a real upper bound, without a layout (C12-8)', () => {
-  const bar = (w, label) =>
-    svgPage(
-      `<rect width="${w}" height="40" fill="#000"/><text x="4" y="27" font-size="16" fill="#fff">${label}</text>`
+// Without a layout, no SVG text over a drawn shape is measured, whatever
+// its geometry: the text is asked about, and Chromium measures it.
+test('SVG text over a drawn shape is asked about, without a layout', () => {
+  for (const inner of [
+    '<rect width="300" height="60" fill="#000"/><text x="10" y="30" font-size="20" fill="#fff">Sales</text>',
+    '<rect width="300" height="100" fill="#000"/><text x="100" y="50" fill="#fff">Sales</text>',
+    '<circle cx="120" cy="45" r="100" fill="#000"/><text x="100" y="50" fill="#fff">Sales</text>',
+    '<rect width="190" height="40" fill="#000"/><text x="4" y="27" font-size="16" fill="#fff">MMMMMMMMMM</text>'
+  ]) {
+    const r = check(svgPage(inner), 'contrast-computable');
+    assert.equal(r.outcome, 'cantTell', inner);
+    assert.equal(r.occurrences[0].data.details.reasonCode, 'BACKGROUND_OVERLAP', inner);
+    assert.equal(
+      r.occurrences[0].i18n.summaryKey,
+      'contrastComputable_cantTell_backgroundOverlapNoLayout',
+      inner
     );
-  const outcome = (html) => check(html, 'contrast-computable').outcome;
-  // Fits by a clear margin: measured.
-  assert.equal(outcome(bar(130, 'Sales')), 'pass');
-  // 10 × 16px is 160px, and some glyphs are wider than 1em: asked about at 170px.
-  assert.equal(outcome(bar(170, 'MMMMMMMMMM')), 'cantTell');
-  assert.equal(outcome(bar(190, 'MMMMMMMMMM')), 'pass');
-  // Emoji and wide East Asian characters take up to 2em.
-  assert.equal(outcome(bar(40, '😀A')), 'cantTell');
-  assert.equal(outcome(bar(60, '売上')), 'cantTell');
-  assert.equal(outcome(bar(72, '売上')), 'pass');
+  }
 });
 
-test('a sign that is a flex or grid item, or beside a float or a positioned box, is a graphic, as in Chromium (C12-1)', () => {
+// Without a layout, a flex or grid item, a float and a positioned box are
+// not taken as block boundaries: jsdom doesn't blockify their display, and
+// the box structure is not guessed. A sign there is read with the digits
+// beside it, as text; Chromium, which computes their display as block,
+// keeps it a graphic (docs/LIMITATIONS.md).
+test('a sign that is a flex or grid item, or beside a float or a positioned box, is read with its text, without a layout (C12-1)', () => {
   for (const body of SIGN_CASES_C12_1) {
-    assert.equal(check(page(body), 'contrast-minimum').outcome, 'pass', body);
-    assert.equal(check(page(body), 'symbol-graphic-contrast').outcome, 'cantTell', body);
+    assert.equal(check(page(body), 'contrast-minimum').outcome, 'fail', body);
+    assert.equal(check(page(body), 'symbol-graphic-contrast').outcome, 'notApplicable', body);
   }
-  // In one inline run, the sign is text.
-  const inline = '<p style="color:#000"><span style="color:#aaa">$</span><span>45.00</span></p>';
-  assert.equal(check(page(inline), 'contrast-minimum').outcome, 'fail');
+  // Across a block element, the sign is a graphic.
+  const block = '<div style="color:#000"><div style="color:#aaa">$</div><div>45.00</div></div>';
+  assert.equal(check(page(block), 'contrast-minimum').outcome, 'pass');
+  assert.equal(check(page(block), 'symbol-graphic-contrast').outcome, 'cantTell');
 });
 
 test('a sign beside a link whose nearest character is a digit is text (C12-12)', () => {
@@ -255,9 +223,13 @@ test('text over a positioned ::before that paints is asked about, without a layo
   const r = check(page('<div class="h">Hello world</div>', overlay), 'contrast-computable');
   assert.equal(r.outcome, 'cantTell');
   assert.equal(r.occurrences[0].data.details.reasonCode, 'BACKGROUND_OVERLAP');
-  // Text inside the host too.
+  assert.equal(r.occurrences[0].data.details.blockerNoLayout, true);
+  // Text inside the host, where the host gives it its background.
   const inner = check(
-    page('<div class="h"><p>Hello <b>world</b></p></div>', overlay),
+    page(
+      '<div class="h"><p>Hello <b>world</b></p></div>',
+      overlay.replace('.h{', '.h{background:#fff;')
+    ),
     'contrast-computable'
   );
   assert.equal(inner.outcome, 'cantTell');
@@ -275,19 +247,17 @@ test('text over a positioned ::before that paints is asked about, without a layo
   }
 });
 
-// A ::before that is not drawn (display: none, visibility: hidden), or one
-// too small or too far off to lie under the text (a 4px corner badge, a box
-// moved off its host), is no background: the text is measured, and light
-// grey on white fails. One that covers its host is still asked about
-// (round 12, F12-2).
-test('a hidden, small or moved-off ::before leaves the text measured, without a layout (F12-2)', () => {
+// A ::before that is not drawn (display: none, visibility: hidden) is no
+// background: the text is measured, and light grey on white fails. Its size
+// and offsets are not read: where it lies needs a layout, so one that is
+// drawn is asked about, a small corner badge too (round 12, F12-2). Only the
+// text's own element and the one that gives it its background count: a
+// badge on another ancestor between them doesn't (docs/LIMITATIONS.md).
+test('a hidden ::before leaves the text measured, a drawn one is asked about, without a layout (F12-2)', () => {
   const base = '.h{position:relative;color:#eee}';
   for (const pseudo of [
     'content:"";display:none;position:absolute;inset:0;background:#000;z-index:-1',
-    'content:"";visibility:hidden;position:absolute;inset:0;background:#000;z-index:-1',
-    'content:"";position:absolute;top:0;right:0;width:4px;height:4px;background:#000',
-    'content:"";position:absolute;top:100%;left:0;width:100%;height:20px;background:#000',
-    'content:"";position:absolute;left:-9999px;top:0;width:200px;height:40px;background:#000'
+    'content:"";visibility:hidden;position:absolute;inset:0;background:#000;z-index:-1'
   ]) {
     const css = `<style>${base}.h::before{${pseudo}}</style>`;
     const body = '<div class="h">Light on white</div>';
@@ -296,14 +266,19 @@ test('a hidden, small or moved-off ::before leaves the text measured, without a 
   }
   for (const pseudo of [
     'content:"";position:absolute;top:0;left:0;right:0;bottom:0;background:#000;z-index:-1',
-    'content:"";position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:-1',
-    'content:"";position:absolute;top:0;left:0;width:300px;height:40px;background:#000;z-index:-1'
+    'content:"";position:absolute;top:0;right:0;width:4px;height:4px;background:#000',
+    'content:"";position:absolute;top:100%;left:0;width:100%;height:20px;background:#000'
   ]) {
     const css = `<style>${base}.h::before{${pseudo}}</style>`;
     const r = check(page('<div class="h">Light on white</div>', css), 'contrast-computable');
     assert.equal(r.outcome, 'cantTell', pseudo);
     assert.equal(r.occurrences[0].data.details.reasonCode, 'BACKGROUND_OVERLAP', pseudo);
   }
+  // A badge on an ancestor that gives the text no background.
+  const badge =
+    '<style>.card{position:relative}.card::after{content:"";position:absolute;top:0;right:0;width:8px;height:8px;background:#c00}p{color:#eee}</style>';
+  const r = check(page('<div class="card"><p>Light on white</p></div>', badge), 'contrast-minimum');
+  assert.equal(r.outcome, 'fail');
 });
 
 // Text the flat tree leaves out is not rendered, so not measured: a light

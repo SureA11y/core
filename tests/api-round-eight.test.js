@@ -191,11 +191,21 @@ test('reporter switches are true or false, as the others are (PK-8)', () => {
   const { renderJunitReport } = require('../src/junit.js');
   const { renderHtmlReport } = require('../src/report.js');
   const r = runa11yCoreOnHtml(HTML, { runOnly: ['img-alt-present', 'button-name-present'] });
+  // Read as the engine reads its own switches, with a warning, and refused
+  // under strictOptions (tests/reporter-option-values.test.js).
   for (const v of ['true', 1, 'yes']) {
-    assert.throws(() => renderJunitReport(r, { includeNotApplicable: v }), TypeError, String(v));
+    assert.throws(
+      () => renderJunitReport(r, { includeNotApplicable: v, strictOptions: true }),
+      TypeError,
+      String(v)
+    );
   }
   for (const v of ['false', 'no', 0]) {
-    assert.throws(() => renderHtmlReport(r, { manualChecks: v }), TypeError, String(v));
+    assert.throws(
+      () => renderHtmlReport(r, { manualChecks: v, strictOptions: true }),
+      TypeError,
+      String(v)
+    );
   }
   renderJunitReport(r, { includeNotApplicable: true });
   renderHtmlReport(r, { manualChecks: false });

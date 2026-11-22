@@ -189,17 +189,25 @@ test('a value on Object.prototype in Chromium', { skip }, async (t) => {
   const cleanNames = await withPage('', (page) => page.evaluate(brief), F12_PAGE);
   assert.ok(cleanNames.some(([id, outcome]) => id === 'contrast-minimum' && outcome === 'fail'));
   await t.test('each name the final review found changes no scan (F12-4, F12-5)', async () => {
+    const cases = [];
     for (const key of F12_NAMES) {
-      for (const [form, script] of [
-        ['plain', `Object.prototype[${JSON.stringify(key)}] = true;`],
-        [
-          'read-only',
-          `Object.defineProperty(Object.prototype, ${JSON.stringify(key)}, { value: undefined });`
-        ]
-      ]) {
+      cases.push([key, 'plain', `Object.prototype[${JSON.stringify(key)}] = true;`]);
+      cases.push([
+        key,
+        'read-only',
+        `Object.defineProperty(Object.prototype, ${JSON.stringify(key)}, { value: undefined });`
+      ]);
+    }
+    // Four pages at a time: each case is its own page, so the order they
+    // finish in changes nothing but the time the test takes.
+    let next = 0;
+    const worker = async () => {
+      while (next < cases.length) {
+        const [key, form, script] = cases[next++];
         const got = await withPage(script, (page) => page.evaluate(brief), F12_PAGE);
         assert.deepEqual(got, cleanNames, `${key} (${form})`);
       }
-    }
+    };
+    await Promise.all([worker(), worker(), worker(), worker()]);
   });
 });

@@ -227,8 +227,23 @@ test('JUnit: a best-practice rule leaning fail gates under leanFailAs, and not w
   assert.doesNotMatch(wcagOnly, /type="leanFail"/);
   assert.match(wcagOnly, /name="heading-order" time="0">\n\s+<skipped/);
 
+  // A value it can't read as on or off is ignored with a warning, as the
+  // engine reads its options; only a BigInt or an object throws.
+  const warn = console.warn;
+  const warnings = [];
+  console.warn = (m) => warnings.push(String(m));
+  try {
+    const ignored = renderJunitReport(result, { leanFailAs: 'failure', leanFailWcagOnly: 'yes' });
+    assert.match(ignored, /type="leanFail"/);
+  } finally {
+    console.warn = warn;
+  }
+  assert.ok(
+    warnings.some((w) => /leanFailWcagOnly/.test(w)),
+    warnings.join('\n')
+  );
   assert.throws(
-    () => renderJunitReport(result, { leanFailAs: 'failure', leanFailWcagOnly: 'yes' }),
+    () => renderJunitReport(result, { leanFailAs: 'failure', leanFailWcagOnly: 1n }),
     TypeError
   );
 });
@@ -277,5 +292,17 @@ test('SARIF: leanFailWcagOnly and lean baseline entries keep a finding that lean
   assert.equal(levelOf(known, th), 'warning');
   assert.equal(levelOf(known, h3), 'error');
 
-  assert.throws(() => renderSarifReport(result, { leanFailWcagOnly: 1 }), TypeError);
+  // 1 reads as on, with a warning, as the engine reads its options; a
+  // BigInt still throws.
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    assert.deepEqual(
+      JSON.parse(renderSarifReport(result, { leanFailWcagOnly: 1 })),
+      JSON.parse(renderSarifReport(result, { leanFailWcagOnly: true }))
+    );
+  } finally {
+    console.warn = warn;
+  }
+  assert.throws(() => renderSarifReport(result, { leanFailWcagOnly: 1n }), TypeError);
 });

@@ -50,7 +50,9 @@ const {
   packsOf,
   omittedOf,
   describeValue,
-  lowerOption
+  lowerOption,
+  reporterStrict,
+  reporterSwitch
 } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
@@ -330,7 +332,8 @@ const SARIF_OPTIONS = [
   'leanFailAs',
   'leanFailWcagOnly',
   'allowProfilesNotRun',
-  'packs'
+  'packs',
+  'strictOptions'
 ];
 
 function renderSarifReport(result, given) {
@@ -359,21 +362,22 @@ function renderSarifReport(result, given) {
   // leanFailWcagOnly: true raises only the leans of rules mapped to a WCAG
   // criterion, not a best-practice rule's, whose stated facts lean fail
   // without condition (docs/LEANS.md).
-  const { leanFailWcagOnly } = options;
-  if (leanFailWcagOnly != null && typeof leanFailWcagOnly !== 'boolean') {
-    throw new TypeError(
-      `renderSarifReport: leanFailWcagOnly must be true or false, not ${describeValue(leanFailWcagOnly)}`
-    );
-  }
+  const strict = reporterStrict(options);
+  const leanFailWcagOnly = reporterSwitch(
+    'renderSarifReport',
+    'leanFailWcagOnly',
+    options.leanFailWcagOnly,
+    strict
+  );
   // allowProfilesNotRun: true accepts a scan of several profiles that ran
   // fewer than it asked for. By default each profile not run is an error,
   // and the run not successful: it counted less than it was asked to.
-  const { allowProfilesNotRun } = options;
-  if (allowProfilesNotRun != null && typeof allowProfilesNotRun !== 'boolean') {
-    throw new TypeError(
-      `renderSarifReport: allowProfilesNotRun must be true or false, not ${describeValue(allowProfilesNotRun)}`
-    );
-  }
+  const allowProfilesNotRun = reporterSwitch(
+    'renderSarifReport',
+    'allowProfilesNotRun',
+    options.allowProfilesNotRun,
+    strict
+  );
   const automation = automationDetails(category);
   const { known, knownLeaning } = knownOccurrences(
     frames,

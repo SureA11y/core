@@ -235,19 +235,28 @@ export interface StrictEngineOptions extends EngineOptionFields {
 }
 
 /**
- * The engine options a scan or catalog function takes, as given: an object
- * with `strictOptions: true` may hold no key but the engine's own, so a
- * misspelt option is an error in the call itself, as in a
- * StrictEngineOptions; any other object is read as an EngineOptions.
+ * EngineOptions whose strictOptions is anything but `true`: with
+ * StrictEngineOptions, what a scan or catalog function takes from a value
+ * typed `EngineOptions | StrictEngineOptions`, as in 1.17.
  */
-export type CheckedEngineOptions<T> = T &
-  (T extends { strictOptions: true }
-    ? { [K in Exclude<keyof T, keyof EngineOptionFields>]: never }
-    : unknown);
+export interface LenientEngineOptions extends EngineOptionFields {
+  strictOptions?: false | 'true' | 'false' | '1' | '0' | 1 | 0;
+  [option: string]: unknown;
+}
 
 /**
- * What a scan with these options returns: a CompactScanResult when
- * `output.detail` is `'findings'`, a ScanResult otherwise.
+ * Engine options of either kind. An object literal with `strictOptions: true`
+ * is a StrictEngineOptions, so a misspelt option in it does not compile.
+ */
+export type AnyEngineOptions = LenientEngineOptions | StrictEngineOptions;
+
+/**
+ * What a scan with these options returns at run time: a CompactScanResult
+ * when `output.detail` is `'findings'`, a ScanResult otherwise. The scan
+ * functions are typed as returning a ScanResult, as they were in 1.17, so
+ * that code written for it still compiles; to type a compact scan's result
+ * as one, declare it: `const r: CompactScanResult = runDomRulesInPage(...)`,
+ * or `as ScanResultFor<typeof options>`.
  */
 export type ScanResultFor<T> = T extends { output: { detail: 'findings' } }
   ? CompactScanResult
@@ -1214,9 +1223,11 @@ export function flattenCrossFrameResult(
 
 /**
  * An occurrence's outcome, as the reporters read it: its own tier
- * (`occurrenceOutcome`) when it is 'fail' or 'cantTell', or else its check's
+ * (`occurrenceOutcome`) when it is 'fail', 'cantTell' or 'pass', so an
+ * occurrence marked 'pass' passes even in a failing check; or else its check's
  * outcome when that is 'fail', 'cantTell' or 'pass' (the summary occurrence of
  * a passing check, as a scan of several profiles gives it); null otherwise.
+ * Before 1.18 an occurrence marked 'pass' took its check's outcome.
  */
 export function occurrenceOutcome(
   check: Pick<CheckResult, 'outcome'> | null | undefined,
@@ -1272,12 +1283,12 @@ export function leaningFailures(
  * Scans the current `window`/`document` (a real page, or jsdom set up on the
  * globals), using the rule modules from the package. For Node.
  */
-export function runDomRulesInPage<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
+export function runDomRulesInPage(
   pageUrl?: string | null,
   contextSelector?: ContextSelector | null,
-  engineOptions?: CheckedEngineOptions<T> | null,
+  engineOptions?: AnyEngineOptions | null,
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
-): ScanResultFor<T>;
+): ScanResult;
 
 export interface HowToCheck {
   steps: string[];
@@ -1749,12 +1760,12 @@ export function relatedRequirements(
  * The same scan from a single self-contained function, which can be
  * serialized into a page (the browser bindings inject its source).
  */
-export function runa11yCoreInPage<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
+export function runa11yCoreInPage(
   pageUrl?: string | null,
   contextSelector?: ContextSelector | null,
-  engineOptions?: CheckedEngineOptions<T> | null,
+  engineOptions?: AnyEngineOptions | null,
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
-): ScanResultFor<T>;
+): ScanResult;
 
 /** Options for waitForPageReady. */
 export interface PageReadyOptions {
@@ -2060,12 +2071,10 @@ export function getMargins(
  * a11yCoreEnableFrameResponder(), over postMessage. For code running inside
  * the page with no automation driver; see docs/INTEGRATION.md.
  */
-export function runa11yCoreAcrossFrames<
-  T extends EngineOptions | StrictEngineOptions = EngineOptions
->(
+export function runa11yCoreAcrossFrames(
   pageUrl?: string | null,
   contextSelector?: ContextSelector | null,
-  engineOptions?: CheckedEngineOptions<T> | null,
+  engineOptions?: AnyEngineOptions | null,
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
 ): Promise<CrossFrameResult>;
 
@@ -2128,31 +2137,31 @@ export interface RuleCatalogEntry {
 }
 
 /** Every atomic rule the given options would make available. */
-export function getChecksCatalog<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
-  engineOptions?: CheckedEngineOptions<T> | null
+export function getChecksCatalog(
+  engineOptions?: AnyEngineOptions | null
 ): CheckCatalogEntry[];
 
 /** Every composite rule the given options would make available. */
-export function getRulesCatalog<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
-  engineOptions?: CheckedEngineOptions<T> | null
+export function getRulesCatalog(
+  engineOptions?: AnyEngineOptions | null
 ): RuleCatalogEntry[];
 
 /** One rule's catalog entry, a custom rule's included, or null. */
-export function getCheckDefById<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
+export function getCheckDefById(
   ruleId: string,
-  engineOptions?: CheckedEngineOptions<T> | null
+  engineOptions?: AnyEngineOptions | null
 ): CheckCatalogEntry | null;
 
 /** One composite rule's catalog entry, or null. */
-export function getCompositeRuleById<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
+export function getCompositeRuleById(
   id: string,
-  engineOptions?: CheckedEngineOptions<T> | null
+  engineOptions?: AnyEngineOptions | null
 ): RuleCatalogEntry | null;
 
 /** The rules a scan with this selection and these options runs. */
-export function getChecksForRunOnly<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
+export function getChecksForRunOnly(
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null,
-  engineOptions?: CheckedEngineOptions<T> | null
+  engineOptions?: AnyEngineOptions | null
 ): CheckCatalogEntry[];
 
 /**
@@ -2162,9 +2171,9 @@ export function getChecksForRunOnly<T extends EngineOptions | StrictEngineOption
  * a scan does: an invalid option is warned about, and throws
  * INVALID_ENGINE_OPTIONS under strictOptions.
  */
-export function getRulesForRunOnly<T extends EngineOptions | StrictEngineOptions = EngineOptions>(
+export function getRulesForRunOnly(
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null,
-  engineOptions?: CheckedEngineOptions<T> | null
+  engineOptions?: AnyEngineOptions | null
 ): RuleCatalogEntry[];
 
 /** How far one shipped translation covers the English dictionary. */
