@@ -33,7 +33,7 @@
  *     digit ("€" in <span>€</span>45,00): it is read with that text, and
  *     contrast-minimum judges it as text, at 4.5:1 or 3:1 if large. A
  *     separator between links, such as a breadcrumb's ">", stays here;
- *   - emoji drawn in their own colours, and text that is only separators
+ *   - emoji drawn in their own colors, and text that is only separators
  *     (`|`, `¦`, `~`, `·`, `•`, `/`, dashes), which decorate;
  *   - symbols in an inactive user interface component (a disabled
  *     control, one in a disabled fieldset, or one with aria-disabled,
@@ -44,13 +44,13 @@
  *     in: on a plain <span> with no control it exempts nothing;
  *   - text in `<svg>`, `<math>`, form controls (`<select>`, `<option>`,
  *     `<textarea>`) and elements that are not drawn (`<script>`, `<style>`,
- *     `<template>`, `<title>`), and text whose colours can't be measured
+ *     `<template>`, `<title>`), and text whose colors can't be measured
  *     (a background image, a gradient, a filter or blending: the reasons
  *     the text-contrast rules give).
  * @expectation
  *   A symbol drawn as text in place of a picture is a graphic under WCAG
  *   1.4.11 when a person needs it to understand the content, as rating
- *   stars or status marks are: its colour against its background reaches
+ *   stars or status marks are: its color against its background reaches
  *   3:1. Below 3:1 it is asked about (cantTell), leaning fail: whether the
  *   symbols carry information, rather than decorate or repeat a text
  *   beside them, is for a person to judge. At 3:1 or more, pass.
@@ -58,7 +58,7 @@
  *   - `symbols`: the element's own symbols (its text nodes), with spacing
  *     collapsed, up to 20 characters.
  *   - `ratio`: their contrast against their background, to two decimals.
- *   - `foreground`, `background`: the colours measured, as hex.
+ *   - `foreground`, `background`: the colors measured, as hex.
  *   - `threshold`: 3.
  * @reason-codes
  *   - `SYMBOLS_BELOW_GRAPHIC_THRESHOLD` (cantTell): symbols drawn as text,
@@ -68,13 +68,13 @@
  *     usually do.
  *     Basis: WCAG 1.4.11 (not settled); G207.
  * @implementation-notes
- * - The colours are measured with the contrast helpers the text-contrast
+ * - The colors are measured with the contrast helpers the text-contrast
  *   rules use (helpers.contrast): the effective foreground, with its
  *   opacity, over the effective background.
  * - Each element is reported for the symbols in its own text nodes, the
  *   innermost element that holds them, as the text-contrast rules report
  *   text: symbols nested in another symbol element are reported once, on
- *   the element that holds them, measured in its colour.
+ *   the element that holds them, measured in its color.
  * - Icon fonts draw their glyphs from the Private Use Area, which is not a
  *   symbol category: they are not seen here.
  */

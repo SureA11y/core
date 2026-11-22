@@ -16,8 +16,7 @@
  *   Every accessible-tree-owned descendant of the container (after
  *   pruning role="none"/"presentation" elements, and any "group"/
  *   "rowgroup" wrapper the container's own required-owned set names, as
- *   transparent for owned-element matching per WAI-ARIA, regardless of whether "group"/"rowgroup" is
- *   itself in the container's own required-owned-roles set) has a role
+ *   transparent for owned-element matching per WAI-ARIA) has a role
  *   from that same required-owned set. Nothing else is a structurally
  *   valid direct child of a composite/container role, where "allowed" is
  *   the container's required-owned roles plus a small set of roles it

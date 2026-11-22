@@ -12,8 +12,8 @@
  *   frame, while no modal dialog is open. It looks at the visible blocks that
  *   name themselves a page zone by their id or class (header, masthead,
  *   banner, nav, navigation, menu, footer, and their French, German and
- *   Spanish names), at search forms (a form with a search field, or one
- *   named q, s, search or query), and at the page's first <header> and last
+ *   Spanish names), at search forms (a form with a field of type search,
+ *   or one named q, s, search or query), and at the page's first <header> and last
  *   <footer>. Elements left out with excludeSelectors are not looked at,
  *   nor is a block whose role is a composite widget (menu, menubar,
  *   listbox, tablist, tree, treegrid, grid, combobox, radiogroup,

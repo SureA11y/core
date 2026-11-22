@@ -77,8 +77,8 @@
  *     text (40 characters and six words at most, no block content; text
  *     hidden or visually hidden, as a screen-reader-only span is, left
  *     out) with padding, in a box set apart by a border, a box-shadow, a
- *     background colour or a gradient of its own, as "Add to cart" on a
- *     coloured `<div onclick>`, or a close or menu symbol alone (✕, ×, ☰):
+ *     background color or a gradient of its own, as "Add to cart" on a
+ *     colored `<div onclick>`, or a close or menu symbol alone (✕, ×, ☰):
  *     cantTell (`CLICK_HANDLER_NOT_FOCUSABLE`). One drawn so inside a native control
  *     in the tab order (a styled `<span>` in a `<button>`) is part of that
  *     control's look, and is left out. An
@@ -91,7 +91,7 @@
  *   - `styledAsControl` (`CLICK_HANDLER_NOT_FOCUSABLE`): `true` when the
  *     element is asked about only because it is drawn as a control.
  *   - `controlCue` (with `styledAsControl`): what draws it so: `border`,
- *     `shadow`, `glyph` (a close or menu symbol) or `background` (a colour
+ *     `shadow`, `glyph` (a close or menu symbol) or `background` (a color
  *     or a gradient).
  * @reason-codes
  *   - `CLICK_HANDLER_NO_KEY_LISTENER` (fail): a button, link, checkbox,
@@ -141,7 +141,7 @@
  *     or a focusable composite widget), and fail when it has no widget role,
  *     shows a pointer cursor or is drawn as a control by a border, a shadow
  *     or a symbol, and nothing above it takes focus or handles keys. One
- *     set apart only by a background (a coloured badge or tag in a
+ *     set apart only by a background (a colored badge or tag in a
  *     sentence) gets no lean.
  *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
  * @implementation-notes

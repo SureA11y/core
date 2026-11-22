@@ -30,10 +30,10 @@
  *   labelable element, so native <label for="..."> associations are not
  *   accepted either.
  *   A <video> with no name that is the only content of a <figure> with a
- *   non-empty <figcaption> is asked about (cantTell) rather than failed: the
- *   caption names the figure, not the video (HTML-AAM; Chromium gives the
- *   video no name), but it may describe the poster, and only a person can
- *   tell.
+ *   non-empty <figcaption> is asked about with no lean, naming the caption:
+ *   the caption names the figure, not the video (HTML-AAM; Chromium gives
+ *   the video no name), but it may describe the poster, and only a person
+ *   can tell.
  * @reports
  *   - `reasonCode`: `VIDEO_POSTER_FIGCAPTION_REVIEW`, with `figcaption`,
  *     the caption's text up to 100 characters, or

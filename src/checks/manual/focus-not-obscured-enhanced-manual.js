@@ -27,8 +27,7 @@
  *   allowed, and a script-made modal dialog that leaves the page able to
  *   take focus is reported apart, as in focus-not-obscured-minimum.
  *   It is focus-not-obscured-minimum run with `obscured: 'partly'` (a
- *   variant: docs/RULE_AUTHORING.md, "Rule variants"), so a fix to that
- *   rule's measuring reaches this one.
+ *   variant of it), so a fix to that rule's measuring reaches this one.
  * @reports
  *   - As focus-not-obscured-minimum's, with `metrics.partlyCount`: how many
  *     elements can take focus partly hidden, and not entirely.

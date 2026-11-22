@@ -31,8 +31,8 @@
  *   is large enough, elsewhere on the page) is not established: a target it
  *   would cover fails.
  *   It is target-size-minimum run with `minSizePx: 44` and
- *   `spacingException: 'none'` (a variant: docs/RULE_AUTHORING.md, "Rule
- *   variants"), so a fix to that rule's measuring reaches this one.
+ *   `spacingException: 'none'` (a variant of it), so a fix to that rule's
+ *   measuring reaches this one.
  *   Margin (`target-size-px`): of the targets that are at least 44 by 44,
  *   the smallest, as the side of the largest square that fits in it against
  *   44. Only a target within 6px of 44 (up to 50) counts as close.

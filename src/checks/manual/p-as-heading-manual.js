@@ -51,12 +51,13 @@
  *     (digits with spacing and punctuation: "2024", "No 12" is not one),
  *     `HEADING_LIKE_LINK` when it is all inside one link, so a report can
  *     set either kind aside as a group; otherwise `BOLD_LARGE_PARAGRAPH`
- *     for a <p> and `BOLD_LARGE_DIV` for a <div>. All are asked about.
+ *     for a <p> and `BOLD_LARGE_DIV` for a <div> of 18px or more, and
+ *     `BOLD_SHORT_PARAGRAPH` for a bold <p> at body size. All are asked
+ *     about.
  *   - `fontSizePx`: the font size of the text as drawn, in CSS pixels (the
  *     computed size times CSS zoom, an SVG transform or what
  *     font-size-adjust scales the font by), the smallest one when the
- *     pieces differ, against the 18px threshold. `BOLD_SHORT_PARAGRAPH`
- *     has it too.
+ *     pieces differ, against the 18px threshold.
  * @reason-codes
  *   - `BOLD_LARGE_PARAGRAPH` (cantTell): a short p whose visible text is all
  *     bold and at least 18px may be a heading shown only by its style.

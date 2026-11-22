@@ -30,8 +30,8 @@
  *   %>" as the title or one part of it, "[title]" as the whole title, or
  *   anywhere a double-brace token "{{title}}", a template literal of one
  *   JavaScript name or dotted path "${page.title}", a WordPress SEO
- *   variable left unreplaced "%%title%%", or "%s" or "%d",
- *   which leans fail); fewer than eight characters; or a template shape pairing
+ *   variable left unreplaced "%%title%%", or "%s" or "%d"; a placeholder
+ *   leans fail); fewer than eight characters; or a template shape pairing
  *   a generic token with a brand, such as "Home | Brand". When the
  *   crawl.pageTitles probe supplies at least ten pages, cross-page signals
  *   are used instead: one title repeated across distinct URLs, or a prefix
