@@ -145,3 +145,21 @@ test(`${RULE_ID}: a box set with the overflow shorthand is asked about under jsd
     assert.ok(hasOccurrenceForId(rule, 'box'));
   }
 });
+
+test(`${RULE_ID}: overflow through var() or overlay is read as Chromium reads it under jsdom (round 11, R11F-4)`, () => {
+  const scan = (style) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main><div id="box" style="height:40px;width:100px;${style}">Opening hours today and tomorrow and more text here</div></main></body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+  for (const style of ['--o:visible;overflow:var(--o)', '--o:visible;overflow-y:var(--o)']) {
+    assertRule(scan(style), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  for (const style of ['--o:auto;overflow:var(--o)', 'overflow:overlay']) {
+    const rule = assertRule(scan(style), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.ok(hasOccurrenceForId(rule, 'box'), style);
+  }
+});

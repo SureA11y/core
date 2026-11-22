@@ -685,6 +685,28 @@ function createDomHelpers(opts) {
     if (len > 2) parts = parts.map((p) => p.slice(0, 2));
     return rgb(...parts.map((p) => parseInt(p, 16)));
   }
+  // value with each var() in it replaced by the custom property's computed
+  // value (or the var()'s fallback), as a browser substitutes them; value
+  // as it is where it holds none, and null where one can't be resolved.
+  function __substituteVars(cs, value) {
+    if (!value || !value.includes('var(')) return value;
+    let out = value;
+    const one = /var\(\s*(--[\w-]+)\s*(?:,([^()]*))?\)/i;
+    for (let i = 0; i < 20 && out.includes('var('); i++) {
+      const m = one.exec(out);
+      if (!m) return null;
+      let v;
+      try {
+        v = String(cs.getPropertyValue(m[1]) || '').trim();
+      } catch {
+        v = '';
+      }
+      if (!v && m[2] !== undefined) v = m[2].trim();
+      if (!v) return null;
+      out = out.slice(0, m.index) + v + out.slice(m.index + m[0].length);
+    }
+    return out.includes('var(') ? null : out.trim().toLowerCase();
+  }
   const __INHERIT_KEYWORDS = new Set(['inherit', 'unset']);
   // jsdom's own value of prop for an element, before any hint here.
   const __beforeHints = new WeakMap();
@@ -731,35 +753,69 @@ function createDomHelpers(opts) {
     const html = dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
 
     // overflow
-    const lx = String(cs.overflowX || '')
-      .trim()
-      .toLowerCase();
-    const ly = String(cs.overflowY || '')
-      .trim()
-      .toLowerCase();
-    const short = String(cs.overflow || '')
-      .trim()
-      .toLowerCase();
-    let x = lx;
-    let y = ly;
-    const words =
-      short && !/^(inherit|initial|unset|revert|revert-layer)$/.test(short)
-        ? short.split(/\s+/)
-        : null;
-    if (words && words.length <= 2) {
-      if (!x || x === 'visible') x = words[0];
-      if (!y || y === 'visible') y = words[1] || words[0];
+    const norm = (v) =>
+      String(v || '')
+        .trim()
+        .toLowerCase();
+    const lx = norm(cs.overflowX);
+    const ly = norm(cs.overflowY);
+    const short = norm(cs.overflow);
+    // jsdom computes custom properties but substitutes none: a value that
+    // holds a var() is read with them (__substituteVars), and one that
+    // can't be resolved is invalid at computed-value time, which makes it
+    // the initial value, visible.
+    const sx = __substituteVars(cs, lx);
+    const sy = __substituteVars(cs, ly);
+    const ss = __substituteVars(cs, short);
+    {
+      // `overlay` is an alias of `auto` (CSS Overflow 3).
+      const canon = (v) => (v === null ? 'visible' : v === 'overlay' ? 'auto' : v);
+      let x = canon(sx);
+      let y = canon(sy);
+      const sv = canon(ss);
+      const words =
+        sv && !/^(inherit|initial|unset|revert|revert-layer)$/.test(sv)
+          ? sv.split(/\s+/).map(canon)
+          : null;
+      if (words && words.length <= 2) {
+        if (!x || x === 'visible') x = words[0];
+        if (!y || y === 'visible') y = words[1] || words[0];
+      }
+      // Form controls, as Chromium computes them: a <textarea> always
+      // scrolls where it would show its overflow; a drop-down <select>
+      // clips, whatever the page sets; a list box (multiple, or a size
+      // above 1) takes overflow-x hidden and overflow-y scroll from the
+      // browser's style where no author declaration sets them.
+      if (html && tag === 'textarea') {
+        if (x === 'visible') x = 'auto';
+        if (y === 'visible') y = 'auto';
+      } else if (html && tag === 'select') {
+        const size = parseHtmlInteger(dom.getAttribute(el, 'size'));
+        if (!dom.hasAttribute(el, 'multiple') && !(size !== null && size > 1)) {
+          x = 'clip';
+          y = 'clip';
+        } else if (__authorDecl(el, 'overflow') === null) {
+          if (__authorDecl(el, 'overflow-x') === null) x = 'hidden';
+          if (__authorDecl(el, 'overflow-y') === null) y = 'scroll';
+        }
+      }
+      const hides = (v) => !!v && v !== 'visible' && v !== 'clip';
+      if (hides(x) || hides(y)) {
+        if (x === 'visible') x = 'auto';
+        else if (x === 'clip') x = 'hidden';
+        if (y === 'visible') y = 'auto';
+        else if (y === 'clip') y = 'hidden';
+      }
+      if (x !== lx) set('overflow-x', x);
+      if (y !== ly) set('overflow-y', y);
+      if (
+        x === lx &&
+        y === ly &&
+        short !== (x === y ? x : x + ' ' + y) &&
+        (short || x !== 'visible' || y !== 'visible')
+      )
+        set('overflow', x === y ? x : x + ' ' + y);
     }
-    const hides = (v) => !!v && v !== 'visible' && v !== 'clip';
-    if (hides(x) || hides(y)) {
-      if (x === 'visible') x = 'auto';
-      else if (x === 'clip') x = 'hidden';
-      if (y === 'visible') y = 'auto';
-      else if (y === 'clip') y = 'hidden';
-    }
-    if (x !== lx) set('overflow-x', x);
-    if (y !== ly) set('overflow-y', y);
-    if (!short && (x !== 'visible' || y !== 'visible')) set('overflow', x === y ? x : x + ' ' + y);
 
     // <marquee hidden>
     if (
