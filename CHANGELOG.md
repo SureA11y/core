@@ -103,7 +103,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Changed (experimental)
 
-- **Requirement laws** (a requirement's `laws` in `standard.procedures`, and on a requirement in standard data) are listed apart from the standard's laws, experimental until 1.20.0: the scan now honours them. Under a profile whose law isn't among them, or that serves none, the requirement's rollup is left out, as `listProcedures({ profile })` already left it out of the list, where the scan judged it and could fail it; `engine.profileExcludes.requirements` names those requirements. A pack using them declares a `~1.18` core range.
+- **Requirement laws** (a requirement's `laws` in `standard.procedures`, and on a requirement in standard data) are listed apart from the standard's laws, experimental until 1.20.0: the scan now honours them. They were declared in 1.16.0, but the scan only began honouring them in 1.18.0, so their two-minor window restarts there ([`API_STABILITY.md`](docs/API_STABILITY.md#experimental-may-change-in-a-minor)). Under a profile whose law isn't among them, or that serves none, the requirement's rollup is left out, as `listProcedures({ profile })` already left it out of the list, where the scan judged it and could fail it; `engine.profileExcludes.requirements` names those requirements. A pack using them declares a `~1.18` core range.
 
 ### Fixed
 
