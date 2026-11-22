@@ -83760,6 +83760,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // (`[type="text"]`). An argument that is not a selector (`:nth-child()`,
   // `::part()`) is only trimmed.
   const SELECTOR_ARGS = /:(is|where|not|has|matches|-webkit-any|host|host-context|slotted)\($/i;
+  // The body of a single-quoted CSS string as Chromium writes it double
+  // quoted: each escape gives its character (a hex escape, with one white
+  // space after it, its code point), then a double quote or a backslash is
+  // escaped.
+  function doubleQuotedBody(body) {
+    let out = '';
+    for (let i = 0; i < body.length; i++) {
+      let ch = body[i];
+      if (ch === '\\' && i + 1 < body.length) {
+        const hex = /^[0-9a-f]{1,6}/i.exec(body.slice(i + 1));
+        if (hex) {
+          const code = parseInt(hex[0], 16);
+          ch = code === 0 || code > 0x10ffff ? '\ufffd' : String.fromCodePoint(code);
+          i += hex[0].length;
+          if (/\s/.test(body[i + 1] || '')) i += 1;
+        } else {
+          i += 1;
+          ch = body[i];
+        }
+      }
+      out += ch === '"' || ch === '\\' ? '\\' + ch : ch;
+    }
+    return out;
+  }
   function serializedAttribute(text) {
     const m =
       /^\[\s*([^\s~|^$*=\]]+)\s*([~|^$*]?=)\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s"'\]]+)\s*([is])?\s*\]$/i.exec(
@@ -83767,8 +83791,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       );
     if (!m) return text.replace(/^\[\s*/, '[').replace(/\s*\]$/, ']');
     let value = m[3];
-    if (value[0] === "'")
-      value = '"' + value.slice(1, -1).replace(/\\'/g, "'").replace(/"/g, '\\"') + '"';
+    if (value[0] === "'") value = '"' + doubleQuotedBody(value.slice(1, -1)) + '"';
     else if (value[0] !== '"') value = '"' + value + '"';
     return `[${m[1]}${m[2]}${value}${m[4] ? ' ' + m[4].toLowerCase() : ''}]`;
   }

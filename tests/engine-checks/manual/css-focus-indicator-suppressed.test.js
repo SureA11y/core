@@ -866,10 +866,18 @@ test(`${RULE_ID}: quotes the selector as Chromium serializes it`, () => {
     ['main>a:focus', 'main > a:focus'],
     ['main  a:is( .x , :focus )', 'main a:is(.x, :focus)'],
     ['a[href=x]:focus', 'a[href="x"]:focus'],
-    ['*:focus', ':focus']
+    ['*:focus', ':focus'],
+    // A single-quoted value is written double quoted, with its escapes read
+    // and a double quote or backslash escaped, as Chromium writes it.
+    [String.raw`a[title='a"b\\c']:focus`, String.raw`a[title="a\"b\\c"]:focus`, 'a&quot;b\\c'],
+    [String.raw`a[title='it\'s']:focus`, `a[title="it's"]:focus`, "it's"],
+    [String.raw`a[title='\41 b']:focus`, 'a[title="Ab"]:focus', 'Ab']
   ];
-  for (const [css, quoted] of cases) {
-    const html = page(`${css}{outline:none}`, '<main><a class="x" href="x">x</a></main>');
+  for (const [css, quoted, title = ''] of cases) {
+    const html = page(
+      `${css}{outline:none}`,
+      `<main><a class="x" href="x" title="${title}">x</a></main>`
+    );
     const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
     assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, [quoted], css);
   }
