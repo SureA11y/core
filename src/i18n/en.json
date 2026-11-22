@@ -889,7 +889,7 @@
   "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
   "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
   "listitemParentValid_summary_cantTell_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
-  "listitemParentValid_hint_cantTell_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+  "listitemParentValid_hint_cantTell_listRoleOverridden": "Check whether the list tells something the content doesn't say otherwise: its items, their number or their order. If it does, keep the list and move role=\"{{parentRole}}\" from the <{{parentElement}}> to an element around it (for a navigation, <nav><{{parentElement}}>). If it doesn't, remove the <{{parentElement}}> and <li> elements.",
   "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
   "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
   "listitemParentValid_lean_why_listRoleOverridden": "The item is drawn with a bullet or number, as an item of a list the markup no longer exposes.",

@@ -989,7 +989,7 @@
   "listitemParentValid_review_LIST_ROLE_OVERRIDDEN_step1": "レポートに示された <li> を調べ、親の <ul>、<ol>、<menu> が list の代わりに持つロールを控えてください。",
   "listitemParentValid_review_LIST_ROLE_OVERRIDDEN_step2": "行頭記号や番号付きで、他の項目と並んでリストの項目として表示されているか確認してください。",
   "listitemParentValid_review_LIST_ROLE_OVERRIDDEN_step3": "スクリーンリーダーで内容を読み、リストとその項目数が読み上げられるか確認してください。",
-  "listitemParentValid_review_LIST_ROLE_OVERRIDDEN_pass": "要素はリストの項目として表示されていないか、リストとその項目や項目数がなくても内容が同じ情報を伝えている (ナビゲーションバーの数個のリンクなど) ため、ページに表示されたもので失われるものはありません。それでもマークアップを修正してください。HTML では <li> はリストの中にしか置けません。",
+  "listitemParentValid_review_LIST_ROLE_OVERRIDDEN_pass": "要素はリストの項目として表示されていないか、リストとその項目や項目数がなくても内容が同じ情報を伝えている (ナビゲーションバーの数個のリンクなど) ため、ページに表示されたもので失われるものはありません。それでもマークアップを修正してください。<li> はどのリストの中にもありません。ロールをリストを囲む要素に移すか、<li> の構造を取り除いてください。",
   "listitemParentValid_review_LIST_ROLE_OVERRIDDEN_fail": "ページは要素をリストの項目として表示しており、リスト (その項目、項目数、順序) が内容からは他に得られない情報を伝えていますが、マークアップではどのリストにも属していないため、その関係がプログラムで判別できません (WCAG 1.3.1)。",
   "liveRegionAnnouncements_review_LIVE_REGION_BUSY_fail": "aria-busy が true のままで、スクリーンリーダーがメッセージを保留または省略し、ページも他の方法で伝えないため、WCAG 4.1.3 を満たしません。",
   "liveRegionAnnouncements_review_LIVE_REGION_BUSY_pass": "更新完了時に aria-busy が解除されるか、ページが同じメッセージを別の方法で伝えるため、フォーカスが移動せずにスクリーンリーダーがメッセージを読み上げます。",
