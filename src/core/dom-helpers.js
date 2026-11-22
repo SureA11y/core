@@ -597,12 +597,30 @@ function createDomHelpers(opts) {
   //   overflow "". The longhands take the shorthand's one or two values,
   //   and, as CSS Overflow 3 computes them, `visible` becomes `auto` (and
   //   `clip` `hidden`) when the other axis scrolls or hides.
+  // - A <marquee hidden> is drawn in Chromium (display: inline-block), but
+  //   jsdom's [hidden] rule gives it display: none. Where no author rule
+  //   or style attribute sets its display, it is inline-block, as Chromium
+  //   draws it. Whether other engines draw it is unverified.
+  // The author's declaration of prop that applies to el, lower-cased: null
+  // for none, undefined where it can't be told (contrast's reading of the
+  // cascade: !important, the style attribute, specificity and order).
+  function __authorDecl(el, prop) {
+    try {
+      const d = contrast.authorDeclarationOf(el, prop);
+      if (d && d.unknown) return undefined;
+      return d ? String(d.value).trim().toLowerCase() : null;
+    } catch {
+      return undefined;
+    }
+  }
   function __jsdomStyleFixesOf(el, cs) {
     let out = null;
     const set = (prop, value) => {
       if (!out) out = new Map();
       out.set(prop, value);
     };
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    const html = dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
 
     // overflow
     const lx = String(cs.overflowX || '')
@@ -634,6 +652,19 @@ function createDomHelpers(opts) {
     if (x !== lx) set('overflow-x', x);
     if (y !== ly) set('overflow-y', y);
     if (!short && (x !== 'visible' || y !== 'visible')) set('overflow', x === y ? x : x + ' ' + y);
+
+    // <marquee hidden>
+    if (
+      html &&
+      tag === 'marquee' &&
+      String(cs.display || '') === 'none' &&
+      dom.hasAttribute(el, 'hidden') &&
+      String(dom.getAttribute(el, 'hidden') || '')
+        .trim()
+        .toLowerCase() !== 'until-found' &&
+      __authorDecl(el, 'display') === null
+    )
+      set('display', 'inline-block');
 
     return out;
   }
@@ -726,7 +757,8 @@ function createDomHelpers(opts) {
   // `<span hidden style="display:inline">` is rendered, and browsers expose
   // it (Chromium names a button from it). So `hidden` counts as hiding only
   // while the element's computed display is none, or when no computed style
-  // can be read. jsdom applies the UA rule too, so it agrees.
+  // can be read. jsdom applies the UA rule too, so it agrees, but for a
+  // <marquee hidden>, which Chromium draws (__jsdomStyleFixesOf).
   // `hidden="until-found"` hides through content-visibility instead, so it
   // hides its descendants where content-visibility would (below).
   const hasEffectiveHiddenAttr = (el) => {

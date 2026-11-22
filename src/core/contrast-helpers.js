@@ -8937,6 +8937,10 @@ function createContrastHelpers(opts, shared) {
     looksLikeLogo,
     contrastSwitchName,
     isInactiveUiComponent,
+    // The author's declaration of a property that applies to an element:
+    // { value }, null where none does, { unknown: true } where it can't be
+    // told.
+    authorDeclarationOf: (el, prop) => __authorColorOf(el, prop),
     comparePaintOrder,
     colorsForced,
     noteForcedColors,
