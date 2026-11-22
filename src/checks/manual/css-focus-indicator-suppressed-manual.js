@@ -1007,6 +1007,110 @@ function runInPage(ctx) {
     ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
     : helpers.queryAll(CANDIDATE_SELECTOR);
 
+  // Every suppressor tested against each element costs rules x elements.
+  // The selectors that parse on their own, and whose text can't run into
+  // the next one's (balanced brackets and quotes, no comment, no trailing
+  // escape), are tested as one list first: an element none of them matches
+  // is tested against the others only. The rules are read one by one only
+  // on a hit.
+  function standsAlone(sel) {
+    if (!sel || sel.includes('/*') || /\\$/.test(sel)) return false;
+    let depth = 0;
+    let quote = '';
+    for (let i = 0; i < sel.length; i++) {
+      const ch = sel[i];
+      if (ch === '\\') {
+        i += 1;
+        continue;
+      }
+      if (quote) {
+        if (ch === quote) quote = '';
+      } else if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === '(' || ch === '[') depth += 1;
+      else if (ch === ')' || ch === ']') {
+        depth -= 1;
+        if (depth < 0) return false;
+      }
+    }
+    return depth === 0 && !quote;
+  }
+  const probe = document ? dom.documentElement(document) : null;
+  const listed = new Set();
+  for (const s of suppressors) {
+    // :scope, & and :host read differently from a tree's querySelectorAll
+    // than from the element's matches(): tested element by element.
+    if (listed.has(s.base) || !probe || !standsAlone(s.base) || /:scope|&|:host/i.test(s.base))
+      continue;
+    try {
+      dom.matches(probe, s.base);
+      listed.add(s.base);
+    } catch {
+      // Unparseable: matchesSafe reads it as matching nothing.
+    }
+  }
+  let suppressorList = listed.size ? [...listed].join(', ') : '';
+  if (suppressorList && probe) {
+    try {
+      dom.matches(probe, suppressorList);
+    } catch {
+      suppressorList = '';
+      listed.clear();
+    }
+  }
+  const unlisted = suppressors.filter((s) => !listed.has(s.base));
+
+  // Which candidates the list matches, and how many in each tree. Where
+  // many do, each listed selector is run once over the tree
+  // (querySelectorAll) rather than once per element, which a browser has
+  // to parse again for each of hundreds of selectors.
+  const listHits = new Set();
+  const listHitsByTree = new Map();
+  function treeOf(el) {
+    try {
+      return dom.getRootNode(el);
+    } catch {
+      return null;
+    }
+  }
+  if (suppressorList) {
+    for (const el of candidates) {
+      if (!el || dom.nodeType(el) !== 1 || !matchesSafe(el, suppressorList)) continue;
+      listHits.add(el);
+      const tree = treeOf(el);
+      listHitsByTree.set(tree, (listHitsByTree.get(tree) || 0) + 1);
+    }
+  }
+  // Only in a browser (a page with a layout): there, a call with one of
+  // hundreds of selectors costs a parse each time. jsdom keeps each one
+  // compiled and walks the tree in script, so one query per selector over
+  // the tree costs it more than testing the elements (measured).
+  let rendered;
+  try {
+    const box = probe ? dom.getBoundingClientRect(probe) : null;
+    rendered = !!box && (box.width > 0 || box.height > 0);
+  } catch {
+    rendered = false;
+  }
+  const TREE_QUERY_MIN_HITS = rendered ? 8 : Infinity;
+  const matchesByTree = new Map();
+  function listedMatchesIn(tree) {
+    if (matchesByTree.has(tree)) return matchesByTree.get(tree);
+    let byBase = null;
+    const type = tree ? dom.nodeType(tree) : 0;
+    if ((type === 9 || type === 11) && listHitsByTree.get(tree) >= TREE_QUERY_MIN_HITS) {
+      byBase = new Map();
+      for (const base of listed) {
+        try {
+          byBase.set(base, new Set(dom.querySelectorAll(tree, base)));
+        } catch {
+          // Tested element by element instead.
+        }
+      }
+    }
+    matchesByTree.set(tree, byBase);
+    return byBase;
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -1017,7 +1121,20 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const suppressing = suppressors.filter((s) => matchesSafe(el, s.base));
+    // Many rules share a selector (a framework's reset repeated): each one
+    // is tested once per element.
+    const listHit = listHits.has(el);
+    const byBase = listHit ? listedMatchesIn(treeOf(el)) : null;
+    const matched = new Map();
+    const suppressing = (listHit ? suppressors : unlisted).filter((s) => {
+      let hit = matched.get(s.base);
+      if (hit === undefined) {
+        const found = byBase && byBase.get(s.base);
+        hit = found ? found.has(el) : matchesSafe(el, s.base);
+        matched.set(s.base, hit);
+      }
+      return hit;
+    });
     if (!suppressing.length) continue;
 
     const killed = new Set();
