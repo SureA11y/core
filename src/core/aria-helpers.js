@@ -1578,7 +1578,7 @@ function createAriaHelpers(opts, shared) {
     let tableRole = getExplicitRole(table);
     if (
       (tableRole === 'presentation' || tableRole === 'none') &&
-      (hasGlobalAriaAttr(table) || /^\s*[+-]?\d/.test(getAttr(table, 'tabindex') || ''))
+      (hasGlobalAriaAttr(table) || /^[\t\n\f\r ]*[+-]?\d/.test(getAttr(table, 'tabindex') || ''))
     ) {
       tableRole = '';
     }

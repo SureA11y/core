@@ -8,8 +8,9 @@
  * @summary tabindex should not be greater than 0
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to elements with a tabindex attribute whose value parses as
- *   a valid integer.
+ *   Applies to elements with a tabindex attribute whose value HTML's rules
+ *   for parsing integers read as a number, as a browser does ("1.5" is 1,
+ *   "2abc" is 2, "0x1" is 0).
  * @expectation
  *   The tabindex value is 0 or negative. A positive tabindex reorders
  *   keyboard tab order explicitly, which is fragile to maintain as a
@@ -84,8 +85,8 @@ function runInPage(ctx) {
         } catch {}
         if (!info || !info.tabbable) continue;
         if (helpers.isHiddenContent && helpers.isHiddenContent(d)) continue;
-        const t = Number(String(dom.getAttribute(d, 'tabindex') || '').trim());
-        stops.push({ el: d, value: Number.isInteger(t) && t > 0 ? t : 0 });
+        const t = helpers.parseHtmlInteger(dom.getAttribute(d, 'tabindex'));
+        stops.push({ el: d, value: t !== null && t > 0 ? t : 0 });
       }
     } catch {}
     const visit = stops
@@ -123,10 +124,10 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
-    const raw = String(dom.getAttribute(el, 'tabindex') || '').trim();
-    if (!raw) continue;
-    const n = Number(raw);
-    if (!Number.isInteger(n)) continue;
+    // Read as HTML's rules for parsing integers read it, as a browser
+    // does: "1.5" is 1, "2abc" is 2, "0x1" is 0, "1e3" is 1.
+    const n = helpers.parseHtmlInteger(dom.getAttribute(el, 'tabindex'));
+    if (n === null) continue;
 
     applicableCount += 1;
 

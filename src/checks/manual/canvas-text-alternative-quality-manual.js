@@ -148,8 +148,7 @@ function runInPage(ctx) {
       } catch {
         tabindex = null;
       }
-      const t = tabindex == null ? '' : String(tabindex).trim();
-      focusable = t !== '' && !Number.isNaN(Number(t));
+      focusable = tabindex != null && ctx.helpers.parseHtmlInteger(tabindex) !== null;
     }
     return !focusable;
   }

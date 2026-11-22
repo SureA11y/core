@@ -112,7 +112,7 @@ function runInPage(ctx) {
     if (
       (tableRole === 'presentation' || tableRole === 'none') &&
       ((ariaHelpers && ariaHelpers.hasGlobalAriaAttr(table)) ||
-        /^\s*[+-]?\d/.test(dom.getAttribute(table, 'tabindex') || ''))
+        ctx.helpers.parseHtmlInteger(dom.getAttribute(table, 'tabindex')) !== null)
     )
       tableRole = '';
     if (tableRole && tableRole !== 'table' && tableRole !== 'grid' && tableRole !== 'treegrid')

@@ -183,11 +183,7 @@ function runInPage(ctx) {
     }
     try {
       const tabindex = dom.getAttribute(el, 'tabindex');
-      return (
-        tabindex != null &&
-        String(tabindex).trim() !== '' &&
-        !Number.isNaN(Number(String(tabindex).trim()))
-      );
+      return tabindex != null && ctx.helpers.parseHtmlInteger(tabindex) !== null;
     } catch {
       return false;
     }

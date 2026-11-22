@@ -124,3 +124,20 @@ test(`${RULE_ID}: gives the value and the tab stops it jumps ahead of`, () => {
   );
   assert.strictEqual(first.i18n.summaryKey, 'tabindex_summary_cantTell_value');
 });
+
+test(`${RULE_ID}: reads tabindex with HTML's rules for parsing integers (round 11, B11-5)`, () => {
+  const read = (value) => {
+    const r = runa11yCoreOnHtml(
+      `<!doctype html><html><body><a href="/a">A</a><button tabindex="${value}">B</button></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((c) => c.ruleId === RULE_ID);
+    return [r.outcome, r.occurrences.map((o) => o.data.details.value)];
+  };
+  // What el.tabIndex gives in a browser: 1, 2, 0, 1, and none for junk.
+  assert.deepStrictEqual(read('1.5'), ['cantTell', [1]]);
+  assert.deepStrictEqual(read(' +2abc'), ['cantTell', [2]]);
+  assert.deepStrictEqual(read('0x1'), ['pass', []]);
+  assert.deepStrictEqual(read('1e3'), ['cantTell', [1]]);
+  assert.deepStrictEqual(read('abc'), ['notApplicable', []]);
+  assert.deepStrictEqual(read(' 1'), ['notApplicable', []]);
+});

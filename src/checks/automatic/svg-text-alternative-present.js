@@ -158,11 +158,7 @@ function runInPage(ctx) {
     try {
       const tabindex =
         svg && dom.get(svg, 'getAttribute') ? dom.getAttribute(svg, 'tabindex') : null;
-      return (
-        tabindex != null &&
-        String(tabindex).trim() !== '' &&
-        !Number.isNaN(Number(String(tabindex).trim()))
-      );
+      return tabindex != null && ctx.helpers.parseHtmlInteger(tabindex) !== null;
     } catch {
       return false;
     }

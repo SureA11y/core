@@ -162,10 +162,7 @@ function runInPage(ctx) {
       focusable = !!(fi && fi.focusable);
     } else {
       const tabindex = dom.getAttribute(el, 'tabindex');
-      focusable =
-        tabindex != null &&
-        String(tabindex).trim() !== '' &&
-        !Number.isNaN(Number(String(tabindex).trim()));
+      focusable = tabindex != null && ctx.helpers.parseHtmlInteger(tabindex) !== null;
     }
     return !focusable;
   }

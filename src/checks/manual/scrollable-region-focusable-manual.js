@@ -148,8 +148,8 @@ function runInPage(ctx) {
     try {
       const tabindexAttr = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'tabindex') : null;
       if (tabindexAttr != null) {
-        const n = Number.parseInt(tabindexAttr, 10);
-        if (Number.isFinite(n) && n >= 0) return true;
+        const n = helpers.parseHtmlInteger(tabindexAttr);
+        if (n !== null && n >= 0) return true;
       }
     } catch {}
     return false;
