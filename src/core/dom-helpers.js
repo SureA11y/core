@@ -623,6 +623,7 @@ function createDomHelpers(opts) {
   }
   const __HINT_BGCOLOR_TAGS = new Set([
     'body',
+    'marquee',
     'table',
     'thead',
     'tbody',
@@ -857,6 +858,27 @@ function createDomHelpers(opts) {
     __revertedColorEls.add(el);
     return value;
   }
+  // An SVG paint, as getComputedStyle gives it: a color, none, or a
+  // url() reference with its fallback (`url("#g") rgb(255, 0, 0)`); null
+  // where the value is no paint.
+  function __svgPaint(raw, currentColor) {
+    const one = (v) => {
+      if (/^currentcolor$/i.test(v)) return currentColor || null;
+      if (/^none$/i.test(v)) return 'none';
+      const rgba = contrast.parseCssColorToRgba(v);
+      if (!rgba) return null;
+      return rgba.a < 1
+        ? `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${rgba.a})`
+        : `rgb(${rgba.r}, ${rgba.g}, ${rgba.b})`;
+    };
+    const v = String(raw == null ? '' : raw).trim();
+    const m = /^url\(\s*(?:"([^"]*)"|'([^']*)'|([^\s"'()]*))\s*\)\s*(.*)$/i.exec(v);
+    if (!m) return one(v);
+    const ref = `url("${m[1] ?? m[2] ?? m[3]}")`;
+    if (!m[4]) return ref;
+    const fallback = one(m[4].trim());
+    return fallback ? `${ref} ${fallback}` : null;
+  }
   function __jsdomStyleFixesOf(el, cs) {
     let out = null;
     const set = (prop, value) => {
@@ -940,7 +962,8 @@ function createDomHelpers(opts) {
         set('overflow', x === y ? x : x + ' ' + y);
     }
 
-    // <marquee hidden>
+    // <marquee hidden>: drawn inline-block by the browser's style, which
+    // `revert` goes back to; `unset` and `initial` make it inline.
     if (
       html &&
       tag === 'marquee' &&
@@ -948,11 +971,14 @@ function createDomHelpers(opts) {
       dom.hasAttribute(el, 'hidden') &&
       String(dom.getAttribute(el, 'hidden') || '')
         .trim()
-        .toLowerCase() !== 'until-found' &&
-      __authorDecl(el, 'display') === null &&
-      __authorDecl(el, 'all') === null
-    )
-      set('display', 'inline-block');
+        .toLowerCase() !== 'until-found'
+    ) {
+      let decl = __authorDecl(el, 'display');
+      if (decl === null) decl = __authorDecl(el, 'all');
+      if (decl === null || decl === 'revert' || decl === 'revert-layer')
+        set('display', 'inline-block');
+      else if (decl === 'unset' || decl === 'initial') set('display', 'inline');
+    }
 
     // Presentational hints
     if (!__treeHasHints(el)) return out;
@@ -1005,20 +1031,13 @@ function createDomHelpers(opts) {
     if (ns === 'http://www.w3.org/2000/svg') {
       let fill = null;
       const fillDecl = __authorDecl(el, 'fill');
-      if (fillDecl === null && dom.hasAttribute(el, 'fill') && __authorDecl(el, 'all') === null) {
-        const v = String(dom.getAttribute(el, 'fill') || '').trim();
-        if (/^currentcolor$/i.test(v)) fill = color || String(cs.color || '');
-        else if (/^none$/i.test(v)) fill = 'none';
-        else {
-          const rgba = contrast.parseCssColorToRgba(v);
-          if (rgba)
-            fill =
-              rgba.a < 1
-                ? `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${rgba.a})`
-                : `rgb(${rgba.r}, ${rgba.g}, ${rgba.b})`;
-        }
-      } else if (fillDecl === null || (fillDecl && __INHERIT_KEYWORDS.has(fillDecl))) {
-        const host = __flatClosest(el, '[fill]');
+      if (fillDecl === null && dom.hasAttribute(el, 'fill') && __authorDecl(el, 'all') === null)
+        fill = __svgPaint(dom.getAttribute(el, 'fill'), color || String(cs.color || ''));
+      // No fill of its own, or one that is no paint (ignored, as an invalid
+      // presentation attribute is): inherited.
+      if (!fill && (fillDecl === null || (fillDecl && __INHERIT_KEYWORDS.has(fillDecl)))) {
+        const parent = __flatParentElement(el);
+        const host = parent ? __flatClosest(parent, '[fill]') : null;
         if (host && dom.namespaceURI(host) === 'http://www.w3.org/2000/svg')
           fill = __inheritedHint(el, cs, 'fill', host);
       }

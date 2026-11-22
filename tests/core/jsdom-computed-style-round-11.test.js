@@ -260,7 +260,49 @@ const CASES = [
     '#t',
     ['backgroundColor'],
     ['rgba(0, 0, 0, 0)']
-  ]
+  ],
+  // R11F-8
+  [
+    'a <marquee bgcolor>',
+    page('<marquee id="t" bgcolor="black">x</marquee>'),
+    '#t',
+    ['backgroundColor'],
+    ['rgb(0, 0, 0)']
+  ],
+  ...[
+    [
+      'an invalid fill, inherited',
+      '<g fill="red"><rect id="t" fill="notacolor" width="1" height="1"/></g>',
+      'rgb(255, 0, 0)'
+    ],
+    [
+      'a fill with a url() and a fallback',
+      '<rect id="t" fill="url(#g) red" width="1" height="1"/>',
+      'url("#g") rgb(255, 0, 0)'
+    ],
+    ['a fill with a url() only', '<rect id="t" fill="url(#g)" width="1" height="1"/>', 'url("#g")'],
+    [
+      'a fill with a url() and none',
+      '<rect id="t" fill="url(#g) none" width="1" height="1"/>',
+      'url("#g") none'
+    ],
+    [
+      'a fill with a url() and a fallback, inherited',
+      '<g fill="url(#g) red"><rect id="t" width="1" height="1"/></g>',
+      'url("#g") rgb(255, 0, 0)'
+    ]
+  ].map(([label, svg, fill]) => [label, page(`<svg>${svg}</svg>`), '#t', ['fill'], [fill]]),
+  ...[
+    ['revert', 'inline-block'],
+    ['revert-layer', 'inline-block'],
+    ['unset', 'inline']
+  ].map(([value, display]) => [
+    `a <marquee hidden> set to display: ${value}`,
+    page('<marquee id="t" hidden>x</marquee>', `<style>marquee{display:${value}}</style>`),
+    '#t',
+    ['display'],
+    [display]
+  ])
 ];
 
 function jsdomStyle(html, selector, props) {
