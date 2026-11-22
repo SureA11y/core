@@ -145,7 +145,15 @@
  *     with no opaque background between the text and that box, inclusive,
  *     so what lies under it changes with the scroll position
  *     (`blockerProperty` `position`). It is asked about whatever the scroll
- *     position is when the page is scanned.
+ *     position is when the page is scanned. For SVG text, a shape painted
+ *     before it in its <svg> is the paint: with a layout, a solid <rect>
+ *     covering all of the text is measured as its background. Without one
+ *     (jsdom), so is a <rect>, <circle> or <ellipse> with an opaque solid
+ *     fill and no transform, opacity, filter, mask or clip on it or its
+ *     ancestors in the <svg>, that certainly covers the text's area (its x
+ *     and y, its font size and its number of characters at an em each), or
+ *     a rect covering the whole <svg>: the last such shape is the
+ *     background, and only a shape painted after it is reported here.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_NOT_COMPUTABLE` (cantTell): the background behind the text
  *     could not be worked out.

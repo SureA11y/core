@@ -8441,7 +8441,9 @@ function createContrastHelpers(opts, shared) {
   // Without a layout (jsdom), where an SVG shape paints can't be told. A
   // shape painted before SVG text in the same <svg> may lie behind it, and
   // then the text's background can't be told either: the shape, as paint
-  // in the way, or null. With a layout, __svgBackdropOf measures it.
+  // in the way, or null. A shape certainly under all of the text is its
+  // background (__svgNoLayoutScan); only one painted after the last such
+  // shape is in the way. With a layout, __svgBackdropOf measures it.
   const __SVG_PAINT_TAGS =
     'rect, circle, ellipse, line, path, polygon, polyline, image, use, foreignObject';
   const __SVG_UNPAINTED_TAGS = new Set([
@@ -8456,11 +8458,37 @@ function createContrastHelpers(opts, shared) {
     'filter'
   ]);
   function __svgShapeMaybeBehind(el) {
+    const scan = __svgNoLayoutScan(el);
+    return scan ? scan.blocker : null;
+  }
+
+  // Without a layout, the simple, certain case is measured (round 11, D11):
+  // a <rect>, <circle> or <ellipse> painted before the text with an opaque
+  // solid fill, no transform, opacity, filter, mask or clip on it or its
+  // ancestors in the <svg>, whose geometry certainly covers the text's
+  // area. The last such shape is the text's background; a shape painted
+  // after it that may lie behind the text (any other) keeps the text
+  // asked about. { certain: { el, rgba } | null, blocker: {...} | null },
+  // or null where nothing applies (with a layout, or not SVG text).
+  const __svgNoLayoutCache = new WeakMap();
+  function __svgNoLayoutScan(el) {
     if (!__isSvgTextElement(el)) return null;
     const doc = dom.ownerDocument(el);
     if (!doc) return null;
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (__layoutByDoc.get(doc)) return null;
+    if (__svgNoLayoutCache.has(el)) return __svgNoLayoutCache.get(el);
+    let out;
+    try {
+      out = __computeSvgNoLayoutScan(el);
+    } catch {
+      out = null;
+    }
+    __svgNoLayoutCache.set(el, out);
+    return out;
+  }
+
+  function __computeSvgNoLayoutScan(el) {
     let svg = composedParent(el);
     for (
       let guard = 0;
@@ -8475,6 +8503,13 @@ function createContrastHelpers(opts, shared) {
     } catch {
       return null;
     }
+    let area;
+    const textArea = () => {
+      if (area === undefined) area = __svgTextArea(el, svg);
+      return area;
+    };
+    let certain = null;
+    let blocker = null;
     for (const shape of shapes) {
       // Painted after el (or el's own ancestor): not behind it.
       if (!(dom.compareDocumentPosition(shape, el) & 4) || __isComposedInside(el, shape)) break;
@@ -8503,14 +8538,267 @@ function createContrastHelpers(opts, shared) {
       const tag = __lname(shape);
       const shapeOnly = tag !== 'image' && tag !== 'use' && tag !== 'foreignobject';
       if (shapeOnly && !paints(fill) && !paints(stroke)) continue;
-      return {
-        selector: __getSimpleSelectorCached(shape, tag),
-        element: describeElement(shape),
-        property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
-        value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
-      };
+      const rgba = __svgCertainCover(shape, cs, svg, paints(stroke), textArea);
+      if (rgba) {
+        // Opaque, over all of the text: what lies under it doesn't show.
+        certain = { el: shape, rgba };
+        blocker = null;
+        continue;
+      }
+      if (!blocker) {
+        blocker = {
+          selector: __getSimpleSelectorCached(shape, tag),
+          element: describeElement(shape),
+          property: paints(fill) || !shapeOnly ? 'fill' : 'stroke',
+          value: shapeOnly ? (paints(fill) ? fill : stroke) : tag
+        };
+      }
     }
-    return null;
+    return { certain, blocker };
+  }
+
+  // An SVG length in user units: a number, px, or a percentage of `full`
+  // (NaN where `full` is unknown). NaN for anything else.
+  function __svgLength(value, full) {
+    const v = trim(value);
+    if (!v) return NaN;
+    let m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(px)?$/i.exec(v);
+    if (m) return Number.parseFloat(m[1]);
+    m = /^([+-]?(?:\d+\.?\d*|\.\d+))%$/.exec(v);
+    if (m) return Number.isFinite(full) ? (Number.parseFloat(m[1]) / 100) * full : NaN;
+    return NaN;
+  }
+
+  // The svg's viewport in user units: its viewBox, or its own width and
+  // height where it has none. { x, y, w, h }, a side NaN where unknown.
+  function __svgViewport(svg) {
+    const vb = trim(dom.getAttribute(svg, 'viewBox'));
+    if (vb) {
+      const n = vb.split(/[\s,]+/).map(Number);
+      if (n.length === 4 && n.every(Number.isFinite) && n[2] > 0 && n[3] > 0)
+        return { x: n[0], y: n[1], w: n[2], h: n[3], viewBox: true };
+      return { x: 0, y: 0, w: NaN, h: NaN, viewBox: true };
+    }
+    return {
+      x: 0,
+      y: 0,
+      w: __svgLength(dom.getAttribute(svg, 'width'), NaN),
+      h: __svgLength(dom.getAttribute(svg, 'height'), NaN),
+      viewBox: false
+    };
+  }
+
+  const __SVG_GROUP_ATTRS = ['transform', 'filter', 'mask', 'clip-path'];
+  // Whether node draws as a group or moves: a transform, opacity, a filter,
+  // a mask or a clip, as an attribute, in its style or computed.
+  function __svgGroupedOrMoved(node) {
+    for (const a of __SVG_GROUP_ATTRS) {
+      const v = trim(dom.getAttribute(node, a)).toLowerCase();
+      if (v && v !== 'none') return true;
+    }
+    const op = trim(dom.getAttribute(node, 'opacity'));
+    if (op && !(Number.parseFloat(op) >= 1)) return true;
+    if (
+      /(^|;)\s*(transform|opacity|filter|mask|clip|clip-path)\s*:/i.test(
+        String(dom.getAttribute(node, 'style') || '')
+      )
+    )
+      return true;
+    const cs = __contrastComputedStyle(node);
+    if (!cs) return false;
+    if (opacityOf(cs) < 1) return true;
+    const set = (v) => !!trim(v) && trim(v) !== 'none';
+    return (
+      set(cs.transform) ||
+      set(cs.filter) ||
+      set(cs.clipPath) ||
+      set(cs.maskImage) ||
+      set(cs.mask) ||
+      (!!cs.mixBlendMode && trim(cs.mixBlendMode) !== 'normal')
+    );
+  }
+
+  // The area SVG text certainly lies in, in the svg's user units, without a
+  // layout: from its x and y, its font size and its number of characters,
+  // each at most one em wide, from 1.2em above the baseline to 0.4em below.
+  // null where that isn't simple: a transform, positions per character,
+  // a textLength, spacing, a vertical writing mode or a text path.
+  function __svgTextArea(el, svg) {
+    let text = el;
+    while (text && text !== svg && __lname(text) !== 'text') text = dom.parentElement(text);
+    if (!text || text === svg) return null;
+    for (let n = text; n && n !== svg; n = dom.parentElement(n)) {
+      if (__svgGroupedOrMoved(n) && n !== text) return null;
+      const t = trim(dom.getAttribute(n, 'transform'));
+      if (t && t !== 'none') return null;
+      const ncs = __contrastComputedStyle(n);
+      if (ncs && trim(ncs.transform) && trim(ncs.transform) !== 'none') return null;
+    }
+    const parts = [text, ...dom.querySelectorAll(text, '*')];
+    for (const n of parts) {
+      const name = __lname(n);
+      if (name === 'textpath') return null;
+      for (const a of ['dx', 'dy', 'rotate', 'textLength', 'letter-spacing', 'word-spacing'])
+        if (dom.hasAttribute(n, a)) return null;
+      if (n !== text && (dom.hasAttribute(n, 'x') || dom.hasAttribute(n, 'y'))) return null;
+      if (
+        /(^|;)\s*(letter-spacing|word-spacing|writing-mode|font-size)\s*:/i.test(
+          String(dom.getAttribute(n, 'style') || '')
+        ) &&
+        n !== text
+      )
+        return null;
+    }
+    const tcs = __contrastComputedStyle(text) || {};
+    if (
+      /^(vertical|tb|sideways)/.test(trim(tcs.writingMode)) ||
+      dom.hasAttribute(text, 'writing-mode')
+    )
+      return null;
+    const spacing = (v) => !trim(v) || trim(v) === 'normal' || Number.parseFloat(v) === 0;
+    if (!spacing(tcs.letterSpacing) || !spacing(tcs.wordSpacing)) return null;
+    const vp = __svgViewport(svg);
+    const x = dom.hasAttribute(text, 'x') ? __svgLength(dom.getAttribute(text, 'x'), vp.w) : 0;
+    const y = dom.hasAttribute(text, 'y') ? __svgLength(dom.getAttribute(text, 'y'), vp.h) : 0;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    // The font size: the larger of the computed one and the nearest
+    // font-size attribute, which jsdom doesn't apply.
+    let fs = parsePx(tcs.fontSize);
+    if (!/^\s*[\d.]+px\s*$/.test(String(tcs.fontSize || ''))) fs = NaN;
+    const host = dom.closest(text, '[font-size]');
+    if (host && __isComposedInside(host, svg)) {
+      const a = __svgLength(dom.getAttribute(host, 'font-size'), NaN);
+      if (!Number.isFinite(a)) return null;
+      fs = Number.isFinite(fs) ? Math.max(fs, a) : a;
+    }
+    if (!Number.isFinite(fs)) fs = 16;
+    const chars = [...trim(dom.textContent(text)).replace(/\s+/g, ' ')].length;
+    if (!chars) return null;
+    const w = chars * fs;
+    const anchorHost = dom.closest(text, '[text-anchor]');
+    let anchor = trim(tcs.textAnchor) || 'start';
+    if (anchorHost && __isComposedInside(anchorHost, svg))
+      anchor = trim(dom.getAttribute(anchorHost, 'text-anchor')).toLowerCase();
+    const rtl = trim(tcs.direction) === 'rtl' || !!dom.closest(text, '[direction="rtl"]');
+    let left;
+    let right;
+    if (rtl || !/^(start|middle|end)$/.test(anchor)) {
+      left = x - w;
+      right = x + w;
+    } else if (anchor === 'middle') {
+      left = x - w / 2;
+      right = x + w / 2;
+    } else if (anchor === 'end') {
+      left = x - w;
+      right = x;
+    } else {
+      left = x;
+      right = x + w;
+    }
+    const baselineSet = ['dominant-baseline', 'alignment-baseline', 'baseline-shift'].some(
+      (a) => !!dom.closest(text, '[' + a + ']')
+    );
+    const above = baselineSet ? 1.3 * fs : 1.2 * fs;
+    const below = baselineSet ? 1.3 * fs : 0.4 * fs;
+    return { left, right, top: y - above, bottom: y + below };
+  }
+
+  // The opaque color a <rect>, <circle> or <ellipse> certainly paints
+  // under all of el's text, without a layout, or null.
+  function __svgCertainCover(shape, cs, svg, stroked, textArea) {
+    const tag = __lname(shape);
+    if (tag !== 'rect' && tag !== 'circle' && tag !== 'ellipse') return null;
+    // Its own <svg>: not in a nested one, a <switch> or a link's group.
+    for (let p = dom.parentElement(shape); p !== svg; p = dom.parentElement(p)) {
+      if (!p) return null;
+      const name = __lname(p);
+      if (name !== 'g' && name !== 'a') return null;
+      if (__svgGroupedOrMoved(p)) return null;
+    }
+    if (__svgGroupedOrMoved(shape)) return null;
+    const fill = parseCssColorToRgba(cs.fill);
+    if (!fill || fill.a < 1) return null;
+    const fo = trim(dom.getAttribute(shape, 'fill-opacity')) || trim(cs.fillOpacity);
+    if (fo && !(Number.parseFloat(fo) >= 1)) return null;
+    if (
+      /(^|;)\s*(fill-opacity|x|y|width|height|rx|ry|r|cx|cy)\s*:/i.test(
+        String(dom.getAttribute(shape, 'style') || '')
+      )
+    )
+      return null;
+    const vp = __svgViewport(svg);
+    const attr = (a, full, dflt) =>
+      dom.hasAttribute(shape, a) ? __svgLength(dom.getAttribute(shape, a), full) : dflt;
+    let half = 0;
+    if (stroked) {
+      const sw = dom.hasAttribute(shape, 'stroke-width')
+        ? __svgLength(dom.getAttribute(shape, 'stroke-width'), NaN)
+        : parsePx(cs.strokeWidth) || 1;
+      if (!Number.isFinite(sw)) return null;
+      half = Math.max(0, sw) / 2;
+    }
+    const rgb = { r: fill.r, g: fill.g, b: fill.b, a: 1 };
+    if (tag === 'rect') {
+      const x = attr('x', vp.w, 0);
+      const y = attr('y', vp.h, 0);
+      const w = attr('width', vp.w, NaN);
+      const h = attr('height', vp.h, NaN);
+      if (![x, y, w, h].every(Number.isFinite) || !(w > 0) || !(h > 0)) return null;
+      let rx = attr('rx', vp.w, NaN);
+      let ry = attr('ry', vp.h, NaN);
+      const rxSet = dom.hasAttribute(shape, 'rx');
+      const rySet = dom.hasAttribute(shape, 'ry');
+      if ((rxSet && !Number.isFinite(rx)) || (rySet && !Number.isFinite(ry))) return null;
+      if (!rxSet) rx = rySet ? ry : 0;
+      if (!rySet) ry = rx;
+      rx = Math.min(Math.max(rx, 0), w / 2);
+      ry = Math.min(Math.max(ry, 0), h / 2);
+      // The whole svg: covers any text in it.
+      const whole = (v, full, raw) => trim(raw) === '100%' || (Number.isFinite(full) && v === full);
+      if (
+        !rx &&
+        !ry &&
+        x === vp.x &&
+        y === vp.y &&
+        whole(w, vp.w, dom.getAttribute(shape, 'width')) &&
+        whole(h, vp.h, dom.getAttribute(shape, 'height'))
+      )
+        return rgb;
+      const area = textArea();
+      if (!area) return null;
+      const ix = Math.max(rx, half);
+      const iy = Math.max(ry, half);
+      return area.left >= x + ix &&
+        area.right <= x + w - ix &&
+        area.top >= y + iy &&
+        area.bottom <= y + h - iy
+        ? rgb
+        : null;
+    }
+    const cx = attr('cx', NaN, 0);
+    const cy = attr('cy', NaN, 0);
+    let rx;
+    let ry;
+    if (tag === 'circle') {
+      rx = attr('r', NaN, NaN);
+      ry = rx;
+    } else {
+      rx = attr('rx', NaN, NaN);
+      ry = attr('ry', NaN, NaN);
+    }
+    if (![cx, cy, rx, ry].every(Number.isFinite)) return null;
+    rx -= half;
+    ry -= half;
+    if (!(rx > 0) || !(ry > 0)) return null;
+    const area = textArea();
+    if (!area) return null;
+    const inside = (px, py) => ((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2 <= 1;
+    return inside(area.left, area.top) &&
+      inside(area.right, area.top) &&
+      inside(area.left, area.bottom) &&
+      inside(area.right, area.bottom)
+      ? rgb
+      : null;
   }
 
   // -------- SVG shapes behind SVG text (#96) --------
@@ -8540,7 +8828,14 @@ function createContrastHelpers(opts, shared) {
 
   function __computeSvgBackdrop(el) {
     const index = __getOverlapIndex();
-    if (!index) return null;
+    if (!index) {
+      // Without a layout: the last shape certainly under all of the text,
+      // with nothing uncertain painted after it (__svgNoLayoutScan).
+      const scan = __svgNoLayoutScan(el);
+      return scan && scan.certain && !scan.blocker
+        ? { layers: [scan.certain], blocked: false }
+        : null;
+    }
     let svg = composedParent(el);
     let guard = 0;
     while (
