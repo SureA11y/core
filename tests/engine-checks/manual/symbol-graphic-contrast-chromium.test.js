@@ -47,7 +47,13 @@ test(`${RULE_ID}: the fixture in Chromium`, { skip }, async (t) => {
     };
   }, RULE_ID);
   assert.equal(got.outcome, 'cantTell');
-  assert.deepEqual(got.ids, ['sgc_case_01', 'sgc_case_02', 'sgc_case_03', 'sgc_case_11']);
+  assert.deepEqual(got.ids, [
+    'sgc_case_01',
+    'sgc_case_02',
+    'sgc_case_03',
+    'sgc_case_11',
+    'sgc_case_12'
+  ]);
   assert.ok(got.ratios.every((r) => r < 3));
   assert.equal(got.ratios[0], 1.42);
   // The symbols asked about are no text the text-contrast rules judge.

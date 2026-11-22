@@ -14,8 +14,12 @@
  *   or check marks (✓): text with at least one character of a Unicode
  *   symbol category (Sm, Sc, Sk, So), 40 characters at most, that is a
  *   direct text child of the element, which is rendered and not
- *   screen-reader-only. Left out:
- *   - text with a letter or a digit anywhere in the element ("4.5 ★",
+ *   screen-reader-only. Only visible text counts: text in a descendant
+ *   that is not drawn (display:none), hidden (visibility:hidden) or
+ *   visually hidden (a screen-reader-only clip or 1px box) is left out of
+ *   the element's text, so ★★★★☆ with a screen-reader-only "4 of 5" is
+ *   symbols only; aria-hidden doesn't matter to sight. Left out:
+ *   - text with a visible letter or digit anywhere in the element ("4.5 ★",
  *     "Next →"): the text-contrast rules judge it as text, at its own ratio;
  *     letter-free text is the only text they leave out (ACT afw4f7), so the
  *     two never judge the same text;
@@ -146,6 +150,33 @@ function runInPage(ctx) {
     return true;
   }
 
+  // The text el shows: its text nodes, less those in an element that is not
+  // drawn (display:none, a closed <details>), hidden (visibility:hidden) or
+  // visually hidden (a screen-reader-only clip or 1px box). aria-hidden
+  // doesn't matter to sight. Read through at most 400 nodes.
+  function visibleTextOf(el) {
+    let out = '';
+    let budget = 400;
+    const walk = (node) => {
+      for (let n = dom.firstChild(node); n && budget > 0; n = dom.nextSibling(n)) {
+        budget -= 1;
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          let cs = null;
+          try {
+            cs = helpers.computedStyle ? helpers.computedStyle(node) : null;
+          } catch {}
+          const vis = trim(cs && cs.visibility);
+          if (!vis || vis === 'visible') out += String(dom.nodeValue(n) || '');
+        } else if (type === 1 && shown(n)) {
+          walk(n);
+        }
+      }
+    };
+    walk(el);
+    return out;
+  }
+
   // The element's own symbol text: its direct text children, holding a
   // symbol, with the whole of its text free of letters and digits. Only
   // the element's own text is its, as the text-contrast rules report text:
@@ -158,7 +189,7 @@ function runInPage(ctx) {
     }
     own = trim(own).replace(/\s+/g, ' ');
     if (!own || !SYMBOL.test(own.replace(SEPARATORS, ''))) return '';
-    const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
+    const text = trim(visibleTextOf(el)).replace(/\s+/g, ' ');
     if (!text || [...text].length > 40) return '';
     if (LETTER_OR_DIGIT.test(text) || EMOJI.test(text)) return '';
     if (!SYMBOL.test(text.replace(SEPARATORS, ''))) return '';

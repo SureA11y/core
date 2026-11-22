@@ -109,12 +109,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/symbol-graphic-contrast-all-s
     'utf8'
   );
   const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
-    minOccurrences: 4,
-    maxOccurrences: 4
+    minOccurrences: 5,
+    maxOccurrences: 5
   });
   assert.deepEqual(
     rule.occurrences.map((o) => /id="(sgc_case_\d+)"/.exec(o.html)[1]),
-    ['sgc_case_01', 'sgc_case_02', 'sgc_case_03', 'sgc_case_11']
+    ['sgc_case_01', 'sgc_case_02', 'sgc_case_03', 'sgc_case_11', 'sgc_case_12']
   );
 });
 
@@ -218,5 +218,32 @@ test(`${RULE_ID}: a currency sign in a run of text is text, judged by contrast-m
     const got = both(body);
     assert.equal(got.symbol, 'cantTell', body);
     assert.ok(!got.text.includes('s'), body);
+  }
+});
+
+// Only visible text counts: a screen-reader-only label beside the symbols
+// gives them no letter or digit a reader sees (round 11, B11-10).
+test(`${RULE_ID}: symbols with only hidden text beside them are asked about (round 11, B11-10)`, () => {
+  const SR = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)';
+  for (const body of [
+    `<span style="color:#ccc">★★★★☆<span style="${SR}">4 of 5</span></span>`,
+    `<style>.sr-only{${SR}}</style><span style="color:#ccc">★★★★☆<span class="sr-only">4 of 5</span></span>`,
+    '<span style="color:#ccc">★★★★☆<span style="clip-path:inset(50%);position:absolute">4 of 5</span></span>',
+    '<span style="color:#ccc">★★★★☆<span style="display:none">4 of 5</span></span>',
+    '<span style="color:#ccc">★★★★☆<span style="visibility:hidden">4 of 5</span></span>'
+  ]) {
+    const rule = assertRule(run(body), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.equal(rule.occurrences[0].data.details.symbols, '★★★★☆', body);
+    assert.equal(rule.occurrences[0].lean.toward, 'fail');
+  }
+  // Visible text with a digit, aria-hidden or not, is text.
+  for (const body of [
+    '<span style="color:#ccc">★★★★☆<span>4 of 5</span></span>',
+    '<span style="color:#ccc">★★★★☆<span aria-hidden="true">4 of 5</span></span>'
+  ]) {
+    assertRule(run(body), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
   }
 });
