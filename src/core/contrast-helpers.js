@@ -1139,11 +1139,34 @@ function createContrastHelpers(opts, shared) {
             clipsX,
             clipsY,
             rect: clipsX || clipsY ? dom.getBoundingClientRect(node) : null,
-            stops: !!acs && (acs.position === 'fixed' || acs.position === 'absolute')
+            stops: !!acs && acs.position === 'fixed',
+            // An absolutely positioned box is clipped by its containing
+            // block and the boxes around that, not by the boxes between
+            // (round 12, C12-3).
+            absolute: !!acs && acs.position === 'absolute'
           };
           clipBoxCache.set(node, box);
         }
         return box;
+      };
+      // The box whose overflow clips next after node: its parent, or for an
+      // absolutely positioned node the nearest positioned ancestor (its
+      // containing block), or null at the root.
+      const clipParentOf = (node) => {
+        let cur = composedParent(node);
+        if (!clipBoxOf(node).absolute) return cur;
+        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 1000; depth++) {
+          const pcs = __contrastComputedStyle(cur);
+          if (
+            !pcs ||
+            (pcs.position && pcs.position !== 'static') ||
+            (trim(pcs.transform) && trim(pcs.transform) !== 'none') ||
+            __lname(cur) === 'html'
+          )
+            return cur;
+          cur = composedParent(cur);
+        }
+        return cur;
       };
       // The clip of node and the boxes above it, up to the first that stops
       // the walk (or the root), as one rectangle: an axis no box clips is
@@ -1165,7 +1188,7 @@ function createContrastHelpers(opts, shared) {
           }
           path.push(cur);
           if (clipBoxOf(cur).stops) break;
-          cur = composedParent(cur);
+          cur = clipParentOf(cur);
         }
         // A walk cut short by the depth limit leaves the rest unknown: too
         // long, and isUndrawn walks it box by box.
@@ -1314,41 +1337,49 @@ function createContrastHelpers(opts, shared) {
           )
             return true;
         }
-        let left = r.left;
-        let top = r.top;
-        let right = r.right;
-        let bottom = r.bottom;
         // Inside a marquee, only the boxes around the marquee clip.
-        let cur = composedParent(marquee || el);
+        const start = marquee || el;
+        let cur = clipParentOf(start);
+        let cl = -Infinity;
+        let ct = -Infinity;
+        let cr = Infinity;
+        let cb = Infinity;
         const up = cur && dom.nodeType(cur) === 1 ? clipUpOf(cur) : null;
         if (up && up.len <= 100) {
           if (!up.clips) return false;
-          left = Math.max(left, up.left);
-          right = Math.min(right, up.right);
-          top = Math.max(top, up.top);
-          bottom = Math.min(bottom, up.bottom);
-          return right - left <= 1 || bottom - top <= 1;
-        }
-        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
-          // hidden and clip cut content off; auto and scroll let a reader
-          // scroll to it.
-          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
-          if (clipsX || clipsY) {
+          cl = up.left;
+          cr = up.right;
+          ct = up.top;
+          cb = up.bottom;
+        } else {
+          for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
+            // hidden and clip cut content off; auto and scroll let a reader
+            // scroll to it.
+            const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
             if (clipsX) {
-              left = Math.max(left, a.left);
-              right = Math.min(right, a.right);
+              cl = Math.max(cl, a.left);
+              cr = Math.min(cr, a.right);
             }
             if (clipsY) {
-              top = Math.max(top, a.top);
-              bottom = Math.min(bottom, a.bottom);
+              ct = Math.max(ct, a.top);
+              cb = Math.min(cb, a.bottom);
             }
-            // A pixel or less: the 1px box of visually hidden text.
-            if (right - left <= 1 || bottom - top <= 1) return true;
+            if (stops) break;
+            cur = clipParentOf(cur);
           }
-          if (stops) break;
-          cur = composedParent(cur);
         }
-        return false;
+        // A pixel or less: the 1px box of visually hidden text.
+        const cut = (b) =>
+          Math.min(b.right, cr) - Math.max(b.left, cl) <= 1 ||
+          Math.min(b.bottom, cb) - Math.max(b.top, ct) <= 1;
+        if (cut(r)) return true;
+        if (marquee || (cl === -Infinity && ct === -Infinity && cr === Infinity && cb === Infinity))
+          return false;
+        // The box shows, but its own text may lie in the part cut off, as
+        // padding pushes it there (round 12, C12-3): a screen-reader text
+        // pushed below a 1em box of rating stars. Its lines decide.
+        const lines = __ownTextRects(el);
+        return lines.length > 0 && lines.every(cut);
       };
 
       // An <option> has no layout box of its own, yet it is drawn: the

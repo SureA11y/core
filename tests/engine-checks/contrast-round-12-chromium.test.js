@@ -76,3 +76,36 @@ test(
     assert.equal(dark.outcome, 'pass');
   }
 );
+
+test(
+  'text its padding pushes past a box that hides its overflow is not measured (C12-3)',
+  { skip },
+  async () => {
+    // The box overlaps the clip; its text lies below it.
+    const pushed = await run(
+      page(
+        '<div style="height:20px;overflow:hidden"><div style="padding-top:40px;color:#aaa">Clipped text</div></div>'
+      ),
+      'contrast-minimum'
+    );
+    assert.equal(pushed.outcome, 'notApplicable');
+    // WooCommerce's star rating: its text, for screen readers, sits below
+    // the 1em box that shows only the stars.
+    const stars = await run(
+      page(
+        '<div class="star-rating" role="img" aria-label="Rated 4.00 out of 5"><span style="width:80%">Rated <strong class="rating">4.00</strong> out of 5</span></div>',
+        '<style>.star-rating{overflow:hidden;position:relative;height:1em;line-height:1;width:5.4em}.star-rating span{overflow:hidden;float:left;top:0;left:0;position:absolute;padding-top:1.5em;color:#aaa}</style>'
+      ),
+      'contrast-minimum'
+    );
+    assert.equal(stars.outcome, 'notApplicable');
+    // Text that shows in part is still measured.
+    const half = await run(
+      page(
+        '<div style="height:20px;overflow:hidden"><div style="padding-top:10px;color:#aaa">Clipped text</div></div>'
+      ),
+      'contrast-minimum'
+    );
+    assert.equal(half.outcome, 'fail');
+  }
+);
