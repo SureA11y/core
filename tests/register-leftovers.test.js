@@ -269,3 +269,33 @@ test('packScript refuses code only where HTML leaves the script open (round 12, 
     assert.equal(refused, open, note);
   }
 });
+
+// An empty rule or tag list selects nothing, and every rule runs: said, and
+// refused under strictOptions (round 12, A12-12).
+test('an empty runOnly rule or tag list warns that every rule runs, and throws under strictOptions (round 12, A12-12)', () => {
+  const empties = [
+    [],
+    '',
+    new Set(),
+    { type: 'rule', values: [] },
+    { type: 'tags', values: '' },
+    { tags: [] },
+    { includeRuleIds: [] }
+  ];
+  const all = scan({}).value.checksResults.length;
+  for (const runOnly of empties) {
+    const loose = scan({}, runOnly);
+    assert.equal(loose.value.checksResults.length, all);
+    assert.ok(
+      loose.warnings.some((w) =>
+        /is an empty list: it selects no rule, so every rule runs/.test(w)
+      ),
+      String(loose.warnings)
+    );
+    const strict = scan({ strictOptions: true }, runOnly);
+    assert.equal(strict.error && strict.error.code, 'INVALID_ENGINE_OPTIONS');
+  }
+  // A list with something in it, and no runOnly at all, say nothing of it.
+  assert.ok(!scan({}, ['page-title-present']).warnings.some((w) => /empty list/.test(w)));
+  assert.ok(!scan({}).warnings.some((w) => /empty list/.test(w)));
+});

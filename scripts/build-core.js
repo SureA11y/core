@@ -1629,6 +1629,39 @@ function warnFiltersBesideRunOnly(eo) {
   } catch {}
 }
 
+// A rule or tag list given empty ([], '', a Set with nothing in it) selects
+// nothing, and every rule runs, as with no runOnly: a list built by a filter
+// that came out empty got a full scan without a word (round 12, A12-12). It
+// is said, and under strictOptions refused.
+function warnEmptyRunOnly(runOnly, eo) {
+  const empty = (v) =>
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'string' && !v.trim()) ||
+    (Object.prototype.toString.call(v) === '[object Set]' && v.size === 0);
+  const named = [];
+  if (Array.isArray(runOnly) || typeof runOnly === 'string') {
+    if (empty(runOnly)) named.push('runOnly');
+  } else if (runOnly && typeof runOnly === 'object') {
+    for (const key of ['values', 'tags', 'includeRuleIds', 'includeTestIds']) {
+      if (Object.prototype.hasOwnProperty.call(runOnly, key) && empty(runOnly[key])) {
+        named.push('runOnly.' + key);
+      }
+    }
+  }
+  if (!named.length) return;
+  const message =
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists') +
+    ': it selects no rule, so every rule runs';
+  if (strictOf(eo)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '.');
+  } catch {}
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   // A number or a boolean, and an object none of whose keys the engine
@@ -1640,6 +1673,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
   if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = [...runOnly];
+  warnEmptyRunOnly(runOnly, eo);
   // Another kind of object (a Map, a Date) has no keys a selection reads,
   // and ran every rule.
   // By its type tag, which holds across realms (a page's object, read by
