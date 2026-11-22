@@ -381,16 +381,21 @@ function runInPage(ctx) {
       const isLarge = largeAt(sizePx);
 
       // With no prototype: a value a page's script put on Object.prototype
-      // (sizeScaledBy) is never read as the font's own (round 12, F12-5).
-      const out = Object.assign(Object.create(null), {
-        fontSizePx: sizePx,
-        fontSizePt: helpers.contrast.pxToPt(sizePx),
-        fontWeightNum,
-        fontWeight: helpers.contrast.fontWeightLabel(fontWeightNum),
-        isBold,
-        isLarge,
-        isLargeText: isLarge
-      });
+      // (sizeScaledBy) is never read as the font's own (round 12, F12-5). Set
+      // to null rather than built on Object.create(null), which V8 keeps in
+      // slow dictionary mode (round 12, F12-6).
+      const out = Object.setPrototypeOf(
+        {
+          fontSizePx: sizePx,
+          fontSizePt: helpers.contrast.pxToPt(sizePx),
+          fontWeightNum,
+          fontWeight: helpers.contrast.fontWeightLabel(fontWeightNum),
+          isBold,
+          isLarge,
+          isLargeText: isLarge
+        },
+        null
+      );
       // What the page drew it at, where that isn't its font-size.
       if (drawn.by.length && Number.isFinite(fontSizePx)) {
         out.declaredFontSizePx = fontSizePx;
@@ -1236,7 +1241,9 @@ function runInPage(ctx) {
   // on Object.prototype (colorScheme) is never read as its own (round 12,
   // R12F-6).
   function acrossSchemes(el, analysis, measureIn) {
-    const own = (a) => (a && typeof a === 'object' ? Object.assign(Object.create(null), a) : a);
+    // A copy with its prototype set to null, not built on Object.create(null):
+    // V8 keeps such an object's properties fast to read (round 12, F12-6).
+    const own = (a) => (a && typeof a === 'object' ? Object.setPrototypeOf({ ...a }, null) : a);
     const canvas = analysis && analysis.computable === true ? analysis.canvas : null;
     if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return own(analysis);
     if (canvas.supported.length < 2) return own(analysis);

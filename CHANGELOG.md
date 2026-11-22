@@ -106,6 +106,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- **The contrast rules are faster again**: their analysis, font and text-scan records are plain objects with a null prototype, not slow dictionary-mode objects (they still read nothing from `Object.prototype`); a page with no shadow roots skips the flat-tree check per text; `symbol-graphic-contrast` stops reading an element's visible text at its first letter, digit or emoji; messages in English or Japanese build no number formatter (the first costs a page about 10 ms); and blend mode, filter, mask, inset shadow and transform are read for each box only when the page's style sheets, style attributes or SVG attributes use them (unreadable sheets, animations, shadow roots and custom elements keep the full checks). Results are unchanged. Over 11 realistic pages in Chromium, whole scans are within 1% of the round 11 code (round 12, F12-6).
 - **Under jsdom, a `::before` or `::after` counts as paint under text only when it is drawn and could cover it**: a hidden one, or a small badge in a corner, no longer turns a real contrast failure into a question (round 12, F12-2).
 - **Text the flat tree leaves out is left out of the contrast scan**: text inside a shadow host that no slot takes, and slot fallback content while nodes are assigned to the slot, are not drawn and were measured (round 12, F12-7).
 - **The HTML report names the style sheets a time budget left unread**, and shows no "rules not run" chip when every rule ran (round 12, R12F-8).

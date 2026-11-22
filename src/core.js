@@ -3470,6 +3470,104 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // -------- Costly paint a page uses at all (round 12, F12-6) --------
+  //
+  // A blend mode, a filter or backdrop-filter, a mask, an inset shadow and
+  // a transform (or the scale or rotate property) are each read of every
+  // box above every text, yet most pages use few of them or none. A box's
+  // computed value of one is other than its initial value only where a
+  // declaration gives it one: in a style sheet (its rules, nested, imported
+  // and keyframes among them), a style attribute (where a script's
+  // element.style writes too), an SVG presentation attribute, or a script's
+  // animation. So once per document and run, the text of all of these is
+  // read, and a feature named nowhere in it is used by no box: its reads
+  // are left out, with the answer they would give. Anything that can't be
+  // ruled out keeps every feature: a sheet that can't be read (another
+  // origin, still loading), a running animation, a shadow root (whose
+  // sheets style its host and slotted content), or a custom element, which
+  // may hold a closed one.
+  const __PAGE_FEATURE_NAMES = {
+    blend: /mix-blend-mode/i,
+    filter: /filter/i,
+    mask: /mask/i,
+    insetShadow: /box-shadow/i,
+    transform: /transform|scale|rotate/i
+  };
+  const __PAGE_FEATURES_ALL = Object.freeze({
+    blend: true,
+    filter: true,
+    mask: true,
+    insetShadow: true,
+    transform: true
+  });
+  const __localPageFeatures = new WeakMap();
+  function __pageFeaturesOf(node) {
+    let doc;
+    try {
+      doc = node && dom.nodeType(node) === 9 ? node : dom.ownerDocument(node);
+    } catch {
+      doc = null;
+    }
+    if (!doc || typeof doc !== 'object') return __PAGE_FEATURES_ALL;
+    const cache = __getSharedWeakMapCache('__pageFeaturesCache') || __localPageFeatures;
+    let out = cache.get(doc);
+    if (!out) {
+      out = __readPageFeatures(doc);
+      cache.set(doc, out);
+    }
+    return out;
+  }
+  function __readPageFeatures(doc) {
+    try {
+      if (typeof dom.get(doc, 'getAnimations') === 'function') {
+        const running = dom.call(doc, 'getAnimations');
+        if (!running || running.length) return __PAGE_FEATURES_ALL;
+      }
+      for (const el of dom.querySelectorAll(doc, '*')) {
+        if (dom.shadowRoot(el) || String(dom.localName(el) || '').includes('-'))
+          return __PAGE_FEATURES_ALL;
+      }
+      if (
+        dom.querySelector(
+          doc,
+          '[filter], [mask], [transform], [gradientTransform], [patternTransform]'
+        )
+      )
+        return __PAGE_FEATURES_ALL;
+      const parts = [];
+      for (const el of dom.querySelectorAll(doc, '[style]')) {
+        parts.push(String(dom.getAttribute(el, 'style') || ''));
+      }
+      const sheets = [...(dom.get(doc, 'styleSheets') || [])].concat([
+        ...(dom.get(doc, 'adoptedStyleSheets') || [])
+      ]);
+      const seen = new Set();
+      while (sheets.length) {
+        const sheet = sheets.pop();
+        if (!sheet || seen.has(sheet)) continue;
+        seen.add(sheet);
+        // Throws for a sheet of another origin, or one still loading.
+        const rules = sheet.cssRules;
+        if (!rules) return __PAGE_FEATURES_ALL;
+        for (let i = 0; i < rules.length; i++) {
+          const rule = rules[i];
+          parts.push(String(rule.cssText));
+          // @import: the imported sheet's rules aren't in its text.
+          if (rule.styleSheet) sheets.push(rule.styleSheet);
+          else if (/^\s*@import/i.test(String(rule.cssText))) return __PAGE_FEATURES_ALL;
+        }
+      }
+      const text = parts.join('\n');
+      const out = {};
+      for (const key of Object.keys(__PAGE_FEATURE_NAMES)) {
+        out[key] = __PAGE_FEATURE_NAMES[key].test(text);
+      }
+      return Object.freeze(out);
+    } catch {
+      return __PAGE_FEATURES_ALL;
+    }
+  }
+
   function __asEligibilityBool(v) {
     if (typeof v === 'boolean') return v;
     if (v && typeof v === 'object' && typeof v.eligible === 'boolean') return v.eligible;
@@ -4237,6 +4335,28 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
 
       const walkRoots = withShadowRoots(lightRoots);
+      // Whether any text walked can be left out of the flat tree
+      // (outOfFlatTree below): only where there is an open shadow root, under
+      // a root of the walk, around one, or holding one. A page with none skips
+      // the walk up from each text (round 12, F12-6).
+      let mayLeaveFlatTree = false;
+      if (includeShadowDom) {
+        mayLeaveFlatTree = walkRoots.some((r) => dom.nodeType(r) === 11);
+        for (const root of lightRoots) {
+          if (mayLeaveFlatTree) break;
+          try {
+            const top = dom.getRootNode(root);
+            if (!top || dom.nodeType(top) !== 9) mayLeaveFlatTree = true;
+            for (let cur = dom.parentNode(root), depth = 0; cur && !mayLeaveFlatTree; depth++) {
+              if (depth > 256 || (dom.nodeType(cur) === 1 && dom.shadowRoot(cur)))
+                mayLeaveFlatTree = true;
+              cur = dom.parentNode(cur);
+            }
+          } catch {
+            mayLeaveFlatTree = true;
+          }
+        }
+      }
 
       const SHOW_TEXT =
         w && w.NodeFilter && typeof w.NodeFilter.SHOW_TEXT === 'number'
@@ -4793,7 +4913,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           // A <textarea>'s text nodes are its default value; what it shows is
           // its current value, read with the other fields below.
           if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
-          if (includeShadowDom && outOfFlatTree(node)) continue;
+          if (mayLeaveFlatTree && outOfFlatTree(node)) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
@@ -4916,7 +5036,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 const m = measureGeneratedText(el, pseudo, bgResolveOpts);
                 if (!m || m.same) continue;
                 generated.push(
-                  Object.freeze(Object.assign(Object.create(null), { el, pseudo, textCount: 1 }))
+                  Object.freeze(Object.setPrototypeOf({ el, pseudo, textCount: 1 }, null))
                 );
               }
             }
@@ -4932,9 +5052,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           // Object.prototype (pseudo) is never read as a record's own
           // (round 12, F12-5).
           elements.map((el) =>
-            Object.freeze(
-              Object.assign(Object.create(null), { el, textCount: elToCount.get(el) || 0 })
-            )
+            Object.freeze(Object.setPrototypeOf({ el, textCount: elToCount.get(el) || 0 }, null))
           )
         ),
         generated: Object.freeze(generated)
@@ -5311,6 +5429,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const doc = dom.ownerDocument(el);
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (!__layoutByDoc.get(doc)) return 1;
+    // No box of a page that sets no transform, scale or rotate has one.
+    if (!__pageFeaturesOf(doc).transform) return 1;
     const chain = [];
     let known = 1;
     let guard = 0;
@@ -6494,6 +6614,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function __hasBlendModeEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
+      if (!__pageFeaturesOf(el).blend) return false;
       if (__hasBlendModeCache.has(el)) return __hasBlendModeCache.get(el);
       const v = hasBlendMode(cs);
       __hasBlendModeCache.set(el, v);
@@ -6506,6 +6627,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function __hasFilterEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasFilter(cs);
+      if (!__pageFeaturesOf(el).filter) return false;
       if (__hasFilterCache.has(el)) return __hasFilterCache.get(el);
       const v = hasFilter(cs);
       __hasFilterCache.set(el, v);
@@ -7188,7 +7310,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     root = root || dom.ownerDocument(el);
     // Answers with no prototype: a value a page's script put on
     // Object.prototype (unknown) is never read as theirs (round 12, F12-5).
-    const answer = (o) => Object.assign(Object.create(null), o);
+    const answer = (o) => Object.setPrototypeOf(o, null);
     const found = __colorRulesOf(root, prop);
     if (found.unreadable) return answer({ unknown: true });
     let best = null;
@@ -10158,14 +10280,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let rec = __ancestorEffectsCache.get(cur);
     if (rec) return rec;
     const cs = __contrastComputedStyle(cur);
-    const boxShadow = trim(cs && cs.boxShadow);
+    // What the page uses no box of at all is not read (__pageFeaturesOf).
+    const uses = __pageFeaturesOf(cur);
+    const boxShadow = uses.insetShadow ? trim(cs && cs.boxShadow) : '';
     const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
     const position = cs && cs.position;
     rec = {
       cs,
       blend: __hasBlendModeEl(cur, cs),
       filter: __hasFilterEl(cur, cs),
-      mask: maskOf(cs),
+      mask: uses.mask ? maskOf(cs) : '',
       // __insetShadowUnder paints nothing without an inset shadow.
       insetShadow: !!boxShadow && boxShadow !== 'none' && /\binset\b/i.test(boxShadow),
       bgImage: __hasBackgroundImageOrGradientEl(cur, cs),
@@ -12752,7 +12876,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
     // With no prototype: a value a page's script put on Object.prototype
     // (rgba) is never read as the backdrop's own (round 12, F12-5).
-    if (out && typeof out === 'object') out = Object.assign(Object.create(null), out);
+    if (out && typeof out === 'object') out = Object.setPrototypeOf({ ...out }, null);
     __paintBackdropCache.set(el, out);
     return out;
   }
@@ -26807,11 +26931,16 @@ const formatLocaleDecimal = (function formatLocaleDecimal(value, locale) {
   const cache = formatLocaleDecimal.separators;
   if (!Object.prototype.hasOwnProperty.call(cache, key)) {
     let sep = '.';
-    try {
-      const shown = new Intl.NumberFormat(key, { useGrouping: false }).format(1.5);
-      if (/^1[^0-9]5$/.test(shown)) sep = shown.charAt(1);
-    } catch {
-      sep = '.';
+    // English and Japanese write a point. Building a formatter costs a page
+    // about 10 ms the first time, as the browser loads the locale's data, so
+    // none is built for them (round 12, F12-6).
+    if (key !== 'en' && key !== 'ja') {
+      try {
+        const shown = new Intl.NumberFormat(key, { useGrouping: false }).format(1.5);
+        if (/^1[^0-9]5$/.test(shown)) sep = shown.charAt(1);
+      } catch {
+        sep = '.';
+      }
     }
     cache[key] = sep;
   }
@@ -80775,16 +80904,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum);
 
       // With no prototype: a value a page's script put on Object.prototype
-      // (sizeScaledBy) is never read as the font's own (round 12, F12-5).
-      const out = Object.assign(Object.create(null), {
-        fontSizePx: sizePx,
-        fontSizePt: helpers.contrast.pxToPt(sizePx),
-        fontWeightNum,
-        fontWeight: helpers.contrast.fontWeightLabel(fontWeightNum),
-        isBold,
-        isLarge,
-        isLargeText: isLarge
-      });
+      // (sizeScaledBy) is never read as the font's own (round 12, F12-5). Set
+      // to null rather than built on Object.create(null), which V8 keeps in
+      // slow dictionary mode (round 12, F12-6).
+      const out = Object.setPrototypeOf(
+        {
+          fontSizePx: sizePx,
+          fontSizePt: helpers.contrast.pxToPt(sizePx),
+          fontWeightNum,
+          fontWeight: helpers.contrast.fontWeightLabel(fontWeightNum),
+          isBold,
+          isLarge,
+          isLargeText: isLarge
+        },
+        null
+      );
       // What the page drew it at, where that isn't its font-size.
       if (drawn.by.length && Number.isFinite(fontSizePx)) {
         out.declaredFontSizePx = fontSizePx;
@@ -81572,7 +81706,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // on Object.prototype (colorScheme) is never read as its own (round 12,
   // R12F-6).
   function acrossSchemes(el, analysis, measureIn) {
-    const own = (a) => (a && typeof a === 'object' ? Object.assign(Object.create(null), a) : a);
+    // A copy with its prototype set to null, not built on Object.create(null):
+    // V8 keeps such an object's properties fast to read (round 12, F12-6).
+    const own = (a) => (a && typeof a === 'object' ? Object.setPrototypeOf({ ...a }, null) : a);
     const canvas = analysis && analysis.computable === true ? analysis.canvas : null;
     if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return own(analysis);
     if (canvas.supported.length < 2) return own(analysis);
@@ -82065,16 +82201,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const isLarge = largeAt(sizePx);
 
       // With no prototype: a value a page's script put on Object.prototype
-      // (sizeScaledBy) is never read as the font's own (round 12, F12-5).
-      const out = Object.assign(Object.create(null), {
-        fontSizePx: sizePx,
-        fontSizePt: helpers.contrast.pxToPt(sizePx),
-        fontWeightNum,
-        fontWeight: helpers.contrast.fontWeightLabel(fontWeightNum),
-        isBold,
-        isLarge,
-        isLargeText: isLarge
-      });
+      // (sizeScaledBy) is never read as the font's own (round 12, F12-5). Set
+      // to null rather than built on Object.create(null), which V8 keeps in
+      // slow dictionary mode (round 12, F12-6).
+      const out = Object.setPrototypeOf(
+        {
+          fontSizePx: sizePx,
+          fontSizePt: helpers.contrast.pxToPt(sizePx),
+          fontWeightNum,
+          fontWeight: helpers.contrast.fontWeightLabel(fontWeightNum),
+          isBold,
+          isLarge,
+          isLargeText: isLarge
+        },
+        null
+      );
       // What the page drew it at, where that isn't its font-size.
       if (drawn.by.length && Number.isFinite(fontSizePx)) {
         out.declaredFontSizePx = fontSizePx;
@@ -82920,7 +83061,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // on Object.prototype (colorScheme) is never read as its own (round 12,
   // R12F-6).
   function acrossSchemes(el, analysis, measureIn) {
-    const own = (a) => (a && typeof a === 'object' ? Object.assign(Object.create(null), a) : a);
+    // A copy with its prototype set to null, not built on Object.create(null):
+    // V8 keeps such an object's properties fast to read (round 12, F12-6).
+    const own = (a) => (a && typeof a === 'object' ? Object.setPrototypeOf({ ...a }, null) : a);
     const canvas = analysis && analysis.computable === true ? analysis.canvas : null;
     if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return own(analysis);
     if (canvas.supported.length < 2) return own(analysis);
@@ -118549,11 +118692,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // size of 0), hidden (visibility:hidden) or
   // visually hidden (a screen-reader-only clip or 1px box). aria-hidden
   // doesn't matter to sight. Read through at most 400 nodes.
+  // Null as soon as the text holds a letter, a digit or an emoji: the
+  // whole of it would too, and symbolTextOf leaves such text out, so the
+  // rest is not read (round 12, F12-6).
   function visibleTextOf(el) {
     let out = '';
     let budget = 400;
+    let worded = false;
     const walk = (node) => {
-      for (let n = dom.firstChild(node); n && budget > 0; n = dom.nextSibling(n)) {
+      for (let n = dom.firstChild(node); n && budget > 0 && !worded; n = dom.nextSibling(n)) {
         budget -= 1;
         const type = dom.nodeType(n);
         if (type === 3) {
@@ -118564,14 +118711,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           const vis = trim(cs && cs.visibility);
           // Text at a font size of 0 draws nothing (round 12, C12-11).
           const drawn = !cs || !cs.fontSize || Number.parseFloat(cs.fontSize) !== 0;
-          if ((!vis || vis === 'visible') && drawn) out += String(dom.nodeValue(n) || '');
+          if ((!vis || vis === 'visible') && drawn) {
+            const piece = String(dom.nodeValue(n) || '');
+            out += piece;
+            if (LETTER_OR_DIGIT.test(piece) || EMOJI.test(piece)) worded = true;
+          }
         } else if (type === 1 && shown(n) && !unseen(n)) {
           walk(n);
         }
       }
     };
     walk(el);
-    return out;
+    return worded ? null : out;
   }
 
   // The element's own symbol text: its direct text children, holding a
@@ -118599,7 +118750,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const walker = dom.createTreeWalker(dom.ownerDocument(el) || tree, tree, 4);
         for (let t = walker.nextNode(); t; t = walker.nextNode()) {
           const v = String(dom.nodeValue(t) || '');
-          if (SYMBOL.test(v.replace(SEPARATORS, ''))) symbolParents.add(dom.parentNode(t));
+          // Text with no symbol at all, most of it, is not copied.
+          if (SYMBOL.test(v) && SYMBOL.test(v.replace(SEPARATORS, '')))
+            symbolParents.add(dom.parentNode(t));
         }
       } catch {
         ok = false;
@@ -118617,7 +118770,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     own = trim(own).replace(/\s+/g, ' ');
     if (!own || !SYMBOL.test(own.replace(SEPARATORS, ''))) return '';
-    const text = trim(visibleTextOf(el)).replace(/\s+/g, ' ');
+    const seen = visibleTextOf(el);
+    if (seen === null) return '';
+    const text = trim(seen).replace(/\s+/g, ' ');
     if (!text || [...text].length > 40) return '';
     if (LETTER_OR_DIGIT.test(text) || EMOJI.test(text)) return '';
     if (!SYMBOL.test(text.replace(SEPARATORS, ''))) return '';
@@ -141997,6 +142152,104 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // -------- Costly paint a page uses at all (round 12, F12-6) --------
+  //
+  // A blend mode, a filter or backdrop-filter, a mask, an inset shadow and
+  // a transform (or the scale or rotate property) are each read of every
+  // box above every text, yet most pages use few of them or none. A box's
+  // computed value of one is other than its initial value only where a
+  // declaration gives it one: in a style sheet (its rules, nested, imported
+  // and keyframes among them), a style attribute (where a script's
+  // element.style writes too), an SVG presentation attribute, or a script's
+  // animation. So once per document and run, the text of all of these is
+  // read, and a feature named nowhere in it is used by no box: its reads
+  // are left out, with the answer they would give. Anything that can't be
+  // ruled out keeps every feature: a sheet that can't be read (another
+  // origin, still loading), a running animation, a shadow root (whose
+  // sheets style its host and slotted content), or a custom element, which
+  // may hold a closed one.
+  const __PAGE_FEATURE_NAMES = {
+    blend: /mix-blend-mode/i,
+    filter: /filter/i,
+    mask: /mask/i,
+    insetShadow: /box-shadow/i,
+    transform: /transform|scale|rotate/i
+  };
+  const __PAGE_FEATURES_ALL = Object.freeze({
+    blend: true,
+    filter: true,
+    mask: true,
+    insetShadow: true,
+    transform: true
+  });
+  const __localPageFeatures = new WeakMap();
+  function __pageFeaturesOf(node) {
+    let doc;
+    try {
+      doc = node && dom.nodeType(node) === 9 ? node : dom.ownerDocument(node);
+    } catch {
+      doc = null;
+    }
+    if (!doc || typeof doc !== 'object') return __PAGE_FEATURES_ALL;
+    const cache = __getSharedWeakMapCache('__pageFeaturesCache') || __localPageFeatures;
+    let out = cache.get(doc);
+    if (!out) {
+      out = __readPageFeatures(doc);
+      cache.set(doc, out);
+    }
+    return out;
+  }
+  function __readPageFeatures(doc) {
+    try {
+      if (typeof dom.get(doc, 'getAnimations') === 'function') {
+        const running = dom.call(doc, 'getAnimations');
+        if (!running || running.length) return __PAGE_FEATURES_ALL;
+      }
+      for (const el of dom.querySelectorAll(doc, '*')) {
+        if (dom.shadowRoot(el) || String(dom.localName(el) || '').includes('-'))
+          return __PAGE_FEATURES_ALL;
+      }
+      if (
+        dom.querySelector(
+          doc,
+          '[filter], [mask], [transform], [gradientTransform], [patternTransform]'
+        )
+      )
+        return __PAGE_FEATURES_ALL;
+      const parts = [];
+      for (const el of dom.querySelectorAll(doc, '[style]')) {
+        parts.push(String(dom.getAttribute(el, 'style') || ''));
+      }
+      const sheets = [...(dom.get(doc, 'styleSheets') || [])].concat([
+        ...(dom.get(doc, 'adoptedStyleSheets') || [])
+      ]);
+      const seen = new Set();
+      while (sheets.length) {
+        const sheet = sheets.pop();
+        if (!sheet || seen.has(sheet)) continue;
+        seen.add(sheet);
+        // Throws for a sheet of another origin, or one still loading.
+        const rules = sheet.cssRules;
+        if (!rules) return __PAGE_FEATURES_ALL;
+        for (let i = 0; i < rules.length; i++) {
+          const rule = rules[i];
+          parts.push(String(rule.cssText));
+          // @import: the imported sheet's rules aren't in its text.
+          if (rule.styleSheet) sheets.push(rule.styleSheet);
+          else if (/^\s*@import/i.test(String(rule.cssText))) return __PAGE_FEATURES_ALL;
+        }
+      }
+      const text = parts.join('\n');
+      const out = {};
+      for (const key of Object.keys(__PAGE_FEATURE_NAMES)) {
+        out[key] = __PAGE_FEATURE_NAMES[key].test(text);
+      }
+      return Object.freeze(out);
+    } catch {
+      return __PAGE_FEATURES_ALL;
+    }
+  }
+
   function __asEligibilityBool(v) {
     if (typeof v === 'boolean') return v;
     if (v && typeof v === 'object' && typeof v.eligible === 'boolean') return v.eligible;
@@ -142764,6 +143017,28 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
 
       const walkRoots = withShadowRoots(lightRoots);
+      // Whether any text walked can be left out of the flat tree
+      // (outOfFlatTree below): only where there is an open shadow root, under
+      // a root of the walk, around one, or holding one. A page with none skips
+      // the walk up from each text (round 12, F12-6).
+      let mayLeaveFlatTree = false;
+      if (includeShadowDom) {
+        mayLeaveFlatTree = walkRoots.some((r) => dom.nodeType(r) === 11);
+        for (const root of lightRoots) {
+          if (mayLeaveFlatTree) break;
+          try {
+            const top = dom.getRootNode(root);
+            if (!top || dom.nodeType(top) !== 9) mayLeaveFlatTree = true;
+            for (let cur = dom.parentNode(root), depth = 0; cur && !mayLeaveFlatTree; depth++) {
+              if (depth > 256 || (dom.nodeType(cur) === 1 && dom.shadowRoot(cur)))
+                mayLeaveFlatTree = true;
+              cur = dom.parentNode(cur);
+            }
+          } catch {
+            mayLeaveFlatTree = true;
+          }
+        }
+      }
 
       const SHOW_TEXT =
         w && w.NodeFilter && typeof w.NodeFilter.SHOW_TEXT === 'number'
@@ -143320,7 +143595,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           // A <textarea>'s text nodes are its default value; what it shows is
           // its current value, read with the other fields below.
           if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
-          if (includeShadowDom && outOfFlatTree(node)) continue;
+          if (mayLeaveFlatTree && outOfFlatTree(node)) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
@@ -143443,7 +143718,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 const m = measureGeneratedText(el, pseudo, bgResolveOpts);
                 if (!m || m.same) continue;
                 generated.push(
-                  Object.freeze(Object.assign(Object.create(null), { el, pseudo, textCount: 1 }))
+                  Object.freeze(Object.setPrototypeOf({ el, pseudo, textCount: 1 }, null))
                 );
               }
             }
@@ -143459,9 +143734,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           // Object.prototype (pseudo) is never read as a record's own
           // (round 12, F12-5).
           elements.map((el) =>
-            Object.freeze(
-              Object.assign(Object.create(null), { el, textCount: elToCount.get(el) || 0 })
-            )
+            Object.freeze(Object.setPrototypeOf({ el, textCount: elToCount.get(el) || 0 }, null))
           )
         ),
         generated: Object.freeze(generated)
@@ -143838,6 +144111,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const doc = dom.ownerDocument(el);
     if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
     if (!__layoutByDoc.get(doc)) return 1;
+    // No box of a page that sets no transform, scale or rotate has one.
+    if (!__pageFeaturesOf(doc).transform) return 1;
     const chain = [];
     let known = 1;
     let guard = 0;
@@ -145021,6 +145296,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function __hasBlendModeEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
+      if (!__pageFeaturesOf(el).blend) return false;
       if (__hasBlendModeCache.has(el)) return __hasBlendModeCache.get(el);
       const v = hasBlendMode(cs);
       __hasBlendModeCache.set(el, v);
@@ -145033,6 +145309,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function __hasFilterEl(el, cs) {
     try {
       if (!el || dom.nodeType(el) !== 1) return hasFilter(cs);
+      if (!__pageFeaturesOf(el).filter) return false;
       if (__hasFilterCache.has(el)) return __hasFilterCache.get(el);
       const v = hasFilter(cs);
       __hasFilterCache.set(el, v);
@@ -145715,7 +145992,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     root = root || dom.ownerDocument(el);
     // Answers with no prototype: a value a page's script put on
     // Object.prototype (unknown) is never read as theirs (round 12, F12-5).
-    const answer = (o) => Object.assign(Object.create(null), o);
+    const answer = (o) => Object.setPrototypeOf(o, null);
     const found = __colorRulesOf(root, prop);
     if (found.unreadable) return answer({ unknown: true });
     let best = null;
@@ -148685,14 +148962,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let rec = __ancestorEffectsCache.get(cur);
     if (rec) return rec;
     const cs = __contrastComputedStyle(cur);
-    const boxShadow = trim(cs && cs.boxShadow);
+    // What the page uses no box of at all is not read (__pageFeaturesOf).
+    const uses = __pageFeaturesOf(cur);
+    const boxShadow = uses.insetShadow ? trim(cs && cs.boxShadow) : '';
     const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
     const position = cs && cs.position;
     rec = {
       cs,
       blend: __hasBlendModeEl(cur, cs),
       filter: __hasFilterEl(cur, cs),
-      mask: maskOf(cs),
+      mask: uses.mask ? maskOf(cs) : '',
       // __insetShadowUnder paints nothing without an inset shadow.
       insetShadow: !!boxShadow && boxShadow !== 'none' && /\binset\b/i.test(boxShadow),
       bgImage: __hasBackgroundImageOrGradientEl(cur, cs),
@@ -151279,7 +151558,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
     // With no prototype: a value a page's script put on Object.prototype
     // (rgba) is never read as the backdrop's own (round 12, F12-5).
-    if (out && typeof out === 'object') out = Object.assign(Object.create(null), out);
+    if (out && typeof out === 'object') out = Object.setPrototypeOf({ ...out }, null);
     __paintBackdropCache.set(el, out);
     return out;
   }
@@ -165334,11 +165613,16 @@ const formatLocaleDecimal = (function formatLocaleDecimal(value, locale) {
   const cache = formatLocaleDecimal.separators;
   if (!Object.prototype.hasOwnProperty.call(cache, key)) {
     let sep = '.';
-    try {
-      const shown = new Intl.NumberFormat(key, { useGrouping: false }).format(1.5);
-      if (/^1[^0-9]5$/.test(shown)) sep = shown.charAt(1);
-    } catch {
-      sep = '.';
+    // English and Japanese write a point. Building a formatter costs a page
+    // about 10 ms the first time, as the browser loads the locale's data, so
+    // none is built for them (round 12, F12-6).
+    if (key !== 'en' && key !== 'ja') {
+      try {
+        const shown = new Intl.NumberFormat(key, { useGrouping: false }).format(1.5);
+        if (/^1[^0-9]5$/.test(shown)) sep = shown.charAt(1);
+      } catch {
+        sep = '.';
+      }
     }
     cache[key] = sep;
   }

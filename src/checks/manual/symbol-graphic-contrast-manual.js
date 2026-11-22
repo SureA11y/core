@@ -177,11 +177,15 @@ function runInPage(ctx) {
   // size of 0), hidden (visibility:hidden) or
   // visually hidden (a screen-reader-only clip or 1px box). aria-hidden
   // doesn't matter to sight. Read through at most 400 nodes.
+  // Null as soon as the text holds a letter, a digit or an emoji: the
+  // whole of it would too, and symbolTextOf leaves such text out, so the
+  // rest is not read (round 12, F12-6).
   function visibleTextOf(el) {
     let out = '';
     let budget = 400;
+    let worded = false;
     const walk = (node) => {
-      for (let n = dom.firstChild(node); n && budget > 0; n = dom.nextSibling(n)) {
+      for (let n = dom.firstChild(node); n && budget > 0 && !worded; n = dom.nextSibling(n)) {
         budget -= 1;
         const type = dom.nodeType(n);
         if (type === 3) {
@@ -192,14 +196,18 @@ function runInPage(ctx) {
           const vis = trim(cs && cs.visibility);
           // Text at a font size of 0 draws nothing (round 12, C12-11).
           const drawn = !cs || !cs.fontSize || Number.parseFloat(cs.fontSize) !== 0;
-          if ((!vis || vis === 'visible') && drawn) out += String(dom.nodeValue(n) || '');
+          if ((!vis || vis === 'visible') && drawn) {
+            const piece = String(dom.nodeValue(n) || '');
+            out += piece;
+            if (LETTER_OR_DIGIT.test(piece) || EMOJI.test(piece)) worded = true;
+          }
         } else if (type === 1 && shown(n) && !unseen(n)) {
           walk(n);
         }
       }
     };
     walk(el);
-    return out;
+    return worded ? null : out;
   }
 
   // The element's own symbol text: its direct text children, holding a
@@ -227,7 +235,9 @@ function runInPage(ctx) {
         const walker = dom.createTreeWalker(dom.ownerDocument(el) || tree, tree, 4);
         for (let t = walker.nextNode(); t; t = walker.nextNode()) {
           const v = String(dom.nodeValue(t) || '');
-          if (SYMBOL.test(v.replace(SEPARATORS, ''))) symbolParents.add(dom.parentNode(t));
+          // Text with no symbol at all, most of it, is not copied.
+          if (SYMBOL.test(v) && SYMBOL.test(v.replace(SEPARATORS, '')))
+            symbolParents.add(dom.parentNode(t));
         }
       } catch {
         ok = false;
@@ -245,7 +255,9 @@ function runInPage(ctx) {
     }
     own = trim(own).replace(/\s+/g, ' ');
     if (!own || !SYMBOL.test(own.replace(SEPARATORS, ''))) return '';
-    const text = trim(visibleTextOf(el)).replace(/\s+/g, ' ');
+    const seen = visibleTextOf(el);
+    if (seen === null) return '';
+    const text = trim(seen).replace(/\s+/g, ' ');
     if (!text || [...text].length > 40) return '';
     if (LETTER_OR_DIGIT.test(text) || EMOJI.test(text)) return '';
     if (!SYMBOL.test(text.replace(SEPARATORS, ''))) return '';

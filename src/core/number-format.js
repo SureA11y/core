@@ -46,11 +46,16 @@ function formatLocaleDecimal(value, locale) {
   const cache = formatLocaleDecimal.separators;
   if (!Object.prototype.hasOwnProperty.call(cache, key)) {
     let sep = '.';
-    try {
-      const shown = new Intl.NumberFormat(key, { useGrouping: false }).format(1.5);
-      if (/^1[^0-9]5$/.test(shown)) sep = shown.charAt(1);
-    } catch {
-      sep = '.';
+    // English and Japanese write a point. Building a formatter costs a page
+    // about 10 ms the first time, as the browser loads the locale's data, so
+    // none is built for them (round 12, F12-6).
+    if (key !== 'en' && key !== 'ja') {
+      try {
+        const shown = new Intl.NumberFormat(key, { useGrouping: false }).format(1.5);
+        if (/^1[^0-9]5$/.test(shown)) sep = shown.charAt(1);
+      } catch {
+        sep = '.';
+      }
     }
     cache[key] = sep;
   }
