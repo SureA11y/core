@@ -21,6 +21,9 @@ const shadow = (host, inner) =>
   `<script>document.getElementById(${JSON.stringify(host)}).attachShadow({mode:"open"}).innerHTML=${JSON.stringify(inner)}</script>`;
 const OVERFLOW = ['overflow', 'overflowX', 'overflowY'];
 const RED = ['rgb(255, 0, 0)'];
+const GREEN = ['rgb(0, 128, 0)', 'rgb(0, 128, 0)'];
+const BLACK = ['rgb(0, 0, 0)', 'rgb(0, 0, 0)'];
+const LINK = ['rgb(0, 0, 238)', 'rgb(0, 0, 238)'];
 
 // [label, html, selector (' >>> ' enters a shadow root), properties,
 // values Chromium computes]
@@ -207,7 +210,57 @@ const CASES = [
     '#t',
     ['color'],
     [rgb]
-  ])
+  ]),
+  // R11F-7: color: revert and revert-layer, and all: unset over a hint.
+  ...[
+    ['a span set to color: revert', '<span id="t" style="color:revert">x</span>', GREEN],
+    [
+      'a child of a span set to color: revert',
+      '<span style="color:revert"><b id="t">x</b></span>',
+      GREEN
+    ],
+    [
+      'a span set to color: revert-layer by a rule',
+      '<span id="t" class="r">x</span>',
+      GREEN,
+      '<style>.r{color:revert-layer}</style>'
+    ],
+    ['a link set to color: revert', '<a href="/" id="t" style="color:revert">x</a>', LINK],
+    ['a <mark> set to color: revert', '<mark id="t" style="color:revert">x</mark>', BLACK],
+    [
+      'a <font color> set to color: revert',
+      '<font color="red" id="t" style="color:revert">x</font>',
+      GREEN
+    ],
+    [
+      'a <font color> set to color: revert-layer',
+      '<font color="red" id="t" style="color:revert-layer">x</font>',
+      ['rgb(255, 0, 0)', 'rgb(255, 0, 0)']
+    ],
+    [
+      'a span set to color: revert in a <font color>',
+      '<font color="red"><span id="t" style="color:revert">x</span></font>',
+      ['rgb(255, 0, 0)', 'rgb(255, 0, 0)']
+    ],
+    [
+      'a <font color> set to all: unset',
+      '<font color="red" id="t" style="all:unset">x</font>',
+      GREEN
+    ]
+  ].map(([label, body, expected, head = '']) => [
+    label,
+    page(`<p style="color:green">${body}</p>`, head),
+    '#t',
+    ['color', 'webkitTextFillColor'],
+    expected
+  ]),
+  [
+    'a cell with bgcolor set to all: unset',
+    page('<table><tr><td bgcolor="black" id="t" style="all:unset">x</td></tr></table>'),
+    '#t',
+    ['backgroundColor'],
+    ['rgba(0, 0, 0, 0)']
+  ]
 ];
 
 function jsdomStyle(html, selector, props) {

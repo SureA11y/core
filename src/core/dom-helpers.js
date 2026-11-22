@@ -818,6 +818,45 @@ function createDomHelpers(opts) {
     if (now === was || String(cs[prop] || '') !== was) return null;
     return now;
   }
+  // color: revert and revert-layer, which jsdom leaves as the keyword, and
+  // its elements' descendants inherit as is; once another property has
+  // been read, jsdom gives them as transparent instead. The value they
+  // take, as Chromium computes it: the browser's color for a link (or
+  // <body link>'s), <mark> and form controls; for revert-layer on
+  // <font color>, the hint, which is below every layer; else the parent's,
+  // inherited. null where jsdom's value stands. Elements whose color is
+  // set here are remembered, for their descendants.
+  const __revertedColorEls = new WeakSet();
+  function __revertedColor(el, cs, raw, tag, html) {
+    const keyword = raw === 'revert' || raw === 'revert-layer';
+    if (!keyword && raw !== 'rgba(0, 0, 0, 0)') return null;
+    const own = __authorDecl(el, 'color');
+    const parent = __flatParentElement(el);
+    let value = null;
+    if (own === 'revert' || own === 'revert-layer') {
+      const link = html && (tag === 'a' || tag === 'area') && dom.hasAttribute(el, 'href');
+      if (link) {
+        const doc = dom.ownerDocument(el);
+        const body = doc ? dom.body(doc) : null;
+        value =
+          (body &&
+            dom.hasAttribute(body, 'link') &&
+            __legacyColor(dom.getAttribute(body, 'link'))) ||
+          'rgb(0, 0, 238)';
+      } else if (own === 'revert-layer' && html && tag === 'font' && dom.hasAttribute(el, 'color'))
+        value = __legacyColor(dom.getAttribute(el, 'color'));
+      else if (html && /^(mark|button|input|select|textarea)$/.test(tag)) value = 'rgb(0, 0, 0)';
+    } else if (own === null || __INHERIT_KEYWORDS.has(own)) {
+      // Inherited from an element set here, as jsdom inherits the keyword.
+      if (!parent) return null;
+      computedStyle(parent);
+      if (!__revertedColorEls.has(parent)) return null;
+    } else return null;
+    if (!value) value = parent ? String(computedStyle(parent).color || '') : 'rgb(0, 0, 0)';
+    if (!value) return null;
+    __revertedColorEls.add(el);
+    return value;
+  }
   function __jsdomStyleFixesOf(el, cs) {
     let out = null;
     const set = (prop, value) => {
@@ -826,12 +865,21 @@ function createDomHelpers(opts) {
     };
     const tag = String(dom.localName(el) || '').toLowerCase();
     const html = dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
-
-    // overflow
     const norm = (v) =>
       String(v || '')
         .trim()
         .toLowerCase();
+    // Read before any other property: jsdom turns a color it can't resolve
+    // transparent once another one has been read (__revertedColor).
+    const rawColor = norm(cs.color);
+    const revertedColor = __revertedColor(el, cs, rawColor, tag, html);
+    if (revertedColor) {
+      set('color', revertedColor);
+      set('-webkit-text-fill-color', revertedColor);
+      set('webkitTextFillColor', revertedColor);
+    }
+
+    // overflow
     const lx = norm(cs.overflowX);
     const ly = norm(cs.overflowY);
     const short = norm(cs.overflow);
@@ -901,7 +949,8 @@ function createDomHelpers(opts) {
       String(dom.getAttribute(el, 'hidden') || '')
         .trim()
         .toLowerCase() !== 'until-found' &&
-      __authorDecl(el, 'display') === null
+      __authorDecl(el, 'display') === null &&
+      __authorDecl(el, 'all') === null
     )
       set('display', 'inline-block');
 
@@ -914,9 +963,11 @@ function createDomHelpers(opts) {
     // The nearest element that can set a color hint: a link's color is the
     // browser's (or <body link>'s), whatever is around it.
     let color = null;
-    const colorHost = __flatClosest(el, 'font[color], body[text], a[href], area[href]');
+    const colorHost = revertedColor
+      ? null
+      : __flatClosest(el, 'font[color], body[text], a[href], area[href]');
     if (colorHost === el) {
-      if (__authorDecl(el, 'color') === null) {
+      if (__authorDecl(el, 'color') === null && __authorDecl(el, 'all') === null) {
         if (html && tag === 'font') color = __legacyColor(dom.getAttribute(el, 'color'));
         else if (html && tag === 'body') color = __legacyColor(dom.getAttribute(el, 'text'));
         else if (html) {
@@ -945,7 +996,8 @@ function createDomHelpers(opts) {
       if (
         bg &&
         __authorDecl(el, 'background-color') === null &&
-        __authorDecl(el, 'background') === null
+        __authorDecl(el, 'background') === null &&
+        __authorDecl(el, 'all') === null
       )
         set('background-color', bg);
     }
@@ -953,7 +1005,7 @@ function createDomHelpers(opts) {
     if (ns === 'http://www.w3.org/2000/svg') {
       let fill = null;
       const fillDecl = __authorDecl(el, 'fill');
-      if (fillDecl === null && dom.hasAttribute(el, 'fill')) {
+      if (fillDecl === null && dom.hasAttribute(el, 'fill') && __authorDecl(el, 'all') === null) {
         const v = String(dom.getAttribute(el, 'fill') || '').trim();
         if (/^currentcolor$/i.test(v)) fill = color || String(cs.color || '');
         else if (/^none$/i.test(v)) fill = 'none';
