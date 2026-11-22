@@ -1843,8 +1843,17 @@ function runInPage(ctx) {
     }
     if (outerCs && (cs.fontStyle || 'normal') !== (outerCs.fontStyle || 'normal')) return true;
     if (hasBorder(cs, wrapper)) return true;
+    return underlinedAtRest(wrapper, cs) && !unseen(wrapper, cs.textDecorationColor);
+  }
+
+  // Whether el's own text-decoration underlines it: from its computed style
+  // where that can be trusted, else from the style sheets, as the link's
+  // own underline is read (jsdom cascades no text-decoration).
+  function underlinedAtRest(el, cs) {
     const deco = decorationInfo(cs);
-    return deco.trustworthy && deco.underlined && !unseen(wrapper, cs.textDecorationColor);
+    if (deco.trustworthy) return deco.underlined;
+    const fromCssom = resolveUnderlineFromCssom(el);
+    return fromCssom.resolved && fromCssom.underlined;
   }
 
   // Whether the text around the link is underlined too: by its own element's
@@ -1862,13 +1871,7 @@ function runInPage(ctx) {
     ) {
       const cs = safeComputedStyle(a);
       if (!cs) return false;
-      const deco = decorationInfo(cs);
-      let underlined = deco.trustworthy && deco.underlined;
-      if (!deco.trustworthy) {
-        const fromCssom = resolveUnderlineFromCssom(a);
-        underlined = fromCssom.resolved && fromCssom.underlined;
-      }
-      if (underlined && !isTransparentColor(cs.textDecorationColor)) return true;
+      if (underlinedAtRest(a, cs) && !isTransparentColor(cs.textDecorationColor)) return true;
       const display = String(cs.display || '');
       const float = String(cs.cssFloat || cs.float || 'none');
       if (
@@ -1940,10 +1943,8 @@ function runInPage(ctx) {
       if (hasBorder(cs, node)) return true;
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
       if (hasBackgroundImage(cs, node) || ownBackground(node, cs)) return true;
-      const deco = decorationInfo(cs);
       return (
-        deco.trustworthy &&
-        deco.underlined &&
+        underlinedAtRest(node, cs) &&
         !isTransparentColor(cs.textDecorationColor) &&
         !(aroundUnderlined && aroundUnderlined())
       );
