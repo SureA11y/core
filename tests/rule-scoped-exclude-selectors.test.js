@@ -317,7 +317,7 @@ test('dom helpers: __setActiveRuleExcludeSelectors(null) clears rule-scoped excl
   );
 });
 
-test('dom helpers: shadow-root discovery cache is bypassed while a rule-scoped exclude is active, even with empty global excludeSelectors', () => {
+test('dom helpers: shadow-root discovery is cached under the rule-scoped exclude list while one is active, even with empty global excludeSelectors', () => {
   const dom = new JSDOM(
     `<!doctype html><html><body>
       <div id="host" class="widget"></div>
@@ -343,17 +343,27 @@ test('dom helpers: shadow-root discovery cache is bypassed while a rule-scoped e
   helpers.__setActiveRuleExcludeSelectors(['.widget']);
 
   const before1 = starScans;
-  helpers.queryAllDeep('button');
+  assert.deepStrictEqual(helpers.queryAllDeep('button'), []);
   const after1 = starScans;
   assert.ok(after1 > before1, 'first deep query should scan for shadow hosts');
 
   const before2 = starScans;
-  helpers.queryAllDeep('button');
+  assert.deepStrictEqual(helpers.queryAllDeep('button'), [], 'the excluded host stays out');
   const after2 = starScans;
-  assert.ok(
-    after2 > before2,
-    'second deep query must scan again -- discovery caching must stay off while a rule-scoped exclude is active'
+  assert.strictEqual(
+    after2,
+    before2,
+    'second deep query reuses the discovery cached for this list'
   );
+
+  // Another list is another cache entry: no stale roots from the first one.
+  helpers.__setActiveRuleExcludeSelectors(null);
+  const before3 = starScans;
+  assert.deepStrictEqual(
+    helpers.queryAllDeep('button').map((el) => el.id),
+    ['shadowBtn']
+  );
+  assert.ok(starScans > before3, 'a different exclude list scans for shadow hosts again');
 });
 
 test('dom helpers: switching the active rule (as dom-runner.js does between rules) never leaks a stale shadow-root cache into the next rule', () => {

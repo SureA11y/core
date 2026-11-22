@@ -847,6 +847,70 @@ function createContrastHelpers(opts, shared) {
         }
         return box;
       };
+      // The clip of node and the boxes above it, up to the first that stops
+      // the walk (or the root), as one rectangle: an axis no box clips is
+      // open. Cutting the text's box by it is cutting it by each box in
+      // turn, as isUndrawn does, since an intersection only shrinks. len:
+      // how many boxes it spans, for the walk's depth limit.
+      const clipUpCache = new Map();
+      const clipUpOf = (node) => {
+        const hit = clipUpCache.get(node);
+        if (hit) return hit;
+        const path = [];
+        let base = null;
+        let cur = node;
+        while (cur && dom.nodeType(cur) === 1 && path.length < 101) {
+          const known = clipUpCache.get(cur);
+          if (known) {
+            base = known;
+            break;
+          }
+          path.push(cur);
+          if (clipBoxOf(cur).stops) break;
+          cur = composedParent(cur);
+        }
+        // A walk cut short by the depth limit leaves the rest unknown: too
+        // long, and isUndrawn walks it box by box.
+        const cut = !base && path.length >= 101;
+        let up = base || {
+          clips: false,
+          left: -Infinity,
+          top: -Infinity,
+          right: Infinity,
+          bottom: Infinity,
+          len: cut ? Infinity : 0
+        };
+        for (let i = path.length - 1; i >= 0; i--) {
+          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(path[i]);
+          const above = stops ? null : up;
+          up = {
+            clips: clipsX || clipsY || (!!above && above.clips),
+            left: clipsX
+              ? Math.max(a.left, above ? above.left : -Infinity)
+              : above
+                ? above.left
+                : -Infinity,
+            top: clipsY
+              ? Math.max(a.top, above ? above.top : -Infinity)
+              : above
+                ? above.top
+                : -Infinity,
+            right: clipsX
+              ? Math.min(a.right, above ? above.right : Infinity)
+              : above
+                ? above.right
+                : Infinity,
+            bottom: clipsY
+              ? Math.min(a.bottom, above ? above.bottom : Infinity)
+              : above
+                ? above.bottom
+                : Infinity,
+            len: 1 + (above ? above.len : 0)
+          };
+          clipUpCache.set(path[i], up);
+        }
+        return up;
+      };
 
       // Whether the element's text lies left of the page: its own text's
       // lines where it has any, else (text from ::before or ::after) the
@@ -958,6 +1022,15 @@ function createContrastHelpers(opts, shared) {
         let bottom = r.bottom;
         // Inside a marquee, only the boxes around the marquee clip.
         let cur = composedParent(marquee || el);
+        const up = cur && dom.nodeType(cur) === 1 ? clipUpOf(cur) : null;
+        if (up && up.len <= 100) {
+          if (!up.clips) return false;
+          left = Math.max(left, up.left);
+          right = Math.min(right, up.right);
+          top = Math.max(top, up.top);
+          bottom = Math.min(bottom, up.bottom);
+          return right - left <= 1 || bottom - top <= 1;
+        }
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
@@ -2253,8 +2326,9 @@ function createContrastHelpers(opts, shared) {
         v = '';
       }
       // A layer paints a mask when it has an image (url(), a gradient,
-      // image-set()); `none` and the shorthand's other keywords don't.
-      if (v && __splitTopLevel(v).some((layer) => layer.includes('('))) return v;
+      // image-set()); `none` and the shorthand's other keywords don't. Some
+      // layer has a "(" exactly when the whole value has one.
+      if (v && v.includes('(')) return v;
     }
     return '';
   }
@@ -4790,7 +4864,8 @@ function createContrastHelpers(opts, shared) {
       }
 
       // Inset shadows filling its padding box, over its background.
-      const shadows = __insetShadowUnder(cur, cs, el);
+      const own = __ancestorEffectsOf(cur);
+      const shadows = own.insetShadow ? __insetShadowUnder(cur, cs, el) : null;
       if (shadows && shadows.colors) {
         for (const c of shadows.colors) {
           if (collectStack) {
@@ -4861,7 +4936,7 @@ function createContrastHelpers(opts, shared) {
 
       // A box in the top layer is painted over its ::backdrop, which is
       // painted over the rest of the page (a lightbox's dimmed page).
-      const top = acc.a < 1 ? __topLayerOf(cur) : null;
+      const top = acc.a < 1 && own.placed ? __topLayerOf(cur) : null;
       if (top && top.color) {
         if (collectStack) {
           stack.push({
@@ -6432,6 +6507,40 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // What an element's own style does to the text under it, whatever that
+  // text is: read once per scan for each element, since every text walks
+  // all its ancestors and siblings share them. What depends on the text
+  // (where an inset shadow or a background layer falls, a drop shadow over
+  // opaque content) is worked out in the walk.
+  const __localAncestorEffectsCache = new WeakMap();
+  const __ancestorEffectsCache =
+    __getSharedWeakMapCache('__ancestorEffectsCache') || __localAncestorEffectsCache;
+  function __ancestorEffectsOf(cur) {
+    let rec = __ancestorEffectsCache.get(cur);
+    if (rec) return rec;
+    const cs = __contrastComputedStyle(cur);
+    const boxShadow = trim(cs && cs.boxShadow);
+    const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
+    const position = cs && cs.position;
+    rec = {
+      cs,
+      blend: __hasBlendModeEl(cur, cs),
+      filter: __hasFilterEl(cur, cs),
+      mask: maskOf(cs),
+      // __insetShadowUnder paints nothing without an inset shadow.
+      insetShadow: !!boxShadow && boxShadow !== 'none' && /\binset\b/i.test(boxShadow),
+      bgImage: __hasBackgroundImageOrGradientEl(cur, cs),
+      opacity: opacityOf(cs),
+      ownBgOpaque: !!ownBg && clamp01(ownBg.a) >= 1,
+      // __topLayerOf asks only boxes placed absolute or fixed.
+      placed: position === 'fixed' || position === 'absolute'
+    };
+    try {
+      __ancestorEffectsCache.set(cur, rec);
+    } catch {}
+    return rec;
+  }
+
   // The walk behind getComputabilityBlocker. skipPseudo: the
   // ::first-line/::first-letter check is left out, to see what else
   // stands in the way.
@@ -6530,9 +6639,10 @@ function createContrastHelpers(opts, shared) {
 
     for (const cur of ancestorsOf(el)) {
       if (dom.nodeType(cur) !== 1) continue;
-      const cs = __contrastComputedStyle(cur);
+      const own = __ancestorEffectsOf(cur);
+      const cs = own.cs;
 
-      if (__hasBlendModeEl(cur, cs)) {
+      if (own.blend) {
         const out = {
           ok: false,
           reasonCode: 'MIX_BLEND_MODE',
@@ -6551,7 +6661,7 @@ function createContrastHelpers(opts, shared) {
         return out;
       }
 
-      if (__hasFilterEl(cur, cs)) {
+      if (own.filter) {
         const isFilter = cs && cs.filter && String(cs.filter).trim().toLowerCase() !== 'none';
         // __hasFilterEl's OR means: if it's not plain `filter`, it must be
         // `backdrop-filter` that's set. Unlike `filter` (unconditional
@@ -6593,7 +6703,7 @@ function createContrastHelpers(opts, shared) {
       // A mask fades cur and all it holds, text and background together,
       // by amounts that vary across it, over what is behind: like a filter,
       // a closer opaque background does not shield the text from it.
-      const mask = maskOf(cs);
+      const mask = own.mask;
       if (mask) {
         const out = {
           ok: false,
@@ -6753,7 +6863,8 @@ function createContrastHelpers(opts, shared) {
       // fills the whole padding box is a color like the background's, one
       // that paints under part of the text stops the measurement as an
       // image would (see __insetShadowUnder).
-      const shadowUnder = paintOccluded ? null : __insetShadowUnder(cur, cs, el);
+      const shadowUnder =
+        paintOccluded || !own.insetShadow ? null : __insetShadowUnder(cur, cs, el);
       if (shadowUnder && shadowUnder.blocked) {
         const out = {
           ok: false,
@@ -6778,9 +6889,7 @@ function createContrastHelpers(opts, shared) {
       // Layers that paint nothing under the text (an underline) or one
       // solid color don't stop the measurement (see __bgLayerKinds).
       const layersUnder =
-        !paintOccluded && !shadowOpaque && __hasBackgroundImageOrGradientEl(cur, cs)
-          ? __bgLayersUnder(cur, cs, el)
-          : null;
+        !paintOccluded && !shadowOpaque && own.bgImage ? __bgLayersUnder(cur, cs, el) : null;
       if (layersUnder && layersUnder.blocked) {
         const bgImg = (cs && cs.backgroundImage) || '';
         const out = {
@@ -6853,7 +6962,7 @@ function createContrastHelpers(opts, shared) {
       // produce for the general case. (el's own opacity is handled just
       // above.)
       if (cur !== el) {
-        const ancestorOpacity = opacityOf(cs);
+        const ancestorOpacity = own.opacity;
         if (ancestorOpacity < 1 && resolveGroupOpacityColors(el)) {
           const out = {
             ok: true,
@@ -6895,10 +7004,9 @@ function createContrastHelpers(opts, shared) {
       // this point (see the paintOccluded comment above the loop).
       if (!paintOccluded) {
         chain.push(cur);
-        const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
         if (
           shadowOpaque ||
-          (ownBg && clamp01(ownBg.a) >= 1) ||
+          own.ownBgOpaque ||
           (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
         ) {
           paintOccluded = true;
@@ -6909,7 +7017,7 @@ function createContrastHelpers(opts, shared) {
       // The ::backdrop under a box in the top layer: an image, a gradient
       // or a filter there stops the measurement as one on an ancestor
       // would, and an opaque one hides the rest of the page.
-      const top = paintOccluded ? null : __topLayerOf(cur);
+      const top = paintOccluded || !own.placed ? null : __topLayerOf(cur);
       if (top && top.blocker) {
         const out = {
           ok: false,

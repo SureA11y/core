@@ -250,11 +250,30 @@ function runInPage(ctx) {
     return v.replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
-  // The scripts written without spaces between words (see tokenize).
-  const NO_SPACE_CHARS =
-    '\\p{scx=Han}\\p{scx=Hira}\\p{scx=Kana}\\p{scx=Thai}\\p{scx=Laoo}\\p{scx=Khmr}\\p{scx=Mymr}';
-  const NO_SPACE_RUN = new RegExp(`[${NO_SPACE_CHARS}][${NO_SPACE_CHARS}\\p{M}]*`, 'gu');
-  const NO_SPACE_CHAR = new RegExp(`^[${NO_SPACE_CHARS}]`, 'u');
+  // The scripts written without spaces between words (see tokenize). Their
+  // expressions take milliseconds to build, so they are built only for text
+  // that may hold such a character: none is ASCII (some below U+0E00 are,
+  // by their Script_Extensions: U+00B7, U+02BC, U+0303...).
+  let noSpace = null;
+  function noSpaceRegExps() {
+    if (!noSpace) {
+      const chars =
+        '\\p{scx=Han}\\p{scx=Hira}\\p{scx=Kana}\\p{scx=Thai}\\p{scx=Laoo}\\p{scx=Khmr}\\p{scx=Mymr}';
+      noSpace = {
+        run: new RegExp(`[${chars}][${chars}\\p{M}]*`, 'gu'),
+        char: new RegExp(`^[${chars}]`, 'u')
+      };
+    }
+    return noSpace;
+  }
+  function notAscii(s) {
+    for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) > 0x7f) return true;
+    return false;
+  }
+  // Whether `w` starts with a character of those scripts.
+  function startsNoSpace(w) {
+    return notAscii(w) && noSpaceRegExps().char.test(w);
+  }
 
   // WCAG 2.5.3's label-in-name comparison is over words, not characters: drop
   // parenthesised text, case-fold and NFKC-normalise, then reduce every
@@ -283,12 +302,13 @@ function runInPage(ctx) {
     // their characters is a word of its own instead, which compares such
     // text by characters: the label's characters must be in the name,
     // together and in order, as a substring is.
+    v = v.replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ');
+    if (!notAscii(v)) return v.split(' ').filter(Boolean);
     return v
-      .replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ')
-      .replace(NO_SPACE_RUN, ' $& ')
+      .replace(noSpaceRegExps().run, ' $& ')
       .split(' ')
       .filter(Boolean)
-      .flatMap((w) => (NO_SPACE_CHAR.test(w) ? [...w] : [w]));
+      .flatMap((w) => (startsNoSpace(w) ? [...w] : [w]));
   }
 
   // Words as a message shows them: the characters of a run written without
@@ -297,7 +317,7 @@ function runInPage(ctx) {
     const out = [];
     let run = false;
     for (const t of tokens) {
-      const inRun = NO_SPACE_CHAR.test(t);
+      const inRun = startsNoSpace(t);
       if (inRun && run) out[out.length - 1] += t;
       else out.push(t);
       run = inRun;
@@ -308,7 +328,7 @@ function runInPage(ctx) {
   // Whether text split by tokenize shows `word`: as a word, or, for a run
   // written without spaces, inside one.
   function showsWord(tokens, word) {
-    const runWord = NO_SPACE_CHAR.test(word);
+    const runWord = startsNoSpace(word);
     return wordsOf(tokens).some((w) => w === word || (runWord && w.indexOf(word) !== -1));
   }
 

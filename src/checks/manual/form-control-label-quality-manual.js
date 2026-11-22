@@ -790,25 +790,54 @@ function runInPage(ctx) {
     return normalizeWs(parts.join(' '));
   }
 
+  // How many fields (FIELD_SELECTOR and isField) each element holds, as
+  // querySelectorAll finds them under it: in its own tree, itself left
+  // out. Counted once per tree, so a page of many single checkboxes does
+  // not search the whole form again for each of them.
+  const fieldCountsByTree = new Map();
+  function fieldCountsIn(node) {
+    const tree = dom.getRootNode(node);
+    let counts = fieldCountsByTree.get(tree);
+    if (counts) return counts;
+    counts = new Map();
+    for (const f of dom.querySelectorAll(tree, FIELD_SELECTOR)) {
+      if (!isField(f)) continue;
+      for (let a = dom.parentElement(f); a; a = dom.parentElement(a)) {
+        counts.set(a, (counts.get(a) || 0) + 1);
+      }
+    }
+    fieldCountsByTree.set(tree, counts);
+    return counts;
+  }
+
   const groupQuestionCache = new Map();
   function choiceGroupContainerText(members) {
     if (groupQuestionCache.has(members)) return groupQuestionCache.get(members);
     let text = '';
     try {
-      const memberSet = new Set(members);
       const skip = new Set(members);
       for (const m of members) {
         for (const label of getReferencedElements(m, 'aria-labelledby')) skip.add(label);
         for (const label of getNativeLabels(m)) skip.add(label);
       }
+      // The members a field search under an ancestor of them all finds.
+      const memberFields = new Set(
+        members.filter((m) => {
+          try {
+            return dom.matches(m, FIELD_SELECTOR) && isField(m);
+          } catch {
+            return false;
+          }
+        })
+      );
       let cur = dom.parentElement(members[0]);
+      const counts = cur ? fieldCountsIn(cur) : null;
       // Bounded as a safety net only: a walk up a real tree always ends.
       for (let steps = 0; cur && steps < 100000; steps++) {
         if (members.every((m) => dom.contains(cur, m))) {
-          const others = Array.prototype.some.call(
-            dom.querySelectorAll(cur, FIELD_SELECTOR),
-            (f) => !memberSet.has(f) && isField(f)
-          );
+          // A field under cur other than the members (cur holds them all).
+          const others =
+            (counts.get(cur) || 0) > memberFields.size - (memberFields.has(cur) ? 1 : 0);
           if (others) break;
           // An element holding nothing but the options says nothing more:
           // the question is in the next one up.

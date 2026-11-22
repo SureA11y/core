@@ -304,15 +304,26 @@ function createDomHelpers(opts) {
   // closure state because rule execution is synchronous and single-rule-
   // at-a-time: exactly one rule's excludes are ever "active" at once.
   var __activeRuleExcludeSelectors = [];
+  // The effective list and its cache key, computed once per change of the
+  // active rule's excludes rather than on every isExcluded() call: sorting
+  // and joining the list per element made each exclude selector add about
+  // 40% to a scan.
+  var __effectiveExcludeSelectors = null;
+  var __selectorOptsKey = null;
 
   function __getEffectiveExcludeSelectors() {
-    return __activeRuleExcludeSelectors.length
-      ? excludeSelectors.concat(__activeRuleExcludeSelectors)
-      : excludeSelectors;
+    if (__effectiveExcludeSelectors === null) {
+      __effectiveExcludeSelectors = __activeRuleExcludeSelectors.length
+        ? excludeSelectors.concat(__activeRuleExcludeSelectors)
+        : excludeSelectors;
+    }
+    return __effectiveExcludeSelectors;
   }
 
   function __setActiveRuleExcludeSelectors(list) {
     __activeRuleExcludeSelectors = normalizeSelectorList(list);
+    __effectiveExcludeSelectors = null;
+    __selectorOptsKey = null;
   }
 
   // Selector-related caches (selector uniqueness index, per-element built
@@ -322,14 +333,16 @@ function createDomHelpers(opts) {
   // calls on the same window/document (see __domSharedCache below), so a
   // run -- or a rule with its own rule-scoped excludes -- must not
   // read/write another run/rule's cached selectors. This key partitions
-  // those caches per effective option set; recomputed per call (not a
-  // constant) since the effective list changes as the active rule changes.
+  // those caches per effective option set; recomputed whenever the active
+  // rule's excludes change (__setActiveRuleExcludeSelectors), not a constant.
   function __getSelectorOptsKey() {
-    return (
-      (includeShadowDom ? 'sd1' : 'sd0') +
-      '|' +
-      __getEffectiveExcludeSelectors().slice().sort().join(',')
-    );
+    if (__selectorOptsKey === null) {
+      __selectorOptsKey =
+        (includeShadowDom ? 'sd1' : 'sd0') +
+        '|' +
+        __getEffectiveExcludeSelectors().slice().sort().join(',');
+    }
+    return __selectorOptsKey;
   }
 
   // -------------------------------------------------------------------------
@@ -348,6 +361,7 @@ function createDomHelpers(opts) {
   var __idRefReverseIndexByScope = null; // WeakMap<object, Map<string, Set<Element>>>
   var __uniqIndexByScope = null; // WeakMap<object, object> (selector uniqueness index per scope)
   var __shadowRootsByRoot = null; // WeakMap<object, Array<object>> (cached open shadow roots per root)
+  var __shadowRootsByOpts = null; // Map<optsKey, WeakMap<object, Array<object>>> (the same, with excludes)
   var __excludedCache = null; // Map<optsKey, WeakMap<Element, boolean>> (isExcluded results)
 
   // Shared recursion-depth guard across the mutually-recursive naming
@@ -4407,12 +4421,14 @@ function createDomHelpers(opts) {
       if (!scope || !dom.get(scope, 'querySelectorAll')) return [];
 
       // Cache shadow root discovery per root to avoid repeated querySelectorAll('*') walks.
-      // IMPORTANT: do not cache when the effective exclude list (global
-      // ∪ active rule-scoped excludes) is non-empty -- different rules
-      // may have different effective lists and must not share results.
-      if (!__getEffectiveExcludeSelectors().length && __shadowRootsByRoot) {
+      // With an exclude list (global ∪ active rule-scoped excludes), the
+      // roots under excluded hosts are left out, so the cache is
+      // partitioned by that list's key: rules with different effective
+      // lists never share results.
+      const cache = __getShadowRootsCache(keepExcluded);
+      if (cache) {
         try {
-          const cached = __shadowRootsByRoot.get(scope);
+          const cached = cache.get(scope);
           if (cached) {
             __perfInc('shadowRoots.hit');
             return cached;
@@ -4429,12 +4445,13 @@ function createDomHelpers(opts) {
           const roots = [];
           for (const el of hosts) {
             if (!el || dom.nodeType(el) !== 1) continue;
+            if (out(el)) continue;
             const sr = dom.shadowRoot(el);
             if (sr) roots.push(sr);
           }
 
           try {
-            __shadowRootsByRoot.set(scope, roots);
+            cache.set(scope, roots);
           } catch {
             __perfInc('shadowRoots.nocache');
           }
@@ -4885,15 +4902,37 @@ function createDomHelpers(opts) {
     __uniqIndexByScope = null;
   }
 
-  // Shadow root discovery cache (per root) within a run.
-  // Only used when excludeSelectors is empty to avoid cross-helper bleed.
+  // Shadow root discovery cache (per root) within a run. Without excludes it
+  // is one WeakMap; with them, one per effective exclude list (and per
+  // keepExcluded), since the roots under excluded hosts are left out.
   try {
     __shadowRootsByRoot =
       __domSharedCache.shadowRootsByRoot instanceof WeakMap
         ? __domSharedCache.shadowRootsByRoot
         : (__domSharedCache.shadowRootsByRoot = new WeakMap());
+    __shadowRootsByOpts =
+      __domSharedCache.shadowRootsByOpts instanceof Map
+        ? __domSharedCache.shadowRootsByOpts
+        : (__domSharedCache.shadowRootsByOpts = new Map());
   } catch {
     __shadowRootsByRoot = null;
+    __shadowRootsByOpts = null;
+  }
+
+  function __getShadowRootsCache(keepExcluded) {
+    if (!__getEffectiveExcludeSelectors().length || keepExcluded) return __shadowRootsByRoot;
+    if (!__shadowRootsByOpts) return null;
+    try {
+      const key = __getSelectorOptsKey();
+      let wm = __shadowRootsByOpts.get(key);
+      if (!(wm instanceof WeakMap)) {
+        wm = new WeakMap();
+        __shadowRootsByOpts.set(key, wm);
+      }
+      return wm;
+    } catch {
+      return null;
+    }
   }
 
   // -------------------------------------------------------------------------
