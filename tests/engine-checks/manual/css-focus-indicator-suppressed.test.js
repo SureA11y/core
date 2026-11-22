@@ -486,6 +486,27 @@ test(`${RULE_ID}: a shadow root's style sheets style its own elements`, () => {
   }
 });
 
+// A document sheet's selectors do not reach into a shadow root (CSS
+// Scoping): its rule removes no outline there (round 12, R12F-12).
+test(`${RULE_ID}: a document sheet does not style a shadow root's elements`, () => {
+  const dom = createDom(
+    '<!doctype html><html><head><style>button:focus, .in button:focus{outline:none}</style></head><body><div id="h" class="in"></div></body></html>'
+  );
+  const root = dom.window.document.getElementById('h').attachShadow({ mode: 'open' });
+  root.innerHTML = '<div class="in"><button id="b">b</button></div>';
+  assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  // The same rule in the shadow root's own sheet does.
+  root.innerHTML += '<style>button:focus{outline:none}</style>';
+  const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, ['button:focus']);
+});
+
 test(`${RULE_ID}: an element outside sequential focus navigation is skipped`, () => {
   const result = runa11yCoreOnHtml(
     page('a:focus{outline:none}', '<a href="/x" id="a" tabindex="-1">x</a>'),

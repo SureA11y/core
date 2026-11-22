@@ -30,9 +30,11 @@
  *   (`main:has(a:focus) a`). A state on a sibling (`+`, `~`) says nothing
  *   about the element's focus, and `:not(:focus-within)` stops holding once
  *   it has focus: neither counts.
- *   - The page's style sheets and those it adopts are read, and so are
- *     each open shadow root's, adopted ones included, against the elements
- *     in that root only. A rule
+ *   - The page's style sheets and those it adopts are read against the
+ *     elements in the document's own tree: as CSS Scoping has it, their
+ *     selectors do not reach into a shadow root. Each open shadow root's
+ *     sheets, adopted ones included, are read against the elements in
+ *     that root only. A rule
  *   that removes it only under `:not(:focus-visible)` keeps it for keyboard
  *   focus and is not counted; nor is the focus-visible polyfill's form of
  *   it, `:not(.focus-visible)` under `.js-focus-visible`, or
@@ -607,7 +609,11 @@ function runInPage(ctx) {
     }
     return out;
   }
-  const scopeOk = (x, el) => !x.scope || treeOf(el) === x.scope;
+  // A sheet styles only the elements in its own tree: a document sheet's
+  // selectors do not reach into a shadow root (CSS Scoping), and a shadow
+  // root's do not reach out of it. (::part() is a pseudo-element, never a
+  // suppressor here, and outline is not inherited.)
+  const scopeOk = (x, el) => treeOf(el) === (x.scope || document);
 
   // A rule whose focus state is on an ancestor of its subject
   // (`main:focus-within a`, `main:has(a:focus) a`), or on the subject as
@@ -1303,7 +1309,8 @@ function runInPage(ctx) {
   }
   if (suppressorList) {
     for (const el of candidates) {
-      if (!el || dom.nodeType(el) !== 1) continue;
+      // The list holds the document's selectors, which match in its tree only.
+      if (!el || dom.nodeType(el) !== 1 || treeOf(el) !== document) continue;
       let hit;
       try {
         hit = dom.matches(el, suppressorList);
