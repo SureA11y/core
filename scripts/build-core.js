@@ -52,6 +52,7 @@ const {
 const {
   isThenable,
   assertPageBuiltins,
+  holdObjectPrototypeValues,
   assertArrayFromFor,
   resolveCustomRules,
   runCore,
@@ -162,6 +163,7 @@ const {
   describeFrameElement,
   getFrameElementUrl,
   frameTimeBudgetOf,
+  frameOptionOf,
   budgetedOptions,
   withScanBudget,
   scanAcrossFrames,
@@ -997,20 +999,20 @@ function isWcagTag(tag) {
 // The level is matched case-insensitively.
 function checkWcagTarget(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + JSON.stringify(value) + '.');
+    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + optionValueText(value) + '.');
   }
   const version = typeof value.version === 'string' ? value.version.trim() : value.version;
   if (!WCAG_TARGET_VERSIONS.includes(version)) {
     throw invalidRunOnly(
       'runOnly.wcag.version must be "2.0", "2.1" or "2.2", ' +
-        (value.version === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.version) + '.')
+        (value.version === undefined ? 'and is missing.' : 'not ' + optionValueText(value.version) + '.')
     );
   }
   const level = typeof value.level === 'string' ? value.level.trim().toUpperCase() : value.level;
   if (!WCAG_TARGET_LEVELS.includes(level)) {
     throw invalidRunOnly(
       'runOnly.wcag.level must be "A", "AA" or "AAA", ' +
-        (value.level === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.level) + '.')
+        (value.level === undefined ? 'and is missing.' : 'not ' + optionValueText(value.level) + '.')
     );
   }
   return { version, level };
@@ -1454,6 +1456,21 @@ function describeWcagLevelTag(tag) {
   return 'WCAG ' + t.version + ' Level ' + t.level + ' ("' + tag + '")';
 }
 
+// A value given for an option, for the message that refuses it: as JSON
+// where it has some, and named otherwise, never throwing. A BigInt threw a
+// bare TypeError from the message itself (round 12, A12-9).
+function optionValueText(value) {
+  if (typeof value === 'bigint') return String(value) + 'n';
+  let shown;
+  try {
+    shown = JSON.stringify(value);
+  } catch {
+    shown = undefined;
+  }
+  if (typeof shown === 'string') return shown;
+  return value !== null && typeof value === 'object' ? 'an object' : 'a ' + typeof value;
+}
+
 function invalidRunOnly(message) {
   const err = new Error(message);
   err.code = 'INVALID_RUN_ONLY';
@@ -1612,6 +1629,39 @@ function warnFiltersBesideRunOnly(eo) {
   } catch {}
 }
 
+// A rule or tag list given empty ([], '', a Set with nothing in it) selects
+// nothing, and every rule runs, as with no runOnly: a list built by a filter
+// that came out empty got a full scan without a word (round 12, A12-12). It
+// is said, and under strictOptions refused.
+function warnEmptyRunOnly(runOnly, eo) {
+  const empty = (v) =>
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'string' && !v.trim()) ||
+    (Object.prototype.toString.call(v) === '[object Set]' && v.size === 0);
+  const named = [];
+  if (Array.isArray(runOnly) || typeof runOnly === 'string') {
+    if (empty(runOnly)) named.push('runOnly');
+  } else if (runOnly && typeof runOnly === 'object') {
+    for (const key of ['values', 'tags', 'includeRuleIds', 'includeTestIds']) {
+      if (Object.prototype.hasOwnProperty.call(runOnly, key) && empty(runOnly[key])) {
+        named.push('runOnly.' + key);
+      }
+    }
+  }
+  if (!named.length) return;
+  const message =
+    named.join(', ') + (named.length === 1 ? ' is an empty list' : ' are empty lists') +
+    ': it selects no rule, so every rule runs';
+  if (strictOf(eo)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_ENGINE_OPTIONS';
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '.');
+  } catch {}
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   // A number or a boolean, and an object none of whose keys the engine
@@ -1623,6 +1673,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
   if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = [...runOnly];
+  warnEmptyRunOnly(runOnly, eo);
   // Another kind of object (a Map, a Date) has no keys a selection reads,
   // and ran every rule.
   // By its type tag, which holds across realms (a page's object, read by
@@ -1668,7 +1719,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
         : runOnly.values;
     if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: values };
     else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: values };
-    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
+    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + optionValueText(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
   // includeMode is 'and' or 'or'; anything else was read as 'and' without a
@@ -1680,7 +1731,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     if (value === undefined || value === null) continue;
     const mode = typeof value === 'string' ? value.trim().replace(/[A-Z]/g, asciiLowerChar) : '';
     if (mode === 'and' || mode === 'or') continue;
-    const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
+    const message = field + ' must be "and" or "or", not ' + optionValueText(value) + '; read as "and".';
     if (strictOf(eo)) throw invalidRunOnly(message);
     try {
       console.warn('[surea11y] ' + message);
@@ -1690,7 +1741,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     if (runOnly.wcag != null) checkWcagTarget(runOnly.wcag);
     if (runOnly.bestPractices !== undefined && typeof runOnly.bestPractices !== 'boolean') {
       throw invalidRunOnly(
-        'runOnly.bestPractices must be true or false, not ' + JSON.stringify(runOnly.bestPractices) + '.'
+        'runOnly.bestPractices must be true or false, not ' + optionValueText(runOnly.bestPractices) + '.'
       );
     }
   }
@@ -2023,7 +2074,7 @@ function criteriaNamingRule(def, runOnly) {
     .map((t) => WCAG_SC_BY_TAG[t]);
 }
 
-function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
+function normalizeRuleResult(def, raw, schemaVersion, policy, helpers, excluding) {
   if (!policy || typeof policy !== 'object') {
     throw new Error('normalizeRuleResult requires a resolved policy');
   }
@@ -2123,15 +2174,50 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     helpers &&
     (typeof helpers.isOccurrenceExcluded === 'function' || typeof helpers.isExcluded === 'function')
   ) {
+    // An occurrence named only by a selector that matches several elements
+    // is dropped only when every one of them is excluded: read as its first
+    // match, it was dropped whatever element the rule meant. One some of
+    // whose matches are excluded is kept, and said to be ambiguous (round
+    // 12, A12-16).
+    let ambiguous = 0;
+    const matchesOf = (o) => {
+      if (o.__node || typeof o.selector !== 'string' || !o.selector) return null;
+      if (Array.isArray(o.shadowHostSelectors) && o.shadowHostSelectors.length) return null;
+      if (typeof document === 'undefined' || !document) return null;
+      try {
+        const found = [...createSafeDom().querySelectorAll(document, o.selector)];
+        return found.length > 1 ? found : null;
+      } catch {
+        return null;
+      }
+    };
     const kept = out.occurrences.filter((o) => {
       if (!o || typeof o !== 'object') return true;
       try {
-        if (typeof helpers.isOccurrenceExcluded === 'function') return helpers.isOccurrenceExcluded(o) !== true;
+        if (typeof helpers.isOccurrenceExcluded === 'function') {
+          // Looked up only while an area is left out for the rule: a
+          // selector can be slow to match, and every scan has none.
+          const matches = excluding === true ? matchesOf(o) : null;
+          if (matches) {
+            let excluded = 0;
+            for (const el of matches) if (helpers.isOccurrenceExcluded({ __node: el }) === true) excluded++;
+            if (excluded === matches.length) return false;
+            if (excluded) ambiguous++;
+            return true;
+          }
+          return helpers.isOccurrenceExcluded(o) !== true;
+        }
         return !o.__node || helpers.isExcluded(o.__node) !== true;
       } catch {
         return true;
       }
     });
+    if (ambiguous) {
+      out.error =
+        (out.error ? String(out.error) + ' | ' : '') +
+        'The rule reported ' + ambiguous + ' occurrence' + (ambiguous === 1 ? '' : 's') +
+        ' by a selector alone that matches elements both inside and outside the areas left out with excludeSelectors; kept, as which element was meant is ambiguous. Report the element (__node) instead.';
+    }
     const dropped = out.occurrences.length - kept.length;
     if (dropped > 0) {
       const given = out.outcome;
@@ -2636,6 +2722,7 @@ ${inlineConstFunction('resolveCustomRules', resolveCustomRules)}
 ${inlineConstFunction('runCoreSettled', runCoreSettled)}
 ${inlineConstFunction('isThenable', isThenable)}
 ${inlineConstFunction('assertPageBuiltins', assertPageBuiltins)}
+${inlineConstFunction('holdObjectPrototypeValues', holdObjectPrototypeValues)}
 ${inlineConstFunction('assertArrayFromFor', assertArrayFromFor)}
 ${inlineConstFunction('runCore', runCore)}
 
@@ -2671,6 +2758,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Before anything reads the page's built-ins (see assertPageBuiltins).
   ${inlineConstFunction('assertPageBuiltinsFirst', assertPageBuiltins)}
   assertPageBuiltinsFirst();
+  // The scan reads only what its objects hold (see holdObjectPrototypeValues).
+  ${inlineConstFunction('holdObjectPrototypeValuesFirst', holdObjectPrototypeValues)}
+  const releaseObjectPrototype = holdObjectPrototypeValuesFirst();
+  try {
+    return runHeld();
+  } finally {
+    releaseObjectPrototype();
+  }
+  function runHeld() {
   const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
   const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
   const ENGINE_VERSION = ${jsStringify(ENGINE_VERSION)};
@@ -2912,6 +3008,7 @@ ${implEntriesInPage.join(',\n')}
     return out;
   };
   return isThenable(result) ? result.then(stamp) : stamp(result);
+  }
 }
 `.trim();
 
@@ -2984,6 +3081,8 @@ ${describeFrameElement.toString()}
 ${getFrameElementUrl.toString()}
 
 ${frameTimeBudgetOf.toString()}
+
+${frameOptionOf.toString()}
 
 ${budgetedOptions.toString()}
 
@@ -3361,6 +3460,15 @@ function getTestsForRunOnly(runOnly, engineOptions) {
  */
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   assertPageBuiltins();
+  const releaseObjectPrototype = holdObjectPrototypeValues();
+  try {
+    return runDomRulesHeld(pageUrl, contextSelector, engineOptions, runOnly);
+  } finally {
+    releaseObjectPrototype();
+  }
+}
+
+function runDomRulesHeld(pageUrl, contextSelector, engineOptions, runOnly) {
   // Under strictOptions the options are checked before the selection is
   // worked out from them, as they are said to be.
   if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);

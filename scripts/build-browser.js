@@ -202,14 +202,55 @@ ${inPageRunnerSource}
       );
     },
     // runa11yCoreInPage, after fetching the style sheets the page can't read
-    // and adding them to engineOptions.styleSheetTexts.
+    // and adding them to engineOptions.styleSheetTexts. A time budget
+    // (engineOptions.timeBudgetMs) counts from before the fetching: it stops
+    // waiting for sheets when the budget is spent, says which it did not
+    // read, and the scan gets what is left (round 12, A12-7).
     runa11yCoreInPageAsync: function (pageUrl, contextSelector, engineOptions, runOnly) {
-      return api.preloadStyleSheets().then(function (sheets) {
-        var options = Object.assign({}, engineOptions || {});
-        var given = Array.isArray(options.styleSheetTexts) ? options.styleSheetTexts : [];
-        options.styleSheetTexts = given.concat(sheets);
-        return api.runa11yCoreInPage(pageUrl, contextSelector, options, runOnly);
-      });
+      var eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+      var given = Object.prototype.hasOwnProperty.call(eo, 'timeBudgetMs') ? eo.timeBudgetMs : null;
+      var budget = typeof given === 'number' && Number.isFinite(given) && given > 0 ? given : null;
+      var started = Date.now();
+      return api
+        .preloadStyleSheets(budget === null ? undefined : { deadline: started + budget })
+        .then(function (sheets) {
+          var options = Object.assign({}, eo);
+          var texts = Array.isArray(options.styleSheetTexts) ? options.styleSheetTexts : [];
+          options.styleSheetTexts = texts.concat(sheets);
+          var notRead = sheets && Array.isArray(sheets.notRead) ? sheets.notRead.slice() : [];
+          var scanOptions = withRegisteredMessages(options);
+          if (budget !== null) {
+            var left = budget - (Date.now() - started);
+            if (left > 0) {
+              if (left < budget) scanOptions.timeBudgetMs = left;
+            } else {
+              // Set by the engine only, not enumerable: no rule starts, and
+              // each is listed in notRun.
+              Object.defineProperty(scanOptions, '__budgetSpent', { value: true });
+              Object.defineProperty(scanOptions, '__budgetSpentAt', {
+                value: 'styleSheets',
+                configurable: true
+              });
+            }
+            Object.defineProperty(scanOptions, '__scanTimeBudgetMs', { value: budget });
+          }
+          if (notRead.length) {
+            try {
+              console.warn(
+                '[surea11y] engineOptions.timeBudgetMs: the time budget of ' +
+                  (budget >= 10 ? Math.round(budget) : Math.round(budget * 10) / 10) +
+                  " ms ran out while fetching the style sheets the page can't read; not read: " +
+                  notRead.join(', ') +
+                  ' (engine.incomplete.styleSheetsNotRead).'
+              );
+            } catch (e) {}
+          }
+          var result = runa11yCoreInPage(pageUrl, contextSelector, scanOptions, runOnly);
+          if (notRead.length && result && result.engine && result.engine.incomplete) {
+            result.engine.incomplete.styleSheetsNotRead = notRead;
+          }
+          return result;
+        });
     }
   };
 

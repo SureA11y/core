@@ -1705,6 +1705,7 @@
   "report_meta_optInRules": "Opt-in-Regeln",
   "report_meta_rulesNotRun": "Regeln nicht ausgeführt",
   "report_incomplete_timeBudget": "Unvollständiger Scan: Sein Zeitbudget von {{budget}} ms war aufgebraucht, bevor alle ausgewählten Regeln gelaufen sind. Nicht ausgeführt ({{count}}): {{rules}}. Sie haben nichts geprüft; nichts in diesem Bericht gilt für sie als bestanden.",
+  "report_incomplete_profilesNotRun": "Nicht gestartete Profile: {{profiles}}.",
   "report_meta_viewport": "Viewport",
   "report_meta_colorScheme": "Farbschema",
   "report_meta_fonts": "Webfonts",

@@ -168,7 +168,8 @@ test('a profile the budget left unstarted lists its rules in notRun, and every r
   const target = earl['@graph'][0].assertions.find((a) => a.test.title === 'target-size-minimum');
   assert.equal(target.result.outcome, 'earl:untested');
   const html = renderHtmlReport(result, { manualChecks: false });
-  assert.match(html, new RegExp(`<div><b>${result.notRun.length}</b>rules not run</div>`));
+  const distinct = new Set(result.notRun.map((n) => n.ruleId)).size;
+  assert.match(html, new RegExp(`<div><b>${distinct}</b>rules not run</div>`));
   const warned = [];
   const helpers = consoleHelpers(
     { console: { table: () => {}, warn: (m) => warned.push(m) } },
@@ -313,6 +314,147 @@ test('the browser bundle honors timeBudgetMs', async () => {
     );
     assert.equal(full.engine.incomplete, undefined);
     assert.equal(full.checksResults.length, 2);
+  } finally {
+    dom.window.close();
+  }
+});
+
+// A frame the scan reaches with no budget left, in a scan of several
+// profiles: its first profile starts no rule and the others are not run, as
+// at the top (round 12, A12-4). Its warnings give the scan's budget, not
+// what was left of it (A12-5).
+test('a frame reached with no budget left, scanning several profiles, lists the profiles not run (round 12, A12-4, A12-5)', () => {
+  const main = require('../src/index.js');
+  const { createDom } = require('../src/testing.js');
+  const { budgetedOptions } = require('../src/core/frame-scan.js');
+  createDom(PAGE);
+  const given = { timeBudgetMs: 300, profile: ['wcag22-aa', 'wcag21-aa'] };
+  // Started 1 s ago: nothing left.
+  const frameOptions = budgetedOptions(given, given, 300, Date.now() - 1000);
+  const { value: frame, said } = quietly(() =>
+    main.runa11yCoreInPage('https://example.test/f.html', null, frameOptions, null)
+  );
+  assert.deepEqual(frame.engine.profiles, ['wcag22-aa']);
+  assert.deepEqual(frame.engine.profilesNotRun, [{ profile: 'wcag21-aa', reason: 'timeBudget' }]);
+  assert.equal(frame.engine.incomplete.profilesNotRun, 1);
+  assert.equal(frame.engine.incomplete.timeBudgetMs, 300);
+  assert.equal(frame.engine.incomplete.rulesNotRun, frame.notRun.length);
+  assert.ok(said.some((s) => s.includes("time budget of 300 ms before this frame's scan started")));
+  assert.ok(
+    said.some((s) => s.includes('time budget of 300 ms before profile "wcag21-aa" started'))
+  );
+
+  // A frame with some budget left: its warnings give the scan's 300 ms, not
+  // a fraction of a ms left over.
+  const partOptions = budgetedOptions(given, given, 300, Date.now() - 299.9999);
+  const { said: partSaid } = quietly(() =>
+    main.runa11yCoreInPage('https://example.test/f.html', null, partOptions, null)
+  );
+  const budgets = partSaid
+    .map((s) => /time budget of ([^ ]+) ms/.exec(s))
+    .filter(Boolean)
+    .map((m) => m[1]);
+  assert.ok(budgets.length > 0);
+  assert.ok(
+    budgets.every((b) => b === '300'),
+    String(budgets)
+  );
+});
+
+test('the budget warnings give the scan’s budget in whole ms (round 12, A12-5)', () => {
+  const slow = {
+    id: 'org-slow',
+    meta: { title: 'Slow', tags: ['wcag2a', 'wcag111'], wcagSc: ['1.1.1'] },
+    runInPage(ctx) {
+      const t = Date.now();
+      while (Date.now() - t < 20);
+      return { ruleId: ctx.rule.ruleId, outcome: 'pass', severity: 'moderate', occurrences: [] };
+    }
+  };
+  const { said } = scan({
+    profile: ['wcag21-aa', 'wcag22-aa'],
+    timeBudgetMs: 12.345,
+    customRules: [slow]
+  });
+  const named = said.filter((s) => /time budget/.test(s));
+  assert.ok(named.length >= 1, String(named));
+  for (const s of named) assert.match(s, /time budget of 12 ms/, s);
+});
+
+// A scan of several profiles lists a rule once for each profile it did not
+// run in; the HTML report counts each rule once, and names the profiles the
+// budget left unstarted apart from the rules (round 12, A12-6).
+test('HTML report: counts each rule not run once, and lists unstarted profiles apart (round 12, A12-6)', () => {
+  const { value: result } = scan({
+    timeBudgetMs: NONE_LEFT,
+    profile: ['wcag22-aa', 'wcag21-aa', 'wcag20-a']
+  });
+  const ids = [...new Set(result.notRun.map((n) => n.ruleId))];
+  assert.ok(result.notRun.length > ids.length);
+  const html = renderHtmlReport(result, { manualChecks: false });
+  assert.match(html, new RegExp(`<div><b>${ids.length}</b>rules not run</div>`));
+  const banner = /<p class="incomplete" role="note">([^<]*)<\/p>/.exec(html)[1];
+  assert.match(banner, new RegExp(`Not run \\(${ids.length}\\): `));
+  assert.match(banner, /Profiles not started: wcag21-aa, wcag20-a\./);
+  const listed = /Not run \(\d+\): ([^.]*)\./.exec(banner)[1].split(', ');
+  assert.deepEqual(listed.sort(), ids.sort());
+});
+
+// The browser bundle's runa11yCoreInPageAsync counts the style sheets it
+// fetches against the budget: it stops waiting for them when the budget is
+// spent, names those it did not read, and lists the rules it did not start
+// (round 12, A12-7).
+test('runa11yCoreInPageAsync counts fetching style sheets against the time budget (round 12, A12-7)', async () => {
+  const src = pathToFileURL(path.join(__dirname, '..', 'surea11y.browser.js')).href;
+  const dom = await new Promise((resolve, reject) => {
+    const d = new JSDOM(PAGE.replace('</body>', `<script src="${src}"></script></body>`), {
+      url: 'https://example.test/',
+      runScripts: 'dangerously',
+      resources: 'usable'
+    });
+    d.window.addEventListener('load', () => resolve(d));
+    d.window.addEventListener('error', (e) => reject(e.error));
+  });
+  try {
+    const w = dom.window;
+    // A sheet from another origin the page can't read, whose server never
+    // answers.
+    const sheet = {
+      href: 'https://cdn.other.test/slow.css',
+      get cssRules() {
+        throw new w.DOMException('cross-origin', 'SecurityError');
+      }
+    };
+    Object.defineProperty(w.Document.prototype, 'styleSheets', {
+      get: () => [sheet],
+      configurable: true
+    });
+    w.fetch = () => new Promise(() => {});
+    const warned = [];
+    const warn = w.console.warn;
+    w.console.warn = (m) => warned.push(String(m));
+    const started = Date.now();
+    let result;
+    try {
+      result = await w.a11ycore.runa11yCoreInPageAsync(null, null, { timeBudgetMs: 100 }, RUN_ONLY);
+    } finally {
+      w.console.warn = warn;
+    }
+    // Far less than the 5 s each fetch may otherwise take.
+    assert.ok(Date.now() - started < 3000);
+    assert.equal(result.engine.incomplete.reason, 'timeBudget');
+    assert.equal(result.engine.incomplete.timeBudgetMs, 100);
+    assert.deepEqual([...result.engine.incomplete.styleSheetsNotRead], [sheet.href]);
+    assert.equal(result.notRun.length, 2);
+    assert.ok(
+      warned.some((m) => m.includes(`not read: ${sheet.href}`)),
+      String(warned)
+    );
+    assert.ok(
+      warned.some((m) =>
+        /fetching the style sheets the page can't read, before any rule started/.test(m)
+      )
+    );
   } finally {
     dom.window.close();
   }

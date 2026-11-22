@@ -1645,8 +1645,8 @@ function definePack(pack) {
 // A scan keeps the engine it prepared for the same pack objects, so a pack
 // must not change once made: definePack freezes it, with the lists and
 // objects it holds (its functions excepted), and a change then throws in
-// strict code instead of going unseen. A pack passed to a scan as a plain
-// object is frozen the same way on its first use (preparePacks).
+// strict code instead of going unseen. Of a pack passed to a scan as a plain
+// object, the engine uses a frozen copy (packCopyOf).
 function deepFreeze(value, seen = new Set()) {
   if (!value || typeof value !== 'object' || seen.has(value)) return value;
   seen.add(value);
@@ -2177,7 +2177,78 @@ function warnLostKeepsParsing(packs) {
 // listed with the reason (thrown under strictOptions). Packs that do not hold
 // together with each other, or a name passed twice, throw: any way of
 // choosing between them would depend on the order they were passed in.
+// A pack's data as the engine keeps it: plain objects and arrays copied,
+// own keys and symbols with their attributes, and frozen; functions, objects
+// frozen already and objects of other kinds (a Map, a class instance) kept as
+// they are. `memo` keeps an object reached twice one copy.
+function frozenCopy(value, memo) {
+  if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
+  if (memo.has(value)) return memo.get(value);
+  const proto = Object.getPrototypeOf(value);
+  const plain =
+    Array.isArray(value) ||
+    (Object.prototype.toString.call(value) === '[object Object]' &&
+      (proto === null || proto === Object.prototype));
+  if (!plain) return value;
+  const out = Array.isArray(value) ? [] : Object.create(proto);
+  memo.set(value, out);
+  for (const key of Reflect.ownKeys(value)) {
+    const d = Object.getOwnPropertyDescriptor(value, key);
+    if (Object.prototype.hasOwnProperty.call(d, 'value')) d.value = frozenCopy(d.value, memo);
+    Object.defineProperty(out, key, d);
+  }
+  return Object.freeze(out);
+}
+
+// Whether a pack's data is still what its copy holds: the same keys, each
+// value the same (a copied object compared in turn, anything else by
+// identity).
+function sameAsCopy(value, copy, seen) {
+  if (value === copy) return true;
+  if (!value || !copy || typeof value !== 'object' || typeof copy !== 'object') return false;
+  if (seen.has(value)) return seen.get(value) === copy;
+  seen.set(value, copy);
+  if (Array.isArray(value) !== Array.isArray(copy)) return false;
+  const keys = Reflect.ownKeys(value);
+  const copyKeys = Reflect.ownKeys(copy);
+  if (keys.length !== copyKeys.length) return false;
+  for (let i = 0; i < keys.length; i++) {
+    if (keys[i] !== copyKeys[i]) return false;
+    const a = Object.getOwnPropertyDescriptor(value, keys[i]);
+    const b = Object.getOwnPropertyDescriptor(copy, keys[i]);
+    const hasValue = Object.prototype.hasOwnProperty.call(a, 'value');
+    if (hasValue !== Object.prototype.hasOwnProperty.call(b, 'value')) return false;
+    if (hasValue ? !sameAsCopy(a.value, b.value, seen) : a.get !== b.get || a.set !== b.set) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// The frozen copy the engine uses of a pack passed as a plain object, made
+// again when the pack has changed since. A pack that can't be copied (a
+// Proxy that refuses) is used as it is.
+const packCopies = new WeakMap();
+function packCopyOf(pack) {
+  try {
+    const kept = packCopies.get(pack);
+    if (kept && sameAsCopy(pack, kept, new Map())) return kept;
+    const copy = frozenCopy(pack, new Map());
+    packCopies.set(pack, copy);
+    return copy;
+  } catch {
+    return pack;
+  }
+}
+
 function preparePacks(list, { strict = false } = {}) {
+  // The engine runs on packs that don't change. One from definePack is
+  // frozen already. Of one passed as a plain object, the engine uses a
+  // frozen copy of its data, its functions kept as they are: the caller's
+  // objects stay as they were, objects of theirs the pack reaches included
+  // (round 12, A12-15), and a later change to the pack makes a fresh copy,
+  // and engine, rather than going unseen (round 8, PK-10).
+  list = list.map((pack) => (isObject(pack) && !Object.isFrozen(pack) ? packCopyOf(pack) : pack));
   // Kept by the identity of the pack objects only: anything else in the list
   // is no pack, and is checked afresh every time, so the string "3" never
   // finds the engine of the pack that happened to get id 3.
@@ -2193,21 +2264,6 @@ function preparePacks(list, { strict = false } = {}) {
     engines.delete(key);
     engines.set(key, cached);
     return cached;
-  }
-
-  // The engine is kept by the identity of these objects, so each is frozen
-  // on its first use, as definePack freezes a pack: a pack passed as a plain
-  // object and changed in place afterwards then throws in strict code, or
-  // the change is ignored, instead of a later scan silently running the
-  // version kept (round 8, PK-10).
-  for (const pack of list) {
-    if (!isObject(pack)) continue;
-    try {
-      deepFreeze(pack);
-    } catch {
-      // An object that can't be frozen (a Proxy that refuses) is checked
-      // below as it is.
-    }
   }
 
   const valid = [];
@@ -2359,18 +2415,24 @@ function pageCodeProblems(rule, where) {
 // data double escaped state, where "</script>" no longer ends the element:
 // "<!--" then "<script" (escaped, then double escaped), with no "-->" or
 // "</script" after. The states as HTML defines them: "<!-->" and "<!--->"
-// close at once; in the double escaped state "</script" goes back to the
-// escaped state and "-->" to plain script data; "--!>", which ends a comment
-// in markup, ends nothing in a script and is matched only to be skipped.
-// Returns the "<script" that opened it, or null (round 8, NW-12).
+// end in plain script data whatever the state, as both end in "-->" ("--"
+// then ">"): in script data they open and close at once, and in the
+// escaped and double escaped states the "<!" is read as text and the rest
+// ends the escape (round 12, A12-8). In the double escaped state "</script"
+// goes back to the escaped state and "-->" to plain script data; "--!>",
+// which ends a comment in markup, ends nothing in a script and is matched
+// only to be skipped. Returns the "<script" that opened it, or null (round
+// 8, NW-12).
 function unclosedScriptInComment(text) {
   const re = /<!--->|<!-->|<!--|--!>|-->|<\/script(?=[\s/>])|<script(?=[\s/>])/gi;
   let state = 'data';
   let opener = null;
   for (let m = re.exec(text); m; m = re.exec(text)) {
     const t = m[0].toLowerCase();
-    if (t === '<!--->' || t === '<!-->' || t === '--!>') continue;
-    if (t === '<!--') {
+    if (t === '--!>') continue;
+    if (t === '<!--->' || t === '<!-->') {
+      state = 'data';
+    } else if (t === '<!--') {
       if (state === 'data') state = 'escaped';
     } else if (t === '-->') {
       state = 'data';

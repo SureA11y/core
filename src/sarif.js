@@ -48,7 +48,9 @@ const {
   notRunOf,
   timeBudgetOf,
   packsOf,
-  omittedOf
+  omittedOf,
+  describeValue,
+  lowerOption
 } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
@@ -348,10 +350,10 @@ function renderSarifReport(result, given) {
   const leanFailAs =
     options.leanFailAs === undefined || options.leanFailAs === null
       ? 'warning'
-      : String(options.leanFailAs).trim().toLowerCase();
+      : lowerOption(options.leanFailAs);
   if (leanFailAs !== 'warning' && leanFailAs !== 'error') {
     throw new TypeError(
-      `renderSarifReport: leanFailAs must be 'warning' or 'error', not ${JSON.stringify(options.leanFailAs)}`
+      `renderSarifReport: leanFailAs must be 'warning' or 'error', not ${describeValue(options.leanFailAs)}`
     );
   }
   // leanFailWcagOnly: true raises only the leans of rules mapped to a WCAG
@@ -360,7 +362,7 @@ function renderSarifReport(result, given) {
   const { leanFailWcagOnly } = options;
   if (leanFailWcagOnly != null && typeof leanFailWcagOnly !== 'boolean') {
     throw new TypeError(
-      `renderSarifReport: leanFailWcagOnly must be true or false, not ${JSON.stringify(leanFailWcagOnly)}`
+      `renderSarifReport: leanFailWcagOnly must be true or false, not ${describeValue(leanFailWcagOnly)}`
     );
   }
   // allowProfilesNotRun: true accepts a scan of several profiles that ran
@@ -369,7 +371,7 @@ function renderSarifReport(result, given) {
   const { allowProfilesNotRun } = options;
   if (allowProfilesNotRun != null && typeof allowProfilesNotRun !== 'boolean') {
     throw new TypeError(
-      `renderSarifReport: allowProfilesNotRun must be true or false, not ${JSON.stringify(allowProfilesNotRun)}`
+      `renderSarifReport: allowProfilesNotRun must be true or false, not ${describeValue(allowProfilesNotRun)}`
     );
   }
   const automation = automationDetails(category);

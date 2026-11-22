@@ -20,6 +20,7 @@
  *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
  *   describeOptionValue (src/core/dom-helpers.js -- names a value of the wrong type),
  *   enforceEngineOptions (src/core/engine-options.js -- unknown or invalid options),
+ *   engineOptionSpec (src/core/engine-options.js -- what probes may hold),
  *   rollupInProfileVersion (a standard's rollups under one of its profiles),
  *   profileStandardOf (ctx.standard: the standard a profile targets),
  *   ENGINE_VERSION (the package version, baked in at build time),
@@ -45,7 +46,7 @@ const { readLiveRegionHook } = require('./live-region-hook');
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    warnDeprecatedStandards, warnDeprecatedProfile, RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
-   profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, strictOf,
+   profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, engineOptionSpec, strictOf,
    STANDARD_REPORTS, t, PROFILE_SEVERITY, PROFILE_WCAG_VERSIONS, CATALOG, switchOf,
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
    criteriaNamingRule, optInTagsOf, ruleIdMatches,
@@ -2300,6 +2301,66 @@ function assertPageBuiltins() {
   }
 }
 
+// A value a page's script put on Object.prototype (Object.prototype.
+// occurrenceOutcome = 'pass', timeBudgetMs, excludeSelectors) is read for
+// every key a plain object lacks: of a rule's result, an occurrence, the
+// caller's options and flags only the engine sets. It turned every failure
+// into a pass (round 12, A12-1). A read-only one also stopped the engine
+// giving an object a key of its own (result.type), with a bare TypeError
+// (A12-3). So for the scan, which runs synchronously, every such value is
+// taken off Object.prototype, and the engine and the rules read only what
+// their objects hold; the returned function puts each back as it was. A
+// method put there (then, as a library may) is left, and a getter is
+// refused by assertPageBuiltins first. One that can't be taken off and
+// can't be written (non-configurable and read-only) stops the scan with
+// PAGE_BUILTINS_BROKEN naming it.
+function holdObjectPrototypeValues() {
+  const proto = Object.prototype;
+  const own = Object.prototype.hasOwnProperty;
+  const held = [];
+  const release = () => {
+    for (let i = held.length - 1; i >= 0; i--) {
+      const h = held[i];
+      try {
+        if (h.cleared) proto[h.name] = h.descriptor.value;
+        else Object.defineProperty(proto, h.name, h.descriptor);
+      } catch {}
+    }
+    held.length = 0;
+  };
+  const names = Object.getOwnPropertyNames(proto);
+  const refused = [];
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i];
+    if (name === '__proto__') continue;
+    const d = Object.getOwnPropertyDescriptor(proto, name);
+    if (!d) continue;
+    // Own reads: a descriptor is a plain object too.
+    if (own.call(d, 'value') && typeof d.value === 'function') continue;
+    if (d.configurable) {
+      delete proto[name];
+      held[held.length] = { name, descriptor: d, cleared: false };
+    } else if (own.call(d, 'writable') && d.writable) {
+      proto[name] = undefined;
+      held[held.length] = { name, descriptor: d, cleared: true };
+    } else refused[refused.length] = 'Object.prototype.' + name;
+  }
+  if (refused.length) {
+    release();
+    let list = '';
+    for (let i = 0; i < refused.length; i++) list += (i ? ', ' : '') + refused[i];
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (' +
+        list +
+        "), so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = refused;
+    throw err;
+  }
+  return release;
+}
+
 // Whether Array.from works as the language defines it, for the rules of a
 // pack or caller that use it: on a page whose scripts replaced it (Prototype
 // gives an empty list for a Set or a Map iterator and ignores the mapping
@@ -2464,8 +2525,9 @@ function runCoreSettled(
   const budgetSpent = !!(
     engineOptions &&
     typeof engineOptions === 'object' &&
-    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent') &&
-    engineOptions.__budgetSpent === true
+    Object.prototype.hasOwnProperty.call(engineOptions, '__budgetSpent') &&
+    engineOptions.__budgetSpent === true &&
+    !Object.prototype.propertyIsEnumerable.call(engineOptions, '__budgetSpent')
   );
   const notRunRules = [];
   // Unknown or invalid options: an error under strictOptions, and a warning
@@ -2814,8 +2876,11 @@ function runCoreSettled(
 
   let probes;
   try {
+    // JSON-safe data only, as enforceEngineOptions says (round 12, A12-13).
     const rawProbes =
-      engineOptionsResolved && typeof engineOptionsResolved.probes === 'object'
+      engineOptionsResolved &&
+      typeof engineOptionsResolved.probes === 'object' &&
+      engineOptionSpec().probes.test(engineOptionsResolved.probes)
         ? engineOptionsResolved.probes
         : null;
     probes = rawProbes ? sanitizeProbeValue(rawProbes, 6) : null;
@@ -3526,6 +3591,12 @@ function runCoreSettled(
     if (typeof sharedHelpers.__setActiveRuleExcludeSelectors === 'function') {
       sharedHelpers.__setActiveRuleExcludeSelectors(ruleConfig && ruleConfig.excludeSelectors);
     }
+    // Whether any area is left out for this rule: only then does
+    // normalizeRuleResult look up every element a selector-only occurrence
+    // matches (round 12, A12-16).
+    const excluding =
+      excludeSelectors.length > 0 ||
+      normalizeSelectorList(ruleConfig && ruleConfig.excludeSelectors).length > 0;
 
     const foreign = foreignCode.has(defResolved.ruleId);
     const ctx = {
@@ -3564,7 +3635,8 @@ function runCoreSettled(
           },
           SCHEMA_VERSION,
           policy,
-          sharedHelpers
+          sharedHelpers,
+          excluding
         )
       );
       if (ruleTimings)
@@ -3592,7 +3664,8 @@ function runCoreSettled(
           // everywhere: what was meant can't be known, so the rule says so.
           throw new Error(
             'applicability returned ' +
-              describeOptionValue(res) +
+              // "a undefined" read badly (round 12, A12-11).
+              (res === undefined ? 'undefined (no value)' : describeOptionValue(res)) +
               '; it must return true or false (or { applicable: true | false })'
           );
         }
@@ -3607,7 +3680,7 @@ function runCoreSettled(
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -3624,7 +3697,7 @@ function runCoreSettled(
           }
         };
         checksResults.push(
-          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
+          normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers, excluding)
         );
         if (ruleTimings)
           ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -3797,7 +3870,8 @@ function runCoreSettled(
         scopeOutcomeToWcagVersion(defResolved, result),
         SCHEMA_VERSION,
         policy,
-        sharedHelpers
+        sharedHelpers,
+        excluding
       )
     );
     if (ruleTimings)
@@ -3870,15 +3944,33 @@ function runCoreSettled(
     }
   );
   if (notRunRules.length) {
+    // The budget the scan was given, not what was left of it when this
+    // profile or frame started (__scanTimeBudgetMs, set by the engine
+    // only), in whole ms, or tenths below 10 (round 12, A12-5).
+    const flagOf = (key) =>
+      Object.prototype.hasOwnProperty.call(engineOptions, key) &&
+      !Object.prototype.propertyIsEnumerable.call(engineOptions, key)
+        ? engineOptions[key]
+        : undefined;
+    const given =
+      typeof flagOf('__scanTimeBudgetMs') === 'number'
+        ? flagOf('__scanTimeBudgetMs')
+        : timeBudgetMs;
+    const budgetText =
+      typeof given === 'number' && Number.isFinite(given)
+        ? ' of ' + (given >= 10 ? Math.round(given) : Math.round(given * 10) / 10) + ' ms'
+        : '';
     try {
       console.warn(
-        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget of ' +
-          timeBudgetMs +
+        '[surea11y] engineOptions.timeBudgetMs: the scan reached its time budget' +
+          budgetText +
           (budgetSpent
-            ? typeof engineOptions.profile === 'string'
-              ? ' ms before profile "' + engineOptions.profile + '" started, so it'
-              : " ms before this frame's scan started, so it"
-            : ' ms and') +
+            ? flagOf('__budgetSpentAt') === 'profile' && typeof engineOptions.profile === 'string'
+              ? ' before profile "' + engineOptions.profile + '" started, so it'
+              : flagOf('__budgetSpentAt') === 'styleSheets'
+                ? " fetching the style sheets the page can't read, before any rule started, so it"
+                : " before this frame's scan started, so it"
+            : ' and') +
           ' did not run ' +
           notRunRules.length +
           ' rule' +
@@ -4154,6 +4246,7 @@ function runCoreSettled(
 module.exports = {
   isThenable,
   assertPageBuiltins,
+  holdObjectPrototypeValues,
   assertArrayFromFor,
   resolveCustomRules,
   runCore,

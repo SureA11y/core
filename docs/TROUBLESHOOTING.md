@@ -44,6 +44,8 @@ Each of these used to scan the whole page instead: a selector that matched nothi
 
 The page's own scripts changed a JavaScript built-in the engine relies on (`Array.prototype.filter`, `Map`, `JSON.stringify` and others, or a getter on `Object.prototype`), so a scan of it could give a result that reads well and is wrong. The error's message and its `broken` list name each one; the list is empty when a built-in is broken so badly that the check itself threw. Scan the page before its scripts change them (inject the bundle earlier, or scan a build without the script that does it). See [`LIMITATIONS.md`](./LIMITATIONS.md).
 
+A value a script put on `Object.prototype` (`Object.prototype.type = 'x'`, read-only or not) is taken off it for the scan and put back after, so the engine and the rules read only what their own objects hold. Only one that can be neither taken off nor written (defined not configurable and not writable) stops the scan, with `broken` naming it (`Object.prototype.type`). A method put there, such as `then`, is left as it is.
+
 When `broken` is only `Array.from`, the page replaced it (Prototype and MooTools do) and a pack's or custom rule in the scan uses it: core's own rules don't. Write that rule with spread (`[...x]`, `[...x].map(f)`; [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §1.3), or leave it out of the selection.
 
 ## "My scan never returns"

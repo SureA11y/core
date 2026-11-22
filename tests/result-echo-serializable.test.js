@@ -36,17 +36,30 @@ test('a result with function custom rules can be cloned, and echoes their ids', 
   }
 });
 
-test('probes are echoed as the capped copy rules read, so a circular one still serializes', () => {
+test('probes are echoed as the capped copy rules read; probes that are not JSON-safe are ignored', () => {
   const crawl = { pages: [] };
-  crawl.self = crawl;
   const result = runa11yCoreOnHtml(HTML, {
-    engineOptions: { probes: { crawl, count: 10n, long: 'x'.repeat(5000) } }
+    engineOptions: { probes: { crawl, long: 'x'.repeat(5000) } }
   });
   assert.doesNotThrow(() => JSON.stringify(result));
   assert.doesNotThrow(() => structuredClone(result));
   const echoed = result.checksResults[0].engineOptions.probes;
   assert.ok(echoed.long.length <= 2001, 'strings capped as for rules');
   assert.notEqual(echoed.crawl, crawl, 'not the caller’s object');
+  // A circular reference or a BigInt is no JSON-safe evidence: warned
+  // about and ignored, and the result still serializes (round 12, A12-13).
+  crawl.self = crawl;
+  const warn = console.warn;
+  console.warn = () => {};
+  let odd;
+  try {
+    odd = runa11yCoreOnHtml(HTML, { engineOptions: { probes: { crawl, count: 10n } } });
+  } finally {
+    console.warn = warn;
+  }
+  assert.doesNotThrow(() => JSON.stringify(odd));
+  assert.doesNotThrow(() => structuredClone(odd));
+  assert.equal(odd.checksResults[0].engineOptions.probes, null);
 });
 
 test('options without probes or customRules echo neither', () => {

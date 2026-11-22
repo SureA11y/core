@@ -31,7 +31,15 @@ async function preloadStyleSheets(options) {
       ? opts.timeoutMs
       : 5000;
   const fetchFn = typeof fetch === 'function' ? fetch : null;
-  if (!doc || !fetchFn) return [];
+  const deadline =
+    typeof opts.deadline === 'number' && Number.isFinite(opts.deadline) ? opts.deadline : null;
+  // The sheets the deadline left unread, on the list resolved with.
+  const notRead = [];
+  const done = (list) => {
+    Object.defineProperty(list, 'notRead', { value: notRead });
+    return list;
+  };
+  if (!doc || !fetchFn) return done([]);
 
   // The sheets that can't be read, by their absolute URL: linked ones, and
   // those an @import in a readable sheet brings in.
@@ -62,12 +70,21 @@ async function preloadStyleSheets(options) {
     const list = getter && getter.get ? getter.get.call(doc) : [];
     for (const sheet of [...(list || [])]) visit(sheet, 0);
   } catch {
-    return [];
+    return done([]);
   }
 
-  function withTimeout(promise) {
+  // Each fetch waits timeoutMs, and never past the deadline; one the
+  // deadline cut short is named in notRead.
+  function withTimeout(promise, href) {
     return new Promise((resolve) => {
-      const timer = setTimeout(() => resolve(null), timeoutMs);
+      const wait = deadline === null ? timeoutMs : Math.min(timeoutMs, deadline - Date.now());
+      const timer = setTimeout(
+        () => {
+          if (deadline !== null && wait < timeoutMs) notRead.push(href);
+          resolve(null);
+        },
+        Math.max(0, wait)
+      );
       promise.then(
         (v) => {
           clearTimeout(timer);
@@ -82,10 +99,15 @@ async function preloadStyleSheets(options) {
   }
 
   function fetchText(href) {
+    if (deadline !== null && Date.now() >= deadline) {
+      notRead.push(href);
+      return Promise.resolve(null);
+    }
     return withTimeout(
       fetchFn(href, { mode: 'cors', credentials: 'omit' }).then((res) =>
         res && res.ok ? res.text().then((text) => ({ href, text })) : null
-      )
+      ),
+      href
     );
   }
 
@@ -124,7 +146,7 @@ async function preloadStyleSheets(options) {
       }
     }
   }
-  return out;
+  return done(out);
 }
 
 module.exports = { preloadStyleSheets };
