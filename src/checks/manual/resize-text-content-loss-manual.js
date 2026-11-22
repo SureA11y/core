@@ -58,6 +58,10 @@
  *     on the box's inline axis (y), the line clamp on its block axis (x),
  *     and a line is half outside by half an em down or half its width
  *     across.
+ *   - Below 600 pixels wide, the page is laid out narrower than a 1280
+ *     pixel window at 200% zoom, and a cut there may appear only at a
+ *     larger zoom, which 1.4.4 doesn't ask for: both codes are asked
+ *     without a lean.
  *   - Text that every box clipping it shows in full passes.
  *   Each box is reported once, for the first text it cuts most. Whether the
  *   full text is offered another way (a control that opens the box, the
@@ -89,17 +93,20 @@
  *   - `viewport.width`, `viewport.height`: the viewport the page was laid
  *     out in, in CSS pixels.
  *   The message names the zoom at which a 1280 pixel window is laid out at
- *   the scanned width (`zoomPercent`): 200% at 640, 400% at 320.
+ *   the scanned width (`zoomPercent`): 200% at 640, 213% at 600. Below 600
+ *   pixels it says the width is narrower than that window at 200% zoom
+ *   (`narrower`).
  * @reason-codes
  *   - `TEXT_CLIPPED_AT_640` (cantTell): at 640 CSS pixels wide or less, a
  *     box that hides its overflow cuts off part of this text, or all of it
  *     while showing other text. It leans fail when a line is at least half
- *     outside the box; a line cut by less gets no lean.
+ *     outside the box; a line cut by less, or any cut below 600 pixels
+ *     wide, gets no lean.
  *     Basis: WCAG 1.4.4 (not settled); ACT 59br37; F69 (not settled).
  *   - `TEXT_TRUNCATED_AT_640` (cantTell): at 640 CSS pixels wide or less, a
  *     box shortens this text with an ellipsis or a line clamp. It leans
- *     fail: part of the text is not shown, unless the full text is offered
- *     another way.
+ *     fail, from 600 pixels wide: part of the text is not shown, unless the
+ *     full text is offered another way.
  *     Basis: WCAG 1.4.4 (not settled); ACT 59br37.
  * @implementation-notes
  *   The rule doesn't change the viewport or zoom the page: a script in the
@@ -155,6 +162,7 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
   const view = dom.defaultView(document) || null;
   const ZOOM_WIDTH = 640;
+  const LEAN_MIN_WIDTH = 600;
   const MAX_TEXT_NODES = 3000;
   const MAX_PER_CODE = 50;
   // A line more than this far outside its box is cut off at all.
@@ -882,12 +890,15 @@ function runInPage(ctx) {
       }
     }
   };
+  // Below this width the page is laid out narrower than a 1280 pixel window
+  // at 200% zoom: what is cut there may be cut only at a larger zoom.
+  const narrower = viewport.width < LEAN_MIN_WIDTH;
   const EDGE_WORDS = { top: 'top ', right: 'right ', bottom: 'bottom ', left: 'left ' };
   const MESSAGES = {
     TEXT_CLIPPED_AT_640: {
       key: 'clipped',
       summary: (p, edge) =>
-        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at ${p.zoomPercent}% zoom, this element cuts off the text "${p.text}" (${p.overflowPx} pixels past its ${EDGE_WORDS[edge] || ''}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
+        `At ${p.viewportWidth} pixels wide, ${p.narrower ? 'narrower than a 1280 pixel window at 200% zoom' : `as a 1280 pixel window shows the page at ${p.zoomPercent}% zoom`}, this element cuts off the text "${p.text}" (${p.overflowPx} pixels past its ${EDGE_WORDS[edge] || ''}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
       hint: (p) =>
         p.clipCss
           ? `Let the box grow with its text when the page is zoomed: change ${p.clipCss}, or let it scroll.`
@@ -896,7 +907,7 @@ function runInPage(ctx) {
     TEXT_TRUNCATED_AT_640: {
       key: 'truncated',
       summary: (p) =>
-        `At ${p.viewportWidth} pixels wide, as a 1280 pixel window shows the page at ${p.zoomPercent}% zoom, this element shortens the text "${p.text}" with an ellipsis or a line clamp, so part of it is not shown.${p.clipCss ? ` The CSS that shortens it: ${p.clipCss}.` : ''}`,
+        `At ${p.viewportWidth} pixels wide, ${p.narrower ? 'narrower than a 1280 pixel window at 200% zoom' : `as a 1280 pixel window shows the page at ${p.zoomPercent}% zoom`}, this element shortens the text "${p.text}" with an ellipsis or a line clamp, so part of it is not shown.${p.clipCss ? ` The CSS that shortens it: ${p.clipCss}.` : ''}`,
       hint: () =>
         'Let the text wrap and the box show all of it when the page is zoomed, or offer the full text another way that works with the keyboard, such as a "read more" link.'
     }
@@ -916,11 +927,19 @@ function runInPage(ctx) {
       // The zoom at which a 1280 pixel window lays the page out this wide:
       // 200% at 640, 400% at 320.
       zoomPercent: String(Math.round((1280 * 100) / (viewport.width || ZOOM_WIDTH))),
+      ...(narrower ? { narrower: true } : {}),
       ...(edgeKey ? { [edgeKey]: true } : {}),
       ...(f.clipCss ? { clipCss: f.clipCss } : {})
     };
-    const lean =
-      f.code === 'TEXT_TRUNCATED_AT_640' ? LEANS.truncated : f.lost ? LEANS.clipped : null;
+    // Narrower than 200% zoom of a 1280 pixel window gives, the cut may
+    // appear only at a zoom 1.4.4 doesn't ask for: asked without a lean.
+    const lean = narrower
+      ? null
+      : f.code === 'TEXT_TRUNCATED_AT_640'
+        ? LEANS.truncated
+        : f.lost
+          ? LEANS.clipped
+          : null;
     questions.push(
       helpers.reportOccurrence(f.el, {
         ...(lean ? { lean } : {}),

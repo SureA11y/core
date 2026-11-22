@@ -317,22 +317,44 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   );
 
   // The message names the zoom that lays a 1280 pixel window out at the
-  // width the page was scanned at: 400% at 320, not 200% (round 12, U12-2).
-  await t.test('the message states the zoom the scanned width stands for', async () => {
+  // width the page was scanned at, not 200% at any width (round 12, U12-2).
+  // Below 600 pixels, narrower than that window at 200% zoom, a cut is asked
+  // about without a lean, and the message says the width is narrower.
+  await t.test('the message states the zoom; below 600 pixels, no lean', async () => {
     const html = page(
       '.box{width:200px;height:20px;overflow:hidden}',
       `<div class="box">${LONG}</div>`
     );
-    const at640 = await scan(html);
-    assert.match(at640.occurrences[0].summary, /^At 6\d\d pixels wide, as a 1280 pixel window/);
-    const at320 = await scan(html, { pageOptions: { viewport: { width: 320, height: 800 } } });
-    const [o] = at320.occurrences;
-    const width = o.data.details.viewport.width;
-    const zoom = String(Math.round(128000 / width));
-    assert.equal(o.i18n.params.zoomPercent, zoom);
-    assert.ok(Number(zoom) >= 400, zoom);
-    assert.ok(o.summary.includes(`shows the page at ${zoom}% zoom`), o.summary);
-    assert.doesNotMatch(o.summary, /200% zoom/);
+    const at = async (width) =>
+      (await scan(html, { pageOptions: { viewport: { width, height: 800 } } })).occurrences[0];
+    const wide = await at(620);
+    const zoom = String(Math.round(128000 / wide.data.details.viewport.width));
+    assert.equal(wide.i18n.params.zoomPercent, zoom);
+    assert.ok(wide.summary.includes(`as a 1280 pixel window shows the page at ${zoom}% zoom`));
+    assert.equal(wide.lean.toward, 'fail');
+    for (const width of [320, 590]) {
+      const o = await at(width);
+      assert.equal(o.data.details.reasonCode, 'TEXT_CLIPPED_AT_640');
+      assert.equal(o.lean, undefined, String(width));
+      assert.equal(o.i18n.params.narrower, true);
+      assert.match(
+        o.summary,
+        /^At \d+ pixels wide, narrower than a 1280 pixel window at 200% zoom,/
+      );
+    }
+    const truncated = (
+      await scan(
+        page(
+          '.box{width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+          `<div class="box">${LONG}</div>`
+        ),
+        {
+          pageOptions: { viewport: { width: 320, height: 800 } }
+        }
+      )
+    ).occurrences[0];
+    assert.equal(truncated.data.details.reasonCode, 'TEXT_TRUNCATED_AT_640');
+    assert.equal(truncated.lean, undefined);
   });
 
   // The CSS quoted is the CSS the author wrote: content-visibility, which
