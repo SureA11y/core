@@ -102151,6 +102151,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const line = linesOf(parent).get(child);
     return line ? line.text || line.inline : null;
   }
+  // The nearest element, from el up, laid out as a block (an inline-block
+  // counts); el itself where nothing above is.
+  const BLOCK_LIKE = /^(block|list-item|table|flex|grid|flow-root|inline-block|table-)/;
+  function blockOf(el) {
+    for (let n = el, i = 0; n && dom.nodeType(n) === 1 && i < 100; n = dom.parentElement(n), i++) {
+      const cs = safeComputedStyle(n);
+      if (cs && BLOCK_LIKE.test(String(cs.display || ''))) return n;
+    }
+    return el;
+  }
   function hasSurroundingText(el, parent) {
     return !!textElementOf(parent, el);
   }
@@ -103159,9 +103169,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     applicableCount += 1;
 
     const linkCs = safeComputedStyle(el);
-    // The surrounding text's style: the parent's, or the inline element's
-    // beside the link that holds the text.
-    const textEl = textElementOf(parent, lineChild);
+    // Colors, weight, style and decoration are measured against the link's
+    // text block, not an inline element beside it.
+    const textEl = blockOf(parent);
     const parentCs = safeComputedStyle(textEl);
 
     // Cues that do not depend on `text-decoration` come first, so a link
@@ -103186,7 +103196,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const resting = restingUnderline(el, linkCs);
     let textUnderlined = null;
     const aroundUnderlined = () => {
-      if (textUnderlined === null) textUnderlined = surroundingUnderlined(textEl);
+      if (textUnderlined === null) textUnderlined = surroundingUnderlined(parent);
       return textUnderlined;
     };
     if (resting.known && resting.underlined && !unseen(el, resting.color) && !aroundUnderlined()) {

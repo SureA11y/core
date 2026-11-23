@@ -241,6 +241,10 @@
  *   of the actual adjacent text node(s), a deliberate scope-down, since
  *   plain text nodes inherit their rendering from the parent in the
  *   overwhelming majority of real markup.
+ * - The link is compared with its text block, the nearest ancestor laid
+ *   out as a block (block, list-item, table, flex, grid, flow-root or
+ *   inline-block): an inline element beside the link (an <abbr>, an <em>, a
+ *   span of another color) marks a few words, not the text the link sits in.
  * - A candidate that cannot be evaluated reports cantTell, not pass:
  *   contrast not confidently computable (the blockers `contrast-minimum`/
  *   `contrast-computable` use) where the two text colors don't settle it
@@ -1264,6 +1268,16 @@ function runInPage(ctx) {
     const line = linesOf(parent).get(child);
     return line ? line.text || line.inline : null;
   }
+  // The nearest element, from el up, laid out as a block (an inline-block
+  // counts); el itself where nothing above is.
+  const BLOCK_LIKE = /^(block|list-item|table|flex|grid|flow-root|inline-block|table-)/;
+  function blockOf(el) {
+    for (let n = el, i = 0; n && dom.nodeType(n) === 1 && i < 100; n = dom.parentElement(n), i++) {
+      const cs = safeComputedStyle(n);
+      if (cs && BLOCK_LIKE.test(String(cs.display || ''))) return n;
+    }
+    return el;
+  }
   function hasSurroundingText(el, parent) {
     return !!textElementOf(parent, el);
   }
@@ -2272,9 +2286,9 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const linkCs = safeComputedStyle(el);
-    // The surrounding text's style: the parent's, or the inline element's
-    // beside the link that holds the text.
-    const textEl = textElementOf(parent, lineChild);
+    // Colors, weight, style and decoration are measured against the link's
+    // text block, not an inline element beside it.
+    const textEl = blockOf(parent);
     const parentCs = safeComputedStyle(textEl);
 
     // Cues that do not depend on `text-decoration` come first, so a link
@@ -2299,7 +2313,7 @@ function runInPage(ctx) {
     const resting = restingUnderline(el, linkCs);
     let textUnderlined = null;
     const aroundUnderlined = () => {
-      if (textUnderlined === null) textUnderlined = surroundingUnderlined(textEl);
+      if (textUnderlined === null) textUnderlined = surroundingUnderlined(parent);
       return textUnderlined;
     };
     if (resting.known && resting.underlined && !unseen(el, resting.color) && !aroundUnderlined()) {

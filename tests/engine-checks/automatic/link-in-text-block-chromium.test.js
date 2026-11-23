@@ -91,6 +91,25 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   );
 
+  await t.test('an underlined link beside code chips and an underlined abbr passes', async () => {
+    const chips = 'code{display:inline-block;padding:2px 4px;background:#efedf1;color:#b62323}';
+    const body =
+      '<ul><li><code>&lt;b&gt;</code> <abbr title="versus">vs.</abbr> <code>&lt;strong&gt;</code>: ' +
+      '<a href="https://example.com/strong#b_vs._strong" style="color:#375ca8">https://example.com/strong#b_vs._strong</a></li></ul>';
+    const page = (css) => scan(`<style>${css}</style>${body}`, 'background:#fff;color:#1b1b1f');
+    assert.deepEqual(await page(chips), ['pass', []]);
+    // With the text around the link all underlined, it sets nothing apart.
+    assert.equal(
+      (
+        await scan(
+          '<p style="text-decoration:underline;color:#1b1b1f">Read <a href="/a" style="color:#375ca8">this</a> now.</p>',
+          'background:#fff'
+        )
+      )[0],
+      'fail'
+    );
+  });
+
   // A hover and focus cue counts only where its rule reaches the link: a
   // nested `&:hover` under a parent the link isn't in, or one only print
   // media gets, is no cue, and the link leans fail.
