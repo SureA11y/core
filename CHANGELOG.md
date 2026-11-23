@@ -4,10 +4,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
-### Fixed
-
-- **`link-in-text-block`**: an underlined link no longer fails because an underlined inline element sits beside it. In `<li><code>b</code> <abbr>vs.</abbr> <code>strong</code>: <a href>…</a></li>`, with the `<code>` chips laid out as inline-blocks, the `<abbr>` was taken for the surrounding text, so the link's underline counted for nothing and the link failed `COLOR_ONLY_DIFFERENTIATION`. The link is now compared with its text block, the nearest ancestor laid out as a block, for its underline, weight, style and colors. A link in a paragraph that is underlined throughout still fails.
-- **Results you may notice**: a plain link beside a bold label or a span of another color is no longer set apart by it. Where that label was the only difference, the link now fails, or asks at 3:1 or more, where it passed before.
+## [1.18.1] - 2026-11-23
 
 ### Changed
 
@@ -17,6 +14,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 ### Fixed
 
 - **`p-as-heading` asks about a bold line on a page whose body text is 18px or more** (`BOLD_SHORT_PARAGRAPH`), when the line is no larger than the text after it and only heavier than it, as WordPress's Twenty Twenty-Five sets `<strong>` (400 over body text at 21px and 300). 1.18.0 asked about such a line only below 18px. A line larger than the text after it still has to be semibold or bolder (#428).
+- **`link-in-text-block`**: an underlined link no longer fails because an underlined inline element sits beside it. In `<li><code>b</code> <abbr>vs.</abbr> <code>strong</code>: <a href>…</a></li>`, with the `<code>` chips laid out as inline-blocks, the `<abbr>` was taken for the surrounding text, so the link's underline counted for nothing and the link failed `COLOR_ONLY_DIFFERENTIATION`. The link is now compared with its text block, the nearest ancestor laid out as a block, for its underline, weight, style and colors. A link in a paragraph that is underlined throughout still fails. A plain link beside a bold label or a span of another color is no longer set apart by it. Where that label was the only difference, the link now fails, or asks at 3:1 or more, where it passed before.
 
 ## [1.18.0] - 2026-11-22
 
