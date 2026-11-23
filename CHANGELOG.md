@@ -4,6 +4,11 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+
+- **`link-in-text-block`**: an underlined link no longer fails because an underlined inline element sits beside it. In `<li><code>b</code> <abbr>vs.</abbr> <code>strong</code>: <a href>…</a></li>`, with the `<code>` chips laid out as inline-blocks, the `<abbr>` was taken for the surrounding text, so the link's underline counted for nothing and the link failed `COLOR_ONLY_DIFFERENTIATION`. The link is now compared with its text block, the nearest ancestor laid out as a block, for its underline, weight, style and colors. A link in a paragraph that is underlined throughout still fails.
+- **Results you may notice**: a plain link beside a bold label or a span of another color is no longer set apart by it. Where that label was the only difference, the link now fails, or asks at 3:1 or more, where it passed before.
+
 ### Changed
 
 - **Docs and rule text**: the README and `LIMITATIONS.md` no longer say reflow at zoom isn't checked at all: they say the engine doesn't zoom the page, and that `reflow-horizontal-scroll` and `resize-text-content-loss` measure a page scanned at 320 and 640 CSS pixels wide. Rule text no longer points at `docs/RULE_AUTHORING.md` (`focus-not-obscured-enhanced`, `link-name-quality-link-only`, `target-size-enhanced`); `nested-interactive-controls-absent` names `presentational-children-focusable-absent` without a break inside the id; `landmark-no-duplicate-contentinfo` and `-main` give an example of their own role in `others`; `page-zones-landmark` says it reads a field named q, s, search or query; `aria-prohibited-children` drops a clause its own code contradicts; `p-as-heading`'s `reasonCode` lists `BOLD_SHORT_PARAGRAPH`; `video-poster-text-alternative-present` says its figure-caption question has no lean, where it said "rather than failed" beside the other question, which no longer fails either; `page-title-patterns` says every placeholder leans fail, not only `%s` and `%d`; and rule text writes "color".

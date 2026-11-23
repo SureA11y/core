@@ -658,14 +658,15 @@ test('link-in-text-block: text in an inline sibling is surrounding text', () => 
   for (const body of not) assert.equal(outcome(body), 'notApplicable', body);
 });
 
-// The link is compared with the text it sits beside: a bold label in a span
-// sets the plain link apart by weight, though their parent is not bold.
-test('link-in-text-block: a link is compared with the inline text beside it', () => {
+test('link-in-text-block: a link is compared with its text block, not an inline neighbour', () => {
   const html =
     '<!doctype html><html lang="en"><head><title>t</title><style>a{color:#333;text-decoration:none} p{color:#222}</style></head><body><main>' +
     '<p><span style="font-weight:700">Play now</span> <a href="/g">View more</a></p></main></body></html>';
   const check = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults[0];
-  assert.equal(check.outcome, 'pass');
+  assert.equal(check.outcome, 'fail');
+  // A bold link is told apart.
+  const bold = html.replace('a{color:#333;', 'a{font-weight:700;color:#333;');
+  assert.equal(runa11yCoreOnHtml(bold, { runOnly: [RULE_ID] }).checksResults[0].outcome, 'pass');
 });
 
 // A link that draws no text can't be told from the text around it by color:

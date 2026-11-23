@@ -201,13 +201,13 @@ const BLOCK_FIRST_LINE = [
     'PSEUDO_ELEMENT_COLOR',
     'p::first-line'
   ],
-  // Text in an inline element of a color of its own keeps it on the first
-  // line: compared with that color alone, 3.57:1.
+  // The link is compared with its text block, not the #000 span: 2.14:1
+  // from the paragraph's #333 and 1.52:1 from its first line's #900.
   [
     'p{color:#333} p::first-line{color:#900} span{color:#000} a{color:#c00}',
     '<p><span>Read</span> <a href="/x">the guide</a> <span>now please.</span></p>',
-    'cantTell',
-    'LINK_COLOR_CONTRAST_ONLY'
+    'fail',
+    'COLOR_ONLY_DIFFERENTIATION'
   ],
   // A first line in the paragraph's own color changes nothing.
   ['p::first-line{color:#000} a{color:#222}', PARA, 'fail', 'COLOR_ONLY_DIFFERENTIATION'],
